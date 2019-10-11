@@ -1,4 +1,4 @@
-[mapping]
+[mapping:vfs]
 archive: libvfs.a
 entries:
     vfs:esp_vfs_open (noflash)

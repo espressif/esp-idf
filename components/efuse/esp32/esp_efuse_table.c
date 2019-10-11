@@ -17,7 +17,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 840523b9e1313240e6102615e3a497a5
+// md5_digest_table 2e23344575b3d07f01ecb695294e9770
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -96,7 +96,7 @@ static const esp_efuse_desc_t CONSOLE_DEBUG_DISABLE[] = {
 };
 
 static const esp_efuse_desc_t FLASH_CRYPT_CNT[] = {
-    {EFUSE_BLK0, 20, 8}, 	 // Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.,
+    {EFUSE_BLK0, 20, 7}, 	 // Flash encrypt. Flash encryption is enabled if this field has an odd number of bits set. EFUSE_FLASH_CRYPT_CNT.,
 };
 
 static const esp_efuse_desc_t WR_DIS_FLASH_CRYPT_CNT[] = {
@@ -149,6 +149,10 @@ static const esp_efuse_desc_t CHIP_CPU_FREQ_RATED[] = {
 
 static const esp_efuse_desc_t CHIP_VER_REV1[] = {
     {EFUSE_BLK0, 111, 1}, 	 // EFUSE_RD_CHIP_VER_REV1,
+};
+
+static const esp_efuse_desc_t CHIP_VER_REV2[] = {
+    {EFUSE_BLK0, 180, 1}, 	 // EFUSE_RD_CHIP_VER_REV2,
 };
 
 static const esp_efuse_desc_t XPD_SDIO_REG[] = {
@@ -333,6 +337,11 @@ const esp_efuse_desc_t* ESP_EFUSE_CHIP_CPU_FREQ_RATED[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_REV1[] = {
     &CHIP_VER_REV1[0],    		// EFUSE_RD_CHIP_VER_REV1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_REV2[] = {
+    &CHIP_VER_REV2[0],    		// EFUSE_RD_CHIP_VER_REV2
     NULL
 };
 

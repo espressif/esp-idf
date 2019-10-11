@@ -441,7 +441,7 @@ test cases:
     7.check SSC2 main dns server
   sub module: DNS
   summary: DNS softap DNS test
-  test environment: SSC_T2_1
+  test environment: SSC_T2_5
   test point 1: stress + function
   test point 2: DNS stress test
   version: v2 (2016-10-23)

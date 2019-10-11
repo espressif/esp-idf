@@ -53,7 +53,7 @@ initializer that should be kept in sync
         .uri_match_fn = NULL                            \
 }
 
-#define ESP_ERR_HTTPD_BASE              (0x8000)                    /*!< Starting number of HTTPD error codes */
+#define ESP_ERR_HTTPD_BASE              (0xb000)                    /*!< Starting number of HTTPD error codes */
 #define ESP_ERR_HTTPD_HANDLERS_FULL     (ESP_ERR_HTTPD_BASE +  1)   /*!< All slots for registering URI handlers have been consumed */
 #define ESP_ERR_HTTPD_HANDLER_EXISTS    (ESP_ERR_HTTPD_BASE +  2)   /*!< URI handler with same method and target URI already registered */
 #define ESP_ERR_HTTPD_INVALID_REQ       (ESP_ERR_HTTPD_BASE +  3)   /*!< Invalid request pointer */
@@ -100,7 +100,9 @@ typedef void (*httpd_free_ctx_fn_t)(void *ctx);
  *
  * @param[in] hd       server instance
  * @param[in] sockfd   session socket file descriptor
- * @return status
+ * @return
+ *  - ESP_OK   : On success
+ *  - Any value other than ESP_OK will signal the server to close the socket immediately
  */
 typedef esp_err_t (*httpd_open_func_t)(httpd_handle_t hd, int sockfd);
 
@@ -201,6 +203,8 @@ typedef struct httpd_config {
      *
      * If a context needs to be maintained between these functions, store it in the session using
      * httpd_sess_set_transport_ctx() and retrieve it later with httpd_sess_get_transport_ctx()
+     *
+     * Returning a value other than ESP_OK will immediately close the new socket.
      */
     httpd_open_func_t open_fn;
 
@@ -872,7 +876,10 @@ size_t httpd_req_get_url_query_len(httpd_req_t *r);
  *    a URI handler where httpd_req_t* request pointer is valid
  *  - If output size is greater than input, then the value is truncated,
  *    accompanied by truncation error as return value
- *  - Use httpd_req_get_url_query_len() to know the right buffer length
+ *  - Prior to calling this function, one can use httpd_req_get_url_query_len()
+ *    to know the query string length beforehand and hence allocate the buffer
+ *    of right size (usually query string length + 1 for null termination)
+ *    for storing the query string
  *
  * @param[in]  r         The request being responded to
  * @param[out] buf       Pointer to the buffer into which the query string will be copied (if found)

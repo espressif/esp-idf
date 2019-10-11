@@ -45,14 +45,14 @@ static void tp_example_read_task(void *pvParameter)
     }
 }
 
-static void tp_example_touch_pad_init()
+static void tp_example_touch_pad_init(void)
 {
     for (int i = 0;i< TOUCH_PAD_MAX;i++) {
         touch_pad_config(i, TOUCH_THRESH_NO_USE);
     }
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize touch pad peripheral.
     // The default fsm mode is software trigger mode.

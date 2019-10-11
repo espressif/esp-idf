@@ -43,6 +43,7 @@ except ImportError:
     import IDF
 
 import DUT
+import TinyFW
 import Utility
 from Utility import (Attenuator, PowerControl, LineChart)
 
@@ -336,7 +337,7 @@ class IperfTestUtility(object):
         else:
             raise AssertionError("Failed to scan AP")
         self.dut.write("sta {} {}".format(self.ap_ssid, self.ap_password))
-        dut_ip = self.dut.expect(re.compile(r"event: sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)"))[0]
+        dut_ip = self.dut.expect(re.compile(r"sta ip: ([\d.]+), mask: ([\d.]+), gw: ([\d.]+)"))[0]
         return dut_ip, rssi
 
     def _save_test_result(self, test_case, raw_data, att, rssi, heap_size):
@@ -643,9 +644,15 @@ def test_wifi_throughput_basic(env, extra_data):
         test_utility.run_all_cases(0)
 
     # 5. log performance and compare with pass standard
+    performance_items = []
     for throughput_type in test_result:
         IDF.log_performance("{}_throughput".format(throughput_type),
                             "{:.02f} Mbps".format(test_result[throughput_type].get_best_throughput()))
+        performance_items.append(["{}_throughput".format(throughput_type),
+                                  "{:.02f} Mbps".format(test_result[throughput_type].get_best_throughput())])
+
+    # save to report
+    TinyFW.JunitReport.update_performance(performance_items)
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
         IDF.check_performance("{}_throughput".format(throughput_type),

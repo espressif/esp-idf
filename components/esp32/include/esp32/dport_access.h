@@ -33,7 +33,7 @@ uint32_t esp_dport_access_sequence_reg_read(uint32_t reg);
 //only call in case of panic().
 void esp_dport_access_int_abort(void);
 
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
 #define DPORT_STALL_OTHER_CPU_START()
 #define DPORT_STALL_OTHER_CPU_END()
 #define DPORT_INTERRUPT_DISABLE()
@@ -41,7 +41,7 @@ void esp_dport_access_int_abort(void);
 #else
 #define DPORT_STALL_OTHER_CPU_START()   esp_dport_access_stall_other_cpu_start()
 #define DPORT_STALL_OTHER_CPU_END()     esp_dport_access_stall_other_cpu_end()
-#define DPORT_INTERRUPT_DISABLE()       unsigned int intLvl = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL)
+#define DPORT_INTERRUPT_DISABLE()       unsigned int intLvl = XTOS_SET_INTLEVEL(CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL)
 #define DPORT_INTERRUPT_RESTORE()       XTOS_RESTORE_JUST_INTLEVEL(intLvl)
 #endif
 

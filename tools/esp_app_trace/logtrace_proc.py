@@ -5,11 +5,8 @@ from __future__ import print_function
 import argparse
 import struct
 import sys
-import pylibelf as elf
-import pylibelf.util as elfutil
-import pylibelf.iterators as elfiter
-import pylibelf.constants as elfconst
-import ctypes
+import elftools.elf.elffile as elffile
+import espytrace.apptrace as apptrace
 
 
 class ESPLogTraceParserError(RuntimeError):
@@ -77,34 +74,14 @@ def logtrace_parse(fname):
     return recs
 
 
-def logtrace_get_str_from_elf(felf, str_addr):
-    tgt_str = ""
-    for sect in elfiter.sections(felf):
-        hdr = elfutil.section_hdr(felf, sect)
-        if hdr.sh_addr == 0 or hdr.sh_type != elfconst.SHT_PROGBITS:
-            continue
-        if str_addr < hdr.sh_addr or str_addr >= hdr.sh_addr + hdr.sh_size:
-            continue
-        # print("Found SECT: %x..%x @ %x" % (hdr.sh_addr, hdr.sh_addr + hdr.sh_size, str_addr - hdr.sh_addr))
-        sec_data = elfiter.getOnlyData(sect).contents
-        buf = ctypes.cast(sec_data.d_buf, ctypes.POINTER(ctypes.c_char))
-        for i in range(str_addr - hdr.sh_addr, hdr.sh_size):
-            if buf[i] == "\0":
-                break
-            tgt_str += buf[i]
-        if len(tgt_str) > 0:
-            return tgt_str
-    return None
-
-
 def logtrace_formated_print(recs, elfname, no_err):
     try:
-        felf = elfutil.open_elf(elfname)
+        felf = elffile.ELFFile(open(elfname, 'rb'))
     except OSError as e:
         raise ESPLogTraceParserError("Failed to open ELF file (%s)!" % e)
 
     for lrec in recs:
-        fmt_str = logtrace_get_str_from_elf(felf, lrec.fmt_addr)
+        fmt_str = apptrace.get_str_from_elf(felf, lrec.fmt_addr)
         i = 0
         prcnt_idx = 0
         while i < len(lrec.args):
@@ -114,7 +91,7 @@ def logtrace_formated_print(recs, elfname, no_err):
             prcnt_idx += 1  # goto next char
             if fmt_str[prcnt_idx] == 's':
                 # find string
-                arg_str = logtrace_get_str_from_elf(felf, lrec.args[i])
+                arg_str = apptrace.get_str_from_elf(felf, lrec.args[i])
                 if arg_str:
                     lrec.args[i] = arg_str
             i += 1
@@ -129,8 +106,7 @@ def logtrace_formated_print(recs, elfname, no_err):
             if not no_err:
                 print("Print error (%s)" % e)
                 print("\nFmt = {%s}, args = %d/%s" % (fmt_str, len(lrec.args), lrec.args))
-
-    elf.elf_end(felf)
+    felf.stream.close()
 
 
 def main():

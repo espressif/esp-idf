@@ -1,9 +1,9 @@
-// Copyright 2010-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,14 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-#ifndef _DRIVER_SPI_MASTER_H_
-#define _DRIVER_SPI_MASTER_H_
+#pragma once
 
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-
+//for spi_bus_initialization funcions. to be back-compatible
 #include "driver/spi_common.h"
 
 /** SPI master clock is divided by 80MHz apb clock. Below defines are example frequencies, and are accurate. Be free to specify a random frequency, it will be rounded to closest frequency (to macros below if above 8MHz).
@@ -133,11 +130,11 @@ struct spi_transaction_t {
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
     union {
         const void *tx_buffer;      ///< Pointer to transmit buffer, or NULL for no MOSI phase
-        uint8_t tx_data[4];         ///< If SPI_USE_TXDATA is set, data set here is sent directly from this variable.
+        uint8_t tx_data[4];         ///< If SPI_TRANS_USE_TXDATA is set, data set here is sent directly from this variable.
     };
     union {
         void *rx_buffer;            ///< Pointer to receive buffer, or NULL for no MISO phase. Written by 4 bytes-unit if DMA is used.
-        uint8_t rx_data[4];         ///< If SPI_USE_RXDATA is set, data is received directly to this variable
+        uint8_t rx_data[4];         ///< If SPI_TRANS_USE_RXDATA is set, data is received directly to this variable
     };
 } ;        //the rx data should start from a 32-bit aligned address to get around dma issue.
 
@@ -154,47 +151,6 @@ typedef struct {
 
 
 typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a SPI bus
-
-/**
- * @brief Initialize a SPI bus
- *
- * @warning For now, only supports HSPI and VSPI.
- *
- * @param host SPI peripheral that controls this bus
- * @param bus_config Pointer to a spi_bus_config_t struct specifying how the host should be initialized
- * @param dma_chan Either channel 1 or 2, or 0 in the case when no DMA is required. Selecting a DMA channel
- *                 for a SPI bus allows transfers on the bus to have sizes only limited by the amount of
- *                 internal memory. Selecting no DMA channel (by passing the value 0) limits the amount of
- *                 bytes transfered to a maximum of 32.
- *
- * @warning If a DMA channel is selected, any transmit and receive buffer used should be allocated in
- *          DMA-capable memory.
- *
- * @warning The ISR of SPI is always executed on the core which calls this
- *          function. Never starve the ISR on this core or the SPI transactions will not
- *          be handled.
- *
- * @return
- *         - ESP_ERR_INVALID_ARG   if configuration is invalid
- *         - ESP_ERR_INVALID_STATE if host already is in use
- *         - ESP_ERR_NO_MEM        if out of memory
- *         - ESP_OK                on success
- */
-esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan);
-
-/**
- * @brief Free a SPI bus
- *
- * @warning In order for this to succeed, all devices have to be removed first.
- *
- * @param host SPI peripheral to free
- * @return
- *         - ESP_ERR_INVALID_ARG   if parameter is invalid
- *         - ESP_ERR_INVALID_STATE if not all devices on the bus are freed
- *         - ESP_OK                on success
- */
-esp_err_t spi_bus_free(spi_host_device_t host);
-
 /**
  * @brief Allocate a device on a SPI bus
  *
@@ -380,9 +336,23 @@ void spi_device_release_bus(spi_device_handle_t dev);
  * @param hz Desired working frequency
  * @param duty_cycle Duty cycle of the spi clock
  * @param reg_o Output of value to be set in clock register, or NULL if not needed.
+ *
+ * @deprecated The app shouldn't care about the register. Call ``spi_get_actual_clock`` instead.
+ *
  * @return Actual working frequency that most fit.
  */
-int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t* reg_o);
+int spi_cal_clock(int fapb, int hz, int duty_cycle, uint32_t* reg_o) __attribute__((deprecated));
+
+/**
+ * @brief Calculate the working frequency that is most close to desired frequency.
+ *
+ * @param fapb The frequency of apb clock, should be ``APB_CLK_FREQ``.
+ * @param hz Desired working frequency
+ * @param duty_cycle Duty cycle of the spi clock
+ *
+ * @return Actual working frequency that most fit.
+ */
+int spi_get_actual_clock(int fapb, int hz, int duty_cycle);
 
 /**
   * @brief Calculate the timing settings of specified frequency and settings.
@@ -415,4 +385,3 @@ int spi_get_freq_limit(bool gpio_is_used, int input_delay_ns);
 }
 #endif
 
-#endif

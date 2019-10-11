@@ -22,16 +22,10 @@ This example can be executed on any ESP32 board, the only required interface is 
 
 ### Configure the project
 
-```
-make menuconfig
-```
-
-* Set serial port under Serial Flasher Options.
-
-* Set ssid and password for the board to connect to AP.
-
+* Open the project configuration menu (`idf.py menuconfig`)
+* Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+* When using Make build system, set `Default serial port` under `Serial flasher config`.
 * Set brokers for all 4 transports (TCP, SSL, WS, WSS), also set certificate if needed
-
 * Set topics for publishing from and to ESP32
 
 ### Build and Flash
@@ -39,7 +33,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

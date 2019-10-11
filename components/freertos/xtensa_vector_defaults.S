@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include "xtensa_rtos.h"
-#include "esp_panic.h"
+#include "esp_private/panic_reason.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
 
 /*
-This file contains the default handlers for the high interrupt levels as well as some specialized exceptions. 
+This file contains the default handlers for the high interrupt levels as well as some specialized exceptions.
 The default behaviour is to just exit the interrupt or call the panic handler on the exceptions
 */
 

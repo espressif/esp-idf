@@ -1,9 +1,9 @@
-menu NVS
+menu "NVS"
 
     config NVS_ENCRYPTION
         bool "Enable NVS encryption"
         default n
-        depends on FLASH_ENCRYPTION_ENABLED
+        depends on SECURE_FLASH_ENC_ENABLED
         help
             This option enables encryption for NVS. When enabled, AES-XTS is used to encrypt
             the complete NVS data, except the page headers. It requires XTS encryption keys

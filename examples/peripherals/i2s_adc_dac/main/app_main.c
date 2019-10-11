@@ -56,7 +56,7 @@ static const char* TAG = "ad/da";
 /**
  * @brief I2S ADC/DAC mode init.
  */
-void example_i2s_init()
+void example_i2s_init(void)
 {
 	 int i2s_num = EXAMPLE_I2S_NUM;
 	 i2s_config_t i2s_config = {
@@ -81,7 +81,7 @@ void example_i2s_init()
 /*
  * @brief erase flash for recording
  */
-void example_erase_flash()
+void example_erase_flash(void)
 {
 #if RECORD_IN_FLASH_EN
     printf("Erasing flash \n");
@@ -118,7 +118,7 @@ void example_disp_buf(uint8_t* buf, int length)
 /**
  * @brief Reset i2s clock and mode
  */
-void example_reset_play_mode()
+void example_reset_play_mode(void)
 {
     i2s_set_clk(EXAMPLE_I2S_NUM, EXAMPLE_I2S_SAMPLE_RATE, EXAMPLE_I2S_SAMPLE_BITS, EXAMPLE_I2S_CHANNEL_NUM);
 }
@@ -126,7 +126,7 @@ void example_reset_play_mode()
 /**
  * @brief Set i2s clock for example audio file
  */
-void example_set_file_play_mode()
+void example_set_file_play_mode(void)
 {
     i2s_set_clk(EXAMPLE_I2S_NUM, 16000, EXAMPLE_I2S_SAMPLE_BITS, 1);
 }
@@ -280,7 +280,7 @@ void adc_read_task(void* arg)
     }
 }
 
-esp_err_t app_main()
+esp_err_t app_main(void)
 {
     example_i2s_init();
     esp_log_level_set("I2S", ESP_LOG_INFO);

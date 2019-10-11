@@ -48,7 +48,7 @@
 
 以下为前述未提及的另外两个 menuconfig 选项：
 
-1. *Threshold for flushing last trace data to host on panic* （:ref:`CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH`）。由于在 JTAG 上工作的性质，此选项是必选项。在该模式下，跟踪数据以 16 KB 数据块的形式曝露给主机。在后验模式中，当一个块被填充时，它会曝露给主机，而之前的块会变得不可用。换句话说，跟踪数据以 16 KB 的粒度进行覆盖。在发生 panic 的时候，当前输入块的最新数据将会被曝露给主机，主机可以读取它们以进行后续分析。如果系统发生 panic 的时候仍有少量数据还没来得及曝光给主机，那么之前收集的 16 KB 的数据将丢失，主机只能看到非常少的最新的跟踪部分，它可能不足以用来诊断问题所在。此 menuconfig 选项允许避免此类情况，它可以控制在发生 panic 时刷新数据的阈值，例如用户可以确定它需要不少于 512 字节的最新跟踪数据，所以如果在发生 panic 时待处理的数据少于 512 字节，它们不会被刷新，也不会覆盖之前的 16 KB。该选项仅在后验模式和 JTAG 工作时有意义。
+1. *Threshold for flushing last trace data to host on panic* （:ref:`CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH`）。由于在 JTAG 上工作的性质，此选项是必选项。在该模式下，跟踪数据以 16 KB 数据块的形式曝露给主机。在后验模式中，当一个块被填充时，它会曝露给主机，而之前的块会变得不可用。换句话说，跟踪数据以 16 KB 的粒度进行覆盖。在发生 panic 的时候，当前输入块的最新数据将会被曝露给主机，主机可以读取它们以进行后续分析。如果系统发生 panic 的时候仍有少量数据还没来得及曝光给主机，那么之前收集的 16 KB 的数据将丢失，主机只能看到非常少的最新的跟踪部分，它可能不足以用来诊断问题所在。此 menuconfig 选项允许避免此类情况，它可以控制在发生 panic 时刷新数据的阈值，例如用户可以确定它需要不少于 512 字节的最新跟踪数据，所以如果在发生 panic 时待处理的数据少于 512 字节，它们不会被刷新，也不会覆盖之前的 16 KB。该选项仅在后验模式和 JTAG 工作时有意义。
 
 2. *Timeout for flushing last trace data to host on panic* （:ref:`CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO`）。该选项仅在流模式下才起作用，它控制跟踪模块在发生 panic 时等待主机读取最新数据的最长时间。
 
@@ -151,7 +151,7 @@
           return res;
       }
 
-2. 下一步是编译应用程序的镜像并将其下载到目标板上，这一步可以参考文档 :doc:`构建并烧写 <../get-started/make-project>`。
+2. 下一步是编译应用程序的镜像并将其下载到目标板上，这一步可以参考文档 :ref:`构建并烧写 <get-started-build>`。
 3. 运行 OpenOCD（参见 :doc:`JTAG 调试 <../api-guides/jtag-debugging/index>`）。
 4. 连接到 OpenOCD 的 telnet 服务器，在终端执行如下命令 ``telnet <oocd_host> 4444``。如果在运行 OpenOCD 的同一台机器上打开
    telnet 会话，您可以使用 ``localhost`` 替换上面命令中的 ``<oocd_host>``。

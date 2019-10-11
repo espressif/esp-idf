@@ -109,6 +109,8 @@ public:
 
     esp_err_t readMultiPageBlob(uint8_t nsIndex, const char* key, void* data, size_t dataSize);
 
+    esp_err_t cmpMultiPageBlob(uint8_t nsIndex, const char* key, const void* data, size_t dataSize);
+
     esp_err_t eraseMultiPageBlob(uint8_t nsIndex, const char* key, VerOffset chunkStart = VerOffset::VER_ANY);
 
     void debugDump();
@@ -118,6 +120,10 @@ public:
     esp_err_t fillStats(nvs_stats_t& nvsStats);
 
     esp_err_t calcEntriesInNamespace(uint8_t nsIndex, size_t& usedEntries);
+
+    bool findEntry(nvs_opaque_iterator_t*, const char* name);
+
+    bool nextEntry(nvs_opaque_iterator_t* it);
 
 protected:
 
@@ -132,6 +138,7 @@ protected:
 
     void eraseOrphanDataBlobs(TBlobIndexList&);
 
+    void fillEntryInfo(Item &item, nvs_entry_info_t &info);
 
     esp_err_t findItem(uint8_t nsIndex, ItemType datatype, const char* key, Page* &page, Item& item, uint8_t chunkIdx = Page::CHUNK_ANY, VerOffset chunkStart = VerOffset::VER_ANY);
 
@@ -146,6 +153,14 @@ protected:
 
 } // namespace nvs
 
-
+struct nvs_opaque_iterator_t
+{
+    nvs_type_t type;
+    uint8_t nsIndex;
+    size_t entryIndex;
+    nvs::Storage *storage;
+    intrusive_list<nvs::Page>::iterator page;
+    nvs_entry_info_t entry_info;
+};
 
 #endif /* nvs_storage_hpp */

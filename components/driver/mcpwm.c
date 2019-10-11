@@ -15,16 +15,12 @@
 #include <stdio.h>
 #include "esp_log.h"
 #include "esp_err.h"
-#include "esp_intr.h"
-#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
-#include "soc/mcpwm_reg.h"
-#include "soc/mcpwm_struct.h"
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/mcpwm_periph.h"
+#include "soc/gpio_periph.h"
 #include "driver/mcpwm.h"
 #include "driver/periph_ctrl.h"
 

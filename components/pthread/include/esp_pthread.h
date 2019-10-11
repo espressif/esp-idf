@@ -41,7 +41,7 @@ typedef struct {
  * @return
  *      A default configuration structure.
  */
-esp_pthread_cfg_t esp_pthread_get_default_config();
+esp_pthread_cfg_t esp_pthread_get_default_config(void);
 
 /**
  * @brief Configure parameters for creating pthread

@@ -272,10 +272,10 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configUSE_NEWLIB_REENTRANT		1
 
 #define configSUPPORT_DYNAMIC_ALLOCATION    1
-#define configSUPPORT_STATIC_ALLOCATION CONFIG_SUPPORT_STATIC_ALLOCATION
+#define configSUPPORT_STATIC_ALLOCATION CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION
 
 #ifndef __ASSEMBLER__
-#if CONFIG_ENABLE_STATIC_TASK_CLEAN_UP_HOOK
+#if CONFIG_FREERTOS_ENABLE_STATIC_TASK_CLEAN_UP
 extern void vPortCleanUpTCB ( void *pxTCB );
 #define portCLEAN_UP_TCB( pxTCB )           vPortCleanUpTCB( pxTCB )
 #endif
@@ -284,9 +284,9 @@ extern void vPortCleanUpTCB ( void *pxTCB );
 /* Test FreeRTOS timers (with timer task) and more. */
 /* Some files don't compile if this flag is disabled */
 #define configUSE_TIMERS                    1
-#define configTIMER_TASK_PRIORITY           CONFIG_TIMER_TASK_PRIORITY
-#define configTIMER_QUEUE_LENGTH            CONFIG_TIMER_QUEUE_LENGTH
-#define configTIMER_TASK_STACK_DEPTH        CONFIG_TIMER_TASK_STACK_DEPTH
+#define configTIMER_TASK_PRIORITY           CONFIG_FREERTOS_TIMER_TASK_PRIORITY
+#define configTIMER_QUEUE_LENGTH            CONFIG_FREERTOS_TIMER_QUEUE_LENGTH
+#define configTIMER_TASK_STACK_DEPTH        CONFIG_FREERTOS_TIMER_TASK_STACK_DEPTH
 
 #define INCLUDE_xTimerPendFunctionCall      1
 #define INCLUDE_eTaskGetState               1

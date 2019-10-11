@@ -21,8 +21,9 @@
 #include "assert.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 #include "bootloader_random.h"
+#include "soc/apb_ctrl_reg.h"
 
 const static char *TAG = "efuse";
 
@@ -31,15 +32,36 @@ const static char *TAG = "efuse";
 // Returns chip version from efuse
 uint8_t esp_efuse_get_chip_ver(void)
 {
-    uint8_t chip_ver;
-    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &chip_ver, 1);
+    uint8_t eco_bit0, eco_bit1, eco_bit2;
+    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV1, &eco_bit0, 1);
+    esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_REV2, &eco_bit1, 1);
+    eco_bit2 = (REG_READ(APB_CTRL_DATE_REG) & 0x80000000) >> 31;
+    uint32_t combine_value = (eco_bit2 << 2) | (eco_bit1 << 1) | eco_bit0;
+    uint8_t chip_ver = 0;
+    switch (combine_value) {
+    case 0:
+        chip_ver = 0;
+        break;
+    case 1:
+        chip_ver = 1;
+        break;
+    case 3:
+        chip_ver = 2;
+        break;
+    case 7:
+        chip_ver = 3;
+        break;
+    default:
+        chip_ver = 0;
+        break;
+    }
     return chip_ver;
 }
 
 // Returns chip package from efuse
 uint32_t esp_efuse_get_pkg_ver(void)
 {
-    uint32_t pkg_ver;
+    uint32_t pkg_ver = 0;
     esp_efuse_read_field_blob(ESP_EFUSE_CHIP_VER_PKG, &pkg_ver, 3);
     return pkg_ver;
 }
@@ -104,19 +126,20 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg)
     } else { // 3/4 Coding Scheme
         bootloader_fill_random(raw, sizeof(raw));
         esp_err_t r = esp_efuse_apply_34_encoding(raw, buf, sizeof(raw));
+        (void) r;
         assert(r == ESP_OK);
     }
 
     ESP_LOGV(TAG, "Writing random values to address 0x%08x", blk_wdata0_reg);
     for (int i = 0; i < 8; i++) {
         ESP_LOGV(TAG, "EFUSE_BLKx_WDATA%d_REG = 0x%08x", i, buf[i]);
-        REG_WRITE(blk_wdata0_reg + 4*i, buf[i]);
+        REG_WRITE(blk_wdata0_reg + 4 * i, buf[i]);
     }
     bzero(buf, sizeof(buf));
     bzero(raw, sizeof(raw));
 }
 
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
 
 #include "../include_bootloader/bootloader_flash.h"
 #include "esp_flash_encrypt.h"
@@ -129,7 +152,7 @@ void esp_efuse_init(uint32_t offset, uint32_t size)
     esp_efuse_flash_size = size;
 }
 
-static uint32_t emulate_secure_version_read()
+static uint32_t emulate_secure_version_read(void)
 {
     uint32_t secure_version;
     uint32_t offset = esp_efuse_flash_offset;
@@ -169,27 +192,27 @@ static void emulate_secure_version_write(uint32_t secure_version)
 #define EFUSE_BLK_RD_ANTI_ROLLBACK EFUSE_BLK3_RDATA4_REG
 #define EFUSE_BLK_WR_ANTI_ROLLBACK EFUSE_BLK3_WDATA4_REG
 
-uint32_t esp_efuse_read_secure_version()
+uint32_t esp_efuse_read_secure_version(void)
 {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
     uint32_t secure_version;
 
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     secure_version = emulate_secure_version_read();
 #else
     secure_version = REG_READ(EFUSE_BLK_RD_ANTI_ROLLBACK);
-#endif // CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#endif // CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
 
-    return __builtin_popcount(secure_version & ((1ULL << CONFIG_APP_SECURE_VERSION_SIZE_EFUSE_FIELD) - 1));
+    return __builtin_popcount(secure_version & ((1ULL << CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD) - 1));
 #else
     return 0;
 #endif
 }
 
-#ifdef CONFIG_APP_ANTI_ROLLBACK
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
 static void write_anti_rollback(uint32_t new_bits)
 {
-#ifdef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     emulate_secure_version_write(new_bits);
 #else
     esp_efuse_reset();
@@ -207,12 +230,12 @@ bool esp_efuse_check_secure_version(uint32_t secure_version)
 
 esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 {
-#ifdef CONFIG_APP_ANTI_ROLLBACK
-    if (CONFIG_APP_SECURE_VERSION_SIZE_EFUSE_FIELD < secure_version) {
-        ESP_LOGE(TAG, "Max secure version is %d. Given %d version can not be written.", CONFIG_APP_SECURE_VERSION_SIZE_EFUSE_FIELD, secure_version);
+#ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
+    if (CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD < secure_version) {
+        ESP_LOGE(TAG, "Max secure version is %d. Given %d version can not be written.", CONFIG_BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD, secure_version);
         return ESP_ERR_INVALID_ARG;
     }
-#ifndef CONFIG_EFUSE_SECURE_VERSION_EMULATE
+#ifndef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     uint32_t coding_scheme = REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_CODING_SCHEME_M;
     if (coding_scheme != EFUSE_CODING_SCHEME_VAL_NONE) {
         ESP_LOGE(TAG, "Anti rollback is not supported with a 3/4 coding scheme.");
@@ -235,3 +258,4 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version)
 #endif
     return ESP_OK;
 }
+

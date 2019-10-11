@@ -15,15 +15,15 @@
 #
 
 import os
-from pyparsing import Word, printables, Combine, Literal, hexnums, quotedString, Optional, nums, removeQuotes, oneOf, Group, infixNotation, opAssoc
+from pyparsing import Word, alphanums, printables, Combine, Literal, hexnums, quotedString, Optional, nums, removeQuotes, oneOf, Group, infixNotation, opAssoc
 
 import sys
 try:
-    import kconfiglib
-except ImportError:
+    from . import kconfiglib
+except Exception:
     parent_dir_name = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
     kconfig_new_dir = os.path.abspath(parent_dir_name + "/kconfig_new")
-    sys.path.append(kconfig_new_dir)
+    sys.path.insert(0, kconfig_new_dir)
     import kconfiglib
 
 
@@ -34,11 +34,11 @@ class SDKConfig:
     """
 
     # A configuration entry is in the form CONFIG=VALUE. Definitions of components of that grammar
-    IDENTIFIER = Word(printables.upper())
+    IDENTIFIER = Word(alphanums.upper() + "_")
 
     HEX = Combine("0x" + Word(hexnums)).setParseAction(lambda t:int(t[0], 16))
     DECIMAL = Combine(Optional(Literal("+") | Literal("-")) + Word(nums)).setParseAction(lambda t:int(t[0]))
-    LITERAL = Word(printables)
+    LITERAL = Word(printables.replace(":", ""))
     QUOTED_LITERAL = quotedString.setParseAction(removeQuotes)
 
     VALUE = HEX | DECIMAL | LITERAL | QUOTED_LITERAL
@@ -46,15 +46,9 @@ class SDKConfig:
     # Operators supported by the expression evaluation
     OPERATOR = oneOf(["=", "!=", ">", "<", "<=", ">="])
 
-    def __init__(self, kconfig_file, sdkconfig_file, env=[]):
-        env = [(name, value) for (name,value) in (e.split("=",1) for e in env)]
-
-        for name, value in env:
-            value = " ".join(value.split())
-            os.environ[name] = value
-
-        self.config = kconfiglib.Kconfig(kconfig_file.name)
-        self.config.load_config(sdkconfig_file.name)
+    def __init__(self, kconfig_file, sdkconfig_file):
+        self.config = kconfiglib.Kconfig(kconfig_file)
+        self.config.load_config(sdkconfig_file)
 
     def evaluate_expression(self, expression):
         result = self.config.eval_string(expression)
@@ -64,7 +58,7 @@ class SDKConfig:
         elif result == 2:  # y
             return True
         else:  # m
-            raise Exception("Unsupported config expression result.")
+            raise Exception("unsupported config expression result")
 
     @staticmethod
     def get_expression_grammar():

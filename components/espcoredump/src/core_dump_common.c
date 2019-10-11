@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include "esp32/rom/crc.h"
-#include "esp_panic.h"
+#include "esp_debug_helpers.h"
 #include "esp_partition.h"
 #include "esp_core_dump_priv.h"
 
@@ -37,15 +37,15 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
 
     task_num = esp_core_dump_get_tasks_snapshot(tasks, CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM, &tcb_sz);
     ESP_COREDUMP_LOGI("Found tasks: (%d)!", task_num);
-  
+
     // Take TCB padding into account, actual TCB size will be stored in header
     if (tcb_sz % sizeof(uint32_t))
         tcb_sz_padded = (tcb_sz / sizeof(uint32_t) + 1) * sizeof(uint32_t);
     else
         tcb_sz_padded = tcb_sz;
-   
+
     // Verifies all tasks in the snapshot
-    for (i = 0; i < task_num; i++) {        
+    for (i = 0; i < task_num; i++) {
         task_is_valid = esp_core_dump_process_tcb(frame, &tasks[i], tcb_sz);
         // Check if task tcb is corrupted
         if (!task_is_valid) {
@@ -67,7 +67,7 @@ static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_
     // Add core dump header size
     data_len += sizeof(core_dump_header_t);
     ESP_COREDUMP_LOG_PROCESS("Core dump len = %lu (%d %d)", data_len, task_num, write_cfg->bad_tasks_num);
-   
+
     // Prepare write
     if (write_cfg->prepare) {
         err = write_cfg->prepare(write_cfg->priv, &data_len);
@@ -153,7 +153,7 @@ inline void esp_core_dump_write(void *frame, core_dump_write_config_t *write_cfg
 
 #endif
 
-void esp_core_dump_init()
+void esp_core_dump_init(void)
 {
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
     esp_core_dump_flash_init();

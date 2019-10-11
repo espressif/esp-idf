@@ -15,8 +15,6 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "driver/rmt.h"
-#include "driver/periph_ctrl.h"
-#include "soc/rmt_reg.h"
 
 static const char* NEC_TAG = "NEC";
 
@@ -237,7 +235,7 @@ static int nec_build_items(int channel, rmt_item32_t* item, int item_num, uint16
 /*
  * @brief RMT transmitter initialization
  */
-static void nec_tx_init()
+static void nec_tx_init(void)
 {
     rmt_config_t rmt_tx;
     rmt_tx.channel = RMT_TX_CHANNEL;
@@ -259,7 +257,7 @@ static void nec_tx_init()
 /*
  * @brief RMT receiver initialization
  */
-static void nec_rx_init()
+static void nec_rx_init(void)
 {
     rmt_config_t rmt_rx;
     rmt_rx.channel = RMT_RX_CHANNEL;
@@ -278,7 +276,7 @@ static void nec_rx_init()
  * @brief RMT receiver demo, this task will print each received NEC data.
  *
  */
-static void rmt_example_nec_rx_task()
+static void rmt_example_nec_rx_task(void *arg)
 {
     int channel = RMT_RX_CHANNEL;
     nec_rx_init();
@@ -319,7 +317,7 @@ static void rmt_example_nec_rx_task()
  * @brief RMT transmitter demo, this task will periodically send NEC data. (100 * 32 bits each time.)
  *
  */
-static void rmt_example_nec_tx_task()
+static void rmt_example_nec_tx_task(void *arg)
 {
     vTaskDelay(10);
     nec_tx_init();
@@ -357,7 +355,7 @@ static void rmt_example_nec_tx_task()
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(rmt_example_nec_rx_task, "rmt_nec_rx_task", 2048, NULL, 10, NULL);
     xTaskCreate(rmt_example_nec_tx_task, "rmt_nec_tx_task", 2048, NULL, 10, NULL);

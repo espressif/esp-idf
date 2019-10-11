@@ -66,40 +66,27 @@ esp_err_t sdmmc_init_ocr(sdmmc_card_t* card)
 esp_err_t sdmmc_init_cid(sdmmc_card_t* card)
 {
     esp_err_t err;
-    sdmmc_csd_t csd;
     sdmmc_response_t raw_cid;
     if (!host_is_spi(card)) {
-        if (card->is_mem) {
-            err = sdmmc_send_cmd_all_send_cid(card, &raw_cid);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "%s: all_send_cid returned 0x%x", __func__, err);
-                return err;
-            }
-        }
-        err = sdmmc_send_cmd_set_relative_addr(card, &card->rca);
+        err = sdmmc_send_cmd_all_send_cid(card, &raw_cid);
         if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: set_relative_addr returned 0x%x", __func__, err);
+            ESP_LOGE(TAG, "%s: all_send_cid returned 0x%x", __func__, err);
             return err;
         }
-        if (card->is_mmc) {
-            /* For MMC, need to know CSD to decode CID.
-             * But CSD can only be read in data transfer mode,
-             * and it is not possible to read CID in data transfer mode.
-             * Luckily at this point the RCA is set and the card is in data
-             * transfer mode, so we can get its CSD to decode the CID...
-             */
-            err = sdmmc_send_cmd_send_csd(card, &csd);
-            if (err != ESP_OK) {
-                ESP_LOGE(TAG, "%s: send_csd returned 0x%x", __func__, err);
-                return err;
-            }
-            err = sdmmc_mmc_decode_cid(csd.mmc_ver, raw_cid, &card->cid);
-        } else {
+        if (!card->is_mmc) {
             err = sdmmc_decode_cid(raw_cid, &card->cid);
-        }
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: decoding CID failed (0x%x)", __func__, err);
-            return err;
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: decoding CID failed (0x%x)", __func__, err);
+                return err;
+            }
+        } else {
+            /* For MMC, need to know CSD to decode CID. But CSD can only be read
+             * in data transfer mode, and it is not possible to read CID in data
+             * transfer mode. We temporiliy store the raw cid and do the
+             * decoding after the RCA is set and the card is in data transfer
+             * mode.
+             */
+            memcpy(card->raw_cid, raw_cid, sizeof(sdmmc_response_t));
         }
     } else {
         err = sdmmc_send_cmd_send_cid(card, &card->cid);
@@ -107,6 +94,30 @@ esp_err_t sdmmc_init_cid(sdmmc_card_t* card)
             ESP_LOGE(TAG, "%s: send_cid returned 0x%x", __func__, err);
             return err;
         }
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_init_rca(sdmmc_card_t* card)
+{
+    esp_err_t err;
+    err = sdmmc_send_cmd_set_relative_addr(card, &card->rca);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: set_relative_addr returned 0x%x", __func__, err);
+        return err;
+    }
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_init_mmc_decode_cid(sdmmc_card_t* card)
+{
+    esp_err_t err;
+    sdmmc_response_t raw_cid;
+    memcpy(raw_cid, card->raw_cid, sizeof(raw_cid));
+    err = sdmmc_mmc_decode_cid(card->csd.mmc_ver, raw_cid, &card->cid);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: decoding CID failed (0x%x)", __func__, err);
+        return err;
     }
     return ESP_OK;
 }
@@ -194,6 +205,7 @@ esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
             SDMMC_FREQ_HIGHSPEED,
             SDMMC_FREQ_26M,
             SDMMC_FREQ_DEFAULT
+            //NOTE: in sdspi mode, 20MHz may not work. in that case, add 10MHz here.
     };
     const int n_freq_values = sizeof(freq_values) / sizeof(freq_values[0]);
 

@@ -30,25 +30,37 @@ static const char *TAG = "simple_ble";
 static simple_ble_cfg_t *g_ble_cfg_p;
 static uint16_t g_gatt_table_map[SIMPLE_BLE_MAX_GATT_TABLE_SIZE];
 
-uint16_t simple_ble_get_uuid(uint16_t handle)
+static uint8_t adv_config_done;
+#define adv_config_flag      (1 << 0)
+#define scan_rsp_config_flag (1 << 1)
+
+const uint8_t *simple_ble_get_uuid128(uint16_t handle)
 {
-    uint16_t *uuid_ptr;
+    const uint8_t *uuid128_ptr;
 
     for (int i = 0; i < SIMPLE_BLE_MAX_GATT_TABLE_SIZE; i++) {
         if (g_gatt_table_map[i] == handle) {
-            uuid_ptr = (uint16_t *) g_ble_cfg_p->gatt_db[i].att_desc.uuid_p;
-            return *uuid_ptr;
+            uuid128_ptr = (const uint8_t *) g_ble_cfg_p->gatt_db[i].att_desc.uuid_p;
+            return uuid128_ptr;
         }
     }
-    return -1;
+    return NULL;
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
     switch (event) {
-    case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
-        esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
-
+    case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
+        adv_config_done &= (~adv_config_flag);
+        if (adv_config_done == 0) {
+            esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
+        }
+        break;
+    case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
+        adv_config_done &= (~scan_rsp_config_flag);
+        if (adv_config_done == 0) {
+            esp_ble_gap_start_advertising(&g_ble_cfg_p->adv_params);
+        }
         break;
     default:
         break;
@@ -87,11 +99,20 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             ESP_LOGE(TAG, "set device name failed, error code = 0x%x", ret);
             return;
         }
-        ret = esp_ble_gap_config_adv_data(&g_ble_cfg_p->adv_data);
+        ret = esp_ble_gap_config_adv_data_raw(g_ble_cfg_p->raw_adv_data_p,
+                                              g_ble_cfg_p->raw_adv_data_len);
         if (ret) {
-            ESP_LOGE(TAG, "config adv data failed, error code = 0x%x", ret);
+            ESP_LOGE(TAG, "config raw adv data failed, error code = 0x%x ", ret);
             return;
         }
+        adv_config_done |= adv_config_flag;
+        ret = esp_ble_gap_config_scan_rsp_data_raw(g_ble_cfg_p->raw_scan_rsp_data_p,
+                                                   g_ble_cfg_p->raw_scan_rsp_data_len);
+        if (ret) {
+            ESP_LOGE(TAG, "config raw scan rsp data failed, error code = 0x%x", ret);
+            return;
+        }
+        adv_config_done |= scan_rsp_config_flag;
         break;
     case ESP_GATTS_READ_EVT:
         g_ble_cfg_p->read_fn(event, gatts_if, param);
@@ -157,7 +178,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     }
 }
 
-simple_ble_cfg_t *simple_ble_init()
+simple_ble_cfg_t *simple_ble_init(void)
 {
     simple_ble_cfg_t *ble_cfg_p = (simple_ble_cfg_t *) malloc(sizeof(simple_ble_cfg_t));
     if (ble_cfg_p == NULL) {
@@ -167,7 +188,7 @@ simple_ble_cfg_t *simple_ble_init()
     return ble_cfg_p;
 }
 
-esp_err_t simple_ble_deinit()
+esp_err_t simple_ble_deinit(void)
 {
     free(g_ble_cfg_p->gatt_db);
     free(g_ble_cfg_p);
@@ -189,7 +210,14 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
         return ret;
     }
 
+#ifdef CONFIG_BTDM_CTRL_MODE_BTDM
+    ret = esp_bt_controller_enable(ESP_BT_MODE_BTDM);
+#elif defined CONFIG_BTDM_CTRL_MODE_BLE_ONLY
     ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
+#else
+    ESP_LOGE(TAG, "Configuration mismatch. Select BLE Only or BTDM mode from menuconfig");
+    return ESP_FAIL;
+#endif
     if (ret) {
         ESP_LOGE(TAG, "%s enable controller failed %d", __func__, ret);
         return ret;
@@ -234,7 +262,7 @@ esp_err_t simple_ble_start(simple_ble_cfg_t *cfg)
     return ESP_OK;
 }
 
-esp_err_t simple_ble_stop()
+esp_err_t simple_ble_stop(void)
 {
     esp_err_t err;
     ESP_LOGD(TAG, "Free mem at start of simple_ble_stop %d", esp_get_free_heap_size());

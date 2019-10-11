@@ -159,6 +159,6 @@ void test_serializer(const param_group_t *param_group, const ptest_func_t* test_
  * @param slave_func ``ptest_func_t`` to be executed by slave.
  */
 #define TEST_MASTER_SLAVE(name, param_group, tag, master_func, slave_func) \
-    static void PTEST_MASTER_NAME(name) () { test_serializer(&PGROUP_NAME(param_group), master_func); } \
-    static void PTEST_SLAVE_NAME(name) () { test_serializer(&PGROUP_NAME(param_group), slave_func); } \
+    static void PTEST_MASTER_NAME(name) (void) { test_serializer(&PGROUP_NAME(param_group), master_func); } \
+    static void PTEST_SLAVE_NAME(name) (void) { test_serializer(&PGROUP_NAME(param_group), slave_func); } \
     TEST_CASE_MULTIPLE_DEVICES("master slave test: "#name, tag, PTEST_MASTER_NAME(name), PTEST_SLAVE_NAME(name))

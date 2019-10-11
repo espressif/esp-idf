@@ -1,0 +1,366 @@
+
+menu "Wi-Fi"
+
+    config ESP32_WIFI_SW_COEXIST_ENABLE
+        bool "Software controls WiFi/Bluetooth coexistence"
+        depends on BT_ENABLED
+        default y
+        help
+            If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
+            Recommended for heavy traffic scenarios. Both coexistence configuration options are
+            automatically managed, no user intervention is required.
+            If only Bluetooth is used, it is recommended to disable this option to reduce binary file
+            size.
+
+    choice ESP32_WIFI_SW_COEXIST_PREFERENCE
+        prompt "WiFi/Bluetooth coexistence performance preference"
+        depends on ESP32_WIFI_SW_COEXIST_ENABLE
+        default ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
+        help
+            Choose Bluetooth/WiFi/Balance for different preference.
+            If choose WiFi, it will make WiFi performance better. Such, keep WiFi Audio more fluent.
+            If choose Bluetooth, it will make Bluetooth performance better. Such, keep Bluetooth(A2DP) Audio more
+            fluent.
+            If choose Balance, the performance of WiFi and bluetooth will be balance. It's default. Normally, just
+            choose balance, the A2DP audio can play fluently, too.
+            Except config preference in menuconfig, you can also call esp_coex_preference_set() dynamically.
+
+        config ESP32_WIFI_SW_COEXIST_PREFERENCE_WIFI
+            bool "WiFi"
+
+        config ESP32_WIFI_SW_COEXIST_PREFERENCE_BT
+            bool "Bluetooth(include BR/EDR and BLE)"
+
+        config ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
+            bool "Balance"
+
+    endchoice
+
+    config ESP32_WIFI_SW_COEXIST_PREFERENCE_VALUE
+        int
+        depends on ESP32_WIFI_SW_COEXIST_ENABLE
+        default 0 if ESP32_WIFI_SW_COEXIST_PREFERENCE_WIFI
+        default 1 if ESP32_WIFI_SW_COEXIST_PREFERENCE_BT
+        default 2 if ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
+
+    config ESP32_WIFI_STATIC_RX_BUFFER_NUM
+        int "Max number of WiFi static RX buffers"
+        range 2 25 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        range 8 25 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        help
+            Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
+            The static rx buffers are allocated when esp_wifi_init is called, they are not freed
+            until esp_wifi_deinit is called.
+
+            WiFi hardware use these buffers to receive all 802.11 frames.
+            A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
+            is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
+            achieve better throughput and compatibility with both stations and APs.
+
+    config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
+        int "Max number of WiFi dynamic RX buffers"
+        range 0 128 if !LWIP_WND_SCALE
+        range 0 1024 if LWIP_WND_SCALE
+        default 32
+        help
+            Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers will be allocated
+            (provided sufficient free RAM). The size of each dynamic RX buffer depends on the size of
+            the received data frame.
+
+            For each received data frame, the WiFi driver makes a copy to an RX buffer and then delivers
+            it to the high layer TCP/IP stack. The dynamic RX buffer is freed after the higher layer has
+            successfully received the data frame.
+
+            For some applications, WiFi data frames may be received faster than the application can
+            process them. In these cases we may run out of memory if RX buffer number is unlimited (0).
+
+            If a dynamic RX buffer limit is set, it should be at least the number of static RX buffers.
+
+    choice ESP32_WIFI_TX_BUFFER
+        prompt "Type of WiFi TX buffers"
+        default ESP32_WIFI_DYNAMIC_TX_BUFFER
+        help
+            Select type of WiFi TX buffers:
+
+            If "Static" is selected, WiFi TX buffers are allocated when WiFi is initialized and released
+            when WiFi is de-initialized. The size of each static TX buffer is fixed to about 1.6KB.
+
+            If "Dynamic" is selected, each WiFi TX buffer is allocated as needed when a data frame is
+            delivered to the Wifi driver from the TCP/IP stack. The buffer is freed after the data frame
+            has been sent by the WiFi driver. The size of each dynamic TX buffer depends on the length
+            of each data frame sent by the TCP/IP layer.
+
+            If PSRAM is enabled, "Static" should be selected to guarantee enough WiFi TX buffers.
+            If PSRAM is disabled, "Dynamic" should be selected to improve the utilization of RAM.
+
+        config ESP32_WIFI_STATIC_TX_BUFFER
+            bool "Static"
+        config ESP32_WIFI_DYNAMIC_TX_BUFFER
+            bool "Dynamic"
+            depends on !SPIRAM_USE_MALLOC
+    endchoice
+
+    config ESP32_WIFI_TX_BUFFER_TYPE
+        int
+        default 0 if ESP32_WIFI_STATIC_TX_BUFFER
+        default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
+
+    config ESP32_WIFI_STATIC_TX_BUFFER_NUM
+        int "Max number of WiFi static TX buffers"
+        depends on ESP32_WIFI_STATIC_TX_BUFFER
+        range 6 64
+        default 16
+        help
+            Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
+            The static RX buffers are allocated when esp_wifi_init() is called, they are not released
+            until esp_wifi_deinit() is called.
+
+            For each transmitted data frame from the higher layer TCP/IP stack, the WiFi driver makes a
+            copy of it in a TX buffer.  For some applications especially UDP applications, the upper
+            layer can deliver frames faster than WiFi layer can transmit. In these cases, we may run out
+            of TX buffers.
+
+    config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
+        int "Max number of WiFi dynamic TX buffers"
+        depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
+        range 16 128
+        default 32
+        help
+            Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
+            it depends on the size of each transmitted data frame.
+
+            For each transmitted frame from the higher layer TCP/IP stack, the WiFi driver makes a copy
+            of it in a TX buffer. For some applications, especially UDP applications, the upper layer
+            can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
+            buffers.
+
+    config ESP32_WIFI_CSI_ENABLED
+        bool "WiFi CSI(Channel State Information)"
+        default n
+        help
+            Select this option to enable CSI(Channel State Information) feature. CSI takes about
+            CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable
+            this feature in order to save memory.
+
+    config ESP32_WIFI_AMPDU_TX_ENABLED
+        bool "WiFi AMPDU TX"
+        default y
+        help
+            Select this option to enable AMPDU TX feature
+
+
+    config ESP32_WIFI_TX_BA_WIN
+        int "WiFi AMPDU TX BA window size"
+        depends on ESP32_WIFI_AMPDU_TX_ENABLED
+        range 2 32
+        default 6
+        help
+            Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
+            more memory. Most of time we should NOT change the default value unless special reason, e.g.
+            test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
+            value is 9~12.
+
+    config ESP32_WIFI_AMPDU_RX_ENABLED
+        bool "WiFi AMPDU RX"
+        default y
+        help
+            Select this option to enable AMPDU RX feature
+
+    config ESP32_WIFI_RX_BA_WIN
+        int "WiFi AMPDU RX BA window size"
+        depends on ESP32_WIFI_AMPDU_RX_ENABLED
+        range 2 32 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        range 16 32 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        help
+            Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
+            compatibility but more memory. Most of time we should NOT change the default value unless special
+            reason, e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the
+            recommended value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first,
+            the default and minimum value should be 16 to achieve better throughput and compatibility with both
+            stations and APs.
+
+    config ESP32_WIFI_NVS_ENABLED
+        bool "WiFi NVS flash"
+        default y
+        help
+            Select this option to enable WiFi NVS flash
+
+    choice ESP32_WIFI_TASK_CORE_ID
+        depends on !FREERTOS_UNICORE
+        prompt "WiFi Task Core ID"
+        default ESP32_WIFI_TASK_PINNED_TO_CORE_0
+        help
+            Pinned WiFi task to core 0 or core 1.
+
+        config ESP32_WIFI_TASK_PINNED_TO_CORE_0
+            bool "Core 0"
+        config ESP32_WIFI_TASK_PINNED_TO_CORE_1
+            bool "Core 1"
+    endchoice
+
+    config ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
+        int "Max length of WiFi SoftAP Beacon"
+        range 752 1256
+        default 752
+        help
+            ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However the
+            default length of a beacon frame can simultaneously hold only five root node identifier structures,
+            meaning that a root node conflict of up to five nodes can be detected at one time. In the occurence of
+            more root nodes conflict involving more than five root nodes, the conflict resolution process will detect
+            five of the root nodes, resolve the conflict, and re-detect more root nodes. This process will repeat
+            until all root node conflicts are resolved. However this process can generally take a very long time.
+
+            To counter this situation, the beacon frame length can be increased such that more root nodes can be
+            detected simultaneously. Each additional root node will require 36 bytes and should be added ontop of the
+            default beacon frame length of
+            752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon
+            frame length as
+            932 (752+36*5).
+
+            Setting a longer beacon length also assists with debugging as the conflicting root nodes can be identified
+            more quickly.
+
+    config ESP32_WIFI_MGMT_SBUF_NUM
+        int "WiFi mgmt short buffer number"
+        range 6 32
+        default 32
+        help
+            Set the number of WiFi management short buffer.
+
+    config ESP32_WIFI_DEBUG_LOG_ENABLE
+        bool "Enable WiFi debug log"
+        default n
+        help
+            Select this option to enable WiFi debug log
+
+    choice ESP32_WIFI_DEBUG_LOG_LEVEL
+        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
+        prompt "WiFi debug log level"
+        default ESP32_WIFI_DEBUG_LOG_DEBUG
+        help
+            The WiFi log is divided into the following levels: ERROR,WARNING,INFO,DEBUG,VERBOSE.
+            The ERROR,WARNING,INFO levels are enabled by default, and the DEBUG,VERBOSE levels can be enabled here.
+
+        config ESP32_WIFI_DEBUG_LOG_DEBUG
+            bool "WiFi Debug Log Debug"
+        config ESP32_WIFI_DEBUG_LOG_VERBOSE
+            bool "WiFi Debug Log Verbose"
+    endchoice
+
+    choice ESP32_WIFI_DEBUG_LOG_MODULE
+        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
+        prompt "WiFi debug log module"
+        default ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
+        help
+            The WiFi log module contains three parts: WIFI,COEX,MESH. The WIFI module indicates the logs related to
+            WiFi, the COEX module indicates the logs related to WiFi and BT(or BLE) coexist, the MESH module indicates
+            the logs related to Mesh. When ESP32_WIFI_LOG_MODULE_ALL is enabled, all modules are selected.
+
+        config ESP32_WIFI_DEBUG_LOG_MODULE_ALL
+            bool "WiFi Debug Log Module All"
+        config ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
+            bool "WiFi Debug Log Module WiFi"
+        config ESP32_WIFI_DEBUG_LOG_MODULE_COEX
+            bool "WiFi Debug Log Module Coex"
+        config ESP32_WIFI_DEBUG_LOG_MODULE_MESH
+            bool "WiFi Debug Log Module Mesh"
+    endchoice
+
+    config ESP32_WIFI_DEBUG_LOG_SUBMODULE
+        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
+        bool "WiFi debug log submodule"
+        default n
+        help
+            Enable this option to set the WiFi debug log submodule.
+            Currently the log submodule contains the following parts: INIT,IOCTL,CONN,SCAN.
+            The INIT submodule indicates the initialization process.The IOCTL submodule indicates the API calling
+            process.
+            The CONN submodule indicates the connecting process.The SCAN submodule indicates the scaning process.
+
+    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
+        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE
+        bool "WiFi Debug Log Submodule All"
+        default n
+        help
+            When this option is enabled, all debug submodules are selected.
+
+    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
+        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
+        bool "WiFi Debug Log Submodule Init"
+        default n
+
+    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
+        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
+        bool "WiFi Debug Log Submodule Ioctl"
+        default n
+
+    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
+        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
+        bool "WiFi Debug Log Submodule Conn"
+        default n
+
+    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
+        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
+        bool "WiFi Debug Log Submodule Scan"
+        default n
+
+    config ESP32_WIFI_IRAM_OPT
+        bool "WiFi IRAM speed optimization"
+        default y
+        help
+            Select this option to place frequently called Wi-Fi library functions in IRAM.
+            When this option is disabled, more than 10Kbytes of IRAM memory will be saved
+            but Wi-Fi throughput will be reduced.
+
+endmenu  # Wi-Fi
+
+menu "PHY"
+
+    config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+        bool "Store phy calibration data in NVS"
+        default y
+        help
+            If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
+            PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
+            will be performed and stored in NVS. Normally, only partial calibration will be performed.
+            If this option is disabled, full calibration will be performed.
+
+            If it's easy that your board calibrate bad data, choose 'n'.
+            Two cases for example, you should choose 'n':
+            1.If your board is easy to be booted up with antenna disconnected.
+            2.Because of your board design, each time when you do calibration, the result are too unstable.
+            If unsure, choose 'y'.
+
+    config ESP32_PHY_INIT_DATA_IN_PARTITION
+        bool "Use a partition to store PHY init data"
+        default n
+        help
+            If enabled, PHY init data will be loaded from a partition.
+            When using a custom partition table, make sure that PHY data
+            partition is included (type: 'data', subtype: 'phy').
+            With default partition tables, this is done automatically.
+            If PHY init data is stored in a partition, it has to be flashed there,
+            otherwise runtime error will occur.
+
+            If this option is not enabled, PHY init data will be embedded
+            into the application binary.
+
+            If unsure, choose 'n'.
+
+    config ESP32_PHY_MAX_WIFI_TX_POWER
+        int "Max WiFi TX power (dBm)"
+        range 10 20
+        default 20
+        help
+            Set maximum transmit power for WiFi radio. Actual transmit power for high
+            data rates may be lower than this setting.
+
+    config ESP32_PHY_MAX_TX_POWER
+        int
+        default ESP32_PHY_MAX_WIFI_TX_POWER
+
+endmenu  # PHY

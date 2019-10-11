@@ -45,7 +45,7 @@ This example can be run on any commonly available ESP32 development board.
 ## Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 Set following parameter under Serial Flasher Options:
@@ -53,10 +53,6 @@ Set following parameter under Serial Flasher Options:
 * Set `Default serial port`.
 
 Set following parameters under Example Configuration Options:
-
-* Set `WiFi SSID` of the Router (Access-Point).
-
-* Set `WiFi Password` of the Router (Access-Point).
 
 * Set `IP version` of example to be IPV4 or IPV6.
 
@@ -66,12 +62,15 @@ Set following parameters under Example Configuration Options:
 
 * Set `Port` number that represents remote port the example will send data and receive data from.
 
+Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
+
+
 ## Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

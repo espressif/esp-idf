@@ -14,6 +14,8 @@
 #ifndef _ESP_PLATFORM_NET_IF_H_
 #define _ESP_PLATFORM_NET_IF_H_
 
+#include "lwip/sockets.h"
+
 #define	MSG_DONTROUTE   0x4     /* send without using routing tables */
 #define	SOCK_SEQPACKET  5       /* sequenced packet stream */
 #define	MSG_EOR         0x8     /* data completes record */
@@ -28,12 +30,6 @@
 #define	NI_MAXSERV  32
 #define	NI_NUMERICSERV  0x00000008
 #define	NI_DGRAM        0x00000010
-
-
-struct ipv6_mreq {
-    struct in6_addr ipv6mr_multiaddr;
-    unsigned int    ipv6mr_interface;
-};
 
 typedef u32_t socklen_t;
 

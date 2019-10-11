@@ -4,7 +4,7 @@
   auto test: 'Yes'
   category: Function
   test point 1: basic function
-  initial condition: BLE_INIT2
+  initial condition: BLE_INIT3
   test environment: SSC_T2_5
   execution time: 0
   module: BT Stack
@@ -17,12 +17,12 @@
 .dut1_stop_adv: &dut1_stop_adv
   LIST_MERGE:
     - - "SSC SSC1 bleadv -D -z stop"
-      - ["R SSC1 C +BLEADV:Stop,OK"]
+      - ["R SSC1 C +BLEADV:"]
 
 .dut2_stop_adv: &dut2_stop_adv
   LIST_MERGE:
     - - "SSC SSC2 bleadv -D -z stop"
-      - ["R SSC2 C +BLEADV:Stop,OK"]
+      - ["R SSC2 C +BLEADV:"]
 
 .dut1_start_adv: &dut1_start_adv
   LIST_MERGE:
@@ -37,7 +37,7 @@
 .set_default_adv_data: &set_default_adv_data
   LIST_MERGE:
     - - "SSC SSC1 bleadv -D -z stop"
-      - ["R SSC1 C +BLEADV:Stop,OK"]
+      - ["R SSC1 C +BLEADV:"]
     - - "SSC SSC1 bleadv -L -c 0 -t 3"
       - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
     - - "SSC SSC1 bleadv -D -z start"
@@ -51,7 +51,7 @@
 .dut1_connect_to_dut2: &dut1_connect_to_dut2
   LIST_MERGE:
     - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-      - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC2 C +BLE:GattsConnect']
+      - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC2 C +BLECONN:GapConnect,OK']
 
 test cases:
 - ID: BTSTK_GAP_01001
@@ -71,11 +71,14 @@ test cases:
   cmd set:
   - ""
   - *set_default_ble_name
-  - *set_default_adv_data
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3 -n 1"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:Start,OK"]
   - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
+  - - "SSC SSC2 blescan -D -z start -t 3 -c 0"
     - ["R SSC2 P <dut1_ble_name>"]
 - ID: BTSTK_GAP_01002
   <<: *GAP_CASE
@@ -95,51 +98,15 @@ test cases:
   - ""
   - - "SSC SSC1 ble -S -z name -n <dut1_ble_name_hex>"
     - ["R SSC1 C +BLE:OK"]
-  - *set_default_adv_data
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:"]
+  - - "SSC SSC1 bleadv -L -c 0 -t 3 -n 1"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:Start,OK"]
   - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
+  - - "SSC SSC2 blescan -D -z start -t 3 -c 0"
     - ["R SSC2 P <dut1_ble_name_hex>"]
-- ID: BTSTK_GAP_01003
-  <<: *GAP_CASE
-  test point 2: BLE GAP param device name test
-  summary: ble set long device name
-  steps: |
-    1. DUT1 set 32 byte device name A
-    2. stop advertising
-    3. config scan response and start advertising
-    4. DUT2 do active scan
-    5. DUT1 set 33 bytes device name
-    6. stop advertising
-    7. config scan response and start advertising
-    8. DUT2 do active scan
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. DUT1 mac in scan result (device name is too long)
-    5. failed
-    6. succeed
-    7. succeed
-    8. DUT1 mac in scan result (device name is too long)
-  cmd set:
-  - ""
-  - - "SSC SSC1 ble -S -z name -n <dut1_ble_name_32>"
-    - ["R SSC1 C +BLE:OK"]
-  - *set_default_adv_data
-  - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -s 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
-    - ["R SSC2 P <dut1_bt_mac> C Complete"]
-  - - "SSC SSC1 ble -S -z name -n 123456789012345678901234567890123"
-    - ["R SSC1 C +BLE:ERROR"]
-  - *set_default_adv_data
-  - - "SSC SSC2 blescan -L -c 0 -s 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
-    - ["R SSC2 P <dut1_bt_mac> C Complete"]
 - ID: BTSTK_GAP_02001
   <<: *GAP_CASE
   test point 2: BLE GAP config advertising data
@@ -190,30 +157,27 @@ test cases:
   test point 2: BLE GAP config advertising data
   summary: ble set advertising data / scan response include Tx power
   steps: |
-    1. DUT1 stop advertise and set short device name
-    2. DUT1 set include Tx power for adv data and scan response
-    3. DUT1 start advertising
-    4. PC do active scan and capture advertising report
-    5. DUT1 stop advertising
-    6. DUT1 set not include Tx power for adv data and scan response
-    7. DUT1 start advertising
-    8. PC do active scan and capture advertising report
+    1. DUT1 set include Tx power for adv data and scan response
+    2. DUT1 start advertising
+    3. PC do active scan and capture advertising report
+    4. DUT1 stop advertising
+    5. DUT1 set not include Tx power for adv data and scan response
+    6. DUT1 start advertising
+    7. PC do active scan and capture advertising report
   expected result: |
     1. succeed
     2. succeed
-    3. succeed
-    4. get Tx power in ADV_IND and SCAN_RSP
+    3. get Tx power in ADV_IND and SCAN_RSP
+    4. succeed
     5. succeed
     6. succeed
-    7. succeed
-    8. do not have Tx power in ADV_IND and SCAN_RSP
+    7. do not have Tx power in ADV_IND and SCAN_RSP
   initial condition: BLE_INIT1
   test environment: SSC_T1_3
   version: v2 (2016-03-01)
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -x 1 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
@@ -230,57 +194,12 @@ test cases:
     - - 'P PC_COM C +HCITOOL:OK'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.TxPower)'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(!HCIEvent.data_0.TxPower)'
-- ID: BTSTK_GAP_02003
-  <<: *GAP_CASE
-  test point 2: BLE GAP config advertising data
-  summary: ble set advertising data / scan response adv interval
-  steps: |
-    1. DUT1 stop advertise and set short device name
-    2. DUT1 set max interval 0x40 min interval 0x20 for adv data and scan response
-    3. DUT1 start advertising
-    4. PC do active scan and capture advertising report
-    5. DUT1 stop advertising
-    6. DUT1 set max interval 0x400 min interval 0x200 for adv data and scan response
-    7. DUT1 start advertising
-    8. PC do active scan and capture advertising report
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. get interval 0x40 0x20 in ADV_IND and SCAN_RSP
-    5. succeed
-    6. succeed
-    7. succeed
-    8. get interval 0x400 0x200 in ADV_IND and SCAN_RSP
-  initial condition: BLE_INIT1
-  test environment: SSC_T1_3
-  version: v2 (2016-03-01)
-  cmd set:
-  - ""
-  - *dut1_stop_adv
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -i 0x20-0x40 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *dut1_start_adv
-  - *open_capture_nic
-  - - "HCITOOL 2 -i <hci_nic> lescan"
-    - - 'P PC_COM C +HCITOOL:OK'
-      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0020-0x0040")'
-      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0020-0x0040")'
-  - *dut1_stop_adv
-  - - "SSC SSC1 bleadv -L -c 0 -i 0x200-0x400 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *dut1_start_adv
-  - - "HCITOOL 2 -i <hci_nic> lescan"
-    - - 'P PC_COM C +HCITOOL:OK'
-      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0200-0x0400")'
-      - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.SlaveConnIntervalRange="0x0200-0x0400")'
 - ID: BTSTK_GAP_02004
   <<: *GAP_CASE
   test point 2: BLE GAP config advertising data
   summary: ble set advertising data / scan response appearance
   steps: |
-    1. DUT1 stop advertise and set short device name
+    1. DUT1 stop advertise
     2. DUT1 set appearance to 0 for adv data and scan response
     3. DUT1 start advertising
     4. PC do active scan and capture advertising report
@@ -303,7 +222,6 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -a 0 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
@@ -325,7 +243,7 @@ test cases:
   test point 2: BLE GAP config advertising data
   summary: ble set advertising data / scan response manufacturer data
   steps: |
-    1. DUT1 stop advertise and set short device name
+    1. DUT1 stop advertise
     2. DUT1 set manufacturer to 0x12345678 for adv data and scan response
     3. DUT1 start advertising
     4. PC do active scan and capture advertising report
@@ -340,7 +258,6 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -m 0x12345678 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
@@ -354,11 +271,11 @@ test cases:
   test point 2: BLE GAP config advertising data
   summary: ble set advertising data / scan response manufacturer length not equal to real lenght
   steps: |
-    1. DUT1 stop advertise and set short device name
+    1. DUT1 stop advertise
     2. DUT1 set manufacturer 0x12345678 and length 3 for adv data and scan response
     3. DUT1 start advertising
     4. PC do active scan and capture advertising report
-    5. DUT1 stop advertise and set short device name
+    5. DUT1 stop advertise
     6. DUT1 set manufacturer 0x12345678 and length 10 for adv data and scan response
     7. DUT1 start advertising
     8. PC do active scan and capture advertising report
@@ -377,7 +294,6 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -m 0x12345678 -t 3 -l 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
@@ -387,7 +303,6 @@ test cases:
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ManufacturerSpecificData="0x12345678")'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ManufacturerSpecificData="0x12345678")'
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -m 0x12345678 -t 3 -l 10"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
@@ -416,8 +331,7 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3"
+  - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3 -p -f 0 -x 0"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - *open_capture_nic
@@ -453,8 +367,7 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3 -l 3"
+  - - "SSC SSC1 bleadv -L -c 0 -d 0x1234123456 -t 3 -l 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - *open_capture_nic
@@ -463,8 +376,7 @@ test cases:
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ServiceData16BitUUID="1234123456")'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_RSP")(HCIEvent.address_0=<dut1_bt_mac>)(HCIEvent.data_0.ServiceData16BitUUID="1234123456")'
   - *dut1_stop_adv
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3 -l 10"
+  - - "SSC SSC1 bleadv -L -c 0 -d 0x1234123456 -t 3 -l 10"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - *open_capture_nic
@@ -553,7 +465,7 @@ test cases:
   test point 2: BLE GAP set advertise param
   summary: ble set adv parameter adv_type
   steps: |
-    1. DUT1 stop advertise and set short device name
+    1. DUT1 stop advertise
     2. DUT1 start adv with adv_type ADV_IND
     3. PC do active scan and capture advertising report
     4. repeat step 1-3 with adv_type ADV_TYPE_DIRECT_IND_HIGH
@@ -572,9 +484,8 @@ test cases:
   test environment: SSC_T1_3
   cmd set:
   - ""
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
   - *open_capture_nic
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -D -z start -t 0"
@@ -582,11 +493,13 @@ test cases:
   - - "HCITOOL 2 -i <hci_nic> lescan"
     - - 'P PC_COM C +HCITOOL:OK'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - *dut1_stop_adv
   - - "SSC SSC1 bleadv -D -z start -t 1 -y 0 -b <hci_nic_mac>"
     - ["R SSC1 C +BLEADV:OK"]
   - - "HCITOOL 2 -i <hci_nic> lescan"
     - - 'P PC_COM C +HCITOOL:OK'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_DIRECT_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - *dut1_stop_adv
   - - "SSC SSC1 bleadv -L -c 0 -i 0x00B0-0x0200 -t 3"
     - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC1 bleadv -D -z start -t 2 -i 0x00B0-0x0200"
@@ -594,6 +507,7 @@ test cases:
   - - "HCITOOL 2 -i <hci_nic> lescan"
     - - 'P PC_COM C +HCITOOL:OK'
       - 'P BLENIC PDU (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_SCAN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
+  - *dut1_stop_adv
   - - "SSC SSC1 bleadv -D -z start -t 3 -i 0x00B0-0x0200"
     - ["R SSC1 C +BLEADV:OK"]
   - - "HCITOOL 2 -i <hci_nic> lescan"
@@ -628,9 +542,8 @@ test cases:
   allow fail: 1/2
   cmd set:
   - ""
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
   - *open_capture_nic
   - - LOOP 7 3 "[1,2,3,4,5,6,7]" "['PDU','PDU','PDU','PDU','PDU','PDU','PDU']"
   - *dut1_stop_adv
@@ -641,37 +554,6 @@ test cases:
       - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
   - - "SSC SSC1 bleadv -D -z start -t 0 -h 8"
     - ["R SSC1 C +BLEADV:Start,ERROR"]
-- ID: BTSTK_GAP_03003
-  <<: *GAP_CASE
-  test point 2: BLE GAP set advertise param
-  summary: ble set adv parameter own address type
-  steps: |
-    1. DUT1 stop advertise
-    2. DUT1 start adv with own address type public
-    3. PC do active scan and capture advertising report
-    4. repeat step 1-3 with own address type random, rpa_public, rpa_random
-    5. repeat step 1-3 with channel map not valid
-  expected result: |
-    1. succeed
-    2. succeed
-    3. get ADV_IND with DUT1 BT MAC
-    4. get ADV_IND with DUT1 BT MAC
-    5. can not get ADV_IND with DUT1 BT MAC
-  initial condition: BLE_INIT1
-  test environment: SSC_T1_3
-  cmd set:
-  - ""
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *open_capture_nic
-  - - LOOP 4 3 "[0,2,1,3]" "['PDU','PDU','NPDU','NPDU']"
-  - *dut1_stop_adv
-  - - "SSC SSC1 bleadv -D -z start -t 0 -o {%d}"
-    - ["R SSC1 C +BLEADV:OK"]
-  - - "HCITOOL 2 -i <hci_nic> lescan"
-    - - 'P PC_COM C +HCITOOL:OK'
-      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="ADV_IND")(HCIEvent.data_0.NameComplete=<dut1_ble_name>)(HCIEvent.address_0=<dut1_bt_mac>)'
 - ID: BTSTK_GAP_03004
   <<: *GAP_CASE
   test point 2: BLE GAP set advertise param
@@ -691,9 +573,8 @@ test cases:
   allow fail: 2/3
   cmd set:
   - ""
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
   - *open_capture_nic
   - *dut1_stop_adv
   - - LOOP 2 2 "[0,1]" "['=','!=']"
@@ -720,72 +601,13 @@ test cases:
     4. calculate adv intervals, within the interval range in adv param
   initial condition: BLE_INIT1
   test environment: SSC_T1_3
+  CI ready: 'No'
   cmd set:
   - "BLEFunction/AdvInterval"
   - - interval_list = ["0x0020-0x0020", "0x0040-0x0040", "0x0060-0x0060"]
     - ['']
   - - deviation = 0.3
     - ['']
-- ID: BTSTK_GAP_03006
-  <<: *GAP_CASE
-  test point 2: BLE GAP set advertise param
-  summary: ble set paramters for SCAN_IND
-  steps: |
-    1. DUT1 stop advertise
-    2. DUT1 set incorrect adv interval for SCAN_IND
-    3. PC do active scan and capture advertising report
-    4. repeat step 1-3 with correct adv interval
-  expected result: |
-    1. succeed
-    2. succeed
-    3. can not get SCAN_IND with DUT1 BT MAC
-    4. get SCAN_IND with DUT1 BT MAC
-  initial condition: BLE_INIT1
-  test environment: SSC_T1_3
-  cmd set:
-  - ""
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *open_capture_nic
-  - *dut1_stop_adv
-  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
-    - [""]
-  - - "SSC SSC1 bleadv -D -z start -t 2 -i {%s}"
-    - ["R SSC1 C +BLEADV:OK"]
-  - - "HCITOOL 2 -i <hci_nic> lescan"
-    - - 'P PC_COM C +HCITOOL:OK'
-      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="SCAN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
-- ID: BTSTK_GAP_03007
-  <<: *GAP_CASE
-  test point 2: BLE GAP set advertise param
-  summary: ble set paramters for NONCONN_IND
-  steps: |
-    1. DUT1 stop advertise
-    2. DUT1 set incorrect adv interval for NONCONN_IND
-    3. PC do active scan and capture advertising report
-    4. repeat step 1-3 with correct adv interval
-  expected result: |
-    1. succeed
-    2. succeed
-    3. can not get SCAN_IND with DUT1 BT MAC
-    4. get SCAN_IND with DUT1 BT MAC
-  initial condition: BLE_INIT1
-  test environment: SSC_T1_3
-  cmd set:
-  - ""
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *open_capture_nic
-  - *dut1_stop_adv
-  - - LOOP 2 2 "['0x20-0x40','0xA0-0xB0']" "['PDU','PDU']"
-    - [""]
-  - - "SSC SSC1 bleadv -D -z start -t 3 -i {%s}"
-    - ["R SSC1 C +BLEADV:OK"]
-  - - "HCITOOL 2 -i <hci_nic> lescan"
-    - - 'P PC_COM C +HCITOOL:OK'
-      - 'P BLENIC {%s} (HCIEvent.le_sub_event_code="LEAdvReport")(HCIEvent.event_type_0="NONCONN_IND")(HCIEvent.address_0=<dut1_bt_mac>)'
 - ID: BTSTK_GAP_03008
   <<: *GAP_CASE
   test point 2: BLE GAP set advertise param
@@ -801,6 +623,8 @@ test cases:
     3. succeed
   cmd set:
   - ""
+  - - "SSC SSC1 bleadv -L -c 0 -t 3 -n 1"
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
   - - "SSC SSC2 bleadv -D -z stop"
     - ["R SSC2 C +BLEADV:Stop,OK"]
   - - "SSC SSC2 ble -S -z privacy -p 1"
@@ -808,7 +632,7 @@ test cases:
   - - "SSC SSC2 bleadv -D -z start -t 0 -o 2"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start"
-    - ["R SSC1 NP <dut2_bt_mac> C Complete"]
+    - ["R SSC1 NP <dut2_bt_mac> C InquiryComplete"]
 - ID: BTSTK_GAP_03009
   <<: *GAP_CASE
   test point 2: BLE GAP set advertise param
@@ -832,32 +656,37 @@ test cases:
     7. succeed
   cmd set:
   - ""
+  - - "SSC SSC2 ble -S -z name -n <dut1_ble_name>"
+    - ["R SSC2 C +BLE:OK"]
   - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x01"
     - ['P SSC2 C +BLESMP:OK']
   - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
     - ['P SSC2 C +BLESMP:OK']
-  - - "SSC SSC2 blesmp -S -z RspKey -v 0x03"
-    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z RspKey -v 0x02"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z InitKey -v 0x02"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC2 bleadv -L -c 0 -n 1"
+    - ["R SSC2 C +BLEADV:SetAdv,OK"]
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC2 C +BLECONN:GapConnect,OK']
   - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC1 C +BLESMP:SecReq']
-  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
     - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
   - - "SSC SSC1 bleconn -D -z all"
-    - ['P SSC1 C +BLE:GattcDisconnect,OK', 'P SSC2 C +BLE:GattsDisconnect,OK']
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC2 C +BLECONN:GapDisconnect,OK']
   - - "SSC SSC2 ble -S -z privacy -p 1"
     - ["R SSC2 C +BLECONN:SetResAddr,Success"]
   - - "SSC SSC2 bleadv -D -z stop"
-    - ["R SSC2 C +BLEADV:OK"]
+    - ["R SSC2 C +BLEADV:"]
   - - "SSC SSC2 bleadv -D -z start -o 2"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start"
     - ["R SSC1 P <dut2_bt_mac> C Complete"]
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+    - ["R SSC1 C +BLECONN:GapConnect,OK", "R SSC2 C +BLECONN:GapConnect,OK"]
 - ID: BTSTK_GAP_03010
   <<: *GAP_CASE
+  CI ready: "No"  # can't restore to use public address after set to use private address
   test point 2: BLE GAP set advertise param
   summary: ble adv with privacy address and RPA_RANDOM
   initial condition: BLE_INIT_SMP
@@ -873,14 +702,20 @@ test cases:
   - ""
   - - "SSC SSC2 bleadv -D -z stop"
     - ["R SSC2 C +BLEADV:Stop,OK"]
+  - *set_default_ble_name
+  - - "SSC SSC2 ble -S -z randAddr -a <static_device_addr> -r 1"
+    - ["R SSC2 C +BLECONN:SetRandAddr,OK"]
   - - "SSC SSC2 ble -S -z privacy -p 1"
     - ["R SSC2 C +BLECONN:SetResAddr,Success"]
+  - - "SSC SSC2 bleadv -L -c 0 -n 1"
+    - ["R SSC2 C +BLEADV:SetAdv,OK"]
   - - "SSC SSC2 bleadv -D -z start -t 0 -o 3"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start"
     - ["R SSC1 NP <dut2_bt_mac> C Complete"]
 - ID: BTSTK_GAP_03011
   <<: *GAP_CASE
+  CI ready: "No"  # can't restore to use public address after set to use private address
   test point 2: BLE GAP set advertise param
   summary: ble set adv owner address type as RPA_RANDOM
   initial condition: BLE_INIT_SMP
@@ -906,30 +741,49 @@ test cases:
     9. succeed
   cmd set:
   - ""
-  - - "SSC SSC2 blesmp -S -z AuthReqMode -v 0x01"
-    - ['P SSC2 C +BLESMP:OK']
-  - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
-    - ['P SSC2 C +BLESMP:OK']
-  - - "SSC SSC2 blesmp -S -z RspKey -v 0x03"
-    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z AuthReqMode -v 0x01"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z IOCAP -v 0x02"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z RspKey -v 0x02"
+    - ['P SSC[1-2] C +BLESMP:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC2 C +BLECONN:GapConnect,OK']
   - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC1 C +BLESMP:SecReq']
-  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
     - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
   - - "SSC SSC1 bleconn -D -z all"
-    - ['P SSC1 C +BLE:GattcDisconnect,OK', 'P SSC2 C +BLE:GattsDisconnect,OK']
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC2 C +BLECONN:GapDisconnect,OK']
+  - - "SSC SSC2 ble -S -z randAddr -a <static_device_addr> -r 1"
+    - ["R SSC2 C +BLECONN:SetRandAddr,OK"]
   - - "SSC SSC2 ble -S -z privacy -p 1"
     - ["R SSC2 C +BLECONN:SetResAddr,Success"]
   - - "SSC SSC2 bleadv -D -z stop"
-    - ["R SSC2 C +BLEADV:OK"]
+    - ["R SSC2 C +BLEADV:"]
   - - "SSC SSC2 bleadv -D -z start -o 3"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start"
     - ["R SSC1 P <dut2_bt_mac> C Complete"]
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+    - ["R SSC1 C +BLECONN:GapConnect,OK", "R SSC2 C +BLECONN:GapConnect,OK"]
+- ID: BTSTK_GAP_03012
+  <<: *GAP_CASE
+  test point 2: BLE GAP set advertise param
+  summary: set ble adv peer_address_type as RPA_PUBLIC and RPA_RANDOM
+  initial condition: BLE_INIT_SMP
+  steps: |
+    1. DUT1 set peer address and peer address type RPA_PUBLIC
+    2. DUT1 set peer address and peer address type RPA_RANDOM
+  expected result: |
+    1. succeed
+    2. succeed
+  cmd set:
+  - ""
+  - - "SSC SSC1 bleadv -D -z stop"
+    - ["R SSC1 C +BLEADV:"]
+  - - "SSC SSC1 bleadv -D -z start -b <dut2_bt_mac> -y 2"
+    - ["R SSC1 C +BLEADV:Start,ERROR"]
+  - - "SSC SSC1 bleadv -D -z start -b <dut2_bt_mac> -y 3"
+    - ["R SSC1 C +BLEADV:Start,ERROR"]
 - ID: BTSTK_GAP_04001
   <<: *GAP_CASE
   test point 2: BLE GAP set scan param
@@ -955,16 +809,12 @@ test cases:
     - ["R SSC1 C +BLEADV:SetScanRes,OK"]
   - *dut1_start_adv
   - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -s 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3 -e 2"
+  - - "SSC SSC2 blescan -D -z start -t 3 -e 2 -c 0 -s 0"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
       - 'R SSC2 NRE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>) C Complete'
   - - "SSC SSC2 blescan -D -z stop"
     - ['R SSC2 C +BLESCAN']
-  - - "SSC SSC2 blescan -L -c 0 -s 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 3 -e 1 -c 0 -s 1"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
       - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
@@ -984,20 +834,25 @@ test cases:
     4. error
   cmd set:
   - ""
-  - *set_default_ble_name
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -L -c 0 -t 3"
     - ["R SSC1 C +BLEADV:SetScanRes,OK"]
   - *dut1_start_adv
   - *dut2_stop_adv
-  - - LOOP 4 2 "[0,1,2,3]"
-    - ['']
-  - - "SSC SSC2 blescan -L -c 0 -s 1 -o {%d}"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -c 0 -s 1 -o 0"
     - ['R SSC2 P <dut1_bt_mac> C Complete']
-  - - "SSC SSC2 blescan -L -c 0 -o 4"
-    - ["R SSC2 C +BLESCAN:SetScanParam,ERROR"]
+  - - "SSC SSC2 ble -S -z privacy -p 1"
+    - ["R SSC2 C +BLECONN:SetResAddr,Success"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -c 0 -s 1 -o 2"
+    - ['R SSC2 P <dut1_bt_mac> C Complete']
+  - - "SSC SSC2 ble -S -z randAddr -a <static_device_addr> -r 1"
+    - ["R SSC2 C +BLECONN:SetRandAddr,OK"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -c 0 -s 1 -o 1"
+    - ['R SSC2 P <dut1_bt_mac> C Complete']
+  - - "SSC SSC2 ble -S -z privacy -p 1"
+    - ["R SSC2 C +BLECONN:SetResAddr,Success"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -c 0 -s 1 -o 3"
+    - ['R SSC2 P <dut1_bt_mac> C Complete']
 - ID: BTSTK_GAP_04003
   <<: *GAP_CASE
   test point 2: BLE GAP set scan param
@@ -1014,17 +869,19 @@ test cases:
     4. error
   cmd set:
   - ""
-  - - "SSC SSC2 bleadv -D -z start"
-    - ["R SSC2 C +BLEADV:OK"]
   - *dut1_stop_adv
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0004 -w 0x0004"
-    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4000 -w 0x4000"
-    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x0003 -w 0x0003"
-    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
-  - - "SSC SSC1 blescan -L -c 0 -s 1 -i 0x4001 -i 0x4001"
-    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -s 1 -i 0x0004 -w 0x0004"
+    - ["R SSC1 C +BLESCAN:Start,OK"]
+  - - "SSC SSC1 blescan -D -z stop"
+    - ["R SSC1 C +BLESCAN:Stop,OK"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -s 1 -i 0x4000 -w 0x4000"
+    - ["R SSC1 C +BLESCAN:Start,OK"]
+  - - "SSC SSC1 blescan -D -z stop"
+    - ["R SSC1 C +BLESCAN:Stop,OK"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -s 1 -i 0x0003 -w 0x0003"
+    - ["R SSC1 C +BLESCAN:Start,ERROR"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -s 1 -i 0x4001 -w 0x4001"
+    - ["R SSC1 C +BLESCAN:Start,ERROR"]
 - ID: BTSTK_GAP_04004
   <<: *GAP_CASE
   test point 2: BLE GAP set scan param
@@ -1043,14 +900,18 @@ test cases:
   test environment: SSC_T1_4
   cmd set:
   - ""
-  - - "SSC SSC1 blescan -L -c 0 -w 0x0004 -i 0x0004"
-    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -w 0x4000 -i 0x4000"
-    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -L -c 0 -w 0x0003 -i 0x0003"
-    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
-  - - "SSC SSC1 blescan -L -c 0 -w 0x4001 -i 0x4001"
-    - ["R SSC1 C +BLESCAN:SetScanParam,ERROR"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -w 0x0004 -i 0x0004"
+    - ["R SSC1 C +BLESCAN:Start,OK"]
+  - - "SSC SSC1 blescan -D -z stop"
+    - ["R SSC1 C +BLESCAN:Stop,OK"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -w 0x4000 -i 0x4000"
+    - ["R SSC1 C +BLESCAN:Start,OK"]
+  - - "SSC SSC1 blescan -D -z stop"
+    - ["R SSC1 C +BLESCAN:Stop,OK"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -w 0x0003 -i 0x0003"
+    - ["R SSC1 C +BLESCAN:Start,ERROR"]
+  - - "SSC SSC1 blescan -D -z start -c 0 -w 0x4001 - 0x4001"
+    - ["R SSC1 C +BLESCAN:Start,ERROR"]
 - ID: BTSTK_GAP_05001
   <<: *GAP_CASE
   test point 2: BLE GAP start stop adv / scan
@@ -1069,20 +930,16 @@ test cases:
     4. succeed
     5. succeed
     6. DUT1 in scan result
-  initial condition: BLE_INIT2
   cmd set:
   - ""
   - *dut1_stop_adv
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -c 0"
     - ["R SSC2 NP <dut1_bt_mac> C Complete"]
   - *dut1_start_adv
-  - *dut1_start_adv
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 1"
+  - - "SSC SSC1 bleadv -D -z start"
+    - ["R SSC1 C +BLEADV:Start"]
+  - - "SSC SSC2 blescan -D -z start -t 1 -c 0"
     - ["R SSC2 P <dut1_bt_mac> C Complete"]
 - ID: BTSTK_GAP_05002
   <<: *GAP_CASE
@@ -1100,864 +957,22 @@ test cases:
   test environment: SSC_T1_4
   cmd set:
   - ""
-  - - "SSC SSC1 blescan -L -c 0"
-    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -D -z start -t 3"
+  - - "SSC SSC1 blescan -D -z start -t 3 -c 0"
     - ["R SSC1 C +BLESCAN:OK"]
   - - "SSC SSC1 blescan -D -z stop"
     - ["R SSC1 C +BLESCAN:Stop,OK"]
   - - "SSC SSC1 blescan -D -z stop"
     - ["R SSC1 C +BLESCAN:Stop,ERROR"]
-- ID: BTSTK_GAP_06001
-  <<: *GAP_CASE
-  test point 2: BLE GAP connect / disconnect
-  summary: ble connect as "client" and "server"
-  allow fail: 1/2
-  steps: |
-    1. DUT1 connect to DUT2 as "client"
-    2. DUT1 disconnected with DUT2
-    3. DUT1 start gatt server app
-    4. DUT1 connect to DUT2 as "server"
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-  cmd set:
-  - ""
-  - *dut1_connect_to_dut2
-  - - "SSC SSC1 bleconn -D -p 0x10"
-    - ['R SSC1 C +BLE:CLOSE,OK']
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:LoadProfile,OK']
-  - - "SSC SSC2 bleadv -D -z start"
-    - ['R SSC2 C +BLEADV:OK']
-  - - "SSC SSC1 bleconn -C -p 0xA0 -a <dut2_bt_mac> -z server"
-    - ['R SSC1 C +BLE:GattsConnect']
-- ID: BTSTK_GAP_06002
-  <<: *GAP_CASE
-  test point 2: BLE GAP connect / disconnect
-  summary: ble disconnect as "client" and "server"
-  steps: |
-    1. DUT1 connect to DUT2 as "client"
-    2. DUT1 disconnected with DUT2 as "client"
-    3. DUT1 start gatt server app
-    4. DUT1 connect to DUT2 as client
-    5. DUT1 disconnect with DUT2 as "server"
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. succeed
-  cmd set:
-  - ""
-  - *dut1_connect_to_dut2
-  - - "SSC SSC1 bleconn -D -p 0x10"
-    - ['R SSC1 C +BLE:CLOSE,OK']
-  - - "SSC SSC2 bleadv -D -z start"
-    - ['R SSC2 C +BLEADV:OK']
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:LoadProfile,OK']
-  - *dut1_connect_to_dut2
-  - - "SSC SSC1 bleconn -D -p 0x10"
-    - ['R SSC1 C +BLE:CLOSE,OK']
-- ID: BTSTK_GAP_06003
-  <<: *GAP_CASE
-  allow fail: 1/2
-  test point 2: BLE GAP connect / disconnect
-  summary: ble connect/disconnect to same connection multiple times
-  steps: |
-    1. DUT1 connect to DUT2 as "client"
-    2. DUT1 start gatt server app
-    3. DUT1 connect to DUT2 as "client" again
-    4. DUT1 connect to DUT2 as "server"
-    5. DUT1 disconnected with DUT2 as "client"
-    6. DUT1 disconnected with DUT2 as "server"
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. succeed
-    6. succeed
-  cmd set:
-  - ""
-  - *dut1_connect_to_dut2
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:LoadProfile,OK']
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['R SSC1 C +BLE:GattcOpen,OK']
-  - - "SSC SSC1 bleconn -C -p 0xA0 -a <dut2_bt_mac> -z server"
-    - ['R SSC1 C +BLE:GattsOpen,OK,00A0']
-  - - "SSC SSC1 bleconn -D -p 0x10"
-    - ['R SSC1 C +BLE:CLOSE,OK']
-  - - "SSC SSC1 bleconn -D -p 0xA0 -z server"
-    - ['R SSC1 C +BLE:GattsClose,OK']
-- ID: BTSTK_GAP_06004
-  <<: *GAP_CASE
-  test point 2: BLE GAP connect / disconnect
-  summary: ble connect to invalid address
-  allow fail: 2/3
-  steps: |
-    1. DUT1 connect to invalid address
-    2. DUT1 connect to DUT2
-  expected result: |
-    1. failed
-    2. succeed
-  cmd set:
-  - ""
-  - - "SSC SSC1 bleconn -C -p 0x10 -a 24:0a:c4:04:26:50"
-    - ['R SSC1 C +BLECONN:OK']
-  - - DELAY 30
-    - ['R SSC1 C +BLE:GattcOpen,ERROR']
-  - *dut1_connect_to_dut2
-- ID: BTSTK_GAP_06005
-  <<: *GAP_CASE
-  test point 2: BLE GAP connect / disconnect
-  summary: ble connect/disconnect event to active app
-  steps: |
-    1. DUT1 create gatts app
-    2. DUT1 connect to DUT2 as "client"
-    3. DUT1 do disconnect as "server"
-  expected result: |
-    1. succeed
-    2. succeed, DUT1 and DUT2 gatts get connect event
-    3. DUT1 and DUT2 gatts get disconnect event
-  cmd set:
-  - ""
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:LoadProfile,OK']
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect C +BLE:GattsConnect', 'P SSC2 C +BLE:GattsConnect']
-  - - "SSC SSC1 bleconn -D -p 0xA0 -z server"
-    - ['P SSC1 C +BLE:GattsClose']
-- ID: BTSTK_GAP_07001
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters by master
-  steps: |
-    1. update connect parameters by master
-  expected result: |
-    1. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["32-64"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["32"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
-- ID: BTSTK_GAP_07002
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters by slave
-  steps: |
-    1. update connect parameters by slave
-  expected result: |
-    1. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["32-64"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["32"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
-- ID: BTSTK_GAP_07003
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25)
-  steps: |
-    1. update invalid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25)
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["7-90"]
-    - ['']
-  - - latency=["1"]
-    - ['']
-  - - supervision_timeout=["41"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07004
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connnect parameters and interval within allowed range
-  steps: |
-    1. DUT1 update connection parametres and interval is 6-128
-    2. DUT1 update connection parametres and interval is 33-3200
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC1"]
-    - ['']
-  - - interval=["6-128","33-3200"]
-    - ['']
-  - - latency=["0","0"]
-    - ['']
-  - - supervision_timeout=["50","1000"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07005
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters interval and interval out of allowed range
-  steps: |
-    1. DUT1 update invalid interval and interval is 16-3201
-    2. DUT1 update invalid interval and interval is 5-64
-  expected result: |
-    1. fail
-    2. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC1"]
-    - ['']
-  - - interval=["16-3201","5-64"]
-    - ['']
-  - - latency=["0","0"]
-    - ['']
-  - - supervision_timeout=["32","32"]
-    - ['']
-  - - expect_result=["ERROR","ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07006
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters latency and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25
-  steps: |
-    1. DUT1 update connect parameters latency and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["32-64"]
-    - ['']
-  - - latency=["8"]
-    - ['']
-  - - supervision_timeout=["32"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07007
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters latency and latency = 501
-  steps: |
-    1. DUT1 uupdate connect parameters latency and latency = 501
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["6-8"]
-    - ['']
-  - - latency=["501"]
-    - ['']
-  - - supervision_timeout=["1003"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07008
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters latency and latency = 500
-  steps: |
-    1. DUT1 update connect parameters latency and latency = 500
-  expected result: |
-    1. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["6-8"]
-    - ['']
-  - - latency=["500"]
-    - ['']
-  - - supervision_timeout=["1003"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
-- ID: BTSTK_GAP_07009
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout within allowed range and timeout<(1+latency)*2*MAX_interval*1.25
-  steps: |
-    1. DUT1 update connect parameters timeout and timeout within allowed range and timeout<(1+latency)*2*MAX_interval*1.25
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["32-64"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["12"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07010
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout = 9
-  steps: |
-    1. DUT1 update connect parameters timeout and timeout = 9
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["8-10"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["9"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07011
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout within allowed range
-  steps: |
-    1. DUT1 update timeout = 10
-    2. DUT1 update timeout = 3200
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC1"]
-    - ['']
-  - - interval=["8-10","8-10"]
-    - ['']
-  - - latency=["0","0"]
-    - ['']
-  - - supervision_timeout=["10","3200"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07012
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout = 3201
-  steps: |
-    1. DUT1 update timeout = 3201
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["8-10"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["3201"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07013
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect parameters before configure connect param event back
-  steps: |
-    1. DUT1 update valid interval
-    2. DUT1 update valid interval
-  expected result: |
-    1.
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - ""
-  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac>"
-    - ['']
-  - - "SSC SSC1 bleconn -S -z ConnParam -a <dut2_bt_mac> -t 0x40"
-    - ['R SSC1 C pending']
-- ID: BTSTK_GAP_07014
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect param and unpdate valid connect params by master
-  steps: |
-    1. DUT1 update invalid connect parameters
-    2. DUT2 update valid connect
-  expected result: |
-    1. fail
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC1"]
-    - ['']
-  - - interval=["32-64","32-64"]
-    - ['']
-  - - latency=["9","0"]
-    - ['']
-  - - supervision_timeout=["32","32"]
-    - ['']
-  - - expect_result=["ERROR","OK"]
-    - ['']
-- ID: BTSTK_GAP_07015
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update valid connect parameters twice
-  allow fail: 1/2
-  steps: |
-    1. DUT1 update valid connect parameters
-    2. DUT1 update valid connect parameters
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC1"]
-    - ['']
-  - - interval=["7-80","10-100"]
-    - ['']
-  - - latency=["1","0"]
-    - ['']
-  - - supervision_timeout=["41","30"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07016
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update valid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25) by slave
-  steps: |
-    1. DUT2 update valid connect parameters(timeout<(1+latency)*2*MAX_interval*1.25) by slave
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["7-90"]
-    - ['']
-  - - latency=["1"]
-    - ['']
-  - - supervision_timeout=["41"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07017
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connnect parameters interval within allowed range by slave
-  steps: |
-    1. DUT2 update interval 6-128
-    2. DUT2 update interval 21-3200
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2","SSC2"]
-    - ['']
-  - - interval=["6-128","21-3200"]
-    - ['']
-  - - latency=["0","0"]
-    - ['']
-  - - supervision_timeout=["50","1000"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07018
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connnect parameters interval out of allowed range by slave
-  steps: |
-    1. DUT2 update invalid interval 10-3201
-    2. DUT2 update invalid interval 5-64
-  expected result: |
-    1. fail
-    2. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2","SSC2"]
-    - ['']
-  - - interval=["10-3201","5-64"]
-    - ['']
-  - - latency=["0","0"]
-    - ['']
-  - - supervision_timeout=["32","32"]
-    - ['']
-  - - expect_result=["ERROR","ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07019
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connnect parameters and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25 by slave
-  steps: |
-    1. DUT2 update connnect parameters and latency within allowed range and timeout<(1+latency)*2*MAX_interval*1.25 by slave
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["32-64"]
-    - ['']
-  - - latency=["8"]
-    - ['']
-  - - supervision_timeout=["32"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07020
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters latency and latency out of allowed range by slave
-  steps: |
-    1. DUT2 update invalid latency = 501
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["6-8"]
-    - ['']
-  - - latency=["501"]
-    - ['']
-  - - supervision_timeout=["1003"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07021
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update valid connect parameters and latency = 500 by slave
-  steps: |
-    1. DUT2 update latency = 500
-  expected result: |
-    1. success
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["6-8"]
-    - ['']
-  - - latency=["500"]
-    - ['']
-  - - supervision_timeout=["1003"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
-- ID: BTSTK_GAP_07022
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout = 9 by slave
-  steps: |
-    1. DUT2 update connect parameters timeout and timeout = 9
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["8-10"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["9"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07023
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout = 10 by slave
-  steps: |
-    1. DUT2 update connect parameters timeout and timeout = 10 by slave
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["8-10"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["10"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
-- ID: BTSTK_GAP_07024
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout = 3200 by slave
-  steps: |
-    1. DUT2 update connect parameters timeout and timeout = 3200 by slave
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["8-10"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["3200"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
-- ID: BTSTK_GAP_07025
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters timeout and timeout = 3201 by slave
-  steps: |
-    1. DUT2 update connect parameters timeout and timeout = 3201 by slave
-  expected result: |
-    1. fail
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2"]
-    - ['']
-  - - interval=["8-10"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["3201"]
-    - ['']
-  - - expect_result=["ERROR"]
-    - ['']
-- ID: BTSTK_GAP_07026
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect parameters before configure connect param event back by slave
-  steps: |
-    1. DUT2 update valid interval
-    2. DUT2 update valid interval
-  expected result: |
-    1.
-    2. pending
-  initial condition: BLE_CONN2
-  cmd set:
-  - ""
-  - - "SSC SSC2 bleconn -S -z ConnParam -a <dut1_bt_mac>"
-    - ['']
-  - - "SSC SSC2 bleconn -S -z ConnParam -a <dut1_bt_mac> -t 0x40"
-    - ['R SSC2 C pending']
-- ID: BTSTK_GAP_07027
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect param and update valid connect params by slave
-  steps: |
-    1. DUT2 update invalid connect
-    2. DUT2 update valid connect
-  expected result: |
-    1. fail
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2","SSC2"]
-    - ['']
-  - - interval=["32-64","32-64"]
-    - ['']
-  - - latency=["0","0"]
-    - ['']
-  - - supervision_timeout=["9","21"]
-    - ['']
-  - - expect_result=["ERROR","OK"]
-    - ['']
-- ID: BTSTK_GAP_07028
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update valid connect parameters twice by slave
-  allow fail: 1/2
-  steps: |
-    1. DUT2 update valid interval
-    2. DUT2 update valid interval
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2","SSC2"]
-    - ['']
-  - - interval=["7-80","10-100"]
-    - ['']
-  - - latency=["1","0"]
-    - ['']
-  - - supervision_timeout=["41","30"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07029
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect param by master and update valid connect params by slave
-  steps: |
-    1. DUT1 update invalid connect
-    2. DUT2 update valid connect
-  expected result: |
-    1. fail
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC2"]
-    - ['']
-  - - interval=["32-64","32-64"]
-    - ['']
-  - - latency=["9","0"]
-    - ['']
-  - - supervision_timeout=["32","32"]
-    - ['']
-  - - expect_result=["ERROR","OK"]
-    - ['']
-- ID: BTSTK_GAP_07030
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update valid connect param by master and update valid connect params by slave
-  steps: |
-    1. DUT1 update valid interval
-    2. DUT2 update valid interval
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1","SSC2"]
-    - ['']
-  - - interval=["7-80","10-100"]
-    - ['']
-  - - latency=["1","0"]
-    - ['']
-  - - supervision_timeout=["41","30"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07031
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update invalid connect param by slave and update valid connect params by master
-  steps: |
-    1. DUT1 update invalid connect
-    2. DUT2 update valid connect
-  expected result: |
-    1. fail
-    2. success
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2","SSC1"]
-    - ['']
-  - - interval=["32-64","32-64"]
-    - ['']
-  - - latency=["9","0"]
-    - ['']
-  - - supervision_timeout=["32","32"]
-    - ['']
-  - - expect_result=["ERROR","OK"]
-    - ['']
-- ID: BTSTK_GAP_07032
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update valid connect param by slave and update valid connect params by master
-  allow fail: 1/2
-  steps: |
-    1. DUT2 update valid interval
-    2. DUT1 update valid interval
-  expected result: |
-    1. succeed
-    2. succeed
-  initial condition: BLE_CONN2
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC2","SSC1"]
-    - ['']
-  - - interval=["7-80","10-100"]
-    - ['']
-  - - latency=["1","0"]
-    - ['']
-  - - supervision_timeout=["41","30"]
-    - ['']
-  - - expect_result=["OK","OK"]
-    - ['']
-- ID: BTSTK_GAP_07033
-  <<: *GAP_CASE
-  test point 2: BLE GAP update connect parameters
-  summary: update connect parameters by master after pairing
-  steps: |
-    1. DUT1 update connection parameters
-  expected result: |
-    1. succeed
-  initial condition: BLE_CONN_SMP
-  cmd set:
-  - "BLEFunction/ConnParamUpdate"
-  - - dut = ["SSC1"]
-    - ['']
-  - - interval=["32-64"]
-    - ['']
-  - - latency=["0"]
-    - ['']
-  - - supervision_timeout=["32"]
-    - ['']
-  - - expect_result=["OK"]
-    - ['']
 - ID: BTSTK_GAP_08001
   <<: *GAP_CASE
   test point 2: BLE GAP operation without init/enable BT or register callback
   summary: do adv, scan, set name when BT is deinit
   steps: |
     1. DUT1 do adv
-    2. DUT1 do scan
-    3. DUT1 do set name
+    2. DUT1 do set name
   expected result: |
     1. fail
     2. fail
-    3. fail
   initial condition: BLE_DEINIT1
   test environment: SSC_T1_4
   cmd set:
@@ -1966,10 +981,6 @@ test cases:
     - ["R SSC1 C +BLEADV"]
   - - "SSC SSC1 bleadv -D -z start"
     - ["R SSC1 C +BLEADV"]
-  - - "SSC SSC1 blescan -L -c 0"
-    - ["R SSC1 C +BLESCAN"]
-  - - "SSC SSC1 blescan -D -z start"
-    - ["R SSC1 C +BLESCAN"]
   - - "SSC SSC1 ble -S -z name -n abcde"
     - ["R SSC1 C +BLE"]
 - ID: BTSTK_GAP_08002
@@ -1979,13 +990,11 @@ test cases:
   steps: |
     1. DUT1 do init
     2. DUT1 do adv
-    3. DUT1 do scan
-    4. DUT2 do set name
+    3. DUT2 do set name
   expected result: |
     1. succeed
     2. fail
     3. fail
-    4. fail
   initial condition: BLE_DEINIT1
   test environment: SSC_T1_4
   cmd set:
@@ -1996,10 +1005,6 @@ test cases:
     - ["R SSC1 C +BLEADV"]
   - - "SSC SSC1 bleadv -D -z start"
     - ["R SSC1 C +BLEADV"]
-  - - "SSC SSC1 blescan -L -c 0"
-    - ["R SSC1 C +BLESCAN"]
-  - - "SSC SSC1 blescan -D -z start"
-    - ["R SSC1 C +BLESCAN"]
   - - "SSC SSC1 ble -S -z name -n abcde"
     - ["R SSC1 C +BLE"]
 - ID: BTSTK_GAP_08003
@@ -2009,13 +1014,11 @@ test cases:
   steps: |
     1. DUT1 do init and enable
     2. DUT1 do adv
-    3. DUT1 do scan
-    4. DUT2 do set name
+    3. DUT2 do set name
   expected result: |
     1. succeed
     2. fail
     3. fail
-    4. fail
   initial condition: BLE_DEINIT1
   test environment: SSC_T1_4
   cmd set:
@@ -2026,40 +1029,8 @@ test cases:
     - ["R SSC1 C +BLEADV"]
   - - "SSC SSC1 bleadv -D -z start"
     - ["R SSC1 C +BLEADV"]
-  - - "SSC SSC1 blescan -L -c 0"
-    - ["R SSC1 C +BLESCAN"]
-  - - "SSC SSC1 blescan -D -z start"
-    - ["R SSC1 C +BLESCAN"]
   - - "SSC SSC1 ble -S -z name -n abcde"
     - ["R SSC1 C +BLE"]
-- ID: BTSTK_GAP_09001
-  <<: *GAP_CASE
-  test point 2: BLE GAP processing scan data
-  summary: process scan data txp, manufacturer data, interval range, appearence, flag
-  steps: |
-    1. DUT1 set raw adv data tx power, manufacturer data, interval range, apperaence, flag
-    2. DUT1 start adv
-    3. DUT2 do active scan with extended scan data 19
-  expected result: |
-    1. succeed
-    2. succeed
-    3. scan with the correct adv data
-  cmd set:
-  - ""
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - *dut1_stop_adv
-  - - "SSC SSC1 bleadv -R -t 1 -r 0x020AEB06FF1112131415051220004000021901020106"
-    - ["R SSC1 C +BLEADV:OK"]
-  - *dut1_start_adv
-  - *dut2_stop_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1112131415"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x01"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,flag,0x06"%%(<dut1_bt_mac>)'
-      - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09002
   <<: *GAP_CASE
   test point 2: BLE GAP processing scan data
@@ -2076,18 +1047,17 @@ test cases:
     4. scan with the correct adv data
   cmd set:
   - ""
-  - *dut1_stop_adv
   - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - LOOP 4 3 "['0302ABCD','0303ABCD','0504ABCDABCD','0505ABCDABCD',]" "['insrv16,0xABCD','srv16,0xABCD','insrv32,0xABCDABCD','srv32,0xABCDABCD']"
+  - - LOOP 4 4 "['0302ABCD','0303ABCD','0504ABCDABCD','0505ABCDABCD',]" "['insrv16,0xABCD','srv16,0xABCD','insrv32,0xABCDABCD','srv32,0xABCDABCD']"
+  - *dut1_stop_adv
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,{%s}"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
-  - - LOOP 2 3 "['1106ABCDABCDABCDABCDABCDABCDABCDABCD','1107ABCDABCDABCDABCDABCDABCDABCDABCD']" "['insrv128,0xABCDABCDABCDABCDABCDABCDABCDABCD','srv128,0xABCDABCDABCDABCDABCDABCDABCDABCD']"
+  - - LOOP 2 4 "['1106ABCDABCDABCDABCDABCDABCDABCDABCD','1107ABCDABCDABCDABCDABCDABCDABCDABCD']" "['insrv128,0xABCDABCDABCDABCDABCDABCDABCDABCD','srv128,0xABCDABCDABCDABCDABCDABCDABCDABCD']"
+  - *dut1_stop_adv
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
   - *dut1_start_adv
@@ -2110,47 +1080,14 @@ test cases:
     4. scan with the correct adv data
   cmd set:
   - ""
-  - *dut1_stop_adv
   - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - LOOP 3 3 "['0416ABCDEF','0620ABCDABCDEF','1221ABCDABCDABCDABCDABCDABCDABCDABCDEF',]" "['srvdata,0xABCDEF','srvdata32,0xABCDABCDEF','srvdata128,0xABCDABCDABCDABCDABCDABCDABCDABCDEF']"
+  - - LOOP 3 4 "['0416ABCDEF','0620ABCDABCDEF','1221ABCDABCDABCDABCDABCDABCDABCDABCDEF',]" "['srvdata16,0xABCDEF','srvdata32,0xABCDABCDEF','srvdata128,0xABCDABCDABCDABCDABCDABCDABCDABCDEF']"
   - - "SSC SSC1 bleadv -R -t 1 -r 0x{%s}"
     - ["R SSC1 C +BLEADV:OK"]
-  - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,{%s}"%%(<dut1_bt_mac>)'
-      - 'R SSC2 C Complete'
-- ID: BTSTK_GAP_09004
-  <<: *GAP_CASE
-  test point 2: BLE GAP processing scan data
-  summary: process combined adv data and scan response data
-  steps: |
-    1. DUT1 set raw adv data manufacturer data
-    2. DUT1 set scan response data tx power, interval range, apperaence, flag
-    2. DUT1 start adv
-    3. DUT2 do active scan with extended scan data 19
-  expected result: |
-    1. succeed
-    2. succeed
-    3. scan with the correct adv data
-  cmd set:
-  - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 bleadv -R -t 1 -r 0x15FF1011121314151617181910111213141516171819"
-    - ["R SSC1 C +BLEADV:OK"]
-  - - "SSC SSC1 bleadv -R -t 2 -r 0x020AEB051220004000021901020106"
-    - ["R SSC1 C +BLEADV:OK"]
   - *dut1_start_adv
-  - *dut2_stop_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x1011121314151617181910111213141516171819"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0xEB"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x01"%%(<dut1_bt_mac>)'
-      - 'P SSC2 RE "\+BTSCANEXT:%%s,flag,0x06"%%(<dut1_bt_mac>)'
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,{%s}"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09005
   <<: *GAP_CASE
@@ -2177,21 +1114,19 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 ble -S -z name -n abcde"
     - ["R SSC1 C +BLE"]
   - - "SSC SSC1 bleadv -L -c 0 -n 1 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCAN:INQ,%%s,abcde"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCAN:INQ,%%s,NULL"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09006
@@ -2219,62 +1154,18 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -x 1 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,txp,0x03"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -L -c 0 -x 0 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'R SSC2 NRE "\+BTSCANEXT:%%s,txp,0x03"%%(<dut1_bt_mac>)'
-      - 'R SSC2 C Complete'
-- ID: BTSTK_GAP_09007
-  <<: *GAP_CASE
-  test point 2: BLE GAP processing scan data
-  summary: proccess scan data included adv interval
-  steps: |
-    1. DUT1 stop advertise and set short device name
-    2. DUT1 set max interval 0x40 min interval 0x20 for adv data and scan response
-    3. DUT1 start advertising
-    4. DUT2 start scan and processing scan data
-    5. DUT1 stop advertising
-    6. DUT1 set max interval 0x400 min interval 0x200 for adv data and scan response
-    7. DUT1 start advertising
-    8. DUT2 start scan and processing scan data
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. scan with the correct adv data
-    5. succeed
-    6. succeed
-    7. succeed
-    8. scan with the correct adv data
-  cmd set:
-  - ""
-  - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - *set_default_ble_name
-  - - "SSC SSC1 bleadv -L -c 0 -i 0x20-0x40 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x20004000"%%(<dut1_bt_mac>)'
-      - 'R SSC2 C Complete'
-  - *dut1_stop_adv
-  - - "SSC SSC1 bleadv -L -c 0 -i 0x200-0x400 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
-  - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,intrange,0x00020004"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09008
   <<: *GAP_CASE
@@ -2301,20 +1192,17 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -a 0 -t 3"
-    - ["R SSC1 C +BLEADV:SetAdv,OK"]
+    - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 NRE "\+BTSCANEXT:%%s,app,0x0100"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
   - *dut1_stop_adv
   - - "SSC SSC1 bleadv -L -c 0 -a 1 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,app,0x0100"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09009
@@ -2334,13 +1222,10 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -m 0x12345678 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,man,0x12345678"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09010
@@ -2360,14 +1245,11 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,srvdata,0x1234123456"%%(<dut1_bt_mac>)'
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,srvdata16,0x1234123456"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09011
   <<: *GAP_CASE
@@ -2386,12 +1268,10 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - - "SSC SSC2 blescan -L -c 0 -d 1"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -x 0 -i 0x00-0x00 -s ABCD,ABCDDCBA,12349B5F8000008000100000ABCD0000 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
-  - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
+  - - "SSC SSC2 blescan -D -z start -t 1 -e 1 -c 0 -d 1"
     - - 'P SSC2 RE "\+BTSCANEXT:%%s,srv16,0xABCD"%%(<dut1_bt_mac>)'
       - 'P SSC2 RE "\+BTSCANEXT:%%s,srv32,0xABCDDCBA"%%(<dut1_bt_mac>)'
       - 'P SSC2 RE "\+BTSCANEXT:%%s,srv128,0x12349B5F8000008000100000ABCD0000"%%(<dut1_bt_mac>)'
@@ -2417,7 +1297,7 @@ test cases:
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - - "SSC SSC1 bleadv -D -z start"
     - ["R SSC1 C +BLEADV:Start,OK"]
-  - - "SSC SSC2 blescan -D -z start"
+  - - "SSC SSC2 blescan -D -z start -c 0"
     - - 'P SSC2 RE "\+BTSCAN:INQ,%%s"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09013
@@ -2483,20 +1363,18 @@ test cases:
   cmd set:
   - ""
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3 -l 4"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,srvdata,0x1234123456"%%(<dut1_bt_mac>)'
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,srvdata16,0x1234123456"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
   - *dut1_stop_adv
-  - *set_default_ble_name
   - - "SSC SSC1 bleadv -L -c 0 -n 0 -d 0x1234123456 -t 3 -l 10"
     - ["R SSC1 C +BLEADV:SetAdv,OK"]
   - *dut1_start_adv
   - - "SSC SSC2 blescan -D -z start -t 1 -e 1"
-    - - 'P SSC2 RE "\+BTSCANEXT:%%s,srvdata,0x1234123456"%%(<dut1_bt_mac>)'
+    - - 'P SSC2 RE "\+BTSCANEXT:%%s,srvdata16,0x1234123456"%%(<dut1_bt_mac>)'
       - 'R SSC2 C Complete'
 - ID: BTSTK_GAP_09015
   <<: *GAP_CASE
@@ -2554,18 +1432,19 @@ test cases:
     3. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
   - - "SSC SSC[2-4] bleadv -D -z start"
     - ["P SSC[2-4] C +BLEADV:Start,OK"]
-  - - LOOP 3 1 "[0,1,2]" "[2,3,4]"
+  - - LOOP 3 1 "[0,1,2]" "[2,3,4]" "[2,3,4]"
     - ""
   - - "SSC SSC1 bleconn -C -p 0x1{%d} -a <dut{%d}_bt_mac>"
-    - ['R SSC1 C +BLE:GattcOpen,OK']
-  - - LOOP 3 1 "[2,1,0]" "[4,3,2]"
+    - ['P SSC1 C +BLECONN:GapConnect,OK',  'P SSC{%d} C +BLECONN:GapConnect,OK']
+  - - LOOP 3 1 "[2,1,0]" "[4,3,2]" "[4,3,2]"
     - ""
-  - - "SSC SSC1 bleconn -D -z client -p 0x1{%d}"
-    - ['P SSC1 C +BLE:GattcDisconnect,OK', 'P SSC{%d} C +BLE:GattsDisconnect,OK']
+  - - "SSC SSC1 bleconn -D -z client -p 0x1{%d} -a <dut{%d}_bt_mac>"
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_10002
   <<: *GAP_CASE
   test point 2: BLE GAP master multi connection test
@@ -2580,6 +1459,7 @@ test cases:
     3. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
   - - "SSC SSC[2-4] bleadv -D -z start"
@@ -2587,11 +1467,11 @@ test cases:
   - - LOOP 3 1 "[0,1,2]" "[2,3,4]" "[2,3,4]"
     - ""
   - - "SSC SSC1 bleconn -C -p 0x1{%d} -a <dut{%d}_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC{%d} C +BLE:GattsConnect']
+    - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC{%d} C +BLECONN:GapConnect,OK']
     - - LOOP 3 1 "[2,3,4]" "[2,3,4]"
     - ""
-  - - "SSC SSC{%d} bleconn -D -z server -p 0xA0"
-    - ['P SSC1 C +BLE:GattcDisconnect,OK,001[0-2]', 'P SSC{%d} C +BLE:GattsDisconnect,OK']
+  - - "SSC SSC{%d} bleconn -D -z server -p 0xA0 -r <dut1_bt_mac>"
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK,001[0-2]', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_10003
   <<: *GAP_CASE
   test point 2: BLE GAP master multi connection test
@@ -2606,6 +1486,7 @@ test cases:
     3. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
   - - "SSC SSC[2-5] bleadv -D -z start"
@@ -2613,11 +1494,11 @@ test cases:
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]"
     - ""
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC{%d} C +BLE:GattsConnect']
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC{%d} C +BLECONN:GapConnect,OK']
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]"
     - ""
   - - "SSC SSC1 bleconn -D -z client -p 0x10 -a <dut{%d}_bt_mac>"
-    - ['P SSC1 C +BLE:GattcDisconnect,OK', 'P SSC{%d} C +BLE:GattsDisconnect,OK']
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_10004
   <<: *GAP_CASE
   test point 2: BLE GAP master multi connection test
@@ -2632,6 +1513,7 @@ test cases:
     3. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
   - - "SSC SSC[2-5] bleadv -D -z start"
@@ -2639,11 +1521,11 @@ test cases:
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]"
     - ""
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC{%d} C +BLE:GattsConnect']
-  - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]" "[2,3,4,5]"
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC{%d} C +BLECONN:GapConnect,OK']
+  - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]"
     - ""
-  - - "SSC SSC{%d} bleconn -D -z server -p 0xA0"
-    - ['P SSC1 RE "BLE:GattcDisconnect,OK,0010,%%s"%%(<dut{%d}_bt_mac>)', 'P SSC{%d} C +BLE:GattsDisconnect']
+  - - "SSC SSC{%d} bleconn -D -z server -p 0xA2 -a <dut1_bt_mac>"
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC{%d} C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_11001
   <<: *GAP_CASE
   test point 2: BLE GAP slave multi connection test
@@ -2658,19 +1540,21 @@ test cases:
     3. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:StartService,OK,A000']
+  - *dut1_stop_adv
+  - - "SSC SSC1 gatts -S -z load -p 0xA2"
+    - ['R SSC1 C +GATTS:StartService,OK,A002']
   - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
     - ""
   - - "SSC SSC1 bleadv -D -z start"
     - ["P SSC1 C +BLEADV:Start,OK"]
   - - "SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>"
-    - ['R SSC{%d} C +BLE:GattcConnect,OK,0010', 'R SSC1 C +BLE:GattsConnect']
+    - ['R SSC{%d} C +BLECONN:GapConnect,OK,0010', 'R SSC1 C +BLECONN:GapConnect,OK']
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]"
-  - - "SSC SSC{%d} bleconn -D -z client -p 0x10"
-    - ['P SSC{%d} C +BLE:GattcDisconnect,OK', 'P SSC1 C +BLE:GattsDisconnect,OK']
+  - - "SSC SSC{%d} bleconn -D -z client -p 0x10 -a <dut1_bt_mac>"
+    - ['P SSC{%d} C +BLECONN:GapDisconnect,OK', 'P SSC1 C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_11002
   <<: *GAP_CASE
   test point 2: BLE GAP slave multi connection test
@@ -2685,20 +1569,22 @@ test cases:
     3. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:StartService,OK,A000']
+  - *dut1_stop_adv
+  - - "SSC SSC1 gatts -S -z load -p 0xA2"
+    - ['R SSC1 C +GATTS:StartService,OK,A002']
   - - LOOP 4 2 "[2,3,4,5]" "[2,3,4,5]"
     - ""
   - - "SSC SSC1 bleadv -D -z start"
     - ["P SSC1 C +BLEADV:Start,OK"]
   - - "SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>"
-    - ['R SSC{%d} C +BLE:GattcConnect,OK,0010', 'R SSC1 C +BLE:GattsConnect']
+    - ['R SSC{%d} C +BLECONN:GapConnect,OK,0010', 'R SSC1 C +BLECONN:GapConnect,OK']
   - - LOOP 4 1 "[2,3,4,5]" "[2,3,4,5]"
     - ""
-  - - "SSC SSC1 bleconn -D -z server -p 0xA0 -a <dut{%d}_bt_mac>"
-    - ['P SSC{%d} C +BLE:GattcDisconnect,OK', 'P SSC1 C +BLE:GattsDisconnect,OK']
+  - - "SSC SSC1 bleconn -D -z server -p 0xA2 -a <dut{%d}_bt_mac>"
+    - ['P SSC{%d} C +BLECONN:GapDisconnect,OK', 'P SSC1 C +BLECONN:GapDisconnect,OK']
 - ID: BTSTK_GAP_12001
   <<: *GAP_CASE
   test point 2: BLE GAP multi connection as both master and slave role test
@@ -2715,22 +1601,24 @@ test cases:
     4. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:StartService,OK,A000']
+  - *dut1_stop_adv
+  - - "SSC SSC1 gatts -S -z load -p 0xA2"
+    - ['R SSC1 C +GATTS:StartService,OK,A002']
   - - LOOP 2 2 "[2,3]" "[2,3]"
     - ""
   - - "SSC SSC1 bleadv -D -z start"
     - ["P SSC1 C +BLEADV:Start,OK"]
   - - "SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>"
-    - ['R SSC{%d} C +BLE:GattcConnect,OK,0010', 'P SSC1 C +BLE:GattsConnect']
+    - ['R SSC{%d} C +BLECONN:GapConnect,OK,0010', 'P SSC1 C +BLECONN:GapConnect,OK']
   - - "SSC SSC[4-5] bleadv -D -z start"
     - ["P SSC[4-5] C +BLEADV:Start,OK"]
   - - LOOP 2 1 "[4,5]" "[4,5]"
     - ""
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC{%d} C +BLE:GattsConnect']
+    - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC{%d} C +BLECONN:GapConnect,OK']
   - - "SSC SSC1 bleconn -D -z all"
     - ["P SSC[2-5] C Disconnect"]
 - ID: BTSTK_GAP_12002
@@ -2749,57 +1637,27 @@ test cases:
     4. succeed
   initial condition: BLE_INIT5
   test environment: SSC_T5_1
+  allow fail: 3/5
   cmd set:
   - ""
-  - - "SSC SSC1 gatts -S -z load -p 0xA0"
-    - ['R SSC1 C +GATTS:StartService,OK,A000']
+  - *dut1_stop_adv
+  - - "SSC SSC1 gatts -S -z load -p 0xA2"
+    - ['R SSC1 C +GATTS:StartService,OK,A002']
   - - LOOP 2 2 "[2,3]" "[2,3]"
     - ""
   - - "SSC SSC1 bleadv -D -z start"
     - ["P SSC1 C +BLEADV:Start,OK"]
   - - "SSC SSC{%d} bleconn -C -p 0x10 -a <dut1_bt_mac>"
-    - ['R SSC{%d} C +BLE:GattcConnect,OK,0010', 'R SSC1 C +BLE:GattsConnect']
+    - ['R SSC{%d} C +BLECONN:GapConnect,OK,0010', 'R SSC1 C +BLECONN:GapConnect,OK']
   - - "SSC SSC[4-5] bleadv -D -z start"
     - ["P SSC[4-5] C +BLEADV:Start,OK"]
   - - LOOP 2 1 "[4,5]" "[4,5]"
     - ""
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut{%d}_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC{%d} C +BLE:GattsConnect']
+    - ['R SSC1 C +BLECONN:GapConnect,OK', 'R SSC{%d} C +BLECONN:GapConnect,OK']
   - - LOOP 4 1 "[2,3,4,5]"
   - - "SSC SSC{%d} bleconn -D -z all"
     - ["P SSC1 C Disconnect"]
-- ID: BTSTK_GAP_40001
-  <<: *GAP_CASE
-  auto test: 'No'
-  test point 2: test if BLE work after switch off some sub modules
-  summary: GAP only test
-  steps: |
-    1. download GAP only SSC bin on both DUT
-    2. DUT1 set ascii device name
-    3. stop advertising
-    4. config scan response and start advertising
-    5. DUT2 do active scan
-  expected result: |
-    1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-    5. device name in scan result
-  initial condition: None
-  version: v1 (2017-05-19)
-  cmd set:
-  - ""
-  - - "SSC SSC[1-2] reboot"
-    - ['R SSC[1-2] C !!!ready!!!']
-  - - "SSC SSC[1-2] ble -R"
-    - ["R SSC[1-2] C +BLE:OK"]
-  - *set_default_ble_name
-  - *set_default_adv_data
-  - *dut2_stop_adv
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
-    - ["R SSC2 P <dut1_ble_name>"]
 - ID: BTSTK_GAP_50001
   <<: *GAP_CASE
   category: Performance
@@ -2826,7 +1684,7 @@ test cases:
   CI ready: 'No'
   cmd set:
   - "BLEStress/BLEConnPerformance"
-  - - "test_time = 420"
+  - - "test_time = 20"
     - ""
   - - "average_conn_time = 3"
     - ""
@@ -2888,74 +1746,6 @@ test cases:
   - "BLEStress/BLEAdvScanPerformance"
   - - "test_time = 600"
     - ""
-- ID: BTSTK_GAP_13001
-  <<: *GAP_CASE
-  test point 2: BLE GAP param packet data length test
-  summary: gattc set packet data length at valid length (27-251)
-  steps: |
-    1. DUT1 connect DUT2
-    2. DUT1 set packet data length
-  expected result: |
-    1. succeed
-    2. succeed
-  cmd set:
-  - ""
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC2 C +BLE:GattsConnect']
-  - - LOOP 3 1 "[27,200,251]" "[27,200,251]"
-  - - "SSC SSC1 ble -S -z pktLen -a <dut2_bt_mac> -l {%d}"
-    - ["R SSC1 C +BLECONN:UpdatePktLen,OK,{%d}"]
-- ID: BTSTK_GAP_13002
-  <<: *GAP_CASE
-  test point 2: BLE GAP param packet data length test
-  summary: gattc set packet data length at invalid length
-  steps: |
-    1. DUT1 connect DUT2
-    2. DUT1 set packet data length
-  expected result: |
-    1. succeed
-    2. succeed
-  cmd set:
-  - ""
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC2 C +BLE:GattsConnect']
-  - - LOOP 2 1 "[26,252]" "[27,251]"
-  - - "SSC SSC1 ble -S -z pktLen -a <dut2_bt_mac> -l {%d}"
-    - ["R SSC1 C +BLECONN:UpdatePktLen,OK,{%d}"]
-- ID: BTSTK_GAP_13003
-  <<: *GAP_CASE
-  test point 2: BLE GAP param packet data length test
-  summary: gatts set packet data length at valid length (27-251)
-  steps: |
-    1. DUT1 connect DUT2
-    2. DUT1 set packet data length
-  expected result: |
-    1. succeed
-    2. succeed
-  cmd set:
-  - ""
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC2 C +BLE:GattsConnect']
-  - - LOOP 3 1 "[27,200,251]" "[27,200,251]"
-  - - "SSC SSC2 ble -S -z pktLen -a <dut1_bt_mac> -l {%d}"
-    - ["R SSC2 C +BLECONN:UpdatePktLen,OK,{%d}"]
-- ID: BTSTK_GAP_13004
-  <<: *GAP_CASE
-  test point 2: BLE GAP param packet data length test
-  summary: gatts set packet data length at invalid length
-  steps: |
-    1. DUT1 connect DUT2
-    2. DUT1 set packet data length
-  expected result: |
-    1. succeed
-    2. succeed
-  cmd set:
-  - ""
-  - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['R SSC1 C +BLE:GattcConnect,OK', 'R SSC2 C +BLE:GattsConnect']
-  - - LOOP 2 1 "[26,252]" "[27,251]"
-  - - "SSC SSC2 ble -S -z pktLen -a <dut1_bt_mac> -l {%d}"
-    - ["R SSC2 C +BLECONN:UpdatePktLen,OK,{%d}"]
 - ID: BTSTK_GAP_14001
   <<: *GAP_CASE
   test point 2: BLE GAP set randAddr as random address
@@ -2979,7 +1769,7 @@ test cases:
   - - "SSC SSC1 blescan -D -z start"
     - ['R SSC1 P <static_device_addr> C Complete']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <static_device_addr> -r 1"
-    - ["P SSC1 C +BLE:GattcConnect,OK", "P SSC2 C +BLE:GattsConnect"]
+    - ["P SSC1 C +BLECONN:GapConnect,OK", "P SSC2 C +BLECONN:GapConnect,OK"]
 - ID: BTSTK_GAP_14002
   <<: *GAP_CASE
   test point 2: BLE GAP set as pablic address
@@ -3053,24 +1843,18 @@ test cases:
     2. succeed
   cmd set:
   - ""
-  - - "SSC SSC1 bleadv -D -z stop"
-    - ["R SSC1 C +BLEADV:OK"]
   - - "SSC SSC1 bleadv -L -c 0 -t 3"
     - ["R SSC1 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
   - - "SSC SSC1 ble -S -z privacy -p 1"
     - ["R SSC1 C +BLECONN:SetResAddr,Success"]
-  - - "SSC SSC1 bleadv -D -z start -o 1"
+  - - "SSC SSC1 bleadv -D -z start -o 2"
     - ["R SSC1 C +BLEADV:OK"]
-  - - "SSC SSC2 bleadv -D -z stop"
-    - ["R SSC2 C +BLEADV:OK"]
-  - - "SSC SSC2 blescan -L -c 0"
-    - ["R SSC2 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC2 blescan -D -z start -t 3"
+  - - "SSC SSC2 blescan -D -z start -t 3 -c 0"
     - ["R SSC2 NP <dut1_bt_mac> C +BLESCAN:InquiryComplete"]
 - ID: BTSTK_GAP_14008
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address and reconnect after disconnect
+  summary: BLE pairing and set random address as resolvable private address, reconnect after disconnect
   steps: |
     1. SSC2 set AuthReqMode and IOCAP,set RspKey as Enc and IRK
     2. pairing
@@ -3092,28 +1876,28 @@ test cases:
     - ['P SSC2 C +BLESMP:OK']
   - - "SSC SSC2 blesmp -S -z IOCAP -v 0x03"
     - ['P SSC2 C +BLESMP:OK']
-  - - "SSC SSC2 blesmp -S -z RspKey -v 0x03"
-    - ['P SSC2 C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z RspKey -v 0x02"
+    - ['P SSC[1-2] C +BLESMP:OK']
+  - - "SSC SSC[1-2] blesmp -S -z InitKey -v 0x02"
+    - ['P SSC[1-2] C +BLESMP:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC2 C +BLECONN:GapConnect,OK']
   - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC1 C +BLESMP:SecReq']
-  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
     - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
   - - "SSC SSC1 bleconn -D -z all"
-    - ['P SSC1 C +BLE:GattcDisconnect,OK', 'P SSC2 C +BLE:GattsDisconnect,OK']
+    - ['P SSC1 C +BLECONN:GapDisconnect,OK', 'P SSC2 C +BLECONN:GapDisconnect,OK']
   - - "SSC SSC2 ble -S -z privacy -p 1"
     - ["R SSC2 C +BLECONN:SetResAddr,Success"]
-  - - "SSC SSC2 bleadv -D -z start -o 1"
+  - - "SSC SSC2 bleadv -D -z start -o 2"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z start -t 3"
     - ["R SSC1 P <dut2_bt_mac> C InquiryComplete"]
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+    - ["R SSC1 C +BLECONN:GapConnect,OK", "R SSC2 C +BLECONN:GapConnect,OK"]
 - ID: BTSTK_GAP_14009
   <<: *GAP_CASE
   test point 2: BLE set random address test
-  summary: BLE set random address as resolvable private address and reconnect after reboot
+  summary: BLE pairing and set random address as resolvable private address, reconnect after reboot
   steps: |
     1. SSC2 set AuthReqMode and IOCAP,set RspKey as Enc and IRK
     2. pairing
@@ -3139,33 +1923,29 @@ test cases:
   - - "SSC SSC2 blesmp -S -z RspKey -v 0x03"
     - ['P SSC2 C +BLESMP:OK']
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ['P SSC1 C +BLE:GattcConnect,OK', 'P SSC2 C +BLE:GattsConnect']
+    - ['P SSC1 C +BLECONN:GapConnect,OK', 'P SSC2 C +BLECONN:GapConnect,OK']
   - - "SSC SSC2 blesmp -E -r <dut1_bt_mac> -z Enc"
-    - ['P SSC1 C +BLESMP:SecReq']
-  - - "SSC SSC1 blesmp -R -a 1 -r <dut2_bt_mac>"
     - ['P SSC[1-2] C +BLESMP:AuthComplete,Success,0']
   - - "SSC SSC[1-2] reboot"
     - ['R SSC[1-2] C !!!ready!!!']
   - - "SSC SSC[1-2] ble -R"
     - ["R SSC[1-2] C +BLE:OK"]
-  - - "SSC SSC2 gatts -S -z load -p 0xA0"
-    - ['R SSC2 C +GATTS:LoadProfile,OK']
+  - - "SSC SSC2 gatts -S -z load -p 0xA2"
+    - ['R SSC2 C +GATTS:StartService,OK,A002']
   - - "SSC SSC2 ble -S -z privacy -p 1"
     - ["R SSC2 C +BLECONN:SetResAddr,Success"]
   - - "SSC SSC2 bleadv -D -z stop"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC2 bleadv -L -c 0 -t 3"
     - ["R SSC2 C +BLEADV:SetAdv,OK C +BLEADV:SetScanRes,OK"]
-  - - "SSC SSC2 bleadv -D -z start -o 1"
+  - - "SSC SSC2 bleadv -D -z start -o 2"
     - ["R SSC2 C +BLEADV:OK"]
   - - "SSC SSC1 blescan -D -z stop"
     - ["R SSC1 C +BLESCAN:OK"]
-  - - "SSC SSC1 blescan -L -c 0"
-    - ["R SSC1 C +BLESCAN:SetScanParam,OK"]
-  - - "SSC SSC1 blescan -D -z start -t 3"
+  - - "SSC SSC1 blescan -D -z start -t 3 -c 0"
     - ["R SSC1 P <dut2_bt_mac> C InquiryComplete"]
   - - "SSC SSC1 bleconn -C -p 0x10 -a <dut2_bt_mac>"
-    - ["R SSC1 C +BLE:GattcConnect,OK", "R SSC2 C +BLE:GattsConnect"]
+    - ["R SSC1 C +BLECONN:GapConnect,OK", "R SSC2 C +BLECONN:GapConnect,OK"]
 - ID: BTSTK_GAP_15001
   <<: *GAP_CASE
   test point 2: BLE GAP white list test
@@ -3253,3 +2033,51 @@ test cases:
     - ['P SSC1 C +BLE:GetWhiteList,OK,0']
   - - "SSC SSC1 ble -W -a c0:9b:0e:36:6d:7c -z add"
     - ['P SSC1 C +BLE:AddWhiteList,Fail']
+- ID: BTSTK_GAP_16001
+  <<: *GAP_CASE
+  test point 2: BLE low power test
+  summary: test adv current and adv interval 32-32
+  category: Performance
+  auto test: 'No'
+  steps: |
+   1. DUT2 start adv
+   2. test DUT2 current
+  expected result: |
+   1. succeed
+   2. succeed
+  cmd set:
+  - "BLEFunction/BLELowPower"
+  - - op_test = "start_adv"
+    - ''
+- ID: BTSTK_GAP_16002
+  <<: *GAP_CASE
+  test point 2: BLE low power test
+  summary: test scan current and scan window/interval 04
+  category: Performance
+  auto test: 'No'
+  steps: |
+   1. DUT2 start scan
+   2. test DUT2 current
+  expected result: |
+   1. succeed
+   2. succeed
+  cmd set:
+  - "BLEFunction/BLELowPower"
+  - - op_test = "start_scan"
+    - ""
+- ID: BTSTK_GAP_16003
+  <<: *GAP_CASE
+  test point 2: BLE low power test
+  summary: test connect current and interval 6-6
+  category: Performance
+  auto test: 'No'
+  steps: |
+   1. DUT1 connect to DUT2
+   2. test DUT2 current
+  expected result: |
+   1. succeed
+   2. succeed
+  cmd set:
+  - "BLEFunction/BLELowPower"
+  - - op_test = "do_connect"
+    - ""

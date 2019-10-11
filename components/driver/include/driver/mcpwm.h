@@ -19,7 +19,6 @@
 #include "soc/soc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
-#include "esp_intr.h"
 #include "esp_intr_alloc.h"
 
 #ifdef __cplusplus

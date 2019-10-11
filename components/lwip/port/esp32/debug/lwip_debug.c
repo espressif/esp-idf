@@ -191,7 +191,6 @@ void dbg_lwip_stats_show(void)
     IP6_FRAG_STATS_DISPLAY();
     MLD6_STATS_DISPLAY();
     ND6_STATS_DISPLAY();
-    ESP_STATS_DROP_DISPLAY();
 }
 
 #if (ESP_STATS_MEM == 1)

@@ -16,8 +16,8 @@ menu "Application Level Tracing"
     config ESP32_APPTRACE_ENABLE
         bool
         depends on !ESP32_TRAX
-        select MEMMAP_TRACEMEM
-        select MEMMAP_TRACEMEM_TWOBANKS
+        select ESP32_MEMMAP_TRACEMEM
+        select ESP32_MEMMAP_TRACEMEM_TWOBANKS
         default n
         help
             Enables/disable application tracing module.
@@ -37,7 +37,7 @@ menu "Application Level Tracing"
             Timeout for flushing last trace data to host in case of panic. In ms.
             Use -1 to disable timeout and wait forever.
 
-    config ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH
+    config ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
         int "Threshold for flushing last trace data to host on panic"
         depends on ESP32_APPTRACE_DEST_TRAX
         range 0 16384
@@ -106,6 +106,14 @@ menu "Application Level Tracing"
             default 16
             help
                 Configures maximum supported tasks in sysview debug
+
+        config SYSVIEW_BUF_WAIT_TMO
+            int "Trace buffer wait timeout"
+            depends on SYSVIEW_ENABLE
+            default 500
+            help
+                Configures timeout (in us) to wait for free space in trace buffer.
+                Set to -1 to wait forever and avoid lost events.
 
         config SYSVIEW_EVT_OVERFLOW_ENABLE
             bool "Trace Buffer Overflow Event"

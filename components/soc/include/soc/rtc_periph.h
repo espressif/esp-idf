@@ -12,13 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_RTC_PERIPH_H
-#define _SOC_RTC_PERIPH_H
+#pragma once
 #include <stdint.h>
 #include "soc/rtc_io_reg.h"
+#include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_cntl_struct.h"
 #include "soc/rtc_gpio_channel.h"
 #include "soc/gpio_pins.h"
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -58,5 +60,3 @@ extern const rtc_gpio_desc_t rtc_gpio_desc[GPIO_PIN_COUNT];
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _SOC_RTC_PERIPH_H

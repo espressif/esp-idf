@@ -6,8 +6,8 @@
 
 static const char TAG[] = "test_psram";
 
-#ifdef CONFIG_SPIRAM_SUPPORT
-static void test_psram_content()
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
+static void test_psram_content(void)
 {
     const int test_size = 2048;
     uint32_t *test_area = heap_caps_malloc(test_size, MALLOC_CAP_SPIRAM);
@@ -40,7 +40,7 @@ static void test_psram_content()
 TEST_CASE("can use spi when not being used by psram", "[psram_4m]")
 {
     spi_host_device_t host;
-#if !CONFIG_SPIRAM_SUPPORT || !CONFIG_SPIRAM_SPEED_80M || CONFIG_SPIRAM_BANKSWITCH_ENABLE
+#if !CONFIG_ESP32_SPIRAM_SUPPORT || !CONFIG_SPIRAM_SPEED_80M || CONFIG_SPIRAM_BANKSWITCH_ENABLE
     //currently all 8M psram don't need more SPI peripherals
     host = -1;
 #elif CONFIG_SPIRAM_OCCUPY_HSPI_HOST
@@ -66,7 +66,7 @@ TEST_CASE("can use spi when not being used by psram", "[psram_4m]")
         TEST_ASSERT(claim_vspi==true);
     }
 
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
     test_psram_content();
 #endif
 }

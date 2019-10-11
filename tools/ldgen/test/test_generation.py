@@ -29,28 +29,23 @@ from generation import SectionsInfo
 from generation import TemplateModel
 from generation import GenerationModel
 
-from fragments import FragmentFileModel
-from fragments import Mapping
-from fragments import Sections
-from fragments import Scheme
+from fragments import FragmentFile
 
 from sdkconfig import SDKConfig
+from io import StringIO
 
 
 class GenerationModelTest(unittest.TestCase):
 
     def setUp(self):
         self.model = GenerationModel()
-        self.sdkconfig = None
         self.sections_info = None
         self.script_model = None
 
-        with open("data/Kconfig") as kconfig_file_obj:
-            with open("data/sdkconfig") as sdkconfig_file_obj:
-                self.sdkconfig = SDKConfig(kconfig_file_obj, sdkconfig_file_obj)
+        self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
 
         with open("data/sample.lf") as fragment_file_obj:
-            fragment_file = FragmentFileModel(fragment_file_obj)
+            fragment_file = FragmentFile(fragment_file_obj, self.sdkconfig)
             self.model.add_fragments_from_file(fragment_file)
 
         self.sections_info = SectionsInfo()
@@ -61,29 +56,25 @@ class GenerationModelTest(unittest.TestCase):
         with open("data/template.ld") as template_file_obj:
             self.script_model = TemplateModel(template_file_obj)
 
-    def _add_mapping(self, text):
-        parser = Mapping.get_fragment_grammar()
-        fragment = parser.parseString(text, parseAll=True)
-        self.model.mappings[fragment[0].name] = fragment[0]
+    @staticmethod
+    def create_fragment_file(contents, name="test_fragment.lf"):
+        f = StringIO(contents)
+        f.name = name
+        return f
 
-    def _add_sections(self, text):
-        parser = Sections.get_fragment_grammar()
-        fragment = parser.parseString(text, parseAll=True)
-        self.model.sections[fragment[0].name] = fragment[0]
+    def add_fragments(self, text):
+        fragment_file = self.create_fragment_file(text)
+        fragment_file = FragmentFile(fragment_file, self.sdkconfig)
+        self.model.add_fragments_from_file(fragment_file)
 
-    def _add_scheme(self, text):
-        parser = Scheme.get_fragment_grammar()
-        fragment = parser.parseString(text, parseAll=True)
-        self.model.schemes[fragment[0].name] = fragment[0]
-
-    def _write(self, expected, actual):
-        self.script_model.fill(expected, self.sdkconfig)
+    def write(self, expected, actual):
+        self.script_model.fill(expected)
         self.script_model.write(open("expected.ld", "w"))
 
-        self.script_model.fill(actual, self.sdkconfig)
+        self.script_model.fill(actual)
         self.script_model.write(open("actual.ld", "w"))
 
-    def _generate_default_rules(self):
+    def generate_default_rules(self):
         rules = dict()
 
         # flash_text
@@ -100,13 +91,13 @@ class GenerationModelTest(unittest.TestCase):
 
         # dram0_data
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["data"].entries + self.model.sections["dram"].entries, "dram0_data")
+        rule = PlacementRule(None, None, None, self.model.sections["data"].entries | self.model.sections["dram"].entries, "dram0_data")
         placement_rules.append(rule)
         rules["dram0_data"] = placement_rules
 
         # dram0_bss
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "dram0_bss")
+        rule = PlacementRule(None, None, None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "dram0_bss")
         placement_rules.append(rule)
         rules["dram0_bss"] = placement_rules
 
@@ -124,7 +115,7 @@ class GenerationModelTest(unittest.TestCase):
 
         # rtc_data
         placement_rules = list()
-        rule = PlacementRule(None, None, None, self.model.sections["rtc_data"].entries + self.model.sections["rtc_rodata"].entries, "rtc_data")
+        rule = PlacementRule(None, None, None, self.model.sections["rtc_data"].entries | self.model.sections["rtc_rodata"].entries, "rtc_data")
         placement_rules.append(rule)
         rules["rtc_data"] = placement_rules
 
@@ -136,7 +127,7 @@ class GenerationModelTest(unittest.TestCase):
 
         return rules
 
-    def _compare_rules(self, expected, actual):
+    def compare_rules(self, expected, actual):
         self.assertEqual(set(expected.keys()), set(actual.keys()))
 
         for (target, rules) in actual.items():
@@ -154,39 +145,38 @@ class GenerationModelTest(unittest.TestCase):
             for expected_target_rule in expected_target_rules:
                 self.assertTrue(expected_target_rule in actual_target_rules, message + str(expected_target_rule))
 
-    def _get_default(self, target, rules):
+    def get_default(self, target, rules):
         return rules[target][0]
 
-    def test_rule_generation_blank(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-        """
+    def test_rule_generation_default(self):
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    * (default)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
+        actual = self.model.generate_rules(self.sections_info)
+        expected = self.generate_default_rules()
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
-
-        expected = self._generate_default_rules()
-
-        self.assertEqual(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_1(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            * (noflash)
-        """
-        self._add_mapping(normal)
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    * (noflash)
+"""
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "*", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -199,30 +189,30 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E1)
         expected["dram0_data"].append(dram0_data_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_2(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            timers (rtc)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    timers (rtc)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         # Add the exclusions
         flash_text_default.add_exclusion(rtc_text_E1)
@@ -235,31 +225,31 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E1)
         expected["rtc_bss"].append(rtc_bss_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_3(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            timers (rtc)
-            * (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    timers (rtc)
+    * (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "*", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -282,39 +272,39 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E1)
         expected["rtc_bss"].append(rtc_bss_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_4(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine (rtc)
-            event_groups (noflash)
-            timers (rtc)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (rtc)
+    event_groups (noflash)
+    timers (rtc)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         # Add the exclusions
         flash_text_default.add_exclusion(rtc_text_E3)
@@ -342,40 +332,40 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E1)
         expected["rtc_bss"].append(rtc_bss_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_5(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine (rtc)
-            event_groups (noflash)
-            timers (rtc)
-            * (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (rtc)
+    event_groups (noflash)
+    timers (rtc)
+    * (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E3 = PlacementRule("libfreertos.a", "timers", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E4 = PlacementRule("libfreertos.a", "*", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E4 = PlacementRule("libfreertos.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -412,24 +402,24 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E1)
         expected["rtc_bss"].append(rtc_bss_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_6(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckPendingReadyList (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
@@ -451,26 +441,26 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E1)
         expected["dram0_data"].append(dram0_data_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_7(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckPendingReadyList (noflash)
-            croutine:prvCheckDelayedList (noflash)
-            croutine:xCoRoutineCreate (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash)
+    croutine:prvCheckDelayedList (noflash)
+    croutine:xCoRoutineCreate (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
@@ -510,37 +500,37 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E3)
         expected["dram0_data"].append(dram0_data_E3)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_8(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckPendingReadyList (noflash)
-            croutine:prvCheckDelayedList (rtc)
-            croutine:xCoRoutineCreate (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckPendingReadyList (noflash)
+    croutine:prvCheckDelayedList (rtc)
+    croutine:xCoRoutineCreate (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckPendingReadyList", self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
         rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
         rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E3 = PlacementRule("libfreertos.a", "croutine", "xCoRoutineCreate", self.model.sections["rodata"].entries, "dram0_data")
@@ -583,33 +573,33 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E3)
         expected["dram0_data"].append(dram0_data_E3)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_9(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckDelayedList (rtc)
-            croutine (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckDelayedList (rtc)
+    croutine (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
         rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
         rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -641,34 +631,34 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E1)
         expected["rtc_bss"].append(rtc_bss_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_10(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckDelayedList (rtc)
-            * (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckDelayedList (rtc)
+    * (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        iram0_text_default = self._get_default("iram0_text", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        iram0_text_default = self.get_default("iram0_text", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
         rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
         rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
@@ -704,36 +694,36 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E1)
         expected["rtc_bss"].append(rtc_bss_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_11(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckDelayedList (noflash)
-            croutine (rtc)
-            * (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckDelayedList (noflash)
+    croutine (rtc)
+    * (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        iram0_text_default = self._get_default("iram0_text", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        iram0_text_default = self.get_default("iram0_text", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
@@ -762,41 +752,41 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E3)
         expected["dram0_data"].append(dram0_data_E3)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_12(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckDelayedList (rtc)
-            croutine (noflash)
-            * (rtc)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckDelayedList (rtc)
+    croutine (noflash)
+    * (rtc)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         rtc_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "rtc_text")
         rtc_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
         rtc_bss_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList",
-                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E2 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E3 = PlacementRule("libfreertos.a", None, None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         rtc_data_extra = PlacementRule("libfreertos.a", "croutine", None, [".data.*"], "rtc_data")
         rtc_bss_extra = PlacementRule("libfreertos.a", "croutine", None, [".bss.*"], "rtc_bss")
@@ -832,30 +822,30 @@ class GenerationModelTest(unittest.TestCase):
         expected["rtc_data"].append(rtc_data_E3)
         expected["rtc_bss"].append(rtc_bss_E3)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_13(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckDelayedList (noflash)
-            event_groups:xEventGroupCreate (noflash)
-            croutine (rtc)
-            event_groups (rtc)
-            * (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckDelayedList (noflash)
+    event_groups:xEventGroupCreate (noflash)
+    croutine (rtc)
+    event_groups (rtc)
+    * (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
@@ -864,14 +854,14 @@ class GenerationModelTest(unittest.TestCase):
         dram0_data_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         rtc_text_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "rtc_text")
         rtc_data_E4 = PlacementRule("libfreertos.a", "event_groups", None,
-                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
         rtc_bss_E4 = PlacementRule("libfreertos.a", "event_groups", None,
-                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E5 = PlacementRule("libfreertos.a", None, None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E5 = PlacementRule("libfreertos.a", None, None, self.model.sections["rodata"].entries, "dram0_data")
@@ -913,42 +903,42 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E5)
         expected["dram0_data"].append(dram0_data_E5)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_14(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine:prvCheckDelayedList (noflash)
-            event_groups:xEventGroupCreate (rtc)
-            croutine (rtc)
-            event_groups (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine:prvCheckDelayedList (noflash)
+    event_groups:xEventGroupCreate (rtc)
+    croutine (rtc)
+    event_groups (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
-        dram0_data_default = self._get_default("dram0_data", expected)
-        dram0_bss_default = self._get_default("dram0_bss", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+        dram0_data_default = self.get_default("dram0_data", expected)
+        dram0_bss_default = self.get_default("dram0_bss", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", "prvCheckDelayedList", self.model.sections["rodata"].entries, "dram0_data")
 
         rtc_text_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate", self.model.sections["text"].entries, "rtc_text")
         rtc_data_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate",
-                                    self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
+                                    self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
         rtc_bss_E2 = PlacementRule("libfreertos.a", "event_groups", "xEventGroupCreate",
-                                   self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+                                   self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         rtc_text_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "rtc_text")
-        rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries + self.model.sections["rodata"].entries, "rtc_data")
-        rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries + self.model.sections["common"].entries, "rtc_bss")
+        rtc_data_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["data"].entries | self.model.sections["rodata"].entries, "rtc_data")
+        rtc_bss_E3 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["bss"].entries | self.model.sections["common"].entries, "rtc_bss")
 
         iram0_text_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E4 = PlacementRule("libfreertos.a", "event_groups", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -993,25 +983,25 @@ class GenerationModelTest(unittest.TestCase):
         expected["dram0_data"].append(dram0_data_extra)
         expected["dram0_bss"].append(dram0_bss_extra)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_15(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine (noflash_data)
-            croutine (noflash_text)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash_data)
+    croutine (noflash_text)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -1024,25 +1014,25 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E1)
         expected["dram0_data"].append(dram0_data_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_nominal_16(self):
-        normal = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine (noflash_data)
-            croutine (noflash)
-        """
+        normal = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (noflash_data)
+    croutine (noflash)
+"""
 
-        self._add_mapping(normal)
+        self.add_fragments(normal)
 
-        actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
+        actual = self.model.generate_rules(self.sections_info)
 
-        expected = self._generate_default_rules()
+        expected = self.generate_default_rules()
 
-        flash_text_default = self._get_default("flash_text", expected)
-        flash_rodata_default = self._get_default("flash_rodata", expected)
+        flash_text_default = self.get_default("flash_text", expected)
+        flash_rodata_default = self.get_default("flash_rodata", expected)
 
         iram0_text_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["text"].entries, "iram0_text")
         dram0_data_E1 = PlacementRule("libfreertos.a", "croutine", None, self.model.sections["rodata"].entries, "dram0_data")
@@ -1055,60 +1045,58 @@ class GenerationModelTest(unittest.TestCase):
         expected["iram0_text"].append(iram0_text_E1)
         expected["dram0_data"].append(dram0_data_E1)
 
-        self._compare_rules(expected, actual)
+        self.compare_rules(expected, actual)
 
     def test_rule_generation_conflict(self):
-        conflict_mapping = """
-        [mapping]
-        archive: libfreertos.a
-        entries:
-            croutine (conflict)
-            croutine (noflash)
-        """
+        conflict_mapping = u"""
+[mapping:test]
+archive: libfreertos.a
+entries:
+    croutine (conflict)
+    croutine (noflash)
 
-        conflict_scheme = """
-        [scheme:conflict]
-        entries:
-            rodata -> dram0_data
-            bss -> dram0_data
-        """
-
-        self._add_scheme(conflict_scheme)
-        self._add_mapping(conflict_mapping)
+[scheme:conflict]
+entries:
+    rodata -> dram0_data
+    bss -> dram0_data
+"""
+        self.add_fragments(conflict_mapping)
 
         with self.assertRaises(GenerationException):
-            self.model.generate_rules(self.sdkconfig, self.sections_info)
+            self.model.generate_rules(self.sections_info)
 
     def test_rule_generation_condition(self):
-        generation_with_condition = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : PERFORMANCE_LEVEL = 0
-            : PERFORMANCE_LEVEL = 1
-            obj1 (noflash)
-            : PERFORMANCE_LEVEL = 2
-            obj1 (noflash)
-            obj2 (noflash)
-            : PERFORMANCE_LEVEL = 3
-            obj1 (noflash)
-            obj2 (noflash)
-            obj3 (noflash)
-        """
-
-        self._add_mapping(generation_with_condition)
+        generation_with_condition = u"""
+[mapping:test]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL = 1:
+        obj1 (noflash)
+    elif PERFORMANCE_LEVEL = 2:
+        obj1 (noflash)
+        obj2 (noflash)
+    elif PERFORMANCE_LEVEL = 3:
+        obj1 (noflash)
+        obj2 (noflash)
+        obj3 (noflash)
+    else: # PERFORMANCE_LEVEL = 0
+        * (default)
+"""
 
         for perf_level in range(0, 4):
             self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
 
-            actual = self.model.generate_rules(self.sdkconfig, self.sections_info)
-            expected = self._generate_default_rules()
+            self.model.mappings = {}
+            self.add_fragments(generation_with_condition)
 
-            flash_text_default = self._get_default("flash_text", expected)
-            flash_rodata_default = self._get_default("flash_rodata", expected)
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
 
             if perf_level < 4:
                 for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
                     iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
                     dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
 
@@ -1118,7 +1106,248 @@ class GenerationModelTest(unittest.TestCase):
                     expected["iram0_text"].append(iram_rule)
                     expected["dram0_data"].append(dram_rule)
 
-            self._compare_rules(expected, actual)
+            self.compare_rules(expected, actual)
+
+    def test_rule_generation_empty_entries(self):
+        normal = u"""
+[mapping:test]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL >= 1: # is false, generate no special rules
+        obj.a (noflash)
+"""
+
+        self.add_fragments(normal)
+        actual = self.model.generate_rules(self.sections_info)
+        expected = self.generate_default_rules()  # only default rules
+        self.compare_rules(expected, actual)
+
+    def test_conditional_sections_1(self):
+        generation_with_condition = u"""
+[sections:cond_text_data]
+entries:
+    if PERFORMANCE_LEVEL >= 1:
+        .text+
+        .literal+
+    else:
+        .data+
+
+[scheme:cond_noflash]
+entries:
+    if PERFORMANCE_LEVEL >= 1:
+        cond_text_data -> iram0_text
+    else:
+        cond_text_data -> dram0_data
+
+[mapping:test]
+archive: lib.a
+entries:
+    * (cond_noflash)
+"""
+
+        self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value("1")
+        self.add_fragments(generation_with_condition)
+
+        actual = self.model.generate_rules(self.sections_info)
+        expected = self.generate_default_rules()
+
+        flash_text_default = self.get_default("flash_text", expected)
+
+        iram0_text_E1 = PlacementRule("lib.a", "*", None, self.model.sections["text"].entries, "iram0_text")
+
+        # Add the exclusions
+        flash_text_default.add_exclusion(iram0_text_E1)
+
+        # Add to the placement rules list
+        expected["iram0_text"].append(iram0_text_E1)
+
+        self.compare_rules(expected, actual)
+
+    def test_conditional_sections_2(self):
+        generation_with_condition = u"""
+[sections:cond_text_data]
+entries:
+    if PERFORMANCE_LEVEL >= 1:
+        .text+
+        .literal+
+    else:
+        .rodata+
+
+[scheme:cond_noflash]
+entries:
+    if PERFORMANCE_LEVEL >= 1:
+        cond_text_data -> iram0_text
+    else:
+        cond_text_data -> dram0_data
+
+[mapping:test]
+archive: lib.a
+entries:
+    * (cond_noflash)
+"""
+
+        self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value("0")
+        self.add_fragments(generation_with_condition)
+
+        actual = self.model.generate_rules(self.sections_info)
+        expected = self.generate_default_rules()
+
+        flash_rodata_default = self.get_default("flash_rodata", expected)
+
+        dram0_data_E1 = PlacementRule("lib.a", "*", None, self.model.sections["rodata"].entries, "dram0_data")
+
+        # Add the exclusions
+        flash_rodata_default.add_exclusion(dram0_data_E1)
+
+        # Add to the placement rules list
+        expected["dram0_data"].append(dram0_data_E1)
+
+        self.compare_rules(expected, actual)
+
+    def test_rule_generation_condition_with_deprecated_mapping(self):
+        generation_with_condition = u"""
+[mapping]
+archive: lib.a
+entries:
+    : PERFORMANCE_LEVEL = 0
+    : PERFORMANCE_LEVEL = 1
+    obj1 (noflash)
+    : PERFORMANCE_LEVEL = 2
+    obj1 (noflash)
+    obj2 (noflash)
+    : PERFORMANCE_LEVEL = 3
+    obj1 (noflash)
+    obj2 (noflash)
+    obj3 (noflash)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            self.model.mappings = {}
+            self.add_fragments(generation_with_condition)
+
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self.compare_rules(expected, actual)
+
+    def test_rule_generation_multiple_deprecated_mapping_definitions(self):
+        multiple_deprecated_definitions = u"""
+[mapping]
+archive: lib.a
+entries:
+    : PERFORMANCE_LEVEL = 0
+    : PERFORMANCE_LEVEL = 1
+    obj1 (noflash)
+    : PERFORMANCE_LEVEL = 2
+    obj1 (noflash)
+    : PERFORMANCE_LEVEL = 3
+    obj1 (noflash)
+
+[mapping]
+archive: lib.a
+entries:
+    : PERFORMANCE_LEVEL = 1
+    obj1 (noflash) # ignore duplicate definition
+    : PERFORMANCE_LEVEL = 2
+    obj2 (noflash)
+    : PERFORMANCE_LEVEL = 3
+    obj2 (noflash)
+    obj3 (noflash)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            self.model.mappings = {}
+            self.add_fragments(multiple_deprecated_definitions)
+
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self.compare_rules(expected, actual)
+
+    def test_rule_generation_multiple_mapping_definitions(self):
+        multiple_deprecated_definitions = u"""
+[mapping:base]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL = 1:
+        obj1 (noflash)
+    elif PERFORMANCE_LEVEL = 2:
+        obj1 (noflash)
+    elif PERFORMANCE_LEVEL = 3:
+        obj1 (noflash)
+    else:
+        * (default)
+
+[mapping:extra]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL = 1:
+        obj1 (noflash) # ignore duplicate definition
+    elif PERFORMANCE_LEVEL = 2:
+        obj2 (noflash)
+    elif PERFORMANCE_LEVEL = 3:
+        obj2 (noflash)
+        obj3 (noflash)
+    else:
+        * (default)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            self.model.mappings = {}
+            self.add_fragments(multiple_deprecated_definitions)
+
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self.compare_rules(expected, actual)
 
 
 if __name__ == "__main__":

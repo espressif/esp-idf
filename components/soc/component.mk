@@ -1,6 +1,6 @@
 SOC_NAME := $(IDF_TARGET)
 
-COMPONENT_SRCDIRS := $(SOC_NAME) src/
+COMPONENT_SRCDIRS := $(SOC_NAME) src src/hal
 
 COMPONENT_ADD_INCLUDEDIRS := $(SOC_NAME)/include include
 

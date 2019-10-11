@@ -1,6 +1,7 @@
-include(component_utils)
-
-macro(idf_set_target)
+#
+# Set the target used for the standard project build.
+#
+macro(__target_init)
     # Input is IDF_TARGET environement variable
     set(env_idf_target $ENV{IDF_TARGET})
 
@@ -26,28 +27,38 @@ macro(idf_set_target)
 
     # Finally, set IDF_TARGET in cache
     set(IDF_TARGET ${env_idf_target} CACHE STRING "IDF Build Target")
-
-    message(STATUS "Building for target ${IDF_TARGET}")
 endmacro()
 
-macro(idf_check_config_target)
-    if(NOT ${IDF_TARGET} STREQUAL ${CONFIG_IDF_TARGET})
+#
+# Check that the set build target and the config target matches.
+#
+function(__target_check)
+    # Should be called after sdkconfig CMake file has been included.
+    idf_build_get_property(idf_target IDF_TARGET)
+    if(NOT ${idf_target} STREQUAL ${CONFIG_IDF_TARGET})
         message(FATAL_ERROR "CONFIG_IDF_TARGET in sdkconfig does not match "
             "IDF_TARGET environement variable. To change the target, delete "
             "sdkconfig file and build the project again.")
     endif()
-endmacro()
+endfunction()
 
-macro(idf_set_toolchain)
-    # First try to load the toolchain file from the tools/cmake/ directory of IDF
-    set(toolchain_file_global $ENV{IDF_PATH}/tools/cmake/toolchain-${IDF_TARGET}.cmake)
+#
+# Used by the project CMake file to set the toolchain before project() call.
+#
+macro(__target_set_toolchain)
+    idf_build_get_property(idf_path IDF_PATH)
+    # First try to load the toolchain file from the tools/cmake/directory of IDF
+    set(toolchain_file_global ${idf_path}/tools/cmake/toolchain-${IDF_TARGET}.cmake)
     if(EXISTS ${toolchain_file_global})
         set(CMAKE_TOOLCHAIN_FILE ${toolchain_file_global})
     else()
-        # Try to load the toolchain file from the directory of ${IDF_TARGET} component
-        components_find_all("${IDF_COMPONENT_DIRS}" ALL_COMPONENT_PATHS ALL_COMPONENTS ALL_TEST_COMPONENTS)
-        find_component_path(${IDF_TARGET} "${ALL_COMPONENTS}" "${ALL_COMPONENT_PATHS}" target_component_path)
-        set(toolchain_file_component ${target_component_path}/toolchain-${IDF_TARGET}.cmake)
+        __component_get_target(component_target ${IDF_TARGET})
+        if(NOT component_target)
+            message(FATAL_ERROR "Unable to resolve '${IDF_TARGET}' for setting toolchain file.")
+        endif()
+        get_property(component_dir TARGET ${component_target} PROPERTY COMPONENT_DIR)
+        # Try to load the toolchain file from the directory of IDF_TARGET component
+        set(toolchain_file_component ${component_dir}/toolchain-${IDF_TARGET}.cmake)
         if(EXISTS ${toolchain_file_component})
             set(CMAKE_TOOLCHAIN_FILE ${toolchain_file_component})
         else()

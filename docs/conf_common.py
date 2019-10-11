@@ -18,6 +18,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import sys
 import os
+import re
 import subprocess
 
 # Note: If extensions (or modules to document with autodoc) are in another directory,
@@ -92,13 +93,16 @@ temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
 
 kconfigs = find_component_files("../../components", "Kconfig")
 kconfig_projbuilds = find_component_files("../../components", "Kconfig.projbuild")
+sdkconfig_renames = find_component_files("../../components", "sdkconfig.rename")
 
 confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
+                "--sdkconfig-rename", "../../sdkconfig.rename",
                 "--config", temp_sdkconfig_path,
                 "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
                 "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
+                "--env", "COMPONENT_SDKCONFIG_RENAMES={}".format(" ".join(sdkconfig_renames)),
                 "--env", "IDF_PATH={}".format(idf_path),
                 "--output", "docs", kconfig_inc_path + '.in'
                 ]
@@ -150,15 +154,13 @@ extensions = ['breathe',
               'sphinxcontrib.rackdiag',
               'sphinxcontrib.packetdiag',
               'html_redirects',
+              'sphinx.ext.todo',
               ]
 
-# Set up font for blockdiag, nwdiag, rackdiag and packetdiag
-blockdiag_fontpath = '../_static/DejaVuSans.ttf'
-seqdiag_fontpath = '../_static/DejaVuSans.ttf'
-actdiag_fontpath = '../_static/DejaVuSans.ttf'
-nwdiag_fontpath = '../_static/DejaVuSans.ttf'
-rackdiag_fontpath = '../_static/DejaVuSans.ttf'
-packetdiag_fontpath = '../_static/DejaVuSans.ttf'
+# sphinx.ext.todo extension parameters
+# If the below parameter is True, the extension
+# produces output, else it produces nothing.
+todo_include_todos = False
 
 # Enabling this fixes cropping of blockdiag edge labels
 seqdiag_antialias = True
@@ -243,19 +245,14 @@ pygments_style = 'sphinx'
 
 # Custom added feature to allow redirecting old URLs
 #
-# list of tuples (old_url, new_url) for pages to redirect
-# (URLs should be relative to document root, only)
-html_redirect_pages = [('api-reference/ethernet/index', 'api-reference/network/index'),
-                       ('api-reference/ethernet/esp_eth', 'api-reference/network/esp_eth'),
-                       ('api-reference/mesh/index', 'api-reference/network/index'),
-                       ('api-reference/mesh/esp_mesh', 'api-reference/network/esp_mesh'),
-                       ('api-reference/wifi/index', 'api-reference/network/index'),
-                       ('api-reference/wifi/esp_now', 'api-reference/network/esp_now'),
-                       ('api-reference/wifi/esp_smartconfig', 'api-reference/network/esp_smartconfig'),
-                       ('api-reference/wifi/esp_wifi', 'api-reference/network/esp_wifi'),
-                       ('api-reference/system/tcpip_adapter', 'api-reference/network/tcpip_adapter'),
-                       ('get-started/idf-monitor', 'api-guides/tools/idf-monitor'),
-                       ('get-started-cmake/idf-monitor', 'api-guides/tools/idf-monitor'),]
+# Redirects should be listed in page_redirects.xt
+#
+with open("../page_redirects.txt") as f:
+    lines = [re.sub(" +", " ", l.strip()) for l in f.readlines() if l.strip() != "" and not l.startswith("#")]
+    for line in lines:  # check for well-formed entries
+        if len(line.split(' ')) != 2:
+            raise RuntimeError("Invalid line in page_redirects.txt: %s" % line)
+html_redirect_pages = [tuple(l.split(' ')) for l in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.

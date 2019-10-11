@@ -1,9 +1,9 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -15,23 +15,21 @@
 
 #include <string.h>
 #include "driver/spi_master.h"
-#include "soc/dport_reg.h"
 #include "soc/spi_periph.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_types.h"
 #include "esp_attr.h"
-#include "esp_intr.h"
-#include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
-#include "esp32/rom/lldesc.h"
+#include "soc/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_heap_caps.h"
 #include "driver/spi_common.h"
 #include "stdatomic.h"
+#include "hal/spi_hal.h"
 
 static const char *SPI_TAG = "spi";
 
@@ -51,14 +49,13 @@ static const char *SPI_TAG = "spi";
 
 typedef struct spi_device_t spi_device_t;
 
-#define FUNC_SPI    1   //all pins of HSPI and VSPI shares this function number
 #define FUNC_GPIO   PIN_FUNC_GPIO
-
 
 #define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
 
 //Periph 1 is 'claimed' by SPI flash code.
-static atomic_bool spi_periph_claimed[3] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false)};
+static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false),
+};
 static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
 static uint8_t spi_dma_chan_enabled = 0;
 static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
@@ -98,15 +95,20 @@ int spicommon_irqsource_for_host(spi_host_device_t host)
     return spi_periph_signal[host].irq;
 }
 
-spi_dev_t *spicommon_hw_for_host(spi_host_device_t host)
+int spicommon_irqdma_source_for_host(spi_host_device_t host)
 {
-    return spi_periph_signal[host].hw;
+    return spi_periph_signal[host].irq_dma;
+}
+
+static inline uint32_t get_dma_periph(int dma_chan)
+{
+    return PERIPH_SPI_DMA_MODULE;
 }
 
 bool spicommon_dma_chan_claim (int dma_chan)
 {
     bool ret = false;
-    assert( dma_chan == 1 || dma_chan == 2 );
+    assert(dma_chan >= 1 && dma_chan <= SOC_SPI_DMA_CHAN_NUM);
 
     portENTER_CRITICAL(&spi_dma_spinlock);
     if ( !(spi_dma_chan_enabled & DMA_CHANNEL_ENABLED(dma_chan)) ) {
@@ -114,7 +116,7 @@ bool spicommon_dma_chan_claim (int dma_chan)
         spi_dma_chan_enabled |= DMA_CHANNEL_ENABLED(dma_chan);
         ret = true;
     }
-    periph_module_enable( PERIPH_SPI_DMA_MODULE );
+    periph_module_enable(get_dma_periph(dma_chan));
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
     return ret;
@@ -135,7 +137,7 @@ bool spicommon_dma_chan_free(int dma_chan)
     spi_dma_chan_enabled &= ~DMA_CHANNEL_ENABLED(dma_chan);
     if ( spi_dma_chan_enabled == 0 ) {
         //disable the DMA only when all the channels are freed.
-        periph_module_disable( PERIPH_SPI_DMA_MODULE );
+        periph_module_disable(get_dma_periph(dma_chan));
     }
     portEXIT_CRITICAL(&spi_dma_spinlock);
 
@@ -214,7 +216,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
 
     //check if the selected pins correspond to the iomux pins of the peripheral
     bool use_iomux = bus_uses_iomux_pins(host, bus_config);
-    if (use_iomux) temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
+    if (use_iomux) temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
 
     uint32_t missing_flag = flags & ~temp_flag;
     missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;//don't check this flag
@@ -226,7 +228,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         if (missing_flag & SPICOMMON_BUSFLAG_MISO) ESP_LOGE(SPI_TAG, "miso pin required.");
         if (missing_flag & SPICOMMON_BUSFLAG_DUAL) ESP_LOGE(SPI_TAG, "not both mosi and miso output capable");
         if (missing_flag & SPICOMMON_BUSFLAG_WPHD) ESP_LOGE(SPI_TAG, "both wp and hd required.");
-        if (missing_flag & SPICOMMON_BUSFLAG_NATIVE_PINS) ESP_LOGE(SPI_TAG, "not using iomux pins");
+        if (missing_flag & SPICOMMON_BUSFLAG_IOMUX_PINS) ESP_LOGE(SPI_TAG, "not using iomux pins");
         SPI_CHECK(missing_flag == 0, "not all required capabilities satisfied.", ESP_ERR_INVALID_ARG);
     }
 
@@ -236,25 +238,25 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         ESP_LOGD(SPI_TAG, "SPI%d use iomux pins.", host+1);
         if (bus_config->mosi_io_num >= 0) {
             gpio_iomux_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in);
-            gpio_iomux_out(bus_config->mosi_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
         }
         if (bus_config->miso_io_num >= 0) {
             gpio_iomux_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in);
-            gpio_iomux_out(bus_config->miso_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
         }
         if (bus_config->quadwp_io_num >= 0) {
             gpio_iomux_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in);
-            gpio_iomux_out(bus_config->quadwp_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
         }
         if (bus_config->quadhd_io_num >= 0) {
             gpio_iomux_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in);
-            gpio_iomux_out(bus_config->quadhd_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
         }
         if (bus_config->sclk_io_num >= 0) {
             gpio_iomux_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in);
-            gpio_iomux_out(bus_config->sclk_io_num, FUNC_SPI, false);
+            gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
         }
-        temp_flag |= SPICOMMON_BUSFLAG_NATIVE_PINS;
+        temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
     } else {
         //Use GPIO matrix
         ESP_LOGD(SPI_TAG, "SPI%d use gpio matrix.", host+1);
@@ -309,32 +311,6 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     return ESP_OK;
 }
 
-
-//Find any pin with output muxed to ``func`` and reset it to GPIO
-static void reset_func_to_gpio(int func)
-{
-    for (int x = 0; x < GPIO_PIN_COUNT; x++) {
-        if (GPIO_IS_VALID_GPIO(x) && (READ_PERI_REG(GPIO_FUNC0_OUT_SEL_CFG_REG + (x * 4))&GPIO_FUNC0_OUT_SEL_M) == func)  {
-            gpio_matrix_out(x, SIG_GPIO_OUT_IDX, false, false);
-        }
-    }
-}
-
-esp_err_t spicommon_bus_free_io(spi_host_device_t host)
-{
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spid_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spid_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiq_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiq_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiclk_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiclk_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiwp_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spiwp_iomux_pin], PIN_FUNC_GPIO);
-    if (REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spihd_iomux_pin], MCU_SEL) == 1) PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spihd_iomux_pin], PIN_FUNC_GPIO);
-    reset_func_to_gpio(spi_periph_signal[host].spid_out);
-    reset_func_to_gpio(spi_periph_signal[host].spiq_out);
-    reset_func_to_gpio(spi_periph_signal[host].spiclk_out);
-    reset_func_to_gpio(spi_periph_signal[host].spiwp_out);
-    reset_func_to_gpio(spi_periph_signal[host].spihd_out);
-    return ESP_OK;
-}
-
 esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg)
 {
     int pin_array[] = {
@@ -356,7 +332,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
     if (!force_gpio_matrix && cs_io_num == spi_periph_signal[host].spics0_iomux_pin && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
         gpio_iomux_in(cs_io_num, spi_periph_signal[host].spics_in);
-        gpio_iomux_out(cs_io_num, FUNC_SPI, false);
+        gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
     } else {
         //Use GPIO matrix
         if (GPIO_IS_VALID_OUTPUT_GPIO(cs_io_num)) {
@@ -370,48 +346,22 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
     }
 }
 
-void spicommon_cs_free(spi_host_device_t host, int cs_io_num)
-{
-    if (cs_io_num == 0 && REG_GET_FIELD(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], MCU_SEL) == 1) {
-        PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[spi_periph_signal[host].spics0_iomux_pin], PIN_FUNC_GPIO);
-    }
-    reset_func_to_gpio(spi_periph_signal[host].spics_out[cs_io_num]);
-}
-
 void spicommon_cs_free_io(int cs_gpio_num)
 {
     assert(cs_gpio_num>=0 && GPIO_IS_VALID_GPIO(cs_gpio_num));
     gpio_reset_pin(cs_gpio_num);
 }
 
-//Set up a list of dma descriptors. dmadesc is an array of descriptors. Data is the buffer to point to.
-void IRAM_ATTR spicommon_setup_dma_desc_links(lldesc_t *dmadesc, int len, const uint8_t *data, bool isrx)
+bool spicommon_bus_using_iomux(spi_host_device_t host)
 {
-    int n = 0;
-    while (len) {
-        int dmachunklen = len;
-        if (dmachunklen > SPI_MAX_DMA_LEN) dmachunklen = SPI_MAX_DMA_LEN;
-        if (isrx) {
-            //Receive needs DMA length rounded to next 32-bit boundary
-            dmadesc[n].size = (dmachunklen + 3) & (~3);
-            dmadesc[n].length = (dmachunklen + 3) & (~3);
-        } else {
-            dmadesc[n].size = dmachunklen;
-            dmadesc[n].length = dmachunklen;
-        }
-        dmadesc[n].buf = (uint8_t *)data;
-        dmadesc[n].eof = 0;
-        dmadesc[n].sosf = 0;
-        dmadesc[n].owner = 1;
-        dmadesc[n].qe.stqe_next = &dmadesc[n + 1];
-        len -= dmachunklen;
-        data += dmachunklen;
-        n++;
-    }
-    dmadesc[n - 1].eof = 1; //Mark last DMA desc as end of stream.
-    dmadesc[n - 1].qe.stqe_next = NULL;
-}
+#define CHECK_IOMUX_PIN(HOST, PIN_NAME) if (GPIO.func_in_sel_cfg[spi_periph_signal[(HOST)].PIN_NAME##_in].sig_in_sel) return false
 
+    CHECK_IOMUX_PIN(host, spid);
+    CHECK_IOMUX_PIN(host, spiq);
+    CHECK_IOMUX_PIN(host, spiwp);
+    CHECK_IOMUX_PIN(host, spihd);
+    return true;
+}
 
 /*
 Code for workaround for DMA issue in ESP32 v0/v1 silicon
@@ -444,7 +394,7 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     return ret;
 }
 
-bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress()
+bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress(void)
 {
     return (dmaworkaround_waiting_for_chan != 0);
 }

@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "sd_card_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "sd_card_example_main.c"
+                    INCLUDE_DIRS ".")

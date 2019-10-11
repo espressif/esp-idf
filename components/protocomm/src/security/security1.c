@@ -57,8 +57,6 @@ typedef struct session {
     size_t nc_off;
 } session_t;
 
-static session_t *cur_session;
-
 static void flip_endian(uint8_t *data, size_t len)
 {
     uint8_t swp_buf;
@@ -75,7 +73,8 @@ static void hexdump(const char *msg, uint8_t *buf, int len)
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_DEBUG);
 }
 
-static esp_err_t handle_session_command1(uint32_t session_id,
+static esp_err_t handle_session_command1(session_t *cur_session,
+                                         uint32_t session_id,
                                          SessionData *req, SessionData *resp)
 {
     ESP_LOGD(TAG, "Request to handle setup1_command");
@@ -176,7 +175,8 @@ static esp_err_t handle_session_command1(uint32_t session_id,
     return ESP_OK;
 }
 
-static esp_err_t handle_session_command0(uint32_t session_id,
+static esp_err_t handle_session_command0(session_t *cur_session,
+                                         uint32_t session_id,
                                          SessionData *req, SessionData *resp,
                                          const protocomm_security_pop_t *pop)
 {
@@ -198,7 +198,7 @@ static esp_err_t handle_session_command0(uint32_t session_id,
     mbedtls_ecdh_context     *ctx_server = malloc(sizeof(mbedtls_ecdh_context));
     mbedtls_entropy_context  *entropy    = malloc(sizeof(mbedtls_entropy_context));
     mbedtls_ctr_drbg_context *ctr_drbg   = malloc(sizeof(mbedtls_ctr_drbg_context));
-    if (!ctx_server || !ctx_server || !ctr_drbg) {
+    if (!ctx_server || !entropy || !ctr_drbg) {
         ESP_LOGE(TAG, "Failed to allocate memory for mbedtls context");
         free(ctx_server);
         free(entropy);
@@ -355,22 +355,13 @@ exit_cmd0:
     return ret;
 }
 
-static esp_err_t sec1_session_setup(uint32_t session_id,
+static esp_err_t sec1_session_setup(session_t *cur_session,
+                                    uint32_t session_id,
                                     SessionData *req, SessionData *resp,
                                     const protocomm_security_pop_t *pop)
 {
     Sec1Payload *in = (Sec1Payload *) req->sec1;
     esp_err_t ret;
-
-    if (!cur_session) {
-        ESP_LOGE(TAG, "Invalid session context data");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (session_id != cur_session->id) {
-        ESP_LOGE(TAG, "Invalid session ID : %d (expected %d)", session_id, cur_session->id);
-        return ESP_ERR_INVALID_STATE;
-    }
 
     if (!in) {
         ESP_LOGE(TAG, "Empty session data");
@@ -379,10 +370,10 @@ static esp_err_t sec1_session_setup(uint32_t session_id,
 
     switch (in->msg) {
         case SEC1_MSG_TYPE__Session_Command0:
-            ret = handle_session_command0(session_id, req, resp, pop);
+            ret = handle_session_command0(cur_session, session_id, req, resp, pop);
             break;
         case SEC1_MSG_TYPE__Session_Command1:
-            ret = handle_session_command1(session_id, req, resp);
+            ret = handle_session_command1(cur_session, session_id, req, resp);
             break;
         default:
             ESP_LOGE(TAG, "Invalid security message type");
@@ -393,7 +384,7 @@ static esp_err_t sec1_session_setup(uint32_t session_id,
 
 }
 
-static void sec1_session_setup_cleanup(uint32_t session_id, SessionData *resp)
+static void sec1_session_setup_cleanup(session_t *cur_session, uint32_t session_id, SessionData *resp)
 {
     Sec1Payload *out = resp->sec1;
 
@@ -427,11 +418,16 @@ static void sec1_session_setup_cleanup(uint32_t session_id, SessionData *resp)
     return;
 }
 
-static esp_err_t sec1_close_session(uint32_t session_id)
+static esp_err_t sec1_close_session(protocomm_security_handle_t handle, uint32_t session_id)
 {
+    session_t *cur_session = (session_t *) handle;
+    if (!cur_session) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (!cur_session || cur_session->id != session_id) {
         ESP_LOGE(TAG, "Attempt to close invalid session");
-        return ESP_ERR_INVALID_ARG;
+        return ESP_ERR_INVALID_STATE;
     }
 
     if (cur_session->state == SESSION_STATE_DONE) {
@@ -439,48 +435,63 @@ static esp_err_t sec1_close_session(uint32_t session_id)
         mbedtls_aes_free(&cur_session->ctx_aes);
     }
 
-    bzero(cur_session, sizeof(session_t));
-    free(cur_session);
-    cur_session = NULL;
+    memset(cur_session, 0, sizeof(session_t));
+    cur_session->id = -1;
     return ESP_OK;
 }
 
-static esp_err_t sec1_new_session(uint32_t session_id)
+static esp_err_t sec1_new_session(protocomm_security_handle_t handle, uint32_t session_id)
 {
-    if (cur_session) {
-        /* Only one session is allowed at a time */
-        ESP_LOGE(TAG, "Closing old session with id %u", cur_session->id);
-        sec1_close_session(cur_session->id);
+    session_t *cur_session = (session_t *) handle;
+    if (!cur_session) {
+        return ESP_ERR_INVALID_ARG;
     }
 
-    cur_session = (session_t *) calloc(1, sizeof(session_t));
-    if (!cur_session) {
-        ESP_LOGE(TAG, "Error allocating session structure");
-        return ESP_ERR_NO_MEM;
+    if (cur_session->id != -1) {
+        /* Only one session is allowed at a time */
+        ESP_LOGE(TAG, "Closing old session with id %u", cur_session->id);
+        sec1_close_session(cur_session, session_id);
     }
 
     cur_session->id = session_id;
     return ESP_OK;
 }
 
-static esp_err_t sec1_init()
+static esp_err_t sec1_init(protocomm_security_handle_t *handle)
 {
-    return ESP_OK;
-}
-
-static esp_err_t sec1_cleanup()
-{
-    if (cur_session) {
-        ESP_LOGD(TAG, "Closing current session with id %u", cur_session->id);
-        sec1_close_session(cur_session->id);
+    if (!handle) {
+        return ESP_ERR_INVALID_ARG;
     }
+    session_t *cur_session = (session_t *) calloc(1, sizeof(session_t));
+    if (!cur_session) {
+        ESP_LOGE(TAG, "Error allocating new session");
+        return ESP_ERR_NO_MEM;
+    }
+    cur_session->id = -1;
+    *handle = (protocomm_security_handle_t) cur_session;
     return ESP_OK;
 }
 
-static esp_err_t sec1_decrypt(uint32_t session_id,
+static esp_err_t sec1_cleanup(protocomm_security_handle_t handle)
+{
+    session_t *cur_session = (session_t *) handle;
+    if (cur_session) {
+        sec1_close_session(handle, cur_session->id);
+    }
+    free(handle);
+    return ESP_OK;
+}
+
+static esp_err_t sec1_decrypt(protocomm_security_handle_t handle,
+                              uint32_t session_id,
                               const uint8_t *inbuf, ssize_t inlen,
                               uint8_t *outbuf, ssize_t *outlen)
 {
+    session_t *cur_session = (session_t *) handle;
+    if (!cur_session) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (*outlen < inlen) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -505,11 +516,24 @@ static esp_err_t sec1_decrypt(uint32_t session_id,
     return ESP_OK;
 }
 
-static esp_err_t sec1_req_handler(const protocomm_security_pop_t *pop, uint32_t session_id,
+static esp_err_t sec1_req_handler(protocomm_security_handle_t handle,
+                                  const protocomm_security_pop_t *pop,
+                                  uint32_t session_id,
                                   const uint8_t *inbuf, ssize_t inlen,
                                   uint8_t **outbuf, ssize_t *outlen,
                                   void *priv_data)
 {
+    session_t *cur_session = (session_t *) handle;
+    if (!cur_session) {
+        ESP_LOGE(TAG, "Invalid session context data");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (session_id != cur_session->id) {
+        ESP_LOGE(TAG, "Invalid session ID : %d (expected %d)", session_id, cur_session->id);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     SessionData *req;
     SessionData resp;
     esp_err_t ret;
@@ -526,7 +550,7 @@ static esp_err_t sec1_req_handler(const protocomm_security_pop_t *pop, uint32_t 
     }
 
     session_data__init(&resp);
-    ret = sec1_session_setup(session_id, req, &resp, pop);
+    ret = sec1_session_setup(cur_session, session_id, req, &resp, pop);
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Session setup error %d", ret);
         session_data__free_unpacked(req, NULL);
@@ -544,7 +568,7 @@ static esp_err_t sec1_req_handler(const protocomm_security_pop_t *pop, uint32_t 
     }
     session_data__pack(&resp, *outbuf);
 
-    sec1_session_setup_cleanup(session_id, &resp);
+    sec1_session_setup_cleanup(cur_session, session_id, &resp);
     return ESP_OK;
 }
 

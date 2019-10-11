@@ -12,7 +12,7 @@ menu "Example Configuration"
         help
             WiFi password (WPA or WPA2) for the example to use.
 
-    config MAX_STA_CONN
+    config ESP_MAX_STA_CONN
         int "Maximal STA connections"
         default 4
         help

@@ -1,4 +1,3 @@
-#include "soc/dport_reg.h"
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "eri.h"
@@ -28,8 +27,8 @@ typedef enum {
  *                        the app cpu writes to block 1. Setting this to true
  *                        inverts this.
  *
- * @return esp_err_t. Fails with ESP_ERR_NO_MEM if Trax enable is requested for 2 CPUs 
- *                    but memmap only has room for 1, or if Trax memmap is disabled 
+ * @return esp_err_t. Fails with ESP_ERR_NO_MEM if Trax enable is requested for 2 CPUs
+ *                    but memmap only has room for 1, or if Trax memmap is disabled
  *                    entirely.
  */
 int trax_enable(trax_ena_select_t ena);
@@ -52,7 +51,7 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop);
  *         that delay with the new value. The delay will always start at the time
  *         the function is called.
  *
- * @param  delay : The delay to stop the trace in, in the unit indicated to 
+ * @param  delay : The delay to stop the trace in, in the unit indicated to
  *              trax_start_trace. Note: the trace memory has 4K words available.
  *
  * @return esp_err_t

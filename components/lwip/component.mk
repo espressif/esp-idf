@@ -5,14 +5,15 @@ COMPONENT_SUBMODULES += lwip
 
 COMPONENT_ADD_INCLUDEDIRS := \
 	include/apps \
+	include/apps/sntp \
 	lwip/src/include \
 	port/esp32/include \
-	port/esp32/include/arch \
-	include_compat
+	port/esp32/include/arch
 
 COMPONENT_SRCDIRS := \
 	apps/dhcpserver \
 	apps/ping \
+	apps/sntp \
 	lwip/src/api \
 	lwip/src/apps/sntp \
 	lwip/src/core \
@@ -24,7 +25,7 @@ COMPONENT_SRCDIRS := \
 	port/esp32/netif \
 	port/esp32/debug
 
-ifdef CONFIG_PPP_SUPPORT
+ifdef CONFIG_LWIP_PPP_SUPPORT
     COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl
 endif
 

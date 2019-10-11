@@ -224,7 +224,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num,
  *
  * @return i2c command link handler
  */
-i2c_cmd_handle_t i2c_cmd_link_create();
+i2c_cmd_handle_t i2c_cmd_link_create(void);
 
 /**
  * @brief Free I2C command link
@@ -384,7 +384,7 @@ int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType
  *        Only call this function in I2C slave mode
  *
  * @param i2c_num I2C port number
- * @param data data pointer to write into internal buffer
+ * @param data data pointer to accept data from internal buffer
  * @param max_size Maximum data size to read
  * @param ticks_to_wait Maximum waiting ticks
  *

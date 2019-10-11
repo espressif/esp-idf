@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-typedef struct {
+typedef struct sdmmc_desc_s {
     uint32_t reserved1: 1;
     uint32_t disable_int_on_completion: 1;
     uint32_t last_descriptor: 1;
@@ -47,7 +47,7 @@ typedef struct {
 _Static_assert(sizeof(sdmmc_desc_t) == 16, "invalid size of sdmmc_desc_t structure");
 
 
-typedef struct {
+typedef struct sdmmc_hw_cmd_s {
     uint32_t cmd_index: 6;          ///< Command index
     uint32_t response_expect: 1;    ///< set if response is expected
     uint32_t response_long: 1;      ///< 0: short response expected, 1: long response expected
@@ -76,7 +76,7 @@ typedef struct {
 _Static_assert(sizeof(sdmmc_hw_cmd_t) == 4, "invalid size of sdmmc_cmd_t structure");
 
 
-typedef volatile struct {
+typedef volatile struct sdmmc_dev_s {
     union {
         struct {
             uint32_t controller_reset: 1;

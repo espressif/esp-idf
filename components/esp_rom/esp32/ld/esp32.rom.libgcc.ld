@@ -1,3 +1,9 @@
+/* Unlike other ROM functions which are exported using PROVIDE, which declares
+   weak symbols, these libgcc functions are exported using assignment,
+   which declares strong symbols. This is done so that ROM functions are always
+   used instead of the ones provided by libgcc.a.
+*/
+
 __absvdi2 = 0x4006387c;
 __absvsi2 = 0x40063868;
 __adddf3 = 0x40002590;
@@ -18,8 +24,6 @@ __ctzsi2 = 0x4000c7f0;
 __divdc3 = 0x400645a4;
 __divdf3 = 0x40002954;
 __divdi3 = 0x4000ca84;
-__divsc3 = 0x4006429c;
-__divsf3 = 0x4000234c;
 __divsi3 = 0x4000c7b8;
 __eqdf2 = 0x400636a8;
 __eqsf2 = 0x40063374;
@@ -41,6 +45,7 @@ __floatundidf = 0x4000c978;
 __floatundisf = 0x4000c8b0;
 __floatunsidf = 0x4000c938;
 __floatunsisf = 0x4000c864;
+__gcc_bcmp = 0x40064a70;
 __gedf2 = 0x40063768;
 __gesf2 = 0x4006340c;
 __gtdf2 = 0x400636dc;
@@ -55,7 +60,6 @@ __modsi3 = 0x4000c7c0;
 __muldc3 = 0x40063c90;
 __muldf3 = 0x4006358c;
 __muldi3 = 0x4000c9fc;
-__mulsc3 = 0x40063944;
 __mulsf3 = 0x400632c8;
 __mulsi3 = 0x4000c7b0;
 __mulvdi3 = 0x40002d78;
@@ -73,7 +77,6 @@ __popcount_tab = 0x3ff96544;
 __popcountdi2 = 0x40002ef8;
 __popcountsi2 = 0x40002ed0;
 __powidf2 = 0x400638e4;
-__powisf2 = 0x4006389c;
 __subdf3 = 0x400026e4;
 __subsf3 = 0x400021d0;
 __subvdi3 = 0x40002d20;

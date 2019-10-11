@@ -35,7 +35,7 @@ static void sigmadelta_example_init(void)
  *  Perform the sigma-delta modulation test
  *  by changing the duty of the output signal.
  */
-void app_main()
+void app_main(void)
 {
     sigmadelta_example_init();
 

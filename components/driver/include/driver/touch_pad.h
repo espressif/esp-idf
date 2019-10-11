@@ -17,10 +17,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "esp_intr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "soc/touch_channel.h"
+#include "soc/touch_periph.h"
 
 typedef enum {
     TOUCH_PAD_NUM0 = 0, /*!< Touch pad channel 0 is GPIO4 */
@@ -118,7 +117,7 @@ typedef intr_handle_t touch_isr_handle_t;
  *     - ESP_OK Success
  *     - ESP_FAIL Touch pad init error
  */
-esp_err_t touch_pad_init();
+esp_err_t touch_pad_init(void);
 
 /**
  * @brief Un-install touch pad driver.
@@ -127,7 +126,7 @@ esp_err_t touch_pad_init();
  *     - ESP_OK   Success
  *     - ESP_FAIL Touch pad driver not initialized
  */
-esp_err_t touch_pad_deinit();
+esp_err_t touch_pad_deinit(void);
 
 /**
  * @brief Configure touch pad interrupt threshold.
@@ -221,21 +220,6 @@ typedef void (* filter_cb_t)(uint16_t *raw_value, uint16_t *filtered_value);
  *      - ESP_ERR_INVALID_ARG set error
  */
 esp_err_t touch_pad_set_filter_read_cb(filter_cb_t read_cb);
-
-/**
- * @brief   Register touch-pad ISR,
- * @note Deprecated function, users should replace this with touch_pad_isr_register,
- *       because RTC modules share a same interrupt index.
- * @param fn  Pointer to ISR handler
- * @param arg  Parameter for ISR
- * @param unused Reserved, not used
- * @param handle_unused Reserved, not used
- * @return
- *     - ESP_OK Success ;
- *     - ESP_ERR_INVALID_ARG GPIO error
- *     - ESP_ERR_NO_MEM No memory
- */
-esp_err_t touch_pad_isr_handler_register(void(*fn)(void *), void *arg, int unused, intr_handle_t *handle_unused) __attribute__ ((deprecated));
 
 /**
  * @brief   Register touch-pad ISR.
@@ -365,7 +349,7 @@ esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_sw_start();
+esp_err_t touch_pad_sw_start(void);
 
 /**
  * @brief Set touch sensor interrupt threshold
@@ -469,28 +453,28 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_clear_status();
+esp_err_t touch_pad_clear_status(void);
 
 /**
  * @brief Get the touch sensor status, usually used in ISR to decide which pads are 'touched'.
  * @return
  *      - touch status
  */
-uint32_t touch_pad_get_status();
+uint32_t touch_pad_get_status(void);
 
 /**
  * @brief To enable touch pad interrupt
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_intr_enable();
+esp_err_t touch_pad_intr_enable(void);
 
 /**
  * @brief To disable touch pad interrupt
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_intr_disable();
+esp_err_t touch_pad_intr_disable(void);
 
 /**
  * @brief set touch pad filter calibration period, in ms.
@@ -540,7 +524,7 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms);
  *      - ESP_OK Success
  *      - ESP_ERR_INVALID_STATE driver state error
  */
-esp_err_t touch_pad_filter_stop();
+esp_err_t touch_pad_filter_stop(void);
 
 /**
  * @brief delete touch pad filter driver and release the memory
@@ -549,7 +533,7 @@ esp_err_t touch_pad_filter_stop();
  *      - ESP_OK Success
  *      - ESP_ERR_INVALID_STATE driver state error
  */
-esp_err_t touch_pad_filter_delete();
+esp_err_t touch_pad_filter_delete(void);
 
 /**
  * @brief Get the touch pad which caused wakeup from sleep

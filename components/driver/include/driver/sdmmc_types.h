@@ -156,7 +156,11 @@ typedef struct {
 typedef struct {
     sdmmc_host_t host;          /*!< Host with which the card is associated */
     uint32_t ocr;               /*!< OCR (Operation Conditions Register) value */
-    sdmmc_cid_t cid;            /*!< decoded CID (Card IDentification) register value */
+    union {
+        sdmmc_cid_t cid;            /*!< decoded CID (Card IDentification) register value */
+        sdmmc_response_t raw_cid;   /*!< raw CID of MMC card to be decoded
+                                         after the CSD is fetched in the data transfer mode*/
+    };
     sdmmc_csd_t csd;            /*!< decoded CSD (Card-Specific Data) register value */
     sdmmc_scr_t scr;            /*!< decoded SCR (SD card Configuration Register) value */
     sdmmc_ext_csd_t ext_csd;    /*!< decoded EXT_CSD (Extended Card Specific Data) register value */

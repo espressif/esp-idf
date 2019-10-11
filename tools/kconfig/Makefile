@@ -165,7 +165,9 @@ check-lxdialog  := $(SRCDIR)/lxdialog/check-lxdialog.sh
 # Use recursively expanded variables so we do not call gcc unless
 # we really need to do so. (Do not call gcc as part of make mrproper)
 CFLAGS += $(shell $(CONFIG_SHELL) $(check-lxdialog) -ccflags) \
-                    -DLOCALE -MMD
+                    -DLOCALE -MMD -MP
+
+CFLAGS += -I "." -I "${SRCDIR}"
 
 %.o: $(SRCDIR)/%.c
 	$(CC) -c $(CFLAGS) $(CPPFLAGS) $< -o $@
@@ -192,13 +194,13 @@ lxdialog/%.o: $(SRCDIR)/lxdialog/%.c
 lxdialog := lxdialog/checklist.o lxdialog/util.o lxdialog/inputbox.o
 lxdialog += lxdialog/textbox.o lxdialog/yesno.o lxdialog/menubox.o
 
-conf-objs	:= conf.o  zconf.tab.o
-mconf-objs     := mconf.o zconf.tab.o $(lxdialog)
-nconf-objs     := nconf.o zconf.tab.o nconf.gui.o
-kxgettext-objs	:= kxgettext.o zconf.tab.o
+conf-objs	:= conf.o  zconf.tab.o expand_env.o
+mconf-objs     := mconf.o zconf.tab.o $(lxdialog) expand_env.o
+nconf-objs     := nconf.o zconf.tab.o nconf.gui.o expand_env.o
+kxgettext-objs	:= kxgettext.o zconf.tab.o expand_env.o
 qconf-cxxobjs	:= qconf.o
-qconf-objs	:= zconf.tab.o
-gconf-objs	:= gconf.o zconf.tab.o
+qconf-objs	:= zconf.tab.o expand_env.o
+gconf-objs	:= gconf.o zconf.tab.o expand_env.o
 
 hostprogs-y := conf-idf nconf mconf-idf kxgettext qconf gconf
 

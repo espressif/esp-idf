@@ -20,7 +20,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct i2c_dev_s {
     union {
         struct {
             uint32_t period:14;             /*This register is used to configure the  low level width of SCL clock.*/

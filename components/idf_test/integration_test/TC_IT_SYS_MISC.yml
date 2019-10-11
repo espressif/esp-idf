@@ -14,11 +14,13 @@ test cases:
   - - SSC SSC1 reboot
     - - R SSC1 C !!!ready!!!
   execution time: 0.0
-  expected result: 重启成功
+  expected result: |
+    1. reboot succeeded
   initial condition: None
   level: Integration
   module: System
-  steps: 系统重启
+  steps: |
+    1. sw reboot
   sub module: Misc
   summary: test reboot function
   test environment: SSC_T1_4
@@ -40,13 +42,13 @@ test cases:
   - - SSC SSC1 ram -H
     - - R SSC1 RE FREEHEAP:\d+\r\n
   execution time: 0.0
-  expected result: |2
-
-    可以查询到一个数值
+  expected result: |
+    1. get free heap size
   initial condition: None
   level: Integration
   module: System
-  steps: 查询空闲ram
+  steps: |
+    1. query current free heap size
   sub module: Misc
   summary: get heap size test
   test environment: SSC_T1_4

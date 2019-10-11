@@ -20,7 +20,7 @@
 
 static const char* TAG = "uart_select_example";
 
-static void uart_select_task()
+static void uart_select_task(void *arg)
 {
     uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -87,7 +87,7 @@ static void uart_select_task()
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(uart_select_task, "uart_select_task", 4*1024, NULL, 5, NULL);
 }

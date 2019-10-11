@@ -1,6 +1,6 @@
 menu "TCP/IP Adapter"
 
-    config IP_LOST_TIMER_INTERVAL
+    config NETIF_IP_LOST_TIMER_INTERVAL
         int "IP Address lost timer interval (seconds)"
         range 0 65535
         default 120
@@ -13,7 +13,7 @@ menu "TCP/IP Adapter"
             the timer expires. The IP lost timer is stopped if the station get the IP again before
             the timer expires.
 
-    choice USE_TCPIP_STACK_LIB
+    choice NETIF_USE_TCPIP_STACK_LIB
         prompt "TCP/IP Stack Library"
         default TCPIP_LWIP
         help

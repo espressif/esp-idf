@@ -1,0 +1,376 @@
+
+.build_template:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+    V: "0"
+
+.build_esp_idf_unit_test_template:
+  extends: .build_template
+  artifacts:
+    paths:
+      - tools/unit-test-app/output
+      - components/idf_test/unit_test/TestCaseAll.yml
+    expire_in: 3 days
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_REGULAR_TEST
+
+build_template_app:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    # Set the variable for 'esp-idf-template' testing
+    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
+    - git clone ${ESP_IDF_TEMPLATE_GIT}
+    # Try to use the same branch name for esp-idf-template that we're
+    # using on esp-idf. If it doesn't exist then just stick to the default branch
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - cd esp-idf-template
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    
+    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
+    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" >> sdkconfig
+    - make defconfig
+    - make all V=1
+    - make clean
+
+    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
+    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig
+    - make defconfig
+    - make all V=1
+    - make clean
+    
+    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
+    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" >> sdkconfig
+    - make defconfig
+    - make all V=1
+    - make clean
+
+    # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
+    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" >> sdkconfig
+    - make defconfig
+    - make all V=1
+    - make clean
+
+    # Check if there are any stray printf/ets_printf references in WiFi libs
+    - pushd ../components/esp_wifi/lib_esp32
+    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
+    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
+    - popd
+    # Repeat the build using CMake
+    - rm -rf build sdkconfig
+    # Debug build
+    - idf.py build
+    # Release build
+    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
+    - idf.py build
+
+build_ssc:
+  extends: .build_template
+  parallel: 3
+  artifacts:
+    paths:
+      - SSC/ssc_bin
+    expire_in: 1 week
+  variables:
+    SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    - git clone $SSC_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT SSC SSC
+    - cd SSC
+    - MAKEFLAGS= ./ci_build_ssc.sh
+
+build_esp_idf_tests_make:
+  extends: .build_esp_idf_unit_test_template
+  script:
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - MAKEFLAGS= make help # make sure kconfig tools are built in single process
+    - make ut-clean-all-configs
+    - make ut-build-all-configs
+    - python tools/UnitTestParser.py
+    # Check if the tests demand Make built binaries. If not, delete them
+    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
+    - rm -rf builds output sdkconfig
+    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+
+build_esp_idf_tests_cmake:
+  extends: .build_esp_idf_unit_test_template
+  script:
+    - export PATH="$IDF_PATH/tools:$PATH"
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    - cd $CI_PROJECT_DIR/tools/unit-test-app
+    - idf.py ut-clean-all-configs
+    - idf.py ut-build-all-configs
+    - python tools/UnitTestParser.py
+    # Check if the tests demand CMake built binaries. If not, delete them
+    - if [ "$UNIT_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
+    - rm -rf builds output sdkconfig
+    - rm $CI_PROJECT_DIR/components/idf_test/unit_test/TestCaseAll.yml
+
+build_examples_make:
+  extends: .build_template
+  parallel: 8
+  # This is a workaround for a rarely encountered issue with building examples in CI.
+  # Probably related to building of Kconfig in 'make clean' stage
+  retry: 1
+  artifacts:
+    when: always
+    paths:
+      - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/sdkconfig
+      - build_examples/*/*/*/build/*.elf
+      - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/download.config
+      - build_examples/*/*/*/build/bootloader/*.bin
+      - $LOG_PATH
+    expire_in: 3 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
+  only:
+    # Here both 'variables' and 'refs' conditions are given. They are combined with "AND" logic.
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_EXAMPLE_TEST
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+      - pipelines
+      - web
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - rm -rf build_examples
+    - mkdir build_examples
+    - cd build_examples
+    # build some of examples
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_examples.sh
+
+# same as above, but for CMake
+.build_examples_cmake: &build_examples_cmake
+  extends: .build_template
+  parallel: 5
+  artifacts:
+    when: always
+    paths:
+      - build_examples_cmake/*/*/*/*/build/*.bin
+      - build_examples_cmake/*/*/*/*/sdkconfig
+      - build_examples_cmake/*/*/*/*/build/*.elf
+      - build_examples_cmake/*/*/*/*/build/*.map
+      - build_examples_cmake/*/*/*/*/build/flasher_args.json
+      - build_examples_cmake/*/*/*/*/build/bootloader/*.bin
+      - $LOG_PATH
+    expire_in: 3 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_EXAMPLE_TEST
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+  script:
+    # it's not possible to build 100% out-of-tree and have the "artifacts"
+    # mechanism work, but this is the next best thing
+    - rm -rf build_examples_cmake
+    - mkdir build_examples_cmake
+    - cd build_examples_cmake
+    # build some of examples
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
+
+build_examples_cmake_esp32:
+  extends: .build_examples_cmake
+  variables:
+    IDF_TARGET: esp32
+
+# If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
+
+build_docs:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build_docs
+  artifacts:
+    when: always
+    paths:
+      # English version of documentation
+      - docs/en/doxygen-warning-log.txt
+      - docs/en/sphinx-warning-log.txt
+      - docs/en/sphinx-warning-log-sanitized.txt
+      - docs/en/_build/html
+      - docs/sphinx-err-*
+      # Chinese version of documentation
+      - docs/zh_CN/doxygen-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log.txt
+      - docs/zh_CN/sphinx-warning-log-sanitized.txt
+      - docs/zh_CN/_build/html
+    expire_in: 3 days
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_BUILD_DOCS
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    - cd docs
+    - ./check_lang_folder_sync.sh
+    - cd en
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh
+    - cd ../zh_CN
+    - make gh-linkcheck
+    - make html
+    - ../check_doc_warnings.sh
+
+verify_cmake_style:
+  extends: .check_job_template
+  stage: build
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    tools/cmake/run_cmake_lint.sh
+
+test_build_system:
+  extends: .build_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system.sh
+
+test_build_system_cmake:
+  extends: .build_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+
+build_docker:
+  stage: build
+  image: espressif/docker-builder:1
+  tags:
+    - build_docker_amd64_brno
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+  variables:
+    DOCKER_TMP_IMAGE_NAME: "idf_tmp_image"
+  before_script: []
+  script:
+    - export DOCKER_BUILD_ARGS="--build-arg IDF_CLONE_URL=${CI_REPOSITORY_URL} --build-arg IDF_CLONE_BRANCH_OR_TAG=${CI_COMMIT_REF_NAME} --build-arg IDF_CHECKOUT_REF=${CI_COMMIT_TAG:-$CI_COMMIT_SHA}"
+    # Build
+    - docker build --tag ${DOCKER_TMP_IMAGE_NAME} ${DOCKER_BUILD_ARGS} tools/docker/
+    # We can't mount $PWD/examples/get-started/blink into the container, see https://gitlab.com/gitlab-org/gitlab-ce/issues/41227.
+    # The workaround mentioned there works, but leaves around directories which need to be cleaned up manually.
+    # Therefore, build a copy of the example located inside the container.
+    - docker run --rm --workdir /opt/esp/idf/examples/get-started/blink ${DOCKER_TMP_IMAGE_NAME} idf.py build
+
+build_idf_exe:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
+  tags:
+    - build
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+  before_script: []
+  artifacts:
+    paths:
+      - tools/windows/idf_exe/build/idf-exe-v*.zip
+    expire_in: 3 days
+  script:
+    - cd tools/windows/idf_exe/
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
+    - cmake --build .
+
+build_cmdlinerunner:
+  stage: build
+  image: $CI_DOCKER_REGISTRY/esp32-toolchain-win-cross
+  tags:
+    - build
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+  before_script: []
+  artifacts:
+    paths:
+      - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
+    expire_in: 3 days
+  script:
+    - cd tools/windows/tool_setup/cmdlinerunner
+    - mkdir build
+    - cd build
+    - cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain-i686-w64-mingw32.cmake -DCMAKE_BUILD_TYPE=Release ..
+    - cmake --build .
+
+build_installer:
+  # using a different stage here to be able to use artifacts from build_cmdlinerunner job
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/wine-innosetup:1
+  tags:
+    - build
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+  dependencies:
+    - build_cmdlinerunner
+  before_script: []
+  script:
+    - cd tools/windows/tool_setup/
+    - ./build_installer.sh

@@ -1,24 +1,38 @@
 cmake_minimum_required(VERSION 3.5)
 project(idf_as_lib C)
 
-# The source file main.c contains app_main() definition
-add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
+if("${TARGET}" STREQUAL "esp32")
+    # Include for ESP-IDF build system functions
+    include($ENV{IDF_PATH}/tools/cmake/idf.cmake)
+    # Create idf::esp32 and idf::freertos static libraries
+    idf_build_process(esp32
+                    # try and trim the build; additional components
+                    # will be included as needed based on dependency tree
+                    #
+                    # although esptool_py does not generate static library,
+                    # processing the component is needed for flashing related
+                    # targets and file generation
+                    COMPONENTS esp32 freertos esptool_py
+                    SDKCONFIG ${CMAKE_BINARY_DIR}/sdkconfig
+                    BUILD_DIR ${CMAKE_BINARY_DIR})
+else()
+    # Create stubs for esp32 and freertos, stub::esp32 and stub::freertos
+    add_subdirectory(stubs/esp32)
+    add_subdirectory(stubs/freertos)
+    add_subdirectory(stubs/spi_flash)
+endif()
 
-# Provides idf_import_components() and idf_link_components()
-include($ENV{IDF_PATH}/tools/cmake/idf_functions.cmake)
+set(elf_file ${CMAKE_PROJECT_NAME}.elf)
+add_executable(${elf_file} main.c)
 
-# Create artifacts used for flashing the project to target chip
-set(IDF_BUILD_ARTIFACTS ON)
-set(IDF_PROJECT_EXECUTABLE ${CMAKE_PROJECT_NAME}.elf)
-set(IDF_BUILD_ARTIFACTS_DIR ${CMAKE_BINARY_DIR})
+# Link the static libraries to the executable
+if("${TARGET}" STREQUAL "esp32")
+    target_link_libraries(${elf_file} idf::esp32 idf::freertos idf::spi_flash)
+    # Attach additional targets to the executable file for flashing,
+    # linker script generation, partition_table generation, etc.
+    idf_build_executable(${elf_file})
+else()
+    target_link_libraries(${elf_file} stub::esp32 stub::freertos stub::spi_flash)
+endif()
 
-# Trim down components included in the build. Although freertos and spi_flash are the ones needed by the application
-# itself, the bootloader and esptool_py components are also needed in order to create the artifacts to be used
-# for flashing to the target chip
-set(IDF_COMPONENTS freertos spi_flash bootloader esptool_py)
-
-# Wraps add_subdirectory() to create library targets for components, and then return them using the specified variable
-idf_import_components(components $ENV{IDF_PATH} esp-idf)
-
-# Wraps target_link_libraries() to link processed components by idf_import_components to target
-idf_link_components(${CMAKE_PROJECT_NAME}.elf "${components}")
+set(CMAKE_EXPORT_COMPILE_COMMANDS 1)

@@ -54,7 +54,7 @@
 /* Return the 'flash_test' custom data partition (type 0x55)
    defined in the custom partition table.
 */
-const esp_partition_t *get_test_data_partition();
+const esp_partition_t *get_test_data_partition(void);
 
 /**
  * @brief Initialize reference clock
@@ -62,26 +62,26 @@ const esp_partition_t *get_test_data_partition();
  * Reference clock provides timestamps at constant 1 MHz frequency, even when
  * the APB frequency is changing.
  */
-void ref_clock_init();
+void ref_clock_init(void);
 
 /**
  * @brief Deinitialize reference clock
  */
-void ref_clock_deinit();
+void ref_clock_deinit(void);
 
 
 /**
  * @brief Get reference clock timestamp
  * @return number of microseconds since the reference clock was initialized
  */
-uint64_t ref_clock_get();
+uint64_t ref_clock_get(void);
 
 /**
  * @brief Entry point of the test application
  *
  * Starts Unity test runner in a separate task and returns.
  */
-void test_main();
+void test_main(void);
 
 /**
  * @brief Reset automatic leak checking which happens in unit tests.
@@ -196,3 +196,43 @@ static inline void unity_send_signal(const char* signal_name)
  * @param[out] mac_addr store converted MAC address
  */
 bool unity_util_convert_mac_from_string(const char* mac_str, uint8_t *mac_addr);
+
+/**
+ * @brief Leak for components
+ */
+typedef enum {
+    COMP_LEAK_GENERAL = 0,  /**< Leak by default */
+    COMP_LEAK_LWIP,         /**< Leak for LWIP */
+    COMP_LEAK_NVS,          /**< Leak for NVS */
+    COMP_LEAK_ALL,          /**< Use for getting the summary leak level */
+} esp_comp_leak_t;
+
+/**
+ * @brief Type of leak
+ */
+typedef enum {
+    TYPE_LEAK_WARNING = 0,  /**< Warning level of leak */
+    TYPE_LEAK_CRITICAL,     /**< Critical level of leak */
+    TYPE_LEAK_MAX,          /**< Max number of leak levels */
+} esp_type_leak_t;
+
+/**
+ * @brief Set a leak level for the required type and component.
+ *
+ * @param[in] leak_level Level of leak
+ * @param[in] type       Type of leak
+ * @param[in] component  Name of component
+ *
+ * return ESP_OK: Successful.
+ *        ESP_ERR_INVALID_ARG: Invalid argument.
+ */
+esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type, esp_comp_leak_t component);
+
+/**
+ * @brief Get a leak level for the required type and component.
+ *
+ * @param[in] type       Type of leak.
+ * @param[in] component  Name of component. If COMP_LEAK_ALL, then the level will be summarized for all components.
+ * return Leak level
+ */
+size_t test_utils_get_leak_level(esp_type_leak_t type, esp_comp_leak_t component);

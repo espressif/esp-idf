@@ -1,0 +1,156 @@
+menu "Ethernet"
+
+    menuconfig ETH_USE_ESP32_EMAC
+        depends on IDF_TARGET_ESP32
+        bool "Support ESP32 internal EMAC controller"
+        default y
+        help
+            ESP32 integrates a 10/100M Ethernet MAC controller.
+
+    if ETH_USE_ESP32_EMAC
+        choice ETH_PHY_INTERFACE
+            prompt "PHY interface"
+            default ETH_PHY_INTERFACE_RMII
+            help
+                Select the communication interface between MAC and PHY chip.
+
+            config ETH_PHY_INTERFACE_RMII
+                bool "Reduced Media Independent Interface (RMII)"
+
+            config ETH_PHY_INTERFACE_MII
+                bool "Media Independent Interface (MII)"
+        endchoice
+
+        if ETH_PHY_INTERFACE_RMII
+            choice ETH_RMII_CLK_MODE
+                prompt "RMII clock mode"
+                default ETH_RMII_CLK_INPUT
+                help
+                    Select external or internal RMII clock.
+
+                config ETH_RMII_CLK_INPUT
+                    bool "Input RMII clock from external"
+                    help
+                        MAC will get RMII clock from outside.
+                        Note that ESP32 only supports GPIO0 to input the RMII clock.
+
+                config ETH_RMII_CLK_OUTPUT
+                    bool "Output RMII clock from internal"
+                    help
+                        ESP32 can generate RMII clock by internal APLL.
+                        This clock can be routed to the external PHY device.
+                        ESP32 supports to route the RMII clock to GPIO0/16/17.
+            endchoice
+        endif
+
+        if ETH_RMII_CLK_INPUT
+            config ETH_RMII_CLK_IN_GPIO
+                int
+                range 0 0
+                default 0
+                help
+                    ESP32 only supports GPIO0 to input the RMII clock.
+        endif
+
+        if ETH_RMII_CLK_OUTPUT
+            config ETH_RMII_CLK_OUTPUT_GPIO0
+                bool "Output RMII clock from GPIO0 (Experimental!)"
+                default n
+                help
+                    GPIO0 can be set to output a pre-divided PLL clock (test only!).
+                    Enabling this option will configure GPIO0 to output a 50MHz clock.
+                    In fact this clock doesn't have directly relationship with EMAC peripheral.
+                    Sometimes this clock won't work well with your PHY chip. You might need to
+                    add some extra devices after GPIO0 (e.g. inverter).
+                    Note that outputting RMII clock on GPIO0 is an experimental practice.
+                    If you want the Ethernet to work with WiFi, don't select GPIO0 output mode for stability.
+
+            if !ETH_RMII_CLK_OUTPUT_GPIO0
+                config ETH_RMII_CLK_OUT_GPIO
+                    int "RMII clock GPIO number"
+                    range 16 17
+                    default 17
+                    help
+                        Set the GPIO number to output RMII Clock.
+            endif
+        endif
+
+        config ETH_SMI_MDC_GPIO
+            int "SMI MDC GPIO number"
+            default 23
+            range 0 33
+            help
+                Set the GPIO number used by SMI MDC.
+
+        config ETH_SMI_MDIO_GPIO
+            int "SMI MDIO GPIO number"
+            default 18
+            range 0 33
+            help
+                Set the GPIO number used by SMI MDIO.
+
+        config ETH_PHY_USE_RST
+            bool "Use Reset Pin of PHY Chip"
+            default y
+            help
+                Set this option to true if you want to control PHY chip's reset using a GPIO.
+                Check the schematic of you board to make sure if it's necessary to use this feature.
+
+        if ETH_PHY_USE_RST
+            config ETH_PHY_RST_GPIO
+                int "PHY RST GPIO number"
+                default 5
+                range 0 33
+                help
+                    Set the GPIO number used by the PHY chip's RST pin.
+        endif
+
+        config ETH_DMA_BUFFER_SIZE
+            int "Ethernet DMA buffer size (Byte)"
+            range 256 1600
+            default 512
+            help
+                Set the size of each buffer used by Ethernet MAC DMA.
+
+        config ETH_DMA_RX_BUFFER_NUM
+            int "Amount of Ethernet DMA Rx buffers"
+            range 3 30
+            default 10
+            help
+                Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
+                Larger number of buffers could increase throughput somehow.
+
+        config ETH_DMA_TX_BUFFER_NUM
+            int "Amount of Ethernet DMA Tx buffers"
+            range 3 30
+            default 10
+            help
+                Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
+                Larger number of buffers could increase throughput somehow.
+    endif
+
+    menuconfig ETH_USE_SPI_ETHERNET
+        bool "Support SPI to Ethernet Module"
+        default y
+        help
+            ESP-IDF can also support some SPI-Ethernet module.
+
+    if ETH_USE_SPI_ETHERNET
+        menuconfig ETH_SPI_ETHERNET_DM9051
+            bool "Use DM9051"
+            default y
+            help
+                DM9051 is a fast Ethernet controller with an SPI interface.
+                It's also integrated with a 10/100M PHY and MAC.
+                Set true to enable DM9051 driver.
+
+        if ETH_SPI_ETHERNET_DM9051
+            config ETH_DM9051_INT_GPIO
+                int "DM9051 Interrupt GPIO number"
+                default 4
+                range 0 33
+                help
+                    Set the GPIO number used by DM9051's Interrupt pin.
+        endif
+    endif
+endmenu

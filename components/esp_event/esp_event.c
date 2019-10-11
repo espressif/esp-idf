@@ -23,13 +23,13 @@
 #include "esp_event_internal.h"
 #include "esp_event_private.h"
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 #include "esp_timer.h"
 #endif
 
 /* ---------------------------- Definitions --------------------------------- */
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 // LOOP @<address, name> rx:<recieved events no.> dr:<dropped events no.>
 #define LOOP_DUMP_FORMAT              "LOOP @%p,%s rx:%u dr:%u\n"
  // handler @<address> ev:<base, id> inv:<times invoked> time:<runtime>
@@ -47,7 +47,7 @@
 static const char* TAG = "event";
 static const char* esp_event_any_base = "any";
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
 static SLIST_HEAD(esp_event_loop_instance_list_t, esp_event_loop_instance) s_event_loops =
         SLIST_HEAD_INITIALIZER(s_event_loops);
 
@@ -57,8 +57,10 @@ static portMUX_TYPE s_event_loops_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 /* ------------------------- Static Functions ------------------------------- */
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
-static int esp_event_dump_prepare()
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
+
+
+static int esp_event_dump_prepare(void)
 {
     esp_event_loop_instance_t* loop_it;
     esp_event_loop_node_t *loop_node_it;
@@ -124,14 +126,28 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_i
 {
     ESP_LOGD(TAG, "running post %s:%d with handler %p on loop %p", post.base, post.id, handler->handler, loop);
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     int64_t start, diff;
     start = esp_timer_get_time();
 #endif
     // Execute the handler
-    (*(handler->handler))(handler->arg, post.base, post.id, post.data);
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
+    void* data_ptr = NULL;
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+    if (post.data_set) {
+        if (post.data_allocated) {
+            data_ptr = post.data.ptr;
+        } else {
+            data_ptr = &post.data.val;
+        }
+    }
+
+    (*(handler->handler))(handler->arg, post.base, post.id, data_ptr);
+#else
+    (*(handler->handler))(handler->arg, post.base, post.id, post.data);
+#endif
+
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     diff = esp_timer_get_time() - start;
 
     xSemaphoreTake(loop->profiling_mutex, portMAX_DELAY);
@@ -154,7 +170,7 @@ static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, 
     handler_instance->handler = handler;
     handler_instance->arg = handler_arg;
 
-    if(SLIST_EMPTY(handlers)) {
+    if (SLIST_EMPTY(handlers)) {
         SLIST_INSERT_HEAD(handlers, handler_instance, next);
     }
     else {
@@ -164,6 +180,7 @@ static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, 
             if (handler == it->handler) {
                 it->arg = handler_arg;
                 ESP_LOGW(TAG, "handler already registered, overwriting");
+                free(handler_instance);
                 return ESP_OK;
             }
             last = it;
@@ -195,7 +212,7 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t
             id_node = (esp_event_id_node_t*) calloc(1, sizeof(*id_node));
 
             if (!id_node) {
-                ESP_LOGI(TAG, "alloc for new id node failed");
+                ESP_LOGE(TAG, "alloc for new id node failed");
                 return ESP_ERR_NO_MEM;
             }
 
@@ -212,6 +229,8 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t
                 else {
                     SLIST_INSERT_AFTER(last_id_node, id_node, next);
                 }
+            } else {
+                free(id_node);
             }
 
             return err;
@@ -263,6 +282,8 @@ static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node, esp_eve
                 else {
                     SLIST_INSERT_AFTER(last_base_node, base_node, next);
                 }
+            } else {
+                free(base_node);
             }
 
             return err;
@@ -371,34 +392,18 @@ static void loop_node_remove_all_handler(esp_event_loop_node_t* loop_node)
     }
 }
 
-static esp_err_t post_instance_create(esp_event_base_t event_base, int32_t event_id, void* event_data, int32_t event_data_size, esp_event_post_instance_t* post)
+static void inline __attribute__((always_inline)) post_instance_delete(esp_event_post_instance_t* post)
 {
-    void* event_data_copy = NULL;
-
-    // Make persistent copy of event data on heap.
-    if (event_data != NULL && event_data_size != 0) {
-        event_data_copy = calloc(1, event_data_size);
-
-        if (event_data_copy == NULL) {
-            ESP_LOGE(TAG, "alloc for post data to event %s:%d failed", event_base, event_id);
-            return ESP_ERR_NO_MEM;
-        }
-
-        memcpy(event_data_copy, event_data, event_data_size);
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
+    if (post->data_allocated && post->data.ptr) {
+        free(post->data.ptr);
     }
-
-    post->base = event_base;
-    post->id = event_id;
-    post->data = event_data_copy;
-
-    ESP_LOGD(TAG, "created post for event %s:%d", event_base, event_id);
-
-    return ESP_OK;
-}
-
-static void post_instance_delete(esp_event_post_instance_t* post)
-{
-    free(post->data);
+#else
+    if (post->data) {
+        free(post->data);
+    }
+#endif
+    memset(post, 0, sizeof(*post));
 }
 
 /* ---------------------------- Public API --------------------------------- */
@@ -413,7 +418,7 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     loop = calloc(1, sizeof(*loop));
     if (loop == NULL) {
         ESP_LOGE(TAG, "alloc for event loop failed");
-        goto on_err;
+        return err;
     }
 
     loop->queue = xQueueCreate(event_loop_args->queue_size , sizeof(esp_event_post_instance_t));
@@ -428,7 +433,7 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
         goto on_err;
     }
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     loop->profiling_mutex = xSemaphoreCreateMutex();
     if (loop->profiling_mutex == NULL) {
         ESP_LOGE(TAG, "create event loop profiling mutex failed");
@@ -460,7 +465,7 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
 
     loop->running_task = NULL;
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     portENTER_CRITICAL(&s_event_loops_spinlock);
     SLIST_INSERT_HEAD(&s_event_loops, loop, next);
     portEXIT_CRITICAL(&s_event_loops_spinlock);
@@ -473,16 +478,16 @@ esp_err_t esp_event_loop_create(const esp_event_loop_args_t* event_loop_args, es
     return ESP_OK;
 
 on_err:
-    if(loop->queue != NULL) {
+    if (loop->queue != NULL) {
         vQueueDelete(loop->queue);
     }
 
-    if(loop->mutex != NULL) {
+    if (loop->mutex != NULL) {
         vSemaphoreDelete(loop->mutex);
     }
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
-    if(loop->profiling_mutex != NULL) {
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
+    if (loop->profiling_mutex != NULL) {
         vSemaphoreDelete(loop->profiling_mutex);
     }
 #endif
@@ -507,7 +512,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
     TickType_t marker = xTaskGetTickCount();
     TickType_t end = 0;
 
-#if( configUSE_16_BIT_TICKS == 1 )
+#if (configUSE_16_BIT_TICKS == 1)
     int32_t remaining_ticks = ticks_to_run;
 #else
     int64_t remaining_ticks = ticks_to_run;
@@ -542,7 +547,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
                     }
 
                     SLIST_FOREACH(id_node, &(base_node->id_nodes), next) {
-                        if(id_node->id == post.id) {
+                        if (id_node->id == post.id) {
                             // Execute id level handlers
                             SLIST_FOREACH(handler, &(id_node->handlers), next) {
                                 handler_execute(loop, handler, post);
@@ -555,6 +560,9 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
                 }
             }
         }
+
+        esp_event_base_t base = post.base;
+        int32_t id = post.id;
 
         post_instance_delete(&post);
 
@@ -576,7 +584,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 
         if (!exec) {
             // No handlers were registered, not even loop/base level handlers
-            ESP_LOGW(TAG, "no handlers have been registered for event %s:%d posted to loop %p", post.base, post.id, event_loop);
+            ESP_LOGD(TAG, "no handlers have been registered for event %s:%d posted to loop %p", base, id, event_loop);
         }
     }
 
@@ -589,13 +597,13 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
     SemaphoreHandle_t loop_mutex = loop->mutex;
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     SemaphoreHandle_t loop_profiling_mutex = loop->profiling_mutex;
 #endif
 
     xSemaphoreTakeRecursive(loop->mutex, portMAX_DELAY);
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     xSemaphoreTakeRecursive(loop->profiling_mutex, portMAX_DELAY);
     portENTER_CRITICAL(&s_event_loops_spinlock);
     SLIST_REMOVE(&s_event_loops, loop, esp_event_loop_instance, next);
@@ -618,7 +626,7 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     // Drop existing posts on the queue
     esp_event_post_instance_t post;
     while(xQueueReceive(loop->queue, &post, 0) == pdTRUE) {
-        free(post.data);
+        post_instance_delete(&post);
     }
 
     // Cleanup loop
@@ -626,7 +634,7 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     free(loop);
     // Free loop mutex before deleting
     xSemaphoreGiveRecursive(loop_mutex);
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     xSemaphoreGiveRecursive(loop_profiling_mutex);
     vSemaphoreDelete(loop_profiling_mutex);
 #endif
@@ -688,6 +696,8 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop, es
             else {
                 SLIST_INSERT_AFTER(last_loop_node, loop_node, next);
             }
+        } else {
+            free(loop_node);
         }
     }
     else {
@@ -735,25 +745,39 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop, 
     return ESP_OK;
 }
 
-
 esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t event_base, int32_t event_id,
                             void* event_data, size_t event_data_size, TickType_t ticks_to_wait)
 {
     assert(event_loop);
 
     if (event_base == ESP_EVENT_ANY_BASE || event_id == ESP_EVENT_ANY_ID) {
-        ESP_LOGE(TAG, "posting nonspecific event base or id unsupported");
         return ESP_ERR_INVALID_ARG;
     }
 
     esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
 
     esp_event_post_instance_t post;
-    esp_err_t err = post_instance_create(event_base, event_id, event_data, event_data_size, &post);
+    memset((void*)(&post), 0, sizeof(post));
 
-    if (err != ESP_OK) {
-        return err;
+    if (event_data != NULL && event_data_size != 0) {
+        // Make persistent copy of event data on heap.
+        void* event_data_copy = calloc(1, event_data_size);
+
+        if (event_data_copy == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+
+        memcpy(event_data_copy, event_data, event_data_size);
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
+        post.data.ptr = event_data_copy;
+        post.data_allocated = true;
+        post.data_set = true;
+#else
+        post.data = event_data_copy;
+#endif
     }
+    post.base = event_base;
+    post.id = event_id;
 
     BaseType_t result = pdFALSE;
 
@@ -784,29 +808,71 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     if (result != pdTRUE) {
         post_instance_delete(&post);
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
-        xSemaphoreTake(loop->profiling_mutex, portMAX_DELAY);
-        loop->events_dropped++;
-        xSemaphoreGive(loop->profiling_mutex);
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
+        atomic_fetch_add(&loop->events_dropped, 1);
 #endif
         return ESP_ERR_TIMEOUT;
     }
 
-#ifdef CONFIG_EVENT_LOOP_PROFILING
-    xSemaphoreTake(loop->profiling_mutex, portMAX_DELAY);
-    loop->events_recieved++;
-    xSemaphoreGive(loop->profiling_mutex);
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
+    atomic_fetch_add(&loop->events_recieved, 1);
 #endif
-
-    ESP_LOGD(TAG, "posted %s:%d to loop %p", post.base, post.id, event_loop);
 
     return ESP_OK;
 }
 
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
+esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t event_base, int32_t event_id,
+                            void* event_data, size_t event_data_size, BaseType_t* task_unblocked)
+{
+    assert(event_loop);
+
+    if (event_base == ESP_EVENT_ANY_BASE || event_id == ESP_EVENT_ANY_ID) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_event_loop_instance_t* loop = (esp_event_loop_instance_t*) event_loop;
+
+    esp_event_post_instance_t post;
+    memset((void*)(&post), 0, sizeof(post));
+
+    if (event_data_size > sizeof(post.data.val)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (event_data != NULL && event_data_size != 0) {
+        memcpy((void*)(&(post.data.val)), event_data, event_data_size);
+        post.data_allocated = false;
+        post.data_set = true;
+    }
+    post.base = event_base;
+    post.id = event_id;
+
+    BaseType_t result = pdFALSE;
+
+    // Post the event from an ISR,
+    result = xQueueSendToBackFromISR(loop->queue, &post, task_unblocked);
+
+    if (result != pdTRUE) {
+        post_instance_delete(&post);
+
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
+        atomic_fetch_add(&loop->events_dropped, 1);
+#endif
+        return ESP_FAIL;
+    }
+
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
+    atomic_fetch_add(&loop->events_recieved, 1);
+#endif
+
+    return ESP_OK;
+}
+#endif
 
 esp_err_t esp_event_dump(FILE* file)
 {
-#ifdef CONFIG_EVENT_LOOP_PROFILING
+#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     assert(file);
 
     esp_event_loop_instance_t* loop_it;
@@ -826,8 +892,13 @@ esp_err_t esp_event_dump(FILE* file)
     portENTER_CRITICAL(&s_event_loops_spinlock);
 
     SLIST_FOREACH(loop_it, &s_event_loops, next) {
+        uint32_t events_recieved, events_dropped;
+
+        events_recieved = atomic_load(&loop_it->events_recieved);
+        events_dropped = atomic_load(&loop_it->events_dropped);
+
         PRINT_DUMP_INFO(dst, sz, LOOP_DUMP_FORMAT, loop_it, loop_it->task != NULL ? loop_it->name : "none" ,
-                        loop_it->events_recieved, loop_it->events_dropped);
+                        events_recieved, events_dropped);
 
         int sz_bak = sz;
 

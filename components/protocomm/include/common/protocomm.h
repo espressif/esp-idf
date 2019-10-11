@@ -52,7 +52,7 @@ typedef struct protocomm protocomm_t;
  *  - protocomm_t* : On success
  *  - NULL : No memory for allocating new instance
  */
-protocomm_t *protocomm_new();
+protocomm_t *protocomm_new(void);
 
 /**
  * @brief   Delete a protocomm instance
@@ -113,6 +113,39 @@ esp_err_t protocomm_add_endpoint(protocomm_t *pc, const char *ep_name,
  *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
  */
 esp_err_t protocomm_remove_endpoint(protocomm_t *pc, const char *ep_name);
+
+/**
+ * @brief   Allocates internal resources for new transport session
+ *
+ * @note
+ *  - An endpoint must be bound to a valid protocomm instance,
+ *    created using `protocomm_new()`.
+ *
+ * @param[in]  pc         Pointer to the protocomm instance
+ * @param[in]  session_id Unique ID for a communication session
+ *
+ * @return
+ *  - ESP_OK : Request handled successfully
+ *  - ESP_ERR_NO_MEM : Error allocating internal resource
+ *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
+ */
+esp_err_t protocomm_open_session(protocomm_t *pc, uint32_t session_id);
+
+/**
+ * @brief   Frees internal resources used by a transport session
+ *
+ * @note
+ *  - An endpoint must be bound to a valid protocomm instance,
+ *    created using `protocomm_new()`.
+ *
+ * @param[in]  pc         Pointer to the protocomm instance
+ * @param[in]  session_id Unique ID for a communication session
+ *
+ * @return
+ *  - ESP_OK : Request handled successfully
+ *  - ESP_ERR_INVALID_ARG : Null instance/name arguments
+ */
+esp_err_t protocomm_close_session(protocomm_t *pc, uint32_t session_id);
 
 /**
  * @brief   Calls the registered handler of an endpoint session

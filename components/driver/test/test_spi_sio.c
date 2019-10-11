@@ -16,7 +16,6 @@
 #include "unity.h"
 #include "driver/spi_master.h"
 #include "driver/spi_slave.h"
-#include "soc/dport_reg.h"
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "soc/spi_periph.h"
@@ -155,7 +154,7 @@ void test_sio_master_round(bool test_mosi)
     master_free_device_bus(spi);
 }
 
-void test_sio_master()
+void test_sio_master(void)
 {
     test_sio_master_round(true);
     unity_send_signal("master ready");
@@ -211,7 +210,7 @@ void test_sio_slave_round(bool test_mosi)
     spi_slave_free(TEST_SLAVE_HOST);
 }
 
-void test_sio_slave()
+void test_sio_slave(void)
 {
     test_sio_slave_round(true);
     unity_wait_for_signal("master ready");

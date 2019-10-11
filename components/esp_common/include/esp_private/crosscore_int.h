@@ -24,7 +24,7 @@
  * called automatically by the startup code and should not
  * be called manually.
  */
-void esp_crosscore_int_init();
+void esp_crosscore_int_init(void);
 
 
 /**

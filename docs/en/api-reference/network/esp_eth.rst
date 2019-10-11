@@ -7,48 +7,47 @@ Application Example
 -   Ethernet basic example: :example:`ethernet/ethernet`.
 -   Ethernet iperf example: :example:`ethernet/iperf`.
 
-PHY Interfaces
---------------
+Ethernet Driver Model
+---------------------
 
-The configured PHY model(s) are set in software by configuring the eth_config_t structure for the given PHY.
+  * :component_file:`esp_eth/include/esp_eth.h`
 
-Headers include a default configuration structure. These default configurations will need some members overriden or re-set before they can be used for a particular PHY hardware configuration. Consult the Ethernet example to see how this is done.
+Ethernet Common Interface
+-------------------------
 
-  * :component_file:`ethernet/include/eth_phy/phy.h` (common)
-  * :component_file:`ethernet/include/eth_phy/phy_tlk110.h`
-  * :component_file:`ethernet/include/eth_phy/phy_lan8720.h`
-  * :component_file:`ethernet/include/eth_phy/phy_ip101.h`
+  * :component_file:`esp_eth/include/esp_eth_com.h`
 
-PHY Configuration Constants
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Ethernet MAC Interface
+----------------------
 
-.. doxygenvariable:: phy_tlk110_default_ethernet_config
-.. doxygenvariable:: phy_lan8720_default_ethernet_config
-.. doxygenvariable:: phy_ip101_default_ethernet_config
+  * :component_file:`esp_eth/include/esp_eth_mac.h`
 
+Ethernet PHY Interface
+----------------------
 
-API Reference - Ethernet
-------------------------
+  * :component_file:`esp_eth/include/esp_eth_phy.h`
+
+Ethernet PHY Common Registers
+-----------------------------
+
+  * :component_file:`esp_eth/include/eth_phy_regs_struct.h`
+
+API Reference - Driver Model
+----------------------------
 
 .. include:: /_build/inc/esp_eth.inc
 
-API Reference - PHY Common
---------------------------
+API Reference - Common Interface
+--------------------------------
 
-.. include:: /_build/inc/phy.inc
+.. include:: /_build/inc/esp_eth_com.inc
 
-API Reference - PHY TLK110
---------------------------
+API Reference - MAC Interface
+-----------------------------
 
-.. include:: /_build/inc/phy_tlk110.inc
+.. include:: /_build/inc/esp_eth_mac.inc
 
-API Reference - PHY LAN8720
----------------------------
+API Reference - PHY Interface
+-----------------------------
 
-.. include:: /_build/inc/phy_lan8720.inc
-
-API Reference - PHY IP101
--------------------------
-
-.. include:: /_build/inc/phy_ip101.inc
-
+.. include:: /_build/inc/esp_eth_phy.inc

@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
+#include "driver/gpio.h"
 
 /**
  * This is an example which echos any data it receives on UART1 back to the sender,
@@ -30,7 +31,7 @@
 
 #define BUF_SIZE (1024)
 
-static void echo_task()
+static void echo_task(void *arg)
 {
     /* Configure parameters of an UART driver,
      * communication pins and install the driver */
@@ -56,7 +57,7 @@ static void echo_task()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     xTaskCreate(echo_task, "uart_echo_task", 1024, NULL, 10, NULL);
 }

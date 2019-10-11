@@ -48,7 +48,7 @@ static esp_err_t i2c_get_port(int port, i2c_port_t *i2c_port)
     return ESP_OK;
 }
 
-static esp_err_t i2c_master_driver_initialize()
+static esp_err_t i2c_master_driver_initialize(void)
 {
     i2c_config_t conf = {
         .mode = I2C_MODE_MASTER,

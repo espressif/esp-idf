@@ -23,7 +23,6 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
-#include "soc/gpio_reg.h"
 #include "unity.h"
 
 /* Second ESP32 board attached as follows:
@@ -127,7 +126,7 @@ static esp_err_t slave_slc_reg_write(sdmmc_card_t* card, uint32_t addr, uint32_t
 }
 
 /** Reset and put slave into download mode */
-static void reset_slave()
+static void reset_slave(void)
 {
     const int pin_en = 18;
     const int pin_io0 = 19;

@@ -30,7 +30,7 @@ To provision the device running this example, the `esp_prov.py` script needs to 
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set serial port under Serial Flasher Options.
@@ -44,7 +44,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
@@ -65,14 +65,12 @@ I (398) app_prov: Console provisioning started
 In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (please replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration, the script should be run as follows :
 
 ```
-python esp_prov.py --ssid myssid --passphrase mypassword --sec_ver 1 --pop abcd1234 --transport console
+python esp_prov.py --transport console --proto_ver "V0.1" --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
 ```
 
 A console will open up and the `Client->Device` commands have to be copied manually to the serial monitor console prompt :
 
 ```
-==== Esp_Prov Version: V0.1 ====
-
 ==== Verifying protocol version ====
 Client->Device msg : proto-ver 0 56302e31
 Enter device->client msg :
@@ -111,8 +109,6 @@ This is helpful in understanding the provisioning process and the order in which
 The full execution sequence of `esp_prov`, as seen on the console, is shown here :
 
 ```
-==== Esp_Prov Version: V0.1 ====
-
 ==== Verifying protocol version ====
 Client->Device msg : proto-ver 0 56302e31
 Enter device->client msg : 53554343455353
@@ -206,7 +202,7 @@ It means the Wi-Fi credentials were already set by some other application flashe
 
 ```
 make erase_flash
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 Or, enable `Reset Provisioning` option under `Example Configuration` under menuconfig. But this will erase the saved Wi-Fi credentials every time the device boots, so this is not the preferred solution.

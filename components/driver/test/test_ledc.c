@@ -20,8 +20,7 @@
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
 #include "unity.h"
-#include "soc/ledc_reg.h"
-#include "soc/ledc_struct.h"
+#include "soc/ledc_periph.h"
 #include "esp_system.h"
 #include "driver/pcnt.h"
 #include "driver/ledc.h"
@@ -84,9 +83,10 @@ static void timer_frequency_test(ledc_channel_t channel, ledc_timer_bit_t timer_
     };
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,
-        .bit_num = timer_bit,
+        .duty_resolution = timer_bit,
         .timer_num = timer,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
@@ -124,9 +124,10 @@ static void timer_duty_test(ledc_channel_t channel, ledc_timer_bit_t timer_bit, 
     };
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = speed_mode,
-        .bit_num = timer_bit,
+        .duty_resolution = timer_bit,
         .timer_num = timer,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
@@ -189,6 +190,7 @@ TEST_CASE("LEDC error log channel and timer config", "[ledc][test_env=UT_T1_LEDC
     ledc_time_config.duty_resolution = LEDC_TIMER_13_BIT;
     ledc_time_config.timer_num = LEDC_TIMER_0;
     ledc_time_config.freq_hz = 5000;
+    ledc_time_config.clk_cfg = LEDC_AUTO_CLK;
 
     ledc_timer_config_t temp_timer_config = ledc_time_config;
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
@@ -226,9 +228,10 @@ TEST_CASE("LEDC normal channel and timer config", "[ledc][test_env=UT_T1_LEDC]")
 
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .bit_num = LEDC_TIMER_13_BIT,
+        .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     ledc_timer_config_t temp_time_config = ledc_time_config;
 
@@ -295,9 +298,10 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
 
     ledc_timer_config_t ledc_time_config = {
         .speed_mode = LEDC_HIGH_SPEED_MODE,
-        .bit_num = 13,
+        .duty_resolution = 13,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
@@ -348,6 +352,7 @@ TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
         .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
@@ -393,6 +398,7 @@ TEST_CASE("LEDC fade with time(logic analyzer)", "[ledc][ignore]")
         .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
@@ -430,6 +436,7 @@ TEST_CASE("LEDC fade with step(logic analyzer)", "[ledc][ignore]")
         .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 
@@ -471,6 +478,7 @@ TEST_CASE("LEDC memory test", "[ledc][test_env=UT_T1_LEDC]")
         .duty_resolution = LEDC_TIMER_13_BIT,
         .timer_num = LEDC_TIMER_0,
         .freq_hz = 5000,
+        .clk_cfg = LEDC_AUTO_CLK,
     };
     TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
 

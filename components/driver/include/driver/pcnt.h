@@ -2,17 +2,14 @@
 #define __PCNT_H__
 
 #include <esp_types.h>
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "soc/soc.h"
-#include "soc/pcnt_reg.h"
-#include "soc/pcnt_struct.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/pcnt_periph.h"
 #include "driver/gpio.h"
-#include "esp_intr_alloc.h"
 
 #ifdef __cplusplus
 extern "C" {

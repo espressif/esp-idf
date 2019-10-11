@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
-#include "soc/timer_group_struct.h"
 #include "driver/periph_ctrl.h"
 #include "driver/timer.h"
 
@@ -61,11 +60,8 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
-    uint32_t intr_status = TIMERG0.int_st_timers.val;
-    TIMERG0.hw_timer[timer_idx].update = 1;
-    uint64_t timer_counter_value = 
-        ((uint64_t) TIMERG0.hw_timer[timer_idx].cnt_high) << 32
-        | TIMERG0.hw_timer[timer_idx].cnt_low;
+    timer_intr_t timer_intr = timer_group_intr_get_in_isr(TIMER_GROUP_0);
+    uint64_t timer_counter_value = timer_group_get_counter_value_in_isr(TIMER_GROUP_0, timer_idx);
 
     /* Prepare basic event data
        that will be then sent back to the main program task */
@@ -76,22 +72,21 @@ void IRAM_ATTR timer_group0_isr(void *para)
 
     /* Clear the interrupt
        and update the alarm time for the timer with without reload */
-    if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_0) {
+    if (timer_intr & TIMER_INTR_T0) {
         evt.type = TEST_WITHOUT_RELOAD;
-        TIMERG0.int_clr_timers.t0 = 1;
+        timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
         timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-        TIMERG0.hw_timer[timer_idx].alarm_high = (uint32_t) (timer_counter_value >> 32);
-        TIMERG0.hw_timer[timer_idx].alarm_low = (uint32_t) timer_counter_value;
-    } else if ((intr_status & BIT(timer_idx)) && timer_idx == TIMER_1) {
+        timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, timer_idx, timer_counter_value);
+    } else if (timer_intr & TIMER_INTR_T1) {
         evt.type = TEST_WITH_RELOAD;
-        TIMERG0.int_clr_timers.t1 = 1;
+        timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_1);
     } else {
         evt.type = -1; // not supported even type
     }
 
     /* After the alarm has been triggered
       we need enable it again, so it is triggered the next time */
-    TIMERG0.hw_timer[timer_idx].config.alarm_en = TIMER_ALARM_EN;
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, timer_idx);
 
     /* Now just send the event data back to the main program task */
     xQueueSendFromISR(timer_queue, &evt, NULL);
@@ -104,7 +99,7 @@ void IRAM_ATTR timer_group0_isr(void *para)
  * auto_reload - should the timer auto reload on alarm?
  * timer_interval_sec - the interval of alarm to set
  */
-static void example_tg0_timer_init(int timer_idx, 
+static void example_tg0_timer_init(int timer_idx,
     bool auto_reload, double timer_interval_sec)
 {
     /* Select and initialize basic parameters of the timer */
@@ -124,7 +119,7 @@ static void example_tg0_timer_init(int timer_idx,
     /* Configure the alarm value and the interrupt on alarm. */
     timer_set_alarm_value(TIMER_GROUP_0, timer_idx, timer_interval_sec * TIMER_SCALE);
     timer_enable_intr(TIMER_GROUP_0, timer_idx);
-    timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr, 
+    timer_isr_register(TIMER_GROUP_0, timer_idx, timer_group0_isr,
         (void *) timer_idx, ESP_INTR_FLAG_IRAM, NULL);
 
     timer_start(TIMER_GROUP_0, timer_idx);
@@ -164,7 +159,7 @@ static void timer_example_evt_task(void *arg)
 /*
  * In this example, we will test hardware timer0 and timer1 of timer group0.
  */
-void app_main()
+void app_main(void)
 {
     timer_queue = xQueueCreate(10, sizeof(timer_event_t));
     example_tg0_timer_init(TIMER_0, TEST_WITHOUT_RELOAD, TIMER_INTERVAL0_SEC);

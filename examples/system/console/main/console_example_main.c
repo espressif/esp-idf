@@ -32,7 +32,7 @@ static const char* TAG = "example";
 #define MOUNT_PATH "/data"
 #define HISTORY_PATH MOUNT_PATH "/history.txt"
 
-static void initialize_filesystem()
+static void initialize_filesystem(void)
 {
     static wl_handle_t wl_handle;
     const esp_vfs_fat_mount_config_t mount_config = {
@@ -47,7 +47,7 @@ static void initialize_filesystem()
 }
 #endif // CONFIG_STORE_HISTORY
 
-static void initialize_nvs()
+static void initialize_nvs(void)
 {
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -57,7 +57,7 @@ static void initialize_nvs()
     ESP_ERROR_CHECK(err);
 }
 
-static void initialize_console()
+static void initialize_console(void)
 {
     /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
@@ -71,20 +71,20 @@ static void initialize_console()
      * correct while APB frequency is changing in light sleep mode.
      */
     const uart_config_t uart_config = {
-            .baud_rate = CONFIG_CONSOLE_UART_BAUDRATE,
+            .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
             .data_bits = UART_DATA_8_BITS,
             .parity = UART_PARITY_DISABLE,
             .stop_bits = UART_STOP_BITS_1,
             .use_ref_tick = true
     };
-    ESP_ERROR_CHECK( uart_param_config(CONFIG_CONSOLE_UART_NUM, &uart_config) );
+    ESP_ERROR_CHECK( uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config) );
 
     /* Install UART driver for interrupt-driven reads and writes */
-    ESP_ERROR_CHECK( uart_driver_install(CONFIG_CONSOLE_UART_NUM,
+    ESP_ERROR_CHECK( uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
             256, 0, 0, NULL, 0) );
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 
     /* Initialize the console */
     esp_console_config_t console_config = {
@@ -115,7 +115,7 @@ static void initialize_console()
 #endif
 }
 
-void app_main()
+void app_main(void)
 {
     initialize_nvs();
 

@@ -74,8 +74,9 @@ used to free memory pointed to by TLSP. Call
 Callbacks.
 
 :ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be 
-configured using ``make meunconfig`` such as running ESP-IDF in Unicore Mode,
-or configuring the number of Thread Local Storage Pointers each task will have.
+set in the project configuration (``idf.py menuconfig``) such as running ESP-IDF in
+Unicore (single core) Mode, or configuring the number of Thread Local Storage Pointers
+each task will have.
 
 
 .. _backported-features:
@@ -89,7 +90,7 @@ Static Alocation
 ^^^^^^^^^^^^^^^^^
 
 This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The 
-:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
+:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
 in order for static allocation functions to be available. Once enabled, the 
 following functions can be called...
 
@@ -291,7 +292,7 @@ resumed. Scheduler suspension in vanilla FreeRTOS is a common protection method
 against simultaneous access of data shared between tasks, whilst still allowing 
 ISRs to be serviced.
 
-In ESP-IDF FreeRTOS, :cpp:func:`xTaskResumeAll` will only prevent calls of 
+In ESP-IDF FreeRTOS, :cpp:func:`xTaskSuspendAll` will only prevent calls of
 ``vTaskSwitchContext()`` from switching contexts on the core that called for the
 suspension. Hence if **PRO_CPU** calls :cpp:func:`vTaskSuspendAll`, **APP_CPU** will 
 still be able to switch contexts. If data is shared between tasks that are 
@@ -376,6 +377,11 @@ The ESP-IDF FreeRTOS critical section functions have been modified as follows…
  - ``taskEXIT_CRITICAL(mux)``, ``taskEXIT_CRITICAL_ISR(mux)``, 
    ``portEXIT_CRITICAL(mux)``, ``portEXIT_CRITICAL_ISR(mux)`` are all macro 
    defined to call :cpp:func:`vTaskExitCritical`
+
+ - ``portENTER_CRITICAL_SAFE(mux)``, ``portEXIT_CRITICAL_SAFE(mux)`` macro identifies
+   the context of execution, i.e ISR or Non-ISR, and calls appropriate critical
+   section functions (``port*_CRITICAL`` in Non-ISR and ``port*_CRITICAL_ISR`` in ISR)
+   in order to be in compliance with Vanilla FreeRTOS.
 
 For more details see :component_file:`freertos/include/freertos/portmacro.h` 
 and :component_file:`freertos/task.c`
@@ -473,10 +479,10 @@ For more details see :doc:`FreeRTOS API reference<../api-reference/system/freert
 Configuring ESP-IDF FreeRTOS
 ----------------------------
 
-The ESP-IDF FreeRTOS can be configured using ``make menuconfig`` under 
-``Component_Config/FreeRTOS``. The following section highlights some of the
-ESP-IDF FreeRTOS configuration options. For a full list of ESP-IDF
-FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
+The ESP-IDF FreeRTOS can be configured in the project configuration menu
+(``idf.py menuconfig``) under ``Component Config/FreeRTOS``. The following section
+highlights some of the ESP-IDF FreeRTOS configuration options. For a full list of
+ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
 
 :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
 on **PRO_CPU**. Note that this is **not equivalent to running vanilla 
@@ -489,7 +495,7 @@ occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 number of Thread Local Storage Pointers each task will have in ESP-IDF 
 FreeRTOS.
 
-:ref:`CONFIG_SUPPORT_STATIC_ALLOCATION` will enable the backported
+:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` will enable the backported
 functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
     
 :ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in

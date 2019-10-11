@@ -113,7 +113,8 @@ function(git_describe _var _repo_dir)
 		${_repo_dir}
 		describe
 		"--always"
-		${hash}
+		"--tags"
+		"--dirty"
 		${ARGN}
 		WORKING_DIRECTORY
 		"${CMAKE_CURRENT_SOURCE_DIR}"

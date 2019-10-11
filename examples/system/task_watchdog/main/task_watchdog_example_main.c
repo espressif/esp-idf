@@ -42,17 +42,17 @@ void reset_task(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Initialize TWDT\n");
     //Initialize or reinitialize TWDT
     CHECK_ERROR_CODE(esp_task_wdt_init(TWDT_TIMEOUT_S, false), ESP_OK);
 
     //Subscribe Idle Tasks to TWDT if they were not subscribed at startup
-#ifndef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
+#ifndef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
     esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(0));
 #endif
-#ifndef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
+#ifndef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
     esp_task_wdt_add(xTaskGetIdleTaskHandleForCPU(1));
 #endif
 

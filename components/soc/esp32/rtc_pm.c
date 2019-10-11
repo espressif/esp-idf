@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <assert.h>
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
 
 typedef enum {
     PM_LIGHT_SLEEP = BIT(2),        /*!< WiFi PD, memory in light sleep */
@@ -30,14 +29,14 @@ typedef enum{
 /* These MAC-related functions are defined in the closed source part of
  * RTC library
  */
-extern void pm_mac_init();
-extern int pm_check_mac_idle();
-extern void pm_mac_deinit();
+extern void pm_mac_init(void);
+extern int pm_check_mac_idle(void);
+extern void pm_mac_deinit(void);
 
 /* This sleep-related function is called from the closed source part of RTC
  * library.
  */
-pm_sw_reject_t pm_set_sleep_mode(pm_sleep_mode_t sleep_mode, void(*pmac_save_params)())
+pm_sw_reject_t pm_set_sleep_mode(pm_sleep_mode_t sleep_mode, void(*pmac_save_params)(void))
 {
     (void) pmac_save_params; /* unused */
 

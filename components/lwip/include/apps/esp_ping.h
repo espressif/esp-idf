@@ -24,7 +24,7 @@ extern "C" {
 // gen_esp_err_to_name.py: include this as "esp_ping.h" because "components/lwip/include/apps/" is in the compiler path
 // and not "components/lwip/include"
 
-#define ESP_ERR_PING_BASE               0x6000
+#define ESP_ERR_PING_BASE               0xa000
 
 #define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x01
 #define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x02

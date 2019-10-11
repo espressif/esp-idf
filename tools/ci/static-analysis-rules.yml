@@ -1,0 +1,23 @@
+limits:
+  "clang-analyzer-core.NullDereference" : 9
+  "clang-analyzer-unix.Malloc" : 9
+
+ignore:
+  - "llvm-header-guard"
+  - "llvm-include-order"
+
+skip:
+  - "components/mbedtls/mbedtls"
+  - "components/lwip/lwip"
+  - "components/asio/asio"
+  - "components/bootloader/subproject/components/micro-ecc/micro-ecc"
+  - "components/bt/lib"
+  - "components/coap/libcoap"
+  - "components/esp_wifi/lib_esp32"
+  - "components/expat/expat"
+  - "components/json/cJSON"
+  - "components/libsodium/libsodium"
+  - "components/nghttp/nghttp2"
+  - "components/protobuf-c/protobuf-c"
+  - "components/spiffs/spiffs"
+  - "components/unity/unity"

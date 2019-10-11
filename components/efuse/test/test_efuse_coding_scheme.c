@@ -2,7 +2,7 @@
 #include <strings.h>
 #include "esp_efuse.h"
 #include "../src/esp_efuse_utility.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 #include "unity.h"
 #include "bootloader_random.h"
 

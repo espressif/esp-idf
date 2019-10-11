@@ -4,14 +4,11 @@ The Example consists of HTTPD server demo with demostration of URI handling :
     1. URI \hello for GET command returns "Hello World!" message
     2. URI \echo for POST command echoes back the POSTed message
 
-* Configure the project using "make menuconfig" and goto :
-    * Example Configuration ->
-        1. WIFI SSID: WIFI network to which your PC is also connected to.
-        2. WIFI Password: WIFI password
+* Open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 
 * In order to test the HTTPD server persistent sockets demo :
-    1. compile and burn the firmware "make flash"
-    2. run "make monitor" and note down the IP assigned to your ESP module. The default port is 80
+    1. compile and burn the firmware `idf.py -p PORT flash`
+    2. run `idf.py -p PORT monitor` and note down the IP assigned to your ESP module. The default port is 80
     3. test the example :
         * run the test script : "python2 scripts/client.py \<IP\> \<port\> \<MSG\>"
             * the provided test script first does a GET \hello and displays the response

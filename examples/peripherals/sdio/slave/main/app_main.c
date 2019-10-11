@@ -8,10 +8,8 @@
    */
 #include "driver/sdio_slave.h"
 #include "esp_log.h"
-#include "esp32/rom/lldesc.h"
 #include "sys/queue.h"
 #include "soc/soc.h"
-#include "soc/sdio_slave_periph.h"
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "sdkconfig.h"
@@ -60,7 +58,7 @@
 #define SDIO_SLAVE_QUEUE_SIZE 11
 
 #define BUFFER_SIZE     128
-#define BUFFER_NUM      12
+#define BUFFER_NUM      16
 
 #define EV_STR(s) "================ "s" ================"
 
@@ -86,7 +84,7 @@ static const char job_desc[][32] = {
 
 
 //reset counters of the slave hardware, and clean the receive buffer (normally they should be sent back to the host)
-static esp_err_t slave_reset()
+static esp_err_t slave_reset(void)
 {
     esp_err_t ret;
     sdio_slave_stop();
@@ -107,7 +105,7 @@ static esp_err_t slave_reset()
 }
 
 //sent interrupts to the host in turns
-static esp_err_t task_hostint()
+static esp_err_t task_hostint(void)
 {
     for(int i = 0; i < 8; i++) {
         ESP_LOGV(TAG, "send intr: %d", i);
@@ -121,7 +119,7 @@ static esp_err_t task_hostint()
 
 //read the value in a specified register set by the host, and set other register according to this.
 //the host will read these registers later
-static esp_err_t task_write_reg()
+static esp_err_t task_write_reg(void)
 {
     //the host write REG1, the slave should write its registers according to value of REG1
     uint8_t read = sdio_slave_read_reg(1);
@@ -158,7 +156,7 @@ static void event_cb(uint8_t pos)
 DMA_ATTR uint8_t buffer[BUFFER_NUM][BUFFER_SIZE] = {};
 
 //Main application
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
 

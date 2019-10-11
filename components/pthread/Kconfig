@@ -1,13 +1,13 @@
 menu "PThreads"
 
-    config ESP32_PTHREAD_TASK_PRIO_DEFAULT
+    config PTHREAD_TASK_PRIO_DEFAULT
         int "Default task priority"
         range 0 255
         default 5
         help
             Priority used to create new tasks with default pthread parameters.
 
-    config ESP32_PTHREAD_TASK_STACK_SIZE_DEFAULT
+    config PTHREAD_TASK_STACK_SIZE_DEFAULT
         int "Default task stack size"
         default 3072
         help
@@ -19,28 +19,28 @@ menu "PThreads"
         help
             Minimum allowed pthread stack size set in attributes passed to pthread_create
 
-    choice ESP32_PTHREAD_TASK_CORE_DEFAULT
+    choice PTHREAD_TASK_CORE_DEFAULT
         bool "Default pthread core affinity"
-        default ESP32_DEFAULT_PTHREAD_CORE_NO_AFFINITY
+        default PTHREAD_DEFAULT_CORE_NO_AFFINITY
         depends on !FREERTOS_UNICORE
         help
             The default core to which pthreads are pinned.
 
-        config ESP32_DEFAULT_PTHREAD_CORE_NO_AFFINITY
+        config PTHREAD_DEFAULT_CORE_NO_AFFINITY
             bool "No affinity"
-        config ESP32_DEFAULT_PTHREAD_CORE_0
+        config PTHREAD_DEFAULT_CORE_0
             bool "Core 0"
-        config ESP32_DEFAULT_PTHREAD_CORE_1
+        config PTHREAD_DEFAULT_CORE_1
             bool "Core 1"
     endchoice
 
-    config ESP32_PTHREAD_TASK_CORE_DEFAULT
+    config PTHREAD_TASK_CORE_DEFAULT
         int
-        default -1 if ESP32_DEFAULT_PTHREAD_CORE_NO_AFFINITY || FREERTOS_UNICORE
-        default 0 if ESP32_DEFAULT_PTHREAD_CORE_0
-        default 1 if ESP32_DEFAULT_PTHREAD_CORE_1
+        default -1 if PTHREAD_DEFAULT_CORE_NO_AFFINITY || FREERTOS_UNICORE
+        default 0 if PTHREAD_DEFAULT_CORE_0
+        default 1 if PTHREAD_DEFAULT_CORE_1
 
-    config ESP32_PTHREAD_TASK_NAME_DEFAULT
+    config PTHREAD_TASK_NAME_DEFAULT
         string "Default name of pthreads"
         default "pthread"
         help

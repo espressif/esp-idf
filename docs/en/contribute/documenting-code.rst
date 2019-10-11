@@ -215,6 +215,35 @@ Try them out by modifying the source code and see the diagram instantly renderin
     There may be slight differences in rendering of font used by the `interactive shell`_ compared to the font used in the esp-idf documentation.
 
 
+Add Notes
+---------
+
+Working on a document, you might need to:
+
+- Place some suggestions on what should be added or modified in future.
+- Leave a reminder for yourself or somebody else to follow up.
+
+In this case, add a todo note to your reST file using the directive ``.. todo::``. For example:
+
+.. code-block:: none
+
+   .. todo::
+
+      Add a package diagram.
+
+If you add ``.. todolist::`` to a reST file, the directive will be replaced by a list of all todo notes from the whole documentation.
+
+By default, the directives ``.. todo::`` and ``.. todolist::`` are ignored by documentation builders. If you want the notes and the list of notes to be visible in your locally built documentation, do the following:
+
+1. Open your local ``conf_common.py`` file.
+2. Find the parameter ``todo_include_todos``.
+3. Change its value from ``False`` to ``True``.
+
+Before pushing your changes to origin, please set the value of ``todo_include_todos`` back to ``False``.
+
+For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documenation.
+
+
 Put it all together
 -------------------
 

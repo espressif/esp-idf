@@ -26,14 +26,14 @@
 #define VALID_NETIF_ID(id) ((id < ESP_IF_MAX) && (id != ESP_IF_WIFI_AP))
 
 static uint32_t restored_ip_addr[TCPIP_ADAPTER_IF_MAX];
-static const char *interface_key[] = {"IF_STA", "IF_AP", "IF_ETH"};
+static const char *interface_key[] = {"IF_STA", "IF_AP", "IF_ETH", "IF_TEST"};
 
 _Static_assert(sizeof(interface_key) / sizeof(char*) == TCPIP_ADAPTER_IF_MAX,
                "Number interface keys differs from number of interfaces");
 
 bool dhcp_ip_addr_restore(void *netif)
 {
-    nvs_handle nvs;
+    nvs_handle_t nvs;
     bool err = false;
     struct netif *net = (struct netif *)netif;
     struct dhcp *dhcp = netif_dhcp_data(net);
@@ -54,7 +54,7 @@ bool dhcp_ip_addr_restore(void *netif)
 
 void dhcp_ip_addr_store(void *netif)
 {
-    nvs_handle nvs;
+    nvs_handle_t nvs;
     struct netif *net = (struct netif *)netif;
     struct dhcp *dhcp = netif_dhcp_data(net);
     uint32_t ip_addr = dhcp->offered_ip_addr.addr;
@@ -73,7 +73,7 @@ void dhcp_ip_addr_store(void *netif)
 
 void dhcp_ip_addr_erase(void *netif)
 {
-    nvs_handle nvs;
+    nvs_handle_t nvs;
     struct netif *net = (struct netif *)netif;
     esp_interface_t netif_id = tcpip_adapter_get_esp_if(net);
 

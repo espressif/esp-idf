@@ -1,15 +1,11 @@
-menu "Example Configuration"
+menu "Example CoAP Server Configuration"
 
-    config WIFI_SSID
-        string "WiFi SSID"
-        default "myssid"
+    config EXAMPLE_COAP_PSK_KEY
+        string "Preshared Key (PSK) to used in the connection from the CoAP client"
+        depends on COAP_MBEDTLS_PSK
+        default "secret-key"
         help
-            SSID (network name) for the example to connect to.
-
-    config WIFI_PASSWORD
-        string "WiFi Password"
-        default "mypassword"
-        help
-            WiFi password (WPA or WPA2) for the example to use.
-
+            The Preshared Key to use to encrypt the communicatons. The same key must be
+            used at both ends of the CoAP connection, and the CoaP client must request
+            an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
 endmenu

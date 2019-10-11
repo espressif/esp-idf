@@ -9,7 +9,7 @@
 
 #pragma once
 
-#include <esp_event_loop.h>
+#include <esp_event.h>
 
 #include <protocomm_security.h>
 #include <wifi_provisioning/wifi_config.h>
@@ -41,21 +41,6 @@ esp_err_t app_prov_get_wifi_state(wifi_prov_sta_state_t* state);
  *  - ESP_FAIL  : Provisioning app not running
  */
 esp_err_t app_prov_get_wifi_disconnect_reason(wifi_prov_sta_fail_reason_t* reason);
-
-/**
- * @brief   Event handler for provisioning app
- *
- * This is called from the main event handler and controls the
- * provisioning application, depeding on WiFi events
- *
- * @param[in] ctx   Event context data
- * @param[in] event Event info
- *
- * @return
- *  - ESP_OK      : Event handled successfully
- *  - ESP_FAIL    : Failed to start server on event AP start
- */
-esp_err_t app_prov_event_handler(void *ctx, system_event_t *event);
 
 /**
  * @brief   Checks if device is provisioned

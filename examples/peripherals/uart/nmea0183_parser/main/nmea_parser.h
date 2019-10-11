@@ -30,7 +30,7 @@ extern "C" {
  * @brief Declare of NMEA Parser Event base
  *
  */
-ESP_EVENT_DECLARE_BASE(ESP_NMEA_EVENT)
+ESP_EVENT_DECLARE_BASE(ESP_NMEA_EVENT);
 
 /**
  * @brief GPS fix type

@@ -1,11 +1,8 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+idf_component_register(SRC_DIRS "."
+                    INCLUDE_DIRS "."
+                    REQUIRES unity ulp soc esp_common)
 
-set(COMPONENT_REQUIRES unity ulp soc)
-
-register_component()
-
-set(ULP_APP_NAME ulp_test_app)
-set(ULP_S_SOURCES "ulp/test_jumps.S")
-set(ULP_EXP_DEP_SRCS "test_ulp_as.c")
-include(${IDF_PATH}/components/ulp/component_ulp_common.cmake)
+set(ulp_app_name ulp_test_app)
+set(ulp_s_sources "ulp/test_jumps.S")
+set(ulp_exp_dep_srcs "test_ulp_as.c")
+ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})

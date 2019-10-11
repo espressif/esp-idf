@@ -17,18 +17,17 @@
 #include "esp_system.h"
 #include "esp_attr.h"
 #include "esp_wifi.h"
-#include "esp_wifi_internal.h"
+#include "esp_private/wifi.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "esp32/rom/efuse.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/uart.h"
 #include "soc/dport_reg.h"
-#include "soc/gpio_reg.h"
-#include "soc/efuse_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/timer_group_reg.h"
-#include "soc/timer_group_struct.h"
+#include "soc/gpio_periph.h"
+#include "soc/efuse_periph.h"
+#include "soc/rtc_periph.h"
+#include "soc/timer_periph.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
 #include "soc/rtc_wdt.h"
@@ -39,6 +38,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
+#include "hal/timer_ll.h"
 
 static const char* TAG = "system_api";
 
@@ -46,10 +46,6 @@ static uint8_t base_mac_addr[6] = { 0 };
 
 #define SHUTDOWN_HANDLERS_NO 2
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
-
-void system_init()
-{
-}
 
 esp_err_t esp_base_mac_addr_set(uint8_t *mac)
 {
@@ -121,9 +117,6 @@ esp_err_t esp_efuse_mac_get_default(uint8_t* mac)
     }
     return ESP_OK;
 }
-
-esp_err_t system_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
-esp_err_t esp_efuse_read_mac(uint8_t *mac) __attribute__((alias("esp_efuse_mac_get_default")));
 
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
 {
@@ -205,23 +198,35 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         ESP_LOGW(TAG, "incorrect mac type");
         break;
     }
-  
+
     return ESP_OK;
 }
 
 esp_err_t esp_register_shutdown_handler(shutdown_handler_t handler)
 {
-     int i;
-     for (i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
-	  if (shutdown_handlers[i] == NULL) {
-	       shutdown_handlers[i] = handler;
-	       return ESP_OK;
-	  }
-     }
-     return ESP_FAIL;
+    for (int i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+        if (shutdown_handlers[i] == handler) {
+            return ESP_ERR_INVALID_STATE;
+        } else if (shutdown_handlers[i] == NULL) {
+            shutdown_handlers[i] = handler;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_NO_MEM;
 }
 
-void esp_restart_noos() __attribute__ ((noreturn));
+esp_err_t esp_unregister_shutdown_handler(shutdown_handler_t handler)
+{
+    for (int i = 0; i < SHUTDOWN_HANDLERS_NO; i++) {
+        if (shutdown_handlers[i] == handler) {
+            shutdown_handlers[i] = NULL;
+            return ESP_OK;
+        }
+    }
+    return ESP_ERR_INVALID_STATE;
+}
+
+void esp_restart_noos(void) __attribute__ ((noreturn));
 
 void IRAM_ATTR esp_restart(void)
 {
@@ -242,7 +247,7 @@ void IRAM_ATTR esp_restart(void)
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
 */
-void IRAM_ATTR esp_restart_noos()
+void IRAM_ATTR esp_restart_noos(void)
 {
     // Disable interrupts
     xt_ints_off(0xFFFFFFFF);
@@ -270,12 +275,13 @@ void IRAM_ATTR esp_restart_noos()
     esp_dport_access_int_abort();
 
     // Disable TG0/TG1 watchdogs
-    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG0.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect=0;
-    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect=0;
+    timer_ll_wdt_set_protect(&TIMERG0, false);
+    timer_ll_wdt_set_enable(&TIMERG0, false);
+    timer_ll_wdt_set_protect(&TIMERG0, true);
+
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_set_enable(&TIMERG1, false);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 
     // Flush any data left in UART FIFOs
     uart_tx_wait_idle(0);
@@ -296,16 +302,16 @@ void IRAM_ATTR esp_restart_noos()
     WRITE_PERI_REG(GPIO_FUNC5_IN_SEL_CFG_REG, 0x30);
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
-    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, 
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
          DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
          DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST | 
+         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
          DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
-            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST);
+            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST);
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
@@ -331,8 +337,6 @@ void IRAM_ATTR esp_restart_noos()
     }
 }
 
-void system_restart(void) __attribute__((alias("esp_restart")));
-
 uint32_t esp_get_free_heap_size( void )
 {
     return heap_caps_get_free_size( MALLOC_CAP_DEFAULT );
@@ -343,47 +347,32 @@ uint32_t esp_get_minimum_free_heap_size( void )
     return heap_caps_get_minimum_free_size( MALLOC_CAP_DEFAULT );
 }
 
-uint32_t system_get_free_heap_size(void) __attribute__((alias("esp_get_free_heap_size")));
-
-const char* system_get_sdk_version(void)
-{
-    return "master";
-}
-
 const char* esp_get_idf_version(void)
 {
     return IDF_VER;
 }
 
-static void get_chip_info_esp32(esp_chip_info_t* out_info)
+void esp_chip_info(esp_chip_info_t* out_info)
 {
-    uint32_t reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
+    uint32_t efuse_rd3 = REG_READ(EFUSE_BLK0_RDATA3_REG);
     memset(out_info, 0, sizeof(*out_info));
-    
+
     out_info->model = CHIP_ESP32;
-    if ((reg & EFUSE_RD_CHIP_VER_REV1_M) != 0) {
-        out_info->revision = 1;
-    }
-    if ((reg & EFUSE_RD_CHIP_VER_DIS_APP_CPU_M) == 0) {
+    out_info->revision = esp_efuse_get_chip_ver();
+
+    if ((efuse_rd3 & EFUSE_RD_CHIP_VER_DIS_APP_CPU_M) == 0) {
         out_info->cores = 2;
     } else {
         out_info->cores = 1;
     }
     out_info->features = CHIP_FEATURE_WIFI_BGN;
-    if ((reg & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
+    if ((efuse_rd3 & EFUSE_RD_CHIP_VER_DIS_BT_M) == 0) {
         out_info->features |= CHIP_FEATURE_BT | CHIP_FEATURE_BLE;
     }
-    int package = (reg & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
+    int package = (efuse_rd3 & EFUSE_RD_CHIP_VER_PKG_M) >> EFUSE_RD_CHIP_VER_PKG_S;
     if (package == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
         package == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) {
         out_info->features |= CHIP_FEATURE_EMB_FLASH;
     }
-}
-
-void esp_chip_info(esp_chip_info_t* out_info)
-{
-    // Only ESP32 is supported now, in the future call one of the
-    // chip-specific functions based on sdkconfig choice
-    return get_chip_info_esp32(out_info);
 }

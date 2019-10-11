@@ -33,7 +33,7 @@ To run this example, you should have one ESP32 dev board (e.g. ESP32-WROVER Kit)
 
 ### Configure the project
 
-Enter `make menuconfig` if you are using GNU Make based build system or enter `idf.py menuconfig` if you are using CMake based build system. Then go into `Example Configuration` menu.
+Open the project configuration menu (`idf.py menuconfig`). Then go into `Example Configuration` menu.
 
 - You can choose whether or not to save command history into flash in `Store command history in flash` option.
 - You can set the maximum number of command line arguments under `Maximum number of command line arguments` option.
@@ -41,7 +41,7 @@ Enter `make menuconfig` if you are using GNU Make based build system or enter `i
 
 ### Build and Flash
 
-Enter `make -j4 flash monitor` if you are using GNU Make based build system or enter `idf.py build flash monitor` if you are using CMake based build system.
+Run `idf.py -p PORT flash monitor` to build and flash the project..
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 

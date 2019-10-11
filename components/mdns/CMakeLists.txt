@@ -1,9 +1,7 @@
-set(COMPONENT_SRCS "mdns.c"
-                   "mdns_console.c"
-                   "mdns_networking.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-set(COMPONENT_PRIV_INCLUDEDIRS "private_include")
-set(COMPONENT_REQUIRES lwip mbedtls console tcpip_adapter)
-
-register_component()
+idf_component_register(SRCS "mdns.c"
+                            "mdns_console.c"
+                            "mdns_networking.c"
+                    INCLUDE_DIRS "include"
+                    PRIV_INCLUDE_DIRS "private_include"
+                    REQUIRES lwip mbedtls console tcpip_adapter)
 

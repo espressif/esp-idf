@@ -1,10 +1,32 @@
 menu "ESP32-specific"
 
-    # Hidden option to support checking for this specific target in C code and Kconfig files
-    config IDF_TARGET_ESP32
+    choice ESP32_REV_MIN
+        prompt "Minimum Supported ESP32 Revision"
+        default ESP32_REV_MIN_0
+        help
+            Minimum revision that ESP-IDF would support.
+            ESP-IDF performs different strategy on different esp32 revision.
+
+        config ESP32_REV_MIN_0
+            bool "Rev 0"
+        config ESP32_REV_MIN_1
+            bool "Rev 1"
+        config ESP32_REV_MIN_2
+            bool "Rev 2"
+        config ESP32_REV_MIN_3
+            bool "Rev 3"
+    endchoice
+
+    config ESP32_REV_MIN
+        int
+        default 0 if ESP32_REV_MIN_0
+        default 1 if ESP32_REV_MIN_1
+        default 2 if ESP32_REV_MIN_2
+        default 3 if ESP32_REV_MIN_3
+
+    config ESP32_DPORT_WORKAROUND
         bool
-        default "y" if IDF_TARGET="esp32"
-        default "n"
+        default "y" if !FREERTOS_UNICORE  && ESP32_REV_MIN < 2
 
     choice ESP32_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
@@ -26,7 +48,7 @@ menu "ESP32-specific"
         default 160 if ESP32_DEFAULT_CPU_FREQ_160
         default 240 if ESP32_DEFAULT_CPU_FREQ_240
 
-    config SPIRAM_SUPPORT
+    config ESP32_SPIRAM_SUPPORT
         bool "Support for external, SPI-connected RAM"
         default "n"
         help
@@ -34,7 +56,7 @@ menu "ESP32-specific"
             main SPI flash chip.
 
     menu "SPI RAM config"
-        depends on SPIRAM_SUPPORT
+        depends on ESP32_SPIRAM_SUPPORT
 
         config SPIRAM_BOOT_INIT
             bool "Initialize SPI RAM when booting the ESP32"
@@ -68,7 +90,7 @@ menu "ESP32-specific"
                 bool "Make RAM allocatable using heap_caps_malloc(..., MALLOC_CAP_SPIRAM)"
             config SPIRAM_USE_MALLOC
                 bool "Make RAM allocatable using malloc() as well"
-                select SUPPORT_STATIC_ALLOCATION
+                select FREERTOS_SUPPORT_STATIC_ALLOCATION
         endchoice
 
         choice SPIRAM_TYPE
@@ -95,7 +117,7 @@ menu "ESP32-specific"
 
         choice SPIRAM_SPEED
             prompt "Set RAM clock speed"
-            default SPIRAM_CACHE_SPEED_40M
+            default SPIRAM_SPEED_40M
             help
                 Select the speed for the SPI RAM chip.
                 If SPI RAM is enabled, we only support three combinations of SPI speed mode we supported now:
@@ -175,7 +197,7 @@ menu "ESP32-specific"
                 from the non-preferred region instead, so malloc() will not suddenly fail when either internal or
                 external memory is full.
 
-        config WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
+        config SPIRAM_TRY_ALLOCATE_WIFI_LWIP
             bool "Try to allocate memories of WiFi and LWIP in SPIRAM firstly. If failed, allocate internal memory"
             depends on SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
             default "n"
@@ -219,7 +241,7 @@ menu "ESP32-specific"
         config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
             bool "Allow .bss segment placed in external memory"
             default n
-            depends on SPIRAM_SUPPORT
+            depends on ESP32_SPIRAM_SUPPORT
             help
                 If enabled the option,and add EXT_RAM_ATTR defined your variable,then your variable will be placed in
                 PSRAM instead of internal memory, and placed most of variables of lwip,net802.11,pp,bluedroid library
@@ -239,29 +261,97 @@ menu "ESP32-specific"
                 bool "VSPI host (SPI3)"
         endchoice
 
-        config PICO_PSRAM_CS_IO
-            int "PSRAM CS IO for ESP32-PICO chip"
-            depends on SPIRAM_SUPPORT
+        menu "PSRAM clock and cs IO for ESP32-DOWD"
+
+            config D0WD_PSRAM_CLK_IO
+                int "PSRAM CLK IO number"
+                depends on ESP32_SPIRAM_SUPPORT
+                range 0 33
+                default 17
+                help
+                    The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design. If user use
+                    1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+            config D0WD_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                depends on ESP32_SPIRAM_SUPPORT
+                range 0 33
+                default 16
+                help
+                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design. If user use
+                    1.8V flash and 1.8V psram, this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+        endmenu
+
+        menu "PSRAM clock and cs IO for ESP32-D2WD"
+
+            config D2WD_PSRAM_CLK_IO
+                int "PSRAM CLK IO number"
+                depends on ESP32_SPIRAM_SUPPORT
+                range 0 33
+                default 9
+                help
+                    User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+                    so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+
+            config D2WD_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                depends on ESP32_SPIRAM_SUPPORT
+                range 0 33
+                default 10
+                help
+                    User can config it based on hardware design. For ESP32-D2WD chip, the psram can only be 1.8V psram,
+                    so this value can only be one of 6, 7, 8, 9, 10, 11, 16, 17.
+        endmenu
+
+        menu "PSRAM clock and cs IO for ESP32-PICO"
+
+            config PICO_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                depends on ESP32_SPIRAM_SUPPORT
+                range 0 33
+                default 10
+                help
+                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+
+                    For ESP32-PICO chip, the psram share clock with flash, so user do not need to configure the clock
+                    IO.
+                    For the reference hardware design, please refer to
+                    https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf
+
+        endmenu
+
+        config SPIRAM_SPIWP_SD3_PIN
+            int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
+            depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
             range 0 33
-            default 10
+            default 7
             help
-                When ESP32-PICO chip connect a external psram, the clock IO and data IO is fixed, but the CS IO can be
-                any unused GPIO, user can config it based on hardware design.
+                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
+                overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
 
-    endmenu
+                When this is the case, the eFuse config only defines 3 of the 4 Quad I/O data pins. The WP pin (aka
+                ESP32 pin "SD_DATA_3" or SPI flash pin "IO2") is not specified in eFuse. And the psram only has QPI
+                mode, the WP pin is necessary, so we need to configure this value here.
 
-    config MEMMAP_TRACEMEM
+                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set as the value configured in
+                bootloader.
+
+                For ESP32-PICO chip, the default value of this config should be 7.
+
+    endmenu # "SPI RAM config"
+
+    config ESP32_MEMMAP_TRACEMEM
         bool
         default "n"
 
-    config MEMMAP_TRACEMEM_TWOBANKS
+    config ESP32_MEMMAP_TRACEMEM_TWOBANKS
         bool
         default "n"
 
     config ESP32_TRAX
         bool "Use TRAX tracing feature"
         default "n"
-        select MEMMAP_TRACEMEM
+        select ESP32_MEMMAP_TRACEMEM
         help
             The ESP32 contains a feature which allows you to trace the execution path the processor
             has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
@@ -272,7 +362,7 @@ menu "ESP32-specific"
         bool "Reserve memory for tracing both pro as well as app cpu execution"
         default "n"
         depends on ESP32_TRAX && !FREERTOS_UNICORE
-        select MEMMAP_TRACEMEM_TWOBANKS
+        select ESP32_MEMMAP_TRACEMEM_TWOBANKS
         help
             The ESP32 contains a feature which allows you to trace the execution path the processor
             has taken through the program. This is stored in a chunk of 32K (16K for single-processor)
@@ -280,15 +370,15 @@ menu "ESP32-specific"
             what this is.
 
             # Memory to reverse for trace, used in linker script
-    config TRACEMEM_RESERVE_DRAM
+    config ESP32_TRACEMEM_RESERVE_DRAM
         hex
-        default 0x8000 if MEMMAP_TRACEMEM && MEMMAP_TRACEMEM_TWOBANKS
-        default 0x4000 if MEMMAP_TRACEMEM && !MEMMAP_TRACEMEM_TWOBANKS
+        default 0x8000 if ESP32_MEMMAP_TRACEMEM && ESP32_MEMMAP_TRACEMEM_TWOBANKS
+        default 0x4000 if ESP32_MEMMAP_TRACEMEM && !ESP32_MEMMAP_TRACEMEM_TWOBANKS
         default 0x0
 
-    choice NUMBER_OF_UNIVERSAL_MAC_ADDRESS
+    choice ESP32_UNIVERSAL_MAC_ADDRESSES
         bool "Number of universally administered (by IEEE) MAC address"
-        default FOUR_UNIVERSAL_MAC_ADDRESS
+        default ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
         help
             Configure the number of universally administered (by IEEE) MAC addresses.
             During initialisation, MAC addresses for each network interface are generated or derived from a
@@ -305,195 +395,19 @@ menu "ESP32-specific"
             a custom universal MAC address range, the correct setting will depend on the allocation of MAC
             addresses in this range (either 2 or 4 per device.)
 
-        config TWO_UNIVERSAL_MAC_ADDRESS
+        config ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
             bool "Two"
-        config FOUR_UNIVERSAL_MAC_ADDRESS
+        config ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
             bool "Four"
     endchoice
 
-    config NUMBER_OF_UNIVERSAL_MAC_ADDRESS
+    config ESP32_UNIVERSAL_MAC_ADDRESSES
         int
-        default 2 if TWO_UNIVERSAL_MAC_ADDRESS
-        default 4 if FOUR_UNIVERSAL_MAC_ADDRESS
+        default 2 if ESP32_UNIVERSAL_MAC_ADDRESSES_TWO
+        default 4 if ESP32_UNIVERSAL_MAC_ADDRESSES_FOUR
 
-    config SYSTEM_EVENT_QUEUE_SIZE
-        int "System event queue size"
-        default 32
-        help
-            Config system event queue size in different application.
 
-    config SYSTEM_EVENT_TASK_STACK_SIZE
-        int "Event loop task stack size"
-        default 2304
-        help
-            Config system event task stack size in different application.
-
-    config MAIN_TASK_STACK_SIZE
-        int "Main task stack size"
-        default 3584
-        help
-            Configure the "main task" stack size. This is the stack of the task
-            which calls app_main(). If app_main() returns then this task is deleted
-            and its stack memory is freed.
-
-    config IPC_TASK_STACK_SIZE
-        int "Inter-Processor Call (IPC) task stack size"
-        default 1024
-        range 512 65536 if !ESP32_APPTRACE_ENABLE
-        range 2048 65536 if ESP32_APPTRACE_ENABLE
-        help
-            Configure the IPC tasks stack size. One IPC task runs on each core
-            (in dual core mode), and allows for cross-core function calls.
-
-            See IPC documentation for more details.
-
-            The default stack size should be enough for most common use cases.
-            It can be shrunk if you are sure that you do not use any custom
-            IPC functionality.
-
-    config TIMER_TASK_STACK_SIZE
-        int "High-resolution timer task stack size"
-        default 3584
-        range 2048 65536
-        help
-            Configure the stack size of esp_timer/ets_timer task. This task is used
-            to dispatch callbacks of timers created using ets_timer and esp_timer
-            APIs. If you are seing stack overflow errors in timer task, increase
-            this value.
-
-            Note that this is not the same as FreeRTOS timer task. To configure
-            FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
-            in "FreeRTOS" menu.
-
-    choice NEWLIB_STDOUT_LINE_ENDING
-        prompt "Line ending for UART output"
-        default NEWLIB_STDOUT_LINE_ENDING_CRLF
-        help
-            This option allows configuring the desired line endings sent to UART
-            when a newline ('\n', LF) appears on stdout.
-            Three options are possible:
-
-            CRLF: whenever LF is encountered, prepend it with CR
-
-            LF: no modification is applied, stdout is sent as is
-
-            CR: each occurence of LF is replaced with CR
-
-            This option doesn't affect behavior of the UART driver (drivers/uart.h).
-
-        config NEWLIB_STDOUT_LINE_ENDING_CRLF
-            bool "CRLF"
-        config NEWLIB_STDOUT_LINE_ENDING_LF
-            bool "LF"
-        config NEWLIB_STDOUT_LINE_ENDING_CR
-            bool "CR"
-    endchoice
-
-    choice NEWLIB_STDIN_LINE_ENDING
-        prompt "Line ending for UART input"
-        default NEWLIB_STDIN_LINE_ENDING_CR
-        help
-            This option allows configuring which input sequence on UART produces
-            a newline ('\n', LF) on stdin.
-            Three options are possible:
-
-            CRLF: CRLF is converted to LF
-
-            LF: no modification is applied, input is sent to stdin as is
-
-            CR: each occurence of CR is replaced with LF
-
-            This option doesn't affect behavior of the UART driver (drivers/uart.h).
-
-        config NEWLIB_STDIN_LINE_ENDING_CRLF
-            bool "CRLF"
-        config NEWLIB_STDIN_LINE_ENDING_LF
-            bool "LF"
-        config NEWLIB_STDIN_LINE_ENDING_CR
-            bool "CR"
-    endchoice
-
-    config NEWLIB_NANO_FORMAT
-        bool "Enable 'nano' formatting options for printf/scanf family"
-        default n
-        help
-            ESP32 ROM contains parts of newlib C library, including printf/scanf family
-            of functions. These functions have been compiled with so-called "nano"
-            formatting option. This option doesn't support 64-bit integer formats and C99
-            features, such as positional arguments.
-
-            For more details about "nano" formatting option, please see newlib readme file,
-            search for '--enable-newlib-nano-formatted-io':
-            https://sourceware.org/newlib/README
-
-            If this option is enabled, build system will use functions available in
-            ROM, reducing the application binary size. Functions available in ROM run
-            faster than functions which run from flash. Functions available in ROM can
-            also run when flash instruction cache is disabled.
-
-            If you need 64-bit integer formatting support or C99 features, keep this
-            option disabled.
-
-    choice CONSOLE_UART
-        prompt "UART for console output"
-        default CONSOLE_UART_DEFAULT
-        help
-            Select whether to use UART for console output (through stdout and stderr).
-
-            - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
-            - If "Custom" is selected, UART0 or UART1 can be chosen,
-              and any pins can be selected.
-            - If "None" is selected, there will be no console output on any UART, except
-              for initial output from ROM bootloader. This output can be further suppressed by
-              bootstrapping GPIO13 pin to low logic level.
-
-        config CONSOLE_UART_DEFAULT
-            bool "Default: UART0, TX=GPIO1, RX=GPIO3"
-        config CONSOLE_UART_CUSTOM
-            bool "Custom"
-        config CONSOLE_UART_NONE
-            bool "None"
-    endchoice
-
-    choice CONSOLE_UART_NUM
-        prompt "UART peripheral to use for console output (0-1)"
-        depends on CONSOLE_UART_CUSTOM
-        default CONSOLE_UART_CUSTOM_NUM_0
-        help
-            Due of a ROM bug, UART2 is not supported for console output
-            via ets_printf.
-
-        config CONSOLE_UART_CUSTOM_NUM_0
-            bool "UART0"
-        config CONSOLE_UART_CUSTOM_NUM_1
-            bool "UART1"
-    endchoice
-
-    config CONSOLE_UART_NUM
-        int
-        default 0 if CONSOLE_UART_DEFAULT || CONSOLE_UART_NONE
-        default 0 if CONSOLE_UART_CUSTOM_NUM_0
-        default 1 if CONSOLE_UART_CUSTOM_NUM_1
-
-    config CONSOLE_UART_TX_GPIO
-        int "UART TX on GPIO#"
-        depends on CONSOLE_UART_CUSTOM
-        range 0 33
-        default 19
-
-    config CONSOLE_UART_RX_GPIO
-        int "UART RX on GPIO#"
-        depends on CONSOLE_UART_CUSTOM
-        range 0 39
-        default 21
-
-    config CONSOLE_UART_BAUDRATE
-        int "UART console baud rate"
-        depends on !CONSOLE_UART_NONE
-        default 115200
-        range 1200 4000000
-
-    config ULP_COPROC_ENABLED
+    config ESP32_ULP_COPROC_ENABLED
         bool "Enable Ultra Low Power (ULP) Coprocessor"
         default "n"
         help
@@ -501,13 +415,13 @@ menu "ESP32-specific"
 
             If this option is enabled, further coprocessor configuration will appear in the Components menu.
 
-    config ULP_COPROC_RESERVE_MEM
+    config ESP32_ULP_COPROC_RESERVE_MEM
         int
-        prompt "RTC slow memory reserved for coprocessor" if ULP_COPROC_ENABLED
-        default 512 if ULP_COPROC_ENABLED
-        range 32 8192 if ULP_COPROC_ENABLED
-        default 0 if !ULP_COPROC_ENABLED
-        range 0 0 if !ULP_COPROC_ENABLED
+        prompt "RTC slow memory reserved for coprocessor" if ESP32_ULP_COPROC_ENABLED
+        default 512 if ESP32_ULP_COPROC_ENABLED
+        range 32 8192 if ESP32_ULP_COPROC_ENABLED
+        default 0 if !ESP32_ULP_COPROC_ENABLED
+        range 0 0 if !ESP32_ULP_COPROC_ENABLED
         help
             Bytes of memory to reserve for ULP coprocessor firmware & data.
 
@@ -539,27 +453,11 @@ menu "ESP32-specific"
 
         config ESP32_PANIC_GDBSTUB
             bool "Invoke GDBStub"
+            select ESP_GDBSTUB_ENABLED
             help
                 Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
                 of the crash.
     endchoice
-
-    config GDBSTUB_SUPPORT_TASKS
-        bool "GDBStub: enable listing FreeRTOS tasks"
-        default y
-        depends on ESP32_PANIC_GDBSTUB
-        help
-            If enabled, GDBStub can supply the list of FreeRTOS tasks to GDB.
-            Thread list can be queried from GDB using 'info threads' command.
-            Note that if GDB task lists were corrupted, this feature may not work.
-            If GDBStub fails, try disabling this feature.
-
-    config GDBSTUB_MAX_TASKS
-        int "GDBStub: maximum number of tasks supported"
-        default 32
-        depends on GDBSTUB_SUPPORT_TASKS
-        help
-            Set the number of tasks which GDB Stub will support.
 
     config ESP32_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
@@ -570,84 +468,13 @@ menu "ESP32-specific"
 
     config ESP32_DEBUG_STUBS_ENABLE
         bool "OpenOCD debug stubs"
-        default OPTIMIZATION_LEVEL_DEBUG
+        default COMPILER_OPTIMIZATION_DEFAULT
         depends on !ESP32_TRAX
         help
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code which does some useful debugging,
             e.g. GCOV data dump.
 
-    config INT_WDT
-        bool "Interrupt watchdog"
-        default y
-        help
-            This watchdog timer can detect if the FreeRTOS tick interrupt has not been called for a certain time,
-            either because a task turned off interrupts and did not turn them on for a long time, or because an
-            interrupt handler did not return. It will try to invoke the panic handler first and failing that
-            reset the SoC.
-
-    config INT_WDT_TIMEOUT_MS
-        int "Interrupt watchdog timeout (ms)"
-        depends on INT_WDT
-        default 300 if !SPIRAM_SUPPORT
-        default 800 if SPIRAM_SUPPORT
-        range 10 10000
-        help
-            The timeout of the watchdog, in miliseconds. Make this higher than the FreeRTOS tick rate.
-
-    config INT_WDT_CHECK_CPU1
-        bool "Also watch CPU1 tick interrupt"
-        depends on INT_WDT && !FREERTOS_UNICORE
-        default y
-        help
-            Also detect if interrupts on CPU 1 are disabled for too long.
-
-    config TASK_WDT
-        bool "Initialize Task Watchdog Timer on startup"
-        default y
-        help
-            The Task Watchdog Timer can be used to make sure individual tasks are still
-            running. Enabling this option will cause the Task Watchdog Timer to be
-            initialized automatically at startup. The Task Watchdog timer can be
-            initialized after startup as well (see Task Watchdog Timer API Reference)
-
-    config TASK_WDT_PANIC
-        bool "Invoke panic handler on Task Watchdog timeout"
-        depends on TASK_WDT
-        default n
-        help
-            If this option is enabled, the Task Watchdog Timer will be configured to
-            trigger the panic handler when it times out. This can also be configured
-            at run time (see Task Watchdog Timer API Reference)
-
-    config TASK_WDT_TIMEOUT_S
-        int "Task Watchdog timeout period (seconds)"
-        depends on TASK_WDT
-        range 1 60
-        default 5
-        help
-            Timeout period configuration for the Task Watchdog Timer in seconds.
-            This is also configurable at run time (see Task Watchdog Timer API Reference)
-
-    config TASK_WDT_CHECK_IDLE_TASK_CPU0
-        bool "Watch CPU0 Idle Task"
-        depends on TASK_WDT
-        default y
-        help
-            If this option is enabled, the Task Watchdog Timer will watch the CPU0
-            Idle Task. Having the Task Watchdog watch the Idle Task allows for detection
-            of CPU starvation as the Idle Task not being called is usually a symptom of
-            CPU starvation. Starvation of the Idle Task is detrimental as FreeRTOS household
-            tasks depend on the Idle Task getting some runtime every now and then.
-
-    config TASK_WDT_CHECK_IDLE_TASK_CPU1
-        bool "Watch CPU1 Idle Task"
-        depends on TASK_WDT && !FREERTOS_UNICORE
-        default y
-        help
-            If this option is enabled, the Task Wtachdog Timer will wach the CPU1
-            Idle Task.
-
-    config BROWNOUT_DET
+    config ESP32_BROWNOUT_DET
         #The brownout detector code is disabled (by making it depend on a nonexisting symbol) because the current
         #revision of ESP32 silicon has a bug in the brown-out detector, rendering it unusable for resetting the CPU.
         bool "Hardware brownout detect & reset"
@@ -657,10 +484,10 @@ menu "ESP32-specific"
             a specific value. If this happens, it will reset the chip in order to prevent unintended
             behaviour.
 
-    choice BROWNOUT_DET_LVL_SEL
+    choice ESP32_BROWNOUT_DET_LVL_SEL
         prompt "Brownout voltage level"
-        depends on BROWNOUT_DET
-        default BROWNOUT_DET_LVL_SEL_25
+        depends on ESP32_BROWNOUT_DET
+        default ESP32_BROWNOUT_DET_LVL_SEL_0
         help
             The brownout detector will reset the chip when the supply voltage is approximately
             below this level. Note that there may be some variation of brownout voltage level
@@ -668,40 +495,40 @@ menu "ESP32-specific"
 
             #The voltage levels here are estimates, more work needs to be done to figure out the exact voltages
             #of the brownout threshold levels.
-        config BROWNOUT_DET_LVL_SEL_0
+        config ESP32_BROWNOUT_DET_LVL_SEL_0
             bool "2.43V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_1
+        config ESP32_BROWNOUT_DET_LVL_SEL_1
             bool "2.48V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_2
+        config ESP32_BROWNOUT_DET_LVL_SEL_2
             bool "2.58V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_3
+        config ESP32_BROWNOUT_DET_LVL_SEL_3
             bool "2.62V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_4
+        config ESP32_BROWNOUT_DET_LVL_SEL_4
             bool "2.67V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_5
+        config ESP32_BROWNOUT_DET_LVL_SEL_5
             bool "2.70V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_6
+        config ESP32_BROWNOUT_DET_LVL_SEL_6
             bool "2.77V +/- 0.05"
-        config BROWNOUT_DET_LVL_SEL_7
+        config ESP32_BROWNOUT_DET_LVL_SEL_7
             bool "2.80V +/- 0.05"
     endchoice
 
-    config BROWNOUT_DET_LVL
+    config ESP32_BROWNOUT_DET_LVL
         int
-        default 0 if BROWNOUT_DET_LVL_SEL_0
-        default 1 if BROWNOUT_DET_LVL_SEL_1
-        default 2 if BROWNOUT_DET_LVL_SEL_2
-        default 3 if BROWNOUT_DET_LVL_SEL_3
-        default 4 if BROWNOUT_DET_LVL_SEL_4
-        default 5 if BROWNOUT_DET_LVL_SEL_5
-        default 6 if BROWNOUT_DET_LVL_SEL_6
-        default 7 if BROWNOUT_DET_LVL_SEL_7
+        default 0 if ESP32_BROWNOUT_DET_LVL_SEL_0
+        default 1 if ESP32_BROWNOUT_DET_LVL_SEL_1
+        default 2 if ESP32_BROWNOUT_DET_LVL_SEL_2
+        default 3 if ESP32_BROWNOUT_DET_LVL_SEL_3
+        default 4 if ESP32_BROWNOUT_DET_LVL_SEL_4
+        default 5 if ESP32_BROWNOUT_DET_LVL_SEL_5
+        default 6 if ESP32_BROWNOUT_DET_LVL_SEL_6
+        default 7 if ESP32_BROWNOUT_DET_LVL_SEL_7
 
 
         #Reduce PHY TX power when brownout reset
-    config REDUCE_PHY_TX_POWER
+    config ESP32_REDUCE_PHY_TX_POWER
         bool "Reduce PHY TX power when brownout reset"
-        depends on BROWNOUT_DET
+        depends on ESP32_BROWNOUT_DET
         default y
         help
             When brownout reset occurs, reduce PHY TX power to keep the code running
@@ -742,9 +569,9 @@ menu "ESP32-specific"
             bool "None"
     endchoice
 
-    choice ESP32_RTC_CLOCK_SOURCE
+    choice ESP32_RTC_CLK_SRC
         prompt "RTC clock source"
-        default ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+        default ESP32_RTC_CLK_SRC_INT_RC
         help
             Choose which clock is used as RTC clock source.
 
@@ -765,22 +592,35 @@ menu "ESP32-specific"
               deep sleep current (by 5uA) but has better frequency stability than
               the internal 150kHz oscillator. It does not require external components.
 
-        config ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+        config ESP32_RTC_CLK_SRC_INT_RC
             bool "Internal 150kHz RC oscillator"
-        config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+        config ESP32_RTC_CLK_SRC_EXT_CRYS
             bool "External 32kHz crystal"
-        config ESP32_RTC_CLOCK_SOURCE_EXTERNAL_OSC
+        config ESP32_RTC_CLK_SRC_EXT_OSC
             bool "External 32kHz oscillator at 32K_XP pin"
-        config ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256
+        config ESP32_RTC_CLK_SRC_INT_8MD256
             bool "Internal 8.5MHz oscillator, divided by 256 (~33kHz)"
     endchoice
 
+    config ESP32_RTC_EXT_CRYST_ADDIT_CURRENT
+        bool "Additional current for external 32kHz crystal"
+        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
+        default "n"
+        help
+            Choose which additional current is used for rtc external crystal.
+
+            - With some 32kHz crystal configurations, the X32N and X32P pins may not
+              have enough drive strength to keep the crystal oscillating during deep sleep.
+              If this option is enabled, additional current from touchpad 9 is provided
+              internally to drive the 32kHz crystal. If this option is enabled, deep sleep current
+              is slightly higher (4-5uA) and the touchpad and ULP wakeup sources are not available.
+
     config ESP32_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
-        default 3000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
-        default 1024 if ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
-        range 0 27000 if ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL || ESP32_RTC_CLOCK_SOURCE_EXTERNAL_OSC || ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256  # NOERROR
-        range 0 32766 if ESP32_RTC_CLOCK_SOURCE_INTERNAL_RC
+        default 3000 if ESP32_RTC_CLK_SRC_EXT_CRYS
+        default 1024 if ESP32_RTC_CLK_SRC_INT_RC
+        range 0 27000 if ESP32_RTC_CLK_SRC_EXT_CRYS || ESP32_RTC_CLK_SRC_EXT_OSC || ESP32_RTC_CLK_SRC_INT_8MD256
+        range 0 32766 if ESP32_RTC_CLK_SRC_INT_RC
         help
             When the startup code initializes RTC_SLOW_CLK, it can perform
             calibration by comparing the RTC_SLOW_CLK frequency with main XTAL
@@ -799,7 +639,7 @@ menu "ESP32-specific"
 
     config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
         int "Bootstrap cycles for external 32kHz crystal"
-        depends on ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
         default 5
         range 0 32768
         help
@@ -862,7 +702,7 @@ menu "ESP32-specific"
         default 40 if ESP32_XTAL_FREQ_40
         default 26 if ESP32_XTAL_FREQ_26
 
-    config DISABLE_BASIC_ROM_CONSOLE
+    config ESP32_DISABLE_BASIC_ROM_CONSOLE
         bool "Permanently disable BASIC ROM Console"
         default n
         help
@@ -874,7 +714,7 @@ menu "ESP32-specific"
 
             (Enabling secure boot also disables the BASIC ROM Console by default.)
 
-    config NO_BLOBS
+    config ESP32_NO_BLOBS
         bool "No Binary Blobs"
         depends on !BT_ENABLED
         default n
@@ -882,18 +722,7 @@ menu "ESP32-specific"
             If enabled, this disables the linking of binary libraries in the application build. Note
             that after enabling this Wi-Fi/Bluetooth will not work.
 
-    config ESP_TIMER_PROFILING
-        bool "Enable esp_timer profiling features"
-        default n
-        help
-            If enabled, esp_timer_dump will dump information such as number of times
-            the timer was started, number of times the timer has triggered, and the
-            total time it took for the callback to run.
-            This option has some effect on timer performance and the amount of memory
-            used for timer storage, and should only be used for debugging/testing
-            purposes.
-
-    config COMPATIBLE_PRE_V2_1_BOOTLOADERS
+    config ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
         bool "App compatible with bootloaders before IDF v2.1"
         default n
         help
@@ -909,15 +738,10 @@ menu "ESP32-specific"
 
             Enabling this setting adds approximately 1KB to the app's IRAM usage.
 
-    config ESP_ERR_TO_NAME_LOOKUP
-        bool "Enable lookup of error code strings"
-        default "y"
-        help
-            Functions esp_err_to_name() and esp_err_to_name_r() return string
-            representations of error codes from a pre-generated lookup table.
-            This option can be used to turn off the use of the look-up table in
-            order to save memory but this comes at the price of sacrificing
-            distinguishable (meaningful) output string representations.
+    config ESP32_APP_INIT_CLK
+        bool
+        default y if ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+        default y if APP_BUILD_TYPE_ELF_RAM
 
     config ESP32_RTCDATA_IN_FAST_MEM
         bool "Place RTC_DATA_ATTR and RTC_RODATA_ATTR variables into RTC fast memory segment"
@@ -929,373 +753,49 @@ menu "ESP32-specific"
             This option depends on the CONFIG_FREERTOS_UNICORE option because RTC fast memory
             can be accessed only by PRO_CPU core.
 
+    config ESP32_USE_FIXED_STATIC_RAM_SIZE
+        bool "Use fixed static RAM size"
+        default n
+        help
+            If this option is disabled, the DRAM part of the heap starts right after the .bss section,
+            within the dram0_0 region. As a result, adding or removing some static variables
+            will change the available heap size.
+
+            If this option is enabled, the DRAM part of the heap starts right after the dram0_0 region,
+            where its length is set with ESP32_FIXED_STATIC_RAM_SIZE
+
+    config ESP32_FIXED_STATIC_RAM_SIZE
+        hex "Fixed Static RAM size"
+        default 0x1E000
+        range 0 0x2c200
+        depends on ESP32_USE_FIXED_STATIC_RAM_SIZE
+        help
+            RAM size dedicated for static variables (.data & .bss sections).
+            Please note that the actual length will be reduced by BT_RESERVE_DRAM if Bluetooth
+            controller is enabled.
+
+    config ESP32_DPORT_DIS_INTERRUPT_LVL
+        int "Disable the interrupt level for the DPORT workarounds"
+        default 5
+        help
+            To prevent interrupting DPORT workarounds,
+            need to disable interrupt with a maximum used level in the system.
+
+    config ESP32_PANIC_HANDLER_IRAM
+        bool "Place panic handler code in IRAM"
+        default n
+        help
+            If this option is disabled (default), the panic handler code is placed in flash not IRAM.
+            This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will
+            automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
+            risk, if the flash cache status is also corrupted during the crash.
+
+            If this option is enabled, the panic handler code is placed in IRAM. This allows the panic
+            handler to run without needing to re-enable cache first. This may be necessary to debug some
+            complex issues with crashes while flash cache is disabled (for example, when writing to
+            SPI flash.)
+
 endmenu  # ESP32-Specific
-
-menu Wi-Fi
-
-    config SW_COEXIST_ENABLE
-        bool "Software controls WiFi/Bluetooth coexistence"
-        depends on BT_ENABLED
-        default y
-        help
-            If enabled, WiFi & Bluetooth coexistence is controlled by software rather than hardware.
-            Recommended for heavy traffic scenarios. Both coexistence configuration options are
-            automatically managed, no user intervention is required.
-            If only Bluetooth is used, it is recommended to disable this option to reduce binary file
-            size.
-
-    choice SW_COEXIST_PREFERENCE
-        prompt "WiFi/Bluetooth coexistence performance preference"
-        depends on SW_COEXIST_ENABLE
-        default SW_COEXIST_PREFERENCE_BALANCE
-        help
-            Choose Bluetooth/WiFi/Balance for different preference.
-            If choose WiFi, it will make WiFi performance better. Such, keep WiFi Audio more fluent.
-            If choose Bluetooth, it will make Bluetooth performance better. Such, keep Bluetooth(A2DP) Audio more
-            fluent.
-            If choose Balance, the performance of WiFi and bluetooth will be balance. It's default. Normally, just
-            choose balance, the A2DP audio can play fluently, too.
-            Except config preference in menuconfig, you can also call esp_coex_preference_set() dynamically.
-
-        config SW_COEXIST_PREFERENCE_WIFI
-            bool "WiFi"
-
-        config SW_COEXIST_PREFERENCE_BT
-            bool "Bluetooth(include BR/EDR and BLE)"
-
-        config SW_COEXIST_PREFERENCE_BALANCE
-            bool "Balance"
-
-    endchoice
-
-    config SW_COEXIST_PREFERENCE_VALUE
-        int
-        depends on SW_COEXIST_ENABLE
-        default 0 if SW_COEXIST_PREFERENCE_WIFI
-        default 1 if SW_COEXIST_PREFERENCE_BT
-        default 2 if SW_COEXIST_PREFERENCE_BALANCE
-
-    config ESP32_WIFI_STATIC_RX_BUFFER_NUM
-        int "Max number of WiFi static RX buffers"
-        range 2 25 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        range 8 25 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        default 10 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        default 16 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        help
-            Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
-            The static rx buffers are allocated when esp_wifi_init is called, they are not freed
-            until esp_wifi_deinit is called.
-
-            WiFi hardware use these buffers to receive all 802.11 frames.
-            A higher number may allow higher throughput but increases memory use. If ESP32_WIFI_AMPDU_RX_ENABLED
-            is enabled, this value is recommended to set equal or bigger than ESP32_WIFI_RX_BA_WIN in order to
-            achieve better throughput and compatibility with both stations and APs.
-
-    config ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM
-        int "Max number of WiFi dynamic RX buffers"
-        range 0 128
-        default 32
-        help
-            Set the number of WiFi dynamic RX buffers, 0 means unlimited RX buffers will be allocated
-            (provided sufficient free RAM). The size of each dynamic RX buffer depends on the size of
-            the received data frame.
-
-            For each received data frame, the WiFi driver makes a copy to an RX buffer and then delivers
-            it to the high layer TCP/IP stack. The dynamic RX buffer is freed after the higher layer has
-            successfully received the data frame.
-
-            For some applications, WiFi data frames may be received faster than the application can
-            process them. In these cases we may run out of memory if RX buffer number is unlimited (0).
-
-            If a dynamic RX buffer limit is set, it should be at least the number of static RX buffers.
-
-    choice ESP32_WIFI_TX_BUFFER
-        prompt "Type of WiFi TX buffers"
-        default ESP32_WIFI_DYNAMIC_TX_BUFFER
-        help
-            Select type of WiFi TX buffers:
-
-            If "Static" is selected, WiFi TX buffers are allocated when WiFi is initialized and released
-            when WiFi is de-initialized. The size of each static TX buffer is fixed to about 1.6KB.
-
-            If "Dynamic" is selected, each WiFi TX buffer is allocated as needed when a data frame is
-            delivered to the Wifi driver from the TCP/IP stack. The buffer is freed after the data frame
-            has been sent by the WiFi driver. The size of each dynamic TX buffer depends on the length
-            of each data frame sent by the TCP/IP layer.
-
-            If PSRAM is enabled, "Static" should be selected to guarantee enough WiFi TX buffers.
-            If PSRAM is disabled, "Dynamic" should be selected to improve the utilization of RAM.
-
-        config ESP32_WIFI_STATIC_TX_BUFFER
-            bool "Static"
-        config ESP32_WIFI_DYNAMIC_TX_BUFFER
-            bool "Dynamic"
-            depends on !SPIRAM_USE_MALLOC
-    endchoice
-
-    config ESP32_WIFI_TX_BUFFER_TYPE
-        int
-        default 0 if ESP32_WIFI_STATIC_TX_BUFFER
-        default 1 if ESP32_WIFI_DYNAMIC_TX_BUFFER
-
-    config ESP32_WIFI_STATIC_TX_BUFFER_NUM
-        int "Max number of WiFi static TX buffers"
-        depends on ESP32_WIFI_STATIC_TX_BUFFER
-        range 6 64
-        default 16
-        help
-            Set the number of WiFi static TX buffers. Each buffer takes approximately 1.6KB of RAM.
-            The static RX buffers are allocated when esp_wifi_init() is called, they are not released
-            until esp_wifi_deinit() is called.
-
-            For each transmitted data frame from the higher layer TCP/IP stack, the WiFi driver makes a
-            copy of it in a TX buffer.  For some applications especially UDP applications, the upper
-            layer can deliver frames faster than WiFi layer can transmit. In these cases, we may run out
-            of TX buffers.
-
-    config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
-        int "Max number of WiFi dynamic TX buffers"
-        depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
-        range 16 128
-        default 32
-        help
-            Set the number of WiFi dynamic TX buffers. The size of each dynamic TX buffer is not fixed,
-            it depends on the size of each transmitted data frame.
-
-            For each transmitted frame from the higher layer TCP/IP stack, the WiFi driver makes a copy
-            of it in a TX buffer. For some applications, especially UDP applications, the upper layer
-            can deliver frames faster than WiFi layer can transmit. In these cases, we may run out of TX
-            buffers.
-
-    config ESP32_WIFI_CSI_ENABLED
-        bool "WiFi CSI(Channel State Information)"
-        default n
-        help
-            Select this option to enable CSI(Channel State Information) feature. CSI takes about
-            CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM KB of RAM. If CSI is not used, it is better to disable
-            this feature in order to save memory.
-
-    config ESP32_WIFI_AMPDU_TX_ENABLED
-        bool "WiFi AMPDU TX"
-        default y
-        help
-            Select this option to enable AMPDU TX feature
-
-
-    config ESP32_WIFI_TX_BA_WIN
-        int "WiFi AMPDU TX BA window size"
-        depends on ESP32_WIFI_AMPDU_TX_ENABLED
-        range 2 32
-        default 6
-        help
-            Set the size of WiFi Block Ack TX window. Generally a bigger value means higher throughput but
-            more memory. Most of time we should NOT change the default value unless special reason, e.g.
-            test the maximum UDP TX throughput with iperf etc. For iperf test in shieldbox, the recommended
-            value is 9~12.
-
-    config ESP32_WIFI_AMPDU_RX_ENABLED
-        bool "WiFi AMPDU RX"
-        default y
-        help
-            Select this option to enable AMPDU RX feature
-
-    config ESP32_WIFI_RX_BA_WIN
-        int "WiFi AMPDU RX BA window size"
-        depends on ESP32_WIFI_AMPDU_RX_ENABLED
-        range 2 32 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        range 16 32 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        default 6 if !WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        default 16 if WIFI_LWIP_ALLOCATION_FROM_SPIRAM_FIRST
-        help
-            Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
-            compatibility but more memory. Most of time we should NOT change the default value unless special
-            reason, e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the
-            recommended value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first,
-            the default and minimum value should be 16 to achieve better throughput and compatibility with both
-            stations and APs.
-
-    config ESP32_WIFI_NVS_ENABLED
-        bool "WiFi NVS flash"
-        default y
-        help
-            Select this option to enable WiFi NVS flash
-
-    choice ESP32_WIFI_TASK_CORE_ID
-        depends on !FREERTOS_UNICORE
-        prompt "WiFi Task Core ID"
-        default ESP32_WIFI_TASK_PINNED_TO_CORE_0
-        help
-            Pinned WiFi task to core 0 or core 1.
-
-        config ESP32_WIFI_TASK_PINNED_TO_CORE_0
-            bool "Core 0"
-        config ESP32_WIFI_TASK_PINNED_TO_CORE_1
-            bool "Core 1"
-    endchoice
-
-    config ESP32_WIFI_SOFTAP_BEACON_MAX_LEN
-        int "Max length of WiFi SoftAP Beacon"
-        range 752 1256
-        default 752
-        help
-            ESP-MESH utilizes beacon frames to detect and resolve root node conflicts (see documentation). However the
-            default length of a beacon frame can simultaneously hold only five root node identifier structures,
-            meaning that a root node conflict of up to five nodes can be detected at one time. In the occurence of
-            more root nodes conflict involving more than five root nodes, the conflict resolution process will detect
-            five of the root nodes, resolve the conflict, and re-detect more root nodes. This process will repeat
-            until all root node conflicts are resolved. However this process can generally take a very long time.
-
-            To counter this situation, the beacon frame length can be increased such that more root nodes can be
-            detected simultaneously. Each additional root node will require 36 bytes and should be added ontop of the
-            default beacon frame length of
-            752 bytes. For example, if you want to detect 10 root nodes simultaneously, you need to set the beacon
-            frame length as
-            932 (752+36*5).
-
-            Setting a longer beacon length also assists with debugging as the conflicting root nodes can be identified
-            more quickly.
-
-    config ESP32_WIFI_MGMT_SBUF_NUM
-        int "WiFi mgmt short buffer number"
-        range 6 32
-        default 32
-        help
-            Set the number of WiFi management short buffer.
-
-    config ESP32_WIFI_DEBUG_LOG_ENABLE
-        bool "Enable WiFi debug log"
-        default n
-        help
-            Select this option to enable WiFi debug log
-
-    choice ESP32_WIFI_DEBUG_LOG_LEVEL
-        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
-        prompt "WiFi debug log level"
-        default ESP32_WIFI_LOG_DEBUG
-        help
-            The WiFi log is divided into the following levels: ERROR,WARNING,INFO,DEBUG,VERBOSE.
-            The ERROR,WARNING,INFO levels are enabled by default, and the DEBUG,VERBOSE levels can be enabled here.
-
-        config ESP32_WIFI_DEBUG_LOG_DEBUG
-            bool "WiFi Debug Log Debug"
-        config ESP32_WIFI_DEBUG_LOG_VERBOSE
-            bool "WiFi Debug Log Verbose"
-    endchoice
-
-    choice ESP32_WIFI_DEBUG_LOG_MODULE
-        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
-        prompt "WiFi debug log module"
-        default ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-        help
-            The WiFi log module contains three parts: WIFI,COEX,MESH. The WIFI module indicates the logs related to
-            WiFi, the COEX module indicates the logs related to WiFi and BT(or BLE) coexist, the MESH module indicates
-            the logs related to Mesh. When ESP32_WIFI_LOG_MODULE_ALL is enabled, all modules are selected.
-
-        config ESP32_WIFI_DEBUG_LOG_MODULE_ALL
-            bool "WiFi Debug Log Module All"
-        config ESP32_WIFI_DEBUG_LOG_MODULE_WIFI
-            bool "WiFi Debug Log Module WiFi"
-        config ESP32_WIFI_DEBUG_LOG_MODULE_COEX
-            bool "WiFi Debug Log Module Coex"
-        config ESP32_WIFI_DEBUG_LOG_MODULE_MESH
-            bool "WiFi Debug Log Module Mesh"
-    endchoice
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE
-        depends on ESP32_WIFI_DEBUG_LOG_ENABLE
-        bool "WiFi debug log submodule"
-        default n
-        help
-            Enable this option to set the WiFi debug log submodule.
-            Currently the log submodule contains the following parts: INIT,IOCTL,CONN,SCAN.
-            The INIT submodule indicates the initialization process.The IOCTL submodule indicates the API calling
-            process.
-            The CONN submodule indicates the connecting process.The SCAN submodule indicates the scaning process.
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE
-        bool "WiFi Debug Log Submodule All"
-        default n
-        help
-            When this option is enabled, all debug submodules are selected.
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_INIT
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Init"
-        default n
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_IOCTL
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Ioctl"
-        default n
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_CONN
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Conn"
-        default n
-
-    config ESP32_WIFI_DEBUG_LOG_SUBMODULE_SCAN
-        depends on ESP32_WIFI_DEBUG_LOG_SUBMODULE && (!ESP32_WIFI_DEBUG_LOG_SUBMODULE_ALL)
-        bool "WiFi Debug Log Submodule Scan"
-        default n
-
-    config ESP32_WIFI_IRAM_OPT
-        bool "WiFi IRAM speed optimization"
-        default y
-        help
-            Select this option to place frequently called Wi-Fi library functions in IRAM.
-            When this option is disabled, more than 10Kbytes of IRAM memory will be saved
-            but Wi-Fi throughput will be reduced.
-
-endmenu  # Wi-Fi
-
-menu PHY
-
-    config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
-        bool "Store phy calibration data in NVS"
-        default y
-        help
-            If this option is enabled, NVS will be initialized and calibration data will be loaded from there.
-            PHY calibration will be skipped on deep sleep wakeup. If calibration data is not found, full calibration
-            will be performed and stored in NVS. Normally, only partial calibration will be performed.
-            If this option is disabled, full calibration will be performed.
-
-            If it's easy that your board calibrate bad data, choose 'n'.
-            Two cases for example, you should choose 'n':
-            1.If your board is easy to be booted up with antenna disconnected.
-            2.Because of your board design, each time when you do calibration, the result are too unstable.
-            If unsure, choose 'y'.
-
-    config ESP32_PHY_INIT_DATA_IN_PARTITION
-        bool "Use a partition to store PHY init data"
-        default n
-        help
-            If enabled, PHY init data will be loaded from a partition.
-            When using a custom partition table, make sure that PHY data
-            partition is included (type: 'data', subtype: 'phy').
-            With default partition tables, this is done automatically.
-            If PHY init data is stored in a partition, it has to be flashed there,
-            otherwise runtime error will occur.
-
-            If this option is not enabled, PHY init data will be embedded
-            into the application binary.
-
-            If unsure, choose 'n'.
-
-    config ESP32_PHY_MAX_WIFI_TX_POWER
-        int "Max WiFi TX power (dBm)"
-        range 0 20
-        default 20
-        help
-            Set maximum transmit power for WiFi radio. Actual transmit power for high
-            data rates may be lower than this setting.
-
-    config ESP32_PHY_MAX_TX_POWER
-        int
-        default ESP32_PHY_MAX_WIFI_TX_POWER
-
-endmenu  # PHY
-
 
 menu "Power Management"
 

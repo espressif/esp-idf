@@ -135,11 +135,11 @@ static timer_isr_handle_t isr_handle;
 static bool test_set_bits;
 static bool test_clear_bits;
 
-static void IRAM_ATTR event_group_isr()
+static void IRAM_ATTR event_group_isr(void *arg)
 {
     portBASE_TYPE task_woken = pdFALSE;
-    TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[xPortGetCoreID()].config.alarm_en = 1;
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, xPortGetCoreID());
 
     if(test_set_bits){
         xEventGroupSetBitsFromISR(eg, BITS, &task_woken);
@@ -157,7 +157,7 @@ static void IRAM_ATTR event_group_isr()
     }
 }
 
-static void setup_timer()
+static void setup_timer(void)
 {
     //Setup timer for ISR
     int timer_group = TIMER_GROUP_0;
@@ -178,7 +178,7 @@ static void setup_timer()
     timer_isr_register(timer_group, timer_idx, event_group_isr, NULL, ESP_INTR_FLAG_IRAM, &isr_handle);    //Set ISR handler
 }
 
-static void cleanup_timer()
+static void cleanup_timer(void)
 {
     timer_disable_intr(TIMER_GROUP_0, TIMER_NUMBER);
     esp_intr_free(isr_handle);

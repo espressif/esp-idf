@@ -57,6 +57,7 @@ function run_tests()
 
     BOOTLOADER_BINS="bootloader/bootloader.elf bootloader/bootloader.bin"
     APP_BINS="app-template.elf app-template.bin"
+    PHY_INIT_BIN="phy_init_data.bin"
 
     print_status "Initial clean build"
     # if make fails here, everything fails
@@ -283,6 +284,18 @@ function run_tests()
     rm sdkconfig sdkconfig.defaults
     make defconfig
 
+    print_status "can build with phy_init_data"
+    make clean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults
+    make defconfig > /dev/null
+    make || failure "Failed to build with PHY_INIT_DATA"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PHY_INIT_BIN}
+    rm sdkconfig
+    rm sdkconfig.defaults
+    make defconfig
+
     print_status "Empty directory not treated as a component"
     mkdir -p components/esp32
     make || failure "Failed to build with empty esp32 directory in components"
@@ -309,6 +322,35 @@ function run_tests()
     make EXTRA_COMPONENT_DIRS=$PWD/mycomponents || failure "EXTRA_COMPONENT_DIRS has added a sibling directory"
     rm -rf esp32
     rm -rf mycomponents
+
+    print_status "Handling deprecated Kconfig options"
+    make clean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "" > ${IDF_PATH}/sdkconfig.rename;
+    make defconfig > /dev/null;
+    echo "CONFIG_TEST_OLD_OPTION=y" >> sdkconfig;
+    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename;
+    echo -e "\n\
+menu \"test\"\n\
+    config TEST_NEW_OPTION\n\
+        bool \"test\"\n\
+        default \"n\"\n\
+        help\n\
+            TEST_NEW_OPTION description\n\
+endmenu\n" >> ${IDF_PATH}/Kconfig;
+    make defconfig > /dev/null;
+    grep "CONFIG_TEST_OLD_OPTION=y" sdkconfig || failure "CONFIG_TEST_OLD_OPTION should be in sdkconfig for backward compatibility"
+    grep "CONFIG_TEST_NEW_OPTION=y" sdkconfig || failure "CONFIG_TEST_NEW_OPTION should be now in sdkconfig"
+    grep "#define CONFIG_TEST_NEW_OPTION 1" build/include/sdkconfig.h || failure "sdkconfig.h should contain the new macro"
+    grep "#define CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" build/include/sdkconfig.h || failure "sdkconfig.h should contain the compatibility macro"
+    grep "CONFIG_TEST_OLD_OPTION=y" build/include/config/auto.conf || failure "CONFIG_TEST_OLD_OPTION should be in auto.conf for backward compatibility"
+    grep "CONFIG_TEST_NEW_OPTION=y" build/include/config/auto.conf || failure "CONFIG_TEST_NEW_OPTION should be now in auto.conf"
+    rm -f sdkconfig sdkconfig.defaults
+    pushd ${IDF_PATH}
+    git checkout -- sdkconfig.rename Kconfig
+    popd
+    make defconfig
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

@@ -78,8 +78,8 @@ and/or address. This is reflected in the device configuration: when the ``comman
 fields are set to zero, no command or address phase is done.
 
 Something similar is true for the read and write phase: not every transaction needs both data to be written
-as well as data to be read. When ``rx_buffer`` is NULL (and SPI_USE_RXDATA) is not set) the read phase
-is skipped. When ``tx_buffer`` is NULL (and SPI_USE_TXDATA) is not set) the write phase is skipped.
+as well as data to be read. When ``rx_buffer`` is NULL (and SPI_TRANS_USE_RXDATA) is not set) the read phase
+is skipped. When ``tx_buffer`` is NULL (and SPI_TRANS_USE_TXDATA) is not set) the write phase is skipped.
 
 The driver offers two different kinds of transactions: the interrupt
 transactions and the polling transactions. Each device can choose one kind of
@@ -205,8 +205,8 @@ Tips
 1. Transactions with small amount of data:
     Sometimes, the amount of data is very small making it less than optimal allocating a separate buffer
     for it. If the data to be transferred is 32 bits or less, it can be stored in the transaction struct
-    itself. For transmitted data, use the ``tx_data`` member for this and set the ``SPI_USE_TXDATA`` flag
-    on the transmission. For received data, use ``rx_data`` and set ``SPI_USE_RXDATA``. In both cases, do
+    itself. For transmitted data, use the ``tx_data`` member for this and set the ``SPI_TRANS_USE_TXDATA`` flag
+    on the transmission. For received data, use ``rx_data`` and set ``SPI_TRANS_USE_RXDATA``. In both cases, do
     not touch the ``tx_buffer`` or ``rx_buffer`` members, because they use the same memory locations
     as ``tx_data`` and ``rx_data``.
 
@@ -538,6 +538,7 @@ Display graphics on the 320x240 LCD of WROVER-Kits: :example:`peripherals/spi_ma
 API Reference - SPI Common
 --------------------------
 
+.. include:: /_build/inc/spi_types.inc
 .. include:: /_build/inc/spi_common.inc
 
 

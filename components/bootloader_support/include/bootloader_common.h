@@ -15,6 +15,11 @@
 #pragma once
 #include "esp_flash_partitions.h"
 #include "esp_image_format.h"
+#include "esp_app_format.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /// Type of hold a GPIO in low state
 typedef enum {
@@ -125,7 +130,7 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
 
 /**
  * @brief Returns esp_app_desc structure for app partition. This structure includes app version.
- * 
+ *
  * Returns a description for the requested app partition.
  * @param[in] partition      App partition description.
  * @param[out] app_desc      Structure of info about app.
@@ -136,3 +141,91 @@ int bootloader_common_select_otadata(const esp_ota_select_entry_t *two_otadata, 
  *  - ESP_FAIL:              mapping is fail.
  */
 esp_err_t bootloader_common_get_partition_description(const esp_partition_pos_t *partition, esp_app_desc_t *app_desc);
+
+/**
+ * @brief Get chip revision
+ *
+ * @return Chip revision number
+ */
+uint8_t bootloader_common_get_chip_revision(void);
+
+/**
+ * @brief Check if the image (bootloader and application) has valid chip ID and revision
+ *
+ * @param img_hdr: image header
+ * @return
+ *      - ESP_OK: image and chip are matched well
+ *      - ESP_FAIL: image doesn't match to the chip
+ */
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr);
+
+/**
+ * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
+ */
+void bootloader_common_vddsdio_configure(void);
+
+#if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )
+/**
+ * @brief Returns partition from rtc_retain_mem
+ *
+ * Uses to get the partition of application which was worked before to go to the deep sleep.
+ * This partition was stored in rtc_retain_mem.
+ * Note: This function operates the RTC FAST memory which available only for PRO_CPU.
+ *       Make sure that this function is used only PRO_CPU.
+ *
+ * @return partition: If rtc_retain_mem is valid.
+ *        - NULL: If it is not valid.
+ */
+esp_partition_pos_t* bootloader_common_get_rtc_retain_mem_partition(void);
+
+/**
+ * @brief Update the partition and reboot_counter in rtc_retain_mem.
+ *
+ * This function saves the partition of application for fast booting from the deep sleep.
+ * An algorithm uses this partition to avoid reading the otadata and does not validate an image.
+ * Note: This function operates the RTC FAST memory which available only for PRO_CPU.
+ *       Make sure that this function is used only PRO_CPU.
+ *
+ * @param[in] partition      App partition description. Can be NULL, in this case rtc_retain_mem.partition is not updated.
+ * @param[in] reboot_counter If true then update reboot_counter.
+ *
+ */
+void bootloader_common_update_rtc_retain_mem(esp_partition_pos_t* partition, bool reboot_counter);
+
+/**
+ * @brief Reset entire rtc_retain_mem.
+ *
+ * Note: This function operates the RTC FAST memory which available only for PRO_CPU.
+ *       Make sure that this function is used only PRO_CPU.
+ */
+void bootloader_common_reset_rtc_retain_mem(void);
+
+/**
+ * @brief Returns reboot_counter from rtc_retain_mem
+ *
+ * The reboot_counter counts the number of reboots. Reset only when power is off.
+ * The very first launch of the application will be from 1.
+ * Overflow is not possible, it will stop at the value UINT16_MAX.
+ * Note: This function operates the RTC FAST memory which available only for PRO_CPU.
+ *       Make sure that this function is used only PRO_CPU.
+ *
+ * @return reboot_counter: 1..65535
+ *         - 0: If rtc_retain_mem is not valid.
+ */
+uint16_t bootloader_common_get_rtc_retain_mem_reboot_counter(void);
+
+/**
+ * @brief Returns rtc_retain_mem
+ *
+ * Note: This function operates the RTC FAST memory which available only for PRO_CPU.
+ *       Make sure that this function is used only PRO_CPU.
+ *
+ * @return rtc_retain_mem
+ */
+rtc_retain_mem_t* bootloader_common_get_rtc_retain_mem(void);
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif

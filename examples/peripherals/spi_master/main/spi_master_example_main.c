@@ -13,7 +13,6 @@
 #include "freertos/task.h"
 #include "esp_system.h"
 #include "driver/spi_master.h"
-#include "soc/gpio_struct.h"
 #include "driver/gpio.h"
 
 #include "pretty_effect.h"
@@ -387,7 +386,7 @@ static void display_pretty_colors(spi_device_handle_t spi)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
     spi_device_handle_t spi;

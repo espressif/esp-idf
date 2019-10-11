@@ -1,10 +1,11 @@
-set(SOC_NAME ${IDF_TARGET})
-set(SOC_TEST_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../${SOC_NAME}/test)
-if(EXISTS "${SOC_TEST_DIR}")
-    set(COMPONENT_SRCDIRS "${SOC_TEST_DIR}")
-    set(COMPONENT_ADD_INCLUDEDIRS "${SOC_TEST_DIR}")
+idf_build_get_property(soc_name IDF_TARGET)
+
+get_filename_component(soc_test "${CMAKE_CURRENT_SOURCE_DIR}/../${soc_name}/test" ABSOLUTE)
+if(EXISTS "${soc_test}")
+    set(srcs "${soc_test}")
+    set(include_dirs "${soc_test}")
 endif()
 
-set(COMPONENT_REQUIRES unity test_utils)
-
-register_component()
+idf_component_register(SRC_DIRS "${src_dirs}"
+                    INCLUDE_DIRS "${include_dirs}"
+                    REQUIRES unity test_utils)

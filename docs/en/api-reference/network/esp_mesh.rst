@@ -37,6 +37,8 @@ The ESP-MESH software stack is built atop the Wi-Fi Driver/FreeRTOS and may use 
 
     ESP-MESH Software Stack
 
+.. _mesh-events:
+
 System Events
 ^^^^^^^^^^^^^
 
@@ -49,9 +51,9 @@ An application interfaces with ESP-MESH via **ESP-MESH Events**. Since ESP-MESH 
 
     ESP-MESH System Events Delivery
 
-The :cpp:type:`mesh_event_id_t` defines all possible ESP-MESH system events and can indicate events such as the connection/disconnection of parent/child. Before ESP-MESH system events can be used, the application must register a **Mesh Event Callback** via :cpp:func:`esp_mesh_set_config`. The callback is used to receive events from the ESP-MESH stack as well as the LwIP Stack and should contain handlers for each event relevant to the application.
+The :cpp:type:`mesh_event_id_t` defines all possible ESP-MESH events and can indicate events such as the connection/disconnection of parent/child. Before ESP-MESH events can be used, the application must register a **Mesh Events handler** via :cpp:func:`esp_event_handler_register` to the default event task. Should contain handlers for each event relevant to the application.
 
-Typical use cases of system events include using events such as :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, :cpp:enumerator:`MESH_EVENT_ROOT_GOT_IP` and :cpp:enumerator:`MESH_EVENT_ROOT_LOST_IP` can be used to indicate when the root node can and cannot transmit data to the external IP network.
+Typical use cases of mesh events include using events such as :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, :cpp:enumerator:`IP_EVENT_STA_GOT_IP` and :cpp:enumerator:`IP_EVENT_STA_LOST_IP` can be used to indicate when the root node can and cannot transmit data to the external IP network.
 
 .. warning::
     When using ESP-MESH under self-organized mode, users must ensure that no calls to Wi-Fi API are made. This is due to the fact that the self-organizing mode will internally make Wi-Fi API calls to connect/disconnect/scan etc. **Any Wi-Fi calls from the application (including calls from callbacks and handlers of Wi-Fi events) may interfere with ESP-MESH's self-organizing behavior**. Therefore, user's should not call Wi-Fi APIs after :cpp:func:`esp_mesh_start` is called, and before :cpp:func:`esp_mesh_stop` is called.
@@ -79,8 +81,6 @@ The following code snippet demonstrates how to initialize LwIP for ESP-MESH appl
      */
     ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
     ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
-    /* do not specify system event callback, use NULL instead. */
-    ESP_ERROR_CHECK(esp_event_loop_init(NULL, NULL));
 
 .. note::
 
@@ -106,12 +106,15 @@ The prerequisites for starting ESP-MESH is to initialize LwIP and Wi-Fi, The fol
      */
     ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
     ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
-    /* do not specify system event callback, use NULL instead. */
-    ESP_ERROR_CHECK(esp_event_loop_init(NULL, NULL));
+
+    /*  event initialization */
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /*  Wi-Fi initialization */
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&config));
+    /*  register IP events handler */
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_FLASH));
     ESP_ERROR_CHECK(esp_wifi_start());
 
@@ -132,6 +135,8 @@ The following code snippet demonstrates how to initialize ESP-MESH
 
     /*  mesh initialization */
     ESP_ERROR_CHECK(esp_mesh_init());
+    /*  register mesh events handler */
+    ESP_ERROR_CHECK(esp_event_handler_register(MESH_EVENT, ESP_EVENT_ANY_ID, &mesh_event_handler, NULL));
 
 .. _mesh-configuring-mesh:
 
@@ -146,9 +151,6 @@ ESP-MESH is configured via :cpp:func:`esp_mesh_set_config` which receives its ar
 | Parameter        | Description                         |
 +==================+=====================================+
 | Channel          | Range from 1 to 14                  |
-+------------------+-------------------------------------+
-| Event Callback   | Callback for Mesh Events,           |
-|                  | see :cpp:type:`mesh_event_cb_t`     |
 +------------------+-------------------------------------+
 | Mesh ID          | ID of ESP-MESH Network,             |
 |                  | see :cpp:type:`mesh_addr_t`         |
@@ -171,8 +173,6 @@ The following code snippet demonstrates how to configure ESP-MESH.
     mesh_cfg_t cfg = MESH_INIT_CONFIG_DEFAULT();
     /* mesh ID */
     memcpy((uint8_t *) &cfg.mesh_id, MESH_ID, 6);
-    /* mesh event callback */
-    cfg.event_cb = &mesh_event_handler;
     /* channel (must match the router's channel) */
     cfg.channel = CONFIG_MESH_CHANNEL;
     /* router */

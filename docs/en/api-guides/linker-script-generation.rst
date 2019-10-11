@@ -5,131 +5,135 @@ Linker Script Generation
 Overview
 --------
 
-There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Usually, code and read-only data are placed in flash regions,
-writable data in RAM, etc. A common action is changing where code/data are mapped by default, say placing critical code/rodata in RAM for performance
-reasons or placing code/data/rodata in RTC memory for use in a wake stub or the ULP coprocessor.
+There are several :ref:`memory regions<memory-layout>` where code and data can be placed. Code and read-only data are placed by default in flash,
+writable data in RAM, etc. However, it is sometimes necessary to change these default placements. For example, it may
+be necessary to place critical code in RAM for performance reasons or to place code in RTC memory for use in a wake stub or the ULP coprocessor.
 
-IDF provides the ability for defining these placements at the component level using the linker script generation mechanism. The component presents
-how it would like to map the input sections of its object files (or even functions/data) through :ref:`linker fragment files<ldgen-fragment-files>`. During app build, 
-the linker fragment files are collected, parsed and processed; and the :ref:`linker script template<ldgen-script-templates>` is augmented with
-information generated from the fragment files to produce the final linker script. This linker script is then used for the linking
-the final app binary.
+With the linker script generation mechanism, it is possible to specify these placements at the component level within ESP-IDF. The component presents
+information on how it would like to place its symbols, objects or the entire archive. During build the information presented by the components are collected,
+parsed and processed; and the placement rules generated is used to link the app.
 
 Quick Start
 ------------
 
-This section presents a guide for quickly placing code/data to RAM and RTC memory; as well as demonstrating how to make these placements 
-dependent on project configuration values. In a true quick start fashion, this section glosses over terms and concepts that will be discussed 
-at a later part of the document. However, whenever it does so, it provides a link to the relevant section on the first mention.
+This section presents a guide for quickly placing code/data to RAM and RTC memory - placements ESP-IDF provides out-of-the-box.
 
-.. _ldgen-add-fragment-file :
+For this guide, suppose we have the following::
 
-Preparation
-^^^^^^^^^^^
+    - components/
+                    - my_component/                              
+                                    - CMakeLists.txt
+                                    - component.mk
+                                    - Kconfig                                
+                                    - src/
+                                          - my_src1.c                          
+                                          - my_src2.c                          
+                                          - my_src3.c                       
+                                    - my_linker_fragment_file.lf          
+
+
+- a component named ``my_component`` that is archived as library ``libmy_component.a`` during build
+- three source files archived under the library, ``my_src1.c``, ``my_src2.c`` and ``my_src3.c`` which are compiled as ``my_src1.o``, ``my_src2.o`` and ``my_src3.o``, respectively
+- under ``my_src1.o``, the function ``my_function1`` is defined; under ``my_src2.o``, the function ``my_function2`` is defined
+- there exist bool-type config ``PERFORMANCE_MODE`` (y/n) and int type config ``PERFORMANCE_LEVEL`` (with range 0-3) in my_component's Kconfig
+
+
+Creating and Specifying a Linker Fragment File
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Before anything else, a linker fragment file needs to be created. A linker fragment file
+is simply a text file with a ``.lf`` extension upon which the desired placements will be written.
+After creating the file, it is then necessary to present it to the build system. The instructions for the build systems
+supported by ESP-IDF are as follows:
 
 Make
 """"
 
-Create a linker fragment file inside the component directory, which is just a text file with a .lf extension. In order for the build system to collect your fragment file,
-add an entry to it from the component, set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to your linker file/s before the ``register_component`` call.
+In the component's ``component.mk`` file, set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to the path of the created linker
+fragment file. The path can either be an absolute path or a relative path from the component directory.
 
 .. code-block:: make
 
-    # file paths relative to component Makefile 
-    COMPONENT_ADD_LDFRAGMENTS += "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+    COMPONENT_ADD_LDFRAGMENTS += "my_linker_fragment_file.lf"
 
 CMake
 """""
 
-For CMake set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to your linker file/s before the ``register_component`` call.
+In the component's ``CMakeLists.txt`` file, specify argument ``LDFRAGMENTS`` in the ``idf_component_register`` call.
+The value of ``LDFRAGMENTS`` can either be an absolute path or a relative path from the component directory to the
+created linker fragment file.
 
 .. code-block:: cmake
 
     # file paths relative to CMakeLists.txt  
-    set(COMPONENT_ADD_LDFRAGMENTS "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf")
-
-    register_component()
-
-It is also possible to specify fragment files from the project CMakeLists.txt or component project_include.cmake using the function `ldgen_add_fragment_files`::
-
-    ldgen_add_fragment_files(target files ...)
+    idf_component_register(...
+                           LDFRAGMENTS "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+                           ...
+                           )
 
 
 Specifying placements
 ^^^^^^^^^^^^^^^^^^^^^
 
-This mechanism allows specifying placement of the following entities:
+It is possible to specify placements at the following levels of granularity:
 
-    - one or multiple object files within the component
-    - one or multiple function/variable using their names
-    - the entire component library
-
-For the following text, suppose we have the following:
-
-    - a component named ``component`` that is archived as library ``libcomponent.a`` during build
-    - three object files archived under the library, ``object1.o``, ``object2.o`` and ``object3.o``
-    - under ``object1.o``, the function ``function1`` is defined; under ``object2.o``, the function ``function2`` is defined
-    - there exist configuration ``PERFORMANCE_MODE`` and ``PERFORMANCE_LEVEL`` in one of the IDF KConfig files, with the set value indicated by entries ``CONFIG_PERFORMANCE_MODE`` and ``CONFIG_PERFORMANCE_LEVEL`` in the project sdkconfig
-
-In the created linker fragment file, we write:
-
-.. code-block:: none
-
-    [mapping]
-    archive: libcomponent.a
-    entries:
-
-This creates an empty :ref:`mapping fragment<ldgen-mapping-fragment>`, which doesn't do anything yet. During linking the :ref:`default placements<ldgen-default-placements>` 
-will still be used for ``libcomponent.a``, unless the ``entries`` key is populated.
+    - object file (``.obj`` or ``.o`` files)
+    - symbol (function/variable)
+    - archive (``.a`` files)
 
 .. _ldgen-placing-object-files :
 
 Placing object files
 """"""""""""""""""""
 
-Suppose the entirety of ``object1.o``  is performance-critical, so it is desirable to place it in RAM. On the other hand, suppose all of ``object2.o`` contains things to be executed coming out of deep sleep, so it needs to be put under RTC memory. We can write:
+Suppose the entirety of ``my_src1.o`` is performance-critical, so it is desirable to place it in RAM. 
+On the other hand, the entirety of ``my_src2.o`` contains symbols needed coming out of deep sleep, so it needs to be put under RTC memory.
+In the the linker fragment file, we can write:
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        object1 (noflash)     # places all code / read-only data under IRAM/ DRAM
-        object2 (rtc)         # places all code/ data and read-only data under RTC fast memory/ RTC slow memory
+        my_src1 (noflash)     # places all my_src1 code/read-only data under IRAM/DRAM
+        my_src2 (rtc)         # places all my_src2 code/ data and read-only data under RTC fast memory/RTC slow memory
 
-What happens to ``object3.o``? Since it is not specified, default placements are used for ``object3.o``.
+What happens to ``my_src3.o``? Since it is not specified, default placements are used for ``my_src3.o``. More on default placements
+:ref:`here<ldgen-default-placements>`. 
 
-Placing functions/data using their names
-""""""""""""""""""""""""""""""""""""""""
+Placing symbols
+""""""""""""""""
 
-Continuing our example, suppose that among functions defined under ``object1.o``, only ``function1`` is performance-critical; and under ``object2.o``,
-only ``function2`` needs to execute after the chip comes out of deep sleep. This could be accomplished by writing:
+Continuing our example, suppose that among functions defined under ``object1.o``, only ``my_function1`` is performance-critical; and under ``object2.o``,
+only ``my_function2`` needs to execute after the chip comes out of deep sleep. This could be accomplished by writing:
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        object1:function1 (noflash) 
-        object2:function2 (rtc) 
+        my_src1:my_function1 (noflash)
+        my_src2:my_function2 (rtc)
 
-The default placements are used for the rest of the functions in ``object1.o`` and ``object2.o`` and the entire ``object3.o``. Something similar
-can be achieved for placing data by writing the variable name instead of the function name after ``:``.
+The default placements are used for the rest of the functions in ``my_src1.o`` and ``my_src2.o`` and the entire ``object3.o``. Something similar
+can be achieved for placing data by writing the variable name instead of the function name, like so::
+
+       my_src1:my_variable (noflash)
 
 .. warning::
 
-    There are :ref:`limitations<ldgen-type1-limitations>` in placing code/data using their symbol names. In order to ensure proper placements, an alternative would be to group
-    relevant code and data into source files, and :ref:`use object file placement<ldgen-placing-object-files>`.
+    There are :ref:`limitations<ldgen-symbol-granularity-placements>` in placing code/data at symbol granularity. In order to ensure proper placements, an alternative would be to group
+    relevant code and data into source files, and :ref:`use object-granularity placements<ldgen-placing-object-files>`.
 
-Placing entire component
-""""""""""""""""""""""""
+Placing entire archive
+"""""""""""""""""""""""
 
-In this example, suppose that the entire component needs to be placed in RAM. This can be written as:
+In this example, suppose that the entire component archive needs to be placed in RAM. This can be written as:
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
         * (noflash)
 
@@ -137,122 +141,226 @@ Similarly, this places the entire component in RTC memory:
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
         * (rtc)
 
 Configuration-dependent placements
 """"""""""""""""""""""""""""""""""
 
-Suppose that the entire component library should only be placed when ``CONFIG_PERFORMANCE_MODE == y`` in the sdkconfig. This could be written as:
+Suppose that the entire component library should only have special placement when a certain condition is true; for example, when ``CONFIG_PERFORMANCE_MODE == y``.
+This could be written as:
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        : PERFORMANCE_MODE = y
-        * (noflash)
+        if PERFORMANCE_MODE = y:
+            * (noflash)
+        else:
+            * (default)
 
-In pseudocode, this translates to:
-
-.. code-block:: none
-
-    if PERFORMANCE_MODE = y
-        place entire libcomponent.a in RAM
-    else
-        use default placements
-
-It is also possible to have multiple conditions to test. Suppose the following requirements: when ``CONFIG_PERFORMANCE_LEVEL == 1``, only ``object1.o`` is put in RAM;
+For a more complex config-dependent placement, suppose the following requirements: when ``CONFIG_PERFORMANCE_LEVEL == 1``, only ``object1.o`` is put in RAM;
 when ``CONFIG_PERFORMANCE_LEVEL == 2``, ``object1.o`` and ``object2.o``; and when ``CONFIG_PERFORMANCE_LEVEL == 3`` all object files under the archive
-are to be put into RAM. When these three are false however, put entire library in RTC memory. This scenario is a bit contrived, but, 
+are to be put into RAM. When these three are false however, put entire library in RTC memory. This scenario is a bit contrived, but,
 it can be written as:
 
 .. code-block:: none
 
-    [mapping]
-    archive: libcomponent.a
+    [mapping:my_component]
+    archive: libmy_component.a
     entries:
-        : PERFORMANCE_LEVEL = 3
-        * (noflash)
-        : PERFORMANCE_LEVEL = 2
-        object1 (noflash)
-        object2 (noflash)
-        : PERFORMANCE_LEVEL = 1
-        object1 (noflash)
-        : default
-        * (rtc)
+        if PERFORMANCE_LEVEL = 1:
+            my_src1 (noflash)
+        elif PERFORMANCE_LEVEL = 2:
+            my_src1 (noflash)
+            my_src2 (noflash)
+        elif PERFORMANCE_LEVEL = 3:
+            my_src1 (noflash)
+            my_src2 (noflash)
+            my_src3 (noflash)
+        else:
+            * (rtc)
 
-Which reads:
+Nesting condition-checking is also possible. The following is equivalent to the snippet above:
 
 .. code-block:: none
 
-    if CONFIG_PERFORMANCE_LEVEL == 3
-        place entire libcomponent.a in RAM
-    else if CONFIG_PERFORMANCE_LEVEL == 2
-        only place object1.o and object2.o in RAM
-    else if CONFIG_PERFORMANCE_LEVEL == 1
-        only place object1.o in RAM
-    else
-        place entire libcomponent.a in RTC memory 
-
-The conditions test :ref:`support other operations<ldgen-condition-entries>`.
+    [mapping:my_component]
+    archive: libmy_component.a
+    entries:
+        if PERFORMANCE_LEVEL <= 3 && PERFORMANCE_LEVEL > 0:
+            if PERFORMANCE_LEVEL >= 1:
+                object1 (noflash)
+                if PERFORMANCE_LEVEL >= 2:
+                    object2 (noflash)
+                    if PERFORMANCE_LEVEL >= 3:
+                        object2 (noflash)
+        else:
+            * (rtc)
 
 .. _ldgen-default-placements:
 
 The 'default' placements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Up until this point, the term  'default placements' has been mentioned as fallback placements for when the 
-placement rules ``rtc`` and ``noflash`` are not specified. The tokens ``noflash`` or ``rtc`` are not merely keywords known by the mechanism, but are actually 
-objects called :ref:`scheme fragments<ldgen-scheme-fragment>` that are specified by the user. Due to the commonness of these placement use cases,
-they are pre-defined in IDF.
+Up until this point, the term  'default placements' has been mentioned as fallback placements for when the
+placement rules ``rtc`` and ``noflash`` are not specified. It is important to note that the tokens ``noflash`` or ``rtc`` are not merely keywords, but are actually
+entities called fragments, specifically :ref:`schemes<ldgen-scheme-fragment>`.
 
-Similarly, there exists a ``default`` scheme fragment which defines what the default placement rules should be, which is discussed :ref:`here<ldgen-default-scheme>`.
+In the same manner as ``rtc`` and ``noflash`` are schemes, there exists a ``default`` scheme which defines what the default placement rules should be.
+As the name suggests, it is where code and data are usually placed, i.e. code/constants is placed in flash, variables
+placed in RAM, etc.  More on the default scheme :ref:`here<ldgen-default-scheme>`.
 
 .. note::
-    For an example of an IDF component using this feature, see :component_file:`freertos/CMakeLists.txt`. The ``freertos`` component uses this 
-    mechanism to place all code, literal and rodata of all of its object files to the instruction RAM memory region for performance reasons.
+    For an example of an ESP-IDF component using the linker script generation mechanism, see :component_file:`freertos/CMakeLists.txt`. 
+    ``freertos`` uses this to place its object files to the instruction RAM for performance reasons.
 
-This marks the end of the quick start guide. The following text discusses this mechanism in a little bit more detail, such its components, essential concepts,
-the syntax, how it is integrated with the build system, etc. The following sections should be helpful in creating custom mappings or modifying default 
-behavior.
+This marks the end of the quick start guide. The following text discusses the internals of the mechanism in a little bit more detail.
+The following sections should be helpful in creating custom placements or modifying default behavior.
 
-Components
-----------
+Linker Script Generation Internals
+----------------------------------
 
-.. _ldgen-fragment-files :
+Linking is the last step in the process of turning C/C++ source files into an executable. It is performed by the toolchain's linker, and accepts
+linker scripts which specify code/data placements, among other things. With the linker script generation mechanism, this process is no different, except
+that the linker script passed to the linker is dynamically generated from: (1) the collected :ref:`linker fragment files<ldgen-linker-fragment-files>` and 
+(2) :ref:`linker script template<ldgen-linker-script-template>`.
+
+.. note::
+
+    The tool that implements the linker script generation mechanism lives under :idf:`tools/ldgen`.
+
+.. _ldgen-linker-fragment-files :
 
 Linker Fragment Files
 ^^^^^^^^^^^^^^^^^^^^^
 
-The fragment files contain objects called 'fragments'. These fragments contain pieces of information which, when put together, form
-placement rules that tell where to place sections of object files in the output binary.
+As mentioned in the quick start guide, fragment files are simple text files with the ``.lf`` extension containing the desired placements. This is a simplified
+description of what fragment files contain, however. What fragment files actually contain are 'fragments'. Fragments are entities which contain pieces of information which, when put together, form
+placement rules that tell where to place sections of object files in the output binary. There are three types of fragments: :ref:`sections<ldgen-sections-fragment>`, 
+:ref:`scheme<ldgen-scheme-fragment>` and :ref:`mapping<ldgen-mapping-fragment>`.
 
-Another way of putting it is that processing linker fragment files aims to create the section placement rules inside GNU LD ``SECTIONS`` command. 
-Where to collect and put these section placement rules is represented internally as a ``target`` token.
+Grammar
+"""""""
 
-The three types of fragments are discussed below.
+The three fragment types share a common grammar:
+
+.. code-block:: none
+
+    [type:name]
+    key: value
+    key:
+        value
+        value
+        value
+        ...
+
+- type: Corresponds to the fragment type, can either be ``sections``, ``scheme`` or ``mapping``.
+- name: The name of the fragment, should be unique for the specified fragment type.
+- key, value: Contents of the fragment; each fragment type may support different keys and different grammars for the key values.
 
 .. note::
 
-    Fragments have a name property (except mapping fragments) and are known globally. 
-    Fragment naming follows C variable naming rules, i.e. case sensitive, must begin with a letter or underscore, alphanumeric/underscore after
-    initial characters are allowed, no spaces/special characters. Each type of fragment has its own namespace. In cases where multiple fragments
-    of the same type and name are encountered, an exception is thrown.
+    In cases where multiple fragments of the same type and name are encountered, an exception is thrown.
+
+.. note::
+
+    The only valid characters for fragment names and keys are alphanumeric characters and underscore.
+
+
+.. _ldgen-condition-checking :
+
+**Condition Checking**
+
+Condition checking enable the linker script generation to be configuration-aware. Depending on whether expressions involving configuration values
+are true or not, a particular set of values for a key can be used. The evaluation uses ``eval_string`` from :idf_file:`tools/kconfig_new/kconfiglib.py` 
+and adheres to its required syntax and limitations. Supported operators are as follows:
+
+    - comparison
+        - LessThan ``<``
+        - LessThanOrEqualTo ``<=``
+        - MoreThan ``>``
+        - MoreThanOrEqualTo ``>=``
+        - Equal ``=``
+        - NotEqual ``!=``
+    - logical
+        - Or ``||``
+        - And ``&&``
+        - Negation ``!``
+    - grouping
+        - Parenthesis ``()``
+
+Condition checking behaves as you would expect an ``if...elseif/elif...else`` block in other languages. Condition-checking is possible
+for both key values and entire fragments. The two sample fragments below are equivalent:
+
+.. code-block:: none
+
+    # Value for keys is dependent on config
+    [type:name]
+    key_1:
+        if CONDITION = y:
+            value_1
+        else:
+            value_2
+    key_2:
+        if CONDITION = y:
+            value_a
+        else:
+            value_b
+
+.. code-block:: none
+
+    # Entire fragment definition is dependent on config
+    if CONDITION = y:
+        [type:name]
+        key_1:
+            value_1
+        key_2:
+            value_b
+    else:
+        [type:name]
+        key_1:
+            value_2
+        key_2:
+            value_b
+
+
+**Comments**
+
+Comment in linker fragment files begin with ``#``. Like in other languages, comment are used to provide helpful descriptions and documentation
+and are ignored during processing. 
+
+Compatibility with ESP-IDF v3.x Linker Script Fragment Files
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+ESP-IDF v4.0 brings some changes to the linker script fragment file grammar:
+
+- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation
+    and examples demonstrates properly indented grammar
+- move to ``if...elif...else`` structure for conditionals, with the ability to nest checks and place entire fragments themselves inside conditionals
+- mapping fragments now requires a name like other fragment types
+
+Linker script generator should be able to parse ESP-IDF v3.x linker fragment files that are indented properly (as demonstrated by
+the ESP-IDF v3.x version of this document). Backward compatibility with the previous mapping fragment grammar (optional
+name and the old grammar for conditionals) has also been retained but with a deprecation warning. Users should switch to the newer grammar discussed
+in this document as support for the old grammar is planned to be removed in the future.
+
+Note that linker fragment files using the new ESP-IDF v4.0 grammar is not supported on ESP-IDF v3.x, however.
+
+Types
+"""""
 
 .. _ldgen-sections-fragment :
 
-I. Sections
-"""""""""""
+**Sections**
 
-Sections fragments defines a list of object file sections that the GCC compiler emits. It may be a default section (e.g. ``.text``, ``.data``) or 
-it may be user defined section through the ``__attribute__`` keyword. 
+Sections fragments defines a list of object file sections that the GCC compiler emits. It may be a default section (e.g. ``.text``, ``.data``) or
+it may be user defined section through the ``__attribute__`` keyword.
 
-The use of an optional '+' indicates the inclusion of the section in the list, as well as sections that start with it. This is the preferred method over listing both explicitly. 
-
-**Syntax**
+The use of an optional '+' indicates the inclusion of the section in the list, as well as sections that start with it. This is the preferred method over listing both explicitly.
 
 .. code-block:: none
 
@@ -262,7 +370,7 @@ The use of an optional '+' indicates the inclusion of the section in the list, a
         .section
         ...
 
-**Example**
+Example:
 
 .. code-block:: none
 
@@ -282,12 +390,9 @@ The use of an optional '+' indicates the inclusion of the section in the list, a
 
 .. _ldgen-scheme-fragment :
 
-II. Scheme
-""""""""""
+**Scheme**
 
-Scheme fragments define what ``target`` a sections fragment is assigned to. 
-
-**Syntax**
+Scheme fragments define what ``target`` a sections fragment is assigned to.
 
 .. code-block:: none
 
@@ -297,7 +402,7 @@ Scheme fragments define what ``target`` a sections fragment is assigned to.
         sections -> target
         ...
 
-**Example**
+Example:
 
 .. code-block:: none
 
@@ -308,69 +413,46 @@ Scheme fragments define what ``target`` a sections fragment is assigned to.
 
 .. _ldgen-default-scheme:
 
-**The** ``default`` **scheme**
+The ``default`` scheme
 
 There exists a special scheme with the name ``default``. This scheme is special because catch-all placement rules are generated from
-its entries. This means that, if one of its entries is ``text -> flash_text``, the placement rule 
+its entries. This means that, if one of its entries is ``text -> flash_text``, the placement rule
 
 .. code-block:: none
 
     *(.literal .literal.* .text .text.*)
 
-will be generated for the target ``flash_text``. 
+will be generated for the target ``flash_text``.
 
-These catch-all rules then effectively serve as fallback rules for those whose mappings were not specified. 
+These catch-all rules then effectively serve as fallback rules for those whose mappings were not specified.
 
 .. note::
 
-    The ``default scheme`` is defined in :component:`esp32/ld/esp32_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are 
+    The ``default scheme`` is defined in :component:`esp32/ld/esp32_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are
     built-in schemes referenced in the quick start guide are also defined in this file.
 
 .. _ldgen-mapping-fragment :
 
-III. Mapping
-""""""""""""
+**Mapping**
 
-Mapping fragments define what scheme fragment to use for mappable entities, i.e. object files, function names, variable names. There are two types of entries
-for this fragment: mapping entries and condition entries.
-
-.. note::
-
-    Mapping fragments have no explicit name property. Internally, the name is constructed from the value of the archive entry. 
-
-**Syntax**
+Mapping fragments define what scheme fragment to use for mappable entities, i.e. object files, function names, variable names, archives.
 
 .. code-block:: none
 
-    [mapping]
+    [mapping:name]
     archive: archive                # output archive file name, as built (i.e. libxxx.a)
     entries:
-        : condition                 # condition entry, non-default
-        object:symbol (scheme)      # mapping entry, Type I
-        object (scheme)             # mapping entry, Type II
-        * (scheme)                  # mapping entry, Type III
+        object:symbol (scheme)      # symbol granularity
+        object (scheme)             # object granularity
+        * (scheme)                  # archive granularity
 
-        # optional separation/comments, for readability
+There are three levels of placement granularity:
 
-        : default                   # condition entry, default
-        * (scheme)                  # mapping entry, Type III
+    - symbol: The object file name and symbol name are specified. The symbol name can be a function name or a variable name.
+    - object: Only the object file name is specified.
+    - archive: ``*`` is specified, which is a short-hand for all the object files under the archive.
 
-.. _ldgen-mapping-entries :
-
-**Mapping Entries**
-
-There are three types of mapping entries:
-
-    ``Type I``
-        The object file name and symbol name are specified. The symbol name can be a function name or a variable name.
-
-    ``Type II``
-        Only the object file name is specified.
-
-    ``Type III``
-        ``*`` is specified, which is a short-hand for all the object files under the archive.
-
-To know what a mapping entry means, let us expand a ``Type II`` entry. Originally: 
+To know what an entry means, let us expand a sample object-granularity placement:
 
 .. code-block:: none
 
@@ -380,8 +462,8 @@ Then expanding the scheme fragment from its entries definitions, we have:
 
 .. code-block:: none
 
-    object (sections -> target, 
-            sections -> target, 
+    object (sections -> target,
+            sections -> target,
             ...)
 
 Expanding the sections fragment with its entries definition:
@@ -391,59 +473,38 @@ Expanding the sections fragment with its entries definition:
     object (.section,      # given this object file
             .section,      # put its sections listed here at this
             ... -> target, # target
-            
+
             .section,
             .section,      # same should be done for these sections
-            ... -> target, 
-            
+            ... -> target,
+
             ...)           # and so on
 
-.. _ldgen-type1-limitations :
+Example:
 
-**On** ``Type I`` **Mapping Entries**
+.. code-block:: none
 
-``Type I`` mapping entry is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. If the user opts to remove these flags, then
-the ``Type I`` mapping will not work. Furthermore, even if the user does not opt to compile without these flags, there are still limitations 
-as the implementation is dependent on the emitted output sections.
+    [mapping:map]
+    archive: libfreertos.a
+    entries:
+        * (noflash)
+
+.. _ldgen-symbol-granularity-placements :
+
+On Symbol-Granularity Placements
+""""""""""""""""""""""""""""""""
+
+Symbol granularity placements is possible due to compiler flags ``-ffunction-sections`` and ``-ffdata-sections``. ESP-IDF compiles with these flags by default.
+If the user opts to remove these flags, then the symbol-granularity placements will not work. Furthermore, even with the presence of these flags, there are still other limitations to keep in mind
+due to the dependence on the compiler's emitted output sections.
 
 For example, with ``-ffunction-sections``, separate sections are emitted for each function; with section names predictably constructed i.e. ``.text.{func_name}``
 and ``.literal.{func_name}``. This is not the case for string literals within the function, as they go to pooled or generated section names.
 
-With ``-fdata-sections``, for global scope data the compiler predictably emits either ``.data.{var_name}``, ``.rodata.{var_name}`` or ``.bss.{var_name}``; and so ``Type I`` mapping entry works for these. 
+With ``-fdata-sections``, for global scope data the compiler predictably emits either ``.data.{var_name}``, ``.rodata.{var_name}`` or ``.bss.{var_name}``; and so ``Type I`` mapping entry works for these.
 However, this is not the case for static data declared in function scope, as the generated section name is a result of mangling the variable name with some other information.
 
-.. _ldgen-condition-entries :
-
-**Condition Entries**
-
-Condition entries enable the linker script generation to be configuration-aware. Depending on whether expressions involving configuration values
-are true or not, a particular set of mapping entries can be used. The evaluation uses ``eval_string`` from :idf_file:`tools/kconfig_new/kconfiglib.py` and adheres to its required syntax and limitations.
-
-All mapping entries defined after a condition entry until the next one or the end of the mapping fragment belongs to that condition entry. During processing 
-conditions are tested sequentially, and the mapping entries under the first condition that evaluates to ``TRUE`` are used.
-
-A default condition can be defined (though every mapping contains an implicit, empty one), whose mapping entries get used in the event no conditions evaluates to ``TRUE``.
-
-**Example**
-
-.. code-block:: none
-
-    [scheme:noflash]
-    entries:
-        text -> iram0_text
-        rodata -> dram0_data
-
-    [mapping:lwip]
-    archive: liblwip.a
-    entries:
-        : LWIP_IRAM_OPTIMIZATION = y         # if CONFIG_LWIP_IRAM_OPTIMIZATION is set to 'y' in sdkconfig
-        ip4:ip4_route_src_hook (noflash)     # map ip4.o:ip4_route_src_hook, ip4.o:ip4_route_src and
-        ip4:ip4_route_src (noflash)          # ip4.o:ip4_route using the noflash scheme, which puts 
-        ip4:ip4_route (noflash)              # them in RAM
-        
-        : default                            # else no special mapping rules apply
-
-.. _ldgen-script-templates :
+.. _ldgen-linker-script-template :
 
 Linker Script Template
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -451,15 +512,13 @@ Linker Script Template
 The linker script template is the skeleton in which the generated placement rules are put into. It is an otherwise ordinary linker script, with a specific marker syntax
 that indicates where the generated placement rules are placed.
 
-**Syntax**
-
 To reference the placement rules collected under a ``target`` token, the following syntax is used:
 
 .. code-block:: none
 
     mapping[target]
 
-**Example**
+Example:
 
 The example below is an excerpt from a possible linker script template. It defines an output section ``.iram0.text``, and inside is a marker referencing
 the target ``iram0_text``.
@@ -530,19 +589,9 @@ Then the corresponding excerpt from the generated linker script will be as follo
     it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first
     among all other rules collected under the same target name.
 
+.. note::
 
-Integration with Build System
------------------------------
+    The linker script template currently used is :component:`esp32/ld/esp32.project.ld.in`, specified by the ``esp32`` component; the
+    generated output script is put under its build directory.
 
-The linker script generation occurs during application build, before the final output binary is linked. The tool that implements the mechanism 
-lives under ``$(IDF_PATH)/tools/ldgen``.
 
-Linker Script Template
-^^^^^^^^^^^^^^^^^^^^^^
-Currently, the linker script template used is :component:`esp32/ld/esp32.project.ld.in`, and is used only for the app build. The generated output script is 
-put under the build directory of the same component. Modifying this linker script template triggers a re-link of the app binary. 
-
-Linker Fragment File
-^^^^^^^^^^^^^^^^^^^^
-Any component can add a fragment file to the build. In order to add a fragment file to process, set COMPONENT_ADD_LDFRAGMENTS or use the function ``ldgen_add_fragment_files`` (CMake only) as mentioned :ref:`here <ldgen-add-fragment-file>`.
-Modifying any fragment file presented to the build system triggers a re-link of the app binary.

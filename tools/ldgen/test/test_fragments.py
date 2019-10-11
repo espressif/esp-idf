@@ -14,625 +14,968 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-import unittest
 import sys
-from pyparsing import ParseException
-from pyparsing import restOfLine
+import unittest
+
+from io import StringIO
+from pyparsing import Word, ParseException, ParseFatalException, alphanums
 
 try:
-    import fragments
+    from fragments import FragmentFile, FRAGMENT_TYPES, Fragment, KeyGrammar
+    from sdkconfig import SDKConfig
 except ImportError:
     sys.path.append('../')
-    import fragments
+    from fragments import FragmentFile, FRAGMENT_TYPES, Fragment, KeyGrammar
+    from sdkconfig import SDKConfig
 
-from sdkconfig import SDKConfig
+
+class SampleFragment(Fragment):
+
+    grammars = {
+        "key_1": KeyGrammar(Word(alphanums + "_").setResultsName("value"), 0, None, True),
+        "key_2": KeyGrammar(Word(alphanums + "_").setResultsName("value"), 0, None, False),
+        "key_3": KeyGrammar(Word(alphanums + "_").setResultsName("value"), 3, 5, False)
+    }
+
+    def set_key_value(self, key, parse_results):
+        if key == "key_1":
+            self.key_1 = list()
+            for result in parse_results:
+                self.key_1.append(result["value"])
+        elif key == "key_2":
+            self.key_2 = list()
+            for result in parse_results:
+                self.key_2.append(result["value"])
+
+    def get_key_grammars(self):
+        return self.__class__.grammars
+
+
+FRAGMENT_TYPES["test"] = SampleFragment
 
 
 class FragmentTest(unittest.TestCase):
 
-    def parse(self, text):
-        self.parser.ignore("#" + restOfLine)
-        fragment = self.parser.parseString(text, parseAll=True)
-        return fragment[0]
+    def setUp(self):
+        self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
+
+    @staticmethod
+    def create_fragment_file(contents, name="test_fragment.lf"):
+        f = StringIO(contents)
+        f.name = name
+        return f
+
+    def test_basic(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_1
+    value_2 # comments should be ignored
+    value_3
+# this is a comment as well
+key_2: value_a
+
+# this is the last comment
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+
+        self.assertEqual(len(fragment_file.fragments[0].key_1), 3)
+        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
+        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_3")
+        self.assertEqual(len(fragment_file.fragments[0].key_2), 1)
+        self.assertEqual(fragment_file.fragments[0].key_2[0], "value_a")
+
+    def test_duplicate_keys(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1: value_1
+key_1: value_a
+""")
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_empty_key(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+""")
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_conditional(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_1
+    if A = y:
+        value_2
+    value_3
+    if A = n:
+        value_4
+    if B = n:
+        value_5
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
+        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_3")
+        self.assertEqual(fragment_file.fragments[0].key_1[3], "value_5")
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_1
+    if B = y:
+        value_2
+    elif C = y:
+        value_3
+    elif A = y:
+        value_4
+    else:
+        value_5
+    value_6
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_3")
+        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_6")
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_1
+    if A = y:
+        value_2
+        if B = y:
+            value_3
+        else:
+            value_4
+            if C = y:
+                value_5
+            value_6
+        value_7
+key_2:
+    value_a
+    if B != y:
+        value_b
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
+        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_4")
+        self.assertEqual(fragment_file.fragments[0].key_1[3], "value_5")
+        self.assertEqual(fragment_file.fragments[0].key_1[4], "value_6")
+        self.assertEqual(fragment_file.fragments[0].key_1[5], "value_7")
+        self.assertEqual(fragment_file.fragments[0].key_2[0], "value_a")
+        self.assertEqual(fragment_file.fragments[0].key_2[1], "value_b")
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    if A = n:
+        value_2
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(len(fragment_file.fragments[0].key_1), 0)
+
+    def test_empty_file(self):
+        test_fragment = self.create_fragment_file(u"""
+
+
+
+
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(len(fragment_file.fragments), 0)
+
+    def test_setting_indent(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+ value_1
+ value_2
+ value_3
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+
+        self.assertEqual(len(fragment_file.fragments[0].key_1), 3)
+        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file.fragments[0].key_1[1], "value_2")
+        self.assertEqual(fragment_file.fragments[0].key_1[2], "value_3")
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+ value_1
+  value_2 # first element dictates indent
+  value_3
+""")
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_values_num_limit(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_a
+key_3:
+    value_1
+    value_2
+    value_3
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_a
+key_3:
+    value_1
+    value_2
+    value_3
+    value_4
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(len(fragment_file.fragments), 1)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_a
+key_3:
+    value_1
+    value_2
+    value_3
+    value_4
+    value_5
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(len(fragment_file.fragments), 1)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_a
+key_3:
+    value_1
+    value_2
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_a
+key_3:
+    value_1
+    value_2
+    value_3
+    value_4
+    value_5
+    value_6
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_unsupported_key(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    value_a
+key_4:
+    value_1
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_empty_fragment(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_empty_conditional(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    if B = y:
+    else:
+        value_1
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    if B = y:
+        value_1
+    else B = y:
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    if B = y:
+        value_1
+    elif B = y:
+    else:
+        value_2
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_out_of_order_conditional(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    elif B = y:
+        value_1
+    else:
+        value_2
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_1:
+    else:
+        value_2
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_required_keys(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test]
+key_2:
+    value_1
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_multiple_fragments(self):
+        test_fragment = self.create_fragment_file(u"""
+[test:test1]
+key_1:
+    value_1
+
+[test:test2]
+key_1:
+    value_2
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+
+        self.assertEqual(len(fragment_file.fragments), 2)
+        self.assertEqual(fragment_file.fragments[0].key_1[0], "value_1")
+        self.assertEqual(fragment_file.fragments[1].key_1[0], "value_2")
+
+    def test_whole_conditional_fragment(self):
+        test_fragment = self.create_fragment_file(u"""
+if B = y:
+    [test:test1]
+    key_1:
+        value_1
+else:
+    [test:test2]
+    key_1:
+        value_2
+
+    if A = y:
+        [test:test3]
+        key_1:
+            value_3
+            if C = y:
+                value_6
+
+    [test:test4]
+    key_1:
+        value_4
+
+[test:test5]
+key_1:
+    value_5
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(len(fragment_file.fragments), 4)
+        self.assertEqual(fragment_file.fragments[0].name, "test2")
+        self.assertEqual(fragment_file.fragments[1].name, "test3")
+        self.assertEqual(fragment_file.fragments[1].key_1[1], "value_6")
+        self.assertEqual(fragment_file.fragments[2].name, "test4")
+        self.assertEqual(fragment_file.fragments[3].name, "test5")
+
+    def test_equivalent_conditional_fragment(self):
+        test_fragment1 = self.create_fragment_file(u"""
+if A = y:
+    [test:test1]
+    key_1:
+        value_1
+else:
+    [test:test2]
+    key_1:
+        value_2
+""")
+
+        fragment_file1 = FragmentFile(test_fragment1, self.sdkconfig)
+        self.assertEqual(len(fragment_file1.fragments), 1)
+        self.assertEqual(fragment_file1.fragments[0].key_1[0], "value_1")
+
+        test_fragment2 = self.create_fragment_file(u"""
+[test:test1]
+key_1:
+    if A = y:
+        value_1
+    else:
+        value_2
+""")
+
+        fragment_file2 = FragmentFile(test_fragment2, self.sdkconfig)
+        self.assertEqual(len(fragment_file2.fragments), 1)
+        self.assertEqual(fragment_file2.fragments[0].key_1[0], "value_1")
 
 
 class SectionsTest(FragmentTest):
 
-    def setUp(self):
-        self.parser = fragments.Sections.get_fragment_grammar()
+    def test_basic(self):
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    .section1
+    .section2
+""")
 
-    def test_valid_entries(self):
-        valid_entries = """
-        [sections:test]
-        entries:
-            .section1
-                .section2
-
-            # Section 3 should not exist
-            # section3
-            .section4
-
-            # This is a comment
-
-            .section5
-        """
-
-        sections = self.parse(valid_entries)
-
-        self.assertEqual("test", sections.name)
-
-        entries = sections.entries
-
-        expected = {
-            ".section1",
-            ".section2",
-            ".section4",
-            ".section5"
-        }
-
-        self.assertEqual(set(entries), expected)
-
-    def test_blank_entries(self):
-        blank_entries = """
-        [sections:test]
-        entries:
-        """
-
-        with self.assertRaises(ParseException):
-            self.parse(blank_entries)
-
-    def test_invalid_names(self):
-        with_spaces = """
-        [sections:invalid name 1]
-        entries:
-        """
-
-        begins_with_number = """
-        [sections:2invalid_name]
-        entries:
-        """
-
-        with_special_character = """
-        [sections:invalid_name~]
-        entries:
-        """
-
-        with self.assertRaises(ParseException):
-            self.parse(with_spaces)
-
-        with self.assertRaises(ParseException):
-            self.parse(begins_with_number)
-
-        with self.assertRaises(ParseException):
-            self.parse(with_special_character)
-
-    def test_non_existent_entries(self):
-        misspelled_entries_field = """
-        [sections:test]
-        entrie:
-            .section1
-        """
-
-        missing_entries_field = """
-        [sections:test]
-        """
-
-        with self.assertRaises(ParseException):
-            self.parse(misspelled_entries_field)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_entries_field)
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].entries, {".section1", ".section2"})
 
     def test_duplicate_entries(self):
-        duplicate_entries = """
-        [sections:test]
-        entries:
-            .section1
-            .section3
-            .section1
-            .section1
-            .section2
-            .section3
-            .section1
-        """
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    .section1
+    .section2
+    .section3
+    .section2
+""")
 
-        sections = self.parse(duplicate_entries)
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].entries, {".section1", ".section2", ".section3"})
 
-        entries = sections.entries
+    def test_empty_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+""")
 
-        expected = {
-            ".section1",
-            ".section2",
-            ".section3",
-        }
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
 
-        self.assertEqual(set(entries), expected)
+        test_fragment = self.create_fragment_file(u"""
+[sections:test]
+entries:
+    if B = y:
+        .section1
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
 
 
 class SchemeTest(FragmentTest):
 
-    def setUp(self):
-        self.parser = fragments.Scheme.get_fragment_grammar()
+    def test_basic(self):
+        test_fragment = self.create_fragment_file(u"""
+[scheme:test]
+entries:
+    sections1 -> target1
+    sections2 -> target2
+""")
 
-    def test_valid_entries(self):
-        valid_entries = """
-        [scheme:test]
-        entries:
-            sections1 -> target1
-            sections2   ->    target2
-        """
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].entries,
+                         {("sections1", "target1"),
+                          ("sections2", "target2")})
 
-        scheme = self.parse(valid_entries)
+    def test_duplicate_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[scheme:test]
+entries:
+    sections1 -> target1
+    sections2 -> target2
+    sections2 -> target2
+""")
 
-        entries = scheme.entries
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(fragment_file.fragments[0].entries,
+                         {("sections1", "target1"),
+                          ("sections2", "target2")})
 
-        expected = {
-            ("sections1", "target1"),
-            ("sections2", "target2")
-        }
-
-        self.assertEqual(entries, expected)
-
-    def test_duplicate_same_mapping(self):
-        duplicate_entries = """
-        [scheme:duplicate_same_mapping]
-        entries:
-            sections1 -> target1
-            sections2 -> target2
-            sections1 -> target1
-        """
-
-        scheme = self.parse(duplicate_entries)
-
-        entries = scheme.entries
-
-        expected = {
-            ("sections1", "target1"),
-            ("sections2", "target2")
-        }
-
-        self.assertEqual(len(entries), 2)
-        self.assertEqual(entries, expected)
-
-    def test_invalid_separator(self):
-        wrong_character = """
-        [scheme:test]
-        entries:
-            sections1, target1
-        """
-
-        single_word = """
-        [scheme:test]
-        entries:
-            sections1
-        """
+    def test_empty_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[scheme:test]
+entries:
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(wrong_character)
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[scheme:test]
+entries:
+    if B = y:
+        sections1 -> target1
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_improper_grammar(self):
+        test_fragment = self.create_fragment_file(u"""
+[scheme:test]
+entries:
+    sections1, target1 # improper separator
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(single_word)
-
-    def test_blank_entries(self):
-        blank_entries = """
-        [scheme:test]
-        entries:
-        """
-
-        with self.assertRaises(ParseException):
-            self.parse(blank_entries)
-
-    def test_non_existent_entries(self):
-        misspelled_entries_field = """
-        [scheme:test]
-        entrie:
-            section -> target
-        """
-
-        missing_entries_field = """
-        [scheme:test]
-        """
-
-        with self.assertRaises(ParseException):
-            self.parse(misspelled_entries_field)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_entries_field)
+            FragmentFile(test_fragment, self.sdkconfig)
 
 
 class MappingTest(FragmentTest):
 
-    def setUp(self):
-        self.parser = fragments.Mapping.get_fragment_grammar()
+    def test_basic(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    obj:symbol (noflash)
+    obj (noflash)
+    obj:symbol_2 (noflash)
+    obj_2 (noflash)
+    * (noflash)
+""")
 
-    def parse_expression(self, expression):
-        parser = SDKConfig.get_expression_grammar()
-        return parser.parseString(expression, parseAll=True)
+        expected = {("obj", "symbol", "noflash"),
+                    ("obj", None, "noflash"),
+                    ("obj", "symbol_2", "noflash"),
+                    ("obj_2", None, "noflash"),
+                    ("*", None, "noflash")}
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_archive(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive:
+entries:
+    * (default)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive:
+    lib1.a
+    lib2.a
+entries:
+    * (default)
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_empty_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive:
+    lib.a
+entries:
+    if B = y:
+        * (noflash) # if condition is false, then no 'entries' key value
+""")
+
+        expected = set()
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive:
+    lib.a
+entries:
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_duplicate_entries(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive:
+    lib.a
+entries:
+    obj:symbol (noflash)
+    obj:symbol (noflash)
+""")
+
+        expected = {("obj", "symbol", "noflash")}
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
+
+    def test_invalid_grammar(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive:
+    lib.a
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+entries:
+    * (default)
+""")
+
+        with self.assertRaises(ParseFatalException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    obj: (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    obj: ()
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    obj:symbol
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    obj:* (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    :symbol (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+        test_fragment = self.create_fragment_file(u"""
+[mapping:test]
+archive: lib.a
+entries:
+    *:symbol (noflash)
+""")
+
+        with self.assertRaises(ParseException):
+            FragmentFile(test_fragment, self.sdkconfig)
+
+
+class DeprecatedMappingTest(FragmentTest):
 
     def test_valid_grammar(self):
-        valid_entries = """
-        [mapping]
-        archive: lib.a
-        entries:
-            obj:symbol (noflash)
-            # Comments should not matter
-            obj (noflash)
-            # Nor should whitespace
-                            obj  :     symbol_2 (    noflash )
-              obj_2  (    noflash )
-            * (noflash)
-        """
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    obj:symbol (noflash)
+    # Comments should not matter
+    obj (noflash)
+    # Nor should whitespace
+                    obj  :     symbol_2 (    noflash )
+        obj_2  (    noflash )
+    * (noflash)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual("lib.a", fragment_file.fragments[0].archive)
+        self.assertEqual("lib_a", fragment_file.fragments[0].name)
 
-        mapping = self.parse(valid_entries)
-
-        self.assertEqual("lib.a", mapping.archive)
-        self.assertEqual("lib_a", mapping.name)
-
-        entries = mapping.entries
-
-        expected = [("default", {
-                    ("obj", "symbol", "noflash"),
+        expected = {("obj", "symbol", "noflash"),
                     ("obj", None, "noflash"),
                     ("obj", "symbol_2", "noflash"),
                     ("obj_2", None, "noflash"),
                     ("*", None, "noflash")
-                    })]
+                    }
 
-        self.assertEqual(entries, expected)
-
-    def test_invalid_grammar(self):
-        with_fragment_name = """
-        [mapping:name]
-        archive: lib.a
-        entries:
-            obj:symbol (noflash)
-        """
-
-        missing_archive = """
-        [mapping:name]
-        entries:
-            obj:symbol (noflash)
-        """
-
-        misspelled_archive = """
-        [mapping:name]
-        archi: lib.a
-        entries:
-            obj:symbol (noflash)
-        """
-
-        missing_entries = """
-        [mapping]
-        archive: lib.a
-        """
-
-        misspelled_entries = """
-        [mapping]
-        archive: lib.a
-        entrie:
-            obj:symbol (noflash)
-        """
-
-        missing_symbols = """
-        [mapping]
-        archive: lib.a
-        entries:
-            obj: (noflash)
-        """
-
-        missing_scheme_1 = """
-        [mapping]
-        archive: lib.a
-        entries:
-            obj: ()
-        """
-
-        missing_scheme_2 = """
-        [mapping]
-        archive: lib.a
-        entries:
-            obj:symbol
-        """
-
-        missing_entity = """
-        [mapping]
-        archive: lib.a
-        entries:
-            (noflash)
-        """
-
-        wilcard_symbol = """
-        [mapping]
-        archive: lib.a
-        entries:
-            obj:* (noflash)
-        """
-
-        empty_object_with_symbol = """
-        [mapping]
-        archive: lib.a
-        entries:
-            :symbol (noflash)
-        """
-
-        wildcard_object_with_symbol = """
-        [mapping]
-        archive: lib.a
-        entries:
-            *:symbol (noflash)
-        """
-
-        empty_definition = """
-        [mapping]
-        """
-
-        with self.assertRaises(ParseException):
-            self.parse(with_fragment_name)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_archive)
-
-        with self.assertRaises(ParseException):
-            self.parse(misspelled_archive)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_entries)
-
-        with self.assertRaises(ParseException):
-            self.parse(misspelled_entries)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_symbols)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_scheme_1)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_scheme_2)
-
-        with self.assertRaises(ParseException):
-            self.parse(missing_entity)
-
-        with self.assertRaises(ParseException):
-            self.parse(wilcard_symbol)
-
-        with self.assertRaises(ParseException):
-            self.parse(empty_object_with_symbol)
-
-        with self.assertRaises(ParseException):
-            self.parse(wildcard_object_with_symbol)
-
-        with self.assertRaises(ParseException):
-            self.parse(empty_definition)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_explicit_blank_default_w_others(self):
-        expl_blnk_w_oth = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_a (noflash)
-            : default
-        """
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a (noflash)
+    : default
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
 
-        mapping = self.parse(expl_blnk_w_oth)
-
-        entries = mapping.entries
-
-        expected = [(entries[0][0], {
-                    ("obj_a", None, "noflash"),
-                    }),
-                    ("default", set())]
-
-        self.assertEqual(entries, expected)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_implicit_blank_default_w_others(self):
-        impl_blnk_w_oth = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_a (noflash)
-        """
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a (noflash)
+""")
 
-        mapping = self.parse(impl_blnk_w_oth)
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
 
-        entries = mapping.entries
-
-        expected = [(entries[0][0], {
-                    ("obj_a", None, "noflash"),
-                    }),
-                    ("default", set())]
-
-        self.assertEqual(entries, expected)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_explicit_blank_default(self):
-        expl_blnk_def = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : default
-        """
-        mapping = self.parse(expl_blnk_def)
-        entries = mapping.entries
-        expected = [("default", set())]
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : default
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
 
-        self.assertEqual(entries, expected)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_implicit_blank_default(self):
-        impl_blnk_def = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : default
-        """
-        mapping = self.parse(impl_blnk_def)
-        entries = mapping.entries
-        expected = [("default", set())]
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : default
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
 
-        self.assertEqual(entries, expected)
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_multiple_entries(self):
-        multiple_entries = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_a1 (noflash)
-            obj_a2 (noflash)
-            : CONFIG_B = y
-            obj_b1 (noflash)
-            obj_b2 (noflash)
-            obj_b3 (noflash)
-            : CONFIG_C = y
-            obj_c1 (noflash)
-        """
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a1 (noflash)
+    obj_a2 (noflash)
+    : B = n
+    obj_b1 (noflash)
+    obj_b2 (noflash)
+    obj_b3 (noflash)
+    : C = n
+    obj_c1 (noflash)
+""")
 
-        mapping = self.parse(multiple_entries)
-
-        entries = mapping.entries
-
-        expected = [(entries[0][0], {
-                    ("obj_a1", None, "noflash"),
-                    ("obj_a2", None, "noflash"),
-                    }),
-                    (entries[1][0], {
-                        ("obj_b1", None, "noflash"),
-                        ("obj_b2", None, "noflash"),
-                        ("obj_b3", None, "noflash"),
-                    }),
-                    (entries[2][0], {
-                        ("obj_c1", None, "noflash"),
-                    }),
-                    ("default", set())]
-
-        self.assertEqual(entries, expected)
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("obj_b1", None, "noflash"),
+                    ("obj_b2", None, "noflash"),
+                    ("obj_b3", None, "noflash")}
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_blank_entries(self):
-        blank_entries = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_a (noflash)
-            : CONFIG_B = y
-            : CONFIG_C = y
-            obj_c (noflash)
-            : CONFIG_D = y
-            : CONFIG_E = y
-            : default
-            obj (noflash)
-        """
-
-        mapping = self.parse(blank_entries)
-
-        entries = mapping.entries
-
-        expected = [(entries[0][0], {
-                    ("obj_a", None, "noflash")
-                    }),
-                    (entries[1][0], set()),
-                    (entries[2][0], {
-                        ("obj_c", None, "noflash")
-                    }),
-                    (entries[3][0], set()),
-                    (entries[4][0], set()),
-                    ("default", {
-                        ("obj", None, "noflash")
-                    })]
-
-        self.assertEqual(entries, expected)
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_a (noflash)
+    : B = n
+    : C = n
+    obj_c (noflash)
+    : default
+    obj (noflash)
+""")
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        expected = {("*", None, "default")}
+        self.assertEqual(expected, fragment_file.fragments[0].entries)
 
     def test_blank_first_condition(self):
-        blank_first_condition = """
-        [mapping]
-        archive: lib.a
-        entries:
-            obj_a (noflash)
-            : CONFIG_B = y
-            obj_b (noflash)
-        """
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    obj_a (noflash)
+    : CONFIG_B = y
+    obj_b (noflash)
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(blank_first_condition)
+            FragmentFile(test_fragment, self.sdkconfig)
 
-    def test_nonlast_default(self):
-        nonlast_default_1 = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : default
-            obj_a (noflash)
-            : CONFIG_A = y
-            obj_A (noflash)
-        """
-
-        nonlast_default_2 = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_A (noflash)
-            : default
-            obj_a (noflash)
-            : CONFIG_B = y
-            obj_B (noflash)
-        """
-
-        nonlast_default_3 = """
-        [mapping]
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_A (noflash)
-            :
-            obj_a (noflash)
-            : CONFIG_B = y
-            obj_B (noflash)
-        """
+    def test_nonlast_default_1(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : default
+    obj_a (noflash)
+    : CONFIG_A = y
+    obj_A (noflash)
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(nonlast_default_1)
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_nonlast_default_2(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = y
+    obj_A (noflash)
+    : default
+    obj_a (noflash)
+    : B = y
+    obj_B (noflash
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(nonlast_default_2)
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_nonlast_default_3(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = y
+    obj_A (noflash)
+    :
+    obj_a (noflash)
+    : B = y
+    obj_B (noflash
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(nonlast_default_3)
+            FragmentFile(test_fragment, self.sdkconfig)
 
-    def test_duplicate_default(self):
-        duplicate_default_1 = """
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_A (noflash)
-            : default
-            obj_a (noflash)
-            : CONFIG_B = y
-            obj_B (noflash)
-            : default
-            obj_a (noflash)
-        """
-
-        duplicate_default_2 = """
-        archive: lib.a
-        entries:
-            : CONFIG_A = y
-            obj_A (noflash)
-            : CONFIG_B = y
-            obj_a (noflash)
-            : default
-            obj_B (noflash)
-            :
-            obj_a (noflash)
-        """
+    def test_duplicate_default_1(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : CONFIG_A = y
+    obj_A (noflash)
+    : default
+    obj_a (noflash)
+    : CONFIG_B = y
+    obj_B (noflash)
+    : default
+    obj_a (noflash)
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(duplicate_default_1)
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_duplicate_default_2(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : CONFIG_A = y
+    obj_A (noflash)
+    : CONFIG_B = y
+    obj_a (noflash)
+    : default
+    obj_B (noflash)
+    :
+    obj_a (noflash)
+""")
 
         with self.assertRaises(ParseException):
-            self.parse(duplicate_default_2)
+            FragmentFile(test_fragment, self.sdkconfig)
+
+    def test_mixed_deprecated_mapping(self):
+        test_fragment = self.create_fragment_file(u"""
+[mapping]
+archive: lib.a
+entries:
+    : A = n
+    obj_A (noflash)
+    : default
+    obj_B (noflash)
+
+
+[mapping:test]
+archive: lib.a
+entries:
+    if A = n:
+        obj_A (noflash)
+    else:
+        obj_B (noflash)
+""")
+
+        fragment_file = FragmentFile(test_fragment, self.sdkconfig)
+        self.assertEqual(2, len(fragment_file.fragments))
+
+        self.assertEqual(fragment_file.fragments[0].entries,
+                         fragment_file.fragments[1].entries)
 
 
 if __name__ == "__main__":

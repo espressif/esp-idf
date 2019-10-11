@@ -18,19 +18,12 @@
 # limitations under the License.
 import os
 import sys
-import subprocess
 import argparse
 
-IDF_PATH = os.path.expandvars("$IDF_PATH")
-
-PARTTOOL_PY = os.path.join(IDF_PATH, "components", "partition_table", "parttool.py")
-
-PARTITION_TABLE_OFFSET = 0x8000
-
-INVOKE_ARGS = [sys.executable, PARTTOOL_PY, "-q", "--partition-table-offset", str(PARTITION_TABLE_OFFSET)]
+PARTITION_TABLE_DIR = os.path.join("components", "partition_table", "")
 
 
-def sized_file_compare(file1, file2):
+def assert_file_same(file1, file2, err):
     with open(file1, "rb") as f1:
         with open(file2, "rb") as f2:
             f1 = f1.read()
@@ -41,121 +34,17 @@ def sized_file_compare(file1, file2):
             else:
                 f1 = f1[:len(f2)]
 
-            return f1 == f2
-
-
-def check(condition, message):
-    if not condition:
-        print("Error: " + message)
-        sys.exit(1)
-
-
-def write_data_partition(size):
-    print("Writing to data partition")
-    with open("write.bin", "wb") as f:
-        # Create a file to write to the data partition with randomly generated content
-        f.write(os.urandom(int(size, 16)))
-
-        # Invokes the command
-        #
-        # parttool.py --partition-table-offset 0x8000 -q --partition-name storage write_partition --input write.bin
-        #
-        # to write the contents of a file to a partition in the device.
-        invoke_args = INVOKE_ARGS + ["--partition-name", "storage", "write_partition", "--input", f.name]
-        subprocess.check_call(invoke_args)
-        return f.name
-
-
-def read_data_partition():
-    print("Reading data partition")
-    # Invokes the command
-    #
-    # parttool.py --partition-table-offset 0x8000 -q --partition-name storage read_partition --output read.bin
-    #
-    # to read the contents of a partition in the device, which is then written to a file.
-    f = "read.bin"
-    invoke_args = INVOKE_ARGS + ["--partition-name", "storage", "read_partition", "--output", f]
-    subprocess.check_call(invoke_args)
-    return f
-
-
-def get_data_partition_info():
-    print("Retrieving data partition offset and size")
-    # Invokes the command
-    #
-    # parttool.py --partition-table-offset 0x8000 -q --partition-name storage get_partition_info --info offset size
-    #
-    # to get the offset and size of a partition named 'storage'.
-    invoke_args = INVOKE_ARGS + ["--partition-name", "storage", "get_partition_info", "--info", "offset", "size"]
-
-    (offset, size) = subprocess.check_output(invoke_args).strip().split(b" ")
-    return (offset, size)
-
-
-def check_app(args):
-    print("Checking if device app binary matches built binary")
-    # Invokes the command
-    #
-    # parttool.py --partition-table-offset 0x8000 --partition-type app --partition-subtype factory read_partition --output app.bin"
-    #
-    # to read the app binary and write it to a file. The read app binary is compared to the built binary in the build folder.
-    invoke_args = INVOKE_ARGS + ["--partition-type", "app", "--partition-subtype", "factory", "read_partition", "--output", "app.bin"]
-    subprocess.check_call(invoke_args)
-
-    app_same = sized_file_compare("app.bin", args.binary)
-    check(app_same, "Device app binary does not match built binary")
-
-
-def check_partition_table():
-    sys.path.append(os.path.join(IDF_PATH, "components", "partition_table"))
-    import gen_esp32part as gen
-
-    print("Checking if device partition table matches partition table csv")
-    # Invokes the command
-    #
-    # parttool.py --partition-table-offset 0x8000 get_partition_info --table table.bin
-    #
-    # to read the device partition table and write it to a file. The read partition table is compared to
-    # the partition table csv.
-    invoke_args = INVOKE_ARGS + ["get_partition_info", "--table", "table.bin"]
-    subprocess.check_call(invoke_args)
-
-    with open("table.bin", "rb") as read:
-        partition_table_csv = os.path.join(IDF_PATH, "examples", "storage", "parttool", "partitions_example.csv")
-        with open(partition_table_csv, "r") as csv:
-            read = gen.PartitionTable.from_binary(read.read())
-            csv = gen.PartitionTable.from_csv(csv.read())
-            check(read == csv, "Device partition table does not match csv partition table")
-
-
-def erase_data_partition():
-    print("Erasing data partition")
-    # Invokes the command
-    #
-    # parttool.py --partition-table-offset 0x8000 --partition-name storage erase_partition
-    #
-    # to erase the 'storage' partition.
-    invoke_args = INVOKE_ARGS + ["--partition-name", "storage", "erase_partition"]
-    subprocess.check_call(invoke_args)
-
-
-def generate_blank_data_file():
-    print("Generating blank data partition file")
-
-    # Invokes the command
-    #
-    # parttool.py --partition-table-offset 0x8000 --partition-name storage generate_blank_partition_file --output blank.bin
-    #
-    # to generate a blank partition file and write it to a file. The blank partition file has the same size as the
-    # 'storage' partition.
-    f = "blank.bin"
-    invoke_args = INVOKE_ARGS + ["--partition-name", "storage", "generate_blank_partition_file", "--output", f]
-    subprocess.check_call(invoke_args)
-    return f
+            if not f1 == f2:
+                raise Exception(err)
 
 
 def main():
-    global INVOKE_ARGS
+    COMPONENTS_PATH = os.path.expandvars(os.path.join("$IDF_PATH", "components"))
+    PARTTOOL_DIR = os.path.join(COMPONENTS_PATH, "partition_table")
+
+    sys.path.append(PARTTOOL_DIR)
+    from parttool import PartitionName, PartitionType, ParttoolTarget
+    from gen_empty_partition import generate_blanked_file
 
     parser = argparse.ArgumentParser("ESP-IDF Partitions Tool Example")
 
@@ -164,43 +53,53 @@ def main():
 
     args = parser.parse_args()
 
-    if args.port:
-        INVOKE_ARGS += ["--port", args.port]
+    target = ParttoolTarget(args.port)
 
-    # Before proceeding, do checks to verify whether the app and partition table in the device matches the built binary and
-    # the generated partition table during build
-    check_app(args)
-    check_partition_table()
+    # Read app partition and save the contents to a file. The app partition is identified
+    # using type-subtype combination
+    print("Checking if device app binary matches built binary")
+    factory = PartitionType("app", "factory")
+    target.read_partition(factory, "app.bin")
+    assert_file_same(args.binary, "app.bin", "Device app binary does not match built binary")
 
-    # Get the offset and size of the data partition
-    (offset, size) = get_data_partition_info()
+    # Retrieve info on data storage partition, this time identifying it by name.
+    storage = PartitionName("storage")
+    storage_info = target.get_partition_info(storage)
+    print("Found data partition at offset 0x{:x} with size 0x{:x}".format(storage_info.offset, storage_info.size))
 
-    print("Found data partition at offset %s with size %s" % (offset, size))
+    # Create a file whose contents will be written to the storage partition
+    with open("write.bin", "wb") as f:
+        # Create a file to write to the data partition with randomly generated content
+        f.write(os.urandom(storage_info.size))
 
-    # Write a generated file of random bytes to the found data partition
-    written = write_data_partition(size)
+    # Write the contents of the created file to storage partition
+    print("Writing to data partition")
+    target.write_partition(storage, "write.bin")
 
-    # Read back the contents of the data partition
-    read = read_data_partition()
+    # Read back the contents of the storage partition
+    print("Reading data partition")
+    target.read_partition(storage, "read.bin")
 
-    # Compare the written and read back data
-    data_same = sized_file_compare(read, written)
-    check(data_same, "Read contents of the data partition does not match written data")
+    assert_file_same("write.bin", "read.bin", "Read contents of storage partition does not match source file contents")
 
-    # Erase the data partition
-    erase_data_partition()
+    # Erase contents of the storage partition
+    print("Erasing data partition")
+    target.erase_partition(storage)
 
-    # Read back the erase data partition, which should be all 0xFF's after erasure
-    read = read_data_partition()
+    # Read back the erased data partition
+    print("Reading data partition")
+    target.read_partition(storage, "read.bin")
 
-    # Generate blank partition file (all 0xFF's)
-    blank = generate_blank_data_file()
+    # Generate a file of all 0xFF
+    generate_blanked_file(storage_info.size, "blank.bin")
 
-    # Verify that the partition has been erased by comparing the contents to the generated blank file
-    data_same = sized_file_compare(read, blank)
-    check(data_same, "Erased data partition contents does not match blank partition file")
+    assert_file_same("blank.bin", "read.bin", "Contents of storage partition not fully erased")
 
+    # Example end and cleanup
     print("\nPartition tool operations performed successfully!")
+    clean_files = ["app.bin", "read.bin", "blank.bin", "write.bin"]
+    for clean_file in clean_files:
+        os.unlink(clean_file)
 
 
 if __name__ == '__main__':

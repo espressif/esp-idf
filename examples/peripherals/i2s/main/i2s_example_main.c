@@ -77,7 +77,7 @@ static void setup_triangle_sine_waves(int bits)
 
     free(samples_data);
 }
-void app_main()
+void app_main(void)
 {
     //for 36Khz sample rates, we create 100Hz sine wave, every cycle need 36000/100 = 360 samples (4-bytes or 8-bytes each sample)
     //depend on bits_per_sample

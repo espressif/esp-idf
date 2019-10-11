@@ -1,6 +1,7 @@
 #include "test/test_common_spi.h"
 #include "driver/spi_slave.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 
 int test_freq_default[]=TEST_FREQ_DEFAULT();
 
@@ -166,12 +167,10 @@ esp_err_t spitest_check_data(int len, spi_transaction_t *master_t, slave_rxdata_
         TEST_ASSERT(rcv_len >= len - 1 && rcv_len <= len + 4);
     }
 
-        //if (dup!=HALF_DUPLEX_MOSI) {
     if (check_master_data) {
         TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_t->tx_start, master_t->rx_buffer, (len + 7) / 8);
     }
 
-    //if (dup!=HALF_DUPLEX_MISO) {
     if (check_slave_data) {
         TEST_ASSERT_EQUAL_HEX8_ARRAY(master_t->tx_buffer, slave_t->data, (len + 7) / 8);
     }

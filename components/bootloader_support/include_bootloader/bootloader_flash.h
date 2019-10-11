@@ -31,6 +31,13 @@
 */
 
 /**
+ * @brief Get number of free pages
+ *
+ * @return Number of free pages
+ */
+uint32_t bootloader_mmap_get_free_pages(void);
+
+/**
  * @brief Map a region of flash to data memory
  *
  * @important In bootloader code, only one region can be bootloader_mmaped at once. The previous region must be bootloader_munmapped before another region is mapped.

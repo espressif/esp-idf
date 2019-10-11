@@ -1322,7 +1322,7 @@ dhcps_dns_setserver(const ip_addr_t *dnsserver)
  * Returns      : ip4_addr_t
 *******************************************************************************/
 ip4_addr_t 
-dhcps_dns_getserver()
+dhcps_dns_getserver(void)
 {
     return dns_server;
 }

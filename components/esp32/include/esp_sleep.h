@@ -95,9 +95,10 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source);
  *       source is used.
  * @return
  *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
  *      - ESP_ERR_INVALID_STATE if ULP co-processor is not enabled or if wakeup triggers conflict
  */
-esp_err_t esp_sleep_enable_ulp_wakeup();
+esp_err_t esp_sleep_enable_ulp_wakeup(void);
 
 /**
  * @brief Enable wakeup by timer
@@ -121,9 +122,10 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
  *
  * @return
  *      - ESP_OK on success
+ *      - ESP_ERR_NOT_SUPPORTED if additional current by touch (CONFIG_ESP32_RTC_EXT_CRYST_ADDIT_CURRENT) is enabled.
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
-esp_err_t esp_sleep_enable_touchpad_wakeup();
+esp_err_t esp_sleep_enable_touchpad_wakeup(void);
 
 /**
  * @brief Get the touch pad which caused wakeup
@@ -132,7 +134,7 @@ esp_err_t esp_sleep_enable_touchpad_wakeup();
  *
  * @return touch pad which caused wakeup
  */
-touch_pad_t esp_sleep_get_touchpad_wakeup_status();
+touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
 
 /**
  * @brief Enable wakeup using a pin
@@ -211,7 +213,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
  */
-esp_err_t esp_sleep_enable_gpio_wakeup();
+esp_err_t esp_sleep_enable_gpio_wakeup(void);
 
 /**
  * @brief Enable wakeup from light sleep using UART
@@ -237,7 +239,7 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
  *
  * @return bit mask, if GPIOn caused wakeup, BIT(n) will be set
  */
-uint64_t esp_sleep_get_ext1_wakeup_status();
+uint64_t esp_sleep_get_ext1_wakeup_status(void);
 
 /**
  * @brief Set power down mode for an RTC power domain in sleep mode
@@ -258,7 +260,7 @@ esp_err_t esp_sleep_pd_config(esp_sleep_pd_domain_t domain,
  *
  * This function does not return.
  */
-void esp_deep_sleep_start() __attribute__((noreturn));
+void esp_deep_sleep_start(void) __attribute__((noreturn));
 
 /**
  * @brief Enter light sleep with the configured wakeup options
@@ -267,7 +269,7 @@ void esp_deep_sleep_start() __attribute__((noreturn));
  *  - ESP_OK on success (returned after wakeup)
  *  - ESP_ERR_INVALID_STATE if WiFi or BT is not stopped
  */
-esp_err_t esp_light_sleep_start();
+esp_err_t esp_light_sleep_start(void);
 
 /**
  * @brief Enter deep-sleep mode
@@ -293,23 +295,13 @@ esp_err_t esp_light_sleep_start();
  */
 void esp_deep_sleep(uint64_t time_in_us) __attribute__((noreturn));
 
-/**
- * @brief Enter deep-sleep mode
- *
- * Function has been renamed to esp_deep_sleep.
- * This name is deprecated and will be removed in a future version.
- *
- * @param time_in_us  deep-sleep time, unit: microsecond
- */
-void system_deep_sleep(uint64_t time_in_us) __attribute__((noreturn, deprecated));
-
 
 /**
  * @brief Get the wakeup source which caused wakeup from sleep
  *
  * @return cause of wake up from last sleep (deep sleep or light sleep)
  */
-esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause();
+esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void);
 
 
 /**

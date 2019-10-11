@@ -1,5 +1,7 @@
-Smart Config
-============
+SmartConfig
+===========
+
+:link_to_translation:`zh_CN:[中文]`
 
 API Reference
 -------------

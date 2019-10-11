@@ -1,0 +1,5 @@
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,        data, nvs,      0x9000,  0x6000,
+# Extra partition to demonstrate reading/writing of encrypted flash
+storage,    data, 0xff,     0xf000,  0x1000, encrypted
+factory,    app,  factory,  0x10000, 1M,

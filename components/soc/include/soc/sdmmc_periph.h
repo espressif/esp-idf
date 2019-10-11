@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SDMMC_PERIPH_H_
-#define _SOC_SDMMC_PERIPH_H_
-
+#pragma once
 #include <stdint.h>
 //include soc related (generated) definitions
 #include "soc/sdmmc_pins.h"
@@ -49,5 +47,3 @@ extern const sdmmc_slot_info_t sdmmc_slot_info[];
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _SOC_SDMMC_PERIPH_H_ */

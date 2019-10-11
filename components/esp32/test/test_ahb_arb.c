@@ -14,12 +14,10 @@
 
 #include "unity.h"
 
-#include "soc/uart_reg.h"
+#include "soc/uart_periph.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/gpio_reg.h"
-#include "soc/i2s_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2s_periph.h"
 
 
 
@@ -33,7 +31,7 @@ to copy bytes over from one memory location to another. DO NOT USE the i2s routi
 the point where they happened to do what I want.
 */
 
-static void lcdIfaceInit()
+static void lcdIfaceInit(void)
 {
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
@@ -101,7 +99,7 @@ static void lcdIfaceInit()
 
 static volatile lldesc_t dmaDesc[2];
 
-static void finishDma()
+static void finishDma(void)
 {
     //No need to finish if no DMA transfer going on
     if (!(READ_PERI_REG(I2S_FIFO_CONF_REG(0))&I2S_DSCR_EN)) {

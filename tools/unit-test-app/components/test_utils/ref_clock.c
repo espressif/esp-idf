@@ -31,14 +31,12 @@
  */
 
 #include "test_utils.h"
-#include "soc/rmt_struct.h"
-#include "soc/pcnt_struct.h"
-#include "soc/pcnt_reg.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/rmt_periph.h"
+#include "soc/pcnt_periph.h"
+#include "soc/gpio_periph.h"
 #include "soc/dport_reg.h"
 #include "esp32/rom/gpio.h"
 #include "esp32/rom/ets_sys.h"
-#include "driver/gpio.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"
@@ -56,7 +54,7 @@ static intr_handle_t s_intr_handle;
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t s_milliseconds;
 
-void ref_clock_init()
+void ref_clock_init(void)
 {
     assert(s_intr_handle == NULL && "already initialized");
 
@@ -130,13 +128,13 @@ void ref_clock_init()
 
 static void IRAM_ATTR pcnt_isr(void* arg)
 {
-    portENTER_CRITICAL(&s_lock);
+    portENTER_CRITICAL_ISR(&s_lock);
     PCNT.int_clr.val = BIT(REF_CLOCK_PCNT_UNIT);
     s_milliseconds += REF_CLOCK_PRESCALER_MS;
-    portEXIT_CRITICAL(&s_lock);
+    portEXIT_CRITICAL_ISR(&s_lock);
 }
 
-void ref_clock_deinit()
+void ref_clock_deinit(void)
 {
     assert(s_intr_handle && "deinit called without init");
 
@@ -155,7 +153,7 @@ void ref_clock_deinit()
     periph_module_disable(PERIPH_PCNT_MODULE);
 }
 
-uint64_t ref_clock_get()
+uint64_t ref_clock_get(void)
 {
     portENTER_CRITICAL(&s_lock);
     uint32_t microseconds = PCNT.cnt_unit[REF_CLOCK_PCNT_UNIT].cnt_val;

@@ -15,4 +15,5 @@ API Reference
 -------------
 
 .. include:: /_build/inc/esp_app_trace.inc
+.. include:: /_build/inc/esp_sysview_trace.inc
 

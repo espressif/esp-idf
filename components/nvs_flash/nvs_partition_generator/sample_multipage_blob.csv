@@ -1,3 +1,4 @@
+# Sample csv file
 key,type,encoding,value
 dummyNamespace,namespace,,
 dummyU8Key,data,u8,127

@@ -48,9 +48,9 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
     */
 #ifndef NDEBUG
     if(!condition) {
-#ifndef CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+#ifndef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
         ets_printf(format, line, address);
-#endif  // CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+#endif  // CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
         abort();
     }
 #else // NDEBUG

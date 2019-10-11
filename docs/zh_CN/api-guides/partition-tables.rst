@@ -11,12 +11,12 @@
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
-在使用分区表时，最简单的方法就是用 `make menuconfig` 选择一张预定义的分区表：
+在使用分区表时，最简单的方法就是用 `idf.py menuconfig` 选择一张预定义的分区表：
 
 -  "Single factory app, no OTA"
 -  "Factory app, two OTA definitions"
 
-在以上两种选项中，出厂应用程序均将被烧录至 flash 的 0x10000 偏移地址处。这时，运行 `make partition_table` ，即可以打印当前使用分区表的信息摘要。
+在以上两种选项中，出厂应用程序均将被烧录至 flash 的 0x10000 偏移地址处。这时，运行 `idf.py partition_table` ，即可以打印当前使用分区表的信息摘要。
 
 内置分区表
 ------------
@@ -102,7 +102,7 @@ SubType 字段长度为 8 bit，内容与具体 Type 有关。目前，esp-idf �
    -  phy (1) 分区用于存放 PHY 初始化数据，从而保证可以为每个设备单独配置 PHY，而非必须采用固件中的统一 PHY 初始化数据。
  
       -  默认配置下，phy 分区并不启用，而是直接将 phy 初始化数据编译至应用程序中，从而节省分区表空间（直接将此分区删掉）。
-      -  如果需要从此分区加载 phy 初始化数据，请运行 ``make menuconfig``，并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
+      -  如果需要从此分区加载 phy 初始化数据，请运行 ``idf.py menuconfig``，并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
    -  nvs (2) 是专门给 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 使用的分区。
 
       -  用于存储每台设备的 PHY 校准数据（注意，并不是 PHY 初始化数据）。
@@ -142,7 +142,7 @@ Flags 字段
 
 烧写到 ESP32 中的分区表采用二进制格式，而不是 CSV 文件本身。此时，:component_file:`partition_table/gen_esp32part.py` 工具可以实现 CSV 和二进制文件之间的转换。
 
-如果您在 ``make menuconfig`` 指定了分区表 CSV 文件的名称，然后执行 ``make partition_table``。这时，转换将在编译过程中自动完成。
+如果您在 ``idf.py menuconfig`` 指定了分区表 CSV 文件的名称，然后执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
 
 手动将 CSV 文件转换为二进制文件:
 
@@ -152,7 +152,7 @@ Flags 字段
 
    python gen_esp32part.py binary_partitions.bin input_partitions.csv
 
-在标准输出（stdout）上，打印二进制分区表的内容（在运行  ``make partition_table`` 时，我们正是这样打印上文展示的信息摘要的）:
+在标准输出（stdout）上，打印二进制分区表的内容（在运行  ``idf.py partition_table`` 时，我们正是这样打印上文展示的信息摘要的）:
 
    python gen_esp32part.py binary_partitions.bin
 
@@ -166,13 +166,13 @@ MD5 校验和
 烧写分区表
 ----------
 
--  ``make partition_table-flash`` ：使用 esptool.py 工具烧写分区表。
--  ``make flash`` ：会烧写所有内容，包括分区表。
+-  ``idf.py partition_table-flash`` ：使用 esptool.py 工具烧写分区表。
+-  ``idf.py flash`` ：会烧写所有内容，包括分区表。
 
-在执行 ``make partition_table`` 命令时，手动烧写分区表的命令也将打印在终端上。
+在执行 ``idf.py partition_table`` 命令时，手动烧写分区表的命令也将打印在终端上。
 
 .. note:: 
 
-   分区表的更新并不会擦除根据之前分区表存储的数据。此时，您可以使用 ``make erase_flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
+   分区表的更新并不会擦除根据之前分区表存储的数据。此时，您可以使用 ``idf.py erase_flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
 
 .. _secure boot: security/secure-boot.rst

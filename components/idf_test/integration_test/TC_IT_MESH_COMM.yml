@@ -1,178 +1,2875 @@
-test cases:
-- CI ready: 'Yes'
-  ID: MESH_COMM_0101
+.MESH_COMM_CASE: &MESH_COMM_CASE
   SDK: ESP32_IDF
   Test App: SSC_MESH
   auto test: 'Yes'
   category: Function
+  execution time: 0.0
+  module: Mesh
+  sub module: Communication
+  version: v1 (2018-08-15)
+  level: Integration
+  allow fail: ''
+  initial condition: MESH_INIT1
+  CI ready: 'NO'
+
+.throughput_cmd_set: &throughput_cmd_set
+  LIST_MERGE:
+    - - 'bcn_interval = [None]'
+      - ['']
+    - - 'test_cycles = 2'
+      - ['']
+    - - 'send_len = [1460, 1024, 512, 256]'
+      - ['']
+    - - 'measure_time_sec = 30'
+      - ['']
+    - - 'send_interval = [0, 100]'
+    - - 'send_interval = [0, 100]'
+      - ['']
+    - - 'send_type = "ucast"'
+      - ['']
+    - - 'send_flag = 2'
+      - ['']
+
+
+.mesh_config_all_duts_no_router: &mesh_config_all_duts_no_router
+  LIST_MERGE:
+    - - 'SSC SSC1 meshset -T -o 0 -t 1'
+      - ['P SSC1 C +MESHSET:TYPE,OK']
+    - - 'MSSC SSC[2-<node_num>] meshset -X -o 0 -i 1'
+      - ['P SSC[2-<node_num>] C +MESHSET:FIX_ROOT,OK']
+    - - 'MSSC SSC[1-<node_num>] meshset -M -o 0 -t <map_auth_mode> -e <map_password> -l 10'
+      - ['P SSC[1-<node_num>] C +MESHSET:MAP_AUTH,OK']
+    - - 'SSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -n <router_channel> -t <max_connect> -e
+        <map_password> -i <ie_encrypt>'
+      - ['P SSC[1-<node_num>] C +MESHSET:CFG,OK']
+
+
+.root_do_connect: &root_do_connect
+  LIST_MERGE:
+    - - 'SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>'
+      - ['R SOC_COM L OK']
+    - - 'SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>'
+      - ['P MNODE(0) C +CONNECT,OK', 'P SOC1 C ACCEPT']
+    - - 'SOC SOC1 MACCEPT GSOC1'
+      - ['R SOC_COM L OK']
+
+test cases:
+- ID: MESH_COMM_0101
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 20 -b 20 -f 2
+     - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send ucast to self
+  summary: no-child root send ucast to self with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T1_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0102
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 20 -b 20 -f 2
+     - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send ucast to self
+  summary: root send ucast to self with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0103
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send ucast to L2
+  summary: root send ucast to L2 with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0104
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send ucast to L3
+  summary: root send ucast to L3 with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0105
+  <<: *MESH_COMM_CASE
   cmd set:
   - ''
   - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1000 -c 20 -b 20 -f 2
-    - - P MNODE(0) C +MESHSEND,OK
-      - P MNODE(0,-1) C +MESHRXPKT:OK
-  execution time: 0.0
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,-1) C +MESHRXPKT,OK
   expected result: |-
     1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-  initial condition: ENABLED_2
-  level: Integration
-  module: Mesh
   steps: |-
-    1. mesh init
-    2. mesh config
-    3. mesh start
-    4. root send unicast to leaf
-  sub module: Communication
-  summary: root send unicast to leaf
-  test environment: SSC_T50_1
+    1. root send ucast to leaf
+  summary: root send ucast to leaf with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
   test point 1: basic function
-  test point 2: unicast test
-  version: v1 (2017-7-20)
-- CI ready: 'Yes'
-  ID: MESH_COMM_0106
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0106
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to root
+  summary: L2 send unicast to root with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0107
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,1) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to brother
+  summary: L2 send unicast to brother with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0108
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0,0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to L3
+  summary: L2 send unicast to L3 with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0109
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,1) C +MESHRXPKT,OK
+  - - DELAY 3
+    - - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,1) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to brother
+  summary: L2 send unicast to brother, delay 3s, send again
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0110
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 100 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send unicast to root
+  summary: L3 send unicast to root with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0111
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -S -d <MNODE(0,0)_mac> -l 1000 -c 100 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send unicast to L2
+  summary: L3 send unicast to L2 with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0112
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -S -d <MNODE(0,0,0)_mac> -l 1000 -c 100 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send unicast to self
+  summary: L3 send unicast to self with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0113
+  <<: *MESH_COMM_CASE
   cmd set:
   - ''
   - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 20 -b 20 -f 2
-    - - P MNODE(0,-1) C +MESHSEND,OK
-      - P MNODE(0) C +MESHRXPKT:OK
-  execution time: 0.0
+    - - P MNODE(0,-1) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
   expected result: |-
     1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-  initial condition: ENABLED_1
-  level: Integration
-  module: Mesh
   steps: |-
-    1. mesh init
-    2. mesh config
-    3. mesh start
-    4. leaf send unicast to root
-  sub module: Communication
-  summary: leaf send unicast to root
-  test environment: SSC_T50_1
+    1. leaf send unicast to root
+  summary: leaf send unicast to root with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
   test point 1: basic function
-  test point 2: unicast test
-  version: v1 (2017-7-20)
-- CI ready: 'Yes'
-  ID: MESH_COMM_0116
-  SDK: ESP32_IDF
-  Test App: SSC
-  auto test: 'Yes'
-  category: Function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0114
+  <<: *MESH_COMM_CASE
   cmd set:
   - ''
-  - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 100 -f 2
-    - - P MNODE(0,-1) C +MESHTXPKT:OK C +MESHSEND,OK
-      - P MNODE(0,1) C +MESHRXPKT:OK
-  - - DELAY 5
-    - - ''
-  - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 10 -f 2
-    - - P MNODE(0,-1) C +MESHTXPKT:OK C +MESHSEND,OK
-      - P MNODE(0,1) C +MESHRXPKT:OK
+  - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0,-1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,-1) C +MESHSEND,OK C +MESHRXPKT,OK C +MESHTXPKT,OK
   expected result: |-
     1. succeed
-    2. succeed
-    3. succeed
-    4. succeed
-  initial condition: ENABLED_2
-  level: Integration
-  module: Mesh
   steps: |-
-    1. mesh init
-    2. mesh config
-    3. mesh start
-    4. root send unicast to others
-  sub module: Communication
-  summary: fluid control test when node send packets upward
-  test environment: SSC_T50_1
+    1. leaf send unicast to itself
+  summary: leaf send unicast to itself with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
   test point 1: basic function
-  test point 2: unicast test
-  version: v1 (2017-7-20)
-- CI ready: 'Yes'
-  ID: MESH_COMM_0210
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0115
+  <<: *MESH_COMM_CASE
   cmd set:
   - ''
+  - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,-1) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,1) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. leaf send unicast to another L2 node
+  summary: leaf send unicast to another l2 node with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0116
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0,0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,-1) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. leaf send unicast to another L3 node
+  summary: leaf send unicast to another L3 node with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0117
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 8
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C TODS_PKT,OK
   - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 4
-    - - P MNODE(0) C +MESHTXPKT:OK C +MESHSEND,OK
-      - P MNODE(0,0) C +MESHRXPKT:OK
-  execution time: 0.0
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 0
+    - - P MNODE(0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. fail
+    2. succeed
+    3. fail
+  steps: |-
+    1. root send unicast to L2 with flag TODS
+    2. root send unicast to L2 with flag FROMDS
+    3. root send unicast to L2 without flag set
+  summary: root send unicast to L2 with different flag
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0118
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 8
+    - - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 4
+    - - P MNODE(0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 0
+    - - P MNODE(0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. fail
+    3. fail
+  steps: |-
+    1. L2 send unicast to root with flag TODS
+    1. L2 send unicast to root with flag FROMDS
+    1. L2 send unicast to root without flag set
+  summary: node send unicast upward to root with different flag
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0119
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - LOOP 4 1 "[0,1,2,3]"
+    - - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2 -p {%d}
+    - - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to root with differet protocal
+  summary: node send unicast with differet protocal
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0120
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - LOOP 4 1 "[0,1,2,3]"
+    - - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -p {%d}
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send unicast to L2 with differet protocal
+  summary: root send unicast with differet protocal
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0121
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 0
+    - - P MNODE(0) C +MESHTXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 1
+    - - P MNODE(0) C +MESHTXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 2
+    - - P MNODE(0) C +MESHTXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 2
+    - - P MNODE(0,0) C +MESHTXPKT,FAIL
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2 -t 0
+    - - P MNODE(0,0) C +MESHTXPKT,FAIL
   expected result: |-
     1. succeed
     2. succeed
     3. succeed
     4. succeed
-  initial condition: ENABLED_1
-  level: Integration
-  module: Mesh
+    5. succeed
   steps: |-
-    1. mesh init
-    2. mesh config
-    3. mesh start
-    4. root send unicast
-  sub module: Communication
-  summary: root send unicast downward with flag=FROMDS
-  test environment: SSC_T50_1
+    1. root send unicast to L2 with tos = P2P
+    2. root send unicast to L2 with tos = E2E
+    3. root send unicast to L2 with tos = DEF
+    4. L2 send unicast to root with tos = DEF
+    5. L2 send unicast to root with tos = P2P
+  summary: node send unicast with different tos
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
   test point 1: basic function
-  test point 2: meshsend parameter check
-  version: v1 (2017-7-20)
-- CI ready: 'Yes'
-  ID: MESH_COMM_0902
-  SDK: ESP32_IDF
-  Test App: SSC_MESH
-  auto test: 'Yes'
-  category: Function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0122
+  <<: *MESH_COMM_CASE
   cmd set:
   - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -t 0 -p 1 -f 4
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send unicast to L2 with flag=FROMDS, protocal=HTTP, tos=P2P
+  summary: root send unicast with flag=FROMDS, protocal=HTTP, tos=P2P
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0123
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 4 -p 1
+      -t 1
+    - - P MNODE(0) C +MESHTXPKT,FAIL
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send unicast to L2 with flag=FROMDS, protocal=HTTP, tos=E2E
+  summary: root send unicast with flag=FROMDS, protocal=HTTP and tos=E2E
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0124
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 8 -p 1 -t 0
+    - - P MNODE(0) C +MESHRXPKT,OK
+      - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to root with flag=TODS, protocal=HTTP, tos=P2P
+  summary: node send unicast to root with flag=TODS, protocal=HTTP and tos=P2P
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0125
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 8 -p 1 -t 1
+    - - P MNODE(0,0) C +MESHTXPKT,FAIL
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to root with flag=TODS, protocal=HTTP, tos=E2E
+  summary: node send unicast to root with flag=TODS, protocal=HTTP and tos=E2E
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0126
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d 01:00:5E:00:00:00 -l 1460 -c 20 -b 20 -f 8
+    - - P MNODE(0) C TODS_PKT,OK C +MESHTXPKT,OK C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send unicast with multicast address
+  summary: root send unicast with multicast address wtth flag TODS
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0127
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 20 -b 20 -f 2
+      - - P MNODE(0,0) C +MESHSEND,OK
+        - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. meshsend unicast between two nodes
+  summary: meshsend unicast test between diffent nodes
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0128
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - *mesh_config_all_duts_no_router
+  - - SSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - P SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s"%%(<node_num>)
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <server_mac> -l 1000 -c 20 -b 20 -f 8
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C TODS_PKT,OK
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0) meshsend -S -d <server_mac> -l 1000 -c 20 -b 20 -f 8
+    - - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C TODS_PKT,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+    5. succeed
+  steps: |-
+    1. set all duts to establish no router network
+    2. layer1 send package to layer2
+    3. layer1 send package to DS
+    4. layer2 send package to layer1
+    5. layer2 send package to DS
+  summary: no router network, meshsend unicast test
+  initial condition: MESH_DEINIT_STA
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0129
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <mesh_id2> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,FAIL
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send unicast with inexistent dst_addr
+  summary: root send unicast with inexistent dst_addr
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0130
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 0 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+      - P MNODE(0,0) NC +MESHRXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 64 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1600 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+      - P MNODE(0,0) NC +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send unicast to another node with different length
+  summary: node send unicast to another node with different length
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0131
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1460 -c 20 -b 20 -f <temp_value>
+    - - P MNODE(0) C +MESHTXPKT,FAIL
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. fail
+  steps: |-
+    1. root send unicast to leaf with invalid flag value
+  summary: (ASSERT) root send unicast with invalid flag value
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+  active: "No"
+- ID: MESH_COMM_0132
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1460 -c 20 -b 20 -p <temp_value>
+    - - P MNODE(0) C +MESHTXPKT,FAIL
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. fail
+  steps: |-
+    1. root send unicast to leaf with invalid proto value
+  summary: (ASSERT) root send unicast with invalid proto value
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+  active: "No"
+- ID: MESH_COMM_0133
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1460 -c 20 -b 20 -t <temp_value>
+    - - P MNODE(0) C +MESHTXPKT,FAIL
+  - - ASSERT
+    - - ''
+  expected result: |-
+    1. fail
+  steps: |-
+    1. root send unicast to leaf with invalid tos value
+  summary: (ASSERT) root send unicast with invalid tos value
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+  active: "No"
+- ID: MESH_COMM_0134
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) meshsend -S -l 1460 -c 10 -b 100 -f 10
+    - - P MNODE(0) C +MESHRXPKT,OK
+      - P MNODE(0,-1) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) NC +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. leaf send unicast without dst_addr
+  summary: leaf send unicast without dst_addr but with flag=P2P|TODS (to root)
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0135
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 200 -b 20 -f 2
+    - - P MNODE(0) C +MESHRXPKT,OK
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0,0) meshsend -D
+    - - P MNODE(0,0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L2 send packets to root
+    2. stop L2 send task
+  summary: stop send task when node send packets to root
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0136
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 200 -b 20 -f 2
+    - - ''
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0) meshsend -D
+    - - P MNODE(0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root send packets to L2
+    2. stop root send task
+  summary: stop send task when root send packets to L2
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0137
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) reboot
+    - - P MNODE(0,-1) C !!!ready!!!
+  - - DELAY 15
+    - - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. disable a node
+    2. root send unicast to this node
+  summary: root send unicast to disabled node
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0138
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - ''
+  - - SSC MNODE(0,-1) mesh -I -o 1
+    - - P MNODE(0,-1) C +MESH:DEINIT,OK
+      - P MNODE(0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root send unicast to leaf
+    2. leaf deinit
+  summary: root send unicast to deinited node
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0139
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d ff:ff:ff:ff:ff:ff -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P SSC[1-<node_num>] C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send broadcast packet with multicast option
+    2. todo
+  summary: root send broadcast packet with multicast option
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0140
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,1)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d <MNODE(0,0)_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,FAIL
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send multicast to L2/L3 with unicast addr
+  summary: root send packet with unicast addr and multicast option
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0141
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] meshsend -S -d <MNODE(0)_mac> -l 1460 -c 50 -b 200 -f 2
+    - - ''
+  - - DELAY 50
+    - - P SSC[1-<node_num>] C +MESHTXPKT,OK +MESHSEND,OK
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. all nodes send unicast to root
+    1. check mesh network
+  summary: all nodes send unicast to root,check mesh network
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0142
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <server_mac> -l 1460 -c 200 -b 50 -f 8
+    - - ''
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0,0) meshsend -D
+    - - P MNODE(0,0) C +MESHSEND:STOP,OK
+  - - DELAY 10
+    - - ''
+  - - SSC MNODE(0,0) meshsend -S -d <server_mac> -l 1460 -c 100 -b 100 -f 8
+    - - P MNODE(0,0) C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send unicast to server
+    2. L2 meshsend stop
+    3. delay 10s,L2 send unicast to server again
+  summary: node send unicast to server with stop
+  CI ready: 'No'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: ucast meshsend test
+- ID: MESH_COMM_0201
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 6
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1200 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,OK C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send multicast to root
+  summary: no-child root send multicast to root with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T1_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0202
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 6
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1200 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,OK C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send multicast to root
+  summary:  root send multicast to root with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0203
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send multicast to L2/L3
+  summary: root send multicast to L2/L3 with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0204
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -P -p 1
+    - - P MNODE(0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f
+      2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send multicast to itself
+  summary: L2 send multicast to itself with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0205
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -P -p 1
+    - - P MNODE(0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0) mesh -D -o 0 -g <MNODE(0,0,0)_mac>
+    - - P MNODE(0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f
+      2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send multicast to L1/L3
+  summary: L2 send multicast to L1/L3 with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0206
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -P -p 1
+    - - P MNODE(0,0,0) C +DELETE_MESHOPT
   - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0)_mac>
     - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
   - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0,0)_mac>
     - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
   - - SSC MNODE(0,0,0) meshsend -P -p 0 -t 7 -l 12
     - - P MNODE(0,0,0) C +MESHSEND:OPTION,1
-  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -c 10 -b 20 -f
+  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f
       2
-    - - P MNODE(0,0,0) C +MESHTXPKT:ERROR C +MESHSEND,OK
-      - P MNODE(0,0) NC +MESHRXPKT:OK
-  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 0 -c 10 -b 20 -f
+    - - P MNODE(0,0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send multicast to L1/L2
+  summary: L3 send multicast to L1/L2 with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0207
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -P -p 1
+    - - P MNODE(0,0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0,0,0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) meshsend -P -p 0 -t 7 -l 6
+    - - P MNODE(0,0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f
       2
-    - - P MNODE(0,0,0) C +MESHTXPKT:ERROR C +MESHSEND,OK
-      - P MNODE(0,0) NC +MESHRXPKT:OK
+    - - P MNODE(0,0,0) C +MESHSEND,OK C +MESHTXPKT,OK C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send multicast to itself
+  summary: L3 send multicast to itself with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0208
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -P -p 1
+    - - P MNODE(0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f
+      2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK C +MESHRXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send multicast to itself/root
+  summary: L2 send multicast to root/itself with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T6_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0209
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -P -p 1
+    - - P MNODE(0,0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0,0,0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) meshsend -P -p 0 -t 7 -l 18
+    - - P MNODE(0,0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 20 -b 20 -f
+      2
+    - - P MNODE(0,0,0) C +MESHSEND,OK C +MESHTXPKT,OK C +MESHRXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send multicast to itself/L1/L2
+  summary: L3 send multicast to itself/L1/L2 with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0210
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 10 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - DELAY 5
+    - ''
+  - - SSC MNODE(0,0) mesh -Q -o 6
+    - - P MNODE(0,0) RE \+MESH_RECV_CNT:\d+,
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send multicast with duplicate mac list in option list
+  summary: root send multicast with duplicate mac list in option list
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0211
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -P -p 1
+    - - P MNODE(0,0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0,0,0) C +MESHSEND:OPTION,1
   - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 10 -b 20 -f
       2
-    - - P MNODE(0,0,0) C +MESHTXPKT:OK C +MESHSEND,OK
-      - P MNODE(0) C +MESHRXPKT:OK
-  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1460 -c 10 -b 20 -f
-      2
-    - - P MNODE(0,0,0) C +MESHTXPKT:ERROR C +MESHSEND,OK
-  execution time: 0.0
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  - - DELAY 5
+    - ''
+  - - SSC MNODE(0) mesh -Q -o 6
+    - - P MNODE(0) RE \+MESH_RECV_CNT:\d+,
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send multicast with duplicate mac list in option list
+  summary: L3 send multicast with duplicate mac list in option list
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0212
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -P -p 1
+    - - P MNODE(0,0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) mesh -D -o 0 -g <MNODE(0,0)_mac>
+    - - P MNODE(0,0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0,0) meshsend -P -p 0 -t 7 -l 12
+    - - P MNODE(0,0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 0 -c 10 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+      - P MNODE(0,0) NC +MESHRXPKT,OK
+  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1000 -c 10 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1460 -c 10 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send multicast with different length
+  summary: node send multicast with different length
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: multicast test
+- ID: MESH_COMM_0301
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d ff:ff:ff:ff:ff:ff -l 1460 -c 10 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    2. root send broadcast
+  summary: no-child root send broadcast with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T1_MESH1
+  test point 1: basic function
+  test point 2: broadcast test
+- ID: MESH_COMM_0302
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d ff:ff:ff:ff:ff:ff -l 1460 -c 10 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P SSC[1-<node_num>] C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    2. root send broadcast
+  summary: root send broadcast with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: broadcast test
+- ID: MESH_COMM_0303
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d ff:ff:ff:ff:ff:ff -l 1460 -c 10 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P SSC[1-<node_num>] C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send broadcast
+  summary: L2 send broadcast with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: broadcast test
+- ID: MESH_COMM_0304
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -S -d ff:ff:ff:ff:ff:ff -l 1460 -c 10 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P SSC[1-<node_num>] C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L3 send broadcast
+  summary: L3 send broadcast with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: broadcast test
+- ID: MESH_COMM_0305
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) meshsend -S -d ff:ff:ff:ff:ff:ff -l 1460 -c 10 -b 20 -f 2
+    - - P MNODE(0,-1) C +MESHSEND,OK C +MESHTXPKT,OK
+      - P SSC[1-<node_num>] C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. leaf send broadcast
+  summary: leaf send broadcast with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: broadcast test
+- ID: MESH_COMM_0401
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <server_mac> -l 1000 -c 20 -b 20 -f 8
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C TODS_PKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send ucast to server
+  summary: root send ucast tods server with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0402
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) meshsend -S -d <server_mac> -l 1000 -c 20 -b 20 -f 8
+    - - P MNODE(0,-1) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C TODS_PKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. leaf send unicast to server
+  summary: leaf send unicast tods server with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0403
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <server_mac> -l 1000 -c 20 -b 20 -f 8
+    - - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C TODS_PKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send multicast to server
+  summary: L2 send unicast tods server with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0404
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -P -p 1
+    - - P MNODE(0) C +DELETE_MESHOPT
+  - - SSC MNODE(0) mesh -D -o 0 -g <server_mac>
+    - - P MNODE(0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0) meshsend -P -p 0 -t 7 -l 6
+    - - P MNODE(0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1200 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHSEND,OK C +MESHTXPKT,FAIL
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root send multicast to server
+  summary: root send multicast to server with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0405
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -P -p 1
+    - - P MNODE(0,0) C +DELETE_MESHOPT
+  - - SSC MNODE(0,0) mesh -D -o 0 -g <server_mac>
+    - - P MNODE(0,0) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,0) meshsend -P -p 0 -t 7 -l 6
+    - - P MNODE(0,0) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,0) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1200 -c 20 -b 20 -f 2
+    - - P MNODE(0,0) C +MESHSEND,OK C +MESHTXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. L2 send multicast to server
+  summary: L2 send multicast to server with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0406
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,-1) meshsend -P -p 1
+    - - P MNODE(0,-1) C +DELETE_MESHOPT
+  - - SSC MNODE(0,-1) mesh -D -o 0 -g <server_mac>
+    - - P MNODE(0,-1) C +MESH_ADDR_LIST_ADD
+  - - SSC MNODE(0,-1) meshsend -P -p 0 -t 7 -l 6
+    - - P MNODE(0,-1) C +MESHSEND:OPTION,1
+  - - SSC MNODE(0,-1) meshsend -S -w 1 -d 01:00:5E:00:00:00 -l 1200 -c 20 -b 20 -f 2
+    - - P MNODE(0,-1) C +MESHSEND,OK C +MESHTXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. leaf send multicast to server
+  summary: leaf send multicast to server with default parameters
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0407
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SSC MNODE(0) mesh -Q -o 9
+    - - P MNODE(0) C +CLEAR_COUNT
+  - - SOC GSOC1 MSEND <MNODE(0)_mac> <server_mac> 1460 10 200
+    - - P SOC_COM C MESHSEND:OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  - - DELAY 5
+    - ''
+  - - SSC MNODE(0) mesh -Q -o 6
+    - - P MNODE(0) RE \+MESH_RECV_CNT:\d+,
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. server send unicast to root
+  summary: server send unicast to root with common package
+  test environment: SSC_T3_MESH2
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0408
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - MESHOPT string <option_list> "070c00" <MNODE(0)_mac> <MNODE(0,0)_mac>
+    - - R PC_COM C +MESHOPT:OK
+  - - SOC GSOC1 MSEND 01:00:5E:00:00:00 <server_mac> 1000 10 200 <option_list>
+    - - P SOC_COM C MESHSEND:OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. server send multicast to node
+  summary: server send multicast to node
+  test environment: SSC_T12_MESH2
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0409
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SOC GSOC1 MSEND ff:ff:ff:ff:ff:ff <server_mac> 100 10 200
+    - - P SOC_COM C MESHSEND:OK
+      - P MNODE(0) C +MESHRXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+      - P MNODE(0,0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. server send broadcast
+  summary: server send broadcast
+  test environment: SSC_T12_MESH2
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0410
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC1 meshset -T -o 0 -t 3
+    - - P SSC1 C +MESHSET:TYPE,OK
+  - - SSC SSC[1-2] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n <router_channel> -t
+        <max_connect> -e <map_password> -i <ie_encrypt>
+    - - P SSC[1-2] C +MESHSET:CFG,OK
+  - - SSC SSC[1-2] mesh -I
+    - - P SSC[1-2] C +MESH:INIT,OK
+  - - SSC SSC[1-2] mesh -T
+    - - P SSC[1-2] C +MESH:START,OK
+  - - DELAY 10
+    - - ''
+  - - SSC SSC[1-2] mesh -Q -o 2
+    - - P SSC[1-2] T topo
+  - - MESHTREE
+    - - R PC_COM C MESHTREE:2%20nodes
+  - - SSC SSC2 meshsend -S -d <SSC1_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P SSC2 C +MESHSEND,OK
+      - P SSC1 C +MESHRXPKT,OK
+  - - SSC SSC1 meshsend -S -d <SSC2_mac> -l 1000 -c 20 -b 20 -f 2
+    - - P SSC1 C +MESHSEND,OK
+      - P SSC2 C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. set one leaf node ssc1 and a normal node ssc2
+    2. ssc2 send package to ssc1
+    3. ssc1 send package to ssc2
+  summary: normal node send unicast to leaf type node, leaf type node send unicast to normal root
+  initial condition: MESH_DEINIT_STA
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: basic function
+  test point 2: meshsend tods and fromds test
+- ID: MESH_COMM_0501
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -Q -o 10
+    - - P MNODE(0) C +ROUTETABLE,OK
+  - - SSC MNODE(0) meshsend -S -w 2 -l 1000 -c 20 -b 20 -f 2
+     - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+       - P SSC[1-<node_num>] C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root table send test
+  summary: root table send test with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: basic function
+  test point 2: table send test
+- ID: MESH_COMM_0502
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) mesh -Q -o 10
+    - - P MNODE(0,0) C +ROUTETABLE,OK
+  - - SSC MNODE(0,0) meshsend -S -w 2 -l 1000 -c 20 -b 20 -f 2
+     - - P MNODE(0,0) C +MESHTXPKT,OK C +MESHSEND,OK
+       - P MNODE(0,0) C +MESHRXPKT,OK
+       - P MNODE(0,0,0) C +MESHRXPKT,OK
   expected result: |-
     1. succeed
     2. succeed
     3. succeed
     4. succeed
-  initial condition: ENABLED_1
-  level: Integration
-  module: Mesh
   steps: |-
     1. mesh init
     2. mesh config
     3. mesh start
-    4. node send multicast with different length
-  sub module: Communication
-  summary: node send multicast with different length
-  test environment: SSC_T50_1
+    4. L2 table send test
+  summary: L2 table send test with default parameters
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
   test point 1: basic function
-  test point 2: meshsend parameter check
-  version: v1 (2017-7-20)
+  test point 2: table send test
+- ID: MESH_COMM_0601
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id2> -s <router_ssid> -p <router_password> -n
+      <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i 0
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - SSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,-1)_mac> -l 1460 -c 20 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0,-1) C +MESHRXPKT,OK
+  - - SSC MNODE(0,-1) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2
+    - - P MNODE(0,-1) C +MESHTXPKT,OK C +MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config: beacon_encrypt=True
+    3. mesh start
+    4. root send unicast to L2 and leaf with beacon_encrypt=0
+  summary: unicast send test after network established with beacon_encrypt=0
+  initial condition: MESH_DEINIT_STA
+  CI ready: 'NO'
+  test environment: SSC_T6_MESH1
+  test point 1: basic function
+  test point 2: mixed meshsend test
+- ID: MESH_COMM_0602
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] mesh -I
+    - - P SSC[1-<node_num>] C +MESH:INIT,OK
+  - - SSC SSC[1-<node_num>] meshset -G -o 0 -m <mesh_id> -s <router_ssid> -p <router_password> -n
+          <router_channel> -b <router_bssid> -t <max_connect> -e <map_password> -i 1
+    - - P SSC[1-<node_num>] C +MESHSET:CFG,OK
+  - - SSC SSC[1-<node_num>] mesh -T
+    - - P SSC[1-<node_num>] C +MESH:START,OK
+  - - DELAY <delay_time>
+    - - ''
+  - - VALUE <tree_node_num> <node_num>
+      - - R PC_COM L OK
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s"%%(<tree_node_num>)
+  - - SOC SOC1 LISTEN <test_tcp_port1> <pc_ip>
+    - - R SOC_COM L OK
+  - - SSC MNODE(0) mesh -S -o 0 -i <pc_ip> -t <test_tcp_port1>
+    - - P MNODE(0) C +CONNECT,OK, P SOC1 C ACCEPT
+  - - SOC SOC1 MACCEPT GSOC1
+    - - R SOC_COM L OK
+  - - SOC GSOC1 MSEND <MNODE(0)_mac> <ap_mac> 1460 10 200
+    - - P SOC_COM C MESHSEND,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+    3. succeed
+    4. succeed
+  steps: |-
+    1. mesh init
+    2. mesh config: set assoc_encrypt=True
+    3. mesh start
+    4. server send unicast to root with assoc_encrypt=True
+  summary: server send unicast to root after network established with beacon_encrypt=1
+  initial condition: MESH_DEINIT_STA
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH2
+  test point 1: basic function
+  test point 2: mixed meshsend test
+- ID: MESH_COMM_0701
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -S -d <MNODE(0)_mac> -l 1000 -c 100 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK
+      - P MNODE(0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0) reboot
+    - - P MNODE(0,0) C !!!ready!!!
+      - P MNODE(0,0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L3 node send unicast to root
+    2. disable the parent node
+  summary: disable parent node when node send unicast to root
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0702
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0,1)_mac> -l 1000 -c 100 -b 50 -f 2
+    - - P MNODE(0,0) C +MESHTXPKT,OK
+  - - DELAY 1
+    - - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY 5
+      - P MNODE(0,0) C MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L2 node send unicast to its' brother node
+    2. disable its' parent node
+  summary: disable parent node when L2 node send unicast to its' brother node
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0703
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0,0) meshsend -S -d <MNODE(0,0,1)_mac> -l 1000 -c 100 -b 20 -f 2
+    - - P MNODE(0,0,0) C +MESHTXPKT,OK
+  - - SSC MNODE(0,0) reboot
+    - - P MNODE(0,0) C !!!ready!!!
+  - - DELAY 5
+    - - P MNODE(0,0,0) C +MESHTXPKT,FAIL C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L3 node send unicast to its' brother node
+    2. disable its' parent node
+  summary: disable parent node when L3 node send unicast to its' brother node
+  CI ready: 'Yes'
+  test environment: SSC_T12_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0704
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) mesh -R -o 1
+    - - P MNODE(0) C +MESHRX:STOP,OK
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 20 -b 20 -f 2
+    - - ''
+  - - DELAY 3
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0,0) C +MESHTXPKT,OK NC +MESHSEND,OK
+      - P MNODE(0) NC +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. disable recv task on root
+    2. L2 node send unicast to root
+  summary: disable a node recv task, another node send unicast to the node
+  CI ready: 'Yes'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0705
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 100 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK
+      - P MNODE(0,0) C +MESHRXPKT,OK
+  - - SSC MNODE(0,0) mesh -R -o 1
+    - - P MNODE(0,0) C +MESHRX:STOP,OK
+      - P MNODE(0) C +MESHTXPKT,OK C +MESHSEND,OK
+  - - SSC MNODE(0,0) mesh -R
+    - - P MNODE(0,0) C +MESHRXPKT,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root node send unicast to L2
+    2. disable L2 recv task
+  summary: disable recv task while another node send unicast to the node
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0706
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SOC GSOC1 MSEND <MNODE(0)_mac> <server_mac> 1000 50 200
+    - - ''
+  - - SSC MNODE(0) mesh -R -o 1
+    - - P MNODE(0) C +MESHRX:STOP,OK
+  - - DELAY 30
+    - - ''
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. disable the recv task while server sending unicast to the node
+  summary: disable recv task while server sending unicast to the node
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH2
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0707
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SSC SSC[1-<node_num>] meshsend -S -d <server_mac> -l 1460 -c 100 -b 20 -f 8
+    - - P SSC[1-<node_num>] C +MESHTXPKT,OK
+      - P MNODE(0) C TODS_PKT,OK
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[1-<node_num>] mesh -Q -o 2
+    - - P SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num-1>)
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. all nodes send unicast to server
+    2. disable root
+  summary: disable root when all nodes send unicast to server
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH2
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0708
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC SSC[1-<node_num>] meshsend -S -d <MNODE(0)_mac> -l 1460 -c 100 -b 20 -f 2
+    - - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+  - - DELAY <delay_time>
+    - - ''
+  - - MSSC SSC[1-<node_num>] mesh -Q -o 2
+    - - P SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num-1>)
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. all nodes send unicast to root
+    2. disable root
+  summary: disable root when all nodes send unicast to root
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0709
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0) meshsend -S -d <MNODE(0,0)_mac> -l 1460 -c 2000 -b 20 -f 2
+    - - P MNODE(0) C +MESHTXPKT,OK
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0,0) mesh -T -o 1
+    - - P MNODE(0,0) C +MESH:STOP,OK
+      - P MNODE(0) C +MESHTXPKT,OK
+    - - SSC MNODE(0) meshsend -D
+    - - P MNODE(0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root send packets to L2
+    2. disable the recv node when root send packets
+  summary: recv node disable when root send packets to node
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0710
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <MNODE(0)_mac> -l 1460 -c 2000 -b 20 -f 2
+    - - ""
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0) reboot
+    - - P MNODE(0) C !!!ready!!!
+      - P MNODE(0,0) C +MESHTXPKT,FAIL
+  - - SSC MNODE(0,0) meshsend -D
+    - - P MNODE(0,0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L2 send packets to root
+    2. disable the recv node when root send packets
+  summary: recv node disable when L2 send packets to the node
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0711
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - - SSC MNODE(0,0) meshsend -S -d <server_mac> -l 1460 -c 2000 -b 20 -f 8
+    - - P MNODE(0,0) C +MESHTXPKT,OK
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0) mesh -R -o 1
+    - - P MNODE(0) C +MESHRX:STOP,OK
+  - - DELAY 5
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0,0) NC +MESHTXPKT,FAIL
+  - - SSC MNODE(0) mesh -R
+    - - P MNODE(0) C +MESHRX:START,OK
+  - - SSC MNODE(0,0) meshsend -D
+    - - P MNODE(0,0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L2 send packets to server
+    2. server close when L2 send packets to server
+  summary: server close when node send packets to server
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0712
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SSC MNODE(0) meshsend -S -d <server_mac> -l 1460 -c 2000 -b 20 -f 8
+    - - ''
+  - - DELAY 2
+    - - ''
+  - - SOC GSOC1 CLOSE
+    - - P MNODE(0) C +TCPSOC:CLOSED
+  - - DELAY 5
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0) C +MESHTXPKT,OK NC +MESHTXPKT,FAIL
+  - - SSC MNODE(0) meshsend -D
+    - - P MNODE(0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. root send packets to server
+    2. server close when root send packets to server
+  summary: server close when root send packets to server
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH2
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0713
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SSC MNODE(0,0,0) meshsend -S -d <server_mac> -l 1460 -c 2000 -b 20 -f 8
+    - - ""
+  - - DELAY 2
+    - - ''
+  - - SOC GSOC1 CLOSE
+    - - P MNODE(0) C +TCPSOC:CLOSED
+  - - DELAY 5
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0,0,0) C +MESHTXPKT,OK NC +MESHTXPKT,FAIL
+  - - SSC MNODE(0,0,0) meshsend -D
+    - - P MNODE(0,0,0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root disconnect with server when L3 send packets to server
+  summary: root disconnect with server when L3 send packets to server
+  CI ready: 'NO'
+  test environment: SSC_T12_MESH2
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0714
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+  - *root_do_connect
+  - - SSC MNODE(0) meshsend -S -d <server_mac> -l 1460 -c 2000 -b 100 -f 8
+    - - ''
+  - - DELAY 2
+    - - ''
+  - - SSC MNODE(0) mesh -S -o 1
+    - - ''
+  - - DELAY 5
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0) C +TCPSOC:CLOSED C +CONNECTSTOP,OK C +MESHTXPKT,OK NC +MESHTXPKT,FAIL
+  - - SSC MNODE(0) meshsend -D
+    - - P MNODE(0) C +MESHSEND:STOP,OK
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. root disconnect with server when root send packets to server
+  summary: root disconnect with server when root send packets to server
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH2
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_0715
+  <<: *MESH_COMM_CASE
+  cmd set:
+  - ''
+#  - *root_do_connect
+  - - SSC MNODE(0,0) meshsend -S -d <server_mac> -l 1460 -c 100 -b 50 -f 8
+    - - P MNODE(0,0) C +MESHTXPKT,OK
+      - P MNODE(0) C TODS_PKT,OK
+  - - SSC MNODE(0) mesh -R -o 1
+    - - P MNODE(0) C +MESHRX:STOP,OK
+  - - DELAY 10
+    - - P PC_COM C DELAYDONE
+      - P MNODE(0,0) NC +MESHSEND,OK
+  - - SSC MNODE(0) mesh -R
+    - - P MNODE(0) C +MESHRX:START,OK C TODS_PKT,OK
+      - P MNODE(0,0) C +MESHSEND,OK
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. L2 send packets to server
+    2. server stop recv when node send packets to server
+  summary: root stop recv when node send packets to server
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: abnormal user
+  test point 2: destory network
+- ID: MESH_COMM_5001
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] meshsend -S -d <MNODE(0)_mac> -l 1460 -c 50 -b 200 -f 2
+    - - ''
+  - - DELAY 50
+    - - P SSC[1-<node_num>] C +MESHTXPKT,OK +MESHSEND,OK
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. all nodes send unicast to root
+    1. check mesh network
+  summary: all nodes(T50) send unicast to root,check mesh network
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5002
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - ''
+  - - MSSC SSC[1-<node_num>] meshsend -S -d <server_mac> -l 1460 -c 30 -b 200 -f 8
+    - - ''
+  - - DELAY 50
+    - - P SSC[1-<node_num>] C +MESHTXPKT,OK C +MESHSEND,OK
+  - - SSC SSC[1-<node_num>] mesh -Q -o 2
+    - - R SSC[1-<node_num>] T topo
+  - - MESHTREE
+    - - R PC_COM RE "MESHTREE:%%s%20nodes"%%(<node_num>)
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. all nodes send unicast to server
+    2. check mesh network
+  summary: all nodes send unicast to server,check mesh network
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5003
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshStressSend
+  - - test_time = 60
+    - - ''
+  - - node_send_type = "unicast"
+    - - ''
+  - - node_send_delay = 500
+    - - ''
+  - - server_send_flag = True
+    - - ''
+  - - server_send_type = "broadcast"
+    - - ''
+  - - server_send_delay = 500
+    - - ''
+  execution time: 1.0
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. all nodes send unicast to random target, server sending broadcast
+  summary: All node send unicast to random nodes, server sending broadcast
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5004
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshStressSend
+  - - test_time = 60
+    - - ''
+  - - node_send_type = "unicast"
+    - - ''
+  - - node_send_delay = 500
+    - - ''
+  - - server_send_flag = False
+    - - ''
+  execution time: 1.0
+  expected result: |-
+    1. succeed
+  steps: |-
+    1. all nodes send unicast to random target
+  summary: All node send unicast to random nodes
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5005
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshTableSend
+  - - source_addr = "MNODE(0)"
+    - - ''
+  - - send_counts = 1000
+    - - ''
+  - - check_timeout = 60
+    - - ''
+  - - send_delay = 0
+    - - ''
+  - - send_flag = 18
+    - - ''
+  - - packet_type = 1
+    - - ''
+  comment: Mesh Stress
+  execution time: 1.0
+  expected result:
+    1. succeed
+    2. succeed
+    3. succeed
+  steps:
+    1. established mesh network
+    2. node send packets to its mesh table
+    3. check send/recv time and lose rate
+  summary: root send unicast to its' mesh table, calculate the send/recv time and lose rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5006
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshTableSend
+  - - source_addr = "MNODE(0,0)"
+    - - ''
+  - - send_counts = 1000
+    - - ''
+  - - check_timeout = 60
+    - - ''
+  - - send_delay = 0
+    - - ''
+  - - send_flag = 18
+    - - ''
+  - - packet_type = 1
+    - - ''
+  comment: Mesh Stress
+  execution time: 1.0
+  expected result:
+    1. succeed
+    2. succeed
+    3. succeed
+  steps:
+    1. established mesh network
+    2. L2 send packets to its mesh table
+    3. check send/recv time and lose rate
+  summary: L2 send unicast to its' mesh table, calculate the send/recv time and lose rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5007
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshTableSend
+  - - source_addr = "MNODE(0,0,0)"
+    - - ''
+  - - send_counts = 1000
+    - - ''
+  - - check_timeout = 60
+    - - ''
+  - - send_delay = 0
+    - - ''
+  - - send_flag = 18
+    - - ''
+  - - packet_type = 1
+    - - ''
+  comment: Mesh Stress
+  execution time: 1.0
+  expected result:
+    1. succeed
+    2. succeed
+    3. succeed
+  steps:
+    1. established mesh network
+    2. L3 send packets to its mesh table
+    3. check send/recv time and lose rate
+  summary: L3 send unicast to its' mesh table, calculate the send/recv time and lose rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_5008
+  <<: *MESH_COMM_CASE
+  category: Stress
+  cmd set:
+  - MeshStress/MeshMixture
+  - - test_time = 720
+    - - ''
+  - - send_delay = 100
+    - - ''
+  - - unicast_addr = "random"
+    - - ''
+  comment: Mesh Stress
+  execution time: 1.0
+  expected result:
+    1. succeed
+    2. succeed
+    3. succeed
+  steps:
+    1. established mesh network
+    2. delay some time,send unicast with random address
+    3. check mesh network
+  summary: mesh mixture stress test
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend stress
+  test point 2: meshsend ucast/mcast/bcast stress test
+- ID: MESH_COMM_6001
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: L1 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to L1(T3), calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6002
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: L1 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to L1(T50), calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6003
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0,0)']
+    - - ''
+  comment: L1 send packet to L2
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to L2(T3), calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T3_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6004
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0,0)']
+    - - ''
+  comment: L1 send packet to L2
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to L2(T50), calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6005
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,0)']
+    - - ''
+  comment: L1 send packet to L3
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to L3, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6006
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,0,0)']
+    - - ''
+  comment: L1 send packet to L4
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to L4, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6007
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: L2 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send packet to L1, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6008
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,0)']
+    - - ''
+  comment: L2 send packet to L3
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send packet to L3, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6009
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,0,0)']
+    - - ''
+  comment: L2 send packet to L4
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send packet to L4, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6010
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: L3 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L3 send packet to L1, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6012
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0)']
+    - - ''
+  comment: L3 send packet to L2
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L3 send packet to L2, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6013
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,0,0)']
+    - - ''
+  comment: L3 send packet to L4
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L3 send packet to L4, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6014
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: L4 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L4 send packet to L1, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6015
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0)']
+    - - ''
+  comment: L4 send packet to L2
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L4 send packet to L2, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6016
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,0)']
+    - - ''
+  comment: L4 send packet to L3
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L4 send packet to L3, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6017
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,1)']
+    - - ''
+  comment: L2 send packet to its brother
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send packet to its brother, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6018
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,1)']
+    - - ''
+  comment: L3 send packet to its brother
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L3 send packet to its brother, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6019
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0)']
+    - - ''
+  - - receiver = ['MNODE(0,1)']
+    - - ''
+  comment: L3 send packet to its uncle
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L3 send packet to its uncle, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6020
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0,0)', 'MNODE(0,1)']
+    - - ''
+  comment: L1 send packet to two L2
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to two L2 node, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6021
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(l2)']
+    - - ''
+  comment: L1 send packet to all L2
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to all L2, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6022
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(l3)']
+    - - ''
+  comment: L1 send packet to all L3
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to all L3, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6023
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(l2)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: all L2 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: all L2 send packet to L1, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6024
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = []
+    - - ''
+  comment: L1 send packet to table
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send packet to table, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6025
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0)']
+    - - ''
+  - - receiver = []
+    - - ''
+  comment: L2 send packet to table
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send packet to table, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6026
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0,0,*)']
+    - - ''
+  comment: L2 send packet to L2's table
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send packet to L2's table, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6027
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['!MNODE(0)']
+    - - ''
+  - - receiver = ['MNODE(0)']
+    - - ''
+  comment: non-L1 send packet to L1
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: all nodes except root send packet to L1, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6028
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0)']
+    - - ''
+  - - send_type = 'bcast'
+    - - ''
+  comment: L1 send broadcast
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L1 send broadcast, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6029
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0)']
+    - - ''
+  - - send_type = 'bcast'
+    - - ''
+  comment: L2 send broadcast
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L2 send broadcast, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6030
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendReceive
+  - *throughput_cmd_set
+  - - sender = ['MNODE(0,0,0)']
+    - - ''
+  - - send_type = 'bcast'
+    - - ''
+  comment: L3 send broadcast
+  execution time: 0.5
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: L3 send broadcast, calculate throughput and packet loss rate
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast throughput and packetloss
+- ID: MESH_COMM_6101
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendRecv
+  - - test_time = 1
+    - - ''
+  - - source_adde_list = ["MNODE(0)", "MNODE(0,0)", "MNODE(0,0,0)", "MNODE(0,0,0,0)", "MNODE(0,0,0,0,0)", "MNODE(0,-1)"]
+    - - ''
+  - - dst_addr_list = ["MNODE(0)", "MNODE(0,0)", "MNODE(0,0,0)", "MNODE(0,0,0,0)", "MNODE(0,0,0,0,0)", "MNODE(0,-1)"]
+    - - ''
+  - - send_delay = 500
+    - - ''
+  - - send_counts = 10 # reduce counts to 10
+    - - ''
+  - - loss_rate_standard = 0.5
+    - - ''
+  execution time: 1.0
+  expected result: |-
+    1. succeed
+    2. succeed
+  steps: |-
+    1. node send unicast to another node
+    2. calculate send/recv time and loss rate
+  summary: calculate send/recv time and loss rate between different nodes
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast delaytime and packetloss
+- ID: MESH_COMM_6102
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendRecv
+  - - test_time = 1
+    - - ''
+  - - source_adde_list = ["GSOC1"]
+    - - ''
+  - - dst_addr_list = ["MNODE(0)", "MNODE(0,0)", "MNODE(0,0,0)", "MNODE(0,0,0,0)", "MNODE(0,0,0,0,0)", "MNODE(0,-1)"]
+    - - ''
+  - - send_delay = 500
+    - - ''
+  - - send_counts = 10 # reduce counts to 10
+    - - ''
+  - - loss_rate_standard = 0.5
+    - - ''
+  execution time: 1.0
+  expected result: |-
+    1. succeed
+    2. calculate packet send/recv time
+  steps: |-
+    1. server send unicast to differet nodes
+    2. calculate send/recv time and loss rate
+  summary: calculate send/recv time and loss rate between server send unicast to different nodes
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast delaytime and packetloss
+- ID: MESH_COMM_6103
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshSendRecv
+  - - test_time = 1
+    - - ''
+  - - source_adde_list = ["MNODE(0)", "MNODE(0,0)", "MNODE(0,0,0)", "MNODE(0,0,0,0)", "MNODE(0,0,0,0,0)", "MNODE(0,-1)"]
+    - - ''
+  - - dst_addr_list = ["GSOC1"]
+    - - ''
+  - - send_delay = 500
+    - - ''
+  - - send_counts = 10 # reduce counts to 10
+    - - ''
+  - - loss_rate_standard = 0.5
+    - - ''
+  execution time: 1.0
+  expected result: |-
+    1. succeed
+    2. calculate packet send/recv time
+  steps: |-
+    1. differet nodes send unicast to server
+    2. calculate send/recv time and loss rate
+  summary: calculate send/recv time and loss rate between different node and server
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast/mcast/bcast delaytime and packetloss
+- ID: MESH_COMM_6201
+  <<: *MESH_COMM_CASE
+  category: Performance
+  cmd set:
+  - MeshStress/MeshPing
+  execution time: 1
+  expected result:
+    1. succeed
+  steps:
+    1. calculate throughput and packet loss rate
+  summary: ping test, calculate round trip time on different leavels
+  CI ready: 'NO'
+  test environment: SSC_T50_MESH1
+  test point 1: meshsend performance
+  test point 2: ucast ping time

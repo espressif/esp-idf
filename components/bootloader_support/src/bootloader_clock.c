@@ -16,10 +16,9 @@
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_reg.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/efuse_periph.h"
 
-void bootloader_clock_configure()
+void bootloader_clock_configure(void)
 {
     // ROM bootloader may have put a lot of text into UART0 FIFO.
     // Wait for it to be printed.
@@ -53,9 +52,18 @@ void bootloader_clock_configure()
      * part of the start up time by enabling 32k XTAL early.
      * App startup code will wait until the oscillator has started up.
      */
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
     if (!rtc_clk_32k_enabled()) {
         rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
     }
 #endif
 }
+
+#ifdef BOOTLOADER_BUILD
+
+int esp_clk_apb_freq(void)
+{
+    return rtc_clk_apb_freq_get();
+}
+
+#endif // BOOTLOADER_BUILD

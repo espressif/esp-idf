@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "esp_log.h"
-#include "soc/soc.h"
-#include "driver/periph_ctrl.h"
 #include "driver/sigmadelta.h"
 
 static const char* SIGMADELTA_TAG = "SIGMADELTA";

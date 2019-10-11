@@ -159,7 +159,7 @@ BIO *BIO_new(void * method);
 /**
  * @brief get the memory BIO method function
  */
-void *BIO_s_mem();
+void *BIO_s_mem(void);
 
 /**
  * @brief free a BIO  object

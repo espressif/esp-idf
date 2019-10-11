@@ -8,7 +8,7 @@
 配置硬件
 ^^^^^^^^
 
-1.  根据 :doc:`../../get-started/get-started-wrover-kit` 文档中 :ref:`get-started-esp-wrover-kit-v4.1-setup-options` 章节所描述的信息，设置 JP8 便可以启用 JTAG 功能。 
+1.  根据 :doc:`../../hw-reference/get-started-wrover-kit` 文档中 :ref:`get-started-esp-wrover-kit-v4.1-setup-options` 章节所描述的信息，设置 JP8 便可以启用 JTAG 功能。 
 
 2.  检查 ESP32 上用于 JTAG 通信的引脚是否被接到了其它硬件上，这可能会影响 JTAG 的工作。
 
@@ -121,19 +121,13 @@ MacOS
 
     sudo kextunload -b com.apple.driver.AppleUSBFTDI
 
-4. 运行 OpenOCD（以下路径为 Github 上可供下载的预编译后的 OpenOCD）::
+4. 运行 OpenOCD::
 
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
-
-   如果 OpenOCD 是从源码编译得到的，那么路径需要做相应修改::
-
-    src/openocd -s tcl -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
 
 5. 在另一个终端窗口，再一次加载 FTDI 串口驱动::
 
     sudo kextload -b com.FTDI.driver.FTDIUSBSerialDriver
-
-.. include:: ./windows-openocd-note.rst
 
 .. note::
 

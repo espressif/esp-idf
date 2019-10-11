@@ -13,7 +13,9 @@
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
+#include "tcpip_adapter.h"
+#include "protocol_examples_common.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -30,7 +32,6 @@
 
 static const char *TAG = "PUBLISH_TEST";
 
-static EventGroupHandle_t wifi_event_group;
 static EventGroupHandle_t mqtt_event_group;
 const static int CONNECTED_BIT = BIT0;
 
@@ -43,50 +44,9 @@ static size_t expected_published = 0;
 static size_t actual_published = 0;
 static int qos_test = 0;
 
-static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
-{
-    switch (event->event_id) {
-    case SYSTEM_EVENT_STA_START:
-        esp_wifi_connect();
-        break;
-    case SYSTEM_EVENT_STA_GOT_IP:
-        xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 
-        break;
-    case SYSTEM_EVENT_STA_DISCONNECTED:
-        esp_wifi_connect();
-        xEventGroupClearBits(wifi_event_group, CONNECTED_BIT);
-        break;
-    default:
-        break;
-    }
-    return ESP_OK;
-}
-
-static void wifi_init(void)
-{
-    tcpip_adapter_init();
-    wifi_event_group = xEventGroupCreate();
-    ESP_ERROR_CHECK(esp_event_loop_init(wifi_event_handler, NULL));
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = CONFIG_WIFI_SSID,
-            .password = CONFIG_WIFI_PASSWORD,
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
-    ESP_LOGI(TAG, "start the WIFI SSID:[%s]", CONFIG_WIFI_SSID);
-    ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_LOGI(TAG, "Waiting for wifi");
-    xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
-}
-
-#if CONFIG_BROKER_CERTIFICATE_OVERRIDDEN == 1
-static const uint8_t iot_eclipse_org_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
+#if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN == 1
+static const uint8_t iot_eclipse_org_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
 #else
 extern const uint8_t iot_eclipse_org_pem_start[]   asm("_binary_iot_eclipse_org_pem_start");
 #endif
@@ -102,7 +62,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(mqtt_event_group, CONNECTED_BIT);
-        msg_id = esp_mqtt_client_subscribe(client, CONFIG_SUBSCIBE_TOPIC, qos_test);
+        msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCIBE_TOPIC, qos_test);
         ESP_LOGI(TAG, "sent subscribe successful, msg_id=%d", msg_id);
 
         break;
@@ -191,7 +151,7 @@ static void get_string(char *line, size_t size)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     char line[256];
     char pattern[32];
@@ -208,8 +168,16 @@ void app_main()
     esp_log_level_set("TRANSPORT", ESP_LOG_VERBOSE);
     esp_log_level_set("OUTBOX", ESP_LOG_VERBOSE);
 
-    nvs_flash_init();
-    wifi_init();
+    ESP_ERROR_CHECK(nvs_flash_init());
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
+
     mqtt_app_start();
 
     while (1) {
@@ -231,16 +199,16 @@ void app_main()
 
         if (0 == strcmp(transport, "tcp")) {
             ESP_LOGI(TAG, "[TCP transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_TCP_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_TCP_URI);
         } else if (0 == strcmp(transport, "ssl")) {
             ESP_LOGI(TAG, "[SSL transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_SSL_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_SSL_URI);
         } else if (0 == strcmp(transport, "ws")) {
             ESP_LOGI(TAG, "[WS transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_WS_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WS_URI);
         } else if (0 == strcmp(transport, "wss")) {
             ESP_LOGI(TAG, "[WSS transport] Startup..");
-            esp_mqtt_client_set_uri(mqtt_client, CONFIG_BROKER_WSS_URI);
+            esp_mqtt_client_set_uri(mqtt_client, CONFIG_EXAMPLE_BROKER_WSS_URI);
         } else {
             ESP_LOGE(TAG, "Unexpected transport");
             abort();
@@ -251,7 +219,7 @@ void app_main()
         xEventGroupWaitBits(mqtt_event_group, CONNECTED_BIT, false, true, portMAX_DELAY);
 
         for (int i = 0; i < expected_published; i++) {
-            int msg_id = esp_mqtt_client_publish(mqtt_client, CONFIG_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0);
+            int msg_id = esp_mqtt_client_publish(mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, expected_data, expected_size, qos_test, 0);
             ESP_LOGI(TAG, "[%d] Publishing...", msg_id);
         }
     }

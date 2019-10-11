@@ -104,7 +104,7 @@ static inline void add_to_cache(const char* tag, esp_log_level_t level);
 static void heap_bubble_down(int index);
 static inline void heap_swap(int i, int j);
 static inline bool should_output(esp_log_level_t level_for_message, esp_log_level_t level_for_tag);
-static inline void clear_log_level_list();
+static inline void clear_log_level_list(void);
 
 vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
 {
@@ -172,10 +172,12 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
     xSemaphoreGive(s_log_mutex);
 }
 
-void clear_log_level_list()
+void clear_log_level_list(void)
 {
-    while( !SLIST_EMPTY(&s_log_tags)) {
+    uncached_tag_entry_t *it;
+    while((it = SLIST_FIRST(&s_log_tags)) != NULL) {
         SLIST_REMOVE_HEAD(&s_log_tags, entries );
+        free(it);
     }
     s_log_cache_entry_count = 0;
     s_log_cache_max_generation = 0;
@@ -323,14 +325,14 @@ static inline void heap_swap(int i, int j)
 //as a workaround before the interface for this variable
 extern uint32_t g_ticks_per_us_pro;
 
-uint32_t ATTR esp_log_early_timestamp()
+uint32_t ATTR esp_log_early_timestamp(void)
 {
     return xthal_get_ccount() / (g_ticks_per_us_pro * 1000);
 }
 
 #ifndef BOOTLOADER_BUILD
 
-uint32_t IRAM_ATTR esp_log_timestamp()
+uint32_t IRAM_ATTR esp_log_timestamp(void)
 {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         return esp_log_early_timestamp();
@@ -344,7 +346,7 @@ uint32_t IRAM_ATTR esp_log_timestamp()
 
 #else
 
-uint32_t esp_log_timestamp() __attribute__((alias("esp_log_early_timestamp")));
+uint32_t esp_log_timestamp(void) __attribute__((alias("esp_log_early_timestamp")));
 
 #endif //BOOTLOADER_BUILD
 

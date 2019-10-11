@@ -1,5 +1,3 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-set(COMPONENT_REQUIRES unity expat)
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                    INCLUDE_DIRS "."
+                    REQUIRES unity expat)

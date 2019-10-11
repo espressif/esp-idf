@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include "esp_types.h"
 #include "driver/adc.h"
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 #include "esp_err.h"
 #include "assert.h"
 #include "esp_adc_cal.h"
@@ -110,13 +110,13 @@ static const uint32_t lut_adc2_high[LUT_POINTS] = {2657, 2698, 2738, 2774, 2807,
                                                    2971, 2996, 3020, 3043, 3067, 3092, 3116, 3139, 3162, 3185};
 
 /* ----------------------- EFuse Access Functions --------------------------- */
-static bool check_efuse_vref()
+static bool check_efuse_vref(void)
 {
     //Check if Vref is burned in eFuse
     return (REG_GET_FIELD(VREF_REG, EFUSE_RD_ADC_VREF) != 0) ? true : false;
 }
 
-static bool check_efuse_tp()
+static bool check_efuse_tp(void)
 {
     //Check if Two Point values are burned in eFuse
     if (CHECK_BLK3_FLAG && (REG_GET_FIELD(BLK3_RESERVED_REG, EFUSE_RD_BLK3_PART_RESERVE) == 0)) {
@@ -150,7 +150,7 @@ static inline int decode_bits(uint32_t bits, uint32_t mask, bool is_twos_compl)
     return ret;
 }
 
-static uint32_t read_efuse_vref()
+static uint32_t read_efuse_vref(void)
 {
     //eFuse stores deviation from ideal reference voltage
     uint32_t ret = VREF_OFFSET;       //Ideal vref
@@ -390,23 +390,3 @@ esp_err_t esp_adc_cal_get_voltage(adc_channel_t channel,
     *voltage = esp_adc_cal_raw_to_voltage((uint32_t)adc_reading, chars);
     return ESP_OK;
 }
-
-/* ------------------------ Deprecated API --------------------------------- */
-void esp_adc_cal_get_characteristics(uint32_t vref,
-                                     adc_atten_t atten,
-                                     adc_bits_width_t bit_width,
-                                     esp_adc_cal_characteristics_t *chars)
-{
-    assert(chars != NULL);
-    esp_adc_cal_characterize(ADC_UNIT_1, atten, bit_width, vref, chars);
-}
-
-uint32_t adc1_to_voltage(adc1_channel_t channel, const esp_adc_cal_characteristics_t *chars)
-{
-    assert(chars != NULL);
-    uint32_t voltage = 0;
-    esp_adc_cal_get_voltage((adc_channel_t)channel, chars, &voltage);
-    return voltage;
-}
-
-

@@ -14,7 +14,10 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "app_wifi.h"
+#include "esp_event.h"
+#include "tcpip_adapter.h"
+#include "protocol_examples_common.h"
+#include "esp_tls.h"
 
 #include "esp_http_client.h"
 
@@ -61,13 +64,19 @@ esp_err_t _http_event_handler(esp_http_client_event_t *evt)
             ESP_LOGD(TAG, "HTTP_EVENT_ON_FINISH");
             break;
         case HTTP_EVENT_DISCONNECTED:
-            ESP_LOGD(TAG, "HTTP_EVENT_DISCONNECTED");
+            ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+            int mbedtls_err = 0;
+            esp_err_t err = esp_tls_get_and_clear_last_error(evt->data, &mbedtls_err, NULL);
+            if (err != 0) {
+                ESP_LOGI(TAG, "Last esp error code: 0x%x", err);
+                ESP_LOGI(TAG, "Last mbedtls failure: 0x%x", mbedtls_err);
+            }
             break;
     }
     return ESP_OK;
 }
 
-static void http_rest_with_url()
+static void http_rest_with_url(void)
 {
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/get",
@@ -151,7 +160,7 @@ static void http_rest_with_url()
     esp_http_client_cleanup(client);
 }
 
-static void http_rest_with_hostname_path()
+static void http_rest_with_hostname_path(void)
 {
     esp_http_client_config_t config = {
         .host = "httpbin.org",
@@ -238,7 +247,7 @@ static void http_rest_with_hostname_path()
 }
 
 
-static void http_auth_basic()
+static void http_auth_basic(void)
 {
     esp_http_client_config_t config = {
         .url = "http://user:passwd@httpbin.org/basic-auth/user/passwd",
@@ -258,7 +267,7 @@ static void http_auth_basic()
     esp_http_client_cleanup(client);
 }
 
-static void http_auth_basic_redirect()
+static void http_auth_basic_redirect(void)
 {
     esp_http_client_config_t config = {
         .url = "http://user:passwd@httpbin.org/basic-auth/user/passwd",
@@ -277,7 +286,7 @@ static void http_auth_basic_redirect()
     esp_http_client_cleanup(client);
 }
 
-static void http_auth_digest()
+static void http_auth_digest(void)
 {
     esp_http_client_config_t config = {
         .url = "http://user:passwd@httpbin.org/digest-auth/auth/user/passwd/MD5/never",
@@ -296,7 +305,7 @@ static void http_auth_digest()
     esp_http_client_cleanup(client);
 }
 
-static void https_with_url()
+static void https_with_url(void)
 {
     esp_http_client_config_t config = {
         .url = "https://www.howsmyssl.com",
@@ -316,7 +325,7 @@ static void https_with_url()
     esp_http_client_cleanup(client);
 }
 
-static void https_with_hostname_path()
+static void https_with_hostname_path(void)
 {
     esp_http_client_config_t config = {
         .host = "www.howsmyssl.com",
@@ -338,7 +347,7 @@ static void https_with_hostname_path()
     esp_http_client_cleanup(client);
 }
 
-static void http_relative_redirect()
+static void http_relative_redirect(void)
 {
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/relative-redirect/3",
@@ -357,7 +366,7 @@ static void http_relative_redirect()
     esp_http_client_cleanup(client);
 }
 
-static void http_absolute_redirect()
+static void http_absolute_redirect(void)
 {
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/absolute-redirect/3",
@@ -376,7 +385,7 @@ static void http_absolute_redirect()
     esp_http_client_cleanup(client);
 }
 
-static void http_redirect_to_https()
+static void http_redirect_to_https(void)
 {
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/redirect-to?url=https%3A%2F%2Fwww.howsmyssl.com",
@@ -396,7 +405,7 @@ static void http_redirect_to_https()
 }
 
 
-static void http_download_chunk()
+static void http_download_chunk(void)
 {
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/stream-bytes/8912",
@@ -415,7 +424,7 @@ static void http_download_chunk()
     esp_http_client_cleanup(client);
 }
 
-static void http_perform_as_stream_reader()
+static void http_perform_as_stream_reader(void)
 {
     char *buffer = malloc(MAX_HTTP_RECV_BUFFER + 1);
     if (buffer == NULL) {
@@ -451,7 +460,7 @@ static void http_perform_as_stream_reader()
     free(buffer);
 }
 
-static void https_async()
+static void https_async(void)
 {
     esp_http_client_config_t config = {
         .url = "https://postman-echo.com/post",
@@ -483,11 +492,28 @@ static void https_async()
     esp_http_client_cleanup(client);
 }
 
+static void https_with_invalid_url(void)
+{
+    esp_http_client_config_t config = {
+            .url = "https://not.existent.url",
+            .event_handler = _http_event_handler,
+    };
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    esp_err_t err = esp_http_client_perform(client);
+
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "HTTPS Status = %d, content_length = %d",
+                 esp_http_client_get_status_code(client),
+                 esp_http_client_get_content_length(client));
+    } else {
+        ESP_LOGE(TAG, "Error perform http request %s", esp_err_to_name(err));
+    }
+    esp_http_client_cleanup(client);
+}
+
 
 static void http_test_task(void *pvParameters)
 {
-    app_wifi_wait_connected();
-    ESP_LOGI(TAG, "Connected to AP, begin http example");
     http_rest_with_url();
     http_rest_with_hostname_path();
     http_auth_basic();
@@ -501,12 +527,13 @@ static void http_test_task(void *pvParameters)
     http_download_chunk();
     http_perform_as_stream_reader();
     https_async();
+    https_with_invalid_url();
 
     ESP_LOGI(TAG, "Finish http example");
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -514,7 +541,15 @@ void app_main()
       ret = nvs_flash_init();
     }
     ESP_ERROR_CHECK(ret);
-    app_wifi_initialise();
+    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
+     * Read "Establishing Wi-Fi or Ethernet Connection" section in
+     * examples/protocols/README.md for more information about this function.
+     */
+    ESP_ERROR_CHECK(example_connect());
+    ESP_LOGI(TAG, "Connected to AP, begin http example");
 
     xTaskCreate(&http_test_task, "http_test_task", 8192, NULL, 5, NULL);
 }

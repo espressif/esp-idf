@@ -19,8 +19,13 @@
 #include <stdbool.h>
 
 #include "esp_attr.h"
+
+#include "sdkconfig.h"
+
+#ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/gpio_reg.h"
 #include "soc/gpio_pins.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {

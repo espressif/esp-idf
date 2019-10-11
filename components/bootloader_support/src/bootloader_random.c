@@ -14,11 +14,11 @@
 #include "bootloader_random.h"
 #include "soc/cpu.h"
 #include "soc/wdev_reg.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/sens_reg.h"
-#include "soc/syscon_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
+#include "soc/syscon_periph.h"
 #include "soc/dport_reg.h"
-#include "soc/i2s_reg.h"
+#include "soc/i2s_periph.h"
 #include "esp_log.h"
 
 #ifndef BOOTLOADER_BUILD

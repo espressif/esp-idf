@@ -322,7 +322,7 @@ void esp_efuse_write_random_key(uint32_t blk_wdata0_reg);
 /* @brief Return secure_version from efuse field.
  * @return Secure version from efuse field
  */
-uint32_t esp_efuse_read_secure_version();
+uint32_t esp_efuse_read_secure_version(void);
 
 /* @brief Check secure_version from app and secure_version and from efuse field.
  *
@@ -347,7 +347,7 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
 
 /* @brief Initializes variables: offset and size to simulate the work of an eFuse.
  *
- * Note: To simulate the work of an eFuse need to set CONFIG_EFUSE_SECURE_VERSION_EMULATE option
+ * Note: To simulate the work of an eFuse need to set CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE option
  * and to add in the partition.csv file a line `efuse_em, data, efuse,   ,   0x2000,`.
  *
  * @param[in] offset The starting address of the partition where the eFuse data will be located.

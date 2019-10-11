@@ -41,6 +41,10 @@ void test_fatfs_read_file(const char* filename);
 
 void test_fatfs_read_file_utf_8(const char* filename);
 
+void test_fatfs_pread_file(const char* filename);
+
+void test_fatfs_pwrite_file(const char* filename);
+
 void test_fatfs_open_max_files(const char* filename_prefix, size_t files_count);
 
 void test_fatfs_lseek(const char* filename);

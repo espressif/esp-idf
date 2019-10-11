@@ -20,7 +20,7 @@ The iterator is obtained using `esp_partition_find` and is released after its us
 I (310) example: Printing partition table csv file contents for reference...
 
 # Name,   Type, SubType, Offset,  Size, Flags
-# Note: if you change the phy_init or app partition offset, make sure to change the offset in Kconfig.projbuild
+# Note: if you have increased the bootloader size, make sure to update the offsets to avoid overlap
 nvs,        data, nvs,      0x9000,  0x6000,
 phy_init,   data, phy,      0xf000,  0x1000,
 factory,    app,  factory,  0x10000, 1M,

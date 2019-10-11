@@ -35,13 +35,13 @@
 
 #define RTC_I2C_CTRL_REG          (DR_REG_RTC_I2C_BASE + 0x004)
 /* RTC_I2C_RX_LSB_FIRST : R/W ;bitpos:[7] ;default: 1'b0 ; */
-/*description: Send LSB first */
+/*description: Receive LSB first */
 #define RTC_I2C_RX_LSB_FIRST	BIT(7)
 #define RTC_I2C_RX_LSB_FIRST_M  BIT(7)
 #define RTC_I2C_RX_LSB_FIRST_V  (1)
 #define RTC_I2C_RX_LSB_FIRST_S  (7)
 /* RTC_I2C_TX_LSB_FIRST : R/W ;bitpos:[6] ;default: 1'b0 ; */
-/*description: Receive LSB first */
+/*description: Send LSB first */
 #define RTC_I2C_TX_LSB_FIRST	BIT(6)
 #define RTC_I2C_TX_LSB_FIRST_M  BIT(6)
 #define RTC_I2C_TX_LSB_FIRST_V  (1)

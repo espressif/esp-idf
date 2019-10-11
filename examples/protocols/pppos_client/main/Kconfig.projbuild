@@ -1,47 +1,47 @@
 menu "Example Configuration"
 
-    choice ESP_MODEM_DEVICE
+    choice EXAMPLE_MODEM_DEVICE
         prompt "Choose supported modem device (DCE)"
-        default ESP_MODEM_DEVICE_BG96
+        default EXAMPLE_MODEM_DEVICE_BG96
         help
             Select modem device connected to the ESP DTE.
-        config ESP_MODEM_DEVICE_SIM800
+        config EXAMPLE_MODEM_DEVICE_SIM800
             bool "SIM800"
             help
                 SIMCom SIM800L is a GSM/GPRS module.
                 It supports Quad-band 850/900/1800/1900MHz.
-        config ESP_MODEM_DEVICE_BG96
+        config EXAMPLE_MODEM_DEVICE_BG96
             bool "BG96"
             help
                 Quectel BG96 is a series of LTE Cat M1/Cat NB1/EGPRS module.
     endchoice
 
-    config ESP_MODEM_APN
+    config EXAMPLE_MODEM_APN
         string "Set Access Point Name (APN)"
         default "CMNET"
         help
             Logical name which is used to select the GGSN or the external packet data network.
 
-    config ESP_MODEM_PPP_AUTH_USERNAME
+    config EXAMPLE_MODEM_PPP_AUTH_USERNAME
         string "Set username for authentication"
         default "espressif"
         help
             Set username for PPP Authentication.
 
-    config ESP_MODEM_PPP_AUTH_PASSWORD
+    config EXAMPLE_MODEM_PPP_AUTH_PASSWORD
         string "Set password for authentication"
         default "esp32"
         help
             Set password for PPP Authentication.
 
-    config SEND_MSG
+    config EXAMPLE_SEND_MSG
         bool "Short message (SMS)"
         default n
         help
             Select this, the modem will send a short message before power off.
 
-    if SEND_MSG
-        config SEND_MSG_PEER_PHONE_NUMBER
+    if EXAMPLE_SEND_MSG
+        config EXAMPLE_SEND_MSG_PEER_PHONE_NUMBER
             string "Peer Phone Number (with area code)"
             default "+8610086"
             help
@@ -49,70 +49,70 @@ menu "Example Configuration"
     endif
 
     menu "UART Configuration"
-        config MODEM_TX_PIN
+        config EXAMPLE_UART_MODEM_TX_PIN
             int "TXD Pin Number"
             default 25
             range 0 31
             help
                 Pin number of UART TX.
 
-        config MODEM_RX_PIN
+        config EXAMPLE_UART_MODEM_RX_PIN
             int "RXD Pin Number"
             default 26
             range 0 31
             help
                 Pin number of UART RX.
 
-        config MODEM_RTS_PIN
+        config EXAMPLE_UART_MODEM_RTS_PIN
             int "RTS Pin Number"
             default 27
             range 0 31
             help
                 Pin number of UART RTS.
 
-        config MODEM_CTS_PIN
+        config EXAMPLE_UART_MODEM_CTS_PIN
             int "CTS Pin Number"
             default 23
             range 0 31
             help
                 Pin number of UART CTS.
 
-        config UART_EVENT_TASK_STACK_SIZE
+        config EXAMPLE_UART_EVENT_TASK_STACK_SIZE
             int "UART Event Task Stack Size"
             range 2000 6000
             default 2048
             help
                 Stack size of UART event task.
 
-        config UART_EVENT_TASK_PRIORITY
+        config EXAMPLE_UART_EVENT_TASK_PRIORITY
             int "UART Event Task Priority"
             range 3 22
             default 5
             help
                 Priority of UART event task.
 
-        config UART_EVENT_QUEUE_SIZE
+        config EXAMPLE_UART_EVENT_QUEUE_SIZE
             int "UART Event Queue Size"
             range 10 40
             default 30
             help
                 Length of UART event queue.
 
-        config UART_PATTERN_QUEUE_SIZE
+        config EXAMPLE_UART_PATTERN_QUEUE_SIZE
             int "UART Pattern Queue Size"
             range 10 40
             default 20
             help
                 Length of UART pattern queue.
 
-        config UART_TX_BUFFER_SIZE
+        config EXAMPLE_UART_TX_BUFFER_SIZE
             int "UART TX Buffer Size"
             range 256 2048
             default 512
             help
                 Buffer size of UART TX buffer.
 
-        config UART_RX_BUFFER_SIZE
+        config EXAMPLE_UART_RX_BUFFER_SIZE
             int "UART RX Buffer Size"
             range 256 2048
             default 1024

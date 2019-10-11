@@ -1,42 +1,15 @@
-[mapping]
+[mapping:esp32]
 archive: libesp32.a
-entries: 
+entries:
     panic (noflash)
 
-[mapping]
-archive: libphy.a
-entries: 
-    * (noflash_data)
-
-[mapping]
-archive: libhal.a
-entries: 
-    * (noflash_text)
-
-[mapping]
-archive: librtc.a
-entries: 
-    * (noflash_text)
-
-[mapping]
+[mapping:gcc]
 archive: libgcc.a
-entries: 
+entries:
     lib2funcs (noflash_text)
+    _divsf3 (noflash)
 
-[mapping]
+[mapping:gcov]
 archive: libgcov.a
-entries: 
+entries:
     * (noflash)
-
-[mapping]
-archive: libpp.a
-entries: 
-    : ESP32_WIFI_IRAM_OPT = y
-    * (wifi_iram)
- 
-[mapping]
-archive: libnet80211.a
-entries: 
-    : ESP32_WIFI_IRAM_OPT = y
-    * (wifi_iram)
- 

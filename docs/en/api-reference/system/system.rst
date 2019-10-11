@@ -91,7 +91,7 @@ If the universally administered MAC addresses are not enough for all of the netw
 
 See `this article <https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local>`_ for the definition of local and universally administered MAC addresses.
 
-The number of universally administered MAC address can be configured using :ref:`CONFIG_NUMBER_OF_UNIVERSAL_MAC_ADDRESS`.
+The number of universally administered MAC address can be configured using :ref:`CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES`.
 
 If the number of universal MAC addresses is two, only two interfaces (Wi-Fi Station and Bluetooth) receive a universally administered MAC address. These are generated sequentially by adding 0 and 1 (respectively) to the base MAC address. The remaining two interfaces (Wi-Fi SoftAP and Ethernet) receive local MAC addresses. These are derived from the universal Wi-Fi station and Bluetooth MAC addresses, respectively.
 
@@ -109,21 +109,38 @@ SDK version
 
 :cpp:func:`esp_get_idf_version` returns a string describing the IDF version which was used to compile the application. This is the same value as the one available through ``IDF_VER`` variable of the build system. The version string generally has the format of ``git describe`` output.
 
+To get the version at build time, additional version macros are provided. They can be used to enable or disable parts of the program depending on IDF version.
+
+* :c:macro:`ESP_IDF_VERSION_MAJOR`, :c:macro:`ESP_IDF_VERSION_MINOR`, :c:macro:`ESP_IDF_VERSION_PATCH` are defined to integers representing major, minor, and patch version.
+
+* :c:macro:`ESP_IDF_VERSION_VAL` and :c:macro:`ESP_IDF_VERSION` can be used when implementing version checks:
+  
+  .. code-block:: c
+
+      #include "esp_idf_version.h"
+
+      #if ESP_IDF_VERSION >= ESP_IDF_VERSION_VAL(4, 0, 0)
+          // enable functionality present in IDF v4.0
+      #endif
+
+
 App version
 -----------
 Application version is stored in :cpp:class:`esp_app_desc_t` structure. It is located in DROM sector and has a fixed offset from the beginning of the binary file. 
 The structure is located after :cpp:class:`esp_image_header_t` and :cpp:class:`esp_image_segment_header_t` structures. The field version has string type and max length 32 chars.
 
-To set version in your project manually you need to set ``PROJECT_VER`` variable in your project Makefile/CMakeLists.txt:
+To set version in your project manually you need to set ``PROJECT_VER`` variable in your project CMakeLists.txt/Makefile:
 
-* For Make build system: in application Makefile put ``PROJECT_VER = "0.1.0.1"`` before including project.mk 
-* For Cmake build system: in application CMakeLists.txt put ``set(PROJECT_VER "0.1.0.1")`` before including project.cmake. 
+* In application CMakeLists.txt put ``set(PROJECT_VER "0.1.0.1")`` before including ``project.cmake``.
 
-If ``PROJECT_VER`` variable is not set in project Makefile/CMakeLists.txt then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
+(For legacy GNU Make build system: in application Makefile put ``PROJECT_VER = "0.1.0.1"`` before including ``project.mk``.)
+
+If ``PROJECT_VER`` variable is not set in the project then it will be retrieved from either ``$(PROJECT_PATH)/version.txt`` file (if present) else using git command ``git describe``. If neither is available then ``PROJECT_VER`` will be set to "1". Application can make use of this by calling :cpp:func:`esp_ota_get_app_description` or :cpp:func:`esp_ota_get_partition_description` functions.
 
 API Reference
 -------------
 
 .. include:: /_build/inc/esp_system.inc
+.. include:: /_build/inc/esp_idf_version.inc
 
 

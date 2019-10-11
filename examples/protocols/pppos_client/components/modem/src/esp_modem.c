@@ -25,7 +25,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 
-#define ESP_MODEM_LINE_BUFFER_SIZE (CONFIG_UART_RX_BUFFER_SIZE / 2)
+#define ESP_MODEM_LINE_BUFFER_SIZE (CONFIG_EXAMPLE_UART_RX_BUFFER_SIZE / 2)
 #define ESP_MODEM_EVENT_QUEUE_SIZE (16)
 
 #define MIN_PATTERN_INTERVAL (10000)
@@ -299,7 +299,7 @@ static esp_err_t esp_modem_dte_change_mode(modem_dte_t *dte, modem_mode_t new_mo
         uart_disable_rx_intr(esp_dte->uart_port);
         uart_flush(esp_dte->uart_port);
         uart_enable_pattern_det_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
-        uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_UART_PATTERN_QUEUE_SIZE);
+        uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_EXAMPLE_UART_PATTERN_QUEUE_SIZE);
         MODEM_CHECK(dce->set_working_mode(dce, new_mode) == ESP_OK, "set new working mode:%d failed", err, new_mode);
         break;
     default:
@@ -373,10 +373,10 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     };
     MODEM_CHECK(uart_param_config(esp_dte->uart_port, &uart_config) == ESP_OK, "config uart parameter failed", err_uart_config);
     if (config->flow_control == MODEM_FLOW_CONTROL_HW) {
-        res = uart_set_pin(esp_dte->uart_port, CONFIG_MODEM_TX_PIN, CONFIG_MODEM_RX_PIN,
-                           CONFIG_MODEM_RTS_PIN, CONFIG_MODEM_CTS_PIN);
+        res = uart_set_pin(esp_dte->uart_port, CONFIG_EXAMPLE_UART_MODEM_TX_PIN, CONFIG_EXAMPLE_UART_MODEM_RX_PIN,
+                           CONFIG_EXAMPLE_UART_MODEM_RTS_PIN, CONFIG_EXAMPLE_UART_MODEM_CTS_PIN);
     } else {
-        res = uart_set_pin(esp_dte->uart_port, CONFIG_MODEM_TX_PIN, CONFIG_MODEM_RX_PIN,
+        res = uart_set_pin(esp_dte->uart_port, CONFIG_EXAMPLE_UART_MODEM_TX_PIN, CONFIG_EXAMPLE_UART_MODEM_RX_PIN,
                            UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
     }
     MODEM_CHECK(res == ESP_OK, "config uart gpio failed", err_uart_config);
@@ -388,13 +388,13 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     }
     MODEM_CHECK(res == ESP_OK, "config uart flow control failed", err_uart_config);
     /* Install UART driver and get event queue used inside driver */
-    res = uart_driver_install(esp_dte->uart_port, CONFIG_UART_RX_BUFFER_SIZE, CONFIG_UART_TX_BUFFER_SIZE,
-                              CONFIG_UART_EVENT_QUEUE_SIZE, &(esp_dte->event_queue), 0);
+    res = uart_driver_install(esp_dte->uart_port, CONFIG_EXAMPLE_UART_RX_BUFFER_SIZE, CONFIG_EXAMPLE_UART_TX_BUFFER_SIZE,
+                              CONFIG_EXAMPLE_UART_EVENT_QUEUE_SIZE, &(esp_dte->event_queue), 0);
     MODEM_CHECK(res == ESP_OK, "install uart driver failed", err_uart_config);
     /* Set pattern interrupt, used to detect the end of a line. */
     res = uart_enable_pattern_det_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
     /* Set pattern queue size */
-    res |= uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_UART_PATTERN_QUEUE_SIZE);
+    res |= uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_EXAMPLE_UART_PATTERN_QUEUE_SIZE);
     MODEM_CHECK(res == ESP_OK, "config uart pattern failed", err_uart_pattern);
     /* Create Event loop */
     esp_event_loop_args_t loop_args = {
@@ -408,9 +408,9 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     /* Create UART Event task */
     BaseType_t ret = xTaskCreate(uart_event_task_entry,             //Task Entry
                                  "uart_event",                      //Task Name
-                                 CONFIG_UART_EVENT_TASK_STACK_SIZE, //Task Stack Size(Bytes)
+                                 CONFIG_EXAMPLE_UART_EVENT_TASK_STACK_SIZE, //Task Stack Size(Bytes)
                                  esp_dte,                           //Task Parameter
-                                 CONFIG_UART_EVENT_TASK_PRIORITY,   //Task Priority
+                                 CONFIG_EXAMPLE_UART_EVENT_TASK_PRIORITY,   //Task Priority
                                  & (esp_dte->uart_event_task_hdl)   //Task Handler
                                 );
     MODEM_CHECK(ret == pdTRUE, "create uart event task failed", err_tsk_create);
@@ -454,6 +454,7 @@ esp_err_t esp_modem_remove_event_handler(modem_dte_t *dte, esp_event_handler_t h
 static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
 {
     struct netif *pppif = ppp_netif(pcb);
+    const ip_addr_t *dest_ip = NULL;
     modem_dte_t *dte = (modem_dte_t *)(ctx);
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
     ppp_client_ip_info_t ipinfo = {0};
@@ -462,8 +463,14 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
         ipinfo.ip = pppif->ip_addr.u_addr.ip4;
         ipinfo.gw = pppif->gw.u_addr.ip4;
         ipinfo.netmask = pppif->netmask.u_addr.ip4;
-        ipinfo.ns1 = dns_getserver(0).u_addr.ip4;
-        ipinfo.ns2 = dns_getserver(1).u_addr.ip4;
+        dest_ip = dns_getserver(0);
+        if(dest_ip != NULL){
+          ipinfo.ns1 = (*dest_ip).u_addr.ip4;
+        }
+        dest_ip = dns_getserver(1);
+        if(dest_ip != NULL){
+          ipinfo.ns2 = (*dest_ip).u_addr.ip4;
+        }
         esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_CONNECT, &ipinfo, sizeof(ipinfo), 0);
         break;
     case PPPERR_PARAM:
@@ -573,7 +580,7 @@ esp_err_t esp_modem_setup_ppp(modem_dte_t *dte)
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
     /* Set PDP Context */
-    MODEM_CHECK(dce->define_pdp_context(dce, 1, "IP", CONFIG_ESP_MODEM_APN) == ESP_OK, "set MODEM APN failed", err);
+    MODEM_CHECK(dce->define_pdp_context(dce, 1, "IP", CONFIG_EXAMPLE_MODEM_APN) == ESP_OK, "set MODEM APN failed", err);
     /* Enter PPP mode */
     MODEM_CHECK(dte->change_mode(dte, MODEM_PPP_MODE) == ESP_OK, "enter ppp mode failed", err);
     /* Create PPPoS interface */
@@ -589,9 +596,9 @@ esp_err_t esp_modem_setup_ppp(modem_dte_t *dte)
     ppp_set_usepeerdns(esp_dte->ppp, 1);
     /* Auth configuration */
 #if PAP_SUPPORT
-    pppapi_set_auth(esp_dte->ppp, PPPAUTHTYPE_PAP, CONFIG_ESP_MODEM_PPP_AUTH_USERNAME, CONFIG_ESP_MODEM_PPP_AUTH_PASSWORD);
+    pppapi_set_auth(esp_dte->ppp, PPPAUTHTYPE_PAP, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
 #elif CHAP_SUPPORT
-    pppapi_set_auth(esp_dte->ppp, PPPAUTHTYPE_CHAP, CONFIG_ESP_MODEM_PPP_AUTH_USERNAME, CONFIG_ESP_MODEM_PPP_AUTH_PASSWORD);
+    pppapi_set_auth(esp_dte->ppp, PPPAUTHTYPE_CHAP, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
 #else
 #error "Unsupported AUTH Negotiation"
 #endif

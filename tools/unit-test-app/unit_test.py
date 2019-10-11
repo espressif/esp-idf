@@ -63,8 +63,9 @@ MULTI_DEVICE_ID = 2
 
 DEFAULT_TIMEOUT = 20
 
+DUT_DELAY_AFTER_RESET = 2
 DUT_STARTUP_CHECK_RETRY_COUNT = 5
-TEST_HISTORY_CHECK_TIMEOUT = 1
+TEST_HISTORY_CHECK_TIMEOUT = 2
 
 
 class TestCaseFailed(AssertionError):
@@ -164,6 +165,11 @@ def reset_dut(dut):
     # now use input cmd `-` and check test history to check if DUT is bootup.
     # we'll retry this step for a few times,
     # in case `dut.reset` returns during DUT bootup (when DUT can't process any command).
+    #
+    # during bootup, DUT might only receive part of the first `-` command.
+    # If it only receive `\n`, then it will print all cases. It could take more than 5 seconds, reset check will fail.
+    # To solve this problem, we will add a delay between reset and input `-` command. And we'll also enlarge expect timeout.
+    time.sleep(DUT_DELAY_AFTER_RESET)
     for _ in range(DUT_STARTUP_CHECK_RETRY_COUNT):
         dut.write("-")
         try:
@@ -285,16 +291,19 @@ def run_unit_test_cases(env, extra_data):
         Utility.console_log("Download finished, start running test cases", "O")
 
         for one_case in case_config[ut_config]:
+            performance_items = []
             # create junit report test case
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
                 run_one_normal_case(dut, one_case, junit_test_case)
+                performance_items = dut.get_performance_items()
             except TestCaseFailed:
                 failed_cases.append(one_case["name"])
             except Exception as e:
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
                 failed_cases.append(one_case["name"])
             finally:
+                TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
 
     # raise exception if any case fails
@@ -445,6 +454,13 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, app_bin, junit
 
     if not result:
         junit_test_case.add_failure_info(output)
+
+    # collect performances from DUTs
+    performance_items = []
+    for dut_name in duts:
+        performance_items.extend(duts[dut_name].get_performance_items())
+    TinyFW.JunitReport.update_performance(performance_items)
+
     return result
 
 
@@ -628,15 +644,18 @@ def run_multiple_stage_cases(env, extra_data):
         dut.start_app()
 
         for one_case in case_config[ut_config]:
+            performance_items = []
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
                 run_one_multiple_stage_case(dut, one_case, junit_test_case)
+                performance_items = dut.get_performance_items()
             except TestCaseFailed:
                 failed_cases.append(one_case["name"])
             except Exception as e:
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
                 failed_cases.append(one_case["name"])
             finally:
+                TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
 
     # raise exception if any case fails

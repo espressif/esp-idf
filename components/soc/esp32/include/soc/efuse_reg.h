@@ -17,11 +17,11 @@
 
 #include "soc.h"
 #define EFUSE_BLK0_RDATA0_REG          (DR_REG_EFUSE_BASE + 0x000)
-/* EFUSE_RD_FLASH_CRYPT_CNT : RO ;bitpos:[27:20] ;default: 8'b0 ; */
+/* EFUSE_RD_FLASH_CRYPT_CNT : RO ;bitpos:[26:20] ;default: 7'b0 ; */
 /*description: read for flash_crypt_cnt*/
-#define EFUSE_RD_FLASH_CRYPT_CNT  0x000000FF
+#define EFUSE_RD_FLASH_CRYPT_CNT  0x0000007F
 #define EFUSE_RD_FLASH_CRYPT_CNT_M  ((EFUSE_RD_FLASH_CRYPT_CNT_V)<<(EFUSE_RD_FLASH_CRYPT_CNT_S))
-#define EFUSE_RD_FLASH_CRYPT_CNT_V  0xFF
+#define EFUSE_RD_FLASH_CRYPT_CNT_V  0x7F
 #define EFUSE_RD_FLASH_CRYPT_CNT_S  20
 /* EFUSE_RD_EFUSE_RD_DIS : RO ;bitpos:[19:16] ;default: 4'b0 ; */
 /*description: read for efuse_rd_disable*/
@@ -319,11 +319,11 @@
 #define EFUSE_CODING_SCHEME_VAL_REPEAT   0x2
 
 #define EFUSE_BLK0_WDATA0_REG          (DR_REG_EFUSE_BASE + 0x01c)
-/* EFUSE_FLASH_CRYPT_CNT : R/W ;bitpos:[27:20] ;default: 8'b0 ; */
+/* EFUSE_FLASH_CRYPT_CNT : R/W ;bitpos:[26:20] ;default: 7'b0 ; */
 /*description: program for flash_crypt_cnt*/
-#define EFUSE_FLASH_CRYPT_CNT  0x000000FF
+#define EFUSE_FLASH_CRYPT_CNT  0x0000007F
 #define EFUSE_FLASH_CRYPT_CNT_M  ((EFUSE_FLASH_CRYPT_CNT_V)<<(EFUSE_FLASH_CRYPT_CNT_S))
-#define EFUSE_FLASH_CRYPT_CNT_V  0xFF
+#define EFUSE_FLASH_CRYPT_CNT_V  0x7F
 #define EFUSE_FLASH_CRYPT_CNT_S  20
 /* EFUSE_RD_DIS : R/W ;bitpos:[19:16] ;default: 4'b0 ; */
 /*description: program for efuse_rd_disable*/

@@ -541,7 +541,7 @@ test cases:
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
-- CI ready: 'Yes'
+- CI ready: 'No'  # current env don't have parameter ap_channel
   ID: WIFI_SCAN_0302
   SDK: ESP32_IDF
   Test App: SSC
@@ -671,6 +671,36 @@ test cases:
   test point 1: interaction
   test point 2: Scan interact with other WiFi operation
   version: v1 (2015-8-15)
+- CI ready: 'No'
+  ID: WIFI_SCAN_0401
+  SDK: ESP32_IDF
+  Test App: SSC
+  auto test: 'No'
+  category: Function
+  cmd set: ''
+  execution time: 0.3
+  expected result: |-
+    1. the routers are configured correctly
+    3. set suc
+    5. burn suc
+    6. set mode ok and SSC connected to the open security mode ap auto
+  initial condition: None
+  level: Integration
+  module: WIFI MAC
+  steps: |-
+    1. configure four router with the same ssid and one of them security mode is open
+    2. target1 connect PC by Uart.
+    3. set the ssid of the router in the manuconfig but not the password
+    4. save the setting and compile
+    5. burn bin files
+    6. set target1 to sta mode
+    7. loop 1,2,3,4 ten times
+  sub module: WIFI Scan
+  summary: connect open security ap
+  test environment: SSC_T1_SCANSPECIFIED
+  test point 1: function
+  test point 2: connect open security mode ap
+  version: v2 (2016-11-15)
 - CI ready: 'Yes'
   ID: WIFI_SCAN_5101
   SDK: |-
@@ -682,7 +712,7 @@ test cases:
   category: Stress
   cmd set:
   - WiFiStress/WifiSCANTime
-  - - test_time = 300
+  - - test_count = 10
     - - ''
   - - active_scan_max_time = 120
     - - ''
@@ -692,8 +722,10 @@ test cases:
     - - ''
   - - scan_mode_list = ["active_scan","passive_scan"]
     - - ''
-  execution time: 5.0
-  expected result: "1. succeed\n3. scan time less than 1.15 test time "
+  execution time: 0.5
+  expected result: |-
+    1. succeed
+    3. scan time meet expectations
   initial condition: None
   level: Integration
   module: WIFI MAC
@@ -703,7 +735,7 @@ test cases:
     3. start scan ap and check scan time
   sub module: WIFI Scan
   summary: test differnt scan mode scan time
-  test environment: SSC_T1_1
+  test environment: SSC_T1_6
   test point 1: stress
   test point 2: Sta active/passive scan stress test
   version: v2 (2017-05-10)
@@ -898,34 +930,4 @@ test cases:
   test environment: SSC_T1_SCANSPECIFIED
   test point 1: function + stress
   test point 2: quick connect ap
-  version: v2 (2016-11-15)
-- CI ready: 'No'
-  ID: WIFI_SCAN_5207
-  SDK: ESP32_IDF
-  Test App: SSC
-  auto test: 'No'
-  category: Stress
-  cmd set: ''
-  execution time: 0.3
-  expected result: |-
-    1. the routers are configured correctly
-    3. set suc
-    5. burn suc
-    6. set mode ok and SSC connected to the open security mode ap auto
-  initial condition: None
-  level: Integration
-  module: WIFI MAC
-  steps: |-
-    1. configure four router with the same ssid and one of them security mode is open
-    2. target1 connect PC by Uart.
-    3. set the ssid of the router in the manuconfig but not the password
-    4. save the setting and compile
-    5. burn bin files
-    6. set target1 to sta mode
-    7. loop 1,2,3,4 ten times
-  sub module: WIFI Scan
-  summary: connect open security ap
-  test environment: SSC_T1_SCANSPECIFIED
-  test point 1: function
-  test point 2: connect open security mode ap
   version: v2 (2016-11-15)

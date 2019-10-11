@@ -1333,7 +1333,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		space'. */
 		if( pxQueue->uxMessagesWaiting < pxQueue->uxLength )
 		{
-			traceQUEUE_SEND_FROM_ISR( pxQueue );
+			traceQUEUE_GIVE_FROM_ISR( pxQueue );
 
 			/* A task can only have an inherited priority if it is a mutex
 			holder - and if there is a mutex holder then the mutex cannot be
@@ -1427,7 +1427,7 @@ Queue_t * const pxQueue = ( Queue_t * ) xQueue;
 		}
 		else
 		{
-			traceQUEUE_SEND_FROM_ISR_FAILED( pxQueue );
+			traceQUEUE_GIVE_FROM_ISR_FAILED( pxQueue );
 			xReturn = errQUEUE_FULL;
 		}
 		taskEXIT_CRITICAL_ISR(&pxQueue->mux);

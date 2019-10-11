@@ -25,7 +25,7 @@
 #include <esp_partition.h>
 #include <esp_attr.h>
 
-TEST_CASE("Test erase partition", "[spi_flash]")
+TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
 {
     const esp_partition_t *part = get_test_data_partition();
 

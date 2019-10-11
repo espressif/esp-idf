@@ -69,7 +69,7 @@ static void esp_dbg_stubs_data_free(void *addr)
     ESP_LOGV(TAG, "%s EXIT %p", __func__, addr);
 }
 
-void esp_dbg_stubs_init()
+void esp_dbg_stubs_init(void)
 {
     s_dbg_stubs_ctl_data.tramp_addr     = (uint32_t)s_stub_code_buf;
     s_dbg_stubs_ctl_data.min_stack_addr = (uint32_t)s_stub_min_stack;

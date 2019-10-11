@@ -7,10 +7,9 @@
 
 #include "tests.h"
 
-static const char *TAG="TESTS";
+static const char *TAG = "TESTS";
 
-int pre_start_mem, post_stop_mem, post_stop_min_mem;
-bool basic_sanity = true;
+static int pre_start_mem, post_stop_mem;
 
 struct async_resp_arg {
     httpd_handle_t hd;
@@ -19,7 +18,7 @@ struct async_resp_arg {
 
 /********************* Basic Handlers Start *******************/
 
-esp_err_t hello_get_handler(httpd_req_t *req)
+static esp_err_t hello_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     ESP_LOGI(TAG, "Free Stack for server task: '%d'", uxTaskGetStackHighWaterMark(NULL));
@@ -28,7 +27,97 @@ esp_err_t hello_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-esp_err_t hello_type_get_handler(httpd_req_t *req)
+/* This handler is intended to check what happens in case of empty values of headers. 
+ * Here `Header2` is an empty header and `Header1` and `Header3` will have `Value1` 
+ * and `Value3` in them. */
+static esp_err_t test_header_get_handler(httpd_req_t *req)
+{
+    httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
+    int buf_len;
+    char *buf;
+
+    buf_len = httpd_req_get_hdr_value_len(req, "Header1");
+    if (buf_len > 0) {
+        buf = malloc(++buf_len);
+        if (!buf) {
+            ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+            return ESP_ERR_NO_MEM;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "Header1", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Header1 content: %s", buf);
+            if (strcmp("Value1", buf) != 0) {
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Wrong value of Header1 received");
+                free(buf);
+                return ESP_ERR_INVALID_ARG;
+            } else {
+                ESP_LOGI(TAG, "Expected value and received value matched for Header1");
+            }
+        } else {
+            ESP_LOGE(TAG, "Error in getting value of Header1");
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Error in getting value of Header1");
+            free(buf);
+            return ESP_FAIL;
+        }
+        free(buf);
+    } else {
+        ESP_LOGE(TAG, "Header1 not found");
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header1 not found");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    buf_len = httpd_req_get_hdr_value_len(req, "Header3");
+    if (buf_len > 0) {
+        buf = malloc(++buf_len);
+        if (!buf) {
+            ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+            httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+            return ESP_ERR_NO_MEM;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "Header3", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Header3 content: %s", buf);
+            if (strcmp("Value3", buf) != 0) {
+                httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Wrong value of Header3 received");
+                free(buf);
+                return ESP_ERR_INVALID_ARG;
+            } else {
+                ESP_LOGI(TAG, "Expected value and received value matched for Header3");
+            }
+        } else {
+            ESP_LOGE(TAG, "Error in getting value of Header3");
+            httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Error in getting value of Header3");
+            free(buf);
+            return ESP_FAIL;
+        }
+        free(buf);
+    } else {
+        ESP_LOGE(TAG, "Header3 not found");
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header3 not found");
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    buf_len = httpd_req_get_hdr_value_len(req, "Header2");
+    buf = malloc(++buf_len);
+    if (!buf) {
+        ESP_LOGE(TAG, "Failed to allocate memory of %d bytes!", buf_len);
+        httpd_resp_send_err(req, HTTPD_500_INTERNAL_SERVER_ERROR, "Memory allocation failed");
+        return ESP_ERR_NO_MEM;
+    }
+    if (httpd_req_get_hdr_value_str(req, "Header2", buf, buf_len) == ESP_OK) {
+        ESP_LOGI(TAG, "Header2 content: %s", buf);
+        httpd_resp_send(req, buf, strlen(buf));
+    } else {
+        ESP_LOGE(TAG, "Header2 not found");
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Header2 not found");
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
+}
+
+static esp_err_t hello_type_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_set_type(req, HTTPD_TYPE_TEXT);
@@ -37,7 +126,7 @@ esp_err_t hello_type_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-esp_err_t hello_status_get_handler(httpd_req_t *req)
+static esp_err_t hello_status_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_set_status(req, HTTPD_500);
@@ -46,7 +135,7 @@ esp_err_t hello_status_get_handler(httpd_req_t *req)
 #undef STR
 }
 
-esp_err_t echo_post_handler(httpd_req_t *req)
+static esp_err_t echo_post_handler(httpd_req_t *req)
 {
     ESP_LOGI(TAG, "/echo handler read content length %d", req->content_len);
 
@@ -101,7 +190,7 @@ esp_err_t echo_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-void adder_free_func(void *ctx)
+static void adder_free_func(void *ctx)
 {
     ESP_LOGI(TAG, "Custom Free Context function called");
     free(ctx);
@@ -110,7 +199,7 @@ void adder_free_func(void *ctx)
 /* Create a context, keep incrementing value in the context, by whatever was
  * received. Return the result
  */
-esp_err_t adder_post_handler(httpd_req_t *req)
+static esp_err_t adder_post_handler(httpd_req_t *req)
 {
     char buf[10];
     char outbuf[50];
@@ -143,7 +232,7 @@ esp_err_t adder_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-esp_err_t leftover_data_post_handler(httpd_req_t *req)
+static esp_err_t leftover_data_post_handler(httpd_req_t *req)
 {
     /* Only echo the first 10 bytes of the request, leaving the rest of the
      * request data as is.
@@ -166,8 +255,9 @@ esp_err_t leftover_data_post_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
-void generate_async_resp(void *arg)
+extern int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, unsigned buf_len, int flags);
+
+static void generate_async_resp(void *arg)
 {
     char buf[250];
     struct async_resp_arg *resp_arg = (struct async_resp_arg *)arg;
@@ -190,7 +280,7 @@ void generate_async_resp(void *arg)
     free(arg);
 }
 
-esp_err_t async_get_handler(httpd_req_t *req)
+static esp_err_t async_get_handler(httpd_req_t *req)
 {
 #define STR "Hello World!"
     httpd_resp_send(req, STR, strlen(STR));
@@ -211,10 +301,15 @@ esp_err_t async_get_handler(httpd_req_t *req)
 }
 
 
-httpd_uri_t basic_handlers[] = {
+static const httpd_uri_t basic_handlers[] = {
     { .uri      = "/hello/type_html",
       .method   = HTTP_GET,
       .handler  = hello_type_get_handler,
+      .user_ctx = NULL,
+    },
+    { .uri      = "/test_header",
+      .method   = HTTP_GET,
+      .handler  = test_header_get_handler,
       .user_ctx = NULL,
     },
     { .uri      = "/hello",
@@ -254,8 +349,9 @@ httpd_uri_t basic_handlers[] = {
     }
 };
 
-int basic_handlers_no = sizeof(basic_handlers)/sizeof(httpd_uri_t);
-void register_basic_handlers(httpd_handle_t hd)
+static const int basic_handlers_no = sizeof(basic_handlers)/sizeof(httpd_uri_t);
+
+static void register_basic_handlers(httpd_handle_t hd)
 {
     int i;
     ESP_LOGI(TAG, "Registering basic handlers");
@@ -269,11 +365,13 @@ void register_basic_handlers(httpd_handle_t hd)
     ESP_LOGI(TAG, "Success");
 }
 
-httpd_handle_t test_httpd_start()
+static httpd_handle_t test_httpd_start(void)
 {
     pre_start_mem = esp_get_free_heap_size();
     httpd_handle_t hd;
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
+    /* Modify this setting to match the number of test URI handlers */
+    config.max_uri_handlers  = 9;
     config.server_port = 1234;
 
     /* This check should be a part of http_server */
@@ -291,14 +389,14 @@ httpd_handle_t test_httpd_start()
     return NULL;
 }
 
-void test_httpd_stop(httpd_handle_t hd)
+static void test_httpd_stop(httpd_handle_t hd)
 {
     httpd_stop(hd);
     post_stop_mem = esp_get_free_heap_size();
     ESP_LOGI(TAG, "HTTPD Stop: Current free memory: %d", post_stop_mem);
 }
 
-httpd_handle_t start_tests()
+httpd_handle_t start_tests(void)
 {
     httpd_handle_t hd = test_httpd_start();
     if (hd) {

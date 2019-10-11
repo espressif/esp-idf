@@ -18,14 +18,13 @@
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/ringbuf.h"
-#include "esp_intr.h"
+#include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp_err.h"
-#include "esp_intr_alloc.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/rmt_struct.h"
+#include "soc/gpio_periph.h"
 #include "driver/periph_ctrl.h"
 #include "driver/rmt.h"
+#include "soc/soc_memory_layout.h"
 
 #include <sys/lock.h>
 
@@ -322,7 +321,7 @@ esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t* status)
     return ESP_OK;
 }
 
-rmt_data_mode_t rmt_get_data_mode()
+rmt_data_mode_t rmt_get_data_mode(void)
 {
     return (rmt_data_mode_t) (RMT.apb_conf.fifo_mask);
 }
@@ -425,6 +424,11 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
         RMT_CHECK((!carrier_en || carrier_freq_hz > 0), "RMT carrier frequency can't be zero", ESP_ERR_INVALID_ARG);
     }
 
+    static bool rmt_enable = false;
+    if (rmt_enable == false) {
+        periph_module_reset(PERIPH_RMT_MODULE);
+        rmt_enable = true;
+    }
     periph_module_enable(PERIPH_RMT_MODULE);
 
     RMT.conf_ch[channel].conf0.div_cnt = clk_div;
@@ -501,9 +505,9 @@ esp_err_t rmt_config(const rmt_config_t* rmt_param)
 
 static void IRAM_ATTR rmt_fill_memory(rmt_channel_t channel, const rmt_item32_t* item, uint16_t item_num, uint16_t mem_offset)
 {
-    portENTER_CRITICAL(&rmt_spinlock);
+    portENTER_CRITICAL_SAFE(&rmt_spinlock);
     RMT.apb_conf.fifo_mask = RMT_DATA_MODE_MEM;
-    portEXIT_CRITICAL(&rmt_spinlock);
+    portEXIT_CRITICAL_SAFE(&rmt_spinlock);
     int i;
     for(i = 0; i < item_num; i++) {
         RMTMEM.chan[channel].data32[i + mem_offset].val = item[i].val;
@@ -947,7 +951,7 @@ esp_err_t rmt_get_channel_status(rmt_channel_status_result_t *channel_status)
             if( p_rmt_obj[i]->tx_sem != NULL ) {
                 if( xSemaphoreTake(p_rmt_obj[i]->tx_sem, (TickType_t)0) == pdTRUE ) {
                     channel_status->status[i] = RMT_CHANNEL_IDLE;
-                    xSemaphoreGive(p_rmt_obj[i]->tx_sem); 
+                    xSemaphoreGive(p_rmt_obj[i]->tx_sem);
                 } else {
                     channel_status->status[i] = RMT_CHANNEL_BUSY;
                 }

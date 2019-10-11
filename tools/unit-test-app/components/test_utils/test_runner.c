@@ -13,11 +13,13 @@
 // limitations under the License.
 
 #include <stdio.h>
+#include "string.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_newlib.h"
 
 #ifdef CONFIG_HEAP_TRACING
 #include "esp_heap_trace.h"
@@ -26,14 +28,8 @@
 static size_t before_free_8bit;
 static size_t before_free_32bit;
 
-/* Each unit test is allowed to "leak" this many bytes.
-
-   TODO: Make this value editable by the test.
-
-   Will always need to be some value here, as fragmentation can reduce free space even when no leak is occurring.
-*/
-const size_t WARN_LEAK_THRESHOLD = 256;
-const size_t CRITICAL_LEAK_THRESHOLD = 4096;
+static size_t warn_leak_threshold;
+static size_t critical_leak_threshold;
 
 static void unity_task(void *pvParameters)
 {
@@ -41,7 +37,7 @@ static void unity_task(void *pvParameters)
     unity_run_menu(); /* Doesn't return */
 }
 
-void test_main()
+void test_main(void)
 {
     // Note: if unpinning this task, change the way run times are calculated in
     // unity_port_esp32.c
@@ -74,9 +70,19 @@ void setUp(void)
 #endif
 
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
+
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+    /* TODO: add sufficient startup code in case of building an ELF file, so that
+     * flash cache is initialized and can work in such mode.
+     * For now this is disabled to allow running unit tests which don't require
+     * flash cache related operations.
+     */
     get_test_data_partition();  /* allocate persistent partition table structures */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
     unity_reset_leak_checks();
+    test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, TYPE_LEAK_CRITICAL, COMP_LEAK_GENERAL);
+    test_utils_set_leak_level(CONFIG_UNITY_WARN_LEAK_LEVEL_GENERAL, TYPE_LEAK_WARNING, COMP_LEAK_GENERAL);
 }
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
@@ -85,16 +91,37 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
         return;
     }
     size_t leaked = before_free - after_free;
-    if (leaked < WARN_LEAK_THRESHOLD) {
+    if (leaked <= warn_leak_threshold) {
         return;
     }
 
     printf("MALLOC_CAP_%s %s leak: Before %u bytes free, After %u bytes free (delta %u)\n",
            type,
-           leaked < CRITICAL_LEAK_THRESHOLD ? "potential" : "critical",
+           leaked <= critical_leak_threshold ? "potential" : "critical",
            before_free, after_free, leaked);
     fflush(stdout);
-    TEST_ASSERT_MESSAGE(leaked < CRITICAL_LEAK_THRESHOLD, "The test leaked too much memory");
+    TEST_ASSERT_MESSAGE(leaked <= critical_leak_threshold, "The test leaked too much memory");
+}
+
+static bool leak_check_required(void)
+{
+    warn_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_WARNING, COMP_LEAK_ALL);
+    critical_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_CRITICAL, COMP_LEAK_ALL);
+    if (Unity.CurrentDetail1 != NULL) {
+        const char *leaks = "[leaks";
+        const int len_leaks = strlen(leaks);
+        const char *sub_leaks = strstr(Unity.CurrentDetail1, leaks);
+        if (sub_leaks != NULL) {
+            if (sub_leaks[len_leaks] == ']') {
+                return true;
+            } else if (sub_leaks[len_leaks] == '=') {
+                critical_leak_threshold = strtol(&sub_leaks[len_leaks + 1], NULL, 10);
+                warn_leak_threshold = critical_leak_threshold;
+                return false;
+            }
+        }
+    }
+    return false;
 }
 
 /* tearDown runs after every test */
@@ -103,6 +130,11 @@ void tearDown(void)
     /* some FreeRTOS stuff is cleaned up by idle task */
     vTaskDelay(5);
 
+    /* clean up some of the newlib's lazy allocations */
+    esp_reent_cleanup();
+
+    size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+    size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     /* We want the teardown to have this file in the printout if TEST_ASSERT fails */
     const char *real_testfile = Unity.TestFile;
     Unity.TestFile = __FILE__;
@@ -115,11 +147,11 @@ void tearDown(void)
     heap_trace_stop();
     heap_trace_dump();
 #endif
-    size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 
-    check_leak(before_free_8bit, after_free_8bit, "8BIT");
-    check_leak(before_free_32bit, after_free_32bit, "32BIT");
+    if (leak_check_required() == false) {
+        check_leak(before_free_8bit, after_free_8bit, "8BIT");
+        check_leak(before_free_32bit, after_free_32bit, "32BIT");
+    }
 
     Unity.TestFile = real_testfile; // go back to the real filename
 }

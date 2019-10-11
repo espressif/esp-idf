@@ -16,8 +16,49 @@
  */
 
 #include "sdmmc_common.h"
+#include "esp_attr.h"
+
+
+#define CIS_TUPLE(NAME)  (cis_tuple_t) {.code=CISTPL_CODE_##NAME, .name=#NAME, .func=&cis_tuple_func_default, }
+#define CIS_TUPLE_WITH_FUNC(NAME, FUNC)  (cis_tuple_t) {.code=CISTPL_CODE_##NAME, .name=#NAME, .func=&(FUNC), }
+
+#define CIS_CHECK_SIZE(SIZE, MINIMAL) do {int store_size = (SIZE); if((store_size) < (MINIMAL)) return ESP_ERR_INVALID_SIZE;} while(0)
+#define CIS_CHECK_UNSUPPORTED(COND) do {if(!(COND)) return ESP_ERR_NOT_SUPPORTED;} while(0)
+#define CIS_GET_MINIMAL_SIZE    32
+
+typedef esp_err_t (*cis_tuple_info_func_t)(const void* tuple_info, uint8_t* data, FILE* fp);
+
+typedef struct {
+    int code;
+    const char *name;
+    cis_tuple_info_func_t   func;
+} cis_tuple_t;
 
 static const char* TAG = "sdmmc_io";
+
+static esp_err_t cis_tuple_func_default(const void* p, uint8_t* data, FILE* fp);
+static esp_err_t cis_tuple_func_manfid(const void* p, uint8_t* data, FILE* fp);
+static esp_err_t cis_tuple_func_cftable_entry(const void* p, uint8_t* data, FILE* fp);
+static esp_err_t cis_tuple_func_end(const void* p, uint8_t* data, FILE* fp);
+
+static const cis_tuple_t cis_table[] = {
+    CIS_TUPLE(NULL),
+    CIS_TUPLE(DEVICE),
+    CIS_TUPLE(CHKSUM),
+    CIS_TUPLE(VERS1),
+    CIS_TUPLE(ALTSTR),
+    CIS_TUPLE(CONFIG),
+    CIS_TUPLE_WITH_FUNC(CFTABLE_ENTRY, cis_tuple_func_cftable_entry),
+    CIS_TUPLE_WITH_FUNC(MANFID, cis_tuple_func_manfid),
+    CIS_TUPLE(FUNCID),
+    CIS_TUPLE(FUNCE),
+    CIS_TUPLE(VENDER_BEGIN),
+    CIS_TUPLE(VENDER_END),
+    CIS_TUPLE(SDIO_STD),
+    CIS_TUPLE(SDIO_EXT),
+    CIS_TUPLE_WITH_FUNC(END, cis_tuple_func_end),
+};
+
 
 esp_err_t sdmmc_io_reset(sdmmc_card_t* card)
 {
@@ -106,10 +147,12 @@ esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card)
 
 esp_err_t sdmmc_io_enable_hs_mode(sdmmc_card_t* card)
 {
-    card->max_freq_khz = SDMMC_FREQ_DEFAULT;
-    if (card->host.max_freq_khz <= card->max_freq_khz) {
-        /* Host is configured to use low frequency, don't attempt to switch */
+    /* If the host is configured to use low frequency, don't attempt to switch */
+    if (card->host.max_freq_khz < SDMMC_FREQ_DEFAULT) {
         card->max_freq_khz = card->host.max_freq_khz;
+        return ESP_OK;
+    } else if (card->host.max_freq_khz < SDMMC_FREQ_HIGHSPEED) {
+        card->max_freq_khz = SDMMC_FREQ_DEFAULT;
         return ESP_OK;
     }
 
@@ -349,4 +392,241 @@ esp_err_t sdmmc_io_wait_int(sdmmc_card_t* card, TickType_t timeout_ticks)
         return ESP_ERR_NOT_SUPPORTED;
     }
     return (*card->host.io_int_wait)(card->host.slot, timeout_ticks);
+}
+
+
+/*
+ * Print the CIS information of a CIS card, currently only ESP slave supported.
+ */
+
+static esp_err_t cis_tuple_func_default(const void* p, uint8_t* data, FILE* fp)
+{
+    const cis_tuple_t* tuple = (const cis_tuple_t*)p;
+    uint8_t code = *(data++);
+    int size = *(data++);
+    if (tuple) {
+        fprintf(fp, "TUPLE: %s, size: %d: ", tuple->name, size);
+    } else {
+        fprintf(fp, "TUPLE: unknown(%02X), size: %d: ", code, size);
+    }
+    for (int i = 0; i < size; i++) fprintf(fp, "%02X ", *(data++));
+    fprintf(fp, "\n");
+    return ESP_OK;
+}
+
+static esp_err_t cis_tuple_func_manfid(const void* p, uint8_t* data, FILE* fp)
+{
+    const cis_tuple_t* tuple = (const cis_tuple_t*)p;
+    data++;
+    int size = *(data++);
+    fprintf(fp, "TUPLE: %s, size: %d\n", tuple->name, size);
+    CIS_CHECK_SIZE(size, 4);
+    fprintf(fp, "  MANF: %04X, CARD: %04X\n", *(uint16_t*)(data), *(uint16_t*)(data+2));
+    return ESP_OK;
+}
+
+static esp_err_t cis_tuple_func_end(const void* p, uint8_t* data, FILE* fp)
+{
+    const cis_tuple_t* tuple = (const cis_tuple_t*)p;
+    data++;
+    fprintf(fp, "TUPLE: %s\n", tuple->name);
+    return ESP_OK;
+}
+
+static esp_err_t cis_tuple_func_cftable_entry(const void* p, uint8_t* data, FILE* fp)
+{
+    const cis_tuple_t* tuple = (const cis_tuple_t*)p;
+    data++;
+    int size = *(data++);
+    fprintf(fp, "TUPLE: %s, size: %d\n", tuple->name, size);
+    CIS_CHECK_SIZE(size, 2);
+
+    CIS_CHECK_SIZE(size--, 1);
+    bool interface = data[0] & BIT(7);
+    bool def = data[0] & BIT(6);
+    int conf_ent_num = data[0] & 0x3F;
+    fprintf(fp, "  INDX: %02X, Intface: %d, Default: %d, Conf-Entry-Num: %d\n", *(data++), interface, def, conf_ent_num);
+
+    if (interface) {
+        CIS_CHECK_SIZE(size--, 1);
+        fprintf(fp, "  IF: %02X\n", *(data++));
+    }
+
+    CIS_CHECK_SIZE(size--, 1);
+    bool misc = data[0] & BIT(7);
+    int mem_space = (data[0] >> 5 )&(0x3);
+    bool irq = data[0] & BIT(4);
+    bool io_sp = data[0] & BIT(3);
+    bool timing = data[0] & BIT(2);
+    int power = data[0] & 3;
+    fprintf(fp, "  FS: %02X, misc: %d, mem_space: %d, irq: %d, io_space: %d, timing: %d, power: %d\n", *(data++), misc, mem_space, irq, io_sp, timing, power);
+
+    CIS_CHECK_UNSUPPORTED(power == 0);  //power descriptor is not handled yet
+    CIS_CHECK_UNSUPPORTED(!timing);     //timing descriptor is not handled yet
+    CIS_CHECK_UNSUPPORTED(!io_sp);      //io space descriptor is not handled yet
+
+    if (irq) {
+        CIS_CHECK_SIZE(size--, 1);
+        bool mask = data[0] & BIT(4);
+        fprintf(fp, "  IR: %02X, mask: %d, ",*(data++), mask);
+        if (mask) {
+            CIS_CHECK_SIZE(size, 2);
+            size-=2;
+            fprintf(fp, "  IRQ: %02X %02X\n", data[0], data[1]);
+            data+=2;
+        }
+    }
+
+    if (mem_space) {
+        CIS_CHECK_SIZE(size, 2);
+        size-=2;
+        CIS_CHECK_UNSUPPORTED(mem_space==1); //other cases not handled yet
+        int len = *(uint16_t*)data;
+        fprintf(fp, "  LEN: %04X\n", len);
+        data+=2;
+    }
+
+    CIS_CHECK_UNSUPPORTED(misc==0);    //misc descriptor is not handled yet
+    return ESP_OK;
+}
+
+static const cis_tuple_t* get_tuple(uint8_t code)
+{
+    for (int i = 0; i < sizeof(cis_table)/sizeof(cis_tuple_t); i++) {
+        if (code == cis_table[i].code) return &cis_table[i];
+    }
+    return NULL;
+}
+
+esp_err_t sdmmc_io_print_cis_info(uint8_t* buffer, size_t buffer_size, FILE* fp)
+{
+    ESP_LOG_BUFFER_HEXDUMP("CIS", buffer, buffer_size, ESP_LOG_DEBUG);
+    if (!fp) fp = stdout;
+
+    uint8_t* cis = buffer;
+    do {
+        const cis_tuple_t* tuple = get_tuple(cis[0]);
+        int size = cis[1];
+        esp_err_t ret = ESP_OK;
+        if (tuple) {
+            ret = tuple->func(tuple, cis, fp);
+        } else {
+            ret = cis_tuple_func_default(NULL, cis, fp);
+        }
+        if (ret != ESP_OK) return ret;
+        cis += 2 + size;
+        if (tuple && tuple->code == CISTPL_CODE_END) break;
+    } while (cis < buffer + buffer_size) ;
+    return ESP_OK;
+}
+
+/**
+ * Check tuples in the buffer.
+ *
+ * @param buf Buffer to check
+ * @param buffer_size Size of the buffer
+ * @param inout_cis_offset
+ *          - input: the last cis_offset, relative to the beginning of the buf. -1 if
+ *                      this buffer begin with the tuple length, otherwise should be no smaller than
+ *                      zero.
+ *          - output: when the end tuple found, output offset of the CISTPL_CODE_END
+ *                      byte + 1 (relative to the beginning of the buffer; when not found, output
+ *                      the address of next tuple code.
+ *
+ * @return true if found, false if haven't.
+ */
+static bool check_tuples_in_buffer(uint8_t* buf, int buffer_size, int* inout_cis_offset)
+{
+    int cis_offset = *inout_cis_offset;
+    if (cis_offset == -1) {
+        //the CIS code is checked in the last buffer, skip to next tuple
+        cis_offset += buf[0] + 2;
+    }
+    assert(cis_offset >= 0);
+    while (1) {
+        if (cis_offset < buffer_size) {
+            //A CIS code in the buffer, check it
+            if (buf[cis_offset] == CISTPL_CODE_END) {
+                *inout_cis_offset = cis_offset + 1;
+                return true;
+            }
+        }
+        if (cis_offset + 1 < buffer_size) {
+            cis_offset += buf[cis_offset+1] + 2;
+        } else {
+            break;
+        }
+    }
+    *inout_cis_offset = cis_offset;
+    return false;
+}
+
+esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t buffer_size, size_t* inout_cis_size)
+{
+    esp_err_t ret = ESP_OK;
+    WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE];
+
+    /*
+     * CIS region exist in 0x1000~0x17FFF of FUNC 0, get the start address of it
+     * from CCCR register.
+     */
+    uint32_t addr;
+    ret = sdmmc_io_read_bytes(card, 0, 9, &addr, 3);
+    if (ret != ESP_OK) return ret;
+    //the sdmmc_io driver reads 4 bytes, the most significant byte is not the address.
+    addr &= 0xffffff;
+    if (addr < 0x1000 || addr > 0x17FFF) {
+        return ESP_ERR_INVALID_RESPONSE;
+    }
+
+    /*
+     * To avoid reading too long, take the input value as limitation if
+     * existing.
+     */
+    size_t max_reading = UINT32_MAX;
+    if (inout_cis_size && *inout_cis_size != 0) {
+        max_reading = *inout_cis_size;
+    }
+
+    /*
+     * Parse the length while reading. If find the end tuple, or reaches the
+     * limitation, read no more and return both the data and the size already
+     * read.
+     */
+    int buffer_offset = 0;
+    int cur_cis_offset = 0;
+    bool end_tuple_found = false;
+    do {
+        ret = sdmmc_io_read_bytes(card, 0, addr + buffer_offset, &buf, CIS_GET_MINIMAL_SIZE);
+        if (ret != ESP_OK) return ret;
+
+        //calculate relative to the beginning of the buffer
+        int offset = cur_cis_offset - buffer_offset;
+        bool finish = check_tuples_in_buffer(buf, CIS_GET_MINIMAL_SIZE, &offset);
+
+        int remain_size = buffer_size - buffer_offset;
+        int copy_len;
+        if (finish) {
+            copy_len = MIN(offset, remain_size);
+            end_tuple_found = true;
+        } else {
+            copy_len = MIN(CIS_GET_MINIMAL_SIZE, remain_size);
+        }
+        if (copy_len > 0) {
+            memcpy(out_buffer + buffer_offset, buf, copy_len);
+        }
+        cur_cis_offset = buffer_offset + offset;
+        buffer_offset += CIS_GET_MINIMAL_SIZE;
+    } while (!end_tuple_found && buffer_offset < max_reading);
+
+    if (end_tuple_found) {
+        *inout_cis_size = cur_cis_offset;
+        if (cur_cis_offset > buffer_size) {
+            return ESP_ERR_INVALID_SIZE;
+        } else {
+            return ESP_OK;
+        }
+    } else {
+        return ESP_ERR_NOT_FOUND;
+    }
 }

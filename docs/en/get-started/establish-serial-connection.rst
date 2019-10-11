@@ -1,5 +1,6 @@
 Establish Serial Connection with ESP32
-======================================
+==============================================
+
 :link_to_translation:`zh_CN:[中文]`
 
 This section provides guidance how to establish serial connection between ESP32 and PC.
@@ -10,7 +11,7 @@ Connect ESP32 to PC
 
 Connect the ESP32 board to the PC using the USB cable. If device driver does not install automatically, identify USB to serial converter chip on your ESP32 board (or external converter dongle), search for drivers in internet and install them.
 
-Below are the links to drivers for ESP32 and other boards produced by Espressif:
+Below are the links to drivers for ESP32 boards produced by Espressif:
 
 
 .. csv-table::
@@ -71,6 +72,10 @@ Linux ::
 MacOS ::
 
     ls /dev/cu.*
+
+.. note::
+
+    MacOS users: if you don't see the serial port then check you have the USB/serial drivers installed as shown in the Getting Started guide for your particular development board. For MacOS High Sierra (10.13), you may also have to explicitly allow the drivers to load. Open System Preferences -> Security & Privacy -> General and check if there is a message shown here about "System Software from developer ..." where the developer name is Silicon Labs or FTDI.
 
 
 .. _linux-dialout-group:
@@ -136,7 +141,7 @@ Then open serial port in terminal and check, if you see any log printed out by E
 
     ...
 
-If you see some legible log, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
+If you can see readable log output, it means serial connection is working and you are ready to proceed with installation and finally upload of application to ESP32.
 
 .. note::
 
@@ -144,9 +149,8 @@ If you see some legible log, it means serial connection is working and you are r
 
 .. note::
 
-   Close serial terminal after verification that communication is working. In next step we are going to use another application to upload ESP32. This application will not be able to access serial port while it is open in terminal.
+   Close serial terminal after verification that communication is working. In the next step we are going to use a different application to upload a new firmware to ESP32. This application will not be able to access serial port while it is open in terminal.
 
-If you got here from section :ref:`get-started-connect` when installing s/w for ESP32 development, then go back to section :ref:`get-started-configure`.
-
+If you got here from :ref:`get-started-connect` when installing s/w for ESP32 development, then you can continue with :ref:`get-started-configure`.
 
 .. _esptool documentation: https://github.com/espressif/esptool/wiki/ESP32-Boot-Mode-Selection#automatic-bootloader

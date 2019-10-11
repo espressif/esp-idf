@@ -1,0 +1,294 @@
+
+.host_test_template:
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - host_test
+  dependencies: []
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_HOST_TEST
+      - $BOT_LABEL_REGULAR_TEST
+
+.host_fuzzer_test_template:
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/afl-fuzzer-test
+  tags:
+    - host_test
+  dependencies: []
+  artifacts:
+    when: always
+    paths:
+      - ${FUZZER_TEST_DIR}/out/crashes
+      - ${FUZZER_TEST_DIR}/fuzz_output.log
+    expire_in: 1 week
+  only:
+    variables:
+      - $BOT_LABEL_FUZZER_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+  script:
+    - export AFL_I_DONT_CARE_ABOUT_MISSING_CRASHES=1 && export AFL_SKIP_CPUFREQ=1
+    - cd ${FUZZER_TEST_DIR}
+    # run AFL fuzzer for one hour
+    - ( ( make ${FUZZER_PARAMS} fuzz | tee fuzz_output.log | grep -v '\(Fuzzing test case\|Entering queue cycle\)' ) || pkill sleep ) &
+    - ( sleep 3600 || mkdir -p out/crashes/env_failed ) && pkill afl-fuz
+    # check no crashes found
+    - test -z "$(ls out/crashes/)" || exit 1
+
+.clang_tidy_check_template:
+  stage: host_test
+  image: ${CI_DOCKER_REGISTRY}/clang-static-analysis
+  tags:
+    - host_test
+  dependencies: []
+  artifacts:
+    reports:
+      junit: $IDF_PATH/output.xml
+    when: always
+    paths:
+      - $IDF_PATH/examples/get-started/hello_world/tidybuild/report/*
+    expire_in: 1 day
+  script:
+    - git clone $IDF_ANALYSIS_UTILS static_analysis_utils && cd static_analysis_utils
+    # Setup parameters of triggered/regular job
+    - export TRIGGERED_RELATIVE=${BOT_LABEL_STATIC_ANALYSIS-} && export TRIGGERED_ABSOLUTE=${BOT_LABEL_STATIC_ANALYSIS_ALL-} && export TARGET_BRANCH=${BOT_CUSTOMIZED_REVISION-}
+    - ./analyze.sh $IDF_PATH/examples/get-started/hello_world/ $IDF_PATH/tools/ci/static-analysis-rules.yml $IDF_PATH/output.xml
+
+test_nvs_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/nvs_flash/test_nvs_host
+    - make test
+
+test_nvs_coverage:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - components/nvs_flash/test_nvs_host/coverage_report
+    expire_in: 1 week
+  only:
+    refs:
+      - triggers
+    variables:
+      - $BOT_LABEL_NVS_COVERAGE
+  script:
+    - cd components/nvs_flash/test_nvs_host
+    - make coverage_report
+
+test_partition_table_on_host:
+  extends: .host_test_template
+  tags:
+    - build
+  script:
+    - cd components/partition_table/test_gen_esp32part_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./gen_esp32part_tests.py
+
+test_wl_on_host:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - components/wear_levelling/test_wl_host/coverage_report.zip
+    expire_in: 1 week
+  script:
+    - cd components/wear_levelling/test_wl_host
+    - make test
+
+test_fatfs_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/fatfs/test_fatfs_host/
+    - make test
+
+test_ldgen_on_host:
+  extends: .host_test_template
+  script:
+    - cd tools/ldgen/test
+    - ./test_fragments.py
+    - ./test_generation.py
+
+clang_tidy_check:
+  extends: .clang_tidy_check_template
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    BOT_LABEL_STATIC_ANALYSIS: 1
+
+clang_tidy_check_regular:
+  extends: .clang_tidy_check_template
+
+clang_tidy_check_all:
+  extends: .clang_tidy_check_template
+  variables:
+    BOT_NEEDS_TRIGGER_BY_NAME: 1
+    BOT_LABEL_STATIC_ANALYSIS_ALL: 1
+
+test_mdns_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/mdns/test_afl_fuzz_host
+
+test_lwip_dns_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dns
+
+test_lwip_dhcp_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dhcp_client
+
+test_lwip_dhcps_fuzzer_on_host:
+  extends: .host_fuzzer_test_template
+  variables:
+    FUZZER_TEST_DIR: components/lwip/test_afl_host
+    FUZZER_PARAMS: MODE=dhcp_server
+
+test_spiffs_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/spiffs/test_spiffs_host/
+    - make test
+
+test_multi_heap_on_host:
+  extends: .host_test_template
+  script:
+    - cd components/heap/test_multi_heap_host
+    - ./test_all_configs.sh
+
+test_confserver:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confserver.py
+
+test_idf_monitor:
+  extends: .host_test_template
+  artifacts:
+    # save artifacts always in order to access results which were retried without consequent failure
+    when: always
+    paths:
+      - tools/test_idf_monitor/outputs/*
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_monitor
+    - ./run_test_idf_monitor.py
+
+test_idf_size:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/test_idf_size/output
+      - tools/test_idf_size/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_size
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_idf_py:
+  extends: .host_test_template
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/tools/test_idf_py
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_py.py
+
+test_idf_tools:
+  extends: .host_test_template
+  script:
+    # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
+    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif${CUSTOM_TOOLCHAIN_PATH:+\|${CUSTOM_TOOLCHAIN_PATH}}" | tr "\n" ":"); echo ${p%:})
+    - cd ${IDF_PATH}/tools/test_idf_tools
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
+
+test_esp_err_to_name_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/esp32/esp_err_to_name.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found. Please run gen_esp_err_to_name.py and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./gen_esp_err_to_name.py
+    - git diff --exit-code -- ../components/esp_common/src/esp_err_to_name.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+
+test_esp_efuse_table_on_host:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - components/efuse/esp32/esp_efuse_table.c
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/components/efuse/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 2.7.15 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
+    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found. Please run make efuse_common_table or idf.py efuse_common_table and commit the changes.'; exit 1; }
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 ./efuse_table_gen.py ${IDF_PATH}/components/efuse/esp32/esp_efuse_table.csv
+    - git diff --exit-code -- esp32/esp_efuse_table.c || { echo 'Differences found between running under Python 2 and 3.'; exit 1; }
+    - cd ${IDF_PATH}/components/efuse/test_efuse_host
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./efuse_tests.py
+
+test_espcoredump:
+  extends: .host_test_template
+  artifacts:
+    when: always
+    paths:
+      - components/espcoredump/test/.coverage
+      - components/espcoredump/test/output
+    expire_in: 1 week
+  script:
+    - cd components/espcoredump/test/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_espcoredump.sh
+
+test_logtrace_proc:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/esp_app_trace/test/logtrace/output
+      - tools/esp_app_trace/test/logtrace/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/esp_app_trace/test/logtrace
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_sysviewtrace_proc:
+  extends: .host_test_template
+  artifacts:
+    when: on_failure
+    paths:
+      - tools/esp_app_trace/test/sysview/output
+      - tools/esp_app_trace/test/sysview/.coverage
+    expire_in: 1 week
+  script:
+    - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+check_doc_links:
+  stage: host_test
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - check_doc_links
+  only:
+    refs:
+      # can only be triggered
+      - triggers
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD_DOCS
+  artifacts:
+    paths:
+      - docs/_build/linkcheck
+    expire_in: 1 week
+  script:
+    # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
+    - test "$CHECK_LINKS" = "Yes" || exit 0
+    # can only run on master branch (otherwise the commit is not on Github yet)
+    - test "${CI_COMMIT_REF_NAME}" = "master" || exit 0
+    - cd docs
+    - make linkcheck

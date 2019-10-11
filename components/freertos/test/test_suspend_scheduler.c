@@ -20,9 +20,8 @@ static volatile unsigned isr_count;
    mutex semaphore to wake up another counter task */
 static void timer_group0_isr(void *vp_arg)
 {
-    TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[TIMER_0].update = 1;
-    TIMERG0.hw_timer[TIMER_0].config.alarm_en = 1;
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, TIMER_0);
     portBASE_TYPE higher_awoken = pdFALSE;
     isr_count++;
     xSemaphoreGiveFromISR(isr_semaphore, &higher_awoken);

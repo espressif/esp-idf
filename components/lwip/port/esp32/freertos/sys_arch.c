@@ -320,7 +320,6 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
   if (msg == NULL) {
     msg = &pvDummy;
   }
-
   if (pdTRUE == xQueueReceive((*mbox)->os_mbox, &(*msg), 0)) {
     ulReturn = ERR_OK;
   } else {
@@ -349,53 +348,13 @@ sys_mbox_set_owner(sys_mbox_t *mbox, void* owner)
 void
 sys_mbox_free(sys_mbox_t *mbox)
 {
-  uint32_t mbox_message_num = 0;
-
   if ( (NULL == mbox) || (NULL == *mbox) ) {
       return;
   }
-
-  mbox_message_num = uxQueueMessagesWaiting((*mbox)->os_mbox);
-
-  LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("mbox free: mbox=%p os_mbox=%p owner=%p msg_num=%d\n", 
-              *mbox, (*mbox)->os_mbox, (*mbox)->owner, mbox_message_num));
-
-#if ESP_THREAD_SAFE
-  if ((*mbox)->owner) {
-    if (0 == mbox_message_num) {
-      /*
-       * If mbox->owner is not NULL, it indicates the mbox is recvmbox or acceptmbox,
-       * we need to post a NULL message to mbox in case some application tasks are blocked
-       * on this mbox
-       */
-      if (sys_mbox_trypost(mbox, NULL) != ERR_OK) {
-        /* Should never be here because post a message to empty mbox should always be successful */
-        ESP_LOGW(TAG, "WARNING: failed to post NULL msg to mbox\n");
-      } else {
-        LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("mbox free: post null successfully\n"));
-      }
-    }
-    (*mbox)->owner = NULL;
-  } else {
-    if (mbox_message_num > 1) {
-      ESP_LOGW(TAG, "WARNING: mbox has %d message, potential memory leaking\n", mbox_message_num);
-    }
-
-    if (mbox_message_num > 0) {
-      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("mbox free: reset mbox queue\n"));
-      xQueueReset((*mbox)->os_mbox); 
-    }
-
-    /* For recvmbox or acceptmbox, free them in netconn_free() when all sockets' API are returned */
-    vQueueDelete((*mbox)->os_mbox);
-    free(*mbox);
-    *mbox = NULL;
-  }
-#else
   vQueueDelete((*mbox)->os_mbox);
   free(*mbox);
   *mbox = NULL;
-#endif
+
 }
 
 /*-----------------------------------------------------------------------------------*/
@@ -412,7 +371,7 @@ sys_thread_new(const char *name, lwip_thread_fn thread, void *arg, int stacksize
   portBASE_TYPE result;
 
   result = xTaskCreatePinnedToCore(thread, name, stacksize, arg, prio, &created_task,
-          CONFIG_TCPIP_TASK_AFFINITY);
+          CONFIG_LWIP_TCPIP_TASK_AFFINITY);
 
   if (result != pdPASS) {
     return NULL;

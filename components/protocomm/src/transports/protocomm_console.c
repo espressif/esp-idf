@@ -145,7 +145,7 @@ static int common_cmd_handler(int argc, char** argv)
 
     if (cur_session_id != session_id) {
         if (pc_console->sec && pc_console->sec->new_transport_session) {
-            ret = pc_console->sec->new_transport_session(cur_session_id);
+            ret = pc_console->sec->new_transport_session(pc_console->sec_inst, cur_session_id);
             if (ret == ESP_OK) {
                 session_id = cur_session_id;
             }

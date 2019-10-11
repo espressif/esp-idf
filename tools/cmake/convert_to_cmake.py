@@ -161,19 +161,16 @@ def convert_component(project_path, component_path):
     cflags = v.get("CFLAGS", None)
 
     with open(cmakelists_path, "w") as f:
-        f.write("set(COMPONENT_ADD_INCLUDEDIRS %s)\n\n" % component_add_includedirs)
-
-        f.write("# Edit following two lines to set component requirements (see docs)\n")
-        f.write("set(COMPONENT_REQUIRES "")\n")
-        f.write("set(COMPONENT_PRIV_REQUIRES "")\n\n")
-
         if component_srcs is not None:
-            f.write("set(COMPONENT_SRCS %s)\n\n" % component_srcs)
-            f.write("register_component()\n")
+            f.write("idf_component_register(SRCS %s)\n" % component_srcs)
+            f.write("                       INCLUDE_DIRS %s" % component_add_includedirs)
+            f.write("                       # Edit following two lines to set component requirements (see docs)\n")
+            f.write("                       REQUIRES "")\n")
+            f.write("                       PRIV_REQUIRES "")\n\n")
         else:
-            f.write("register_config_only_component()\n")
+            f.write("idf_component_register()\n")
         if cflags is not None:
-            f.write("component_compile_options(%s)\n" % cflags)
+            f.write("target_compile_options(${COMPONENT_LIB} PRIVATE %s)\n" % cflags)
 
     print("Converted %s" % cmakelists_path)
 

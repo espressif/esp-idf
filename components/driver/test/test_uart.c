@@ -118,7 +118,57 @@ static void uart_config(uint32_t baud_rate, bool use_ref_tick)
     uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
 }
 
-TEST_CASE("test uart get baud-rate","[uart]")
+static volatile bool exit_flag;
+
+static void test_task(void *pvParameters)
+{
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    char* data = (char *) malloc(256);
+
+    while (exit_flag == false) {
+        uart_tx_chars(UART_NUM1, data, 256);
+        // The uart_wait_tx_done() function does not block anything if ticks_to_wait = 0.
+        uart_wait_tx_done(UART_NUM1, 0);
+    }
+
+    free(data);
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+static void test_task2(void *pvParameters)
+{
+    while (exit_flag == false) {
+        // This task obstruct a setting tx_done_sem semaphore in the UART interrupt.
+        // It leads to waiting the ticks_to_wait time in uart_wait_tx_done() function.
+        uart_disable_intr_mask(UART_NUM1, UART_TX_DONE_INT_ENA_M);
+    }
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test uart_wait_tx_done is not blocked when ticks_to_wait=0", "[uart]")
+{
+    uart_config(UART_BAUD_11520, false);
+
+    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    exit_flag = false;
+
+    xTaskCreate(test_task,  "tsk1", 2048, &exit_sema, 5, NULL);
+    xTaskCreate(test_task2, "tsk2", 2048, NULL,       5, NULL);
+
+    printf("Waiting for 5 sec\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    exit_flag = true;
+
+    if (xSemaphoreTake(exit_sema, 1000 / portTICK_PERIOD_MS) == pdTRUE) {
+        vSemaphoreDelete(exit_sema);
+    } else {
+        TEST_FAIL_MESSAGE("uart_wait_tx_done is blocked");
+    }
+    TEST_ESP_OK(uart_driver_delete(UART_NUM1));
+}
+
+TEST_CASE("test uart get baud-rate", "[uart]")
 {
     uint32_t baud_rate1 = 0;
     uint32_t baud_rate2 = 0;
@@ -136,13 +186,13 @@ TEST_CASE("test uart get baud-rate","[uart]")
     ESP_LOGI(UART_TAG, "get baud-rate test passed  ....\n");
 }
 
-TEST_CASE("test uart tx data with break","[uart]")
+TEST_CASE("test uart tx data with break", "[uart]")
 {
     const int buf_len = 200;
     const int send_len = 128;
     const int brk_len = 10;
     char *psend = (char *)malloc(buf_len);
-    TEST_ASSERT( psend != NULL);
+    TEST_ASSERT(psend != NULL);
     memset(psend, '0', buf_len);
     uart_config(UART_BAUD_115200, false);
     printf("Uart%d send %d bytes with break\n", UART_NUM1, send_len);
@@ -151,6 +201,7 @@ TEST_CASE("test uart tx data with break","[uart]")
     //If the code is running here, it means the test passed, otherwise it will crash due to the interrupt wdt timeout.
     printf("Send data with break test passed\n");
     free(psend);
+    uart_driver_delete(UART_NUM1);
 }
 
 // Calculate buffer checksum using tables 
@@ -193,7 +244,7 @@ static uint16_t buffer_fill_random(uint8_t *buffer, size_t length)
     return crc;
 }
 
-static void rs485_init()
+static void rs485_init(void)
 {
     uart_config_t uart_config = {
         .baud_rate = UART_BAUD_115200,
@@ -237,7 +288,7 @@ static esp_err_t print_packet_data(const char *str, uint8_t *buffer, uint16_t bu
 }
 
 // Slave test case for multi device
-static void rs485_slave()
+static void rs485_slave(void)
 {
     rs485_init();
     uint8_t* slave_data = (uint8_t*) malloc(BUF_SIZE);
@@ -276,7 +327,7 @@ static void rs485_slave()
 // Master test of multi device test case.
 // It forms packet with random data, apply generated CRC16 and sends to slave.
 // If response recieved correctly from slave means RS485 channel works.
-static void rs485_master()
+static void rs485_master(void)
 {
     uint16_t err_count = 0, good_count = 0;
     rs485_init();

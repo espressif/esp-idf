@@ -1,6 +1,6 @@
 menu "Example Configuration"
 
-    config STORE_HISTORY
+    config SNIFFER_STORE_HISTORY
         bool "Store command history into flash"
         default y
         help
@@ -30,7 +30,7 @@ menu "Example Configuration"
             help
                 Specify the mount point in the VFS (Virtual File System) for SD card.
 
-        config PCAP_FILE_NAME_MAX_LEN
+        config SNIFFER_PCAP_FILE_NAME_MAX_LEN
             int "Max name length of pcap file"
             default 32
             help

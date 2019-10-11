@@ -75,7 +75,8 @@
 //    trace data are necessary, e.g. for analyzing crashes. On panic the latest data from current input block are exposed to host and host can read them.
 //    It can happen that system panic occurs when there are very small amount of data which are not exposed to host yet (e.g. crash just after the
 //    TRAX block switch). In this case the previous 16KB of collected data will be dropped and host will see the latest, but very small piece of trace.
-//    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH
+//    It can be insufficient to diagnose the problem. To avoid such situations there is menuconfig option
+//    CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH
 //    which controls the threshold for flushing data in case of panic.
 //  - Streaming mode. Tracing module enters this mode when host connects to target and sets respective bits in control registers (per core).
 //    In this mode before switching the block tracing module waits for the host to read all the data from the previously exposed block.
@@ -159,8 +160,7 @@
 #include "soc/dport_reg.h"
 #include "eri.h"
 #include "trax.h"
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
+#include "soc/timer_periph.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_app_trace.h"
 
@@ -360,7 +360,7 @@ static esp_apptrace_hw_t s_trace_hw[ESP_APPTRACE_HW_MAX] = {
     }
 };
 
-static inline int esp_apptrace_log_lock()
+static inline int esp_apptrace_log_lock(void)
 {
 #if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_tmo_t tmo;
@@ -372,22 +372,22 @@ static inline int esp_apptrace_log_lock()
 #endif
 }
 
-static inline void esp_apptrace_log_unlock()
+static inline void esp_apptrace_log_unlock(void)
 {
  #if ESP_APPTRACE_PRINT_LOCK
     esp_apptrace_lock_give(&s_log_lock);
 #endif
 }
 
-static inline esp_err_t esp_apptrace_lock_initialize()
+static inline esp_err_t esp_apptrace_lock_initialize(esp_apptrace_lock_t *lock)
 {
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
-    esp_apptrace_lock_init(&s_trace_buf.lock);
+    esp_apptrace_lock_init(lock);
 #endif
     return ESP_OK;
 }
 
-static inline esp_err_t esp_apptrace_lock_cleanup()
+static inline esp_err_t esp_apptrace_lock_cleanup(void)
 {
     return ESP_OK;
 }
@@ -403,7 +403,7 @@ esp_err_t esp_apptrace_lock(esp_apptrace_tmo_t *tmo)
     return ESP_OK;
 }
 
-esp_err_t esp_apptrace_unlock()
+esp_err_t esp_apptrace_unlock(void)
 {
     esp_err_t ret = ESP_OK;
 #if CONFIG_ESP32_APPTRACE_LOCK_ENABLE
@@ -413,7 +413,7 @@ esp_err_t esp_apptrace_unlock()
 }
 
 #if CONFIG_ESP32_APPTRACE_DEST_TRAX
-static void esp_apptrace_trax_init()
+static void esp_apptrace_trax_init(void)
 {
     // Stop trace, if any (on the current CPU)
     eri_write(ERI_TRAX_TRAXCTRL, TRAXCTRL_TRSTP);
@@ -449,7 +449,7 @@ static void esp_apptrace_trax_pend_chunk_sz_update(uint16_t size)
     }
 }
 
-static uint16_t esp_apptrace_trax_pend_chunk_sz_get()
+static uint16_t esp_apptrace_trax_pend_chunk_sz_get(void)
 {
     uint16_t ch_sz;
     ESP_APPTRACE_LOGD("Get chunk enter %d w-r-s %d-%d-%d", s_trace_buf.trax.cur_pending_chunk_sz,
@@ -467,7 +467,7 @@ static uint16_t esp_apptrace_trax_pend_chunk_sz_get()
 #endif
 
 // assumed to be protected by caller from multi-core/thread access
-static esp_err_t esp_apptrace_trax_block_switch()
+static esp_err_t esp_apptrace_trax_block_switch(void)
 {
     int prev_block_num = s_trace_buf.trax.state.in_block % 2;
     int new_block_num = prev_block_num ? (0) : (1);
@@ -845,7 +845,7 @@ static esp_err_t esp_apptrace_trax_status_reg_get(uint32_t *val)
     return ESP_OK;
 }
 
-static esp_err_t esp_apptrace_trax_dest_init()
+static esp_err_t esp_apptrace_trax_dest_init(void)
 {
     for (int i = 0; i < ESP_APPTRACE_TRAX_BLOCKS_NUM; i++) {
         s_trace_buf.trax.blocks[i].start = (uint8_t *)s_trax_blocks[i];
@@ -874,7 +874,7 @@ static esp_err_t esp_apptrace_trax_dest_init()
 }
 #endif
 
-esp_err_t esp_apptrace_init()
+esp_err_t esp_apptrace_init(void)
 {
     int res;
 
@@ -929,6 +929,9 @@ esp_err_t esp_apptrace_read(esp_apptrace_dest_t dest, void *buf, uint32_t *size,
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
     }
+    if (buf == NULL || size == NULL || *size == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     //TODO: callback system
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -963,8 +966,10 @@ uint8_t *esp_apptrace_down_buffer_get(esp_apptrace_dest_t dest, uint32_t *size, 
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return NULL;
     }
+    if (size == NULL || *size == 0) {
+        return NULL;
+    }
 
-    // ESP_APPTRACE_LOGE("esp_apptrace_down_buffer_get %d", *size);
     esp_apptrace_tmo_init(&tmo, user_tmo);
     return hw->get_down_buffer(size, &tmo);
 }
@@ -984,6 +989,9 @@ esp_err_t esp_apptrace_down_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, u
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ptr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1006,6 +1014,9 @@ esp_err_t esp_apptrace_write(esp_apptrace_dest_t dest, const void *data, uint32_
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (data == NULL || size == 0) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1039,6 +1050,9 @@ int esp_apptrace_vprintf_to(esp_apptrace_dest_t dest, uint32_t user_tmo, const c
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (fmt == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
@@ -1101,6 +1115,9 @@ uint8_t *esp_apptrace_buffer_get(esp_apptrace_dest_t dest, uint32_t size, uint32
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return NULL;
     }
+    if (size == 0) {
+        return NULL;
+    }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);
     return hw->get_up_buffer(size, &tmo);
@@ -1121,6 +1138,9 @@ esp_err_t esp_apptrace_buffer_put(esp_apptrace_dest_t dest, uint8_t *ptr, uint32
     } else {
         ESP_APPTRACE_LOGE("Trace destinations other then TRAX are not supported yet!");
         return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (ptr == NULL) {
+        return ESP_ERR_INVALID_ARG;
     }
 
     esp_apptrace_tmo_init(&tmo, user_tmo);

@@ -6,14 +6,14 @@
 #
 
 LINKER_SCRIPTS := \
-	esp32.bootloader.ld \
-	$(IDF_PATH)/components/esp_rom/esp32/ld/esp32.rom.ld \
-	$(IDF_PATH)/components/esp_rom/esp32/ld/esp32.rom.spiram_incompatible_fns.ld \
-	$(IDF_PATH)/components/esp32/ld/esp32.peripherals.ld \
-	esp32.bootloader.rom.ld
+    $(IDF_TARGET).bootloader.ld \
+    $(IDF_TARGET).bootloader.rom.ld \
+    $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.ld \
+    $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.newlib-funcs.ld \
+    $(IDF_PATH)/components/$(IDF_TARGET)/ld/$(IDF_TARGET).peripherals.ld
 
 ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
-LINKER_SCRIPTS += $(IDF_PATH)/components/esp_rom/esp32/ld/esp32.rom.spiflash.ld
+LINKER_SCRIPTS += $(IDF_PATH)/components/esp_rom/$(IDF_TARGET)/ld/$(IDF_TARGET).rom.spiflash.ld
 endif
 
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH) $(addprefix -T ,$(LINKER_SCRIPTS))

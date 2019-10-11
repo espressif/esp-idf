@@ -446,7 +446,7 @@ void heap_caps_dump(uint32_t caps)
     }
 }
 
-void heap_caps_dump_all()
+void heap_caps_dump_all(void)
 {
     heap_caps_dump(MALLOC_CAP_INVALID);
 }
