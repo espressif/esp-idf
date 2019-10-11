@@ -1476,11 +1476,12 @@ void bt_mesh_net_start(void)
         u16_t addr = bt_mesh_primary_addr();
         u32_t iv_index = bt_mesh.iv_index;
         u8_t flags = (u8_t)bt_mesh.sub[0].kr_flag;
+        const u8_t *net_key = bt_mesh.sub[0].keys[flags].net;
         if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS)) {
             flags |= BLE_MESH_NET_FLAG_IVU;
         }
 
-        bt_mesh_prov_complete(net_idx, addr, flags, iv_index);
+        bt_mesh_prov_complete(net_idx, net_key, addr, flags, iv_index);
     }
 }
 #endif
