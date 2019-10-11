@@ -38,7 +38,6 @@ static const char *TAG = "emac_dm9051";
         }                                                                         \
     } while (0)
 
-#define RX_QUEUE_WAIT_MS (100)
 #define DM9051_SPI_LOCK_TIMEOUT_MS (50)
 #define DM9051_PHY_OPERATION_TIMEOUT_US (1000)
 
@@ -309,6 +308,30 @@ static esp_err_t dm9051_memory_read(emac_dm9051_t *emac, uint8_t *buffer, uint32
 }
 
 /**
+ * @brief peek buffer from dm9051 internal memory (without internal cursor moved)
+ */
+static esp_err_t dm9051_memory_peek(emac_dm9051_t *emac, uint8_t *buffer, uint32_t len)
+{
+    esp_err_t ret = ESP_OK;
+    spi_transaction_t trans = {
+        .cmd = DM9051_SPI_RD,
+        .addr = DM9051_MRCMDX1,
+        .length = len * 8,
+        .rx_buffer = buffer
+    };
+    if (dm9051_lock(emac)) {
+        if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
+            ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
+            ret = ESP_FAIL;
+        }
+        dm9051_unlock(emac);
+    } else {
+        ret = ESP_ERR_TIMEOUT;
+    }
+    return ret;
+}
+
+/**
  * @brief read mac address from internal registers
  */
 static esp_err_t dm9051_get_mac_addr(emac_dm9051_t *emac)
@@ -501,26 +524,27 @@ static void emac_dm9051_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        if (ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(RX_QUEUE_WAIT_MS))) {
-            /* clear interrupt status */
-            dm9051_register_read(emac, DM9051_ISR, &status);
-            dm9051_register_write(emac, DM9051_ISR, status);
-            /* packet received */
-            if (status & ISR_PR) {
-                do {
-                    buffer = (uint8_t *)heap_caps_malloc(ETH_MAX_PACKET_SIZE, MALLOC_CAP_DMA);
-                    if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
-                        /* pass the buffer to stack (e.g. TCP/IP layer) */
-                        if (length) {
-                            emac->eth->stack_input(emac->eth, buffer, length);
-                        } else {
-                            free(buffer);
-                        }
+        // block indefinitely until some task notifies me
+        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        /* clear interrupt status */
+        dm9051_register_read(emac, DM9051_ISR, &status);
+        dm9051_register_write(emac, DM9051_ISR, status);
+        /* packet received */
+        if (status & ISR_PR) {
+            do {
+                length = ETH_MAX_PACKET_SIZE;
+                buffer = (uint8_t *)heap_caps_malloc(length, MALLOC_CAP_DMA);
+                if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
+                    /* pass the buffer to stack (e.g. TCP/IP layer) */
+                    if (length) {
+                        emac->eth->stack_input(emac->eth, buffer, length);
                     } else {
                         free(buffer);
                     }
-                } while (emac->packets_remain);
-            }
+                } else {
+                    free(buffer);
+                }
+            } while (emac->packets_remain);
         }
     }
     vTaskDelete(NULL);
@@ -744,13 +768,26 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     if (rxbyte > 1) {
         MAC_CHECK(dm9051_stop(emac) == ESP_OK, "stop dm9051 failed", err, ESP_FAIL);
         /* reset rx fifo pointer */
-        MAC_CHECK(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX) == ESP_OK, "write MPTRCR failed", err, ESP_FAIL);
+        MAC_CHECK(dm9051_register_write(emac, DM9051_MPTRCR, MPTRCR_RST_RX) == ESP_OK,
+                  "write MPTRCR failed", err, ESP_FAIL);
         ets_delay_us(10);
         MAC_CHECK(dm9051_start(emac) == ESP_OK, "start dm9051 failed", err, ESP_FAIL);
         MAC_CHECK(false, "reset rx fifo pointer", err, ESP_FAIL);
     } else if (rxbyte) {
-        MAC_CHECK(dm9051_memory_read(emac, (uint8_t *)&header, sizeof(header)) == ESP_OK, "read rx header failed", err, ESP_FAIL);
+        MAC_CHECK(dm9051_memory_peek(emac, (uint8_t *)&header, sizeof(header)) == ESP_OK,
+                  "peek rx header failed", err, ESP_FAIL);
         rx_len = header.length_low + (header.length_high << 8);
+        /* check if the buffer can hold all the incoming data */
+        if (*length < rx_len - 4) {
+            ESP_LOGE(TAG, "buffer size too small");
+            /* tell upper layer the size we need */
+            *length = rx_len - 4;
+            ret = ESP_ERR_INVALID_SIZE;
+            goto err;
+        }
+        MAC_CHECK(*length >= rx_len - 4, "buffer size too small", err, ESP_ERR_INVALID_SIZE);
+        MAC_CHECK(dm9051_memory_read(emac, (uint8_t *)&header, sizeof(header)) == ESP_OK,
+                  "read rx header failed", err, ESP_FAIL);
         MAC_CHECK(dm9051_memory_read(emac, buf, rx_len) == ESP_OK, "read rx data failed", err, ESP_FAIL);
         MAC_CHECK(!(header.status & 0xBF), "receive status error: %xH", err, ESP_FAIL, header.status);
         *length = rx_len - 4; // substract the CRC length (4Bytes)
@@ -818,9 +855,10 @@ static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
 esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config)
 {
     esp_eth_mac_t *ret = NULL;
+    emac_dm9051_t *emac = NULL;
     MAC_CHECK(dm9051_config, "can't set dm9051 specific config to null", err, NULL);
     MAC_CHECK(mac_config, "can't set mac config to null", err, NULL);
-    emac_dm9051_t *emac = calloc(1, sizeof(emac_dm9051_t));
+    emac = calloc(1, sizeof(emac_dm9051_t));
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
@@ -841,16 +879,22 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->parent.receive = emac_dm9051_receive;
     /* create mutex */
     emac->spi_lock = xSemaphoreCreateMutex();
-    MAC_CHECK(emac->spi_lock, "create lock failed", err_lock, NULL);
+    MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
     /* create dm9051 task */
     BaseType_t xReturned = xTaskCreate(emac_dm9051_task, "dm9051_tsk", mac_config->rx_task_stack_size, emac,
                                        mac_config->rx_task_prio, &emac->rx_task_hdl);
-    MAC_CHECK(xReturned == pdPASS, "create dm9051 task failed", err_tsk, NULL);
+    MAC_CHECK(xReturned == pdPASS, "create dm9051 task failed", err, NULL);
     return &(emac->parent);
-err_tsk:
-    vSemaphoreDelete(emac->spi_lock);
-err_lock:
-    free(emac);
+
 err:
+    if (emac) {
+        if (emac->rx_task_hdl) {
+            vTaskDelete(emac->rx_task_hdl);
+        }
+        if (emac->spi_lock) {
+            vSemaphoreDelete(emac->spi_lock);
+        }
+        free(emac);
+    }
     return ret;
 }

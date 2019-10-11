@@ -482,7 +482,7 @@ void emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t len
     hal->dma_regs->dmatxpolldemand = 0;
 }
 
-uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t *frames_remain)
+uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain)
 {
     eth_dma_rx_descriptor_t *desc_iter = NULL;
     eth_dma_rx_descriptor_t *first_desc = NULL;
@@ -501,6 +501,12 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
         if (desc_iter->RDES0.LastDescriptor) {
             /* Get the Frame Length of the received packet: substruct 4 bytes of the CRC */
             len = desc_iter->RDES0.FrameLength - ETH_CRC_LENGTH;
+            /* check if the buffer can store the whole frame */
+            if (len > size) {
+                /* return the real size that we want */
+                /* user need to compare the return value to the size they prepared when this function returned */
+                return len;
+            }
             /* update unhandled frame count */
             frame_count++;
         }
