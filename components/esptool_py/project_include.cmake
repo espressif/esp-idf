@@ -52,6 +52,10 @@ if(CONFIG_SECURE_BOOT_ENABLED AND
     set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --secure-pad)
 endif()
 
+if(CONFIG_ESP32_REV_MIN)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --min-rev ${CONFIG_ESP32_REV_MIN})
+endif()
+
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
     # as elf2image can't have 'detect' as an option...

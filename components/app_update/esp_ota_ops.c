@@ -42,7 +42,7 @@
 #include "esp_efuse.h"
 
 
-#define SUB_TYPE_ID(i) (i & 0x0F) 
+#define SUB_TYPE_ID(i) (i & 0x0F)
 
 typedef struct ota_ops_entry_ {
     uint32_t handle;
@@ -200,7 +200,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
             // must erase the partition before writing to it
             assert(it->erased_size > 0 && "must erase the partition before writing to it");
             if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0 && data_bytes[0] != ESP_IMAGE_HEADER_MAGIC) {
-                ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x", data_bytes[0]);
+                ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x)", data_bytes[0]);
                 return ESP_ERR_OTA_VALIDATE_FAILED;
             }
 
