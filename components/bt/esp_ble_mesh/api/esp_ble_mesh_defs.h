@@ -1287,6 +1287,7 @@ typedef union {
      */
     struct ble_mesh_provision_complete_evt_param {
         uint16_t net_idx;                       /*!< NetKey Index */
+        uint8_t  net_key[16];                   /*!< NetKey */
         uint16_t addr;                          /*!< Primary address */
         uint8_t  flags;                         /*!< Flags */
         uint32_t iv_index;                      /*!< IV Index */
