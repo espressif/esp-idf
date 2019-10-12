@@ -132,6 +132,10 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_LIGHTING_CLIENT]   = {btc_ble_mesh_lighting_client_call_handler,   btc_ble_mesh_lighting_client_cb_handler  },
     [BTC_PID_SENSOR_CLIENT]     = {btc_ble_mesh_sensor_client_call_handler,     btc_ble_mesh_sensor_client_cb_handler    },
     [BTC_PID_TIME_SCENE_CLIENT] = {btc_ble_mesh_time_scene_client_call_handler, btc_ble_mesh_time_scene_client_cb_handler},
+    [BTC_PID_GENERIC_SERVER]    = {NULL,                                        btc_ble_mesh_generic_server_cb_handler   },
+    [BTC_PID_LIGHTING_SERVER]   = {NULL,                                        btc_ble_mesh_lighting_server_cb_handler  },
+    [BTC_PID_SENSOR_SERVER]     = {NULL,                                        btc_ble_mesh_sensor_server_cb_handler    },
+    [BTC_PID_TIME_SCENE_SERVER] = {NULL,                                        btc_ble_mesh_time_scene_server_cb_handler},
 #endif /* #if CONFIG_BLE_MESH */
 };
 

@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _MODEL_COMMON_H_
-#define _MODEL_COMMON_H_
+#ifndef _CLIENT_COMMON_H_
+#define _CLIENT_COMMON_H_
 
 #include "mesh_access.h"
 
@@ -136,5 +136,5 @@ typedef struct {
  */
 int bt_mesh_set_client_model_role(bt_mesh_role_param_t *common);
 
-#endif /* _MODEL_COMMON_H_ */
+#endif /* _CLIENT_COMMON_H_ */
 

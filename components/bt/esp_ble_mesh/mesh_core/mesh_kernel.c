@@ -124,8 +124,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
     return;
 }
 
-int k_delayed_work_submit(struct k_delayed_work *work,
-                          s32_t delay)
+int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
 {
     assert(work != NULL && bm_alarm_hash_map != NULL);
 
@@ -138,6 +137,23 @@ int k_delayed_work_submit(struct k_delayed_work *work,
     // Cancel the alarm first, before start the alarm.
     osi_alarm_cancel(alarm);
     osi_alarm_set(alarm, delay);
+    return 0;
+}
+
+int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period)
+{
+    assert(work != NULL && bm_alarm_hash_map != NULL);
+
+    osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
+    if (alarm == NULL) {
+        BT_WARN("%s, Unable to find expected alarm in hash map", __func__);
+        return -EINVAL;
+    }
+
+    /* Cancel the alarm first before starting it. */
+    osi_alarm_cancel(alarm);
+    osi_alarm_set_periodic(alarm, period);
+
     return 0;
 }
 
