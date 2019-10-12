@@ -288,6 +288,11 @@ static void btc_ble_mesh_config_client_callback(esp_ble_mesh_cfg_client_cb_param
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_CONFIG_CLIENT)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_CONFIG_CLIENT;
     msg.act = act;
@@ -687,6 +692,11 @@ static void btc_ble_mesh_config_server_callback(esp_ble_mesh_cfg_server_cb_param
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_CONFIG_SERVER)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_CONFIG_SERVER;
     msg.act = act;
@@ -709,8 +719,8 @@ void bt_mesh_config_server_cb_evt_to_btc(u8_t evt_type,
     }
 
     switch (evt_type) {
-    case BTC_BLE_MESH_EVT_CONFIG_SERVER_RECV_MSG:
-        act = ESP_BLE_MESH_CFG_SERVER_RECV_MSG_EVT;
+    case BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE:
+        act = ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT;
         break;
     default:
         LOG_ERROR("%s, Unknown config server event type %d", __func__, evt_type);
@@ -726,8 +736,8 @@ void bt_mesh_config_server_cb_evt_to_btc(u8_t evt_type,
     cb_params.ctx.recv_dst = ctx->recv_dst;
 
     if (val && len) {
-        length = (len <= sizeof(cb_params.status_cb)) ? len : sizeof(cb_params.status_cb);
-        memcpy(&cb_params.status_cb, val, length);
+        length = (len <= sizeof(cb_params.value)) ? len : sizeof(cb_params.value);
+        memcpy(&cb_params.value, val, length);
     }
 
     btc_ble_mesh_config_server_callback(&cb_params, act);

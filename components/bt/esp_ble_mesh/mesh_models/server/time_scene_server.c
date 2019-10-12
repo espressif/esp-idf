@@ -620,7 +620,7 @@ static void scene_recall(struct bt_mesh_model *model,
     }
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 

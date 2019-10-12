@@ -110,6 +110,7 @@ u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model);
 int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_time);
 
 int bt_mesh_server_get_optional(struct bt_mesh_model *model,
+                                struct bt_mesh_msg_ctx *ctx,
                                 struct net_buf_simple *buf,
                                 u8_t *trans_time, u8_t *delay,
                                 bool *optional);

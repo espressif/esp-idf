@@ -149,7 +149,7 @@ static void gen_onoff_set(struct bt_mesh_model *model,
     }
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -327,7 +327,7 @@ static void gen_level_set(struct bt_mesh_model *model,
     level = (s16_t) net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -423,7 +423,7 @@ static void gen_delta_set(struct bt_mesh_model *model,
     delta = (s32_t)net_buf_simple_pull_le32(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -545,7 +545,7 @@ static void gen_move_set(struct bt_mesh_model *model,
     delta = (s16_t) net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -1090,7 +1090,7 @@ static void gen_power_level_set(struct bt_mesh_model *model,
     power = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
