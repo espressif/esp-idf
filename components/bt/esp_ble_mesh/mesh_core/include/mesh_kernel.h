@@ -182,6 +182,8 @@ struct k_delayed_work {
  */
 int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay);
 
+int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period);
+
 /**
  * @brief Get time remaining before a delayed work gets scheduled.
  *

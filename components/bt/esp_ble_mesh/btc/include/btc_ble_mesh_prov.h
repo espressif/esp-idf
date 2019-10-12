@@ -69,6 +69,7 @@ typedef enum {
     BTC_BLE_MESH_ACT_MODEL_PUBLISH,
     BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
     BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
+    BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE,
 } btc_ble_mesh_model_act_t;
 
 typedef union {
@@ -215,6 +216,11 @@ typedef union {
         uint8_t device_role;
         int32_t msg_timeout;
     } model_send;
+    struct ble_mesh_server_model_update_state_args {
+        esp_ble_mesh_model_t *model;
+        esp_ble_mesh_server_state_type_t type;
+        esp_ble_mesh_server_state_value_t *value;
+    } model_update_state;
 } btc_ble_mesh_model_args_t;
 
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
