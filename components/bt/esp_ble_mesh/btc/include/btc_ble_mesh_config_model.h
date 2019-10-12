@@ -63,7 +63,7 @@ void bt_mesh_config_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
 void btc_ble_mesh_config_server_cb_handler(btc_msg_t *msg);
 
 typedef enum {
-    BTC_BLE_MESH_EVT_CONFIG_SERVER_RECV_MSG,
+    BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
     BTC_BLE_MESH_EVT_CONFIG_SERVER_MAX,
 } btc_ble_mesh_config_server_evt_t;
 

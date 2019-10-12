@@ -236,7 +236,7 @@ static void light_lightness_set(struct bt_mesh_model *model,
     actual = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -348,7 +348,7 @@ static void light_lightness_linear_set(struct bt_mesh_model *model,
     linear = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -774,7 +774,7 @@ static void light_ctl_set(struct bt_mesh_model *model,
         return;
     }
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -1022,7 +1022,7 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
         return;
     }
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -1377,7 +1377,7 @@ static void light_hsl_set(struct bt_mesh_model *model,
     saturation = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -1618,7 +1618,7 @@ static void light_hsl_hue_set(struct bt_mesh_model *model,
     hue = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -1719,7 +1719,7 @@ static void light_hsl_sat_set(struct bt_mesh_model *model,
     saturation = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -1994,7 +1994,7 @@ static void light_xyl_set(struct bt_mesh_model *model,
     y = net_buf_simple_pull_le16(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 
@@ -2434,7 +2434,7 @@ static void light_lc_light_onoff_set(struct bt_mesh_model *model,
     onoff = net_buf_simple_pull_u8(buf);
     tid = net_buf_simple_pull_u8(buf);
 
-    if (bt_mesh_server_get_optional(model, buf, &trans_time, &delay, &optional)) {
+    if (bt_mesh_server_get_optional(model, ctx, buf, &trans_time, &delay, &optional)) {
         return;
     }
 

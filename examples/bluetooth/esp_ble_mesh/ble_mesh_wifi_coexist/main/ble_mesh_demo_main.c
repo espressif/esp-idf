@@ -716,14 +716,14 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
              __func__, event, param->ctx.recv_op, param->ctx.addr);
 
     switch (event) {
-    case ESP_BLE_MESH_CFG_SERVER_RECV_MSG_EVT:
+    case ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT:
         switch (param->ctx.recv_op) {
         case ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD:
             ESP_LOGI(TAG, "Config Server get Config AppKey Add");
-            err = example_handle_config_app_key_add_evt(param->status_cb.app_key_add.app_idx);
+            err = example_handle_config_app_key_add_evt(param->value.state_change.appkey_add.app_idx);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to bind app_idx 0x%04x with non-config models",
-                         __func__, param->status_cb.app_key_add.app_idx);
+                    __func__, param->value.state_change.appkey_add.app_idx);
                 return;
             }
             break;

@@ -127,6 +127,7 @@ int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_tim
 }
 
 int bt_mesh_server_get_optional(struct bt_mesh_model *model,
+                                struct bt_mesh_msg_ctx *ctx,
                                 struct net_buf_simple *buf,
                                 u8_t *trans_time, u8_t *delay,
                                 bool *optional)
@@ -140,6 +141,14 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
     if (buf->len != 0x00 && buf->len != 0x02) {
         BT_ERR("%s, Invalid optional message length %d", __func__, buf->len);
         return -EINVAL;
+    }
+
+    /* Currently we only get optional msg info which dst is set to a unicast address */
+    if (!BLE_MESH_ADDR_IS_UNICAST(ctx->recv_dst)) {
+        *trans_time = 0U;
+        *delay = 0U;
+        *optional = false;
+        return 0;
     }
 
     /* No optional fields are available */
@@ -193,6 +202,11 @@ bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
 {
     *now = k_uptime_get();
 
+    /* Currently we only compare msg info which dst is set to a unicast address */
+    if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
+        return false;
+    }
+
     if (last->tid == tid && last->src == src && last->dst == dst &&
         (*now - last->timestamp <= K_SECONDS(6))) {
         return true;
@@ -204,6 +218,11 @@ bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
 void bt_mesh_server_update_last_msg(struct bt_mesh_last_msg_info *last,
                                     u8_t tid, u16_t src, u16_t dst, s64_t *now)
 {
+    /* Currently we only update msg info which dst is set to a unicast address */
+    if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
+        return;
+    }
+
     last->tid = tid;
     last->src = src;
     last->dst = dst;

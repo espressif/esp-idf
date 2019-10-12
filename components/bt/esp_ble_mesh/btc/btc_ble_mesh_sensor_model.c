@@ -450,6 +450,11 @@ static void btc_ble_mesh_sensor_client_callback(esp_ble_mesh_sensor_client_cb_pa
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_SENSOR_CLIENT)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_SENSOR_CLIENT;
     msg.act = act;
@@ -822,6 +827,11 @@ static void btc_ble_mesh_sensor_server_callback(esp_ble_mesh_sensor_server_cb_pa
     btc_msg_t msg = {0};
 
     LOG_DEBUG("%s", __func__);
+
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_SENSOR_SERVER)) {
+        return;
+    }
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_SENSOR_SERVER;
