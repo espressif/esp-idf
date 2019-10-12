@@ -381,3 +381,99 @@ void btc_ble_mesh_time_scene_client_cb_handler(btc_msg_t *msg)
     return;
 }
 
+/* Time and Scenes Server Models related functions */
+
+static inline void btc_ble_mesh_time_scene_server_cb_to_app(
+        esp_ble_mesh_time_scene_server_cb_event_t event,
+        esp_ble_mesh_time_scene_server_cb_param_t *param)
+{
+    esp_ble_mesh_time_scene_server_cb_t btc_ble_mesh_cb =
+        (esp_ble_mesh_time_scene_server_cb_t)btc_profile_cb_get(BTC_PID_TIME_SCENE_SERVER);
+    if (btc_ble_mesh_cb) {
+        btc_ble_mesh_cb(event, param);
+    }
+}
+
+static void btc_ble_mesh_time_scene_server_callback(esp_ble_mesh_time_scene_server_cb_param_t *cb_params, uint8_t act)
+{
+    btc_msg_t msg = {0};
+
+    LOG_DEBUG("%s", __func__);
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_TIME_SCENE_SERVER;
+    msg.act = act;
+
+    btc_transfer_context(
+        &msg, cb_params, sizeof(esp_ble_mesh_time_scene_server_cb_param_t), NULL);
+}
+
+void bt_mesh_time_scene_server_cb_evt_to_btc(u8_t evt_type,
+        struct bt_mesh_model *model,
+        struct bt_mesh_msg_ctx *ctx,
+        const u8_t *val, size_t len)
+{
+    esp_ble_mesh_time_scene_server_cb_param_t cb_params = {0};
+    size_t length;
+    uint8_t act;
+
+    if (model == NULL || ctx == NULL) {
+        LOG_ERROR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    switch (evt_type) {
+    case BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE:
+        act = ESP_BLE_MESH_TIME_SCENE_SERVER_STATE_CHANGE_EVT;
+        break;
+    case BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_GET_MSG:
+        act = ESP_BLE_MESH_TIME_SCENE_SERVER_RECV_GET_MSG_EVT;
+        break;
+    case BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG:
+        act = ESP_BLE_MESH_TIME_SCENE_SERVER_RECV_SET_MSG_EVT;
+        break;
+    case BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_STATUS_MSG:
+        act = ESP_BLE_MESH_TIME_SCENE_SERVER_RECV_STATUS_MSG_EVT;
+        break;
+    default:
+        LOG_ERROR("%s, Unknown Time Scene Server event type", __func__);
+        return;
+    }
+
+    cb_params.model = (esp_ble_mesh_model_t *)model;
+    cb_params.ctx.net_idx = ctx->net_idx;
+    cb_params.ctx.app_idx = ctx->app_idx;
+    cb_params.ctx.addr = ctx->addr;
+    cb_params.ctx.recv_ttl = ctx->recv_ttl;
+    cb_params.ctx.recv_op = ctx->recv_op;
+    cb_params.ctx.recv_dst = ctx->recv_dst;
+
+    if (val && len) {
+        length = (len <= sizeof(cb_params.value)) ? len : sizeof(cb_params.value);
+        memcpy(&cb_params.value, val, length);
+    }
+
+    btc_ble_mesh_time_scene_server_callback(&cb_params, act);
+    return;
+}
+
+void btc_ble_mesh_time_scene_server_cb_handler(btc_msg_t *msg)
+{
+    esp_ble_mesh_time_scene_server_cb_param_t *param = NULL;
+
+    if (!msg || !msg->arg) {
+        LOG_ERROR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    param = (esp_ble_mesh_time_scene_server_cb_param_t *)(msg->arg);
+
+    if (msg->act < ESP_BLE_MESH_TIME_SCENE_SERVER_EVT_MAX) {
+        btc_ble_mesh_time_scene_server_cb_to_app(msg->act, param);
+    } else {
+        LOG_ERROR("%s, Unknown msg->act = %d", __func__, msg->act);
+    }
+
+    return;
+}
+

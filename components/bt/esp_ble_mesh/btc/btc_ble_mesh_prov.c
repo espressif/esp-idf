@@ -48,6 +48,7 @@
 #include "sensor_client.h"
 #include "time_scene_client.h"
 #include "client_common.h"
+#include "state_binding.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_config_model.h"
@@ -176,6 +177,16 @@ void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
+        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE", __func__);
+        dst->model_update_state.value = osi_malloc(sizeof(esp_ble_mesh_server_state_value_t));
+        if (dst->model_update_state.value) {
+            memcpy(dst->model_update_state.value, src->model_update_state.value,
+                sizeof(esp_ble_mesh_server_state_value_t));
+        } else {
+            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+        }
+        break;
     default:
         LOG_DEBUG("%s, Unknown deep copy act %d", __func__, msg->act);
         break;
@@ -201,6 +212,11 @@ static void btc_ble_mesh_model_arg_deep_free(btc_msg_t *msg)
         }
         if (arg->model_send.ctx) {
             osi_free(arg->model_send.ctx);
+        }
+        break;
+    case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
+        if (arg->model_update_state.value) {
+            osi_free(arg->model_update_state.value);
         }
         break;
     default:
@@ -422,7 +438,7 @@ static void btc_ble_mesh_model_send_comp_cb(esp_ble_mesh_model_t *model, esp_ble
     mesh_param.model_send_comp.err_code = err;
     mesh_param.model_send_comp.opcode = opcode;
     mesh_param.model_send_comp.model = model;
-    mesh_param.model_send_comp.ctx   = ctx;
+    mesh_param.model_send_comp.ctx = ctx;
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_MODEL;
@@ -448,6 +464,29 @@ static void btc_ble_mesh_model_publish_comp_cb(esp_ble_mesh_model_t *model, int 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_MODEL;
     msg.act = ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT;
+    ret = btc_transfer_context(&msg, &mesh_param,
+                               sizeof(esp_ble_mesh_model_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        LOG_ERROR("%s btc_transfer_context failed", __func__);
+    }
+    return;
+}
+
+static void btc_ble_mesh_server_model_update_state_comp_cb(esp_ble_mesh_model_t *model,
+        esp_ble_mesh_server_state_type_t type, int err)
+{
+    esp_ble_mesh_model_cb_param_t mesh_param = {0};
+    btc_msg_t msg = {0};
+    bt_status_t ret;
+
+    mesh_param.server_model_update_state.err_code = err;
+    mesh_param.server_model_update_state.model = model;
+    mesh_param.server_model_update_state.type = type;
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_MODEL;
+    msg.act = ESP_BLE_MESH_SERVER_MODEL_UPDATE_STATE_COMP_EVT;
     ret = btc_transfer_context(&msg, &mesh_param,
                                sizeof(esp_ble_mesh_model_cb_param_t), NULL);
 
@@ -1230,6 +1269,45 @@ extern const struct bt_mesh_model_op sensor_cli_op[];
 extern const struct bt_mesh_model_op time_cli_op[];
 extern const struct bt_mesh_model_op scene_cli_op[];
 extern const struct bt_mesh_model_op scheduler_cli_op[];
+/* Generic Server Models */
+extern const struct bt_mesh_model_op gen_onoff_srv_op[];
+extern const struct bt_mesh_model_op gen_level_srv_op[];
+extern const struct bt_mesh_model_op gen_def_trans_time_srv_op[];
+extern const struct bt_mesh_model_op gen_power_onoff_srv_op[];
+extern const struct bt_mesh_model_op gen_power_onoff_setup_srv_op[];
+extern const struct bt_mesh_model_op gen_power_level_srv_op[];
+extern const struct bt_mesh_model_op gen_power_level_setup_srv_op[];
+extern const struct bt_mesh_model_op gen_battery_srv_op[];
+extern const struct bt_mesh_model_op gen_location_srv_op[];
+extern const struct bt_mesh_model_op gen_location_setup_srv_op[];
+extern const struct bt_mesh_model_op gen_user_prop_srv_op[];
+extern const struct bt_mesh_model_op gen_admin_prop_srv_op[];
+extern const struct bt_mesh_model_op gen_manu_prop_srv_op[];
+extern const struct bt_mesh_model_op gen_client_prop_srv_op[];
+/* Lighting Server Models */
+extern const struct bt_mesh_model_op light_lightness_srv_op[];
+extern const struct bt_mesh_model_op light_lightness_setup_srv_op[];
+extern const struct bt_mesh_model_op light_ctl_srv_op[];
+extern const struct bt_mesh_model_op light_ctl_setup_srv_op[];
+extern const struct bt_mesh_model_op light_ctl_temp_srv_op[];
+extern const struct bt_mesh_model_op light_hsl_srv_op[];
+extern const struct bt_mesh_model_op light_hsl_hue_srv_op[];
+extern const struct bt_mesh_model_op light_hsl_sat_srv_op[];
+extern const struct bt_mesh_model_op light_hsl_setup_srv_op[];
+extern const struct bt_mesh_model_op light_xyl_srv_op[];
+extern const struct bt_mesh_model_op light_xyl_setup_srv_op[];
+extern const struct bt_mesh_model_op light_lc_srv_op[];
+extern const struct bt_mesh_model_op light_lc_setup_srv_op[];
+/* Time and Scenes Server Models */
+extern const struct bt_mesh_model_op time_srv_op[];
+extern const struct bt_mesh_model_op time_setup_srv_op[];
+extern const struct bt_mesh_model_op scene_srv_op[];
+extern const struct bt_mesh_model_op scene_setup_srv_op[];
+extern const struct bt_mesh_model_op scheduler_srv_op[];
+extern const struct bt_mesh_model_op scheduler_setup_srv_op[];
+/* Sensor Server Models */
+extern const struct bt_mesh_model_op sensor_srv_op[];
+extern const struct bt_mesh_model_op sensor_setup_srv_op[];
 
 static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
 {
@@ -1240,8 +1318,8 @@ static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
         return;
     }
 
-    /* 1. For SIG client models, model->op will be NULL and initialized here.
-     * 2. The vendor model opcode is 3 bytes.
+    /* For SIG client and server models, model->op will be NULL and initialized here.
+     * For vendor models whose opcode is 3 bytes, model->op will be initialized here.
      */
     if ((model->op != NULL) && (model->op->opcode >= 0x10000)) {
         goto add_model_op;
@@ -1419,9 +1497,220 @@ static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
         }
         break;
     }
-    default: {
+    case BLE_MESH_MODEL_ID_GEN_ONOFF_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_onoff_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_LEVEL_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_level_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_def_trans_time_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_power_onoff_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_power_onoff_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_power_level_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_power_level_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_BATTERY_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_battery_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_LOCATION_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_location_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_user_prop_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_admin_prop_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_manu_prop_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_client_prop_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)gen_location_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_lightness_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_lightness_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_CTL_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_ctl_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_ctl_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_ctl_temp_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_hsl_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_hsl_hue_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_hsl_sat_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_hsl_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_XYL_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_xyl_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_xyl_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_LC_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_lc_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)light_lc_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_TIME_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)time_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_TIME_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)time_setup_srv_op;
+        if (model->pub) {
+            /* Time Setup Server model does not support subscribing nor publishing. */
+            LOG_ERROR("%s, Time Setup Server shall not support publication", __func__);
+            return;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_SCENE_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)scene_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_SCENE_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)scene_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_SCHEDULER_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)scheduler_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)scheduler_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_SENSOR_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)sensor_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    case BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)sensor_setup_srv_op;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+    default:
         goto add_model_op;
-    }
     }
     return;
 
@@ -1447,6 +1736,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         LOG_ERROR("%s, Invalid parameter", __func__);
         return;
     }
+
     arg = (btc_ble_mesh_prov_args_t *)(msg->arg);
 
     switch (msg->act) {
@@ -1887,6 +2177,13 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
                                         arg->model_send.opcode, err);
         break;
     }
+    case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
+        err = bt_mesh_update_binding_state(
+                (struct bt_mesh_model *)arg->model_update_state.model, arg->model_update_state.type,
+                (bt_mesh_server_state_value_t *)arg->model_update_state.value);
+        btc_ble_mesh_server_model_update_state_comp_cb(arg->model_update_state.model,
+            arg->model_update_state.type, err);
+        break;
     default:
         LOG_WARN("%s, Unknown msg->act %d", __func__, msg->act);
         break;
