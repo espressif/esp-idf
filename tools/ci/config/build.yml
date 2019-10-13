@@ -22,6 +22,17 @@
       - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_REGULAR_TEST
 
+
+.build_with_make_and_cmake: &build_with_make_and_cmake |
+  echo -e "section_end:"`date +%s`":build_script\r\e[0Ksection_start:"`date +%s`":build_make\r\e[0KBuild with Make"
+  make defconfig
+  make all
+  make clean
+  echo -e "section_end:"`date +%s`":build_make\r\e[0Ksection_start:"`date +%s`":build_cmake\r\e[0KBuild with CMake"
+  rm -rf build sdkconfig
+  idf.py build
+  echo -e "section_end:"`date +%s`":build_cmake\r\e[0Ksection_start:"`date +%s`":build_script\r\e[0K"
+
 build_template_app:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
@@ -45,43 +56,37 @@ build_template_app:
     - export PATH="$IDF_PATH/tools:$PATH"
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    
-    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
-    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" >> sdkconfig
-    - make defconfig
-    - make all V=1
-    - make clean
 
-    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
-    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig
-    - make defconfig
-    - make all V=1
-    - make clean
-    
-    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
-    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" >> sdkconfig
-    - make defconfig
-    - make all V=1
-    - make clean
+    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
+    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
 
     # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
-    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" >> sdkconfig
-    - make defconfig
-    - make all V=1
-    - make clean
+    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
+    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
+    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # Same as above, but also disable assertions.
+    - echo "CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y" >> sdkconfig.defaults
+    # Don't error out on -Wunused, when assertions are disabled
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
+    - *build_with_make_and_cmake
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
     # Check if there are any stray printf/ets_printf references in WiFi libs
     - pushd ../components/esp_wifi/lib_esp32
     - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
     - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
     - popd
-    # Repeat the build using CMake
-    - rm -rf build sdkconfig
-    # Debug build
-    - idf.py build
-    # Release build
-    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
-    - idf.py build
 
 build_ssc:
   extends: .build_template
