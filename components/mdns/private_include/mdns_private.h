@@ -52,6 +52,7 @@
 #define MDNS_ANSWER_AAAA            0x10
 #define MDNS_ANSWER_NSEC            0x20
 #define MDNS_ANSWER_SDPTR           0x80
+#define MDNS_ANSWER_AAAA_SIZE       16
 
 #define MDNS_SERVICE_PORT           5353                    // UDP port that the server runs on
 #define MDNS_SERVICE_STACK_DEPTH    4096                    // Stack size for the service thread
