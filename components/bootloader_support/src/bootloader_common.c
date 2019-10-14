@@ -303,20 +303,20 @@ uint8_t bootloader_common_get_chip_revision(void)
 }
 #endif
 
-esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr)
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type)
 {
     esp_err_t err = ESP_OK;
     esp_chip_id_t chip_id = CONFIG_IDF_FIRMWARE_CHIP_ID;
     if (chip_id != img_hdr->chip_id) {
-        ESP_LOGE(TAG, "mismatch chip ID, expect %d, found %d", chip_id, img_hdr->chip_id);
+        ESP_LOGE(TAG, "mismatch chip ID, expected %d, found %d", chip_id, img_hdr->chip_id);
         err = ESP_FAIL;
     }
     uint8_t revision = bootloader_common_get_chip_revision();
     if (revision < img_hdr->min_chip_rev) {
-        ESP_LOGE(TAG, "can't run on lower chip revision, expect %d, found %d", revision, img_hdr->min_chip_rev);
+        ESP_LOGE(TAG, "can't run on lower chip revision, expected %d, found %d", revision, img_hdr->min_chip_rev);
         err = ESP_FAIL;
     } else if (revision != img_hdr->min_chip_rev) {
-        ESP_LOGI(TAG, "mismatch chip revision, expect %d, found %d", revision, img_hdr->min_chip_rev);
+        ESP_LOGI(TAG, "chip revision: %d, min. %s chip revision: %d", revision, type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
     }
     return err;
 }
