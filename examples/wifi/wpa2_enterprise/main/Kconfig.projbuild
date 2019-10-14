@@ -6,12 +6,28 @@ menu "Example Configuration"
         help
             SSID (network name) for the example to connect to.
 
-    config EXAMPLE_EAP_METHOD
-        int "EAP METHOD"
-        default 1
+    config EXAMPLE_VALIDATE_SERVER_CERT
+        bool "Validate server"
+        default y
         help
-            EAP method (TLS, PEAP or TTLS) for the example to use.
-            TLS: 0, PEAP: 1, TTLS: 2
+            Validate the servers' certificate using CA cert.
+
+    choice
+        prompt "EAP method for the example to use"
+        default EXAMPLE_EAP_METHOD_PEAP
+        config EXAMPLE_EAP_METHOD_TLS
+            bool "TLS"
+        config EXAMPLE_EAP_METHOD_PEAP
+            bool "PEAP"
+        config EXAMPLE_EAP_METHOD_TTLS
+            bool "TTLS"
+    endchoice
+
+    config EXAMPLE_EAP_METHOD
+        int
+        default 0 if EXAMPLE_EAP_METHOD_TLS
+        default 1 if EXAMPLE_EAP_METHOD_PEAP
+        default 2 if EXAMPLE_EAP_METHOD_TTLS
 
     config EXAMPLE_EAP_ID
         string "EAP ID"
@@ -21,12 +37,14 @@ menu "Example Configuration"
 
     config EXAMPLE_EAP_USERNAME
         string "EAP USERNAME"
+        depends on EXAMPLE_EAP_METHOD_PEAP || EXAMPLE_EAP_METHOD_TTLS
         default "espressif"
         help
             Username for EAP method (PEAP and TTLS).
 
     config EXAMPLE_EAP_PASSWORD
         string "EAP PASSWORD"
+        depends on EXAMPLE_EAP_METHOD_PEAP || EXAMPLE_EAP_METHOD_TTLS
         default "test11"
         help
             Password for EAP method (PEAP and TTLS).
