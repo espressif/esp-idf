@@ -15,7 +15,7 @@
 #pragma once
 
 #include <esp_http_client.h>
-#include <esp_ota_ops.h>
+#include <bootloader_common.h>
 
 #ifdef __cplusplus
 extern "C" {
