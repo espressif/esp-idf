@@ -28,6 +28,11 @@ typedef enum {
     GPIO_NOT_HOLD   = 0     /*!< If the GPIO input is not low */
 } esp_comm_gpio_hold_t;
 
+typedef enum {
+    ESP_IMAGE_BOOTLOADER,
+    ESP_IMAGE_APPLICATION
+} esp_image_type;
+
 /**
  * @brief Calculate crc for the OTA data select.
  *
@@ -152,12 +157,13 @@ uint8_t bootloader_common_get_chip_revision(void);
 /**
  * @brief Check if the image (bootloader and application) has valid chip ID and revision
  *
- * @param img_hdr: image header
+ * @param[in] img_hdr: image header
+ * @param[in] type: image type, bootloader or application
  * @return
  *      - ESP_OK: image and chip are matched well
  *      - ESP_FAIL: image doesn't match to the chip
  */
-esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr);
+esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hdr, esp_image_type type);
 
 /**
  * @brief Configure VDDSDIO, call this API to rise VDDSDIO to 1.9V when VDDSDIO regulator is enabled as 1.8V mode.
