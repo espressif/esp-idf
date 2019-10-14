@@ -169,25 +169,25 @@ _xt_context_save:
     s32i    a9,  sp, XT_STK_OVLY        /* save overlay state */
     #endif
 
-	rsr     a2, PS
-	movi    a3, PS_INTLEVEL_MASK
+	rsr     a2, PS                      /* We need to enable window execptions to */ 
+	movi    a3, PS_INTLEVEL_MASK        /* perform spill registers*/
 	and     a2, a2, a3
 	bnez    a2, _not_l1
 	rsr     a2, PS
-	movi    a3, PS_INTLEVEL(1)
-	or      a2, a2, a3
-	wsr     a2, PS
+	movi    a3, PS_INTLEVEL(1)          /* For some curious reason the level 1 interrupts */
+	or      a2, a2, a3                  /* dont set the intlevel correctly on PS, we need to */     
+	wsr     a2, PS                      /* do this manually */
 
 _not_l1:
-	rsr     a2, PS
+	rsr     a2, PS                      /* finally umask the window exceptions */
 	movi    a3, ~(PS_EXCM_MASK)
 	and     a2, a2, a3
 	wsr     a2, PS
     rsync
 
-    addi    sp,  sp, XT_STK_FRMSZ      /* restore the interruptee's SP */
-    SPILL_ALL_WINDOWS
-    addi    sp,  sp, -XT_STK_FRMSZ
+    addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
+    SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
+    addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with conext save*/
     #endif
 
     l32i    a12, sp, XT_STK_TMP0        /* temp. save stuff in stack frame */
