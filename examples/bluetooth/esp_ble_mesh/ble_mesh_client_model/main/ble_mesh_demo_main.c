@@ -150,11 +150,11 @@ static void gen_onoff_set_unack_handler(esp_ble_mesh_model_t *model,
     uint8_t prev_onoff;
     esp_err_t err;
 
-    ESP_LOGI(TAG, "%s, addr 0x%02x onoff 0x%02x", __func__, model->element->element_addr, led->current);
-
     prev_onoff = led->previous;
     led->current = data[0];
     remote_onoff = led->current;
+
+    ESP_LOGI(TAG, "%s, addr 0x%04x onoff 0x%02x", __func__, model->element->element_addr, led->current);
 
     board_led_operation(led->pin, led->current);
 
@@ -181,11 +181,11 @@ static void gen_onoff_set_handler(esp_ble_mesh_model_t *model,
     uint8_t prev_onoff, send_data;
     esp_err_t err;
 
-    ESP_LOGI(TAG, "%s, addr 0x%02x onoff 0x%02x", __func__, model->element->element_addr, led->current);
-
     prev_onoff = led->previous;
     led->current = data[0];
     remote_onoff = led->current;
+
+    ESP_LOGI(TAG, "%s, addr 0x%04x onoff 0x%02x", __func__, model->element->element_addr, led->current);
 
     board_led_operation(led->pin, led->current);
 
