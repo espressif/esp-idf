@@ -6,6 +6,7 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
+#include "sdkconfig.h"
 #include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "esp_vfs_semihost.h"
@@ -17,8 +18,8 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "mdns.h"
+#include "lwip/apps/netbiosns.h"
 #include "protocol_examples_common.h"
-#include "sdkconfig.h"
 
 #define MDNS_INSTANCE "esp home web server"
 
@@ -126,6 +127,8 @@ void app_main(void)
     tcpip_adapter_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     initialise_mdns();
+    netbiosns_init();
+    netbiosns_set_name(CONFIG_EXAMPLE_MDNS_HOST_NAME);
 
     ESP_ERROR_CHECK(example_connect());
     ESP_ERROR_CHECK(init_fs());
