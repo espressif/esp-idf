@@ -44,12 +44,26 @@
 #define CAN_RESET_FLAG(var, mask)   ((var) &= ~(mask))
 #define CAN_TAG "CAN"
 
+/*
+ * Baud Rate Prescaler Divider config/values. The BRP_DIV bit is located in the
+ * CAN interrupt enable register, and is only available in ESP32 Revision 2 or
+ * later. Setting this bit will cause the APB clock to be prescaled (divided) by
+ * a factor 2, before having the BRP applied. This will allow for lower bit rates
+ * to be achieved.
+ */
+#define BRP_DIV_EN_THRESH           128         //A BRP config value large this this will need to enable brp_div
+#define BRP_DIV_EN_BIT              0x10        //Bit mask for brp_div in the interrupt register
+//When brp_div is enabled, the BRP config value must be any multiple of 4 between 132 and 256
+#define BRP_CHECK_WITH_DIV(brp)     ((brp) >= 132 && (brp) <= 256 && ((brp) & 0x3) == 0)
+//When brp_div is disabled, the BRP config value must be any even number between 2 to 128
+#define BRP_CHECK_NO_DIV(brp)       ((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0)
+
 //Driver default config/values
 #define DRIVER_DEFAULT_EWL          96          //Default Error Warning Limit value
 #define DRIVER_DEFAULT_TEC          0           //TX Error Counter starting value
 #define DRIVER_DEFAULT_REC          0           //RX Error Counter starting value
 #define DRIVER_DEFAULT_CLKOUT_DIV   14          //APB CLK divided by two
-#define DRIVER_DEFAULT_INTERRUPTS   0xE7        //Exclude data overrun
+#define DRIVER_DEFAULT_INTERRUPTS   0xE7        //Exclude data overrun (bit[3]) and brp_div (bit[4])
 #define DRIVER_DEFAULT_ERR_PASS_CNT 128         //Error counter threshold for error passive
 
 //Command Bit Masks
@@ -199,7 +213,7 @@ static inline void can_config_bus_timing(uint32_t brp, uint32_t sjw, uint32_t ts
        - SJW (1 to 4) is number of T_scl to shorten/lengthen for bit synchronization
        - TSEG_1 (1 to 16) is number of T_scl in a bit time before sample point
        - TSEG_2 (1 to 8) is number of T_scl in a bit time after sample point
-       - triple_sampling will cause each bit time to be sampled 3 times*/
+       - triple_sampling will cause each bit time to be sampled 3 times */
     can_bus_tim_0_reg_t timing_reg_0;
     can_bus_tim_1_reg_t timing_reg_1;
     timing_reg_0.baud_rate_prescaler = (brp / 2) - 1;
@@ -629,6 +643,12 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     CAN_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
     CAN_CHECK(g_config->tx_io >= 0 && g_config->tx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
     CAN_CHECK(g_config->rx_io >= 0 && g_config->rx_io < GPIO_NUM_MAX, ESP_ERR_INVALID_ARG);
+#if (CONFIG_ESP32_REV_MIN >= 2)
+    //ESP32 revision 2 or later chips have a brp_div bit. Check that the BRP config value is valid when brp_div is enabled or disabled
+    CAN_CHECK(BRP_CHECK_WITH_DIV(t_config->brp) || BRP_CHECK_NO_DIV(t_config->brp), ESP_ERR_INVALID_ARG);
+#else
+    CAN_CHECK(BRP_CHECK_NO_DIV(t_config->brp), ESP_ERR_INVALID_ARG);
+#endif
 
     esp_err_t ret;
     can_obj_t *p_can_obj_dummy;
@@ -685,8 +705,14 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     /* Note: REC is allowed to increase even in reset mode. Listen only mode
        will freeze REC. The desired mode will be set when can_start() is called. */
     can_config_mode(CAN_MODE_LISTEN_ONLY);
+#if (CONFIG_ESP32_REV_MIN >= 2)
+    //If the BRP config value is large enough, the brp_div bit must be enabled to achieve the same effective baud rate prescaler
+    can_config_interrupts((t_config->brp > BRP_DIV_EN_THRESH) ? DRIVER_DEFAULT_INTERRUPTS | BRP_DIV_EN_BIT : DRIVER_DEFAULT_INTERRUPTS);
+    can_config_bus_timing((t_config->brp > BRP_DIV_EN_THRESH) ? t_config->brp/2 : t_config->brp, t_config->sjw, t_config->tseg_1, t_config->tseg_2, t_config->triple_sampling);
+#else
     can_config_interrupts(DRIVER_DEFAULT_INTERRUPTS);
     can_config_bus_timing(t_config->brp, t_config->sjw, t_config->tseg_1, t_config->tseg_2, t_config->triple_sampling);
+#endif
     can_config_error(DRIVER_DEFAULT_EWL, DRIVER_DEFAULT_REC, DRIVER_DEFAULT_TEC);
     can_config_acceptance_filter(f_config->acceptance_code, f_config->acceptance_mask, f_config->single_filter);
     can_config_clk_out(g_config->clkout_divider);

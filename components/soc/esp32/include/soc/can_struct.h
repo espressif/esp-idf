@@ -93,7 +93,7 @@ typedef union {
         uint32_t tx: 1;                                     /* IER.1 Transmit Interrupt Enable */
         uint32_t err_warn: 1;                               /* IER.2 Error Interrupt Enable */
         uint32_t data_overrun: 1;                           /* IER.3 Data Overrun Interrupt Enable */
-        uint32_t reserved1: 1;                              /* Internal Reserved (Wake-up not supported) */
+        uint32_t brp_div: 1;                                /* THIS IS NOT AN INTERRUPT. brp_div will prescale BRP by 2. Only available on ESP32 Revision 2 or later. Reserved otherwise */
         uint32_t err_passive: 1;                            /* IER.5 Error Passive Interrupt Enable */
         uint32_t arb_lost: 1;                               /* IER.6 Arbitration Lost Interrupt Enable */
         uint32_t bus_err: 1;                                /* IER.7 Bus Error Interrupt Enable */
