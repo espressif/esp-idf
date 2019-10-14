@@ -17,6 +17,7 @@
 #include <string.h>
 #include <esp_https_ota.h>
 #include <esp_log.h>
+#include <esp_ota_ops.h>
 
 #define IMAGE_HEADER_SIZE sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t) + sizeof(esp_app_desc_t) + 1
 #define DEFAULT_OTA_BUF_SIZE IMAGE_HEADER_SIZE
