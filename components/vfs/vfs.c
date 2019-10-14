@@ -877,8 +877,12 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         return -1;
     }
 
+    // Capture s_vfs_count to a local variable in case a new driver is registered or removed during this actual select()
+    // call. s_vfs_count cannot be protected with a mutex during a select() call (which can be one without a timeout)
+    // because that could block the registration of new driver.
+    const size_t vfs_count = s_vfs_count;
     fds_triple_t *vfs_fds_triple;
-    if ((vfs_fds_triple = calloc(s_vfs_count, sizeof(fds_triple_t))) == NULL) {
+    if ((vfs_fds_triple = calloc(vfs_count, sizeof(fds_triple_t))) == NULL) {
         __errno_r(r) = ENOMEM;
         ESP_LOGD(TAG, "calloc is unsuccessful");
         return -1;
@@ -952,7 +956,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         }
     }
 
-    void **driver_args = calloc(s_vfs_count, sizeof(void *));
+    void **driver_args = calloc(vfs_count, sizeof(void *));
 
     if (driver_args == NULL) {
         free(vfs_fds_triple);
@@ -961,7 +965,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         return -1;
     }
 
-    for (int i = 0; i < s_vfs_count; ++i) {
+    for (int i = 0; i < vfs_count; ++i) {
         const vfs_entry_t *vfs = get_vfs_for_index(i);
         fds_triple_t *item = &vfs_fds_triple[i];
 
@@ -977,7 +981,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
 
             if (err != ESP_OK) {
                 call_end_selects(i, vfs_fds_triple, driver_args);
-                (void) set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
+                (void) set_global_fd_sets(vfs_fds_triple, vfs_count, readfds, writefds, errorfds);
                 if (sel_sem.is_sem_local && sel_sem.sem) {
                     vSemaphoreDelete(sel_sem.sem);
                     sel_sem.sem = NULL;
@@ -1022,9 +1026,9 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
         xSemaphoreTake(sel_sem.sem, ticks_to_wait);
     }
 
-    call_end_selects(s_vfs_count, vfs_fds_triple, driver_args); // for VFSs for start_select was called before
+    call_end_selects(vfs_count, vfs_fds_triple, driver_args); // for VFSs for start_select was called before
     if (ret >= 0) {
-        ret += set_global_fd_sets(vfs_fds_triple, s_vfs_count, readfds, writefds, errorfds);
+        ret += set_global_fd_sets(vfs_fds_triple, vfs_count, readfds, writefds, errorfds);
     }
     if (sel_sem.is_sem_local && sel_sem.sem) {
         vSemaphoreDelete(sel_sem.sem);
@@ -1049,6 +1053,8 @@ void esp_vfs_select_triggered(esp_vfs_select_sem_t sem)
         // which has a permanent FD. But in order to avoid to lock
         // s_fd_table_lock we go through the VFS table.
         for (int i = 0; i < s_vfs_count; ++i) {
+            // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
+            // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
             if (vfs != NULL && vfs->vfs.stop_socket_select != NULL) {
                 vfs->vfs.stop_socket_select(sem.sem);
@@ -1067,6 +1073,8 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
         // which has a permanent FD. But in order to avoid to lock
         // s_fd_table_lock we go through the VFS table.
         for (int i = 0; i < s_vfs_count; ++i) {
+            // Note: s_vfs_count could have changed since the start of vfs_select() call. However, that change doesn't
+            // matter here stop_socket_select() will be called for only valid VFS drivers.
             const vfs_entry_t *vfs = s_vfs[i];
             if (vfs != NULL && vfs->vfs.stop_socket_select_isr != NULL) {
                 vfs->vfs.stop_socket_select_isr(sem.sem, woken);
