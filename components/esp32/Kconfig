@@ -147,7 +147,7 @@ config SPIRAM_MEMTEST
 
 config SPIRAM_CACHE_WORKAROUND
     bool "Enable workaround for bug in SPI RAM cache for Rev1 ESP32s"
-    depends on SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC
+    depends on (SPIRAM_USE_MEMMAP || SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC) && (ESP32_REV_MIN < 3)
     default "y"
     help
         Revision 1 of the ESP32 has a bug that can cause a write to PSRAM not to take place in some situations
@@ -157,6 +157,8 @@ config SPIRAM_CACHE_WORKAROUND
 
         This will also not use any bits of newlib that are located in ROM, opting for a version that is compiled
         with the workaround and located in flash instead.
+
+        The workaround is not required for ESP32 revision 3 and above.
 
 config SPIRAM_BANKSWITCH_ENABLE
     bool "Enable bank switching for >4MiB external RAM"
