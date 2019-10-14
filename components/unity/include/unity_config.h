@@ -26,6 +26,7 @@
 #endif
 
 #define UNITY_EXCLUDE_TIME_H
+#define UNITY_EXCLUDE_SETJMP_H
 
 void unity_flush(void);
 void unity_putc(int c);
