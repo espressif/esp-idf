@@ -109,14 +109,8 @@ void  wpa_neg_complete(void)
 bool  wpa_attach(void)
 {
     bool ret = true; 
-#ifndef IOT_SIP_MODE
     ret = wpa_sm_init(NULL, wpa_sendto_wrapper,
                  wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
-#else
-    u8 *payload = (u8 *)os_malloc(WPA_TX_MSG_BUFF_MAXLEN);
-    ret = wpa_sm_init(payload, wpa_sendto_wrapper,
-                 wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
-#endif
     if(ret) {   
         ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
     }
