@@ -697,16 +697,9 @@ static int wpa2_start_eapol_internal(void)
         return ESP_FAIL;
     }
     if (wpa_sta_is_cur_pmksa_set()) {
-        if (0) {
-            wpa_printf(MSG_DEBUG,
-                    "RSN: Timeout on waiting for the AP to initiate 4-way handshake \
-                    for PMKSA caching or EAP authentication \
-                    - try to force it to start EAP authentication");
-        } else {
-            wpa_printf(MSG_DEBUG,
-                    "RSN: PMKSA caching - do not send EAPOL-Start");
-            return -1;
-        }
+        wpa_printf(MSG_DEBUG,
+                "RSN: PMKSA caching - do not send EAPOL-Start");
+        return ESP_FAIL;
     }
 
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
