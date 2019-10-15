@@ -286,7 +286,7 @@ char * wpa_config_parse_string(const char *value, size_t *len)
 }
 
 
-int is_hex(const u8 *data, size_t len)
+int wpa_is_hex(const u8 *data, size_t len)
 {
 	size_t i;
 
@@ -298,7 +298,7 @@ int is_hex(const u8 *data, size_t len)
 }
 
 
-size_t merge_byte_arrays(u8 *res, size_t res_len,
+size_t wpa_merge_byte_arrays(u8 *res, size_t res_len,
 			 const u8 *src1, size_t src1_len,
 			 const u8 *src2, size_t src2_len)
 {
@@ -344,7 +344,7 @@ char * dup_binstr(const void *src, size_t len)
 
 	return res;
 }
-void bin_clear_free(void *bin, size_t len)
+void wpa_bin_clear_free(void *bin, size_t len)
 {
 	if (bin) {
 		os_memset(bin, 0, len);

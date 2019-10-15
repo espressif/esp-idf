@@ -396,8 +396,8 @@ size_t printf_decode(u8 *buf, size_t maxlen, const char *str);
 const char * wpa_ssid_txt(const u8 *ssid, size_t ssid_len);
 
 char * wpa_config_parse_string(const char *value, size_t *len);
-int is_hex(const u8 *data, size_t len);
-size_t merge_byte_arrays(u8 *res, size_t res_len,
+int wpa_is_hex(const u8 *data, size_t len);
+size_t wpa_merge_byte_arrays(u8 *res, size_t res_len,
 			 const u8 *src1, size_t src1_len,
 			 const u8 *src2, size_t src2_len);
 char * dup_binstr(const void *src, size_t len);
@@ -420,7 +420,7 @@ static inline int is_multicast_ether_addr(const u8 *a)
 #define broadcast_ether_addr (const u8 *) "\xff\xff\xff\xff\xff\xff"
 
 
-#include "wpa_debug.h"
+#include "utils/wpa_debug.h"
 
 
 struct wpa_freq_range_list {
@@ -431,32 +431,9 @@ struct wpa_freq_range_list {
 	unsigned int num;
 };
 
-int freq_range_list_parse(struct wpa_freq_range_list *res, const char *value);
-int freq_range_list_includes(const struct wpa_freq_range_list *list,
-			     unsigned int freq);
-char * freq_range_list_str(const struct wpa_freq_range_list *list);
-
-int int_array_len(const int *a);
-void int_array_concat(int **res, const int *a);
-void int_array_sort_unique(int *a);
-void int_array_add_unique(int **res, int a);
-
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 
-void str_clear_free(char *str);
-void bin_clear_free(void *bin, size_t len);
-
-int random_mac_addr(u8 *addr);
-int random_mac_addr_keep_oui(u8 *addr);
-
-const char * cstr_token(const char *str, const char *delim, const char **last);
-char * str_token(char *str, const char *delim, char **context);
-size_t utf8_escape(const char *inp, size_t in_size,
-		   char *outp, size_t out_size);
-size_t utf8_unescape(const char *inp, size_t in_size,
-		     char *outp, size_t out_size);
-int is_ctrl_char(char c);
-
+void wpa_bin_clear_free(void *bin, size_t len);
 
 /*
  * gcc 4.4 ends up generating strict-aliasing warnings about some very common

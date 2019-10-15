@@ -528,6 +528,8 @@ void   wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     if (res)
         goto failed;
 
+    pmksa_cache_set_current(sm, NULL, sm->bssid, 0, 0);
+
     if (sm->renew_snonce) {
         if (os_get_random(sm->snonce, WPA_NONCE_LEN)) {
          #ifdef DEBUG_PRINT            
