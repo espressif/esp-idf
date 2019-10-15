@@ -62,7 +62,7 @@ class Env(object):
         self.lock = threading.RLock()
 
     @_synced
-    def get_dut(self, dut_name, app_path, dut_class=None, app_class=None, **dut_init_args):
+    def get_dut(self, dut_name, app_path, dut_class=None, app_class=None, app_config_name=None, **dut_init_args):
         """
         get_dut(dut_name, app_path, dut_class=None, app_class=None)
 
@@ -70,6 +70,7 @@ class Env(object):
         :param app_path: application path, app instance will use this path to process application info
         :param dut_class: dut class, if not specified will use default dut class of env
         :param app_class: app class, if not specified will use default app of env
+        :param app_config_name: app build config
         :keyword dut_init_args: extra kwargs used when creating DUT instance
         :return: dut instance
         """
@@ -80,7 +81,6 @@ class Env(object):
                 dut_class = self.default_dut_cls
             if app_class is None:
                 app_class = self.app_cls
-            app_inst = app_class(app_path)
             try:
                 port = self.config.get_variable(dut_name)
             except ValueError:
@@ -89,10 +89,14 @@ class Env(object):
                 available_ports = dut_class.list_available_ports()
                 for port in available_ports:
                     if port not in allocated_ports:
-                        if dut_class.confirm_dut(port, app_inst):
+                        result = dut_class.confirm_dut(port)
+                        if result:
                             break
                 else:
                     port = None
+
+            app_inst = app_class(app_path, app_config_name)
+
             if port:
                 try:
                     dut_config = self.get_variable(dut_name + "_port_config")

@@ -160,14 +160,14 @@ class IDFDUT(DUT.SerialDUT):
         self.performance_items = _queue.Queue()
 
     @classmethod
-    def get_mac(cls, app, port):
+    def get_mac(cls, port):
         """
         get MAC address via esptool
 
-        :param app: application instance (to get tool)
         :param port: serial port as string
         :return: MAC address or None
         """
+        esp = None
         try:
             esp = esptool.ESP32ROM(port)
             esp.connect()
@@ -175,13 +175,14 @@ class IDFDUT(DUT.SerialDUT):
         except RuntimeError:
             return None
         finally:
-            # do hard reset after use esptool
-            esp.hard_reset()
-            esp._port.close()
+            if esp:
+                # do hard reset after use esptool
+                esp.hard_reset()
+                esp._port.close()
 
     @classmethod
-    def confirm_dut(cls, port, app, **kwargs):
-        return cls.get_mac(app, port) is not None
+    def confirm_dut(cls, port, **kwargs):
+        return cls.get_mac(port) is not None
 
     @_uses_esptool
     def _try_flash(self, esp, erase_nvs, baud_rate):
