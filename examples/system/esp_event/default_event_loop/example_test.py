@@ -4,7 +4,6 @@ import sys
 
 try:
     import IDF
-    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -94,7 +93,7 @@ def _test_iteration_events(dut):
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_default_event_loop_example(env, extra_data):
-    dut = env.get_dut('default_event_loop', 'examples/system/esp_event/default_event_loop', dut_class=ESP32DUT)
+    dut = env.get_dut('default_event_loop', 'examples/system/esp_event/default_event_loop')
 
     _test_iteration_events(dut)
     _test_timer_events(dut)
