@@ -25,7 +25,7 @@ def format_case_id(chip, case_name):
 
 
 def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", execution_time=1,
-                     level="example", erase_nvs=True, **kwargs):
+                     level="example", erase_nvs=True, config_name=None, **kwargs):
     """
     decorator for testing idf examples (with default values for some keyword args).
 
@@ -36,6 +36,7 @@ def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", e
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
     :param erase_nvs: if need to erase_nvs in DUT.start_app()
+    :param config_name: if specified, name of the app configuration
     :param kwargs: other keyword args
     :return: test method
     """

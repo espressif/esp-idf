@@ -38,9 +38,11 @@ class BaseApp(object):
     Also implements some common methods.
 
     :param app_path: the path for app.
+    :param config_name: app configuration to be tested
+    :param target: build target
     """
 
-    def __init__(self, app_path):
+    def __init__(self, app_path, config_name=None, target=None):
         pass
 
     @classmethod
