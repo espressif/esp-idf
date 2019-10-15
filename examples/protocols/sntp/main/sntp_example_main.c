@@ -19,9 +19,7 @@
 #include "esp_attr.h"
 #include "esp_sleep.h"
 #include "nvs_flash.h"
-
-#include "lwip/err.h"
-#include "lwip/apps/sntp.h"
+#include "esp_sntp.h"
 
 /* The examples use simple WiFi configuration that you can set via
    'make menuconfig'.
@@ -53,6 +51,19 @@ static void initialize_sntp(void);
 static void initialise_wifi(void);
 static esp_err_t event_handler(void *ctx, system_event_t *event);
 
+#ifdef CONFIG_SNTP_TIME_SYNC_METHOD_CUSTOM
+void sntp_sync_time(struct timeval *tv)
+{
+   settimeofday(tv, NULL);
+   ESP_LOGI(TAG, "Time is synchronized from custom code");
+   sntp_set_sync_status(SNTP_SYNC_STATUS_COMPLETED);
+}
+#endif
+
+void time_sync_notification_cb(struct timeval *tv)
+{
+    ESP_LOGI(TAG, "Notification of a time synchronization event");
+}
 
 void app_main()
 {
@@ -70,6 +81,27 @@ void app_main()
         // update 'now' variable with current time
         time(&now);
     }
+#ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
+    else {
+        // add 500 ms error to the current system time.
+        // Only to demonstrate a work of adjusting method!
+        {
+            ESP_LOGI(TAG, "Add a error for test adjtime");
+            struct timeval tv_now;
+            gettimeofday(&tv_now, NULL);
+            int64_t cpu_time = (int64_t)tv_now.tv_sec * 1000000L + (int64_t)tv_now.tv_usec;
+            int64_t error_time = cpu_time + 500 * 1000L;
+            struct timeval tv_error = { .tv_sec = error_time / 1000000L, .tv_usec = error_time % 1000000L };
+            settimeofday(&tv_error, NULL);
+        }
+
+        ESP_LOGI(TAG, "Time was set, now just adjusting it. Use SMOOTH SYNC method.");
+        obtain_time();
+        // update 'now' variable with current time
+        time(&now);
+    }
+#endif
+
     char strftime_buf[64];
 
     // Set timezone to Eastern Standard Time and print local time
@@ -85,6 +117,18 @@ void app_main()
     localtime_r(&now, &timeinfo);
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
+
+    if (sntp_get_sync_mode() == SNTP_SYNC_MODE_SMOOTH) {
+        struct timeval outdelta;
+        while (sntp_get_sync_status() == SNTP_SYNC_STATUS_IN_PROGRESS) {
+            adjtime(NULL, &outdelta);
+            ESP_LOGI(TAG, "Waiting for adjusting time ... outdelta = %li sec: %li ms: %li us",
+                        outdelta.tv_sec,
+                        outdelta.tv_usec/1000,
+                        outdelta.tv_usec%1000);
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+        }
+    }
 
     const int deep_sleep_sec = 10;
     ESP_LOGI(TAG, "Entering deep sleep for %d seconds", deep_sleep_sec);
@@ -104,12 +148,12 @@ static void obtain_time(void)
     struct tm timeinfo = { 0 };
     int retry = 0;
     const int retry_count = 10;
-    while(timeinfo.tm_year < (2016 - 1900) && ++retry < retry_count) {
+    while (sntp_get_sync_status() == SNTP_SYNC_STATUS_RESET && ++retry < retry_count) {
         ESP_LOGI(TAG, "Waiting for system time to be set... (%d/%d)", retry, retry_count);
         vTaskDelay(2000 / portTICK_PERIOD_MS);
-        time(&now);
-        localtime_r(&now, &timeinfo);
     }
+    time(&now);
+    localtime_r(&now, &timeinfo);
 
     ESP_ERROR_CHECK( esp_wifi_stop() );
 }
@@ -119,6 +163,10 @@ static void initialize_sntp(void)
     ESP_LOGI(TAG, "Initializing SNTP");
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "pool.ntp.org");
+    sntp_set_time_sync_notification_cb(time_sync_notification_cb);
+#ifdef CONFIG_SNTP_TIME_SYNC_METHOD_SMOOTH
+    sntp_set_sync_mode(SNTP_SYNC_MODE_SMOOTH);
+#endif
     sntp_init();
 }
 

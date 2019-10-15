@@ -5,6 +5,7 @@ COMPONENT_SUBMODULES += lwip
 
 COMPONENT_ADD_INCLUDEDIRS := \
 	include/apps \
+	include/apps/sntp \
 	lwip/src/include \
 	port/esp32/include \
 	port/esp32/include/arch \
@@ -13,6 +14,7 @@ COMPONENT_ADD_INCLUDEDIRS := \
 COMPONENT_SRCDIRS := \
 	apps/dhcpserver \
 	apps/ping \
+	apps/sntp \
 	lwip/src/api \
 	lwip/src/apps/sntp \
 	lwip/src/core \
