@@ -57,9 +57,18 @@ NOERROR: .error "C preprocessor needed for this file: make sure its filename\
 #include <xtensa/overlay_os_asm.h>
 #endif
 
+/*
+--------------------------------------------------------------------------------
+    ISR overhead statistics data:
+--------------------------------------------------------------------------------
+*/
+    .data
+    .align      16
+    .global     isr_enter_spent_time_cycles
+isr_enter_spent_time_cycles:
+    .word		0
+
     .text
-
-
 
 /*******************************************************************************
 
@@ -99,7 +108,6 @@ Exit conditions:
 	.literal_position
     .align  4
 _xt_context_save:
-
     s32i    a2,  sp, XT_STK_A2
     s32i    a3,  sp, XT_STK_A3
     s32i    a4,  sp, XT_STK_A4
@@ -182,10 +190,17 @@ _not_l1:
     and     a2, a2, a3
     wsr     a2, PS
     rsync
-    
+
+    rsr a2, CCOUNT
+
     addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
     SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
     addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with conext save*/
+
+    rsr a3, CCOUNT
+    sub  a3, a3, a2
+    movi a2, isr_enter_spent_time_cycles
+    s32i a3,a2,0
     #endif
 
     l32i    a12, sp, XT_STK_TMP0        /* temp. save stuff in stack frame */
@@ -197,7 +212,6 @@ _not_l1:
     #endif
 
     ret
-
 /*******************************************************************************
 
 _xt_context_restore
