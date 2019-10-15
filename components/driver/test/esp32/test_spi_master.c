@@ -24,6 +24,7 @@
 #include "sdkconfig.h"
 #include "../cache_utils.h"
 #include "soc/soc_memory_layout.h"
+#include "driver/spi_common_internal.h"
 
 const static char TAG[] = "test_spi";
 

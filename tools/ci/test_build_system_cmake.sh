@@ -48,7 +48,7 @@ function run_tests()
     if [ -z $CHECKOUT_REF_SCRIPT ]; then
         git checkout ${CI_BUILD_REF_NAME} || echo "Using esp-idf-template default branch..."
     else
-        $CHECKOUT_REF_SCRIPT esp-idf-template
+        $CHECKOUT_REF_SCRIPT esp-idf-template .
     fi
 
     print_status "Try to clean fresh directory..."
@@ -443,6 +443,28 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     grep "set(CONFIG_TEST_OLD_OPTION \"y\")" build/config/sdkconfig.cmake || failure "CONFIG_TEST_OLD_OPTION should be in auto.conf for backward compatibility"
     grep "set(CONFIG_TEST_NEW_OPTION \"y\")" build/config/sdkconfig.cmake || failure "CONFIG_TEST_NEW_OPTION should be now in auto.conf"
     rm -f sdkconfig sdkconfig.defaults
+    pushd ${IDF_PATH}
+    git checkout -- sdkconfig.rename Kconfig
+    popd
+
+    print_status "Handling deprecated Kconfig options in sdkconfig.defaults"
+    idf.py clean;
+    rm -f sdkconfig;
+    echo "CONFIG_TEST_OLD_OPTION=7" > sdkconfig.defaults;
+    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" > ${IDF_PATH}/sdkconfig.rename;
+    echo -e "\n\
+menu \"test\"\n\
+    config TEST_NEW_OPTION\n\
+        int \"TEST_NEW_OPTION\"\n\
+        range 0 10\n\
+        default 5\n\
+        help\n\
+            TEST_NEW_OPTION description\n\
+endmenu\n" >> ${IDF_PATH}/Kconfig;
+    idf.py build > /dev/null;
+    grep "CONFIG_TEST_OLD_OPTION=7" sdkconfig || failure "CONFIG_TEST_OLD_OPTION=7 should be in sdkconfig for backward compatibility"
+    grep "CONFIG_TEST_NEW_OPTION=7" sdkconfig || failure "CONFIG_TEST_NEW_OPTION=7 should be in sdkconfig"
+    rm -f sdkconfig.defaults;
     pushd ${IDF_PATH}
     git checkout -- sdkconfig.rename Kconfig
     popd

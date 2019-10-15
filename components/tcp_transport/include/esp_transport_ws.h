@@ -43,7 +43,6 @@ void esp_transport_ws_set_path(esp_transport_handle_t t, const char *path);
  */
 esp_err_t esp_transport_ws_set_subprotocol(esp_transport_handle_t t, const char *sub_protocol);
 
-
 #ifdef __cplusplus
 }
 #endif
