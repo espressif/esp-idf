@@ -46,6 +46,7 @@ import shlex
 import time
 import sys
 import serial
+import serial.tools.list_ports
 import serial.tools.miniterm as miniterm
 import threading
 import ctypes
@@ -65,6 +66,7 @@ CTRL_R = '\x12'
 CTRL_T = '\x14'
 CTRL_Y = '\x19'
 CTRL_P = '\x10'
+CTRL_X = '\x18'
 CTRL_L = '\x0c'
 CTRL_RBRACKET = '\x1d'  # Ctrl+]
 
@@ -272,6 +274,8 @@ class ConsoleParser(object):
             yellow_print("Pause app (enter bootloader mode), press Ctrl-T Ctrl-R to restart")
             # to fast trigger pause without press menu key
             ret = (TAG_CMD, CMD_ENTER_BOOT)
+        elif c in [CTRL_X, 'x', 'X']:  # Exiting from within the menu
+            ret = (TAG_CMD, CMD_STOP)
         else:
             red_print('--- unknown menu character {} --'.format(key_description(c)))
 
@@ -294,6 +298,7 @@ class ConsoleParser(object):
             ---    {output:14} Toggle output display
             ---    {log:14} Toggle saving output into file
             ---    {pause:14} Reset target into bootloader to pause app via RTS line
+            ---    {menuexit:14} Exit program
         """.format(version=__version__,
                    exit=key_description(self.exit_key),
                    menu=key_description(self.menu_key),
@@ -302,7 +307,8 @@ class ConsoleParser(object):
                    appmake=key_description(CTRL_A) + ' (or A)',
                    output=key_description(CTRL_Y),
                    log=key_description(CTRL_L),
-                   pause=key_description(CTRL_P))
+                   pause=key_description(CTRL_P),
+                   menuexit=key_description(CTRL_X) + ' (or X)')
         return textwrap.dedent(text)
 
     def get_next_action_text(self):
@@ -759,12 +765,24 @@ class Monitor(object):
 
 
 def main():
+
+    def _get_default_serial_port():
+        """
+        Same logic for detecting serial port as esptool.py and idf.py: reverse sort by name and choose the first port.
+        """
+
+        try:
+            ports = list(reversed(sorted(p.device for p in serial.tools.list_ports.comports())))
+            return ports[0]
+        except Exception:
+            return '/dev/ttyUSB0'
+
     parser = argparse.ArgumentParser("idf_monitor - a serial output monitor for esp-idf")
 
     parser.add_argument(
         '--port', '-p',
         help='Serial port device',
-        default=os.environ.get('ESPTOOL_PORT', '/dev/ttyUSB0')
+        default=os.environ.get('ESPTOOL_PORT', _get_default_serial_port())
     )
 
     parser.add_argument(

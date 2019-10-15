@@ -1168,7 +1168,7 @@ can be used with CMake commands that support generator expressions.
 
 .. code-block:: none
 
-  idf_component_set_property(property val [APPEND])
+  idf_component_set_property(component property val [APPEND])
 
 Set a specified *component*'s :ref:`component property<cmake-component-properties>`, *property* with value *val*. Specifying *APPEND* will append the specified value to the current
 value of the property. If the property does not previously exist or it is currently empty, the specified value becomes 

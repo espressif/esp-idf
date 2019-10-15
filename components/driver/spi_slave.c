@@ -17,7 +17,7 @@
 #include <hal/spi_ll.h>
 #include <hal/spi_slave_hal.h>
 #include <soc/lldesc.h>
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "driver/spi_slave.h"
 #include "soc/spi_periph.h"
 #include "esp_types.h"
