@@ -316,11 +316,11 @@ TEST_CASE("test time adjustment happens linearly", "[newlib][timeout=35]")
 }
 #endif
 
-#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 )
+#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 )
 #define WITH_RTC 1
 #endif
 
-#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_FRC1 ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 )
+#if defined( CONFIG_ESP32_TIME_SYSCALL_USE_FRC1 ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_FRC1 ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 )
 #define WITH_FRC 1
 #endif
 void test_posix_timers_clock (void)
@@ -416,7 +416,7 @@ void test_posix_timers_clock (void)
 #endif // defined( WITH_FRC ) || defined( WITH_RTC )
 }
 
-TEST_CASE_ESP32("test posix_timers clock_... functions", "[newlib]")
+TEST_CASE("test posix_timers clock_... functions", "[newlib]")
 {
     test_posix_timers_clock();
 }
