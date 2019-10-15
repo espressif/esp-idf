@@ -25,23 +25,36 @@
 #include "esp_event.h"
 
 static const char *TAG = "WEBSOCKET";
-static const char *WEBSOCKET_ECHO_ENDPOINT = CONFIG_WEBSOCKET_URI;
 
+#if CONFIG_WEBSOCKET_URI_FROM_STDIN
+static void get_string(char *line, size_t size)
+{
+    int count = 0;
+    while (count < size) {
+        int c = fgetc(stdin);
+        if (c == '\n') {
+            line[count] = '\0';
+            break;
+        } else if (c > 0 && c < 127) {
+            line[count] = c;
+            ++count;
+        }
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+}
+
+#endif /* CONFIG_WEBSOCKET_URI_FROM_STDIN */
 
 static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
 {
-    // esp_websocket_client_handle_t client = (esp_websocket_client_handle_t)handler_args;
     esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
     switch (event_id) {
         case WEBSOCKET_EVENT_CONNECTED:
             ESP_LOGI(TAG, "WEBSOCKET_EVENT_CONNECTED");
-
-
             break;
         case WEBSOCKET_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "WEBSOCKET_EVENT_DISCONNECTED");
             break;
-
         case WEBSOCKET_EVENT_DATA:
             ESP_LOGI(TAG, "WEBSOCKET_EVENT_DATA");
             ESP_LOGI(TAG, "Received opcode=%d", data->op_code);
@@ -55,11 +68,23 @@ static void websocket_event_handler(void *handler_args, esp_event_base_t base, i
 
 static void websocket_app_start(void)
 {
-    ESP_LOGI(TAG, "Connectiong to %s...", WEBSOCKET_ECHO_ENDPOINT);
+    esp_websocket_client_config_t websocket_cfg = {};
 
-    const esp_websocket_client_config_t websocket_cfg = {
-        .uri = WEBSOCKET_ECHO_ENDPOINT, // or wss://echo.websocket.org for websocket secure
-    };
+    #if CONFIG_WEBSOCKET_URI_FROM_STDIN
+    char line[128];
+
+    ESP_LOGI(TAG, "Please enter uri of websocket endpoint");
+    get_string(line, sizeof(line));
+
+    websocket_cfg.uri = line;
+    ESP_LOGI(TAG, "Endpoint uri: %s\n", line);
+
+    #else
+    websocket_cfg.uri = CONFIG_WEBSOCKET_URI;
+
+    #endif /* CONFIG_WEBSOCKET_URI_FROM_STDIN */
+
+    ESP_LOGI(TAG, "Connecting to %s...", websocket_cfg.uri);
 
     esp_websocket_client_handle_t client = esp_websocket_client_init(&websocket_cfg);
     esp_websocket_register_events(client, WEBSOCKET_EVENT_ANY, websocket_event_handler, (void *)client);
@@ -75,6 +100,8 @@ static void websocket_app_start(void)
         }
         vTaskDelay(1000 / portTICK_RATE_MS);
     }
+    // Give server some time to respond before closing
+    vTaskDelay(3000 / portTICK_RATE_MS);
     esp_websocket_client_stop(client);
     ESP_LOGI(TAG, "Websocket Stopped");
     esp_websocket_client_destroy(client);
