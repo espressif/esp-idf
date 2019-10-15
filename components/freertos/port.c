@@ -109,6 +109,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
+#include "esp_compiler.h"
 
 /* Defined in portasm.h */
 extern void _frxt_tick_timer_init(void);

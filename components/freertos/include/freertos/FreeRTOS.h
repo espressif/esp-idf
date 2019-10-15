@@ -94,6 +94,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/* for likely and unlikely */
+#include "esp_compiler.h"
 
 /* Application specific configuration options. */
 #include "FreeRTOSConfig.h"

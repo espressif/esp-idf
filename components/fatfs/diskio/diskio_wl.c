@@ -43,7 +43,7 @@ DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
     assert(wl_handle + 1);
     esp_err_t err = wl_read(wl_handle, sector * wl_sector_size(wl_handle), buff, count * wl_sector_size(wl_handle));
-    if (err != ESP_OK) {
+    if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_read failed (%d)", err);
         return RES_ERROR;
     }
@@ -56,12 +56,12 @@ DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
     assert(wl_handle + 1);
     esp_err_t err = wl_erase_range(wl_handle, sector * wl_sector_size(wl_handle), count * wl_sector_size(wl_handle));
-    if (err != ESP_OK) {
+    if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_erase_range failed (%d)", err);
         return RES_ERROR;
     }
     err = wl_write(wl_handle, sector * wl_sector_size(wl_handle), buff, count * wl_sector_size(wl_handle));
-    if (err != ESP_OK) {
+    if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_write failed (%d)", err);
         return RES_ERROR;
     }

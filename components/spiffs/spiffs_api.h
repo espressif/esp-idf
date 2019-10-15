@@ -21,6 +21,7 @@
 #include "freertos/semphr.h"
 #include "spiffs.h"
 #include "esp_vfs.h"
+#include "esp_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {

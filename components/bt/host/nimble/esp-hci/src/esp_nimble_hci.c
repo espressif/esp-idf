@@ -28,6 +28,7 @@
 #include "esp_nimble_hci.h"
 #include "esp_bt.h"
 #include "freertos/semphr.h"
+#include "esp_compiler.h"
 
 #define NIMBLE_VHCI_TIMEOUT_MS  2000
 

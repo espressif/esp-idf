@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2016-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -11,26 +11,18 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef __ESP_COMPILER_H
+#define __ESP_COMPILER_H
 
-#pragma once
+/*
+ * The likely and unlikely macro pairs:
+ * These macros are useful to place when application  
+ * knows the majority ocurrence of a decision paths,
+ * placing one of these macros can hint the compiler
+ * to reorder instructions producing more optimized 
+ * code.
+ */ 
+#define likely(x)      __builtin_expect(!!(x), 1) 
+#define unlikely(x)    __builtin_expect(!!(x), 0) 
 
-#include "sdmmc_cmd.h"
-#include "driver/sdmmc_host.h"
-#include "esp_compiler.h"
-
-#ifdef __cplusplus
-extern "C" {
 #endif
-
-/**
- * Register SD/MMC diskio driver
- *
- * @param pdrv  drive number
- * @param card  pointer to sdmmc_card_t structure describing a card; card should be initialized before calling f_mount.
- */
-void ff_diskio_register_sdmmc(unsigned char pdrv, sdmmc_card_t* card);
-
-#ifdef __cplusplus
-}
-#endif
-
