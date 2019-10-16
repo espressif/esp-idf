@@ -450,3 +450,10 @@ void heap_caps_dump_all(void)
 {
     heap_caps_dump(MALLOC_CAP_INVALID);
 }
+
+size_t heap_caps_get_allocated_size( void *ptr )
+{
+    heap_t *heap = find_containing_heap(ptr);
+    size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
+    return size;
+}
