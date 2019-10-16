@@ -1751,6 +1751,8 @@ WPS Enrolle
 
 ESP32 supports WPS enrollee feature in Wi-Fi mode WIFI_MODE_STA or WIFI_MODE_APSTA. Currently ESP32 supports WPS enrollee type PBC and PIN.
 
+.. _wifi-buffer-usage:
+
 Wi-Fi Buffer Usage
 --------------------------
 
@@ -1772,26 +1774,9 @@ Due to these reasons, there is not a good-for-all application configuration. Rat
 Dynamic vs. Static Buffer
 ++++++++++++++++++++++++++++++
 
-The default type of buffer in LwIP and Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in LwIP/Wi-Fi.
+The default type of buffer in Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in Wi-Fi.
 
-
-Peak LwIP Dynamic Buffer
-++++++++++++++++++++++++++++++
-
-The default type of LwIP buffer is "dynamic", and this section considers the dynamic buffer only.
-The peak heap memory that LwIP consumes is the **theoretically-maximum memory** that the LwIP driver consumes. Generally, the peak heap memory that the LwIP consumes depends on:
-
- - the memory required to create a UDP connection: lwip_udp_conn
- - the memory required to create a TCP connection: lwip_tcp_conn
- - the number of UDP connections that the application has: lwip_udp_con_num
- - the number of TCP connections that the application has: lwip_tcp_con_num
- - the TCP TX window size: lwip_tcp_tx_win_size
- - the TCP RX window size: lwip_tcp_rx_win_size
-
-**So, the peak heap memory that the LwIP consumes can be calculated with the following formula:**
-  lwip_dynamic_peek_memory =  (lwip_udp_con_num * lwip_udp_conn)  + (lwip_tcp_con_num * (lwip_tcp_tx_win_size + lwip_tcp_rx_win_size + lwip_tcp_conn))
-
-Some TCP-based applications need only one TCP connection. However, they may choose to close this TCP connection and create a new one when an error (such as a sending failure) occurs. This may result in multiple TCP connections existing in the system simultaneously, because it may take a long time for a TCP connection to close, according to the TCP state machine (refer to RFC793).
+lwIP also allocates buffers at the TCP/IP layer, and this buffer allocation is also dynamic. See :ref:`lwIP documentation section about memory use and performance<lwip-ram-usage>`.
 
 Peak Wi-Fi Dynamic Buffer
 ++++++++++++++++++++++++++++++
