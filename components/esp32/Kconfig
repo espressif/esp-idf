@@ -169,8 +169,12 @@ config SPIRAM_BANKSWITCH_ENABLE
         memories, but these have to be bank-switched in and out of this address space. Enabling this allows you
         to reserve some MMU pages for this, which allows the use of the esp_himem api to manage these banks.
 
-#Note that this is limited to 62 banks, as esp_spiram_writeback_cache needs some kind of mapping of some banks
-#below that mark to work. We cannot at this moment guarantee this to exist when himem is enabled.
+        #Note that this is limited to 62 banks, as esp_spiram_writeback_cache needs some kind of mapping of some banks
+        #below that mark to work. We cannot at this moment guarantee this to exist when himem is enabled.
+
+        If spiram 2T mode is enabled, the size of 64Mbit psram will be changed as 32Mbit, so himem will be
+        unusable.
+
 config SPIRAM_BANKSWITCH_RESERVE
     int "Amount of 32K pages to reserve for bank switching"
     depends on SPIRAM_BANKSWITCH_ENABLE
@@ -334,6 +338,20 @@ config SPIRAM_SPIWP_SD3_PIN
         bootloader.
 
         For ESP32-PICO chip, the default value of this config should be 7.
+
+config SPIRAM_2T_MODE
+    bool "Enable SPI PSRAM 2T mode"
+    depends on SPIRAM_SUPPORT
+    default "n"
+    help
+        Enable this option to fix single bit errors inside 64Mbit PSRAM.
+
+        Some 64Mbit PSRAM chips have a hardware issue in the RAM which causes bit errors at multiple
+        fixed bit positions.
+
+        Note: If this option is enabled, the 64Mbit PSRAM chip will appear to be 32Mbit in size.
+        Applications will not be affected unless the use the esp_himem APIs, which are not supported
+        in 2T mode.
 endmenu
 
 config MEMMAP_TRACEMEM
