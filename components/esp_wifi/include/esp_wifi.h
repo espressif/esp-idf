@@ -592,9 +592,11 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
   * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
   * @attention 4. When the country info is changed because of configuration or because the station connects to a different
   *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.
-  * @attention 5. The country configuration is not stored into flash
+  * @attention 5. The country configuration is stored into flash.
   * @attention 6. This API doesn't validate the per-country rules, it's up to the user to fill in all fields according to 
   *               local regulations.
+  * @attention 7. When this API is called, the PHY init data will switch to the PHY init data type corresponding to the
+  *               country info.
   *
   * @param     country   the configured country info
   *
