@@ -435,9 +435,18 @@ menu "FreeRTOS"
             would be checked to be in compliance with Vanilla FreeRTOS.
             e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
+<<<<<<< HEAD
     config FREERTOS_DEBUG_OCDAWARE
         bool
         help
             Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
 
+=======
+    config FREERTOS_ISR_STATS
+        bool "Enable cycle measurement inside ISR"
+        default n
+        help
+            If enabled, every context save operation will have its time
+            spent in cycles, measured.
+>>>>>>> 0f141ba8a... freertos/xtensa_context: added conditional compiling option around isr cycle measurement
 endmenu

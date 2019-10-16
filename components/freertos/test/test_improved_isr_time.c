@@ -13,6 +13,8 @@
 #include "soc/cpu.h"
 #include "test_utils.h"
 
+#ifdef CONFIG_FREERTOS_ISR_STATS
+
 static SemaphoreHandle_t end_sema;
 extern uint32_t isr_enter_spent_time_cycles;
 volatile static uint32_t isr_enter_spent_time_cycles_copy;
@@ -49,7 +51,7 @@ static void test_task(void *arg) {
     nested1();
  }
 
-TEST_CASE("isr handling time test", "[freertos]")
+TEST_CASE("isr handling time test", "[freertos] [ignore]")
 {
     end_sema = xSemaphoreCreateBinary();
     TEST_ASSERT(end_sema != NULL);
@@ -59,3 +61,4 @@ TEST_CASE("isr handling time test", "[freertos]")
     TEST_PERFORMANCE_LESS_THAN(SPILL_REG_CYCLES, "%d cycles" ,isr_enter_spent_time_cycles_copy); 
 }
 
+#endif
