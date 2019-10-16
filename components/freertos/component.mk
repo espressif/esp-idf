@@ -2,7 +2,10 @@
 # Component Makefile
 #
 
-COMPONENT_ADD_LDFLAGS += -Wl,--undefined=uxTopUsedPriority
+ifdef CONFIG_FREERTOS_DEBUG_OCDAWARE
+	COMPONENT_ADD_LDFLAGS += -Wl,--undefined=uxTopUsedPriority
+endif
+
 COMPONENT_ADD_INCLUDEDIRS := include
 COMPONENT_PRIV_INCLUDEDIRS := include/freertos .
 
