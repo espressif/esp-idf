@@ -1,6 +1,7 @@
 set(COMPONENT_SRCS "src/bootloader_clock.c"
                    "src/bootloader_common.c"
                    "src/bootloader_flash.c"
+                   "src/bootloader_flash_config.c"
                    "src/bootloader_random.c"
                    "src/bootloader_sha.c"
                    "src/bootloader_utility.c"
