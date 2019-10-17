@@ -85,6 +85,9 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
 
     //Disable unneeded ints
     hw->slave.val &= ~SPI_LL_UNUSED_INT_MASK;
+
+    //disable a feature may cause transaction to be too long
+    hw->user.usr_prep_hold = 0;
 }
 
 /**
@@ -778,24 +781,30 @@ static inline void spi_ll_set_address(spi_dev_t *hw, uint64_t addr, int addrlen,
 {
     if (lsbfirst) {
         /* The output address start from the LSB of the highest byte, i.e.
-         * addr[24] -> addr[31]
-         * ...
-         * addr[0] -> addr[7]
-         * slv_wr_status[24] -> slv_wr_status[31]
-         * ...
-         * slv_wr_status[0] -> slv_wr_status[7]
-         * So swap the byte order to let the LSB sent first.
-         */
+        * addr[24] -> addr[31]
+        * ...
+        * addr[0] -> addr[7]
+        * So swap the byte order to let the LSB sent first.
+        */
         addr = HAL_SWAP64(addr);
-        hw->addr = addr >> 32;
-        hw->slv_wr_status = addr;
+        if (addrlen > 32) {
+            //The slv_wr_status register bits are sent first, then
+            //bits in addr register is sent.
+            hw->slv_wr_status = addr >> 32;
+            hw->addr = addr;
+        } else {
+            //otherwise only addr register is sent
+            hw->addr = addr >> 32;
+        }
     } else {
         // shift the address to MSB of addr (and maybe slv_wr_status) register.
-        // output address will be sent from MSB to LSB of addr register, then comes the MSB to LSB of slv_wr_status register.
         if (addrlen > 32) {
-            hw->addr = addr >> (addrlen - 32);
-            hw->slv_wr_status = addr << (64 - addrlen);
+            // output address will be sent from MSB to LSB of slv_wr_status register, then comes the MSB to
+            // LSB of addr register.
+            hw->addr = addr << (64 - addrlen);
+            hw->slv_wr_status = addr >> (addrlen - 32);
         } else {
+            // output address will be sent from MSB to LSB of addr register
             hw->addr = addr << (32 - addrlen);
         }
     }

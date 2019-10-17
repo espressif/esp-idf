@@ -87,32 +87,32 @@ int spi_hal_master_cal_clock(int fapb, int hz, int duty_cycle)
 void spi_hal_cal_timing(int eff_clk, bool gpio_is_used, int input_delay_ns, int *dummy_n, int *miso_delay_n)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
-    //calculate how many apb clocks a period has
-    const int apbclk_n = APB_CLK_FREQ / eff_clk;
+    //how many apb clocks a period has
+    const int spiclk_apb_n = APB_CLK_FREQ / eff_clk;
     const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
 
-    //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-    int apb_period_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
-    if (apb_period_n < 0) {
-        apb_period_n = 0;
+    //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
+    int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
+    if (delay_apb_n < 0) {
+        delay_apb_n = 0;
     }
 
-    int dummy_required = apb_period_n / apbclk_n;
+    int dummy_required = delay_apb_n / spiclk_apb_n;
 
     int miso_delay = 0;
     if (dummy_required > 0) {
         //due to the clock delay between master and slave, there's a range in which data is random
         //give MISO a delay if needed to make sure we sample at the time MISO is stable
-        miso_delay = (dummy_required + 1) * apbclk_n - apb_period_n - 1;
+        miso_delay = (dummy_required + 1) * spiclk_apb_n - delay_apb_n - 1;
     } else {
         //if the dummy is not required, maybe we should also delay half a SPI clock if the data comes too early
-        if (apb_period_n * 4 <= apbclk_n) {
+        if (delay_apb_n * 4 <= spiclk_apb_n) {
             miso_delay = -1;
         }
     }
     *dummy_n = dummy_required;
     *miso_delay_n = miso_delay;
-    HAL_LOGD(SPI_HAL_TAG, "eff: %d, limit: %dk(/%d), %d dummy, %d delay", eff_clk / 1000, apbclk_kHz / (apb_period_n + 1), apb_period_n, dummy_required, miso_delay);
+    HAL_LOGD(SPI_HAL_TAG, "eff: %d, limit: %dk(/%d), %d dummy, %d delay", eff_clk / 1000, apbclk_kHz / (delay_apb_n + 1), delay_apb_n, dummy_required, miso_delay);
 }
 
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
@@ -120,11 +120,11 @@ int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
     const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
 
-    //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
-    int apb_period_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
-    if (apb_period_n < 0) {
-        apb_period_n = 0;
+    //how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
+    int delay_apb_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
+    if (delay_apb_n < 0) {
+        delay_apb_n = 0;
     }
 
-    return APB_CLK_FREQ / (apb_period_n + 1);
+    return APB_CLK_FREQ / (delay_apb_n + 1);
 }
