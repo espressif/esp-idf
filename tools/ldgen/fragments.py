@@ -234,7 +234,7 @@ class Sections(Fragment):
         else:
             if sections_entry.endswith("+"):
                 section = sections_entry.replace("+", ".*")
-                expansion = section.replace(".*", "." + symbol)
+                expansion = section.replace(".*", "." + symbol.replace('+', ''))
                 return (section, expansion)
             else:
                 return (sections_entry, None)
@@ -313,7 +313,7 @@ class Mapping(Fragment):
         #       obj (scheme)
         #       * (scheme)
         obj = Fragment.ENTITY.setResultsName("object")
-        symbol = Suppress(":") + Fragment.IDENTIFIER.setResultsName("symbol")
+        symbol = Suppress(":") + Word(alphas + "_", alphanums + "_" + "+.").setResultsName("symbol")
         scheme = Suppress("(") + Fragment.IDENTIFIER.setResultsName("scheme") + Suppress(")")
 
         pattern1 = obj + symbol + scheme
@@ -328,7 +328,6 @@ class Mapping(Fragment):
         }
 
         return grammars
-
 
 class DeprecatedMapping():
     """

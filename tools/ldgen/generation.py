@@ -202,6 +202,9 @@ class PlacementRule():
         else:
             rule_string = "*%s:%s(%s)" % (archive, obj, sections_string)
 
+        if self.symbol and self.symbol.endswith('+'):
+            rule_string += "\n    KEEP(*(.text.%s))" % (sections_string)
+
         return rule_string
 
     def __eq__(self, other):
@@ -536,7 +539,6 @@ class TemplateModel:
             try:
                 indent = member.indent
                 rules = member.rules
-
                 for rule in rules:
                     generated_line = "".join([indent, str(rule), '\n'])
                     output_file.write(generated_line)
