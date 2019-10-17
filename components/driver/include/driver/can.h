@@ -45,7 +45,13 @@ extern "C" {
  * The following initializer macros offer commonly found bit rates.
  *
  * @note These timing values are based on the assumption APB clock is at 80MHz
+ * @note The 20K, 16K and 12.5K bit rates are only available from ESP32 Revision 2 onwards
  */
+#if (CONFIG_ESP32_REV_MIN >= 2)
+#define CAN_TIMING_CONFIG_12_5KBITS()   {.brp = 256, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
+#define CAN_TIMING_CONFIG_16KBITS()     {.brp = 200, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
+#define CAN_TIMING_CONFIG_20KBITS()     {.brp = 200, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#endif
 #define CAN_TIMING_CONFIG_25KBITS()     {.brp = 128, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_50KBITS()     {.brp = 80, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_100KBITS()    {.brp = 40, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
@@ -153,7 +159,8 @@ typedef struct {
  * @note    Macro initializers are available for this structure
  */
 typedef struct {
-    uint8_t brp;                    /**< Baudrate prescaler (APB clock divider, even number from 2 to 128) */
+    uint32_t brp;                   /**< Baudrate prescaler (i.e., APB clock divider) can be any even number from 2 to 128.
+                                         For ESP32 Rev 2 or later, multiples of 4 from 132 to 256 are also supported */
     uint8_t tseg_1;                 /**< Timing segment 1 (Number of time quanta, between 1 to 16) */
     uint8_t tseg_2;                 /**< Timing segment 2 (Number of time quanta, 1 to 8) */
     uint8_t sjw;                    /**< Synchronization Jump Width (Max time quanta jump for synchronize from 1 to 4) */
