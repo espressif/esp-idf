@@ -13,6 +13,10 @@ if(CONFIG_ETH_SPI_ETHERNET_DM9051)
                              "src/esp_eth_phy_dm9051.c")
 endif()
 
+if(CONFIG_ETH_USE_OPENETH)
+    list(APPEND esp_eth_srcs "src/esp_eth_mac_openeth.c")
+endif()
+
 idf_component_register(SRCS "${esp_eth_srcs}"
                        INCLUDE_DIRS "include"
                        LDFRAGMENTS "linker.lf"
