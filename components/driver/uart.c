@@ -1240,9 +1240,19 @@ int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickTyp
     if(xSemaphoreTake(p_uart_obj[uart_num]->rx_mux,(portTickType)ticks_to_wait) != pdTRUE) {
         return -1;
     }
+
+    if(p_uart_obj[uart_num]->rx_cur_remain == 0) {
+        data = (uint8_t*) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (portTickType) ticks_to_wait);
+        if(data) {
+            p_uart_obj[uart_num]->rx_head_ptr = data;
+            p_uart_obj[uart_num]->rx_ptr = data;
+            p_uart_obj[uart_num]->rx_cur_remain = size;
+        }
+    }
+
     while(length) {
         if(p_uart_obj[uart_num]->rx_cur_remain == 0) {
-            data = (uint8_t*) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (portTickType) ticks_to_wait);
+            data = (uint8_t*) xRingbufferReceive(p_uart_obj[uart_num]->rx_ring_buf, &size, (portTickType) 0);
             if(data) {
                 p_uart_obj[uart_num]->rx_head_ptr = data;
                 p_uart_obj[uart_num]->rx_ptr = data;
