@@ -22,6 +22,10 @@ if(CONFIG_ETH_ENABLED)
     endif()
 endif()
 
+if(CONFIG_ETH_USE_OPENETH)
+    list(APPEND srcs "src/esp_eth_mac_openeth.c")
+endif()
+
 idf_component_register(SRCS "${srcs}"
     INCLUDE_DIRS ${include}
     LDFRAGMENTS ${linker}

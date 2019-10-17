@@ -49,6 +49,7 @@ typedef enum {
 typedef struct {
     const char *data_ptr;   /*!< Data pointer */
     int         data_len;   /*!< Data length */
+    uint8_t     op_code;    /*!< Received opcode */
 } esp_websocket_event_data_t;
 
 /**
@@ -72,7 +73,6 @@ typedef struct {
 } esp_websocket_event_t;
 
 typedef esp_websocket_event_t* esp_websocket_event_handle_t;
-typedef esp_err_t (* websocket_event_callback_t)(esp_websocket_event_handle_t event);
 
 /**
  * @brief Websocket client setup configuration
@@ -150,7 +150,7 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client);
 esp_err_t esp_websocket_client_destroy(esp_websocket_client_handle_t client);
 
 /**
- * @brief      Write data to the WebSocket connection
+ * @brief      Generic write data to the WebSocket connection; defaults to binary send
  *
  * @param[in]  client  The client
  * @param[in]  data    The data
@@ -162,6 +162,34 @@ esp_err_t esp_websocket_client_destroy(esp_websocket_client_handle_t client);
  *     - (-1) if any errors
  */
 int esp_websocket_client_send(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout);
+
+/**
+ * @brief      Write binary data to the WebSocket connection (data send with WS OPCODE=02, i.e. binary)
+ *
+ * @param[in]  client  The client
+ * @param[in]  data    The data
+ * @param[in]  len     The length
+ * @param[in]  timeout Write data timeout
+ *
+ * @return
+ *     - Number of data was sent
+ *     - (-1) if any errors
+ */
+int esp_websocket_client_send_bin(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout);
+
+/**
+ * @brief      Write textual data to the WebSocket connection (data send with WS OPCODE=01, i.e. text)
+ *
+ * @param[in]  client  The client
+ * @param[in]  data    The data
+ * @param[in]  len     The length
+ * @param[in]  timeout Write data timeout
+ *
+ * @return
+ *     - Number of data was sent
+ *     - (-1) if any errors
+ */
+int esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout);
 
 /**
  * @brief      Check the WebSocket connection status

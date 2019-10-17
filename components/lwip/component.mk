@@ -16,6 +16,7 @@ COMPONENT_SRCDIRS := \
 	apps/sntp \
 	lwip/src/api \
 	lwip/src/apps/sntp \
+	lwip/src/apps/netbiosns \
 	lwip/src/core \
 	lwip/src/core/ipv4 \
 	lwip/src/core/ipv6 \

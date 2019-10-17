@@ -168,7 +168,7 @@ The operating bit rate of the CAN controller is configured using the :cpp:type:`
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
-The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the CAN controller's source clock (80 MHz APB clock). The ``brp`` can be **any even number from 2 to 128**.
+The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the CAN controller's source clock (80 MHz APB clock). The ``brp`` can be **any even number from 2 to 128**. If the ESP32 is a revision 2 or later chip, the ``brp`` will also support **any multiple of 4 from 132 to 256**, and can be enabled by setting the :ref:`CONFIG_ESP32_REV_MIN` to revision 2 or higher.
 
 .. packetdiag:: ../../../_static/diagrams/can/can_bit_timing.diag
     :caption: Bit timing configuration for 500kbit/s given BRP = 8
@@ -183,6 +183,9 @@ The **Synchronization Jump Width** is used to determined the maximum number of t
 
 Bit timing **macro initializers** are also available for commonly used CAN bus bit rates. The following macro initializers are provided by the CAN driver.
 
+    - ``CAN_TIMING_CONFIG_12_5KBITS()``
+    - ``CAN_TIMING_CONFIG_16KBITS()``
+    - ``CAN_TIMING_CONFIG_20KBITS()``
     - ``CAN_TIMING_CONFIG_25KBITS()``
     - ``CAN_TIMING_CONFIG_50KBITS()``
     - ``CAN_TIMING_CONFIG_100KBITS()``
@@ -191,6 +194,10 @@ Bit timing **macro initializers** are also available for commonly used CAN bus b
     - ``CAN_TIMING_CONFIG_500KBITS()``
     - ``CAN_TIMING_CONFIG_800KBITS()``
     - ``CAN_TIMING_CONFIG_1MBITS()``
+
+.. note::
+    The macro initializers for 12.5K, 16K, and 20K bit rates are only available
+    for ESP32 revision 2 or later.
 
 Acceptance Filter
 ^^^^^^^^^^^^^^^^^

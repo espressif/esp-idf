@@ -108,6 +108,8 @@ openocd-esp32/bin/openocd -s openocd-esp32/share/openocd/scripts -f interface/ft
 
 In your browser, enter the URL where the website located (e.g. `http://esp-home.local`). You can also enter the IP address that ESP32 obtained if your operating system currently don't have support for mDNS service.
 
+Besides that, this example also enables the NetBIOS feature with the domain name `esp-home`. If your OS supports NetBIOS and has enabled it (e.g. Windows has native support for NetBIOS), then the URL `http://esp-home` should also work.
+
 ![esp_home_local](https://dl.espressif.com/dl/esp-idf/docs/_static/esp_home_local.gif)
 
 ### ESP monitor output
