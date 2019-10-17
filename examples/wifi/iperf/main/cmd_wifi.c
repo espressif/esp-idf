@@ -111,8 +111,10 @@ void initialise_wifi(void)
     esp_netif_init();
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
-    assert(netif_ap = esp_netif_create_default_wifi_ap());
-    assert(netif_sta = esp_netif_create_default_wifi_sta());
+    netif_ap = esp_netif_create_default_wifi_ap();
+    assert(netif_ap);
+    netif_sta = esp_netif_create_default_wifi_sta();
+    assert(netif_sta);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &scan_done_handler, NULL) );
