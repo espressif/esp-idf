@@ -24,7 +24,6 @@
 
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
-volatile bool is_connected = false;
 
 
 static void event_handler(void* arg, esp_event_base_t event_base,
@@ -107,7 +106,6 @@ static int connect(int argc, char **argv)
         return 1;
     }
     ESP_LOGI(__func__, "Connected");
-	is_connected = true;
     return 0;
 }
 
