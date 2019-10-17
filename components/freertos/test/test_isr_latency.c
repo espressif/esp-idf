@@ -51,7 +51,7 @@ static void test_task(void *arg) {
     nested1();
  }
 
-TEST_CASE("isr handling time test", "[freertos] [ignore]")
+TEST_CASE("isr latency test", "[freertos] [ignore]")
 {
     end_sema = xSemaphoreCreateBinary();
     TEST_ASSERT(end_sema != NULL);

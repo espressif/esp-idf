@@ -200,7 +200,7 @@ _not_l1:
 
     addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
     SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
-    addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with conext save*/
+    addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with context save*/
 
     #ifdef CONFIG_FREERTOS_ISR_STATS
     rsr a3, CCOUNT
@@ -211,8 +211,8 @@ _not_l1:
     
     #endif
 
-    l32i    a12, sp, XT_STK_TMP0        /* temp. save stuff in stack frame */
-    l32i    a13, sp, XT_STK_TMP1    
+    l32i    a12, sp, XT_STK_TMP0       /* restore the temp saved registers */
+    l32i    a13, sp, XT_STK_TMP1       /* our return address is there */
     l32i    a9,  sp, XT_STK_TMP2  
 
     #if XCHAL_EXTRA_SA_SIZE > 0 || !defined(__XTENSA_CALL0_ABI__)

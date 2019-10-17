@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017, Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 /* Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,13 +20,8 @@
  */
 
 /* File adapted to use on IDF FreeRTOS component, extracted 
- * originally from zephyr RTOS code base
- */
-
-/*
- * Copyright (c) 2017, Intel Corporation
- *
- * SPDX-License-Identifier: Apache-2.0
+ * originally from zephyr RTOS code base:
+ * https://github.com/zephyrproject-rtos/zephyr/blob/dafd348/arch/xtensa/include/xtensa-asm2-s.h
  */
 
 #ifndef __XT_ASM_UTILS_H
