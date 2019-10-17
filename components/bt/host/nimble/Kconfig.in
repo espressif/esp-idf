@@ -2,7 +2,7 @@
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     range 1 9
-    default 1
+    default BTDM_CTRL_BLE_MAX_CONN
     depends on BT_NIMBLE_ENABLED
     help
         Defines maximum number of concurrent BLE connections
