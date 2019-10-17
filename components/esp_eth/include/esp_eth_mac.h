@@ -307,6 +307,12 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
 #endif
+
+
+#if CONFIG_ETH_USE_OPENETH
+esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);
+#endif // CONFIG_ETH_USE_OPENETH
+
 #ifdef __cplusplus
 }
 #endif
