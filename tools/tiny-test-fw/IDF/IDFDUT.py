@@ -185,6 +185,7 @@ class IDFDUT(DUT.SerialDUT):
 
     @classmethod
     def confirm_dut(cls, port, app, **kwargs):
+        inst = None
         try:
             # TODO: check whether 8266 works with this logic
             # Otherwise overwrite it in ESP8266DUT
@@ -195,7 +196,7 @@ class IDFDUT(DUT.SerialDUT):
         except(esptool.FatalError, RuntimeError):
             return False
         finally:
-            if inst:
+            if inst is not None:
                 inst._port.close()
 
     @_uses_esptool
