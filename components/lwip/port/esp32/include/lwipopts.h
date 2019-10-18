@@ -326,6 +326,11 @@
 #define TCP_MSS                         CONFIG_LWIP_TCP_MSS
 
 /**
+ * TCP_TMR_INTERVAL: TCP timer interval
+ */
+#define TCP_TMR_INTERVAL                CONFIG_TCP_TMR_INTERVAL
+
+/**
  * TCP_MSL: The maximum segment lifetime in milliseconds
  */
 #define TCP_MSL                         CONFIG_LWIP_TCP_MSL
