@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <dirent.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "esp_partition.h"
 #include "spiffs.h"
@@ -96,7 +100,18 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
 
     while ((entry = readdir(dir)) != NULL) {
         char *name = entry->d_name;
-        if (entry->d_type == DT_DIR) {
+
+        char path[PATH_MAX] = { 0 };
+
+        // Read the file from host FS
+        strcpy(path, cur_path);
+        strcat(path, "/");
+        strcat(path, name);
+
+        struct stat sb;
+        stat(path, &sb);
+
+        if (S_ISDIR(sb.st_mode)) {
             if (!strcmp(name, ".") || !strcmp(name, ".."))
                 continue;
             cur_path[len] = '/';
@@ -104,13 +119,6 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
             check_spiffs_files(fs, base_path, cur_path);
             cur_path[len] = '\0';
         } else {
-            char path[PATH_MAX];
-
-            // Read the file from host FS
-            strcpy(path, cur_path);
-            strcat(path, "/");
-            strcat(path, name);
-
             FILE* f = fopen(path , "r");
             REQUIRE(f);
             fseek(f, 0, SEEK_END);
@@ -126,6 +134,7 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
             // Read the file from SPIFFS
             char *spiffs_path = path + strlen(base_path);
             spiffs_res = SPIFFS_open(fs, spiffs_path, SPIFFS_RDONLY, 0);
+
             REQUIRE(spiffs_res > SPIFFS_OK);
 
             spiffs_file fd = spiffs_res;
