@@ -56,7 +56,7 @@
 PR_BEGIN_EXTERN_C
 #endif /* __cplusplus */
    
-void vMBPortSetMode( UCHAR ucMode );
+void vMBMasterPortSetMode( UCHAR ucMode ); // TODO renamed based on EQ-703
 
 #ifdef __cplusplus
 PR_END_EXTERN_C
