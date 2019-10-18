@@ -75,3 +75,6 @@ examples/storage/parttool/parttool_example.py
 examples/system/ota/otatool/otatool_example.py
 tools/check_kconfigs.py
 tools/test_check_kconfigs.py
+install.sh
+tools/docker/entrypoint.sh
+tools/idf_tools.py
