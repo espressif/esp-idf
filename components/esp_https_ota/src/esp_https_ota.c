@@ -263,7 +263,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                                              handle->ota_upgrade_buf,
                                              handle->ota_upgrade_buf_size);
             if (data_read == 0) {
-                ESP_LOGI(TAG, "Connection closed, all data received");
+                ESP_LOGI(TAG, "Connection closed");
             } else if (data_read < 0) {
                 ESP_LOGE(TAG, "Error: SSL data read error");
                 return ESP_FAIL;
