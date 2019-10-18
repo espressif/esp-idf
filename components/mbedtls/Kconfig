@@ -92,6 +92,19 @@ menu "mbedTLS"
             at runtime in order to enable mbedTLS debug output via the ESP
             log mechanism.
 
+    config MBEDTLS_ECP_RESTARTABLE
+        bool "Enable mbedTLS ecp restartable"
+        default n
+        help
+            Enable "non-blocking" ECC operations that can return early and be resumed.
+
+    config MBEDTLS_CMAC_C
+        bool "Enable CMAC mode for block ciphers"
+        default n
+        help
+            Enable the CMAC (Cipher-based Message Authentication Code) mode for
+            block ciphers.
+
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
         default y
