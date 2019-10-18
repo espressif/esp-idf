@@ -71,6 +71,13 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
 bool bootloader_common_label_search(const char *list, char *label);
 
 /**
+ * @brief Get chip revision
+ *
+ * @return Chip revision number
+ */
+uint8_t bootloader_common_get_chip_revision(void);
+
+/**
  * @brief Check if the image (bootloader and application) has valid chip ID and revision
  *
  * @param img_hdr: image header
