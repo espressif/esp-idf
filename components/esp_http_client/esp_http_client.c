@@ -843,7 +843,16 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 
         if (rlen <= 0) {
             if (errno != 0) {
-                ESP_LOGW(TAG, "esp_transport_read returned : %d and errno : %d ", rlen, errno);
+                esp_log_level_t sev = ESP_LOG_WARN;
+                /* On connection close from server, recv should ideally return 0 but we have error conversion
+                 * in `tcp_transport` SSL layer which translates it `-1` and hence below additional checks */
+                if (rlen == -1 && errno == ENOTCONN && client->response->is_chunked) {
+                    /* Explicit call to parser for invoking `message_complete` callback */
+                    http_parser_execute(client->parser, client->parser_settings, res_buffer->data, 0);
+                    /* ...and lowering the message severity, as closed connection from server side is expected in chunked transport */
+                    sev = ESP_LOG_DEBUG;
+                }
+                ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
             return ridx;
         }
