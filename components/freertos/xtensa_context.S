@@ -179,7 +179,7 @@ _xt_context_save:
     s32i    a9,  sp, XT_STK_OVLY        /* save overlay state */
     #endif
 
-    rsr     a2, PS                      /* We need to enable window execptions to */ 
+    rsr     a2, PS                      /* We need to enable window exceptions to */ 
     movi    a3, PS_INTLEVEL_MASK        /* perform spill registers*/
     and     a2, a2, a3
     bnez    a2, _not_l1
