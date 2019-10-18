@@ -527,11 +527,11 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
         bool exec = false;
 
         esp_event_handler_instance_t *handler, *temp_handler;
-        esp_event_loop_node_t *loop_node;
+        esp_event_loop_node_t *loop_node, *temp_node;
         esp_event_base_node_t *base_node, *temp_base;
         esp_event_id_node_t *id_node, *temp_id_node;
 
-        SLIST_FOREACH(loop_node, &(loop->loop_nodes), next) {
+        SLIST_FOREACH_SAFE(loop_node, &(loop->loop_nodes), next, temp_node) {
             // Execute loop level handlers
             SLIST_FOREACH_SAFE(handler, &(loop_node->handlers), next, temp_handler) {
                 handler_execute(loop, handler, post);
