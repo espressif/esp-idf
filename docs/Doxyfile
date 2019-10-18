@@ -53,6 +53,8 @@ INPUT = \
     ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
     ../../components/bt/bluedroid/api/include/api/esp_hf_defs.h \
     ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
+     ## NimBLE related Bluetooth APIs
+    ../../components/nimble/esp-hci/include/esp_nimble_hci.h \
     ##
     ## Ethernet - API Reference
     ##

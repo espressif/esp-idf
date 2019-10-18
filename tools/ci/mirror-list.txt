@@ -18,3 +18,4 @@ components/mqtt/esp-mqtt                                    @GENERAL_MIRROR_SERV
 components/protobuf-c/protobuf-c                            @GENERAL_MIRROR_SERVER@/idf/protobuf-c.git                      ALLOW_TO_SYNC_FROM_PUBLIC
 components/unity/unity                                      @GENERAL_MIRROR_SERVER@/idf/Unity.git                           ALLOW_TO_SYNC_FROM_PUBLIC
 examples/build_system/cmake/import_lib/main/lib/tinyxml2    @GENERAL_MIRROR_SERVER@/idf/tinyxml2.git                        ALLOW_TO_SYNC_FROM_PUBLIC
+components/nimble/nimble                                    @GENERAL_MIRROR_SERVER@/idf/esp-nimble.git                      ALLOW_TO_SYNC_FROM_PUBLIC

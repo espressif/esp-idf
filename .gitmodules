@@ -69,3 +69,7 @@
 [submodule "examples/build_system/cmake/import_lib/main/lib/tinyxml2"]
 	path = examples/build_system/cmake/import_lib/main/lib/tinyxml2
 	url = https://github.com/leethomason/tinyxml2
+
+[submodule "components/nimble/nimble"]
+	path = components/nimble/nimble
+	url = https://github.com/espressif/esp-nimble.git

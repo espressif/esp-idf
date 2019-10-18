@@ -449,6 +449,47 @@
 #endif
 
 /**
+ * \def MBEDTLS_ECP_RESTARTABLE
+ *
+ * Enable "non-blocking" ECC operations that can return early and be resumed.
+ *
+ * This allows various functions to pause by returning
+ * #MBEDTLS_ERR_ECP_IN_PROGRESS (or, for functions in the SSL module,
+ * #MBEDTLS_ERR_SSL_CRYPTO_IN_PROGRESS) and then be called later again in
+ * order to further progress and eventually complete their operation. This is
+ * controlled through mbedtls_ecp_set_max_ops() which limits the maximum
+ * number of ECC operations a function may perform before pausing; see
+ * mbedtls_ecp_set_max_ops() for more information.
+ *
+ * This is useful in non-threaded environments if you want to avoid blocking
+ * for too long on ECC (and, hence, X.509 or SSL/TLS) operations.
+ *
+ * Uncomment this macro to enable restartable ECC computations.
+ *
+ * \note  This option only works with the default software implementation of
+ *        elliptic curve functionality. It is incompatible with
+ *        MBEDTLS_ECP_ALT, MBEDTLS_ECDH_XXX_ALT and MBEDTLS_ECDSA_XXX_ALT.
+ */
+#ifdef CONFIG_MBEDTLS_ECP_RESTARTABLE
+#define MBEDTLS_ECP_RESTARTABLE
+#endif
+
+/**
+ * \def MBEDTLS_CMAC_C
+ *
+ * Enable the CMAC (Cipher-based Message Authentication Code) mode for block
+ * ciphers.
+ *
+ * Module:  library/cmac.c
+ *
+ * Requires: MBEDTLS_AES_C or MBEDTLS_DES_C
+ *
+ */
+#ifdef CONFIG_MBEDTLS_CMAC_C
+#define MBEDTLS_CMAC_C
+#endif
+
+/**
  * \def MBEDTLS_ECP_DP_SECP192R1_ENABLED
  *
  * MBEDTLS_ECP_XXXX_ENABLED: Enables specific curves within the Elliptic Curve
