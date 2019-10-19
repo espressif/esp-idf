@@ -3062,7 +3062,7 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
         switch(event_id) {
             case WIFI_EVENT_STA_CONNECTED:
                 if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_STA, &dcst)) {
-                    if (dcst != TCPIP_ADAPTER_DHCP_STARTED) {
+                    if (dcst == TCPIP_ADAPTER_DHCP_STOPPED) {
                         _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
                     }
                 }
@@ -3085,7 +3085,7 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
         switch (event_id) {
             case ETHERNET_EVENT_CONNECTED:
                 if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_ETH, &dcst)) {
-                    if (dcst != TCPIP_ADAPTER_DHCP_STARTED) {
+                    if (dcst == TCPIP_ADAPTER_DHCP_STOPPED) {
                         _mdns_enable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
                     }
                 }
