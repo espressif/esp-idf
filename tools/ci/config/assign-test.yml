@@ -8,7 +8,6 @@ assign_test:
   # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
   dependencies:
     - build_ssc
-    - build_esp_idf_tests_make
     - build_esp_idf_tests_cmake
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
