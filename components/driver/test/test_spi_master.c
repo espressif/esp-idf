@@ -939,6 +939,9 @@ TEST_CASE("SPI master variable dummy test", "[spi]")
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
+//Disabled since the check in portENTER_CRITICAL in esp_intr_enable/disable increase the delay
+#ifndef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = xthal_get_ccount();}while(0)
 #define RECORD_TIME_END(p_time) do{__t2 = xthal_get_ccount(); *p_time = (__t2-__t1);}while(0)
@@ -997,9 +1000,6 @@ static IRAM_ATTR void spi_transmit_polling_measure(spi_device_handle_t spi, spi_
 
 TEST_CASE("spi_speed","[spi]")
 {
-#ifdef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
-    return;
-#endif
     uint32_t t_flight;
     //to get rid of the influence of randomly interrupts, we measured the performance by median value
     uint32_t t_flight_sorted[TEST_TIMES];
@@ -1025,7 +1025,7 @@ TEST_CASE("spi_speed","[spi]")
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%.2lf", GET_US_BY_CCOUNT(t_flight_sorted[i]));
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
+    TEST_TARGET_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -1058,7 +1058,7 @@ TEST_CASE("spi_speed","[spi]")
     for (int i = 0; i < TEST_TIMES; i++) {
         ESP_LOGI(TAG, "%.2lf", GET_US_BY_CCOUNT(t_flight_sorted[i]));
     }
-    TEST_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
+    TEST_TARGET_PERFORMANCE_LESS_THAN(SPI_PER_TRANS_NO_POLLING_NO_DMA, "%d us", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES+1)/2]));
 
     //acquire the bus to send polling transactions faster
     ret = spi_device_acquire_bus(spi, portMAX_DELAY);
@@ -1078,6 +1078,7 @@ TEST_CASE("spi_speed","[spi]")
     spi_device_release_bus(spi);
     master_free_device_bus(spi);
 }
+#endif
 
 typedef struct {
     spi_device_handle_t handle;
