@@ -149,7 +149,13 @@ struct spi_flash_chip_t {
      *
      * Can return ESP_ERR_FLASH_UNSUPPORTED_HOST or ESP_ERR_FLASH_UNSUPPORTED_CHIP if the specified mode is unsupported.
      */
-    esp_err_t (*set_read_mode)(esp_flash_t *chip);
+    esp_err_t (*set_io_mode)(esp_flash_t *chip);
+
+    /*
+     * Get whether the Quad Enable (QE) is set. (*out_io_mode)=SPI_FLASH_QOUT if
+     * enabled, otherwise disabled
+     */
+    esp_err_t (*get_io_mode)(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode);
 };
 
 /* Pointer to an array of pointers to all known drivers for flash chips. This array is used

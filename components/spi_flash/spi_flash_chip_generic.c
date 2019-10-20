@@ -60,12 +60,8 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip)
 
 esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size)
 {
-    uint32_t id = 0;
+    uint32_t id = chip->chip_id;
     *size = 0;
-    esp_err_t err = chip->host->read_id(chip->host, &id);
-    if (err != ESP_OK) {
-        return err;
-    }
 
     /* Can't detect size unless the high byte of the product ID matches the same convention, which is usually 0x40 or
      * 0xC0 or similar. */
@@ -144,7 +140,7 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
 {
     esp_err_t err = ESP_OK;
     // Configure the host, and return
-    spi_flash_chip_generic_config_host_read_mode(chip);
+    spi_flash_chip_generic_config_host_io_mode(chip);
 
     while (err == ESP_OK && length > 0) {
         uint32_t read_len = MIN(length, chip->host->max_read_bytes);
@@ -277,7 +273,7 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_m
     return (timeout_ms > 0) ?  ESP_OK : ESP_ERR_TIMEOUT;
 }
 
-esp_err_t spi_flash_chip_generic_config_host_read_mode(esp_flash_t *chip)
+esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
 {
     uint32_t dummy_cyclelen_base;
     uint32_t addr_bitlen;
@@ -320,62 +316,33 @@ esp_err_t spi_flash_chip_generic_config_host_read_mode(esp_flash_t *chip)
         return ESP_ERR_FLASH_NOT_INITIALISED;
     }
 
-    return chip->host->configure_host_read_mode(chip->host, chip->read_mode, addr_bitlen, dummy_cyclelen_base, read_command);
+    return chip->host->configure_host_io_mode(chip->host, read_command, addr_bitlen, dummy_cyclelen_base,
+                                                chip->read_mode);
 }
 
-esp_err_t spi_flash_common_set_read_mode(esp_flash_t *chip, uint8_t qe_rdsr_command, uint8_t qe_wrsr_command, uint8_t qe_sr_bitwidth, unsigned qe_sr_bit)
-{
-    if (spi_flash_is_quad_mode(chip)) {
-        // Ensure quad modes are enabled, using the Quad Enable parameters supplied.
-        spi_flash_trans_t t = {
-            .command = qe_rdsr_command,
-            .mosi_data = 0,
-            .mosi_len = 0,
-            .miso_len = qe_sr_bitwidth,
-        };
-        chip->host->common_command(chip->host, &t);
-        unsigned sr = t.miso_data[0];
-        ESP_EARLY_LOGV(TAG, "set_read_mode: status before 0x%x", sr);
-        if ((sr & qe_sr_bit) == 0) {
-            //some chips needs the write protect to be disabled before writing to Status Register
-            chip->chip_drv->set_chip_write_protect(chip, false);
-
-            sr |= qe_sr_bit;
-            spi_flash_trans_t t = {
-                .command = qe_wrsr_command,
-                .mosi_data = sr,
-                .mosi_len = qe_sr_bitwidth,
-                .miso_len = 0,
-            };
-            chip->host->common_command(chip->host, &t);
-
-            /* Check the new QE bit has stayed set */
-            spi_flash_trans_t t_rdsr = {
-                .command = qe_rdsr_command,
-                .mosi_data = 0,
-                .mosi_len = 0,
-                .miso_len = qe_sr_bitwidth
-            };
-            chip->host->common_command(chip->host, &t_rdsr);
-            sr = t_rdsr.miso_data[0];
-            ESP_EARLY_LOGV(TAG, "set_read_mode: status after 0x%x", sr);
-            if ((sr & qe_sr_bit) == 0) {
-                return ESP_ERR_FLASH_NO_RESPONSE;
-            }
-
-            chip->chip_drv->set_chip_write_protect(chip, true);
-        }
-    }
-    return ESP_OK;
-}
-
-esp_err_t spi_flash_chip_generic_set_read_mode(esp_flash_t *chip)
+esp_err_t spi_flash_chip_generic_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode)
 {
     // On "generic" chips, this involves checking
     // bit 1 (QE) of RDSR2 (35h) result
     // (it works this way on GigaDevice & Fudan Micro chips, probably others...)
     const uint8_t BIT_QE = 1 << 1;
-    return spi_flash_common_set_read_mode(chip, CMD_RDSR2, CMD_WRSR2, 8, BIT_QE);
+    uint32_t sr;
+    esp_err_t ret = spi_flash_common_read_status_8b_rdsr2(chip, &sr);
+    if (ret == ESP_OK) {
+        *out_io_mode = ((sr & BIT_QE)? SPI_FLASH_QOUT: 0);
+    }
+    return ret;
+}
+
+esp_err_t spi_flash_chip_generic_set_io_mode(esp_flash_t *chip)
+{
+    // On "generic" chips, this involves checking
+    // bit 9 (QE) of RDSR (05h) result
+    const uint32_t BIT_QE = 1 << 9;
+    return spi_flash_common_set_io_mode(chip,
+                                        spi_flash_common_write_status_16b_wrsr,
+                                        spi_flash_common_read_status_16b_rdsr_rdsr2,
+                                        BIT_QE);
 }
 
 static const char chip_name[] = "generic";
@@ -409,5 +376,134 @@ const spi_flash_chip_t esp_flash_chip_generic = {
     .write_encrypted = spi_flash_chip_generic_write_encrypted,
 
     .wait_idle = spi_flash_chip_generic_wait_idle,
-    .set_read_mode = spi_flash_chip_generic_set_read_mode,
+    .set_io_mode = spi_flash_chip_generic_set_io_mode,
+    .get_io_mode = spi_flash_chip_generic_get_io_mode,
 };
+
+/*******************************************************************************
+ * Utility functions
+ ******************************************************************************/
+
+static esp_err_t spi_flash_common_read_qe_sr(esp_flash_t *chip, uint8_t qe_rdsr_command, uint8_t qe_sr_bitwidth, uint32_t *sr)
+{
+    spi_flash_trans_t t = {
+        .command = qe_rdsr_command,
+        .mosi_data = 0,
+        .mosi_len = 0,
+        .miso_len = qe_sr_bitwidth,
+    };
+    esp_err_t ret = chip->host->common_command(chip->host, &t);
+    *sr = t.miso_data[0];
+    return ret;
+}
+
+static esp_err_t spi_flash_common_write_qe_sr(esp_flash_t *chip, uint8_t qe_wrsr_command, uint8_t qe_sr_bitwidth, uint32_t qe)
+{
+    spi_flash_trans_t t = {
+        .command = qe_wrsr_command,
+        .mosi_data = qe,
+        .mosi_len = qe_sr_bitwidth,
+        .miso_len = 0,
+    };
+    return chip->host->common_command(chip->host, &t);
+}
+
+esp_err_t spi_flash_common_read_status_16b_rdsr_rdsr2(esp_flash_t* chip, uint32_t* out_sr)
+{
+    uint32_t sr, sr2;
+    esp_err_t ret = spi_flash_common_read_qe_sr(chip, CMD_RDSR2, 8, &sr2);
+    if (ret == ESP_OK) {
+        ret = spi_flash_common_read_qe_sr(chip, CMD_RDSR, 8, &sr);
+    }
+    if (ret == ESP_OK) {
+        *out_sr = (sr & 0xff) | ((sr2 & 0xff) << 8);
+    }
+    return ret;
+}
+
+esp_err_t spi_flash_common_read_status_8b_rdsr2(esp_flash_t* chip, uint32_t* out_sr)
+{
+    return spi_flash_common_read_qe_sr(chip, CMD_RDSR2, 8, out_sr);
+}
+
+esp_err_t spi_flash_common_read_status_8b_rdsr(esp_flash_t* chip, uint32_t* out_sr)
+{
+    return spi_flash_common_read_qe_sr(chip, CMD_RDSR, 8, out_sr);
+}
+
+esp_err_t spi_flash_common_write_status_16b_wrsr(esp_flash_t* chip, uint32_t sr)
+{
+    return spi_flash_common_write_qe_sr(chip, CMD_WRSR, 16, sr);
+}
+
+esp_err_t spi_flash_common_write_status_8b_wrsr(esp_flash_t* chip, uint32_t sr)
+{
+    return spi_flash_common_write_qe_sr(chip, CMD_WRSR, 8, sr);
+}
+
+esp_err_t spi_flash_common_write_status_8b_wrsr2(esp_flash_t* chip, uint32_t sr)
+{
+    return spi_flash_common_write_qe_sr(chip, CMD_WRSR2, 8, sr);
+}
+
+esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t wrsr_func, esp_flash_rdsr_func_t rdsr_func, uint32_t qe_sr_bit)
+{
+    esp_err_t ret = ESP_OK;
+    const bool is_quad_mode = esp_flash_is_quad_mode(chip);
+    bool update_config = false;
+    const bool force_check = true; //in case some chips doesn't support erase QE
+
+    bool need_check = is_quad_mode;
+    if (force_check) {
+        need_check = true;
+    }
+
+    uint32_t sr_update;
+    if (need_check) {
+        // Ensure quad modes are enabled, using the Quad Enable parameters supplied.
+        uint32_t sr;
+        ret = (*rdsr_func)(chip, &sr);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        ESP_EARLY_LOGD(TAG, "set_io_mode: status before 0x%x", sr);
+        if (is_quad_mode) {
+            sr_update = sr | qe_sr_bit;
+        } else {
+            sr_update = sr & (~qe_sr_bit);
+        }
+        ESP_EARLY_LOGV(TAG, "set_io_mode: status update 0x%x", sr_update);
+        if (sr != sr_update) {
+            update_config = true;
+        }
+    }
+
+    if (update_config) {
+        //some chips needs the write protect to be disabled before writing to Status Register
+        chip->chip_drv->set_chip_write_protect(chip, false);
+
+        ret = (*wrsr_func)(chip, sr_update);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
+        ret = chip->chip_drv->wait_idle(chip, DEFAULT_IDLE_TIMEOUT);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
+        /* Check the new QE bit has stayed set */
+        uint32_t sr;
+        ret = (*rdsr_func)(chip, &sr);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+        ESP_EARLY_LOGD(TAG, "set_io_mode: status after 0x%x", sr);
+        if (sr != sr_update) {
+            ret = ESP_ERR_FLASH_NO_RESPONSE;
+        }
+
+        chip->chip_drv->set_chip_write_protect(chip, true);
+    }
+    return ret;
+}
