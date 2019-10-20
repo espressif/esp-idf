@@ -120,7 +120,7 @@ def test_examples_loadable_elf(env, extra_data):
     idf_path = os.environ['IDF_PATH']
     rel_project_path = os.path.join('examples', 'get-started', 'hello_world')
     proj_path = os.path.join(idf_path, rel_project_path)
-    example = IDF.Example(rel_project_path)
+    example = IDF.Example(rel_project_path, target="esp32")
     sdkconfig = example.get_sdkconfig()
     elf_path = os.path.join(example.get_binary_path(rel_project_path), 'hello-world.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
