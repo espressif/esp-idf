@@ -5,19 +5,22 @@ assign_test:
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
   stage: assign_test
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
-  # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
+  # we have a lot build example jobs. now we don't use dependencies, just download all artifacts of build stage.
   dependencies:
     - build_ssc_esp32
     - build_esp_idf_tests_cmake
+    - build_test_apps_esp32
   variables:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
+    TEST_APP_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/tools/test_apps/test_configs"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
   artifacts:
     paths:
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
+      - $TEST_APP_CONFIG_OUTPUT_PATH
       - build_examples/artifact_index.json
     expire_in: 1 week
   only:
@@ -29,6 +32,8 @@ assign_test:
   script:
     # assign example tests
     - python tools/ci/python_packages/ttfw_idf/CIAssignExampleTest.py $IDF_PATH/examples $CI_TARGET_TEST_CONFIG_FILE $EXAMPLE_CONFIG_OUTPUT_PATH
+    # assign test apps
+    - python tools/ci/python_packages/ttfw_idf/CIAssignExampleTest.py --job-prefix test_app_test_ $IDF_PATH/tools/test_apps $CI_TARGET_TEST_CONFIG_FILE $TEST_APP_CONFIG_OUTPUT_PATH
     # assign unit test cases
     - python tools/ci/python_packages/ttfw_idf/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests

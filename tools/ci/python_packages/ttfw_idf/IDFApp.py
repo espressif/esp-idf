@@ -402,6 +402,36 @@ class UT(IDFApp):
         raise OSError("Failed to get unit-test-app binary path")
 
 
+class TestApp(IDFApp):
+    def _get_sdkconfig_paths(self):
+        """
+        overrides the parent method to provide exact path of sdkconfig for example tests
+        """
+        return [os.path.join(self.binary_path, "..", "sdkconfig")]
+
+    def get_binary_path(self, app_path, config_name=None):
+        # local build folder
+        path = os.path.join(self.idf_path, app_path, "build")
+        if os.path.exists(path):
+            return path
+
+        if not config_name:
+            config_name = "default"
+
+        # Search for CI build folders.
+        # Path format: $IDF_PATH/build_test_apps/app_path_with_underscores/config/target
+        # (see tools/ci/build_test_apps.sh)
+        # For example: $IDF_PATH/build_test_apps/startup/default/esp32
+        app_path_underscored = app_path.replace(os.path.sep, "_")
+        build_root = os.path.join(self.idf_path, "build_test_apps")
+        for dirpath in os.listdir(build_root):
+            if os.path.basename(dirpath) == app_path_underscored:
+                path = os.path.join(build_root, dirpath, config_name, self.target, "build")
+                return path
+
+        raise OSError("Failed to find test app binary")
+
+
 class SSC(IDFApp):
     def get_binary_path(self, app_path, config_name=None, target=None):
         # TODO: to implement SSC get binary path

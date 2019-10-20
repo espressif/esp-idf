@@ -15,7 +15,7 @@ import os
 import re
 
 from tiny_test_fw import TinyFW, Utility
-from .IDFApp import IDFApp, Example, LoadableElfExample, UT  # noqa: export all Apps for users
+from .IDFApp import IDFApp, Example, LoadableElfExample, UT, TestApp  # noqa: export all Apps for users
 from .IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
 
 
@@ -58,6 +58,38 @@ def idf_example_test(app=Example, dut=IDFDUT, chip="ESP32", module="examples", e
 
 def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", execution_time=1,
                   level="unit", erase_nvs=True, **kwargs):
+    """
+    decorator for testing idf unit tests (with default values for some keyword args).
+
+    :param app: test application class
+    :param dut: dut class
+    :param chip: chip supported, string or tuple
+    :param module: module, string
+    :param execution_time: execution time in minutes, int
+    :param level: test level, could be used to filter test cases, string
+    :param erase_nvs: if need to erase_nvs in DUT.start_app()
+    :param kwargs: other keyword args
+    :return: test method
+    """
+    try:
+        # try to config the default behavior of erase nvs
+        dut.ERASE_NVS = erase_nvs
+    except AttributeError:
+        pass
+
+    original_method = TinyFW.test_method(app=app, dut=dut, chip=chip, module=module,
+                                         execution_time=execution_time, level=level, **kwargs)
+
+    def test(func):
+        test_func = original_method(func)
+        test_func.case_info["ID"] = format_case_id(chip, test_func.case_info["name"])
+        return test_func
+
+    return test
+
+
+def idf_test_app_test(app=TestApp, dut=IDFDUT, chip="ESP32", module="misc", execution_time=1,
+                      level="integration", erase_nvs=True, **kwargs):
     """
     decorator for testing idf unit tests (with default values for some keyword args).
 

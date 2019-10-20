@@ -184,6 +184,50 @@ build_examples_cmake_esp32s2:
   variables:
     IDF_TARGET: esp32s2
 
+.build_test_apps: &build_test_apps
+  extends: .build_template
+  parallel: 2
+  stage: pre_build
+  artifacts:
+    when: always
+    paths:
+      - build_test_apps/list.json
+      - build_test_apps/list_job_*.json
+      - build_test_apps/*/*/*/build/*.bin
+      - build_test_apps/*/*/*/sdkconfig
+      - build_test_apps/*/*/*/build/*.elf
+      - build_test_apps/*/*/*/build/*.map
+      - build_test_apps/*/*/*/build/flasher_args.json
+      - build_test_apps/*/*/*/build/bootloader/*.bin
+      - build_test_apps/*/*/*/build/partition_table/*.bin
+      - $LOG_PATH
+    expire_in: 3 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_test_apps"
+    BUILD_PATH: "$CI_PROJECT_DIR/build_test_apps"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+  script:
+    - mkdir -p ${BUILD_PATH}
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_test_apps.sh
+
+build_test_apps_esp32:
+  extends: .build_test_apps
+  variables:
+    IDF_TARGET: esp32
+
+build_test_apps_esp32s2:
+  extends: .build_test_apps
+  variables:
+    IDF_TARGET: esp32s2beta
+
+
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
 build_docs:

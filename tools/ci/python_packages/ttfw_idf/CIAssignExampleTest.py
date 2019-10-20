@@ -82,7 +82,18 @@ if __name__ == '__main__':
                         help="output path of config files")
     parser.add_argument("--pipeline_id", "-p", type=int, default=None,
                         help="pipeline_id")
+    parser.add_argument("--job-prefix",
+                        help="prefix of the test job name in CI yml file")
+    parser.add_argument("--test-case-file-pattern",
+                        help="file name pattern used to find Python test case files")
     args = parser.parse_args()
+
+    if args.job_prefix:
+        CIExampleAssignTest.CI_TEST_JOB_PATTERN = re.compile(r"^{}.+".format(args.job_prefix))
+
+    assign_test = CIExampleAssignTest(args.test_case, args.ci_config_file, case_group=ExampleGroup)
+    if args.test_case_file_pattern:
+        assign_test.test_case_file_pattern = args.test_case_file_pattern
 
     assign_test = CIExampleAssignTest(args.test_case, args.ci_config_file, case_group=ExampleGroup)
     assign_test.assign_cases()
