@@ -38,7 +38,7 @@ esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_d
     return ESP_OK;
 }
 
-esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *chip_drv, uint32_t *id)
+esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *host, uint32_t *id)
 {
     //NOTE: we do have a read id function, however it doesn't work in high freq
     spi_flash_trans_t t = {
@@ -47,7 +47,7 @@ esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *chip_drv, uint32_t *id
         .mosi_len = 0,
         .miso_len = 24
     };
-    chip_drv->common_command(chip_drv, &t);
+    host->common_command(host, &t);
     uint32_t raw_flash_id = t.miso_data[0];
     ESP_EARLY_LOGV(TAG, "raw_chip_id: %X\n", raw_flash_id);
     if (raw_flash_id == 0xFFFFFF || raw_flash_id == 0) {
