@@ -19,6 +19,8 @@
 #include "stack/hcimsgs.h"
 #include "osi/future.h"
 #include "osi/allocator.h"
+#include "bt_common.h"
+#include "device/controller.h"
 
 #include "mbedtls/aes.h"
 
@@ -31,6 +33,8 @@
 
 #include "provisioner_prov.h"
 #include "mesh_common.h"
+
+struct bt_mesh_dev bt_mesh_dev;
 
 #define BLE_MESH_BTM_CHECK_STATUS(func) do {                                                     \
         tBTM_STATUS __status = (func);                                                           \
@@ -96,6 +100,40 @@ static struct gattc_prov_info {
 static struct bt_mesh_prov_conn_cb *bt_mesh_gattc_conn_cb;
 static tBTA_GATTC_IF bt_mesh_gattc_if;
 #endif /* defined(CONFIG_BLE_MESH_PROVISIONER) && CONFIG_BLE_MESH_PROVISIONER */
+
+esp_err_t bt_mesh_host_init(void)
+{
+    return ESP_OK;
+}
+
+void bt_mesh_hci_init(void)
+{
+    const uint8_t *features = controller_get_interface()->get_features_ble()->as_array;
+    if (features != NULL) {
+        memcpy(bt_mesh_dev.features[0], features, 8);
+        memcpy(bt_mesh_dev.le.features, features, 8);
+    }
+
+    /**
+     * Currently 20ms non-connectable adv interval is supported, and we need to add
+     * a flag to indicate this support.
+     */
+#ifdef CONFIG_BLE_MESH_HCI_5_0
+    bt_mesh_dev.hci_version = BLE_MESH_HCI_VERSION_5_0;
+#else
+    bt_mesh_dev.hci_version = controller_get_interface()->get_bt_version()->hci_version;
+#endif
+    bt_mesh_dev.lmp_version = controller_get_interface()->get_bt_version()->lmp_version;
+    bt_mesh_dev.hci_revision = controller_get_interface()->get_bt_version()->hci_revision;
+    bt_mesh_dev.lmp_subversion = controller_get_interface()->get_bt_version()->lmp_subversion;
+    bt_mesh_dev.manufacturer = controller_get_interface()->get_bt_version()->manufacturer;
+
+    const uint8_t *p = controller_get_interface()->get_ble_supported_states();
+    uint64_t states_fh = 0, states_sh = 0;
+    STREAM_TO_UINT32(states_fh, p);
+    STREAM_TO_UINT32(states_sh, p);
+    bt_mesh_dev.le.states = (states_sh << 32) | states_fh;
+}
 
 static void bt_mesh_scan_results_change_2_bta(tBTM_INQ_RESULTS *p_inq, u8_t *p_eir,
                 tBTA_DM_SEARCH_CBACK *p_scan_cback)

@@ -21,7 +21,6 @@
 #include "freertos/semphr.h"
 
 #include "btc/btc_task.h"
-#include "esp_bt_defs.h"
 
 #include "mesh_access.h"
 #include "mesh_buf.h"

@@ -49,7 +49,7 @@
 #ifdef CONFIG_BTC_TASK_STACK_SIZE
 #define UC_BTC_TASK_STACK_SIZE              CONFIG_BTC_TASK_STACK_SIZE
 #else
-#define UC_BTC_TASK_STACK_SIZE              3072
+#define UC_BTC_TASK_STACK_SIZE              4096
 #endif
 
 /**********************************************************
