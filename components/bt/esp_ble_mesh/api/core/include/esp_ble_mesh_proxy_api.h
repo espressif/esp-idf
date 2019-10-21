@@ -60,8 +60,8 @@ esp_err_t esp_ble_mesh_proxy_gatt_disable(void);
  * @return       ESP_OK on success or error code otherwise.
  *
  */
-esp_err_t esp_ble_mesh_proxy_client_connect(esp_bd_addr_t addr,
-            esp_ble_addr_type_t addr_type, uint16_t net_idx);
+esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
+            esp_ble_mesh_addr_type_t addr_type, uint16_t net_idx);
 
 /**
  * @brief        Proxy Client terminates a connection with the Proxy Server.

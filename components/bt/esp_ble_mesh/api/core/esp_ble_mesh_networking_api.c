@@ -203,7 +203,7 @@ esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     arg.model_update_state.model = model;
     arg.model_update_state.type = type;
