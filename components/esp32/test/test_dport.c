@@ -390,8 +390,10 @@ static void accessDPORT2(void *pvParameters)
 
     TEST_ESP_OK(esp_intr_alloc(ETS_INTERNAL_TIMER2_INTR_SOURCE, ESP_INTR_FLAG_LEVEL5 | ESP_INTR_FLAG_IRAM, NULL, NULL, &inth));
 
+    XTHAL_SET_CCOMPARE(2, XTHAL_GET_CCOUNT() + 21);
+    int sync = 0;
     while (exit_flag == false) {
-        XTHAL_SET_CCOMPARE(2, XTHAL_GET_CCOUNT() + 21);
+        ets_delay_us(++sync % 10);
         for (int i = 0; i < 200; ++i) {
             if (DPORT_REG_READ(DPORT_DATE_REG) != DPORT_REG_READ(DPORT_DATE_REG)) {
                 dport_test_result = false;
