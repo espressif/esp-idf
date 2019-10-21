@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +10,6 @@
 #define _BOARD_H_
 
 #include "driver/gpio.h"
-#include "esp_ble_mesh_defs.h"
 
 #if defined(CONFIG_BLE_MESH_ESP_WROOM_32)
 #define LED_R GPIO_NUM_25
@@ -30,10 +30,6 @@ struct _led_state {
     uint8_t pin;
     char *name;
 };
-
-void board_output_number(esp_ble_mesh_output_action_t action, uint32_t number);
-
-void board_prov_complete(void);
 
 void board_led_operation(uint8_t pin, uint8_t onoff);
 
