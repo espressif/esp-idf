@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2017 Intel Corporation
+ * Additional Copyright (c) 2018 Espressif Systems (Shanghai) PTE LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,10 +31,6 @@ struct _led_state {
     uint8_t pin;
     char *name;
 };
-
-void board_output_number(esp_ble_mesh_output_action_t action, uint32_t number);
-
-void board_prov_complete(void);
 
 void board_led_operation(uint8_t pin, uint8_t onoff);
 

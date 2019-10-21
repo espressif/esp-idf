@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := ble_mesh_node
+PROJECT_NAME := onoff_client
 
 COMPONENT_ADD_INCLUDEDIRS := components/include
 
