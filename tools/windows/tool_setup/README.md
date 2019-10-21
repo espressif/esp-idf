@@ -14,7 +14,17 @@ Some functionality of the installer depends on additional programs:
 
 * [cmdlinerunner](cmdlinerunner/cmdlinerunner.c) — a helper DLL used to run external command line programs from the installer, capture live console output, and get the exit code.
 
-## Steps required to build the installer
+## Building the installer 
+
+### In Docker
+
+This uses `wine-innosetup` Docker image and `build_installer.sh` script. This is how the installer is built in CI.
+
+```
+docker run --rm -v $IDF_PATH:/idf -w /idf/tools/windows/tool_setup -it $CI_DOCKER_REGISTRY/wine-innosetup:1 /bin/bash build_installer.sh
+```
+
+### Manually, step by step
 
 * Build cmdlinerunner DLL.
   - On Linux/Mac, install mingw-w64 toolchain (`i686-w64-mingw32-gcc`). Then build the DLL using CMake:
@@ -35,5 +45,10 @@ Some functionality of the installer depends on additional programs:
 
 * Build the installer using Inno Setup Compiler: `ISCC.exe idf_tools_setup.iss`.
 
-* Obtain the signing keys, then sign `Output/esp-idf-tools-setup-unsigned.exe`.
+## Signing the installer
 
+* Obtain the signing key (e.g `key.pem`) and the certificate chain (e.g. `certchain.pem`). Set the environment variables to point to these files:
+  - `export KEYFILE=key.pem`
+  - `export CERTCHAIN=certchain.pem`
+
+* Run `sign_installer.sh` script. This will ask for the `key.pem` password, and produce the signed installer in the Output directory. If you plan to run the script multiple times, you may also set `KEYPASSWORD` environment variable to the `key.pem` password, to avoid the prompt.

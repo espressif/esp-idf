@@ -345,19 +345,5 @@ build_installer:
     - build_cmdlinerunner
   before_script: []
   script:
-    - mkdir idf_tools_tmp
-    - export IDF_TOOLS_PATH=$PWD/idf_tools_tmp
-    - tools/idf_tools.py --non-interactive download --platform Windows-x86_64 all
-    - tools/idf_tools.py --tools-json tools/windows/tool_setup/tools_fallback.json --non-interactive download --platform Windows-x86_64 all
-    - mkdir tools/windows/tool_setup/dist
-    - mv idf_tools_tmp/dist/* tools/windows/tool_setup/dist/
-
     - cd tools/windows/tool_setup/
-    - mkdir unzip
-    - cd unzip
-    - wget --no-verbose https://www.7-zip.org/a/7z1900-extra.7z
-    - 7zr e -y 7z1900-extra.7z
-    - cd ..
-
-    - wget --no-verbose https://dl.espressif.com/dl/esp-idf/idf_versions.txt
-    - iscc idf_tool_setup.iss
+    - ./build_installer.sh
