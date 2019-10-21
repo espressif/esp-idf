@@ -25,7 +25,7 @@ esp_err_t esp_ble_mesh_lpn_enable(void)
 {
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -39,7 +39,7 @@ esp_err_t esp_ble_mesh_lpn_disable(bool force)
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -55,7 +55,7 @@ esp_err_t esp_ble_mesh_lpn_poll(void)
 {
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;

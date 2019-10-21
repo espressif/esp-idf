@@ -61,23 +61,23 @@ esp_err_t esp_ble_mesh_proxy_gatt_disable(void)
     return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_mesh_proxy_client_connect(esp_bd_addr_t addr,
-            esp_ble_addr_type_t addr_type, uint16_t net_idx)
+esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
+            esp_ble_mesh_addr_type_t addr_type, uint16_t net_idx)
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!addr || addr_type > BLE_ADDR_TYPE_RANDOM) {
+    if (!addr || addr_type > ESP_BLE_MESH_ADDR_TYPE_RANDOM) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
     msg.act = BTC_BLE_MESH_ACT_PROXY_CLIENT_CONNECT;
 
-    memcpy(arg.proxy_client_connect.addr, addr, ESP_BD_ADDR_LEN);
+    memcpy(arg.proxy_client_connect.addr, addr, BD_ADDR_LEN);
     arg.proxy_client_connect.addr_type = addr_type;
     arg.proxy_client_connect.net_idx = net_idx;
 
@@ -90,7 +90,7 @@ esp_err_t esp_ble_mesh_proxy_client_disconnect(uint8_t conn_handle)
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -112,7 +112,7 @@ esp_err_t esp_ble_mesh_proxy_client_set_filter_type(uint8_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -136,7 +136,7 @@ esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -161,7 +161,7 @@ esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle,
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;

@@ -847,7 +847,7 @@ static void btc_ble_mesh_proxy_client_adv_recv_cb(const bt_mesh_addr_t *addr,
     LOG_DEBUG("%s", __func__);
 
     mesh_param.proxy_client_recv_adv_pkt.addr_type = addr->type;
-    memcpy(mesh_param.proxy_client_recv_adv_pkt.addr, addr->val, ESP_BD_ADDR_LEN);
+    memcpy(mesh_param.proxy_client_recv_adv_pkt.addr, addr->val, BD_ADDR_LEN);
     mesh_param.proxy_client_recv_adv_pkt.net_idx = ctx->net_id.net_idx;
     memcpy(mesh_param.proxy_client_recv_adv_pkt.net_id, ctx->net_id.net_id, 8);
 
@@ -868,7 +868,7 @@ static void btc_ble_mesh_proxy_client_connect_cb(const bt_mesh_addr_t *addr,
     LOG_DEBUG("%s", __func__);
 
     mesh_param.proxy_client_connected.addr_type = addr->type;
-    memcpy(mesh_param.proxy_client_connected.addr, addr->val, ESP_BD_ADDR_LEN);
+    memcpy(mesh_param.proxy_client_connected.addr, addr->val, BD_ADDR_LEN);
     mesh_param.proxy_client_connected.conn_handle = conn_handle;
     mesh_param.proxy_client_connected.net_idx = net_idx;
 
@@ -889,7 +889,7 @@ static void btc_ble_mesh_proxy_client_disconnect_cb(const bt_mesh_addr_t *addr,
     LOG_DEBUG("%s", __func__);
 
     mesh_param.proxy_client_disconnected.addr_type = addr->type;
-    memcpy(mesh_param.proxy_client_disconnected.addr, addr->val, ESP_BD_ADDR_LEN);
+    memcpy(mesh_param.proxy_client_disconnected.addr, addr->val, BD_ADDR_LEN);
     mesh_param.proxy_client_disconnected.conn_handle = conn_handle;
     mesh_param.proxy_client_disconnected.net_idx = net_idx;
     mesh_param.proxy_client_disconnected.reason = reason;
@@ -1752,7 +1752,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_CONNECT:
         act = ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT;
-        memcpy(param.proxy_client_connect_comp.addr, arg->proxy_client_connect.addr, ESP_BD_ADDR_LEN);
+        memcpy(param.proxy_client_connect_comp.addr, arg->proxy_client_connect.addr, BD_ADDR_LEN);
         param.proxy_client_connect_comp.addr_type = arg->proxy_client_connect.addr_type;
         param.proxy_client_connect_comp.net_idx = arg->proxy_client_connect.net_idx;
         param.proxy_client_connect_comp.err_code =
