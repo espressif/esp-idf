@@ -149,6 +149,15 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
                 memory for thrown exceptions when there is not enough memory on the heap.
 
+        config COMPILER_CXX_RTTI
+            # Invisible option, until the toolchain with RTTI support is released.
+            # Use prompt "Enable C++ run-time type info (RTTI)" when updating.
+            bool
+            help
+                Enabling this option compiles all C++ files with RTTI support enabled.
+                This increases binary size (typically by tens of kB) but allows using
+                dynamic_cast conversion and typeid operator.
+
         choice COMPILER_STACK_CHECK_MODE
             prompt "Stack smashing protection mode"
             default COMPILER_STACK_CHECK_MODE_NONE
