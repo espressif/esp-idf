@@ -175,6 +175,10 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
     idf_build_get_property(python PYTHON)
 
+    set(prepare_kconfig_files_command
+        ${python} ${idf_path}/tools/kconfig_new/prepare_kconfig_files.py
+        --env-file ${config_env_path})
+
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
         --kconfig ${root_kconfig}
@@ -196,6 +200,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(output_sdkconfig __OUTPUT_SDKCONFIG)
     if(output_sdkconfig)
         execute_process(
+            COMMAND ${prepare_kconfig_files_command})
+        execute_process(
             COMMAND ${confgen_basecommand}
             --output header ${sdkconfig_header}
             --output cmake ${sdkconfig_cmake}
@@ -204,6 +210,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
             --output config ${sdkconfig}
             RESULT_VARIABLE config_result)
     else()
+        execute_process(
+            COMMAND ${prepare_kconfig_files_command})
         execute_process(
             COMMAND ${confgen_basecommand}
             --output header ${sdkconfig_header}
@@ -254,6 +262,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     add_custom_target(menuconfig
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
+        COMMAND ${prepare_kconfig_files_command}
         COMMAND ${confgen_basecommand} --env "IDF_TARGET=${idf_target}" --output config ${sdkconfig}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
@@ -273,6 +282,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     # Custom target to run confserver.py from the build tool
     add_custom_target(confserver
+        COMMAND ${prepare_kconfig_files_command}
         COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
         --env-file ${config_env_path}
         --kconfig ${IDF_PATH}/Kconfig

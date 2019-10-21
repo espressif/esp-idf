@@ -75,7 +75,6 @@ def main():
 
 
 def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCOL_VERSION):
-    confgen.prepare_source_files()
     config = kconfiglib.Kconfig(kconfig)
     sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
     sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()

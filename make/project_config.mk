@@ -70,6 +70,14 @@ SDKCONFIG_DEFAULTS_FILES := $(shell cygpath -m $(SDKCONFIG_DEFAULTS_FILES))
 endif
 DEFAULTS_ARG := $(foreach f,$(SDKCONFIG_DEFAULTS_FILES),--defaults $(f))
 
+prepare_kconfig_files:
+	mkdir -p $(BUILD_DIR_BASE)
+	$(PYTHON) $(IDF_PATH)/tools/kconfig_new/prepare_kconfig_files.py \
+		--env "COMPONENT_KCONFIGS=$(strip $(COMPONENT_KCONFIGS))" \
+		--env "COMPONENT_KCONFIGS_PROJBUILD=$(strip $(COMPONENT_KCONFIGS_PROJBUILD))" \
+		--env "COMPONENT_KCONFIGS_SOURCE_FILE=$(COMPONENT_KCONFIGS_SOURCE_FILE)" \
+		--env "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=$(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE)"
+
 # macro for running confgen.py
 define RunConfGen
 	mkdir -p $(BUILD_DIR_BASE)/include/config
@@ -118,7 +126,7 @@ ifndef MAKE_RESTARTS
 # depend on any prerequisite that may cause a make restart as part of
 # the prerequisite's own recipe.
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf-idf | check_python_dependencies
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf-idf | check_python_dependencies prepare_kconfig_files
 	$(summary) MENUCONFIG
 ifdef BATCH_BUILD
 	@echo "Can't run interactive configuration inside non-interactive build process."
@@ -135,13 +143,13 @@ else
 endif
 
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
-defconfig: | check_python_dependencies
+defconfig: | check_python_dependencies prepare_kconfig_files
 	$(summary) DEFCONFIG
 	$(call RunConfGen)
 
 # if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
 # ensure generated config files are up to date
-$(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | check_python_dependencies $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
+$(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | check_python_dependencies prepare_kconfig_files $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
 	$(summary) GENCONFIG
 	$(call RunConfGen)
 	touch $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h  # ensure newer than sdkconfig
