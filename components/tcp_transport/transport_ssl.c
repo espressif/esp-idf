@@ -190,6 +190,14 @@ void esp_transport_ssl_set_client_key_data(esp_transport_handle_t t, const char 
     }
 }
 
+void esp_transport_ssl_skip_common_name_check(esp_transport_handle_t t)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.skip_common_name = true;
+    }
+}
+
 esp_transport_handle_t esp_transport_ssl_init()
 {
     esp_transport_handle_t t = esp_transport_init();

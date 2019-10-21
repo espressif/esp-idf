@@ -242,18 +242,26 @@ static int create_ssl_handle(esp_tls_t *tls, const char *hostname, size_t hostle
         goto exit;        
     }
     
-    /* Hostname set here should match CN in server certificate */    
-    char *use_host = strndup(hostname, hostlen);
-    if (!use_host) {
-        goto exit;
-    }
+    if (!cfg->skip_common_name) {
+        char *use_host = NULL;
+        if (cfg->common_name != NULL) {
+            use_host = strndup(cfg->common_name, strlen(cfg->common_name));
+        } else {
+            use_host = strndup(hostname, hostlen);
+        }
 
-    if ((ret = mbedtls_ssl_set_hostname(&tls->ssl, use_host)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+        if (use_host == NULL) {
+            goto exit;
+        }
+
+        /* Hostname set here should match CN in server certificate */
+        if ((ret = mbedtls_ssl_set_hostname(&tls->ssl, use_host)) != 0) {
+            ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
+            free(use_host);
+            goto exit;
+        }
         free(use_host);
-        goto exit;
     }
-    free(use_host);
 
     if ((ret = mbedtls_ssl_config_defaults(&tls->conf,
                     MBEDTLS_SSL_IS_CLIENT,

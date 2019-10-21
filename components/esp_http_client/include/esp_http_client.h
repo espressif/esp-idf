@@ -118,8 +118,20 @@ typedef struct {
     void                        *user_data;               /*!< HTTP user_data context */
     bool                        is_async;                 /*!< Set asynchronous mode, only supported with HTTPS for now */
     bool                        use_global_ca_store;      /*!< Use a global ca_store for all the connections in which this bool is set. */
+    bool                        skip_cert_common_name_check;    /*!< Skip any validation of server certificate CN field */
 } esp_http_client_config_t;
 
+/**
+ * Enum for the HTTP status codes.
+ */
+typedef enum {
+    /* 3xx - Redirection */
+    HttpStatus_MovedPermanently  = 301,
+    HttpStatus_Found             = 302,
+
+    /* 4xx - Client Error */
+    HttpStatus_Unauthorized      = 401
+} HttpStatus_Code;
 
 #define ESP_ERR_HTTP_BASE               (0x7000)                    /*!< Starting number of HTTP error codes */
 #define ESP_ERR_HTTP_MAX_REDIRECT       (ESP_ERR_HTTP_BASE + 1)     /*!< The error exceeds the number of HTTP redirects */
@@ -441,11 +453,22 @@ esp_http_client_transport_t esp_http_client_get_transport_type(esp_http_client_h
  *
  * @param[in]  client  The esp_http_client handle
  *
- * @return
+ * @return      
  *     - ESP_OK
  *     - ESP_FAIL
  */
 esp_err_t esp_http_client_set_redirection(esp_http_client_handle_t client);
+
+/**
+ * @brief      On receiving HTTP Status code 401, this API can be invoked to add authorization
+ *             information.
+ *
+ * @note       There is a possibility of receiving body message with redirection status codes, thus make sure
+ *             to flush off body data after calling this API.
+ *
+ * @param[in]  client   The esp_http_client handle
+ */
+void esp_http_client_add_auth(esp_http_client_handle_t client);
 
 #ifdef __cplusplus
 }

@@ -12,21 +12,10 @@ menu "Example Configuration"
         help
             WiFi password (WPA or WPA2) for the example to use.
 
-    config EXAMPLE_FIRMWARE_UPGRADE_URL
+    config FIRMWARE_UPGRADE_URL
         string "firmware upgrade url endpoint"
         default "https://192.168.0.3:8070/hello-world.bin"
         help
             URL of server which hosts the firmware
             image.
-
-    config EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
-        bool
-        default y if EXAMPLE_FIRMWARE_UPGRADE_URL = "FROM_STDIN"
-
-    config EXAMPLE_SKIP_COMMON_NAME_CHECK
-        bool "Skip server certificate CN fieldcheck"
-        default n
-        help
-            This allows you to skip the validation of OTA server certificate CN field.
-
 endmenu
