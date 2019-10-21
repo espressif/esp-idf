@@ -39,25 +39,16 @@ typedef struct alarm_t {
 
 unsigned int bt_mesh_irq_lock(void)
 {
-#if defined(CONFIG_BLE_MESH_IRQ_LOCK) && CONFIG_BLE_MESH_IRQ_LOCK
-    unsigned int key = XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL);
-    return key;
-#else
-    /* Change by Espressif. In BLE Mesh, in order to improve the real-time
-     * requirements of bt controller, we use task lock to replace IRQ lock.
+    /* Changed by Espressif. In BLE Mesh, in order to improve the real-time
+     * requirements of bt controller, we use task lock instead of IRQ lock.
      */
     osi_mutex_lock(&bm_irq_lock, OSI_MUTEX_MAX_TIMEOUT);
     return 0;
-#endif
 }
 
 void bt_mesh_irq_unlock(unsigned int key)
 {
-#if defined(CONFIG_BLE_MESH_IRQ_LOCK) && CONFIG_BLE_MESH_IRQ_LOCK
-    XTOS_RESTORE_INTLEVEL(key);
-#else
     osi_mutex_unlock(&bm_irq_lock);
-#endif
 }
 
 s64_t k_uptime_get(void)

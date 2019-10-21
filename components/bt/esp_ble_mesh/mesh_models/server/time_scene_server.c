@@ -99,7 +99,7 @@ static void send_time_status(struct bt_mesh_model *model,
                  */
                 net_buf_simple_add_u8(msg, srv->state->time.uncertainty);
                 net_buf_simple_add_le16(msg,
-                    (srv->state->time.tai_utc_delta_curr << 1) | srv->state->time.time_authority);
+                                        (srv->state->time.tai_utc_delta_curr << 1) | srv->state->time.time_authority);
                 net_buf_simple_add_u8(msg, srv->state->time.time_zone_offset_curr);
             }
         } else if (model->id == BLE_MESH_MODEL_ID_TIME_SETUP_SRV) {
@@ -109,7 +109,7 @@ static void send_time_status(struct bt_mesh_model *model,
                 net_buf_simple_add_u8(msg, srv->state->time.subsecond);
                 net_buf_simple_add_u8(msg, srv->state->time.uncertainty);
                 net_buf_simple_add_le16(msg,
-                    (srv->state->time.tai_utc_delta_curr << 1) | srv->state->time.time_authority);
+                                        (srv->state->time.tai_utc_delta_curr << 1) | srv->state->time.time_authority);
                 net_buf_simple_add_u8(msg, srv->state->time.time_zone_offset_curr);
             }
         }
@@ -219,7 +219,7 @@ static void time_get(struct bt_mesh_model *model,
             return;
         }
         if (srv->state->time_role != TIME_RELAY &&
-            srv->state->time_role != TIME_CLINET) {
+                srv->state->time_role != TIME_CLINET) {
             /**
              * If the value of the Time Role state of the element is 0x00 (None) or
              * 0x01 (Time Authority), the message shall be ignored.
@@ -275,7 +275,7 @@ static void time_get(struct bt_mesh_model *model,
             BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_STATE_CHANGE, model, ctx, (const u8_t *)&change, sizeof(change));
 
         if (model->pub == NULL || model->pub->msg == NULL ||
-            model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
+                model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
             return;
         }
         prev_ttl = model->pub->ttl;
@@ -531,7 +531,7 @@ static void send_scene_register_status(struct bt_mesh_model *model,
         if (scene->scene_number != INVALID_SCENE_NUMBER) {
             total_len += SCENE_NUMBER_LEN;
             if ((publish == false && total_len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SERVER_RSP_MAX_LEN)) ||
-                (publish == true && total_len > msg->size + BLE_MESH_SERVER_TRANS_MIC_SIZE)) {
+                    (publish == true && total_len > msg->size + BLE_MESH_SERVER_TRANS_MIC_SIZE)) {
                 /* Add this in case the message is too long */
                 break;
             }
@@ -870,7 +870,7 @@ static void scene_action(struct bt_mesh_model *model,
         }
 
         if (srv->state->target_scene == scene_number &&
-            srv->state->in_progress == true) {
+                srv->state->in_progress == true) {
             /**
              * When the scene transition is in progress and the target Scene Number
              * is deleted from a Scene Register state as a result of Scene Delete
@@ -924,7 +924,7 @@ static void scene_action(struct bt_mesh_model *model,
     }
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_SCENE_STORE ||
-        ctx->recv_op == BLE_MESH_MODEL_OP_SCENE_DELETE) {
+            ctx->recv_op == BLE_MESH_MODEL_OP_SCENE_DELETE) {
         send_scene_register_status(model, ctx, srv->state->status_code, false);
     }
     send_scene_register_status(model, NULL, srv->state->status_code, true);

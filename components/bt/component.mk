@@ -140,9 +140,10 @@ endif
 endif
 
 ifdef CONFIG_BLE_MESH
-COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_core                     \
+COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_common/include           \
+                             esp_ble_mesh/mesh_core                     \
                              esp_ble_mesh/mesh_core/include             \
-                             esp_ble_mesh/mesh_core/settings            \
+                             esp_ble_mesh/mesh_core/storage             \
                              esp_ble_mesh/btc/include                   \
                              esp_ble_mesh/mesh_models/common/include    \
                              esp_ble_mesh/mesh_models/client/include    \
@@ -151,10 +152,10 @@ COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_core                     \
                              esp_ble_mesh/api/models/include            \
                              esp_ble_mesh/api
 
-COMPONENT_SRCDIRS += esp_ble_mesh/mesh_core                 \
-                     esp_ble_mesh/mesh_core/settings        \
+COMPONENT_SRCDIRS += esp_ble_mesh/mesh_common               \
+                     esp_ble_mesh/mesh_core                 \
+                     esp_ble_mesh/mesh_core/storage         \
                      esp_ble_mesh/btc                       \
-                     esp_ble_mesh/mesh_models/common        \
                      esp_ble_mesh/mesh_models/client        \
                      esp_ble_mesh/mesh_models/server        \
                      esp_ble_mesh/api/core                  \

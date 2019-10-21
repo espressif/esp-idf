@@ -215,7 +215,7 @@ static void btc_ble_mesh_lighting_client_callback(esp_ble_mesh_light_client_cb_p
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_light_client_cb_param_t), btc_ble_mesh_lighting_client_copy_req_data);
+                         sizeof(esp_ble_mesh_light_client_cb_param_t), btc_ble_mesh_lighting_client_copy_req_data);
 }
 
 void bt_mesh_lighting_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
@@ -283,7 +283,7 @@ void btc_ble_mesh_lighting_client_publish_callback(u32_t opcode,
     }
 
     bt_mesh_lighting_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_LIGHTING_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+                                          BTC_BLE_MESH_EVT_LIGHTING_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -322,7 +322,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
 
         cb.params = arg->light_client_get_state.params;
         cb.error_code = bt_mesh_light_client_get_state(&common,
-                (void *)arg->light_client_get_state.get_state, (void *)&cb.status_cb);
+                        (void *)arg->light_client_get_state.get_state, (void *)&cb.status_cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_lighting_client_callback(&cb, ESP_BLE_MESH_LIGHT_CLIENT_GET_STATE_EVT);
@@ -348,7 +348,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
 
         cb.params = arg->light_client_set_state.params;
         cb.error_code = bt_mesh_light_client_set_state(&common,
-                (void *)arg->light_client_set_state.set_state, (void *)&cb.status_cb);
+                        (void *)arg->light_client_set_state.set_state, (void *)&cb.status_cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_lighting_client_callback(&cb, ESP_BLE_MESH_LIGHT_CLIENT_SET_STATE_EVT);
@@ -387,8 +387,8 @@ void btc_ble_mesh_lighting_client_cb_handler(btc_msg_t *msg)
 /* Lighting Server Models related functions */
 
 static inline void btc_ble_mesh_lighting_server_cb_to_app(
-        esp_ble_mesh_lighting_server_cb_event_t event,
-        esp_ble_mesh_lighting_server_cb_param_t *param)
+    esp_ble_mesh_lighting_server_cb_event_t event,
+    esp_ble_mesh_lighting_server_cb_param_t *param)
 {
     esp_ble_mesh_lighting_server_cb_t btc_ble_mesh_cb =
         (esp_ble_mesh_lighting_server_cb_t)btc_profile_cb_get(BTC_PID_LIGHTING_SERVER);
@@ -411,7 +411,7 @@ static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_d
     switch (msg->act) {
     case ESP_BLE_MESH_LIGHTING_SERVER_STATE_CHANGE_EVT:
         if (p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
-            p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+                p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
             if (p_src_data->value.state_change.lc_property_set.property_value) {
                 length = p_src_data->value.state_change.lc_property_set.property_value->len;
                 p_dest_data->value.state_change.lc_property_set.property_value = bt_mesh_alloc_buf(length);
@@ -427,7 +427,7 @@ static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_d
         break;
     case ESP_BLE_MESH_LIGHTING_SERVER_RECV_SET_MSG_EVT:
         if (p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
-            p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+                p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
             if (p_src_data->value.set.lc_property.property_value) {
                 length = p_src_data->value.set.lc_property.property_value->len;
                 p_dest_data->value.set.lc_property.property_value = bt_mesh_alloc_buf(length);
@@ -475,13 +475,13 @@ static void btc_ble_mesh_lighting_server_free_req_data(btc_msg_t *msg)
     switch (msg->act) {
     case ESP_BLE_MESH_LIGHTING_SERVER_STATE_CHANGE_EVT:
         if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
-            arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
             bt_mesh_free_buf(arg->value.state_change.lc_property_set.property_value);
         }
         break;
     case ESP_BLE_MESH_LIGHTING_SERVER_RECV_SET_MSG_EVT:
         if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
-            arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
             bt_mesh_free_buf(arg->value.set.lc_property.property_value);
         }
         break;

@@ -292,7 +292,7 @@ static void reset_adv_link(void)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
     bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-        BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
 #endif
 
     reset_state();
@@ -1000,7 +1000,7 @@ static int bt_mesh_calc_dh_key(void)
 }
 
 int bt_mesh_set_oob_pub_key(const u8_t pub_key_x[32], const u8_t pub_key_y[32],
-        const u8_t pri_key[32])
+                            const u8_t pri_key[32])
 {
     if (!pub_key_x || !pub_key_y || !pri_key) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1333,7 +1333,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add the link id into exceptional list */
     bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-        BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
 #endif
 
     bearer_ctl_send(LINK_ACK, NULL, 0);
@@ -1416,7 +1416,7 @@ static void prov_msg_recv(void)
 
     if (1 + prov_handlers[type].len != link.rx.buf->len) {
         BT_ERR("%s, Invalid length %u for type 0x%02x",
-                __func__, link.rx.buf->len, type);
+               __func__, link.rx.buf->len, type);
         prov_send_fail_msg(PROV_ERR_NVAL_FMT);
         return;
     }
@@ -1466,7 +1466,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
                       ((link.rx.last_seg - 1) * 23U));
         if (expect_len != buf->len) {
             BT_ERR("%s, Incorrect last seg len: %u != %u",
-                    __func__, expect_len, buf->len);
+                   __func__, expect_len, buf->len);
             prov_send_fail_msg(PROV_ERR_NVAL_FMT);
             return;
         }
@@ -1526,7 +1526,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 
     if (link.rx.buf->len > link.rx.buf->size) {
         BT_ERR("%s, Too large provisioning PDU (%u bytes)",
-                __func__, link.rx.buf->len);
+               __func__, link.rx.buf->len);
         /* Zephyr uses prov_send_fail_msg() here */
         return;
     }

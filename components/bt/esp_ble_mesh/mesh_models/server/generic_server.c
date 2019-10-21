@@ -654,8 +654,8 @@ static void gen_move_set(struct bt_mesh_model *model,
 
 /* Generic Default Transition Time Server message handlers */
 static void send_gen_def_trans_time_status(struct bt_mesh_model *model,
-                                           struct bt_mesh_msg_ctx *ctx,
-                                           bool publish)
+        struct bt_mesh_msg_ctx *ctx,
+        bool publish)
 {
     struct bt_mesh_gen_def_trans_time_srv *srv = model->user_data;
     struct net_buf_simple *msg = NULL;
@@ -1250,7 +1250,7 @@ static void gen_power_range_set(struct bt_mesh_model *model,
 
     if (range_min > range_max) {
         BT_ERR("%s, Range Min 0x%04x is greater than Range Max 0x%04x",
-            __func__, range_min, range_max);
+               __func__, range_min, range_max);
         return;
     }
 
@@ -1540,7 +1540,7 @@ static void gen_location_set(struct bt_mesh_model *model,
     }
 
     if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET ||
-        ctx->recv_op == BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET) {
+            ctx->recv_op == BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET) {
         send_gen_location_status(model, ctx, false, opcode);
     }
     send_gen_location_status(model, NULL, true, opcode);
@@ -1550,7 +1550,7 @@ static void gen_location_set(struct bt_mesh_model *model,
 
 /* Generic User Property Server message handlers */
 struct bt_mesh_generic_property *gen_get_user_property(struct bt_mesh_model *model,
-                                    u16_t property_id)
+        u16_t property_id)
 {
     struct bt_mesh_gen_user_prop_srv *srv = model->user_data;
     u8_t i;
@@ -1605,12 +1605,12 @@ static void send_gen_user_prop_status(struct bt_mesh_model *model,
         net_buf_simple_add_le16(msg, property->id);
         net_buf_simple_add_u8(msg, property->user_access);
         if ((ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_GET &&
-            property->user_access != USER_ACCESS_PROHIBIT &&
-            property->user_access != USER_ACCESS_WRITE) ||
-            ((ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET ||
-            ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK) &&
-            property->user_access != USER_ACCESS_PROHIBIT &&
-            property->user_access != USER_ACCESS_READ)) {
+                property->user_access != USER_ACCESS_PROHIBIT &&
+                property->user_access != USER_ACCESS_WRITE) ||
+                ((ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET ||
+                  ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK) &&
+                 property->user_access != USER_ACCESS_PROHIBIT &&
+                 property->user_access != USER_ACCESS_READ)) {
             net_buf_simple_add_mem(msg, property->val->data, property->val->len);
         }
     }
@@ -1666,7 +1666,7 @@ static void gen_user_prop_get(struct bt_mesh_model *model,
         bt_mesh_model_msg_init(msg, BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS);
         for (i = 0U; i < srv->property_count; i++) {
             if (srv->properties[i].admin_access != ADMIN_NOT_USER_PROP &&
-                srv->properties[i].manu_access != MANU_NOT_USER_PROP) {
+                    srv->properties[i].manu_access != MANU_NOT_USER_PROP) {
                 net_buf_simple_add_le16(msg, srv->properties[i].id);
             }
         }
@@ -1714,7 +1714,7 @@ static void gen_user_prop_set(struct bt_mesh_model *model,
 
     property = gen_get_user_property(model, property_id);
     if (property == NULL || property->user_access == USER_ACCESS_PROHIBIT ||
-        property->user_access == USER_ACCESS_READ) {
+            property->user_access == USER_ACCESS_READ) {
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET) {
             send_gen_user_prop_status(model, ctx, property_id, false);
         }
@@ -1730,7 +1730,7 @@ static void gen_user_prop_set(struct bt_mesh_model *model,
     expect_len = bt_mesh_get_dev_prop_len(property_id);
     if (buf->len != expect_len) {
         BT_ERR("%s, Invalid User Property length, ID 0x%04x, expect %d, actual %d",
-            __func__, property_id, expect_len, buf->len);
+               __func__, property_id, expect_len, buf->len);
         return;
     }
 
@@ -1754,7 +1754,7 @@ static void gen_user_prop_set(struct bt_mesh_model *model,
 
 /* Generic Admin Property Server message handlers */
 struct bt_mesh_generic_property *gen_get_admin_property(struct bt_mesh_model *model,
-                                    u16_t property_id)
+        u16_t property_id)
 {
     struct bt_mesh_gen_admin_prop_srv *srv = model->user_data;
     u8_t i;
@@ -1809,7 +1809,7 @@ static void send_gen_admin_prop_status(struct bt_mesh_model *model,
         net_buf_simple_add_le16(msg, property->id);
         net_buf_simple_add_u8(msg, property->admin_access);
         if (ctx->recv_op != BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET ||
-            property->admin_access != ADMIN_ACCESS_WRITE) {
+                property->admin_access != ADMIN_ACCESS_WRITE) {
             net_buf_simple_add_mem(msg, property->val->data, property->val->len);
         }
     }
@@ -1942,7 +1942,7 @@ static void gen_admin_prop_set(struct bt_mesh_model *model,
 
 /* Generic Manufacturer Property Server message handlers */
 struct bt_mesh_generic_property *gen_get_manu_property(struct bt_mesh_model *model,
-                                    u16_t property_id)
+        u16_t property_id)
 {
     struct bt_mesh_gen_manu_prop_srv *srv = model->user_data;
     u8_t i;
@@ -2332,8 +2332,12 @@ const struct bt_mesh_model_op gen_client_prop_srv_op[] = {
 
 static inline int property_id_compare(const void *p1, const void *p2)
 {
-    if (*(u16_t *)p1 < *(u16_t *)p2) return -1;
-    if (*(u16_t *)p1 > *(u16_t *)p2) return 1;
+    if (*(u16_t *)p1 < * (u16_t *)p2) {
+        return -1;
+    }
+    if (*(u16_t *)p1 > *(u16_t *)p2) {
+        return 1;
+    }
     return 0;
 }
 

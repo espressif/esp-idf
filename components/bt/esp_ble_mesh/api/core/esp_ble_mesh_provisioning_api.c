@@ -70,7 +70,7 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers)
 }
 
 esp_err_t esp_ble_mesh_node_set_oob_pub_key(uint8_t pub_key_x[32], uint8_t pub_key_y[32],
-                uint8_t private_key[32])
+        uint8_t private_key[32])
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
@@ -157,7 +157,7 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name)
 
 #if (CONFIG_BLE_MESH_PROVISIONER)
 esp_err_t esp_ble_mesh_provisioner_read_oob_pub_key(uint8_t link_idx, uint8_t pub_key_x[32],
-            uint8_t pub_key_y[32])
+        uint8_t pub_key_y[32])
 {
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};

@@ -97,9 +97,9 @@ int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_tim
      *    Light LC Property Set: 0x3C, 0x004E20 -> Light LC Time Run On
      *    Light LC Property Set: 0x37, 0x004E20 -> Light LC Time Fade On
      *    Light LC Property Set: 0x39, 0x004E20 -> Light LC Time Fade Standby Manual
-     * 
+     *
      * 2. Set transition time to 0x0 for BQB test case MESH/SR/LLC/BV-08-C.
-     * 
+     *
      * TODO: Based on Light LC state and choose property property value as the
      * transition time. Currently directly use Light LC Time Run On property value.
      * Unit: Millisecond, range: [0, 16777214(0xFFFFFE)]
@@ -133,7 +133,7 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
                                 bool *optional)
 {
     if (model == NULL || buf == NULL || trans_time == NULL ||
-        delay == NULL || optional == NULL) {
+            delay == NULL || optional == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
@@ -208,7 +208,7 @@ bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
     }
 
     if (last->tid == tid && last->src == src && last->dst == dst &&
-        (*now - last->timestamp <= K_SECONDS(6))) {
+            (*now - last->timestamp <= K_SECONDS(6))) {
         return true;
     }
 
@@ -240,7 +240,7 @@ struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u
     }
 
     if (model->pub == NULL || model->pub->msg == NULL ||
-        model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
+            model->pub->addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_DBG("%s, Model 0x%04x has no publication support", __func__, model->id);
         return NULL;
     }
@@ -248,7 +248,7 @@ struct net_buf_simple *bt_mesh_server_get_pub_msg(struct bt_mesh_model *model, u
     buf = model->pub->msg;
     if (buf->size < msg_len) {
         BT_ERR("%s, Too small publication msg size %d, model 0x%04x",
-            __func__, buf->size, model->id);
+               __func__, buf->size, model->id);
         return NULL;
     }
 

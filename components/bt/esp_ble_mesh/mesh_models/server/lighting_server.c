@@ -485,7 +485,7 @@ static void light_lightness_range_set(struct bt_mesh_model *model,
 
     if (range_min > range_max) {
         BT_ERR("%s, Range Min 0x%04x is greater than Range Max 0x%04x",
-            __func__, range_min, range_max);
+               __func__, range_min, range_max);
         return;
     }
 
@@ -810,20 +810,20 @@ static void light_ctl_set(struct bt_mesh_model *model,
 
     srv->state->target_lightness = lightness;
     if (srv->state->temperature_range_min &&
-        srv->state->temperature_range_min != BLE_MESH_TEMPERATURE_UNKNOWN &&
-        temperature < srv->state->temperature_range_min) {
+            srv->state->temperature_range_min != BLE_MESH_TEMPERATURE_UNKNOWN &&
+            temperature < srv->state->temperature_range_min) {
         temperature = srv->state->temperature_range_min;
     } else if (srv->state->temperature_range_max &&
-        srv->state->temperature_range_max != BLE_MESH_TEMPERATURE_UNKNOWN &&
-        temperature > srv->state->temperature_range_max) {
+               srv->state->temperature_range_max != BLE_MESH_TEMPERATURE_UNKNOWN &&
+               temperature > srv->state->temperature_range_max) {
         temperature = srv->state->temperature_range_max;
     }
     srv->state->target_temperature = temperature;
     srv->state->target_delta_uv = delta_uv;
 
     if (srv->state->target_lightness != srv->state->lightness ||
-        srv->state->target_temperature != srv->state->temperature ||
-        srv->state->target_delta_uv != srv->state->delta_uv) {
+            srv->state->target_temperature != srv->state->temperature ||
+            srv->state->target_delta_uv != srv->state->delta_uv) {
         light_ctl_tt_values(srv, trans_time, delay);
     } else {
         bt_mesh_light_server_state_change_t change = {
@@ -902,12 +902,12 @@ static void light_ctl_default_set(struct bt_mesh_model *model,
     }
 
     if (srv->state->temperature_range_min &&
-        srv->state->temperature_range_min != BLE_MESH_TEMPERATURE_UNKNOWN &&
-        temperature < srv->state->temperature_range_min) {
+            srv->state->temperature_range_min != BLE_MESH_TEMPERATURE_UNKNOWN &&
+            temperature < srv->state->temperature_range_min) {
         temperature = srv->state->temperature_range_min;
     } else if (srv->state->temperature_range_max &&
-        srv->state->temperature_range_max != BLE_MESH_TEMPERATURE_UNKNOWN &&
-        temperature > srv->state->temperature_range_max) {
+               srv->state->temperature_range_max != BLE_MESH_TEMPERATURE_UNKNOWN &&
+               temperature > srv->state->temperature_range_max) {
         temperature = srv->state->temperature_range_max;
     }
 
@@ -948,10 +948,10 @@ static void light_ctl_temp_range_set(struct bt_mesh_model *model,
 
     /* This is as per 6.1.3.1 in Mesh Model Specification */
     if (min > max ||
-        min < BLE_MESH_TEMPERATURE_MIN || (min != BLE_MESH_TEMPERATURE_UNKNOWN && min > BLE_MESH_TEMPERATURE_MAX) ||
-        max < BLE_MESH_TEMPERATURE_MIN || (max != BLE_MESH_TEMPERATURE_UNKNOWN && max > BLE_MESH_TEMPERATURE_MAX)) {
+            min < BLE_MESH_TEMPERATURE_MIN || (min != BLE_MESH_TEMPERATURE_UNKNOWN && min > BLE_MESH_TEMPERATURE_MAX) ||
+            max < BLE_MESH_TEMPERATURE_MIN || (max != BLE_MESH_TEMPERATURE_UNKNOWN && max > BLE_MESH_TEMPERATURE_MAX)) {
         BT_ERR("%s, Invalid parameter, range Min 0x%04x, range max 0x%04x",
-            __func__, min, max);
+               __func__, min, max);
         return;
     }
 
@@ -1056,19 +1056,19 @@ static void light_ctl_temp_set(struct bt_mesh_model *model,
     bt_mesh_server_update_last_msg(&srv->last, tid, ctx->addr, ctx->recv_dst, &now);
 
     if (srv->state->temperature_range_min &&
-        srv->state->temperature_range_min != BLE_MESH_TEMPERATURE_UNKNOWN &&
-        temperature < srv->state->temperature_range_min) {
+            srv->state->temperature_range_min != BLE_MESH_TEMPERATURE_UNKNOWN &&
+            temperature < srv->state->temperature_range_min) {
         temperature = srv->state->temperature_range_min;
     } else if (srv->state->temperature_range_max &&
-        srv->state->temperature_range_max != BLE_MESH_TEMPERATURE_UNKNOWN &&
-        temperature > srv->state->temperature_range_max) {
+               srv->state->temperature_range_max != BLE_MESH_TEMPERATURE_UNKNOWN &&
+               temperature > srv->state->temperature_range_max) {
         temperature = srv->state->temperature_range_max;
     }
     srv->state->target_temperature = temperature;
     srv->state->target_delta_uv = delta_uv;
 
     if (srv->state->target_temperature != srv->state->temperature ||
-        srv->state->target_delta_uv != srv->state->delta_uv) {
+            srv->state->target_delta_uv != srv->state->delta_uv) {
         light_ctl_temp_tt_values(srv, trans_time, delay);
     } else {
         bt_mesh_light_server_state_change_t change = {
@@ -1430,8 +1430,8 @@ static void light_hsl_set(struct bt_mesh_model *model,
      * be started and is considered complete.
      */
     if (srv->state->target_lightness != srv->state->lightness ||
-        srv->state->target_hue != srv->state->hue ||
-        srv->state->target_saturation != srv->state->saturation) {
+            srv->state->target_hue != srv->state->hue ||
+            srv->state->target_saturation != srv->state->saturation) {
         light_hsl_tt_values(srv, trans_time, delay);
     } else {
         bt_mesh_light_server_state_change_t change = {
@@ -1554,13 +1554,13 @@ static void light_hsl_range_set(struct bt_mesh_model *model,
 
     if (hue_min > hue_max) {
         BT_ERR("%s, Invalid parameter, Hue min 0x%04x, Hue max 0x%04x",
-            __func__, hue_min, hue_max);
+               __func__, hue_min, hue_max);
         return;
     }
 
     if (saturation_min > saturation_max) {
         BT_ERR("%s, Invalid parameter, Saturation min 0x%04x, Saturation max 0x%04x",
-            __func__, hue_min, hue_max);
+               __func__, hue_min, hue_max);
         return;
     }
 
@@ -2047,8 +2047,8 @@ static void light_xyl_set(struct bt_mesh_model *model,
      * be started and is considered complete.
      */
     if (srv->state->target_lightness != srv->state->lightness ||
-        srv->state->target_x != srv->state->x ||
-        srv->state->target_y != srv->state->y) {
+            srv->state->target_x != srv->state->x ||
+            srv->state->target_y != srv->state->y) {
         light_xyl_tt_values(srv, trans_time, delay);
     } else {
         bt_mesh_light_server_state_change_t change = {
@@ -2171,13 +2171,13 @@ static void light_xyl_range_set(struct bt_mesh_model *model,
 
     if (x_min > x_max) {
         BT_ERR("%s, Invalid parameter, xyL x min 0x%04x, xyL x max 0x%04x",
-            __func__, x_min, x_max);
+               __func__, x_min, x_max);
         return;
     }
 
     if (y_min > y_max) {
         BT_ERR("%s, Invalid parameter, xyL y min 0x%04x, xyL y max 0x%04x",
-            __func__, y_min, y_max);
+               __func__, y_min, y_max);
         return;
     }
 
@@ -2528,13 +2528,13 @@ static void light_lc_sensor_status(struct bt_mesh_model *model,
      * field contains a Raw Value for the Present Ambient Light Level device property,
      * it shall set the Light LC Ambient LuxLevel state to the Represented Value of the
      * received Present Ambient Light Level.
-     * 
+     *
      * Motion Sensed: 1 octet, 0x0042
      * People Count: 2 octets, 0x004C
      * Presence Detected: 1 octet, 0x004D
-     * 
+     *
      * Time Since Motion Sensed: 2 octets, 0x0068
-     * 
+     *
      * Present Ambient Light Level: 4 octets, 0x004E
      */
     struct bt_mesh_light_lc_srv *srv = model->user_data;
@@ -2834,7 +2834,7 @@ static void light_lc_prop_set(struct bt_mesh_model *model,
     expect_len = bt_mesh_get_dev_prop_len(prop_id);
     if (buf->len != expect_len) {
         BT_ERR("%s, Invalid Light LC Property length, ID 0x%04x, expect %d, actual %d",
-            __func__, prop_id, expect_len, buf->len);
+               __func__, prop_id, expect_len, buf->len);
         return;
     }
 
