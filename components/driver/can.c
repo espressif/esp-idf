@@ -453,13 +453,17 @@ static void can_intr_handler_tx(can_status_reg_t *status, int *alert_req)
 
     //Update TX message count
     p_can_obj->tx_msg_count--;
-    configASSERT(p_can_obj->tx_msg_count >= 0);     //Sanity check
+    assert(p_can_obj->tx_msg_count >= 0);     //Sanity check
 
     //Check if there are more frames to transmit
     if (p_can_obj->tx_msg_count > 0 && p_can_obj->tx_queue != NULL) {
         can_frame_t frame;
-        configASSERT(xQueueReceiveFromISR(p_can_obj->tx_queue, &frame, NULL) == pdTRUE);
-        can_set_tx_buffer_and_transmit(&frame);
+        int res = xQueueReceiveFromISR(p_can_obj->tx_queue, &frame, NULL);
+        if (res == pdTRUE) {
+            can_set_tx_buffer_and_transmit(&frame);
+        } else {
+            assert(false && "failed to get a frame from TX queue");
+        }
     } else {
         //No more frames to transmit
         CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_TX_BUFF_OCCUPIED);
@@ -679,7 +683,8 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     }
     periph_module_reset(PERIPH_CAN_MODULE);
     periph_module_enable(PERIPH_CAN_MODULE);            //Enable APB CLK to CAN peripheral
-    configASSERT(can_enter_reset_mode() == ESP_OK);     //Must enter reset mode to write to config registers
+    esp_err_t err = can_exit_reset_mode();              //Must enter reset mode to write to config registers
+    assert(err == ESP_OK);
     can_config_pelican();                               //Use PeliCAN addresses
     /* Note: REC is allowed to increase even in reset mode. Listen only mode
        will freeze REC. The desired mode will be set when can_start() is called. */
@@ -734,7 +739,8 @@ esp_err_t can_driver_uninstall()
     //Check state
     CAN_CHECK_FROM_CRIT(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
     CAN_CHECK_FROM_CRIT(p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF), ESP_ERR_INVALID_STATE);
-    configASSERT(can_enter_reset_mode() == ESP_OK); //Enter reset mode to stop any CAN bus activity
+    esp_err_t err = can_exit_reset_mode();  //Enter reset mode to stop any CAN bus activity
+    assert(err == ESP_OK);
     //Clear registers by reading
     (void) can_get_interrupt_reason();
     (void) can_get_arbitration_lost_capture();
@@ -772,7 +778,8 @@ esp_err_t can_start()
     //Reset RX queue, and RX message count
     xQueueReset(p_can_obj->rx_queue);
     p_can_obj->rx_msg_count = 0;
-    configASSERT(can_enter_reset_mode() == ESP_OK); //Should already be in bus-off mode, set again to make sure
+    esp_err_t err = can_exit_reset_mode(); //Should already be in bus-off mode, set again to make sure
+    assert(err == ESP_OK);
 
     //Currently in listen only mode, need to set to mode specified by configuration
     can_mode_t mode;
@@ -785,7 +792,8 @@ esp_err_t can_start()
     }
     can_config_mode(mode);                              //Set mode
     (void) can_get_interrupt_reason();                  //Clear interrupt register
-    configASSERT(can_exit_reset_mode() == ESP_OK);
+    err = can_exit_reset_mode();
+    assert(err == ESP_OK);
 
     CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_STOPPED);
     CAN_EXIT_CRITICAL();
@@ -800,7 +808,8 @@ esp_err_t can_stop()
     CAN_CHECK_FROM_CRIT(!(p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF)), ESP_ERR_INVALID_STATE);
 
     //Clear interrupts and reset flags
-    configASSERT(can_enter_reset_mode() == ESP_OK);
+    esp_err_t err = can_exit_reset_mode();
+    assert(err == ESP_OK);
     (void) can_get_interrupt_reason();          //Read interrupt register to clear interrupts
     can_config_mode(CAN_MODE_LISTEN_ONLY);      //Set to listen only mode to freeze REC
     CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_TX_BUFF_OCCUPIED);
@@ -851,11 +860,13 @@ esp_err_t can_transmit(const can_message_t *message, TickType_t ticks_to_wait)
             CAN_ENTER_CRITICAL();
             if (p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF)) {
                 //TX queue was reset (due to stop/bus_off), remove copied frame from queue to prevent transmission
-                configASSERT(xQueueReceive(p_can_obj->tx_queue, &tx_frame, 0) == pdTRUE);
+                int res = xQueueReceive(p_can_obj->tx_queue, &tx_frame, 0);
+                assert(res == pdTRUE);
                 ret = ESP_ERR_INVALID_STATE;
             } else if ((p_can_obj->tx_msg_count == 0) && !(p_can_obj->control_flags & CTRL_FLAG_TX_BUFF_OCCUPIED)) {
                 //TX buffer was freed during copy, manually trigger transmission
-                configASSERT(xQueueReceive(p_can_obj->tx_queue, &tx_frame, 0) == pdTRUE);
+                int res = xQueueReceive(p_can_obj->tx_queue, &tx_frame, 0);
+                assert(res == pdTRUE);
                 can_set_tx_buffer_and_transmit(&tx_frame);
                 p_can_obj->tx_msg_count++;
                 CAN_SET_FLAG(p_can_obj->control_flags, CTRL_FLAG_TX_BUFF_OCCUPIED);
@@ -946,7 +957,8 @@ esp_err_t can_initiate_recovery()
     CAN_SET_FLAG(p_can_obj->control_flags, CTRL_FLAG_RECOVERING);
 
     //Trigger start of recovery process
-    configASSERT(can_exit_reset_mode() == ESP_OK);
+    esp_err_t err = can_exit_reset_mode();
+    assert(err == ESP_OK);
     CAN_EXIT_CRITICAL();
 
     return ESP_OK;
