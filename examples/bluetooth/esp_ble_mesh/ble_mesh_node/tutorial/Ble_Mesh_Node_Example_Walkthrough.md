@@ -97,7 +97,7 @@ static esp_err_t ble_mesh_init(void)
 {
     int err = 0;
 
-    memcpy(dev_uuid + 2, esp_bt_dev_get_address(), ESP_BD_ADDR_LEN);
+    memcpy(dev_uuid + 2, esp_bt_dev_get_address(), BLE_MESH_ADDR_LEN);
 
     // See comment 1
      esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb);

@@ -259,7 +259,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_dev(esp_ble_mesh_device_delete_t *del_
  * @param[in]    bearer: Adv packet received from PB-GATT or PB-ADV bearer.
  *
  */
-typedef void (*esp_ble_mesh_prov_adv_cb_t)(const esp_bd_addr_t addr, const esp_ble_addr_type_t addr_type,
+typedef void (*esp_ble_mesh_prov_adv_cb_t)(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type,
         const uint8_t adv_type, const uint8_t *dev_uuid,
         uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
 

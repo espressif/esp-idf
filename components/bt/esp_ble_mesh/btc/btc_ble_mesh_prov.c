@@ -689,7 +689,7 @@ static void btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb(
     }
 
     memcpy(mesh_param.provisioner_recv_unprov_adv_pkt.dev_uuid, dev_uuid, 16);
-    memcpy(mesh_param.provisioner_recv_unprov_adv_pkt.addr, addr, ESP_BD_ADDR_LEN);
+    memcpy(mesh_param.provisioner_recv_unprov_adv_pkt.addr, addr, BLE_MESH_ADDR_LEN);
     mesh_param.provisioner_recv_unprov_adv_pkt.addr_type = addr_type;
     mesh_param.provisioner_recv_unprov_adv_pkt.oob_info = oob_info;
     mesh_param.provisioner_recv_unprov_adv_pkt.adv_type = adv_type;
