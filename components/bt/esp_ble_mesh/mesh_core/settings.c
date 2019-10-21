@@ -656,7 +656,7 @@ static int model_set(bool vnd, const char *name)
         model = bt_mesh_model_get(vnd, elem_idx, model_idx);
         if (!model) {
             BT_ERR("%s, Failed to get %s model, elem_idx %u model_idx %u",
-                    __func__, vnd ? "vnd" : "sig", elem_idx, model_idx);
+                   __func__, vnd ? "vnd" : "sig", elem_idx, model_idx);
             err = -ENOENT;
             goto free;
         }
@@ -1227,7 +1227,7 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
     err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
     if (err) {
         BT_ERR("%s, Failed to add 0x%04x to %s", __func__, model_key,
-                vnd ? "mesh/vnd" : "mesh/sig");
+               vnd ? "mesh/vnd" : "mesh/sig");
     }
 
     return;
@@ -1257,7 +1257,7 @@ static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
     err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
     if (err) {
         BT_ERR("%s, Failed to add 0x%04x to %s", __func__, model_key,
-                vnd ? "mesh/vnd" : "mesh/sig");
+               vnd ? "mesh/vnd" : "mesh/sig");
     }
 
     return;
@@ -1301,7 +1301,7 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
     err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
     if (err) {
         BT_ERR("%s, Failed to add 0x%04x to %s", __func__, model_key,
-                vnd ? "mesh/vnd" : "mesh/sig");
+               vnd ? "mesh/vnd" : "mesh/sig");
     }
 
     return;

@@ -29,8 +29,8 @@
 #if CONFIG_BLE_MESH_NODE
 
 /* Not support enabling Proxy Client and Proxy Server simultaneously */
-_Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) && IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)),
-    "Not support Proxy Server and Proxy Client simultaneously");
+_Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)),
+               "Not support Proxy Server and Proxy Client simultaneously");
 
 #define PDU_TYPE(data)     (data[0] & BIT_MASK(6))
 #define PDU_SAR(data)      (data[0] >> 6)
@@ -670,7 +670,7 @@ static ssize_t prov_ccc_read(struct bt_mesh_conn *conn,
     u16_t *value = attr->user_data;
 
     return bt_mesh_gatts_attr_read(conn, attr, buf, len, offset, value,
-                             sizeof(*value));
+                                   sizeof(*value));
 }
 
 /* Mesh Provisioning Service Declaration */
@@ -805,7 +805,7 @@ static ssize_t proxy_ccc_read(struct bt_mesh_conn *conn,
     u16_t *value = attr->user_data;
 
     return bt_mesh_gatts_attr_read(conn, attr, buf, len, offset, value,
-                             sizeof(*value));
+                                   sizeof(*value));
 }
 
 /* Mesh Proxy Service Declaration */

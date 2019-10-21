@@ -22,7 +22,7 @@ int bt_mesh_pb_gatt_close(struct bt_mesh_conn *conn);
 int bt_mesh_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf);
 
 int bt_mesh_set_oob_pub_key(const u8_t pub_key_x[32], const u8_t pub_key_y[32],
-        const u8_t pri_key[32]);
+                            const u8_t pri_key[32]);
 
 const struct bt_mesh_prov *bt_mesh_prov_get(void);
 

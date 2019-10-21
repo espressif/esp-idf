@@ -240,7 +240,7 @@ int provisioner_upper_init(void)
        which has been initialized in the application layer */
     bt_mesh.iv_index = prov->iv_index;
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS,
-                      BLE_MESH_IV_UPDATE(prov->flags));
+                              BLE_MESH_IV_UPDATE(prov->flags));
 
     /* Set minimum required hours, since the 96-hour minimum requirement
      * doesn't apply straight after provisioning (since we can't know how

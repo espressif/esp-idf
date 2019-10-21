@@ -1281,7 +1281,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_generic_server_cb_t)(esp_ble_mesh_generic_server_cb_event_t event,
-            esp_ble_mesh_generic_server_cb_param_t *param);
+        esp_ble_mesh_generic_server_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Generic Server Model callback.

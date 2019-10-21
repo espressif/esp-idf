@@ -73,6 +73,8 @@
 /* 2 transmissions, 20ms interval */
 #define POLL_XMIT BLE_MESH_TRANSMIT(1, 20)
 
+#define FIRST_POLL_ATTEMPTS     6
+
 static void (*lpn_cb)(u16_t friend_addr, bool established);
 
 static const char *state2str(int state)
@@ -743,7 +745,7 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
             bt_mesh_scan_disable();
         }
 
-        if (lpn->req_attempts < 6) {
+        if (lpn->req_attempts < FIRST_POLL_ATTEMPTS) {
             BT_WARN("Retrying first Friend Poll");
             lpn->sent_req = 0U;
             if (send_friend_poll() == 0) {
@@ -795,7 +797,7 @@ static void lpn_timeout(struct k_work *work)
         k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
         break;
     case BLE_MESH_LPN_OFFER_RECV:
-        if (lpn->req_attempts < 6) {
+        if (lpn->req_attempts < FIRST_POLL_ATTEMPTS) {
             BT_WARN("Retrying the first Friend Poll, %d attempts", lpn->req_attempts);
             lpn->sent_req = 0U;
             send_friend_poll();

@@ -128,7 +128,7 @@ struct scene_register {
  * mesh-wide value. (There can be a maximum of 65535 scenes in a mesh
  * network.) The meaning of a scene, as well as the state storage container
  * associated with it, are determined by a model.
- * 
+ *
  * The Scenes state change may start numerous parallel model transitions.
  * In that case, each individual model handles the transition internally.
  *

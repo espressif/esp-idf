@@ -482,7 +482,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
     bt_mesh.iv_index = iv_index;
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS,
-                      BLE_MESH_IV_UPDATE(flags));
+                              BLE_MESH_IV_UPDATE(flags));
 
     /* Set minimum required hours, since the 96-hour minimum requirement
      * doesn't apply straight after provisioning (since we can't know how
@@ -729,8 +729,8 @@ u32_t bt_mesh_next_seq(void)
     }
 
     if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) &&
-        bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
-        bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY)) {
+            bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
+            bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY)) {
 #if CONFIG_BLE_MESH_NODE
         bt_mesh_beacon_ivu_initiator(true);
 #endif
@@ -791,7 +791,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-            bt_mesh_proxy_relay(&buf->b, dst)) {
+                bt_mesh_proxy_relay(&buf->b, dst)) {
             send_cb_finalize(cb, cb_data);
             return 0;
         }
@@ -1049,11 +1049,11 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 
 #if CONFIG_BLE_MESH_NODE
     if (bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY) &&
-            rx->net_if == BLE_MESH_NET_IF_PROXY_CFG) {
-        return bt_mesh_net_decrypt(enc, buf, BLE_MESH_NET_IVI_RX(rx),
-                                   true);
-    }
+        if (IS_ENABLED(CONFIG_BLE_MESH_PROXY) &&
+                rx->net_if == BLE_MESH_NET_IF_PROXY_CFG) {
+            return bt_mesh_net_decrypt(enc, buf, BLE_MESH_NET_IVI_RX(rx),
+                                       true);
+        }
     }
 #endif
 
@@ -1445,11 +1445,11 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
      */
 #if CONFIG_BLE_MESH_NODE
     if (bt_mesh_is_provisioned()) {
-    if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-            (!rx.local_match && !rx.friend_match)) {
-        net_buf_simple_restore(&buf, &state);
-        bt_mesh_net_relay(&buf, &rx);
-    }
+        if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
+                (!rx.local_match && !rx.friend_match)) {
+            net_buf_simple_restore(&buf, &state);
+            bt_mesh_net_relay(&buf, &rx);
+        }
     }
 #endif
 }
@@ -1500,7 +1500,7 @@ void bt_mesh_net_start(void)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add Mesh beacon type (Secure Network Beacon) to the exceptional list */
     bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-        BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+                                    BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
 #endif
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {

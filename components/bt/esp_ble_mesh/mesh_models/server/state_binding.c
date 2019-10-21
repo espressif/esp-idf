@@ -106,7 +106,7 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
                                  bt_mesh_server_state_value_t *value)
 {
     if (model == NULL || model->user_data == NULL ||
-        value == NULL || type > BIND_STATE_MAX) {
+            value == NULL || type > BIND_STATE_MAX) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }

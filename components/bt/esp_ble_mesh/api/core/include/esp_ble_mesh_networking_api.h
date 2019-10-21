@@ -138,7 +138,7 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
  * @brief        Update a server model state value. If the model publication
  *               state is set properly (e.g. publish address is set to a valid
  *               address), it will publish corresponding status message.
- * 
+ *
  * @note         Currently this API is used to update bound state value, not
  *               for all server model states.
  *

@@ -391,13 +391,13 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             (bearers & BLE_MESH_PROV_ADV)) {
         bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-            BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+                                        BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
         bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-            BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
+                                        BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
     }
 #endif
 

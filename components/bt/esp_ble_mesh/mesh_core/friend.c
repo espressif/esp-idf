@@ -902,8 +902,8 @@ init_friend:
 }
 
 static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
-                                          u16_t src, u64_t *seq_auth,
-                                          u8_t seg_count)
+        u16_t src, u64_t *seq_auth,
+        u8_t seg_count)
 {
     struct bt_mesh_friend_seg *unassigned = NULL;
     int i;
@@ -951,7 +951,7 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
     seg = get_seg(frnd, BLE_MESH_ADV(buf)->addr, &adv->seq_auth, seg_count);
     if (!seg) {
         BT_ERR("%s, No free friend segment RX contexts for 0x%04x",
-                __func__, BLE_MESH_ADV(buf)->addr);
+               __func__, BLE_MESH_ADV(buf)->addr);
         net_buf_unref(buf);
         return;
     }
@@ -1275,7 +1275,7 @@ static bool friend_queue_has_space(struct bt_mesh_friend *frnd, u16_t addr,
              */
             buf = (void *)sys_slist_peek_head(&seg->queue);
             if (buf && BLE_MESH_ADV(buf)->addr == addr &&
-                FRIEND_ADV(buf)->seq_auth == *seq_auth) {
+                    FRIEND_ADV(buf)->seq_auth == *seq_auth) {
                 return true;
             }
         }
@@ -1383,7 +1383,7 @@ void bt_mesh_friend_enqueue_rx(struct bt_mesh_net_rx *rx,
         struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
         if (!friend_lpn_matches(frnd, rx->sub->net_idx,
-                    rx->ctx.recv_dst)) {
+                                rx->ctx.recv_dst)) {
             continue;
         }
 

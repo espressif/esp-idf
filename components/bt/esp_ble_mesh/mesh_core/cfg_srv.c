@@ -478,7 +478,7 @@ static void app_key_add(struct bt_mesh_model *model,
         change.cfg_appkey_add.app_idx = key_app_idx;
         memcpy(change.cfg_appkey_add.app_key, buf->data, 16);
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -512,7 +512,7 @@ static void app_key_update(struct bt_mesh_model *model,
         change.cfg_appkey_update.app_idx = key_app_idx;
         memcpy(change.cfg_appkey_update.app_key, buf->data, 16);
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -596,7 +596,7 @@ send_status:
         change.cfg_appkey_delete.net_idx = key_net_idx;
         change.cfg_appkey_delete.app_idx = key_app_idx;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -1158,7 +1158,7 @@ send_status:
         change.cfg_mod_pub_set.cid = vnd ? mod->vnd.company : 0xFFFF;
         change.cfg_mod_pub_set.mod_id = vnd ? mod->vnd.id : mod->id;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -1491,7 +1491,7 @@ send_status:
         change.cfg_mod_sub_add.cid = vnd ? mod->vnd.company : 0xFFFF;
         change.cfg_mod_sub_add.mod_id = vnd ? mod->vnd.id : mod->id;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -1567,7 +1567,7 @@ send_status:
         change.cfg_mod_sub_delete.cid = vnd ? mod->vnd.company : 0xFFFF;
         change.cfg_mod_sub_delete.mod_id = vnd ? mod->vnd.id : mod->id;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -2238,7 +2238,7 @@ static void net_key_add(struct bt_mesh_model *model,
     change.cfg_netkey_add.net_idx = sub->net_idx;
     memcpy(change.cfg_netkey_add.net_key, sub->keys[0].net, 16);
     bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-        model, ctx, (const u8_t *)&change, sizeof(change));
+                                        model, ctx, (const u8_t *)&change, sizeof(change));
 }
 
 static void net_key_update(struct bt_mesh_model *model,
@@ -2313,7 +2313,7 @@ static void net_key_update(struct bt_mesh_model *model,
     change.cfg_netkey_update.net_idx = sub->net_idx;
     memcpy(change.cfg_netkey_update.net_key, sub->keys[1].net, 16);
     bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-        model, ctx, (const u8_t *)&change, sizeof(change));
+                                        model, ctx, (const u8_t *)&change, sizeof(change));
 }
 
 static void hb_pub_disable(struct bt_mesh_cfg_srv *cfg)
@@ -2371,7 +2371,7 @@ send_status:
         bt_mesh_cfg_server_state_change_t change = {0};
         change.cfg_netkey_delete.net_idx = sub->net_idx;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -2586,7 +2586,7 @@ send_status:
         change.cfg_mod_app_bind.cid = vnd ? mod->vnd.company : 0xFFFF;
         change.cfg_mod_app_bind.mod_id = vnd ? mod->vnd.id : mod->id;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -2642,7 +2642,7 @@ send_status:
         change.cfg_mod_app_unbind.cid = vnd ? mod->vnd.company : 0xFFFF;
         change.cfg_mod_app_unbind.mod_id = vnd ? mod->vnd.id : mod->id;
         bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-            model, ctx, (const u8_t *)&change, sizeof(change));
+                                            model, ctx, (const u8_t *)&change, sizeof(change));
     }
 }
 
@@ -2957,7 +2957,7 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
     change.cfg_kr_phase_set.net_idx = idx;
     change.cfg_kr_phase_set.kr_phase = phase;
     bt_mesh_config_server_cb_evt_to_btc(BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE,
-        model, ctx, (const u8_t *)&change, sizeof(change));
+                                        model, ctx, (const u8_t *)&change, sizeof(change));
 }
 
 static u8_t hb_log(u16_t val)
@@ -3230,7 +3230,7 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
          * MESH/NODE/CFG/HBS/BV-02-C.
          */
         if (sub_src == BLE_MESH_ADDR_UNASSIGNED ||
-            sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
+                sub_dst == BLE_MESH_ADDR_UNASSIGNED) {
             cfg->hb_sub.src = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.dst = BLE_MESH_ADDR_UNASSIGNED;
             cfg->hb_sub.min_hops = BLE_MESH_TTL_MAX;

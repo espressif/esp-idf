@@ -121,7 +121,7 @@ static int settings_save(nvs_handle handle, const char *key, const u8_t *val, si
     }
     if (err != ESP_OK) {
         BT_ERR("%s, Failed to %s %s data (err %d)", __func__,
-                val ? "set" : "erase", key, err);
+               val ? "set" : "erase", key, err);
         return -EIO;
     }
 

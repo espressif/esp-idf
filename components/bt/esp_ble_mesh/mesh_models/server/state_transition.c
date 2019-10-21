@@ -385,7 +385,7 @@ void generic_power_level_work_handler(struct k_work *work)
     bt_mesh_gen_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -447,7 +447,7 @@ void light_lightness_actual_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->actual_transition.timer.work._reserved == NULL) {
+            srv->actual_transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -509,7 +509,7 @@ void light_lightness_linear_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->linear_transition.timer.work._reserved == NULL) {
+            srv->linear_transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -561,7 +561,7 @@ void light_ctl_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -621,7 +621,7 @@ void light_ctl_temp_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -677,7 +677,7 @@ void light_hsl_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -737,7 +737,7 @@ void light_hsl_hue_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -789,7 +789,7 @@ void light_hsl_sat_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -841,7 +841,7 @@ void light_xyl_work_handler(struct k_work *work)
     bt_mesh_light_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
@@ -966,7 +966,7 @@ void scene_recall_work_handler(struct k_work *work)
     bt_mesh_time_scene_server_state_change_t change = {0};
 
     if (srv == NULL || srv->state == NULL ||
-        srv->transition.timer.work._reserved == NULL) {
+            srv->transition.timer.work._reserved == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }

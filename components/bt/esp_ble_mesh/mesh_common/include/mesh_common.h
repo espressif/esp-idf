@@ -46,7 +46,7 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
 
 /**
  * @brief This function gets device role for stack internal use.
- * 
+ *
  * @Note  Currently Provisioner only support client models, Node supports
  *        client models and server models. Hence if srv_send is set to be
  *        TRUE, then role NODE will be returned.

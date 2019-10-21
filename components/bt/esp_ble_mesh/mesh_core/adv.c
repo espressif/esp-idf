@@ -126,7 +126,7 @@ static inline int adv_send(struct net_buf *buf)
     adv_int = MAX(adv_int_min,
                   BLE_MESH_TRANSMIT_INT(BLE_MESH_ADV(buf)->xmit));
     duration = (BLE_MESH_TRANSMIT_COUNT(BLE_MESH_ADV(buf)->xmit) + 1) *
-                (adv_int + 10);
+               (adv_int + 10);
 
     BT_DBG("type %u len %u: %s", BLE_MESH_ADV(buf)->type,
            buf->len, bt_hex(buf->data, buf->len));
@@ -300,7 +300,7 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
     }
 
     BT_DBG("%s, pool = %p, buf_count = %d, uinit_count = %d", __func__,
-        buf->pool, pool->buf_count, pool->uninit_count);
+           buf->pool, pool->buf_count, pool->uninit_count);
 
     adv = get_id(net_buf_id(buf));
     BLE_MESH_ADV(buf) = adv;
@@ -395,7 +395,7 @@ static struct bt_mesh_adv *relay_adv_alloc(int id)
 }
 
 struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
-                                         s32_t timeout)
+        s32_t timeout)
 {
     return bt_mesh_adv_create_from_pool(&relay_adv_buf_pool, relay_adv_alloc, type,
                                         xmit, timeout);
@@ -440,7 +440,7 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
 }
 
 void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
-        void *cb_data, u16_t src, u16_t dst)
+                            void *cb_data, u16_t src, u16_t dst)
 {
     bt_mesh_msg_t msg = {
         .relay = true,
@@ -504,17 +504,17 @@ static bool bt_mesh_is_adv_srv_uuid_valid(struct net_buf_simple *buf, u16_t *uui
     BT_DBG("Received adv pkt with service UUID: %d", *uuid);
 
     if (*uuid != BLE_MESH_UUID_MESH_PROV_VAL &&
-        *uuid != BLE_MESH_UUID_MESH_PROXY_VAL) {
+            *uuid != BLE_MESH_UUID_MESH_PROXY_VAL) {
         return false;
     }
 
     if (*uuid == BLE_MESH_UUID_MESH_PROV_VAL &&
-        bt_mesh_is_provisioner_en() == false) {
+            bt_mesh_is_provisioner_en() == false) {
         return false;
     }
 
     if (*uuid == BLE_MESH_UUID_MESH_PROXY_VAL &&
-        !IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+            !IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
         return false;
     }
 
@@ -557,7 +557,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     case BLE_MESH_UUID_MESH_PROXY_VAL:
         if (buf->len != BLE_MESH_PROXY_SRV_DATA_LEN1 &&
-            buf->len != BLE_MESH_PROXY_SRV_DATA_LEN2) {
+                buf->len != BLE_MESH_PROXY_SRV_DATA_LEN2) {
             BT_WARN("%s, Invalid Mesh Proxy Service Data length %d", __func__, buf->len);
             return;
         }
@@ -612,9 +612,9 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 #if 0
         /* TODO: Check with BLE Mesh BQB test cases */
         if ((type == BLE_MESH_DATA_MESH_PROV || type == BLE_MESH_DATA_MESH_MESSAGE ||
-            type == BLE_MESH_DATA_MESH_BEACON) && (adv_type != BLE_MESH_ADV_NONCONN_IND)) {
+                type == BLE_MESH_DATA_MESH_BEACON) && (adv_type != BLE_MESH_ADV_NONCONN_IND)) {
             BT_DBG("%s, ignore BLE Mesh packet (type 0x%02x) with adv_type 0x%02x",
-                    __func__, type, adv_type);
+                   __func__, type, adv_type);
             return;
         }
 #endif
@@ -691,7 +691,7 @@ void bt_mesh_adv_init(void)
     xQueueAddToSet(xBleMeshRelayQueue, xBleMeshQueueSet);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
     int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", 3072, NULL,
-                            configMAX_PRIORITIES - 7, NULL, ADV_TASK_CORE);
+                                      configMAX_PRIORITIES - 7, NULL, ADV_TASK_CORE);
     configASSERT(ret == pdTRUE);
 }
 
