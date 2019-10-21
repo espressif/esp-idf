@@ -289,6 +289,11 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/smp/smp_l2c.c"
                    "host/bluedroid/stack/smp/smp_main.c"
                    "host/bluedroid/stack/smp/smp_utils.c")
+
+        if(CONFIG_BLE_MESH)
+            list(APPEND srcs "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c")
+        endif()
+
     endif()
 
     if(CONFIG_BLE_MESH)
@@ -335,9 +340,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_core/lpn.c"
                     "esp_ble_mesh/mesh_core/mesh_aes_encrypt.c"
                     "esp_ble_mesh/mesh_core/mesh_atomic.c"
-                    "esp_ble_mesh/mesh_core/mesh_bearer_adapt.c"
                     "esp_ble_mesh/mesh_core/mesh_buf.c"
-                    "esp_ble_mesh/mesh_core/mesh_hci.c"
                     "esp_ble_mesh/mesh_core/mesh_kernel.c"
                     "esp_ble_mesh/mesh_core/mesh_main.c"
                     "esp_ble_mesh/mesh_core/mesh_util.c"
@@ -468,6 +471,10 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/porting/nimble/src/os_mbuf.c"
                     "host/nimble/nimble/porting/nimble/src/os_cputime.c"
                     "host/nimble/esp-hci/src/esp_nimble_hci.c")
+
+        if (CONFIG_BLE_MESH)
+            list(APPEND srcs "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c")
+        endif()
 
         if(CONFIG_BT_NIMBLE_MESH)
 

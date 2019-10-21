@@ -21,7 +21,7 @@ static int ble_mesh_init(void)
     prov_key.app_idx = ESP_BLE_MESH_APP_IDX;
     memset(prov_key.app_key, APP_KEY_OCTET, sizeof(prov_key.app_key));
 
-    memcpy(dev_uuid, esp_bt_dev_get_address(), ESP_BD_ADDR_LEN);
+    memcpy(dev_uuid, esp_bt_dev_get_address(), BLE_MESH_ADDR_LEN);
 
     esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(esp_ble_mesh_model_cb);
