@@ -239,7 +239,7 @@ static void btc_ble_mesh_health_client_callback(esp_ble_mesh_health_client_cb_pa
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_health_client_cb_param_t), btc_ble_mesh_health_client_copy_req_data);
+                         sizeof(esp_ble_mesh_health_client_cb_param_t), btc_ble_mesh_health_client_copy_req_data);
 }
 
 void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
@@ -307,7 +307,7 @@ void btc_ble_mesh_health_publish_callback(u32_t opcode,
     }
 
     bt_mesh_health_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+                                        BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -420,7 +420,7 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg)
             break;
         }
         btc_ble_mesh_health_client_get_state(arg->health_client_get_state.params,
-            arg->health_client_get_state.get_state, &cb);
+                                             arg->health_client_get_state.get_state, &cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_health_client_callback(&cb, ESP_BLE_MESH_HEALTH_CLIENT_GET_STATE_EVT);
@@ -436,7 +436,7 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg)
             break;
         }
         btc_ble_mesh_health_client_set_state(arg->health_client_set_state.params,
-            arg->health_client_set_state.set_state, &cb);
+                                             arg->health_client_set_state.set_state, &cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_health_client_callback(&cb, ESP_BLE_MESH_HEALTH_CLIENT_SET_STATE_EVT);
@@ -560,7 +560,7 @@ static void btc_ble_mesh_health_server_callback(esp_ble_mesh_health_server_cb_pa
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_health_server_cb_param_t), btc_ble_mesh_health_server_copy_req_data);
+                         sizeof(esp_ble_mesh_health_server_cb_param_t), btc_ble_mesh_health_server_copy_req_data);
 }
 
 void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg)

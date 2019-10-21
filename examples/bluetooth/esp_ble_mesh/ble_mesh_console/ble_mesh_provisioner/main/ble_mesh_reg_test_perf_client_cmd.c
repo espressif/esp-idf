@@ -47,9 +47,9 @@ typedef struct {
 } ble_mesh_test_perf_client_model_statistics_t;
 ble_mesh_test_perf_client_model_statistics_t test_perf_client_model_statistics;
 
-void ble_mesh_performance_client_model_command();
+void ble_mesh_performance_client_model_command(void);
 
-void ble_mesh_register_mesh_test_performance_client()
+void ble_mesh_register_mesh_test_performance_client(void)
 {
     ble_mesh_performance_client_model_command();
 }
@@ -177,7 +177,7 @@ int ble_mesh_test_performance_client_model_performance(int argc, char **argv)
     return 0;
 }
 
-void ble_mesh_performance_client_model_command()
+void ble_mesh_performance_client_model_command(void)
 {
     test_perf_client_model.action_type = arg_str1("z", NULL, "<action>", "action type");
     test_perf_client_model.playload_byte = arg_int0("p", NULL, "<byte>", "playload byte");

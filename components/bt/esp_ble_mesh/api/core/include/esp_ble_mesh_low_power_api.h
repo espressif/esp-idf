@@ -44,7 +44,14 @@ esp_err_t esp_ble_mesh_lpn_disable(bool force);
 /**
  * @brief       LPN tries to poll messages from the Friend Node.
  *
- * @note        Once called, Friend Poll will be sent to the Friend Node.
+ * @note        The Friend Poll message is sent by a Low Power node to ask the Friend
+ *              node to send a message that it has stored for the Low Power node.
+ *              Users can call this API to send Friend Poll message manually. If this
+ *              API is not invoked, the bottom layer of the Low Power node will send
+ *              Friend Poll before the PollTimeout timer expires.
+ *              If the corresponding Friend Update is received and MD is set to 0,
+ *              which means there are no messages for the Low Power node, then the
+ *              Low Power node will stop scanning.
  *
  * @return      ESP_OK on success or error code otherwise.
  *

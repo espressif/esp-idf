@@ -541,7 +541,7 @@ typedef struct {
  * mesh-wide value. (There can be a maximum of 65535 scenes in a mesh
  * network.) The meaning of a scene, as well as the state storage container
  * associated with it, are determined by a model.
- * 
+ *
  * The Scenes state change may start numerous parallel model transitions.
  * In that case, each individual model handles the transition internally.
  *
@@ -896,7 +896,7 @@ typedef enum {
  * @param   param: Pointer to callback parameter
  */
 typedef void (* esp_ble_mesh_time_scene_server_cb_t)(esp_ble_mesh_time_scene_server_cb_event_t event,
-            esp_ble_mesh_time_scene_server_cb_param_t *param);
+        esp_ble_mesh_time_scene_server_cb_param_t *param);
 
 /**
  * @brief       Register BLE Mesh Time and Scenes Server Model callback.

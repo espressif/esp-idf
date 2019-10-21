@@ -18,7 +18,7 @@
 #include "ble_mesh_console_lib.h"
 #include "ble_mesh_adapter.h"
 
-void ble_mesh_register_server_operation();
+void ble_mesh_register_server_operation(void);
 
 typedef struct {
     struct arg_str *data;
@@ -29,7 +29,7 @@ typedef struct {
 } ble_mesh_publish_message;
 ble_mesh_publish_message msg_publish;
 
-void ble_mesh_register_server()
+void ble_mesh_register_server(void)
 {
     ble_mesh_register_server_operation();
 }
@@ -63,7 +63,7 @@ int ble_mesh_module_publish_message(int argc, char **argv)
     return err;
 }
 
-void ble_mesh_register_server_operation()
+void ble_mesh_register_server_operation(void)
 {
     msg_publish.data = arg_str1("d", NULL, "<data>", "message data");
     msg_publish.opcode = arg_int1("o", NULL, "<opcode>", "operation opcode");

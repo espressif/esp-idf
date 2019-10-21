@@ -544,8 +544,8 @@ struct net_buf {
 };
 
 struct net_buf_data_cb {
-    u8_t * (*alloc)(struct net_buf *buf, size_t *size, s32_t timeout);
-    u8_t * (*ref)(struct net_buf *buf, u8_t *data);
+    u8_t *(*alloc)(struct net_buf *buf, size_t *size, s32_t timeout);
+    u8_t *(*ref)(struct net_buf *buf, u8_t *data);
     void   (*unref)(struct net_buf *buf, u8_t *data);
 };
 
@@ -709,7 +709,7 @@ int net_buf_id(struct net_buf *buf);
  */
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool, s32_t timeout,
-                                    const char *func, int line);
+        const char *func, int line);
 #define net_buf_alloc_fixed(_pool, _timeout) \
     net_buf_alloc_fixed_debug(_pool, _timeout, __func__, __LINE__)
 #else

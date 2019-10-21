@@ -695,6 +695,12 @@ typedef enum {
     FAST_PROV_ACT_MAX,
 } esp_ble_mesh_fast_prov_action_t;
 
+/*!< This enum value is the type of proxy filter */
+typedef enum {
+    PROXY_FILTER_WHITELIST,
+    PROXY_FILTER_BLACKLIST,
+} esp_ble_mesh_proxy_filter_type_t;
+
 /*!< This enum value is the event of node/provisioner/fast provisioning */
 typedef enum {
     ESP_BLE_MESH_PROV_REGISTER_COMP_EVT,                        /*!< Initialize BLE Mesh provisioning capabilities and internal data information completion event */
@@ -1235,7 +1241,7 @@ typedef union {
 typedef uint32_t esp_ble_mesh_opcode_config_client_get_t;
 
 #define ESP_BLE_MESH_MODEL_OP_BEACON_GET                            OP_BEACON_GET           /*!< Config Beacon Get */
-#define ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET                  OP_DEV_COMP_DATA_GET    /*!< Config Composition Data Get */ 
+#define ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET                  OP_DEV_COMP_DATA_GET    /*!< Config Composition Data Get */
 #define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_GET                       OP_DEFAULT_TTL_GET      /*!< Config Default TTL Get */
 #define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_GET                        OP_GATT_PROXY_GET       /*!< Config GATT Proxy Get */
 #define ESP_BLE_MESH_MODEL_OP_RELAY_GET                             OP_RELAY_GET            /*!< Config Relay Get */
@@ -1711,7 +1717,7 @@ typedef struct {
     esp_ble_mesh_model_t *model;    /*!< Pointer to the client model structure */
     esp_ble_mesh_msg_ctx_t ctx;     /*!< The context used to send message */
     int32_t msg_timeout;            /*!< Timeout value (ms) to get response to the sent message */
-                                    /*!< Note: if using default timeout value in menuconfig, make sure to set this value to 0 */
+    /*!< Note: if using default timeout value in menuconfig, make sure to set this value to 0 */
     uint8_t msg_role;               /*!< Role of the device - Node/Provisioner */
 } esp_ble_mesh_client_common_param_t;
 

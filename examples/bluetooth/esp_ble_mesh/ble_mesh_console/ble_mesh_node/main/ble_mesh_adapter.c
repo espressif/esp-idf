@@ -72,7 +72,7 @@ esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id)
     return comp;
 }
 
-void ble_mesh_node_init()
+void ble_mesh_node_init(void)
 {
     uint16_t i;
 
@@ -100,7 +100,7 @@ void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_a
     xSemaphoreGive(ble_mesh_node_sema);
 }
 
-void ble_mesh_node_statistics_get()
+void ble_mesh_node_statistics_get(void)
 {
     xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY);
     ESP_LOGI(TAG, "statistics:%d,%d\n", ble_mesh_node_statistics.statistics, ble_mesh_node_statistics.package_num);
@@ -156,7 +156,7 @@ int ble_mesh_node_statistics_init(uint16_t package_num)
     return 0;
 }
 
-void ble_mesh_node_statistics_destroy()
+void ble_mesh_node_statistics_destroy(void)
 {
     if (ble_mesh_node_statistics.package_index != NULL) {
         free(ble_mesh_node_statistics.package_index);

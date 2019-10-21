@@ -85,13 +85,13 @@ extern SemaphoreHandle_t ble_mesh_node_sema;
     } \
 }while(0) \
 
-void ble_mesh_node_init();
+void ble_mesh_node_init(void);
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr);
 esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id);
 esp_ble_mesh_comp_t *ble_mesh_get_component(uint16_t model_id);
-void ble_mesh_node_statistics_get();
+void ble_mesh_node_statistics_get(void);
 int ble_mesh_node_statistics_accumultate(uint8_t *data, uint32_t value, uint16_t type);
 int ble_mesh_node_statistics_init(uint16_t package_num);
-void ble_mesh_node_statistics_destroy();
+void ble_mesh_node_statistics_destroy(void);
 
 #endif //_BLE_MESH_ADAOTER_H_

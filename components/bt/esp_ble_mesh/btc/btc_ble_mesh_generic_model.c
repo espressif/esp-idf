@@ -371,7 +371,7 @@ static void btc_ble_mesh_generic_client_callback(esp_ble_mesh_generic_client_cb_
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_generic_client_cb_param_t), btc_ble_mesh_generic_client_copy_req_data);
+                         sizeof(esp_ble_mesh_generic_client_cb_param_t), btc_ble_mesh_generic_client_copy_req_data);
 }
 
 void bt_mesh_generic_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
@@ -439,7 +439,7 @@ void btc_ble_mesh_generic_client_publish_callback(u32_t opcode,
     }
 
     bt_mesh_generic_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_GENERIC_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+                                         BTC_BLE_MESH_EVT_GENERIC_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -478,7 +478,7 @@ void btc_ble_mesh_generic_client_call_handler(btc_msg_t *msg)
 
         cb.params = arg->generic_client_get_state.params;
         cb.error_code = bt_mesh_generic_client_get_state(&common,
-                (void *)arg->generic_client_get_state.get_state, (void *)&cb.status_cb);
+                        (void *)arg->generic_client_get_state.get_state, (void *)&cb.status_cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_generic_client_callback(&cb, ESP_BLE_MESH_GENERIC_CLIENT_GET_STATE_EVT);
@@ -504,7 +504,7 @@ void btc_ble_mesh_generic_client_call_handler(btc_msg_t *msg)
 
         cb.params = arg->generic_client_set_state.params;
         cb.error_code = bt_mesh_generic_client_set_state(&common,
-                (void *)arg->generic_client_set_state.set_state, (void *)&cb.status_cb);
+                        (void *)arg->generic_client_set_state.set_state, (void *)&cb.status_cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_generic_client_callback(&cb, ESP_BLE_MESH_GENERIC_CLIENT_SET_STATE_EVT);
@@ -543,8 +543,8 @@ void btc_ble_mesh_generic_client_cb_handler(btc_msg_t *msg)
 /* Generic Server Models related functions */
 
 static inline void btc_ble_mesh_generic_server_cb_to_app(
-        esp_ble_mesh_generic_server_cb_event_t event,
-        esp_ble_mesh_generic_server_cb_param_t *param)
+    esp_ble_mesh_generic_server_cb_event_t event,
+    esp_ble_mesh_generic_server_cb_param_t *param)
 {
     esp_ble_mesh_generic_server_cb_t btc_ble_mesh_cb =
         (esp_ble_mesh_generic_server_cb_t)btc_profile_cb_get(BTC_PID_GENERIC_SERVER);
@@ -699,7 +699,7 @@ static void btc_ble_mesh_generic_server_callback(esp_ble_mesh_generic_server_cb_
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_generic_server_cb_param_t), btc_ble_mesh_generic_server_copy_req_data);
+                         sizeof(esp_ble_mesh_generic_server_cb_param_t), btc_ble_mesh_generic_server_copy_req_data);
 }
 
 void bt_mesh_generic_server_cb_evt_to_btc(u8_t evt_type,

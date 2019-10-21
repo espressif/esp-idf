@@ -11,18 +11,18 @@
 #include "esp_ble_mesh_defs.h"
 
 // Register system functions
-void register_system();
+void register_system(void);
 
 // Register blutooth
-void register_bluetooth();
+void register_bluetooth(void);
 
 // Register mesh node cmd
-void ble_mesh_register_mesh_node();
+void ble_mesh_register_mesh_node(void);
 
 // Register mesh config server and generic server operation cmd
-void ble_mesh_register_server();
+void ble_mesh_register_server(void);
 
 #if (CONFIG_BLE_MESH_CFG_CLI)
 // Register mesh config client operation cmd
-void ble_mesh_register_configuration_client_model();
+void ble_mesh_register_configuration_client_model(void);
 #endif

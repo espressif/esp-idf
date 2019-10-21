@@ -767,7 +767,7 @@ bool bt_mesh_proxy_client_send(struct net_buf_simple *buf, u16_t dst)
         net_buf_simple_init(&msg, 1);
         net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-        err = bt_mesh_proxy_prov_client_send(server->conn, BLE_MESH_PROXY_NET_PDU, &msg);  
+        err = bt_mesh_proxy_prov_client_send(server->conn, BLE_MESH_PROXY_NET_PDU, &msg);
         if (err) {
             BT_ERR("%s, Failed to send proxy net message (err %d)", __func__, err);
         } else {
@@ -957,11 +957,11 @@ int bt_mesh_proxy_client_send_cfg(u8_t conn_handle, u16_t net_idx, struct bt_mes
 
     /**
      * Check if net_idx used to encrypt Proxy Configuration are the same
-     * with the one added when creating proxy connection. 
+     * with the one added when creating proxy connection.
      */
     if (servers[conn_handle].net_idx != net_idx) {
         BT_ERR("%s, NetKey Index 0x%04x mismatch, expect 0x%04x",
-            __func__, net_idx, servers[conn_handle].net_idx);
+               __func__, net_idx, servers[conn_handle].net_idx);
         return -EIO;
     }
 
@@ -989,7 +989,7 @@ int bt_mesh_proxy_prov_client_init(void)
 
 #if CONFIG_BLE_MESH_USE_DUPLICATE_SCAN && CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-        BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV, NULL);
+                                    BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV, NULL);
 #endif
 
     return 0;

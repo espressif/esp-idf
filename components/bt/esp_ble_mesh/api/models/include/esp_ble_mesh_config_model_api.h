@@ -513,8 +513,8 @@ typedef struct {
 
 /** Parameters of Config Network Transmit Status */
 typedef struct {
-    uint8_t net_trans_count:3;          /*!< Number of transmissions for each Network PDU originating from the node */
-    uint8_t net_trans_step :5;          /*!< Maximum hops when receiving Heartbeat messages */
+    uint8_t net_trans_count: 3;         /*!< Number of transmissions for each Network PDU originating from the node */
+    uint8_t net_trans_step : 5;         /*!< Maximum hops when receiving Heartbeat messages */
 } esp_ble_mesh_cfg_net_trans_status_cb_t;
 
 /** Parameters of Config SIG/Vendor Subscription List */

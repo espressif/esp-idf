@@ -310,7 +310,7 @@ void net_buf_unref(struct net_buf *buf)
         }
 #endif
         NET_BUF_DBG("buf %p ref %u pool %p frags %p", buf, buf->ref,
-            buf->pool, buf->frags);
+                    buf->pool, buf->frags);
 
         /* Changed by Espressif. Add !buf->ref to avoid minus 0 */
         if (!buf->ref || --buf->ref > 0) {
@@ -325,7 +325,7 @@ void net_buf_unref(struct net_buf *buf)
 #if defined(CONFIG_BLE_MESH_NET_BUF_POOL_USAGE)
         pool->avail_count++;
         NET_BUF_DBG("%s, pool %p, avail_count %d, uninit_count %d", __func__,
-            pool, pool->avail_count, pool->uninit_count);
+                    pool, pool->avail_count, pool->uninit_count);
         NET_BUF_ASSERT(pool->avail_count <= pool->buf_count);
 #endif
 
@@ -366,10 +366,10 @@ static u8_t *data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
-                    s32_t timeout, const char *func, int line)
+                                        s32_t timeout, const char *func, int line)
 #else
 struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
-                    s32_t timeout)
+                                  s32_t timeout)
 #endif
 {
     struct net_buf *buf = NULL;
@@ -379,7 +379,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
     NET_BUF_ASSERT(pool);
 
     NET_BUF_DBG("%s, pool %p, uninit_count %d, buf_count %d", __func__,
-        pool, pool->uninit_count, pool->buf_count);
+                pool, pool->uninit_count, pool->buf_count);
 
     /* We need to lock interrupts temporarily to prevent race conditions
      * when accessing pool->uninit_count.
@@ -436,8 +436,8 @@ success:
 
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
 struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
-                    s32_t timeout, const char *func,
-                    int line)
+        s32_t timeout, const char *func,
+        int line)
 {
     const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
 

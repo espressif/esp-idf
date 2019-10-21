@@ -446,7 +446,7 @@ typedef void (*bt_mesh_dh_key_cb_t)(const u8_t key[32], const u8_t idx);
  *  or BLE_MESH_GATT_ITER_STOP to stop.
  */
 typedef u8_t (*bt_mesh_gatt_attr_func_t)(const struct bt_mesh_gatt_attr *attr,
-                                         void *user_data);
+        void *user_data);
 
 /** @brief Connection callback structure.
  *
@@ -657,20 +657,20 @@ int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_service_unregister(struct bt_mesh_gatt_service *svc);
 
 ssize_t bt_mesh_gatts_attr_read_included(struct bt_mesh_conn *conn,
-                                   const struct bt_mesh_gatt_attr *attr,
-                                   void *buf, u16_t len, u16_t offset);
+        const struct bt_mesh_gatt_attr *attr,
+        void *buf, u16_t len, u16_t offset);
 
 ssize_t bt_mesh_gatts_attr_read(struct bt_mesh_conn *conn, const struct bt_mesh_gatt_attr *attr,
                                 void *buf, u16_t buf_len, u16_t offset,
                                 const void *value, u16_t value_len);
 
 ssize_t bt_mesh_gatts_attr_read_service(struct bt_mesh_conn *conn,
-                                  const struct bt_mesh_gatt_attr *attr,
-                                  void *buf, u16_t len, u16_t offset);
+                                        const struct bt_mesh_gatt_attr *attr,
+                                        void *buf, u16_t len, u16_t offset);
 
 ssize_t bt_mesh_gatts_attr_read_chrc(struct bt_mesh_conn *conn,
-                               const struct bt_mesh_gatt_attr *attr, void *buf,
-                               u16_t len, u16_t offset);
+                                     const struct bt_mesh_gatt_attr *attr, void *buf,
+                                     u16_t len, u16_t offset);
 
 int bt_mesh_gatts_notify(struct bt_mesh_conn *conn, const struct bt_mesh_gatt_attr *attr,
                          const void *data, u16_t len);
@@ -719,10 +719,10 @@ bool bt_mesh_check_public_key(const uint8_t key[64]);
 int bt_mesh_dh_key_gen(const u8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const u8_t idx);
 
 int bt_mesh_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
-                  u8_t enc_data[16]);
+                       u8_t enc_data[16]);
 
 int bt_mesh_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
-                  u8_t enc_data[16]);
+                       u8_t enc_data[16]);
 
 enum {
     BLE_MESH_EXCEP_LIST_ADD = 0,

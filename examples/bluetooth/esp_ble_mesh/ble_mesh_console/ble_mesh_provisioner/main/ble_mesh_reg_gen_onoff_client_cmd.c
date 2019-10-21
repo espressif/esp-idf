@@ -32,11 +32,11 @@ typedef struct {
 } ble_mesh_gen_onoff_state_t;
 ble_mesh_gen_onoff_state_t gen_onoff_state;
 
-void ble_mesh_register_gen_onoff_client_command();
+void ble_mesh_register_gen_onoff_client_command(void);
 void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
         esp_ble_mesh_generic_client_cb_param_t *param);
 
-void ble_mesh_register_gen_onoff_client()
+void ble_mesh_register_gen_onoff_client(void)
 {
     ble_mesh_register_gen_onoff_client_command();
 }
@@ -152,7 +152,7 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
     return err;
 }
 
-void ble_mesh_register_gen_onoff_client_command()
+void ble_mesh_register_gen_onoff_client_command(void)
 {
     gen_onoff_state.action_type = arg_str1("z", NULL, "<action>", "action type");
     gen_onoff_state.opcode = arg_int0("o", NULL, "<opcode>", "message opcode");

@@ -26,12 +26,12 @@
 #define ESP_BLE_MESH_TX_SDU_MAX ((CONFIG_BLE_MESH_ADV_BUF_COUNT - 3) * 12)
 
 static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
-                                         esp_ble_mesh_msg_ctx_t *ctx,
-                                         uint32_t opcode,
-                                         btc_ble_mesh_model_act_t act,
-                                         uint16_t length, uint8_t *data,
-                                         int32_t msg_timeout, bool need_rsp,
-                                         esp_ble_mesh_dev_role_t device_role)
+        esp_ble_mesh_msg_ctx_t *ctx,
+        uint32_t opcode,
+        btc_ble_mesh_model_act_t act,
+        uint16_t length, uint8_t *data,
+        int32_t msg_timeout, bool need_rsp,
+        esp_ble_mesh_dev_role_t device_role)
 {
     btc_ble_mesh_model_args_t arg = {0};
     uint8_t op_len = 0, mic_len = 0;
@@ -41,7 +41,13 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
+    if (ctx && ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
+        LOG_ERROR("%s, Invalid destination address 0x0000", __func__);
+        return ESP_ERR_INVALID_ARG;
+    }
+
     if (device_role > ROLE_FAST_PROV) {
+        LOG_ERROR("%s, Invalid device role 0x%02x", __func__, device_role);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -214,7 +220,7 @@ esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
     msg.act = BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_model_arg_deep_copy)
-              == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_node_local_reset(void)

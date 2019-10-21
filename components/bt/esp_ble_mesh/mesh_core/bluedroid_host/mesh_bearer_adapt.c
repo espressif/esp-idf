@@ -47,7 +47,7 @@ struct bt_mesh_dev bt_mesh_dev;
 #define BLE_MESH_GATT_GET_CONN_ID(conn_id)              (((u16_t)(conn_id)) >> 8)
 #define BLE_MESH_GATT_CREATE_CONN_ID(gatt_if, conn_id)  ((u16_t)((((u8_t)(conn_id)) << 8) | ((u8_t)(gatt_if))))
 
-/* We don't need to manage the BLE_MESH_DEV_ADVERTISING flags in the version of bluedriod, 
+/* We don't need to manage the BLE_MESH_DEV_ADVERTISING flags in the version of bluedriod,
  * it will manage it in the BTM layer.
  */
 #define BLE_MESH_DEV    0
@@ -136,7 +136,7 @@ void bt_mesh_hci_init(void)
 }
 
 static void bt_mesh_scan_results_change_2_bta(tBTM_INQ_RESULTS *p_inq, u8_t *p_eir,
-                tBTA_DM_SEARCH_CBACK *p_scan_cback)
+        tBTA_DM_SEARCH_CBACK *p_scan_cback)
 {
     tBTM_INQ_INFO *p_inq_info;
     tBTA_DM_SEARCH result;
@@ -512,9 +512,9 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
         if (attr != NULL && attr->write != NULL) {
             if ((len = attr->write(&bt_mesh_gatts_conn[index], attr,
-                                    p_data->req_data.p_data->write_req.value,
-                                    p_data->req_data.p_data->write_req.len,
-                                    p_data->req_data.p_data->write_req.offset, 0)) > 0) {
+                                   p_data->req_data.p_data->write_req.value,
+                                   p_data->req_data.p_data->write_req.len,
+                                   p_data->req_data.p_data->write_req.offset, 0)) > 0) {
                 if (p_data->req_data.p_data->write_req.need_rsp) {
                     BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                                       p_data->req_data.status, NULL);
@@ -627,7 +627,7 @@ static struct bt_mesh_gatt_attr *bt_mesh_gatts_find_attr_by_handle(u16_t handle)
 }
 
 static void bt_mesh_gatts_foreach_attr(u16_t start_handle, u16_t end_handle,
-                bt_mesh_gatt_attr_func_t func, void *user_data)
+                                       bt_mesh_gatt_attr_func_t func, void *user_data)
 {
     struct bt_mesh_gatt_service *svc = NULL;
 
@@ -694,8 +694,8 @@ struct gatts_incl {
 } __packed;
 
 ssize_t bt_mesh_gatts_attr_read_included(struct bt_mesh_conn *conn,
-                                         const struct bt_mesh_gatt_attr *attr,
-                                         void *buf, u16_t len, u16_t offset)
+        const struct bt_mesh_gatt_attr *attr,
+        void *buf, u16_t len, u16_t offset)
 {
     struct bt_mesh_gatt_attr *incl = attr->user_data;
     struct bt_mesh_uuid *uuid = incl->user_data;
@@ -731,7 +731,7 @@ ssize_t bt_mesh_gatts_attr_read_service(struct bt_mesh_conn *conn,
     }
 
     return bt_mesh_gatts_attr_read(conn, attr, buf, len, offset,
-                             BLE_MESH_UUID_128(uuid)->val, 16);
+                                   BLE_MESH_UUID_128(uuid)->val, 16);
 }
 
 struct gatts_chrc {
@@ -1027,7 +1027,7 @@ u8_t bt_mesh_gattc_get_free_conn_count(void)
 
     for (i = 0U; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
         if (bt_mesh_gattc_info[i].conn.handle == 0xFFFF &&
-            bt_mesh_gattc_info[i].service_uuid == 0x0000) {
+                bt_mesh_gattc_info[i].service_uuid == 0x0000) {
             ++count;
         }
     }
@@ -1065,13 +1065,13 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
     int i;
 
     if (!addr || !memcmp(addr->val, zero, BLE_MESH_ADDR_LEN) ||
-        (addr->type > BLE_ADDR_RANDOM)) {
+            (addr->type > BLE_ADDR_RANDOM)) {
         BT_ERR("%s, Invalid remote address", __func__);
         return -EINVAL;
     }
 
     if (service_uuid != BLE_MESH_UUID_MESH_PROV_VAL &&
-        service_uuid != BLE_MESH_UUID_MESH_PROXY_VAL) {
+            service_uuid != BLE_MESH_UUID_MESH_PROXY_VAL) {
         BT_ERR("%s, Invalid service uuid 0x%04x", __func__, service_uuid);
         return -EINVAL;
     }
@@ -1080,7 +1080,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
     for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
         if (!memcmp(bt_mesh_gattc_info[i].addr.val, addr->val, BLE_MESH_ADDR_LEN)) {
             BT_WARN("%s, Already create connection with %s",
-                __func__, bt_hex(addr->val, BLE_MESH_ADDR_LEN));
+                    __func__, bt_hex(addr->val, BLE_MESH_ADDR_LEN));
             return -EALREADY;
         }
     }
@@ -1088,7 +1088,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
     /* Find empty element in queue to store device info */
     for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
         if ((bt_mesh_gattc_info[i].conn.handle == 0xFFFF) &&
-            (bt_mesh_gattc_info[i].service_uuid == 0x0000)) {
+                (bt_mesh_gattc_info[i].service_uuid == 0x0000)) {
             memcpy(bt_mesh_gattc_info[i].addr.val, addr->val, BLE_MESH_ADDR_LEN);
             bt_mesh_gattc_info[i].addr.type = addr->type;
             /* Service to be found after exhanging mtu size */
@@ -1120,7 +1120,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, u16_t service_uuid)
     BTA_DmSetBlePrefConnParams(bt_mesh_gattc_info[i].addr.val, 0xC8, 0xC8, 0x00, 0xC80);
 
     BTA_GATTC_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-        bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE);
+                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE);
 
     return i;
 }
@@ -1254,7 +1254,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
             if (bt_mesh_gattc_info[i].conn.handle == handle) {
                 if (p_data->srvc_res.service_uuid.uuid.len == 2 &&
-                    p_data->srvc_res.service_uuid.uuid.uu.uuid16 == bt_mesh_gattc_info[i].service_uuid) {
+                        p_data->srvc_res.service_uuid.uuid.uu.uuid16 == bt_mesh_gattc_info[i].service_uuid) {
                     bt_mesh_gattc_info[i].start_handle = p_data->srvc_res.start_handle;
                     bt_mesh_gattc_info[i].end_handle = p_data->srvc_res.end_handle;
                 }
@@ -1484,7 +1484,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
             if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->prov_notify != NULL) {
                 len = bt_mesh_gattc_conn_cb->prov_notify(&bt_mesh_gattc_info[i].conn,
-                                                     p_data->notify.value, p_data->notify.len);
+                        p_data->notify.value, p_data->notify.len);
                 if (len < 0) {
                     BT_ERR("%s, prov_notify failed", __func__);
                     bt_mesh_gattc_disconnect(conn);
@@ -1494,7 +1494,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
         } else if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROXY_VAL) {
             if (bt_mesh_gattc_conn_cb != NULL && bt_mesh_gattc_conn_cb->proxy_notify != NULL) {
                 len = bt_mesh_gattc_conn_cb->proxy_notify(&bt_mesh_gattc_info[i].conn,
-                                                      p_data->notify.value, p_data->notify.len);
+                        p_data->notify.value, p_data->notify.len);
                 if (len < 0) {
                     BT_ERR("%s, proxy_notify failed", __func__);
                     bt_mesh_gattc_disconnect(conn);
@@ -1876,7 +1876,7 @@ int bt_mesh_update_exceptional_list(u8_t sub_code, u8_t type, void *info)
     BD_ADDR value = {0};
 
     if ((sub_code > BLE_MESH_EXCEP_LIST_CLEAN) ||
-        (type > BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV)) {
+            (type > BLE_MESH_EXCEP_INFO_MESH_PROXY_ADV)) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
