@@ -522,7 +522,7 @@ static void btc_ble_mesh_link_close_cb(bt_mesh_prov_bearer_t bearer)
     return;
 }
 
-static void btc_ble_mesh_complete_cb(u16_t net_idx, u16_t addr, u8_t flags, u32_t iv_index)
+static void btc_ble_mesh_complete_cb(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
     btc_msg_t msg = {0};
@@ -531,6 +531,7 @@ static void btc_ble_mesh_complete_cb(u16_t net_idx, u16_t addr, u8_t flags, u32_
     LOG_DEBUG("%s", __func__);
 
     mesh_param.node_prov_complete.net_idx = net_idx;
+    memcpy(mesh_param.node_prov_complete.net_key, net_key, 16);
     mesh_param.node_prov_complete.addr = addr;
     mesh_param.node_prov_complete.flags = flags;
     mesh_param.node_prov_complete.iv_index = iv_index;
