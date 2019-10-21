@@ -102,6 +102,20 @@ void *heap_caps_realloc( void *ptr, size_t size, int caps);
 void *heap_caps_calloc(size_t n, size_t size, uint32_t caps);
 
 /**
+ * @brief Get the total size of all the regions that have the given capabilities
+ *
+ * This function takes all regions capable of having the given capabilities allocated in them
+ * and adds up the total space they have.
+ *
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory
+ *
+ * @return total size in bytes
+ */
+
+size_t heap_caps_get_total_size(uint32_t caps);
+
+/**
  * @brief Get the total free size of all the regions that have the given capabilities
  *
  * This function takes all regions capable of having the given capabilities allocated in them
