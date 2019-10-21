@@ -14,8 +14,7 @@
 #include "osi/alarm.h"
 #include "osi/hash_functions.h"
 
-#include "common/bt_trace.h"
-#include "common/bt_defs.h"
+#include "bt_common.h"
 
 #include "esp_timer.h"
 

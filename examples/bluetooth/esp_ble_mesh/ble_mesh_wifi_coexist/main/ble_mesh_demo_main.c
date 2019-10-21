@@ -30,10 +30,6 @@
 #include "argtable3/argtable3.h"
 #include "cmd_decl.h"
 
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-#include "esp_bt_device.h"
-
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -45,8 +41,7 @@
 #include "esp_fast_prov_operation.h"
 #include "esp_fast_prov_client_model.h"
 #include "esp_fast_prov_server_model.h"
-
-#define TAG "BLE_MESH_WIFI_COEXIST_DEMO"
+#include "ble_mesh_demo_init.h"
 
 extern struct _led_state led_state[3];
 extern struct k_delayed_work send_self_prov_node_addr_timer;
@@ -348,8 +343,8 @@ static void provisioner_prov_complete(int node_idx, const uint8_t uuid[16], uint
     }
 }
 
-static void example_recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[ESP_BD_ADDR_LEN],
-                                        esp_ble_addr_type_t addr_type, uint16_t oob_info,
+static void example_recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[BLE_MESH_ADDR_LEN],
+                                        esp_ble_mesh_addr_type_t addr_type, uint16_t oob_info,
                                         uint8_t adv_type, esp_ble_mesh_prov_bearer_t bearer)
 {
     esp_ble_mesh_unprov_dev_add_t add_dev = {0};
@@ -370,7 +365,7 @@ static void example_recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[ESP_B
         add_dev.oob_info = oob_info;
         add_dev.bearer = (uint8_t)bearer;
         memcpy(add_dev.uuid, dev_uuid, 16);
-        memcpy(add_dev.addr, addr, ESP_BD_ADDR_LEN);
+        memcpy(add_dev.addr, addr, BLE_MESH_ADDR_LEN);
         flag = ADD_DEV_RM_AFTER_PROV_FLAG | ADD_DEV_START_PROV_NOW_FLAG | ADD_DEV_FLUSHABLE_DEV_FLAG;
         err = esp_ble_mesh_provisioner_add_unprov_dev(&add_dev, flag);
         if (err != ESP_OK) {
@@ -745,9 +740,6 @@ static esp_err_t ble_mesh_init(void)
 {
     esp_err_t err;
 
-    /* First two bytes of device uuid is compared with match value by Provisioner */
-    memcpy(dev_uuid + 2, esp_bt_dev_get_address(), 6);
-
     esp_ble_mesh_register_prov_callback(example_ble_mesh_provisioning_cb);
     esp_ble_mesh_register_custom_model_callback(example_ble_mesh_custom_model_cb);
     esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
@@ -784,47 +776,6 @@ static esp_err_t ble_mesh_init(void)
     board_led_operation(LED_B, LED_ON);
 
     return ESP_OK;
-}
-
-static esp_err_t bluetooth_init(void)
-{
-    esp_err_t ret;
-
-    ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s initialize controller failed", __func__);
-        return ret;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed", __func__);
-        return ret;
-    }
-
-    ret = esp_bluedroid_init();
-    if (ret) {
-        ESP_LOGE(TAG, "%s init bluetooth failed", __func__);
-        return ret;
-    }
-
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable bluetooth failed", __func__);
-        return ret;
-    }
-
-    return ret;
 }
 
 #define WIFI_CONNECTED_BIT BIT0
@@ -960,11 +911,20 @@ void app_main(void)
         return;
     }
 
+    err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+
     err = bluetooth_init();
     if (err) {
         ESP_LOGE(TAG, "esp32_bluetooth_init failed (err %d)", err);
         return;
     }
+
+    ble_mesh_get_dev_uuid(dev_uuid);
 
     /* Initialize the Bluetooth Mesh Subsystem */
     err = ble_mesh_init();
