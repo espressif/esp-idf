@@ -574,7 +574,7 @@ static esp_err_t ble_mesh_init(void)
 
 void app_main(void)
 {
-    int err;
+    esp_err_t err;
 
     ESP_LOGI(TAG, "Initializing...");
 
