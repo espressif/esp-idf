@@ -202,6 +202,12 @@ example_test_008:
     - ESP32
     - Example_Flash_Encryption
 
+example_test_009:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_ExtFlash
+
 UT_001:
   extends: .unit_test_template
   parallel: 50

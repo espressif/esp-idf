@@ -55,27 +55,38 @@ typedef struct esp_partition_iterator_opaque_ {
 
 static esp_partition_iterator_opaque_t* iterator_create(esp_partition_type_t type, esp_partition_subtype_t subtype, const char* label);
 static esp_err_t load_partitions();
+static esp_err_t ensure_partitions_loaded(void);
 
 
+static const char* TAG = "partition";
 static SLIST_HEAD(partition_list_head_, partition_list_item_) s_partition_list =
         SLIST_HEAD_INITIALIZER(s_partition_list);
 static _lock_t s_partition_list_lock;
 
 
-esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
-        esp_partition_subtype_t subtype, const char* label)
+static esp_err_t ensure_partitions_loaded(void)
 {
+    esp_err_t err = ESP_OK;
     if (SLIST_EMPTY(&s_partition_list)) {
         // only lock if list is empty (and check again after acquiring lock)
         _lock_acquire(&s_partition_list_lock);
-        esp_err_t err = ESP_OK;
         if (SLIST_EMPTY(&s_partition_list)) {
+            ESP_LOGD(TAG, "Loading the partition table");
             err = load_partitions();
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "load_partitions returned 0x%x", err);
+            }
         }
         _lock_release(&s_partition_list_lock);
-        if (err != ESP_OK) {
-            return NULL;
-        }
+    }
+    return err;
+}
+
+esp_partition_iterator_t esp_partition_find(esp_partition_type_t type,
+        esp_partition_subtype_t subtype, const char* label)
+{
+    if (ensure_partitions_loaded() != ESP_OK) {
+        return NULL;
     }
     // create an iterator pointing to the start of the list
     // (next item will be the first one)
@@ -231,6 +242,11 @@ esp_err_t esp_partition_register_external(esp_flash_t* flash_chip, size_t offset
 
     if (offset + size > flash_chip->size) {
         return ESP_ERR_INVALID_SIZE;
+    }
+
+    esp_err_t err = ensure_partitions_loaded();
+    if (err != ESP_OK) {
+        return err;
     }
 
     partition_list_item_t* item = (partition_list_item_t*) calloc(sizeof(partition_list_item_t), 1);
