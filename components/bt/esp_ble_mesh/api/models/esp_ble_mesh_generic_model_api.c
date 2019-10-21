@@ -73,7 +73,7 @@ esp_err_t esp_ble_mesh_generic_client_set_state(esp_ble_mesh_client_common_param
 
 esp_err_t esp_ble_mesh_register_generic_server_callback(esp_ble_mesh_generic_server_cb_t callback)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_GENERIC_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
 }

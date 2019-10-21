@@ -1087,8 +1087,8 @@ typedef union {
      * @brief ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT
      */
     struct ble_mesh_proxy_client_recv_adv_pkt_param {
-        esp_bd_addr_t addr;                     /*!< Device address */
-        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint16_t net_idx;                       /*!< Network ID related NetKey Index */
         uint8_t  net_id[8];                     /*!< Network ID contained in the advertising packet */
     } proxy_client_recv_adv_pkt;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT */
@@ -1096,8 +1096,8 @@ typedef union {
      * @brief ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT
      */
     struct ble_mesh_proxy_client_connected_param {
-        esp_bd_addr_t addr;                     /*!< Device address of the Proxy Server */
-        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the Proxy Server */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_connected;                   /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT */
@@ -1105,8 +1105,8 @@ typedef union {
      * @brief ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT
      */
     struct ble_mesh_proxy_client_disconnected_param {
-        esp_bd_addr_t addr;                     /*!< Device address of the Proxy Server */
-        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the Proxy Server */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
         uint8_t reason;                         /*!< Proxy disconnect reason */
@@ -1126,8 +1126,8 @@ typedef union {
      */
     struct ble_mesh_proxy_client_connect_comp_param {
         int err_code;                           /*!< Indicate the result of Proxy Client connect */
-        esp_bd_addr_t addr;                     /*!< Device address of the Proxy Server */
-        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the Proxy Server */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_connect_comp;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT */
     /**
