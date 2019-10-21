@@ -2,7 +2,7 @@ menu "Example Configuration"
 
     config BROKER_URI
         string "Broker URL"
-        default "mqtts://iot.eclipse.org:8883"
+        default "mqtts://mqtt.eclipse.org:8883"
         help
             URL of an mqtt broker which this example connects to.
 
