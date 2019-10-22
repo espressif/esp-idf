@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ esp_err_t esp_wifi_get_if_mac(wifi_netif_driver_t ifx, uint8_t mac[6])
     return esp_wifi_get_mac(wifi_interface, mac);
 }
 
-bool esp_wifi_is_if_ready_when_stared(wifi_netif_driver_t ifx)
+bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx)
 {
     // WiFi rxcb to be register wifi rxcb on start for AP only, station gets it registered on connect event
     return (ifx->wifi_if == WIFI_IF_AP);

@@ -66,7 +66,7 @@ esp_err_t esp_wifi_get_if_mac(wifi_netif_driver_t ifx, uint8_t mac[6]);
  *      - true if ready after intertace started (typically Access Point type)
  *      - false if ready once intertace connected (typically for Station type)
  */
-bool esp_wifi_is_if_ready_when_stared(wifi_netif_driver_t ifx);
+bool esp_wifi_is_if_ready_when_started(wifi_netif_driver_t ifx);
 
 /**
  * @brief Register interface receive callback function with argument

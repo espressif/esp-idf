@@ -2,7 +2,7 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 
-TEST_CASE("esp_netif: init and destroy", "[esp_netif][leaks=0]")
+TEST_CASE("esp_netif: init and destroy", "[esp_netif]")
 {
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
     esp_netif_t *esp_netif = esp_netif_new(NULL);
@@ -36,12 +36,15 @@ TEST_CASE("esp_netif: get from if_key", "[esp_netif][leaks=0]")
 
 TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]")
 {
-    const int nr_of_netifs = 10;
+    // interface key has to be a unique identifier
+    const char* if_keys[] = { "if1", "if2", "if3", "if4", "if5", "if6", "if7", "if8", "if9" };
+    const int nr_of_netifs = sizeof(if_keys)/sizeof(char*);
     esp_netif_t *netifs[nr_of_netifs];
-    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
 
     // create 10 wifi stations
     for (int i=0; i<nr_of_netifs; ++i) {
+        esp_netif_inherent_config_t base_netif_config = { .if_key = if_keys[i]};
+        esp_netif_config_t cfg = { .base = &base_netif_config, .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA };
         netifs[i] = esp_netif_new(&cfg);
         TEST_ASSERT_NOT_NULL(netifs[i]);
     }

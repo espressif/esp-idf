@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ static void wifi_start(void *esp_netif, esp_event_base_t base, int32_t event_id,
     }
     ESP_LOGD(TAG, "WIFI mac address: %x %x %x %x %x %x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-    if (esp_wifi_is_if_ready_when_stared(driver)) {
+    if (esp_wifi_is_if_ready_when_started(driver)) {
         if ((ret = esp_wifi_register_if_rxcb(driver,  esp_netif_receive, esp_netif)) != ESP_OK) {
             ESP_LOGE(TAG, "esp_wifi_register_if_rxcb for if=%p failed with %d", driver, ret);
             return;
@@ -86,7 +86,7 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
         esp_netif_t *esp_netif = s_wifi_netifs[WIFI_IF_STA];
         wifi_netif_driver_t driver = esp_netif_get_io_driver(esp_netif);
 
-        if (!esp_wifi_is_if_ready_when_stared(driver)) {
+        if (!esp_wifi_is_if_ready_when_started(driver)) {
             // if interface not ready when started, rxcb to be registered on connection
             if ((ret = esp_wifi_register_if_rxcb(driver,  esp_netif_receive, esp_netif)) != ESP_OK) {
                 ESP_LOGE(TAG, "esp_wifi_register_if_rxcb for if=%p failed with %d", driver, ret);
