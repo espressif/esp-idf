@@ -1,63 +1,67 @@
 **********************************************
-Windows 平台工具链的标准设置  (传统 GNU Make)
+Windows 平台工具链的标准设置（传统 GNU Make）
 **********************************************
 :link_to_translation:`en:[English]`
 
 .. include:: ../gnu-make-legacy.rst
 
-引言
-============
+概述
+====
 
-Windows 没有内置的 "make" 环境，因此如果要安装工具链，你需要一个 GNU 兼容环境。我们这里使用 MSYS2_ 来提供该环境。你不需要一直使用这个环境（你可以使用 :doc:`Eclipse <eclipse-setup>` 或其它前端工具），但是它是在后台运行的。
+Windows 系统没有内置的 "make" 环境，所以除了安装工具链之外，您还需要一个兼容 GNU 的环境。这里，我们使用 MSYS2_ 环境兼容 GNU。您无需一直使用这个环境，比如您可以使用 :doc:`Eclipse <eclipse-setup>` 或其他前端，仅需在后台运行 MSYS2_ 即可。
 
-工具链的设置
-===============
 
-快速设置的方法是从 dl.espressif.com 下载集成在一起的工具链和 MSYS2 压缩文件：
+工具链设置
+==========
 
-https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20181001.zip
+最简便的工具链设置方法是从下方地址下载 Windows 多合一工具链和 MSYS2 压缩包文件：
 
-将 zip 压缩文件解压到 ``C:\`` (或其它路径，这里假设是 ``C:\``)，它会使用预先准备的环境创建一个 ``msys32`` 目录。
+https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20190611.zip
 
-检出
-============
+请将压缩包文件解压至 ``C:\``（或其他目录，但本文档中以 ``C:\`` 为例），该文件将为您创建一个带有预配置环境的 ``msys32`` 目录。
 
-运行 ``C:\msys32\mingw32.exe`` 打开一个 MSYS2 的终端窗口。该窗口的环境是一个 bash shell。创建一个 ``esp`` 目录作为开发 ESP32 应用的默认地址。运行指令 ::
 
-    mkdir -p ~/esp  
-    
-输入 ``cd ~/esp`` 就进入到新创建的目录。如果没有错误信息出现则表明此步骤已完成。
+开始尝试
+========
 
+请运行 ``C:\msys32\mingw32.exe`` 文件，打开一个 MSYS2 MINGW32 终端窗口。该窗口的环境为 bash shell。请创建一个名为 ``esp`` 的文件夹，作为 ESP32 应用程序开发的默认目录。您可以使用以下命令创建文件夹::
+
+    mkdir -p ~/esp
+
+您还可以通过 ``cd ~/esp`` 命令，进入刚刚创建的文件夹。如无其他问题，本步骤到此结束。
 
 .. figure:: ../../_static/msys2-terminal-window.png
     :align: center
-    :alt: MSYS2 MINGW32 shell window
+    :alt: MSYS2 MINGW32 shell 窗口
     :figclass: align-center
 
-    MSYS2 终端窗口
+    MSYS2 MINGW32 shell 窗口
 
-后续步骤将会使用这个窗口来为 ESP32 设置开发环境。
+请在后续步骤中，使用本窗口配置 ESP32 的开发环境。
+
 
 后续步骤
 ==========
 
-要继续设置开发环境，请参考 :ref:`get-started-get-esp-idf-legacy` 一节。
+继续设置开发环境，请前往 :ref:`get-started-get-esp-idf-legacy` 章节。
 
 更新环境
-========================
+========
 
-当 IDF 更新时，有时需要新的工具链，或者将新的需求添加到 Windows MSYS2 环境中。要将旧版本的预编译环境中的数据移动到新版本：
+当 IDF 有更新时，有时需要安装新的工具链或为 Windows MSYS2 环境添加新的要求。如需将旧版本预编译环境中的数据迁移至新版本，您可以：
 
-- 把旧的 MSYS2 环境（即 ``C:\msys32``）移动/重命名为不同的目录（即 ``C:\msys32_old``）。
-- 按照前文所述步骤下载新的预编译环境。
-- 将新的 MSYS2 环境解压缩到 ``C:\msys32`` （或其他位置）。
-- 找到旧的 ``C:\msys32_old\home`` 目录并把它移到 ``C:\msys32``。
-- 如果你不再需要 ``C:\msys32_old`` 可以将它删除。
+1. 复制旧的 MSYS2 环境（即 ``C:\msys32``），并将其移动/重命名到不同目录下（即 ``C:\msys32_old``）。
+2. 使用上述步骤，下载新的预编译环境。
+3. 将新的 MSYS2 环境解压缩至 ``C:\msys32`` （或您指定的其他位置）。
+4. 找到旧的 ``C:\msys32_old\home`` 文件夹，并将其移动至 ``C:\msys32``。
+5. 此时，如无其他需要，您可以删除旧的 ``C:\msys32_old\home`` 文件夹。
 
-你可以在系统上拥有独立的不同的 MSYS2 环境，前提是在不同的目录中。
+注意，您可以在电脑中安装多个不同的 MSYS2 环境，仅需将它们保存在不同的路径下即可。
+
+此外，您还可以 :ref:`直接更新现有环境（无需下载新的版本）<updating-existing-windows-environment-legacy>`，但步骤更加复杂。
 
 相关文档
-=================
+========
 
 .. toctree::
     :maxdepth: 1
