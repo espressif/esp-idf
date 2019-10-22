@@ -57,7 +57,7 @@ Overall application interaction with communication media and network stack
 ###  C) ESP-NETIF, former tcpip_adapter
 * init API (new, configure)
 * IO API: for passing data between IO driver and network stack
-* event/actiona API (esp-netif lifecycle management)
+* event/action API (esp-netif lifecycle management)
   - building blocks for designing event handlers
 * setters, getters
 * network stack abstraction: enabling user interaction with TCP/IP stack

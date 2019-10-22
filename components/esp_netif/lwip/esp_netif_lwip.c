@@ -155,17 +155,12 @@ static inline esp_err_t esp_netif_lwip_ipc_call(esp_netif_api_fn fn, esp_netif_t
  */
 static esp_netif_t* esp_netif_is_active(esp_netif_t *arg)
 {
-    esp_netif_t *esp_netif = NULL;
     // looking for the netif in the list of registered interfaces
     //  as it might have already been destroyed
-    esp_netif_t *nif = esp_netif_next(NULL);
-    do {
-        if (nif && nif == arg) {
-            esp_netif = nif;
-            break;
-        }
-    } while (NULL != (nif = esp_netif_next(nif)));
-    return esp_netif;
+    if (esp_netif_is_netif_listed(arg)) {
+        return arg;
+    }
+    return NULL;
 }
 
 /**
@@ -195,8 +190,9 @@ static void esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_act
         default:
         case ESP_NETIF_STOPPED:
         {
-            esp_netif_t *netif = esp_netif_next(NULL);
             s_last_default_esp_netif = NULL;
+            esp_netif_list_lock();
+            esp_netif_t *netif = esp_netif_next_unsafe(NULL);
             while (netif) {
                 if (esp_netif_is_netif_up(netif)) {
                     if (s_last_default_esp_netif && esp_netif_is_netif_up(s_last_default_esp_netif)) {
@@ -208,8 +204,9 @@ static void esp_netif_update_default_netif(esp_netif_t *esp_netif, esp_netif_act
                         s_last_default_esp_netif = netif;
                     }
                 }
-                netif = esp_netif_next(netif);
+                netif = esp_netif_next_unsafe(netif);
             }
+            esp_netif_list_unlock();
             if (s_last_default_esp_netif && esp_netif_is_netif_up(s_last_default_esp_netif)) {
                 netif_set_default(s_last_default_esp_netif->lwip_netif);
             }
@@ -1360,17 +1357,6 @@ const char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
 const char *esp_netif_get_desc(esp_netif_t *esp_netif)
 {
     return esp_netif->if_desc;
-}
-
-esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
-{
-    esp_netif_t *esp_netif = esp_netif_next(NULL);
-    do {
-        if (esp_netif && strcmp(if_key, esp_netif->if_key)==0) {
-            return esp_netif;
-        }
-    } while (NULL != (esp_netif = esp_netif_next(esp_netif)));
-    return NULL;
 }
 
 uint32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type)

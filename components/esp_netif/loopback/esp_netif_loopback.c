@@ -427,17 +427,6 @@ const char *esp_netif_get_desc(esp_netif_t *esp_netif)
     return esp_netif->if_desc;
 }
 
-esp_netif_t *esp_netif_get_handle_from_ifkey(const char *if_key)
-{
-    esp_netif_t *esp_netif = esp_netif_next(NULL);
-    do {
-        if (esp_netif && strcmp(if_key, esp_netif->if_key)==0) {
-            return esp_netif;
-        }
-    } while (NULL != (esp_netif = esp_netif_next(esp_netif)));
-    return NULL;
-}
-
 uint32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type)
 {
     return 0;
