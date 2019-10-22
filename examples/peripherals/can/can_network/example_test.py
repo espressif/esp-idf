@@ -17,7 +17,7 @@ import IDF
 #Define tuple of strings to expect for each DUT.
 master_expect = ("CAN Master: Driver installed", "CAN Master: Driver uninstalled")
 slave_expect = ("CAN Slave: Driver installed", "CAN Slave: Driver uninstalled")
-listen_only_expect = ("CAN Listen Only: Driver installed", "Listen Only: Driver uninstalled")
+listen_only_expect = ("CAN Listen Only: Driver installed", "CAN Listen Only: Driver uninstalled")
 
 def dut_thread_callback(**kwargs):
     #Parse keyword arguments
@@ -34,7 +34,7 @@ def dut_thread_callback(**kwargs):
     #Mark thread has run to completion without any exceptions
     result[0] = True    
 
-@IDF.idf_example_test(env_tag='Example_CAN')
+@IDF.idf_example_test(env_tag='Example_CAN2')
 def test_can_network_example(env, extra_data):
     
     #Get device under test. "dut1", "dut2", and "dut3" must be properly defined in EnvConfig
