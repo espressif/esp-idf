@@ -567,6 +567,19 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
         || failure "Deprecation warnings are not displayed"
     rm out.txt
 
+    print_status "should be able to specify multiple sdkconfig default files"
+    idf.py clean > /dev/null;
+    idf.py fullclean > /dev/null;
+    rm -f sdkconfig.defaults;
+    rm -f sdkconfig;
+    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults1;
+    echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig.defaults2;
+    idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults1;sdkconfig.defaults2" reconfigure > /dev/null;
+    grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults1 should be in sdkconfig"
+    grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig.defaults2 should be in sdkconfig"
+    rm sdkconfig.defaults1;
+    rm sdkconfig.defaults2;
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
