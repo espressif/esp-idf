@@ -16,7 +16,22 @@
 #include "mesh_uuid.h"
 
 /* BLE Mesh Max Connection Count */
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
 #define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
+
+#define ADV_TASK_CORE TASK_PINNED_TO_CORE
+#endif
+
+#ifdef CONFIG_BT_NIMBLE_ENABLED
+#define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
+
+#ifdef CONFIG_BT_NIMBLE_PINNED_TO_CORE
+#define ADV_TASK_CORE              (CONFIG_BT_NIMBLE_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_NIMBLE_PINNED_TO_CORE : tskNO_AFFINITY)
+#else
+#define ADV_TASK_CORE              (0)
+#endif
+
+#endif
 
 /* BD ADDR types */
 #define BLE_MESH_ADDR_PUBLIC         0x00
@@ -619,6 +634,8 @@ struct bt_mesh_gatt_attr {
     .attrs = _attrs,                    \
     .attr_count = ARRAY_SIZE(_attrs),   \
 }
+
+esp_err_t bt_mesh_host_init(void);
 
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,

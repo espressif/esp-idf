@@ -18,8 +18,6 @@
 #include "btc/btc_manage.h"
 
 #include "esp_err.h"
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "esp_ble_mesh_defs.h"
@@ -28,7 +26,7 @@ esp_err_t esp_ble_mesh_proxy_identity_enable(void)
 {
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -41,7 +39,7 @@ esp_err_t esp_ble_mesh_proxy_gatt_enable(void)
 {
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -54,7 +52,7 @@ esp_err_t esp_ble_mesh_proxy_gatt_disable(void)
 {
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;

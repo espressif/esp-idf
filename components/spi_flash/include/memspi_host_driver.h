@@ -32,7 +32,7 @@
         .read = spi_flash_hal_read, \
         .max_read_bytes = SPI_FLASH_HAL_MAX_READ_BYTES, \
         .host_idle = spi_flash_hal_host_idle, \
-        .configure_host_read_mode = spi_flash_hal_configure_host_read_mode, \
+        .configure_host_io_mode = spi_flash_hal_configure_host_io_mode, \
         .poll_cmd_done = spi_flash_hal_poll_cmd_done, \
         .flush_cache = memspi_host_flush_cache, \
 }

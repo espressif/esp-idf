@@ -17,15 +17,12 @@
 #include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
-
 #include "btc_ble_mesh_sensor_model.h"
 #include "esp_ble_mesh_sensor_model_api.h"
 
 esp_err_t esp_ble_mesh_register_sensor_client_callback(esp_ble_mesh_sensor_client_cb_t callback)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_SENSOR_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
@@ -40,7 +37,7 @@ esp_err_t esp_ble_mesh_sensor_client_get_state(esp_ble_mesh_client_common_param_
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SENSOR_CLIENT;
@@ -62,7 +59,7 @@ esp_err_t esp_ble_mesh_sensor_client_set_state(esp_ble_mesh_client_common_param_
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SENSOR_CLIENT;
