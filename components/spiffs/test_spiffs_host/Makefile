@@ -87,7 +87,11 @@ $(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(SPI_FLASH_SIM_BUILD_DIR)/$(SPI_FLASH_SI
 
 # Use spiffs source directory as the test image
 spiffs_image: ../spiffs $(shell find ../spiffs -type d) $(shell find ../spiffs -type -f -name '*')
-	../spiffsgen.py 2097152 ../spiffs image.bin 
+	# Creation of test symlinks unfortunately causes rerun of spiffsgen.py every make invoke
+	rm -f ../spiffs/include ../spiffs/CMakeLists.txt 
+	ln -s ../include ../spiffs/include
+	ln -s ../CMakeLists.txt ../spiffs/CMakeLists.txt
+	../spiffsgen.py --follow-symlinks 2097152 ../spiffs image.bin 
 
 test: $(TEST_PROGRAM) spiffs_image 
 	./$(TEST_PROGRAM)

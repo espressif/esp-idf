@@ -22,7 +22,7 @@ typedef struct {
     spi_host_device_t host_id;      ///< Bus to use
     int cs_id;                      ///< CS pin (signal) to use
     int cs_io_num;                  ///< GPIO pin to output the CS signal
-    esp_flash_read_mode_t io_mode;  ///< IO mode to read from the Flash
+    esp_flash_io_mode_t io_mode;  ///< IO mode to read from the Flash
     esp_flash_speed_t speed;        ///< Speed of the Flash clock
     int input_delay_ns;             ///< Input delay of the data pins, in ns. Set to 0 if unknown.
 } esp_flash_spi_device_config_t;

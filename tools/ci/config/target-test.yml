@@ -234,7 +234,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 18
+  parallel: 30
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -433,7 +433,7 @@ UT_029:
 # Gitlab parallel max value is 50. We need to create another UT job if parallel is larger than 50.
 UT_030:
   extends: .unit_test_template
-  parallel: 6
+  parallel: 10
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -460,11 +460,17 @@ UT_033:
 
 UT_034:
   extends: .unit_test_template
+  parallel: 4
+  tags:
+    - ESP32_IDF
+    - UT_T1_ESP_FLASH
+
+UT_035:
+  extends: .unit_test_template
   parallel: 28
   tags:
     - ESP32S2BETA_IDF
     - UT_T1_1
-
 
 nvs_compatible_test:
   extends: .test_template

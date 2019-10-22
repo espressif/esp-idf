@@ -82,7 +82,7 @@ ble_mesh_provisioner_add_key_t provisioner_add_key;
 
 void ble_mesh_regist_provisioner_cmd(void);
 
-void ble_mesh_prov_adv_cb(const esp_bd_addr_t addr, const esp_ble_addr_type_t addr_type, const uint8_t adv_type,
+void ble_mesh_prov_adv_cb(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type, const uint8_t adv_type,
                           const uint8_t *dev_uuid, uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
 
 void ble_mesh_register_mesh_provisioner(void)
@@ -90,12 +90,12 @@ void ble_mesh_register_mesh_provisioner(void)
     ble_mesh_regist_provisioner_cmd();
 }
 
-void ble_mesh_prov_adv_cb(const esp_bd_addr_t addr, const esp_ble_addr_type_t addr_type, const uint8_t adv_type,
+void ble_mesh_prov_adv_cb(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type, const uint8_t adv_type,
                           const uint8_t *dev_uuid, uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer)
 {
     ESP_LOGD(TAG, "enter %s\n", __func__);
     ESP_LOGI(TAG, "scan device address:");
-    esp_log_buffer_hex(TAG, addr, sizeof(esp_bd_addr_t));
+    esp_log_buffer_hex(TAG, addr, sizeof(esp_ble_mesh_bd_addr_t));
     ESP_LOGI(TAG, "scan device uuid:");
     esp_log_buffer_hex(TAG, dev_uuid, 16);
     ESP_LOGD(TAG, "exit %s\n", __func__);

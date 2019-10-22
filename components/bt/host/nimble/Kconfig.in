@@ -53,6 +53,7 @@ config BT_NIMBLE_PINNED_TO_CORE
 config BT_NIMBLE_TASK_STACK_SIZE
     int "NimBLE Host task stack size"
     depends on BT_NIMBLE_ENABLED
+    default 5120 if BLE_MESH
     default 4096
     help
         This configures stack size of NimBLE host task

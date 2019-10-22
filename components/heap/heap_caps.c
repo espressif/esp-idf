@@ -333,6 +333,18 @@ IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
     return result;
 }
 
+size_t heap_caps_get_total_size(uint32_t caps)
+{
+    size_t total_size = 0;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap_caps_match(heap, caps)) {
+            total_size += (heap->end - heap->start);
+        }
+    }
+    return total_size;
+}
+
 size_t heap_caps_get_free_size( uint32_t caps )
 {
     size_t ret = 0;

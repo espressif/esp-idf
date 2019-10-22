@@ -17,6 +17,7 @@
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
 #include "common/bt_trace.h"
+#include "bta/bta_api.h"
 #include "btc/btc_manage.h"
 #include "btc_gap_bt.h"
 #include "btc/btc_storage.h"

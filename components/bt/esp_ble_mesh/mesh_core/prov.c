@@ -1744,10 +1744,10 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
     return 0;
 }
 
-void bt_mesh_prov_complete(u16_t net_idx, u16_t addr, u8_t flags, u32_t iv_index)
+void bt_mesh_prov_complete(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index)
 {
     if (prov->complete) {
-        prov->complete(net_idx, addr, flags, iv_index);
+        prov->complete(net_idx, net_key, addr, flags, iv_index);
     }
 }
 

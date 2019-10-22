@@ -129,26 +129,31 @@ COMPONENT_PRIV_INCLUDEDIRS += common/btc/include              	   \
 COMPONENT_SRCDIRS += common/osi                         		   \
 					 common/btc/core
 
+ifdef CONFIG_BLE_MESH
+
+COMPONENT_SRCDIRS += esp_ble_mesh/mesh_core/bluedroid_host
+
+endif
 endif
 
 ifdef CONFIG_BLE_MESH
-    COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_core                     \
-                                 esp_ble_mesh/mesh_core/include             \
-                                 esp_ble_mesh/mesh_core/settings            \
-                                 esp_ble_mesh/btc/include                   \
-                                 esp_ble_mesh/mesh_models/common/include    \
-                                 esp_ble_mesh/mesh_models/client/include    \
-                                 esp_ble_mesh/api/core/include              \
-                                 esp_ble_mesh/api/models/include            \
-                                 esp_ble_mesh/api
+COMPONENT_ADD_INCLUDEDIRS += esp_ble_mesh/mesh_core                     \
+                             esp_ble_mesh/mesh_core/include             \
+                             esp_ble_mesh/mesh_core/settings            \
+                             esp_ble_mesh/btc/include                   \
+                             esp_ble_mesh/mesh_models/common/include    \
+                             esp_ble_mesh/mesh_models/client/include    \
+                             esp_ble_mesh/api/core/include              \
+                             esp_ble_mesh/api/models/include            \
+                             esp_ble_mesh/api
 
-    COMPONENT_SRCDIRS +=    esp_ble_mesh/mesh_core               \
-                            esp_ble_mesh/mesh_core/settings      \
-                            esp_ble_mesh/btc                     \
-                            esp_ble_mesh/mesh_models/common      \
-                            esp_ble_mesh/mesh_models/client      \
-                            esp_ble_mesh/api/core                \
-                            esp_ble_mesh/api/models
+COMPONENT_SRCDIRS += esp_ble_mesh/mesh_core               	\
+                     esp_ble_mesh/mesh_core/settings      	\
+                     esp_ble_mesh/btc                     	\
+                     esp_ble_mesh/mesh_models/common      	\
+                     esp_ble_mesh/mesh_models/client      	\
+                     esp_ble_mesh/api/core                	\
+                     esp_ble_mesh/api/models
 endif
 
 
@@ -195,6 +200,17 @@ COMPONENT_SRCDIRS += host/nimble/nimble/ext/tinycrypt/src
 endif
 
 COMPONENT_OBJEXCLUDE += host/nimble/nimble/nimble/host/store/config/src/ble_store_config_conf.o
+
+ifdef CONFIG_BLE_MESH
+COMPONENT_PRIV_INCLUDEDIRS += common/btc/include 	\
+			      common/include
+
+COMPONENT_SRCDIRS += common/osi 		\
+					 common/btc/core 	\
+					 esp_ble_mesh/mesh_core/nimble_host
+
+COMPONENT_ADD_INCLUDEDIRS += common/osi/include
+endif
 
 ifdef CONFIG_BT_NIMBLE_MESH
 
