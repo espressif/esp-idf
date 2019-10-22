@@ -41,7 +41,7 @@ The main purpose of the application rollback is to keep the device working after
 
 * The application works fine, :cpp:func:`esp_ota_mark_app_valid_cancel_rollback` marks the running application with the state ``ESP_OTA_IMG_VALID``. There are no restrictions on booting this application.
 * The application has critical errors and further work is not possible, a rollback to the previous application is required, :cpp:func:`esp_ota_mark_app_invalid_rollback_and_reboot` marks the running application with the state ``ESP_OTA_IMG_INVALID`` and reset. This application will not be selected by the bootloader for boot and will boot the previously working application.
-* If the :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set, and occur a reset without calling either function then happend and is rolled back.
+* If the :ref:`CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE` option is set, and a reset occurs without calling either function then the application is rolled back.
 
 Note: The state is not written to the binary image of the application it is written to the ``otadata`` partition. The partition contains a ``ota_seq`` counter  which is a pointer to the slot (ota_0, ota_1, ...) from which the application will be selected for boot.
 
