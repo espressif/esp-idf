@@ -485,6 +485,27 @@ UT_036:
     - UT_T1_PSRAMV0
     - psram
 
+UT_037:
+  extends: .unit_test_template
+  parallel: 4
+  tags:
+    - ESP32_IDF
+    - UT_T1_LEDC
+
+UT_038:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_LEDC
+    - psram
+
+UT_039:
+  extends: .unit_test_template
+  parallel: 28
+  tags:
+    - ESP32S2BETA_IDF
+    - UT_T1_LEDC
+
 
 nvs_compatible_test:
   extends: .test_template
