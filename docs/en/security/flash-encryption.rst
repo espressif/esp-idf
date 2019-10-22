@@ -2,6 +2,8 @@
 Flash Encryption
 ================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document provides introduction to Flash encryption concept on ESP32 and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `ESP32 Technical reference manual`_.
 
 .. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
@@ -17,7 +19,7 @@ With flash encryption enabled, following kinds of flash data are encrypted by de
   - Partition Table
   - All "app" type partitions
 
-  Other type of flash data are encrypted conditionally:
+  Other types of flash data are encrypted conditionally:
 
   - Secure boot bootloader digest (if secure boot is enabled)
   - Any partition marked with the "encrypted" flag in the partition table
