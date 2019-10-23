@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -44,25 +44,25 @@
 
 #define ESP_NETIF_HOSTNAME_MAX_SIZE    32
 
+/**
+ * @brief thread safe tcpip function utility macro
+ */
+#define _LWIP_TASK_IPC_CALL(function, netif, param) \
+{   \
+    return esp_netif_lwip_ipc_call(function, netif, (void *)(param)); \
+}
+
+//
+//  Internal types
+//
 typedef enum esp_netif_action {
     ESP_NETIF_UNDEF,
     ESP_NETIF_STARTED,
     ESP_NETIF_STOPPED,
 } esp_netif_action_t;
 
-extern sys_thread_t g_lwip_task;
-
-static const char *TAG = "esp_netif_lwip";
-
-static sys_sem_t api_sync_sem = NULL;
-static sys_sem_t api_lock_sem = NULL;
-static bool tcpip_initialized = false;
-static esp_netif_t *s_last_default_esp_netif = NULL;
-
 /**
  * @brief Main esp-netif container with interface related information
- *
- *
  */
 struct esp_netif_obj {
     // default interface addresses
@@ -97,13 +97,17 @@ struct esp_netif_obj {
     int route_prio;
 };
 
-/**
- * @brief thread safe tcpip function utility macro
- */
-#define _LWIP_TASK_IPC_CALL(function, netif, param) \
-{   \
-    return esp_netif_lwip_ipc_call(function, netif, (void *)param); \
-}
+//
+//  Internal variables for this module
+//
+extern sys_thread_t g_lwip_task;
+
+static const char *TAG = "esp_netif_lwip";
+
+static sys_sem_t api_sync_sem = NULL;
+static sys_sem_t api_lock_sem = NULL;
+static bool tcpip_initialized = false;
+static esp_netif_t *s_last_default_esp_netif = NULL;
 
 /**
  * @brief Api callback from tcpip thread used to call esp-netif
@@ -245,8 +249,9 @@ esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev)
 
 void* esp_netif_get_netif_impl(esp_netif_t *esp_netif)
 {
-    if (esp_netif)
+    if (esp_netif) {
         return esp_netif->lwip_netif;
+    }
     return NULL;
 }
 
@@ -613,7 +618,7 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
     }
 
     if (esp_netif->flags&ESP_NETIF_DHCPS) {
-        dhcps_stop(lwip_netif);    // TODO: dhcps checks status by its self
+        dhcps_stop(lwip_netif);    // TODO(IDF-1099): dhcps checks status by its self
         if (ESP_NETIF_DHCP_STOPPED != esp_netif->dhcps_status) {
             esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
         }
@@ -1359,15 +1364,16 @@ const char *esp_netif_get_desc(esp_netif_t *esp_netif)
     return esp_netif->if_desc;
 }
 
-uint32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type)
+int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type)
 {
     switch(event_type) {
         case ESP_NETIF_IP_EVENT_GOT_IP:
             return esp_netif->get_ip_event;
         case ESP_NETIF_IP_EVENT_LOST_IP:
             return esp_netif->lost_ip_event;
+        default:
+            return -1;
     }
-    return 0;
 }
 
 esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val,
@@ -1496,7 +1502,7 @@ esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
 esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val,
                                  uint32_t opt_len)
 {
-    // TODO: when dhcp request timeout,change the retry count
+    // TODO(IDF-1100): when dhcp request timeout,change the retry count
     return ESP_ERR_NOT_SUPPORTED;
 }
 

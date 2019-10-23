@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -47,14 +47,14 @@ typedef struct {
  * @brief  Get IP information for stations connected to the Wi-Fi AP interface
  *
  * @param[in]   wifi_sta_list Wi-Fi station info list, returned from esp_wifi_ap_get_sta_list()
- * @param[out]  tcpip_sta_list IP layer station info list, corresponding to MAC addresses provided in wifi_sta_list
+ * @param[out]  netif_sta_list IP layer station info list, corresponding to MAC addresses provided in wifi_sta_list
  *
  * @return
  *         - ESP_OK
  *         - ESP_ERR_ESP_NETIF_NO_MEM
  *         - ESP_ERR_ESP_NETIF_INVALID_PARAMS
  */
-esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif_sta_list_t *tcpip_sta_list);
+esp_err_t esp_netif_get_sta_list(const wifi_sta_list_t *wifi_sta_list, esp_netif_sta_list_t *netif_sta_list);
 
 /**
  * @}
