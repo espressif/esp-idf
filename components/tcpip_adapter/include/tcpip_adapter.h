@@ -96,12 +96,18 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void);
 
 /**
  * @brief Compatible version of network stack input function. Translates to esp_netif_receive()
- * @param buffer
- * @param len
- * @param eb
- * @return see esp_netif_receive
  */
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb);
+
+/**
+ * @brief Compatible version of network stack input function. Translates to esp_netif_receive()
+ */
+esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb);
+
+/**
+ * @brief Compatible version of network stack input function. Translates to esp_netif_receive()
+ */
+esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb);
 
 /**
  * @brief Compatible version of former tcpip_adapter API to clear default WIFI handlers
@@ -174,5 +180,69 @@ int tcpip_adapter_get_netif_index(tcpip_adapter_if_t tcpip_if);
  * @brief Compatible version of former tcpip_adapter API of esp_netif_get_sta_list
 */
 esp_err_t tcpip_adapter_get_sta_list(const wifi_sta_list_t *wifi_sta_list, tcpip_adapter_sta_list_t *tcpip_sta_list);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_action_start for default ethernet
+*/
+esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info, void *args);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_action_start for default station
+*/
+esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_action_start for default softAP
+*/
+esp_err_t tcpip_adapter_ap_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_action_stop
+*/
+esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_up
+*/
+esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_down
+*/
+esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_get_old_ip_info
+*/
+esp_err_t tcpip_adapter_get_old_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_set_old_ip_info
+*/
+esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_get_handle_from_netif_impl
+*/
+esp_interface_t tcpip_adapter_get_esp_if(void *dev);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_set_hostname
+*/
+esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *hostname);
+
+/**
+ * @brief Compatible version of former tcpip_adapter API of esp_netif_get_hostname
+*/
+esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname);
+
+/**
+ * @brief This function is called from wifi_init to assure backward compatibility mode
+ * of tcpip_adapter. In case of legacy use, default instances of ap and sta
+ * are created and handlers are registered
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
 
 #endif //_TCPIP_ADAPTER_H_

@@ -3110,8 +3110,10 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
         s_esp_netifs[MDNS_IF_STA] = esp_netif_get_handle_from_ifkey("WIFI_STA_DEF");
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_AP_START) {
         s_esp_netifs[MDNS_IF_AP] = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
+#if CONFIG_ETH_ENABLED
     } else if (event_base == ETH_EVENT && event_id == ETHERNET_EVENT_START) {
         s_esp_netifs[MDNS_IF_ETH] = esp_netif_get_handle_from_ifkey("ETH_DEF");
+#endif
     }
 
     esp_netif_dhcp_status_t dcst;
