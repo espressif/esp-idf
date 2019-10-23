@@ -699,8 +699,9 @@ const char *esp_netif_get_desc(esp_netif_t *esp_netif);
  * @param event_type (either get or lost IP)
  * 
  * @return specific event id which is configured to be raised if the interface lost or acquired IP address
+ *         -1 if supplied event_type is not known
  */
-uint32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type);
+int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type);
 
 /**
  * @}

@@ -133,15 +133,16 @@ esp_netif_t* esp_netif_next_unsafe(esp_netif_t* netif)
 {
     ESP_LOGV(TAG, "%s %p", __func__, netif);
     struct slist_netifs_s *item;
+    // Getting the first netif if argument is NULL
     if (netif == NULL) {
         item = SLIST_FIRST(&s_head);
         return (item == NULL) ? NULL : item->netif;
-    } else {
-        SLIST_FOREACH(item, &s_head, next) {
-            if (item->netif == netif) {
-                item = SLIST_NEXT(item, next);
-                return (item == NULL) ? NULL : item->netif;
-            }
+    }
+    // otherwise the next one (after the supplied netif)
+    SLIST_FOREACH(item, &s_head, next) {
+        if (item->netif == netif) {
+            item = SLIST_NEXT(item, next);
+            return (item == NULL) ? NULL : item->netif;
         }
     }
     return NULL;
