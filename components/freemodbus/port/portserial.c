@@ -246,7 +246,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
             FALSE, "mb config failure, uart_param_config() returned (0x%x).", (uint32_t)xErr);
     // Install UART driver, and get the queue.
     xErr = uart_driver_install(ucUartNumber, MB_SERIAL_BUF_SIZE, MB_SERIAL_BUF_SIZE,
-            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LEVEL3);
+            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LOWMED); // TODO EQ-717, ISR might fail to be installed, adding also possible ISR prio 1 and 2
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
 #ifndef MB_TIMER_PORT_ENABLED
