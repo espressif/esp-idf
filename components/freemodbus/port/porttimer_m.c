@@ -115,7 +115,7 @@ BOOL xMBMasterPortTimersInit(USHORT usTimeOut50us)
                     (uint32_t)xErr);
     // Register ISR for timer
     xErr = timer_isr_register(usTimerGroupIndex, usTimerIndex,
-                                vTimerGroupIsr, NULL, ESP_INTR_FLAG_IRAM, NULL);
+                                vTimerGroupIsr, NULL, ESP_INTR_FLAG_LOWMED, NULL); // TODO EQ-721 ISR causing panic
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                     "timer set value failure, timer_isr_register() returned (0x%x).",
                     (uint32_t)xErr);
