@@ -108,6 +108,10 @@ given VFS driver.
 :cpp:func:`end_select` is called to stop/deinitialize/free the
 environment which was setup by :cpp:func:`start_select`.
 
+.. note::
+    :cpp:func:`end_select` might be called without a previous :cpp:func:`start_select` call in some rare
+    circumstances. :cpp:func:`end_select` should fail gracefully if this is the case.
+
 Please refer to the
 reference implementation for the UART peripheral in
 :component_file:`vfs/vfs_uart.c` and most particularly to the functions
@@ -154,6 +158,10 @@ Please see :component_file:`lwip/port/esp32/vfs_lwip.c` for a reference socket d
 .. note::
     If you use :cpp:func:`select` for socket file descriptors only then you can enable the
     :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` option to reduce the code size and improve performance.
+
+.. note::
+    Don't change the socket driver during an active :cpp:func:`select` call or you might experience some undefined
+    behavior.
 
 Paths
 -----
