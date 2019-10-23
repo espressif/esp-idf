@@ -37,9 +37,6 @@
 #define FRIEND_BUF_COUNT    ((CONFIG_BLE_MESH_FRIEND_QUEUE_SIZE + 1) * \
                  CONFIG_BLE_MESH_FRIEND_LPN_COUNT)
 
-#define FRIEND_ADV(buf)     CONTAINER_OF(BLE_MESH_ADV(buf), \
-                     struct friend_adv, adv)
-
 /* PDUs from Friend to the LPN should only be transmitted once with the
  * smallest possible interval (20ms).
  */
@@ -60,10 +57,7 @@ struct friend_pdu_info {
 NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
                           BLE_MESH_ADV_DATA_SIZE, NULL);
 
-static struct friend_adv {
-    struct bt_mesh_adv adv;
-    u64_t seq_auth;
-} adv_pool[FRIEND_BUF_COUNT];
+static struct bt_mesh_adv adv_pool[FRIEND_BUF_COUNT];
 
 enum {
     BLE_MESH_FRIENDSHIP_TERMINATE_ESTABLISH_FAIL,
@@ -79,7 +73,7 @@ static void (*friend_cb)(bool establish, u16_t lpn_addr, u8_t reason);
 
 static struct bt_mesh_adv *adv_alloc(int id)
 {
-    return &adv_pool[id].adv;
+    return &adv_pool[id];
 }
 
 static bool is_lpn_unicast(struct bt_mesh_friend *frnd, u16_t addr)
@@ -318,13 +312,7 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
         struct friend_pdu_info *info,
         struct net_buf_simple *sdu)
 {
-    struct bt_mesh_subnet *sub;
-    const u8_t *enc, *priv;
     struct net_buf *buf;
-    u8_t nid;
-
-    sub = bt_mesh_subnet_get(frnd->net_idx);
-    __ASSERT_NO_MSG(sub != NULL);
 
     buf = bt_mesh_adv_create_from_pool(&friend_buf_pool, adv_alloc,
                                        BLE_MESH_ADV_DATA,
@@ -333,22 +321,7 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
         return NULL;
     }
 
-    BLE_MESH_ADV(buf)->addr = info->src;
-    FRIEND_ADV(buf)->seq_auth = TRANS_SEQ_AUTH_NVAL;
-
-    /* Friend Offer needs master security credentials */
-    if (info->ctl && TRANS_CTL_OP(sdu->data) == TRANS_CTL_OP_FRIEND_OFFER) {
-        enc = sub->keys[sub->kr_flag].enc;
-        priv = sub->keys[sub->kr_flag].privacy;
-        nid = sub->keys[sub->kr_flag].nid;
-    } else {
-        if (friend_cred_get(sub, frnd->lpn, &nid, &enc, &priv)) {
-            BT_ERR("%s, friend_cred_get failed", __func__);
-            goto failed;
-        }
-    }
-
-    net_buf_add_u8(buf, (nid | (info->iv_index & 1) << 7));
+    net_buf_add_u8(buf, (info->iv_index & 1) << 7); /* Will be reset in encryption */
 
     if (info->ctl) {
         net_buf_add_u8(buf, info->ttl | 0x80);
@@ -363,25 +336,55 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
 
     net_buf_add_mem(buf, sdu->data, sdu->len);
 
-    /* We re-encrypt and obfuscate using the received IVI rather than
-     * the normal TX IVI (which may be different) since the transport
-     * layer nonce includes the IVI.
-     */
-    if (bt_mesh_net_encrypt(enc, &buf->b, info->iv_index, false)) {
-        BT_ERR("%s, Re-encrypting failed", __func__);
-        goto failed;
-    }
-
-    if (bt_mesh_net_obfuscate(buf->data, info->iv_index, priv)) {
-        BT_ERR("%s, Re-obfuscating failed", __func__);
-        goto failed;
-    }
-
     return buf;
+}
 
-failed:
-    net_buf_unref(buf);
-    return NULL;
+static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf, bool master_cred)
+{
+    struct bt_mesh_subnet *sub = bt_mesh_subnet_get(frnd->net_idx);
+    const u8_t *enc, *priv;
+    u32_t iv_index;
+    u16_t src;
+    u8_t nid;
+
+    if (master_cred) {
+        enc = sub->keys[sub->kr_flag].enc;
+        priv = sub->keys[sub->kr_flag].privacy;
+        nid = sub->keys[sub->kr_flag].nid;
+    } else {
+        if (friend_cred_get(sub, frnd->lpn, &nid, &enc, &priv)) {
+            BT_ERR("friend_cred_get failed");
+            return -ENOENT;
+        }
+    }
+
+    src = sys_get_be16(&buf->data[5]);
+
+    if (bt_mesh_elem_find(src)) {
+        /* Local messages were stored with a blank seqnum */
+        u32_t seq = bt_mesh_next_seq();
+        buf->data[2] = seq >> 16;
+        buf->data[3] = seq >> 8;
+        buf->data[4] = seq;
+        iv_index = BLE_MESH_NET_IVI_TX;
+    } else {
+        u8_t ivi = (buf->data[0] >> 7);
+        iv_index = (bt_mesh.iv_index - ((bt_mesh.iv_index & 1) != ivi));
+    }
+
+    buf->data[0] = (nid | (iv_index & 1) << 7);
+
+    if (bt_mesh_net_encrypt(enc, &buf->b, iv_index, false)) {
+        BT_ERR("Encrypting failed");
+        return -EINVAL;
+    }
+
+    if (bt_mesh_net_obfuscate(buf->data, iv_index, priv)) {
+        BT_ERR("Obfuscating failed");
+        return -EINVAL;
+    }
+
+    return 0;
 }
 
 static struct net_buf *encode_friend_ctl(struct bt_mesh_friend *frnd,
@@ -389,7 +392,6 @@ static struct net_buf *encode_friend_ctl(struct bt_mesh_friend *frnd,
         struct net_buf_simple *sdu)
 {
     struct friend_pdu_info info;
-    u32_t seq;
 
     BT_DBG("LPN 0x%04x", frnd->lpn);
 
@@ -401,10 +403,7 @@ static struct net_buf *encode_friend_ctl(struct bt_mesh_friend *frnd,
     info.ctl = 1U;
     info.ttl = 0U;
 
-    seq = bt_mesh_next_seq();
-    info.seq[0] = seq >> 16;
-    info.seq[1] = seq >> 8;
-    info.seq[2] = seq;
+    memset(info.seq, 0, sizeof(info.seq));
 
     info.iv_index = BLE_MESH_NET_IVI_TX;
 
@@ -447,6 +446,10 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, u8_t xact)
     buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_SUB_CFM, &sdu);
     if (!buf) {
         BT_ERR("%s, Unable to encode Subscription List Confirmation", __func__);
+        return;
+    }
+
+    if (encrypt_friend_pdu(frnd, buf, false)) {
         return;
     }
 
@@ -759,6 +762,10 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
         return;
     }
 
+    if (encrypt_friend_pdu(frnd, buf, true)) {
+        return;
+    }
+
     frnd->counter++;
 
     if (frnd->last) {
@@ -904,8 +911,29 @@ init_friend:
     return 0;
 }
 
+static bool is_seg(struct bt_mesh_friend_seg *seg, u16_t src, u16_t seq_zero)
+{
+    struct net_buf *buf = (void *)sys_slist_peek_head(&seg->queue);
+    struct net_buf_simple_state state;
+    u16_t buf_seq_zero;
+    u16_t buf_src;
+
+    if (!buf) {
+        return false;
+    }
+
+    net_buf_simple_save(&buf->b, &state);
+    net_buf_skip(buf, 5);   /* skip IVI, NID, CTL, TTL, SEQ */
+    buf_src = net_buf_pull_be16(buf);
+    net_buf_skip(buf, 3);   /* skip DST, OP/AID */
+    buf_seq_zero = ((net_buf_pull_be16(buf) >> 2) & TRANS_SEQ_ZERO_MASK);
+    net_buf_simple_restore(&buf->b, &state);
+
+    return ((src == buf_src) && (seq_zero == buf_seq_zero));
+}
+
 static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
-        u16_t src, u64_t *seq_auth,
+        u16_t src, u16_t seq_zero,
         u8_t seg_count)
 {
     struct bt_mesh_friend_seg *unassigned = NULL;
@@ -913,14 +941,12 @@ static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
 
     for (i = 0; i < ARRAY_SIZE(frnd->seg); i++) {
         struct bt_mesh_friend_seg *seg = &frnd->seg[i];
-        struct net_buf *buf = (void *)sys_slist_peek_head(&seg->queue);
 
-        if (buf && BLE_MESH_ADV(buf)->addr == src &&
-                FRIEND_ADV(buf)->seq_auth == *seq_auth) {
+        if (is_seg(seg, src, seq_zero)) {
             return seg;
         }
 
-        if (!unassigned && !buf) {
+        if (!unassigned && !sys_slist_peek_head(&seg->queue)) {
             unassigned = seg;
         }
     }
@@ -934,10 +960,10 @@ static struct bt_mesh_friend_seg *get_seg(struct bt_mesh_friend *frnd,
 
 static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
                                enum bt_mesh_friend_pdu_type type,
-                               u8_t seg_count, struct net_buf *buf)
+                               u16_t src, u8_t seg_count,
+                               struct net_buf *buf)
 {
     struct bt_mesh_friend_seg *seg;
-    struct friend_adv *adv;
 
     BT_DBG("type %u", type);
 
@@ -950,11 +976,11 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
         return;
     }
 
-    adv = FRIEND_ADV(buf);
-    seg = get_seg(frnd, BLE_MESH_ADV(buf)->addr, &adv->seq_auth, seg_count);
+    u16_t seq_zero = (((buf->data[10] << 8 | buf->data[11]) >> 2) & TRANS_SEQ_ZERO_MASK);
+
+    seg = get_seg(frnd, src, seq_zero, seg_count);
     if (!seg) {
-        BT_ERR("%s, No free friend segment RX contexts for 0x%04x",
-               __func__, BLE_MESH_ADV(buf)->addr);
+        BT_ERR("No free friend segment RX contexts for 0x%04x", src);
         net_buf_unref(buf);
         return;
     }
@@ -966,16 +992,9 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
             enqueue_update(frnd, 1);
         }
 
-        /* Only acks should have a valid SeqAuth in the Friend queue
-         * (otherwise we can't easily detect them there), so clear
-         * the SeqAuth information from the segments before merging.
-         */
-        SYS_SLIST_FOR_EACH_CONTAINER(&seg->queue, buf, node) {
-            FRIEND_ADV(buf)->seq_auth = TRANS_SEQ_AUTH_NVAL;
-            frnd->queue_size++;
-        }
-
         sys_slist_merge_slist(&frnd->queue, &seg->queue);
+
+        frnd->queue_size += seg->seg_count;
         seg->seg_count = 0U;
     } else {
         /* Mark the buffer as having more to come after it */
@@ -1052,6 +1071,10 @@ static void friend_timeout(struct k_work *work)
         return;
     }
 
+    if (encrypt_friend_pdu(frnd, frnd->last, false)) {
+        return;
+    }
+
     /* Clear the flag we use for segment tracking */
     frnd->last->flags &= ~NET_BUF_FRAGS;
     frnd->last->frags = NULL;
@@ -1094,6 +1117,42 @@ int bt_mesh_friend_init(void)
     return 0;
 }
 
+static bool is_segack(struct net_buf *buf, u64_t *seqauth, u16_t src)
+{
+    struct net_buf_simple_state state;
+    bool found = false;
+
+    if (buf->len != 16) {
+        return false;
+    }
+
+    net_buf_simple_save(&buf->b, &state);
+
+    net_buf_skip(buf, 1); /* skip IVI, NID */
+
+    if (!(net_buf_pull_u8(buf) >> 7)) {
+        goto end;
+    }
+
+    net_buf_pull(buf, 3); /* skip SEQNUM */
+
+    if (src != net_buf_pull_be16(buf)) {
+        goto end;
+    }
+
+    net_buf_skip(buf, 2); /* skip dst */
+
+    if (TRANS_CTL_OP((u8_t *) net_buf_pull_mem(buf, 1)) != TRANS_CTL_OP_ACK) {
+        goto end;
+    }
+
+    found = ((net_buf_pull_be16(buf) >> 2) & TRANS_SEQ_ZERO_MASK) ==
+        (*seqauth & TRANS_SEQ_ZERO_MASK);
+end:
+    net_buf_simple_restore(&buf->b, &state);
+    return found;
+}
+
 static void friend_purge_old_ack(struct bt_mesh_friend *frnd, u64_t *seq_auth,
                                  u16_t src)
 {
@@ -1105,8 +1164,7 @@ static void friend_purge_old_ack(struct bt_mesh_friend *frnd, u64_t *seq_auth,
             cur != NULL; prev = cur, cur = sys_slist_peek_next(cur)) {
         struct net_buf *buf = (void *)cur;
 
-        if (BLE_MESH_ADV(buf)->addr == src &&
-                FRIEND_ADV(buf)->seq_auth == *seq_auth) {
+        if (is_segack(buf, seq_auth, src)) {
             BT_DBG("Removing old ack from Friend Queue");
 
             sys_slist_remove(&frnd->queue, prev, cur);
@@ -1158,11 +1216,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
         return;
     }
 
-    if (seq_auth) {
-        FRIEND_ADV(buf)->seq_auth = *seq_auth;
-    }
-
-    enqueue_friend_pdu(frnd, type, seg_count, buf);
+    enqueue_friend_pdu(frnd, type, info.src, seg_count, buf);
 
     BT_DBG("Queued message for LPN 0x%04x, queue_size %u",
            frnd->lpn, frnd->queue_size);
@@ -1176,7 +1230,6 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
 {
     struct friend_pdu_info info;
     struct net_buf *buf;
-    u32_t seq;
 
     BT_DBG("LPN 0x%04x", frnd->lpn);
 
@@ -1190,10 +1243,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
     info.ttl = tx->ctx->send_ttl;
     info.ctl = (tx->ctx->app_idx == BLE_MESH_KEY_UNUSED);
 
-    seq = bt_mesh_next_seq();
-    info.seq[0] = seq >> 16;
-    info.seq[1] = seq >> 8;
-    info.seq[2] = seq;
+    memset(info.seq, 0, sizeof(info.seq)); /* Will be allocated before encryption */
 
     info.iv_index = BLE_MESH_NET_IVI_TX;
 
@@ -1203,11 +1253,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
         return;
     }
 
-    if (seq_auth) {
-        FRIEND_ADV(buf)->seq_auth = *seq_auth;
-    }
-
-    enqueue_friend_pdu(frnd, type, seg_count, buf);
+    enqueue_friend_pdu(frnd, type, info.src, seg_count, buf);
 
     BT_DBG("Queued message for LPN 0x%04x", frnd->lpn);
 }
@@ -1270,17 +1316,11 @@ static bool friend_queue_has_space(struct bt_mesh_friend *frnd, u16_t addr,
     for (i = 0; i < ARRAY_SIZE(frnd->seg); i++) {
         struct bt_mesh_friend_seg *seg = &frnd->seg[i];
 
-        if (seq_auth) {
-            struct net_buf *buf;
-
+        if (seq_auth && is_seg(seg, addr, *seq_auth & TRANS_SEQ_ZERO_MASK)) {
             /* If there's a segment queue for this message then the
              * space verification has already happened.
              */
-            buf = (void *)sys_slist_peek_head(&seg->queue);
-            if (buf && BLE_MESH_ADV(buf)->addr == addr &&
-                    FRIEND_ADV(buf)->seq_auth == *seq_auth) {
-                return true;
-            }
+            return true;
         }
 
         total += seg->seg_count;
@@ -1454,18 +1494,8 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, u16_t src,
 
         for (j = 0; j < ARRAY_SIZE(frnd->seg); j++) {
             struct bt_mesh_friend_seg *seg = &frnd->seg[j];
-            struct net_buf *buf;
 
-            buf = (void *)sys_slist_peek_head(&seg->queue);
-            if (!buf) {
-                continue;
-            }
-
-            if (BLE_MESH_ADV(buf)->addr != src) {
-                continue;
-            }
-
-            if (FRIEND_ADV(buf)->seq_auth != *seq_auth) {
+            if (!is_seg(seg, src, *seq_auth & TRANS_SEQ_ZERO_MASK)) {
                 continue;
             }
 
@@ -1473,6 +1503,7 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, u16_t src,
 
             purge_buffers(&seg->queue);
             seg->seg_count = 0U;
+            break;
         }
     }
 }
