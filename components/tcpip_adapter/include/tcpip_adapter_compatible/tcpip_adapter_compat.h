@@ -16,25 +16,42 @@
 #define _TCPIP_ADAPTER_COMPAT_H_
 
 /**
+ * @brief This function is called from ethernet driver init code to facilitate
+ * autostart fo the driver in backward compatible tcpip_adapter way
+ *
+ * @note This api is provided in a separate header, which is included internally only (from wifi driver)
+ * rather then user initialization code.
+ *
+ * @param[in] h Handle to the ethernet driver
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t tcpip_adapter_compat_start_eth(void* h);
+
+/**
  * @brief This function is called from wifi_init to assure backward compatibility mode
  * of tcpip_adapter. In case of legacy use, default instances of ap and sta
  * are created and handlers are registered
  *
- * @note This api is given in a separate header, which is included internally (from wifi driver)
- * rather then user initialization code.
+ * @note This API is provided in a separate header, which is included internally only (from wifi_init)
+ * rather then user initialization code. At this same time this API is also a public API of former tcqpip_adapter
+ * and thus provided also in tcpip_adapter.h
  *
  * @return ESP_OK on success
  */
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
 
 /**
- * @brief This function is called from ethernet driver init code to facilitate
- * autostart fo the driver in backward compatible tcpip_adapter way
+ * @brief This function is called from wifi_init to assure backward compatibility mode
+ * of tcpip_adapter. In case of legacy use, default instances of ap and sta
+ * are destroyed and handlers are unregistered
  *
- * @param[in] h Handle to the ethernet driver
+ * @note This API is provided in a separate header, which is included internally only (from wifi_init)
+ * rather then user initialization code. At this same time this API is also a public API of former tcqpip_adapter
+ * and thus provided also in tcpip_adapter.h
  *
  * @return ESP_OK on success
  */
-esp_err_t tcpip_adapter_start_eth(void* h);
+esp_err_t tcpip_adapter_clear_default_wifi_handlers(void);
 
 #endif //_TCPIP_ADAPTER_COMPAT_H_

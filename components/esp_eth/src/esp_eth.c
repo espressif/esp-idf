@@ -223,7 +223,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS, "start eth_link_timer failed", err_start_timer, ESP_FAIL);
     eth_driver->base.post_attach = esp_eth_post_attach_driver_start;
     *out_hdl = (esp_eth_handle_t)eth_driver;
-    tcpip_adapter_start_eth(eth_driver);
+    tcpip_adapter_compat_start_eth(eth_driver);
     return ESP_OK;
 err_start_timer:
     xTimerDelete(eth_driver->check_link_timer, 0);

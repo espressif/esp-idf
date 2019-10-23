@@ -19,14 +19,21 @@
 
 #if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
 
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
+#endif
 #include "tcpip_adapter_types.h"
 #include "esp_wifi_default.h"
 
+//
+// Accessing some internal default interfaces and esp-netifs
+//
 extern void _esp_wifi_set_default_ap_netif(esp_netif_t* esp_netif);
 extern void _esp_wifi_set_default_sta_netif(esp_netif_t* esp_netif);
 extern esp_err_t _esp_wifi_set_default_wifi_handlers(void);
 extern esp_err_t _esp_wifi_clear_default_wifi_handlers(void);
+extern esp_err_t esp_netif_up(esp_netif_t *esp_netif);
+extern esp_err_t esp_netif_down(esp_netif_t *esp_netif);
 
 //
 // Purpose of this module is to provide backward compatible version of esp-netif
@@ -98,7 +105,8 @@ void tcpip_adapter_init(void)
     }
 }
 
-static void tcpip_adapter_eth_start(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
+#if CONFIG_ETH_ENABLED
+static void tcpip_adapter_attach_eth_to_netif(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
 {
     esp_eth_handle_t eth_handle = *(esp_eth_handle_t*)data;
     esp_netif_attach(esp_netif, eth_handle);
@@ -106,6 +114,7 @@ static void tcpip_adapter_eth_start(void *esp_netif, esp_event_base_t base, int3
 
 esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
 {
+    ESP_ERROR_CHECK(esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_attach_eth_to_netif));
     return esp_eth_clear_default_handlers(netif_from_if(TCPIP_ADAPTER_IF_ETH));
 }
 
@@ -117,7 +126,7 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void)
 
         s_esp_netifs[TCPIP_ADAPTER_IF_ETH] = eth_netif;
         // provide a separate "after driver start" hook to attach
-        esp_err_t ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_eth_start, eth_netif);
+        esp_err_t ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_attach_eth_to_netif, eth_netif);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Failed to register ");
             return ret;
@@ -128,13 +137,24 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void)
     return ESP_OK;
 
 }
+#endif
 
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb)
 {
     return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_ETH), buffer, len, eb);
 }
 
-esp_err_t tcpip_adapter_start_eth(void* eth_driver)
+esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb)
+{
+    return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_STA), buffer, len, eb);
+}
+
+esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb)
+{
+    return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_AP), buffer, len, eb);
+}
+
+esp_err_t tcpip_adapter_compat_start_eth(void* eth_driver)
 {
     if (s_tcpip_adapter_compat) {
         esp_netif_t *esp_netif = netif_from_if(TCPIP_ADAPTER_IF_ETH);
@@ -275,9 +295,89 @@ esp_err_t tcpip_adapter_get_sta_list(const wifi_sta_list_t *wifi_sta_list, tcpip
     return esp_netif_get_sta_list(wifi_sta_list, tcpip_sta_list);
 }
 
+static esp_err_t tcpip_adapter_compat_start_netif(esp_netif_t *netif, uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+{
+    if (netif == NULL || mac == NULL || ip_info == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+    esp_netif_set_mac(netif, mac);
+    esp_netif_set_ip_info(netif, (esp_netif_ip_info_t *)ip_info);
+    esp_netif_action_start(netif, NULL, 0, NULL);
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info, void *args)
+{
+    return tcpip_adapter_compat_start_netif(netif_from_if(TCPIP_ADAPTER_IF_ETH),
+                                            mac, ip_info);
+}
+
+esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+{
+    return tcpip_adapter_compat_start_netif(netif_from_if(TCPIP_ADAPTER_IF_STA),
+                                            mac, ip_info);
+}
+
+esp_err_t tcpip_adapter_ap_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
+{
+    return tcpip_adapter_compat_start_netif(netif_from_if(TCPIP_ADAPTER_IF_AP),
+                                            mac, ip_info);
+}
+
+esp_err_t tcpip_adapter_stop(tcpip_adapter_if_t tcpip_if)
+{
+    esp_netif_t *netif = netif_from_if(tcpip_if);
+    if (netif == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+    esp_netif_action_stop(netif_from_if(tcpip_if), NULL, 0, NULL);
+    return ESP_OK;
+}
+
+esp_err_t tcpip_adapter_up(tcpip_adapter_if_t tcpip_if)
+{
+    return esp_netif_up(netif_from_if(tcpip_if));
+}
+
+esp_err_t tcpip_adapter_down(tcpip_adapter_if_t tcpip_if)
+{
+    return esp_netif_down(netif_from_if(tcpip_if));
+}
+
+esp_err_t tcpip_adapter_get_old_ip_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_ip_info_t *ip_info)
+{
+    return esp_netif_get_old_ip_info(netif_from_if(tcpip_if), (esp_netif_ip_info_t *)ip_info);
+}
+
+esp_err_t tcpip_adapter_set_old_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)
+{
+    return esp_netif_set_old_ip_info(netif_from_if(tcpip_if), (esp_netif_ip_info_t *)ip_info);
+}
+
+esp_interface_t tcpip_adapter_get_esp_if(void *dev)
+{
+    esp_netif_t *netif = esp_netif_get_handle_from_netif_impl(dev);
+    for (int i=0; i< TCPIP_ADAPTER_IF_MAX; ++i) {
+        if (s_esp_netifs[i] == netif) {
+            return i;
+        }
+    }
+    return ESP_IF_MAX;
+}
+
+esp_err_t tcpip_adapter_set_hostname(tcpip_adapter_if_t tcpip_if, const char *hostname)
+{
+    return esp_netif_set_hostname(netif_from_if(tcpip_if), hostname);
+}
+
+esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **hostname)
+{
+    return esp_netif_get_hostname(netif_from_if(tcpip_if), hostname);
+}
+
 #else
 
-esp_err_t tcpip_adapter_start_eth(void* eth_driver)
+esp_err_t tcpip_adapter_compat_start_eth(void* eth_driver)
 {
     return ESP_OK;
 }
