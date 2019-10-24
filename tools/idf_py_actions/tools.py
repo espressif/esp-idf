@@ -3,7 +3,7 @@ import re
 import subprocess
 import sys
 
-from .contstants import GENERATORS
+from .constants import GENERATORS
 from .errors import FatalError
 
 

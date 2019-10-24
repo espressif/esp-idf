@@ -4,7 +4,7 @@ import sys
 
 import click
 
-from idf_py_actions.contstants import GENERATOR_CMDS, GENERATOR_VERBOSE, SUPPORTED_TARGETS
+from idf_py_actions.constants import GENERATOR_CMDS, GENERATOR_VERBOSE, SUPPORTED_TARGETS
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_tool
