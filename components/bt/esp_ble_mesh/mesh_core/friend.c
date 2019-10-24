@@ -29,8 +29,6 @@
 
 #ifdef CONFIG_BLE_MESH_FRIEND
 
-#define FRIEND_BUF_SIZE     (BLE_MESH_ADV_DATA_SIZE - BLE_MESH_NET_HDR_LEN)
-
 /* We reserve one extra buffer for each friendship, since we need to be able
  * to resend the last sent PDU, which sits separately outside of the queue.
  */
