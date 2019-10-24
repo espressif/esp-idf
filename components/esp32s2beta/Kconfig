@@ -4,6 +4,26 @@ menu "ESP32S2-specific"
     # not working so we just hide all items here
     visible if IDF_TARGET_ESP32S2BETA
 
+    choice ESP32S2_BETA_CHIP_VERSION
+        # TODO: remove once final S2 chip is supported
+        prompt "ESP32-S2 Beta chip version"
+        default ESP32S2_BETA_VERSION_MARLIN3
+        help
+            There are three versions of ESP32-S2 beta chip with different Wi-Fi PHY: A, B and Marlin3.
+
+            The correct setting is required for Wi-Fi to work correctly. If unsure which version you
+            have, please contact Espressif.
+
+            The Wi-Fi performance of Marlin3 is the best among the three versions of chip.
+
+        config ESP32S2_BETA_VERSION_A
+            bool "Version A"
+        config ESP32S2_BETA_VERSION_B
+            bool "Version B"
+        config ESP32S2_BETA_VERSION_MARLIN3
+            bool "Version Marlin3"
+    endchoice
+
     choice ESP32S2_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
         default ESP32S2_DEFAULT_CPU_FREQ_160

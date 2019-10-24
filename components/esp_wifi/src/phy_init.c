@@ -163,6 +163,12 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
             phy_set_wifi_mode_only(0);
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+            if (module == PHY_MODEM_MODULE) {
+                phy_wakeup_init();
+            }
+            else
+#endif
             if (ESP_CAL_DATA_CHECK_FAIL == register_chipv7_phy(init_data, calibration_data, mode)) {
                 ESP_LOGW(TAG, "saving new calibration data because of checksum failure, mode(%d)", mode);
 #ifdef CONFIG_ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
@@ -172,7 +178,9 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
 #endif
             }
 
+#if CONFIG_IDF_TARGET_ESP32
             coex_bt_high_prio();
+#endif
         }
     }
 
