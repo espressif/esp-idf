@@ -19,7 +19,7 @@ STR_EXPECT = ("CAN Alert and Recovery: Driver installed", "CAN Alert and Recover
 EXPECT_TIMEOUT = 20
 
 
-@IDF.idf_example_test(env_tag='Example_CAN1')
+@IDF.idf_example_test(env_tag='Example_CAN1', ignore=True)
 def test_can_alert_and_recovery_example(env, extra_data):
     # Get device under test, flash and start example. "dut4" must be defined in EnvConfig
     dut = env.get_dut('dut1', 'examples/peripherals/can/can_alert_and_recovery')
