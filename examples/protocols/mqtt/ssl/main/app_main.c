@@ -115,6 +115,9 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
             break;
         case MQTT_EVENT_ERROR:
             ESP_LOGI(TAG, "MQTT_EVENT_ERROR");
+            if (event->error_handle->error_type == MQTT_ERROR_TYPE_CONNECTION_REFUSED) {
+                ESP_LOGI(TAG, "Connection refused error: 0x%x", event->error_handle->connect_return_code);
+            }
             break;
         default:
             ESP_LOGI(TAG, "Other event id:%d", event->event_id);
