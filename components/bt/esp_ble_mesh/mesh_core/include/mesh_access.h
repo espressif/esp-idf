@@ -140,6 +140,9 @@ struct bt_mesh_msg_ctx {
     /** Destination address of a received message. Not used for sending. */
     u16_t recv_dst;
 
+    /** RSSI of received packet. Not used for sending. */
+    s8_t  recv_rssi;
+
     /** Received TTL value. Not used for sending. */
     u8_t  recv_ttl: 7;
 

@@ -491,6 +491,9 @@ typedef struct {
     /** Destination address of a received message. Not used for sending. */
     uint16_t recv_dst;
 
+    /** RSSI of received packet. Not used for sending. */
+    int8_t   recv_rssi;
+
     /** Received TTL value. Not used for sending. */
     uint8_t  recv_ttl: 7;
 
