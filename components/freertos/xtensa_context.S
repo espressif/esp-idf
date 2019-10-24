@@ -57,20 +57,6 @@ NOERROR: .error "C preprocessor needed for this file: make sure its filename\
 #include <xtensa/overlay_os_asm.h>
 #endif
 
-/*
---------------------------------------------------------------------------------
-    ISR overhead statistics data:
---------------------------------------------------------------------------------
-*/
-
-    #ifdef CONFIG_FREERTOS_ISR_STATS
-    .data
-    .align      16
-    .global     isr_enter_spent_time_cycles
-isr_enter_spent_time_cycles:
-    .word		0
-    #endif
-
     .text
 
 /*******************************************************************************
@@ -194,20 +180,9 @@ _not_l1:
     wsr     a2, PS
     rsync
 
-    #ifdef CONFIG_FREERTOS_ISR_STATS
-    rsr a2, CCOUNT
-    #endif
-
     addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
     SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
     addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with context save*/
-
-    #ifdef CONFIG_FREERTOS_ISR_STATS
-    rsr a3, CCOUNT
-    sub  a3, a3, a2
-    movi a2, isr_enter_spent_time_cycles
-    s32i a3,a2,0
-    #endif //CONFIG_ISR_TIMING_STATS
     
     #endif
 
