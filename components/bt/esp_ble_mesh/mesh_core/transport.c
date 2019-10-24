@@ -492,6 +492,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 {
     const u8_t *key = NULL;
     u8_t *ad, role;
+    u8_t aid;
     int err;
 
     if (net_buf_simple_tailroom(msg) < 4) {
@@ -513,32 +514,13 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
         return -EINVAL;
     }
 
-    if (tx->ctx->app_idx == BLE_MESH_KEY_DEV) {
-        key = bt_mesh_tx_devkey_get(role, tx->ctx->addr);
-        if (!key) {
-            BT_ERR("%s, Failed to get Device Key", __func__);
-            return -EINVAL;
-        }
-
-        tx->aid = 0U;
-    } else {
-        struct bt_mesh_app_key *app_key = NULL;
-
-        app_key = bt_mesh_tx_appkey_get(role, tx->ctx->app_idx, tx->ctx->net_idx);
-        if (!app_key) {
-            BT_ERR("%s, Failed to get AppKey", __func__);
-            return -EINVAL;
-        }
-
-        if (tx->sub->kr_phase == BLE_MESH_KR_PHASE_2 &&
-                app_key->updated) {
-            key = app_key->keys[1].val;
-            tx->aid = app_key->keys[1].id;
-        } else {
-            key = app_key->keys[0].val;
-            tx->aid = app_key->keys[0].id;
-        }
+    err = bt_mesh_app_key_get(tx->sub, tx->ctx->app_idx, &key,
+                              &aid, role, tx->ctx->addr);
+    if (err) {
+        return err;
     }
+
+    tx->aid = aid;
 
     if (!tx->ctx->send_rel || net_buf_simple_tailroom(msg) < 8) {
         tx->aszmic = 0U;
@@ -1663,4 +1645,42 @@ void bt_mesh_heartbeat_send(void)
 
     bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
                      NULL, NULL, NULL);
+}
+
+int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
+                        const u8_t **key, u8_t *aid, u8_t role, u16_t dst)
+{
+    struct bt_mesh_app_key *app_key;
+
+    if (app_idx == BLE_MESH_KEY_DEV) {
+        *key = bt_mesh_tx_devkey_get(role, dst);
+        if (!*key) {
+            BT_ERR("%s, Failed to get Device Key", __func__);
+            return -EINVAL;
+        }
+
+        *aid = 0U;
+        return 0;
+    }
+
+    if (!subnet) {
+        BT_ERR("%s, Invalid subnet", __func__);
+        return -EINVAL;
+    }
+
+    app_key = bt_mesh_tx_appkey_get(role, app_idx, subnet->net_idx);
+    if (!app_key) {
+        BT_ERR("%s, Failed to get AppKey", __func__);
+        return -ENOENT;
+    }
+
+    if (subnet->kr_phase == BLE_MESH_KR_PHASE_2 && app_key->updated) {
+        *key = app_key->keys[1].val;
+        *aid = app_key->keys[1].id;
+    } else {
+        *key = app_key->keys[0].val;
+        *aid = app_key->keys[0].id;
+    }
+
+    return 0;
 }
