@@ -1308,6 +1308,17 @@ done:
 
 #endif /* CONFIG_BLE_MESH_NODE */
 
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+                              struct bt_mesh_net_rx *rx)
+{
+    rx->old_iv = (IVI(buf->data) != (bt_mesh.iv_index & 0x01));
+    rx->ctl = CTL(buf->data);
+    rx->ctx.recv_ttl = TTL(buf->data);
+    rx->seq = SEQ(buf->data);
+    rx->ctx.addr = SRC(buf->data);
+    rx->ctx.recv_dst = DST(buf->data);
+}
+
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
                        struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
