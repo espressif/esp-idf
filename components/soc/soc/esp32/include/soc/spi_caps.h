@@ -16,8 +16,7 @@
 
 #define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    2
-
-#define SPI_PERIPH_NUM          3
+#define SOC_SPI_PERIPH_CS_NUM(i)    3
 
 #define SPI_FUNC_NUM            1
 #define SPI_IOMUX_PIN_NUM_MISO  7

@@ -132,7 +132,10 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         .read_mode = config->io_mode,
         .host = host,
     };
-    esp_err_t err = esp_flash_init_os_functions(chip, config->host_id);
+
+    int dev_id;
+    esp_err_t err = esp_flash_init_os_functions(chip, config->host_id, &dev_id);
+    assert(dev_id < SOC_SPI_PERIPH_CS_NUM(config->host_id) && dev_id >= 0);
     if (err != ESP_OK) {
         ret = err;
         goto fail;
@@ -141,7 +144,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     bool use_iomux = spicommon_bus_using_iomux(config->host_id);
     memspi_host_config_t host_cfg = {
         .host_id = config->host_id,
-        .cs_num = config->cs_id,
+        .cs_num = dev_id,
         .iomux = use_iomux,
         .input_delay_ns = config->input_delay_ns,
         .speed = config->speed,
@@ -165,6 +168,7 @@ esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip)
     if (chip==NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+    esp_flash_deinit_os_functions(chip);
     if (chip->host) {
         free(chip->host->driver_data);
         free(chip->host);
