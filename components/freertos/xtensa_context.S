@@ -96,6 +96,7 @@ Exit conditions:
     .align  4
 	.literal_position
     .align  4
+
 _xt_context_save:
     s32i    a2,  sp, XT_STK_A2
     s32i    a3,  sp, XT_STK_A3
@@ -195,6 +196,7 @@ _not_l1:
     #endif
 
     ret
+
 /*******************************************************************************
 
 _xt_context_restore

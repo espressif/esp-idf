@@ -19,9 +19,8 @@ static SemaphoreHandle_t sync;
 static SemaphoreHandle_t end_sema;
 uint32_t cycle_before_trigger;
 uint32_t cycle_before_exit;
-uint32_t delta_enter_cycles;
-uint32_t delta_enter_cycles;
-uint32_t delta_exit_cycles;
+uint32_t delta_enter_cycles = 0;
+uint32_t delta_exit_cycles = 0;
 
 static void software_isr(void *arg) {
     (void)arg;
@@ -56,6 +55,7 @@ static void test_task(void *arg) {
     delta_enter_cycles /= 10000;
     delta_exit_cycles /= 10000;
 
+    esp_intr_free(handle);
     xSemaphoreGive(end_sema);
     vTaskDelete(NULL);
 }
