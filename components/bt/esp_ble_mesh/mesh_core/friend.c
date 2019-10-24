@@ -384,12 +384,11 @@ static int unseg_app_sdu_decrypt(struct bt_mesh_friend *frnd,
                                  struct net_buf *buf,
                                  const struct unseg_app_sdu_meta *meta)
 {
-    struct net_buf_simple sdu = {
-        .len = buf->len - 14,
-        .data = &buf->data[10],
-        .__buf = &buf->data[10],
-        .size = buf->len - 10,
-    };
+    struct net_buf_simple sdu;
+
+    net_buf_simple_clone(&buf->b, &sdu);
+    net_buf_simple_pull(&sdu, 10);
+    sdu.len -= 4;
 
     return bt_mesh_app_decrypt(meta->key, meta->is_dev_key, 0, &sdu, &sdu,
                                meta->ad, meta->net.ctx.addr,
@@ -401,12 +400,11 @@ static int unseg_app_sdu_encrypt(struct bt_mesh_friend *frnd,
                                  struct net_buf *buf,
                                  const struct unseg_app_sdu_meta *meta)
 {
-    struct net_buf_simple sdu = {
-        .len = buf->len - 14,
-        .data = &buf->data[10],
-        .__buf = &buf->data[10],
-        .size = buf->len - 10,
-    };
+    struct net_buf_simple sdu;
+
+    net_buf_simple_clone(&buf->b, &sdu);
+    net_buf_simple_pull(&sdu, 10);
+    sdu.len -= 4;
 
     return bt_mesh_app_encrypt(meta->key, meta->is_dev_key, 0, &sdu,
                                meta->ad, meta->net.ctx.addr,

@@ -31,6 +31,12 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
     return buf;
 }
 
+void net_buf_simple_clone(const struct net_buf_simple *original,
+                          struct net_buf_simple *clone)
+{
+    memcpy(clone, original, sizeof(struct net_buf_simple));
+}
+
 void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 {
     u8_t *tail = net_buf_simple_tail(buf);
