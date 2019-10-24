@@ -66,7 +66,7 @@ TEST_CASE("isr latency test", "[freertos] [ignore]")
     TEST_ASSERT(sync != NULL);
     end_sema = xSemaphoreCreateBinary();
     TEST_ASSERT(end_sema != NULL);
-    xTaskCreatePinnedToCore(test_task, "tst" , 4096, NULL, 3, NULL, 0);
+    xTaskCreatePinnedToCore(test_task, "tst" , 4096, NULL, configMAX_PRIORITIES - 1, NULL, 0);
     BaseType_t result = xSemaphoreTake(end_sema, portMAX_DELAY);    
     TEST_ASSERT_EQUAL_HEX32(pdTRUE, result);
     TEST_PERFORMANCE_LESS_THAN(ISR_ENTER_CYCLES, "%d cycles" ,delta_enter_cycles);
