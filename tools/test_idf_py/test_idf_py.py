@@ -32,8 +32,8 @@ except ImportError:
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
 idf_py_path = os.path.join(current_dir, '..', 'idf.py')
-extension_path = os.path.join(current_dir, 'test_idf_extensions', 'idf_test_extension')
-link_path = os.path.join(current_dir, '..', 'idf_py_actions', 'idf_test_extension')
+extension_path = os.path.join(current_dir, 'test_idf_extensions', 'test_ext')
+link_path = os.path.join(current_dir, '..', 'idf_py_actions', 'test_ext')
 
 
 class TestExtensions(unittest.TestCase):

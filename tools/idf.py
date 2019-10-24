@@ -593,8 +593,8 @@ def init_cli(verbose_output=None):
     all_actions = {}
     # Load extensions from components dir
     idf_py_extensions_path = os.path.join(os.environ["IDF_PATH"], "tools", "idf_py_actions")
-    extra_pathes = os.environ.get("IDF_EXTRA_ACTIONS_PATH", "").split(';')
-    extension_dirs = [idf_py_extensions_path] + extra_pathes
+    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH", "").split(';')
+    extension_dirs = [idf_py_extensions_path] + extra_paths
     extensions = {}
 
     for directory in extension_dirs:
@@ -604,7 +604,7 @@ def init_cli(verbose_output=None):
 
         sys.path.append(directory)
         for _finder, name, _ispkg in sorted(iter_modules([directory])):
-            if name.startswith('idf_'):
+            if name.endswith('_ext'):
                 extensions[name] = import_module(name)
 
     for name, extension in extensions.items():
