@@ -50,9 +50,13 @@ Before building an ESP-IDF project, run the following command to switch the targ
 
 .. important:: Running ``set-target`` will clear the project configuration and create a new empty ``sdkconfig`` file for the project. The old configuration will be saved in ``sdkconfig.old``.
 
-Then configure and build the project as usual, for example::
+Then configure the project::
 
   idf.py menuconfig
+
+.. important:: There are 3 versions of ESP32-S2 Beta engineering sample available with different Wi-Fi PHYs. The correct setting must be chosen in the project setting ``CONFIG_ESP32S2_BETA_CHIP_VERSION`` (found under Component Config -> ESP32S2-specific) for Wi-Fi to work correctly. If the selected version doesn't match the chip then Wi-Fi performance may be very poor, or the chip may crash when initializing Wi-Fi. If unsure which version you have, please contact Espressif.
+
+Build and flash the project as usual, for example::
 
   idf.py -p PORT flash monitor
 
