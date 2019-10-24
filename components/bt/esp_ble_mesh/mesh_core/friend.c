@@ -886,7 +886,7 @@ init_friend:
     frnd->clear.frnd = sys_be16_to_cpu(msg->prev_addr);
 
     BT_DBG("LPN 0x%04x rssi %d recv_delay %u poll_to %ums",
-           frnd->lpn, rx->rssi, frnd->recv_delay, frnd->poll_to);
+           frnd->lpn, rx->ctx.recv_rssi, frnd->recv_delay, frnd->poll_to);
 
     /**
      * Spec says:
@@ -901,12 +901,13 @@ init_friend:
     }
 
     k_delayed_work_submit(&frnd->timer,
-                          offer_delay(frnd, rx->rssi, msg->criteria));
+                          offer_delay(frnd, rx->ctx.recv_rssi,
+                                      msg->criteria));
 
     friend_cred_create(rx->sub, frnd->lpn, frnd->lpn_counter,
                        frnd->counter);
 
-    enqueue_offer(frnd, rx->rssi);
+    enqueue_offer(frnd, rx->ctx.recv_rssi);
 
     return 0;
 }
