@@ -10,6 +10,7 @@ set(srcs
     "apps/dhcpserver/dhcpserver.c"
     "apps/ping/esp_ping.c"
     "apps/ping/ping.c"
+    "apps/ping/ping_sock.c"
     "apps/sntp/sntp.c"
     "lwip/src/api/api_lib.c"
     "lwip/src/api/api_msg.c"

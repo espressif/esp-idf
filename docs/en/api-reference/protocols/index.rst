@@ -11,6 +11,7 @@ Application Protocols
     HTTP Client <esp_http_client>
     HTTP Server <esp_http_server>
     HTTPS Server <esp_https_server>
+    ICMP Echo <icmp_echo>
     Local Control <esp_local_ctrl>
     mDNS <mdns>
     Modbus <modbus>
