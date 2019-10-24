@@ -17,11 +17,11 @@
 #include <sys/fcntl.h>
 #include <sys/param.h>
 #include "unity.h"
-#include "soc/uart_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/uart.h"
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
+#include "esp_vfs_fat.h"
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 #include "test_utils.h"
@@ -32,9 +32,19 @@ typedef struct {
     xSemaphoreHandle sem;
 } test_task_param_t;
 
+typedef struct {
+    fd_set *rdfds;
+    fd_set *wrfds;
+    fd_set *errfds;
+    int maxfds;
+    struct timeval *tv;
+    int select_ret;
+    xSemaphoreHandle sem;
+} test_select_task_param_t;
+
 static const char message[] = "Hello world!";
 
-static int open_dummy_socket()
+static int open_dummy_socket(void)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,
@@ -52,7 +62,7 @@ static int open_dummy_socket()
     return dummy_socket_fd;
 }
 
-static int socket_init()
+static int socket_init(void)
 {
     const struct addrinfo hints = {
         .ai_family = AF_INET,
@@ -84,7 +94,7 @@ static int socket_init()
     return socket_fd;
 }
 
-static void uart1_init()
+static void uart1_init(void)
 {
     uart_config_t uart_config = {
         .baud_rate = 115200,
@@ -488,6 +498,86 @@ TEST_CASE("concurent selects work", "[vfs]")
 
     TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(test_task_param.sem, 1000 / portTICK_PERIOD_MS));
     vSemaphoreDelete(test_task_param.sem);
+
+    deinit(uart_fd, socket_fd);
+    close(dummy_socket_fd);
+}
+
+static void select_task2(void *task_param)
+{
+    const test_select_task_param_t *param = task_param;
+
+    int s = select(param->maxfds, param->rdfds, param->wrfds, param->errfds, param->tv);
+    TEST_ASSERT_EQUAL(param->select_ret, s);
+
+    if (param->sem) {
+        xSemaphoreGive(param->sem);
+    }
+    vTaskDelete(NULL);
+}
+
+static void inline start_select_task2(test_select_task_param_t *param)
+{
+    xTaskCreate(select_task2, "select_task2", 4*1024, (void *) param, 5, NULL);
+}
+
+TEST_CASE("select() works with concurrent mount", "[vfs][fatfs]")
+{
+    wl_handle_t test_wl_handle;
+    int uart_fd, socket_fd;
+
+    init(&uart_fd, &socket_fd);
+    const int dummy_socket_fd = open_dummy_socket();
+
+    esp_vfs_fat_sdmmc_mount_config_t mount_config = {
+        .format_if_mount_failed = true,
+        .max_files = 2
+    };
+
+    // select() will be waiting for a socket & UART and FATFS mount will occur in parallel
+
+    struct timeval tv = {
+        .tv_sec = 1,
+        .tv_usec = 0,
+    };
+
+    fd_set rdfds;
+    FD_ZERO(&rdfds);
+    FD_SET(uart_fd, &rdfds);
+    FD_SET(dummy_socket_fd, &rdfds);
+
+    test_select_task_param_t param = {
+        .rdfds = &rdfds,
+        .wrfds = NULL,
+        .errfds = NULL,
+        .maxfds = MAX(uart_fd, dummy_socket_fd) + 1,
+        .tv = &tv,
+        .select_ret = 0, // expected timeout
+        .sem = xSemaphoreCreateBinary(),
+    };
+    TEST_ASSERT_NOT_NULL(param.sem);
+
+    start_select_task2(&param);
+    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+    TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
+
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
+
+    // select() will be waiting for a socket & UART and FATFS unmount will occur in parallel
+
+    FD_ZERO(&rdfds);
+    FD_SET(uart_fd, &rdfds);
+    FD_SET(dummy_socket_fd, &rdfds);
+
+    start_select_task2(&param);
+    vTaskDelay(10 / portTICK_PERIOD_MS); //make sure the task has started and waits in select()
+
+    TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
+
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(param.sem, 1500 / portTICK_PERIOD_MS));
+
+    vSemaphoreDelete(param.sem);
 
     deinit(uart_fd, socket_fd);
     close(dummy_socket_fd);
