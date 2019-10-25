@@ -7,7 +7,7 @@ menu "ESP32S2-specific"
     choice ESP32S2_BETA_CHIP_VERSION
         # TODO: remove once final S2 chip is supported
         prompt "ESP32-S2 Beta chip version"
-        default ESP32S2_BETA_VERSION_MARLIN3
+        default ESP32S2_BETA_VERSION_A
         help
             There are three versions of ESP32-S2 beta chip with different Wi-Fi PHY: A, B and Marlin3.
 
