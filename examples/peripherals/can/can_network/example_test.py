@@ -34,7 +34,7 @@ def dut_thread_callback(**kwargs):
     #Mark thread has run to completion without any exceptions
     result[0] = True    
 
-@IDF.idf_example_test(env_tag='Example_CAN2', ignore=True)
+@IDF.idf_example_test(env_tag='Example_CAN2')
 def test_can_network_example(env, extra_data):
     
     #Get device under test. "dut1", "dut2", and "dut3" must be properly defined in EnvConfig
