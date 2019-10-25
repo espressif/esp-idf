@@ -203,7 +203,6 @@ static void test_event_simple_handler_registration_task(void* args)
     vTaskDelete(NULL);
 }
 
-
 static void test_handler_post_w_task(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     simple_arg_t* arg = (simple_arg_t*) event_handler_arg;
