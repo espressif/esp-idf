@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "bta_ag_int.h"
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
 #include "bta/bta_ag_api.h"
@@ -32,7 +33,6 @@
 #include "common/bt_defs.h"
 #include "common/bt_trace.h"
 #include "osi/allocator.h"
-#include "bta_ag_int.h"
 
 #if (BTA_AG_INCLUDED == TRUE)
 /*****************************************************************************

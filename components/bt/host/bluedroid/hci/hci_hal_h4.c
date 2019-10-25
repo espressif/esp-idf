@@ -228,14 +228,15 @@ static void hci_update_adv_report_flow_control(BT_HDR *packet)
         // update adv free number
         hci_hal_env.adv_free_num ++;
         if (esp_vhci_host_check_send_available()){
+#if (BLE_INCLUDED == TRUE)
             // send hci cmd
             btsnd_hcic_ble_update_adv_report_flow_control(hci_hal_env.adv_free_num);
+#endif
             hci_hal_env.adv_free_num = 0;
         } else {
             //do nothing
         }
     }
-
 }
 #endif
 

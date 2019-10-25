@@ -21,13 +21,14 @@
  *  This is the interface file for audio gateway call-out  and call-in functions.
  *
  ******************************************************************************/
-#ifndef BTA_AG_CIO_H
-#define BTA_AG_CIO_H
+#ifndef BTA_AG_CO_H
+#define BTA_AG_CO_H
 
 #include "bta/bta_ag_api.h"
 #include "hci/hci_audio.h"
 
 #if (BTA_AG_INCLUDED == TRUE)
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_ag_sco_audio_state
@@ -155,6 +156,8 @@ extern void bta_ag_ci_rx_write(UINT16 handle, char *p_data, UINT16 len);
 ******************************************************************************/
 extern void bta_ag_ci_slc_ready(UINT16 handle);
 
+#endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
+
 #endif /* #if (BTA_AG_INCLUDED == TRUE) */
 
-#endif /* BTA_AG_CIO_H */
+#endif /* BTA_AG_CO_H */

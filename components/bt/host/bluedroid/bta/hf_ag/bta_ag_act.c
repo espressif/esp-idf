@@ -398,8 +398,9 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     bta_sys_conn_close(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* call close call-out */
-    // bta_ag_sco_co_close(close.hdr.handle);
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
     bta_ag_sco_co_close();
+#endif
     /* call close cback */
     (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG *) &close);
 
@@ -463,7 +464,9 @@ void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     bta_ag_at_init(&p_scb->at_cb);
 
     /* call app open call-out */
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
     bta_ag_sco_co_open(bta_ag_scb_to_idx(p_scb), p_scb->air_mode, BTA_HFP_SCO_OUT_PKT_SIZE, bta_ag_svc_id[p_scb->conn_service]);
+#endif
     bta_sys_conn_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     bta_ag_cback_open(p_scb, NULL, BTA_AG_SUCCESS);
 
