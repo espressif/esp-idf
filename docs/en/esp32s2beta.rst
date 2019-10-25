@@ -54,7 +54,7 @@ Then configure the project::
 
   idf.py menuconfig
 
-.. important:: There are 3 versions of ESP32-S2 Beta engineering sample available with different Wi-Fi PHYs. The correct setting must be chosen in the project setting ``CONFIG_ESP32S2_BETA_CHIP_VERSION`` (found under Component Config -> ESP32S2-specific) for Wi-Fi to work correctly. If the selected version doesn't match the chip then Wi-Fi performance may be very poor, or the chip may crash when initializing Wi-Fi. If unsure which version you have, please contact Espressif.
+.. important:: There are 3 versions of ESP32-S2 Beta engineering sample available with different Wi-Fi PHYs. They can be identified by the marking on the chip itself. The project must be configured to match the chip via the project setting "ESP32-S2 Beta chip version" (``CONFIG_ESP32S2_BETA_CHIP_VERSION``). This can be found under Component Config -> ESP32S2-specific. If the project setting doesn't match the chip then Wi-Fi performance may be very poor, or the chip may crash when initializing Wi-Fi.
 
 Build and flash the project as usual, for example::
 
