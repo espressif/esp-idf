@@ -390,7 +390,8 @@ static void can_intr_handler_err_warn(can_status_reg_t *status, int *alert_req)
             can_alert_handler(CAN_ALERT_ABOVE_ERR_WARN, alert_req);
         } else if (p_can_obj->control_flags & CTRL_FLAG_RECOVERING) {
             //Bus recovery complete.
-            can_enter_reset_mode();
+            esp_err_t err = can_enter_reset_mode();
+            assert(err == ESP_OK);
             //Reset and set flags to the equivalent of the stopped state
             CAN_RESET_FLAG(p_can_obj->control_flags, CTRL_FLAG_RECOVERING | CTRL_FLAG_ERR_WARN |
                                                      CTRL_FLAG_ERR_PASSIVE | CTRL_FLAG_BUS_OFF |
@@ -704,7 +705,7 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     }
     periph_module_reset(PERIPH_CAN_MODULE);
     periph_module_enable(PERIPH_CAN_MODULE);            //Enable APB CLK to CAN peripheral
-    esp_err_t err = can_exit_reset_mode();              //Must enter reset mode to write to config registers
+    esp_err_t err = can_enter_reset_mode();              //Must enter reset mode to write to config registers
     assert(err == ESP_OK);
     can_config_pelican();                               //Use PeliCAN addresses
     /* Note: REC is allowed to increase even in reset mode. Listen only mode
@@ -766,7 +767,7 @@ esp_err_t can_driver_uninstall(void)
     //Check state
     CAN_CHECK_FROM_CRIT(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
     CAN_CHECK_FROM_CRIT(p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF), ESP_ERR_INVALID_STATE);
-    esp_err_t err = can_exit_reset_mode();  //Enter reset mode to stop any CAN bus activity
+    esp_err_t err = can_enter_reset_mode();  //Enter reset mode to stop any CAN bus activity
     assert(err == ESP_OK);
     //Clear registers by reading
     (void) can_get_interrupt_reason();
@@ -805,7 +806,7 @@ esp_err_t can_start(void)
     //Reset RX queue, and RX message count
     xQueueReset(p_can_obj->rx_queue);
     p_can_obj->rx_msg_count = 0;
-    esp_err_t err = can_exit_reset_mode(); //Should already be in bus-off mode, set again to make sure
+    esp_err_t err = can_enter_reset_mode(); //Should already be in bus-off mode, set again to make sure
     assert(err == ESP_OK);
 
     //Currently in listen only mode, need to set to mode specified by configuration
@@ -835,7 +836,7 @@ esp_err_t can_stop(void)
     CAN_CHECK_FROM_CRIT(!(p_can_obj->control_flags & (CTRL_FLAG_STOPPED | CTRL_FLAG_BUS_OFF)), ESP_ERR_INVALID_STATE);
 
     //Clear interrupts and reset flags
-    esp_err_t err = can_exit_reset_mode();
+    esp_err_t err = can_enter_reset_mode();
     assert(err == ESP_OK);
     (void) can_get_interrupt_reason();          //Read interrupt register to clear interrupts
     can_config_mode(CAN_MODE_LISTEN_ONLY);      //Set to listen only mode to freeze REC

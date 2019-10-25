@@ -23,6 +23,7 @@
 
 #ifndef BOOTLOADER_BUILD
 #include "esp_system.h"
+#include "driver/periph_ctrl.h"
 
 void bootloader_fill_random(void *buffer, size_t length)
 {
@@ -71,7 +72,11 @@ void bootloader_random_enable(void)
     /* Ensure the hardware RNG is enabled following a soft reset.  This should always be the case already (this clock is
        never disabled while the CPU is running), this is a "belts and braces" type check.
      */
+#ifdef BOOTLOADER_BUILD
     DPORT_SET_PERI_REG_MASK(DPORT_WIFI_CLK_EN_REG, DPORT_WIFI_CLK_RNG_EN);
+#else
+    periph_module_enable(PERIPH_RNG_MODULE);
+#endif // BOOTLOADER_BUILD
 
     /* Enable SAR ADC in test mode to feed ADC readings of the 1.1V
        reference via I2S into the RNG entropy input.
@@ -84,7 +89,11 @@ void bootloader_random_enable(void)
 #if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_SAR2_EN_TEST);
 
+#ifdef BOOTLOADER_BUILD
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
+#else
+    periph_module_enable(PERIPH_I2S0_MODULE);
+#endif // BOOTLOADER_BUILD
     CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_FORCE_START_TOP);
     CLEAR_PERI_REG_MASK(SENS_SAR_START_FORCE_REG, SENS_ULP_CP_START_TOP);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
@@ -138,8 +147,11 @@ void bootloader_random_enable(void)
 void bootloader_random_disable(void)
 {
     /* Disable i2s clock */
+#ifdef BOOTLOADER_BUILD
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
-
+#else
+    periph_module_disable(PERIPH_I2S0_MODULE);
+#endif // BOOTLOADER_BUILD
 
     /* Reset some i2s configuration (possibly redundant as we reset entire
        I2S peripheral further down). */
@@ -174,8 +186,12 @@ void bootloader_random_disable(void)
 #endif
 
     /* Reset i2s peripheral */
+#ifdef BOOTLOADER_BUILD
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+#else
+    periph_module_reset(PERIPH_I2S0_MODULE);
+#endif
 
     /* Disable pull supply voltage to SAR ADC */
     CLEAR_PERI_REG_MASK(RTC_CNTL_TEST_MUX_REG, RTC_CNTL_ENT_RTC);

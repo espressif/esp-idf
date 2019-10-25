@@ -59,7 +59,7 @@ typedef enum {
 
 typedef enum {
     PING_RES_TIMEOUT = 0,
-    PING_RES_OK      = 1, 
+    PING_RES_OK      = 1,
     PING_RES_FINISH  = 2,
 } ping_res_t;
 

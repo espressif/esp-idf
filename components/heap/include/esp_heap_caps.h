@@ -324,6 +324,19 @@ void heap_caps_dump(uint32_t caps);
  */
 void heap_caps_dump_all(void);
 
+/**
+ * @brief Return the size that a particular pointer was allocated with.
+ *
+ * @param ptr Pointer to currently allocated heap memory. Must be a pointer value previously 
+ * returned by heap_caps_malloc,malloc,calloc, etc. and not yet freed.
+ *
+ * @note The app will crash with an assertion failure if the pointer is not valid.
+ * 
+ * @return Size of the memory allocated at this block.
+ * 
+ */
+size_t heap_caps_get_allocated_size( void *ptr );
+
 #ifdef __cplusplus
 }
 #endif

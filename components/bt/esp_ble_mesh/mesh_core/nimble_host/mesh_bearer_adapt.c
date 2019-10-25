@@ -807,8 +807,6 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
     } else {
         adv_params.conn_mode = BLE_GAP_CONN_MODE_NON;
         adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
-        adv_params.itvl_min = 160;
-        adv_params.itvl_max = 160;
     }
 
     err = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, BLE_HS_FOREVER, &adv_params,
