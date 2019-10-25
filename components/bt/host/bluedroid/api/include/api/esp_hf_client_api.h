@@ -126,7 +126,7 @@ typedef union {
      * @brief ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT
      */
     struct hf_client_service_availability_param {
-        esp_hf_service_availability_status_t status;     /*!< service availability status */
+        esp_hf_network_state_t status;     /*!< service availability status */
     } service_availability;                              /*!< HF callback param of ESP_HF_CLIENT_CIND_SERVICE_AVAILABILITY_EVT */
 
     /**

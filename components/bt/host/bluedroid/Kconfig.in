@@ -72,6 +72,9 @@ choice BT_HFP_ROLE
 
     config BT_HFP_CLIENT_ENABLE
         bool "Hands Free Unit"
+
+    config BT_HFP_AG_ENABLE
+        bool "Audio Gateway"
 endchoice
 
 choice BT_HFP_AUDIO_DATA_PATH
