@@ -47,6 +47,9 @@
 #if (BTC_SPP_INCLUDED == TRUE)
 #include "btc_spp.h"
 #endif /* #if (BTC_SPP_INCLUDED == TRUE) */
+#if BTC_HF_INCLUDED
+#include "btc_hf_ag.h"
+#endif/* #if BTC_HF_INCLUDED */
 #if BTC_HF_CLIENT_INCLUDED
 #include "btc_hf_client.h"
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
@@ -110,6 +113,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if (BTC_SPP_INCLUDED == TRUE)
     [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },
 #endif /* #if (BTC_SPP_INCLUDED == TRUE) */
+#if BTC_HF_INCLUDED
+    [BTC_PID_HF]   = {btc_hf_call_handler,  btc_hf_cb_handler},
+#endif  /* #if BTC_HF_INCLUDED */
 #if BTC_HF_CLIENT_INCLUDED
     [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */

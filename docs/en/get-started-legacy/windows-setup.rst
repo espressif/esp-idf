@@ -22,7 +22,7 @@ Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``
 
 .. important::
 
-    If another toolchain location is used (different than the default `C:\msys32`), please ensure that the path where the all-in-one toolchain gets unzipped is a plain ASCII, contains no spaces, symlinks or accents.
+    If another toolchain location is used (different than the default ``C:\msys32``), please ensure that the path where the all-in-one toolchain gets unzipped is a plain ASCII, contains no spaces, symlinks or accents.
 
 
 Check it Out

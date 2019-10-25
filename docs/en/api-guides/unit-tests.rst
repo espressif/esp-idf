@@ -29,7 +29,7 @@ There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_EN
 The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves,
 components. ESP-IDF uses the test framework ``unity`` and should be specified as a requirement for the component. Normally, components 
 :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the 
-use of ``COMPONENT_SRCDIRS`` is advised.
+use of ``SRC_DIRS`` argument to ``idf_component_register`` is advised.
 
 Overall, the minimal ``test`` subdirectory CMakeLists.txt file may look like as follows:
 
