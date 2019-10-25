@@ -19,10 +19,12 @@
 #pragma once
 #include <sdkconfig.h>
 #include <stdlib.h>
+#include "esp_compiler.h"
 
 #include_next <assert.h>
 
+
 #if defined(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT) && !defined(NDEBUG)
 #undef assert
-#define assert(__e) ((__e) ? (void)0 : abort())
+#define assert(__e) (likely(__e)) ? (void)0 : abort()       
 #endif
