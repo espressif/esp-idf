@@ -22,7 +22,7 @@ The following overview describes functions and data types used to establish comm
 
 The minimum to make the UART working is to complete the first four steps, the last two steps are optional.
 
-The driver is identified by :cpp:type:`uart_port_t`, that corresponds to one of the tree UART controllers. Such identification is present in all the following function calls.
+The driver is identified by :cpp:type:`uart_port_t`, that corresponds to one of the three UART controllers. Such identification is present in all the following function calls.
 
 
 .. _uart-api-setting-communication-parameters:
