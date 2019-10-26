@@ -163,9 +163,19 @@ tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  
 TIMER_LIST_ENT       tx_power_timer;
 tBTM_CMPL_CB        *p_tx_power_cmpl_cb;/* Callback function to be called       */
 
+#if CLASSIC_BT_INCLUDED == TRUE
+TIMER_LIST_ENT       afh_channels_timer;
+tBTM_CMPL_CB        *p_afh_channels_cmpl_cb; /* Callback function to be called  When */
+/* set AFH channels is completed   */
+#endif
+
 DEV_CLASS            dev_class;         /* Local device class                   */
 
 #if BLE_INCLUDED == TRUE
+
+TIMER_LIST_ENT       ble_channels_timer;
+tBTM_CMPL_CB        *p_ble_channels_cmpl_cb; /* Callback function to be called  When
+                                                ble set host channels is completed   */
 
 tBTM_CMPL_CB        *p_le_test_cmd_cmpl_cb;   /* Callback function to be called when
                                                   LE test mode command has been sent successfully */
@@ -1067,7 +1077,8 @@ void btm_inq_db_reset (void);
 void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len);
 void btm_delete_stored_link_key_complete (UINT8 *p);
 void btm_report_device_status (tBTM_DEV_STATUS status);
-
+void btm_set_afh_channels_complete (UINT8 *p);
+void btm_ble_set_channels_complete (UINT8 *p);
 
 /* Internal functions provided by btm_dev.c
 **********************************************

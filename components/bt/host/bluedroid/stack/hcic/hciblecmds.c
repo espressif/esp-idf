@@ -1023,5 +1023,28 @@ BOOLEAN btsnd_hcic_ble_update_adv_report_flow_control (UINT16 num)
     return TRUE;
 }
 
+BOOLEAN btsnd_hcic_ble_set_channels (BLE_CHANNELS channels)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_BLE_SET_CHANNELS)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_BLE_SET_CHANNELS;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_BLE_SET_HOST_CHNL_CLASS);
+    UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_BLE_SET_CHANNELS);
+
+    ARRAY_TO_STREAM  (pp, channels, HCIC_PARAM_SIZE_BLE_SET_CHANNELS);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    return (TRUE);
+}
+
 #endif
 

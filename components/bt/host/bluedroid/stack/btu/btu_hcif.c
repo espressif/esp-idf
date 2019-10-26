@@ -911,9 +911,17 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
     case HCI_READ_INQ_TX_POWER_LEVEL:
         btm_read_linq_tx_power_complete (p);
         break;
+#if (CLASSIC_BT_INCLUDED == TRUE)
+    case HCI_SET_AFH_CHANNELS:
+        btm_set_afh_channels_complete(p);
+        break;
+#endif
 
 #if (BLE_INCLUDED == TRUE)
-    /* BLE Commands sComplete*/
+    /* BLE Commands Complete*/
+    case HCI_BLE_SET_HOST_CHNL_CLASS:
+        btm_ble_set_channels_complete(p);
+        break;
     case HCI_BLE_ADD_WHITE_LIST:
         btm_ble_add_2_white_list_complete(*p);
         break;

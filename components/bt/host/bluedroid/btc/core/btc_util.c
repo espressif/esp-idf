@@ -313,6 +313,9 @@ esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
         case BTM_NO_RESOURCES:
             esp_status = ESP_BT_STATUS_NOMEM;
             break;
+        case BTM_ILLEGAL_VALUE:
+            esp_status = ESP_BT_STATUS_PARM_INVALID;
+            break;
         case BTM_ERR_PROCESSING:
             esp_status = ESP_BT_STATUS_PENDING;
             break;

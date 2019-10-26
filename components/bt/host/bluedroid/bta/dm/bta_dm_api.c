@@ -225,7 +225,63 @@ void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmSetAfhChannels
+**
+** Description      This function sets the AFH channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb)
+{
+
+    tBTA_DM_API_SET_AFH_CHANNELS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_SET_AFH_CHANNELS *) osi_malloc(sizeof(tBTA_DM_API_SET_AFH_CHANNELS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_AFH_CHANNELS_EVT;
+
+        p_msg->set_afh_cb = set_afh_cb;
+        memcpy(p_msg->channels, channels, AFH_CHANNELS_LEN);
+
+        bta_sys_sendmsg(p_msg);
+    }
+
+
+}
+#endif /// CLASSIC_BT_INCLUDED == TRUE
+
 #if (BLE_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmBleSetChannels
+**
+** Description      This function sets BLE channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmBleSetChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_channels_cb)
+{
+
+    tBTA_DM_API_BLE_SET_CHANNELS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_CHANNELS *) osi_malloc(sizeof(tBTA_DM_API_BLE_SET_CHANNELS))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_CHANNELS_EVT;
+
+        p_msg->set_channels_cb = set_channels_cb;
+        memcpy(p_msg->channels, channels, BLE_CHANNELS_LEN);
+
+        bta_sys_sendmsg(p_msg);
+    }
+
+
+}
+
 void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBLE_ADDR_TYPE addr_type, tBTA_ADD_WHITELIST_CBACK *add_wl_cb)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;

@@ -708,6 +708,31 @@ static void btc_gap_bt_config_eir(btc_gap_bt_args_t *arg)
     BTA_DmConfigEir(&eir_config);
 }
 
+static void btc_gap_bt_set_afh_channels_cmpl_callback(void *p_data)
+{
+    tBTA_SET_AFH_CHANNELS_RESULTS *result = (tBTA_SET_AFH_CHANNELS_RESULTS *)p_data;
+    esp_bt_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_SET_AFH_CHANNELS_EVT;
+
+    param.set_afh_channels.stat = btc_btm_status_to_esp_status(result->status);
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_bt_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+static void btc_gap_bt_set_afh_channels(btc_gap_bt_args_t *arg)
+{
+    BTA_DmSetAfhChannels(arg->set_afh_channels.channels, btc_gap_bt_set_afh_channels_cmpl_callback);
+}
+
 void btc_gap_bt_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
 {
     switch (msg->act) {
@@ -873,6 +898,12 @@ void btc_gap_bt_call_handler(btc_msg_t *msg)
         btc_gap_bt_config_eir(arg);
         break;
     }
+
+    case BTC_GAP_BT_ACT_SET_AFH_CHANNELS: {
+        btc_gap_bt_set_afh_channels(arg);
+        break;
+    }
+
     default:
         break;
     }
@@ -908,6 +939,7 @@ void btc_gap_bt_cb_deep_free(btc_msg_t *msg)
     case BTC_GAP_BT_CONFIG_EIR_DATA_EVT:
     case BTC_GAP_BT_AUTH_CMPL_EVT:
     case BTC_GAP_BT_PIN_REQ_EVT:
+    case BTC_GAP_BT_SET_AFH_CHANNELS_EVT:
 #if (BT_SSP_INCLUDED == TRUE)
     case BTC_GAP_BT_CFM_REQ_EVT:
     case BTC_GAP_BT_KEY_NOTIF_EVT:
@@ -965,6 +997,10 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
         break;
     }
 #endif ///BT_SSP_INCLUDED == TRUE
+    case BTC_GAP_BT_SET_AFH_CHANNELS_EVT:{
+        btc_gap_bt_cb_to_app(ESP_BT_GAP_SET_AFH_CHANNELS_EVT, (esp_bt_gap_cb_param_t *)msg->arg);
+        break;
+    }
     default:
         BTC_TRACE_ERROR("%s: Unhandled event (%d)!\n", __FUNCTION__, msg->act);
         break;
