@@ -798,6 +798,22 @@ typedef struct {
     BD_ADDR     rem_bda;
 } tBTM_LINK_QUALITY_RESULTS;
 
+/* Structure returned with set AFH channels event (in tBTM_CMPL_CB callback function)
+** in response to BTM_SetAfhChannels call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+} tBTM_SET_AFH_CHANNELS_RESULTS;
+
+/* Structure returned with set BLE channels event (in tBTM_CMPL_CB callback function)
+** in response to BTM_BleSetChannels call.
+*/
+typedef struct {
+    tBTM_STATUS status;
+    UINT8       hci_status;
+} tBTM_BLE_SET_CHANNELS_RESULTS;
+
 /* Structure returned with read inq tx power quality event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_ReadInquiryRspTxPower call.
 */
@@ -4098,6 +4114,29 @@ void BTM_PCM2Setup_Write (BOOLEAN clk_master, tBTM_VSC_CMPL_CB *p_arc_cb);
 *******************************************************************************/
 //extern
 tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
+
+/*******************************************************************************
+**
+** Function         BTM_SetAfhChannels
+**
+** Description      This function is called to set AFH channels
+**
+** Returns          status of the operation
+**
+*******************************************************************************/
+tBTM_STATUS BTM_SetAfhChannels (AFH_CHANNELS channels, tBTM_CMPL_CB *p_afh_channels_cmpl_cback);
+
+/*******************************************************************************
+**
+** Function         BTM_BleSetChannels
+**
+** Description      This function is called to set BLE channels
+**
+** Returns          status of the operation
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback);
+
 /*
 #ifdef __cplusplus
 }
