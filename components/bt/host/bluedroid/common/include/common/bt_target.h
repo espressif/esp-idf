@@ -133,6 +133,9 @@
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
 
+#ifndef CLASSIC_BT_GATT_INCLUDED
+#define CLASSIC_BT_GATT_INCLUDED    FALSE
+#endif /* CLASSIC_BT_GATT_INCLUDED */
 /******************************************************************************
 **
 ** BLE features
