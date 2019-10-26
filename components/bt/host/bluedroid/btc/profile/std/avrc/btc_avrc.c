@@ -178,14 +178,14 @@ bool btc_avrc_ct_init_p(void)
 bool btc_avrc_tg_connected_p(void)
 {
     return (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC) &&
-           (btc_rc_cb.rc_connected = TRUE) &&
+           (btc_rc_cb.rc_connected == TRUE) &&
            (btc_rc_cb.rc_features & BTA_AV_FEAT_RCCT);
 }
 
 bool btc_avrc_ct_connected_p(void)
 {
     return (s_rc_ct_init == BTC_RC_CT_INIT_MAGIC) &&
-           (btc_rc_cb.rc_connected = TRUE) &&
+           (btc_rc_cb.rc_connected == TRUE) &&
            (btc_rc_cb.rc_features & BTA_AV_FEAT_RCTG);
 }
 
