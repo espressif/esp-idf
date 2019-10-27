@@ -443,9 +443,9 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
     tGATT_SR_REG            *p_sreg;
     tGATT_HDL_LIST_ELEM      *p_list = NULL;
     UINT8                    i_sreg;
-#if (SDP_INCLUDED == TRUE)
+#if (SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
     tBT_UUID                *p_uuid;
-#endif  ///SDP_INCLUDED == TRUE
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
     tGATT_REG              *p_reg = gatt_get_regcb(gatt_if);
 
     tGATTS_PENDING_NEW_SRV_START *p_buf;
@@ -484,10 +484,10 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
     case GATT_TRANSPORT_BR_EDR:
     case GATT_TRANSPORT_LE_BR_EDR:
         if (p_sreg->type == GATT_UUID_PRI_SERVICE) {
-#if (SDP_INCLUDED == TRUE)
+#if (SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
             p_uuid = gatts_get_service_uuid (p_sreg->p_db);
             p_sreg->sdp_handle = gatt_add_sdp_record(p_uuid, p_sreg->s_hdl, p_sreg->e_hdl);
-#endif  ///SDP_INCLUDED == TRUE
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
         }
         break;
     default:
@@ -539,11 +539,11 @@ void GATTS_StopService (UINT16 service_handle)
 
     /* Index 0 is reserved for GATT, and is never stopped */
     if ( (ii > 0) && (ii < GATT_MAX_SR_PROFILES) && (gatt_cb.sr_reg[ii].in_use) ) {
-#if(SDP_INCLUDED == TRUE)
+#if(SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
         if (gatt_cb.sr_reg[ii].sdp_handle) {
             SDP_DeleteRecord(gatt_cb.sr_reg[ii].sdp_handle);
         }
-#endif  ///SDP_INCLUDED == TRUE
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
         gatt_remove_a_srv_from_list(&gatt_cb.srv_list_info, &gatt_cb.srv_list[ii]);
         gatt_cb.srv_list[ii].in_use = FALSE;
         memset (&gatt_cb.sr_reg[ii], 0, sizeof(tGATT_SR_REG));

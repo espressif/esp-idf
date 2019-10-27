@@ -164,11 +164,12 @@ struct bt_mesh_prov {
      *  assigned the specified NetKeyIndex and primary element address.
      *
      *  @param net_idx  NetKeyIndex given during provisioning.
+     *  @param net_key  NetKey given during provisioning.
      *  @param addr     Primary element address.
      *  @param flags    Key Refresh & IV Update flags
      *  @param iv_index IV Index.
      */
-    void        (*complete)(u16_t net_idx, u16_t addr, u8_t flags, u32_t iv_index);
+    void        (*complete)(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index);
 
     /** @brief Node has been reset.
      *

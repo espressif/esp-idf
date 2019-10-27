@@ -22,8 +22,8 @@
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
-#ifdef CONFIG_BTU_TASK_STACK_SIZE
-#define UC_BTU_TASK_STACK_SIZE              CONFIG_BTU_TASK_STACK_SIZE
+#ifdef CONFIG_BT_BTU_TASK_STACK_SIZE
+#define UC_BTU_TASK_STACK_SIZE              CONFIG_BT_BTU_TASK_STACK_SIZE
 #else
 #define UC_BTU_TASK_STACK_SIZE              4096
 #endif
@@ -53,7 +53,14 @@
 #define UC_BT_SPP_ENABLED                   FALSE
 #endif
 
-//HFP
+//HFP(AG)
+#ifdef CONFIG_BT_HFP_AG_ENABLE
+#define UC_BT_HFP_AG_ENABLED            CONFIG_BT_HFP_AG_ENABLE
+#else
+#define UC_BT_HFP_AG_ENABLED            FALSE
+#endif
+
+//HFP(Client)
 #ifdef CONFIG_BT_HFP_CLIENT_ENABLE
 #define UC_BT_HFP_CLIENT_ENABLED            CONFIG_BT_HFP_CLIENT_ENABLE
 #else

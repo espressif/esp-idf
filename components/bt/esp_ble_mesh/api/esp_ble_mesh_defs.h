@@ -17,8 +17,6 @@
 
 #include <stdint.h>
 
-#include "esp_bt_defs.h"
-
 #include "mesh_proxy.h"
 #include "mesh_access.h"
 #include "mesh_main.h"
@@ -30,6 +28,16 @@
 
 #include "model_opcode.h"
 #include "mesh_common.h"
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+#include "esp_bt_defs.h"
+#include "esp_bt_main.h"
+#define ESP_BLE_HOST_STATUS_ENABLED ESP_BLUEDROID_STATUS_ENABLED
+#define ESP_BLE_HOST_STATUS_CHECK(status) ESP_BLUEDROID_STATUS_CHECK(status)
+#else
+#define ESP_BLE_HOST_STATUS_ENABLED 0
+#define ESP_BLE_HOST_STATUS_CHECK(status)  do {} while (0)
+#endif
 
 /*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN            384
@@ -790,6 +798,30 @@ typedef enum {
     .input_action   = in_act,       \
 }
 
+typedef uint8_t UINT8;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+
+#define BT_OCTET32_LEN    32
+typedef UINT8 BT_OCTET32[BT_OCTET32_LEN];   /* octet array: size 32 */
+
+
+#ifndef BD_ADDR_LEN
+#define BD_ADDR_LEN     6
+typedef uint8_t BD_ADDR[BD_ADDR_LEN];
+#endif
+
+typedef uint8_t esp_ble_mesh_bd_addr_t[BD_ADDR_LEN];
+
+/// BLE device address type
+typedef enum {
+    ESP_BLE_MESH_ADDR_TYPE_PUBLIC        = 0x00,
+    ESP_BLE_MESH_ADDR_TYPE_RANDOM        = 0x01,
+    ESP_BLE_MESH_ADDR_TYPE_RPA_PUBLIC    = 0x02,
+    ESP_BLE_MESH_ADDR_TYPE_RPA_RANDOM    = 0x03,
+} esp_ble_mesh_addr_type_t;
+
 typedef struct esp_ble_mesh_model esp_ble_mesh_model_t;
 
 /** Abstraction that describes a BLE Mesh Element.
@@ -1110,8 +1142,8 @@ typedef uint8_t esp_ble_mesh_dev_add_flag_t;
 
 /** Information of the device which is going to be added for provisioning. */
 typedef struct {
-    esp_bd_addr_t addr;                 /*!< Device address */
-    esp_ble_addr_type_t addr_type;      /*!< Device address type */
+    esp_ble_mesh_bd_addr_t addr;                 /*!< Device address */
+    esp_ble_mesh_addr_type_t addr_type;      /*!< Device address type */
     uint8_t  uuid[16];                  /*!< Device UUID */
     uint16_t oob_info;                  /*!< Device OOB Info */
     /*!< ADD_DEV_START_PROV_NOW_FLAG shall not be set if the bearer has both PB-ADV and PB-GATT enabled */
@@ -1124,8 +1156,8 @@ typedef struct {
 typedef struct {
     union {
         struct {
-            esp_bd_addr_t addr;             /*!< Device address */
-            esp_ble_addr_type_t addr_type;  /*!< Device address type */
+            esp_ble_mesh_bd_addr_t addr;             /*!< Device address */
+            esp_ble_mesh_addr_type_t addr_type;  /*!< Device address type */
         };
         uint8_t uuid[16];                   /*!< Device UUID */
     };
@@ -1287,6 +1319,7 @@ typedef union {
      */
     struct ble_mesh_provision_complete_evt_param {
         uint16_t net_idx;                       /*!< NetKey Index */
+        uint8_t  net_key[16];                   /*!< NetKey */
         uint16_t addr;                          /*!< Primary address */
         uint8_t  flags;                         /*!< Flags */
         uint32_t iv_index;                      /*!< IV Index */
@@ -1339,7 +1372,7 @@ typedef union {
     struct ble_mesh_provisioner_recv_unprov_adv_pkt_param {
         uint8_t  dev_uuid[16];                  /*!< Device UUID of the unprovisoned device */
         uint8_t  addr[6];                       /*!< Device address of the unprovisoned device */
-        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_addr_type_t addr_type;          /*!< Device address type */
         uint16_t oob_info;                      /*!< OOB Info of the unprovisoned device */
         uint8_t  adv_type;                      /*!< Avertising type of the unprovisoned device */
         esp_ble_mesh_prov_bearer_t bearer;      /*!< Bearer of the unprovisoned device */

@@ -76,6 +76,13 @@ menu "SPIFFS Configuration"
             SPIFFS_OBJ_NAME_LEN + SPIFFS_META_LENGTH should not exceed
             SPIFFS_PAGE_SIZE - 64.
 
+    config SPIFFS_FOLLOW_SYMLINKS
+        bool "Enable symbolic links for image creation"
+        default "n"
+        help
+            If this option is enabled, symbolic links are taken into account
+            during partition image creation.
+
     config SPIFFS_USE_MAGIC
         bool "Enable SPIFFS Filesystem Magic"
         default "y"

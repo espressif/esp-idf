@@ -128,5 +128,10 @@ misc:
     module abbr: SYS
     sub module: Misc
     sub module abbr: MISC
+wifi_init:
+    module: System
+    module abbr: SYS
+    sub module: Misc
+    sub module abbr: MISC
 
 

@@ -1075,8 +1075,30 @@ static const struct bt_mesh_adv_data net_id_ad[] = {
     BLE_MESH_ADV_DATA(BLE_MESH_DATA_SVC_DATA16, proxy_svc_data, NET_ID_LEN),
 };
 
+static size_t gatt_proxy_adv_create(struct bt_mesh_adv_data *proxy_sd)
+{
+    const char *name = device_name;
+    size_t name_len = strlen(name);
+    /* One octet for Length, and another octet for AD type */
+    size_t sd_space = 29;
+
+    if (name_len > sd_space) {
+        proxy_sd->type = BLE_MESH_DATA_NAME_SHORTENED;
+        proxy_sd->data_len = sd_space;
+    } else {
+        proxy_sd->type = BLE_MESH_DATA_NAME_COMPLETE;
+        proxy_sd->data_len = name_len;
+    }
+
+    proxy_sd->data = (const u8_t *)name;
+
+    return 1;
+}
+
 static int node_id_adv(struct bt_mesh_subnet *sub)
 {
+    struct bt_mesh_adv_data proxy_sd = {0};
+    size_t proxy_sd_len;
     u8_t tmp[16];
     int err;
 
@@ -1099,9 +1121,10 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
     }
 
     memcpy(proxy_svc_data + 3, tmp + 8, 8);
+    proxy_sd_len = gatt_proxy_adv_create(&proxy_sd);
 
     err = bt_le_adv_start(&fast_adv_param, node_id_ad,
-                          ARRAY_SIZE(node_id_ad), NULL, 0);
+                          ARRAY_SIZE(node_id_ad), &proxy_sd, proxy_sd_len);
     if (err) {
         BT_WARN("Failed to advertise using Node ID (err %d)", err);
         return err;
@@ -1114,6 +1137,8 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
 
 static int net_id_adv(struct bt_mesh_subnet *sub)
 {
+    struct bt_mesh_adv_data proxy_sd = {0};
+    size_t proxy_sd_len;
     int err;
 
     BT_DBG("%s", __func__);
@@ -1124,9 +1149,10 @@ static int net_id_adv(struct bt_mesh_subnet *sub)
            bt_hex(sub->keys[sub->kr_flag].net_id, 8));
 
     memcpy(proxy_svc_data + 3, sub->keys[sub->kr_flag].net_id, 8);
+    proxy_sd_len = gatt_proxy_adv_create(&proxy_sd);
 
     err = bt_le_adv_start(&slow_adv_param, net_id_ad,
-                          ARRAY_SIZE(net_id_ad), NULL, 0);
+                          ARRAY_SIZE(net_id_ad), &proxy_sd, proxy_sd_len);
     if (err) {
         BT_WARN("Failed to advertise using Network ID (err %d)", err);
         return err;

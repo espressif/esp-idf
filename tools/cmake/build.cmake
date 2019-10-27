@@ -114,8 +114,7 @@ function(__build_set_default_build_specifications)
     list(APPEND c_compile_options   "-std=gnu99"
                                     "-Wno-old-style-declaration")
 
-    list(APPEND cxx_compile_options "-std=gnu++11"
-                                    "-fno-rtti")
+    list(APPEND cxx_compile_options "-std=gnu++11")
 
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
@@ -181,7 +180,8 @@ endfunction()
 #
 function(__build_resolve_and_add_req var component_target req type)
     __component_get_target(_component_target ${req})
-    if(NOT _component_target)
+    __component_get_property(_component_registered ${component_target} __COMPONENT_REGISTERED)
+    if(NOT _component_target OR NOT _component_registered)
         message(FATAL_ERROR "Failed to resolve component '${req}'.")
     endif()
     __component_set_property(${component_target} ${type} ${_component_target} APPEND)

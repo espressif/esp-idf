@@ -19,6 +19,7 @@
 #include "esp_log.h"
 #include "bt_common.h"
 #include "osi/allocator.h"
+#include "btc/btc_alarm.h"
 
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #include "common/bt_target.h"
@@ -32,7 +33,6 @@
 #include "btc_blufi_prf.h"
 #include "blufi_int.h"
 #include "btc/btc_dm.h"
-#include "btc/btc_alarm.h"
 #include "bta/bta_gatt_api.h"
 #if CLASSIC_BT_INCLUDED
 #include "btc/btc_profile_queue.h"
@@ -47,6 +47,9 @@
 #if (BTC_SPP_INCLUDED == TRUE)
 #include "btc_spp.h"
 #endif /* #if (BTC_SPP_INCLUDED == TRUE) */
+#if BTC_HF_INCLUDED
+#include "btc_hf_ag.h"
+#endif/* #if BTC_HF_INCLUDED */
 #if BTC_HF_CLIENT_INCLUDED
 #include "btc_hf_client.h"
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
@@ -94,7 +97,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
 #endif  ///GATTS_INCLUDED == TRUE
     [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
+#endif
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
 #if CLASSIC_BT_INCLUDED
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     btc_gap_bt_cb_handler   },
@@ -108,6 +113,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if (BTC_SPP_INCLUDED == TRUE)
     [BTC_PID_SPP]         = {btc_spp_call_handler,        btc_spp_cb_handler      },
 #endif /* #if (BTC_SPP_INCLUDED == TRUE) */
+#if BTC_HF_INCLUDED
+    [BTC_PID_HF]   = {btc_hf_call_handler,  btc_hf_cb_handler},
+#endif  /* #if BTC_HF_INCLUDED */
 #if BTC_HF_CLIENT_INCLUDED
     [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */

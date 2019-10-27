@@ -67,8 +67,3 @@ esp_err_t spi_flash_hal_init(spi_flash_memspi_data_t *data_out, const spi_flash_
     ESP_EARLY_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;
 }
-
-static inline spi_dev_t *get_spi_dev(spi_flash_host_driver_t *chip_drv)
-{
-    return ((spi_flash_memspi_data_t *)chip_drv->driver_data)->spi;
-}

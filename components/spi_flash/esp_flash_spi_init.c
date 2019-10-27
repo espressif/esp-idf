@@ -21,7 +21,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hal/spi_types.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "esp_flash_internal.h"
 
 __attribute__((unused)) static const char TAG[] = "spi_flash";
@@ -62,7 +62,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 esp_flash_t *esp_flash_default_chip = NULL;
 
 
-static IRAM_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux)
+static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux)
 {
     //Not using spicommon_cs_initialize since we don't want to put the whole
     //spi_periph_signal into the DRAM. Copy these data from flash before the

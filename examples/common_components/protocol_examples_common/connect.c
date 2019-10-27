@@ -73,6 +73,7 @@ esp_err_t example_connect(void)
     }
     s_connect_event_group = xEventGroupCreate();
     start();
+    ESP_ERROR_CHECK(esp_register_shutdown_handler(&stop));
     xEventGroupWaitBits(s_connect_event_group, CONNECTED_BITS, true, true, portMAX_DELAY);
     ESP_LOGI(TAG, "Connected to %s", s_connection_name);
     ESP_LOGI(TAG, "IPv4 address: " IPSTR, IP2STR(&s_ip_addr));
@@ -101,7 +102,11 @@ static void on_wifi_disconnect(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
     ESP_LOGI(TAG, "Wi-Fi disconnected, trying to reconnect...");
-    ESP_ERROR_CHECK(esp_wifi_connect());
+    esp_err_t err = esp_wifi_connect();
+    if (err == ESP_ERR_WIFI_NOT_STARTED) {
+        return;
+    }
+    ESP_ERROR_CHECK(err);
 }
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
@@ -149,7 +154,11 @@ static void stop(void)
     ESP_ERROR_CHECK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_GOT_IP6, &on_got_ipv6));
     ESP_ERROR_CHECK(esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_STA_CONNECTED, &on_wifi_connect));
 #endif
-    ESP_ERROR_CHECK(esp_wifi_stop());
+    esp_err_t err = esp_wifi_stop();
+    if (err == ESP_ERR_WIFI_NOT_INIT) {
+        return;
+    }
+    ESP_ERROR_CHECK(err);
     ESP_ERROR_CHECK(esp_wifi_deinit());
 }
 #endif // CONFIG_EXAMPLE_CONNECT_WIFI
@@ -223,7 +232,12 @@ static void start(void)
     eth_dm9051_config_t dm9051_config = ETH_DM9051_DEFAULT_CONFIG(spi_handle);
     s_mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     s_phy = esp_eth_phy_new_dm9051(&phy_config);
+#elif CONFIG_EXAMPLE_USE_OPENETH
+    phy_config.autonego_timeout_ms = 100;
+    s_mac = esp_eth_mac_new_openeth(&mac_config);
+    s_phy = esp_eth_phy_new_dp83848(&phy_config);
 #endif
+
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
     s_connection_name = "Ethernet";

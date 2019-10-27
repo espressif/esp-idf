@@ -20,6 +20,10 @@ https://dl.espressif.com/dl/esp32_win32_msys2_environment_and_toolchain-20190611
 
 Unzip the zip file to ``C:\`` (or some other location, but this guide assumes ``C:\``) and it will create an ``msys32`` directory with a pre-prepared environment.
 
+.. important::
+
+    If another toolchain location is used (different than the default ``C:\msys32``), please ensure that the path where the all-in-one toolchain gets unzipped is a plain ASCII, contains no spaces, symlinks or accents.
+
 
 Check it Out
 ============

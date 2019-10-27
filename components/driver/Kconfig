@@ -71,4 +71,15 @@ menu "Driver configurations"
 
     endmenu # SPI Configuration
 
+    menu "UART configuration"
+
+        config UART_ISR_IN_IRAM
+            bool "Place UART ISR function into IRAM"
+            default n
+            help
+                If this option is not selected, UART interrupt will be disabled for a long time and
+                may cause data lost when doing spi flash operation.
+
+    endmenu # UART Configuration
+
 endmenu  # Driver configurations

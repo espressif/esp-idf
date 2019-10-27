@@ -31,8 +31,14 @@ typedef struct {
     char *path;
     char *buffer;
     char *sub_protocol;
+    uint8_t read_opcode;
     esp_transport_handle_t parent;
 } transport_ws_t;
+
+static inline uint8_t ws_get_bin_opcode(ws_transport_opcodes_t opcode)
+{
+    return (uint8_t)opcode;
+}
 
 static esp_transport_handle_t ws_get_payload_transport_handle(esp_transport_handle_t t)
 {
@@ -103,12 +109,24 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
                          ws->path,
                          host, port,
                          client_key);
-    if (ws->sub_protocol) {
-        len += snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
-    }
-    len += snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "\r\n");
     if (len <= 0 || len >= DEFAULT_WS_BUFFER) {
         ESP_LOGE(TAG, "Error in request generation, %d", len);
+        return -1;
+    }
+    if (ws->sub_protocol) {
+        int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
+        len += r;
+        if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+            ESP_LOGE(TAG, "Error in request generation"
+                          "(snprintf of subprotocol returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
+            return -1;
+        }
+    }
+    int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "\r\n");
+    len += r;
+    if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+        ESP_LOGE(TAG, "Error in request generation"
+                       "(snprintf of header terminal returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
         return -1;
     }
     ESP_LOGD(TAG, "Write upgrate request\r\n%s", ws->buffer);
@@ -188,18 +206,17 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
         ws_header[header_len++] = (uint8_t)((len >> 8) & 0xFF);
         ws_header[header_len++] = (uint8_t)((len >> 0) & 0xFF);
     }
-    if (len) {
-        if (mask_flag) {
-            mask = &ws_header[header_len];
-            getrandom(ws_header + header_len, 4, 0);
-            header_len += 4;
 
-            for (i = 0; i < len; ++i) {
-                buffer[i] = (buffer[i] ^ mask[i % 4]);
-            }
+    if (mask_flag) {
+        mask = &ws_header[header_len];
+        getrandom(ws_header + header_len, 4, 0);
+        header_len += 4;
+
+        for (i = 0; i < len; ++i) {
+            buffer[i] = (buffer[i] ^ mask[i % 4]);
         }
-
     }
+
     if (esp_transport_write(ws->parent, ws_header, header_len, timeout_ms) != header_len) {
         ESP_LOGE(TAG, "Error write header");
         return -1;
@@ -220,11 +237,25 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
     return ret;
 }
 
+int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t opcode, const char *b, int len, int timeout_ms)
+{
+    uint8_t op_code = ws_get_bin_opcode(opcode);
+    if (t == NULL) {
+        ESP_LOGE(TAG, "Transport must be a valid ws handle");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGD(TAG, "Sending raw ws message with opcode %d", op_code);
+    return _ws_write(t, op_code | WS_FIN, WS_MASK, b, len, timeout_ms);
+}
+
 static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeout_ms)
 {
     if (len == 0) {
+        // Default transport write of zero length in ws layer sends out a ping message.
+        // This behaviour could however be altered in IDF 5.0, since a separate API for sending
+        // messages with user defined opcodes has been introduced.
         ESP_LOGD(TAG, "Write PING message");
-        return _ws_write(t, WS_OPCODE_PING | WS_FIN, 0, NULL, 0, timeout_ms);
+        return _ws_write(t, WS_OPCODE_PING | WS_FIN, WS_MASK, NULL, 0, timeout_ms);
     }
     return _ws_write(t, WS_OPCODE_BINARY | WS_FIN, WS_MASK, b, len, timeout_ms);
 }
@@ -234,7 +265,7 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
     transport_ws_t *ws = esp_transport_get_context_data(t);
     int payload_len;
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
-    char *data_ptr = ws_header, opcode, mask, *mask_key = NULL;
+    char *data_ptr = ws_header, mask, *mask_key = NULL;
     int rlen;
     int poll_read;
     if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
@@ -247,12 +278,12 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
-    opcode = (*data_ptr & 0x0F);
+    ws->read_opcode = (*data_ptr & 0x0F);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", opcode, mask, payload_len);
+    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", ws->read_opcode, mask, payload_len);
     if (payload_len == 126) {
         // headerLen += 2;
         if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
@@ -282,7 +313,7 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
     }
 
     // Then receive and process payload
-    if ((rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
+    if (payload_len != 0 && (rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
@@ -376,4 +407,10 @@ esp_err_t esp_transport_ws_set_subprotocol(esp_transport_handle_t t, const char 
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;
+}
+
+ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return ws->read_opcode;
 }

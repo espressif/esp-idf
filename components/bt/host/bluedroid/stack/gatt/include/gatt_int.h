@@ -507,7 +507,7 @@ typedef struct {
     UINT16              next_handle;    /* next available handle */
     tGATT_SVC_CHG       gattp_attr;     /* GATT profile attribute service change */
     tGATT_IF            gatt_if;
-#if (GATTS_INCLUDED == TRUE)    
+#if (GATTS_INCLUDED == TRUE)
     tGATT_HDL_LIST_INFO hdl_list_info;
     tGATT_HDL_LIST_ELEM hdl_list[GATT_MAX_SR_PROFILES];
     tGATT_SRV_LIST_INFO srv_list_info;
@@ -601,9 +601,9 @@ extern tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB *p_tcb, BT_HDR *p_toL2CAP);
 
 /* utility functions */
 extern UINT8 *gatt_dbg_op_name(UINT8 op_code);
-#if (SDP_INCLUDED == TRUE)
+#if (SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE)
 extern UINT32 gatt_add_sdp_record (tBT_UUID *p_uuid, UINT16 start_hdl, UINT16 end_hdl);
-#endif  ///SDP_INCLUDED == TRUE
+#endif  ///SDP_INCLUDED == TRUE && CLASSIC_BT_GATT_INCLUDED == TRUE
 extern BOOLEAN gatt_parse_uuid_from_cmd(tBT_UUID *p_uuid, UINT16 len, UINT8 **p_data);
 extern UINT8 gatt_build_uuid_to_stream(UINT8 **p_dst, tBT_UUID uuid);
 extern BOOLEAN gatt_uuid_compare(tBT_UUID src, tBT_UUID tar);
@@ -725,16 +725,16 @@ extern BOOLEAN gatts_init_service_db (tGATT_SVC_DB *p_db, tBT_UUID *p_service, B
 extern UINT16 gatts_add_included_service (tGATT_SVC_DB *p_db, UINT16 s_handle, UINT16 e_handle, tBT_UUID service);
 extern UINT16 gatts_add_characteristic (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                                                         tGATT_CHAR_PROP property,
-                                                        tBT_UUID *p_char_uuid, tGATT_ATTR_VAL *attr_val, 
+                                                        tBT_UUID *p_char_uuid, tGATT_ATTR_VAL *attr_val,
                                                         tGATTS_ATTR_CONTROL *control);
-extern UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm, 
+extern UINT16 gatts_add_char_descr (tGATT_SVC_DB *p_db, tGATT_PERM perm,
                                          tBT_UUID *p_dscp_uuid, tGATT_ATTR_VAL *attr_val,
                                          tGATTS_ATTR_CONTROL *control);
 
-extern tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle, 
+extern tGATT_STATUS gatts_set_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                     UINT16 length, UINT8 *value);
 
-extern tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle, 
+extern tGATT_STATUS gatts_get_attribute_value(tGATT_SVC_DB *p_db, UINT16 attr_handle,
                                     UINT16 *length, UINT8 **value);
 extern BOOLEAN gatts_is_auto_response(UINT16 attr_handle);
 extern tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB *p_tcb, tGATT_SVC_DB *p_db, UINT8 op_code, BT_HDR *p_rsp, UINT16 s_handle,

@@ -329,6 +329,18 @@ IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
     return result;
 }
 
+size_t heap_caps_get_total_size(uint32_t caps)
+{
+    size_t total_size = 0;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap_caps_match(heap, caps)) {
+            total_size += (heap->end - heap->start);
+        }
+    }
+    return total_size;
+}
+
 size_t heap_caps_get_free_size( uint32_t caps )
 {
     size_t ret = 0;
@@ -449,4 +461,11 @@ void heap_caps_dump(uint32_t caps)
 void heap_caps_dump_all(void)
 {
     heap_caps_dump(MALLOC_CAP_INVALID);
+}
+
+size_t heap_caps_get_allocated_size( void *ptr )
+{
+    heap_t *heap = find_containing_heap(ptr);
+    size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
+    return size;
 }

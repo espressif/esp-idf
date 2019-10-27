@@ -215,7 +215,7 @@ static void btm_esco_conn_rsp (UINT16 sco_inx, UINT8 hci_status, BD_ADDR bda,
 #if BTM_SCO_HCI_INCLUDED == TRUE
 void btm_sco_process_num_bufs (UINT16 num_lm_sco_bufs)
 {
-    BTM_TRACE_ERROR("%s, %d", __FUNCTION__, num_lm_sco_bufs);
+    BTM_TRACE_DEBUG("%s, %d", __FUNCTION__, num_lm_sco_bufs);
     btm_cb.sco_cb.num_lm_sco_bufs = btm_cb.sco_cb.xmit_window_size = num_lm_sco_bufs;
 }
 

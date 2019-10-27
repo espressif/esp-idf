@@ -27,4 +27,28 @@ else()
         -fno-stack-protector)
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_LIBRARIES "-Wl,--gc-sections")
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
+    set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY LINK_INTERFACE_MULTIPLICITY 4)
+
+    # List of components needed for the error codes list
+    set(optional_reqs ulp
+                      efuse
+                      esp_http_client
+                      esp_http_server
+                      bootloader_support
+                      nvs_flash
+                      esp_wifi
+                      app_update
+                      lwip
+                      spi_flash
+                      wpa_supplicant
+                      tcpip_adapter)
+
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    foreach(req ${optional_reqs})
+        if(req IN_LIST build_components)
+            idf_component_get_property(req_lib ${req} COMPONENT_LIB)
+            target_link_libraries(${COMPONENT_LIB} PRIVATE ${req_lib})
+        endif()
+    endforeach()
+
 endif()

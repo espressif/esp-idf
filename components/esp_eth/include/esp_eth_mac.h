@@ -99,10 +99,14 @@ struct esp_eth_mac_s {
     * @param[out] length: length of the received packet
     *
     * @note Memory of buf is allocated in the Layer2, make sure it get free after process.
+    * @note Before this function got invoked, the value of "length" should set by user, equals the size of buffer.
+    *       After the function returned, the value of "length" means the real length of received data.
     *
     * @return
     *      - ESP_OK: receive packet successfully
     *      - ESP_ERR_INVALID_ARG: receive packet failed because of invalid argument
+    *      - ESP_ERR_INVALID_SIZE: input buffer size is not enough to hold the incoming data.
+    *                              in this case, value of returned "length" indicates the real size of incoming data.
     *      - ESP_FAIL: receive packet failed because some other error occurred
     *
     */
@@ -303,6 +307,12 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
 #endif
+
+
+#if CONFIG_ETH_USE_OPENETH
+esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);
+#endif // CONFIG_ETH_USE_OPENETH
+
 #ifdef __cplusplus
 }
 #endif

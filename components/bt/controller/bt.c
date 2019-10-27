@@ -226,6 +226,7 @@ extern int coex_bt_release_wrapper(uint32_t event);
 extern int coex_register_bt_cb_wrapper(coex_func_cb_t cb);
 extern uint32_t coex_bb_reset_lock_wrapper(void);
 extern void coex_bb_reset_unlock_wrapper(uint32_t restore);
+extern void coex_ble_adv_priority_high_set(bool high);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -1194,6 +1195,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         err = ESP_ERR_NO_MEM;
         goto error;
     }
+
+    #ifdef CONFIG_BTDM_COEX_BLE_ADV_HIGH_PRIORITY
+        coex_ble_adv_priority_high_set(true);
+    #else
+        coex_ble_adv_priority_high_set(false);
+    #endif
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 

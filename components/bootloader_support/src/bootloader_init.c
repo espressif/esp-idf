@@ -132,7 +132,7 @@ static esp_err_t bootloader_main(void)
     /* Check chip ID and minimum chip revision that supported by this image */
     uint8_t revision = bootloader_common_get_chip_revision();
     ESP_LOGI(TAG, "Chip Revision: %d", revision);
-    if (bootloader_common_check_chip_validity(&fhdr) != ESP_OK) {
+    if (bootloader_common_check_chip_validity(&fhdr, ESP_IMAGE_BOOTLOADER) != ESP_OK) {
         return ESP_FAIL;
     }
 

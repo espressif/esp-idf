@@ -2,7 +2,7 @@
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
     range 1 9
-    default 1
+    default BTDM_CTRL_BLE_MAX_CONN
     depends on BT_NIMBLE_ENABLED
     help
         Defines maximum number of concurrent BLE connections
@@ -53,6 +53,7 @@ config BT_NIMBLE_PINNED_TO_CORE
 config BT_NIMBLE_TASK_STACK_SIZE
     int "NimBLE Host task stack size"
     depends on BT_NIMBLE_ENABLED
+    default 5120 if BLE_MESH
     default 4096
     help
         This configures stack size of NimBLE host task
@@ -99,11 +100,20 @@ config BT_NIMBLE_SM_SC
         Enable security manager secure connections
 
 config BT_NIMBLE_DEBUG
-    bool "Enable host debugging"
+    bool "Enable extra runtime asserts and host debugging"
     default n
     depends on BT_NIMBLE_ENABLED
     help
-        This enables extra runtime assertions
+        This enables extra runtime asserts and host debugging
+
+config BT_NIMBLE_SM_SC_DEBUG_KEYS
+    bool "Use predefined public-private key pair"
+    default n
+    depends on BT_NIMBLE_SM_SC
+    help
+        If this option is enabled, SM uses predefined DH key pair as described
+        in Core Specification, Vol. 3, Part H, 2.3.5.6.1. This allows to
+        decrypt air traffic easily and thus should only be used for debugging.
 
 config BT_NIMBLE_SVC_GAP_DEVICE_NAME
     string "BLE GAP default device name"
@@ -257,3 +267,12 @@ config BT_NIMBLE_MESH_DEVICE_NAME
     help
         This value defines Bluetooth Mesh device/node name
 
+config BT_NIMBLE_CRYPTO_STACK_MBEDTLS
+    bool "Override TinyCrypt with mbedTLS for crypto computations"
+    default y
+    depends on BT_NIMBLE_ENABLED
+    select MBEDTLS_ECP_RESTARTABLE
+    select MBEDTLS_CMAC_C
+    help
+        Enable this option to choose mbedTLS instead of TinyCrypt for crypto
+        computations.

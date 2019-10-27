@@ -297,8 +297,6 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
         struct net_buf_simple *buf)
 {
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
-    bt_mesh_client_user_data_t *client_param = NULL;
-    bt_mesh_client_internal_data_t *data = NULL;
     bt_mesh_client_node_t *node = NULL;
     btc_msg_t msg = {0};
     bt_status_t ret;
@@ -308,14 +306,10 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
         return;
     }
 
-    client_param = (bt_mesh_client_user_data_t *)model->user_data;
-    data = (bt_mesh_client_internal_data_t *)client_param->internal_data;
-    if (!data) {
-        LOG_ERROR("%s, Client internal_data is NULL", __func__);
-        return;
-    }
-
     bt_mesh_client_model_lock();
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_MODEL;
 
     node = bt_mesh_is_client_recv_publish_msg(model, ctx, buf, false);
     if (node == NULL) {
@@ -325,6 +319,8 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
         mesh_param.client_recv_publish_msg.ctx = (esp_ble_mesh_msg_ctx_t *)ctx;
         mesh_param.client_recv_publish_msg.length = buf->len;
         mesh_param.client_recv_publish_msg.msg = buf->data;
+        ret = btc_transfer_context(&msg, &mesh_param,
+                sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_model_copy_req_data);
     } else {
         msg.act = ESP_BLE_MESH_MODEL_OPERATION_EVT;
         mesh_param.model_operation.opcode = ctx->recv_op;
@@ -332,19 +328,11 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
         mesh_param.model_operation.ctx = (esp_ble_mesh_msg_ctx_t *)ctx;
         mesh_param.model_operation.length = buf->len;
         mesh_param.model_operation.msg = buf->data;
-    }
-
-    msg.sig = BTC_SIG_API_CB;
-    msg.pid = BTC_PID_MODEL;
-    if (msg.act == ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT) {
-        ret = btc_transfer_context(&msg, &mesh_param,
-                sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_model_copy_req_data);
-    } else {
         if (!k_delayed_work_free(&node->timer)) {
             ret = btc_transfer_context(&msg, &mesh_param,
                     sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_model_copy_req_data);
             // Don't forget to release the node at the end.
-            bt_mesh_client_free_node(&data->queue, node);
+            bt_mesh_client_free_node(node);
         } else {
             ret = BT_STATUS_SUCCESS;
         }
@@ -534,7 +522,7 @@ static void btc_ble_mesh_link_close_cb(bt_mesh_prov_bearer_t bearer)
     return;
 }
 
-static void btc_ble_mesh_complete_cb(u16_t net_idx, u16_t addr, u8_t flags, u32_t iv_index)
+static void btc_ble_mesh_complete_cb(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
     btc_msg_t msg = {0};
@@ -543,6 +531,7 @@ static void btc_ble_mesh_complete_cb(u16_t net_idx, u16_t addr, u8_t flags, u32_
     LOG_DEBUG("%s", __func__);
 
     mesh_param.node_prov_complete.net_idx = net_idx;
+    memcpy(mesh_param.node_prov_complete.net_key, net_key, 16);
     mesh_param.node_prov_complete.addr = addr;
     mesh_param.node_prov_complete.flags = flags;
     mesh_param.node_prov_complete.iv_index = iv_index;
@@ -603,44 +592,35 @@ static void btc_ble_mesh_prov_register_complete_cb(int err_code)
 static void btc_ble_mesh_client_model_timeout_cb(struct k_work *work)
 {
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
-    bt_mesh_client_user_data_t *client_param = NULL;
-    bt_mesh_client_internal_data_t *data = NULL;
+    struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     btc_msg_t msg = {0};
     bt_status_t ret;
 
-    node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
-    if (!node || !node->ctx.model || !node->ctx.model->user_data) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
-        return;
-    }
-
-    client_param = (bt_mesh_client_user_data_t *)node->ctx.model->user_data;
-    data = (bt_mesh_client_internal_data_t *)client_param->internal_data;
-    if (!data) {
-        LOG_ERROR("%s, Client internal_data is NULL", __func__);
-        return;
-    }
-
     bt_mesh_client_model_lock();
 
-    if (!k_delayed_work_free(&node->timer)) {
-        mesh_param.client_send_timeout.opcode = node->opcode;
-        mesh_param.client_send_timeout.model = (esp_ble_mesh_model_t *)node->ctx.model;
-        mesh_param.client_send_timeout.ctx = (esp_ble_mesh_msg_ctx_t *)&node->ctx;
+    timer = CONTAINER_OF(work, struct k_delayed_work, work);
 
-        msg.sig = BTC_SIG_API_CB;
-        msg.pid = BTC_PID_MODEL;
-        msg.act = ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT;
+    if (timer && !k_delayed_work_free(timer)) {
+        node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
+        if (node) {
+            mesh_param.client_send_timeout.opcode = node->opcode;
+            mesh_param.client_send_timeout.model = (esp_ble_mesh_model_t *)node->ctx.model;
+            mesh_param.client_send_timeout.ctx = (esp_ble_mesh_msg_ctx_t *)&node->ctx;
 
-        ret = btc_transfer_context(&msg, &mesh_param,
-                sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_model_copy_req_data);
-        if (ret != BT_STATUS_SUCCESS) {
-            LOG_ERROR("%s btc_transfer_context failed", __func__);
+            msg.sig = BTC_SIG_API_CB;
+            msg.pid = BTC_PID_MODEL;
+            msg.act = ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT;
+
+            ret = btc_transfer_context(&msg, &mesh_param,
+                    sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_model_copy_req_data);
+            if (ret != BT_STATUS_SUCCESS) {
+                LOG_ERROR("%s btc_transfer_context failed", __func__);
+            }
+
+            // Don't forget to release the node at the end.
+            bt_mesh_client_free_node(node);
         }
-
-        // Don't forget to release the node at the end.
-        bt_mesh_client_free_node(&data->queue, node);
     }
 
     bt_mesh_client_model_unlock();
@@ -709,7 +689,7 @@ static void btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb(
     }
 
     memcpy(mesh_param.provisioner_recv_unprov_adv_pkt.dev_uuid, dev_uuid, 16);
-    memcpy(mesh_param.provisioner_recv_unprov_adv_pkt.addr, addr, ESP_BD_ADDR_LEN);
+    memcpy(mesh_param.provisioner_recv_unprov_adv_pkt.addr, addr, BLE_MESH_ADDR_LEN);
     mesh_param.provisioner_recv_unprov_adv_pkt.addr_type = addr_type;
     mesh_param.provisioner_recv_unprov_adv_pkt.oob_info = oob_info;
     mesh_param.provisioner_recv_unprov_adv_pkt.adv_type = adv_type;

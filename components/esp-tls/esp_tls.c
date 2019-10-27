@@ -551,15 +551,32 @@ static ssize_t tcp_write(esp_tls_t *tls, const char *data, size_t datalen)
 
 static ssize_t tls_write(esp_tls_t *tls, const char *data, size_t datalen)
 {
-    ssize_t ret = mbedtls_ssl_write(&tls->ssl, (unsigned char*) data, datalen);
-    if (ret < 0) {
-        if (ret != MBEDTLS_ERR_SSL_WANT_READ  && ret != MBEDTLS_ERR_SSL_WANT_WRITE) {
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_WRITE_FAILED);
-            ESP_LOGE(TAG, "write error :%d:", ret);
+    size_t written = 0;
+    size_t write_len = datalen;
+    while (written < datalen) {
+        if (write_len > MBEDTLS_SSL_OUT_CONTENT_LEN) {
+            write_len = MBEDTLS_SSL_OUT_CONTENT_LEN;
         }
+        if (datalen > MBEDTLS_SSL_OUT_CONTENT_LEN) {
+            ESP_LOGD(TAG, "Fragmenting data of excessive size :%d, offset: %d, size %d", datalen, written, write_len);
+        }
+        ssize_t ret = mbedtls_ssl_write(&tls->ssl, (unsigned char*) data + written, write_len);
+        if (ret <= 0) {
+            if (ret != MBEDTLS_ERR_SSL_WANT_READ  && ret != MBEDTLS_ERR_SSL_WANT_WRITE && ret != 0) {
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_WRITE_FAILED);
+                ESP_LOGE(TAG, "write error :%d:", ret);
+                return ret;
+            } else {
+                // Exitting the tls-write process as less than desired datalen are writable
+                ESP_LOGD(TAG, "mbedtls_ssl_write() returned %d, already written %d, exitting...", ret, written);
+                return written;
+            }
+        }
+        written += ret;
+        write_len = datalen - written;
     }
-    return ret;
+    return written;
 }
 
 static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)

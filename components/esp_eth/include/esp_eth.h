@@ -148,9 +148,14 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length);
 * @param[out] buf: buffer to preserve the received packet
 * @param[out] length: length of the received packet
 *
+* @note Before this function got invoked, the value of "length" should set by user, equals the size of buffer.
+*       After the function returned, the value of "length" means the real length of received data.
+*
 * @return
 *       - ESP_OK: receive frame buffer successfully
 *       - ESP_ERR_INVALID_ARG: receive frame buffer failed because of some invalid argument
+*       - ESP_ERR_INVALID_SIZE: input buffer size is not enough to hold the incoming data.
+*                               in this case, value of returned "length" indicates the real size of incoming data.
 *       - ESP_FAIL: receive frame buffer failed because some other error occurred
 */
 esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);

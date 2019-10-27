@@ -102,6 +102,20 @@ void *heap_caps_realloc( void *ptr, size_t size, int caps);
 void *heap_caps_calloc(size_t n, size_t size, uint32_t caps);
 
 /**
+ * @brief Get the total size of all the regions that have the given capabilities
+ *
+ * This function takes all regions capable of having the given capabilities allocated in them
+ * and adds up the total space they have.
+ *
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory
+ *
+ * @return total size in bytes
+ */
+
+size_t heap_caps_get_total_size(uint32_t caps);
+
+/**
  * @brief Get the total free size of all the regions that have the given capabilities
  *
  * This function takes all regions capable of having the given capabilities allocated in them
@@ -309,6 +323,19 @@ void heap_caps_dump(uint32_t caps);
  *
  */
 void heap_caps_dump_all(void);
+
+/**
+ * @brief Return the size that a particular pointer was allocated with.
+ *
+ * @param ptr Pointer to currently allocated heap memory. Must be a pointer value previously 
+ * returned by heap_caps_malloc,malloc,calloc, etc. and not yet freed.
+ *
+ * @note The app will crash with an assertion failure if the pointer is not valid.
+ * 
+ * @return Size of the memory allocated at this block.
+ * 
+ */
+size_t heap_caps_get_allocated_size( void *ptr );
 
 #ifdef __cplusplus
 }

@@ -142,12 +142,33 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
         -D IDF_PATH="${idf_path}"
         -D ESPTOOLPY="${ESPTOOLPY}"
         -D ESPTOOL_ARGS="write_flash;@flash_${flasher_filename}_args"
-        -D ESPTOOL_WORKING_DIR="${build_dir}"
+        -D WORKING_DIRECTORY="${build_dir}"
         -P run_esptool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         USES_TERMINAL
         )
 endfunction()
+
+add_custom_target(erase_flash
+    COMMAND ${CMAKE_COMMAND}
+    -D IDF_PATH="${idf_path}"
+    -D ESPTOOLPY="${ESPTOOLPY}"
+    -D ESPTOOL_ARGS="erase_flash"
+    -P run_esptool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    )
+
+add_custom_target(monitor
+    COMMAND ${CMAKE_COMMAND}
+    -D IDF_PATH="${idf_path}"
+    -D IDF_MONITOR="${idf_path}/tools/idf_monitor.py"
+    -D ELF_FILE="${elf}"
+    -D WORKING_DIRECTORY="${build_dir}"
+    -P run_idf_monitor.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    )
 
 esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")

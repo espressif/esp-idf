@@ -13,10 +13,6 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 
-#include "esp_bt.h"
-#include "esp_bt_main.h"
-#include "esp_bt_device.h"
-
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_networking_api.h"
@@ -24,8 +20,7 @@
 #include "esp_ble_mesh_config_model_api.h"
 
 #include "board.h"
-
-#define TAG "ble_mesh_node"
+#include "ble_mesh_demo_init.h"
 
 #define CID_ESP 0x02E5
 
@@ -146,10 +141,10 @@ static void gen_onoff_set_unack_handler(esp_ble_mesh_model_t *model,
     uint8_t prev_onoff;
     esp_err_t err;
 
-    ESP_LOGI(TAG, "%s, addr 0x%02x onoff 0x%02x", __func__, model->element->element_addr, led->current);
-
     prev_onoff = led->previous;
     led->current = data[0];
+
+    ESP_LOGI(TAG, "%s, addr 0x%04x onoff 0x%02x", __func__, model->element->element_addr, led->current);
 
     board_led_operation(led->pin, led->current);
 
@@ -175,10 +170,10 @@ static void gen_onoff_set_handler(esp_ble_mesh_model_t *model,
     uint8_t prev_onoff, send_data;
     esp_err_t err;
 
-    ESP_LOGI(TAG, "%s, addr 0x%02x onoff 0x%02x", __func__, model->element->element_addr, led->current);
-
     prev_onoff = led->previous;
     led->current = data[0];
+
+    ESP_LOGI(TAG, "%s, addr 0x%04x onoff 0x%02x", __func__, model->element->element_addr, led->current);
 
     board_led_operation(led->pin, led->current);
 
@@ -314,8 +309,6 @@ static esp_err_t ble_mesh_init(void)
 {
     int err = 0;
 
-    memcpy(dev_uuid + 2, esp_bt_dev_get_address(), ESP_BD_ADDR_LEN);
-
     esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(esp_ble_mesh_model_cb);
 
@@ -334,45 +327,6 @@ static esp_err_t ble_mesh_init(void)
     return err;
 }
 
-static esp_err_t bluetooth_init(void)
-{
-    esp_err_t ret;
-
-    ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
-
-    ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
-
-    esp_bt_controller_config_t bt_cfg = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-    ret = esp_bt_controller_init(&bt_cfg);
-    if (ret) {
-        ESP_LOGE(TAG, "%s initialize controller failed", __func__);
-        return ret;
-    }
-
-    ret = esp_bt_controller_enable(ESP_BT_MODE_BLE);
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable controller failed", __func__);
-        return ret;
-    }
-    ret = esp_bluedroid_init();
-    if (ret) {
-        ESP_LOGE(TAG, "%s init bluetooth failed", __func__);
-        return ret;
-    }
-    ret = esp_bluedroid_enable();
-    if (ret) {
-        ESP_LOGE(TAG, "%s enable bluetooth failed", __func__);
-        return ret;
-    }
-
-    return ret;
-}
-
 void app_main(void)
 {
     int err;
@@ -381,11 +335,20 @@ void app_main(void)
 
     board_init();
 
+    err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+
     err = bluetooth_init();
     if (err) {
         ESP_LOGE(TAG, "esp32_bluetooth_init failed (err %d)", err);
         return;
     }
+
+    ble_mesh_get_dev_uuid(dev_uuid);
 
     /* Initialize the Bluetooth Mesh Subsystem */
     err = ble_mesh_init();

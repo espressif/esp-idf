@@ -80,6 +80,27 @@
 #define BTC_SPP_INCLUDED            TRUE
 #endif /* UC_BT_SPP_ENABLED */
 
+#if (UC_BT_HFP_AG_ENABLED == TRUE)
+#define BTC_HF_INCLUDED             TRUE
+#define BTA_AG_INCLUDED             TRUE
+#define PLC_INCLUDED                TRUE
+#ifndef RFCOMM_INCLUDED
+#define RFCOMM_INCLUDED             TRUE
+#endif
+#ifndef BTM_SCO_INCLUDED
+#define BTM_SCO_INCLUDED            TRUE
+#endif
+#ifndef BTM_MAX_SCO_LINKS
+#define BTM_MAX_SCO_LINKS           (1)
+#endif
+#ifndef SBC_DEC_INCLUDED
+#define SBC_DEC_INCLUDED            TRUE
+#endif
+#ifndef SBC_ENC_INCLUDED
+#define SBC_ENC_INCLUDED            TRUE
+#endif
+#endif  /* UC_BT_HFP_AG_ENABLED */
+
 #if (UC_BT_HFP_CLIENT_ENABLED == TRUE)
 #define BTC_HF_CLIENT_INCLUDED      TRUE
 #define BTA_HF_INCLUDED             TRUE
@@ -112,6 +133,9 @@
 #define CLASSIC_BT_INCLUDED         FALSE
 #endif /* CLASSIC_BT_INCLUDED */
 
+#ifndef CLASSIC_BT_GATT_INCLUDED
+#define CLASSIC_BT_GATT_INCLUDED    FALSE
+#endif /* CLASSIC_BT_GATT_INCLUDED */
 /******************************************************************************
 **
 ** BLE features

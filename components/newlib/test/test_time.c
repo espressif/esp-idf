@@ -233,19 +233,6 @@ static void start_measure(int64_t* sys_time, int64_t* real_time)
     *sys_time = (int64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
 }
 
-static void end_measure(int64_t* sys_time, int64_t* real_time)
-{
-    struct timeval tv_time;
-    int64_t t1, t2;
-    do {
-        t1 = esp_timer_get_time();
-        gettimeofday(&tv_time, NULL);
-        t2 = esp_timer_get_time();
-    } while (t2 - t1 > 40);
-    *real_time = t2;
-    *sys_time  = (int64_t)tv_time.tv_sec * 1000000L + tv_time.tv_usec;
-}
-
 static int64_t calc_correction(const char* tag, int64_t* sys_time, int64_t* real_time)
 {
     int64_t dt_real_time_us = real_time[1] - real_time[0];
@@ -274,23 +261,22 @@ static void measure_time_task(void *pvParameters)
     start_measure(&main_sys_time_us[0], &main_real_time_us[0]);
 
     {
-        int64_t real_time_us[2];
-        int64_t sys_time_us[2];
-        int64_t delay_us = 2 * 1000000; // 2 sec
-        start_measure(&sys_time_us[0], &real_time_us[0]);
+        int64_t real_time_us[2] = { main_real_time_us[0], 0};
+        int64_t sys_time_us[2] = { main_sys_time_us[0], 0};
         // although exit flag is set in another task, checking (exit_flag == false) is safe
         while (exit_flag == false) {
-            ets_delay_us(delay_us);
+            ets_delay_us(2 * 1000000); // 2 sec
 
-            end_measure(&sys_time_us[1], &real_time_us[1]);
+            start_measure(&sys_time_us[1], &real_time_us[1]);
             result_adjtime_correction_us[1] += calc_correction("measure", sys_time_us, real_time_us);
 
             sys_time_us[0]  = sys_time_us[1];
             real_time_us[0] = real_time_us[1];
         }
+        main_sys_time_us[1] = sys_time_us[1];
+        main_real_time_us[1] = real_time_us[1];
     }
 
-    end_measure(&main_sys_time_us[1], &main_real_time_us[1]);
     result_adjtime_correction_us[0] = calc_correction("main", main_sys_time_us, main_real_time_us);
     int64_t delta_us = result_adjtime_correction_us[0] - result_adjtime_correction_us[1];
     printf("\nresult of adjtime correction: %lli us, %lli us. delta = %lli us\n", result_adjtime_correction_us[0], result_adjtime_correction_us[1], delta_us);

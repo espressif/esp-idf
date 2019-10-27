@@ -33,7 +33,7 @@
 #include "soc/efuse_periph.h"
 #include "soc/spi_caps.h"
 #include "driver/gpio.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 #include "driver/periph_ctrl.h"
 #include "bootloader_common.h"
 
@@ -469,7 +469,7 @@ static esp_err_t IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spi_num)
 
 void psram_set_cs_timing(psram_spi_num_t spi_num, psram_clk_mode_t clk_mode)
 {
-    if (clk_mode == PSRAM_CLK_MODE_NORM) { 
+    if (clk_mode == PSRAM_CLK_MODE_NORM) {
         SET_PERI_REG_MASK(SPI_USER_REG(spi_num), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
         // Set cs time.
         SET_PERI_REG_BITS(SPI_CTRL2_REG(spi_num), SPI_HOLD_TIME_V, 1, SPI_HOLD_TIME_S);
@@ -566,7 +566,7 @@ static void IRAM_ATTR psram_gpio_config(psram_io_t *psram_io, psram_cache_mode_t
     gpio_matrix_in(psram_io->psram_spiwp_sd3_io, SPIWP_IN_IDX, 0);
     gpio_matrix_out(psram_io->psram_spihd_sd2_io, SPIHD_OUT_IDX, 0, 0);
     gpio_matrix_in(psram_io->psram_spihd_sd2_io, SPIHD_IN_IDX, 0);
-    
+
     //select pin function gpio
     if ((psram_io->flash_clk_io == SPI_IOMUX_PIN_NUM_CLK) && (psram_io->flash_clk_io != psram_io->psram_clk_io)) {
         //flash clock signal should come from IO MUX.
@@ -671,7 +671,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
 
         // If flash mode is set to QIO or QOUT, the WP pin is equal the value configured in bootloader.
         // If flash mode is set to DIO or DOUT, the WP pin should config it via menuconfig.
-        #if CONFIG_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
+        #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_FLASHMODE_QOUT
         psram_io.psram_spiwp_sd3_io = CONFIG_BOOTLOADER_SPI_WP_PIN;
         #else
         psram_io.psram_spiwp_sd3_io = CONFIG_SPIRAM_SPIWP_SD3_PIN;
@@ -685,7 +685,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     CLEAR_PERI_REG_MASK(SPI_USER_REG(PSRAM_SPI_1), SPI_USR_PREP_HOLD_M);
 
     psram_spi_init(PSRAM_SPI_1, mode);
-    
+
     switch (mode) {
         case PSRAM_CACHE_F80M_S80M:
             gpio_matrix_out(psram_io.psram_clk_io, SPICLK_OUT_IDX, 0, 0);
@@ -754,7 +754,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         gpio_matrix_out(PSRAM_INTERNAL_IO_29, SIG_GPIO_OUT_IDX, 0, 0);
         gpio_matrix_out(psram_io.psram_clk_io, SPICLK_OUT_IDX, 0, 0);
     }
-    
+
     // Update cs timing according to psram driving method.
     psram_set_cs_timing(PSRAM_SPI_1, s_clk_mode);
     psram_set_cs_timing(_SPI_CACHE_PORT, s_clk_mode);
