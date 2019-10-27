@@ -44,10 +44,6 @@ else()
     set(priv_requires bootloader_support app_update soc)
 endif()
 
-if(IDF_TARGET STREQUAL "esp32")
-    list(APPEND srcs "spi_flash_rom_patch.c")
-endif()
-
 idf_component_register(SRCS "${srcs}"
                     PRIV_REQUIRES "${priv_requires}"
                     INCLUDE_DIRS include
