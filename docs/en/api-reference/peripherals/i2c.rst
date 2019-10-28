@@ -1,51 +1,66 @@
-I2C
-===
-
-An I2C (Inter-Integrated Circuit) bus can be used for communication with several external devices connected to the same bus as ESP32. There are two I2C controllers on board of the ESP32, each of which can be set to master mode or slave mode.
-
+I2C Driver
+==========
 
 Overview
 --------
 
-The following sections will walk you through typical steps to configure and operate the I2C driver:
+I2C is a serial, synchronous, half-duplex communication protocol that allows co-existence of multiple masters and slaves on the same bus. The I2C bus consists of two lines: serial data line (SDA) and serial clock (SCL). Both lines require pull-up resistors.
 
-1.  :ref:`i2c-api-configure-driver` - select driver's parameters like master or slave mode, set specific GPIO pins to act as SDA and SCL, set the clock speed, etc. 
-2.  :ref:`i2c-api-install-driver`- activate driver in master or slave mode to operate on one of the two I2C controllers available on ESP32.
-3.  :ref:`i2c-api-run-communication`:
+With such advantages as simplicity and low manufacturing cost, I2C is mostly used for communication of low-speed peripheral devices over short distances (within one foot).
 
-    a)  :ref:`i2c-api-master-mode` - run communication acting as a master
-    b)  :ref:`i2c-api-slave-mode` - get slave responding to messages from the master
+ESP32 has two I2C controllers (also referred to as ports) which are responsible for handling communications on two I2C buses. Each I2C controller can operate as master or slave. As an example, one controller can act as a master and the other as a slave at the same time.
 
-4.  :ref:`i2c-api-interrupt-handling` - configure and service I2C interrupts.
-5.  :ref:`i2c-api-going-beyond-defaults` - adjust timing, pin configuration and other parameters of the I2C communication.
-6.  :ref:`i2c-api-error-handling` - how to recognize and handle driver configuration and communication errors.
-7.  :ref:`i2c-api-delete-driver`- on communication end to free resources used by the I2C driver.
 
-The top level identification of an I2C driver is one of the two port numbers selected from :cpp:type:`i2c_port_t`. The mode of operation for a given port is provided during driver configuration by selecting either "master" or "slave" from :cpp:type:`i2c_mode_t`.
+Driver Features
+---------------
+
+I2C driver governs communications of devices over the I2C bus. The driver supports the following features:
+
+- Reading and writing bytes in Master mode
+- Slave mode
+- Reading and writing to registers which are in turn read/written by the master
+
+
+Driver Usage
+------------
+
+The following sections describe typical steps of configuring and operating the I2C driver:
+
+1. :ref:`i2c-api-configure-driver` - set the initialization parameters (master or slave mode, GPIO pins for SDA and SCL, clock speed, etc.)
+2. :ref:`i2c-api-install-driver`- activate the driver on one of the two I2C controllers as a master or slave
+3. Depending on whether you configure the driver for a master or slave, choose the appropriate item
+
+   a) :ref:`i2c-api-master-mode` - handle communications (master)
+   b) :ref:`i2c-api-slave-mode` - respond to messages from the master (slave)
+
+4. :ref:`i2c-api-interrupt-handling` - configure and service I2C interrupts
+5. :ref:`i2c-api-customized-configuration` - adjust default I2C communication parameters (timings, bit order, etc.)
+6. :ref:`i2c-api-error-handling` - how to recognize and handle driver configuration and communication errors
+7. :ref:`i2c-api-delete-driver`- release resources used by the I2C driver when communication ends
 
 
 .. _i2c-api-configure-driver:
 
-Configure Driver
-^^^^^^^^^^^^^^^^
+Configuration
+^^^^^^^^^^^^^
 
-The first step to establishing I2C communication is to configure the driver. This is done by setting several parameters contained in :cpp:type:`i2c_config_t` structure:
+To establish I2C communication, start by configuring the driver. This is done by setting the parameters of the structure :cpp:type:`i2c_config_t`:
 
-* I2C **mode** - select either slave or master from :cpp:type:`i2c_mode_t`
-* Settings of the **communication pins**:
+- Set I2C **mode of operation** - slave or master from :cpp:type:`i2c_mode_t`
+- Configure **communication pins**
 
-    * GPIO pin numbers assigned to the SDA and SCL signals 
-    * Whether to enable ESP32's internal pull up for respective pins
+    - Assign GPIO pins for SDA and SCL signals
+    - Set whether to enable ESP32's internal pull-ups
 
-* I2C **clock speed**, if this configuration concerns the master mode
-* If this configuration concerns the slave mode:
+- (Master only) Set I2C **clock speed**
+- (Slave only) Configure the following
 
-    * Whether **10 bit address mode** should be enabled
-    * The **slave address**
+    * Whether to enable **10 bit address mode**
+    * Define **slave address**
 
-Then, to initialize configuration for a given I2C port, call function :cpp:func:`i2c_param_config` with the port number and :cpp:type:`i2c_config_t` structure as the function call parameters. 
+After that, initialize the configuration for a given I2C port. For this, call the function :cpp:func:`i2c_param_config` and pass to it the port number and the structure :cpp:type:`i2c_config_t`.
 
-At this stage :cpp:func:`i2c_param_config` also sets "behind the scenes" couple of other I2C configuration parameters to commonly used default values. To check what are the values and how to change them, see :ref:`i2c-api-going-beyond-defaults`. 
+At this stage, :cpp:func:`i2c_param_config` also sets a few other I2C configuration parameters to default values that are defined by the I2C specification. For more details on the values and how to modify them, see :ref:`i2c-api-customized-configuration`.
 
 
 .. _i2c-api-install-driver:
@@ -53,219 +68,106 @@ At this stage :cpp:func:`i2c_param_config` also sets "behind the scenes" couple 
 Install Driver
 ^^^^^^^^^^^^^^
 
-Having the configuration initialized, the next step is to install the I2C driver by calling :cpp:func:`i2c_driver_install`. This function call requires the following parameters:
+After the I2C driver is configured, install it by calling the function :cpp:func:`i2c_driver_install` with the following parameters:
 
-* The port number, one of the two ports available, selected from :cpp:type:`i2c_port_t`
-* The I2C mode, slave or master, selected from :cpp:type:`i2c_mode_t`
-* Sizes of buffers that will be allocated for sending and receiving data **in the slave mode**
-* Flags used to allocate the interrupt
-
-
-.. _i2c-api-run-communication:
-
-Run Communication
-^^^^^^^^^^^^^^^^^
-
-With the I2C driver installed, ESP32 is ready to communicate with other I2C devices. Programming of communication depends on whether selected I2C port operates in a master or a slave mode.
+- Port number, one of the two port numbers from :cpp:type:`i2c_port_t`
+- Master or slave, selected from :cpp:type:`i2c_mode_t`
+- (Slave only) Size of buffers to allocate for sending and receiving data. As I2C is a master-centric bus, data can only go from the slave to the master at the master's request. Therefore, the slave will usually have a send buffer where the slave application writes data. The data remains in the send buffer to be read by the master at the master's own discretion.
+- Flags for allocating the interrupt (see ESP_INTR_FLAG_* values in :component_file:`esp32/include/esp_intr_alloc.h`)
 
 
 .. _i2c-api-master-mode:
 
-Master Mode
-"""""""""""
+Communication as Master
+^^^^^^^^^^^^^^^^^^^^^^^
 
-ESP32's I2C port working in the master made is responsible for establishing communication with slave I2C devices and sending commands to trigger actions by slaves, like doing a measurement and sending back a result. 
+After installing the I2C driver, ESP32 is ready to communicate with other I2C devices.
 
-To organize this process the driver provides a container, called a "command link", that should be populated with a sequence of commands and then passed to the I2C controller for execution.
+ESP32's I2C controller operating as master is responsible for establishing communication with I2C slave devices and sending commands to trigger a slave to action, for example, to take a measurement and send the readings back to the master.
 
-**Master Write**
+For better process organization, the driver provides a container, called a "command link", that should be populated with a sequence of commands and then passed to the I2C controller for execution.
 
-An example of building a commend link for I2C master sending n bytes to slave is shown below:
 
-.. blockdiag::
-    :scale: 75
+Master Write
+""""""""""""
+
+The example below shows how to build a command link for an I2C master to send *n* bytes to a slave.
+
+.. blockdiag:: ../../../_static/diagrams/i2c-command-link-master-write-blockdiag.diag
+    :scale: 100
     :caption: I2C command link - master write example
     :align: center
 
-    blockdiag i2c-command-link-master-write { 
-        # global properties
-        span_width = 5;
-        span_height = 5;
-        node_height = 25;
-        default_group_color = lightgrey;
-        class spacer [shape=none, width=10];
-        class cmdlink [colwidth=2, width=180];
-        class cjoint [shape=none, width=40];
 
-        # all the rows
-        0 -- a0 --                         f0 [style=none]; 
-        1 -- a1 -- b1 -- c1 -- d1 -- e1 -- f1 -- g1 -- h1 [style=none]; 
-        2 -- a2 -- b2 -- c2 -- d2 -- e2 -- f2 -- g2 [style=none]; 
-        3 -- a3 --             d3 --       f3 [style=none];
-        4 -- a4 [style=none];
-        5 -- a5 [style=none];
-        6 -- a6 --       c6 [style=none];
-        7 -- a7 --       c7 -- d7 [style=none];
-        8 -- a8 --       c8 --              f8 [style=none];
-        9 -- a9 --       c9 --                         h9 [style=none];
-        10 -- a10 [style=none];
-        11 -- a11 [style=none];
+The following describes how a command link for a "master write" is set up and what comes inside:
 
-        # separator row
-        3, a3, d3, f3 [shape=none, height=5];
+1. Create a command link with :cpp:func:`i2c_cmd_link_create`.
 
-        # tuning node properties and connections
-        0 [class=spacer]; a0 [shape=none, colwidth=5]; f0 [shape=note, colwidth=2];
-        1 [class=spacer]; a1 [shape=none]; b1; c1 [width=40]; e1 [shape=none, width=30]; g1 [shape=none, width=30]; h1 [width=40];
-        2 [class=spacer]; a2 [shape=none]; b2; c2 [class=cjoint]; d2 [shape=none]; e2 [width=30]; f2 [shape=none]; g2 [width=30];
-        3 [class=spacer]; a3 [shape=none, colwidth=3]; d3 [colwidth=2]; f3 [colwidth=2];
-        4 [class=spacer]; a4 [class=cmdlink]
-        5 [class=spacer]; a5 [class=cmdlink];
-        6 [class=spacer]; a6 [class=cmdlink]; c6 [class=cjoint]; a6 -- c6 [style=solid]; c6 -- c2 -> c1 [folded];
-        7 [class=spacer]; a7 [class=cmdlink]; c7 [class=cjoint]; d7 [shape=none, colwidth=2]; a7 -- c7 -- d7 [style=solid]; d7 -> d3 [folded];
-        8 [class=spacer]; a8 [class=cmdlink]; c8 [class=cjoint, colwidth=3]; f8 [shape=none, colwidth=2]; a8 -- c8 -- f8 [style=solid]; f8 -> f3 [folded];
-        9 [class=spacer]; a9 [class=cmdlink]; c9 [class=cjoint, colwidth=5]; h9 [shape=none, width=40]; a9 -- c9 -- h9 [style=solid]; h9 -> h1 [folded];
-        10 [class=spacer]; a10 [class=cmdlink]; 
-        11 [class=spacer]; a11 [class=cmdlink]; 
-
-        # labels
-        f0 [label="Data n times", shape=note, color=yellow];
-        b1 [label=Master, shape=note, color=lightyellow]; c1 [label=START]; d1 [label="Slave Address"]; f1 [label=Data]; h1 [label=STOP];
-        b2 [label=Slave, shape=note, color=lightyellow]; e2 [label=ACK]; g2 [label=ACK];  
-        a4 [shape=note, label=Commands, color=yellow]; 
-        a5 [label="cmd = i2c_cmd_link_create()", numbered = 1]; 
-        a6 [label="i2c_master_start(cmd)", numbered = 2]; 
-        a7 [label="i2c_master_write_byte(cmd, Address, ACK)", numbered = 3]; 
-        a8 [label="i2c_master_write(Data, n, ACK)", numbered = 4]; 
-        a9 [label="i2c_master_stop(cmd)", numbered = 5]; 
-        a10 [label="i2c_master_cmd_begin(I2c_port, cmd, wait)", numbered = 6]; 
-        a11 [label="i2c_cmd_link_delete(cmd)", numbered = 7]; 
-
-        # Slave Address
-        group { d1; e1; }
-        group { d2; e2; d3; }
-
-        # Data x n times
-        group { f1; g1;}
-        group { f2; g2; f3; }
-    }
-
-The following describes how the command link for a "master write" is set up and what comes inside:
-
-1.  The first step is to create a command link with :cpp:func:`i2c_cmd_link_create`. 
-
-    Then the command link is populated with series of data to be sent to the slave:
+    Then, populate it with the series of data to be sent to the slave:
     
-    2.  **Start bit** - :cpp:func:`i2c_master_start`
-    3.  Single byte **slave address** - :cpp:func:`i2c_master_write_byte`. The address is provided as an argument of this function call.
-    4.  One or more bytes of **data** as an argument of :cpp:func:`i2c_master_write`. 
-    5.  **Stop bit** - :cpp:func:`i2c_master_stop`
+   a) **Start bit** - :cpp:func:`i2c_master_start`
+   b) **Slave address** - :cpp:func:`i2c_master_write_byte`. The single byte address is provided as an argument of this function call.
+   c) **Data** - One or more bytes as an argument of :cpp:func:`i2c_master_write`
+   d) **Stop bit** - :cpp:func:`i2c_master_stop`
 
-    Both :cpp:func:`i2c_master_write_byte` and :cpp:func:`i2c_master_write` commands have additional argument defining whether slave should **acknowledge** received data or not.
+    Both functions :cpp:func:`i2c_master_write_byte` and :cpp:func:`i2c_master_write` have an additional argument specifying whether the master should ensure that it has received the ACK bit.
 
-6.  Execution of command link by I2C controller is triggered by calling :cpp:func:`i2c_master_cmd_begin`.
-7.  As the last step, after sending of the commands is finished, the resources used by the command link are released by calling :cpp:func:`i2c_cmd_link_delete`.
+2. Trigger the execution of the command link by I2C controller by calling :cpp:func:`i2c_master_cmd_begin`. Once the execution is triggered, the command link cannot be modified.
+3. After the commands are transmitted, release the resources used by the command link by calling :cpp:func:`i2c_cmd_link_delete`.
 
-**Master Read**
 
-There is a similar sequence of steps for the master to read the data from a slave. 
+Master Read
+"""""""""""
 
-.. blockdiag::
+The example below shows how to build a command link for an I2C master to read *n* bytes from a slave.
+
+.. blockdiag:: ../../../_static/diagrams/i2c-command-link-master-read-blockdiag.diag
     :scale: 100
     :caption: I2C command link - master read example
     :align: center
 
-    blockdiag i2c-command-link-master-read { 
-        # global properties
-        span_width = 5;
-        span_height = 5;
-        node_height = 25;
-        default_group_color = lightgrey;
-        class spacer [shape=none, width=10];
-        class cmdlink [colwidth=2, width=180];
-        class cjoint [shape=none, width=40];
 
-        # all the rows
-        0 -- a0 --                         f0 [style=none]; 
-        1 -- a1 -- b1 -- c1 -- d1 -- e1 -- f1 -- g1 -- h1 -- i1 -- j1 [style=none]; 
-        2 -- a2 -- b2 -- c2 -- d2 -- e2 -- f2 -- g2 -- h2 -- i2  [style=none]; 
-        3 -- a3 --             d3 --       f3 --       h3 [style=none];
-        4 -- a4 [style=none];
-        5 -- a5 [style=none];
-        6 -- a6 --       c6 [style=none];
-        7 -- a7 --       c7 -- d7 [style=none];
-        8 -- a8 --       c8 --              f8 [style=none];
-        9 -- a9 --       c9 --                         h9 [style=none];
-        10 -- a10 --     c10 --                                    j10 [style=none];
-        11 -- a11 [style=none];
-        12 -- a12 [style=none];
+Compared to writing data, the command link is populated in Step 4 not with ``i2c_master_write...`` functions but with :cpp:func:`i2c_master_read_byte` and / or :cpp:func:`i2c_master_read`. Also, the last read in Step 5 is configured so that the master does not provide the ACK bit.
 
-        # separator row
-        3, a3, d3, f3, h3 [shape=none, height=5];
 
-        # tuning node properties and connections
-        0 [class=spacer]; a0 [shape=none, colwidth=5]; f0 [shape=note, colwidth=2];
-        1 [class=spacer]; a1 [shape=none]; b1; c1 [width=40]; e1 [shape=none, width=30]; f1 [shape=none]; g1 [width=30]; h1 [shape=none]; i1 [width=30]; j1 [width=40];
-        2 [class=spacer]; a2 [shape=none]; b2; c2 [class=cjoint]; d2 [shape=none]; e2 [width=30]; g2 [shape=none, width=30]; i2 [shape=none, width=30];
-        3 [class=spacer]; a3 [shape=none, colwidth=3]; d3 [colwidth=2]; f3 [colwidth=2]; h3 [colwidth=2];
-        4 [class=spacer]; a4 [class=cmdlink]
-        5 [class=spacer]; a5 [class=cmdlink];
-        6 [class=spacer]; a6 [class=cmdlink]; c6 [class=cjoint]; a6 -- c6 [style=solid]; c6 -- c2 -> c1 [folded];
-        7 [class=spacer]; a7 [class=cmdlink]; c7 [class=cjoint]; d7 [shape=none, colwidth=2]; a7 -- c7 -- d7 [style=solid]; d7 -> d3 [folded];
-        8 [class=spacer]; a8 [class=cmdlink]; c8 [class=cjoint, colwidth=3]; f8 [shape=none, colwidth=2]; a8 -- c8 -- f8 [style=solid]; f8 -> f3 [folded];
-        9 [class=spacer]; a9 [class=cmdlink]; c9 [class=cjoint, colwidth=5]; h9 [shape=none, colwidth=2]; a9 -- c9 -- h9 [style=solid]; h9 -> h3 [folded];
-        10 [class=spacer]; a10 [class=cmdlink]; c10 [class=cjoint, colwidth=7]; j10 [shape=none, width=40]; a10 -- c10 -- j10 [style=solid]; j10 -> j1 [folded];
-        11 [class=spacer]; a11 [class=cmdlink]; 
-        12 [class=spacer]; a12 [class=cmdlink]; 
+Indicating Write or Read
+""""""""""""""""""""""""
 
-        # labels
-        f0 [label="Data (n-1) times", shape=note, color=yellow];
-        b1 [label=Master, shape=note, color=lightyellow]; c1 [label=START]; d1 [label="Slave Address"]; g1 [label=ACK]; i1 [label=NAK]; j1 [label=STOP];
-        b2 [label=Slave, shape=note, color=lightyellow]; e2 [label=ACK]; f2 [label=Data]; h2 [label=Data];
-        a4 [shape=note, label=Commands, color=yellow]; 
-        a5 [label="cmd = i2c_cmd_link_create()", numbered = 1]; 
-        a6 [label="i2c_master_start(cmd)", numbered = 2]; 
-        a7 [label="i2c_master_write_byte(cmd, Address, ACK)", numbered = 3]; 
-        a8 [label="i2c_master_read(Data, n-1, ACK)", numbered = 4]; 
-        a9 [label="i2c_master_read(Data, 1, NAK)", numbered = 5]; 
-        a10 [label="i2c_master_stop(cmd)", numbered = 6]; 
-        a11 [label="i2c_master_cmd_begin(I2c_port, cmd, wait)", numbered = 7]; 
-        a12 [label="i2c_cmd_link_delete(cmd)", numbered = 8]; 
+After sending a slave address (see Step 3 on both diagrams above), the master either writes or reads from the slave.
 
-        # Slave Address
-        group { d1; e1; }
-        group { d2; e2; d3; }
+The information on what the master will actually do is hidden in the least significant bit of the slave's address.
 
-        # Data x (n - 1) times
-        group { f1; g1;}
-        group { f2; g2; f3; }
+For this reason, the command link sent by the master to write data to the slave contains the address ``(ESP_SLAVE_ADDR << 1) | I2C_MASTER_WRITE`` and looks as follows:
 
-        # Data
-        group { h1; i1; }
-        group { h2; i2; h3; }
-    }
+.. code-block:: c
 
-When reading the data, instead of "i2c_master_read...", the command link is populated with :cpp:func:`i2c_master_read_byte` and / or :cpp:func:`i2c_master_read`. Also, the last read is configured for not providing an acknowledge by the master.
+    i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | I2C_MASTER_WRITE, ACK_EN);
 
-**Master Write or Read?**
+Likewise, the command link to read from the slave looks as follows:
 
-After sending a slave's address, see step 3 on pictures above, the master either writes to or reads from the slave. The information what the master will actually do is hidden in the least significant bit of the slave's address. 
+.. code-block:: c
 
-Therefore the command link instructing the slave that the master will write the data contains the address like ``(ESP_SLAVE_ADDR << 1) | I2C_MASTER_WRITE`` and looks as follows::
-
-  i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | I2C_MASTER_WRITE, ACK_CHECK_EN)
-
-By similar token the command link to read from the slave looks as follows::
-
-  i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | I2C_MASTER_READ, ACK_CHECK_EN)
+    i2c_master_write_byte(cmd, (ESP_SLAVE_ADDR << 1) | I2C_MASTER_READ, ACK_EN);
 
 
 .. _i2c-api-slave-mode:
 
-Slave Mode
-""""""""""
+Communication as Slave
+^^^^^^^^^^^^^^^^^^^^^^
 
-The API provides functions to read and write data by the slave - * :cpp:func:`i2c_slave_read_buffer` and :cpp:func:`i2c_slave_write_buffer`. An example of using these functions is provided in :example:`peripherals/i2c`.
+After installing the I2C driver, ESP32 is ready to communicate with other I2C devices.
+
+The API provides the following functions for slaves
+
+- :cpp:func:`i2c_slave_read_buffer`
+
+    Whenever the master writes data to the slave, the slave will automatically store it in the receive buffer. This allows the slave application to call the function :cpp:func:`i2c_slave_read_buffer` at its own discretion. This function also has a parameter to specify block time if no data is in the receive buffer. This will allow the slave application to wait with a specified timeout for data to arrive to the buffer.
+
+- :cpp:func:`i2c_slave_write_buffer`
+
+    The send buffer is used to store all the data that the slave wants to send to the master in FIFO order. The data stays there until the master requests for it. The function :cpp:func:`i2c_slave_write_buffer` has a parameter to specify block time if the send buffer is full. This will allow the slave application to wait with a specified timeout for the adequate amount of space to become available in the send buffer.
+
+A code example showing how to use these functions can be found in :example:`peripherals/i2c`.
 
 
 .. _i2c-api-interrupt-handling:
@@ -273,36 +175,49 @@ The API provides functions to read and write data by the slave - * :cpp:func:`i2
 Interrupt Handling
 ^^^^^^^^^^^^^^^^^^
 
-To register an interrupt handler, call function :cpp:func:`i2c_isr_register`, to delete the handler call :cpp:func:`i2c_isr_free`. Description of interrupts triggered by I2C controller is provided in the `ESP32 Technical Reference Manual (PDF) <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_.
+During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=292>`_ for the description of interrupts triggered by the I2C controller.
+
+To delete an interrupt handler, call :cpp:func:`i2c_isr_free`.
 
 
-.. _i2c-api-going-beyond-defaults:
+.. _i2c-api-customized-configuration:
 
-Going Beyond Defaults
-^^^^^^^^^^^^^^^^^^^^^
+Customized Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are couple of I2C communication parameters setup during driver configuration (when calling :cpp:func:`i2c_param_config`, see :ref:`i2c-api-configure-driver`), to some default commonly used values. Some parameters are also already configured in registers of the I2C controller. These parameters can be changed to user defined values by calling dedicated functions: 
+As mentioned at the end of Section :ref:`i2c-api-configure-driver`, when the function :cpp:func:`i2c_param_config` initializes the driver configuration for an I2C port, it also sets several I2C communication parameters to default values defined in the `I2C specification <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_. Some other related parameters are pre-configured in registers of the I2C controller.
 
-* Period of SCL pulses being high and low - :cpp:func:`i2c_set_period`
-* SCL and SDA signal timing used during generation of start / stop signals - :cpp:func:`i2c_set_start_timing` / :cpp:func:`i2c_set_stop_timing`
-* Timing relationship between SCL and SDA signals when sampling by slave, as well as when transmitting by master - :cpp:func:`i2c_set_data_timing`
-* I2C timeout - :cpp:func:`i2c_set_timeout`
+All these parameters can be changed to user-defined values by calling dedicated functions given in the table below. Please note that the timing values are defined in APB clock cycles. The frequency of APB is specified in :cpp:type:`I2C_APB_CLK_FREQ`.
 
-  .. note::
+.. list-table:: Other Configurable I2C Communication Parameters
+   :widths: 65 35
+   :header-rows: 1
 
-    The timing values are defined in APB clock cycles. The frequency of APB is specified in :cpp:type:`I2C_APB_CLK_FREQ`.
+   * - Parameters to Change
+     - Function
+   * - High time and low time for SCL pulses
+     - :cpp:func:`i2c_set_period`
+   * - SCL and SDA signal timing used during generation of **start** signals
+     - :cpp:func:`i2c_set_start_timing`
+   * - SCL and SDA signal timing used during generation of **stop** signals
+     - :cpp:func:`i2c_set_stop_timing`
+   * - Timing relationship between SCL and SDA signals when slave samples, as well as when master toggles
+     - :cpp:func:`i2c_set_data_timing`
+   * - I2C timeout
+     - :cpp:func:`i2c_set_timeout`
+   * - Choice between transmitting / receiving the LSB or MSB first, choose one of the modes defined in :cpp:type:`i2c_trans_mode_t`
+     - :cpp:func:`i2c_set_data_mode`
 
-* What bit, LSB or MSB, is transmitted / received first - :cpp:func:`i2c_set_data_mode` selectable out of modes defined in :cpp:type:`i2c_trans_mode_t`
 
-Each one of the above functions has a *_get_* counterpart to check the currently set value.
+Each of the above functions has a *_get_* counterpart to check the currently set value. For example, to check the I2C timeout value, call :cpp:func:`i2c_get_timeout`.
 
-To see the default values of parameters setup during driver configuration, please refer to file :component_file:`driver/i2c.c` looking up defines with ``_DEFAULT`` suffix.
+To check the default parameter values which are set during the driver configuration process, please refer to the file :component_file:`driver/i2c.c` and look for defines with the suffix ``_DEFAULT``.
 
-With function :cpp:func:`i2c_set_pin` it is also possible to select different SDA and SCL pins and alter configuration of pull ups, changing what has been already entered with :cpp:func:`i2c_param_config`.
+You can also select different pins for SDA and SCL signals and alter the configuration of pull-ups with the function :cpp:func:`i2c_set_pin`. If you want to modify already entered values, use the function :cpp:func:`i2c_param_config`.
 
 .. note::
 
-    ESP32's internal pull ups are in the range of some tens of kOhm, and as such in most cases insufficient for use as I2C pull ups by themselves. We suggest to add external pull ups as well, with values as described in the I2C standard.
+    ESP32's internal pull-ups are in the range of tens of kOhm, which is, in most cases, insufficient for use as I2C pull-ups. Users are advised to use external pull-ups with values described in the `I2C specification <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_.
 
 
 .. _i2c-api-error-handling:
@@ -310,11 +225,11 @@ With function :cpp:func:`i2c_set_pin` it is also possible to select different SD
 Error Handling
 ^^^^^^^^^^^^^^
 
-Most of driver's function return the ``ESP_OK`` on successful completion or a specific error code on a failure. It is a good practice to always check the returned values and implement the error handling. The driver is also printing out log messages, when e.g. checking the correctness of entered configuration, that contain explanation of errors. For details please refer to file :component_file:`driver/i2c.c` looking up defines with ``_ERR_STR`` suffix.
+The majority of I2C driver functions either return ``ESP_OK`` on successful completion or a specific error code on failure. It is a good practice to always check the returned values and implement error handling. The driver also prints out log messages that contain error details, e.g., when checking the validity of entered configuration. For details please refer to the file :component_file:`driver/i2c.c` and look for defines with the suffix ``_ERR_STR``.
 
-Use dedicated interrupts to capture communication failures. For instance there is ``I2C_TIME_OUT_INT`` interrupt triggered when I2C takes too long to receive data. See :ref:`i2c-api-interrupt-handling` for related information.
+Use dedicated interrupts to capture communication failures. For instance, if a slave stretches the clock for too long while preparing the data to send back to master, the interrupt ``I2C_TIME_OUT_INT`` will be triggered. For detailed information, see :ref:`i2c-api-interrupt-handling`.
 
-To reset internal hardware buffers in case of communication failure, you can use :cpp:func:`i2c_reset_tx_fifo` and :cpp:func:`i2c_reset_rx_fifo`.
+In case of a communication failure, you can reset the internal hardware buffers by calling the functions :cpp:func:`i2c_reset_tx_fifo` and :cpp:func:`i2c_reset_rx_fifo` for the send and receive buffers respectively.
 
 
 .. _i2c-api-delete-driver:
@@ -322,7 +237,7 @@ To reset internal hardware buffers in case of communication failure, you can use
 Delete Driver
 ^^^^^^^^^^^^^
 
-If the I2C communication is established with :cpp:func:`i2c_driver_install` for some specific period of time and then not required, the driver may be removed to free allocated resources by calling :cpp:func:`i2c_driver_delete`.
+When the I2C communication is established with the function :cpp:func:`i2c_driver_install` and is not required for some substantial amount of time, the driver may be deinitialized to release allocated resources by calling :cpp:func:`i2c_driver_delete`.
 
 
 Application Example
