@@ -679,6 +679,132 @@ static esp_err_t IRAM_ATTR spi_flash_translate_rc(esp_rom_spiflash_result_t rc)
     }
 }
 
+// Those code below enable direct communication with the SPI FLASH, such as almost any command available from any flash vendor or manufacturer	
+#include "soc/spi_reg.h"		
+#include "soc/soc.h"		
+static void IRAM_ATTR spi_master_ops(int unit, unsigned int word_size, unsigned int len, unsigned char *out, unsigned char *in) {		
+unsigned int bytes = word_size * len; // Number of bytes to write / read		
+unsigned int idx = 0;		
+/*		
+ * SPI data buffers hardware registers are 32-bit size, so we use a		
+ * transfer buffer for adapt user buffers to buffers expected by hardware, this		
+ * buffer is 16-word size (64 bytes)		
+ *		
+ */		
+uint32_t buffer[16]; // Transfer buffer		
+uint32_t wd;         // Current word		
+unsigned int wdb; 	 // Current byte into current word		
+// This is the number of bits to transfer for current chunk		
+unsigned int bits;		
+bytes = word_size * len;		
+while (bytes) {		
+  // Populate transfer buffer in chunks of 64 bytes		
+  idx = 0;		
+  bits = 0;		
+  while (bytes && (idx < 16)) {		
+    wd = 0;		
+    wdb = 4;		
+    while (bytes && wdb) {		
+      wd = (wd >> 8);		
+      if (out) {		
+        wd |= *out << 24;		
+        out++;		
+      } else {		
+        wd |= 0xff << 24;		
+      }		
+      wdb--;		
+      bytes--;		
+      bits += 8;		
+    }		
+    while (wdb) {		
+      wd = (wd >> 8);		
+      wdb--;		
+    }		
+    buffer[idx] = wd;		
+    idx++;		
+  }		
+  // Wait for SPI bus ready		
+  while (READ_PERI_REG(SPI_CMD_REG(unit))&SPI_USR);		
+  // Load send buffer		
+    SET_PERI_REG_BITS(SPI_MOSI_DLEN_REG(unit), SPI_USR_MOSI_DBITLEN, bits - 1, SPI_USR_MOSI_DBITLEN_S);		
+    SET_PERI_REG_BITS(SPI_MISO_DLEN_REG(unit), SPI_USR_MISO_DBITLEN, bits - 1, SPI_USR_MISO_DBITLEN_S);		
+    idx = 0;		
+    while ((idx << 5) < bits) {		
+      WRITE_PERI_REG((SPI_W0_REG(unit) + (idx << 2)), buffer[idx]);		
+      idx++;		
+    }		
+    // Start transfer		
+    SET_PERI_REG_MASK(SPI_CMD_REG(unit), SPI_USR);		
+    // Wait for SPI bus ready		
+  while (READ_PERI_REG(SPI_CMD_REG(unit))&SPI_USR);		
+  if (in) {		
+    // Read data into buffer		
+    idx = 0;		
+    while ((idx << 5) < bits) {		
+      buffer[idx] = READ_PERI_REG((SPI_W0_REG(unit) + (idx << 2)));		
+      idx++;		
+    }		
+    memcpy((void *)in, (void *)buffer, bits >> 3);		
+    in += (bits >> 3);		
+  }		
+}		
+}	
+
+void IRAM_ATTR spi_flash_send_cmd(uint32_t len, uint8_t *cmd, uint8_t *res) {		
+  uint32_t prev[8];		
+  spi_flash_disable_interrupts_caches_and_other_cpu();		
+  // Store SPI registers		
+  prev[0] = READ_PERI_REG(SPI_USER_REG(1));		
+  prev[1] = READ_PERI_REG(SPI_USER1_REG(1));		
+  prev[2] = READ_PERI_REG(SPI_USER2_REG(1));		
+  prev[3] = READ_PERI_REG(SPI_CTRL_REG(1));		
+  prev[4] = READ_PERI_REG(SPI_CTRL2_REG(1));		
+  prev[5] = READ_PERI_REG(SPI_SLAVE_REG(1));		
+  prev[6] = READ_PERI_REG(SPI_PIN_REG(1));		
+  prev[7] = READ_PERI_REG(SPI_CLOCK_REG(1));		
+  // Clean SPI registers		
+  WRITE_PERI_REG(SPI_USER_REG(1), 0);		
+  WRITE_PERI_REG(SPI_USER1_REG(1), 0);		
+  WRITE_PERI_REG(SPI_USER2_REG(1), 0);		
+  WRITE_PERI_REG(SPI_CTRL_REG(1), 0);		
+  WRITE_PERI_REG(SPI_CTRL2_REG(1), 0);		
+  WRITE_PERI_REG(SPI_SLAVE_REG(1), 0);		
+  WRITE_PERI_REG(SPI_PIN_REG(1), 0);		
+  // Set SPI mode 0		
+  CLEAR_PERI_REG_MASK(SPI_PIN_REG(1),  SPI_CK_IDLE_EDGE);		
+  CLEAR_PERI_REG_MASK(SPI_USER_REG(1), SPI_CK_OUT_EDGE);		
+  // Set bit order to MSB		
+  CLEAR_PERI_REG_MASK(SPI_CTRL_REG(1), SPI_WR_BIT_ORDER | SPI_RD_BIT_ORDER);		
+  // Enable full-duplex communication		
+  SET_PERI_REG_MASK(SPI_USER_REG(1), SPI_DOUTDIN);		
+  // Configure as master		
+  WRITE_PERI_REG(SPI_USER1_REG(1), 0);		
+SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_MISO_DELAY_MODE, 0, SPI_MISO_DELAY_MODE_S);		
+CLEAR_PERI_REG_MASK(SPI_SLAVE_REG(1), SPI_SLAVE_MODE);		
+  // Set clock to 1 Khz		
+  WRITE_PERI_REG(SPI_CLOCK_REG(1), 0x7cf89005);		
+  // Enable MOSI / MISO / CS		
+  SET_PERI_REG_MASK(SPI_USER_REG(1), SPI_CS_SETUP | SPI_CS_HOLD | SPI_USR_MOSI | SPI_USR_MISO);		
+  SET_PERI_REG_MASK(SPI_CTRL2_REG(1), ((0x4 & SPI_MISO_DELAY_NUM) << SPI_MISO_DELAY_NUM_S));		
+  // Don't use command / address phase		
+  CLEAR_PERI_REG_MASK(SPI_USER_REG(1), SPI_USR_COMMAND);		
+  SET_PERI_REG_BITS(SPI_USER2_REG(1), SPI_USR_COMMAND_BITLEN, 0, SPI_USR_COMMAND_BITLEN_S);		
+  CLEAR_PERI_REG_MASK(SPI_USER_REG(1), SPI_USR_ADDR);		
+  SET_PERI_REG_BITS(SPI_USER1_REG(1), SPI_USR_ADDR_BITLEN, 0, SPI_USR_ADDR_BITLEN_S);		
+  spi_master_ops(1, 1, len, cmd, res);		
+  // Restore SPI registers		
+  WRITE_PERI_REG(SPI_USER_REG(1),  prev[0]);		
+  WRITE_PERI_REG(SPI_USER1_REG(1), prev[1]);		
+  WRITE_PERI_REG(SPI_USER2_REG(1), prev[2]);		
+  WRITE_PERI_REG(SPI_CTRL_REG(1),  prev[3]);		
+  WRITE_PERI_REG(SPI_CTRL2_REG(1), prev[4]);		
+  WRITE_PERI_REG(SPI_SLAVE_REG(1), prev[5]);		
+  WRITE_PERI_REG(SPI_PIN_REG(1),   prev[6]);		
+  WRITE_PERI_REG(SPI_CLOCK_REG(1), prev[7]);		
+  spi_flash_enable_interrupts_caches_and_other_cpu();		
+}		
+// Those code above enable direct communication with the SPI FLASH, such as almost any command available from any flash vendor or manufacturer
+
 #if CONFIG_SPI_FLASH_ENABLE_COUNTERS
 
 static inline void dump_counter(spi_flash_counter_t *counter, const char *name)
