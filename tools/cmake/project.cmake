@@ -313,21 +313,27 @@ macro(project project_name)
     # PROJECT_NAME is taken from the passed name from project() call
     # PROJECT_DIR is set to the current directory
     # PROJECT_VER is from the version text or git revision of the current repo
-    if(SDKCONFIG_DEFAULTS)
-        foreach(sdkconfig_default ${SDKCONFIG_DEFAULTS})
-            get_filename_component(sdkconfig_default "${sdkconfig_default}" ABSOLUTE)
-            if(NOT EXISTS "${sdkconfig_default}")
-                message(FATAL_ERROR "SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
-            endif()
-            list(APPEND sdkconfig_defaults ${sdkconfig_default})
-        endforeach()
-    else()
+    set(_sdkconfig_defaults "$ENV{SDKCONFIG_DEFAULTS}")
+
+    if(NOT _sdkconfig_defaults)
         if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
-            set(sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+            set(_sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
         else()
-            set(sdkconfig_defaults "")
+            set(_sdkconfig_defaults "")
         endif()
     endif()
+
+    if(SDKCONFIG_DEFAULTS)
+        set(_sdkconfig_defaults "${SDKCONFIG_DEFAULTS}")
+    endif()
+
+    foreach(sdkconfig_default ${_sdkconfig_defaults})
+        get_filename_component(sdkconfig_default "${sdkconfig_default}" ABSOLUTE)
+        if(NOT EXISTS "${sdkconfig_default}")
+            message(FATAL_ERROR "SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
+        endif()
+        list(APPEND sdkconfig_defaults ${sdkconfig_default})
+    endforeach()
 
     if(SDKCONFIG)
         get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
