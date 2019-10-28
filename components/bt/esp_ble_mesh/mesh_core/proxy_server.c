@@ -130,7 +130,7 @@ int bt_mesh_set_device_name(const char *name)
     memset(device_name, 0x0, sizeof(device_name));
     memcpy(device_name, name, strlen(name));
 
-    return 0;
+    return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
 static struct bt_mesh_proxy_client *find_client(struct bt_mesh_conn *conn)
@@ -1417,7 +1417,7 @@ int bt_mesh_proxy_init(void)
     __ASSERT(prov && prov->uuid, "%s, Device UUID is not initialized", __func__);
 #endif
 
-    return 0;
+    return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
 #endif /* CONFIG_BLE_MESH_NODE */

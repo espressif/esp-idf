@@ -1011,6 +1011,14 @@ int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc)
 
     return 0;
 }
+
+int bt_mesh_gatts_set_local_device_name(const char *name)
+{
+    BLE_MESH_BTM_CHECK_STATUS(BTM_SetLocalDeviceName((char *)name));
+
+    return 0;
+}
+
 #endif /* defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE */
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
