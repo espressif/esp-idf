@@ -508,6 +508,11 @@ void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
 #endif
 }
 
+int32_t IRAM_ATTR coex_is_in_isr_wrapper(void)
+{
+    return !xPortCanYield();
+}
+
 wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._version = ESP_WIFI_OS_ADAPTER_VERSION,
     ._set_isr = set_isr_wrapper,
@@ -617,7 +622,7 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
     ._semphr_take = semphr_take_wrapper,
     ._semphr_give = semphr_give_wrapper,
-    ._is_in_isr = xPortInIsrContext,
+    ._is_in_isr = coex_is_in_isr_wrapper,
     ._malloc_internal =  malloc_internal_wrapper,
     ._free = free,
     ._timer_disarm = timer_disarm_wrapper,
