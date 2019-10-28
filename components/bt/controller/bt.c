@@ -743,7 +743,7 @@ static void task_delete_wrapper(void *task_handle)
 
 static bool IRAM_ATTR is_in_isr_wrapper(void)
 {
-    return (bool)xPortInIsrContext();
+    return !xPortCanYield();
 }
 
 static void IRAM_ATTR cause_sw_intr(void *arg)
