@@ -171,6 +171,7 @@ COMPONENT_ADD_INCLUDEDIRS += host/nimble/nimble/nimble/include                  
                              host/nimble/nimble/nimble/host/services/gap/include   \
                              host/nimble/nimble/nimble/host/services/gatt/include  \
                              host/nimble/nimble/nimble/host/services/ias/include   \
+                             host/nimble/nimble/nimble/host/services/ipss/include  \
                              host/nimble/nimble/nimble/host/services/lls/include   \
                              host/nimble/nimble/nimble/host/services/tps/include   \
                              host/nimble/nimble/nimble/host/util/include           \
@@ -191,6 +192,7 @@ COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/src                         
                      host/nimble/nimble/nimble/host/services/gap/src               \
                      host/nimble/nimble/nimble/host/services/gatt/src              \
                      host/nimble/nimble/nimble/host/services/ias/src               \
+                     host/nimble/nimble/nimble/host/services/ipss/src              \
                      host/nimble/nimble/nimble/host/services/lls/src               \
                      host/nimble/nimble/nimble/host/services/tps/src               \
                      host/nimble/nimble/nimble/host/util/src                       \
