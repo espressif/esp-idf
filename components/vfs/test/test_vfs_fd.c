@@ -232,7 +232,7 @@ static int time_test_vfs_write(int fd, const void *data, size_t size)
     return size;
 }
 
-TEST_CASE_ESP32("Open & write & close through VFS passes performance test", "[vfs]")
+TEST_CASE("Open & write & close through VFS passes performance test", "[vfs]")
 {
     esp_vfs_t desc = {
         .flags = ESP_VFS_FLAG_DEFAULT,
