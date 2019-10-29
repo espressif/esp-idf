@@ -151,8 +151,10 @@ typedef struct {
 
 static can_obj_t *p_can_obj = NULL;
 static portMUX_TYPE can_spinlock = portMUX_INITIALIZER_UNLOCKED;
-#define CAN_ENTER_CRITICAL()  portENTER_CRITICAL(&can_spinlock)
-#define CAN_EXIT_CRITICAL()   portEXIT_CRITICAL(&can_spinlock)
+#define CAN_ENTER_CRITICAL_ISR()    portENTER_CRITICAL_ISR(&can_spinlock)
+#define CAN_EXIT_CRITICAL_ISR()     portEXIT_CRITICAL_ISR(&can_spinlock)
+#define CAN_ENTER_CRITICAL()        portENTER_CRITICAL(&can_spinlock)
+#define CAN_EXIT_CRITICAL()         portEXIT_CRITICAL(&can_spinlock)
 
 /* ------------------- Configuration Register Functions---------------------- */
 
@@ -494,7 +496,7 @@ static void can_intr_handler_main(void *arg)
     can_status_reg_t status;
     can_intr_reg_t intr_reason;
 
-    CAN_ENTER_CRITICAL();
+    CAN_ENTER_CRITICAL_ISR();
     status.val = can_get_status();
     intr_reason.val = (p_can_obj != NULL) ? can_get_interrupt_reason() : 0; //Incase intr occurs whilst driver is being uninstalled
 
@@ -529,7 +531,7 @@ static void can_intr_handler_main(void *arg)
     }
     /* Todo: Check possible bug where transmitting self reception request then
        clearing rx buffer will cancel the transmission. */
-    CAN_EXIT_CRITICAL();
+    CAN_EXIT_CRITICAL_ISR();
 
     if (p_can_obj->alert_semphr != NULL && alert_req) {
         //Give semaphore if alerts were triggered
