@@ -441,6 +441,10 @@ static uint16_t _mdns_append_ptr_record(uint8_t * packet, uint16_t * index, cons
     uint16_t record_length = 0;
     uint8_t part_length;
 
+    if (service == NULL) {
+        return 0;
+    }
+
     str[0] = instance;
     str[1] = service;
     str[2] = proto;
@@ -484,6 +488,10 @@ static uint16_t _mdns_append_sdptr_record(uint8_t * packet, uint16_t * index, md
     const char * sd_str[4];
     uint16_t record_length = 0;
     uint8_t part_length;
+
+    if (service == NULL) {
+        return 0;
+    }
 
     sd_str[0] = (char*)"_services";
     sd_str[1] = (char*)"_dns-sd";
@@ -529,6 +537,10 @@ static uint16_t _mdns_append_txt_record(uint8_t * packet, uint16_t * index, mdns
     const char * str[4];
     uint16_t record_length = 0;
     uint8_t part_length;
+
+    if (service == NULL) {
+        return 0;
+    }
 
     str[0] = _mdns_get_service_instance_name(service);
     str[1] = service->service;
@@ -597,6 +609,10 @@ static uint16_t _mdns_append_srv_record(uint8_t * packet, uint16_t * index, mdns
     const char * str[4];
     uint16_t record_length = 0;
     uint8_t part_length;
+
+    if (service == NULL) {
+        return 0;
+    }
 
     str[0] = _mdns_get_service_instance_name(service);
     str[1] = service->service;
@@ -1147,6 +1163,7 @@ static bool _mdns_alloc_answer(mdns_out_answer_t ** destnation, uint16_t type, m
     }
     a->type = type;
     a->service = service;
+    a->custom_service = NULL;
     a->bye = bye;
     a->flush = flush;
     a->next = NULL;
