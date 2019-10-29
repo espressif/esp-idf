@@ -18,6 +18,17 @@ if(PYTHON_DEPS_CHECKED)
     idf_build_set_property(__CHECK_PYTHON 0)
 endif()
 
+# Store CMake arguments that need to be passed into all CMake sub-projects as well
+# (bootloader, ULP, etc)
+#
+# It's not possible to tell if CMake was called with --warn-uninitialized, so to also
+# have these warnings in sub-projects we set a cache variable as well and then check that.
+if(WARN_UNINITIALIZED)
+    idf_build_set_property(EXTRA_CMAKE_ARGS --warn-uninitialized)
+else()
+    idf_build_set_property(EXTRA_CMAKE_ARGS "")
+endif()
+
 # Initialize build target for this build using the environment variable or
 # value passed externally.
 __target_init()
