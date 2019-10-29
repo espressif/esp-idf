@@ -20,7 +20,7 @@ idf_component_register(SRCS "src/coexist.c"
                     LDFRAGMENTS "${ldfragments}")
 
 idf_build_get_property(build_dir BUILD_DIR)
-target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}")
+target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}")
 
 if(link_binary_libs)
     if(CONFIG_IDF_TARGET_ESP32)
@@ -39,7 +39,7 @@ if(link_binary_libs)
 
     foreach(blob ${blobs})
         add_library(${blob} STATIC IMPORTED)
-        set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib_${idf_target}/lib${blob}.a)
+        set_property(TARGET ${blob} PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/${idf_target}/lib${blob}.a)
         target_link_libraries(${COMPONENT_LIB} PUBLIC ${blob})
 
         foreach(_blob ${blobs})
