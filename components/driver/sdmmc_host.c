@@ -23,6 +23,7 @@
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"
 #include "sdmmc_private.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "soc/sdmmc_periph.h"
 
