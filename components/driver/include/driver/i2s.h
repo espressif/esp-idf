@@ -25,6 +25,7 @@
 #include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
 #include "driver/adc.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
 #ifdef __cplusplus
