@@ -1010,10 +1010,27 @@ Espressif's fork of `mbedtls <https://github.com/ARMmbed/mbedtls>`_. See its :co
 
 The CMake variable ``ESP_PLATFORM`` is set to 1 whenever the ESP-IDF build system is being used. Tests such as ``if (ESP_PLATFORM)`` can be used in generic CMake code if special IDF-specific logic is required.
 
+Using ESP-IDF components from external libraries
+------------------------------------------------
+
+The above example assumes that the external library ``foo` (or ``tinyxml`` in the case of the ``import_lib`` example) doesn't need to use any ESP-IDF APIs apart from common APIs such as libc, libstdc++, etc. If the external library needs to use APIs provided by other ESP-IDF components, this needs to be specified in the external CMakeLists.txt file by adding a dependency on the library target ``idf::<componentname>``.
+
+For example, in the ``foo/CMakeLists.txt`` file::
+
+  add_library(foo bar.c fizz.cpp buzz.cpp)
+
+  if(ESP_PLATFORM)
+    # On ESP-IDF, bar.c needs to include esp_spi_flash.h from the spi_flash component
+    target_link_libraries(foo PRIVATE idf::spi_flash)
+  endif()
+
+
 Using Prebuilt Libraries with Components
 ========================================
 
 .. highlight:: cmake
+
+Another possibility is that you have a prebuilt static library (``.a`` file), built by some other build process.
 
 The ESP-IDF build system provides a utility function ``add_prebuilt_library`` for users to be able to easily import and use
 prebuilt libraries::
