@@ -26,7 +26,16 @@
 #endif
 
 #define UNITY_EXCLUDE_TIME_H
-#define UNITY_EXCLUDE_SETJMP_H
+
+/**
+ * @note For some reason setjmp does not work with 
+ * unity in local tests for, at least now, unknown 
+ * reasons since the interrupt handling was modified
+ * so if you want to perform tests locally, 
+ * uncomment this line. Remote tests on CI
+ * still working as expected 
+ */ 
+//#define UNITY_EXCLUDE_SETJMP_H
 
 void unity_flush(void);
 void unity_putc(int c);
