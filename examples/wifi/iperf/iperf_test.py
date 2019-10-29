@@ -32,6 +32,7 @@ import subprocess
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -517,7 +518,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
                                                     "sdkconfig.{}".format(config_name))
 
         # 2. get DUT and download
-        dut = env.get_dut("iperf", "examples/wifi/iperf")
+        dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ESP32DUT)
         dut.start_app()
         dut.expect("esp32>")
 
@@ -575,7 +576,7 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     build_iperf_with_config(BEST_PERFORMANCE_CONFIG)
 
     # 2. get DUT and download
-    dut = env.get_dut("iperf", "examples/wifi/iperf")
+    dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ESP32DUT)
     dut.start_app()
     dut.expect("esp32>")
 
@@ -624,7 +625,7 @@ def test_wifi_throughput_basic(env, extra_data):
     build_iperf_with_config(BEST_PERFORMANCE_CONFIG)
 
     # 2. get DUT
-    dut = env.get_dut("iperf", "examples/wifi/iperf")
+    dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ESP32DUT)
     dut.start_app()
     dut.expect("esp32>")
 

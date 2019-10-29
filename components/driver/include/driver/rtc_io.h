@@ -24,11 +24,18 @@ extern "C" {
 #endif
 
 typedef enum {
-    RTC_GPIO_MODE_INPUT_ONLY , /*!< Pad input */
-    RTC_GPIO_MODE_OUTPUT_ONLY, /*!< Pad output */
+    RTC_GPIO_MODE_INPUT_ONLY ,  /*!< Pad input */
+    RTC_GPIO_MODE_OUTPUT_ONLY,  /*!< Pad output */
     RTC_GPIO_MODE_INPUT_OUTPUT, /*!< Pad pull input + output */
-    RTC_GPIO_MODE_DISABLED,    /*!< Pad (output + input) disable */
+    RTC_GPIO_MODE_DISABLED,     /*!< Pad (output + input) disable */
 } rtc_gpio_mode_t;
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+typedef enum {
+    RTCIO_MODE_OUTPUT = 0,      /*!< Pad output normal mode */
+    RTCIO_MODE_OUTPUT_OD = 1,   /*!< Pad output OD mode */
+} rtc_io_out_mode_t;
+#endif
 
 /**
  * @brief Determine if the specified GPIO is a valid RTC GPIO.
@@ -38,8 +45,12 @@ typedef enum {
  */
 inline static bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     return gpio_num < GPIO_PIN_COUNT
         && rtc_gpio_desc[gpio_num].reg != 0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    return (gpio_num < RTC_GPIO_NUMBER);
+#endif
 }
 
 #define RTC_GPIO_IS_VALID_GPIO(gpio_num) rtc_gpio_is_valid_gpio(gpio_num) // Deprecated, use rtc_gpio_is_valid_gpio()
@@ -266,7 +277,71 @@ esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
  */
 esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num);
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+/**
+ * @brief  RTC IO set output mode
+ * @param  gpio_num  Configure GPIO pins number
+ * @param  mode GPIO output mode
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO error
+ *
+ */
+esp_err_t rtc_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode);
 
+/**
+ * @brief  RTC IO get output mode
+ * @param  gpio_num  Configure GPIO pins number
+ * @param  mode GPIO output mode
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO error
+ */
+esp_err_t rtc_gpio_get_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t *mode);
+
+/**
+ * @brief  Set RTC IO status in deep sleep
+ *         In some application scenarios, IO needs to have another states during deep sleep.
+ * @param  gpio_num  Configure GPIO pins number
+ * @param  input input mode. false: close; true: open;
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO error
+ */
+esp_err_t rtc_gpio_sleep_input_enable(gpio_num_t gpio_num, bool input);
+
+/**
+ * @brief  Set RTC IO status in deep sleep
+ *         In some application scenarios, IO needs to have another states during deep sleep.
+ * @param  gpio_num  Configure GPIO pins number
+ * @param  output output mode. false: close; true: open;
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO error
+ */
+esp_err_t rtc_gpio_sleep_output_enable(gpio_num_t gpio_num, bool output);
+
+/**
+ * @brief  Close RTC IO status in deep sleep
+ *         In some application scenarios, IO needs to have another states during deep sleep.
+ * @param  gpio_num  Configure GPIO pins number
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG GPIO error
+ */
+esp_err_t rtc_gpio_sleep_mode_disable(gpio_num_t gpio_num);
+
+/**
+ * @brief Enable force hold signal for all RTC IOs
+ *
+ * Each RTC pad has a "force hold" input signal from the RTC controller.
+ * If this signal is set, pad latches current values of input enable,
+ * function, output enable, and other signals which come from the RTC mux.
+ * Force hold signal is enabled before going into deep sleep for pins which
+ * are used for EXT1 wakeup.
+ */
+esp_err_t rtc_gpio_force_hold_all(void);
+#endif
 
 #ifdef __cplusplus
 }

@@ -4,6 +4,7 @@ import sys
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     test_fw_path = os.getenv('TEST_FW_PATH')
     if test_fw_path and test_fw_path not in sys.path:
@@ -20,7 +21,7 @@ except ImportError:
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_key flash_encryption key.bin
 @IDF.idf_example_test(env_tag='Example_Flash_Encryption')
 def test_examples_security_flash_encryption(env, extra_data):
-    dut = env.get_dut('flash_encryption', 'examples/security/flash_encryption')
+    dut = env.get_dut('flash_encryption', 'examples/security/flash_encryption', dut_class=ESP32DUT)
     # start test
     dut.start_app()
     lines = [

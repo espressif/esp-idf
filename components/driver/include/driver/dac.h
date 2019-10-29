@@ -24,8 +24,8 @@ extern "C" {
 #include "soc/dac_periph.h"
 
 typedef enum {
-    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 */
-    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO26 */
+    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 (ESP32), GPIO17 (ESP32-S2) */
+    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO26 (ESP32), GPIO18 (ESP32-S2) */
     DAC_CHANNEL_MAX,
 } dac_channel_t;
 

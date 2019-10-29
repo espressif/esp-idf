@@ -5,8 +5,9 @@
  * This software may be distributed under the terms of the BSD license.
  * See README for more details.
  */
-
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#endif
 #include "utils/includes.h"
 
 #include "utils/common.h"

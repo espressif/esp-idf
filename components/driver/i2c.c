@@ -24,11 +24,12 @@
 #include "freertos/task.h"
 #include "freertos/ringbuf.h"
 #include "soc/i2c_periph.h"
+#include "soc/soc_memory_layout.h"
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_pm.h"
-#include "soc/soc_memory_layout.h"
+#include "sdkconfig.h"
 
 static const char* I2C_TAG = "i2c";
 #define I2C_CHECK(a, str, ret)  if(!(a)) {                                             \
@@ -458,7 +459,11 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
             if (p_i2c->mode == I2C_MODE_SLAVE) {
                 int rx_fifo_cnt = I2C[i2c_num]->status_reg.rx_fifo_cnt;
                 for (idx = 0; idx < rx_fifo_cnt; idx++) {
+                    #if CONFIG_IDF_TARGET_ESP32
                     p_i2c->data_buf[idx] = I2C[i2c_num]->fifo_data.data;
+                    #elif CONFIG_IDF_TARGET_ESP32S2BETA
+                    p_i2c->data_buf[idx] = READ_PERI_REG(I2C_DATA_APB_REG(i2c_num));
+                    #endif
                 }
                 xRingbufferSendFromISR(p_i2c->rx_ring_buf, p_i2c->data_buf, rx_fifo_cnt, &HPTaskAwoken);
                 I2C[i2c_num]->int_clr.rx_fifo_full = 1;
@@ -500,7 +505,11 @@ static void IRAM_ATTR i2c_isr_handler_default(void* arg)
         } else if (status & I2C_RXFIFO_FULL_INT_ST_M) {
             int rx_fifo_cnt = I2C[i2c_num]->status_reg.rx_fifo_cnt;
             for (idx = 0; idx < rx_fifo_cnt; idx++) {
+                #if CONFIG_IDF_TARGET_ESP32
                 p_i2c->data_buf[idx] = I2C[i2c_num]->fifo_data.data;
+                #elif CONFIG_IDF_TARGET_ESP32S2BETA
+                p_i2c->data_buf[idx] = READ_PERI_REG(I2C_DATA_APB_REG(i2c_num));
+                #endif
             }
             xRingbufferSendFromISR(p_i2c->rx_ring_buf, p_i2c->data_buf, rx_fifo_cnt, &HPTaskAwoken);
             I2C[i2c_num]->int_clr.rx_fifo_full = 1;
@@ -551,6 +560,7 @@ esp_err_t i2c_get_data_mode(i2c_port_t i2c_num, i2c_trans_mode_t *tx_trans_mode,
 static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     const int scl_half_period = I2C_CLR_BUS_HALF_PERIOD_US; // use standard 100kHz data rate
     int sda_in_sig = 0, scl_in_sig = 0;
     int i = 0;
@@ -586,6 +596,10 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
     ets_delay_us(scl_half_period);
     gpio_set_level(sda_io, 1); // STOP, SDA low -> high while SCL is HIGH
     i2c_set_pin(i2c_num, sda_io, scl_io, 1, 1, I2C_MODE_MASTER);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    I2C[i2c_num]->scl_sp_conf.scl_rst_slv_num = 9;
+    I2C[i2c_num]->scl_sp_conf.scl_rst_slv_en = 1;
+#endif
     return ESP_OK;
 }
 
@@ -596,6 +610,7 @@ static esp_err_t i2c_master_clear_bus(i2c_port_t i2c_num)
 static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
 {
     I2C_CHECK(i2c_num < I2C_NUM_MAX, I2C_NUM_ERROR_STR, ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t ctr              = I2C[i2c_num]->ctr.val;
     uint32_t fifo_conf        = I2C[i2c_num]->fifo_conf.val;
     uint32_t scl_low_period   = I2C[i2c_num]->scl_low_period.val;
@@ -615,7 +630,7 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
     i2c_hw_disable(i2c_num);
     i2c_master_clear_bus(i2c_num);
     i2c_hw_enable(i2c_num);
-    I2C[i2c_num]->int_ena.val          = 0;
+
     I2C[i2c_num]->ctr.val              = ctr & (~I2C_TRANS_START_M);
     I2C[i2c_num]->fifo_conf.val        = fifo_conf;
     I2C[i2c_num]->scl_low_period.val   = scl_low_period;
@@ -629,18 +644,28 @@ static esp_err_t i2c_hw_fsm_reset(i2c_port_t i2c_num)
     I2C[i2c_num]->timeout.val          = timeout;
     I2C[i2c_num]->scl_filter_cfg.val   = scl_filter_cfg;
     I2C[i2c_num]->sda_filter_cfg.val   = sda_filter_cfg;
-    uint32_t intr_mask = ( I2C_TRANS_COMPLETE_INT_ENA_M
+    I2C[i2c_num]->slave_addr.val       = slave_addr;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    i2c_master_clear_bus(i2c_num);
+
+    I2C[i2c_num]->ctr.fsm_rst = 1;
+    I2C[i2c_num]->ctr.fsm_rst = 0;
+    I2C[i2c_num]->fifo_conf.rx_fifo_rst = 1;
+    I2C[i2c_num]->fifo_conf.rx_fifo_rst = 0;
+    I2C[i2c_num]->fifo_conf.tx_fifo_rst = 1;
+    I2C[i2c_num]->fifo_conf.tx_fifo_rst = 0;
+#endif
+
+    I2C[i2c_num]->int_ena.val = 0;
+    uint32_t intr_mask = I2C_TRANS_COMPLETE_INT_ENA_M
                          | I2C_TRANS_START_INT_ENA_M
                          | I2C_ACK_ERR_INT_ENA_M
                          | I2C_RXFIFO_OVF_INT_ENA_M
                          | I2C_SLAVE_TRAN_COMP_INT_ENA_M
-                         | I2C_TIME_OUT_INT_ENA_M);
-    if (I2C[i2c_num]->ctr.ms_mode == I2C_MODE_SLAVE) {
-        I2C[i2c_num]->slave_addr.val = slave_addr;
-        intr_mask |= ( I2C_RXFIFO_FULL_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M);
-    } else {
-        intr_mask |= I2C_ARBITRATION_LOST_INT_ENA_M;
-    }
+                         | I2C_TIME_OUT_INT_ENA_M
+                         | I2C_RXFIFO_FULL_INT_ENA_M
+                         | I2C_ARBITRATION_LOST_INT_ENA_M;
+
     I2C[i2c_num]->int_clr.val = intr_mask;
     I2C[i2c_num]->int_ena.val = intr_mask;
     return ESP_OK;
@@ -657,6 +682,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
     if (ret != ESP_OK) {
         return ret;
     }
+
     // Reset the I2C hardware in case there is a soft reboot.
     i2c_hw_disable(i2c_num);
     i2c_hw_enable(i2c_num);
@@ -667,6 +693,12 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
     I2C[i2c_num]->ctr.sda_force_out = 1; // set open-drain output mode
     I2C[i2c_num]->ctr.scl_force_out = 1; // set open-drain output mode
     I2C[i2c_num]->ctr.sample_scl_level = 0; //sample at high level of clock
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    I2C[i2c_num]->ctr.ref_always_on = 1;
+    I2C[i2c_num]->sda_filter_cfg.val = 0;
+    I2C[i2c_num]->scl_filter_cfg.val = 0;
+#endif
 
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         I2C[i2c_num]->slave_addr.addr = i2c_conf->slave.slave_addr;
@@ -687,10 +719,21 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
         I2C[i2c_num]->timeout.tout = cycle * I2C_MASTER_TOUT_CNUM_DEFAULT;
         //set timing for data
         I2C[i2c_num]->sda_hold.time = half_cycle / 2;
-        I2C[i2c_num]->sda_sample.time = half_cycle / 2;
 
+#if CONFIG_IDF_TARGET_ESP32
+        I2C[i2c_num]->sda_sample.time = half_cycle / 2;
         I2C[i2c_num]->scl_low_period.period = half_cycle;
         I2C[i2c_num]->scl_high_period.period = half_cycle;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        int low_period = half_cycle;
+        int wait_high = 0;
+        int high_period = cycle - low_period - wait_high;
+        I2C[i2c_num]->sda_sample.time = high_period / 2;
+        I2C[i2c_num]->scl_low_period.period = low_period;
+        I2C[i2c_num]->scl_high_period.period = high_period;
+        I2C[i2c_num]->scl_high_period.scl_wait_high_period = wait_high;
+#endif
+
         //set timing for start signal
         I2C[i2c_num]->scl_start_hold.time = half_cycle;
         I2C[i2c_num]->scl_rstart_setup.time = half_cycle;

@@ -59,6 +59,7 @@ esp_err_t spi_hal_get_clock_conf(const spi_hal_context_t *hal, int speed_hz, int
     //But these don't work for full-duplex connections.
     spi_hal_cal_timing(eff_clk_n, use_gpio, input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
 
+#ifdef CONFIG_IDF_TARGET_ESP32
     const int freq_limit = spi_hal_get_freq_limit(use_gpio, input_delay_ns);
 
     SPI_HAL_CHECK(hal->half_duplex || temp_conf.timing_dummy == 0 || hal->no_compensate,
@@ -67,6 +68,7 @@ Try to use IOMUX pins to increase the frequency limit, or use the half duplex mo
 Please note the SPI master can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
 Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output data at higher speed, or read data at your own risk.",
                   ESP_ERR_NOT_SUPPORTED, freq_limit / 1000. / 1000 );
+#endif
 
     if (timing_conf) {
         *timing_conf = temp_conf;

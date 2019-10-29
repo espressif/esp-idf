@@ -11,6 +11,9 @@
 
 #include <math.h>
 #include "pretty_effect.h"
+#include "sdkconfig.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "decode_image.h"
 
 uint16_t **pixels;
@@ -23,6 +26,13 @@ static inline uint16_t get_bgnd_pixel(int x, int y)
     y+=8;
     return pixels[y][x];
 }
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+//esp32s2beta doesn't have enough memory to hold the decoded image, calculate instead
+static inline uint16_t get_bgnd_pixel(int x, int y)
+{
+    return ((x<<3)^(y<<3)^(x*y));
+}
+#endif
 
 
 //This variable is used to detect the next frame.
@@ -55,7 +65,12 @@ void pretty_effect_calc_lines(uint16_t *dest, int line, int frame, int linect)
 }
 
 
-esp_err_t pretty_effect_init(void) 
+esp_err_t pretty_effect_init(void)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32
     return decode_image(&pixels);
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    //esp32s2beta doesn't have enough memory to hold the decoded image, calculate instead
+    return ESP_OK;
+#endif
 }

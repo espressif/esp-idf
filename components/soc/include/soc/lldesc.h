@@ -14,7 +14,13 @@
 
 #pragma once
 #include <stdbool.h>
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/lldesc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/lldesc.h"
+#endif
 
 //the size field has 12 bits, but 0 not for 4096.
 //to avoid possible problem when the size is not word-aligned, we only use 4096-4 per desc.

@@ -33,15 +33,22 @@
  *    GPIO4/5 are from low speed channel group.
  *
  */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define LEDC_HS_TIMER          LEDC_TIMER_0
 #define LEDC_HS_MODE           LEDC_HIGH_SPEED_MODE
 #define LEDC_HS_CH0_GPIO       (18)
 #define LEDC_HS_CH0_CHANNEL    LEDC_CHANNEL_0
 #define LEDC_HS_CH1_GPIO       (19)
 #define LEDC_HS_CH1_CHANNEL    LEDC_CHANNEL_1
-
+#endif
 #define LEDC_LS_TIMER          LEDC_TIMER_1
 #define LEDC_LS_MODE           LEDC_LOW_SPEED_MODE
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define LEDC_LS_CH0_GPIO       (18)
+#define LEDC_LS_CH0_CHANNEL    LEDC_CHANNEL_0
+#define LEDC_LS_CH1_GPIO       (19)
+#define LEDC_LS_CH1_CHANNEL    LEDC_CHANNEL_1
+#endif
 #define LEDC_LS_CH2_GPIO       (4)
 #define LEDC_LS_CH2_CHANNEL    LEDC_CHANNEL_2
 #define LEDC_LS_CH3_GPIO       (5)
@@ -62,18 +69,18 @@ void app_main(void)
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_13_BIT, // resolution of PWM duty
         .freq_hz = 5000,                      // frequency of PWM signal
-        .speed_mode = LEDC_HS_MODE,           // timer mode
-        .timer_num = LEDC_HS_TIMER,            // timer index
+        .speed_mode = LEDC_LS_MODE,           // timer mode
+        .timer_num = LEDC_LS_TIMER,            // timer index
         .clk_cfg = LEDC_AUTO_CLK,              // Auto select the source clock
     };
     // Set configuration of timer0 for high speed channels
     ledc_timer_config(&ledc_timer);
-
+#ifdef CONFIG_IDF_TARGET_ESP32
     // Prepare and set configuration of timer1 for low speed channels
-    ledc_timer.speed_mode = LEDC_LS_MODE;
-    ledc_timer.timer_num = LEDC_LS_TIMER;
+    ledc_timer.speed_mode = LEDC_HS_MODE;
+    ledc_timer.timer_num = LEDC_HS_TIMER;
     ledc_timer_config(&ledc_timer);
-
+#endif
     /*
      * Prepare individual configuration
      * for each channel of LED Controller
@@ -88,6 +95,7 @@ void app_main(void)
      *         will be the same
      */
     ledc_channel_config_t ledc_channel[LEDC_TEST_CH_NUM] = {
+#ifdef CONFIG_IDF_TARGET_ESP32
         {
             .channel    = LEDC_HS_CH0_CHANNEL,
             .duty       = 0,
@@ -104,6 +112,24 @@ void app_main(void)
             .hpoint     = 0,
             .timer_sel  = LEDC_HS_TIMER
         },
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        {
+            .channel    = LEDC_LS_CH0_CHANNEL,
+            .duty       = 0,
+            .gpio_num   = LEDC_LS_CH0_GPIO,
+            .speed_mode = LEDC_LS_MODE,
+            .hpoint     = 0,
+            .timer_sel  = LEDC_LS_TIMER
+        },
+        {
+            .channel    = LEDC_LS_CH1_CHANNEL,
+            .duty       = 0,
+            .gpio_num   = LEDC_LS_CH1_GPIO,
+            .speed_mode = LEDC_LS_MODE,
+            .hpoint     = 0,
+            .timer_sel  = LEDC_LS_TIMER
+        },
+#endif
         {
             .channel    = LEDC_LS_CH2_CHANNEL,
             .duty       = 0,

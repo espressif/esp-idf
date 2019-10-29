@@ -16,6 +16,7 @@ from threading import Thread, Event
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     test_fw_path = os.getenv("TEST_FW_PATH")
     if test_fw_path and test_fw_path not in sys.path:
@@ -112,7 +113,7 @@ def test_examples_protocol_mdns(env, extra_data):
       3. check the mdns name is accessible
       4. check DUT output if mdns advertized host is resolved
     """
-    dut1 = env.get_dut("mdns-test", "examples/protocols/mdns")
+    dut1 = env.get_dut("mdns-test", "examples/protocols/mdns", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mdns-test.bin")
     bin_size = os.path.getsize(binary_file)

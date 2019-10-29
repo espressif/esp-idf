@@ -28,6 +28,7 @@ except ImportError:
     import TinyFW
 
 import IDF
+from IDF.IDFDUT import ESP32DUT
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
@@ -38,7 +39,7 @@ def test_examples_protocol_https_request(env, extra_data):
       2. connect to www.howsmyssl.com:443
       3. send http request
     """
-    dut1 = env.get_dut("https_request", "examples/protocols/https_request")
+    dut1 = env.get_dut("https_request", "examples/protocols/https_request", dut_class=ESP32DUT)
     dut1.start_app()
     dut1.expect(re.compile(r"Connecting to www.howsmyssl.com:443"), timeout=30)
     dut1.expect("Performing the SSL/TLS handshake")

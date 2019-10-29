@@ -11,6 +11,7 @@ from threading import Thread, Event
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -84,7 +85,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
       4. Test ESP32 client received correct qos0 message
       5. Test python client receives binary data from running partition and compares it with the binary
     """
-    dut1 = env.get_dut("mqtt_ssl", "examples/protocols/mqtt/ssl")
+    dut1 = env.get_dut("mqtt_ssl", "examples/protocols/mqtt/ssl", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_ssl.bin")
     bin_size = os.path.getsize(binary_file)

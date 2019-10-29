@@ -2,6 +2,7 @@ import re
 import os
 import sys
 import IDF
+from IDF.IDFDUT import ESP32DUT
 
 # this is a test case write with tiny-test-fw.
 # to run test cases outside tiny-test-fw,
@@ -20,7 +21,7 @@ def test_examples_protocol_websocket(env, extra_data):
       2. connect to ws://echo.websocket.org
       3. send and receive data
     """
-    dut1 = env.get_dut("websocket", "examples/protocols/websocket")
+    dut1 = env.get_dut("websocket", "examples/protocols/websocket", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "websocket-example.bin")
     bin_size = os.path.getsize(binary_file)

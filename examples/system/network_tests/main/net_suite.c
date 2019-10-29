@@ -29,8 +29,9 @@ void nettestif_input(void *buffer, u16_t len);
 
 /* these data configures ARP cache so the test IPs are knows */
 static char arp1[] = {
-    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x01, 0x08, 0x00, 0x06, 
-    0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0a, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x0a, 0x00, 0x00, 0x01
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x01,
+    0x08, 0x00, 0x06, 0x04, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x0a, 0x00, 0x00, 0x02,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x0a, 0x00, 0x00, 0x01
 };
 
 /* Test data (ICMP packet) for verification of tcp ip test netif
@@ -139,7 +140,7 @@ void app_main(void)
     uint8_t ap_mac[6] = { 0,0,0,0,0,1};
     IP4_ADDR(&ip_info.ip, 10, 0 , 0, 1);
     IP4_ADDR(&ip_info.gw, 10, 0 , 0, 1);
-    IP4_ADDR(&ip_info.netmask, 255, 255 , 255, 0);    
+    IP4_ADDR(&ip_info.netmask, 255, 255 , 255, 0);
 
     tcpip_adapter_init();
 
@@ -153,10 +154,10 @@ void app_main(void)
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
     /* Install UART driver for interrupt-driven reads and writes */
-    ESP_ERROR_CHECK( uart_driver_install( (uart_port_t)CONFIG_CONSOLE_UART_NUM,
+    ESP_ERROR_CHECK( uart_driver_install( (uart_port_t)CONFIG_ESP_CONSOLE_UART_NUM,
             256, 0, 0, NULL, 0) );
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
     esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
     /* Move the caret to the beginning of the next line on '\n' */
     esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);

@@ -2,5 +2,6 @@
 # CMakeLists in this exact order for cmake to work correctly
 cmake_minimum_required(VERSION 3.5)
 
+set(SUPPORTED_TARGETS esp32)  # Flash encryption not currently supported for ESP32-S2beta
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(flash_encryption)

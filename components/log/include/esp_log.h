@@ -18,7 +18,11 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "sdkconfig.h"
-#include <esp32/rom/ets_sys.h>
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -169,15 +173,15 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 
 /**
  * @brief Dump a buffer to the log at specified level.
- * 
+ *
  * The dump log shows just like the one below:
- * 
+ *
  *      W (195) log_example: 0x3ffb4280   45 53 50 33 32 20 69 73  20 67 72 65 61 74 2c 20  |ESP32 is great, |
  *      W (195) log_example: 0x3ffb4290   77 6f 72 6b 69 6e 67 20  61 6c 6f 6e 67 20 77 69  |working along wi|
  *      W (205) log_example: 0x3ffb42a0   74 68 20 74 68 65 20 49  44 46 2e 00              |th the IDF..|
- *      
+ *
  * It is highly recommend to use terminals with over 102 text width.
- * 
+ *
  * @param tag description tag
  * @param buffer Pointer to the buffer array
  * @param buff_len length of buffer in bytes
@@ -303,7 +307,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif  // BOOTLOADER_BUILD
 
 /** runtime macro to output logs at a specified level.
- * 
+ *
  * @param tag tag of the log, which can be used to change the log level by ``esp_log_level_set`` at runtime.
  * @param level level of the output log.
  * @param format format of the output log. see ``printf``

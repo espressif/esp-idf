@@ -1,5 +1,9 @@
+idf_build_get_property(idf_target IDF_TARGET)
+
 idf_component_register(INCLUDE_DIRS "port/include" "mbedtls/include"
-                    REQUIRES lwip)
+    REQUIRES lwip
+    PRIV_REQUIRES ${IDF_COMPONENT_REQUIRES_COMMON} soc
+    )
 
 # Only build mbedtls libraries
 set(ENABLE_TESTING CACHE BOOL OFF)
@@ -22,20 +26,22 @@ set(mbedtls_targets mbedtls mbedcrypto mbedx509)
 target_sources(mbedtls PRIVATE  "${COMPONENT_DIR}/port/mbedtls_debug.c"
                                 "${COMPONENT_DIR}/port/net_sockets.c")
 
-target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_bignum.c"
-                                "${COMPONENT_DIR}/port/esp_hardware.c"
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                 "${COMPONENT_DIR}/port/esp_mem.c"
                                 "${COMPONENT_DIR}/port/esp_sha.c"
                                 "${COMPONENT_DIR}/port/esp_sha1.c"
                                 "${COMPONENT_DIR}/port/esp_sha256.c"
                                 "${COMPONENT_DIR}/port/esp_sha512.c"
                                 "${COMPONENT_DIR}/port/esp_timing.c"
-                                "${COMPONENT_DIR}/port/esp32/aes.c"
-                                "${COMPONENT_DIR}/port/esp32/sha.c")
+                                "${COMPONENT_DIR}/port/${idf_target}/esp_bignum.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/aes.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/sha.c")
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
 endforeach()
+
+set_property(TARGET mbedcrypto APPEND PROPERTY LINK_INTERFACE_LIBRARIES mbedtls)
 
 # Link mbedtls libraries to component library
 target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})

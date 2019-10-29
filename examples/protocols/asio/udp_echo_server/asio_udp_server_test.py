@@ -6,6 +6,7 @@ import socket
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -29,7 +30,7 @@ def test_examples_protocol_asio_udp_server(env, extra_data):
       5. Test evaluates received test message on server stdout
     """
     test_msg = b"echo message from client to server"
-    dut1 = env.get_dut("udp_echo_server", "examples/protocols/asio/udp_echo_server")
+    dut1 = env.get_dut("udp_echo_server", "examples/protocols/asio/udp_echo_server", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "asio_udp_echo_server.bin")
     bin_size = os.path.getsize(binary_file)

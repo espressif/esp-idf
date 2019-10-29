@@ -12,13 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "sdkconfig.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_debug_helpers.h"
-#include "esp32/rom/ets_sys.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/cpu.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#else
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 bool IRAM_ATTR esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame)
 {

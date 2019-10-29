@@ -10,8 +10,11 @@ set(SOC_SRCS "cpu_util.c"
     "rtc_wdt.c"
     "sdio_slave_periph.c"
     "sdmmc_periph.c"
+    "interrupts.c"
     "soc_memory_layout.c"
-    "spi_periph.c")
+    "spi_periph.c"
+    "ledc_periph.c"
+    "i2s_periph.c")
 
 if(NOT BOOTLOADER_BUILD AND CONFIG_ETH_USE_ESP32_EMAC)
     list(APPEND SOC_SRCS "emac_hal.c")

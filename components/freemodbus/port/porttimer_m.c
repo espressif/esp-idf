@@ -40,6 +40,7 @@
 #include "mb_m.h"
 #include "mbport.h"
 #include "port_serial_master.h"
+#include "sdkconfig.h"
 
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_TICK_TIME_US         (50)    // 50uS = one tick for timer

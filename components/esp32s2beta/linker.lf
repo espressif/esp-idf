@@ -1,0 +1,14 @@
+[mapping:esp32s2beta]
+archive: libesp32s2beta.a
+entries:
+    panic (noflash)
+
+[mapping:gcc]
+archive: libgcc.a
+entries:
+    lib2funcs (noflash_text)
+
+[mapping:gcov]
+archive: libgcov.a
+entries:
+    * (noflash)

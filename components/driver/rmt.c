@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -193,8 +193,12 @@ esp_err_t rmt_tx_stop(rmt_channel_t channel)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rmt_spinlock);
+#ifdef CONFIG_IDF_TARGET_ESP32
     RMTMEM.chan[channel].data32[0].val = 0;
     RMT.conf_ch[channel].conf1.tx_start = 0;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    RMT.conf_ch[channel].conf1.tx_stop = 1;
+#endif
     RMT.conf_ch[channel].conf1.mem_rd_rst = 1;
     RMT.conf_ch[channel].conf1.mem_rd_rst = 0;
     portEXIT_CRITICAL(&rmt_spinlock);
@@ -317,7 +321,11 @@ esp_err_t rmt_get_idle_level(rmt_channel_t channel, bool* idle_out_en, rmt_idle_
 esp_err_t rmt_get_status(rmt_channel_t channel, uint32_t* status)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+#ifdef CONFIG_IDF_TARGET_ESP32
     *status = RMT.status_ch[channel];
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    *status = RMT.status_ch[channel].val;
+#endif
     return ESP_OK;
 }
 
@@ -382,9 +390,15 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
         RMT.tx_lim_ch[channel].limit = evt_thresh;
         portEXIT_CRITICAL(&rmt_spinlock);
         rmt_set_tx_wrap_en(true);
+#ifdef CONFIG_IDF_TARGET_ESP32
         rmt_set_intr_enable_mask(BIT(channel + 24));
     } else {
         rmt_clr_intr_enable_mask(BIT(channel + 24));
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        rmt_set_intr_enable_mask(BIT(channel + 12));
+    } else {
+        rmt_clr_intr_enable_mask(BIT(channel + 12));
+#endif
     }
     return ESP_OK;
 }
@@ -396,7 +410,7 @@ esp_err_t rmt_set_pin(rmt_channel_t channel, rmt_mode_t mode, gpio_num_t gpio_nu
     RMT_CHECK(((GPIO_IS_VALID_GPIO(gpio_num) && (mode == RMT_MODE_RX)) || (GPIO_IS_VALID_OUTPUT_GPIO(gpio_num) && (mode == RMT_MODE_TX))),
         RMT_GPIO_ERROR_STR, ESP_ERR_INVALID_ARG);
 
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], 2);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
     if(mode == RMT_MODE_TX) {
         gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
         gpio_matrix_out(gpio_num, RMT_SIG_OUT0_IDX + channel, 0, 0);
@@ -566,7 +580,12 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
     while (status) {
         int i = __builtin_ffs(status) - 1;
         status &= ~(1 << i);
+#ifdef CONFIG_IDF_TARGET_ESP32
         if(i < 24) {
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        if(i >= 15) {
+        } else if(i < 12) {
+#endif
             channel = i / 3;
             rmt_obj_t* p_rmt = p_rmt_obj[channel];
             if(NULL == p_rmt) {
@@ -617,8 +636,13 @@ static void IRAM_ATTR rmt_driver_isr_default(void* arg)
                 default:
                     break;
             }
+#ifdef CONFIG_IDF_TARGET_ESP32
         } else {
             channel = i - 24;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        } else if(i >= 12 && i < 16) {
+            channel = i - 12;
+#endif
             rmt_obj_t* p_rmt = p_rmt_obj[channel];
 
             if(p_rmt->tx_data == NULL) {

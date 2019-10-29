@@ -22,6 +22,7 @@ import time
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     test_fw_path = os.getenv("TEST_FW_PATH")
     if test_fw_path and test_fw_path not in sys.path:
@@ -43,7 +44,7 @@ esp_prov.config_throw_except = True
 @IDF.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_wifi_prov_mgr(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("wifi_prov_mgr", "examples/provisioning/manager")
+    dut1 = env.get_dut("wifi_prov_mgr", "examples/provisioning/manager", dut_class=ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "wifi_prov_mgr.bin")

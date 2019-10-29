@@ -19,6 +19,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
 #include "esp32/rom/efuse.h"
 #include "esp32/rom/ets_sys.h"
@@ -28,6 +29,19 @@
 #include "esp32/rom/uart.h"
 #include "esp32/rom/gpio.h"
 #include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/cache.h"
+#include "esp32s2beta/rom/efuse.h"
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/crc.h"
+#include "esp32s2beta/rom/rtc.h"
+#include "esp32s2beta/rom/uart.h"
+#include "esp32s2beta/rom/gpio.h"
+#include "esp32s2beta/rom/secure_boot.h"
+#else
+#error "Unsupported IDF_TARGET"
+#endif
 
 #include "soc/soc.h"
 #include "soc/cpu.h"
@@ -39,6 +53,11 @@
 #include "soc/timer_periph.h"
 #include "soc/rtc_wdt.h"
 #include "soc/spi_periph.h"
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#include "soc/spi_mem_reg.h"
+#include "soc/extmem_reg.h"
+#include "soc/assist_debug_reg.h"
+#endif
 
 #include "sdkconfig.h"
 #include "esp_image_format.h"
@@ -48,6 +67,7 @@
 #include "bootloader_flash.h"
 #include "bootloader_random.h"
 #include "bootloader_config.h"
+#include "bootloader_common.h"
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
@@ -60,7 +80,7 @@ extern int _bss_end;
 extern int _data_start;
 extern int _data_end;
 
-static const char* TAG = "boot";
+static const char *TAG = "boot";
 
 static esp_err_t bootloader_main(void);
 static void print_flash_info(const esp_image_header_t* pfhdr);
@@ -78,11 +98,13 @@ esp_err_t bootloader_init(void)
     /* Sanity check that static RAM is after the stack */
 #ifndef NDEBUG
     {
-        int *sp = get_sp();
         assert(&_bss_start <= &_bss_end);
         assert(&_data_start <= &_data_end);
+#if CONFIG_IDF_TARGET_ESP32
+        int *sp = get_sp();
         assert(sp < &_bss_start);
         assert(sp < &_data_start);
+#endif
     }
 #endif
 
@@ -91,14 +113,27 @@ esp_err_t bootloader_init(void)
 
     /* completely reset MMU for both CPUs
        (in case serial bootloader was running) */
+#if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
+#if !CONFIG_FREERTOS_UNICORE
     Cache_Read_Disable(1);
+#endif
     Cache_Flush(0);
+#if !CONFIG_FREERTOS_UNICORE
     Cache_Flush(1);
+#endif
     mmu_init(0);
+#if !CONFIG_FREERTOS_UNICORE
     DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
     mmu_init(1);
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
+#endif
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //TODO, save the autoload value
+    Cache_Suspend_ICache();
+    Cache_Invalidate_ICache_All();
+    Cache_MMU_Init();
+#endif
     /* (above steps probably unnecessary for most serial bootloader
        usage, all that's absolutely needed is that we unmask DROM0
        cache on the following two lines - normal ROM boot exits with
@@ -109,10 +144,15 @@ esp_err_t bootloader_init(void)
        The lines which manipulate DPORT_APP_CACHE_MMU_IA_CLR bit are
        necessary to work around a hardware bug.
     */
+#if CONFIG_IDF_TARGET_ESP32
     DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
+#if !CONFIG_FREERTOS_UNICORE
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
-
-    if(bootloader_main() != ESP_OK){
+#endif
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    DPORT_REG_CLR_BIT(DPORT_PRO_ICACHE_CTRL1_REG, DPORT_PRO_ICACHE_MASK_DROM0);
+#endif
+    if (bootloader_main() != ESP_OK) {
         return ESP_FAIL;
     }
     return ESP_OK;
@@ -137,21 +177,25 @@ static esp_err_t bootloader_main(void)
     }
 
     bootloader_init_flash_configure(&fhdr);
-#if (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ == 240)
-    //Check if ESP32 is rated for a CPU frequency of 160MHz only
-    if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_CPU_FREQ_RATED) &&
-        REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_CPU_FREQ_LOW)) {
-        ESP_LOGE(TAG, "Chip CPU frequency rated for 160MHz. Modify CPU frequency in menuconfig");
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+    int rated_freq = bootloader_clock_get_rated_freq_mhz();
+    if (rated_freq < CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ) {
+        ESP_LOGE(TAG, "Chip CPU frequency rated for %dMHz, configured for %dMHz. Modify CPU frequency in menuconfig",
+                 rated_freq, CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ);
         return ESP_FAIL;
     }
 #endif
+
     bootloader_clock_configure();
     uart_console_configure();
     wdt_reset_check();
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
+#if !CONFIG_FREERTOS_UNICORE
     ets_set_appcpu_boot_addr(0);
+#endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
@@ -172,7 +216,7 @@ static esp_err_t bootloader_main(void)
 
 #ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
-    if(spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
+    if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
         ESP_LOGE(TAG, "SPI flash pins are overridden. \"Enable SPI flash ROM driver patched functions\" must be enabled in menuconfig");
         return ESP_FAIL;
     }
@@ -193,38 +237,46 @@ static esp_err_t bootloader_main(void)
     return ESP_OK;
 }
 
-static void update_flash_config(const esp_image_header_t* pfhdr)
+static void update_flash_config(const esp_image_header_t *pfhdr)
 {
     uint32_t size;
-    switch(pfhdr->spi_size) {
-        case ESP_IMAGE_FLASH_SIZE_1MB:
-            size = 1;
-            break;
-        case ESP_IMAGE_FLASH_SIZE_2MB:
-            size = 2;
-            break;
-        case ESP_IMAGE_FLASH_SIZE_4MB:
-            size = 4;
-            break;
-        case ESP_IMAGE_FLASH_SIZE_8MB:
-            size = 8;
-            break;
-        case ESP_IMAGE_FLASH_SIZE_16MB:
-            size = 16;
-            break;
-        default:
-            size = 2;
+    switch (pfhdr->spi_size) {
+    case ESP_IMAGE_FLASH_SIZE_1MB:
+        size = 1;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_2MB:
+        size = 2;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_4MB:
+        size = 4;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_8MB:
+        size = 8;
+        break;
+    case ESP_IMAGE_FLASH_SIZE_16MB:
+        size = 16;
+        break;
+    default:
+        size = 2;
     }
-    Cache_Read_Disable( 0 );
+#if CONFIG_IDF_TARGET_ESP32
+    Cache_Read_Disable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t autoload = Cache_Suspend_ICache();
+#endif
     // Set flash chip size
     esp_rom_spiflash_config_param(g_rom_flashchip.device_id, size * 0x100000, 0x10000, 0x1000, 0x100, 0xffff);
     // TODO: set mode
     // TODO: set frequency
+#if CONFIG_IDF_TARGET_ESP32
     Cache_Flush(0);
-    Cache_Read_Enable( 0 );
+    Cache_Read_Enable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    Cache_Resume_ICache(autoload);
+#endif
 }
 
-static void print_flash_info(const esp_image_header_t* phdr)
+static void print_flash_info(const esp_image_header_t *phdr)
 {
 #if (BOOT_LOG_LEVEL >= BOOT_LOG_LEVEL_NOTICE)
 
@@ -234,7 +286,7 @@ static void print_flash_info(const esp_image_header_t* phdr)
     ESP_LOGD(TAG, "spi_speed %02x", phdr->spi_speed );
     ESP_LOGD(TAG, "spi_size %02x", phdr->spi_size );
 
-    const char* str;
+    const char *str;
     switch ( phdr->spi_speed ) {
     case ESP_IMAGE_SPI_SPEED_40M:
         str = "40MHz";
@@ -256,6 +308,7 @@ static void print_flash_info(const esp_image_header_t* phdr)
 
     /* SPI mode could have been set to QIO during boot already,
        so test the SPI registers not the flash header */
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t spi_ctrl = REG_READ(SPI_CTRL_REG(0));
     if (spi_ctrl & SPI_FREAD_QIO) {
         str = "QIO";
@@ -270,6 +323,22 @@ static void print_flash_info(const esp_image_header_t* phdr)
     } else {
         str = "SLOW READ";
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t spi_ctrl = REG_READ(SPI_MEM_CTRL_REG(0));
+    if (spi_ctrl & SPI_MEM_FREAD_QIO) {
+        str = "QIO";
+    } else if (spi_ctrl & SPI_MEM_FREAD_QUAD) {
+        str = "QOUT";
+    } else if (spi_ctrl & SPI_MEM_FREAD_DIO) {
+        str = "DIO";
+    } else if (spi_ctrl & SPI_MEM_FREAD_DUAL) {
+        str = "DOUT";
+    } else if (spi_ctrl & SPI_MEM_FASTRD_MODE) {
+        str = "FAST READ";
+    } else {
+        str = "SLOW READ";
+    }
+#endif
     ESP_LOGI(TAG, "SPI Mode       : %s", str );
 
     switch ( phdr->spi_size ) {
@@ -296,10 +365,6 @@ static void print_flash_info(const esp_image_header_t* phdr)
 #endif
 }
 
-/*
- * Bootloader reads SPI configuration from bin header, so that
- * the burning configuration can be different with compiling configuration.
- */
 static void IRAM_ATTR bootloader_init_flash_configure(const esp_image_header_t* pfhdr)
 {
     bootloader_flash_gpio_config(pfhdr);
@@ -362,9 +427,16 @@ static void uart_console_configure(void)
 
 static void wdt_reset_cpu0_info_enable(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //We do not reset core1 info here because it didn't work before cpu1 was up. So we put it into call_start_cpu1.
     DPORT_REG_SET_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_PDEBUG_ENABLE | DPORT_PRO_CPU_RECORD_ENABLE);
     DPORT_REG_CLR_BIT(DPORT_PRO_CPU_RECORD_CTRL_REG, DPORT_PRO_CPU_RECORD_ENABLE);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
+    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_ASSIST_DEBUG);
+    REG_WRITE(ASSIST_DEBUG_PRO_PDEBUGENABLE, 1);
+    REG_WRITE(ASSIST_DEBUG_PRO_RCD_RECORDING, 1);
+#endif
 }
 
 static void wdt_reset_info_dump(int cpu)
@@ -373,6 +445,7 @@ static void wdt_reset_info_dump(int cpu)
              lsstat = 0, lsaddr = 0, lsdata = 0, dstat = 0;
     const char *cpu_name = cpu ? "APP" : "PRO";
 
+#if CONFIG_IDF_TARGET_ESP32
     if (cpu == 0) {
         stat    = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_STATUS_REG);
         pid     = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PID_REG);
@@ -385,6 +458,7 @@ static void wdt_reset_info_dump(int cpu)
         lsdata  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0DATA_REG);
 
     } else {
+#if !CONFIG_FREERTOS_UNICORE
         stat    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_STATUS_REG);
         pid     = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PID_REG);
         inst    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGINST_REG);
@@ -394,9 +468,25 @@ static void wdt_reset_info_dump(int cpu)
         lsstat  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0STAT_REG);
         lsaddr  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0ADDR_REG);
         lsdata  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0DATA_REG);
+#else
+        ESP_LOGE(TAG, "WDT reset info: &s CPU not support!\n", cpu_name);
+        return;
+#endif
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    stat    = 0xdeadbeef;
+    pid     = 0;
+    inst    = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGINST);
+    dstat   = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGSTATUS);
+    data    = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGDATA);
+    pc      = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGPC);
+    lsstat  = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGLS0STAT);
+    lsaddr  = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGLS0ADDR);
+    lsdata  = REG_READ(ASSIST_DEBUG_PRO_RCD_PDEBUGLS0DATA);
+#endif
+
     if (DPORT_RECORD_PDEBUGINST_SZ(inst) == 0 &&
-        DPORT_RECORD_PDEBUGSTATUS_BBCAUSE(dstat) == DPORT_RECORD_PDEBUGSTATUS_BBCAUSE_WAITI) {
+            DPORT_RECORD_PDEBUGSTATUS_BBCAUSE(dstat) == DPORT_RECORD_PDEBUGSTATUS_BBCAUSE_WAITI) {
         ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x (waiti mode)", cpu_name, pc);
     } else {
         ESP_LOGW(TAG, "WDT reset info: %s CPU PC=0x%x", cpu_name, pc);
@@ -418,21 +508,31 @@ static void wdt_reset_check(void)
     RESET_REASON rst_reas[2];
 
     rst_reas[0] = rtc_get_reset_reason(0);
+#if CONFIG_IDF_TARGET_ESP32
     rst_reas[1] = rtc_get_reset_reason(1);
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-        rst_reas[0] == TGWDT_CPU_RESET  || rst_reas[0] == RTCWDT_CPU_RESET) {
+            rst_reas[0] == TGWDT_CPU_RESET  || rst_reas[0] == RTCWDT_CPU_RESET) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET || rst_reas[1] == TG1WDT_SYS_RESET ||
-        rst_reas[1] == TGWDT_CPU_RESET  || rst_reas[1] == RTCWDT_CPU_RESET) {
+            rst_reas[1] == TGWDT_CPU_RESET  || rst_reas[1] == RTCWDT_CPU_RESET) {
         ESP_LOGW(TAG, "APP CPU has been reset by WDT.");
         wdt_rst = 1;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
+            rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
+        wdt_rst = 1;
+    }
+#endif
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
+#if CONFIG_IDF_TARGET_ESP32
         wdt_reset_info_dump(1);
+#endif
     }
     wdt_reset_cpu0_info_enable();
 }
@@ -440,16 +540,16 @@ static void wdt_reset_check(void)
 void __assert_func(const char *file, int line, const char *func, const char *expr)
 {
     ESP_LOGE(TAG, "Assert failed in %s, %s:%d (%s)", func, file, line, expr);
-    while(1) {}
+    while (1) {}
 }
 
 void abort(void)
 {
-#if !CONFIG_ESP32_PANIC_SILENT_REBOOT
+#if !(CONFIG_ESP32_PANIC_SILENT_REBOOT || CONFIG_ESP32S2_PANIC_SILENT_REBOOT)
     ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
 #endif
     if (esp_cpu_in_ocd_debug_mode()) {
         __asm__ ("break 0,0");
     }
-    while(1) {}
+    while (1) {}
 }

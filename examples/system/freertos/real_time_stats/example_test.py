@@ -4,6 +4,7 @@ import sys
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -20,7 +21,7 @@ STATS_TASK_EXPECT = "Real time stats obtained"
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_real_time_stats_example(env, extra_data):
-    dut = env.get_dut('real_time_stats', 'examples/system/freertos/real_time_stats')
+    dut = env.get_dut('real_time_stats', 'examples/system/freertos/real_time_stats', dut_class=ESP32DUT)
     dut.start_app()
 
     for iteration in range(0, STATS_TASK_ITERS):

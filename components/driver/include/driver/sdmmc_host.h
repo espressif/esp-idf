@@ -20,6 +20,12 @@
 #include "sdmmc_types.h"
 #include "driver/gpio.h"
 
+#include "soc/soc_caps.h"
+
+#ifndef SOC_SDMMC_HOST_SUPPORTED
+#error SDMMC host is not supported in this chip target
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

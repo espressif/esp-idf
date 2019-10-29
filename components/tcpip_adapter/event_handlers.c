@@ -17,7 +17,9 @@
 #include "esp_event.h"
 #include "esp_wifi.h"
 #include "esp_private/wifi.h"
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
+#endif
 #include "esp_err.h"
 #include "esp_log.h"
 
@@ -39,7 +41,7 @@ static void handle_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, 
 static void handle_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data);
-
+#if CONFIG_ETH_ENABLED
 static void handle_eth_start(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data);
 static void handle_eth_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data);
@@ -94,6 +96,16 @@ static void handle_eth_disconnected(void *arg, esp_event_base_t base, int32_t ev
     tcpip_adapter_down(TCPIP_ADAPTER_IF_ETH);
 }
 
+static void handle_eth_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
+{
+    const ip_event_got_ip_t *event = (const ip_event_got_ip_t *) data;
+    ESP_LOGI(TAG, "eth ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
+             IP2STR(&event->ip_info.ip),
+             IP2STR(&event->ip_info.netmask),
+             IP2STR(&event->ip_info.gw));
+}
+#endif
+
 static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
     API_CALL_CHECK("esp_wifi_internal_set_sta_ip", esp_wifi_internal_set_sta_ip(), ESP_OK);
@@ -105,14 +117,6 @@ static void handle_sta_got_ip(void *arg, esp_event_base_t base, int32_t event_id
              IP2STR(&event->ip_info.gw));
 }
 
-static void handle_eth_got_ip(void *arg, esp_event_base_t base, int32_t event_id, void *data)
-{
-    const ip_event_got_ip_t *event = (const ip_event_got_ip_t *) data;
-    ESP_LOGI(TAG, "eth ip: " IPSTR ", mask: " IPSTR ", gw: " IPSTR,
-             IP2STR(&event->ip_info.ip),
-             IP2STR(&event->ip_info.netmask),
-             IP2STR(&event->ip_info.gw));
-}
 
 static void handle_ap_start(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
@@ -260,6 +264,7 @@ esp_err_t tcpip_adapter_clear_default_wifi_handlers(void)
     return ESP_OK;
 }
 
+#if CONFIG_ETH_ENABLED
 esp_err_t tcpip_adapter_set_default_eth_handlers(void)
 {
     esp_err_t err;
@@ -304,3 +309,4 @@ esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
     esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, handle_eth_got_ip);
     return ESP_OK;
 }
+#endif

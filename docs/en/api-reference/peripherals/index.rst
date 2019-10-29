@@ -22,6 +22,7 @@ Peripherals API
     Sigma-delta Modulation <sigmadelta>
     SPI Master <spi_master>
     SPI Slave <spi_slave>
+    Temp sensor <temp_sensor>
     Timer <timer>
     Touch Sensor <touch_pad>
     UART <uart>

@@ -16,11 +16,23 @@ struct flash_test_ctx {
     SemaphoreHandle_t done;
 };
 
+/* Base offset in flash for tests. */
+static size_t start;
+
+static void setup_tests(void)
+{
+    if (start == 0) {
+        const esp_partition_t *part = get_test_data_partition();
+        start = part->address;
+        printf("Test data partition @ 0x%x\n", start);
+    }
+}
+
 static void flash_test_task(void *arg)
 {
     struct flash_test_ctx *ctx = (struct flash_test_ctx *) arg;
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    const uint32_t sector = ctx->offset;
+    const uint32_t sector = start / SPI_FLASH_SEC_SIZE + ctx->offset;
     printf("t%d\n", sector);
     printf("es%d\n", sector);
     if (spi_flash_erase_sector(sector) != ESP_OK) {
@@ -65,13 +77,15 @@ static void flash_test_task(void *arg)
 
 TEST_CASE("flash write and erase work both on PRO CPU and on APP CPU", "[spi_flash][ignore]")
 {
+    setup_tests();
+
     SemaphoreHandle_t done = xSemaphoreCreateCounting(4, 0);
     struct flash_test_ctx ctx[] = {
-            { .offset = 0x100 + 6, .done = done },
-            { .offset = 0x100 + 7, .done = done },
-            { .offset = 0x100 + 8, .done = done },
+            { .offset = 0x10 + 6, .done = done },
+            { .offset = 0x10 + 7, .done = done },
+            { .offset = 0x10 + 8, .done = done },
 #ifndef CONFIG_FREERTOS_UNICORE
-            { .offset = 0x100 + 9, .done = done }
+            { .offset = 0x10 + 9, .done = done }
 #endif
     };
 
@@ -105,6 +119,10 @@ typedef struct {
     size_t delay_time_us;
     size_t repeat_count;
 } block_task_arg_t;
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define int_clr_timers int_clr
+#endif
 
 static void IRAM_ATTR timer_isr(void* varg) {
     block_task_arg_t* arg = (block_task_arg_t*) varg;

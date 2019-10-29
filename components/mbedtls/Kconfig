@@ -131,6 +131,8 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
+        depends on IDF_TARGET_ESP32
+        # ToDo: remove once hardware AES acceleration is supported on esp32s2
         default y
         help
             Enable hardware accelerated AES encryption & decryption.

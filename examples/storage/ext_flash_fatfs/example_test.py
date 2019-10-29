@@ -10,10 +10,12 @@ except ImportError:
         sys.path.insert(0, test_fw_path)
     import IDF
 
+from IDF.IDFDUT import ESP32DUT
+
 
 @IDF.idf_example_test(env_tag='Example_ExtFlash')
 def test_examples_storage_ext_flash_fatfs(env, extra_data):
-    dut = env.get_dut('ext_flash_fatfs', 'examples/storage/ext_flash_fatfs')
+    dut = env.get_dut('ext_flash_fatfs', 'examples/storage/ext_flash_fatfs', dut_class=ESP32DUT)
     dut.start_app()
 
     dut.expect('Initialized external Flash')

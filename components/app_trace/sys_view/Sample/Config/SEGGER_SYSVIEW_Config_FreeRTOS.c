@@ -63,11 +63,19 @@ Revision: $Rev: 3734 $
 */
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
+#include "soc/soc.h"
+#include "soc/interrupts.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
 #include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/clk.h"
+#endif
+
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -81,7 +89,7 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 #define SYSVIEW_APP_NAME        "FreeRTOS Application"
 
 // The target device name
-#define SYSVIEW_DEVICE_NAME     "ESP32"
+#define SYSVIEW_DEVICE_NAME     CONFIG_IDF_TARGET
 
 // Determine which timer to use as timestamp source
 #if CONFIG_SYSVIEW_TS_SOURCE_CCOUNT
@@ -123,14 +131,19 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
 #if TS_USE_CCOUNT
 // CCOUNT is incremented at CPU frequency
+#if CONFIG_IDF_TARGET_ESP32
 #define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ * 1000000)
+#endif
+
 #endif // TS_USE_CCOUNT
 
 // System Frequency.
 #define SYSVIEW_CPU_FREQ        (esp_clk_cpu_freq())
 
 // The lowest RAM address used for IDs (pointers)
-#define SYSVIEW_RAM_BASE        (0x3F400000)
+#define SYSVIEW_RAM_BASE        (SOC_DROM_LOW)
 
 #if CONFIG_FREERTOS_CORETIMER_0
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
@@ -147,78 +160,6 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
 static esp_apptrace_lock_t s_sys_view_lock = {.mux = portMUX_INITIALIZER_UNLOCKED, .int_state = 0};
 
-static const char * const s_isr_names[] = {
-    [0] = "WIFI_MAC",
-    [1] = "WIFI_NMI",
-    [2] = "WIFI_BB",
-    [3] = "BT_MAC",
-    [4] = "BT_BB",
-    [5] = "BT_BB_NMI",
-    [6] = "RWBT",
-    [7] = "RWBLE",
-    [8] = "RWBT_NMI",
-    [9] = "RWBLE_NMI",
-    [10] = "SLC0",
-    [11] = "SLC1",
-    [12] = "UHCI0",
-    [13] = "UHCI1",
-    [14] = "TG0_T0_LEVEL",
-    [15] = "TG0_T1_LEVEL",
-    [16] = "TG0_WDT_LEVEL",
-    [17] = "TG0_LACT_LEVEL",
-    [18] = "TG1_T0_LEVEL",
-    [19] = "TG1_T1_LEVEL",
-    [20] = "TG1_WDT_LEVEL",
-    [21] = "TG1_LACT_LEVEL",
-    [22] = "GPIO",
-    [23] = "GPIO_NMI",
-    [24] = "FROM_CPU0",
-    [25] = "FROM_CPU1",
-    [26] = "FROM_CPU2",
-    [27] = "FROM_CPU3",
-    [28] = "SPI0",
-    [29] = "SPI1",
-    [30] = "SPI2",
-    [31] = "SPI3",
-    [32] = "I2S0",
-    [33] = "I2S1",
-    [34] = "UART0",
-    [35] = "UART1",
-    [36] = "UART2",
-    [37] = "SDIO_HOST",
-    [38] = "ETH_MAC",
-    [39] = "PWM0",
-    [40] = "PWM1",
-    [41] = "PWM2",
-    [42] = "PWM3",
-    [43] = "LEDC",
-    [44] = "EFUSE",
-    [45] = "CAN",
-    [46] = "RTC_CORE",
-    [47] = "RMT",
-    [48] = "PCNT",
-    [49] = "I2C_EXT0",
-    [50] = "I2C_EXT1",
-    [51] = "RSA",
-    [52] = "SPI1_DMA",
-    [53] = "SPI2_DMA",
-    [54] = "SPI3_DMA",
-    [55] = "WDT",
-    [56] = "TIMER1",
-    [57] = "TIMER2",
-    [58] = "TG0_T0_EDGE",
-    [59] = "TG0_T1_EDGE",
-    [60] = "TG0_WDT_EDGE",
-    [61] = "TG0_LACT_EDGE",
-    [62] = "TG1_T0_EDGE",
-    [63] = "TG1_T1_EDGE",
-    [64] = "TG1_WDT_EDGE",
-    [65] = "TG1_LACT_EDGE",
-    [66] = "MMU_IA",
-    [67] = "MPU_IA",
-    [68] = "CACHE_IA",
-};
-
 /*********************************************************************
 *
 *       _cbSendSystemDesc()
@@ -231,9 +172,9 @@ static void _cbSendSystemDesc(void) {
     SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME",C=Xtensa,O=FreeRTOS");
     snprintf(irq_str, sizeof(irq_str), "I#%d=SysTick", SYSTICK_INTR_ID);
     SEGGER_SYSVIEW_SendSysDesc(irq_str);
-    size_t isr_count = sizeof(s_isr_names)/sizeof(s_isr_names[0]);
+    size_t isr_count = sizeof(esp_isr_names)/sizeof(esp_isr_names[0]);
     for (size_t i = 0; i < isr_count; ++i) {
-        snprintf(irq_str, sizeof(irq_str), "I#%d=%s", ETS_INTERNAL_INTR_SOURCE_OFF + i, s_isr_names[i]);
+        snprintf(irq_str, sizeof(irq_str), "I#%d=%s", ETS_INTERNAL_INTR_SOURCE_OFF + i, esp_isr_names[i]);
         SEGGER_SYSVIEW_SendSysDesc(irq_str);
     }
 }

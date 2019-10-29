@@ -69,7 +69,7 @@ SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 EXAMPLE_PATHS=$( get_supported_examples.sh $IDF_TARGET | sed "s#^#${IDF_PATH}\/examples\/#g" | awk '{print $0"/CmakeLists.txt"}' )
 NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
 # just a plausibility check
-[ ${NUM_OF_EXAMPLES} -lt 100 ] && die "NUM_OF_EXAMPLES is bad"
+[ ${NUM_OF_EXAMPLES} -lt 50 ] && die "NUM_OF_EXAMPLES is bad"
 
 echo "All examples found for target $IDF_TARGET:"
 echo $EXAMPLE_PATHS

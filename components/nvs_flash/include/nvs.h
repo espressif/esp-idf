@@ -205,7 +205,7 @@ esp_err_t nvs_set_u32 (nvs_handle_t handle, const char* key, uint32_t value);
 esp_err_t nvs_set_i64 (nvs_handle_t handle, const char* key, int64_t value);
 esp_err_t nvs_set_u64 (nvs_handle_t handle, const char* key, uint64_t value);
 esp_err_t nvs_set_str (nvs_handle_t handle, const char* key, const char* value);
-/**@}*/ 
+/**@}*/
 
 /**
  * @brief       set variable length binary value for given key
@@ -282,7 +282,7 @@ esp_err_t nvs_get_i32 (nvs_handle_t handle, const char* key, int32_t* out_value)
 esp_err_t nvs_get_u32 (nvs_handle_t handle, const char* key, uint32_t* out_value);
 esp_err_t nvs_get_i64 (nvs_handle_t handle, const char* key, int64_t* out_value);
 esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value);
-/**@}*/ 
+/**@}*/
 
 /**
  * @brief      get value for given key

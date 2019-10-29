@@ -71,6 +71,10 @@
 	path = components/esp_wifi/lib_esp32
 	url = ../../espressif/esp32-wifi-lib.git
 
+[submodule "components/esp_wifi/lib_esp32s2beta"]
+	path = components/esp_wifi/lib_esp32s2beta
+	url = ../../espressif/esp32-wifi-lib.git
+
 [submodule "components/bt/host/nimble/nimble"]
 	path = components/bt/host/nimble/nimble
 	url = ../../espressif/esp-nimble.git
@@ -78,3 +82,4 @@
 [submodule "components/cbor/tinycbor"]
 	path = components/cbor/tinycbor
 	url = ../../intel/tinycbor.git
+

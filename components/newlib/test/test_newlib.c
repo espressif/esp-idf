@@ -125,14 +125,14 @@ static bool fn_in_rom(void *fn, const char *name)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-#if defined(CONFIG_NEWLIB_NANO_FORMAT) && !defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if defined(CONFIG_NEWLIB_NANO_FORMAT) && !defined(CONFIG_SPIRAM)
     TEST_ASSERT(fn_in_rom(printf, "printf"));
     TEST_ASSERT(fn_in_rom(sscanf, "sscanf"));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(printf, "printf"));
     TEST_ASSERT_FALSE(fn_in_rom(sscanf, "sscanf"));
 #endif
-#if !defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if !defined(CONFIG_SPIRAM)
     TEST_ASSERT(fn_in_rom(atoi,   "atoi"));
     TEST_ASSERT(fn_in_rom(strtol, "strtol"));
 #else

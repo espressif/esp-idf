@@ -1,4 +1,4 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,18 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SPI_CAPS_H_
-#define _SOC_SPI_CAPS_H_
+#pragma once
 
 #define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    2
 
+#define SPI_PERIPH_NUM          3
+
+#define SPI_FUNC_NUM            1
 #define SPI_IOMUX_PIN_NUM_MISO  7
 #define SPI_IOMUX_PIN_NUM_MOSI  8
 #define SPI_IOMUX_PIN_NUM_CLK   6
 #define SPI_IOMUX_PIN_NUM_CS    11
 #define SPI_IOMUX_PIN_NUM_WP    10
 #define SPI_IOMUX_PIN_NUM_HD    9
+
+#define HSPI_FUNC_NUM           1
 
 //For D2WD and PICO-D4 chip
 #define SPI_D2WD_PIN_NUM_MISO  17
@@ -40,6 +44,7 @@
 #define HSPI_IOMUX_PIN_NUM_WP   2
 #define HSPI_IOMUX_PIN_NUM_HD   4
 
+#define VSPI_FUNC_NUM           1
 #define VSPI_IOMUX_PIN_NUM_MISO 19
 #define VSPI_IOMUX_PIN_NUM_MOSI 23
 #define VSPI_IOMUX_PIN_NUM_CLK  18
@@ -51,4 +56,7 @@
 
 #define SOC_SPI_SUPPORT_AS_CS   1   //Support to toggle the CS while the clock toggles
 
-#endif /* _SOC_SPI_CAPS_H_ */
+//#define SOC_SPI_SUPPORT_DDRCLK
+//#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
+//#define SOC_SPI_SUPPORT_CD_SIG
+

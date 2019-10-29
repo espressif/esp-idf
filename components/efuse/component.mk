@@ -1,10 +1,10 @@
 #
 # Component Makefile
 # currently the only SoC supported; to be moved into Kconfig
-SOC_NAME := $(IDF_TARGET)
+TARGET := $(IDF_TARGET)
 
-COMPONENT_SRCDIRS := $(SOC_NAME) src
+COMPONENT_SRCDIRS := $(TARGET) src src/$(TARGET)
+COMPONENT_PRIV_INCLUDEDIRS := private_include
+COMPONENT_ADD_INCLUDEDIRS := $(TARGET)/include include
 
-COMPONENT_ADD_INCLUDEDIRS := $(SOC_NAME)/include include
-
--include $(COMPONENT_PATH)/$(SOC_NAME)/component.mk
+-include $(COMPONENT_PATH)/$(TARGET)/component.mk

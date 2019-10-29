@@ -15,6 +15,12 @@
 #include "unity.h"
 #include "test_utils.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define int_clr_timers int_clr
+#define update update.update
+#define int_st_timers int_st
+#endif
+
 #define NO_OF_NOTIFS    4
 #define NO_OF_TASKS     2       //Sender and receiver
 #define TIMER_DIVIDER 10000

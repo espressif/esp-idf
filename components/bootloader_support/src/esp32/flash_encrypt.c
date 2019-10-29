@@ -174,7 +174,7 @@ static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_cry
 
     /* If the last flash_crypt_cnt bit is burned or write-disabled, the
        device can't re-encrypt itself. */
-    if (flash_crypt_wr_dis) {
+    if (flash_crypt_wr_dis || flash_crypt_cnt == 0xFF) {
         ESP_LOGE(TAG, "Cannot re-encrypt data (FLASH_CRYPT_CNT 0x%02x write disabled %d", flash_crypt_cnt, flash_crypt_wr_dis);
         return ESP_FAIL;
     }

@@ -59,6 +59,13 @@ void phy_set_wifi_mode_only(bool wifi_only);
  */
 void coex_bt_high_prio(void);
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+/**
+ * @brief Open PHY and RF.
+ */
+void phy_wakeup_init(void);
+#endif
+
 /**
  * @brief Shutdown PHY and RF.
  */

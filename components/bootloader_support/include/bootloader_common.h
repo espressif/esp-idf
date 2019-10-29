@@ -89,6 +89,13 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
 bool bootloader_common_label_search(const char *list, char *label);
 
 /**
+ * @brief Configure default SPI pin modes and drive strengths
+ *
+ * @param drv GPIO drive level (determined by clock frequency)
+ */
+void bootloader_configure_spi_pins(int drv);
+
+/**
  * @brief Calculates a sha-256 for a given partition or returns a appended digest.
  *
  * This function can be used to return the SHA-256 digest of application, bootloader and data partitions.

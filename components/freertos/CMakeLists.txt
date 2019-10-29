@@ -1,4 +1,10 @@
-set(srcs 
+if(BOOTLOADER_BUILD)
+    # bootloader only needs FreeRTOS for config, not for anything else
+    idf_component_register()
+    return()
+endif()
+
+set(srcs
     "croutine.c"
     "event_groups.c"
     "FreeRTOS-openocd.c"
