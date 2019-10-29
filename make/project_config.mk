@@ -61,15 +61,14 @@ ifeq ("$(PYTHON)","")
 PYTHON=python
 endif
 
-ifneq ("$(wildcard $(SDKCONFIG_DEFAULTS))","")
+SDKCONFIG_DEFAULTS_FILES := $(foreach f,$(SDKCONFIG_DEFAULTS),$(wildcard $(f)))
+# for each sdkconfig.defaults file, also add sdkconfig.defaults.IDF_TARGET, if it exists
+SDKCONFIG_DEFAULTS_FILES += $(foreach f,$(SDKCONFIG_DEFAULTS_FILES),$(wildcard $(f).$(IDF_TARGET)))
+
 ifeq ($(OS),Windows_NT)
-DEFAULTS_ARG:=--defaults $(shell cygpath -m $(SDKCONFIG_DEFAULTS))
-else
-DEFAULTS_ARG:=--defaults $(SDKCONFIG_DEFAULTS)
+SDKCONFIG_DEFAULTS_FILES := $(shell cygpath -m $(SDKCONFIG_DEFAULTS_FILES))
 endif
-else
-DEFAULTS_ARG:=
-endif
+DEFAULTS_ARG := $(foreach f,$(SDKCONFIG_DEFAULTS_FILES),--defaults $(f))
 
 # macro for running confgen.py
 define RunConfGen
