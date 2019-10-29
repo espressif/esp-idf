@@ -395,7 +395,7 @@ matter.
 
 .. _floating-points:
 
-Floating Point Aritmetic
+Floating Point Arithmetic
 ------------------------
 
 The ESP32 supports hardware acceleration of single precision floating point
