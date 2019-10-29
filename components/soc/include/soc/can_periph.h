@@ -13,4 +13,6 @@
 // limitations under the License.
 
 #pragma once
+#if CONFIG_IDF_TARGET_ESP32
 #include "soc/can_struct.h"
+#endif

@@ -3,7 +3,7 @@
 
 /*
  * MDNS Server Networking -- private include
- * 
+ *
  */
 #include "mdns.h"
 #include "mdns_private.h"
@@ -21,7 +21,9 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_event.h"
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
+#endif
 
 
 /**

@@ -3098,7 +3098,9 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
             default:
                 break;
         }
-    } else if (event_base == ETH_EVENT) {
+    }
+#if CONFIG_ETH_ENABLED
+    else if (event_base == ETH_EVENT) {
         switch (event_id) {
             case ETHERNET_EVENT_CONNECTED:
                 if (!tcpip_adapter_dhcpc_get_status(TCPIP_ADAPTER_IF_ETH, &dcst)) {
@@ -3114,15 +3116,19 @@ static void _mdns_handle_system_event(esp_event_base_t event_base,
             default:
                 break;
         }
-    } else if (event_base == IP_EVENT) {
+    }
+#endif
+    else if (event_base == IP_EVENT) {
         switch (event_id) {
             case IP_EVENT_STA_GOT_IP:
                 _mdns_enable_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V4);
                 _mdns_announce_pcb(TCPIP_ADAPTER_IF_STA, MDNS_IP_PROTOCOL_V6, NULL, 0, true);
                 break;
+#if CONFIG_ETH_ENABLED
             case IP_EVENT_ETH_GOT_IP:
                 _mdns_enable_pcb(TCPIP_ADAPTER_IF_ETH, MDNS_IP_PROTOCOL_V4);
                 break;
+#endif
             case IP_EVENT_GOT_IP6:
                 _mdns_enable_pcb(interface, MDNS_IP_PROTOCOL_V6);
                 _mdns_announce_pcb(interface, MDNS_IP_PROTOCOL_V4, NULL, 0, true);
@@ -4189,17 +4195,17 @@ esp_err_t mdns_init(void)
         err = ESP_ERR_NO_MEM;
         goto free_lock;
     }
-
     if ((err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         goto free_event_handlers;
     }
     if ((err = esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         goto free_event_handlers;
     }
+#if CONFIG_ETH_ENABLED
     if ((err = esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL)) != ESP_OK) {
         goto free_event_handlers;
     }
-
+#endif
     uint8_t i;
     ip6_addr_t tmp_addr6;
     tcpip_adapter_ip_info_t if_ip_info;
@@ -4229,7 +4235,9 @@ free_all_and_disable_pcbs:
 free_event_handlers:
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#if CONFIG_ETH_ENABLED
     esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#endif
     vQueueDelete(_mdns_server->action_queue);
 free_lock:
     vSemaphoreDelete(_mdns_server->lock);
@@ -4277,7 +4285,9 @@ void mdns_free(void)
     vSemaphoreDelete(_mdns_server->lock);
     esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#if CONFIG_ETH_ENABLED
     esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#endif
     free(_mdns_server);
     _mdns_server = NULL;
 }

@@ -16,7 +16,12 @@
 #ifdef ESP_PLATFORM
 
 #include <freertos/FreeRTOS.h>
-#include <esp32/rom/ets_sys.h>
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include <assert.h>
 
 /* Because malloc/free can happen inside an ISR context,

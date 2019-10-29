@@ -1,9 +1,15 @@
 menu "Ethernet"
 
+    # Invisible item that is enabled if any Ethernet
+    # selection is made
+    config ETH_ENABLED
+        bool
+
     menuconfig ETH_USE_ESP32_EMAC
         depends on IDF_TARGET_ESP32
         bool "Support ESP32 internal EMAC controller"
         default y
+        select ETH_ENABLED
         help
             ESP32 integrates a 10/100M Ethernet MAC controller.
 
@@ -132,8 +138,9 @@ menu "Ethernet"
     menuconfig ETH_USE_SPI_ETHERNET
         bool "Support SPI to Ethernet Module"
         default y
+        select ETH_ENABLED
         help
-            ESP-IDF can also support some SPI-Ethernet module.
+            ESP-IDF can also support some SPI-Ethernet modules.
 
     if ETH_USE_SPI_ETHERNET
         menuconfig ETH_SPI_ETHERNET_DM9051

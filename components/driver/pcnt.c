@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ esp_err_t pcnt_unit_config(const pcnt_config_t *pcnt_config)
 
     PCNT_CHECK(unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(channel < PCNT_CHANNEL_MAX, PCNT_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
-    PCNT_CHECK(input_io < 0 || (GPIO_IS_VALID_GPIO(input_io) && (input_io != ctrl_io)), "PCNT pluse input io error", ESP_ERR_INVALID_ARG);
+    PCNT_CHECK(input_io < 0 || (GPIO_IS_VALID_GPIO(input_io) && (input_io != ctrl_io)), "PCNT pulse input io error", ESP_ERR_INVALID_ARG);
     PCNT_CHECK(ctrl_io < 0 || GPIO_IS_VALID_GPIO(ctrl_io), "PCNT ctrl io error", ESP_ERR_INVALID_ARG);
     PCNT_CHECK((pcnt_config->pos_mode < PCNT_COUNT_MAX) && (pcnt_config->neg_mode < PCNT_COUNT_MAX), PCNT_COUNT_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK((pcnt_config->hctrl_mode < PCNT_MODE_MAX) && (pcnt_config->lctrl_mode < PCNT_MODE_MAX), PCNT_CTRL_MODE_ERR_STR, ESP_ERR_INVALID_ARG);
@@ -106,11 +106,11 @@ esp_err_t pcnt_set_pin(pcnt_unit_t unit, pcnt_channel_t channel, int pulse_io, i
     PCNT_CHECK(channel < PCNT_CHANNEL_MAX, PCNT_CHANNEL_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(GPIO_IS_VALID_GPIO(pulse_io) || pulse_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_CHECK(GPIO_IS_VALID_GPIO(ctrl_io) || ctrl_io < 0, PCNT_GPIO_ERR_STR, ESP_ERR_INVALID_ARG);
-    
+
     int sig_base  = (channel == 0) ? PCNT_SIG_CH0_IN0_IDX  : PCNT_SIG_CH1_IN0_IDX;
     int ctrl_base = (channel == 0) ? PCNT_CTRL_CH0_IN0_IDX : PCNT_CTRL_CH1_IN0_IDX;
-    if (unit > 4) {  
-        sig_base  += 12; // GPIO matrix assignments have a gap between units 4 & 5  
+    if (unit > 4) {
+        sig_base  += 12; // GPIO matrix assignments have a gap between units 4 & 5
         ctrl_base += 12;
     }
     int input_sig_index = sig_base  + (4 * unit);
@@ -161,7 +161,11 @@ esp_err_t pcnt_counter_clear(pcnt_unit_t pcnt_unit)
 {
     PCNT_CHECK(pcnt_unit < PCNT_UNIT_MAX, PCNT_UNIT_ERR_STR, ESP_ERR_INVALID_ARG);
     PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+#ifdef CONFIG_IDF_TARGET_ESP32
     uint32_t reset_bit = BIT(PCNT_PLUS_CNT_RST_U0_S + (pcnt_unit * 2));
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t reset_bit = BIT(PCNT_PULSE_CNT_RST_U0_S + (pcnt_unit * 2));
+#endif
     PCNT.ctrl.val |= reset_bit;
     PCNT.ctrl.val &= ~reset_bit;
     PCNT_EXIT_CRITICAL(&pcnt_spinlock);

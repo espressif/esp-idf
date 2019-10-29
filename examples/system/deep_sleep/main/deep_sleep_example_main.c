@@ -145,6 +145,7 @@ void app_main(void)
     esp_sleep_enable_ext1_wakeup(ext_wakeup_pin_1_mask | ext_wakeup_pin_2_mask, ESP_EXT1_WAKEUP_ANY_HIGH);
 
 #ifdef CONFIG_ENABLE_TOUCH_WAKEUP
+#if CONFIG_IDF_TARGET_ESP32
     // Initialize touch pad peripheral.
     // The default fsm mode is software trigger mode.
     touch_pad_init();
@@ -160,9 +161,50 @@ void app_main(void)
     touch_pad_config(TOUCH_PAD_NUM9, TOUCH_THRESH_NO_USE);
     calibrate_touch_pad(TOUCH_PAD_NUM8);
     calibrate_touch_pad(TOUCH_PAD_NUM9);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    /* Initialize touch pad peripheral. */
+    touch_pad_init();
+    /* Only support one touch channel in sleep mode. */
+    touch_pad_set_thresh(TOUCH_PAD_NUM8, TOUCH_PAD_THRESHOLD_MAX);
+    touch_pad_sleep_channel_t slp_config = {
+        .touch_num = TOUCH_PAD_NUM8,
+        .sleep_pad_threshold = TOUCH_PAD_THRESHOLD_MAX,
+        .en_proximity = false,
+    };
+    touch_pad_sleep_channel_config(slp_config);
+    /* Filter setting */
+    touch_filter_config_t filter_info = {
+            .mode = TOUCH_PAD_FILTER_IIR_8,
+            .debounce_cnt = 1,      // 1 time count.
+            .hysteresis_thr = 1,    // 9.4%
+            .noise_thr = 1,         // 37.5%
+            .noise_neg_thr = 1,     // 37.5%
+            .neg_noise_limit = 10,  // 10 time count.
+            .jitter_step = 4,       // use for jitter mode.
+    };
+    touch_pad_filter_set_config(&filter_info);
+    touch_pad_filter_enable();
+    touch_pad_filter_baseline_reset(TOUCH_PAD_MAX);
+    printf("touch pad filter init %d", TOUCH_PAD_FILTER_IIR_8);
+
+    /* Enable touch sensor clock. Work mode is "timer trigger". */
+    touch_pad_fsm_start(TOUCH_FSM_MODE_TIMER);
+
+    uint32_t touch_value;
+    //read baseline value
+    touch_pad_read_raw(TOUCH_PAD_NUM8, &touch_value);
+    //set interrupt threshold.
+    touch_pad_sleep_channel_t slp_config = {
+        .touch_num = TOUCH_PAD_NUM8,
+        .sleep_pad_threshold = touch_value * 0.2,
+        .en_proximity = false,
+    };
+    touch_pad_sleep_channel_config(slp_config); //20%
+    printf("test init: touch pad [%d] base %d, thresh %d", \
+        TOUCH_PAD_NUM8, touch_value, (uint32_t)(touch_value * 0.2));
+#endif
     printf("Enabling touch pad wakeup\n");
     esp_sleep_enable_touchpad_wakeup();
-
 #endif // CONFIG_ENABLE_TOUCH_WAKEUP
 
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP
@@ -186,6 +228,7 @@ void app_main(void)
 }
 
 #ifdef CONFIG_ENABLE_TOUCH_WAKEUP
+#if CONFIG_IDF_TARGET_ESP32
 static void calibrate_touch_pad(touch_pad_t pad)
 {
     int avg = 0;
@@ -207,6 +250,7 @@ static void calibrate_touch_pad(touch_pad_t pad)
         touch_pad_config(pad, threshold);
     }
 }
+#endif
 #endif // CONFIG_ENABLE_TOUCH_WAKEUP
 
 #ifdef CONFIG_ENABLE_ULP_TEMPERATURE_WAKEUP

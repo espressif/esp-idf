@@ -28,6 +28,7 @@ __version__ = '1.0'
 
 quiet = False
 max_blk_len = 256
+idf_target = "esp32"
 
 copyright = '''// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
@@ -244,35 +245,36 @@ class FuseTable(list):
 
         rows += [""]
 
-        rows += ["#define MAX_BLK_LEN CONFIG_EFUSE_MAX_BLK_LEN"]
+        if idf_target == "esp32":
+            rows += ["#define MAX_BLK_LEN CONFIG_EFUSE_MAX_BLK_LEN"]
 
-        rows += [""]
+            rows += [""]
 
-        last_free_bit_blk1 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK1")
-        last_free_bit_blk2 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK2")
-        last_free_bit_blk3 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK3")
+            last_free_bit_blk1 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK1")
+            last_free_bit_blk2 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK2")
+            last_free_bit_blk3 = self.get_str_position_last_free_bit_in_blk("EFUSE_BLK3")
 
-        rows += ["// The last free bit in the block is counted over the entire file."]
-        if last_free_bit_blk1 is not None:
-            rows += ["#define LAST_FREE_BIT_BLK1 " + last_free_bit_blk1]
-        if last_free_bit_blk2 is not None:
-            rows += ["#define LAST_FREE_BIT_BLK2 " + last_free_bit_blk2]
-        if last_free_bit_blk3 is not None:
-            rows += ["#define LAST_FREE_BIT_BLK3 " + last_free_bit_blk3]
+            rows += ["// The last free bit in the block is counted over the entire file."]
+            if last_free_bit_blk1 is not None:
+                rows += ["#define LAST_FREE_BIT_BLK1 " + last_free_bit_blk1]
+            if last_free_bit_blk2 is not None:
+                rows += ["#define LAST_FREE_BIT_BLK2 " + last_free_bit_blk2]
+            if last_free_bit_blk3 is not None:
+                rows += ["#define LAST_FREE_BIT_BLK3 " + last_free_bit_blk3]
 
-        rows += [""]
+            rows += [""]
 
-        if last_free_bit_blk1 is not None:
-            rows += ['_Static_assert(LAST_FREE_BIT_BLK1 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
-                     'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
-        if last_free_bit_blk2 is not None:
-            rows += ['_Static_assert(LAST_FREE_BIT_BLK2 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
-                     'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
-        if last_free_bit_blk3 is not None:
-            rows += ['_Static_assert(LAST_FREE_BIT_BLK3 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
-                     'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
+            if last_free_bit_blk1 is not None:
+                rows += ['_Static_assert(LAST_FREE_BIT_BLK1 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
+                         'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
+            if last_free_bit_blk2 is not None:
+                rows += ['_Static_assert(LAST_FREE_BIT_BLK2 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
+                         'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
+            if last_free_bit_blk3 is not None:
+                rows += ['_Static_assert(LAST_FREE_BIT_BLK3 <= MAX_BLK_LEN, "The eFuse table does not match the coding scheme. '
+                         'Edit the table and restart the efuse_common_table or efuse_custom_table command to regenerate the new files.");']
 
-        rows += [""]
+            rows += [""]
 
         last_name = ''
         for p in self:
@@ -348,8 +350,16 @@ class FuseDefinition(object):
     def parse_block(self, strval):
         if strval == "":
             raise InputError("Field 'efuse_block' can't be left empty.")
-        if strval not in ["EFUSE_BLK0", "EFUSE_BLK1", "EFUSE_BLK2", "EFUSE_BLK3"]:
-            raise InputError("Field 'efuse_block' should consist from EFUSE_BLK0..EFUSE_BLK3")
+        if idf_target == "esp32":
+            if strval not in ["EFUSE_BLK0", "EFUSE_BLK1", "EFUSE_BLK2", "EFUSE_BLK3"]:
+                raise InputError("Field 'efuse_block' should be one of EFUSE_BLK0..EFUSE_BLK3")
+
+        if idf_target == "esp32s2beta":
+            if strval not in ["EFUSE_BLK0", "EFUSE_BLK1", "EFUSE_BLK2", "EFUSE_BLK3", "EFUSE_BLK4",
+                              "EFUSE_BLK5", "EFUSE_BLK6", "EFUSE_BLK7", "EFUSE_BLK8", "EFUSE_BLK9",
+                              "EFUSE_BLK10"]:
+                raise InputError("Field 'efuse_block' should be one of EFUSE_BLK0..EFUSE_BLK10")
+
         return strval
 
     def get_max_bits_of_block(self):
@@ -450,16 +460,20 @@ def create_output_files(name, output_table, debug):
 def main():
     global quiet
     global max_blk_len
+    global idf_target
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
+    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32','esp32s2beta'], default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action="store_false")
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action="store_true")
-    parser.add_argument('--max_blk_len', help='Max number of bits in BLK1, BLK2 and BLK3', type=int, default=256)
+    parser.add_argument('--max_blk_len', help='Max number of bits in BLOCKs', type=int, default=256)
     parser.add_argument('common_input', help='Path to common CSV file to parse.', type=argparse.FileType('r'))
     parser.add_argument('custom_input', help='Path to custom CSV file to parse.', type=argparse.FileType('r'), nargs='?', default=None)
 
     args = parser.parse_args()
+
+    idf_target = args.idf_target
 
     max_blk_len = args.max_blk_len
     print("Max number of bits in BLK %d" % (max_blk_len))

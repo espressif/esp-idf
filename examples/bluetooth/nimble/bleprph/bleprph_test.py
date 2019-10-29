@@ -29,6 +29,7 @@ try:
     if test_fw_path and test_fw_path not in sys.path:
         sys.path.insert(0, test_fw_path)
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError as e:
     print(e)
     print("Try `export TEST_FW_PATH=$IDF_PATH/tools/tiny-test-fw` for resolving the issue")
@@ -149,7 +150,7 @@ def test_example_app_ble_peripheral(env, extra_data):
     subprocess.check_output(['hciconfig','hci0','reset'])
 
     # Acquire DUT
-    dut = env.get_dut("bleprph", "examples/bluetooth/nimble/bleprph")
+    dut = env.get_dut("bleprph", "examples/bluetooth/nimble/bleprph", dut_class=ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, "bleprph.bin")

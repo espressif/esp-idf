@@ -81,6 +81,13 @@
 
 #define PIN_FUNC_GPIO                               2
 
+#define SPI_CLK_GPIO_NUM                            6
+#define SPI_CS0_GPIO_NUM                            11
+#define SPI_Q_GPIO_NUM                              7
+#define SPI_D_GPIO_NUM                              8
+#define SPI_WP_GPIO_NUM                             10
+#define SPI_HD_GPIO_NUM                             9
+
 #define PIN_CTRL                          (DR_REG_IO_MUX_BASE +0x00)
 #define CLK_OUT3                                    0xf
 #define CLK_OUT3_V                                  CLK_OUT3

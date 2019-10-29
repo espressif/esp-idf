@@ -30,9 +30,12 @@
 #include "esp_attr.h"
 #include <limits.h>
 #include <assert.h>
+#include "soc/soc.h"
+
 #if !CONFIG_FREERTOS_UNICORE
 #include "esp_ipc.h"
 #endif
+
 
 static const char* TAG = "intr_alloc";
 
@@ -342,7 +345,7 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: reserved at runtime.");
         return false;
     }
-    
+
     //Ints can't be both shared and non-shared.
     assert(!((vd->flags&VECDESC_FL_SHARED)&&(vd->flags&VECDESC_FL_NONSHARED)));
     //check if interrupt already is in use by a non-shared interrupt
@@ -370,7 +373,7 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         ALCHLOG("....Unusable: already allocated");
         return false;
     }
-        
+
     return true;
 }
 
@@ -387,7 +390,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
     vector_desc_t empty_vect_desc;
     memset(&empty_vect_desc, 0, sizeof(vector_desc_t));
 
-    
+
     //Level defaults to any low/med interrupt
     if (!(flags&ESP_INTR_FLAG_LEVELMASK)) flags|=ESP_INTR_FLAG_LOWMED;
 
@@ -412,13 +415,13 @@ static int get_available_int(int flags, int cpu, int force, int source)
         if (vd == NULL ) {
             //if existing vd not found, just check the default state for the intr.
             empty_vect_desc.intno = force;
-            vd = &empty_vect_desc; 
+            vd = &empty_vect_desc;
         }
         if ( is_vect_desc_usable(vd, flags, cpu, force) ) {
             best = vd->intno;
         } else {
             ALCHLOG("get_avalible_int: forced vd invalid.");
-        } 
+        }
         return best;
     }
 
@@ -435,12 +438,12 @@ static int get_available_int(int flags, int cpu, int force, int source)
         ALCHLOG("Int %d reserved %d level %d %s hasIsr %d",
             x, int_desc[x].cpuflags[cpu]==INTDESC_RESVD, int_desc[x].level,
             int_desc[x].type==INTTP_LEVEL?"LEVEL":"EDGE", int_has_handler(x, cpu));
-        
+
         if ( !is_vect_desc_usable(vd, flags, cpu, force) ) continue;
 
         if (flags&ESP_INTR_FLAG_SHARED) {
             //We're allocating a shared int.
-            
+
             //See if int already is used as a shared interrupt.
             if (vd->flags&VECDESC_FL_SHARED) {
                 //We can use this already-marked-as-shared interrupt. Count the already attached isrs in order to see
@@ -550,9 +553,12 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     //Statusreg should have a mask
     if (intrstatusreg && !intrstatusmask) return ESP_ERR_INVALID_ARG;
     //If the ISR is marked to be IRAM-resident, the handler must not be in the cached region
+    //ToDo: if we are to allow placing interrupt handlers into the 0x400c0000—0x400c2000 region,
+    //we need to make sure the interrupt is connected to the CPU0.
+    //CPU1 does not have access to the RTC fast memory through this region.
     if ((flags&ESP_INTR_FLAG_IRAM) &&
-            (ptrdiff_t) handler >= 0x400C0000 &&
-            (ptrdiff_t) handler < 0x50000000 ) {
+            (ptrdiff_t) handler >= SOC_RTC_IRAM_HIGH &&
+            (ptrdiff_t) handler < SOC_RTC_DATA_LOW ) {
         return ESP_ERR_INVALID_ARG;
     }
 

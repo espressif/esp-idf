@@ -13,12 +13,17 @@
 // limitations under the License.
 
 #include <stdarg.h>
+#include "sdkconfig.h"
 #include "esp_flash.h"
-
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/cache.h"
 #include "esp_attr.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#include "esp32/rom/cache.h"
+#else
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/rom/cache.h"
+#endif
 
 
 static IRAM_ATTR esp_err_t start(void *arg)

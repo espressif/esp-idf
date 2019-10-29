@@ -64,7 +64,7 @@
 #undef PORTMUX_COMPARE_SET_FN_NAME
 
 
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if defined(CONFIG_SPIRAM)
 
 #define PORTMUX_AQUIRE_MUX_FN_NAME vPortCPUAcquireMutexIntsDisabledExtram
 #define PORTMUX_RELEASE_MUX_FN_NAME vPortCPUReleaseMutexIntsDisabledExtram
@@ -91,22 +91,28 @@
 
 
 static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexIntsDisabled(PORTMUX_AQUIRE_MUX_FN_ARGS) {
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if !defined(CONFIG_FREERTOS_UNICORE)
+#if defined(CONFIG_SPIRAM)
 	if (esp_ptr_external_ram(mux)) {
 		return vPortCPUAcquireMutexIntsDisabledExtram(PORTMUX_AQUIRE_MUX_FN_CALL_ARGS(mux));
 	}
 #endif
 	return vPortCPUAcquireMutexIntsDisabledInternal(PORTMUX_AQUIRE_MUX_FN_CALL_ARGS(mux));
+#else
+    return true;
+#endif
 }
 
 
 static inline void vPortCPUReleaseMutexIntsDisabled(PORTMUX_RELEASE_MUX_FN_ARGS) {
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if !defined(CONFIG_FREERTOS_UNICORE)
+#if defined(CONFIG_SPIRAM)
 	if (esp_ptr_external_ram(mux)) {
 		vPortCPUReleaseMutexIntsDisabledExtram(PORTMUX_RELEASE_MUX_FN_CALL_ARGS(mux));
 		return;
 	}
 #endif
 	vPortCPUReleaseMutexIntsDisabledInternal(PORTMUX_RELEASE_MUX_FN_CALL_ARGS(mux));
+#endif
 }
 

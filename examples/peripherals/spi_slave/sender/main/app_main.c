@@ -56,6 +56,17 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_SCLK 15
 #define GPIO_CS 14
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define SENDER_HOST HSPI_HOST
+#define DMA_CHAN    2
+
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define SENDER_HOST SPI2_HOST
+#define DMA_CHAN    SENDER_HOST
+
+#endif
+
+
 //The semaphore indicating the slave is ready to receive stuff.
 static xQueueHandle rdySem;
 
@@ -130,9 +141,9 @@ void app_main(void)
     gpio_isr_handler_add(GPIO_HANDSHAKE, gpio_handshake_isr_handler, NULL);
 
     //Initialize the SPI bus and add the device we want to send stuff to.
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    ret=spi_bus_initialize(SENDER_HOST, &buscfg, DMA_CHAN);
     assert(ret==ESP_OK);
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &handle);
+    ret=spi_bus_add_device(SENDER_HOST, &devcfg, &handle);
     assert(ret==ESP_OK);
 
     //Assume the slave is ready for the first transmission: if the slave started up before us, we will not detect

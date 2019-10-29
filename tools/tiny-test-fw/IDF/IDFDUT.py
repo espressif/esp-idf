@@ -122,7 +122,7 @@ def _uses_esptool(func):
         settings = self.port_inst.get_settings()
 
         try:
-            rom = esptool.ESP32ROM(self.port_inst)
+            rom = self._get_rom()(self.port_inst)
             rom.connect('hard_reset')
             esp = rom.run_stub()
 
@@ -160,6 +160,10 @@ class IDFDUT(DUT.SerialDUT):
         self.performance_items = _queue.Queue()
 
     @classmethod
+    def _get_rom(cls):
+        raise NotImplementedError("This is an abstraction class, method not defined.")
+
+    @classmethod
     def get_mac(cls, app, port):
         """
         get MAC address via esptool
@@ -169,7 +173,7 @@ class IDFDUT(DUT.SerialDUT):
         :return: MAC address or None
         """
         try:
-            esp = esptool.ESP32ROM(port)
+            esp = cls._get_rom()(port)
             esp.connect()
             return esp.read_mac()
         except RuntimeError:
@@ -181,7 +185,19 @@ class IDFDUT(DUT.SerialDUT):
 
     @classmethod
     def confirm_dut(cls, port, app, **kwargs):
-        return cls.get_mac(app, port) is not None
+        inst = None
+        try:
+            # TODO: check whether 8266 works with this logic
+            # Otherwise overwrite it in ESP8266DUT
+            inst = esptool.ESPLoader.detect_chip(port)
+            if type(inst) != cls._get_rom():
+                raise RuntimeError("Target not expected")
+            return inst.read_mac() is not None
+        except(esptool.FatalError, RuntimeError):
+            return False
+        finally:
+            if inst is not None:
+                inst._port.close()
 
     @_uses_esptool
     def _try_flash(self, esp, erase_nvs, baud_rate):
@@ -389,3 +405,21 @@ class IDFDUT(DUT.SerialDUT):
         if not self.allow_dut_exception and self.get_exceptions():
             Utility.console_log("DUT exception detected on {}".format(self), color="red")
             raise IDFDUTException()
+
+
+class ESP32DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32ROM
+
+
+class ESP32S2DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32S2ROM
+
+
+class ESP8266DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP8266ROM

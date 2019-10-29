@@ -93,7 +93,7 @@ static void setup_mmap_tests(void)
     }
 }
 
-TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
+TEST_CASE_ESP32("Can mmap into data address space", "[spi_flash][mmap]")
 {
     setup_mmap_tests();
 
@@ -153,7 +153,7 @@ TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
+TEST_CASE_ESP32("Can mmap into instruction address space", "[spi_flash][mmap]")
 {
     setup_mmap_tests();
 
@@ -177,15 +177,23 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
     printf("Mapping %x (+%x)\n", start - 0x10000, 0x20000);
     spi_flash_mmap_handle_t handle2;
     const void *ptr2;
-    ESP_ERROR_CHECK( spi_flash_mmap(start - 0x10000, 0x20000, SPI_FLASH_MMAP_DATA, &ptr2, &handle2) );
+    ESP_ERROR_CHECK( spi_flash_mmap(start - 0x10000, 0x20000, SPI_FLASH_MMAP_INST, &ptr2, &handle2) );
     printf("mmap_res: handle=%d ptr=%p\n", handle2, ptr2);
+
+    TEST_ASSERT_EQUAL_HEX32(start - 0x10000, spi_flash_cache2phys(ptr2));
+    TEST_ASSERT_EQUAL_PTR(ptr2, spi_flash_phys2cache(start - 0x10000, SPI_FLASH_MMAP_INST));
+
     spi_flash_mmap_dump();
 
     printf("Mapping %x (+%x)\n", start, 0x10000);
     spi_flash_mmap_handle_t handle3;
     const void *ptr3;
-    ESP_ERROR_CHECK( spi_flash_mmap(start, 0x10000, SPI_FLASH_MMAP_DATA, &ptr3, &handle3) );
+    ESP_ERROR_CHECK( spi_flash_mmap(start, 0x10000, SPI_FLASH_MMAP_INST, &ptr3, &handle3) );
     printf("mmap_res: handle=%d ptr=%p\n", handle3, ptr3);
+
+    TEST_ASSERT_EQUAL_HEX32(start, spi_flash_cache2phys(ptr3));
+    TEST_ASSERT_EQUAL_PTR(ptr3, spi_flash_phys2cache(start, SPI_FLASH_MMAP_INST));
+
     spi_flash_mmap_dump();
 
     printf("Unmapping handle1\n");
@@ -201,7 +209,7 @@ TEST_CASE("Can mmap into instruction address space", "[spi_flash][mmap]")
 
 }
 
-TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")
+TEST_CASE_ESP32("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]")
 {
     int nopages;
     int *pages;
@@ -342,7 +350,7 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
+TEST_CASE_ESP32("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 {
     uint8_t buf[64];
 
@@ -419,7 +427,7 @@ TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash][mmap]")
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
 }
 
-TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]")
+TEST_CASE_ESP32("no stale data read post mmap and write partition", "[spi_flash][mmap]")
 {
     /* Buffer size is set to 32 to allow encrypted flash writes */
     const char buf[32] = "Test buffer data for partition";

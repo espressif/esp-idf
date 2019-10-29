@@ -21,7 +21,7 @@
    error hex value (mbedTLS uses -N for error codes) */
 #define TEST_ASSERT_MBEDTLS_OK(X) TEST_ASSERT_EQUAL_HEX32(0, -(X))
 
-TEST_CASE("mbedtls ECDH Generate Key", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls ECDH Generate Key", "[mbedtls]")
 {
     mbedtls_ecdh_context ctx;
     mbedtls_entropy_context entropy;
@@ -48,7 +48,7 @@ TEST_CASE("mbedtls ECP self-tests", "[mbedtls]")
     TEST_ASSERT_EQUAL(0, mbedtls_ecp_self_test(1));
 }
 
-TEST_CASE("mbedtls ECP mul w/ koblitz", "[mbedtls]")
+TEST_CASE_ESP32("mbedtls ECP mul w/ koblitz", "[mbedtls]")
 {
     /* Test case code via https://github.com/espressif/esp-idf/issues/1556 */
     mbedtls_entropy_context ctxEntropy;

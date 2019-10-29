@@ -16,7 +16,6 @@
 #include <string.h>
 
 #include "tcpip_adapter_internal.h"
-
 #if CONFIG_TCPIP_LWIP
 
 #include "lwip/inet.h"
@@ -32,7 +31,9 @@
 #include "lwip/netif.h"
 #endif
 #include "netif/wlanif.h"
+#ifdef CONFIG_ETH_ENABLED
 #include "netif/ethernetif.h"
+#endif
 #include "netif/nettestif.h"
 
 #include "dhcpserver/dhcpserver.h"
@@ -232,8 +233,12 @@ static esp_err_t tcpip_adapter_start(tcpip_adapter_if_t tcpip_if, uint8_t *mac, 
 
 esp_err_t tcpip_adapter_eth_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info, void *args)
 {
+#ifdef CONFIG_ETH_ENABLED
     esp_netif_init_fn[TCPIP_ADAPTER_IF_ETH] = ethernetif_init;
     return tcpip_adapter_start(TCPIP_ADAPTER_IF_ETH, mac, ip_info, args);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }
 
 esp_err_t tcpip_adapter_sta_start(uint8_t *mac, tcpip_adapter_ip_info_t *ip_info)
@@ -1141,8 +1146,12 @@ static esp_err_t tcpip_adapter_dhcpc_stop_api(tcpip_adapter_api_msg_t *msg)
 
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb)
 {
+#ifdef CONFIG_ETH_ENABLED
     ethernetif_input(esp_netif[TCPIP_ADAPTER_IF_ETH], buffer, len);
     return ESP_OK;
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
 }
 
 esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb)

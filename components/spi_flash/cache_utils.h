@@ -15,6 +15,8 @@
 #ifndef ESP_SPI_FLASH_CACHE_UTILS_H
 #define ESP_SPI_FLASH_CACHE_UTILS_H
 
+#include <stdbool.h>
+
 /**
  * This header file contains declarations of cache manipulation functions
  * used both in flash_ops.c and flash_mmap.c.
@@ -53,5 +55,13 @@ void spi_flash_enable_interrupts_caches_no_os(void);
 // Only call this while holding spi_flash_op_lock()
 // Returns true if cache was flushed, false otherwise
 bool spi_flash_check_and_flush_cache(uint32_t start_addr, uint32_t length);
+
+//config cache mode
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+void esp_config_instruction_cache_mode(void);
+void esp_config_data_cache_mode(void);
+void esp_switch_rodata_to_dcache(void);
+#endif
+
 
 #endif //ESP_SPI_FLASH_CACHE_UTILS_H

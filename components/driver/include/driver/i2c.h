@@ -80,20 +80,20 @@ typedef enum {
  * @brief I2C initialization parameters
  */
 typedef struct{
-    i2c_mode_t mode;       /*!< I2C mode */
+    i2c_mode_t mode;              /*!< I2C mode */
     gpio_num_t sda_io_num;        /*!< GPIO number for I2C sda signal */
     gpio_pullup_t sda_pullup_en;  /*!< Internal GPIO pull mode for I2C sda signal*/
     gpio_num_t scl_io_num;        /*!< GPIO number for I2C scl signal */
     gpio_pullup_t scl_pullup_en;  /*!< Internal GPIO pull mode for I2C scl signal*/
-
+    //TODO: add ref tick configure
     union {
         struct {
             uint32_t clk_speed;     /*!< I2C clock frequency for master mode, (no higher than 1MHz for now) */
-        } master;
+        } master; /*!< Configuration if the I2C peripheral is master */
         struct {
             uint8_t addr_10bit_en;  /*!< I2C 10bit address mode enable for slave mode */
             uint16_t slave_addr;    /*!< I2C address for slave mode */
-        } slave;
+        } slave; /*!< Configuration if the I2C peripheral is slave */
 
     };
 }i2c_config_t;

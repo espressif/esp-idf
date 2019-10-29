@@ -5,9 +5,6 @@
 #if __has_include("soc/soc.h")
 #include "soc/soc.h"
 #endif
-#if __has_include("esp32/ulp.h")
-#include "esp32/ulp.h"
-#endif
 #if __has_include("esp_efuse.h")
 #include "esp_efuse.h"
 #endif
@@ -55,6 +52,9 @@
 #endif
 #if __has_include("tcpip_adapter.h")
 #include "tcpip_adapter.h"
+#endif
+#if __has_include("ulp_common.h")
+#include "ulp_common.h"
 #endif
 
 #ifdef CONFIG_ESP_ERR_TO_NAME_LOOKUP
@@ -203,7 +203,7 @@ static const esp_err_msg_t esp_err_msg_table[] = {
                                                                                 API functions.  NVS key is different in
                                                                                 comparison */
 #   endif
-    // components/ulp/include/esp32/ulp.h
+    // components/ulp/include/ulp_common.h
 #   ifdef      ESP_ERR_ULP_BASE
     ERR_TBL_IT(ESP_ERR_ULP_BASE),                               /*  4608 0x1200 Offset for ULP-related error codes */
 #   endif

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/portmacro.h"
 #include "freertos/task.h"
@@ -25,6 +25,7 @@
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "driver/can.h"
+#if CONFIG_IDF_TARGET_ESP32
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
@@ -1049,3 +1050,4 @@ esp_err_t can_clear_receive_queue(void)
 
     return ESP_OK;
 }
+#endif

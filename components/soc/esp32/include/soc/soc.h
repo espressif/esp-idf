@@ -25,19 +25,6 @@
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
 
-/* Overall memory map */
-#define SOC_IROM_LOW            0x400D0000
-#define SOC_IROM_HIGH           0x40400000
-#define SOC_DROM_LOW            0x3F400000
-#define SOC_DROM_HIGH           0x3F800000
-#define SOC_DRAM_LOW            0x3FFAE000
-#define SOC_DRAM_HIGH           0x40000000
-#define SOC_RTC_IRAM_LOW        0x400C0000
-#define SOC_RTC_IRAM_HIGH       0x400C2000
-#define SOC_RTC_DATA_LOW        0x50000000
-#define SOC_RTC_DATA_HIGH       0x50002000
-#define SOC_EXTRAM_DATA_LOW     0x3F800000
-#define SOC_EXTRAM_DATA_HIGH    0x3FC00000
 
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
@@ -246,30 +233,34 @@
 //}}
 
 /* Overall memory map */
-#define SOC_DROM_LOW    0x3F400000
-#define SOC_DROM_HIGH   0x3F800000
-#define SOC_IROM_LOW    0x400D0000
-#define SOC_IROM_HIGH   0x40400000
-#define SOC_IROM_MASK_LOW   0x40000000
-#define SOC_IROM_MASK_HIGH  0x40070000
-#define SOC_CACHE_PRO_LOW   0x40070000
-#define SOC_CACHE_PRO_HIGH  0x40078000
-#define SOC_CACHE_APP_LOW   0x40078000
-#define SOC_CACHE_APP_HIGH  0x40080000
-#define SOC_IRAM_LOW    0x40080000
-#define SOC_IRAM_HIGH   0x400A0000
-#define SOC_RTC_IRAM_LOW  0x400C0000
-#define SOC_RTC_IRAM_HIGH 0x400C2000
-#define SOC_RTC_DRAM_LOW  0x3FF80000
-#define SOC_RTC_DRAM_HIGH 0x3FF82000
-#define SOC_RTC_DATA_LOW  0x50000000
-#define SOC_RTC_DATA_HIGH 0x50002000
+#define SOC_DROM_LOW            0x3F400000
+#define SOC_DROM_HIGH           0x3F800000
+#define SOC_DRAM_LOW            0x3FFAE000
+#define SOC_DRAM_HIGH           0x40000000
+#define SOC_IROM_LOW            0x400D0000
+#define SOC_IROM_HIGH           0x40400000
+#define SOC_IROM_MASK_LOW       0x40000000
+#define SOC_IROM_MASK_HIGH      0x40070000
+#define SOC_CACHE_PRO_LOW       0x40070000
+#define SOC_CACHE_PRO_HIGH      0x40078000
+#define SOC_CACHE_APP_LOW       0x40078000
+#define SOC_CACHE_APP_HIGH      0x40080000
+#define SOC_IRAM_LOW            0x40080000
+#define SOC_IRAM_HIGH           0x400A0000
+#define SOC_RTC_IRAM_LOW        0x400C0000
+#define SOC_RTC_IRAM_HIGH       0x400C2000
+#define SOC_RTC_DRAM_LOW        0x3FF80000
+#define SOC_RTC_DRAM_HIGH       0x3FF82000
+#define SOC_RTC_DATA_LOW        0x50000000
+#define SOC_RTC_DATA_HIGH       0x50002000
+#define SOC_EXTRAM_DATA_LOW     0x3F800000
+#define SOC_EXTRAM_DATA_HIGH    0x3FC00000
 
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x400A0000
-#define SOC_DIRAM_IRAM_HIGH   0x400BFFFC
+#define SOC_DIRAM_IRAM_HIGH   0x400C0000
 #define SOC_DIRAM_DRAM_LOW    0x3FFE0000
-#define SOC_DIRAM_DRAM_HIGH   0x3FFFFFFC
+#define SOC_DIRAM_DRAM_HIGH   0x40000000
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FFAE000
@@ -355,6 +346,7 @@
 #define ETS_MMU_IA_INTR_SOURCE                  66/**< interrupt of MMU Invalid Access, LEVEL*/
 #define ETS_MPU_IA_INTR_SOURCE                  67/**< interrupt of MPU Invalid Access, LEVEL*/
 #define ETS_CACHE_IA_INTR_SOURCE                68/**< interrupt of Cache Invalied Access, LEVEL*/
+#define ETS_MAX_INTR_SOURCE                     69/**< total number of interrupt sources*/
 
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************

@@ -73,6 +73,16 @@ typedef enum {
     TIMER_AUTORELOAD_MAX,
 } timer_autoreload_t;
 
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+/**
+ * @brief Select timer source clock.
+ */
+typedef enum {
+    TIMER_SRC_CLK_APB = 0,  /*!< Select APB as the source clock*/
+    TIMER_SRC_CLK_XTAL = 1, /*!< Select XTAL as the source clock*/
+} timer_src_clk_t;
+#endif
+
 /**
  * @brief Data structure with timer's configuration settings
  */
@@ -83,6 +93,9 @@ typedef struct {
     timer_count_dir_t counter_dir; /*!< Counter direction  */
     bool auto_reload;   /*!< Timer auto-reload */
     uint32_t divider;   /*!< Counter clock divider. The divider's range is from from 2 to 65536. */
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    timer_src_clk_t clk_sel;  /*!< Use XTAL as source clock. */
+#endif
 } timer_config_t;
 
 

@@ -86,7 +86,7 @@ GENERATORS = [
 GENERATOR_CMDS = dict((a[0], a[1]) for a in GENERATORS)
 GENERATOR_VERBOSE = dict((a[0], a[3]) for a in GENERATORS)
 
-SUPPORTED_TARGETS = ["esp32"]
+SUPPORTED_TARGETS = ["esp32", "esp32s2beta"]
 
 
 def _run_tool(tool_name, args, cwd):
@@ -395,6 +395,8 @@ def monitor(action, ctx, args, print_filter):
     if args.port is not None:
         monitor_args += ["-p", args.port]
     monitor_args += ["-b", project_desc["monitor_baud"]]
+    monitor_args += ["--toolchain-prefix", project_desc["monitor_toolprefix"]]
+
     if print_filter is not None:
         monitor_args += ["--print_filter", print_filter]
     monitor_args += [elf_file]

@@ -15,19 +15,24 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+#include "sdkconfig.h"
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_log.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#include "esp32s2beta/ulp.h"
+#endif
 
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/sens_reg.h"
 
-#include "sdkconfig.h"
+#include "ulp_private.h"
 
 typedef struct {
     uint32_t magic;
@@ -43,6 +48,7 @@ static const char* TAG = "ulp";
 
 esp_err_t ulp_run(uint32_t entry_point)
 {
+#if CONFIG_IDF_TARGET_ESP32
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     // wait for at least 1 RTC_SLOW_CLK cycle
@@ -59,6 +65,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
     // enable ULP timer
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
+#endif
     return ESP_OK;
 }
 
@@ -70,10 +77,10 @@ esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, siz
     if (program_size_bytes < sizeof(ulp_binary_header_t)) {
         return ESP_ERR_INVALID_SIZE;
     }
-    if (load_addr_bytes > CONFIG_ESP32_ULP_COPROC_RESERVE_MEM) {
+    if (load_addr_bytes > ULP_RESERVE_MEM) {
         return ESP_ERR_INVALID_ARG;
     }
-    if (load_addr_bytes + program_size_bytes > CONFIG_ESP32_ULP_COPROC_RESERVE_MEM) {
+    if (load_addr_bytes + program_size_bytes > ULP_RESERVE_MEM) {
         return ESP_ERR_INVALID_SIZE;
     }
 
@@ -107,12 +114,13 @@ esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t* program_binary, siz
 
 esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 {
+#if CONFIG_IDF_TARGET_ESP32
     if (period_index > 4) {
         return ESP_ERR_INVALID_ARG;
     }
     uint64_t period_us_64 = period_us;
     uint64_t period_cycles = (period_us_64 << RTC_CLK_CAL_FRACT) / esp_clk_slowclk_cal_get();
-    uint64_t min_sleep_period_cycles = ULP_FSM_PREPARE_SLEEP_CYCLES 
+    uint64_t min_sleep_period_cycles = ULP_FSM_PREPARE_SLEEP_CYCLES
                                     + ULP_FSM_WAKEUP_SLEEP_CYCLES
                                     + REG_GET_FIELD(RTC_CNTL_TIMER2_REG, RTC_CNTL_ULPCP_TOUCH_START_WAIT);
     if (period_cycles < min_sleep_period_cycles) {
@@ -123,5 +131,6 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     }
     REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG + period_index * sizeof(uint32_t),
             SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
+#endif
     return ESP_OK;
 }

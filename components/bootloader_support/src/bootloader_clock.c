@@ -11,12 +11,19 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include "esp32/rom/uart.h"
-#include "esp32/rom/rtc.h"
+#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/uart.h"
+#include "esp32/rom/rtc.h"
+#else
+#include "esp32s2beta/rom/uart.h"
+#include "esp32s2beta/rom/rtc.h"
+#endif
 
 void bootloader_clock_configure(void)
 {
@@ -27,23 +34,30 @@ void bootloader_clock_configure(void)
     // and will be done with the bootloader much earlier than UART FIFO is empty.
     uart_tx_wait_idle(0);
 
-    /* Set CPU to 80MHz. Keep other clocks unmodified. */
-    int cpu_freq_mhz = 80;
-
     /* On ESP32 rev 0, switching to 80/160 MHz if clock was previously set to
      * 240 MHz may cause the chip to lock up (see section 3.5 of the errata
      * document). For rev. 0, switch to 240 instead if it has been enabled
      * previously.
      */
+#if CONFIG_IDF_TARGET_ESP32
+    /* Set CPU to 80MHz. Keep other clocks unmodified. */
+    int cpu_freq_mhz = 80;
+
     uint32_t chip_ver_reg = REG_READ(EFUSE_BLK0_RDATA3_REG);
     if ((chip_ver_reg & EFUSE_RD_CHIP_VER_REV1_M) == 0 &&
             DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL) == DPORT_CPUPERIOD_SEL_240) {
         cpu_freq_mhz = 240;
     }
+#endif
 
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
+#if CONFIG_IDF_TARGET_ESP32
     clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
     clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    clk_cfg.xtal_freq = CONFIG_ESP32S2_XTAL_FREQ;
+    clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
+#endif
     clk_cfg.slow_freq = rtc_clk_slow_freq_get();
     clk_cfg.fast_freq = rtc_clk_fast_freq_get();
     rtc_clk_init(clk_cfg);

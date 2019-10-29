@@ -17,6 +17,9 @@
 #include <esp_log.h>
 #include <esp_spi_flash.h> /* including in bootloader for error values */
 #include <esp_flash_encrypt.h>
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/spi_flash.h"
+#endif
 
 #ifndef BOOTLOADER_BUILD
 /* Normal app version maps to esp_spi_flash.h operations...
@@ -37,7 +40,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
         return NULL; /* existing mapping in use... */
     }
     const void *result = NULL;
-    uint32_t src_page = src_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    uint32_t src_page = src_addr & ~(SPI_FLASH_MMU_PAGE_SIZE - 1);
     size += (src_addr - src_page);
     esp_err_t err = spi_flash_mmap(src_page, size, SPI_FLASH_MMAP_DATA, &result, &map);
     if (err != ESP_OK) {
@@ -49,7 +52,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 
 void bootloader_munmap(const void *mapping)
 {
-    if(mapping && map) {
+    if (mapping && map) {
         spi_flash_munmap(map);
     }
     map = 0;
@@ -67,7 +70,11 @@ esp_err_t bootloader_flash_read(size_t src, void *dest, size_t size, bool allow_
 esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted)
 {
     if (write_encrypted) {
+#if CONFIG_IDF_TARGET_ESP32
         return spi_flash_write_encrypted(dest_addr, src, size);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        return SPI_Encrypt_Write(dest_addr, src, size);
+#endif
     } else {
         return spi_flash_write(dest_addr, src, size);
     }
@@ -86,18 +93,35 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #else
 /* Bootloader version, uses ROM functions only */
 #include <soc/dport_reg.h>
+#if CONFIG_IDF_TARGET_ESP32
 #include <esp32/rom/spi_flash.h>
 #include <esp32/rom/cache.h>
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include <esp32s2beta/rom/spi_flash.h>
+#include <esp32s2beta/rom/cache.h>
+#endif
 static const char *TAG = "bootloader_flash";
 
+#if CONFIG_IDF_TARGET_ESP32
 /* Use first 50 blocks in MMU for bootloader_mmap,
    50th block for bootloader_flash_read
 */
-#define MMU_BLOCK0_VADDR  0x3f400000
-#define MMU_BLOCK50_VADDR 0x3f720000
-#define MMU_FREE_PAGES    ((MMU_BLOCK50_VADDR - MMU_BLOCK0_VADDR) / FLASH_BLOCK_SIZE)
+#define MMU_BLOCK0_VADDR  SOC_DROM_LOW
+#define MMU_SIZE          (0x320000)
+#define MMU_BLOCK50_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#define FLASH_READ_VADDR MMU_BLOCK50_VADDR
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+/* Use first 63 blocks in MMU for bootloader_mmap,
+   63th block for bootloader_flash_read
+*/
+#define MMU_BLOCK0_VADDR  SOC_DROM_LOW
+#define MMU_SIZE          (0x3f0000)
+#define MMU_BLOCK63_VADDR (MMU_BLOCK0_VADDR + MMU_SIZE)
+#define FLASH_READ_VADDR MMU_BLOCK63_VADDR
+#endif
 
+#define MMU_FREE_PAGES    (MMU_SIZE / FLASH_BLOCK_SIZE)
+    
 static bool mapped;
 
 // Current bootloader mapping (ab)used for bootloader_read()
@@ -118,25 +142,41 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
         ESP_LOGE(TAG, "tried to bootloader_mmap twice");
         return NULL; /* can't map twice */
     }
-    if (size > 0x320000) {
-        /* Allow mapping up to 50 of the 51 available MMU blocks (last one used for reads) */
+    if (size > MMU_SIZE) {
         ESP_LOGE(TAG, "bootloader_mmap excess size %x", size);
         return NULL;
     }
 
     uint32_t src_addr_aligned = src_addr & MMU_FLASH_MASK;
     uint32_t count = bootloader_cache_pages_to_map(size, src_addr);
+#if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t autoload = Cache_Suspend_ICache();
+    Cache_Invalidate_ICache_All();
+#endif
     ESP_LOGD(TAG, "mmu set paddr=%08x count=%d size=%x src_addr=%x src_addr_aligned=%x",
-            src_addr & MMU_FLASH_MASK, count, size, src_addr, src_addr_aligned );
+             src_addr & MMU_FLASH_MASK, count, size, src_addr, src_addr_aligned );
+#if CONFIG_IDF_TARGET_ESP32
     int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    int e = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
+#endif
     if (e != 0) {
         ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
+#if CONFIG_IDF_TARGET_ESP32
         Cache_Read_Enable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        Cache_Resume_ICache(autoload);
+#endif
         return NULL;
     }
+#if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    Cache_Resume_ICache(autoload);
+#endif
 
     mapped = true;
 
@@ -146,10 +186,17 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 void bootloader_munmap(const void *mapping)
 {
     if (mapped)  {
+#if CONFIG_IDF_TARGET_ESP32
         /* Full MMU reset */
         Cache_Read_Disable(0);
         Cache_Flush(0);
         mmu_init(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        //TODO, save the autoload value.
+        Cache_Suspend_ICache();
+        Cache_Invalidate_ICache_All();
+        Cache_MMU_Init();
+#endif
         mapped = false;
         current_read_mapping = UINT32_MAX;
     }
@@ -157,7 +204,7 @@ void bootloader_munmap(const void *mapping)
 
 static esp_err_t spi_to_esp_err(esp_rom_spiflash_result_t r)
 {
-    switch(r) {
+    switch (r) {
     case ESP_ROM_SPIFLASH_RESULT_OK:
         return ESP_OK;
     case ESP_ROM_SPIFLASH_RESULT_ERR:
@@ -171,10 +218,18 @@ static esp_err_t spi_to_esp_err(esp_rom_spiflash_result_t r)
 
 static esp_err_t bootloader_flash_read_no_decrypt(size_t src_addr, void *dest, size_t size)
 {
+#if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t autoload = Cache_Suspend_ICache();
+#endif
     esp_rom_spiflash_result_t r = esp_rom_spiflash_read(src_addr, dest, size);
+#if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    Cache_Resume_ICache(autoload);
+#endif
 
     return spi_to_esp_err(r);
 }
@@ -183,28 +238,42 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 {
     uint32_t *dest_words = (uint32_t *)dest;
 
-    /* Use the 51st MMU mapping to read from flash in 64KB blocks.
-       (MMU will transparently decrypt if encryption is enabled.)
-    */
     for (int word = 0; word < size / 4; word++) {
         uint32_t word_src = src_addr + word * 4;  /* Read this offset from flash */
         uint32_t map_at = word_src & MMU_FLASH_MASK; /* Map this 64KB block from flash */
         uint32_t *map_ptr;
         if (map_at != current_read_mapping) {
             /* Move the 64KB mmu mapping window to fit map_at */
+#if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Disable(0);
             Cache_Flush(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+            uint32_t autoload = Cache_Suspend_ICache();
+            Cache_Invalidate_ICache_All();
+#endif
             ESP_LOGD(TAG, "mmu set block paddr=0x%08x (was 0x%08x)", map_at, current_read_mapping);
-            int e = cache_flash_mmu_set(0, 0, MMU_BLOCK50_VADDR, map_at, 64, 1);
+#if CONFIG_IDF_TARGET_ESP32
+            int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+            int e = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, FLASH_READ_VADDR, map_at, 64, 1, 0);
+#endif
             if (e != 0) {
                 ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
+#if CONFIG_IDF_TARGET_ESP32
                 Cache_Read_Enable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+                Cache_Resume_ICache(autoload);
+#endif
                 return ESP_FAIL;
             }
             current_read_mapping = map_at;
+#if CONFIG_IDF_TARGET_ESP32
             Cache_Read_Enable(0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+            Cache_Resume_ICache(autoload);
+#endif
         }
-        map_ptr = (uint32_t *)(MMU_BLOCK50_VADDR + (word_src - map_at));
+        map_ptr = (uint32_t *)(FLASH_READ_VADDR + (word_src - map_at));
         dest_words[word] = *map_ptr;
     }
     return ESP_OK;
@@ -255,7 +324,12 @@ esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool 
     }
 
     if (write_encrypted) {
+#if CONFIG_IDF_TARGET_ESP32
         return spi_to_esp_err(esp_rom_spiflash_write_encrypted(dest_addr, src, size));
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        // TODO: use the same ROM AP here
+        return spi_to_esp_err(SPI_Encrypt_Write(dest_addr, src, size));
+#endif
     } else {
         return spi_to_esp_err(esp_rom_spiflash_write(dest_addr, src, size));
     }

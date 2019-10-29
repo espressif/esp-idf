@@ -1,0 +1,54 @@
+/* These are the stdio related newlib functions present in ESP32S2beta ROM.
+   They are not used when compiling with newlib 3.
+*/
+
+PROVIDE ( fclose = 0x40015a30 );
+PROVIDE ( _fclose_r = 0x40015940 );
+PROVIDE ( fflush = 0x40001f94 );
+PROVIDE ( _fflush_r = 0x40001f0c );
+PROVIDE ( __fp_lock_all = 0x40015864 );
+PROVIDE ( _fwalk = 0x40016efc );
+PROVIDE ( _fwalk_reent = 0x40016f34 );
+PROVIDE ( fiprintf = 0x40000e18 );
+PROVIDE ( _fiprintf_r = 0x40000df4 );
+PROVIDE ( fprintf = 0x40000e18 );
+PROVIDE ( _fprintf_r = 0x40000df4 );
+PROVIDE ( __fp_unlock_all = 0x40015878 );
+PROVIDE ( fputwc = 0x40001c40 );
+PROVIDE ( __fputwc = 0x40001b4c );
+PROVIDE ( _fputwc_r = 0x40001bd4 );
+PROVIDE ( _printf_common = 0x4000123c );
+PROVIDE ( _printf_float = 0x40015538 );
+PROVIDE ( _printf_i = 0x40001308 );
+PROVIDE ( vfiprintf = 0x4000121c );
+PROVIDE ( _vfiprintf_r = 0x40000f34 );
+PROVIDE ( vfprintf = 0x4000121c );
+PROVIDE ( _vfprintf_r = 0x40000f34 );
+PROVIDE ( _scanf_float = 0x40015554 );
+PROVIDE ( __sclose = 0x4001592c );
+PROVIDE ( __seofread = 0x400158bc );
+PROVIDE ( __sf_fake_stderr = 0x3ffae938 );
+PROVIDE ( __sf_fake_stdin = 0x3ffae978 );
+PROVIDE ( __sf_fake_stdout = 0x3ffae958 );
+PROVIDE ( __sflush_r = 0x40001db8 );
+PROVIDE ( __sfmoreglue = 0x400156f4 );
+PROVIDE ( __sfp = 0x400157bc );
+PROVIDE ( __sfp_lock_acquire = 0x40015734 );
+PROVIDE ( __sfp_lock_release = 0x40015740 );
+PROVIDE ( __sfputs_r = 0x40000e7c );
+PROVIDE ( __sfvwrite_r = 0x400016ec );
+PROVIDE ( __sinit = 0x40015764 );
+PROVIDE ( __sinit_lock_acquire = 0x4001574c );
+PROVIDE ( __sinit_lock_release = 0x40015758 );
+PROVIDE ( __smakebuf_r = 0x40001d30 );
+PROVIDE ( __sprint_r = 0x40000ec8 );
+PROVIDE ( __sread = 0x4001588c );
+PROVIDE ( __sseek = 0x400158f8 );
+PROVIDE ( __swbuf = 0x40001a58 );
+PROVIDE ( __swbuf_r = 0x40001998 );
+PROVIDE ( __swhatbuf_r = 0x40001cd4 );
+PROVIDE ( __swrite = 0x400158c4 );
+PROVIDE ( __swsetup_r = 0x40001a6c );
+PROVIDE ( _cleanup = 0x40015724 );
+PROVIDE ( _cleanup_r = 0x400156ac );
+PROVIDE ( creat = 0x40007c68 );

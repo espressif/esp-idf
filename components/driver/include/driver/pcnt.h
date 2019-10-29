@@ -47,10 +47,13 @@ typedef enum {
     PCNT_UNIT_1 = 1,                 /*!< PCNT unit 1 */
     PCNT_UNIT_2 = 2,                 /*!< PCNT unit 2 */
     PCNT_UNIT_3 = 3,                 /*!< PCNT unit 3 */
+//ESP32-S2 only have 4 unit
+#ifdef CONFIG_IDF_TARGET_ESP32
     PCNT_UNIT_4 = 4,                 /*!< PCNT unit 4 */
     PCNT_UNIT_5 = 5,                 /*!< PCNT unit 5 */
     PCNT_UNIT_6 = 6,                 /*!< PCNT unit 6 */
     PCNT_UNIT_7 = 7,                 /*!< PCNT unit 7 */
+#endif
     PCNT_UNIT_MAX,
 } pcnt_unit_t; 
 
@@ -67,11 +70,11 @@ typedef enum {
  * @brief Selection of counter's events the may trigger an interrupt
  */
 typedef enum {
-    PCNT_EVT_L_LIM = 0,             /*!< PCNT watch point event: Minimum counter value */
-    PCNT_EVT_H_LIM = 1,             /*!< PCNT watch point event: Maximum counter value */
-    PCNT_EVT_THRES_0 = 2,           /*!< PCNT watch point event: threshold0 value event */
-    PCNT_EVT_THRES_1 = 3,           /*!< PCNT watch point event: threshold1 value event */
-    PCNT_EVT_ZERO = 4,              /*!< PCNT watch point event: counter value zero event */
+    PCNT_EVT_THRES_1 = BIT(2),           /*!< PCNT watch point event: threshold1 value event */
+    PCNT_EVT_THRES_0 = BIT(3),           /*!< PCNT watch point event: threshold0 value event */
+    PCNT_EVT_L_LIM = BIT(4),             /*!< PCNT watch point event: Minimum counter value */
+    PCNT_EVT_H_LIM = BIT(5),             /*!< PCNT watch point event: Maximum counter value */
+    PCNT_EVT_ZERO = BIT(6),              /*!< PCNT watch point event: counter value zero event */
     PCNT_EVT_MAX
 } pcnt_evt_type_t;
 

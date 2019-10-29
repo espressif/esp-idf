@@ -24,6 +24,11 @@ extern "C" {
  */
 void bootloader_clock_configure(void);
 
+/** @brief Return the rated maximum frequency of this chip
+ */
+int bootloader_clock_get_rated_freq_mhz(void);
+
 #ifdef __cplusplus
 }
 #endif
+

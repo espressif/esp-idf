@@ -30,7 +30,9 @@ extern "C" {
 #define LEDC_ERR_VAL    (-1)
 
 typedef enum {
+#ifdef CONFIG_IDF_TARGET_ESP32
     LEDC_HIGH_SPEED_MODE = 0, /*!< LEDC high speed speed_mode */
+#endif
     LEDC_LOW_SPEED_MODE,      /*!< LEDC low speed speed_mode */
     LEDC_SPEED_MODE_MAX,      /*!< LEDC speed limit */
 } ledc_mode_t;
@@ -93,12 +95,14 @@ typedef enum {
     LEDC_TIMER_12_BIT,      /*!< LEDC PWM duty resolution of 12 bits */
     LEDC_TIMER_13_BIT,      /*!< LEDC PWM duty resolution of 13 bits */
     LEDC_TIMER_14_BIT,      /*!< LEDC PWM duty resolution of 14 bits */
+#ifdef CONFIG_IDF_TARGET_ESP32
     LEDC_TIMER_15_BIT,      /*!< LEDC PWM duty resolution of 15 bits */
     LEDC_TIMER_16_BIT,      /*!< LEDC PWM duty resolution of 16 bits */
     LEDC_TIMER_17_BIT,      /*!< LEDC PWM duty resolution of 17 bits */
     LEDC_TIMER_18_BIT,      /*!< LEDC PWM duty resolution of 18 bits */
     LEDC_TIMER_19_BIT,      /*!< LEDC PWM duty resolution of 19 bits */
     LEDC_TIMER_20_BIT,      /*!< LEDC PWM duty resolution of 20 bits */
+#endif
     LEDC_TIMER_BIT_MAX,
 } ledc_timer_bit_t;
 
@@ -307,7 +311,6 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
  * @param arg User-supplied argument passed to the handler function.
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
  *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info.
- * @param arg Parameter for handler function
  * @param handle Pointer to return handle. If non-NULL, a handle for the interrupt will
  *        be returned here.
  *

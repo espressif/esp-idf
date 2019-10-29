@@ -250,6 +250,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "COMPONENT_KCONFIGS=${kconfigs}"
         "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
         "IDF_CMAKE=y"
+        "IDF_TARGET=${IDF_TARGET}"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
         ${mconf} ${root_kconfig}

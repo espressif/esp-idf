@@ -159,13 +159,18 @@ class DeprecatedOptions(object):
                 f_o.write('{}\n'.format(self._DEP_OP_END))
 
     def append_header(self, config, path_output):
+        def _opt_defined(opt):
+            if not opt.visibility:
+                return False
+            return not (opt.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and opt.str_value == "n")
+
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
                 f_o.write('\n/* List of deprecated options */\n')
                 for dep_opt in sorted(self.r_dic):
                     new_opt = self.r_dic[dep_opt]
-                    f_o.write('#ifdef {}{}\n#define {}{} {}{}\n#endif\n\n'.format(self.config_prefix, new_opt,
-                                                                                  self.config_prefix, dep_opt, self.config_prefix, new_opt))
+                    if new_opt in config.syms and _opt_defined(config.syms[new_opt]):
+                        f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
 def main():

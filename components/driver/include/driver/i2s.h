@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -101,7 +101,9 @@ typedef enum {
  */
 typedef enum {
     I2S_NUM_0 = 0x0,  /*!< I2S 0*/
-    I2S_NUM_1 = 0x1,  /*!< I2S 1*/
+#if SOC_I2S_PERIPH_NUM > 1
+    I2S_NUM_1,  /*!< I2S 1*/
+#endif
     I2S_NUM_MAX,
 } i2s_port_t;
 
@@ -118,7 +120,9 @@ typedef enum {
     I2S_MODE_RX = 8,
     I2S_MODE_DAC_BUILT_IN = 16,       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
     I2S_MODE_ADC_BUILT_IN = 32,       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
+#if SOC_I2S_SUPPORT_PDM
     I2S_MODE_PDM = 64,
+#endif
 } i2s_mode_t;
 
 
@@ -187,6 +191,7 @@ typedef struct {
     int data_in_num;    /*!< DATA in pin*/
 } i2s_pin_config_t;
 
+#if SOC_I2S_SUPPORT_PDM
 /**
  * @brief I2S PDM RX downsample mode
  */
@@ -195,6 +200,7 @@ typedef enum {
     I2S_PDM_DSR_16S,     /*!< downsampling number is 16 for PDM RX mode*/
     I2S_PDM_DSR_MAX,
 } i2s_pdm_dsr_t;
+#endif
 
 typedef intr_handle_t i2s_isr_handle_t;
 /**
@@ -221,6 +227,7 @@ typedef intr_handle_t i2s_isr_handle_t;
  */
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
 
+#if SOC_I2S_SUPPORT_PDM
 /**
  * @brief Set PDM mode down-sample rate
  *        In PDM RX mode, there would be 2 rounds of downsample process in hardware.
@@ -239,6 +246,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
  *     - ESP_ERR_NO_MEM      Out of memory
  */
 esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr);
+#endif
 
 /**
  * @brief Set I2S dac mode, I2S built-in DAC is disabled by default

@@ -14,6 +14,7 @@ void spi_slave_hal_user_start(const spi_slave_hal_context_t *hal)
 
 void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
 {
+    spi_ll_slave_reset(hal->hw);
     if (hal->use_dma) {
         spi_ll_reset_dma(hal->hw);
 
@@ -32,7 +33,6 @@ void spi_slave_hal_prepare_data(const spi_slave_hal_context_t *hal)
             spi_ll_write_buffer(hal->hw, hal->tx_buffer, hal->bitlen);
         }
     }
-    spi_ll_slave_reset(hal->hw);
 
     spi_ll_slave_set_rx_bitlen(hal->hw, hal->bitlen);
     spi_ll_slave_set_tx_bitlen(hal->hw, hal->bitlen);
@@ -53,6 +53,7 @@ void spi_slave_hal_store_result(spi_slave_hal_context_t *hal)
         //Copy result out
         spi_ll_read_buffer(hal->hw, hal->rx_buffer, hal->bitlen);
     }
+    spi_ll_slave_set_int_type(hal->hw, SPI_LL_INT_TYPE_NORMAL);
 }
 
 uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal)

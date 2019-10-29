@@ -7,9 +7,13 @@
 #include "string.h"
 #include "sdkconfig.h"
 
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/rtc.h"
-#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/rtc.h"
+#endif
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

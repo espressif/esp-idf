@@ -26,7 +26,8 @@ variables:
   # If the "recursive" strategy is used we have a problem with using relative URLs for sub-submodules.
   GIT_SUBMODULE_STRATEGY: normal
 
-  UNIT_TEST_BUILD_SYSTEM: make
+  UNIT_TEST_BUILD_SYSTEM: cmake
+  EXAMPLE_TEST_BUILD_SYSTEM: cmake
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"

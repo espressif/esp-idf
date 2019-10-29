@@ -114,6 +114,7 @@ build_esp_idf_tests_make:
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    - export IDF_TARGET=esp32
     - cd $CI_PROJECT_DIR/tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
     - make ut-clean-all-configs
@@ -154,6 +155,7 @@ build_examples_make:
       - build_examples/*/*/*/build/*.map
       - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
     expire_in: 3 days
   variables:
@@ -183,6 +185,10 @@ build_examples_make:
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples.sh
+    # Check if the tests demand Make built binaries. If not, delete them
+    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
+    - cd ..
+    - rm -rf build_examples
 
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
@@ -191,12 +197,13 @@ build_examples_make:
   artifacts:
     when: always
     paths:
-      - build_examples_cmake/*/*/*/*/build/*.bin
-      - build_examples_cmake/*/*/*/*/sdkconfig
-      - build_examples_cmake/*/*/*/*/build/*.elf
-      - build_examples_cmake/*/*/*/*/build/*.map
-      - build_examples_cmake/*/*/*/*/build/flasher_args.json
-      - build_examples_cmake/*/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/*/build/*.bin
+      - build_examples/*/*/*/*/sdkconfig
+      - build_examples/*/*/*/*/build/*.elf
+      - build_examples/*/*/*/*/build/*.map
+      - build_examples/*/*/*/*/build/flasher_args.json
+      - build_examples/*/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
     expire_in: 3 days
   variables:
@@ -211,17 +218,26 @@ build_examples_make:
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
-    - rm -rf build_examples_cmake
-    - mkdir build_examples_cmake
-    - cd build_examples_cmake
+    - rm -rf build_examples
+    - mkdir build_examples
+    - cd build_examples
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
+    # Check if the tests demand CMake built binaries. If not, delete them
+    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
+    - cd ..
+    - rm -rf build_examples
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
   variables:
     IDF_TARGET: esp32
+
+build_examples_cmake_esp32s2:
+  extends: .build_examples_cmake
+  variables:
+    IDF_TARGET: esp32s2beta
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 

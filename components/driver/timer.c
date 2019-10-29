@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "hal/timer_ll.h"
+#include "soc/rtc.h"
 
 static const char* TIMER_TAG = "timer_group";
 #define TIMER_CHECK(a, str, ret_val) \
@@ -48,7 +49,11 @@ esp_err_t timer_get_counter_value(timer_group_t group_num, timer_idx_t timer_num
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_val != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL_SAFE(&timer_spinlock[group_num]);
+#ifdef CONFIG_IDF_TARGET_ESP32
     TG[group_num]->hw_timer[timer_num].update = 1;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->hw_timer[timer_num].update.update = 1;
+#endif
     *timer_val = ((uint64_t) TG[group_num]->hw_timer[timer_num].cnt_high << 32)
         | (TG[group_num]->hw_timer[timer_num].cnt_low);
     portEXIT_CRITICAL_SAFE(&timer_spinlock[group_num]);
@@ -65,7 +70,15 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     esp_err_t err = timer_get_counter_value(group_num, timer_num, &timer_val);
     if (err == ESP_OK) {
         uint16_t div = TG[group_num]->hw_timer[timer_num].config.divider;
+#ifdef CONFIG_IDF_TARGET_ESP32
         *time = (double)timer_val * div / TIMER_BASE_CLK;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        if(TG[group_num]->hw_timer[timer_num].config.use_xtal) {
+            *time = (double)timer_val * div / ((int)rtc_clk_xtal_freq_get() * 1000000);
+        } else {
+            *time = (double)timer_val * div / rtc_clk_apb_freq_get();
+        }
+#endif
     }
     return err;
 }
@@ -223,7 +236,11 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     //but software reset does not clear interrupt status. This is not safe for application when enable the interrupt of timer_group.
     //we need to disable the interrupt and clear the interrupt status here.
     TG[group_num]->int_ena.val &= (~BIT(timer_num));
+#ifdef CONFIG_IDF_TARGET_ESP32
     TG[group_num]->int_clr_timers.val = BIT(timer_num);
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->int_clr.val = BIT(timer_num);
+#endif
     TG[group_num]->hw_timer[timer_num].config.autoreload = config->auto_reload;
     TG[group_num]->hw_timer[timer_num].config.divider = (uint16_t) config->divider;
     TG[group_num]->hw_timer[timer_num].config.enable = config->counter_en;
@@ -231,6 +248,9 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     TG[group_num]->hw_timer[timer_num].config.alarm_en = config->alarm_en;
     TG[group_num]->hw_timer[timer_num].config.level_int_en = (config->intr_type == TIMER_INTR_LEVEL ? 1 : 0);
     TG[group_num]->hw_timer[timer_num].config.edge_int_en = (config->intr_type == TIMER_INTR_LEVEL ? 0 : 1);
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->hw_timer[timer_num].config.use_xtal = config->clk_sel;
+#endif
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
@@ -327,3 +347,4 @@ bool IRAM_ATTR timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer
 {
     return timer_ll_get_auto_reload(TG[group_num], timer_num);
 }
+

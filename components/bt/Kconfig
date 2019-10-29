@@ -2,6 +2,7 @@ menu "Bluetooth"
 
     config BT_ENABLED
         bool "Bluetooth"
+        depends on IDF_TARGET_ESP32
         help
             Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 

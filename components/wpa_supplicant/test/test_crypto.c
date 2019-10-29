@@ -23,7 +23,7 @@
 #include "mbedtls/ecp.h"
 typedef struct crypto_bignum crypto_bignum;
 
-TEST_CASE("Test crypto lib bignum apis", "[wpa_crypto]")
+TEST_CASE_ESP32("Test crypto lib bignum apis", "[wpa_crypto]")
 {
     {
 

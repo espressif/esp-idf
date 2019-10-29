@@ -13,6 +13,12 @@
 #include "driver/timer.h"
 #include "sdkconfig.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define int_clr_timers int_clr
+#define update update.update
+#define int_st_timers int_st
+#endif
+
 static SemaphoreHandle_t isr_semaphore;
 static volatile unsigned isr_count;
 

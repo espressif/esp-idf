@@ -4,7 +4,6 @@
 
 #include <esp_types.h>
 #include <stdio.h>
-#include "esp32/rom/ets_sys.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -45,7 +44,7 @@ TEST_CASE("portMUX spinlocks (no contention)", "[freertos]")
 #ifdef CONFIG_FREERTOS_UNICORE
     TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE, "%d cycles/op", ((end - start)/REPEAT_OPS));
 #else
-#if CONFIG_ESP32_SPIRAM_SUPPORT
+#if CONFIG_SPIRAM
     TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM, "%d cycles/op", ((end - start)/REPEAT_OPS));
 #else
     TEST_PERFORMANCE_LESS_THAN(FREERTOS_SPINLOCK_CYCLES_PER_OP, "%d cycles/op", ((end - start)/REPEAT_OPS));

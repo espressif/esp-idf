@@ -14,19 +14,24 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "esp_log.h"
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/spi_flash.h"
 #include "bootloader_config.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
 #include "sdkconfig.h"
 #include "esp_image_format.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/gpio.h"
 #include "esp32/rom/rtc.h"
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/gpio.h"
+#include "esp32s2beta/rom/rtc.h"
+#include "esp32s2beta/rom/spi_flash.h"
+#endif
 
-static const char* TAG = "boot";
+static const char *TAG = "boot";
 
 static int select_partition_number (bootloader_state_t *bs);
 static int selected_boot_partition(const bootloader_state_t *bs);
@@ -101,7 +106,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
             return bootloader_utility_get_selected_boot_partition(bs);
         }
 #endif
-       // TEST firmware.
+        // TEST firmware.
 #ifdef CONFIG_BOOTLOADER_APP_TEST
         if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
             ESP_LOGI(TAG, "Detect a boot condition of the test firmware");

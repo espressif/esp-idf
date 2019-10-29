@@ -17,7 +17,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
-#include "esp32/rom/lldesc.h"
+#include "soc/lldesc.h"
 #include "soc/spi_periph.h"
 #include "hal/spi_types.h"
 #include "sdkconfig.h"
@@ -137,7 +137,6 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
  *         - ESP_OK                on success
  */
 esp_err_t spi_bus_free(spi_host_device_t host);
-
 
 #ifdef __cplusplus
 }

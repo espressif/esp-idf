@@ -6,7 +6,6 @@
    software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
    CONDITIONS OF ANY KIND, either express or implied.
 */
-
 #include <stdio.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
@@ -110,6 +109,9 @@ static void example_tg0_timer_init(int timer_idx,
     config.alarm_en = TIMER_ALARM_EN;
     config.intr_type = TIMER_INTR_LEVEL;
     config.auto_reload = auto_reload;
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    config.clk_sel = TIMER_SRC_CLK_APB;
+#endif
     timer_init(TIMER_GROUP_0, timer_idx, &config);
 
     /* Timer's counter will initially start from value below.

@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-reference/peripherals/temp_sensor.rst
