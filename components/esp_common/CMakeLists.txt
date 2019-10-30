@@ -11,8 +11,10 @@ else()
              "src/esp_timer.c"
              "src/ets_timer_legacy.c"
              "src/freertos_hooks.c"
+             "src/mac_addr.c"
              "src/pm_locks.c"
-             "src/stack_check.c")
+             "src/stack_check.c"
+             "src/system_api.c")
 
     # IPC framework is not applicable if freertos unicore config is selected
     if(NOT CONFIG_FREERTOS_UNICORE)
