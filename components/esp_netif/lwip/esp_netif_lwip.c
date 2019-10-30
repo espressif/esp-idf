@@ -574,7 +574,7 @@ static esp_err_t esp_netif_start_api(esp_netif_api_msg_t *msg)
         ESP_LOGD(TAG, "%s Setting the lwip netif%p UP", __func__, p_netif);
         netif_set_up(p_netif);
     }
-    if (esp_netif->flags&ESP_NETIF_DHCPS) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         if (esp_netif->dhcps_status != ESP_NETIF_DHCP_STARTED) {
             if (p_netif != NULL && netif_is_up(p_netif)) {
                 esp_netif_ip_info_t *default_ip = esp_netif->ip_info;
@@ -617,12 +617,12 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
         return ESP_ERR_ESP_NETIF_IF_NOT_READY;
     }
 
-    if (esp_netif->flags&ESP_NETIF_DHCPS) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         dhcps_stop(lwip_netif);    // TODO(IDF-1099): dhcps checks status by its self
         if (ESP_NETIF_DHCP_STOPPED != esp_netif->dhcps_status) {
             esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
         }
-    } else if (esp_netif->flags&ESP_NETIF_DHCPC) {
+    } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         dhcp_release(lwip_netif);
         dhcp_stop(lwip_netif);
         dhcp_cleanup(lwip_netif);
@@ -870,7 +870,7 @@ esp_err_t esp_netif_dhcpc_start(esp_netif_t *esp_netif) _LWIP_TASK_IPC_CALL(esp_
 
 esp_err_t esp_netif_dhcps_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status)
 {
-    if (!esp_netif || (esp_netif->flags&ESP_NETIF_DHCPC)) {
+    if (!esp_netif || (esp_netif->flags & ESP_NETIF_DHCP_CLIENT)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -880,7 +880,7 @@ esp_err_t esp_netif_dhcps_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_stat
 
 esp_err_t esp_netif_dhcpc_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status)
 {
-    if (!esp_netif || (esp_netif->flags&ESP_NETIF_DHCPS)) {
+    if (!esp_netif || (esp_netif->flags & ESP_NETIF_DHCP_SERVER)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -1043,7 +1043,7 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 
     struct netif *lwip_netif = esp_netif->lwip_netif;
 
-    if (esp_netif->flags&ESP_NETIF_DHCPC && esp_netif->dhcpc_status == ESP_NETIF_DHCP_STARTED) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT && esp_netif->dhcpc_status == ESP_NETIF_DHCP_STARTED) {
         dhcp_stop(esp_netif->lwip_netif);
 
         esp_netif->dhcpc_status = ESP_NETIF_DHCP_INIT;
@@ -1054,7 +1054,7 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
     netif_set_addr(lwip_netif, IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
     netif_set_down(lwip_netif);
 
-    if (esp_netif->flags&ESP_NETIF_DHCPC) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         esp_netif_start_ip_lost_timer(esp_netif);
     }
 
@@ -1148,11 +1148,11 @@ static esp_err_t esp_netif_set_ip_info_api(esp_netif_api_msg_t *msg)
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (esp_netif->flags&ESP_NETIF_DHCPS) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         if (esp_netif->dhcps_status != ESP_NETIF_DHCP_STOPPED) {
             return ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED;
             }
-    } else if (esp_netif->flags&ESP_NETIF_DHCPC) {
+    } else if (esp_netif->flags & ESP_NETIF_DHCP_CLIENT) {
         if (esp_netif->dhcpc_status != ESP_NETIF_DHCP_STOPPED) {
             return ESP_ERR_ESP_NETIF_DHCP_NOT_STOPPED;
         }
@@ -1225,7 +1225,7 @@ static esp_err_t esp_netif_set_dns_info_api(esp_netif_api_msg_t *msg)
     ip_addr_t *lwip_ip = (ip_addr_t*)&dns->ip;
     lwip_ip->type = IPADDR_TYPE_V4;
 
-    if (esp_netif->flags&ESP_NETIF_DHCPS) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         // if DHCP server configured to set DNS in dhcps API
         if (type != ESP_NETIF_DNS_MAIN) {
             ESP_LOGD(TAG, "set dns invalid type");
@@ -1263,7 +1263,7 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
 
-    if (esp_netif->flags&ESP_NETIF_DHCPS) {
+    if (esp_netif->flags & ESP_NETIF_DHCP_SERVER) {
         ip4_addr_t dns_ip = dhcps_dns_getserver();
         memcpy(&dns->ip.u_addr.ip4, &dns_ip, sizeof(ip4_addr_t));
     } else {

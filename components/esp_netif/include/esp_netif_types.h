@@ -123,8 +123,8 @@ typedef struct {
 
 
 typedef enum esp_netif_flags {
-    ESP_NETIF_DHCPC       = 1 << 0,
-    ESP_NETIF_DHCPS       = 1 << 1,
+    ESP_NETIF_DHCP_CLIENT = 1 << 0,
+    ESP_NETIF_DHCP_SERVER = 1 << 1,
     ESP_NETIF_FLAG_AUTOUP = 1 << 2,
     ESP_NETIF_FLAG_GARP   = 1 << 3,
     ESP_NETIF_FLAG_EVENT_IP_MODIFIED = 1 << 4

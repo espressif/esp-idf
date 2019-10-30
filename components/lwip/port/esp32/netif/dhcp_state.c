@@ -26,7 +26,7 @@
 #define DHCP_NAMESPACE "dhcp_state"
 
 // DHCP_Client has to be enabled for this netif
-#define VALID_NETIF_ID(netif) (ESP_NETIF_DHCPC&esp_netif_get_flags(netif))
+#define VALID_NETIF_ID(netif) (ESP_NETIF_DHCP_CLIENT&esp_netif_get_flags(netif))
 
 bool dhcp_ip_addr_restore(void *netif)
 {
