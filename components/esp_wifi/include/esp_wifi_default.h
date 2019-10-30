@@ -77,4 +77,22 @@ esp_netif_t* esp_netif_create_default_wifi_ap(void);
  */
 esp_netif_t* esp_netif_create_default_wifi_sta(void);
 
+/**
+ * @brief Creates default STA and AP network interfaces for esp-mesh.
+ *
+ * Both netifs are almost identical to the default station and softAP, but with
+ * DHCP client and server disabled. Please note that the DHCP client is typically
+ * enabled only if the device is promoted to a root node.
+ *
+ * Returns created interfaces which could be ignored setting parameters to NULL
+ * if an application code does not need to save the interface instances
+ * for further processing.
+ *
+ * @param[out] p_netif_sta pointer where the resultant STA interface is saved (if non NULL)
+ * @param[out] p_netif_ap pointer where the resultant AP interface is saved (if non NULL)
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, esp_netif_t **p_netif_ap);
+
 #endif //_ESP_WIFI_DEFAULT_H

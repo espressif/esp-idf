@@ -372,38 +372,6 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
 
 }
 
-/**
- * @brief Creates mesh network interfaces based on default STA and AP,
- * but without DHCP, this is to be enabled separately only on root node
- */
-static esp_err_t create_wifi_netifs(void)
-{
-    esp_netif_inherent_config_t netif_cfg;
-    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_AP, sizeof(netif_cfg));
-    netif_cfg.flags &= ~ESP_NETIF_DHCPS;
-    esp_netif_config_t cfg_ap = {
-        .base = &netif_cfg,
-        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP,
-    };
-    esp_netif_t *netif_ap = esp_netif_new(&cfg_ap);
-    assert(netif_ap);
-    ESP_ERROR_CHECK(esp_netif_attach_wifi_ap(netif_ap));
-    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
-
-    memcpy(&netif_cfg, ESP_NETIF_BASE_DEFAULT_WIFI_STA, sizeof(netif_cfg));
-    netif_cfg.flags &= ~ESP_NETIF_DHCPC;
-    esp_netif_config_t cfg_sta = {
-        .base = &netif_cfg,
-        .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA,
-    };
-
-    netif_sta = esp_netif_new(&cfg_sta);
-    assert(netif_sta);
-    ESP_ERROR_CHECK(esp_netif_attach_wifi_station(netif_sta));
-    ESP_ERROR_CHECK(esp_wifi_set_default_wifi_sta_handlers());
-    return ESP_OK;
-}
-
 void app_main(void)
 {
     ESP_ERROR_CHECK(mesh_light_init());
@@ -412,8 +380,8 @@ void app_main(void)
     esp_netif_init();
     /*  event initialization */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    /*  crete network interfaces for mesh */
-    ESP_ERROR_CHECK(create_wifi_netifs());
+    /*  crete network interfaces for mesh (only station instance saved for further manipulation, soft AP instance ignored */
+    ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&netif_sta, NULL));
     /*  wifi initialization */
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&config));
