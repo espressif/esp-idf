@@ -69,12 +69,13 @@ def main():
 
     if args.env_file is not None:
         env = json.load(args.env_file)
-        os.environ.update(env)
+        os.environ.update(confgen.dict_enc_for_env(env))
 
     run_server(args.kconfig, args.config, args.sdkconfig_rename)
 
 
 def run_server(kconfig, sdkconfig, sdkconfig_rename, default_version=MAX_PROTOCOL_VERSION):
+    confgen.prepare_source_files()
     config = kconfiglib.Kconfig(kconfig)
     sdkconfig_renames = [sdkconfig_rename] if sdkconfig_rename else []
     sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
@@ -245,15 +246,41 @@ def diff(before, after):
 def get_ranges(config):
     ranges_dict = {}
 
+    def is_base_n(i, n):
+        try:
+            int(i, n)
+            return True
+        except ValueError:
+            return False
+
+    def get_active_range(sym):
+        """
+        Returns a tuple of (low, high) integer values if a range
+        limit is active for this symbol, or (None, None) if no range
+        limit exists.
+        """
+        base = kconfiglib._TYPE_TO_BASE[sym.orig_type] if sym.orig_type in kconfiglib._TYPE_TO_BASE else 0
+
+        try:
+            for low_expr, high_expr, cond in sym.ranges:
+                if kconfiglib.expr_value(cond):
+                    low = int(low_expr.str_value, base) if is_base_n(low_expr.str_value, base) else 0
+                    high = int(high_expr.str_value, base) if is_base_n(high_expr.str_value, base) else 0
+                    return (low, high)
+        except ValueError:
+            pass
+        return (None, None)
+
     def handle_node(node):
         sym = node.item
         if not isinstance(sym, kconfiglib.Symbol):
             return
-        active_range = sym.active_range
+        active_range = get_active_range(sym)
         if active_range[0] is not None:
             ranges_dict[sym.name] = active_range
 
-    config.walk_menu(handle_node)
+    for n in config.node_iter():
+        handle_node(n)
     return ranges_dict
 
 
@@ -274,7 +301,8 @@ def get_visible(config):
             result[node] = visible
         except AttributeError:
             menus.append(node)
-    config.walk_menu(handle_node)
+    for n in config.node_iter():
+        handle_node(n)
 
     # now, figure out visibility for each menu. A menu is visible if any of its children are visible
     for m in reversed(menus):  # reverse to start at leaf nodes

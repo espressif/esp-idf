@@ -12,15 +12,15 @@ Linux 平台工具链的标准设置（传统 GNU Make）
 
 - CentOS 7::
 
-    sudo yum install gcc git wget make ncurses-devel flex bison gperf python python2-cryptography
+    sudo yum install gcc git wget make flex bison gperf python python2-cryptography
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
+    sudo apt-get install gcc git wget make flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make ncurses flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
+    sudo pacman -S --needed gcc git make flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
 
 .. note::
 
@@ -85,21 +85,6 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 ------------------------------
 
 某些 Linux 版本可能在烧写 ESP32 时会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息，这可以通过 :ref:`将当前用户添加到 dialout 组 <linux-dialout-group-legacy>` 来解决。
-
-
-Arch Linux 用户
-----------------
-
-在 Arch Linux 中运行预编译 gdb (xtensa-esp32-elf-gdb) 需要 ncurses 5，但 Arch 会使用 ncurses 6。
-
-不过，AUR_ 中有针对原生和 lib32 配置的向下兼容库：
-
-- https://aur.archlinux.org/packages/ncurses5-compat-libs/
-- https://aur.archlinux.org/packages/lib32-ncurses5-compat-libs/
-
-在安装这些软件包之前，您可能需要将作者的公钥添加到您的密钥环中，具体参考上方的 “注释” 部分。
-
-此外，您也可以使用 crosstool-NG 编译一个链接到 ncurses 6 的 gdb。
 
 
 后续步骤

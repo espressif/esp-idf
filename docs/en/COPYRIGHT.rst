@@ -4,7 +4,7 @@ Copyrights and Licenses
 Software Copyrights
 ===================
 
-All original source code in this repository is Copyright (C) 2015-2018 Espressif Systems. This source code is licensed under the Apache License 2.0 as described in the file LICENSE.
+All original source code in this repository is Copyright (C) 2015-2019 Espressif Systems. This source code is licensed under the Apache License 2.0 as described in the file LICENSE.
 
 Additional third party copyrighted code is included under the following licenses.
 
@@ -71,6 +71,10 @@ This is the list of licenses for tools included in this repository, which are us
 * :component:`esptool.py <esptool_py/esptool>` is Copyright (C) 2014-2016 Fredrik Ahlberg, Angus Gratton and is licensed under the GNU General Public License v2, as described in :component_file:`LICENSE file<esptool_py/LICENSE>`.
 
 * :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
+
+* :idf:`Kconfiglib <tools/kconfig_new/kconfiglib.py>` is Copyright (C) 2011-2019, Ulf Magnusson, and is licensed under the ISC License.
+
+* :idf:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
 
 
 ROM Source Code Copyrights

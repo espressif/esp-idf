@@ -24,7 +24,7 @@ menu "Example Configuration"
         bool
     config EXAMPLE_IPV6
         bool
-        select EXAMPLE_CONNECT_IPV6
+        select EXAMPLE_CONNECT_IPV6 if IDF_TARGET_ESP32
 
     config EXAMPLE_MULTICAST_IPV4_ADDR
         string "Multicast IPV4 Address (send & receive)"
