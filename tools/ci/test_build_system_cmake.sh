@@ -306,18 +306,17 @@ function run_tests()
     grep "CONFIG_IDF_TARGET=\"${fake_target}\"" sdkconfig || failure "Project not configured correctly using idf.py reconfigure -D"
     grep "IDF_TARGET:STRING=${fake_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py reconfigure -D"
 
-    # TODO Change the real target to other value than esp32 when we have
-    real_target=esp32
+    real_target=esp32s2beta
     print_status "Can set target using idf.py set-target"
     clean_build_dir
     rm sdkconfig
-    idf.py set-target esp32 || failure "Failed to set target via idf.py set-target"
+    idf.py set-target ${real_target} || failure "Failed to set target via idf.py set-target"
     grep "CONFIG_IDF_TARGET=\"${real_target}\"" sdkconfig || failure "Project not configured correctly using idf.py set-target"
     grep "IDF_TARGET:STRING=${real_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py set-target"
 
     # Clean up modifications for the fake target
     mv CMakeLists.txt.bak CMakeLists.txt
-    rm -rf components
+    rm -rf components sdkconfig build
 
     print_status "Can find toolchain file in component directory"
     clean_build_dir
@@ -346,18 +345,19 @@ function run_tests()
     rm -rf main/main
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
-    print_status "sdkconfig should have contents both files: sdkconfig and sdkconfig.defaults"
+    print_status "sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET"
     idf.py clean > /dev/null;
     idf.py fullclean > /dev/null;
     rm -f sdkconfig.defaults;
     rm -f sdkconfig;
     echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults;
+    echo "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" >> sdkconfig.defaults.esp32;
     echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig;
     idf.py reconfigure > /dev/null;
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
+    grep "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" sdkconfig || failure "The define from sdkconfig.defaults.esp32 should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
-    rm sdkconfig;
-    rm sdkconfig.defaults;
+    rm sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
 
     print_status "can build with phy_init_data"
     idf.py clean > /dev/null;
