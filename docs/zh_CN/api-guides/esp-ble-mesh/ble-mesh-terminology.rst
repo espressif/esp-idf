@@ -1,0 +1,1 @@
+.. include:: ../../../en/api-guides/esp-ble-mesh/ble-mesh-terminology.rst
