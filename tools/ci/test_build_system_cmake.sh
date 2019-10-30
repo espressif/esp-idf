@@ -94,7 +94,7 @@ function run_tests()
     print_status "Partial build doesn't compile anything by default"
     take_build_snapshot
     # verify no build files are refreshed by a partial make
-    ALL_BUILD_FILES=$(find ${BUILD} -type f | sed "s@${BUILD}/@@" | grep -v '^.')
+    ALL_BUILD_FILES=$(find ${BUILD} -type f | ${SED} "s@${BUILD}/@@" | grep -v '^.')
     idf.py build || failure "Partial build failed"
     assert_not_rebuilt ${ALL_BUILD_FILES}
 
@@ -127,7 +127,7 @@ function run_tests()
     print_status "Can set COMPONENT_SRCS with spaces"
     clean_build_dir
     touch main/main2.c
-    sed -i 's/^set(COMPONENT_SRCS.*/set(COMPONENT_SRCS "main.c main2.c")/' main/CMakeLists.txt
+    ${SED} -i 's/^set(COMPONENT_SRCS.*/set(COMPONENT_SRCS "main.c main2.c")/' main/CMakeLists.txt
     idf.py build || failure "Set COMPONENT_SRCS with spaces build failed"
     git checkout -- main/CMakeLists.txt
     rm main/main2.c
@@ -136,7 +136,7 @@ function run_tests()
     clean_build_dir
     OUTOFTREE_BUILD=${TESTDIR}/alt_build
     idf.py -B "${OUTOFTREE_BUILD}" build || failure "Failed to build with out-of-tree build dir"
-    NEW_BUILD_FILES=$(find ${OUTOFREE_BUILD} -type f)
+    NEW_BUILD_FILES=$(find ${OUTOFTREE_BUILD} -type f)
     if [ -z "${NEW_BUILD_FILES}" ]; then
         failure "No files found in new build directory!"
     fi
@@ -159,7 +159,9 @@ function run_tests()
     # make a copy of esp-idf and CRLFify it
     CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
     mkdir -p ${CRLF_ESPIDF}
-    cp -r ${IDF_PATH}/* ${CRLF_ESPIDF}
+    # Note: trailing slash after ${IDF_PATH} avoids creating esp-idf directory inside ${CRLF_ESPIDF}
+    rsync -a --exclude ${TESTDIR} ${IDF_PATH}/ ${CRLF_ESPIDF}
+    # cp -r ${IDF_PATH}/* ${CRLF_ESPIDF}
     # don't CRLFify executable files, as Linux will fail to execute them
     find ${CRLF_ESPIDF} -name .git -prune -name build -prune -type f ! -perm 755 -exec unix2dos {} \;
     IDF_PATH=${CRLF_ESPIDF} idf.py build || failure "Failed to build with CRLFs in source"
@@ -203,7 +205,7 @@ function run_tests()
     idf.py build
     take_build_snapshot
     # need to actually change config, or cmake is too smart to rebuild
-    sed -i.bak s/^\#\ CONFIG_FREERTOS_UNICORE\ is\ not\ set/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
+    ${SED} -i.bak s/^\#\ CONFIG_FREERTOS_UNICORE\ is\ not\ set/CONFIG_FREERTOS_UNICORE=y/ sdkconfig
     idf.py build
     # check the sdkconfig.h file was rebuilt
     assert_rebuilt config/sdkconfig.h
@@ -220,7 +222,7 @@ function run_tests()
     take_build_snapshot
     # Need to actually change the build config, or CMake won't do anything
     cp CMakeLists.txt CMakeLists.bak
-    sed -i.bak 's/^project(/add_compile_options("-DUSELESS_MACRO_DOES_NOTHING=1")\nproject\(/' CMakeLists.txt
+    ${SED} -i.bak 's/^project(/add_compile_options("-DUSELESS_MACRO_DOES_NOTHING=1")\nproject\(/' CMakeLists.txt
     idf.py build || failure "Build failed"
     mv CMakeLists.bak CMakeLists.txt
     # similar to previous test
@@ -242,7 +244,7 @@ function run_tests()
 
     print_status "Can build with IDF_PATH set via cmake cache not environment"
     clean_build_dir
-    sed -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
+    ${SED} -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
     export IDF_PATH_BACKUP="$IDF_PATH"
     (unset IDF_PATH &&
          cd build &&
@@ -253,7 +255,7 @@ function run_tests()
 
     print_status "Can build with IDF_PATH unset and inferred by build system"
     clean_build_dir
-    sed -i.bak "s%\$ENV{IDF_PATH}%\${ci_idf_path}%" CMakeLists.txt  # expand to a hardcoded path
+    ${SED} -i.bak "s%\$ENV{IDF_PATH}%\${ci_idf_path}%" CMakeLists.txt  # expand to a hardcoded path
     (ci_idf_path=${IDF_PATH} && unset IDF_PATH && cd build &&
          cmake -G Ninja -D ci_idf_path=${ci_idf_path} .. && ninja) || failure "Ninja build failed"
     mv CMakeLists.txt.bak CMakeLists.txt
@@ -261,7 +263,7 @@ function run_tests()
 
     print_status "Can build with IDF_PATH unset and inferred by cmake when Kconfig needs it to be set"
     clean_build_dir
-    sed -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
+    ${SED} -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
     export IDF_PATH_BACKUP="$IDF_PATH"
     mv main/Kconfig.projbuild main/Kconfig.projbuild_bak
     echo "source \"\$IDF_PATH/examples/wifi/getting_started/station/main/Kconfig.projbuild\"" > main/Kconfig.projbuild
@@ -280,7 +282,7 @@ function run_tests()
     mkdir -p ${IDF_PATH}/components/xtensa/$fake_target/include
     touch components/$fake_target/CMakeLists.txt
     cp ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake components/$fake_target/toolchain-$fake_target.cmake
-    sed -i.bak '/cmake_minimum_required/ a\
+    ${SED} -i.bak '/cmake_minimum_required/ a\
         set(COMPONENTS esptool_py)' CMakeLists.txt
 
     print_status "Can override IDF_TARGET from environment"
@@ -339,7 +341,7 @@ function run_tests()
     mkdir -p main/main/main # move main component contents to another directory
     mv main/* main/main/main
     cp CMakeLists.txt CMakeLists.bak # set EXTRA_COMPONENT_DIRS to point to the other directory
-    sed -i "s%cmake_minimum_required(VERSION \([0-9]\+\).\([0-9]\+\))%cmake_minimum_required(VERSION \1.\2)\nset(EXTRA_COMPONENT_DIRS main/main/main)%" CMakeLists.txt
+    ${SED} -i "s%cmake_minimum_required(VERSION \([0-9]\+\).\([0-9]\+\))%cmake_minimum_required(VERSION \1.\2)\nset(EXTRA_COMPONENT_DIRS main/main/main)%" CMakeLists.txt
     idf.py build || failure "Build with EXTRA_COMPONENT_DIRS set failed"
     mv CMakeLists.bak CMakeLists.txt # revert previous modifications
     mv main/main/main/* main
@@ -548,7 +550,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     clean_build_dir
     cp CMakeLists.txt CMakeLists.txt.bak
     printf "\nidf_component_get_property(srcs main SRCS)\nmessage(STATUS SRCS:\${srcs})" >> CMakeLists.txt
-    (idf.py reconfigure | grep "SRCS:$(realpath main/main.c)") || failure "Component properties should be set"
+    (idf.py reconfigure | grep "SRCS:$(${REALPATH} main/main.c)") || failure "Component properties should be set"
     rm -rf CMakeLists.txt
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
@@ -598,12 +600,25 @@ mkdir -p ${TESTDIR}
 SNAPSHOT=${TESTDIR}/snapshot
 BUILD=${TESTDIR}/template/build
 
+IS_DARWIN=
+export SED=sed
+export REALPATH=realpath
+if [ "$(uname -s)" = "Darwin" ]; then
+    IS_DARWIN=1
+    export SED=gsed
+    export REALPATH=grealpath
+fi
 
 # copy all the build output to a snapshot directory
 function take_build_snapshot()
 {
     rm -rf ${SNAPSHOT}
     cp -ap ${TESTDIR}/template/build ${SNAPSHOT}
+    if [ -n "$IS_DARWIN" ]; then
+        # wait at least 1 second before the next build, for the test in
+        # file_was_rebuilt to work
+        sleep 1
+    fi
 }
 
 # verify that all the arguments are present in the build output directory
@@ -620,12 +635,21 @@ function assert_built()
 # Test if a file has been rebuilt.
 function file_was_rebuilt()
 {
-    # can't use [ a -ot b ] here as -ot only gives second resolution
-    # but stat -c %y seems to be microsecond at least for tmpfs, ext4..
-    if [ "$(stat -c %y ${SNAPSHOT}/$1)" != "$(stat -c %y ${BUILD}/$1)" ]; then
-        return 0
+    if [ -z "$IS_DARWIN" ]; then
+        # can't use [ a -ot b ] here as -ot only gives second resolution
+        # but stat -c %y seems to be microsecond at least for tmpfs, ext4..
+        if [ "$(stat -c %y ${SNAPSHOT}/$1)" != "$(stat -c %y ${BUILD}/$1)" ]; then
+            return 0
+        else
+            return 1
+        fi
     else
-        return 1
+        # macOS: work around 1-second resolution by adding a sleep in take_build_snapshot
+        if [ ${SNAPSHOT}/$1 -ot ${BUILD}/$1 ]; then
+            return 0
+        else
+            return 1
+        fi
     fi
 }
 
@@ -663,7 +687,11 @@ function assert_not_rebuilt()
 # do a "clean" that doesn't depend on idf.py
 function clean_build_dir()
 {
-    rm -rf --preserve-root ${BUILD}/* ${BUILD}/.*
+    PRESERVE_ROOT_ARG=
+    if [ -z "$IS_DARWIN" ]; then
+        PRESERVE_ROOT_ARG=--preserve-root
+    fi
+    rm -rf $PRESERVE_ROOT_ARG ${BUILD}/* ${BUILD}/.*
 }
 
 cd ${TESTDIR}
