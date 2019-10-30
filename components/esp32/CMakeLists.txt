@@ -20,7 +20,6 @@ else()
         "crosscore_int.c"
         "dport_access.c"
         "dport_panic_highint_hdl.S"
-        "esp_adapter.c"
         "esp_timer_esp32.c"
         "esp_himem.c"
         "hw_random.c"

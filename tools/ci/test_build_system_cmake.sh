@@ -297,6 +297,7 @@ function run_tests()
     export fake_target=esp31b
     mkdir -p components/$fake_target
     mkdir -p ${IDF_PATH}/components/xtensa/$fake_target/include
+    mkdir -p ${IDF_PATH}/components/esp_wifi/$fake_target/include
     touch components/$fake_target/CMakeLists.txt
     cp ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake components/$fake_target/toolchain-$fake_target.cmake
     ${SED} -i.bak '/cmake_minimum_required/ a\
