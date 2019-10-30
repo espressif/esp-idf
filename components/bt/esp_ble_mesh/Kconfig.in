@@ -14,7 +14,9 @@ if BLE_MESH
         default y
         help
             Enable this option to allow using specific duplicate scan filter
-            in BLE Mesh, and Scan Duplicate Type must be set to 0x02.
+            in BLE Mesh, and Scan Duplicate Type must be set by choosing the
+            option in the Bluetooth Controller section in menuconfig, which is
+            "Scan Duplicate By Device Address and Advertising Data".
 
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
@@ -24,16 +26,24 @@ if BLE_MESH
         default n
         help
             Enable this option to allow BLE Mesh fast provisioning solution to be used.
+            When there are multiple unprovisioned devices around, fast provisioning can
+            greatly reduce the time consumption of the whole provisioning process.
+            When this option is enabled, and after an unprovisioned device is provisioned
+            into a node successfully, it can be changed to a temporary Provisioner.
 
     config BLE_MESH_NODE
         bool "Support for BLE Mesh Node"
         help
-            Enable the device to be provisioned into a node.
+            Enable the device to be provisioned into a node. This option should be
+            enabled when an unprovisioned device is going to be provisioned into a
+            node and communicate with other nodes in the BLE Mesh network.
 
     config BLE_MESH_PROVISIONER
         bool "Support for BLE Mesh Provisioner"
         help
-            Enable the device to be a provisioner.
+            Enable the device to be a Provisioner. The option should be enabled when
+            a device is going to act as a Provisioner and provision unprovisioned
+            devices into the BLE Mesh network.
 
     if BLE_MESH_PROVISIONER
 
@@ -42,8 +52,10 @@ if BLE_MESH
             default 20
             range 1 100
             help
-                This option specifies how may unprovisioned devices can be added to device
-                queue for provisioning.
+                This option specifies how many unprovisioned devices can be added to device
+                queue for provisioning. Users can use this option to define the size of the
+                queue in the bottom layer which is used to store unprovisioned device
+                information (e.g. Device UUID, address).
 
         config BLE_MESH_MAX_STORED_NODES
             int "Maximum number of nodes whose information can be stored"
@@ -51,48 +63,64 @@ if BLE_MESH
             range 1 1000
             help
                 This option specifies the maximum number of nodes whose information can be
-                stored by a provisioner in its upper layer.
+                stored by a Provisioner in its upper layer.
+                Users can change this value according to the number of nodes whose information
+                (e.g. Device UUID, unicast address, element number) are going to be stored by
+                a Provisioner. And the nodes include the provisioned ones and user-added ones.
 
         config BLE_MESH_MAX_PROV_NODES
-            int "Maximum number of devices that can be provisioned by provisioner"
+            int "Maximum number of devices that can be provisioned by Provisioner"
             default 20
             range 1 100
             help
-                This option specifies how many devices can be provisioned by provisioner.
+                This option specifies how many devices can be provisioned by a Provisioner.
+                This value indicates the maximum number of unprovisioned devices which can be
+                provisioned by a Provisioner. For instance，if the value is 6, it means the
+                Provisioner can provision up to 6 unprovisioned devices.
+                Theoretically a Provisioner without the limitation of its memory can provision
+                up to 32766 unprovisioned devices, here we limit the maximum number to 100
+                just to limit the memory used by a Provisioner. The bigger the value is, the
+                more memory it will cost by a Provisioner to store the information of nodes.
 
         if BLE_MESH_PB_ADV
             config BLE_MESH_PBA_SAME_TIME
-                int "Maximum number of PB-ADV running at the same time by provisioner"
+                int "Maximum number of PB-ADV running at the same time by Provisioner"
                 default 2
                 range 1 10
                 help
-                    This option specifies how many devices can be provisioned at the same
-                    time using PB-ADV.
+                    This option specifies how many devices can be provisioned at the same time
+                    using PB-ADV. For examples, if the value is 2, it means a Provisioner can
+                    provision two unprovisioned devices with PB-ADV at the same time.
+
         endif # BLE_MESH_PB_ADV
 
         if BLE_MESH_PB_GATT
             config BLE_MESH_PBG_SAME_TIME
-                int "Maximum number of PB-GATT running at the same time by provisioner"
+                int "Maximum number of PB-GATT running at the same time by Provisioner"
                 default 1
                 range 1 5
                 help
                     This option specifies how many devices can be provisioned at the same
-                    time using PB-GATT.
+                    time using PB-GATT. For example, if the value is 2, it means a Provisioner
+                    can provision two unprovisioned devices with PB-GATT at the same time.
+
         endif # BLE_MESH_PB_GATT
 
         config BLE_MESH_PROVISIONER_SUBNET_COUNT
-            int "Maximum number of mesh subnets that can be created by provisioner"
+            int "Maximum number of mesh subnets that can be created by Provisioner"
             default 3
             range 1 4096
             help
-                This option specifies how many subnets per network a provisioner can create.
+                This option specifies how many subnets per network a Provisioner can create.
+                Indeed, this value decides the number of network keys which can be added by a Provisioner.
 
         config BLE_MESH_PROVISIONER_APP_KEY_COUNT
-            int "Maximum number of application keys that can be owned by provisioner"
+            int "Maximum number of application keys that can be owned by Provisioner"
             default 9
             range 1 4096
             help
-                This option specifies how many application keys the provisioner can have.
+                This option specifies how many application keys the Provisioner can have.
+                Indeed, this value decides the number of the application keys which can be added by a Provisioner.
 
     endif # BLE_MESH_PROVISIONER
 
@@ -110,7 +138,8 @@ if BLE_MESH
         default y
         help
             Enable this option to allow the device to be provisioned over the
-            advertising bearer.
+            advertising bearer. This option should be enabled if PB-ADV is
+            going to be used during provisioning procedure.
 
     config BLE_MESH_PB_GATT
         bool "Provisioning support using GATT (PB-GATT)"
@@ -118,6 +147,8 @@ if BLE_MESH
         select BLE_MESH_PROV
         help
             Enable this option to allow the device to be provisioned over GATT.
+            This option should be enabled if PB-GATT is going to be used during
+            provisioning procedure.
 
             # Virtual option enabled whenever any Proxy protocol is needed
     config BLE_MESH_PROXY
@@ -133,6 +164,7 @@ if BLE_MESH
         help
             This option enables support for Mesh GATT Proxy Service, i.e. the
             ability to act as a proxy between a Mesh GATT Client and a Mesh network.
+            This option should be enabled if a node is going to be a Proxy Server.
 
     config BLE_MESH_NODE_ID_TIMEOUT
         int "Node Identity advertising timeout"
@@ -144,6 +176,9 @@ if BLE_MESH
             Node Identity. The given value is in seconds. The specification limits
             this to 60 seconds and lists it as the recommended value as well.
             So leaving the default value is the safest option.
+            When an unprovisioned device is provisioned successfully and becomes a
+            node, it will start to advertise using Node Identity during the time
+            set by this option. And after that, Network ID will be advertised.
 
     if BLE_MESH_PROXY
 
@@ -154,6 +189,9 @@ if BLE_MESH
             range 1 32767
             help
                 This option specifies how many Proxy Filter entries the local node supports.
+                The entries of Proxy filter (whitelist or blacklist) are used to store a
+                list of addresses which can be used to decide which messages will be forwarded
+                to the Proxy Client by the Proxy Server.
 
     endif # BLE_MESH_PROXY
 
@@ -161,7 +199,9 @@ if BLE_MESH
         bool "BLE Mesh net buffer pool usage tracking"
         default y
         help
-            Enable BLE Mesh net buffer pool tracking.
+            Enable BLE Mesh net buffer pool tracking. This option is used to introduce another
+            variable in the bottom layer to record the usage of advertising buffers of BLE Mesh
+            devices. Recommend to enable this option as default.
 
     config BLE_MESH_SETTINGS
         bool "Store BLE Mesh Node configuration persistently"
@@ -170,6 +210,8 @@ if BLE_MESH
             When selected, the BLE Mesh stack will take care of storing/restoring the
             BLE Mesh configuration persistently in flash. Currently this only supports
             storing BLE Mesh node configuration.
+            Currently enabling this option will only store BLE Mesh nodes' information
+            in the flash.
 
     if BLE_MESH_SETTINGS
         config BLE_MESH_STORE_TIMEOUT
@@ -179,6 +221,9 @@ if BLE_MESH
             help
                 This value defines in seconds how soon any pending changes are actually
                 written into persistent storage (flash) after a change occurs.
+                The option allows nodes to delay a certain period of time to save proper
+                information to flash. The default value is 0, which means information
+                will be stored immediately once there are updates.
 
         config BLE_MESH_SEQ_STORE_RATE
             int "How often the sequence number gets updated in storage"
@@ -200,16 +245,17 @@ if BLE_MESH
             range 0 1000000
             default 5
             help
-                This value defines in seconds how soon the RPL(Replay Protection List)
+                This value defines in seconds how soon the RPL (Replay Protection List)
                 gets written to persistent storage after a change occurs. If the node
                 receives messages frequently, then a large value is recommended. If the
                 node receives messages rarely, then the value can be as low as 0 (which
-                means the PRL is written into the storage immediately).
+                means the RPL is written into the storage immediately).
                 Note that if the node operates in a security-sensitive case, and there is
                 a risk of sudden power-off, then a value of 0 is strongly recommended.
                 Otherwise, a power loss before RPL being written into the storage may
                 introduce message replay attacks and system security will be in a
                 vulnerable state.
+
     endif  # if BLE_MESH_SETTINGS
 
     config BLE_MESH_SUBNET_COUNT
@@ -218,6 +264,7 @@ if BLE_MESH
         range 1 4096
         help
             This option specifies how many subnets a Mesh network can have at the same time.
+            Indeed, this value decides the number of the network keys which can be owned by a node.
 
     config BLE_MESH_APP_KEY_COUNT
         int "Maximum number of application keys per network"
@@ -225,6 +272,7 @@ if BLE_MESH
         range 1 4096
         help
             This option specifies how many application keys the device can store per network.
+            Indeed, this value decides the number of the application keys which can be owned by a node.
 
     config BLE_MESH_MODEL_KEY_COUNT
         int "Maximum number of application keys per model"
@@ -248,6 +296,7 @@ if BLE_MESH
         range 0 4096
         help
             This option specifies how many Label UUIDs can be stored.
+            Indeed, this value decides the number of the Virtual Addresses can be supported by a node.
 
     config BLE_MESH_CRPL
         int "Maximum capacity of the replay protection list"
@@ -256,6 +305,9 @@ if BLE_MESH
         help
             This option specifies the maximum capacity of the replay protection list.
             It is similar to Network message cache size, but has a different purpose.
+            The replay protection list is used to prevent a node from replay attack,
+            which will store the source address and sequence number of the received
+            mesh messages.
 
     config BLE_MESH_MSG_CACHE_SIZE
         int "Network message cache size"
@@ -265,6 +317,8 @@ if BLE_MESH
             Number of messages that are cached for the network. This helps prevent
             unnecessary decryption operations and unnecessary relays. This option
             is similar to Replay protection list, but has a different purpose.
+            A node is not required to cache the entire Network PDU and may cache
+            only part of it for tracking, such as values for SRC/SEQ or others.
 
     config BLE_MESH_ADV_BUF_COUNT
         int "Number of advertising buffers"
@@ -310,6 +364,11 @@ if BLE_MESH
         range 1 BLE_MESH_ADV_BUF_COUNT
         help
             Maximum number of simultaneous outgoing multi-segment and/or reliable messages.
+            The default value is 1, which means the device can only send one segmented
+            message at a time. And if another segmented message is going to be sent, it
+            should wait for the completion of the previous one.
+            If users are going to send multiple segmented messages at the same time, this
+            value should be configured properly.
 
     config BLE_MESH_RX_SEG_MSG_COUNT
         int "Maximum number of simultaneous incoming segmented messages"
@@ -317,6 +376,11 @@ if BLE_MESH
         range 1 255
         help
             Maximum number of simultaneous incoming multi-segment and/or reliable messages.
+            The default value is 1, which means the device can only receive one segmented
+            message at a time. And if another segmented message is going to be received,
+            it should wait for the completion of the previous one.
+            If users are going to receive multiple segmented messages at the same time, this
+            value should be configured properly.
 
     config BLE_MESH_RX_SDU_MAX
         int "Maximum incoming Upper Transport Access PDU length"
@@ -353,12 +417,18 @@ if BLE_MESH
     config BLE_MESH_RELAY
         bool "Relay support"
         help
-            Support for acting as a Mesh Relay Node.
+            Support for acting as a Mesh Relay Node. Enabling this option will allow
+            a node to support the Relay feature, and the Relay feature can still
+            be enabled or disabled by proper configuration messages. Disabling this
+            option will let a node not support the Relay feature.
 
     config BLE_MESH_LOW_POWER
         bool "Support for Low Power features"
         help
-            Enable this option to operate as a Low Power Node.
+            Enable this option to operate as a Low Power Node. If low power consumption
+            is required by a node, this option should be enabled. And once the node
+            enters the mesh network, it will try to find a Friend node and establish a
+            friendship.
 
     if BLE_MESH_LOW_POWER
 
@@ -370,6 +440,9 @@ if BLE_MESH
                 reduced scan duty cycle. The downside of this is that the node may miss
                 out on messages intended for it until it has successfully set up Friendship
                 with a Friend node.
+                When this option is enabled, the node will stop scanning for a period of
+                time after a Friend Request or Friend Poll is sent, so as to reduce more
+                power consumption.
 
         config BLE_MESH_LPN_AUTO
             bool "Automatically start looking for Friend nodes once provisioned"
@@ -378,6 +451,9 @@ if BLE_MESH
                 Once provisioned, automatically enable LPN functionality and start looking
                 for Friend nodes. If this option is disabled LPN mode needs to be manually
                 enabled by calling bt_mesh_lpn_set(true).
+                When an unprovisioned device is provisioned successfully and becomes a node,
+                enabling this option will trigger the node starts to send Friend Request at
+                a certain period until it finds a proper Friend node.
 
         config BLE_MESH_LPN_AUTO_TIMEOUT
             int "Time from last received message before going to LPN mode"
@@ -389,7 +465,7 @@ if BLE_MESH
                 before starting to look for Friend nodes.
 
         config BLE_MESH_LPN_RETRY_TIMEOUT
-            int "Retry timeout for Friend requests"
+            int "Retry timeout for Friend Requests"
             default 8
             range 1 3600
             help
@@ -403,6 +479,8 @@ if BLE_MESH
             help
                 The contribution of the RSSI, measured by the Friend node, used in Friend
                 Offer Delay calculations. 0 = 1, 1 = 1.5, 2 = 2, 3 = 2.5.
+                RSSIFactor, one of the parameters carried by Friend Request sent by Low Power
+                node, which is used to calculate the Friend Offer Delay.
 
         config BLE_MESH_LPN_RECV_WIN_FACTOR
             int "ReceiveWindowFactor, used in Friend Offer Delay calculation"
@@ -411,6 +489,8 @@ if BLE_MESH
             help
                 The contribution of the supported Receive Window used in Friend Offer
                 Delay calculations. 0 = 1, 1 = 1.5, 2 = 2, 3 = 2.5.
+                ReceiveWindowFactor, one of the parameters carried by Friend Request sent by
+                Low Power node, which is used to calculate the Friend Offer Delay.
 
         config BLE_MESH_LPN_MIN_QUEUE_SIZE
             int "Minimum size of the acceptable friend queue (MinQueueSizeLog)"
@@ -441,6 +521,8 @@ if BLE_MESH
                 the Friend node before the PollTimeout timer expires, then the
                 friendship is considered terminated. The value is in units of 100
                 milliseconds, so e.g. a value of 300 means 30 seconds.
+                The smaller the value, the faster the Low Power node tries to get
+                messages from corresponding Friend node and vice versa.
 
         config BLE_MESH_LPN_INIT_POLL_TIMEOUT
             int "The starting value of the PollTimeout timer"
@@ -468,6 +550,7 @@ if BLE_MESH
             default 8
             help
                 Maximum number of groups to which the LPN can subscribe.
+
     endif # BLE_MESH_LOW_POWER
 
     config BLE_MESH_FRIEND
@@ -490,6 +573,8 @@ if BLE_MESH
             default 16
             help
                 Minimum number of buffers available to be stored for each local Friend Queue.
+                This option decides the size of each buffer which can be used by a Friend node
+                to store messages for each Low Power node.
 
         config BLE_MESH_FRIEND_SUB_LIST_SIZE
             int "Friend Subscription List Size"
@@ -497,7 +582,9 @@ if BLE_MESH
             default 3
             help
                 Size of the Subscription List that can be supported by a Friend node for a
-                Low Power node.
+                Low Power node. And Low Power node can send Friend Subscription List Add or
+                Friend Subscription List Remove messages to the Friend node to add or remove
+                subscription addresses.
 
         config BLE_MESH_FRIEND_LPN_COUNT
             int "Number of supported LPN nodes"
@@ -505,6 +592,9 @@ if BLE_MESH
             default 2
             help
                 Number of Low Power Nodes with which a Friend can have Friendship simultaneously.
+                A Friend node can have friendship with multiple Low Power nodes at the same time,
+                while a Low Power node can only establish friendship with only one Friend node at
+                the same time.
 
         config BLE_MESH_FRIEND_SEG_RX
             int "Number of incomplete segment lists per LPN"
@@ -522,7 +612,8 @@ if BLE_MESH
         depends on BLE_MESH
         default n
         help
-            Select this to save the BLE Mesh related rodata code size.
+            Select this to save the BLE Mesh related rodata code size. Enabling this option
+            will disable the output of BLE Mesh debug log.
 
     menu "BLE Mesh STACK DEBUG LOG LEVEL"
         depends on BLE_MESH && !BLE_MESH_NO_LOG
@@ -603,6 +694,10 @@ if BLE_MESH
         help
             To improve the real-time requirements of bt controller in BLE Mesh,
             task lock is used to replace IRQ lock.
+            With this option enabled, interrupt lock instead of the mutex will
+            be used and the BLE Mesh stack will try to change interrupt level to
+            protect some critical situations. Users need to ensure that this option
+            is disabled so mutex will be used in the bottom layer.
 
     config BLE_MESH_CLIENT_MSG_TIMEOUT
         int "Timeout(ms) for client message response"
@@ -611,6 +706,10 @@ if BLE_MESH
         help
             Timeout value used by the node to get response of the acknowledged
             message which is sent by the client model.
+            This value indicates the maximum time that a client model waits for
+            the response of the sent acknowledged messages. If a client model
+            uses 0 as the timeout value when sending acknowledged messages, then
+            the default value will be used which is four seconds.
 
     menu "Support for BLE Mesh Client Models"
 
@@ -717,6 +816,7 @@ if BLE_MESH
         help
             This option removes the 96 hour limit of the IV Update Procedure and
             lets the state to be changed at any time.
+            If IV Update test mode is going to be used, this option should be enabled.
 
     menu "BLE Mesh specific test option"
 
@@ -802,3 +902,4 @@ if BLE_MESH
     endmenu
 
 endif # BLE_MESH
+
