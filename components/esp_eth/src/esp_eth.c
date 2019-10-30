@@ -182,10 +182,13 @@ esp_err_t esp_eth_driver_start(esp_eth_handle_t eth_handle)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = eth_handle;
+    ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS, "start eth_link_timer failed", err_start_timer, ESP_FAIL);
 
     ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
               "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
     return ret;
+err_start_timer:
+    xTimerDelete(eth_driver->check_link_timer, 0);
 err_event:
     esp_eth_driver_uninstall(eth_driver);
     return ret;
@@ -220,13 +223,10 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->check_link_timer = xTimerCreate("eth_link_timer", pdMS_TO_TICKS(config->check_link_period_ms), pdTRUE,
                                    eth_driver, eth_check_link_timer_cb);
     ETH_CHECK(eth_driver->check_link_timer, "create eth_link_timer failed", err_create_timer, ESP_FAIL);
-    ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS, "start eth_link_timer failed", err_start_timer, ESP_FAIL);
     eth_driver->base.post_attach = esp_eth_post_attach_driver_start;
     *out_hdl = (esp_eth_handle_t)eth_driver;
     tcpip_adapter_compat_start_eth(eth_driver);
     return ESP_OK;
-err_start_timer:
-    xTimerDelete(eth_driver->check_link_timer, 0);
 err_create_timer:
     phy->deinit(phy);
 err_init_phy:
