@@ -295,7 +295,6 @@ BOOLEAN  BTM_SecAddRmtNameNotifyCallback (tBTM_RMT_NAME_CALLBACK *p_callback)
 }
 #endif  ///SMP_INCLUDED == TRUE
 
-
 /*******************************************************************************
 **
 ** Function         BTM_SecDeleteRmtNameNotifyCallback
