@@ -622,7 +622,7 @@ static esp_err_t esp_netif_stop_api(esp_netif_api_msg_t *msg)
         if (ESP_NETIF_DHCP_STOPPED != esp_netif->dhcps_status) {
             esp_netif->dhcps_status = ESP_NETIF_DHCP_INIT;
         }
-    } else if (esp_netif->flags&ESP_NETIF_DHCPS) {
+    } else if (esp_netif->flags&ESP_NETIF_DHCPC) {
         dhcp_release(lwip_netif);
         dhcp_stop(lwip_netif);
         dhcp_cleanup(lwip_netif);
