@@ -95,14 +95,14 @@
           "macos": {
             "sha256": "e566b9f1288ef3bd89b08e9807e88c37f760d48e74b84eee9e9642bb5c0a0bbd",
             "size": 69793197,
-            "url": " https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-macos.tar.gz "
+            "url": "https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-macos.tar.gz"
           },
           "name": "esp32s2-dev-4-g3a626e9-8.2.0",
           "status": "recommended",
           "win32": {
             "sha256": "6ebdcd01de2c8c50ac38446dd4421bb44d320b30b85727c49db26a703ac2c381",
             "size": 73352955,
-            "url": " https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-win32.zip"
+            "url": "https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-win32.zip"
           },
           "win64": {
             "sha256": "6ebdcd01de2c8c50ac38446dd4421bb44d320b30b85727c49db26a703ac2c381",
