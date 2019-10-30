@@ -33,7 +33,7 @@ else()
         "sleep_modes.c"
         "spiram.c"
         "spiram_psram.c"
-        "system_api.c"
+        "system_api_esp32.c"
         "task_wdt.c")
     set(include_dirs "include")
 

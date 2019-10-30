@@ -171,7 +171,7 @@ void esp_fill_random(void *buf, size_t len);
   * @return ESP_OK on success
   *         ESP_ERR_INVALID_ARG If mac is NULL or is not a unicast MAC
   */
-esp_err_t esp_base_mac_addr_set(uint8_t *mac);
+esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
 
 /**
   * @brief  Return base MAC address which is set using esp_base_mac_addr_set.
