@@ -348,43 +348,43 @@ function run_tests()
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET"
-    idf.py clean > /dev/null;
-    idf.py fullclean > /dev/null;
-    rm -f sdkconfig.defaults;
-    rm -f sdkconfig;
-    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults;
-    echo "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" >> sdkconfig.defaults.esp32;
-    echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig;
-    idf.py reconfigure > /dev/null;
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults
+    echo "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" >> sdkconfig.defaults.esp32
+    echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig
+    idf.py reconfigure > /dev/null
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults should be into sdkconfig"
     grep "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" sdkconfig || failure "The define from sdkconfig.defaults.esp32 should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
     rm sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
 
     print_status "can build with phy_init_data"
-    idf.py clean > /dev/null;
-    idf.py fullclean > /dev/null;
-    rm -f sdkconfig.defaults;
-    rm -f sdkconfig;
-    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults;
-    idf.py reconfigure > /dev/null;
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults
+    idf.py reconfigure > /dev/null
     idf.py build || failure "Failed to build with PHY_INIT_DATA"
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} ${PHY_INIT_BIN}
-    rm sdkconfig;
-    rm sdkconfig.defaults;
+    rm sdkconfig
+    rm sdkconfig.defaults
 
     print_status "can build with ethernet component disabled"
-    idf.py clean > /dev/null;
-    idf.py fullclean > /dev/null;
-    rm -f sdkconfig.defaults;
-    rm -f sdkconfig;
-    echo "CONFIG_ETH_USE_SPI_ETHERNET=" >> sdkconfig.defaults;
-    echo "CONFIG_ETH_USE_ESP32_EMAC=" >> sdkconfig.defaults;
-    idf.py reconfigure > /dev/null;
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_ETH_USE_SPI_ETHERNET=" >> sdkconfig.defaults
+    echo "CONFIG_ETH_USE_ESP32_EMAC=" >> sdkconfig.defaults
+    idf.py reconfigure > /dev/null
     idf.py build || failure "Failed to build with ethernet component disabled"
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
-    rm sdkconfig;
-    rm sdkconfig.defaults;
+    rm sdkconfig
+    rm sdkconfig.defaults
 
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
@@ -422,13 +422,13 @@ EOF
     rm ./python
 
     print_status "Handling deprecated Kconfig options"
-    idf.py clean > /dev/null;
-    rm -f sdkconfig.defaults;
-    rm -f sdkconfig;
-    echo "" > ${IDF_PATH}/sdkconfig.rename;
-    idf.py build > /dev/null;
-    echo "CONFIG_TEST_OLD_OPTION=y" >> sdkconfig;
-    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename;
+    idf.py clean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "" > ${IDF_PATH}/sdkconfig.rename
+    idf.py build > /dev/null
+    echo "CONFIG_TEST_OLD_OPTION=y" >> sdkconfig
+    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename
     echo -e "\n\
 menu \"test\"\n\
     config TEST_NEW_OPTION\n\
@@ -436,8 +436,8 @@ menu \"test\"\n\
         default \"n\"\n\
         help\n\
             TEST_NEW_OPTION description\n\
-endmenu\n" >> ${IDF_PATH}/Kconfig;
-    idf.py build > /dev/null;
+endmenu\n" >> ${IDF_PATH}/Kconfig
+    idf.py build > /dev/null
     grep "CONFIG_TEST_OLD_OPTION=y" sdkconfig || failure "CONFIG_TEST_OLD_OPTION should be in sdkconfig for backward compatibility"
     grep "CONFIG_TEST_NEW_OPTION=y" sdkconfig || failure "CONFIG_TEST_NEW_OPTION should be now in sdkconfig"
     grep "#define CONFIG_TEST_NEW_OPTION 1" build/config/sdkconfig.h || failure "sdkconfig.h should contain the new macro"
@@ -450,10 +450,10 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     popd
 
     print_status "Handling deprecated Kconfig options in sdkconfig.defaults"
-    idf.py clean;
-    rm -f sdkconfig;
-    echo "CONFIG_TEST_OLD_OPTION=7" > sdkconfig.defaults;
-    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" > ${IDF_PATH}/sdkconfig.rename;
+    idf.py clean
+    rm -f sdkconfig
+    echo "CONFIG_TEST_OLD_OPTION=7" > sdkconfig.defaults
+    echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" > ${IDF_PATH}/sdkconfig.rename
     echo -e "\n\
 menu \"test\"\n\
     config TEST_NEW_OPTION\n\
@@ -462,11 +462,11 @@ menu \"test\"\n\
         default 5\n\
         help\n\
             TEST_NEW_OPTION description\n\
-endmenu\n" >> ${IDF_PATH}/Kconfig;
-    idf.py build > /dev/null;
+endmenu\n" >> ${IDF_PATH}/Kconfig
+    idf.py build > /dev/null
     grep "CONFIG_TEST_OLD_OPTION=7" sdkconfig || failure "CONFIG_TEST_OLD_OPTION=7 should be in sdkconfig for backward compatibility"
     grep "CONFIG_TEST_NEW_OPTION=7" sdkconfig || failure "CONFIG_TEST_NEW_OPTION=7 should be in sdkconfig"
-    rm -f sdkconfig.defaults;
+    rm -f sdkconfig.defaults
     pushd ${IDF_PATH}
     git checkout -- sdkconfig.rename Kconfig
     popd
@@ -568,17 +568,17 @@ endmenu\n" >> ${IDF_PATH}/Kconfig;
     rm out.txt
 
     print_status "should be able to specify multiple sdkconfig default files"
-    idf.py clean > /dev/null;
-    idf.py fullclean > /dev/null;
-    rm -f sdkconfig.defaults;
-    rm -f sdkconfig;
-    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults1;
-    echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig.defaults2;
-    idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults1;sdkconfig.defaults2" reconfigure > /dev/null;
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_PARTITION_TABLE_OFFSET=0x10000" >> sdkconfig.defaults1
+    echo "CONFIG_PARTITION_TABLE_TWO_OTA=y" >> sdkconfig.defaults2
+    idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults1;sdkconfig.defaults2" reconfigure > /dev/null
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults1 should be in sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig.defaults2 should be in sdkconfig"
-    rm sdkconfig.defaults1;
-    rm sdkconfig.defaults2;
+    rm sdkconfig.defaults1
+    rm sdkconfig.defaults2
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
