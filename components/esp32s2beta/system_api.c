@@ -54,7 +54,11 @@ esp_err_t esp_base_mac_addr_set(uint8_t *mac)
 {
     if (mac == NULL) {
         ESP_LOGE(TAG, "Base MAC address is NULL");
-        abort();
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (mac[0] & 0x01) {
+        ESP_LOGE(TAG, "Base MAC must be a unicast MAC");
+        return ESP_ERR_INVALID_ARG;
     }
 
     memcpy(base_mac_addr, mac, 6);
