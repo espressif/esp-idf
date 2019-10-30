@@ -13,7 +13,8 @@ API Guides
     Console Component <console>
     Deep Sleep Wake Stubs <deep-sleep-stub>
     Error Handling <error-handling>
-    ESP-MESH <mesh>
+    ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+    ESP-MESH (Wi-Fi) <mesh>
     ESP32 Core Dump <core_dump>
     Event Handling <event-handling>
     External SPI-connected RAM <external-ram>
