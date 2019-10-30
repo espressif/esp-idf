@@ -489,9 +489,6 @@ kconfig_print_symbol(FILE *fp, struct symbol *sym, const char *value, void *arg)
 	switch (sym->type) {
 	case S_BOOLEAN:
 	case S_TRISTATE:
-		if (*value == 'n') {
-			value = "";
-		}
 		break;
 	default:
 		break;

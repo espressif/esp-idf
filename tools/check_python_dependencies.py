@@ -55,6 +55,10 @@ if __name__ == "__main__":
     with open(args.requirements) as f:
         for line in f:
             line = line.strip()
+            # pkg_resources.require() cannot handle the full requirements file syntax so we need to make
+            # adjustments for options which we use.
+            if line.startswith('file://'):
+                line = os.path.basename(line)
             try:
                 pkg_resources.require(line)
             except Exception:

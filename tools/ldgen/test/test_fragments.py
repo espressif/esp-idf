@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import os
 import sys
 import unittest
+import tempfile
 
 from io import StringIO
 from pyparsing import Word, ParseException, ParseFatalException, alphanums
@@ -57,7 +59,24 @@ FRAGMENT_TYPES["test"] = SampleFragment
 class FragmentTest(unittest.TestCase):
 
     def setUp(self):
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.kconfigs_source_file = os.path.join(tempfile.gettempdir(), f.name)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.kconfig_projbuilds_source_file = os.path.join(tempfile.gettempdir(), f.name)
+
+        os.environ['COMPONENT_KCONFIGS_SOURCE_FILE'] = self.kconfigs_source_file
+        os.environ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'] = self.kconfig_projbuilds_source_file
+        os.environ['COMPONENT_KCONFIGS'] = ''
+        os.environ['COMPONENT_KCONFIGS_PROJBUILD'] = ''
+
         self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
+
+    def tearDown(self):
+        try:
+            os.remove(self.kconfigs_source_file)
+            os.remove(self.kconfig_projbuilds_source_file)
+        except Exception:
+            pass
 
     @staticmethod
     def create_fragment_file(contents, name="test_fragment.lf"):
