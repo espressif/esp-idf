@@ -1111,7 +1111,7 @@ tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_chann
 
 /*******************************************************************************
 **
-** Function         btm_set_afh_channels_complete
+** Function         btm_ble_set_channels_complete
 **
 ** Description      This function is called when setting AFH channels complete.
 **                  message is received from the HCI.
