@@ -452,6 +452,7 @@ CXXFLAGS ?=
 EXTRA_CXXFLAGS ?=
 CXXFLAGS := $(strip \
 	-std=gnu++11 \
+	-fno-rtti \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
@@ -462,12 +463,6 @@ ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 CXXFLAGS += -fexceptions
 else
 CXXFLAGS += -fno-exceptions
-endif
-
-ifdef CONFIG_COMPILER_CXX_RTTI
-CXXFLAGS += -frtti
-else
-CXXFLAGS += -fno-rtti
 endif
 
 ARFLAGS := cru
