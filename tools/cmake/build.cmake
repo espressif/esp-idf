@@ -152,7 +152,9 @@ function(__build_init idf_path)
     endforeach()
 
     # Set components required by all other components in the build
-    set(requires_common cxx newlib freertos heap log soc esp_rom esp_common xtensa)
+    #
+    # - lwip is here so that #include <sys/socket.h> works without any special provisions
+    set(requires_common cxx newlib freertos heap log lwip soc esp_rom esp_common xtensa)
     idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${requires_common}")
 
     __build_get_idf_git_revision()
