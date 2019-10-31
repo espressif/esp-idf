@@ -5,23 +5,18 @@
 COMPONENT_SRCDIRS := .
 
 ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-	# This linker script must come before esp32.project.ld
-	LINKER_SCRIPTS += esp32.extram.bss.ld
+   # This linker script must come before esp32.project.ld
+   LINKER_SCRIPTS += esp32.extram.bss.ld
 endif
 
-ifndef CONFIG_COMPILER_CXX_RTTI
-	# This linker script must come before esp32.project.ld
-	LINKER_SCRIPTS += esp32.discard-rtti.ld
-endif
-
-# Linker scripts used to link the final application.
-# Warning: These linker scripts are only used when the normal app is compiled; the bootloader
-# specifies its own scripts.
+#Linker scripts used to link the final application.
+#Warning: These linker scripts are only used when the normal app is compiled; the bootloader
+#specifies its own scripts.
 LINKER_SCRIPTS += $(COMPONENT_BUILD_DIR)/esp32.project.ld esp32.peripherals.ld
 
-# ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
-# linker will ignore panic_highint_hdl.S as it has no other files depending on any
-# symbols in it.
+#ld_include_panic_highint_hdl is added as an undefined symbol because otherwise the
+#linker will ignore panic_highint_hdl.S as it has no other files depending on any
+#symbols in it.
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/ld \
                          -T esp32_out.ld \
                          -u ld_include_panic_highint_hdl \

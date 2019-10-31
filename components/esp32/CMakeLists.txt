@@ -62,11 +62,6 @@ else()
         target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.extram.bss.ld")
     endif()
 
-    if(NOT CONFIG_COMPILER_CXX_RTTI)
-        # This has to be linked before esp32.project.ld
-        target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32.discard-rtti.ld")
-    endif()
-
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
     target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32.project.ld.in" 
