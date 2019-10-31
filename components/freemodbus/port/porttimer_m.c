@@ -51,16 +51,15 @@
 #define MB_TIMER_WITH_RELOAD    (1)
 
 // Timer group and timer number to measure time (configurable in KConfig)
-#define MB_TIMER_INDEX CONFIG_FMB_TIMER_INDEX
-#define MB_TIMER_GROUP CONFIG_FMB_TIMER_GROUP
-
-#define MB_TIMER_IO_LED 0
+#define MB_TIMER_INDEX          (CONFIG_FMB_TIMER_INDEX)
+#define MB_TIMER_GROUP          (CONFIG_FMB_TIMER_GROUP)
 
 /* ----------------------- Variables ----------------------------------------*/
 static USHORT usT35TimeOut50us;
 
 static const USHORT usTimerIndex = MB_TIMER_INDEX;      // Initialize Modbus Timer index used by stack,
 static const USHORT usTimerGroupIndex = MB_TIMER_GROUP; // Timer group index used by stack
+static timer_isr_handle_t xTimerIntHandle;              // Timer interrupt handle
 
 /* ----------------------- static functions ---------------------------------*/
 
@@ -110,7 +109,7 @@ BOOL xMBMasterPortTimersInit(USHORT usTimeOut50us)
                     (uint32_t)xErr);
     // Register ISR for timer
     xErr = timer_isr_register(usTimerGroupIndex, usTimerIndex,
-                                vTimerGroupIsr, (void*)(uint32_t)usTimerIndex, ESP_INTR_FLAG_IRAM, NULL);
+                                vTimerGroupIsr, (void*)(uint32_t)usTimerIndex, ESP_INTR_FLAG_LOWMED, &xTimerIntHandle);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                     "timer set value failure, timer_isr_register() returned (0x%x).",
                     (uint32_t)xErr);
@@ -146,7 +145,7 @@ static BOOL xMBMasterPortTimersEnable(USHORT usTimerTics50us)
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                             "timer start failure, timer_start() returned (0x%x).",
                             (uint32_t)xErr);
-    //ESP_LOGD(MB_PORT_TAG,"%s Init timer.", __func__);
+    ESP_LOGD(MB_PORT_TAG,"%s Init timer.", __func__);
     return TRUE;
 }
 
@@ -193,4 +192,5 @@ void vMBMasterPortTimerClose(void)
 {
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
+    ESP_ERROR_CHECK(esp_intr_free(xTimerIntHandle));
 }
