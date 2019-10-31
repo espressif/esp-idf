@@ -103,6 +103,23 @@ typedef enum {
 esp_err_t esp_wifi_init_internal(const wifi_init_config_t *config);
 
 /**
+ * @brief Deinitialize Wi-Fi Driver
+ *     Free resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
+ *     WiFi NVS structure among others.
+ *
+ * For the most part, you need not call this function directly. It gets called
+ * from esp_wifi_deinit().
+ *
+ * This function may be called, if you call esp_wifi_init_internal to initialize
+ * WiFi driver.
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - others: refer to error code esp_err.h
+ */
+esp_err_t esp_wifi_deinit_internal(void);
+
+/**
   * @brief  get whether the wifi driver is allowed to transmit data or not
   *
   * @return

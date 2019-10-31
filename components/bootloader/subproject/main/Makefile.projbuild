@@ -1,4 +1,4 @@
 # Submodules normally added in component.mk, but fully qualified
 # paths can be added at this level (we need binary librtc to be
 # available to link bootloader).
-COMPONENT_SUBMODULES += $(IDF_PATH)/components/esp_wifi/lib_esp32
+COMPONENT_SUBMODULES += $(IDF_PATH)/components/esp_wifi/lib
