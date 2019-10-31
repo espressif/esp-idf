@@ -611,6 +611,12 @@ psram_size_t psram_get_size()
     }
 }
 
+//used in UT only
+bool psram_is_32mbit_ver0(void)
+{
+    return PSRAM_IS_32MBIT_VER0(s_psram_id);
+}
+
 /*
  * Psram mode init will overwrite original flash speed mode, so that it is possible to change psram and flash speed after OTA.
  * Flash read mode(QIO/QOUT/DIO/DOUT) will not be changed in app bin. It is decided by bootloader, OTA can not change this mode.
@@ -721,9 +727,13 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         return ESP_FAIL;
     }
 
-    if (PSRAM_IS_32MBIT_VER0(s_psram_id)) {
+    if (psram_is_32mbit_ver0()) {
         s_clk_mode = PSRAM_CLK_MODE_DCLK;
         if (mode == PSRAM_CACHE_F80M_S80M) {
+#ifdef CONFIG_SPIRAM_OCCUPY_NO_HOST
+            ESP_EARLY_LOGE(TAG, "This version of PSRAM needs to claim an extra SPI peripheral at 80MHz. Please either: choose lower frequency by SPIRAM_SPEED_, or select one SPI peripheral it by SPIRAM_OCCUPY_*SPI_HOST in the menuconfig.");
+            abort();
+#else
             /*   note: If the third mode(80Mhz+80Mhz) is enabled for 32MBit 1V8 psram, one of HSPI/VSPI port will be
                  occupied by the system (according to kconfig).
                  Application code should never touch HSPI/VSPI hardware in this case.  We try to stop applications
@@ -747,6 +757,7 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
                     break;
                 }
             }
+#endif
         }
     } else {
         // For other psram, we don't need any extra clock cycles after cs get back to high level
