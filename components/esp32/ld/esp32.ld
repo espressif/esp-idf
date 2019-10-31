@@ -100,11 +100,6 @@ MEMORY
   /* external memory ,including data and text */
   extern_ram_seg(RWX)  :             org = 0x3F800000,
                                      len = 0x400000
-
-  /* This is not a memory range which can really be accessed; we use it as a "bitbucket"
-     where non-loadable sections, which aren't used at run time, can be discarded.
-   */
-  discard_seg (R) :                  org = 0x00000000, len = 0x10000000
 }
 
 #if defined(CONFIG_ESP32_USE_FIXED_STATIC_RAM_SIZE)
