@@ -261,6 +261,9 @@ menu "ESP32-specific"
                 bool "HSPI host (SPI2)"
             config SPIRAM_OCCUPY_VSPI_HOST
                 bool "VSPI host (SPI3)"
+            config SPIRAM_OCCUPY_NO_HOST
+                bool "Will not try to use any host, will abort if not able to use the PSRAM"
+
         endchoice
 
         menu "PSRAM clock and cs IO for ESP32-DOWD"
