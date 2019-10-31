@@ -1,5 +1,5 @@
-ESP BLE Terminology
-===================
+ESP-BLE-MESH Terminology
+========================
 
 .. _ble-mesh-terminology-role:
 
