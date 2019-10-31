@@ -104,6 +104,8 @@ Chip version
 
 :cpp:func:`esp_chip_info` function fills :cpp:class:`esp_chip_info_t` structure with information about the chip. This includes the chip revision, number of CPU cores, and a bit mask of features enabled in the chip.
 
+.. _idf-version-h:
+
 SDK version
 -----------
 
