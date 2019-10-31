@@ -161,11 +161,17 @@ void esp_fill_random(void *buf, size_t len);
   * address with the MAC address which is stored in BLK3 of EFUSE or external storage before initializing
   * WiFi/BT/Ethernet.
   *
+  * @note Base MAC must be a unicast MAC (least significant bit of first byte must be zero).
+  *
+  * @note If not using a valid OUI, set the "locally administered" bit
+  *       (bit value 0x02 in the first byte) to avoid collisions.
+  *
   * @param  mac  base MAC address, length: 6 bytes.
   *
   * @return ESP_OK on success
+  *         ESP_ERR_INVALID_ARG If mac is NULL or is not a unicast MAC
   */
-esp_err_t esp_base_mac_addr_set(uint8_t *mac);
+esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
 
 /**
   * @brief  Return base MAC address which is set using esp_base_mac_addr_set.
