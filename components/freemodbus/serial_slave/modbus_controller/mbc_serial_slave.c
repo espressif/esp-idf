@@ -133,7 +133,7 @@ static esp_err_t mbc_serial_slave_destroy(void)
     MB_SLAVE_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     free(mbs_interface_ptr);
-
+    mbs_interface_ptr = NULL;
     return ESP_OK;
 }
 
