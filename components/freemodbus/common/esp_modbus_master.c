@@ -107,7 +107,7 @@ esp_err_t mbc_master_get_parameter(uint16_t cid, char* name, uint8_t* value, uin
     error = master_interface_ptr->get_parameter(cid, name, value, type);
     MB_MASTER_CHECK((error == ESP_OK), 
                     ESP_ERR_INVALID_STATE, 
-                    "SERIAL master get parameter failure error=(0x%x).", 
+                    "Master get parameter failure error=(0x%x).", 
                     (uint16_t)error);
     return error;
 }
@@ -127,7 +127,7 @@ esp_err_t mbc_master_send_request(mb_param_request_t* request, void* data_ptr)
     error = master_interface_ptr->send_request(request, data_ptr);
     MB_MASTER_CHECK((error == ESP_OK), 
                     ESP_ERR_INVALID_STATE, 
-                    "SERIAL master get parameter failure error=(0x%x).", 
+                    "Master send request failure error=(0x%x).", 
                     (uint16_t)error);
     return error;
 }
