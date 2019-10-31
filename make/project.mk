@@ -468,6 +468,7 @@ ifdef CONFIG_COMPILER_CXX_RTTI
 CXXFLAGS += -frtti
 else
 CXXFLAGS += -fno-rtti
+LDFLAGS += -fno-rtti
 endif
 
 ARFLAGS := cru
