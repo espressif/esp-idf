@@ -83,9 +83,9 @@ build_template_app:
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
     # Check if there are any stray printf/ets_printf references in WiFi libs
-    - pushd ../components/esp_wifi/lib_esp32
-    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
-    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
+    - pushd ../components/esp_wifi/lib
+    - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
+    - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
     - popd
 
 build_ssc:

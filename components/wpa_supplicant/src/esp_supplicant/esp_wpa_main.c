@@ -232,7 +232,7 @@ int esp_supplicant_init(void)
     return ESP_OK;
 }
 
-bool  wpa_hook_deinit(void)
+int esp_supplicant_deinit(void)
 {
     return esp_wifi_unregister_wpa_cb_internal();
 }
