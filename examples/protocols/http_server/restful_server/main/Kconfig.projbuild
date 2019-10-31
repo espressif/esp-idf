@@ -21,6 +21,7 @@ menu "Example Configuration"
                 Deploy website to host.
                 It is recommended to choose this mode during developing.
         config EXAMPLE_WEB_DEPLOY_SD
+            depends on IDF_TARGET_ESP32
             bool "Deploy website to SD card"
             help
                 Deploy website to SD card.

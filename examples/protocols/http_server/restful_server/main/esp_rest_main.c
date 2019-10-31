@@ -7,7 +7,6 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include "sdkconfig.h"
-#include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "esp_vfs_semihost.h"
 #include "esp_vfs_fat.h"
@@ -20,6 +19,9 @@
 #include "mdns.h"
 #include "lwip/apps/netbiosns.h"
 #include "protocol_examples_common.h"
+#if CONFIG_EXAMPLE_WEB_DEPLOY_SD
+#include "driver/sdmmc_host.h"
+#endif
 
 #define MDNS_INSTANCE "esp home web server"
 
