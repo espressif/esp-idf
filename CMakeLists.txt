@@ -22,6 +22,12 @@ else()
     list(APPEND cxx_compile_options "-fno-exceptions")
 endif()
 
+if(CONFIG_COMPILER_CXX_RTTI)
+    list(APPEND cxx_compile_options "-frtti")
+else()
+    list(APPEND cxx_compile_options "-fno-rtti")
+endif()
+
 if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
     list(APPEND compile_options "-Wno-parentheses"
                                 "-Wno-sizeof-pointer-memaccess"
