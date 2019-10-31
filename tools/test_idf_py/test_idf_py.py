@@ -14,8 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import sys
 import unittest
+import subprocess
 
 try:
     from StringIO import StringIO
@@ -28,32 +30,67 @@ except ImportError:
     sys.path.append('..')
     import idf
 
+current_dir = os.path.dirname(os.path.realpath(__file__))
+idf_py_path = os.path.join(current_dir, '..', 'idf.py')
+extension_path = os.path.join(current_dir, 'test_idf_extensions', 'test_ext')
+link_path = os.path.join(current_dir, '..', 'idf_py_actions', 'test_ext')
+
+
+class TestExtensions(unittest.TestCase):
+    def test_extension_loading(self):
+        try:
+            os.symlink(extension_path, link_path)
+            os.environ["IDF_EXTRA_ACTIONS_PATH"] = os.path.join(current_dir, 'extra_path')
+            output = subprocess.check_output([sys.executable, idf_py_path, "--help"],
+                                             env=os.environ).decode('utf-8', 'ignore')
+
+            self.assertIn('--test-extension-option', output)
+            self.assertIn('test_subcommand', output)
+            self.assertIn('--some-extension-option', output)
+            self.assertIn('extra_subcommand', output)
+        finally:
+            os.remove(link_path)
+
+    def test_extension_execution(self):
+        try:
+            os.symlink(extension_path, link_path)
+            os.environ["IDF_EXTRA_ACTIONS_PATH"] = ";".join([os.path.join(current_dir, 'extra_path')])
+            output = subprocess.check_output(
+                [sys.executable, idf_py_path, "--some-extension-option=awesome", 'test_subcommand', "extra_subcommand"],
+                env=os.environ).decode('utf-8', 'ignore')
+            self.assertIn('!!! From some global callback: awesome', output)
+            self.assertIn('!!! From some subcommand', output)
+            self.assertIn('!!! From test global callback: test', output)
+            self.assertIn('!!! From some subcommand', output)
+        finally:
+            os.remove(link_path)
+
 
 class TestDependencyManagement(unittest.TestCase):
     def test_dependencies(self):
         result = idf.init_cli()(
-            args=['--no-run', 'flash'],
+            args=['--dry-run', 'flash'],
             standalone_mode=False,
         )
         self.assertEqual(['all', 'flash'], list(result.keys()))
 
     def test_order_only_dependencies(self):
         result = idf.init_cli()(
-            args=['--no-run', 'build', 'fullclean', 'all'],
+            args=['--dry-run', 'build', 'fullclean', 'all'],
             standalone_mode=False,
         )
         self.assertEqual(['fullclean', 'all'], list(result.keys()))
 
     def test_repeated_dependencies(self):
         result = idf.init_cli()(
-            args=['--no-run', 'fullclean', 'app', 'fullclean', 'fullclean'],
+            args=['--dry-run', 'fullclean', 'app', 'fullclean', 'fullclean'],
             standalone_mode=False,
         )
         self.assertEqual(['fullclean', 'app'], list(result.keys()))
 
     def test_complex_case(self):
         result = idf.init_cli()(
-            args=['--no-run', 'clean', 'monitor', 'clean', 'fullclean', 'flash'],
+            args=['--dry-run', 'clean', 'monitor', 'clean', 'fullclean', 'flash'],
             standalone_mode=False,
         )
         self.assertEqual(['fullclean', 'clean', 'all', 'flash', 'monitor'], list(result.keys()))
@@ -62,7 +99,7 @@ class TestDependencyManagement(unittest.TestCase):
         capturedOutput = StringIO()
         sys.stdout = capturedOutput
         idf.init_cli()(
-            args=['--no-run', 'clean', 'monitor', 'build', 'clean', 'fullclean', 'all'],
+            args=['--dry-run', 'clean', 'monitor', 'build', 'clean', 'fullclean', 'all'],
             standalone_mode=False,
         )
         sys.stdout = sys.__stdout__
@@ -71,7 +108,7 @@ class TestDependencyManagement(unittest.TestCase):
 
         sys.stdout = capturedOutput
         idf.init_cli()(
-            args=['--no-run', 'clean', 'clean'],
+            args=['--dry-run', 'clean', 'clean'],
             standalone_mode=False,
         )
         sys.stdout = sys.__stdout__
@@ -84,7 +121,7 @@ class TestGlobalAndSubcommandParameters(unittest.TestCase):
         """Can set -D twice: globally and for subcommand if values are the same"""
 
         idf.init_cli()(
-            args=['--no-run', '-DAAA=BBB', '-DCCC=EEE', 'build', '-DAAA=BBB', '-DCCC=EEE'],
+            args=['--dry-run', '-DAAA=BBB', '-DCCC=EEE', 'build', '-DAAA=BBB', '-DCCC=EEE'],
             standalone_mode=False,
         )
 
@@ -93,7 +130,7 @@ class TestGlobalAndSubcommandParameters(unittest.TestCase):
 
         with self.assertRaises(idf.FatalError):
             idf.init_cli()(
-                args=['--no-run', '-DAAA=BBB', 'build', '-DAAA=EEE', '-DCCC=EEE'],
+                args=['--dry-run', '-DAAA=BBB', 'build', '-DAAA=EEE', '-DCCC=EEE'],
                 standalone_mode=False,
             )
 
