@@ -181,7 +181,7 @@ static int uart_rx_char(int fd)
 #if CONFIG_IDF_TARGET_ESP32
     return uart->fifo.rw_byte;
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-    return uart->ahb_fifo.rw_byte;
+    return READ_PERI_REG(UART_FIFO_AHB_REG(fd));
 #endif
 }
 
