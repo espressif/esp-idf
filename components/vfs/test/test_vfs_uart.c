@@ -19,7 +19,11 @@
 #include <sys/termios.h>
 #include <sys/errno.h>
 #include "unity.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/uart.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -42,8 +46,8 @@ static void fwrite_str_loopback(const char* str, size_t size)
 static void flush_stdin_stdout(void)
 {
     vTaskDelay(10 / portTICK_PERIOD_MS);
-    char *bitbucket = (char*) 0x3f000000;
-    while (fread(bitbucket, 1, 128, stdin) > 0) {
+    char bitbucket[UART_FIFO_LEN];
+    while (fread(bitbucket, 1, UART_FIFO_LEN, stdin) > 0) {
         ;
     }
     fflush(stdout);

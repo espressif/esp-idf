@@ -262,7 +262,7 @@ void start_cpu0_default(void)
     esp_perip_clk_init();
     intr_matrix_clear();
 
-#ifndef CONFIG_CONSOLE_UART_NONE
+#ifndef CONFIG_ESP_CONSOLE_UART_NONE
 #ifdef CONFIG_PM_ENABLE
     const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
@@ -270,8 +270,8 @@ void start_cpu0_default(void)
 #else
     const int uart_clk_freq = APB_CLK_FREQ;
 #endif // CONFIG_PM_DFS_ENABLE
-    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
-#endif // CONFIG_CONSOLE_UART_NONE
+    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+#endif // CONFIG_ESP_CONSOLE_UART_NONE
 
 #if CONFIG_ESP32S2_BROWNOUT_DET
     esp_brownout_init();
@@ -282,7 +282,7 @@ void start_cpu0_default(void)
     rtc_gpio_force_hold_dis_all();
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
-#ifndef CONFIG_CONSOLE_UART_NONE
+#ifndef CONFIG_ESP_CONSOLE_UART_NONE
     const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
     _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
