@@ -1,0 +1,16 @@
+menu "Example Configuration"
+
+    choice BLE_MESH_EXAMPLE_BOARD
+        prompt "Board selection for BLE Mesh"
+        default BLE_MESH_ESP_WROOM_32
+        help
+            Select this option to choose the board for BLE Mesh. The default is ESP32-WROOM-32
+
+        config BLE_MESH_ESP_WROOM_32
+            bool "ESP32-WROOM-32"
+
+        config BLE_MESH_ESP_WROVER
+            bool "ESP32-WROVER"
+    endchoice
+
+endmenu
