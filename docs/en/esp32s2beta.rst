@@ -26,10 +26,10 @@ Manual toolchain URLs
 
 If not using ``install.sh`` or ``install.bat``, you can download the manual toolchain manually from here:
 
-- `Windows <https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-win32.zip>`_
-- `macOS <https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-macos.tar.gz>`_
-- `Linux 64-bit x86 <https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-linux-amd64.tar.gz>`_
-- `Linux 32-bit x86 <https://dl.espressif.com/dl/toolchains/preview/xtensa-esp32s2-elf-gcc8_2_0-esp32s2-dev-4-g3a626e-linux-i686.tar.gz>`_
+- `Windows <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-win32.zip>`_
+- `macOS <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-macos.tar.gz>`_
+- `Linux 64-bit x86 <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-amd64.tar.gz>`_
+- `Linux 32-bit x86 <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-i686.tar.gz>`_
 
 If installing the toolchain manually, unpack it somewhere and add the ``bin`` subdirectory to your `PATH`.
 
