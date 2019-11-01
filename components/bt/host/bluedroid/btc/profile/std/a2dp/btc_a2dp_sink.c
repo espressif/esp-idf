@@ -747,6 +747,8 @@ static void btc_a2dp_sink_thread_cleanup(UNUSED_ATTR void *context)
 
     fixed_queue_free(a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ, osi_free_func);
 
+    a2dp_sink_local_param.btc_aa_snk_cb.RxSbcQ = NULL;
+
     future_ready(a2dp_sink_local_param.btc_a2dp_sink_future, NULL);
 }
 
