@@ -308,6 +308,27 @@ test_build_system_cmake:
     - cd test_build_system
     - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
 
+test_build_system_cmake_macos:
+  extends: .macos_build_template
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+      - triggers
+      - pipelines
+      - web
+    variables:
+      - $CI_PIPELINE_SOURCE != "push" && $BOT_LABEL_MACOS_TEST != null
+      - $CI_PIPELINE_SOURCE == "push"
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+
 build_docker:
   stage: build
   image: espressif/docker-builder:1
