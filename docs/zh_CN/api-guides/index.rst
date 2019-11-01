@@ -30,7 +30,8 @@ API 指南
    ROM debug console <romconsole>
    RF Calibration <RF_calibration>
    WiFi Driver <wifi>
-   ESP-MESH <mesh>
+   ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+   ESP-MESH (Wi-Fi) <mesh>
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>

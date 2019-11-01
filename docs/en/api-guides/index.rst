@@ -12,6 +12,7 @@ API Guides
    Fatal Errors <fatal-errors>
    Event Handling <event-handling>
    Deep Sleep Wake Stubs <deep-sleep-stub>
+   ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>
    FreeRTOS SMP Changes <freertos-smp>
