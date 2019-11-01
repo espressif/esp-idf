@@ -435,4 +435,9 @@ menu "FreeRTOS"
             would be checked to be in compliance with Vanilla FreeRTOS.
             e.g Calling port*_CRITICAL from ISR context would cause assert failure
 
+    config FREERTOS_DEBUG_OCDAWARE
+        bool
+        help
+            Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
+
 endmenu

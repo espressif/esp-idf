@@ -381,6 +381,7 @@ menu "ESP32-specific"
     config ESP32_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y
+        select FREERTOS_DEBUG_OCDAWARE
         help
             The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
             instead of panicking, have the debugger stop on the offending instruction.
