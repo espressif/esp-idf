@@ -28,15 +28,13 @@
 #include "esp32s2beta/rom/ets_sys.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/apb_ctrl_reg.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/spi_mem_reg.h"
-#include "soc/sens_reg.h"
+#include "soc/spi_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc_wdt.h"
+#include "soc/soc_memory_layout.h"
 #include "soc/uart_caps.h"
 #include "driver/rtc_io.h"
+#include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
@@ -83,6 +81,10 @@ static sleep_config_t s_config = {
     .wakeup_triggers = 0
 };
 
+/* Internal variable used to track if light sleep wakeup sources are to be
+   expected when determining wakeup cause. */
+static bool s_light_sleep_wakeup = false;
+
 /* Updating RTC_MEMORY_CRC_REG register via set_rtc_memory_crc()
    is not thread-safe. */
 static _lock_t lock_rtc_memory_crc;
@@ -106,11 +108,14 @@ esp_deep_sleep_wake_stub_fn_t esp_get_deep_sleep_wake_stub(void)
     REG_WRITE(RTC_MEMORY_CRC_REG, stored_crc);
     _lock_release(&lock_rtc_memory_crc);
 
-    if(stored_crc == calc_crc) {
-        return (esp_deep_sleep_wake_stub_fn_t)REG_READ(RTC_ENTRY_ADDR_REG);
-    } else {
+    if (stored_crc != calc_crc) {
         return NULL;
     }
+    esp_deep_sleep_wake_stub_fn_t stub_ptr = (esp_deep_sleep_wake_stub_fn_t) REG_READ(RTC_ENTRY_ADDR_REG);
+    if (!esp_ptr_executable(stub_ptr)) {
+        return NULL;
+    }
+    return stub_ptr;
 }
 
 void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
@@ -135,6 +140,13 @@ void esp_deep_sleep(uint64_t time_in_us)
     esp_deep_sleep_start();
 }
 
+static void IRAM_ATTR flush_uarts(void)
+{
+    for (int i = 0; i < SOC_UART_NUM; ++i) {
+        uart_tx_wait_idle(i);
+    }
+}
+
 static void IRAM_ATTR suspend_uarts(void)
 {
     for (int i = 0; i < SOC_UART_NUM; ++i) {
@@ -150,8 +162,14 @@ static void IRAM_ATTR resume_uarts(void)
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
 {
-    // Stop UART output so that output is not lost due to APB frequency change
-    suspend_uarts();
+    // Stop UART output so that output is not lost due to APB frequency change.
+    // For light sleep, suspend UART output — it will resume after wakeup.
+    // For deep sleep, wait for the contents of UART FIFO to be sent.
+    if (pd_flags & RTC_SLEEP_PD_DIG) {
+        flush_uarts();
+    } else {
+        suspend_uarts();
+    }
 
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_t cpu_freq = rtc_clk_cpu_freq_get();
@@ -166,8 +184,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
-        //TODO, esp32s2 does not have this bit
-        //SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_WAKEUP_FORCE_EN);
+        // no-op for esp32s2beta
     }
 
     // Enter sleep
@@ -269,7 +286,7 @@ esp_err_t esp_light_sleep_start(void)
     // If it needs to be powered down, adjust sleep time.
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US;
 
-#ifndef CONFIG_ESP32S2_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
     const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
             flash_enable_time_us + LIGHT_SLEEP_TIME_OVERHEAD_US + LIGHT_SLEEP_MIN_TIME_US);
 
@@ -277,7 +294,7 @@ esp_err_t esp_light_sleep_start(void)
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
         s_config.sleep_time_adjustment += flash_enable_time_us;
     }
-#endif //CONFIG_ESP32S2_SPIRAM_SUPPORT
+#endif //CONFIG_SPIRAM
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -297,6 +314,8 @@ esp_err_t esp_light_sleep_start(void)
     // Enter sleep, then wait for flash to be ready on wakeup
     esp_err_t err = esp_light_sleep_inner(pd_flags,
             flash_enable_time_us, vddsdio_config);
+
+    s_light_sleep_wakeup = true;
 
     // FRC1 has been clock gated for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
@@ -325,30 +344,36 @@ esp_err_t esp_light_sleep_start(void)
     return err;
 }
 
-void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
-
 esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 {
     // For most of sources it is enough to set trigger mask in local
     // configuration structure. The actual RTC wake up options
     // will be updated by esp_sleep_start().
-    if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
+    if (source == ESP_SLEEP_WAKEUP_ALL) {
+        s_config.wakeup_triggers = 0;
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TIMER, RTC_TIMER_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TIMER_TRIG_EN;
         s_config.sleep_duration = 0;
-    }
-    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT0, RTC_EXT0_TRIG_EN)) {
         s_config.ext0_rtc_gpio_num = 0;
         s_config.ext0_trigger_level = 0;
         s_config.wakeup_triggers &= ~RTC_EXT0_TRIG_EN;
-    }
-    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT1, RTC_EXT1_TRIG_EN)) {
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_EXT1, RTC_EXT1_TRIG_EN)) {
         s_config.ext1_rtc_gpio_mask = 0;
         s_config.ext1_trigger_mode = 0;
         s_config.wakeup_triggers &= ~RTC_EXT1_TRIG_EN;
-    }
-    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_TOUCHPAD, RTC_TOUCH_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_TOUCH_TRIG_EN;
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_GPIO, RTC_GPIO_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_GPIO_TRIG_EN;
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
+        s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
+#ifdef CONFIG_ESP32S2_ULP_COPROC_ENABLED
+    else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
+        s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
+    }
+#endif
     else {
         ESP_LOGE(TAG, "Incorrect wakeup source (%d) to disable.", (int) source);
         return ESP_ERR_INVALID_STATE;
@@ -376,7 +401,6 @@ static void timer_wakeup_prepare(void)
         sleep_duration = 0;
     }
     int64_t rtc_count_delta = rtc_time_us_to_slowclk(sleep_duration, period);
-
     rtc_sleep_set_wakeup_time(s_config.rtc_ticks_at_sleep_start + rtc_count_delta);
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
     SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
@@ -516,9 +540,32 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     return gpio_mask;
 }
 
+esp_err_t esp_sleep_enable_gpio_wakeup(void)
+{
+    if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
+        ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
+        return ESP_ERR_INVALID_STATE;
+    }
+    s_config.wakeup_triggers |= RTC_GPIO_TRIG_EN;
+    return ESP_OK;
+}
+
+esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
+{
+    if (uart_num == UART_NUM_0) {
+        s_config.wakeup_triggers |= RTC_UART0_TRIG_EN;
+    } else if (uart_num == UART_NUM_1) {
+        s_config.wakeup_triggers |= RTC_UART1_TRIG_EN;
+    } else {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return ESP_OK;
+}
+
 esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
 {
-    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
+    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET && !s_light_sleep_wakeup) {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
 
@@ -533,6 +580,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_TOUCHPAD;
     } else if (wakeup_cause & RTC_ULP_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
+    } else if (wakeup_cause & RTC_GPIO_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_GPIO;
+    } else if (wakeup_cause & (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN)) {
+        return ESP_SLEEP_WAKEUP_UART;
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -557,12 +608,12 @@ static uint32_t get_power_down_flags(void)
     // If there is any data placed into .rtc.data or .rtc.bss segments, and
     // RTC_SLOW_MEM is Auto, keep it powered up as well.
 
-    // These labels are defined in the linker script:
-    extern int _rtc_data_start, _rtc_data_end, _rtc_bss_start, _rtc_bss_end;
+    // Labels are defined in the linker script, see esp32s2beta.ld.
+    extern int _rtc_slow_length;
 
     if ((s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] == ESP_PD_OPTION_AUTO) &&
-            (&_rtc_data_end > &_rtc_data_start || &_rtc_bss_end > &_rtc_bss_start ||
-            (s_config.wakeup_triggers & RTC_ULP_TRIG_EN))) {
+            ((size_t) &_rtc_slow_length > 0 ||
+             (s_config.wakeup_triggers & RTC_ULP_TRIG_EN))) {
         s_config.pd_options[ESP_PD_DOMAIN_RTC_SLOW_MEM] = ESP_PD_OPTION_ON;
     }
 
@@ -575,10 +626,10 @@ static uint32_t get_power_down_flags(void)
         s_config.pd_options[ESP_PD_DOMAIN_RTC_FAST_MEM] = ESP_PD_OPTION_ON;
     }
 
-    // RTC_PERIPH is needed for EXT0 wakeup.
-    // If RTC_PERIPH is auto, and EXT0 isn't enabled, power down RTC_PERIPH.
+    // RTC_PERIPH is needed for EXT0 wakeup and GPIO wakeup.
+    // If RTC_PERIPH is auto, and EXT0/GPIO aren't enabled, power down RTC_PERIPH.
     if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] == ESP_PD_OPTION_AUTO) {
-        if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
+        if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN | RTC_GPIO_TRIG_EN)) {
             s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] = ESP_PD_OPTION_ON;
         } else if (s_config.wakeup_triggers & (RTC_TOUCH_TRIG_EN | RTC_ULP_TRIG_EN)) {
             // In both rev. 0 and rev. 1 of ESP32, forcing power up of RTC_PERIPH
