@@ -1664,6 +1664,8 @@ static void btc_a2dp_source_thread_cleanup(UNUSED_ATTR void *context)
 
     fixed_queue_free(btc_aa_src_cb.TxAaQ, osi_free_func);
 
+    btc_aa_src_cb.TxAaQ = NULL;
+
     future_ready(btc_a2dp_source_future, NULL);
 }
 
