@@ -228,6 +228,10 @@ char * ets_strdup(const char *s);
 #ifndef os_memcmp
 #define os_memcmp(s1, s2, n) memcmp((s1), (s2), (n))
 #endif
+#ifndef os_memcmp_const
+#define os_memcmp_const(s1, s2, n) memcmp((s1), (s2), (n))
+#endif
+
 
 #ifndef os_strlen
 #define os_strlen(s) strlen(s)
@@ -273,6 +277,11 @@ char * ets_strdup(const char *s);
 #define os_snprintf snprintf
 #endif
 #endif
+
+static inline int os_snprintf_error(size_t size, int res)
+{
+        return res < 0 || (unsigned int) res >= size;
+}
 
 /**
  * os_strlcpy - Copy a string with size bound and NUL-termination
