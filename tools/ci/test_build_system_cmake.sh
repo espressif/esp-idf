@@ -159,9 +159,9 @@ function run_tests()
     # make a copy of esp-idf and CRLFify it
     CRLF_ESPIDF=${TESTDIR}/esp-idf-crlf
     mkdir -p ${CRLF_ESPIDF}
+    TESTDIR_REL=$($REALPATH ${TESTDIR} --relative-to ${IDF_PATH})
     # Note: trailing slash after ${IDF_PATH} avoids creating esp-idf directory inside ${CRLF_ESPIDF}
-    rsync -a --exclude ${TESTDIR} ${IDF_PATH}/ ${CRLF_ESPIDF}
-    # cp -r ${IDF_PATH}/* ${CRLF_ESPIDF}
+    rsync -a --exclude ${TESTDIR_REL} ${IDF_PATH}/ ${CRLF_ESPIDF}
     # don't CRLFify executable files, as Linux will fail to execute them
     find ${CRLF_ESPIDF} -name .git -prune -name build -prune -type f ! -perm 755 -exec unix2dos {} \;
     IDF_PATH=${CRLF_ESPIDF} idf.py build || failure "Failed to build with CRLFs in source"
