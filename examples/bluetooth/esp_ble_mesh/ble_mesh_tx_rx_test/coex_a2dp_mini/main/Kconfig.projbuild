@@ -1,0 +1,145 @@
+menu "A2DP Example Configuration"
+
+menuconfig  RUN_ON_ESP32_LYRAT
+    bool "Run on ESP32-LyraT-Board"
+    default n
+    help
+        Run this A2DP sink demo on ESP32-LyraT board.
+        It could play music and heart sound on ESP32-LyraT board.
+        If you don't want the demo run ESP32-LyarT, please set "N",
+        therefore it will crased when initialise external Codec chip.
+
+menu "Media Hal Config"
+menu "I2C Configuration (Configure Codec Chip Register)"
+
+config I2C_PORT
+    int "I2C port"
+    default 0 if RUN_ON_ESP32_LYRAT
+    default 0
+    range 0 1
+    help
+        Select I2C port number.
+
+config I2C_CLK_PIN
+    int "I2C clock pin"
+    default 23 if RUN_ON_ESP32_LYRAT
+    default 23
+    range 0 39
+    help
+        Select I2C clock pin.
+
+config I2C_DATA_PIN
+    int "I2C data pin"
+    default 18 if RUN_ON_ESP32_LYRAT
+    default 18
+    range 0 39
+    help
+        Select I2C data pin.
+
+endmenu
+
+menu "I2S Configuration (Output Data to Codec Chip)"
+
+config I2S_PORT
+    int "I2S port"
+    default 0 if RUN_ON_ESP32_LYRAT
+    default 0
+    range 0 1
+    help
+        Select I2S port number.
+
+config I2S_SCLK_PIN
+    int "I2S SCLK pin"
+    default 5 if RUN_ON_ESP32_LYRAT
+    default 5
+    range 0 39
+    help
+        Select I2S SCLK pin(GPIO no).
+
+config I2S_WS_PIN
+    int "I2S WS pin"
+    default 25 if RUN_ON_ESP32_LYRAT
+    default 25
+    range 0 39
+    help
+        Select I2S WS pin(GPIO no).
+
+## A2DP don't need data input, so make it invisible
+config I2S_DATA_IN_PIN
+    int
+    default 26 if RUN_ON_ESP32_LYRAT
+    default 26
+    range 0 39
+    help
+        Select I2S data input pin(GPIO no).
+
+config I2S_DATA_OUT_PIN
+    int "I2S data ouyput pin"
+    default 35 if RUN_ON_ESP32_LYRAT
+    default 35
+    range 0 39
+    help
+        Select I2S data output pin(GPIO no).
+
+config I2S_MCLK_OUT_GPIO0_ENABLE
+    bool "Use GPIO0 as I2S MCLK OUTPUT"
+    default y if RUN_ON_ESP32_LYRAT
+    default n
+    help
+        Use GPIO0 as I2S MCLK OUTPUT.
+
+config I2S_BITS_PER_SAMPLE
+    int "I2S sample bits (only support 8, 16, 24, 32)"
+    default 16 if RUN_ON_ESP32_LYRAT
+    default 16
+    range 8 32
+    help
+        Select I2S sample bits
+endmenu
+
+config I2S_DAC_EN
+    bool "Use internal DAC intead Codec chip receive I2S signal)"
+    default n if RUN_ON_ESP32_LYRAT
+    default n
+    help
+        If the sound output format is I2S format, then it can use internal
+        DAC intead Codec chip receive I2S signal and do sound output.
+
+## A2DP don't need data input, so make it invisible
+config I2S_ADC_EN
+    bool
+    default n if RUN_ON_ESP32_LYRAT
+    default n
+    help
+        Just for microphone, A2DP don't need microphone.
+
+menuconfig PA_EN_GPIO_ENABLE
+    bool "Use GPIO to enable PA"
+    default y if RUN_ON_ESP32_LYRAT
+    default n
+    help
+        Select if there's a GPIO to enable PA.
+
+config PA_EN_GPIO
+    int "PA enable GPIO"
+    depends on PA_EN_GPIO_ENABLE
+    default 21 if RUN_ON_ESP32_LYRAT
+    default 21
+    help
+        The GPIO which can enable PA.
+
+config VOLUME_DEFAULT
+    int "Default Volume for Media CODEC"
+    default 60
+    range 0 100
+    help
+        Set default volume for codec chip.
+endmenu
+
+config A2DP_MEDIA_RINGBUF
+    bool "Use ringbuf to store audio data when i2s write"
+    default y
+    help
+        When i2s write, use ringbuf  to store more audio data as cache.
+
+endmenu

@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config BLE_MESH_PROV_TEST
+        bool "Temporary Provisioning Test"
+        default y
+        help
+            A temporary option for BLE Mesh provisioning test.
+
+endmenu
