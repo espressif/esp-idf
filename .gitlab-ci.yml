@@ -135,6 +135,17 @@ after_script:
   dependencies: []
   extends: .before_script_lesser_nofilter
 
+.macos_build_template:
+  stage: build
+  tags:
+    - macos_shell
+  dependencies: []
+  before_script:
+    - *apply_bot_filter
+    - *setup_tools_unless_target_test
+    - *setup_custom_toolchain
+    - source tools/ci/configure_ci_environment.sh
+
 include:
   - '/tools/ci/config/build.yml'
   - '/tools/ci/config/assign-test.yml'
