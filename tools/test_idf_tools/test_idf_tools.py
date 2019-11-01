@@ -71,7 +71,7 @@ class TestUsage(unittest.TestCase):
             idf_tools.main(['list'])
         output = output_stream.getvalue()
 
-        xtensa_esp32_elf_version = 'esp32-2019r1-8.2.0'
+        xtensa_esp32_elf_version = 'esp-2019r2-8.2.0'
         esp32ulp_version = '2.28.51.20170517'
 
         self.assertIn('* xtensa-esp32-elf:', output)
