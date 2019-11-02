@@ -362,9 +362,16 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
     }
 
 
-    if (puri.field_data[UF_PATH].len) {
+    if (puri.field_data[UF_PATH].len || puri.field_data[UF_QUERY].len) {
         free(client->config->path);
-        asprintf(&client->config->path, "%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off);
+        if (puri.field_data[UF_QUERY].len == 0) {
+            asprintf(&client->config->path, "%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off);
+        } else if (puri.field_data[UF_PATH].len == 0)  {
+            asprintf(&client->config->path, "/?%.*s", puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off);
+        } else {
+            asprintf(&client->config->path, "%.*s?%.*s", puri.field_data[UF_PATH].len, uri + puri.field_data[UF_PATH].off,
+                    puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off);
+        }
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->path, return ESP_ERR_NO_MEM);
 
         esp_transport_handle_t trans = esp_transport_list_get_transport(client->transport_list, "ws");
