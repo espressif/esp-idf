@@ -90,6 +90,7 @@ struct esp_websocket_client {
     char                        *rx_buffer;
     char                        *tx_buffer;
     int                         buffer_size;
+    ws_transport_opcodes_t      last_opcode;
 };
 
 static uint64_t _tick_get_ms()
@@ -106,6 +107,7 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
     esp_websocket_event_data_t event_data;
     event_data.data_ptr = data;
     event_data.data_len = data_len;
+    event_data.op_code = client->last_opcode;
 
     if ((err = esp_event_post_to(client->event_handle,
                                  WEBSOCKET_EVENTS, event,
@@ -464,7 +466,7 @@ static void esp_websocket_client_task(void *pv)
                 if (_tick_get_ms() - client->ping_tick_ms > WEBSOCKET_PING_TIMEOUT_MS) {
                     client->ping_tick_ms = _tick_get_ms();
                     // Send PING
-                    esp_transport_write(client->transport, NULL, 0, client->config->network_timeout_ms);
+                    esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PING, NULL, 0, client->config->network_timeout_ms);
                 }
                 if (read_select == 0) {
                     ESP_LOGD(TAG, "Timeout...");
@@ -478,8 +480,15 @@ static void esp_websocket_client_task(void *pv)
                     esp_websocket_client_abort_connection(client);
                     break;
                 }
-                if (rlen > 0) {
+                if (rlen >= 0) {
+                    client->last_opcode = esp_transport_ws_get_read_opcode(client->transport);
                     esp_websocket_client_dispatch_event(client, WEBSOCKET_EVENT_DATA, client->rx_buffer, rlen);
+                    // if a PING message received -> send out the PONG
+                    if (client->last_opcode == WS_TRANSPORT_OPCODES_PING) {
+                        const char *data = (rlen == 0) ? NULL : client->rx_buffer;
+                        esp_transport_ws_send_raw(client->transport, WS_TRANSPORT_OPCODES_PONG, data, rlen,
+                                                  client->config->network_timeout_ms);
+                    }
                 }
                 break;
             case WEBSOCKET_STATE_WAIT_TIMEOUT:
@@ -536,7 +545,24 @@ esp_err_t esp_websocket_client_stop(esp_websocket_client_handle_t client)
     return ESP_OK;
 }
 
+static int esp_websocket_client_send_with_opcode(esp_websocket_client_handle_t client, ws_transport_opcodes_t opcode, const char *data, int len, TickType_t timeout);
+
+int esp_websocket_client_send_text(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout)
+{
+    return esp_websocket_client_send_with_opcode(client, WS_TRANSPORT_OPCODES_TEXT, data, len, timeout);
+}
+
 int esp_websocket_client_send(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout)
+{
+    return esp_websocket_client_send_with_opcode(client, WS_TRANSPORT_OPCODES_BINARY, data, len, timeout);
+}
+
+int esp_websocket_client_send_bin(esp_websocket_client_handle_t client, const char *data, int len, TickType_t timeout)
+{
+    return esp_websocket_client_send_with_opcode(client, WS_TRANSPORT_OPCODES_BINARY, data, len, timeout);
+}
+
+static int esp_websocket_client_send_with_opcode(esp_websocket_client_handle_t client, ws_transport_opcodes_t opcode, const char *data, int len, TickType_t timeout)
 {
     int need_write = len;
     int wlen = 0, widx = 0;
@@ -565,10 +591,8 @@ int esp_websocket_client_send(esp_websocket_client_handle_t client, const char *
             need_write = client->buffer_size;
         }
         memcpy(client->tx_buffer, data + widx, need_write);
-        wlen = esp_transport_write(client->transport,
-                                   (char *)client->tx_buffer,
-                                   need_write,
-                                   client->config->network_timeout_ms);
+        // send with ws specific way and specific opcode
+        wlen = esp_transport_ws_send_raw(client->transport, opcode, (char *)client->tx_buffer, need_write, timeout);
         if (wlen <= 0) {
             xSemaphoreGive(client->lock);
             return wlen;
