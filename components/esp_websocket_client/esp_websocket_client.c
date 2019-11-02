@@ -39,7 +39,6 @@ static const char *TAG = "WEBSOCKET_CLIENT";
 #define WEBSOCKET_NETWORK_TIMEOUT_MS    (10*1000)
 #define WEBSOCKET_PING_TIMEOUT_MS       (10*1000)
 #define WEBSOCKET_EVENT_QUEUE_SIZE      (1)
-#define WEBSOCKET_SEND_EVENT_TIMEOUT_MS (1000/portTICK_RATE_MS)
 
 #define ESP_WS_CLIENT_MEM_CHECK(TAG, a, action) if (!(a)) {                                         \
         ESP_LOGE(TAG,"%s:%d (%s): %s", __FILE__, __LINE__, __FUNCTION__, "Memory exhausted");       \
@@ -113,10 +112,10 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
                                  WEBSOCKET_EVENTS, event,
                                  &event_data,
                                  sizeof(esp_websocket_event_data_t),
-                                 WEBSOCKET_SEND_EVENT_TIMEOUT_MS)) != ESP_OK) {
+                                 portMAX_DELAY)) != ESP_OK) {
         return err;
     }
-    return esp_event_loop_run(client->event_handle, WEBSOCKET_SEND_EVENT_TIMEOUT_MS);
+    return esp_event_loop_run(client->event_handle, 0);
 }
 
 static esp_err_t esp_websocket_client_abort_connection(esp_websocket_client_handle_t client)
