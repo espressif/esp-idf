@@ -904,14 +904,14 @@ Custom sdkconfig defaults
 
 For example projects or other projects where you don't want to specify a full sdkconfig configuration, but you do want to override some key values from the ESP-IDF defaults, it is possible to create a file ``sdkconfig.defaults`` in the project directory. This file will be used when creating a new config from scratch, or when any new config value hasn't yet been set in the ``sdkconfig`` file.
 
-To override the name of this file, set the ``SDKCONFIG_DEFAULTS`` environment variable.
+To override the name of this file or to specify multiple files, set the ``SDKCONFIG_DEFAULTS`` environment variable or set ``SDKCONFIG_DEFAULTS`` in top-level CMakeLists.txt. If specifying multiple files, use semicolon as the list separator. File names not specified as full paths are resolved relative to current project.
 
 Target-dependent sdkconfig defaults
 -----------------------------------
 
 In addition to ``sdkconfig.defaults`` file, build system will also load defaults from ``sdkconfig.defaults.TARGET_NAME`` file, where ``TARGET_NAME`` is the value of ``IDF_TARGET``. For example, for ``esp32`` target, default settings will be taken from ``sdkconfig.defaults`` first, and then from ``sdkconfig.defaults.esp32``.
 
-If ``SDKCONFIG_DEFAULTS`` is used to override the name of defaults file, the name of target-specific defaults file will be derived from ``SDKCONFIG_DEFAULTS`` value.
+If ``SDKCONFIG_DEFAULTS`` is used to override the name of defaults file/files, the name of target-specific defaults file will be derived from ``SDKCONFIG_DEFAULTS`` value/values using the rule above.
 
 
 Flash arguments
@@ -1099,7 +1099,7 @@ The call requires the target chip to be specified with *target* argument. Option
 - PROJECT_NAME - name of the project; defaults to CMAKE_PROJECT_NAME
 - PROJECT_VER - version/revision of the project; defaults to "1"
 - SDKCONFIG - output path of generated sdkconfig file; defaults to PROJECT_DIR/sdkconfig or CMAKE_SOURCE_DIR/sdkconfig depending if PROJECT_DIR is set
-- SDKCONFIG_DEFAULTS - defaults file to use for the build; defaults to empty
+- SDKCONFIG_DEFAULTS - list of files containing default config to use in the build (list must contain full paths); defaults to empty. For each value *filename* in the list, the config from file *filename.target*, if it exists, is also loaded.
 - BUILD_DIR - directory to place ESP-IDF build-related artifacts, such as generated binaries, text files, components; defaults to CMAKE_BINARY_DIR
 - COMPONENTS - select components to process among the components known by the build system (added via `idf_build_component`). This argument is used to trim the build. 
   Other components are automatically added if they are required in the dependency chain, i.e. 
@@ -1154,7 +1154,7 @@ For example, to get the Python interpreter used for the build:
   - PROJECT_VER - version of the project; set from ``idf_build_process`` PROJECT_VER argument
   - PYTHON - Python interpreter used for the build; set from PYTHON environment variable if available, if not "python" is used
   - SDKCONFIG - full path to output config file; set from ``idf_build_process`` SDKCONFIG argument
-  - SDKCONFIG_DEFAULTS - full path to config defaults file; set from ``idf_build_process`` SDKCONFIG_DEFAULTS argument
+  - SDKCONFIG_DEFAULTS - list of files containing default config to use in the build; set from ``idf_build_process`` SDKCONFIG_DEFAULTS argument
   - SDKCONFIG_HEADER - full path to C/C++ header file containing component configuration; set by ``idf_build_process``
   - SDKCONFIG_CMAKE - full path to CMake file containing component configuration; set by ``idf_build_process``
   - SDKCONFIG_JSON - full path to JSON file containing component configuration; set by ``idf_build_process``

@@ -71,29 +71,18 @@ def action_extensions(base_actions, project_path=os.getcwd()):
 
             # Clean up and set idf-target
             base_actions["actions"]["fullclean"]["callback"]("fullclean", ctx, args)
-            base_actions["actions"]["set-target"]["callback"]("set-target", ctx, args, target)
 
             new_cache_values["EXCLUDE_COMPONENTS"] = config.get("EXCLUDE_COMPONENTS", "''")
             new_cache_values["TEST_EXCLUDE_COMPONENTS"] = config.get("TEST_EXCLUDE_COMPONENTS", "''")
             new_cache_values["TEST_COMPONENTS"] = config.get("TEST_COMPONENTS", "''")
             new_cache_values["TESTS_ALL"] = int(new_cache_values["TEST_COMPONENTS"] == "''")
-
-            # write a new sdkconfig file from the combined defaults and the config
-            # value folder
-            with open(os.path.join(project_path, "sdkconfig"), "w") as sdkconfig:
-                sdkconfig_default = os.path.join(project_path, "sdkconfig.defaults")
-
-                with open(sdkconfig_default, "rb") as sdkconfig_default_file:
-                    sdkconfig.write(sdkconfig_default_file.read())
-
-                sdkconfig_config = os.path.join(project_path, "configs", config_name)
-                with open(sdkconfig_config, "rb") as sdkconfig_config_file:
-                    sdkconfig.write(b"\n")
-                    sdkconfig.write(sdkconfig_config_file.read())
+            new_cache_values["IDF_TARGET"] = target
+            new_cache_values["SDKCONFIG_DEFAULTS"] = ";".join([os.path.join(project_path, "sdkconfig.defaults"), config_path])
 
             args.define_cache_entry.extend(["%s=%s" % (k, v) for k, v in new_cache_values.items()])
 
-            base_actions["actions"]["reconfigure"]["callback"](None, ctx, args)
+            reconfigure = base_actions["actions"]["reconfigure"]["callback"]
+            reconfigure(None, ctx, args)
 
     # This target builds the configuration. It does not currently track dependencies,
     # but is good enough for CI builds if used together with clean-all-configs.
