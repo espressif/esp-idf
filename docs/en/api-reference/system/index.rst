@@ -22,6 +22,7 @@ System API
     Logging <log>
     Miscellaneous System APIs <system>
     Over The Air Updates (OTA) <ota>
+    Performance Monitor <perfmon>
     Power Management <power_management>
     Sleep Modes <sleep_modes>
     Watchdogs <wdts>
