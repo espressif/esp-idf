@@ -71,6 +71,11 @@ struct sock_db {
     uint64_t lru_counter;                   /*!< LRU Counter indicating when the socket was last used */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    bool ws_handshake_done;                 /*!< True if it has done WebSocket handshake (if this socket is a valid WS) */
+    bool ws_close;                          /*!< Set to true to close the socket later (when WS Close frame received) */
+    esp_err_t (*ws_handler)(httpd_req_t *r);   /*!< WebSocket handler, leave to null if it's not WebSocket */
+#endif
 };
 
 /**
@@ -91,6 +96,11 @@ struct httpd_req_aux {
         const char *value;
     } *resp_hdrs;                                   /*!< Additional headers in response packet */
     struct http_parser_url url_parse_res;           /*!< URL parsing result, used for retrieving URL elements */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    bool ws_handshake_detect;                       /*!< WebSocket handshake detection flag */
+    httpd_ws_type_t ws_type;                        /*!< WebSocket frame type */
+    bool ws_final;                                  /*!< WebSocket FIN bit (final frame or not) */
+#endif
 };
 
 /**
@@ -468,6 +478,44 @@ int httpd_default_send(httpd_handle_t hd, int sockfd, const char *buf, size_t bu
 int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len, int flags);
 
 /** End of Group : Send and Receive
+ * @}
+ */
+
+/* ************** Group: WebSocket ************** */
+/** @name WebSocket
+ * Functions for WebSocket header parsing
+ * @{
+ */
+
+
+/**
+ * @brief   This function is for responding a WebSocket handshake
+ *
+ * @param[in] req    Pointer to handshake request that will be handled
+ * @return
+ *  - ESP_OK                        : When handshake is sucessful
+ *  - ESP_ERR_NOT_FOUND             : When some headers (Sec-WebSocket-*) are not found
+ *  - ESP_ERR_INVALID_VERSION       : The WebSocket version is not "13"
+ *  - ESP_ERR_INVALID_STATE         : Handshake was done beforehand
+ *  - ESP_ERR_INVALID_ARG           : Argument is invalid (null or non-WebSocket)
+ *  - ESP_FAIL                      : Socket failures
+ */
+esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req);
+
+/**
+ * @brief   This function is for getting a frame type
+ *          and responding a WebSocket control frame automatically
+ *
+ * @param[in] req    Pointer to handshake request that will be handled
+ * @return
+ *  - ESP_OK                        : When handshake is sucessful
+ *  - ESP_ERR_INVALID_ARG           : Argument is invalid (null or non-WebSocket)
+ *  - ESP_ERR_INVALID_STATE         : Received only some parts of a control frame
+ *  - ESP_FAIL                      : Socket failures
+ */
+esp_err_t httpd_ws_get_frame_type(httpd_req_t *req);
+
+/** End of WebSocket related functions
  * @}
  */
 

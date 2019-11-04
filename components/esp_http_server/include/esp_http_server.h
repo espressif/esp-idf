@@ -399,6 +399,14 @@ typedef struct httpd_uri {
      * Pointer to user context data which will be available to handler
      */
     void *user_ctx;
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    /**
+     * Flag for indicating a WebSocket endpoint.
+     * If this flag is true, then method must be HTTP_GET. Otherwise the handshake will not be handled.
+     */
+    bool is_websocket;
+#endif
 } httpd_uri_t;
 
 /**
@@ -1449,6 +1457,65 @@ typedef void (*httpd_work_fn_t)(void *arg);
 esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *arg);
 
 /** End of Group Work Queue
+ * @}
+ */
+
+/* ************** Group: WebSocket ************** */
+/** @name WebSocket
+ * Functions and structs for WebSocket server
+ * @{
+ */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+/**
+ * @brief Enum for WebSocket packet types (Opcode in the header)
+ * @note Please refer to RFC6455 Section 5.4 for more details
+ */
+typedef enum {
+    HTTPD_WS_TYPE_CONTINUE   = 0x0,
+    HTTPD_WS_TYPE_TEXT       = 0x1,
+    HTTPD_WS_TYPE_BINARY     = 0x2,
+    HTTPD_WS_TYPE_CLOSE      = 0x8,
+    HTTPD_WS_TYPE_PING       = 0x9,
+    HTTPD_WS_TYPE_PONG       = 0xA
+} httpd_ws_type_t;
+
+/**
+ * @brief WebSocket frame format
+ */
+typedef struct httpd_ws_frame {
+    bool final;                 /*!< Final frame */
+    httpd_ws_type_t type;       /*!< WebSocket frame type */
+    uint8_t *payload;           /*!< Pre-allocated data buffer */
+    size_t len;                 /*!< Length of the WebSocket data */
+} httpd_ws_frame_t;
+
+/**
+ * @brief Receive and parse a WebSocket frame
+ * @param[in]   req         Current request
+ * @param[out]  pkt         WebSocket packet
+ * @param[in]   max_len     Maximum length for receive
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : Socket errors occurs
+ *  - ESP_ERR_INVALID_STATE     : Handshake was already done beforehand
+ *  - ESP_ERR_INVALID_ARG       : Argument is invalid (null or non-WebSocket)
+ */
+esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *pkt, size_t max_len);
+
+/**
+ * @brief Construct and send a WebSocket frame
+ * @param[in]   req     Current request
+ * @param[in]   pkt     WebSocket frame
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : When socket errors occurs
+ *  - ESP_ERR_INVALID_STATE     : Handshake was already done beforehand
+ *  - ESP_ERR_INVALID_ARG       : Argument is invalid (null or non-WebSocket)
+ */
+esp_err_t httpd_ws_send_frame(httpd_req_t *req, httpd_ws_frame_t *pkt);
+
+#endif /* CONFIG_HTTPD_WS_SUPPORT */
+/** End of WebSocket related stuff
  * @}
  */
 
