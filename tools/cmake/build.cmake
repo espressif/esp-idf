@@ -367,8 +367,8 @@ endfunction()
 #                       are processed.
 macro(idf_build_process target)
     set(options)
-    set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG SDKCONFIG_DEFAULTS)
-    set(multi_value COMPONENTS)
+    set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG)
+    set(multi_value COMPONENTS SDKCONFIG_DEFAULTS)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
     idf_build_set_property(BOOTLOADER_BUILD "${BOOTLOADER_BUILD}")
