@@ -34,6 +34,25 @@
     return ret; \
 }
 
+#define FETCH_ADD(n, type) type __atomic_fetch_add_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = portENTER_CRITICAL_NESTED(); \
+    type ret = *ptr; \
+    *ptr = *ptr + value; \
+    portEXIT_CRITICAL_NESTED(state); \
+    return ret; \
+}
+
+#define FETCH_SUB(n, type) type __atomic_fetch_sub_ ## n (type* ptr, type value, int memorder) \
+{ \
+    unsigned state = portENTER_CRITICAL_NESTED(); \
+    type ret = *ptr; \
+    *ptr = *ptr - value; \
+    portEXIT_CRITICAL_NESTED(state); \
+    return ret; \
+}
+
+
 //this piece of code should only be compiled if the cpu doesn't support atomic compare and swap (s32c1i)
 #if XCHAL_HAVE_S32C1I == 0
 
@@ -43,5 +62,15 @@ CMP_EXCHANGE(1, uint8_t)
 CMP_EXCHANGE(2, uint16_t)
 CMP_EXCHANGE(4, uint32_t)
 CMP_EXCHANGE(8, uint64_t)
+
+FETCH_ADD(1, uint8_t)
+FETCH_ADD(2, uint16_t)
+FETCH_ADD(4, uint32_t)
+FETCH_ADD(8, uint64_t)
+
+FETCH_SUB(1, uint8_t)
+FETCH_SUB(2, uint16_t)
+FETCH_SUB(4, uint32_t)
+FETCH_SUB(8, uint64_t)
 
 #endif
