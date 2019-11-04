@@ -398,14 +398,14 @@ TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
 
 #else // !CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE_ESP32("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+TEST_CASE("std::out_of_range exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
 {
     std::vector<int> v(10);
     v.at(20) = 42;
     TEST_FAIL_MESSAGE("Unreachable because we are aborted on the line above");
 }
 
-TEST_CASE_ESP32("std::bad_alloc exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
+TEST_CASE("std::bad_alloc exception when -fno-exceptions", "[cxx][reset=abort,SW_CPU_RESET]")
 {
     std::string s = std::string(2000000000, 'a');
     (void)s;
