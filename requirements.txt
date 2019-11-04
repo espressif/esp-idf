@@ -1,9 +1,9 @@
 # This is a list of python packages needed for ESP-IDF. This file is used with pip.
 # Please see the Get Started section of the ESP-IDF Programming Guide for further information.
 #
-setuptools
+setuptools>=21
 # The setuptools package is required to install source distributions and on some systems is not installed by default.
-# Please keep it as the first item of this list.
+# Please keep it as the first item of this list. Version 21 is required to handle PEP 508 environment markers.
 #
 click>=5.0
 pyserial>=3.0
