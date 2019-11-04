@@ -63,6 +63,10 @@ test_multi_heap_host
 # VS Code Settings
 .vscode/
 
+# VIM files
+*.swp
+*.swo
+
 # Clion IDE CMake build & config
 .idea/
 cmake-build-*/
