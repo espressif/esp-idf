@@ -63,6 +63,7 @@
 #include "esp_wifi_types.h"
 #include "esp_event.h"
 #include "esp_private/esp_wifi_private.h"
+#include "esp_wifi_default.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -543,7 +544,7 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @brief     Set primary/secondary channel of ESP32
   *
   * @attention 1. This is a special API for sniffer
-  * @attention 2. This API should be called after esp_wifi_start() or esp_wifi_set_promiscuous()
+  * @attention 2. This API should be called after esp_wifi_start() and esp_wifi_set_promiscuous()
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel
