@@ -103,7 +103,7 @@ static esp_err_t verify_url (http_parser *parser)
     if (http_parser_parse_url(r->uri, strlen(r->uri),
                               r->method == HTTP_CONNECT, res)) {
         ESP_LOGW(TAG, LOG_FMT("http_parser_parse_url failed with errno = %d"),
-                              parser->http_errno);
+                 parser->http_errno);
         parser_data->error = HTTPD_400_BAD_REQUEST;
         return ESP_FAIL;
     }
@@ -145,7 +145,7 @@ static esp_err_t cb_url(http_parser *parser,
     return ESP_OK;
 }
 
-static esp_err_t pause_parsing(http_parser *parser, const char* at)
+static esp_err_t pause_parsing(http_parser *parser, const char *at)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
     struct httpd_req *r        = parser_data->req;
@@ -374,13 +374,29 @@ static esp_err_t cb_headers_complete(http_parser *parser)
     ESP_LOGD(TAG, LOG_FMT("bytes read     = %d"),  parser->nread);
     ESP_LOGD(TAG, LOG_FMT("content length = %zu"), r->content_len);
 
+    /* Handle upgrade requests - only WebSocket is supported for now */
     if (parser->upgrade) {
-        ESP_LOGW(TAG, LOG_FMT("upgrade from HTTP not supported"));
-        /* There is no specific HTTP error code to notify the client that
-         * upgrade is not supported, thus sending 400 Bad Request */
-        parser_data->error = HTTPD_400_BAD_REQUEST;
-        parser_data->status = PARSING_FAILED;
-        return ESP_FAIL;
+        ESP_LOGD(TAG, LOG_FMT("Got an upgrade request"));
+
+        /* If there's no "Upgrade" header field, then it's not WebSocket. */
+        char ws_upgrade_hdr_val[] = "websocket";
+        if (httpd_req_get_hdr_value_str(r, "Upgrade", ws_upgrade_hdr_val, sizeof(ws_upgrade_hdr_val)) != ESP_OK) {
+            ESP_LOGW(TAG, LOG_FMT("Upgrade header does not match the length of \"websocket\""));
+            parser_data->error = HTTPD_400_BAD_REQUEST;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+
+        /* If "Upgrade" field's key is not "websocket", then we should also forget about it. */
+        if (strcasecmp("websocket", ws_upgrade_hdr_val) != 0) {
+            ESP_LOGW(TAG, LOG_FMT("Upgrade header found but it's %s"), ws_upgrade_hdr_val);
+            parser_data->error = HTTPD_400_BAD_REQUEST;
+            parser_data->status = PARSING_FAILED;
+            return ESP_FAIL;
+        }
+
+        /* Now set handshake flag to true */
+        ra->ws_handshake_detect = true;
     }
 
     parser_data->status = PARSING_BODY;
@@ -484,7 +500,7 @@ static int read_block(httpd_req_t *req, size_t offset, size_t length)
              * to signal for retrying call to recv(), else it may
              * return ESP_FAIL to signal for closure of socket */
             return (httpd_req_handle_err(req, HTTPD_408_REQ_TIMEOUT) == ESP_OK) ?
-                    HTTPD_SOCK_ERR_TIMEOUT : HTTPD_SOCK_ERR_FAIL;
+                   HTTPD_SOCK_ERR_TIMEOUT : HTTPD_SOCK_ERR_FAIL;
         }
         /* Some socket error occurred. Return failure
          * to force closure of underlying socket.
@@ -516,17 +532,17 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
          * request URI/header must be too long */
         ESP_LOGW(TAG, LOG_FMT("request URI/header too long"));
         switch (data->status) {
-            case PARSING_URL:
-                data->error = HTTPD_414_URI_TOO_LONG;
-                break;
-            case PARSING_HDR_FIELD:
-            case PARSING_HDR_VALUE:
-                data->error = HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE;
-                break;
-            default:
-                ESP_LOGE(TAG, LOG_FMT("unexpected state"));
-                data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
-                break;
+        case PARSING_URL:
+            data->error = HTTPD_414_URI_TOO_LONG;
+            break;
+        case PARSING_HDR_FIELD:
+        case PARSING_HDR_VALUE:
+            data->error = HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE;
+            break;
+        default:
+            ESP_LOGE(TAG, LOG_FMT("unexpected state"));
+            data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
+            break;
         }
         data->status = PARSING_FAILED;
         return -1;
@@ -648,7 +664,7 @@ static void init_req(httpd_req_t *r, httpd_config_t *config)
 {
     r->handle = 0;
     r->method = 0;
-    memset((char*)r->uri, 0, sizeof(r->uri));
+    memset((char *)r->uri, 0, sizeof(r->uri));
     r->content_len = 0;
     r->aux = 0;
     r->user_ctx = 0;
@@ -667,6 +683,7 @@ static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
     ra->first_chunk_sent = 0;
     ra->req_hdrs_count = 0;
     ra->resp_hdrs_count = 0;
+    ra->ws_handshake_detect = false;
     memset(ra->resp_hdrs, 0, config->max_resp_headers * sizeof(struct resp_hdr));
 }
 
@@ -699,23 +716,58 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     init_req_aux(&hd->hd_req_aux, &hd->config);
     r->handle = hd;
     r->aux = &hd->hd_req_aux;
+
     /* Associate the request to the socket */
     struct httpd_req_aux *ra = r->aux;
     ra->sd = sd;
+
     /* Set defaults */
     ra->status = (char *)HTTPD_200;
     ra->content_type = (char *)HTTPD_TYPE_TEXT;
     ra->first_chunk_sent = false;
+
     /* Copy session info to the request */
     r->sess_ctx = sd->ctx;
     r->free_ctx = sd->free_ctx;
     r->ignore_sess_ctx_changes = sd->ignore_sess_ctx_changes;
+
+    /* Handle WebSocket */
+    esp_err_t ret;
+    ESP_LOGD(TAG, LOG_FMT("New request, has WS? %s, sd->ws_handler valid? %s"),
+             sd->ws_handshake_done ? "Yes" : "No",
+             sd->ws_handler != NULL ? "Yes" : "No");
+    if (sd->ws_handshake_done && sd->ws_handler != NULL) {
+        ESP_LOGD(TAG, LOG_FMT("New WS request from existing socket"));
+        ret = httpd_ws_get_frame_type(r);
+
+        /* Close the connection immediately if it's a CLOSE frame */
+        if (ra->ws_type == HTTPD_WS_TYPE_CLOSE) {
+            httpd_req_cleanup(r);
+            return ret;
+        }
+
+        /* Ignore PONG frame, as this is a server */
+        if (ra->ws_type == HTTPD_WS_TYPE_PONG) {
+            return ret;
+        }
+
+        /* Call handler if it's a non-control frame */
+        if (ret == ESP_OK && ra->ws_type < HTTPD_WS_TYPE_CLOSE) {
+            ret = sd->ws_handler(r);
+        }
+
+        if (ret != ESP_OK) {
+            httpd_req_cleanup(r);
+        }
+        return ret;
+    }
+
     /* Parse request */
-    esp_err_t err = httpd_parse_req(hd);
-    if (err != ESP_OK) {
+    ret = httpd_parse_req(hd);
+    if (ret != ESP_OK) {
         httpd_req_cleanup(r);
     }
-    return err;
+    return ret;
 }
 
 /* Function that resets the http request data
@@ -794,7 +846,7 @@ esp_err_t httpd_query_key_value(const char *qry_str, const char *key, char *val,
          * Compare lengths first as key from url is not
          * null terminated (has '=' in the end) */
         if ((offset != strlen(key)) ||
-            (strncasecmp(qry_ptr, key, offset))) {
+                (strncasecmp(qry_ptr, key, offset))) {
             /* Get the name=val string. Multiple name=value pairs
              * are separated by '&' */
             qry_ptr = strchr(val_ptr, '&');
@@ -908,7 +960,7 @@ size_t httpd_req_get_hdr_value_len(httpd_req_t *r, const char *field)
          * null terminated (has ':' in the end).
          */
         if ((val_ptr - hdr_ptr != strlen(field)) ||
-            (strncasecmp(hdr_ptr, field, strlen(field)))) {
+                (strncasecmp(hdr_ptr, field, strlen(field)))) {
             if (count) {
                 /* Jump to end of header field-value string */
                 hdr_ptr = 1 + strchr(hdr_ptr, '\0');
@@ -964,7 +1016,7 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
          * null terminated (has ':' in the end).
          */
         if ((val_ptr - hdr_ptr != strlen(field)) ||
-            (strncasecmp(hdr_ptr, field, strlen(field)))) {
+                (strncasecmp(hdr_ptr, field, strlen(field)))) {
             if (count) {
                 /* Jump to end of header field-value string */
                 hdr_ptr = 1 + strchr(hdr_ptr, '\0');

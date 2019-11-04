@@ -387,46 +387,46 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
     const char *status;
 
     switch (error) {
-        case HTTPD_501_METHOD_NOT_IMPLEMENTED:
-            status = "501 Method Not Implemented";
-            msg    = "Request method is not supported by server";
-            break;
-        case HTTPD_505_VERSION_NOT_SUPPORTED:
-            status = "505 Version Not Supported";
-            msg    = "HTTP version not supported by server";
-            break;
-        case HTTPD_400_BAD_REQUEST:
-            status = "400 Bad Request";
-            msg    = "Server unable to understand request due to invalid syntax";
-            break;
-        case HTTPD_404_NOT_FOUND:
-            status = "404 Not Found";
-            msg    = "This URI does not exist";
-            break;
-        case HTTPD_405_METHOD_NOT_ALLOWED:
-            status = "405 Method Not Allowed";
-            msg    = "Request method for this URI is not handled by server";
-            break;
-        case HTTPD_408_REQ_TIMEOUT:
-            status = "408 Request Timeout";
-            msg    = "Server closed this connection";
-            break;
-        case HTTPD_414_URI_TOO_LONG:
-            status = "414 URI Too Long";
-            msg    = "URI is too long for server to interpret";
-            break;
-        case HTTPD_411_LENGTH_REQUIRED:
-            status = "411 Length Required";
-            msg    = "Chunked encoding not supported by server";
-            break;
-        case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
-            status = "431 Request Header Fields Too Large";
-            msg    = "Header fields are too long for server to interpret";
-            break;
-        case HTTPD_500_INTERNAL_SERVER_ERROR:
-        default:
-            status = "500 Internal Server Error";
-            msg    = "Server has encountered an unexpected error";
+    case HTTPD_501_METHOD_NOT_IMPLEMENTED:
+        status = "501 Method Not Implemented";
+        msg    = "Request method is not supported by server";
+        break;
+    case HTTPD_505_VERSION_NOT_SUPPORTED:
+        status = "505 Version Not Supported";
+        msg    = "HTTP version not supported by server";
+        break;
+    case HTTPD_400_BAD_REQUEST:
+        status = "400 Bad Request";
+        msg    = "Server unable to understand request due to invalid syntax";
+        break;
+    case HTTPD_404_NOT_FOUND:
+        status = "404 Not Found";
+        msg    = "This URI does not exist";
+        break;
+    case HTTPD_405_METHOD_NOT_ALLOWED:
+        status = "405 Method Not Allowed";
+        msg    = "Request method for this URI is not handled by server";
+        break;
+    case HTTPD_408_REQ_TIMEOUT:
+        status = "408 Request Timeout";
+        msg    = "Server closed this connection";
+        break;
+    case HTTPD_414_URI_TOO_LONG:
+        status = "414 URI Too Long";
+        msg    = "URI is too long for server to interpret";
+        break;
+    case HTTPD_411_LENGTH_REQUIRED:
+        status = "411 Length Required";
+        msg    = "Chunked encoding not supported by server";
+        break;
+    case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
+        status = "431 Request Header Fields Too Large";
+        msg    = "Header fields are too long for server to interpret";
+        break;
+    case HTTPD_500_INTERNAL_SERVER_ERROR:
+    default:
+        status = "500 Internal Server Error";
+        msg    = "Server has encountered an unexpected error";
     }
 
     /* If user has provided custom message, override default message */
@@ -555,7 +555,7 @@ static int httpd_sock_err(const char *ctx, int sockfd)
     int errval;
     ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, errno);
 
-    switch(errno) {
+    switch (errno) {
     case EAGAIN:
     case EINTR:
         errval = HTTPD_SOCK_ERR_TIMEOUT;

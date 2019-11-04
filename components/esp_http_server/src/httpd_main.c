@@ -39,7 +39,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
              * therefore httpd_accept_conn() will be called again, but this time
              * with space available for one session
              */
-       }
+        }
     }
 
     struct sockaddr_in addr_from;
@@ -55,12 +55,12 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
     /* Set recv timeout of this fd as per config */
     tv.tv_sec = hd->config.recv_wait_timeout;
     tv.tv_usec = 0;
-    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(new_fd, SOL_SOCKET, SO_RCVTIMEO, (const char *)&tv, sizeof(tv));
 
     /* Set send timeout of this fd as per config */
     tv.tv_sec = hd->config.send_wait_timeout;
     tv.tv_usec = 0;
-    setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char*)&tv, sizeof(tv));
+    setsockopt(new_fd, SOL_SOCKET, SO_SNDTIMEO, (const char *)&tv, sizeof(tv));
 
     if (ESP_OK != httpd_sess_new(hd, new_fd)) {
         ESP_LOGW(TAG, LOG_FMT("session creation failed"));
@@ -374,8 +374,8 @@ esp_err_t httpd_start(httpd_handle_t *handle, const httpd_config_t *config)
      */
     if (CONFIG_LWIP_MAX_SOCKETS < config->max_open_sockets + 3) {
         ESP_LOGE(TAG, "Configuration option max_open_sockets is too large (max allowed %d)\n\t"
-                      "Either decrease this or configure LWIP_MAX_SOCKETS to a larger value",
-                      CONFIG_LWIP_MAX_SOCKETS - 3);
+                 "Either decrease this or configure LWIP_MAX_SOCKETS to a larger value",
+                 CONFIG_LWIP_MAX_SOCKETS - 3);
         return ESP_ERR_INVALID_ARG;
     }
 
