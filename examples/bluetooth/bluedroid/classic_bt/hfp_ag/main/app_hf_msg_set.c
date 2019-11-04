@@ -16,7 +16,7 @@ void hf_msg_show_usage(void)
 {
     printf("########################################################################\n");
     printf("HFP AG command usage manual\n");
-    printf("HFP AG commands begins with \"hf\" and ends with \";\"\n");
+    printf("HFP AG commands begins with \"hf\" and end with \";\"\n");
     printf("Supported commands are as follows, arguments are embraced with < and >\n\n");
     printf("hf con;                   -- setup connection with peer device\n");
     printf("hf dis;                   -- release connection with peer device\n");

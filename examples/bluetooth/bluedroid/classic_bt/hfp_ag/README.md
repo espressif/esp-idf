@@ -1,6 +1,6 @@
 # Hands-Free Audio Gateway
 
-This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG) Component and the effects of them with the help of user commands. You can use this example to communicate with a Hands-Free Unit (e.g. a headphone set). This example uses UART as a transportation of user commands and configured GPIO for PCM audio data stream.
+This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG) Component and the effects of them with the help of user commands. You can use this example to communicate with a Hands-Free Unit (e.g. a headphone set). This example uses UART as a transportation of user commands and uses GPIO for PCM audio data stream.
 
 ## How to use example
 
@@ -15,7 +15,7 @@ idf.py menuconfig
 ```
 
 - Enable `Classic Bluetooth`,  `Hands Free/Handset` and `Aduio Gateway` under `Component config ---> Bluetooth ---> Bluedroid Options`.
-- When using PCM as the data path and this example configures PCM audio data to GPIO pins. You can link the GPIO pins to a speaker via i2s port. PCM data path does not support mSBC codec but CVSD codec.
+- When using PCM as the data path and this example configures PCM audio data to GPIO pins. You can link the GPIO pins to a speaker via I2S port. PCM data path does not support mSBC codec but CVSD codec.
 - When using HCI data path, ESP32 support both CVSD and mSBC codec.
 
 ### Build and Flash
@@ -39,7 +39,7 @@ When you run this example the command table will prints like:
 ```
 ########################################################################
 HFP AG command usage manual
-HFP AG commands begins with "hf" and ends with ";"
+HFP AG commands begins with "hf" and end with ";"
 Supported commands are as follows, arguments are embraced with < and >
 
 hf con;                   -- setup connection with peer device
@@ -84,7 +84,7 @@ E (100427) BT_HF: APP HFP event: CONNECTION_STATE_EVT
 E (100437) BT_HF: --connection state disconnected, peer feats 0x0, chld_feats 0x0
 ```
 
-**Note: Only after HF service is initiated and a service level connection exists between the HF Unit and AG that other commands are available.**
+**Note: Only after HF service is initialized and a service level connection exists between the HF Unit and AG could other commands be available.**
 
 You can type `hf dis;` to disconnect with the connected HF Unit device, and log prints like:
 
@@ -101,29 +101,29 @@ E (100437) BT_HF: --connection state disconnected, peer feats 0x0, chld_feats 0x
 
 You can type `hf cona;` to establish the audio connection between HF Unit and AG device. Also, you can type `hf disa;` to close the audio data stream.
 
-#### Situations for Audio Connection
+#### Use Scenarios for Audio Connection
 
 - Answer an incoming call
 - Enable voice recognition
 - Dial an outgoing call
 
-#### Situations for Audio Disconnection
+#### Use Scenarios for Audio Disconnection
 
 - Reject an incoming call
 - Disable the voice recognition
 
 #### Audio Data path
 
-ESP32 supports two type of audio data pth: PCM and HCI.
+ESP32 supports two types of audio data path: PCM and HCI.
 
-- PCM : When using PCM audio data stream is "matrixed" to GPIO pins and you should link these GPIO pins to a speaker via i2s port. 
-- HCI : When using HCI audio data stream will act in "loopback" mode. For example, you can hear your own voice when you place a call to a phone connected with a ESP32 development borad.
+- PCM : When using PCM, audio data stream is mapped to GPIO pins and you should link these GPIO pins to a speaker via I2S port. 
+- HCI : When using HCI, audio data stream acts in "loopback" mode. For example, you can hear your own voice when you place a call to a phone connected with a ESP32 development borad.
 
 #### Codec
 
-ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use when establishing a service level connection. The choice of codec also depends on the user's configuration in `menuconfig`. 
+ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features in the process of a service level connection. The choice of codec also depends on the user's configuration in `menuconfig`. 
 
-Since CVSD is the default codec in HFP, we just show the situation using mSBC :
+Since CVSD is the default codec in HFP, we just show the scenarios using mSBC :
 
 - If you enable `BT_HFP_WBS_ENABLE` in `menuconfig`, mSBC will be available.
 - If both HF Unit and AG support mSBC and also `BT_HFP_WBS_ENABLE` is enabled, ESP32 chooses mSBC.
@@ -192,7 +192,7 @@ You can type `hf vu <tgt> <vol>;` to sync volume gain of headset or microphone. 
 - `<tgt>` : 0 - headset, 1 - microphone.
 - `<vol>` : Integer among 0 - 15.
 
-For example,  `hf vu 0 9;` sync the volume of headset and log on AG side prints `volume update`, on HF Unit side log prints like:
+For example, `hf vu 0 9;` sync the volume of headset and log on AG side prints `volume update`, on HF Unit side log prints like:
 
 ```
 E (17087) BT_HF: APP HFP event: VOLUME_CONTROL_EVT
@@ -200,7 +200,7 @@ E (17087) BT_HF: --volume_target: SPEAKER, volume 9
 
 ```
 
-And also,  `hf vu 1 9;` sync the volume gain of microphone and log on HF  Unit side prints like:
+And also, `hf vu 1 9;` sync the volume gain of microphone and log on HF  Unit side prints like:
 
 ```
 E (32087) BT_HF: APP HFP event: VOLUME_CONTROL_EVT
@@ -224,7 +224,7 @@ I (1014138) BT_APP_HF: --Audio State connected
 
 #### Notify Device Notification
 
-When use `hf ind <call> <ntk> <callsetup> <sig>` AG will send some device status to HF Unit. Log on AG will printout like:  `Device Indicator Changed!`  and on HF Unit side will prints like:
+You can type `hf ind <call> <ntk> <callsetup> <sig>` to send device status of AG to HF Unit. Log on AG will printout like:  `Device Indicator Changed!`  and on HF Unit side will prints like:
 
 ```
 E (293641) BT_HF: APP HFP event: CALL_IND_EVT
