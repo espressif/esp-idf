@@ -17,7 +17,7 @@ void hf_msg_show_usage(void)
 {
     printf("########################################################################\n");
     printf("HF client command usage manual\n");
-    printf("HF client commands begin with \"hf\" and ends with \";\"\n");
+    printf("HF client commands begin with \"hf\" and end with \";\"\n");
     printf("Supported commands are as follows, arguments are embraced with < and >\n");
     printf("hf con;   -- setup connection with peer device\n");
     printf("hf dis;   -- release connection with peer device\n");
@@ -27,22 +27,25 @@ void hf_msg_show_usage(void)
     printf("hf qc;    -- query current call status\n");
     printf("hf ac;    -- answer incoming call\n");
     printf("hf rc;    -- reject incoming call\n");
-    printf("hf d <num>;                -- dial <num>, e.g. hf d 11223344\n");
-    printf("hf rd;                     -- redial\n");
-    printf("hf dm <index>;             -- dial memory\n");
-    printf("hf vron;                   -- start voice recognition\n");
-    printf("hf vroff;                  -- stop voice recognition\n");
-    printf("hf vu <tgt> <vol>;         -- volume update, tgt: 0-speaker, 1-microphone\n");
+    printf("hf d <num>;        -- dial <num>, e.g. hf d 11223344\n");
+    printf("hf rd;             -- redial\n");
+    printf("hf dm <index>;     -- dial memory\n");
+    printf("hf vron;           -- start voice recognition\n");
+    printf("hf vroff;          -- stop voice recognition\n");
+    printf("hf vu <tgt> <vol>; -- volume update\n");
+    printf("     tgt: 0-speaker, 1-microphone\n");
     printf("     vol: volume gain ranges from 0 to 15\n");
-    printf("hf rs;                     -- retrieve subscriber information\n");
-    printf("hf rv;                     -- retrieve last voice tag number\n");
-    printf("hf rh <btrh>;              -- response and hold, btrh: 0 - put call on hold,\n");
-    printf("     1 - accept the held call, 2 -reject the held call\n");
-    printf("hf k <dtmf>;               -- send dtmf code. dtmf: single character in set \n");
-    printf("     0-9, *, #, A-D\n");
-    printf("hf h;                      -- show command manual\n");
+    printf("hf rs;             -- retrieve subscriber information\n");
+    printf("hf rv;             -- retrieve last voice tag number\n");
+    printf("hf rh <btrh>;      -- response and hold\n");
+    printf("     btrh:\n");
+    printf("        0 - put call on hold,\n");
+    printf("        1 - accept the held call,\n");
+    printf("        2 -reject the held call\n");
+    printf("hf k <dtmf>;       -- send dtmf code.\n");
+    printf("     dtmf: single character in set 0-9, *, #, A-D\n");
+    printf("hf h;              -- show command manual\n");
     printf("########################################################################\n");
-
 }
 
 #define HF_CMD_HANDLER(cmd)    static void hf_##cmd##_handler(int argn, char **argv)
