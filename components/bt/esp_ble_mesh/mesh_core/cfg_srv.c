@@ -47,11 +47,7 @@
 
 static struct bt_mesh_cfg_srv *conf;
 
-static struct label {
-    u16_t ref;
-    u16_t addr;
-    u8_t  uuid[16];
-} labels[CONFIG_BLE_MESH_LABEL_COUNT];
+static struct label labels[CONFIG_BLE_MESH_LABEL_COUNT];
 
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
                          bool primary)
@@ -1152,23 +1148,59 @@ send_status:
     }
 }
 
-#if CONFIG_BLE_MESH_LABEL_COUNT > 0
-static u8_t va_add(u8_t *label_uuid, u16_t *addr)
+struct label *get_label(u16_t index)
 {
-    struct label *free_slot = NULL;
+    if (index >= ARRAY_SIZE(labels)) {
+        return NULL;
+    }
+
+    return &labels[index];
+}
+
+#if CONFIG_BLE_MESH_LABEL_COUNT > 0
+static inline void va_store(struct label *store)
+{
+    bt_mesh_atomic_set_bit(store->flags, BLE_MESH_VA_CHANGED);
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_store_label();
+    }
+}
+
+static struct label *va_find(const u8_t *label_uuid,
+                             struct label **free_slot)
+{
+    struct label *match = NULL;
     int i;
 
+    if (free_slot != NULL) {
+        *free_slot = NULL;
+    }
+
     for (i = 0; i < ARRAY_SIZE(labels); i++) {
-        if (!labels[i].ref) {
-            free_slot = &labels[i];
+        if (labels[i].ref == 0) {
+            if (free_slot != NULL) {
+                *free_slot = &labels[i];
+            }
             continue;
         }
 
         if (!memcmp(labels[i].uuid, label_uuid, 16)) {
-            *addr = labels[i].addr;
-            labels[i].ref++;
-            return STATUS_SUCCESS;
+            match = &labels[i];
         }
+    }
+
+    return match;
+}
+
+static u8_t va_add(u8_t *label_uuid, u16_t *addr)
+{
+    struct label *update, *free_slot = NULL;
+
+    update = va_find(label_uuid, &free_slot);
+    if (update) {
+        update->ref++;
+        va_store(update);
+        return 0;
     }
 
     if (!free_slot) {
@@ -1182,23 +1214,24 @@ static u8_t va_add(u8_t *label_uuid, u16_t *addr)
     free_slot->ref = 1U;
     free_slot->addr = *addr;
     memcpy(free_slot->uuid, label_uuid, 16);
+    va_store(free_slot);
 
     return STATUS_SUCCESS;
 }
 
 static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 {
-    int i;
+    struct label *update;
 
-    for (i = 0; i < ARRAY_SIZE(labels); i++) {
-        if (!memcmp(labels[i].uuid, label_uuid, 16)) {
-            if (addr) {
-                *addr = labels[i].addr;
-            }
+    update = va_find(label_uuid, NULL);
+    if (update) {
+        update->ref--;
 
-            labels[i].ref--;
-            return STATUS_SUCCESS;
+        if (addr) {
+            *addr = update->addr;
         }
+
+        va_store(update);
     }
 
     if (addr) {

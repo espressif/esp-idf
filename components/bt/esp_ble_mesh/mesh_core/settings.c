@@ -55,6 +55,8 @@
  *      key: "mesh/v/xxxx/b"  -> write/read to set/get VENDOR MODEL Bind AppKey List
  *      key: "mesh/v/xxxx/s" -> write/read to set/get VENDOR MODEL Subscription List
  *      key: "mesh/v/xxxx/p" -> write/read to set/get VENDOR MODEL Publication
+ * key: "mesh/vaddr" -> write/read to set/get all virtual addresses
+ *      key: "mesh/va/xxxx" -> write/read to set/get the "xxxx" virtual address
  */
 
 #if CONFIG_BLE_MESH_SETTINGS
@@ -141,6 +143,13 @@ struct mod_pub_val {
     u8_t  period_div: 4,
           cred: 1;
 };
+
+/* Virtual Address information */
+struct va_val {
+    u16_t ref;
+    u16_t addr;
+    u8_t  uuid[16];
+} __packed;
 
 /* We need this so we don't overwrite app-hardcoded values in case FCB
  * contains a history of changes but then has a NULL at the end.
@@ -695,6 +704,66 @@ static int vnd_mod_set(const char *name)
     return model_set(true, name);
 }
 
+#if CONFIG_BLE_MESH_LABEL_COUNT > 0
+static int va_set(const char *name)
+{
+    struct net_buf_simple *buf = NULL;
+    struct va_val va = {0};
+    char get[16] = {'\0'};
+    struct label *lab;
+    size_t length;
+    bool exist;
+    int err = 0;
+    u16_t i;
+
+    BT_DBG("%s", __func__);
+
+    buf = bt_mesh_get_core_settings_item(name);
+    if (!buf) {
+        return 0;
+    }
+
+    length = buf->len;
+
+    for (i = 0U; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t index = net_buf_simple_pull_le16(buf);
+        sprintf(get, "mesh/va/%04x", index);
+
+        err = bt_mesh_load_core_settings(get, (u8_t *)&va, sizeof(va), &exist);
+        if (err) {
+            BT_ERR("%s, Failed to load virtual address %s", __func__, get);
+            goto free;
+        }
+
+        if (exist == false) {
+            continue;
+        }
+
+        if (va.ref == 0) {
+            BT_DBG("Ignore virtual address %s with ref = 0", get);
+            goto free;
+        }
+
+        lab = get_label(index);
+        if (lab == NULL) {
+            BT_WARN("%s, Out of labels buffers", __func__);
+            err = -ENOBUFS;
+            goto free;
+        }
+
+        memcpy(lab->uuid, va.uuid, 16);
+        lab->addr = va.addr;
+        lab->ref = va.ref;
+
+        BT_DBG("Restore virtual address 0x%04x ref 0x%04x", index, lab->ref);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return err;
+}
+#endif
+
 const struct bt_mesh_setting {
     const char *name;
     int (*func)(const char *name);
@@ -709,6 +778,9 @@ const struct bt_mesh_setting {
     { "mesh/cfg",    cfg_set     },
     { "mesh/sig",    sig_mod_set },
     { "mesh/vnd",    vnd_mod_set },
+#if CONFIG_BLE_MESH_LABEL_COUNT > 0
+    { "mesh/vaddr",  va_set      },
+#endif
 };
 
 int settings_core_load(void)
@@ -1331,6 +1403,52 @@ static void store_pending_mod(struct bt_mesh_model *model,
     }
 }
 
+#define IS_VA_DEL(_label)   ((_label)->ref == 0)
+static void store_pending_va(void)
+{
+    struct va_val va = {0};
+    char name[16] = {'\0'};
+    struct label *lab;
+    u16_t i;
+    int err;
+
+    for (i = 0U; (lab = get_label(i)) != NULL; i++) {
+        if (!bt_mesh_atomic_test_and_clear_bit(lab->flags,
+            BLE_MESH_VA_CHANGED)) {
+            continue;
+        }
+
+        sprintf(name, "mesh/va/%04x", i);
+
+        if (IS_VA_DEL(lab)) {
+            err = bt_mesh_save_core_settings(name, NULL, 0);
+        } else {
+            va.ref = lab->ref;
+            va.addr = lab->addr;
+            memcpy(va.uuid, lab->uuid, 16);
+            err = bt_mesh_save_core_settings(name, (const u8_t *)&va, sizeof(va));
+        }
+        if (err) {
+            BT_ERR("%s, Failed to %s virtual address %s", __func__,
+                IS_VA_DEL(lab) ? "delete" : "store", name);
+            return;
+        }
+
+        if (IS_VA_DEL(lab)) {
+            err = bt_mesh_remove_core_settings_item("mesh/vaddr", i);
+        } else {
+            err = bt_mesh_add_core_settings_item("mesh/vaddr", i);
+        }
+        if (err) {
+            BT_ERR("%s, Failed to %s 0x%04x in mesh/vaddr", __func__,
+                IS_VA_DEL(lab) ? "delete" : "store", i);
+            return;
+        }
+
+        BT_DBG("%s virtual address 0x%04x", IS_VA_DEL(lab) ? "Delete" : "Store", i);
+    }
+}
+
 static void store_pending(struct k_work *work)
 {
     BT_DBG("%s", __func__);
@@ -1385,6 +1503,10 @@ static void store_pending(struct k_work *work)
             bt_mesh_save_core_settings("mesh/sig", NULL, 0);
             bt_mesh_save_core_settings("mesh/vnd", NULL, 0);
         }
+    }
+
+    if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_VA_PENDING)) {
+        store_pending_va();
     }
 }
 
@@ -1568,6 +1690,11 @@ void bt_mesh_store_mod_pub(struct bt_mesh_model *model)
 {
     model->flags |= BLE_MESH_MOD_PUB_PENDING;
     schedule_store(BLE_MESH_MOD_PENDING);
+}
+
+void bt_mesh_store_label(void)
+{
+    schedule_store(BLE_MESH_VA_PENDING);
 }
 
 int settings_core_init(void)

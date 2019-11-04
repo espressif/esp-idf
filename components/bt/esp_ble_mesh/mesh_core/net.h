@@ -224,6 +224,7 @@ enum {
     BLE_MESH_HB_PUB_PENDING,
     BLE_MESH_CFG_PENDING,
     BLE_MESH_MOD_PENDING,
+    BLE_MESH_VA_PENDING,
 
     /* Don't touch - intentionally last */
     BLE_MESH_FLAG_COUNT,
