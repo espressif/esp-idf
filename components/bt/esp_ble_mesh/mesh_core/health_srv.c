@@ -227,8 +227,7 @@ static void health_fault_test(struct bt_mesh_model *model,
 static void send_attention_status(struct bt_mesh_model *model,
                                   struct bt_mesh_msg_ctx *ctx)
 {
-    /* Needed size: opcode (2 bytes) + msg + MIC */
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_STATUS, 1);
     struct bt_mesh_health_srv *srv = model->user_data;
     u8_t time;
 
@@ -286,8 +285,7 @@ static void attention_set(struct bt_mesh_model *model,
 static void send_health_period_status(struct bt_mesh_model *model,
                                       struct bt_mesh_msg_ctx *ctx)
 {
-    /* Needed size: opcode (2 bytes) + msg + MIC */
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_STATUS, 1);
 
     bt_mesh_model_msg_init(&msg, OP_HEALTH_PERIOD_STATUS);
     net_buf_simple_add_u8(&msg, model->pub->period_div);

@@ -188,6 +188,56 @@ struct bt_mesh_model_op {
 /** Helper to define an empty model array */
 #define BLE_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
+/** Length of a short Mesh MIC. */
+#define BLE_MESH_MIC_SHORT 4
+/** Length of a long Mesh MIC. */
+#define BLE_MESH_MIC_LONG 8
+
+/** @def BLE_MESH_MODEL_OP_LEN
+ *
+ * @brief Helper to determine the length of an opcode.
+ *
+ * @param _op Opcode.
+ */
+#define BLE_MESH_MODEL_OP_LEN(_op) ((_op) <= 0xff ? 1 : (_op) <= 0xffff ? 2 : 3)
+
+/** @def BLE_MESH_MODEL_BUF_LEN
+ *
+ * @brief Helper for model message buffer length.
+ *
+ * Returns the length of a Mesh model message buffer, including the opcode
+ * length and a short MIC.
+ *
+ * @param _op Opcode of the message.
+ * @param _payload_len Length of the model payload.
+ */
+#define BLE_MESH_MODEL_BUF_LEN(_op, _payload_len)                \
+        (BLE_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BLE_MESH_MIC_SHORT)
+
+/** @def BLE_MESH_MODEL_BUF_LEN_LONG_MIC
+ *
+ * @brief Helper for model message buffer length.
+ *
+ * Returns the length of a Mesh model message buffer, including the opcode
+ * length and a long MIC.
+ *
+ * @param _op Opcode of the message.
+ * @param _payload_len Length of the model payload.
+ */
+#define BLE_MESH_MODEL_BUF_LEN_LONG_MIC(_op, _payload_len)       \
+        (BLE_MESH_MODEL_OP_LEN(_op) + (_payload_len) + BLE_MESH_MIC_LONG)
+
+/** @def BLE_MESH_MODEL_BUF_DEFINE
+ *
+ * @brief Define a Mesh model message buffer using @ref NET_BUF_SIMPLE_DEFINE.
+ *
+ * @param _buf Buffer name.
+ * @param _op Opcode of the message.
+ * @param _payload_len Length of the model message payload.
+ */
+#define BLE_MESH_MODEL_BUF_DEFINE(_buf, _op, _payload_len)       \
+        NET_BUF_SIMPLE_DEFINE(_buf, BLE_MESH_MODEL_BUF_LEN(_op, (_payload_len)))
+
 #define BLE_MESH_MODEL(_id, _op, _pub, _user_data)                  \
 {                                                                   \
     .id = (_id),                                                    \

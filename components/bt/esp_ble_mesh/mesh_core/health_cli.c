@@ -235,7 +235,7 @@ const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 
 int bt_mesh_health_attention_get(struct bt_mesh_msg_ctx *ctx)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_GET, 0);
     int err;
 
     if (!ctx || !ctx->addr) {
@@ -257,7 +257,7 @@ int bt_mesh_health_attention_get(struct bt_mesh_msg_ctx *ctx)
 int bt_mesh_health_attention_set(struct bt_mesh_msg_ctx *ctx,
                                  u8_t attention, bool need_ack)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_ATTENTION_SET, 1);
     u32_t opcode;
     int err;
 
@@ -285,7 +285,7 @@ int bt_mesh_health_attention_set(struct bt_mesh_msg_ctx *ctx,
 
 int bt_mesh_health_period_get(struct bt_mesh_msg_ctx *ctx)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_GET, 0);
     int err;
 
     if (!ctx || !ctx->addr) {
@@ -307,7 +307,7 @@ int bt_mesh_health_period_get(struct bt_mesh_msg_ctx *ctx)
 int bt_mesh_health_period_set(struct bt_mesh_msg_ctx *ctx,
                               u8_t divisor, bool need_ack)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_PERIOD_SET, 1);
     u32_t opcode;
     int err;
 
@@ -336,7 +336,7 @@ int bt_mesh_health_period_set(struct bt_mesh_msg_ctx *ctx,
 int bt_mesh_health_fault_test(struct bt_mesh_msg_ctx *ctx,
                               u16_t cid, u8_t test_id, bool need_ack)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 3 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_TEST, 3);
     u32_t opcode;
     int err;
 
@@ -366,7 +366,7 @@ int bt_mesh_health_fault_test(struct bt_mesh_msg_ctx *ctx,
 int bt_mesh_health_fault_clear(struct bt_mesh_msg_ctx *ctx,
                                u16_t cid, bool need_ack)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 2 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_CLEAR, 2);
     u32_t opcode;
     int err;
 
@@ -394,7 +394,7 @@ int bt_mesh_health_fault_clear(struct bt_mesh_msg_ctx *ctx,
 
 int bt_mesh_health_fault_get(struct bt_mesh_msg_ctx *ctx, u16_t cid)
 {
-    NET_BUF_SIMPLE_DEFINE(msg, 2 + 2 + 4);
+    BLE_MESH_MODEL_BUF_DEFINE(msg, OP_HEALTH_FAULT_GET, 2);
     int err;
 
     if (!ctx || !ctx->addr) {
