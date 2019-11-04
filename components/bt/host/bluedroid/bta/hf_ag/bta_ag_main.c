@@ -272,7 +272,7 @@ const tBTA_AG_ST_TBL bta_ag_st_tbl[] =
 /*****************************************************************************
 ** Global data
 *****************************************************************************/
-const char *bta_ag_version = "1.5"; //"1.6"
+const char *bta_ag_version = "1.6";
 /* AG control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_AG_CB  bta_ag_cb;

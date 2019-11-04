@@ -991,6 +991,8 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             if (!(p_scb->features & BTA_AG_FEAT_VREC)) {
                 event = 0;
                 bta_ag_send_error(p_scb, BTA_AG_ERR_OP_NOT_SUPPORTED);
+            } else {
+                bta_ag_send_ok(p_scb);
             }
             break;
 
@@ -1536,6 +1538,12 @@ void bta_ag_hfp_result(tBTA_AG_SCB *p_scb, tBTA_AG_API_RESULT *p_result)
 
         case BTA_AG_BVRA_RES:
             bta_ag_send_result(p_scb, code, NULL, p_result->data.state);
+            if (p_result->data.ok_flag!= BTA_AG_OK_ERROR)
+            {
+                bta_ag_send_ok(p_scb);
+            } else {
+                bta_ag_send_error(p_scb, p_result->data.errcode);
+            }
             break;
 
         case BTA_AG_BTRH_RES: // Not supported yet

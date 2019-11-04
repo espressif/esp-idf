@@ -49,7 +49,7 @@ typedef enum
 {
     ESP_HF_CONNECTION_STATE_EVT = 0,          /*!< Connection state changed event */
     ESP_HF_AUDIO_STATE_EVT,                   /*!< Audio connection state change event */
-    ESP_HF_BVRA_EVT,                          /*!< Voice recognition state change event */
+    ESP_HF_BVRA_RESPONSE_EVT,                          /*!< Voice recognition state change event */
     ESP_HF_VOLUME_CONTROL_EVT,                /*!< Audio volume control command from HF Client, provided by +VGM or +VGS message */
 
     ESP_HF_UNAT_RESPONSE_EVT,                 /*!< Unknown AT cmd Response*/
@@ -89,7 +89,7 @@ typedef union
     } audio_stat;                                 /*!< AG callback param of ESP_AG_AUDIO_STATE_EVT */
 
     /**
-     * @brief ESP_HF_BVRA_EVT
+     * @brief ESP_HF_BVRA_RESPONSE_EVT
      */
     struct hf_bvra_param {
         esp_bd_addr_t     remote_addr;

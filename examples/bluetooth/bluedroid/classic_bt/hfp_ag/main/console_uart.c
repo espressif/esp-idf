@@ -62,23 +62,23 @@ static void console_uart_task(void *pvParameters)
             }
             //Event of HW FIFO overflow detected
             case UART_FIFO_OVF:
-                ESP_LOGI(TAG_CNSL, "hw fifo overflow\n");
+                ESP_LOGI(TAG_CNSL, "hw fifo overflow");
                 break;
             //Event of UART ring buffer full
             case UART_BUFFER_FULL:
-                ESP_LOGI(TAG_CNSL, "ring buffer full\n");
+                ESP_LOGI(TAG_CNSL, "ring buffer full");
                 break;
             //Event of UART RX break detected
             case UART_BREAK:
-                ESP_LOGI(TAG_CNSL, "uart rx break\n");
+                ESP_LOGI(TAG_CNSL, "uart rx break");
                 break;
             //Event of UART parity check error
             case UART_PARITY_ERR:
-                ESP_LOGI(TAG_CNSL, "uart parity error\n");
+                ESP_LOGI(TAG_CNSL, "uart parity error");
                 break;
             //Event of UART frame error
             case UART_FRAME_ERR:
-                ESP_LOGI(TAG_CNSL, "uart frame error\n");
+                ESP_LOGI(TAG_CNSL, "uart frame error");
                 break;
             //Others
             default:

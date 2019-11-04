@@ -154,11 +154,6 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
                     param->conn_stat.peer_feat,
                     param->conn_stat.chld_feat);
             memcpy(hf_peer_addr, param->conn_stat.remote_bda, ESP_BD_ADDR_LEN);
-            if (param->conn_stat.state == ESP_HF_CONNECTION_STATE_CONNECTING) {
-                esp_bt_hf_connect(hf_peer_addr);
-            } else if (param->conn_stat.state == ESP_HF_CONNECTION_STATE_DISCONNECTING) {
-                esp_bt_hf_disconnect(hf_peer_addr);
-            }
             break;
         }
 
@@ -176,7 +171,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             break;
         }
 
-        case ESP_HF_BVRA_EVT:
+        case ESP_HF_BVRA_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--Voice Recognition is %s", c_vr_state_str[param->vra_rep.value]);
             break;
@@ -283,7 +278,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             break;
         }
 
-        // case ESP_HF_BAC_RESPONSE_EVT:
+        case ESP_HF_BAC_RESPONSE_EVT:
         case ESP_HF_BCS_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--AG choose codec mode: %s",c_codec_mode_str[param->codec.mode]);

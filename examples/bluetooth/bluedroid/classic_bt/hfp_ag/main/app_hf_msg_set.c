@@ -12,6 +12,9 @@
 #include "app_hf_msg_set.h"
 #include "bt_app_hf.h"
 
+// if you want to connect a specific device, add it's bda here
+// esp_bd_addr_t hf_peer_addr = {0x70,0x26,0x05,0xca,0xeb,0x21};
+
 void hf_msg_show_usage(void)
 {
     printf("########################################################################\n");
@@ -35,8 +38,8 @@ void hf_msg_show_usage(void)
     printf("hf ate <rep> <err>;       -- send extended at error code\n");
     printf("     rep: response code from 0 to 7\n");
     printf("     err: error code from 0 to 32\n");
-    printf("hf iron;                  -- inband ring tone provided\n");
-    printf("hf iroff;                 -- inband ring tone not provided\n");
+    printf("hf iron;                  -- in-band ring tone provided\n");
+    printf("hf iroff;                 -- in-band ring tone not provided\n");
     printf("hf ac;                    -- Answer Incoming Call from AG\n");
     printf("hf rc;                    -- Reject Incoming Call from AG\n");
     printf("hf d <num>;               -- Dial Number by AG, e.g. hf d 11223344\n");

@@ -339,7 +339,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 
     pkt_size = BT_HDR_SIZE + len;
     pkt = (BT_HDR *) osi_calloc(pkt_size);
-    //pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
+
     if (!pkt) {
         HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
         return -1;
