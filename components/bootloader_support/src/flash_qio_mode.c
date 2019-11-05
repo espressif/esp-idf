@@ -211,12 +211,12 @@ void bootloader_enable_qio_mode(void)
     if (i == NUM_CHIPS - 1) {
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-    spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
-#endif
     enable_qio_mode(chip_data[i].read_status_fn,
                     chip_data[i].write_status_fn,
                     chip_data[i].status_qio_bit);
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
+#endif
 }
 
 static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
