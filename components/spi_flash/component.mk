@@ -7,5 +7,5 @@ COMPONENT_ADD_LDFRAGMENTS += linker.lf
 
 ifdef IS_BOOTLOADER_BUILD
 # Bootloader needs updated SPIUnlock from this file
-COMPONENT_OBJS := spi_flash_rom_patch.o
+COMPONENT_OBJS := esp32/spi_flash_rom_patch.o
 endif
