@@ -96,7 +96,6 @@ function(__build_set_default_build_specifications)
     list(APPEND compile_options     "-ffunction-sections"
                                     "-fdata-sections"
                                     "-fstrict-volatile-bitfields"
-                                    "-nostdlib"
                                     # warning-related flags
                                     "-Wall"
                                     "-Werror=all"
@@ -440,14 +439,6 @@ macro(idf_build_process target)
     idf_build_get_property(sdkconfig_defaults SDKCONFIG_DEFAULTS)
     __kconfig_generate_config("${sdkconfig}" "${sdkconfig_defaults}")
     __build_import_configs()
-
-    # Temporary trick to support both gcc5 and gcc8 builds
-    if(CMAKE_C_COMPILER_VERSION VERSION_EQUAL 5.2.0)
-        set(GCC_NOT_5_2_0 0 CACHE STRING "GCC is 5.2.0 version")
-    else()
-        set(GCC_NOT_5_2_0 1 CACHE STRING "GCC is not 5.2.0 version")
-    endif()
-    idf_build_set_property(COMPILE_DEFINITIONS "-DGCC_NOT_5_2_0" APPEND)
 
     # All targets built under this scope is with the ESP-IDF build system
     set(ESP_PLATFORM 1)

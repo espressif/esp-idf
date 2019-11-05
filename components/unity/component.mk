@@ -2,9 +2,7 @@
 # Component Makefile
 #
 
-ifeq ($(GCC_NOT_5_2_0), 1)
 unity/src/unity.o: CFLAGS += -Wno-unused-const-variable
-endif
 
 COMPONENT_ADD_INCLUDEDIRS = include unity/src
 COMPONENT_SRCDIRS = unity/src .

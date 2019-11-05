@@ -21,6 +21,4 @@ target_compile_definitions(${COMPONENT_LIB} PUBLIC
     -DUNITY_INCLUDE_CONFIG_H
 )
 
-if(GCC_NOT_5_2_0)
-    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
-endif()
+target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-unused-const-variable)
