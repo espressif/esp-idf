@@ -189,7 +189,7 @@ extern void esp_switch_rodata_to_dcache(void);
 extern void esp_spiram_enable_instruction_access(void);
     esp_spiram_enable_instruction_access();
 #endif
-#if SPIRAM_RODATA
+#if CONFIG_SPIRAM_RODATA
 extern void esp_spiram_enable_rodata_access(void);
     esp_spiram_enable_rodata_access();
 #endif
