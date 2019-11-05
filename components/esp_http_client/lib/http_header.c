@@ -188,6 +188,7 @@ int http_header_generate_string(http_header_handle_t header, int index, char *bu
 
         if (siz + 1 > *buffer_len - 2) {
             ret_idx = idx - 1;
+            break;
         }
     }
 
