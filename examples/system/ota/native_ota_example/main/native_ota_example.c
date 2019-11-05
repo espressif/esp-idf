@@ -21,6 +21,10 @@
 #include "driver/gpio.h"
 #include "protocol_examples_common.h"
 
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+#include "esp_wifi.h"
+#endif
+
 #define BUFFSIZE 1024
 #define HASH_LEN 32 /* SHA-256 digest length */
 
@@ -176,19 +180,20 @@ static void ota_example_task(void *pvParameter)
             binary_file_length += data_read;
             ESP_LOGD(TAG, "Written image length %d", binary_file_length);
         } else if (data_read == 0) {
-            ESP_LOGI(TAG, "Connection closed,all data received");
+            ESP_LOGI(TAG, "Connection closed");
             break;
         }
     }
-    ESP_LOGI(TAG, "Total Write binary data length : %d", binary_file_length);
+    ESP_LOGI(TAG, "Total Write binary data length: %d", binary_file_length);
     if (esp_http_client_is_complete_data_received(client) != true) {
         ESP_LOGE(TAG, "Error in receiving complete file");
         http_cleanup(client);
         task_fatal_error();
     }
 
-    if (esp_ota_end(update_handle) != ESP_OK) {
-        ESP_LOGE(TAG, "esp_ota_end failed!");
+    err = esp_ota_end(update_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ota_end failed (%s)!", esp_err_to_name(err));
         http_cleanup(client);
         task_fatal_error();
     }
@@ -281,6 +286,13 @@ void app_main(void)
      * examples/protocols/README.md for more information about this function.
      */
     ESP_ERROR_CHECK(example_connect());
+
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+    /* Ensure to disable any WiFi power save mode, this allows best throughput
+     * and hence timings for overall OTA operation.
+     */
+    esp_wifi_set_ps(WIFI_PS_NONE);
+#endif // CONFIG_EXAMPLE_CONNECT_WIFI
 
     xTaskCreate(&ota_example_task, "ota_example_task", 8192, NULL, 5, NULL);
 }
