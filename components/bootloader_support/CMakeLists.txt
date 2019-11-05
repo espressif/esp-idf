@@ -18,8 +18,7 @@ endif()
 
 if(BOOTLOADER_BUILD)
     set(include_dirs "include" "include_bootloader")
-    # freertos is included just for the CONFIG_FREERTOS_UNICORE macro
-    set(priv_requires micro-ecc spi_flash efuse freertos)
+    set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
         "src/bootloader_init.c"
         "src/${IDF_TARGET}/bootloader_sha.c"
