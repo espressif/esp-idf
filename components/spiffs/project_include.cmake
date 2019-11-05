@@ -15,6 +15,16 @@ function(spiffs_create_partition_image partition base_dir)
     partition_table_get_partition_info(size "--partition-name ${partition}" "size")
     partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")
 
+    if(NOT "${size}")
+        message(WARNING "spiffsgen: Unable to resolve size of partition '${partition}'. "
+                "Check config if using correct partition table.")
+    endif()
+
+    if(NOT "${offset}")
+        message(WARNING "spiffsgen: Unable to resolve offset of partition '${partition}'. "
+                "Check config if using correct partition table.")
+    endif()
+
     set(image_file ${CMAKE_BINARY_DIR}/${partition}.bin)
 
     if(CONFIG_SPIFFS_USE_MAGIC)
@@ -42,8 +52,8 @@ function(spiffs_create_partition_image partition base_dir)
         ${image_file})
 
     if(arg_FLASH_IN_PROJECT)
-        esptool_py_flash_project_args(${partition} ${offset} ${image_file} FLASH_IN_PROJECT)
+        esptool_py_flash_project_args("${partition}" "${offset}" "${image_file}" FLASH_IN_PROJECT)
     else()
-        esptool_py_flash_project_args(${partition} ${offset} ${image_file})
+        esptool_py_flash_project_args("${partition}" "${offset}" "${image_file}")
     endif()
 endfunction()
