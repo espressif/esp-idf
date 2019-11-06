@@ -472,10 +472,6 @@ void vApplicationSleep( TickType_t xExpectedIdleTime );
 /*-----------------------------------------------------------*/
 
 /* Architecture specific optimisations. */
-#ifndef configUSE_PORT_OPTIMISED_TASK_SELECTION
-	#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
-#endif
-
 #if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
 
 /* Check the configuration. */

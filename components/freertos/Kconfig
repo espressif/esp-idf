@@ -44,8 +44,8 @@ menu "FreeRTOS"
         default y
         help
             On most platforms there are instructions can speedup the ready task
-            searching. Enabling this option the FreeRTOS with this instructions 
-            support will be built
+            searching. Enabling this option the FreeRTOS with this instructions
+            support will be built.
 
     config FREERTOS_HZ
         int "Tick rate (Hz)"
