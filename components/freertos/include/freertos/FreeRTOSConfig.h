@@ -72,6 +72,10 @@
 
 #include "sdkconfig.h"
 
+/* enable use of optimized task selection by the scheduler */
+#ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
+#endif
 
 /* ESP31 and ESP32 are dualcore processors. */
 #ifndef CONFIG_FREERTOS_UNICORE
@@ -172,10 +176,14 @@ int xt_clock_freq(void) __attribute__((deprecated));
 //#define configCPU_CLOCK_HZ				80000000
 
 /* This has impact on speed of search for highest priority */
+#ifdef configUSE_PORT_OPTIMISED_TASK_SELECTION
 #ifdef SMALL_TEST
 #define configMAX_PRIORITIES			( 7 )
 #else
 #define configMAX_PRIORITIES			( 25 )
+#endif
+#else 
+#define configMAX_PRIORITIES			( 32 )
 #endif
 
 #ifndef CONFIG_APPTRACE_ENABLE

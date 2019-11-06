@@ -2783,9 +2783,15 @@ void vTaskSwitchContext( void )
 #endif
 
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
-		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
 
+#if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
+		portBASE_TYPE uxDynamicTopReady;
+		portGET_HIGHEST_PRIORITY( uxDynamicTopReady, uxTopReadyPriority );
+		portBASE_TYPE uxCopyOfTopReadyPrio = uxDynamicTopReady;
+#else 
+		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
+#endif
 		/*
 		 *  ToDo: This scheduler doesn't correctly implement the round-robin scheduling as done in the single-core
 		 *  FreeRTOS stack when multiple tasks have the same priority and are all ready; it just keeps grabbing the
@@ -2861,7 +2867,14 @@ void vTaskSwitchContext( void )
 					}
 				} while ((ableToSchedule == pdFALSE) && (pxTCB != pxRefTCB));
 			} else {
-				if (!holdTop) --uxTopReadyPriority;
+				if (!holdTop) {
+					#if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1					
+						portRESET_READY_PRIORITY( uxCopyOfTopReadyPrio,uxTopReadyPriority );
+						portGET_HIGHEST_PRIORITY( uxCopyOfTopReadyPrio,uxTopReadyPriority );
+					#else
+						uxTopReadyPriority--;
+					#endif
+				}
 			}
 			--uxDynamicTopReady;
 		}
