@@ -241,13 +241,13 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
     mbedtls_x509_crt_free(&crt);
 }
 
+#ifdef CONFIG_MBEDTLS_HARDWARE_MPI
+
 static int myrand(void *rng_state, unsigned char *output, size_t len)
 {
     size_t olen;
     return mbedtls_hardware_poll(rng_state, output, len, &olen);
 }
-
-#ifdef CONFIG_MBEDTLS_HARDWARE_MPI
 
 TEST_CASE("test performance RSA key operations", "[bignum][ignore]")
 {
