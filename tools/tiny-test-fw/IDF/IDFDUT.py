@@ -122,9 +122,10 @@ def _uses_esptool(func):
         settings = self.port_inst.get_settings()
 
         try:
-            rom = self._get_rom()(self.port_inst)
-            rom.connect('hard_reset')
-            esp = rom.run_stub()
+            if not self._rom_inst:
+                self._rom_inst = esptool.ESPLoader.detect_chip(self.port_inst)
+            self._rom_inst.connect('hard_reset')
+            esp = self._rom_inst.run_stub()
 
             ret = func(self, esp, *args, **kwargs)
             # do hard reset after use esptool
@@ -158,6 +159,7 @@ class IDFDUT(DUT.SerialDUT):
         self.allow_dut_exception = allow_dut_exception
         self.exceptions = _queue.Queue()
         self.performance_items = _queue.Queue()
+        self._rom_inst = None
 
     @classmethod
     def _get_rom(cls):
@@ -187,10 +189,15 @@ class IDFDUT(DUT.SerialDUT):
     def confirm_dut(cls, port, app, **kwargs):
         inst = None
         try:
+            expected_rom_class = cls._get_rom()
+        except NotImplementedError:
+            expected_rom_class = None
+
+        try:
             # TODO: check whether 8266 works with this logic
             # Otherwise overwrite it in ESP8266DUT
             inst = esptool.ESPLoader.detect_chip(port)
-            if type(inst) != cls._get_rom():
+            if expected_rom_class and type(inst) != expected_rom_class:
                 raise RuntimeError("Target not expected")
             return inst.read_mac() is not None
         except(esptool.FatalError, RuntimeError):
