@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "esp_types.h"
-#include "esp32/clk.h"
+#include "esp32s2beta/clk.h"
 #include "esp_log.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
@@ -13,7 +13,7 @@
 #include "mbedtls/sha1.h"
 #include "mbedtls/sha256.h"
 #include "mbedtls/sha512.h"
-#include "esp32/sha.h"
+#include "esp32s2beta/sha.h"
 
 /* Note: Most of the SHA functions are called as part of mbedTLS, so
 are tested as part of mbedTLS tests. Only esp_sha() is different.

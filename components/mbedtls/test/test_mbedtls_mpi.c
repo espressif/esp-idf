@@ -165,7 +165,7 @@ static bool test_bignum_modexp(const char *z_str, const char *x_str, const char 
     return fail;
 }
 
-TEST_CASE_ESP32("test MPI modexp", "[bignum]")
+TEST_CASE("test MPI modexp", "[bignum]")
 {
     bool test_error = false;
     printf("Z = (X ^ Y) mod M \n");
