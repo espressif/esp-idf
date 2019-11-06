@@ -1,3 +1,3 @@
-idf_component_register(SRCS "."
+idf_component_register(SRC_DIRS "."
                     INCLUDE_DIRS "."
                     REQUIRES unity test_utils nvs_flash bootloader_support)
