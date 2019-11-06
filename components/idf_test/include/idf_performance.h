@@ -30,4 +30,6 @@
 // floating point instructions per divide and per sqrt (configured for worst-case with PSRAM workaround)
 #define IDF_PERFORMANCE_MAX_ESP32_CYCLES_PER_DIV 70
 #define IDF_PERFORMANCE_MAX_ESP32_CYCLES_PER_SQRT 140
+// SHA256 hardware throughput at 240MHz, threshold set lower than worst case
+#define IDF_PERFORMANCE_MIN_SHA256_THROUGHPUT_MBSEC                             9.0
 
