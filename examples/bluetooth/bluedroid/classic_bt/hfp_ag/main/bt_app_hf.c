@@ -190,6 +190,17 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             break;
         }
 
+        case ESP_HF_IND_UPDATE_EVT:
+        {
+            ESP_LOGI(BT_HF_TAG, "--UPDATE INDCATOR!");
+            esp_hf_call_status_t call_state = 1;
+            esp_hf_call_setup_status_t call_setup_state = 2;
+            esp_hf_network_state_t ntk_state = 1;
+            int signal = 2;
+            esp_bt_hf_indchange_notification(hf_peer_addr,call_state,call_setup_state,ntk_state,signal);
+            break;
+        }
+
         case ESP_HF_CIND_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--CIND Start.");

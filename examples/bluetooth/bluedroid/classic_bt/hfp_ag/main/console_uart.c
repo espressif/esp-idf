@@ -96,7 +96,7 @@ esp_err_t console_uart_init(void)
 
     ret =  uart_param_config(CONSOLE_UART_NUM, &uart_cfg);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG_CNSL, "Uart %d initialize err %04x\n", CONSOLE_UART_NUM, ret);
+        ESP_LOGE(TAG_CNSL, "Uart %d initialize err %04x", CONSOLE_UART_NUM, ret);
         return ret;
     }
 

@@ -1,19 +1,12 @@
 # Hands-Free Audio Gateway
 
-This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG) Component and the effects of them by providing a set of commands. You can use this example to communicate with a Hands-Free Unit (e.g. a headphone set). This example uses UART for user commands and uses GPIO for PCM audio data stream.
+This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG) Component and the effects of them by providing a set of commands. You can use this example to communicate with a Hands-Free Unit (e.g. a headphone set). This example uses UART for user commands.
 
 ## How to use example
 
 ### Hardware Required
 
-If possible, example should be able to run on any commonly available ESP32 development board and is supposed to connect to _Hands Free Unit example (hfp_hf)_ in ESP-IDF.
-
-### Audio Data Path
-
-ESP32 supports two types of audio data path: PCM and HCI.
-
-- PCM : When using PCM, audio data stream is mapped to GPIO pins and you should link these GPIO pins to a speaker via I2S port. 
-- HCI : When using HCI, audio data stream will be transport to HF unit app via HCI.
+This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate it should be connected to an Hands-Free Unit running on a Headphone/Headset or on another ESP32 development board loaded with Hands Free Unit (hfp_hf) example from ESP-IDF.
 
 ### Configure the project
 
@@ -21,9 +14,16 @@ ESP32 supports two types of audio data path: PCM and HCI.
 idf.py menuconfig
 ```
 
+ESP32 supports two types of audio data paths: PCM and HCI but the default sdkconfig of this example does not config the data path in a specific way. You should config the data path you want:
+
+- PCM : When using PCM, audio data stream is directed to GPIO pins and you should link these GPIO pins to a speaker via I2S port. You should choose PCM in `menuconfig` path: `Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> PCM`and also `Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> PCM`.
+- HCI : When using HCI, audio data stream will be transport to HF unit app via HCI. You should choose HCI in `menuconfig` path: `Component config -->Bluetooth controller -->BR/EDR Sync(SCO/eSCO) default data path --> HCI` and also `Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
+
+**Note: Wide Band Speech is disabled by default, if you want to use it please select it in the menuconfig path: `Component config --> Bluetooth --> Bluedroid Options --> Wide Band Speech`.**
+
 ### Build and Flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
+Build the project and flash it to the board. Then, run monitor tool to view serial output:
 
 ```
 idf.py -p PORT flash monitor
@@ -33,11 +33,11 @@ idf.py -p PORT flash monitor
 
 (To exit the serial monitor, type ``Ctrl-]``.)
 
-See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
+See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
 
-When you run this example the commands help table prints like:
+When you flash and monitor this example the commands help table prints the following at the very begining:
 
 ```
 ########################################################################
@@ -54,7 +54,7 @@ hf vroff;                 -- stop voice recognition
 hf vu <tgt> <vol>;        -- volume update
      tgt: 0-speaker, 1-microphone
      vol: volume gain ranges from 0 to 15
-hf ind <call> <ntk> <callsetup> <sig>;       -- unsolicited notify device notification to HF Client
+hf ind <call> <ntk> <callsetup> <sig>;       -- unsolicited indication device status to HF Client
      call: call status [0,1]
      callsetup: call setup status [0,3]
      ntk: network status [0,1]
@@ -72,11 +72,15 @@ hf h;                     -- to see the command for HFP AG
 ########################################################################
 ```
 
-The commands help table will print out in monitor whenever you type `hf h;` or input a command that is not required by the command parse rule.
+**Note:**
+
+- This command help table will print out in monitor whenever you type `hf h;` or if you input a command that is not required by the command parse rule.
+- The command you type will not echo in monitor and your command should always start with `hf` and end with `;` or the example will not responds.
+- The command you typed will not echo in monitor.
 
 ### Service Level Connection and Disconnection
 
-You can type `hf con;` to establish a service level connection with HF Unit device and log prints like:
+You can type `hf con;` to establish a service level connection with HF Unit device and log prints such as:
 
 ```
 W (2211) BT_APPL: new conn_srvc id:5, app_id:0
@@ -88,9 +92,9 @@ I (2331) BT_APP_HF: APP HFP event: CONNECTION_STATE_EVT
 I (2331) BT_APP_HF: --connection state SLC_CONNECTED, peer feats 0xff, chld_feats 0x4010
 ```
 
-**Note: Only after HFP service is initialized and a service level connection exists between an HF Unit and an AG device, could other commands be available.**
+**Note: Only after Hands-free Profile(HFP) service is initialized and a service level connection exists between an HF Unit and an AG device, could other commands be available.**
 
-You can type `hf dis;` to disconnect with the connected HF Unit device, and log prints like:
+You can type `hf dis;` to disconnect with the connected HF Unit device, and log prints such as:
 
 ```
 E (100147) CNSL: Command [hf dis;]
@@ -106,37 +110,32 @@ W (77381) BT_RFCOMM: RFCOMM_DisconnectInd LCID:0x41
 
 You can type `hf cona;` to establish the audio connection between HF Unit and AG device. Also, you can type `hf disa;` to close the audio data stream.
 
-#### Use Scenarios for Audio Connection
+#### Scenarios for Audio Connection
 
 - Answer an incoming call
 - Enable voice recognition
 - Dial an outgoing call
 
-#### Use Scenarios for Audio Disconnection
+#### Scenarios for Audio Disconnection
 
 - Reject an incoming call
 - Disable the voice recognition
 
-#### Audio Data path
+#### Choise of Codec
 
-- When using PCM as the data path and this example configures PCM audio data to GPIO pins. You can link the GPIO pins to a speaker via I2S port. PCM data path does not support mSBC codec but CVSD codec.
-- When using HCI data path, ESP32 support both CVSD and mSBC codec.
+ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
 
-#### Codec
-
-ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features in the process of a service level connection. The choice of codec also depends on the user's configuration in `menuconfig`. 
-
-Since CVSD is the default codec in HFP, we just show the scenarios using mSBC :
+Since CVSD is the default codec in HFP, we just show the scenarios using mSBC:
 
 - If you enable `BT_HFP_WBS_ENABLE` in `menuconfig`, mSBC will be available.
-- If both HF Unit and AG support mSBC and also `BT_HFP_WBS_ENABLE` is enabled, ESP32 chooses mSBC.
+- If both HF Unit and AG support mSBC and `BT_HFP_WBS_ENABLE` is enabled, ESP32 chooses mSBC.
 - If you use PCM data path, mSBC is not available.
 
 ### Answer or Reject an Incoming Call
 
 #### Answer an Incoming Call
 
-You can type `hf ac;` to answer an incoming call and log prints like:
+You can type `hf ac;` to answer an incoming call and log prints such as:
 
 ```
 E (1066280) CNSL: Command [hf ac;]
@@ -151,7 +150,7 @@ I (1067240) BT_APP_HF: --Audio State connected
 
 #### Reject an Incoming Call
 
-You can type `hf rc;` to reject an incoming call and log prints like:
+You can type `hf rc;` to reject an incoming call and log prints such as:
 
 ```
 E (10040) CNSL: Command [hf rc;]
@@ -162,7 +161,7 @@ I (1067240) BT_APP_HF: --Audio State disconnected
 
 #### End a Call
 
-You can type `hf end;` to end the current ongoing call and log prints like:
+You can type `hf end;` to end the current ongoing call and log prints such as:
 
 ```
 E (157741) CNSL: Command [hf end;]
@@ -175,7 +174,7 @@ I (159311) BT_APP_HF: --ESP AG Audio Connection Disconnected.
 
 ### Dial Number
 
-You can type `hf d <num>;` to dial `<num>` from AG and log prints like:
+You can type `hf d <num>;` to dial `<num>` from AG and log prints such as:
 
 ```
 E (207351) CNSL: Command [hf d 18629485549;]
@@ -191,19 +190,19 @@ I (208811) BT_APP_HF: --Audio State connected
 
 ### Volume Control
 
-You can type `hf vu <tgt> <vol>;` to update volume gain of headset or microphone. The parameter set:
+You can type `hf vu <tgt> <vol>;` to update the volume of a headset or microphone. The parameter should be set as follows:
 
 - `<tgt>` : 0 - headset, 1 - microphone.
 - `<vol>` : Integer among 0 - 15.
 
-For example, `hf vu 0 9;` update the volume of headset and log on AG side prints `Volume Update`, on HF Unit side log prints like:
+For example, `hf vu 0 9;` updates the volume of headset and the log on the AG side prints `Volume Update`, while on the HF Unit side the log prints:
 
 ```
 E (17087) BT_HF: APP HFP event: VOLUME_CONTROL_EVT
 E (17087) BT_HF: --volume_target: SPEAKER, volume 9
 ```
 
-And also, `hf vu 1 9;` update the volume gain of microphone and log on HF  Unit side prints like:
+And also, `hf vu 1 9;` updates the volume of a microphone and the log on the HF Unit side prints:
 
 ```
 E (32087) BT_HF: APP HFP event: VOLUME_CONTROL_EVT
@@ -212,7 +211,7 @@ E (32087) BT_HF: --volume_target: MICROPHONE, volume 9
 
 #### Voice Recognition
 
-You can type `hf vron;` to start the voice recognition of AG and type `hf vroff;` to terminate the voice recognition. Both command will notify the HF Unit the status of voice recognition. For example, type `hf vron;` and log prints like:
+You can type `hf vron;` to start the voice recognition and type `hf vroff;` to terminate this function in the AG device. Both commands will notify the HF Unit the status of voice recognition. For example, type `hf vron;` and the log will prints:
 
 ```
 E (244131) CNSL: Command [hf vron;]
@@ -224,9 +223,9 @@ I (245311) BT_APP_HF: APP HFP event: AUDIO_STATE_EVT
 I (245311) BT_APP_HF: --Audio State connected
 ```
 
-#### Notify Device Notification
+#### Device Status Indication
 
-You can type `hf ind <call> <ntk> <callsetup> <sig>` to send device status of AG to HF Unit. Log on AG prints like:  `Device Indicator Changed!`  and on HF Unit side prints like:
+You can type `hf ind <call> <ntk> <callsetup> <sig>` to send device status of AG to HF Unit. Log on AG prints such as:  `Device Indicator Changed!`  and on HF Unit side prints such as:
 
 ```
 E (293641) BT_HF: APP HFP event: CALL_IND_EVT
@@ -237,26 +236,25 @@ E (293651) BT_HF: APP HFP event: SIGNAL_STRENGTH_IND_EVT
 E (293661) BT_HF: -- signal strength: 5
 ```
 
-**Note: AG only sends changed status to HF Unit.**
+**Note: The AG device sends only the changed status to the HF Unit.**
 
 #### Send Extended AT Error Code
 
-You can type `hf ate <rep> <err>` to send extended AT error code to HF Unit. Parameter set:
+You can type `hf ate <rep> <err>` to send extended AT error code to HF Unit. The parameter should be set as follows:
 
 - `<rep>` : integer among 0 - 7.
 - `<err>` : integer among 0 - 32.
 
-When you type `hf ate 7 7;` log on AG side prints like `Send CME Error.` and on HF Unit side prints like:
+When you type `hf ate 7 7;` the log on the AG side prints `Send CME Error.` while on the HF Unit side prints:
 
 ```
 E (448146) BT_HF: APP HFP event: AT_RESPONSE
 E (448146) BT_HF: --AT response event, code 7, cme 7
-
 ```
 
 #### In-Band Ring Tone Setting
 
-You can type `hf iron;` to enable in-band ring tone and type `hf iroff;` to disable in-band ring tone. Log on AG side prints like `Device Indicator Changed!` and on HF Unit side prints like:
+You can type `hf iron;` to enable the in-band ring tone and type `hf iroff;` to disable it. The log on the AG side prints such as `Device Indicator Changed!` and on HF Unit side it prints such as:
 
 ```
 E (19546) BT_HF: APP HFP event: IN-BAND_RING_TONE_EVT
@@ -268,17 +266,17 @@ E (19556) BT_HF: --in-band ring state Provided
 If you encounter any problems, please check if the following rules are followed:
 
 - You should type the command in the terminal according to the format described in the commands help table. 
-- Not all commands in the table are supported by HF Unit.
-- If you want to `hf con;` to establish a service level connection with specific HF Unit, you should add the MAC address of HF Unit in `app_hf_msg_set.c`, for example: `esp_bd_addr_t peer_addr = {0xb4, 0xe6, 0x2d, 0xeb, 0x09, 0x93};`
+- Not all commands in the table are supported by the HF Unit.
+- If you want to `hf con;` to establish a service level connection with a specific HF Unit, you should add the MAC address of the HF Unit in `app_hf_msg_set.c` for example: `esp_bd_addr_t peer_addr = {0xb4, 0xe6, 0x2d, 0xeb, 0x09, 0x93};`
 - Use `esp_hf_client_register_callback()` and  `esp_hf_client_init();` before  establishing a service level connection.
 
 ## Example Breakdown
 
-Due to the complexity of Hands Free Profile, this example has more source files than other bluetooth examples. To show functions of Hands Free Profile in a simple way, we use the Commands and Effects scheme to illustrate APIs of HFP in ESP-IDF.
+Due to the complexity of the HFP, this example has more source files than other bluetooth examples. To show the functions of HFP in a simple way, we use the Commands and Effects scheme to illustrate APIs of the HFP in ESP-IDF.
 
-- The example will respond to user command through UART console. Please go to `console_uart.c`  for the configuration details.
-- For voice interface, ESP32 has provided PCM input/output signals which can be mapped to GPIO pins, please go to `gpio_pcm_config.c` for the configuration details. 
+- The example will respond to user command through the UART console. Please go to `console_uart.c`  for the configuration details.
+- For the voice interface, ESP32 has provided PCM input/output signals which can be directed to GPIO pins. So, please go to `gpio_pcm_config.c` for the configuration details.
 - If you want to update the command table, please refer to `app_hf_msg_set.c`.
 - If you want to update the command parse rules, please refer to `app_hf_msg_prs.c`.
-- If you want to update the responses of AG or want to update the log, please refer to `bt_app_hf.c`.
-- Task configuration part is in `bt_app_core.c`.
+- If you want to update the responses of the AG or want to update the log, please refer to `bt_app_hf.c`.
+- The task configuration part is in `bt_app_core.c`.

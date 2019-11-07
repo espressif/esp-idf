@@ -30,7 +30,7 @@ void hf_msg_show_usage(void)
     printf("hf vu <tgt> <vol>;        -- volume update\n");
     printf("     tgt: 0-speaker, 1-microphone\n");
     printf("     vol: volume gain ranges from 0 to 15\n");
-    printf("hf ind <call> <ntk> <callsetup> <sig>;       -- unsolicited notify device notification to HF Client\n");
+    printf("hf ind <call> <ntk> <callsetup> <sig>;       -- unsolicited indication device status to HF Client\n");
     printf("     call: call status [0,1]\n");
     printf("     callsetup: call setup status [0,3]\n");
     printf("     ntk: network status [0,1]\n");

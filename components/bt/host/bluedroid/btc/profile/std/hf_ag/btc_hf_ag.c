@@ -1332,6 +1332,11 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         }
 
         case BTA_AG_AT_CBC_EVT:
+        {
+            btc_hf_cb_to_app(ESP_HF_IND_UPDATE_EVT, NULL);
+            break;
+        }
+
         case BTA_AG_AT_CIND_EVT:
         {
             btc_hf_cind_evt(&p_data->ind);
