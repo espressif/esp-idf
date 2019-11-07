@@ -53,6 +53,7 @@ tools/ci/test_configure_ci_environment.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
 tools/docker/entrypoint.sh
+tools/docker/hooks/build
 tools/elf_to_ld.sh
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py
