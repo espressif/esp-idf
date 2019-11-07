@@ -62,6 +62,7 @@ typedef struct {
     bool                        auto_reconnect;
     void                        *user_context;
     int                         network_timeout_ms;
+    char                        *subprotocol;
 } websocket_config_storage_t;
 
 typedef enum {
@@ -173,6 +174,11 @@ static esp_err_t esp_websocket_client_set_config(esp_websocket_client_handle_t c
         cfg->path = strdup(config->path);
         ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->path, return ESP_ERR_NO_MEM);
     }
+    if (config->subprotocol) {
+        free(cfg->subprotocol);
+        cfg->subprotocol = strdup(config->subprotocol);
+        ESP_WS_CLIENT_MEM_CHECK(TAG, cfg->subprotocol, return ESP_ERR_NO_MEM);
+    }
 
     cfg->network_timeout_ms = WEBSOCKET_NETWORK_TIMEOUT_MS;
     cfg->user_context = config->user_context;
@@ -200,10 +206,21 @@ static esp_err_t esp_websocket_client_destroy_config(esp_websocket_client_handle
     free(cfg->scheme);
     free(cfg->username);
     free(cfg->password);
+    free(cfg->subprotocol);
     memset(cfg, 0, sizeof(websocket_config_storage_t));
     free(client->config);
     client->config = NULL;
     return ESP_OK;
+}
+
+static void set_websocket_transport_optional_settings(esp_websocket_client_handle_t client, esp_transport_handle_t trans)
+{
+    if (trans && client->config->path) {
+        esp_transport_ws_set_path(trans, client->config->path);
+    }
+    if (trans && client->config->subprotocol) {
+        esp_transport_ws_set_subprotocol(trans, client->config->subprotocol);
+    }
 }
 
 esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_client_config_t *config)
@@ -224,6 +241,9 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
 
     client->lock = xSemaphoreCreateMutex();
     ESP_WS_CLIENT_MEM_CHECK(TAG, client->lock, goto _websocket_init_fail);
+
+    client->config = calloc(1, sizeof(websocket_config_storage_t));
+    ESP_WS_CLIENT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
 
     client->transport_list = esp_transport_list_init();
     ESP_WS_CLIENT_MEM_CHECK(TAG, client->transport_list, goto _websocket_init_fail);
@@ -260,13 +280,10 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
     esp_transport_set_default_port(wss, WEBSOCKET_SSL_DEFAULT_PORT);
 
     esp_transport_list_add(client->transport_list, wss, "wss");
-    if (config->transport == WEBSOCKET_TRANSPORT_OVER_TCP) {
+    if (config->transport == WEBSOCKET_TRANSPORT_OVER_SSL) {
         asprintf(&client->config->scheme, "wss");
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
     }
-
-    client->config = calloc(1, sizeof(websocket_config_storage_t));
-    ESP_WS_CLIENT_MEM_CHECK(TAG, client->config, goto _websocket_init_fail);
 
     if (config->uri) {
         if (esp_websocket_client_set_uri(client, config->uri) != ESP_OK) {
@@ -284,6 +301,9 @@ esp_websocket_client_handle_t esp_websocket_client_init(const esp_websocket_clie
         asprintf(&client->config->scheme, "ws");
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->scheme, goto _websocket_init_fail);
     }
+
+    set_websocket_transport_optional_settings(client, esp_transport_list_get_transport(client->transport_list, "ws"));
+    set_websocket_transport_optional_settings(client, esp_transport_list_get_transport(client->transport_list, "wss"));
 
     client->keepalive_tick_ms = _tick_get_ms();
     client->reconnect_tick_ms = _tick_get_ms();
@@ -374,15 +394,6 @@ esp_err_t esp_websocket_client_set_uri(esp_websocket_client_handle_t client, con
                     puri.field_data[UF_QUERY].len, uri + puri.field_data[UF_QUERY].off);
         }
         ESP_WS_CLIENT_MEM_CHECK(TAG, client->config->path, return ESP_ERR_NO_MEM);
-
-        esp_transport_handle_t trans = esp_transport_list_get_transport(client->transport_list, "ws");
-        if (trans) {
-            esp_transport_ws_set_path(trans, client->config->path);
-        }
-        trans = esp_transport_list_get_transport(client->transport_list, "wss");
-        if (trans) {
-            esp_transport_ws_set_path(trans, client->config->path);
-        }
     }
     if (puri.field_data[UF_PORT].off) {
         client->config->port = strtol((const char*)(uri + puri.field_data[UF_PORT].off), NULL, 10);

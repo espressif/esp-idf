@@ -207,18 +207,17 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
         ws_header[header_len++] = (uint8_t)((len >> 8) & 0xFF);
         ws_header[header_len++] = (uint8_t)((len >> 0) & 0xFF);
     }
-    if (len) {
-        if (mask_flag) {
-            mask = &ws_header[header_len];
-            getrandom(ws_header + header_len, 4, 0);
-            header_len += 4;
 
-            for (i = 0; i < len; ++i) {
-                buffer[i] = (buffer[i] ^ mask[i % 4]);
-            }
+    if (mask_flag) {
+        mask = &ws_header[header_len];
+        getrandom(ws_header + header_len, 4, 0);
+        header_len += 4;
+
+        for (i = 0; i < len; ++i) {
+            buffer[i] = (buffer[i] ^ mask[i % 4]);
         }
-
     }
+
     if (esp_transport_write(ws->parent, ws_header, header_len, timeout_ms) != header_len) {
         ESP_LOGE(TAG, "Error write header");
         return -1;
@@ -257,7 +256,7 @@ static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeou
         // This behaviour could however be altered in IDF 5.0, since a separate API for sending
         // messages with user defined opcodes has been introduced.
         ESP_LOGD(TAG, "Write PING message");
-        return _ws_write(t, WS_OPCODE_PING | WS_FIN, 0, NULL, 0, timeout_ms);
+        return _ws_write(t, WS_OPCODE_PING | WS_FIN, WS_MASK, NULL, 0, timeout_ms);
     }
     return _ws_write(t, WS_OPCODE_BINARY | WS_FIN, WS_MASK, b, len, timeout_ms);
 }
@@ -315,7 +314,7 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
     }
 
     // Then receive and process payload
-    if ((rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
+    if (payload_len != 0 && (rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
