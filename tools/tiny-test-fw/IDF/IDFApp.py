@@ -213,6 +213,8 @@ class Example(IDFApp):
             # search for CI build folders
             app = os.path.basename(app_path)
             example_path = os.path.join(self.idf_path, "build_examples", "example_builds")
+            # example_path has subdirectories named after targets. So we need to look into only the right
+            # subdirectory. Currently, the target is not known at this moment.
             for dirpath, dirnames, files in os.walk(example_path):
                 if dirnames:
                     if dirnames[0] == app:
