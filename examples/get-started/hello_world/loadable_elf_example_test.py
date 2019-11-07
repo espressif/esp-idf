@@ -64,8 +64,14 @@ class GDBProcess(CustomProcess):
                                  'Load failed'])
         if i == 0:
             Utility.console_log('gdb is at breakpoint')
+        elif i == 1:
+            raise RuntimeError('Load has failed. Please examine the logs.')
         else:
-            raise RuntimeError('Load failed: probably the ELF file was not built for loading with gdb')
+            Utility.console_log('i = {}'.format(i))
+            Utility.console_log(str(self.p))
+            # This really should not happen. TIMEOUT and EOF failures are exceptions.
+            raise RuntimeError('An unknown error has occurred. Please examine the logs.')
+
         self.p.expect_exact('(gdb)')
 
     def close(self):
@@ -114,8 +120,13 @@ def test_examples_loadable_elf(env, extra_data):
     idf_path = os.environ['IDF_PATH']
     rel_project_path = os.path.join('examples', 'get-started', 'hello_world')
     proj_path = os.path.join(idf_path, rel_project_path)
-    elf_path = os.path.join(IDF.Example(rel_project_path).get_binary_path(rel_project_path), 'hello-world.elf')
+    example = IDF.Example(rel_project_path)
+    sdkconfig = example.get_sdkconfig()
+    elf_path = os.path.join(example.get_binary_path(rel_project_path), 'hello-world.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
+
+    assert(sdkconfig['CONFIG_IDF_TARGET_ESP32'] == 'y'), "Only ESP32 target is supported"
+    assert(sdkconfig['CONFIG_APP_BUILD_TYPE_ELF_RAM'] == 'y'), "ELF should be built with CONFIG_APP_BUILD_TYPE_ELF_RAM"
 
     with SerialThread(esp_log_path):
         with OCDProcess(proj_path), GDBProcess(proj_path, elf_path) as gdb:
