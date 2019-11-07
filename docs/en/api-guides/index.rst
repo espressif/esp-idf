@@ -25,6 +25,7 @@ API Guides
     High Level Interrupts <hlinterrupts>
     JTAG Debugging <jtag-debugging/index>
     Linker Script Generation <linker-script-generation>
+    lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
     RF Calibration <RF_calibration>
     ROM debug console <romconsole>
@@ -35,5 +36,4 @@ API Guides
     ULP Coprocessor <ulp>
     Unit Testing (Legacy GNU Make) <unit-tests-legacy>
     Unit Testing <unit-tests>
-    LwIP <lwip>
     WiFi Driver <wifi>
