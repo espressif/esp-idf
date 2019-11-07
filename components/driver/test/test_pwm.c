@@ -666,7 +666,7 @@ TEST_CASE("MCPWM timer1 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeou
     }
 }
 
-TEST_CASE("MCPWM timer2 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180][ignore]")
+TEST_CASE("MCPWM timer2 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180]")
 {
 //    API just supports the high level trigger now, so comment it
 //    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
@@ -685,24 +685,7 @@ TEST_CASE("MCPWM timer2 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeou
     }
 }
 
-// to debug the "mcpwm_fault_deinit" case. The "MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXB_HIGH" scenario can work right
-// however, the mcpwm_fault_deinit can not release the status after "MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXB_LOW" scenario
-TEST_CASE("MCPWM timer0 one shot fault test single", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
-{
-    // API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
-    mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
-    mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
-
-    oneshot_fault_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-    		MCPWM_SELECT_F0, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_0,
-			action_a[0], action_b[2]);
-}
-
-// the mcpwm_fault_deinit can not release the status after "MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXB_LOW" scenario
-// set it ignore
-// same as the case "MCPWM timer1 one shot fault test" and case "MCPWM timer2 one shot fault test"
-TEST_CASE("MCPWM timer0 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60][ignore]")
+TEST_CASE("MCPWM timer0 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
     // API just supports the high level trigger now, so comment it
 //    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
@@ -722,7 +705,7 @@ TEST_CASE("MCPWM timer0 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][tim
     }
 }
 
-TEST_CASE("MCPWM timer1 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60][ignore]")
+TEST_CASE("MCPWM timer1 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
     // API just supports the high level trigger now, so comment it
 //    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
@@ -741,7 +724,7 @@ TEST_CASE("MCPWM timer1 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][tim
     }
 }
 
-TEST_CASE("MCPWM timer2 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60][ignore]")
+TEST_CASE("MCPWM timer2 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
 //    API just supports the high level trigger now, so comment it
 //    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
