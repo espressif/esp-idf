@@ -390,7 +390,9 @@
           ""
         ]
       ],
-      "export_vars": {},
+      "export_vars": {
+        "IDF_CCACHE_ENABLE": "1"
+      },
       "info_url": "https://github.com/ccache/ccache",
       "install": "never",
       "license": "GPL-3.0-or-later",
