@@ -38,9 +38,14 @@ string(REGEX REPLACE "[^\n]+$" ".byte \\0\n" data "${data}")                    
 string(REGEX REPLACE "[0-9a-f][0-9a-f]" "0x\\0, " data "${data}")                      # hex formatted C bytes
 string(REGEX REPLACE ", \n" "\n" data "${data}")                                       # trim the last comma
 
-## Come up with C-friendly symbol name based on source file
-get_filename_component(source_filename "${DATA_FILE}" NAME)
-string(MAKE_C_IDENTIFIER "${source_filename}" varname)
+## Come up with C-friendly variable name based on source file
+# unless VARIABLE_BASENAME is set
+if(NOT VARIABLE_BASENAME)
+    get_filename_component(source_filename "${DATA_FILE}" NAME)
+    string(MAKE_C_IDENTIFIER "${source_filename}" varname)
+else()
+    string(MAKE_C_IDENTIFIER "${VARIABLE_BASENAME}" varname)
+endif()
 
 function(append str)
     file(APPEND "${SOURCE_FILE}" "${str}")
