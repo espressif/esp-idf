@@ -29,7 +29,7 @@ SDKCONFIG_DEFAULTS ?= $(PROJECT_PATH)/sdkconfig.defaults
 $(KCONFIG_TOOL_DIR)/mconf-idf: $(KCONFIG_TOOL_DIR)/conf-idf
 
 # reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
-$(KCONFIG_TOOL_DIR)/mconf-idf $(KCONFIG_TOOL_DIR)/conf-idf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c)
+$(KCONFIG_TOOL_DIR)/mconf-idf $(KCONFIG_TOOL_DIR)/conf-idf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c) $(wildcard $(KCONFIG_TOOL_DIR)/*.y)
 	MAKEFLAGS="" CC=$(HOSTCC) LD=$(HOSTLD) \
 	$(MAKE) -C $(KCONFIG_TOOL_DIR)
 
@@ -70,7 +70,8 @@ define RunConfGen
 		$(DEFAULTS_ARG) \
 		--output config ${SDKCONFIG} \
 		--output makefile $(SDKCONFIG_MAKEFILE) \
-		--output header $(BUILD_DIR_BASE)/include/sdkconfig.h
+		--output header $(BUILD_DIR_BASE)/include/sdkconfig.h \
+		$1
 endef
 
 # macro for the commands to run kconfig tools conf-idf or mconf-idf.
@@ -107,23 +108,23 @@ ifdef BATCH_BUILD
 	@echo "See esp-idf documentation for more details."
 	@exit 1
 else
-	$(call RunConfGen)
-	# RunConfGen before mconf-idf ensures that deprecated options won't be ignored (they've got renamed)
+	$(call RunConfGen,--dont-write-deprecated)
+	# RunConfGen before menuconfig ensures that deprecated options won't be ignored (they've got renamed)
 	$(call RunConf,mconf-idf)
-	# RunConfGen after mconf-idf ensures that deprecated options are appended to $(SDKCONFIG) for backward compatibility
-	$(call RunConfGen)
+	# RunConfGen after menuconfig ensures that deprecated options are appended to $(SDKCONFIG) for backward compatibility
+	$(call RunConfGen,)
 endif
 
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
 defconfig: | check_python_dependencies
 	$(summary) DEFCONFIG
-	$(call RunConfGen)
+	$(call RunConfGen,)
 
 # if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
 # ensure generated config files are up to date
 $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | check_python_dependencies $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
 	$(summary) GENCONFIG
-	$(call RunConfGen)
+	$(call RunConfGen,)
 	touch $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h  # ensure newer than sdkconfig
 
 else  # "$(MAKE_RESTARTS)" != ""
