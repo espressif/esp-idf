@@ -67,6 +67,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
 
         set(SECURE_BOOT_SIGNING_KEY ${secure_boot_signing_key}) # needed by some other components
         set(sign_key_arg "-DSECURE_BOOT_SIGNING_KEY=${secure_boot_signing_key}")
+        set(ver_key_arg)
 
         add_dependencies(gen_secure_boot_keys gen_secure_boot_signing_key)
     else()
@@ -87,10 +88,14 @@ if(CONFIG_SECURE_SIGNED_APPS)
             add_custom_target(gen_secure_boot_verification_key)
         endif()
 
+        set(sign_key_arg)
         set(ver_key_arg "-DSECURE_BOOT_VERIFICATION_KEY=${secure_boot_verification_key}")
 
         add_dependencies(gen_secure_boot_keys gen_secure_boot_verification_key)
     endif()
+else()
+    set(sign_key_arg)
+    set(ver_key_arg)
 endif()
 
 idf_build_get_property(idf_path IDF_PATH)
@@ -110,7 +115,7 @@ externalproject_add(bootloader
                 # the bootloader common component requirements depends on this and
                 # config variables are not available before project() call.
                 -DLEGACY_INCLUDE_COMMON_HEADERS=${CONFIG_LEGACY_INCLUDE_COMMON_HEADERS}
-                ${EXTRA_CMAKE_ARGS}
+                ${extra_cmake_args}
     INSTALL_COMMAND ""
     BUILD_ALWAYS 1  # no easy way around this...
     BUILD_BYPRODUCTS ${bootloader_binary_files}

@@ -134,7 +134,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES ${priv_requires} esp_eth tcpip_adapter nvs_flash)
+                    PRIV_REQUIRES esp_eth tcpip_adapter nvs_flash)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
