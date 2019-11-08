@@ -126,9 +126,9 @@ def _detect_cmake_generator(prog_name):
     """
     Find the default cmake generator, if none was specified. Raises an exception if no valid generator is found.
     """
-    for (generator, _, version_check, _) in GENERATORS:
-        if executable_exists(version_check):
-            return generator
+    for (generator_name,  generator) in GENERATORS.items():
+        if executable_exists(generator["version"]):
+            return generator_name
     raise FatalError("To use %s, either the 'ninja' or 'GNU make' build tool must be available in the PATH" % prog_name)
 
 

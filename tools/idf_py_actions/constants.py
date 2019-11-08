@@ -16,17 +16,23 @@ else:
     MAKE_CMD = "make"
     MAKE_GENERATOR = "Unix Makefiles"
 
-GENERATORS = [
-    # ('generator name', 'build command line', 'version command line', 'verbose flag')
-    ("Ninja", ["ninja"], ["ninja", "--version"], "-v"),
-    (
-        MAKE_GENERATOR,
-        [MAKE_CMD, "-j", str(multiprocessing.cpu_count() + 2)],
-        [MAKE_CMD, "--version"],
-        "VERBOSE=1",
-    ),
-]
-GENERATOR_CMDS = dict((a[0], a[1]) for a in GENERATORS)
-GENERATOR_VERBOSE = dict((a[0], a[3]) for a in GENERATORS)
+GENERATORS = {
+    # - command: build command line
+    # - version: version command line
+    # - dry_run: command to run in dry run mode
+    # - verbose_flag: verbose flag
+    "Ninja": {
+        "command": ["ninja"],
+        "version": ["ninja", "--version"],
+        "dry_run": ["ninja", "-n"],
+        "verbose_flag": "-v"
+    },
+    MAKE_GENERATOR: {
+        "command": [MAKE_CMD, "-j", str(multiprocessing.cpu_count() + 2)],
+        "version": [MAKE_CMD, "--version"],
+        "dry_run": [MAKE_CMD, "-n"],
+        "verbose_flag": "VERBOSE=1",
+    }
+}
 
 SUPPORTED_TARGETS = ["esp32", "esp32s2beta"]
