@@ -114,17 +114,18 @@ void bootloader_random_enable(void)
 
 void bootloader_random_disable(void)
 {
-    /* Disable i2s clock */
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
-
-
     /* Reset some i2s configuration (possibly redundant as we reset entire
        I2S peripheral further down). */
+    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_START);
+    SET_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_RESET);
+    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_RESET);
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_CAMERA_EN);
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_LCD_EN);
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE_TEST_EN);
     CLEAR_PERI_REG_MASK(I2S_CONF2_REG(0), I2S_DATA_ENABLE);
-    CLEAR_PERI_REG_MASK(I2S_CONF_REG(0), I2S_RX_START);
+
+    /* Disable i2s clock */
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
 
     /* Restore SYSCON mode registers */
     CLEAR_PERI_REG_MASK(SENS_SAR_READ_CTRL_REG, SENS_SAR1_DIG_FORCE);
