@@ -48,14 +48,13 @@
 #include "mbrtu.h"
 #endif
 #if MB_MASTER_ASCII_ENABLED == 1
-#include "mbascii.h"
+#include "mbascii_m.h"
 #endif
 #if MB_MASTER_TCP_ENABLED == 1
 #include "mbtcp.h"
 #endif
 
 #if MB_MASTER_RTU_ENABLED > 0 || MB_MASTER_ASCII_ENABLED > 0
-
 
 #ifndef MB_PORT_HAS_CLOSE
 #define MB_PORT_HAS_CLOSE 1
@@ -269,15 +268,13 @@ eMBMasterPoll( void )
     eMBMasterErrorEventType errorType;
 
     /* Check if the protocol stack is ready. */
-    if( eMBState != STATE_ENABLED )
-    {
+    if( eMBState != STATE_ENABLED ) {
         return MB_EILLSTATE;
     }
 
     /* Check if there is a event available. If not return control to caller.
      * Otherwise we will handle the event. */
-    if( xMBMasterPortEventGet( &eEvent ) == TRUE )
-    {
+    if( xMBMasterPortEventGet( &eEvent ) == TRUE ) {
         switch ( eEvent )
         {
         case EV_MASTER_NO_EVENT:
@@ -303,13 +300,10 @@ eMBMasterPoll( void )
         case EV_MASTER_FRAME_RECEIVED:
             eStatus = peMBMasterFrameReceiveCur( &ucRcvAddress, &ucMBFrame, &usLength );
             // Check if the frame is for us. If not ,send an error process event.
-            if ( ( eStatus == MB_ENOERR ) && ( ucRcvAddress == ucMBMasterGetDestAddress() ) )
-            {
+            if ( ( eStatus == MB_ENOERR ) && ( ucRcvAddress == ucMBMasterGetDestAddress() ) ) {
                 ESP_LOGD(MB_PORT_TAG, "%s: Packet data received successfully (%u).", __func__, eStatus);
                 ( void ) xMBMasterPortEventPost( EV_MASTER_EXECUTE );
-            }
-            else
-            {
+            } else {
                 vMBMasterSetErrorType(EV_ERROR_RECEIVE_DATA);
                 ESP_LOGD(MB_PORT_TAG, "%s: Packet data receive failed (addr=%u)(%u).", __func__, ucRcvAddress, eStatus);
                 ( void ) xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
@@ -322,13 +316,10 @@ eMBMasterPoll( void )
             /* If receive frame has exception. The receive function code highest bit is 1.*/
             if(ucFunctionCode >> 7) {
                 eException = (eMBException)ucMBFrame[MB_PDU_DATA_OFF];
-            }
-            else
-            {
-                for (i = 0; i < MB_FUNC_HANDLERS_MAX; i++)
-                {
+            } else {
+                for (i = 0; i < MB_FUNC_HANDLERS_MAX; i++) {
                     /* No more function handlers registered. Abort. */
-                    if (xMasterFuncHandlers[i].ucFunctionCode == 0)    {
+                    if (xMasterFuncHandlers[i].ucFunctionCode == 0) {
                         break;
                     }
                     else if (xMasterFuncHandlers[i].ucFunctionCode == ucFunctionCode) {
@@ -342,8 +333,7 @@ eMBMasterPoll( void )
                                 vMBMasterSetDestAddress(j);
                                 eException = xMasterFuncHandlers[i].pxHandler(ucMBFrame, &usLength);
                             }
-                        }
-                        else {
+                        } else {
                             eException = xMasterFuncHandlers[i].pxHandler(ucMBFrame, &usLength);
                         }
                         vMBMasterSetCBRunInMasterMode(FALSE);
@@ -355,8 +345,7 @@ eMBMasterPoll( void )
             if (eException != MB_EX_NONE) {
                 vMBMasterSetErrorType(EV_ERROR_EXECUTE_FUNCTION);
                 ( void ) xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
-            }
-            else {
+            } else {
                 vMBMasterCBRequestSuccess( );
                 vMBMasterRunResRelease( );
             }
@@ -366,8 +355,7 @@ eMBMasterPoll( void )
             /* Master is busy now. */
             vMBMasterGetPDUSndBuf( &ucMBFrame );
             eStatus = peMBMasterFrameSendCur( ucMBMasterGetDestAddress(), ucMBFrame, usMBMasterGetPDUSndLength() );
-            if (eStatus != MB_ENOERR)
-            {
+            if (eStatus != MB_ENOERR) {
                 ESP_LOGD(MB_PORT_TAG, "%s:Frame send error. %d", __func__, eStatus);
             }
 
@@ -438,7 +426,7 @@ eMBMasterErrorEventType eMBMasterGetErrorType( void )
 }
 
 // Set Modbus Master current error event type.
-void vMBMasterSetErrorType( eMBMasterErrorEventType errorType )
+void IRAM_ATTR vMBMasterSetErrorType( eMBMasterErrorEventType errorType )
 {
     eMBMasterCurErrorType = errorType;
 }

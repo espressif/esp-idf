@@ -113,7 +113,7 @@ eMBASCIIInit( UCHAR ucSlaveAddress, UCHAR ucPort, ULONG ulBaudRate, eMBParity eP
     ENTER_CRITICAL_SECTION(  );
     ucMBLFCharacter = MB_ASCII_DEFAULT_LF;
 
-    if( xMBPortSerialInit( ucPort, ulBaudRate, 7, eParity ) != TRUE )
+    if( xMBPortSerialInit( ucPort, ulBaudRate, 8, eParity ) != TRUE )
     {
         eStatus = MB_EPORTERR;
     }
@@ -388,27 +388,21 @@ xMBASCIITransmitFSM( void )
          * been sent. */
     case STATE_TX_NOTIFY:
         eSndState = STATE_TX_IDLE;
-        xNeedPoll = xMBPortEventPost( EV_FRAME_SENT );
+        xMBPortEventPost( EV_FRAME_SENT );
+        xNeedPoll = TRUE;
 
-        /* Disable transmitter. This prevents another transmit buffer
-         * empty interrupt. */
-        vMBPortSerialEnable( TRUE, FALSE );
-        eSndState = STATE_TX_IDLE;
         break;
 
         /* We should not get a transmitter event if the transmitter is in
          * idle state.  */
     case STATE_TX_IDLE:
-        /* enable receiver/disable transmitter. */
-        vMBPortSerialEnable( TRUE, FALSE );
         break;
     }
 
     return xNeedPoll;
 }
 
-BOOL
-xMBASCIITimerT1SExpired( void )
+BOOL MB_PORT_ISR_ATTR xMBASCIITimerT1SExpired( void )
 {
     switch ( eRcvState )
     {
@@ -421,7 +415,8 @@ xMBASCIITimerT1SExpired( void )
         break;
 
     default:
-        assert( ( eRcvState == STATE_RX_RCV ) || ( eRcvState == STATE_RX_WAIT_EOF ) );
+        assert( ( eRcvState == STATE_RX_RCV ) || ( eRcvState == STATE_RX_WAIT_EOF )
+                        || (eRcvState == STATE_RX_IDLE ));
         break;
     }
     vMBPortTimersDisable(  );

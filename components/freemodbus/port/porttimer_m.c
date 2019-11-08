@@ -109,7 +109,7 @@ BOOL xMBMasterPortTimersInit(USHORT usTimeOut50us)
                     (uint32_t)xErr);
     // Register ISR for timer
     xErr = timer_isr_register(usTimerGroupIndex, usTimerIndex,
-                                vTimerGroupIsr, (void*)(uint32_t)usTimerIndex, ESP_INTR_FLAG_LOWMED, &xTimerIntHandle);
+                                vTimerGroupIsr, (void*)(uint32_t)usTimerIndex, MB_PORT_TIMER_ISR_FLAG, &xTimerIntHandle);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                     "timer set value failure, timer_isr_register() returned (0x%x).",
                     (uint32_t)xErr);
@@ -179,13 +179,18 @@ void vMBMasterPortTimersRespondTimeoutEnable(void)
     (void)xMBMasterPortTimersEnable(usTimerTicks);
 }
 
-void vMBMasterPortTimersDisable(void)
+void MB_PORT_ISR_ATTR
+vMBMasterPortTimersDisable()
 {
-    // Stop timer and then reload timer counter value
-    ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
-    ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));
-    // Disable timer interrupt
-    ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
+    if( (BOOL)xPortInIsrContext() ) {
+        timer_group_set_counter_enable_in_isr(usTimerGroupIndex, usTimerIndex, TIMER_PAUSE);
+    } else {
+        // Stop timer and then reload timer counter value
+        ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
+        ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));
+        // Disable timer interrupt
+        ESP_ERROR_CHECK(timer_disable_intr(usTimerGroupIndex, usTimerIndex));
+    }
 }
 
 void vMBMasterPortTimerClose(void)
