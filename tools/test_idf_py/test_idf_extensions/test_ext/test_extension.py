@@ -20,5 +20,9 @@ def action_extensions(base_actions, project_path=os.getcwd()):
                 "callback": test_callback,
                 "help": "Help for test subcommand.",
             },
-        },
+            "hidden_one": {
+                "callback": test_callback,
+                "hidden": True
+            }
+        }
     }
