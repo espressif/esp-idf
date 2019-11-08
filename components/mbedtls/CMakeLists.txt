@@ -2,7 +2,7 @@ idf_build_get_property(idf_target IDF_TARGET)
 
 idf_component_register(INCLUDE_DIRS "port/include" "mbedtls/include"
     REQUIRES lwip
-    PRIV_REQUIRES ${IDF_COMPONENT_REQUIRES_COMMON} soc
+    PRIV_REQUIRES soc
     )
 
 # Only build mbedtls libraries
