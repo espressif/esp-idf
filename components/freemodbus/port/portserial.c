@@ -67,6 +67,8 @@
 #define MB_SERIAL_TASK_STACK_SIZE   (CONFIG_FMB_SERIAL_TASK_STACK_SIZE)
 #define MB_SERIAL_TOUT              (3) // 3.5*8 = 28 ticks, TOUT=3 -> ~24..33 ticks
 
+#define MB_SERIAL_TX_TOUT_MS        (100)
+#define MB_SERIAL_TX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS) // timeout for transmission
 // Set buffer size for transmission
 #define MB_SERIAL_BUF_SIZE          (CONFIG_FMB_SERIAL_BUF_SIZE)
 
@@ -125,14 +127,13 @@ static void vMBPortSerialRxPoll(size_t xEventSize)
             // Let the stack know that T3.5 time is expired and data is received
             (void)pxMBPortCBTimerExpired(); // calls callback xMBRTUTimerT35Expired();
 #endif
-            ESP_LOGD(TAG, "RX_T35_timeout: %d(bytes in buffer)\n", (uint32_t)usLength);
+            ESP_LOGD(TAG, "Receive: %d(bytes in buffer)\n", (uint32_t)usLength);
         }
     }
 }
 
 BOOL xMBPortSerialTxPoll(void)
 {
-    BOOL bStatus = FALSE;
     USHORT usCount = 0;
     BOOL bNeedPoll = FALSE;
 
@@ -142,10 +143,14 @@ BOOL xMBPortSerialTxPoll(void)
             // Calls the modbus stack callback function to let it fill the UART transmit buffer.
             bNeedPoll = pxMBFrameCBTransmitterEmpty( ); // calls callback xMBRTUTransmitFSM();
         }
-        ESP_LOGD(TAG, "MB_TX_buffer sent: (%d) bytes\n", (uint16_t)usCount);
-        bStatus = TRUE;
+        ESP_LOGD(TAG, "MB_TX_buffer send: (%d) bytes\n", (uint16_t)usCount);
+        // Waits while UART sending the packet
+        esp_err_t xTxStatus = uart_wait_tx_done(ucUartNumber, MB_SERIAL_TX_TOUT_TICKS);
+        vMBPortSerialEnable(TRUE, FALSE);
+        MB_PORT_CHECK((xTxStatus == ESP_OK), FALSE, "mb serial sent buffer failure.");
+        return TRUE;
     }
-    return bStatus;
+    return FALSE;
 }
 
 static void vUartTask(void *pvParameters)
@@ -154,7 +159,6 @@ static void vUartTask(void *pvParameters)
     for(;;) {
         if (xQueueReceive(xMbUartQueue, (void*)&xEvent, portMAX_DELAY) == pdTRUE) {
             ESP_LOGD(TAG, "MB_uart[%d] event:", ucUartNumber);
-            //vMBPortTimersEnable();
             switch(xEvent.type) {
                 //Event of UART receving data
                 case UART_DATA:
@@ -246,7 +250,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
             FALSE, "mb config failure, uart_param_config() returned (0x%x).", (uint32_t)xErr);
     // Install UART driver, and get the queue.
     xErr = uart_driver_install(ucUartNumber, MB_SERIAL_BUF_SIZE, MB_SERIAL_BUF_SIZE,
-            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LEVEL3);
+                                    MB_QUEUE_LENGTH, &xMbUartQueue, MB_PORT_SERIAL_ISR_FLAG);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
 #ifndef MB_TIMER_PORT_ENABLED
