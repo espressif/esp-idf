@@ -48,7 +48,7 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                         -DIDF_PATH=${idf_path}
                         -DSDKCONFIG=${SDKCONFIG_HEADER}
                         -DPYTHON=${python}
-                        ${EXTRA_CMAKE_ARGS}
+                        ${extra_cmake_args}
             BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
             BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
                             ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
