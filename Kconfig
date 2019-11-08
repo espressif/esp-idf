@@ -20,7 +20,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         # the build system is responsible for detecting the mismatch between
         # CONFIG_IDF_TARGET and $IDF_TARGET.
         string
-        default "$(IDF_TARGET)"
+        default "$IDF_TARGET"
 
     config IDF_TARGET_ESP32
         bool
