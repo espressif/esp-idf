@@ -48,7 +48,11 @@ static void modbus_slave_task(void *pvParameters)
         // Check if stack started then poll for data
         if (status & MB_EVENT_STACK_STARTED) {
             (void)eMBPoll(); // allow stack to process data
-            (void)xMBPortSerialTxPoll(); // Send response buffer if ready
+            // Send response buffer
+            BOOL xSentState = xMBPortSerialTxPoll(); 
+            if (xSentState) {
+                (void)xMBPortEventPost( EV_FRAME_SENT );
+            }
         }
     }
 }

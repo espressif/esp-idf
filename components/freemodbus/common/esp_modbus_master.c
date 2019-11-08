@@ -45,7 +45,7 @@ esp_err_t mbc_master_init(mb_port_type_t port_type, void** handler)
     MB_MASTER_CHECK((port_handler != NULL),
                     ESP_ERR_INVALID_STATE,
                     "Master interface initialization failure, error=(0x%x), port type=(0x%x).",
-                    (uint16_t)error, (uint16_t)port_type);
+                    error, (uint16_t)port_type);
 
     if ((port_handler != NULL) && (error == ESP_OK)) {
         master_interface_ptr = (mb_master_interface_t*) port_handler;
@@ -106,9 +106,9 @@ esp_err_t mbc_master_get_parameter(uint16_t cid, char* name, uint8_t* value, uin
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->get_parameter(cid, name, value, type);
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL master get parameter failure error=(0x%x).", 
-                    (uint16_t)error);
+                    error,
+                    "SERIAL master get parameter failure error=(0x%x) (%s).",
+                    error, esp_err_to_name(error));
     return error;
 }
 
@@ -126,10 +126,10 @@ esp_err_t mbc_master_send_request(mb_param_request_t* request, void* data_ptr)
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->send_request(request, data_ptr);
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL master get parameter failure error=(0x%x).", 
-                    (uint16_t)error);
-    return error;
+                    error,
+                    "SERIAL master send request failure error=(0x%x) (%s).",
+                    error, esp_err_to_name(error));
+    return ESP_OK;
 }
 
 /**
@@ -146,10 +146,10 @@ esp_err_t mbc_master_set_descriptor(const mb_parameter_descriptor_t* descriptor,
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->set_descriptor(descriptor, num_elements);
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL master set descriptor failure error=(0x%x).", 
-                    (uint16_t)error);
-    return error;
+                    error,
+                    "SERIAL master set descriptor failure error=(0x%x) (%s).",
+                    error, esp_err_to_name(error));
+    return ESP_OK;
 }
 
 /**
@@ -166,10 +166,10 @@ esp_err_t mbc_master_set_parameter(uint16_t cid, char* name, uint8_t* value, uin
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->set_parameter(cid, name, value, type);
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL master set parameter failure error=(0x%x).", 
-                    (uint16_t)error);
-    return error;
+                    error,
+                    "SERIAL master set parameter failure error=(0x%x) (%s).",
+                    error, esp_err_to_name(error));
+    return ESP_OK;
 }
 
 /**
@@ -186,10 +186,10 @@ esp_err_t mbc_master_setup(void* comm_info)
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->setup(comm_info);
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL master setup failure error=(0x%x).", 
-                    (uint16_t)error);
-    return error;
+                    error,
+                    "SERIAL master setup failure error=(0x%x) (%s).",
+                    error, esp_err_to_name(error));
+    return ESP_OK;
 }
 
 /**
@@ -206,10 +206,10 @@ esp_err_t mbc_master_start(void)
                     "Master interface is not correctly initialized.");
     error = master_interface_ptr->start();
     MB_MASTER_CHECK((error == ESP_OK), 
-                    ESP_ERR_INVALID_STATE, 
-                    "SERIAL master start failure error=(0x%x).", 
-                    (uint16_t)error);
-    return error;
+                    error,
+                    "SERIAL master start failure error=(0x%x) (%s).",
+                    error, esp_err_to_name(error));
+    return ESP_OK;
 }
 
 eMBErrorCode eMBMasterRegDiscreteCB(UCHAR * pucRegBuffer, USHORT usAddress,

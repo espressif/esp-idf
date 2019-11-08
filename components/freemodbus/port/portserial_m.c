@@ -114,7 +114,7 @@ static void vMBMasterPortSerialRxPoll(size_t xEventSize)
             }
             // The buffer is transferred into Modbus stack and is not needed here any more
             uart_flush_input(ucUartNumber);
-            ESP_LOGD(TAG, "RX_T35_timeout: %d(bytes in buffer)\n", (uint32_t)usLength);
+            ESP_LOGD(TAG, "Receive: %d(bytes in buffer)\n", (uint32_t)usLength);
         }
     } else {
         ESP_LOGE(TAG, "%s: bRxState disabled but junk data (%d bytes) received. ", __func__, (uint16_t)xEventSize);
@@ -123,7 +123,6 @@ static void vMBMasterPortSerialRxPoll(size_t xEventSize)
 
 BOOL xMBMasterPortSerialTxPoll(void)
 {
-    BOOL bStatus = FALSE;
     USHORT usCount = 0;
     BOOL bNeedPoll = FALSE;
 
@@ -137,10 +136,11 @@ BOOL xMBMasterPortSerialTxPoll(void)
         // Waits while UART sending the packet
         esp_err_t xTxStatus = uart_wait_tx_done(ucUartNumber, MB_SERIAL_TX_TOUT_TICKS);
         bTxStateEnabled = FALSE;
+        vMBMasterPortSerialEnable( TRUE, FALSE );
         MB_PORT_CHECK((xTxStatus == ESP_OK), FALSE, "mb serial sent buffer failure.");
-        bStatus = TRUE;
+        return TRUE;
     }
-    return bStatus;
+    return FALSE;
 }
 
 // UART receive event task
@@ -241,7 +241,7 @@ BOOL xMBMasterPortSerialInit( UCHAR ucPORT, ULONG ulBaudRate, UCHAR ucDataBits, 
             FALSE, "mb config failure, uart_param_config() returned (0x%x).", (uint32_t)xErr);
     // Install UART driver, and get the queue.
     xErr = uart_driver_install(ucUartNumber, MB_SERIAL_BUF_SIZE, MB_SERIAL_BUF_SIZE,
-            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LEVEL3);
+                                    MB_QUEUE_LENGTH, &xMbUartQueue, MB_PORT_SERIAL_ISR_FLAG);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
     // Set timeout for TOUT interrupt (T3.5 modbus time)

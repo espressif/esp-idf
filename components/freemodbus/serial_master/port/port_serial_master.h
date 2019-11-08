@@ -55,7 +55,7 @@
 #ifdef __cplusplus
 PR_BEGIN_EXTERN_C
 #endif /* __cplusplus */
-   
+
 void vMBPortSetMode( UCHAR ucMode );
 
 #ifdef __cplusplus
