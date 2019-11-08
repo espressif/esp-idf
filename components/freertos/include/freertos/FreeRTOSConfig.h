@@ -176,14 +176,10 @@ int xt_clock_freq(void) __attribute__((deprecated));
 //#define configCPU_CLOCK_HZ				80000000
 
 /* This has impact on speed of search for highest priority */
-#ifdef configUSE_PORT_OPTIMISED_TASK_SELECTION
 #ifdef SMALL_TEST
 #define configMAX_PRIORITIES			( 7 )
 #else
 #define configMAX_PRIORITIES			( 25 )
-#endif
-#else 
-#define configMAX_PRIORITIES			( 32 )
 #endif
 
 #ifndef CONFIG_APPTRACE_ENABLE

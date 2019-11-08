@@ -368,7 +368,7 @@ PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ portNUM_PROCESSORS
 																										\
 		/* listGET_OWNER_OF_NEXT_ENTRY indexes through the list, so the tasks of						\
 		the	same priority get an equal share of the processor time. */									\
-		listGET_OWNER_OF_NEXT_ENTRY( xTaskGetCurrentTaskHandle(), &( pxReadyTasksLists[ uxTopReadyPriority ] ) );		\
+		listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[xPortGetCoreID()], &( pxReadyTasksLists[ uxTopReadyPriority ] ) );		\
 	} /* taskSELECT_HIGHEST_PRIORITY_TASK */
 
 	/*-----------------------------------------------------------*/
@@ -397,7 +397,7 @@ PRIVILEGED_DATA static volatile BaseType_t xSwitchingContext[ portNUM_PROCESSORS
 		/* Find the highest priority queue that contains ready tasks. */							\
 		portGET_HIGHEST_PRIORITY( uxTopPriority, uxTopReadyPriority );								\
 		configASSERT( listCURRENT_LIST_LENGTH( &( pxReadyTasksLists[ uxTopPriority ] ) ) > 0 );		\
-		listGET_OWNER_OF_NEXT_ENTRY( xTaskGetCurrentTaskHandle(), &( pxReadyTasksLists[ uxTopPriority ] ) );		\
+		listGET_OWNER_OF_NEXT_ENTRY( pxCurrentTCB[xPortGetCoreID()], &( pxReadyTasksLists[ uxTopPriority ] ) );		\
 	} /* taskSELECT_HIGHEST_PRIORITY_TASK() */
 
 	/*-----------------------------------------------------------*/
@@ -2723,7 +2723,7 @@ void vTaskSwitchContext( void )
 	//Theoretically, this is only called from either the tick interrupt or the crosscore interrupt, so disabling
 	//interrupts shouldn't be necessary anymore. Still, for safety we'll leave it in for now.
 	int irqstate=portENTER_CRITICAL_NESTED();
-	tskTCB * pxTCB;
+
 	if( uxSchedulerSuspended[ xPortGetCoreID() ] != ( UBaseType_t ) pdFALSE )
 	{
 		/* The scheduler is currently suspended - do not allow a context
@@ -2782,16 +2782,12 @@ void vTaskSwitchContext( void )
 		vPortCPUAcquireMutex( &xTaskQueueMutex );
 #endif
 
+#if !CONFIG_FREERTOS_UNICORE
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
+		tskTCB * pxTCB;
 
-#if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
-		portBASE_TYPE uxDynamicTopReady;
-		portGET_HIGHEST_PRIORITY( uxDynamicTopReady, uxTopReadyPriority );
-		portBASE_TYPE uxCopyOfTopReadyPrio = uxDynamicTopReady;
-#else 
 		portBASE_TYPE uxDynamicTopReady = uxTopReadyPriority;
-#endif
 		/*
 		 *  ToDo: This scheduler doesn't correctly implement the round-robin scheduling as done in the single-core
 		 *  FreeRTOS stack when multiple tasks have the same priority and are all ready; it just keeps grabbing the
@@ -2867,18 +2863,19 @@ void vTaskSwitchContext( void )
 					}
 				} while ((ableToSchedule == pdFALSE) && (pxTCB != pxRefTCB));
 			} else {
-				if (!holdTop) {
-					#if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1					
-						portRESET_READY_PRIORITY( uxCopyOfTopReadyPrio,uxTopReadyPriority );
-						portGET_HIGHEST_PRIORITY( uxCopyOfTopReadyPrio,uxTopReadyPriority );
-					#else
-						uxTopReadyPriority--;
-					#endif
-				}
+				if (!holdTop)  uxTopReadyPriority--;
 			}
 			--uxDynamicTopReady;
 		}
 
+#else 
+		//For Unicore targets we can keep the current FreeRTOS O(1)
+		//Scheduler. I hope to optimize better the scheduler for 
+		//Multicore settings -- This will involve to create a per
+		//affinity ready task list which will impact hugely on 
+		//tasks module
+		taskSELECT_HIGHEST_PRIORITY_TASK();
+#endif
 		traceTASK_SWITCHED_IN();
         xSwitchingContext[ xPortGetCoreID() ] = pdFALSE;
 
@@ -2889,6 +2886,7 @@ void vTaskSwitchContext( void )
 #else
 		vPortCPUReleaseMutex( &xTaskQueueMutex );
 #endif
+
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
 		vPortSetStackWatchpoint(pxCurrentTCB[xPortGetCoreID()]->pxStack);

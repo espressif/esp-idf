@@ -77,4 +77,4 @@
 #endif //CONFIG_IDF_TARGET_ESP32S2BETA
 
 //time to perform the task selection plus context switch (from task)
-#define IDF_PERFORMANCE_MAX_SCHEDULING_TIME                                     4500
+#define IDF_PERFORMANCE_MAX_SCHEDULING_TIME                                     1500
