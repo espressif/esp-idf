@@ -46,6 +46,10 @@ entries:
 
 [sections:wifi_iram]
 entries:
+    .wifirxiram+
+
+[sections:wifi_rx_iram]
+entries:
     .wifi0iram+
 
 [scheme:default]
@@ -62,6 +66,7 @@ entries:
     rtc_rodata -> rtc_data
     rtc_bss -> rtc_bss
     wifi_iram -> flash_text
+    wifi_rx_iram -> flash_text
 
 [scheme:rtc]
 entries:
@@ -87,3 +92,7 @@ entries:
 [scheme:wifi_iram]
 entries:
     wifi_iram -> iram0_text
+
+[scheme:wifi_rx_iram]
+entries:
+    wifi_rx_iram -> iram0_text
