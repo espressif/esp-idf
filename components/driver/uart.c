@@ -836,6 +836,7 @@ static void uart_rx_intr_handler_default(void *param)
                         if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
                             UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
                             uart_reg->conf0.sw_rts = 0;
+							uart_reg->int_clr.tx_done = 1;
                             uart_reg->int_ena.tx_done = 1;
                             UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
                         }
@@ -1113,7 +1114,7 @@ static int uart_fill_fifo(uart_port_t uart_num, const char* buffer, uint32_t len
     // Set the RTS pin if RS485 mode is enabled
     if (UART_IS_MODE_SET(uart_num, UART_MODE_RS485_HALF_DUPLEX)) {
         UART[uart_num]->conf0.sw_rts = 0;
-        uart_clear_intr_status(uart_num, UART_TX_DONE_INT_CLR_M);	// Clear interrupt before enabling to fix (IDFGH-1983)
+		UART[uart_num]->int_clr.tx_done = 1;
         UART[uart_num]->int_ena.tx_done = 1;
     }
     for (i = 0; i < copy_cnt; i++) {
