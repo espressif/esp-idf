@@ -3,6 +3,8 @@ The latest support policy for ESP-IDF can be found at [https://github.com/espres
 Support Period Policy
 =====================
 
+* [中文版](./SUPPORT_POLICY_CN.md)
+
 Each ESP-IDF major and minor release (V4.0, V4.1, etc) is supported for
 18 months after the initial stable release date.
 
