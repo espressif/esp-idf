@@ -35,12 +35,16 @@ try:
 except KeyError:
     builddir = '_build'
 
+builddir = os.path.abspath(builddir)
+
 # Fill in a default IDF_PATH if it's missing (ie when Read The Docs is building the docs)
 try:
     idf_path = os.environ['IDF_PATH']
 except KeyError:
     idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
+# Set the idf_target chip. This is a hack right now.
+idf_target = 'esp32s2'
 
 def call_with_python(cmd):
     # using sys.executable ensures that the scripts are called with the same Python interpreter
@@ -59,70 +63,6 @@ copy_if_modified('xml/', 'xml_in/')
 
 # Generate 'api_name.inc' files using the XML files by Doxygen
 call_with_python('../gen-dxd.py')
-
-
-def find_component_files(parent_dir, target_filename):
-    parent_dir = os.path.abspath(parent_dir)
-    result = []
-
-    component_files = dict()
-
-    for (dirpath, dirnames, filenames) in os.walk(parent_dir):
-        try:
-            # note: trimming "examples" dir as MQTT submodule
-            # has its own examples directory in the submodule, not part of IDF
-            dirnames.remove("examples")
-        except ValueError:
-            pass
-        if target_filename in filenames:
-            component_files[os.path.basename(dirpath)] = os.path.join(dirpath, target_filename)
-
-    components = sorted(component_files.keys())
-
-    for component in components:
-        result.append(component_files[component])
-
-    print("List of %s: %s" % (target_filename, ", ".join(components)))
-    return result
-
-
-# Generate 'kconfig.inc' file from components' Kconfig files
-print("Generating kconfig.inc from kconfig contents")
-kconfig_inc_path = '{}/inc/kconfig.inc'.format(builddir)
-temp_sdkconfig_path = '{}/sdkconfig.tmp'.format(builddir)
-
-kconfigs = find_component_files("../../components", "Kconfig")
-kconfig_projbuilds = find_component_files("../../components", "Kconfig.projbuild")
-sdkconfig_renames = find_component_files("../../components", "sdkconfig.rename")
-
-kconfigs_source_path = '{}/inc/kconfigs_source.in'.format(builddir)
-kconfig_projbuilds_source_path = '{}/inc/kconfig_projbuilds_source.in'.format(builddir)
-
-prepare_kconfig_files_args = [sys.executable,
-                              "../../tools/kconfig_new/prepare_kconfig_files.py",
-                              "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
-                              "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
-                              "--env", "COMPONENT_KCONFIGS_SOURCE_FILE={}".format(kconfigs_source_path),
-                              "--env", "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE={}".format(kconfig_projbuilds_source_path),
-                              ]
-subprocess.check_call(prepare_kconfig_files_args)
-
-confgen_args = [sys.executable,
-                "../../tools/kconfig_new/confgen.py",
-                "--kconfig", "../../Kconfig",
-                "--sdkconfig-rename", "../../sdkconfig.rename",
-                "--config", temp_sdkconfig_path,
-                "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
-                "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
-                "--env", "COMPONENT_SDKCONFIG_RENAMES={}".format(" ".join(sdkconfig_renames)),
-                "--env", "COMPONENT_KCONFIGS_SOURCE_FILE={}".format(kconfigs_source_path),
-                "--env", "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE={}".format(kconfig_projbuilds_source_path),
-                "--env", "IDF_PATH={}".format(idf_path),
-                "--env", "IDF_TARGET={}".format(os.environ.get('IDF_TARGET', 'esp32')),
-                "--output", "docs", kconfig_inc_path + '.in'
-                ]
-subprocess.check_call(confgen_args)
-copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
 
 # Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
 esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(builddir)
@@ -176,6 +116,8 @@ extensions = ['breathe',
               'sphinxcontrib.rackdiag',
               'sphinxcontrib.packetdiag',
               'html_redirects',
+              'idf_build_system',
+              'kconfig_reference',
               'sphinx.ext.todo',
               ]
 
