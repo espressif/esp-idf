@@ -83,13 +83,14 @@ void  wpa_config_profile(void)
 
 int wpa_config_bss(uint8_t *bssid)
 {
+    int ret = 0;
     struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
     u8 mac[6];
 
     esp_wifi_get_macaddr_internal(0, mac);
-    wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
+    ret = wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
                 (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
-    return ESP_OK;
+    return ret;
 }
 
 void  wpa_config_assoc_ie(u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len)
@@ -151,8 +152,10 @@ bool  wpa_deattach(void)
 
 void  wpa_sta_connect(uint8_t *bssid)
 {
+    int ret = 0;
     wpa_config_profile();
-    wpa_config_bss(bssid);
+    ret = wpa_config_bss(bssid);
+    WPA_ASSERT(ret == 0);
 }
 
 int cipher_type_map(int wpa_cipher)
