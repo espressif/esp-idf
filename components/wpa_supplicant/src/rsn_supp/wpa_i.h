@@ -163,7 +163,7 @@ void eapol_txcb(void *eb);
 
 void wpa_set_profile(u32 wpa_proto, u8 auth_mode);
 
-void wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
+int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 #endif /* WPA_I_H */

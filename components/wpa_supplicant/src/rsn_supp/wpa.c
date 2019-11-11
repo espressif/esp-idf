@@ -528,7 +528,10 @@ void   wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     if (res)
         goto failed;
 
-    pmksa_cache_set_current(sm, NULL, sm->bssid, 0, 0);
+    if (esp_wifi_sta_prof_is_wpa2_internal() 
+            && esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT) {
+        pmksa_cache_set_current(sm, NULL, sm->bssid, 0, 0);
+    }
 
     if (sm->renew_snonce) {
         if (os_get_random(sm->snonce, WPA_NONCE_LEN)) {
@@ -1988,9 +1991,9 @@ void wpa_set_pmk(uint8_t *pmk)
     sm->pmk_len = PMK_LEN;
 }
 
-void  
-wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
+int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
 {
+    int res = 0;
     struct wpa_sm *sm = &gWpaSm;
     
     sm->pairwise_cipher = BIT(pairwise_cipher);
@@ -2008,11 +2011,13 @@ wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, cha
         pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
         wpa_sm_set_pmk_from_pmksa(sm);
     }
-
     set_assoc_ie(assoc_ie_buf); /* use static buffer */
-
-    wpa_gen_wpa_ie(sm, sm->assoc_wpa_ie, sm->assoc_wpa_ie_len); //TODO: NEED TO DEBUG!!
+    res = wpa_gen_wpa_ie(sm, sm->assoc_wpa_ie, sm->assoc_wpa_ie_len);
+    if (res < 0) 
+        return -1;
+    sm->assoc_wpa_ie_len = res;
     wpa_set_passphrase(passphrase, ssid, ssid_len);
+    return 0;
 }
 
 /*
@@ -2063,8 +2068,8 @@ set_assoc_ie(u8 * assoc_buf)
     if ( sm->proto == WPA_PROTO_WPA) 
          sm->assoc_wpa_ie_len = ASSOC_IE_LEN;
     else 
-         sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;    
-    
+         sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
+
     sm->config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);    
 }
 
