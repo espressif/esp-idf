@@ -41,6 +41,7 @@ menu "FreeRTOS"
 
     config FREERTOS_OPTIMIZED_SCHEDULER
         bool "Enable FreeRTOS pĺatform optimized scheduler"
+        depends on FREERTOS_UNICORE
         default y
         help
             On most platforms there are instructions can speedup the ready task

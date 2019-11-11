@@ -2782,7 +2782,7 @@ void vTaskSwitchContext( void )
 		vPortCPUAcquireMutex( &xTaskQueueMutex );
 #endif
 
-#if !CONFIG_FREERTOS_UNICORE
+#if !configUSE_PORT_OPTIMISED_TASK_SELECTION
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
 		unsigned portBASE_TYPE holdTop=pdFALSE;
 		tskTCB * pxTCB;
@@ -2863,7 +2863,7 @@ void vTaskSwitchContext( void )
 					}
 				} while ((ableToSchedule == pdFALSE) && (pxTCB != pxRefTCB));
 			} else {
-				if (!holdTop)  uxTopReadyPriority--;
+				if (!holdTop) --uxTopReadyPriority;
 			}
 			--uxDynamicTopReady;
 		}
