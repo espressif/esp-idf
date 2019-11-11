@@ -76,6 +76,8 @@ PR_BEGIN_EXTERN_C
 /* ----------------------- Type definitions ---------------------------------*/
 #ifndef _MB_M_H
 
+#define MB_FUNC_CODE_MAX 127
+
 /*! \ingroup modbus
  * \brief Modbus serial transmission modes (RTU/ASCII).
  *

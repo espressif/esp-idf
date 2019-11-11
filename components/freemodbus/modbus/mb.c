@@ -229,7 +229,7 @@ eMBRegisterCB( UCHAR ucFunctionCode, pxMBFunctionHandler pxHandler )
     int             i;
     eMBErrorCode    eStatus;
 
-    if( ( 0 < ucFunctionCode ) && ( ucFunctionCode <= 127 ) )
+    if( ( 0 < ucFunctionCode ) && ( ucFunctionCode <= MB_FUNC_CODE_MAX ) )
     {
         ENTER_CRITICAL_SECTION(  );
         if( pxHandler != NULL )
@@ -332,7 +332,7 @@ eMBDisable( void )
 eMBErrorCode
 eMBPoll( void )
 {
-    static UCHAR   *ucMBFrame;
+    static UCHAR    *ucMBFrame = NULL;
     static UCHAR    ucRcvAddress;
     static UCHAR    ucFunctionCode;
     static USHORT   usLength;
@@ -373,8 +373,10 @@ eMBPoll( void )
             break;
 
         case EV_EXECUTE:
-            ESP_LOGD(MB_PORT_TAG, "%s:EV_EXECUTE", __func__);
-            ucFunctionCode = ucMBFrame[MB_PDU_FUNC_OFF];
+            if ( !ucMBFrame ) {
+                return MB_EILLSTATE;
+            }
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_EXECUTE", __func__);            ucFunctionCode = ucMBFrame[MB_PDU_FUNC_OFF];
             eException = MB_EX_ILLEGAL_FUNCTION;
             for( i = 0; i < MB_FUNC_HANDLERS_MAX; i++ )
             {
@@ -416,7 +418,10 @@ eMBPoll( void )
         case EV_FRAME_SENT:
             ESP_LOGD(MB_PORT_TAG, "%s:EV_FRAME_SENT", __func__);
             break;
+            
+        default:
+            break;
         }
     }
-    return MB_ENOERR;
+    return eStatus;
 }

@@ -362,7 +362,7 @@ BOOL MB_PORT_ISR_ATTR xMBMasterRTUTimerExpired(void)
         /* An error occured while receiving the frame. */
     case STATE_M_RX_ERROR:
         vMBMasterSetErrorType(EV_ERROR_RECEIVE_DATA);
-        xNeedPoll = xMBMasterPortEventPost( EV_MASTER_ERROR_PROCESS );
+        xNeedPoll = xMBMasterPortEventPost(EV_MASTER_ERROR_PROCESS);
         break;
 
         /* Function called in an illegal state. */
