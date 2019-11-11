@@ -14,7 +14,7 @@
 
 #ifdef CONFIG_WPA3_SAE
 
-#include "../common/sae.h"
+#include "common/sae.h"
 #include "esp_wifi_driver.h"
 #include "rsn_supp/wpa.h"
 
@@ -47,11 +47,17 @@ static struct wpabuf *wpa3_build_sae_commit(u8 *bssid)
 		return NULL;
 	}
 
-	// For reuse PWE after retry case
-	// memcpy(g_sae_data.tmp->bssid, bssid, ETH_ALEN);
-
 	buf = wpabuf_alloc(SAE_COMMIT_MAX_LEN);
-	sae_write_commit(&g_sae_data, buf, NULL, NULL); //no token
+	if (!buf) {
+		wpa_printf(MSG_ERROR, "wpa3: failed to allocate buffer for commit msg");
+		return NULL;
+	}
+
+	if (sae_write_commit(&g_sae_data, buf, NULL, NULL) != ESP_OK) {
+		wpa_printf(MSG_ERROR, "wpa3: failed to write SAE commit msg");
+		wpabuf_free(buf);
+		return NULL;
+	}
 	g_sae_data.state = SAE_COMMITTED;
 
 	return buf;
@@ -65,7 +71,16 @@ static struct wpabuf *wpa3_build_sae_confirm(void)
 		return NULL;
 
 	buf = wpabuf_alloc(SAE_COMMIT_MAX_LEN);
-	sae_write_confirm(&g_sae_data, buf);
+	if (!buf) {
+		wpa_printf(MSG_ERROR, "wpa3: failed to allocate buffer for confirm msg");
+		return NULL;
+	}
+
+	if (sae_write_confirm(&g_sae_data, buf) != ESP_OK) {
+		wpa_printf(MSG_ERROR, "wpa3: failed to write SAE confirm msg");
+		wpabuf_free(buf);
+		return NULL;
+	}
 	g_sae_data.state = SAE_CONFIRMED;
 
 	return buf;
@@ -100,22 +115,22 @@ static int wpa3_parse_sae_commit(u8 *buf, u32 len)
 	if (g_sae_data.state != SAE_COMMITTED) {
 		wpa_printf(MSG_ERROR, "wpa3: failed to parse SAE commit in state(%d)!",
 			   g_sae_data.state);
-		return -1;
+		return ESP_FAIL;
 	}
 
 	ret = sae_parse_commit(&g_sae_data, buf, len, NULL, 0, g_allowed_groups);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "wpa3: could not parse commit(%d)", ret);
-		return -1;
+		return ESP_FAIL;
 	}
 
 	ret = sae_process_commit(&g_sae_data);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "wpa3: could not process commit(%d)", ret);
-		return -1;
+		return ESP_FAIL;
 	}
 
-	return 0;
+	return ESP_OK;
 }
 
 static int wpa3_parse_sae_confirm(u8 *buf, u32 len)
@@ -123,21 +138,24 @@ static int wpa3_parse_sae_confirm(u8 *buf, u32 len)
 	if (g_sae_data.state != SAE_CONFIRMED) {
 		wpa_printf(MSG_ERROR, "wpa3: failed to parse SAE commit in state(%d)!",
 			   g_sae_data.state);
-		return -1;
+		return ESP_FAIL;
 	}
 
-	sae_check_confirm(&g_sae_data, buf, len);
+	if (sae_check_confirm(&g_sae_data, buf, len) != ESP_OK) {
+		wpa_printf(MSG_ERROR, "wpa3: failed to parse SAE confirm");
+		return ESP_FAIL;
+	}
 	g_sae_data.state = SAE_ACCEPTED;
 
 	wpa_set_pmk(g_sae_data.pmk);
 	memcpy(esp_wifi_sta_get_ap_info_prof_pmk_internal(), g_sae_data.pmk, PMK_LEN);
 
-	return 0;
+	return ESP_OK;
 }
 
 static int wpa3_parse_sae_msg(u8 *buf, u32 len, u32 sae_msg_type)
 {
-	int ret = 0;
+	int ret = ESP_OK;
 
 	switch (sae_msg_type) {
 		case SAE_MSG_COMMIT:
@@ -149,7 +167,7 @@ static int wpa3_parse_sae_msg(u8 *buf, u32 len, u32 sae_msg_type)
 		default:
 			wpa_printf(MSG_ERROR, "wpa3: Invalid SAE msg type(%d)!",
 				   sae_msg_type);
-			ret = -1;
+			ret = ESP_FAIL;
 			break;
 	}
 
