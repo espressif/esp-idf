@@ -26,6 +26,14 @@ menu "Core dump"
         help
             Enables/disable core dump module.
 
+    config ESP32_CORE_DUMP_USERDATA
+        bool "Include user data"
+        default F
+        depends on ESP32_ENABLE_COREDUMP
+        help
+            Requires user to implement esp_core_dump_userdata_get
+            and esp_core_dump_userdata_get_len functions.
+
     config ESP32_CORE_DUMP_MAX_TASKS_NUM
         int "Maximum number of tasks"
         depends on ESP32_ENABLE_COREDUMP
