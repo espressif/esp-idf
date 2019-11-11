@@ -25,10 +25,6 @@
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 
-
-
-#define IANA_SECP256R1 19
-
 #ifdef ESP_PLATFORM
 int crypto_get_random(void *buf, size_t len)
 {
@@ -496,6 +492,8 @@ int crypto_ec_point_solve_y_coord(struct crypto_ec *e,
         if (y_bit) {
             MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(y, &e->group.P, y));
         }
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&((mbedtls_ecp_point* )p)->X, (const mbedtls_mpi*) x));
+        MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&((mbedtls_ecp_point *)p)->Z, 1));
     } else {
         ret = 1;
     }

@@ -116,7 +116,7 @@ typedef int (*esp_aes_unwrap_t)(const unsigned char *kek, int n, const unsigned 
   * @param mac  Buffer for the hash (32 bytes).
   *
   */
-typedef void (*esp_hmac_sha256_vector_t)(const unsigned char *key, int key_len, int num_elem,
+typedef int (*esp_hmac_sha256_vector_t)(const unsigned char *key, int key_len, int num_elem,
 			                   const unsigned char *addr[], const int *len, unsigned char *mac);
 
 /**
@@ -131,7 +131,7 @@ typedef void (*esp_hmac_sha256_vector_t)(const unsigned char *key, int key_len, 
   * @param buf_len  Number of bytes of key to generate.
   *
   */
-typedef void (*esp_sha256_prf_t)(const unsigned char *key, int key_len, const char *label,
+typedef int (*esp_sha256_prf_t)(const unsigned char *key, int key_len, const char *label,
 	                           const unsigned char *data, int data_len, unsigned char *buf, int buf_len);
 
 /**
