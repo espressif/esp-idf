@@ -122,14 +122,16 @@ menu "Modbus configuration"
         help
                 Modbus Timer Index in the group that is used for timeout measurement.
 
-    config FMB_ISR_IN_IRAM
-        bool "Place interrupt handlers into IRAM"
-        default y
+    config FMB_TIMER_ISR_IN_IRAM
+        bool "Place timer interrupt handler into IRAM"
+        default n
         select UART_ISR_IN_IRAM
         help
-                This option places Modbus IRQ handlers into IRAM.
+                This option places Modbus timer IRQ handler into IRAM.
                 This allows to avoid delays related to processing of non-IRAM-safe interrupts
                 during a flash write operation (NVS updating a value, or some other
                 flash API which has to perform an read/write operation and disable CPU cache).
+                This option has dependency with the UART_ISR_IN_IRAM option which places UART interrupt
+                handler into IRAM to prevent delays related to processing of UART events.
 
 endmenu
