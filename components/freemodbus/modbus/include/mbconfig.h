@@ -130,8 +130,8 @@ PR_BEGIN_EXTERN_C
 /*! \brief If the <em>Read/Write Multiple Registers</em> function should be enabled. */
 #define MB_FUNC_READWRITE_HOLDING_ENABLED       (  1 )
 
-/*! \brief Check the option to place handlers into IRAM */
-#define MB_ISR_IN_IRAM                          (  CONFIG_FMB_ISR_IN_IRAM )
+/*! \brief Check the option to place timer handler into IRAM */
+#define MB_PORT_TIMER_ISR_IN_IRAM                          (  CONFIG_FMB_TIMER_ISR_IN_IRAM )
 
 /*! @} */
 #ifdef __cplusplus
