@@ -1440,11 +1440,15 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
     UART_CHECK((rx_buffer_size > UART_FIFO_LEN), "uart rx buffer length error(>128)", ESP_FAIL);
     UART_CHECK((tx_buffer_size > UART_FIFO_LEN) || (tx_buffer_size == 0), "uart tx buffer length error(>128 or 0)", ESP_FAIL);
 #if CONFIG_UART_ISR_IN_IRAM
-    UART_CHECK((intr_alloc_flags & ESP_INTR_FLAG_IRAM) != 0,
-                "should set ESP_INTR_FLAG_IRAM flag when CONFIG_UART_ISR_IN_IRAM is enabled", ESP_FAIL);
+    if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0) {
+        ESP_LOGI(UART_TAG, "ESP_INTR_FLAG_IRAM flag not set while CONFIG_UART_ISR_IN_IRAM is enabled, flag updated");
+        intr_alloc_flags |= ESP_INTR_FLAG_IRAM;
+    }
 #else
-    UART_CHECK((intr_alloc_flags & ESP_INTR_FLAG_IRAM) == 0,
-                "should not set ESP_INTR_FLAG_IRAM when CONFIG_UART_ISR_IN_IRAM is not enabled", ESP_FAIL);
+    if ((intr_alloc_flags & ESP_INTR_FLAG_IRAM) != 0) {
+        ESP_LOGW(UART_TAG, "ESP_INTR_FLAG_IRAM flag is set while CONFIG_UART_ISR_IN_IRAM is not enabled, flag updated");
+        intr_alloc_flags &= ~ESP_INTR_FLAG_IRAM;
+    }
 #endif
 
     if (p_uart_obj[uart_num] == NULL) {
