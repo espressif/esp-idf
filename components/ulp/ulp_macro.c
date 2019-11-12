@@ -130,6 +130,22 @@ static int reloc_sort_func(const void* p_lhs, const void* p_rhs)
  *
  */
 
+static size_t count_ulp_macros(const ulp_insn_t* program, size_t psize)
+{
+    const ulp_insn_t* read_ptr = program;
+    const ulp_insn_t* end = program + psize;
+    size_t macro_count = 0;
+    // step 1: calculate number of macros
+    while (read_ptr < end) {
+        ulp_insn_t r_insn = *read_ptr;
+        if (r_insn.macro.opcode == OPCODE_MACRO) {
+            ++macro_count;
+        }
+        ++read_ptr;
+    }
+    return macro_count;
+}
+
 static esp_err_t do_single_reloc(ulp_insn_t* program, uint32_t load_addr,
         reloc_info_t label_info, reloc_info_t the_reloc)
 {
@@ -181,36 +197,9 @@ static esp_err_t do_single_reloc(ulp_insn_t* program, uint32_t load_addr,
     return ESP_OK;
 }
 
-esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* program, size_t* psize)
+static esp_err_t process_relocs(uint32_t macro_count, uint32_t load_addr, const ulp_insn_t* program, size_t* psize)
 {
-    const ulp_insn_t* read_ptr = program;
-    const ulp_insn_t* end = program + *psize;
-    size_t macro_count = 0;
-    // step 1: calculate number of macros
-    while (read_ptr < end) {
-        ulp_insn_t r_insn = *read_ptr;
-        if (r_insn.macro.opcode == OPCODE_MACRO) {
-            ++macro_count;
-        }
-        ++read_ptr;
-    }
-    size_t real_program_size = *psize - macro_count;
-    const size_t ulp_mem_end = ULP_RESERVE_MEM / sizeof(ulp_insn_t);
-    if (load_addr > ulp_mem_end) {
-        ESP_LOGW(TAG, "invalid load address %x, max is %x",
-                load_addr, ulp_mem_end);
-        return ESP_ERR_ULP_INVALID_LOAD_ADDR;
-    }
-    if (real_program_size + load_addr > ulp_mem_end) {
-        ESP_LOGE(TAG, "program too big: %d words, max is %d words",
-                real_program_size, ulp_mem_end);
-        return ESP_ERR_ULP_SIZE_TOO_BIG;
-    }
-    // If no macros found, copy the program and return.
-    if (macro_count == 0) {
-        memcpy(((ulp_insn_t*) RTC_SLOW_MEM) + load_addr, program, *psize * sizeof(ulp_insn_t));
-        return ESP_OK;
-    }
+
     reloc_info_t* reloc_info =
             (reloc_info_t*) malloc(sizeof(reloc_info_t) * macro_count);
     if (reloc_info == NULL) {
@@ -218,8 +207,9 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
     }
 
     // step 2: record macros into reloc_info array
-    // and remove them from then program
-    read_ptr = program;
+    // and remove them from the program
+    const ulp_insn_t* read_ptr = program;
+    const ulp_insn_t* end = program + *psize;
     ulp_insn_t* output_program = ((ulp_insn_t*) RTC_SLOW_MEM) + load_addr;
     ulp_insn_t* write_ptr = output_program;
     uint32_t cur_insn_addr = load_addr;
@@ -292,6 +282,54 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
         }
     }
     free(reloc_info);
-    *psize = real_program_size;
+    *psize -= macro_count;
     return ESP_OK;
+}
+
+esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* program, size_t* psize)
+{
+    size_t macro_count = count_ulp_macros(program, *psize);
+    size_t real_program_size = *psize - macro_count;
+    const size_t ulp_mem_end = ULP_RESERVE_MEM / sizeof(ulp_insn_t);
+    if (load_addr > ulp_mem_end) {
+        ESP_LOGW(TAG, "invalid load address %x, max is %x",
+                load_addr, ulp_mem_end);
+        return ESP_ERR_ULP_INVALID_LOAD_ADDR;
+    }
+    if (real_program_size + load_addr > ulp_mem_end) {
+        ESP_LOGE(TAG, "program too big: %d words, max is %d words",
+                real_program_size, ulp_mem_end);
+        return ESP_ERR_ULP_SIZE_TOO_BIG;
+    }
+    // If no macros found, copy the program and return.
+    if (macro_count == 0) {
+        memcpy(((ulp_insn_t*) RTC_SLOW_MEM) + load_addr, program, *psize * sizeof(ulp_insn_t));
+        return ESP_OK;
+    }
+
+    return process_relocs(macro_count, load_addr, program, psize);
+}
+
+esp_err_t ulp_process_macros_in_place(const ulp_insn_t* program, size_t* psize)
+{
+    size_t macro_count = count_ulp_macros(program, *psize);
+    size_t real_program_size = *psize - macro_count;
+    const size_t ulp_mem_end = 0x1000 / sizeof(ulp_insn_t);
+    // const uint32_t* program_addr = program;
+    uint32_t load_addr = program - (ulp_insn_t*)RTC_SLOW_MEM;
+    if (program < RTC_SLOW_MEM || load_addr >= ulp_mem_end) {
+        ESP_LOGW(TAG, "program in invalid location in memory, check attributes");
+        return ESP_ERR_ULP_INVALID_LOAD_ADDR;
+    }
+    if (real_program_size + load_addr > ulp_mem_end) {
+        ESP_LOGE(TAG, "program too big: %d words, max is %d words",
+                real_program_size, ulp_mem_end - load_addr);
+        return ESP_ERR_ULP_SIZE_TOO_BIG;
+    }
+    // If no macros found, return
+    if (macro_count == 0) {
+        return ESP_OK;
+    }
+
+    return process_relocs(macro_count, load_addr, program, psize);
 }

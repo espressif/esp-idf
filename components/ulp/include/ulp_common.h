@@ -47,6 +47,17 @@ typedef union ulp_insn ulp_insn_t;
 esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* program, size_t* psize);
 
 /**
+ * @brief Resolve all macro references in a program in RTC memory, overwriting it with the result
+ * @param program  ulp_insn_t array (in RTC_SLOW_MEM) with the program
+ * @param psize  size of the program, expressed in 32-bit words
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_NO_MEM if auxiliary temporary structure can not be allocated
+ *      - one of ESP_ERR_ULP_xxx if program is not valid or can not be loaded
+ */
+esp_err_t ulp_process_macros_in_place(const ulp_insn_t* program, size_t* psize);
+
+/**
  * @brief Load ULP program binary into RTC memory
  *
  * ULP program binary should have the following format (all values little-endian):
