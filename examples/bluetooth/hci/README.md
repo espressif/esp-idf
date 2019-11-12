@@ -18,6 +18,13 @@ Demonstrates interaction with controller though virtual HCI layer. In this examp
 
 See the [README.md](./controller_vhci_ble_adv/README.md) file in the example [controller_vhci_ble_adv](./controller_vhci_ble_adv).
 
+## ble_adv_scan_combined
+
+Demonstrates interaction with controller. In this example, BLE advertising and scanning is done. Also scanned advertising reports are parsed and displayed.
+
+See the [README.md](./ble_adv_scan_combined/README.md) file in the example [ble_adv_scan_combined](./ble_adv_scan_combined).
+
+
 ## hci_common_component
 
 This is separate component adding functionalities for HCI Layer. Since this component is just used by HCI examples, it is not placed in global components.
