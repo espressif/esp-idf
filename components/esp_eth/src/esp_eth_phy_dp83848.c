@@ -260,7 +260,9 @@ err:
 static esp_err_t dp83848_del(esp_eth_phy_t *phy)
 {
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
-    free(dp83848);
+    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
+        free(dp83848);
+    }
     return ESP_OK;
 }
 
@@ -314,6 +316,7 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     dp83848->parent.get_addr = dp83848_get_addr;
     dp83848->parent.set_addr = dp83848_set_addr;
     dp83848->parent.del = dp83848_del;
+    atomic_init(&dp83848->parent.ref_count, 1);
 
     return &(dp83848->parent);
 err:

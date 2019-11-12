@@ -18,8 +18,9 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "esp_eth_com.h"
+#include <stdatomic.h>
 #include "sdkconfig.h"
+#include "esp_eth_com.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
@@ -37,6 +38,12 @@ typedef struct esp_eth_mac_s esp_eth_mac_t;
 *
 */
 struct esp_eth_mac_s {
+    /**
+     * @brief Reference count of MAC instance
+     *
+     */
+    atomic_int ref_count;
+
     /**
     * @brief Set mediator for Ethernet MAC
     *
@@ -310,6 +317,17 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
 
 
 #if CONFIG_ETH_USE_OPENETH
+/**
+* @brief Create OpenETH MAC instance
+*
+* @note This API is only used for qemu simulation
+*
+* @param config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
 esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);
 #endif // CONFIG_ETH_USE_OPENETH
 

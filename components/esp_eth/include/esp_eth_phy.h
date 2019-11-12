@@ -18,8 +18,9 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "esp_eth_com.h"
+#include <stdatomic.h>
 #include "sdkconfig.h"
+#include "esp_eth_com.h"
 
 /**
 * @brief Ethernet PHY
@@ -32,6 +33,12 @@ typedef struct esp_eth_phy_s esp_eth_phy_t;
 *
 */
 struct esp_eth_phy_s {
+    /**
+     * @brief Reference count of PHY instance
+     *
+     */
+    atomic_int ref_count;
+
     /**
     * @brief Set mediator for PHY
     *

@@ -341,7 +341,9 @@ err:
 static esp_err_t lan8720_del(esp_eth_phy_t *phy)
 {
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
-    free(lan8720);
+    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
+        free(lan8720);
+    }
     return ESP_OK;
 }
 
@@ -394,6 +396,7 @@ esp_eth_phy_t *esp_eth_phy_new_lan8720(const eth_phy_config_t *config)
     lan8720->parent.get_addr = lan8720_get_addr;
     lan8720->parent.set_addr = lan8720_set_addr;
     lan8720->parent.del = lan8720_del;
+    atomic_init(&lan8720->parent.ref_count, 1);
 
     return &(lan8720->parent);
 err:
