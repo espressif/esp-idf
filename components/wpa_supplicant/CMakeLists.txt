@@ -103,4 +103,5 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     ESPRESSIF_USE
     ESP32_WORKAROUND
     CONFIG_ECC
+    CONFIG_IEEE80211W
     )

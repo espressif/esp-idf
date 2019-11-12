@@ -214,10 +214,12 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
     /* RSN Capabilities */
     capab = 0;
 #ifdef CONFIG_IEEE80211W
-    if (sm->mfp)
+    if (sm->pmf_cfg.capable) {
         capab |= WPA_CAPABILITY_MFPC;
-    if (sm->mfp == 2)
-        capab |= WPA_CAPABILITY_MFPR;
+        if (sm->pmf_cfg.required) {
+            capab |= WPA_CAPABILITY_MFPR;
+	}
+    }
 #endif /* CONFIG_IEEE80211W */
     WPA_PUT_LE16(pos, capab);
     pos += 2;
@@ -229,16 +231,14 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
         /* PMKID */
         os_memcpy(pos, sm->cur_pmksa->pmkid, PMKID_LEN);
         pos += PMKID_LEN;
+    } else {
+        /* 0 PMKID Count */
+        WPA_PUT_LE16(pos, 0);
+        pos += 2;
     }
 
 #ifdef CONFIG_IEEE80211W
     if (mgmt_group_cipher == WPA_CIPHER_AES_128_CMAC) {
-        if (!sm->cur_pmksa) {
-            /* PMKID Count */
-            WPA_PUT_LE16(pos, 0);
-            pos += 2;
-        }
-
         /* Management Group Cipher Suite */
         RSN_SELECTOR_PUT(pos, RSN_CIPHER_SUITE_AES_128_CMAC);
         pos += RSN_SELECTOR_LEN;

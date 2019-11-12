@@ -63,7 +63,8 @@ enum {
     WPA2_AUTH_PSK       = 0x05,
     WPA_AUTH_CCKM       = 0x06,
     WPA2_AUTH_CCKM      = 0x07,
-    WPA2_AUTH_INVALID   = 0x08,
+    WPA2_AUTH_PSK_SHA256= 0x08,
+    WPA2_AUTH_INVALID   = 0x09,
 };
 
 typedef enum {
@@ -217,5 +218,7 @@ esp_err_t esp_wifi_internal_supplicant_header_md5_check(const char *md5);
 int esp_wifi_sta_update_ap_info_internal(void);
 uint8_t *esp_wifi_sta_get_ap_info_prof_pmk_internal(void);
 esp_err_t esp_wifi_set_wps_start_flag_internal(bool start);
+uint16_t esp_wifi_sta_pmf_enabled(void);
+wifi_cipher_type_t esp_wifi_sta_get_mgmt_group_cipher(void);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */
