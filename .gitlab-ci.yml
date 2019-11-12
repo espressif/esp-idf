@@ -1,9 +1,10 @@
 stages:
+  - pre_check
   - build
   - assign_test
   - host_test
   - target_test
-  - check
+  - post_check
   - deploy
   - post_check
 
@@ -120,7 +121,7 @@ after_script:
   - *cleanup_custom_toolchain
 
 .check_job_template:
-  stage: check
+  stage: pre_check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
@@ -128,7 +129,7 @@ after_script:
   extends: .before_script_lesser_nofilter
 
 .check_job_template_with_filter:
-  stage: check
+  stage: pre_check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
@@ -147,9 +148,10 @@ after_script:
     - source tools/ci/configure_ci_environment.sh
 
 include:
+  - '/tools/ci/config/pre_check.yml'
   - '/tools/ci/config/build.yml'
   - '/tools/ci/config/assign-test.yml'
   - '/tools/ci/config/host-test.yml'
   - '/tools/ci/config/target-test.yml'
-  - '/tools/ci/config/check.yml'
+  - '/tools/ci/config/post_check.yml'
   - '/tools/ci/config/deploy.yml'
