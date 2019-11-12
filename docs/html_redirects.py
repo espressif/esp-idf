@@ -41,10 +41,12 @@ REDIRECT_TEMPLATE = """
 
 def setup(app):
     app.add_config_value('html_redirect_pages', [], 'html')
-    app.connect('build-finished', create_redirect_pages)
+    # attaching to this event is a hack, but it's a convenient stage in the build
+    # to create HTML redirects
+    app.connect('html-collect-pages', create_redirect_pages)
 
 
-def create_redirect_pages(app, docname):
+def create_redirect_pages(app):
     if not isinstance(app.builder, StandaloneHTMLBuilder):
         return  # only relevant for standalone HTML output
 
@@ -66,3 +68,5 @@ def create_redirect_pages(app, docname):
 
         with open(out_file, "w") as rp:
             rp.write(content)
+
+    return []

@@ -300,6 +300,7 @@ ENABLE_PREPROCESSING   = YES
 MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
+    $(ENV_DOXYGEN_DEFINES) \
     __attribute__(x)= \
     IDF_DEPRECATED(X)= \
     IRAM_ATTR= \

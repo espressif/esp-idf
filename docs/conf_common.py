@@ -25,7 +25,7 @@ import subprocess
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute
 
-from local_util import run_cmd_get_output, copy_if_modified
+from local_util import run_cmd_get_output, copy_if_modified, call_with_python
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
@@ -46,29 +46,10 @@ except KeyError:
 # Set the idf_target chip. This is a hack right now.
 idf_target = 'esp32s2'
 
-def call_with_python(cmd):
-    # using sys.executable ensures that the scripts are called with the same Python interpreter
-    if os.system('{} {}'.format(sys.executable, cmd)) != 0:
-        raise RuntimeError('{} failed'.format(cmd))
-
-
-# Call Doxygen to get XML files from the header files
-print("Calling Doxygen to generate latest XML files")
-if os.system("doxygen ../Doxyfile") != 0:
-    raise RuntimeError('Doxygen call failed')
-
-# Doxygen has generated XML files in 'xml' directory.
-# Copy them to 'xml_in', only touching the files which have changed.
-copy_if_modified('xml/', 'xml_in/')
-
-# Generate 'api_name.inc' files using the XML files by Doxygen
-call_with_python('../gen-dxd.py')
-
-# Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions
-esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(builddir)
-call_with_python('../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in')
-copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
-
+try:
+    os.mkdir(builddir)
+except OSError:
+    pass
 
 # Generate version-related includes
 #
@@ -78,7 +59,6 @@ def generate_version_specific_includes(app):
     version_tmpdir = '{}/version_inc'.format(builddir)
     call_with_python('../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir))
     copy_if_modified(version_tmpdir, '{}/inc'.format(builddir))
-
 
 # Generate toolchain download links
 print("Generating toolchain download links")
@@ -118,6 +98,7 @@ extensions = ['breathe',
               'html_redirects',
               'idf_build_system',
               'kconfig_reference',
+              'doxygen_idf',
               'sphinx.ext.todo',
               ]
 

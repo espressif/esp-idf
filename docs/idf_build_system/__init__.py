@@ -13,7 +13,6 @@ import json
 
 # this directory also contains the dummy IDF project
 project_path = os.path.abspath(os.path.dirname(__file__))
-project_build_dir = os.path.join(project_path, "build")
 
 def setup(app):
     builddir = os.path.dirname(app.doctreedir.rstrip(os.sep))
@@ -27,21 +26,20 @@ def setup(app):
 
 def generate_idf_info(app, env, added, changed, removed):
     print("Running CMake on dummy project to get build info...")
+    build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
+    cmake_build_dir = os.path.join(build_dir, "build_dummy_project")
     idf_py_path = os.path.join(app.config.idf_path, "tools", "idf.py")
     print("Running idf.py...")
-    subprocess.check_call([sys.executable,
-                           idf_py_path,
-                           "-C",
-                           project_path,
-                           "set-target",
-                           app.config.idf_target])
-    # TODO: can call these in one execution pass?
-    subprocess.check_call([sys.executable,
-                           idf_py_path,
-                           "-C",
-                           project_path,
-                           "reconfigure"])
-    with open(os.path.join(project_build_dir, "project_description.json")) as f:
+    idf_py = [sys.executable,
+              idf_py_path,
+              "-B",
+              cmake_build_dir,
+              "-C",
+              project_path]
+    subprocess.check_call(idf_py + [ "set-target", app.config.idf_target])
+    # TODO: can call these two in one execution pass?
+    subprocess.check_call(idf_py + [ "reconfigure"])
+    with open(os.path.join(cmake_build_dir, "project_description.json")) as f:
         project_description = json.load(f)
     app.emit('idf-info', project_description)
 

@@ -46,7 +46,102 @@ all_kinds = [
 """
 
 
-def get_doxyfile_input():
+def setup(app):
+    # The idf_build_system extension will emit this event once it
+    app.connect('idf-info', generate_doxygen)
+
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
+
+
+def _parse_defines(header_path):
+    defines = {}
+    # Note: we run C preprocessor here without any -I arguments, so assumption is
+    # that these headers are all self-contained and don't include any other headers
+    # not in the same directory
+    print("Reading macros from %s..." % (header_path))
+    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-dM", "-E", header_path]).decode()
+    for line in processed_output.split("\n"):
+        line = line.strip()
+        m = re.search("#define ([^ ]+) ?(.*)", line)
+        if m and not m.group(1).startswith("_"):
+            defines[m.group(1)] = m.group(2)
+
+    return defines
+
+
+def generate_doxygen(app, project_description):
+    build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
+
+    # Parse kconfig macros to pass into doxygen
+    #
+    # TODO: this should use the set of "config which can't be changed" eventually,
+    # not the header
+    defines = _parse_defines(os.path.join(project_description["build_dir"],
+                                          "config", "sdkconfig.h"))
+
+    # Add all SOC _caps.h headers to the defines
+    #
+    # kind of a hack, be nicer to add a component info dict in project_description.json
+    soc_path = [p for p in project_description["build_component_paths"] if p.endswith("/soc")][0]
+    for soc_header in glob.glob(os.path.join(soc_path, project_description["target"],
+                                             "include", "soc", "*_caps.h")):
+        defines.update(_parse_defines(soc_header))
+
+    # Call Doxygen to get XML files from the header files
+    print("Calling Doxygen to generate latest XML files")
+    doxy_env = {
+        "ENV_DOXYGEN_DEFINES": " ".join(defines),
+        "IDF_PATH": app.config.idf_path,
+        "IDF_TARGET": app.config.idf_target,
+    }
+    doxyfile = os.path.join(app.config.docs_root, "Doxyfile")
+    print("Running doxygen with doxyfile {}".format(doxyfile))
+    # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
+    subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir)
+
+    # Doxygen has generated XML files in 'xml' directory.
+    # Copy them to 'xml_in', only touching the files which have changed.
+    copy_if_modified(os.path.join(build_dir, 'xml/'), os.path.join(build_dir, 'xml_in/'))
+
+    # Generate 'api_name.inc' files from the Doxygen XML files
+    convert_api_xml_to_inc(app, doxyfile)
+
+
+def convert_api_xml_to_inc(app, doxyfile):
+    """ Generate header_file.inc files
+    with API reference made of doxygen directives
+    for each header file
+    specified in the 'INPUT' statement of the Doxyfile.
+    """
+    build_dir = app.config.build_dir
+
+    xml_directory_path = "{}/xml".format(build_dir)
+    inc_directory_path = "{}/inc".format(build_dir)
+
+    if not os.path.isdir(xml_directory_path):
+        raise RuntimeError("Directory {} does not exist!".format(xml_directory_path))
+
+    if not os.path.exists(inc_directory_path):
+        os.makedirs(inc_directory_path)
+
+    header_paths = get_doxyfile_input_paths(app, doxyfile)
+    print("Generating 'api_name.inc' files with Doxygen directives")
+    for header_file_path in header_paths:
+        api_name = get_api_name(header_file_path)
+        inc_file_path = inc_directory_path + "/" + api_name + ".inc"
+        rst_output = generate_directives(header_file_path, xml_directory_path)
+
+        previous_rst_output = ''
+        if os.path.isfile(inc_file_path):
+            with open(inc_file_path, "r", encoding='utf-8') as inc_file_old:
+                previous_rst_output = inc_file_old.read()
+
+        if previous_rst_output != rst_output:
+            with open(inc_file_path, "w", encoding='utf-8') as inc_file:
+                inc_file.write(rst_output)
+
+
+def get_doxyfile_input_paths(app, doxyfile_path):
     """Get contents of Doxyfile's INPUT statement.
 
     Returns:

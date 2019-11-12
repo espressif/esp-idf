@@ -18,6 +18,7 @@ from __future__ import unicode_literals
 from io import open
 import os
 import shutil
+import sys
 
 try:
     import urllib.request
@@ -75,3 +76,8 @@ def download_file_if_missing(from_url, to_path):
         with open(filename_with_path, 'wb') as fobj:
             with open(tmp_file, 'rb') as tmp:
                 fobj.write(tmp.read())
+
+def call_with_python(cmd):
+    # using sys.executable ensures that the scripts are called with the same Python interpreter
+    if os.system('{} {}'.format(sys.executable, cmd)) != 0:
+        raise RuntimeError('{} failed'.format(cmd))
