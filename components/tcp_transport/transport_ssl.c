@@ -86,16 +86,15 @@ static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     int ret = -1;
+    struct timeval timeout;
     fd_set readset;
     fd_set errset;
     FD_ZERO(&readset);
     FD_ZERO(&errset);
     FD_SET(ssl->tls->sockfd, &readset);
     FD_SET(ssl->tls->sockfd, &errset);
-    struct timeval timeout;
-    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
 
-    ret = select(ssl->tls->sockfd + 1, &readset, NULL, &errset, &timeout);
+    ret = select(ssl->tls->sockfd + 1, &readset, NULL, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
     if (ret > 0 && FD_ISSET(ssl->tls->sockfd, &errset)) {
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
@@ -110,15 +109,14 @@ static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     int ret = -1;
+    struct timeval timeout;
     fd_set writeset;
     fd_set errset;
     FD_ZERO(&writeset);
     FD_ZERO(&errset);
     FD_SET(ssl->tls->sockfd, &writeset);
     FD_SET(ssl->tls->sockfd, &errset);
-    struct timeval timeout;
-    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    ret = select(ssl->tls->sockfd + 1, NULL, &writeset, &errset, &timeout);
+    ret = select(ssl->tls->sockfd + 1, NULL, &writeset, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
     if (ret > 0 && FD_ISSET(ssl->tls->sockfd, &errset)) {
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);

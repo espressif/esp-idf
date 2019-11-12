@@ -52,7 +52,7 @@ static int resolve_dns(const char *host, struct sockaddr_in *ip) {
 static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int timeout_ms)
 {
     struct sockaddr_in remote_ip;
-    struct timeval tv;
+    struct timeval tv = { 0 };
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
 
     bzero(&remote_ip, sizeof(struct sockaddr_in));
@@ -74,7 +74,7 @@ static int tcp_connect(esp_transport_handle_t t, const char *host, int port, int
     remote_ip.sin_family = AF_INET;
     remote_ip.sin_port = htons(port);
 
-    esp_transport_utils_ms_to_timeval(timeout_ms, &tv);
+    esp_transport_utils_ms_to_timeval(timeout_ms, &tv); // if timeout=-1, tv is unchanged, 0, i.e. waits forever
 
     setsockopt(tcp->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
     setsockopt(tcp->sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
@@ -117,15 +117,15 @@ static int tcp_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
     int ret = -1;
+    struct timeval timeout;
     fd_set readset;
     fd_set errset;
     FD_ZERO(&readset);
     FD_ZERO(&errset);
     FD_SET(tcp->sock, &readset);
     FD_SET(tcp->sock, &errset);
-    struct timeval timeout;
-    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    ret = select(tcp->sock + 1, &readset, NULL, &errset, &timeout);
+
+    ret = select(tcp->sock + 1, &readset, NULL, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
     if (ret > 0 && FD_ISSET(tcp->sock, &errset)) {
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
@@ -140,15 +140,15 @@ static int tcp_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_tcp_t *tcp = esp_transport_get_context_data(t);
     int ret = -1;
+    struct timeval timeout;
     fd_set writeset;
     fd_set errset;
     FD_ZERO(&writeset);
     FD_ZERO(&errset);
     FD_SET(tcp->sock, &writeset);
     FD_SET(tcp->sock, &errset);
-    struct timeval timeout;
-    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    ret = select(tcp->sock + 1, NULL, &writeset, &errset, &timeout);
+
+    ret = select(tcp->sock + 1, NULL, &writeset, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
     if (ret > 0 && FD_ISSET(tcp->sock, &errset)) {
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
