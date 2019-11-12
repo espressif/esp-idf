@@ -313,16 +313,15 @@ esp_err_t ulp_process_macros_and_load(uint32_t load_addr, const ulp_insn_t* prog
 esp_err_t ulp_process_macros_in_place(const ulp_insn_t* program, size_t* psize)
 {
     size_t macro_count = count_ulp_macros(program, *psize);
-    size_t real_program_size = *psize - macro_count;
     const size_t ulp_mem_end = 0x1000 / sizeof(ulp_insn_t);
     uint32_t load_addr = program - (ulp_insn_t*)RTC_SLOW_MEM;
     if (program < RTC_SLOW_MEM || load_addr >= ulp_mem_end) {
         ESP_LOGW(TAG, "program in invalid location in memory, check attributes");
         return ESP_ERR_ULP_INVALID_LOAD_ADDR;
     }
-    if (real_program_size + load_addr > ulp_mem_end) {
+    if (*psize + load_addr > ulp_mem_end) {
         ESP_LOGE(TAG, "program too big: %d words, max is %d words",
-                real_program_size, ulp_mem_end - load_addr);
+                *psize, ulp_mem_end - load_addr);
         return ESP_ERR_ULP_SIZE_TOO_BIG;
     }
     // If no macros found, return
