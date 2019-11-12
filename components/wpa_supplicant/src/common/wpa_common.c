@@ -22,6 +22,7 @@
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"
 #include "crypto/md5.h"
+#include "crypto/aes.h"
  
 #define MD5_MAC_LEN 16
 
@@ -388,6 +389,10 @@ int wpa_eapol_key_mic(const u8 *key, int ver, const u8 *buf, size_t len,
 			return -1;
 		memcpy(mic, hash, MD5_MAC_LEN);
 		break;
+#ifdef CONFIG_IEEE80211W
+	case WPA_KEY_INFO_TYPE_AES_128_CMAC:
+		return omac1_aes_128(key, buf, len, mic);
+#endif
 	default:
 		return -1;
 	}

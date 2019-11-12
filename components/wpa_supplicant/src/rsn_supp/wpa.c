@@ -27,6 +27,7 @@
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
+#include "crypto/ccmp.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -681,7 +682,7 @@ int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
         #endif    
         return -1;
     }
-       
+
     if (sm->wpa_ptk_rekey) {
         eloop_cancel_timeout(wpa_sm_rekey_ptk, sm, NULL);
         eloop_register_timeout(sm->wpa_ptk_rekey, 0, wpa_sm_rekey_ptk,
@@ -991,7 +992,29 @@ void wpa_report_ie_mismatch(struct wpa_sm *sm, const u8 *src_addr,
 int   ieee80211w_set_keys(struct wpa_sm *sm,
                    struct wpa_eapol_ie_parse *ie)
 {
+#ifdef CONFIG_IEEE80211W
+	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC) {
+		return -1;
+	}
+
+	if (ie->igtk) {
+		const wifi_wpa_igtk_t *igtk;
+		uint16_t keyidx;
+
+		if (ie->igtk_len != sizeof(*igtk)) {
+			return -1;
+		}
+		igtk = (const wifi_wpa_igtk_t*)ie->igtk;
+		keyidx = WPA_GET_LE16(igtk->keyid);
+		if (keyidx > 4095) {
+			return -1;
+		}
+		return esp_wifi_set_igtk_internal(ESP_IF_WIFI_STA, igtk);
+	}
+	return 0;
+#else
      return 0;
+#endif
 }
 
   int   wpa_supplicant_validate_ie(struct wpa_sm *sm,
@@ -2318,10 +2341,10 @@ bool wpa_sta_in_4way_handshake(void)
     return false;
 }
 
-
 bool wpa_sta_is_cur_pmksa_set(void) {
     struct wpa_sm *sm = &gWpaSm;
     return (pmksa_cache_get_current(sm) != NULL);
 }
+
 #endif // ESP_SUPPLICANT
 
