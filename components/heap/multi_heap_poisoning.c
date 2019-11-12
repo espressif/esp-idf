@@ -21,6 +21,7 @@
 #include <sys/param.h>
 #include <multi_heap.h>
 #include "multi_heap_internal.h"
+#include "heap_private.h"
 
 /* Note: Keep platform-specific parts in this header, this source
    file should depend on libc only */
@@ -268,7 +269,20 @@ void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
     new_head = multi_heap_malloc_impl(heap, size + POISON_OVERHEAD);
     if (new_head != NULL) {
         result = poison_allocated_region(new_head, size);
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+        //We may need to deal with aliased heap pointers. here too, 
+        //mainly because the heap canary is located before the
+        //the slot reserved to preserve original DRAM address
+        //so the original user data is actually p + 4 ahead :
+        if(esp_ptr_in_diram_dram((void *)p)) {
+            memcpy(result, p + sizeof(intptr_t), MIN(size, orig_alloc_size));
+        } else {
+            memcpy(result, p , MIN(size, orig_alloc_size));
+        }
+#else 
         memcpy(result, p, MIN(size, orig_alloc_size));
+#endif        
         multi_heap_free(heap, p);
     }
 #endif

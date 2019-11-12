@@ -107,6 +107,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
                         ret = multi_heap_malloc(heap->heap, size + 4);  // int overflow checked above
+
                         if (ret != NULL) {
                             return dram_alloc_to_iram_addr(ret, size + 4);  // int overflow checked above
                         }
@@ -287,8 +288,18 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         return NULL;
     }
 
-    heap_t *heap = find_containing_heap(ptr);
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    //On esp32s2 the pointer to heap may be aliased, we need to 
+    //recover it before to manage a new allocation:
+    if(esp_ptr_in_diram_iram((void *)ptr)) {
+        //pointer must be already aliased, otherwise just ignore this part:
+        uint32_t *dram_addr = (uint32_t *)ptr;
+        ptr = (void *)dram_addr[-1];
+        //printf("[HEAP_CAPS_MALLOC]: obtained pointer that was aliased: %p \n", (void *)ptr);
+    }
+#endif
 
+    heap_t *heap = find_containing_heap(ptr);
     assert(heap != NULL && "realloc() pointer is outside heap areas");
 
     // are the existing heap's capabilities compatible with the
@@ -308,6 +319,7 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     // in a different heap with requested capabilities.
     void *new_p = heap_caps_malloc(size, caps);
     if (new_p != NULL) {
+
         size_t old_size = multi_heap_get_allocated_size(heap->heap, ptr);
         assert(old_size > 0);
         memcpy(new_p, ptr, MIN(size, old_size));
