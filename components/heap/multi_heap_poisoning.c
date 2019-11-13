@@ -21,7 +21,10 @@
 #include <sys/param.h>
 #include <multi_heap.h>
 #include "multi_heap_internal.h"
-#include "heap_private.h"
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    #include "heap_private.h"
+#endif
+
 
 /* Note: Keep platform-specific parts in this header, this source
    file should depend on libc only */
