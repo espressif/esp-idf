@@ -32,5 +32,5 @@ ESP-IDF 示例项目的 :example:`wifi` 目录下包含以下应用程序：
 API 参考
 -------------
 
-.. include:: /_build/inc/esp_wifi.inc
-.. include:: /_build/inc/esp_wifi_types.inc
+.. include-build-file:: inc/esp_wifi.inc
+.. include-build-file:: inc/esp_wifi_types.inc

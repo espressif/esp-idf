@@ -224,18 +224,18 @@ This reference covers three components:
 ADC driver
 ^^^^^^^^^^
 
-.. include:: /_build/inc/adc.inc
+.. include-build-file:: inc/adc.inc
 
 .. _adc-api-reference-adc-calibration:
 
 ADC Calibration
 ^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_adc_cal.inc
+.. include-build-file:: inc/esp_adc_cal.inc
 
 .. _adc-api-reference-gpio-lookup-macros:
 
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/adc_channel.inc
+.. include-build-file:: inc/adc_channel.inc

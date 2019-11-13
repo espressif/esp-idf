@@ -402,4 +402,4 @@ One way to differentiate between "real" and "false positive" memory leaks is to 
 API Reference - Heap Tracing
 ----------------------------
 
-.. include:: /_build/inc/esp_heap_trace.inc
+.. include-build-file:: inc/esp_heap_trace.inc

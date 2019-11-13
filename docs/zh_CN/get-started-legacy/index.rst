@@ -8,7 +8,7 @@
 
 本文档旨在指导用户搭建 ESP32 硬件开发的软件环境，通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 ESP32 开发板等步骤。
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 概述
 ====
@@ -141,13 +141,13 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 打开终端，后运行以下命令：
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 

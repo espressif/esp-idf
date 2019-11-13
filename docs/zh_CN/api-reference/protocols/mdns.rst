@@ -184,6 +184,6 @@ mDNS 提供查询服务和解析主机 IP/IPv6 地址的方法。
 API 参考
 --------
 
-.. include:: /_build/inc/mdns.inc
+.. include-build-file:: inc/mdns.inc
 
 

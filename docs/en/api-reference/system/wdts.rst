@@ -102,4 +102,4 @@ Task Watchdog API Reference
 
 A full example using the Task Watchdog is available in esp-idf: :example:`system/task_watchdog`
 
-.. include:: /_build/inc/esp_task_wdt.inc
+.. include-build-file:: inc/esp_task_wdt.inc

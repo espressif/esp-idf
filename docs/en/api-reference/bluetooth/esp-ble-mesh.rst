@@ -42,7 +42,7 @@ This section contains only one header file, which lists the following items of E
 * Structs used to transmit/receive messages
 * Event types and related event parameters
 
-.. include:: /_build/inc/esp_ble_mesh_defs.inc
+.. include-build-file:: inc/esp_ble_mesh_defs.inc
 
 
 ESP-BLE-MESH Core API Reference
@@ -64,37 +64,37 @@ This API reference covers six components:
 ESP-BLE-MESH Stack Initialization
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_common_api.inc
+.. include-build-file:: inc/esp_ble_mesh_common_api.inc
 
 
 Reading of Local Data Information
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_local_data_operation_api.inc
+.. include-build-file:: inc/esp_ble_mesh_local_data_operation_api.inc
 
 
 Low Power Operation (Updating)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_low_power_api.inc
+.. include-build-file:: inc/esp_ble_mesh_low_power_api.inc
 
 
 Send/Publish Messages, add Local AppKey, etc.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_networking_api.inc
+.. include-build-file:: inc/esp_ble_mesh_networking_api.inc
 
 
 ESP-BLE-MESH Node/Provisioner Provisioning
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_provisioning_api.inc
+.. include-build-file:: inc/esp_ble_mesh_provisioning_api.inc
 
 
 ESP-BLE-MESH GATT Proxy Server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_proxy_api.inc
+.. include-build-file:: inc/esp_ble_mesh_proxy_api.inc
 
 
 ESP-BLE-MESH Models API Reference
@@ -120,35 +120,35 @@ There are six categories of models:
 Configuration Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_config_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_config_model_api.inc
 
 
 Health Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_generic_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_generic_model_api.inc
 
 
 Generic Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_health_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_health_model_api.inc
 
 
 Sensor Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_lighting_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_lighting_model_api.inc
 
 
 Time and Scenes Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_sensor_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_sensor_model_api.inc
 
 
 Lighting Client/Server Models
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_ble_mesh_time_scene_model_api.inc
+.. include-build-file:: inc/esp_ble_mesh_time_scene_model_api.inc
 

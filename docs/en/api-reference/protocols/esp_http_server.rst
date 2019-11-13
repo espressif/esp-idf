@@ -155,4 +155,4 @@ Check the example under :example:`protocols/http_server/persistent_sockets`.
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_http_server.inc
+.. include-build-file:: inc/esp_http_server.inc

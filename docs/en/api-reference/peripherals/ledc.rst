@@ -175,5 +175,5 @@ The LEDC change duty cycle and fading control example: :example:`peripherals/led
 API Reference
 -------------
 
-.. include:: /_build/inc/ledc.inc
+.. include-build-file:: inc/ledc.inc
 

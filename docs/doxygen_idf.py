@@ -4,6 +4,7 @@ import os.path
 import re
 import sys
 import subprocess
+gen_dxd = __import__("gen-dxd")
 
 from local_util import copy_if_modified, call_with_python
 
@@ -18,7 +19,7 @@ def _parse_defines(header_path):
     # that these headers are all self-contained and don't include any other headers
     # not in the same directory
     print("Reading macros from %s..." % (header_path))
-    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-dM", "-E", header_path])
+    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-dM", "-E", header_path]).decode()
     for line in processed_output.split("\n"):
         line = line.strip()
         m = re.search("#define ([^ ]+) ?(.*)", line)
@@ -49,19 +50,27 @@ def generate_doxygen(app, project_description):
     # Call Doxygen to get XML files from the header files
     print("Calling Doxygen to generate latest XML files")
     doxy_env = {
-        "ENV_DOXYGEN_DEFINES": " ".join(defines)
+        "ENV_DOXYGEN_DEFINES": " ".join(defines),
+        "IDF_PATH": app.config.idf_path,
     }
-    subprocess.check_call(["doxygen", "../Doxyfile"], env=doxy_env)
+    doxyfile = os.path.join(app.config.docs_root, "Doxyfile")
+    # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
+    subprocess.check_call(["doxygen", doxyfile], env=doxy_env, cwd=build_dir)
 
     # Doxygen has generated XML files in 'xml' directory.
     # Copy them to 'xml_in', only touching the files which have changed.
-    copy_if_modified('xml/', 'xml_in/')
+    copy_if_modified(os.path.join(build_dir, 'xml/'), os.path.join(build_dir, 'xml_in/'))
 
     # Generate 'api_name.inc' files using the XML files by Doxygen
-    call_with_python('../gen-dxd.py')
+    gen_dxd.builddir = build_dir
+    gen_dxd.doxyfile_path = doxyfile
+    gen_dxd.header_file_path_prefix = "components/"
+    gen_dxd.xml_directory_path = "{}/xml".format(build_dir)
+    gen_dxd.inc_directory_path = "{}/inc".format(build_dir)
+    gen_dxd.generate_api_inc_files()
 
     # Generate 'esp_err_defs.inc' file with ESP_ERR_ error code definitions from inc file
     esp_err_inc_path = '{}/inc/esp_err_defs.inc'.format(build_dir)
-    call_with_python('../../tools/gen_esp_err_to_name.py --rst_output ' + esp_err_inc_path + '.in')
+    call_with_python('{}/tools/gen_esp_err_to_name.py --rst_output {}.in'.format(app.config.idf_path, esp_err_inc_path))
     copy_if_modified(esp_err_inc_path + '.in', esp_err_inc_path)
 

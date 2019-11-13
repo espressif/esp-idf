@@ -341,4 +341,4 @@ To get a dump for all eFuse registers.
 	00000000 00000000 00000000 00000000 00000000 00000000 00000000 00000000
 
 
-.. include:: /_build/inc/esp_efuse.inc
+.. include-build-file:: inc/esp_efuse.inc

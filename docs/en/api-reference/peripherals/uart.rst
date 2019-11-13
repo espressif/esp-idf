@@ -379,7 +379,7 @@ The table below describes the code examples available in the directory :example:
 API Reference
 -------------
 
-.. include:: /_build/inc/uart.inc
+.. include-build-file:: inc/uart.inc
 
 
 GPIO Lookup Macros
@@ -395,5 +395,5 @@ The UART peripherals have dedicated IO_MUX pins to which they are connected dire
 2. :c:macro:`UART_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when connected to the UART peripheral via IO_MUX (this is UART_NUM_0)
 3. :c:macro:`UART_CTS_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when used as the UART CTS pin via IO_MUX (this is UART_NUM_0). Similar to the above macro but specifies the pin function which is also part of the IO_MUX assignment.
 
-.. include:: /_build/inc/uart_channel.inc
+.. include-build-file:: inc/uart_channel.inc
 

@@ -106,4 +106,4 @@ See :doc:`sd_pullup_requirements` for pullup support and compatibilities of modu
 API Reference
 -------------
 
-.. include:: /_build/inc/sdmmc_host.inc
+.. include-build-file:: inc/sdmmc_host.inc

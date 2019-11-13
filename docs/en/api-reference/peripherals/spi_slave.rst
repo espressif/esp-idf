@@ -191,5 +191,5 @@ The code example for Device/Host communication can be found in the :example:`per
 API Reference
 -------------
 
-.. include:: /_build/inc/spi_slave.inc
+.. include-build-file:: inc/spi_slave.inc
 

@@ -332,4 +332,4 @@ ESP-IDF contains these ESP-MESH example projects:
 API Reference
 --------------
 
-.. include:: /_build/inc/esp_mesh.inc
+.. include-build-file:: inc/esp_mesh.inc

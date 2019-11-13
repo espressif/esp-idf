@@ -84,4 +84,4 @@ Instead, post the necessary data to a queue and handle it from a lower priority 
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_now.inc
+.. include-build-file:: inc/esp_now.inc

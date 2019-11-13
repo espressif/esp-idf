@@ -163,6 +163,6 @@ More extensive example in :example:`system/deep_sleep` illustrates usage of vari
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_sleep.inc
+.. include-build-file:: inc/esp_sleep.inc
 
 

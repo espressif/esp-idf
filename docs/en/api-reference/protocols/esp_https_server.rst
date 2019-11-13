@@ -47,4 +47,4 @@ The initial session setup can take about two seconds, or more with slower clock 
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_https_server.inc
+.. include-build-file:: inc/esp_https_server.inc

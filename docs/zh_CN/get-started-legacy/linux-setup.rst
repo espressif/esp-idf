@@ -29,7 +29,7 @@ Linux 平台工具链的标准设置（传统 GNU Make）
 工具链设置
 ==========
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
@@ -45,11 +45,11 @@ Linux 版的 ESP32 工具链可以从 Espressif 的网站下载：
 
     - 64 位 Linux：
 
-    .. include:: /_build/inc/unpack-code-linux64.inc
+    .. include-build-file:: inc/unpack-code-linux64.inc
 
     - 32 位 Linux：
 
-    .. include:: /_build/inc/unpack-code-linux32.inc
+    .. include-build-file:: inc/unpack-code-linux32.inc
 
 .. _setup-linux-toolchain-add-it-to-path-legacy:
 

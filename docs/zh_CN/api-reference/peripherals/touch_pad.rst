@@ -156,7 +156,7 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 API 参考
 -------------
 
-.. include:: /_build/inc/touch_pad.inc
+.. include-build-file:: inc/touch_pad.inc
 
 GPIO 宏查找表
 ^^^^^^^^^^^^^^^^^^
@@ -165,4 +165,6 @@ GPIO 宏查找表
 1. ``TOUCH_PAD_NUM5_GPIO_NUM`` 定义了通道 5 的 GPIO（即 GPIO 12）；
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` 定义了 GPIO 4 的通道（即通道 0）。
 
-.. include:: /_build/inc/touch_sensor_channel.inc
+
+.. include-build-file:: inc/touch_sensor_channel.inc
+.. include-build-file:: inc/touch_channel.inc

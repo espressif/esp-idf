@@ -10,7 +10,7 @@ This document is intended to help you set up the software development environmen
 
 After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then how to build and flash firmware onto an ESP32 board.
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 Introduction
 ============
@@ -142,13 +142,13 @@ To get a local copy of ESP-IDF, navigate to your installation directory and clon
 
 Open Terminal, and run the following commands:
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 

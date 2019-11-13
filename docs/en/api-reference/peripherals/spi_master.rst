@@ -455,12 +455,12 @@ The code example for displaying graphics on an ESP32-WROVER-KIT's 320x240 LCD sc
 API Reference - SPI Common
 --------------------------
 
-.. include:: /_build/inc/spi_types.inc
-.. include:: /_build/inc/spi_common.inc
+.. include-build-file:: inc/spi_types.inc
+.. include-build-file:: inc/spi_common.inc
 
 
 API Reference - SPI Master
 --------------------------
 
-.. include:: /_build/inc/spi_master.inc
+.. include-build-file:: inc/spi_master.inc
 

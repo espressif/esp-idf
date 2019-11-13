@@ -16,8 +16,10 @@ project_path = os.path.abspath(os.path.dirname(__file__))
 
 def setup(app):
     builddir = os.path.dirname(app.doctreedir.rstrip(os.sep))
+    app.add_config_value('docs_root', "", 'env')
     app.add_config_value('idf_path', os.environ.get("IDF_PATH", ""), 'env')
     app.add_config_value('idf_target', 'esp32', 'env')
+    app.add_config_value('build_dir', os.environ.get("BUILDDIR", ""), 'env')  # not actually an IDF thing
     app.add_event('idf-info')
 
     # Attaching the generate event to env-get-outdated is a bit of a hack,
@@ -36,11 +38,20 @@ def generate_idf_info(app, env, added, changed, removed):
               cmake_build_dir,
               "-C",
               project_path]
-    subprocess.check_call(idf_py + [ "set-target", app.config.idf_target])
-    # TODO: can call these two in one execution pass?
+    if not os.path.exists(os.path.join(cmake_build_dir, "CMakeCache.txt")):
+        # if build directory not created yet, run a reconfigure pass over it
+        print("Starting new dummy IDF project...")
+        subprocess.check_call(idf_py + [ "set-target", app.config.idf_target])
+    else:
+        print("Re-running CMake on the existing IDF project in {}".format(cmake_build_dir))
+
     subprocess.check_call(idf_py + [ "reconfigure"])
     with open(os.path.join(cmake_build_dir, "project_description.json")) as f:
         project_description = json.load(f)
+    if project_description["target"] != app.config.idf_target:
+        # this shouldn't really happen unless someone has been moving around directories inside _build, as
+        # the cmake_build_dir path should be target-specific
+        raise RuntimeError("Error configuring the dummy IDF project for {}. Target in project description is {}. Is _build directory contents corrupt?".format(app.config.idf_target, project_description["target"]))
     app.emit('idf-info', project_description)
 
     return []

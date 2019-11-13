@@ -106,4 +106,4 @@ The 64-bit hardware timer example: :example:`peripherals/timer_group`.
 API Reference
 -------------
 
-.. include:: /_build/inc/timer.inc
+.. include-build-file:: inc/timer.inc

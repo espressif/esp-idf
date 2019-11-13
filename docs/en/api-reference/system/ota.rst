@@ -311,7 +311,7 @@ End-to-end example of OTA firmware update workflow: :example:`system/ota`.
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_ota_ops.inc
+.. include-build-file:: inc/esp_ota_ops.inc
 
 
 

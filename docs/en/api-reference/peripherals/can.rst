@@ -485,5 +485,5 @@ Application Examples
 API Reference
 -------------
 
-.. include:: /_build/inc/can_types.inc
-.. include:: /_build/inc/can.inc
+.. include-build-file:: inc/can_types.inc
+.. include-build-file:: inc/can.inc

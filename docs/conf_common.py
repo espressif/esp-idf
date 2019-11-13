@@ -31,11 +31,11 @@ from local_util import run_cmd_get_output, copy_if_modified, call_with_python
 sys.setrecursionlimit(3500)
 
 try:
-    builddir = os.environ['BUILDDIR']
+    build_dir = os.environ['BUILDDIR']
 except KeyError:
-    builddir = '_build'
+    build_dir = '_build'
 
-builddir = os.path.abspath(builddir)
+build_dir = os.path.abspath(build_dir)
 
 # Fill in a default IDF_PATH if it's missing (ie when Read The Docs is building the docs)
 try:
@@ -43,11 +43,15 @@ try:
 except KeyError:
     idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
-# Set the idf_target chip. This is a hack right now.
-idf_target = 'esp32s2'
+docs_root = os.path.join(idf_path, "docs")
 
 try:
-    os.mkdir(builddir)
+    os.mkdir(build_dir)
+except OSError:
+    pass
+
+try:
+    os.mkdir(os.path.join(build_dir, 'inc'))
 except OSError:
     pass
 
@@ -56,16 +60,16 @@ except OSError:
 # (Note: this is in a function as it needs to access configuration to get the language)
 def generate_version_specific_includes(app):
     print("Generating version-specific includes...")
-    version_tmpdir = '{}/version_inc'.format(builddir)
-    call_with_python('../gen-version-specific-includes.py {} {}'.format(app.config.language, version_tmpdir))
-    copy_if_modified(version_tmpdir, '{}/inc'.format(builddir))
+    version_tmpdir = '{}/version_inc'.format(build_dir)
+    call_with_python('{}/gen-version-specific-includes.py {} {}'.format(docs_root, app.config.language, version_tmpdir))
+    copy_if_modified(version_tmpdir, '{}/inc'.format(build_dir))
 
 # Generate toolchain download links
 print("Generating toolchain download links")
 base_url = 'https://dl.espressif.com/dl/'
-toolchain_tmpdir = '{}/toolchain_inc'.format(builddir)
-call_with_python('../gen-toolchain-links.py ../../tools/toolchain_versions.mk {} {}'.format(base_url, toolchain_tmpdir))
-copy_if_modified(toolchain_tmpdir, '{}/inc'.format(builddir))
+toolchain_tmpdir = '{}/toolchain_inc'.format(build_dir)
+call_with_python('{}/gen-toolchain-links.py ../../tools/toolchain_versions.mk {} {}'.format(docs_root, base_url, toolchain_tmpdir))
+copy_if_modified(toolchain_tmpdir, '{}/inc'.format(build_dir))
 
 print("Generating IDF Tools list")
 os.environ["IDF_MAINTAINER"] = "1"
@@ -100,6 +104,7 @@ extensions = ['breathe',
               'kconfig_reference',
               'doxygen_idf',
               'sphinx.ext.todo',
+              'include_build_file',
               ]
 
 # sphinx.ext.todo extension parameters
@@ -115,7 +120,7 @@ seqdiag_antialias = True
 # Doxygen regenerates files in 'xml/' directory every time,
 # but we copy files to 'xml_in/' only when they change, to speed up
 # incremental builds.
-breathe_projects = {"esp32-idf": "xml_in/"}
+breathe_projects = {"esp32-idf": os.path.join(build_dir, "xml_in/")}
 breathe_default_project = "esp32-idf"
 
 # Add any paths that contain templates here, relative to this directory.
@@ -364,5 +369,6 @@ texinfo_documents = [
 # Override RTD CSS theme to introduce the theme corrections
 # https://github.com/rtfd/sphinx_rtd_theme/pull/432
 def setup(app):
+    app.config.build_dir = build_dir
     app.add_stylesheet('theme_overrides.css')
     generate_version_specific_includes(app)

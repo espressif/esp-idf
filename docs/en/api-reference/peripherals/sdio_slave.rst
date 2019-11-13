@@ -277,6 +277,7 @@ Slave/master communication: :example:`peripherals/sdio`.
 API Reference
 -------------
 
-.. include:: /_build/inc/sdio_slave_types.inc
-.. include:: /_build/inc/sdio_slave.inc
+.. include-build-file:: inc/sdio_slave_types.inc
+.. include-build-file:: inc/sdio_slave.inc
+
 

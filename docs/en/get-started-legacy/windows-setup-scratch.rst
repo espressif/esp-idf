@@ -78,7 +78,7 @@ Add this line to ``/etc/profile`` in the MSYS directory in order to permanently 
 Alternative Setup: Just download a toolchain
 ============================================
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 If you already have an MSYS2 install or want to do things differently, you can download just the toolchain here:
 

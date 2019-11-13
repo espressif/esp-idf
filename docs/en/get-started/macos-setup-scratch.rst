@@ -69,7 +69,7 @@ Go into the newly created directory::
 
 Download ``crosstool-NG`` and build it:
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 Build the toolchain::
 

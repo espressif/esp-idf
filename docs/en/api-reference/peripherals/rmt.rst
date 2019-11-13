@@ -264,5 +264,5 @@ Application Examples
 API Reference
 -------------
 
-.. include:: /_build/inc/rmt.inc
+.. include-build-file:: inc/rmt.inc
 

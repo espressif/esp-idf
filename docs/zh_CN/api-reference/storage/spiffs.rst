@@ -139,4 +139,4 @@ mkspiffs
 高级 API 参考
 ------------------------
 
-.. include:: /_build/inc/esp_spiffs.inc
+.. include-build-file:: inc/esp_spiffs.inc

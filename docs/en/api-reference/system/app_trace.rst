@@ -14,6 +14,6 @@ Developers can use this library to send application specific state of execution 
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_app_trace.inc
-.. include:: /_build/inc/esp_sysview_trace.inc
+.. include-build-file:: inc/esp_app_trace.inc
+.. include-build-file:: inc/esp_sysview_trace.inc
 

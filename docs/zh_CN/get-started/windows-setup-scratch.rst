@@ -24,13 +24,13 @@
 
 打开命令提示符，运行以下命令：
 
-.. include:: /_build/inc/git-clone-windows.inc
+.. include-build-file:: inc/git-clone-windows.inc
 
 ESP-IDF 将下载至 ``%userprofile%\esp\esp-idf``。
 
 请前往 :doc:`/versions`，查看 ESP-IDF 不同版本的具体适用场景。
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
@@ -82,7 +82,7 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 工具链设置
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 下载预编译的 Windows 工具链：
 

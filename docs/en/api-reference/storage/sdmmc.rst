@@ -100,6 +100,6 @@ Most applications need to use the protocol layer only in one task. For this reas
 API Reference
 -------------
 
-.. include:: /_build/inc/sdmmc_cmd.inc
+.. include-build-file:: inc/sdmmc_cmd.inc
 
-.. include:: /_build/inc/sdmmc_types.inc
+.. include-build-file:: inc/sdmmc_types.inc

@@ -47,4 +47,4 @@ Other functions are mostly used by the protocol level SD/SDIO/MMC driver via fun
 API Reference
 -------------
 
-.. include:: /_build/inc/sdspi_host.inc
+.. include-build-file:: inc/sdspi_host.inc

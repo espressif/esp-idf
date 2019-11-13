@@ -216,8 +216,8 @@ Other examples which also adopt esp_event library:
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_event.inc
-.. include:: /_build/inc/esp_event_base.inc
+.. include-build-file:: inc/esp_event.inc
+.. include-build-file:: inc/esp_event_base.inc
 
 Related Documents
 -----------------

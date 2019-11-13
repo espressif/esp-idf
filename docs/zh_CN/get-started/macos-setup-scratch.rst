@@ -69,7 +69,7 @@ MacPorts 需要完整的 XCode 软件，而 homebrew 只需要安装 XCode 命�
 
 下载并编译 ``crosstool-NG`` 
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 编译工具链::
 

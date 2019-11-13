@@ -66,6 +66,6 @@ The following example illustrates usage of ``esp_timer`` APIs: :example:`system/
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_timer.inc
+.. include-build-file:: inc/esp_timer.inc
 
 

@@ -92,6 +92,6 @@ SDIO 卡初始化和检测过程与 SD 存储卡相同，唯一的区别是 SDIO
 API 参考
 -------------
 
-.. include:: /_build/inc/sdmmc_cmd.inc
+.. include-build-file:: inc/sdmmc_cmd.inc
 
-.. include:: /_build/inc/sdmmc_types.inc
+.. include-build-file:: inc/sdmmc_types.inc

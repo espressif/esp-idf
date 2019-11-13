@@ -279,8 +279,8 @@ For complete example implementation see :example:`provisioning/manager`
 API Reference
 -------------
 
-.. include:: /_build/inc/manager.inc
-.. include:: /_build/inc/scheme_ble.inc
-.. include:: /_build/inc/scheme_softap.inc
-.. include:: /_build/inc/scheme_console.inc
-.. include:: /_build/inc/wifi_config.inc
+.. include-build-file:: inc/manager.inc
+.. include-build-file:: inc/scheme_ble.inc
+.. include-build-file:: inc/scheme_softap.inc
+.. include-build-file:: inc/scheme_console.inc
+.. include-build-file:: inc/wifi_config.inc

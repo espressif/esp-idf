@@ -29,4 +29,4 @@ Temperature sensor reading example: :example:`peripherals/temp_sensor`.
 API Reference - Normal Temp Sensor
 ----------------------------------
 
-.. include:: /_build/inc/temp_sensor.inc
+.. include-build-file:: inc/temp_sensor.inc

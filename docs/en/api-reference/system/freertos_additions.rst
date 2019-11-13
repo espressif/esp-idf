@@ -469,7 +469,7 @@ Ring Buffer API Reference
     of tasks using the ring buffer simultaneously is low, and the ring buffer is not operating
     near maximum capacity.
 
-.. include:: /_build/inc/ringbuf.inc
+.. include-build-file:: inc/ringbuf.inc
 
 
 .. _hooks:
@@ -518,4 +518,4 @@ in turn.
 Hooks API Reference
 -------------------
 
-.. include:: /_build/inc/esp_freertos_hooks.inc
+.. include-build-file:: inc/esp_freertos_hooks.inc

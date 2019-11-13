@@ -24,13 +24,13 @@ Get ESP-IDF
 
 Open Command Prompt and run the following commands:
 
-.. include:: /_build/inc/git-clone-windows.inc
+.. include-build-file:: inc/git-clone-windows.inc
 
 ESP-IDF will be downloaded into ``%userprofile%\esp\esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
@@ -75,7 +75,7 @@ Once Python is installed, open a Windows Command Prompt from the Start menu and 
 Toolchain Setup
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 Download the precompiled Windows toolchain:
 

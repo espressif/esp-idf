@@ -175,6 +175,7 @@ Examples of using MCPWM for motor control: :example:`peripherals/mcpwm`:
 API Reference
 -------------
 
-.. include:: /_build/inc/mcpwm_types.inc
-.. include:: /_build/inc/mcpwm.inc
+.. include-build-file:: inc/mcpwm_types.inc
+.. include-build-file:: inc/mcpwm.inc
+
 

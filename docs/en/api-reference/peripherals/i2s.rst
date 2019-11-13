@@ -208,5 +208,5 @@ Configuring I2S to use internal DAC for analog output
 API Reference
 -------------
 
-.. include:: /_build/inc/i2s.inc
+.. include-build-file:: inc/i2s.inc
 

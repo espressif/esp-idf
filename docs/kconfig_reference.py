@@ -32,10 +32,19 @@ def generate_reference(app, project_description):
     kconfigs_source_path = '{}/inc/kconfigs_source.in'.format(build_dir)
     kconfig_projbuilds_source_path = '{}/inc/kconfig_projbuilds_source.in'.format(build_dir)
 
+    prepare_kconfig_files_args = [sys.executable,
+                                  "{}/tools/kconfig_new/prepare_kconfig_files.py".format(app.config.idf_path),
+                                  "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
+                                  "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
+                                  "--env", "COMPONENT_KCONFIGS_SOURCE_FILE={}".format(kconfigs_source_path),
+                                  "--env", "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE={}".format(kconfig_projbuilds_source_path),
+    ]
+    subprocess.check_call(prepare_kconfig_files_args)
+
     confgen_args = [sys.executable,
-                    "../../tools/kconfig_new/confgen.py",
-                    "--kconfig", "../../Kconfig",
-                    "--sdkconfig-rename", "../../sdkconfig.rename",
+                    "{}/tools/kconfig_new/confgen.py".format(app.config.idf_path),
+                    "--kconfig", "./Kconfig",
+                    "--sdkconfig-rename", "./sdkconfig.rename",
                     "--config", temp_sdkconfig_path,
                     "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
                     "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
@@ -46,7 +55,7 @@ def generate_reference(app, project_description):
                     "--env", "IDF_TARGET={}".format(app.config.idf_target),
                     "--output", "docs", kconfig_inc_path + '.in'
     ]
-    subprocess.check_call(confgen_args)
+    subprocess.check_call(confgen_args, cwd=app.config.idf_path)
     copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
 
 

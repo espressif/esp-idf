@@ -100,6 +100,6 @@ or the status should be handled in other enabled interrupt properly**. You may l
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_intr_alloc.inc
+.. include-build-file:: inc/esp_intr_alloc.inc
 
 

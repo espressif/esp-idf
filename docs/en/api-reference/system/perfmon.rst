@@ -21,6 +21,6 @@ Header Files
 API Reference
 -------------
 
-.. include:: /_build/inc/xtensa_perfmon_access.inc
-.. include:: /_build/inc/xtensa_perfmon_apis.inc
+.. include-build-file:: inc/xtensa_perfmon_access.inc
+.. include-build-file:: inc/xtensa_perfmon_apis.inc
 

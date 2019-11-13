@@ -162,7 +162,7 @@ If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`C
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_system.inc
-.. include:: /_build/inc/esp_idf_version.inc
+.. include-build-file:: inc/esp_system.inc
+.. include-build-file:: inc/esp_idf_version.inc
 
 

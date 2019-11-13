@@ -141,6 +141,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_pm.inc
-.. include:: /_build/inc/pm.inc
+.. include-build-file:: inc/esp_pm.inc
+.. include-build-file:: inc/pm.inc
 

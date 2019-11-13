@@ -111,7 +111,7 @@ To use the region above the 4MiB limit, you can use the :doc:`himem API</api-ref
 API Reference - Heap Allocation
 -------------------------------
 
-.. include:: /_build/inc/esp_heap_caps.inc
+.. include-build-file:: inc/esp_heap_caps.inc
 
 Thread Safety
 ^^^^^^^^^^^^^
@@ -132,7 +132,7 @@ The following features are documented on the :doc:`Heap Memory Debugging </api-r
 API Reference - Initialisation
 ------------------------------
 
-.. include:: /_build/inc/esp_heap_caps_init.inc
+.. include-build-file:: inc/esp_heap_caps_init.inc
 
 Implementation Notes
 --------------------
@@ -150,4 +150,4 @@ API Reference - Multi Heap API
 
 (Note: The multi heap API is used internally by the heap capabilities allocator. Most IDF programs will never need to call this API directly.)
 
-.. include:: /_build/inc/multi_heap.inc
+.. include-build-file:: inc/multi_heap.inc

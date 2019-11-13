@@ -29,7 +29,7 @@ To compile with ESP-IDF you need to get the following packages:
 Toolchain Setup
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 ESP32 toolchain for Linux is available for download from Espressif website:
 
@@ -45,11 +45,11 @@ ESP32 toolchain for Linux is available for download from Espressif website:
 
     - for 64-bit Linux:
 
-      .. include:: /_build/inc/unpack-code-linux64.inc
+      .. include-build-file:: inc/unpack-code-linux64.inc
 
     - for 32-bit Linux:
 
-      .. include:: /_build/inc/unpack-code-linux32.inc
+      .. include-build-file:: inc/unpack-code-linux32.inc
 
 .. _setup-linux-toolchain-add-it-to-path-legacy:
 

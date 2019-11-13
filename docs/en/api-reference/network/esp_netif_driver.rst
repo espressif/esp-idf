@@ -94,4 +94,4 @@ The packet data path functions for transmitting and freeing the rx buffer (defin
 the esp-netif, specifically from its TCP/IP stack connecting layer. The following API reference outlines these network stack
 interaction with the esp-netif.
 
-.. include:: /_build/inc/esp_netif_net_stack.inc
+.. include-build-file:: inc/esp_netif_net_stack.inc

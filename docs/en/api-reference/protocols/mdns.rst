@@ -184,6 +184,6 @@ mDNS server/scanner example: :example:`protocols/mdns`.
 API Reference
 -------------
 
-.. include:: /_build/inc/mdns.inc
+.. include-build-file:: inc/mdns.inc
 
 

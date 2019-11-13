@@ -28,7 +28,7 @@ Setting DAC channel 1 (GPIO 25) voltage to approx 0.78 of VDD_A voltage (VDD * 2
 API Reference
 -------------
 
-.. include:: /_build/inc/dac.inc
+.. include-build-file:: inc/dac.inc
 
 GPIO Lookup Macros
 ^^^^^^^^^^^^^^^^^^
@@ -38,4 +38,4 @@ e.g.
 1. ``DAC_CHANNEL_1_GPIO_NUM`` is the GPIO number of channel 1 (25);
 2. ``DAC_GPIO26_CHANNEL`` is the channel number of GPIO 26 (channel 2).
 
-.. include:: /_build/inc/dac_channel.inc
+.. include-build-file:: inc/dac_channel.inc

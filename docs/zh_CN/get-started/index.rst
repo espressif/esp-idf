@@ -6,7 +6,7 @@
 
 本文档旨在指导用户搭建 ESP32 硬件开发的软件环境，通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 ESP32 开发板等步骤。
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 概述
 ============
@@ -140,7 +140,7 @@ Linux 和 MacOS 操作系统
 
 打开终端，后运行以下命令：
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF 将下载至 ``~/esp/esp-idf``。
 

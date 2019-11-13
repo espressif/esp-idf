@@ -92,5 +92,5 @@ Pulse counter with control signal and event interrupt example: :example:`periphe
 API Reference
 -------------
 
-.. include:: /_build/inc/pcnt.inc
+.. include-build-file:: inc/pcnt.inc
 

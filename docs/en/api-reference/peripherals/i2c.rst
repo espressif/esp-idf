@@ -249,4 +249,4 @@ I2C master and slave example: :example:`peripherals/i2c`.
 API Reference
 -------------
 
-.. include:: /_build/inc/i2c.inc
+.. include-build-file:: inc/i2c.inc

@@ -145,4 +145,4 @@ An example of using SPIFFS is provided in the :example:`storage/spiffs` director
 High-level API Reference
 ------------------------
 
-.. include:: /_build/inc/esp_spiffs.inc
+.. include-build-file:: inc/esp_spiffs.inc

@@ -19,10 +19,10 @@ GPIO output and input interrupt example: :example:`peripherals/gpio`.
 API Reference - Normal GPIO
 ---------------------------
 
-.. include:: /_build/inc/gpio.inc
+.. include-build-file:: inc/gpio.inc
 
 API Reference - RTC GPIO
 ------------------------
 
-.. include:: /_build/inc/rtc_io.inc
+.. include-build-file:: inc/rtc_io.inc
 

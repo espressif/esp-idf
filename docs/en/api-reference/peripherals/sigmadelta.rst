@@ -29,4 +29,4 @@ Sigma-delta Modulation example: :example:`peripherals/sigmadelta`.
 API Reference
 -------------
 
-.. include:: /_build/inc/sigmadelta.inc
+.. include-build-file:: inc/sigmadelta.inc

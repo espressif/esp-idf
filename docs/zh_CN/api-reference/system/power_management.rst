@@ -127,6 +127,6 @@ ESP32 支持下表中所述的三种电源管理锁。
 API 参考
 -------------
 
-.. include:: /_build/inc/esp_pm.inc
-.. include:: /_build/inc/pm.inc
+.. include-build-file:: inc/esp_pm.inc
+.. include-build-file:: inc/pm.inc
 

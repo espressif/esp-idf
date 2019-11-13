@@ -103,6 +103,6 @@ To guarantee that the custom structure is located in the image even if it is not
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_app_format.inc
+.. include-build-file:: inc/esp_app_format.inc
 
 

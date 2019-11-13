@@ -31,8 +31,8 @@ You can find two code examples in the :example:`storage` directory of ESP-IDF ex
 API Reference
 -------------
 
-.. include:: /_build/inc/nvs_flash.inc
+.. include-build-file:: inc/nvs_flash.inc
 
-.. include:: /_build/inc/nvs.inc
+.. include-build-file:: inc/nvs.inc
 
 

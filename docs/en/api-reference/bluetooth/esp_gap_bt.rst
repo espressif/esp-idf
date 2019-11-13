@@ -16,5 +16,5 @@ Application Example
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_gap_bt_api.inc
+.. include-build-file:: inc/esp_gap_bt_api.inc
 

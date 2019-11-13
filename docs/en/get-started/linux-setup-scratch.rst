@@ -60,7 +60,7 @@ Create the working directory and go into it::
 
 Download ``crosstool-NG`` and build it:
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 .. note:: To create a toolchain with support for 64-bit time_t, you need to remove the ``--enable-newlib-long-time_t`` option from the ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` file in 33 and 43 lines.
 
