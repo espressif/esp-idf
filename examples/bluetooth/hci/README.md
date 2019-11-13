@@ -1,4 +1,4 @@
-# Bluetooth Examples for Bluedroid host
+# Bluetooth Examples for Host Controller Interface
 
 Note: To use examples in this directory, you need to have Bluetooth enabled in configuration.
 

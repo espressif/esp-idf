@@ -394,6 +394,13 @@ menu "Bluetooth"
             help
                 This option is recommended for BLE only usecases to save on memory
 
+        config BT_CONTROLLER_ONLY
+            bool "Controller Only"
+            help
+                This option is recommended when you want to communicate directly with the
+                controller (without any host) or when you are using any other host stack
+                not supported by Espressif (not mentioned here).
+
     endchoice
 
     menu "Bluedroid Options"
