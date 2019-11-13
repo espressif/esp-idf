@@ -502,3 +502,94 @@ size_t heap_caps_get_allocated_size( void *ptr )
     size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
     return size;
 }
+
+IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
+{
+    void *ret = NULL;
+
+    if(!alignment) {
+        return NULL;
+    }
+
+    //Alignment must be a power of two:
+    if((alignment & (alignment - 1)) != 0) {
+        return NULL;
+    }
+
+    if (size > HEAP_SIZE_MAX) {
+        // Avoids int overflow when adding small numbers to size, or
+        // calculating 'end' from start+size, by limiting 'size' to the possible range
+        return NULL;
+    }
+
+    if (caps & MALLOC_CAP_EXEC) {
+        //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following
+        //caps, but the following caps are not possible for IRAM.  Thus, the combination is impossible and we return
+        //NULL directly, even although our heap capabilities (based on soc_memory_tags & soc_memory_regions) would
+        //indicate there is a tag for this.
+        if ((caps & MALLOC_CAP_8BIT) || (caps & MALLOC_CAP_DMA)) {
+            return NULL;
+        }
+        caps |= MALLOC_CAP_32BIT; // IRAM is 32-bit accessible RAM
+    }
+
+    if (caps & MALLOC_CAP_32BIT) {
+        /* 32-bit accessible RAM should allocated in 4 byte aligned sizes
+         * (Future versions of ESP-IDF should possibly fail if an invalid size is requested)
+         */
+        size = (size + 3) & (~3); // int overflow checked above
+    }
+
+    for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
+        //Iterate over heaps and check capabilities at this priority
+        heap_t *heap;
+        SLIST_FOREACH(heap, &registered_heaps, next) {
+            if (heap->heap == NULL) {
+                continue;
+            }
+            if ((heap->caps[prio] & caps) != 0) {
+                //Heap has at least one of the caps requested. If caps has other bits set that this prio
+                //doesn't cover, see if they're available in other prios.
+                if ((get_all_caps(heap) & caps) == caps) {
+                    //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
+                    if ((caps & MALLOC_CAP_EXEC) && esp_ptr_in_diram_dram((void *)heap->start)) {
+                        //This is special, insofar that what we're going to get back is a DRAM address. If so,
+                        //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
+                        //add a pointer to the DRAM equivalent before the address we're going to return.
+                        ret = multi_heap_aligned_alloc(heap->heap, size + 4, alignment);  // int overflow checked above
+                        if (ret != NULL) {
+                            return dram_alloc_to_iram_addr(ret, size + 4);  // int overflow checked above
+                        }
+                    } else {
+                        //Just try to alloc, nothing special.
+                        ret = multi_heap_aligned_alloc(heap->heap, size, alignment); 
+                        if (ret != NULL) {
+                            return ret;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    //Nothing usable found.
+    return NULL;
+}
+
+IRAM_ATTR void heap_caps_aligned_free(void *ptr)
+{
+    if (ptr == NULL) {
+        return;
+    }
+
+    if (esp_ptr_in_diram_iram(ptr)) {
+        //Memory allocated here is actually allocated in the DRAM alias region and
+        //cannot be de-allocated as usual. dram_alloc_to_iram_addr stores a pointer to
+        //the equivalent DRAM address, though; free that.
+        uint32_t *dramAddrPtr = (uint32_t *)ptr;
+        ptr = (void *)dramAddrPtr[-1];
+    }
+
+    heap_t *heap = find_containing_heap(ptr);
+    assert(heap != NULL && "free() target pointer is outside heap areas");
+    multi_heap_aligned_free(heap->heap, ptr);
+}
