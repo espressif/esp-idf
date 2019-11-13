@@ -91,9 +91,7 @@ void newlib_include_heap_impl(void)
  */
 void* memalign(size_t alignment, size_t n)
 {
-    extern void memalign_function_was_linked_but_unsupported_in_esp_idf(void);
-    memalign_function_was_linked_but_unsupported_in_esp_idf();
-    return NULL;
+    return heap_caps_aligned_alloc(alignment, n, MALLOC_CAP_DEFAULT);
 }
 
 int malloc_trim(size_t pad)
