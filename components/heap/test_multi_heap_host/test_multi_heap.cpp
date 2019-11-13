@@ -494,3 +494,36 @@ TEST_CASE("unaligned heaps", "[multi_heap]")
         }
     }
 }
+
+TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
+{
+    uint8_t test_heap[1024 * 1024];
+    multi_heap_handle_t heap = multi_heap_register(test_heap, sizeof(test_heap));
+    uint32_t aligments = 0; // starts from alignment by 4-byte boundary
+
+    printf("New heap:\n");
+    multi_heap_dump(heap);
+    printf("*********************\n");
+
+    for(;aligments < 4096; aligments++) {
+
+        //Use a non-sense size to test correct alignment even in strange
+        //memory layout objects:
+        uint8_t *buf = (uint8_t *)multi_heap_aligned_alloc(heap, (aligments + 117), aligments );
+        if(((aligments & (aligments - 1)) != 0) || (!aligments)) {
+            REQUIRE( buf == NULL );
+            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
+        } else {
+            REQUIRE( buf != NULL );
+            REQUIRE((intptr_t)buf >= (intptr_t)test_heap);
+            REQUIRE((intptr_t)buf < (intptr_t)(test_heap + sizeof(test_heap)));
+
+            printf("[ALIGNED_ALLOC] alignment required: %u \n", aligments);
+            //printf("[ALIGNED_ALLOC] allocated size: %d \n", multi_heap_get_allocated_size(heap, buf));    
+            printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
+
+            REQUIRE(((intptr_t)buf & (aligments - 1)) == 0);
+            multi_heap_aligned_free(heap, buf);    
+        }
+    }
+}
