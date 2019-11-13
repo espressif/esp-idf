@@ -8,6 +8,7 @@ if BLE_MESH
 
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
+        depends on BT_BLUEDROID_ENABLED
         select BLE_SCAN_DUPLICATE
         select BLE_MESH_SCAN_DUPLICATE_EN
         default y
