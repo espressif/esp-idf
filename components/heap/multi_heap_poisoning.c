@@ -222,6 +222,9 @@ void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t ali
 #else 
         (void)data;
 #endif
+    } else {
+        multi_heap_internal_unlock(heap);
+        return NULL;
     }
 
     //Lets align our new obtained block address:

@@ -522,23 +522,14 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
         return NULL;
     }
 
-    if (caps & MALLOC_CAP_EXEC) {
-        //MALLOC_CAP_EXEC forces an alloc from IRAM. There is a region which has both this as well as the following
-        //caps, but the following caps are not possible for IRAM.  Thus, the combination is impossible and we return
-        //NULL directly, even although our heap capabilities (based on soc_memory_tags & soc_memory_regions) would
-        //indicate there is a tag for this.
-        if ((caps & MALLOC_CAP_8BIT) || (caps & MALLOC_CAP_DMA)) {
-            return NULL;
-        }
-        caps |= MALLOC_CAP_32BIT; // IRAM is 32-bit accessible RAM
+    //aligned alloc for now only supports default allocator or external
+    //allocator.
+    if((caps & (MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM)) == 0) {
+        return NULL;
     }
 
-    if (caps & MALLOC_CAP_32BIT) {
-        /* 32-bit accessible RAM should allocated in 4 byte aligned sizes
-         * (Future versions of ESP-IDF should possibly fail if an invalid size is requested)
-         */
-        size = (size + 3) & (~3); // int overflow checked above
-    }
+    //if caps requested are supported, clear undesired others:
+    caps &= (MALLOC_CAP_DEFAULT | MALLOC_CAP_SPIRAM);
 
     for (int prio = 0; prio < SOC_MEMORY_TYPE_NO_PRIOS; prio++) {
         //Iterate over heaps and check capabilities at this priority
@@ -551,21 +542,10 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
                 //Heap has at least one of the caps requested. If caps has other bits set that this prio
                 //doesn't cover, see if they're available in other prios.
                 if ((get_all_caps(heap) & caps) == caps) {
-                    //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
-                    if ((caps & MALLOC_CAP_EXEC) && esp_ptr_in_diram_dram((void *)heap->start)) {
-                        //This is special, insofar that what we're going to get back is a DRAM address. If so,
-                        //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
-                        //add a pointer to the DRAM equivalent before the address we're going to return.
-                        ret = multi_heap_aligned_alloc(heap->heap, size + 4, alignment);  // int overflow checked above
-                        if (ret != NULL) {
-                            return dram_alloc_to_iram_addr(ret, size + 4);  // int overflow checked above
-                        }
-                    } else {
-                        //Just try to alloc, nothing special.
-                        ret = multi_heap_aligned_alloc(heap->heap, size, alignment); 
-                        if (ret != NULL) {
-                            return ret;
-                        }
+                    //Just try to alloc, nothing special.
+                    ret = multi_heap_aligned_alloc(heap->heap, size, alignment); 
+                    if (ret != NULL) {
+                        return ret;
                     }
                 }
             }
