@@ -16,9 +16,8 @@ variables:
 
 # GitLab-CI environment
 
-  # more attempts for more robust
-  GET_SOURCES_ATTEMPTS: "10"
-  ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
+  # XXX_ATTEMPTS variables (https://docs.gitlab.com/ce/ci/yaml/README.html#job-stages-attempts) are not defined here.
+  # Use values from  "CI / CD Settings" - "Variables".
 
   # GIT_STRATEGY is not defined here.
   # Use an option from  "CI / CD Settings" - "General pipelines".
