@@ -55,8 +55,11 @@
 #define POLL_TIMEOUT_MAX(lpn) ((CONFIG_BLE_MESH_LPN_POLL_TIMEOUT * 100) - \
                    REQ_RETRY_DURATION(lpn))
 
-/* Update 4 to 20 for BQB test case MESH/NODE/FRND/LPM/BI-02-C */
-#define REQ_ATTEMPTS(lpn)     (POLL_TIMEOUT_MAX(lpn) < K_SECONDS(3) ? 2 : 4)
+/**
+ * 1. Should use 20 attempts for BQB test case MESH/NODE/FRND/LPM/BI-02-C.
+ * 2. We should use more specific value for each PollTimeout range.
+ */
+#define REQ_ATTEMPTS(lpn)     (POLL_TIMEOUT_MAX(lpn) < K_SECONDS(3) ? 2 : 6)
 
 #define CLEAR_ATTEMPTS        2
 
@@ -70,9 +73,10 @@
 /* 2 transmissions, 20ms interval */
 #define POLL_XMIT BLE_MESH_TRANSMIT(1, 20)
 
+#define FIRST_POLL_ATTEMPTS     6
+
 static void (*lpn_cb)(u16_t friend_addr, bool established);
 
-#if defined(CONFIG_BLE_MESH_DEBUG_LOW_POWER)
 static const char *state2str(int state)
 {
     switch (state) {
@@ -94,17 +98,16 @@ static const char *state2str(int state)
         return "recv delay";
     case BLE_MESH_LPN_WAIT_UPDATE:
         return "wait update";
+    case BLE_MESH_LPN_OFFER_RECV:
+        return "offer recv";
     default:
         return "(unknown)";
     }
 }
-#endif /* CONFIG_BLE_MESH_DEBUG_LOW_POWER */
 
 static inline void lpn_set_state(int state)
 {
-#if defined(CONFIG_BLE_MESH_DEBUG_LOW_POWER)
     BT_DBG("%s -> %s", state2str(bt_mesh.lpn.state), state2str(state));
-#endif
     bt_mesh.lpn.state = state;
 }
 
@@ -149,6 +152,8 @@ static inline void group_clear(bt_mesh_atomic_t *target, bt_mesh_atomic_t *sourc
 
 static void clear_friendship(bool force, bool disable);
 
+static bool scan_after_clear;
+
 static void friend_clear_sent(int err, void *user_data)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
@@ -156,7 +161,10 @@ static void friend_clear_sent(int err, void *user_data)
     /* We're switching away from Low Power behavior, so permanently
      * enable scanning.
      */
-    bt_mesh_scan_enable();
+    if (scan_after_clear == false) {
+        bt_mesh_scan_enable();
+        scan_after_clear = true;
+    }
 
     lpn->req_attempts++;
 
@@ -261,6 +269,11 @@ static void clear_friendship(bool force, bool disable)
 
     lpn_set_state(BLE_MESH_LPN_ENABLED);
     k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
+
+    scan_after_clear = false;
+    if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
+        bt_mesh_scan_disable();
+    }
 }
 
 static void friend_req_sent(u16_t duration, int err, void *user_data)
@@ -269,6 +282,10 @@ static void friend_req_sent(u16_t duration, int err, void *user_data)
 
     if (err) {
         BT_ERR("%s, Sending Friend Request failed (err %d)", __func__, err);
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
+            bt_mesh_scan_enable();
+        }
         return;
     }
 
@@ -322,10 +339,8 @@ static void req_sent(u16_t duration, int err, void *user_data)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-#if defined(CONFIG_BLE_MESH_DEBUG_LOW_POWER)
     BT_DBG("req 0x%02x duration %u err %d state %s",
            lpn->sent_req, duration, err, state2str(lpn->state));
-#endif
 
     if (err) {
         BT_ERR("%s, Sending request failed (err %d)", __func__, err);
@@ -346,6 +361,12 @@ static void req_sent(u16_t duration, int err, void *user_data)
                               LPN_RECV_DELAY - SCAN_LATENCY);
     } else {
         lpn_set_state(BLE_MESH_LPN_OFFER_RECV);
+        /**
+         * Friend Update is replied by Friend Node with TTL set to 0 and Network
+         * Transmit set to 30ms which will cause the packet easy to be missed.
+         * Regarding this situation, here we can reduce the duration of receiving
+         * the first Friend Update.
+         */
         k_delayed_work_submit(&lpn->timer,
                               LPN_RECV_DELAY + duration +
                               lpn->recv_win);
@@ -404,7 +425,7 @@ void bt_mesh_lpn_disable(bool force)
     clear_friendship(force, true);
 }
 
-int bt_mesh_lpn_set(bool enable)
+int bt_mesh_lpn_set(bool enable, bool force)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -442,7 +463,7 @@ int bt_mesh_lpn_set(bool enable)
             k_delayed_work_cancel(&lpn->timer);
             lpn_set_state(BLE_MESH_LPN_DISABLED);
         } else {
-            bt_mesh_lpn_disable(false);
+            bt_mesh_lpn_disable(force);
         }
     }
 
@@ -542,6 +563,10 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
     }
 
     lpn->counter++;
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
+        bt_mesh_scan_disable();
+    }
 
     return 0;
 }
@@ -720,7 +745,7 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
             bt_mesh_scan_disable();
         }
 
-        if (lpn->req_attempts < 6) {
+        if (lpn->req_attempts < FIRST_POLL_ATTEMPTS) {
             BT_WARN("Retrying first Friend Poll");
             lpn->sent_req = 0U;
             if (send_friend_poll() == 0) {
@@ -737,9 +762,7 @@ static void lpn_timeout(struct k_work *work)
 {
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-#if defined(CONFIG_BLE_MESH_DEBUG_LOW_POWER)
     BT_DBG("state: %s", state2str(lpn->state));
-#endif
 
     switch (lpn->state) {
     case BLE_MESH_LPN_DISABLED:
@@ -774,9 +797,15 @@ static void lpn_timeout(struct k_work *work)
         k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
         break;
     case BLE_MESH_LPN_OFFER_RECV:
-        BT_WARN("No Friend Update received after the first Friend Poll");
-        lpn->sent_req = 0U;
-        send_friend_poll();
+        if (lpn->req_attempts < FIRST_POLL_ATTEMPTS) {
+            BT_WARN("Retrying the first Friend Poll, %d attempts", lpn->req_attempts);
+            lpn->sent_req = 0U;
+            send_friend_poll();
+            break;
+        }
+
+        BT_ERR("Timeout waiting for the first Friend Update");
+        clear_friendship(true, false);
         break;
     case BLE_MESH_LPN_ESTABLISHED:
         if (lpn->req_attempts < REQ_ATTEMPTS(lpn)) {
@@ -1047,9 +1076,7 @@ int bt_mesh_lpn_init(void)
     k_delayed_work_init(&lpn->timer, lpn_timeout);
 
     if (lpn->state == BLE_MESH_LPN_ENABLED) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
-            bt_mesh_scan_disable();
-        } else {
+        if (!IS_ENABLED(CONFIG_BLE_MESH_LPN_ESTABLISHMENT)) {
             bt_mesh_scan_enable();
         }
 

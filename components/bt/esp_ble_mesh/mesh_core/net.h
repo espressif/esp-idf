@@ -67,7 +67,7 @@ struct bt_mesh_subnet {
         u8_t nid;           /* NID */
         u8_t enc[16];       /* EncKey */
         u8_t net_id[8];     /* Network ID */
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
         u8_t identity[16];  /* IdentityKey */
 #endif
         u8_t privacy[16];   /* PrivacyKey */
@@ -393,7 +393,7 @@ void friend_cred_clear(struct friend_cred *cred);
 int friend_cred_del(u16_t net_idx, u16_t addr);
 
 static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
-                    void *cb_data)
+                                    void *cb_data)
 {
     if (!cb) {
         return;

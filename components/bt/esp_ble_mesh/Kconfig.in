@@ -60,7 +60,7 @@ if BLE_MESH
         config BLE_MESH_MAX_STORED_NODES
             int "Maximum number of nodes whose information can be stored"
             default 20
-            range 1 1000
+            range BLE_MESH_MAX_PROV_NODES 1000
             help
                 This option specifies the maximum number of nodes whose information can be
                 stored by a Provisioner in its upper layer.
@@ -71,7 +71,7 @@ if BLE_MESH
         config BLE_MESH_MAX_PROV_NODES
             int "Maximum number of devices that can be provisioned by Provisioner"
             default 20
-            range 1 100
+            range 1 1000
             help
                 This option specifies how many devices can be provisioned by a Provisioner.
                 This value indicates the maximum number of unprovisioned devices which can be
@@ -158,17 +158,28 @@ if BLE_MESH
             Enable this option to support BLE Mesh Proxy protocol used by PB-GATT
             and other proxy pdu transmission.
 
-    config BLE_MESH_GATT_PROXY
-        bool "BLE Mesh GATT Proxy Service"
+    config BLE_MESH_GATT_PROXY_SERVER
+        bool "BLE Mesh GATT Proxy Server"
         select BLE_MESH_PROXY
+        depends on BLE_MESH_NODE
+        default y
         help
             This option enables support for Mesh GATT Proxy Service, i.e. the
             ability to act as a proxy between a Mesh GATT Client and a Mesh network.
             This option should be enabled if a node is going to be a Proxy Server.
 
+    config BLE_MESH_GATT_PROXY_CLIENT
+        bool "BLE Mesh GATT Proxy Client"
+        select BLE_MESH_PROXY
+        default n
+        help
+            This option enables support for Mesh GATT Proxy Client. The Proxy Client
+            can use the GATT bearer to send mesh messages to a node that supports the
+            advertising bearer.
+
     config BLE_MESH_NODE_ID_TIMEOUT
         int "Node Identity advertising timeout"
-        depends on BLE_MESH_GATT_PROXY
+        depends on BLE_MESH_GATT_PROXY_SERVER
         range 1 60
         default 60
         help
@@ -185,7 +196,7 @@ if BLE_MESH
         config BLE_MESH_PROXY_FILTER_SIZE
             int "Maximum number of filter entries per Proxy Client"
             default 1
-            default 3 if BLE_MESH_GATT_PROXY
+            default 3 if BLE_MESH_GATT_PROXY_SERVER
             range 1 32767
             help
                 This option specifies how many Proxy Filter entries the local node supports.
@@ -416,14 +427,39 @@ if BLE_MESH
 
     config BLE_MESH_RELAY
         bool "Relay support"
+        depends on BLE_MESH_NODE
+        default y
         help
             Support for acting as a Mesh Relay Node. Enabling this option will allow
             a node to support the Relay feature, and the Relay feature can still
             be enabled or disabled by proper configuration messages. Disabling this
             option will let a node not support the Relay feature.
 
+    if BLE_MESH_RELAY
+
+        config BLE_MESH_RELAY_ADV_BUF
+            bool "Use separate advertising buffers for relay packets"
+            default n
+            help
+                When selected, self-send packets will be put in a high-priority
+                queue and relay packets will be put in a low-priority queue.
+
+        if BLE_MESH_RELAY_ADV_BUF
+
+            config BLE_MESH_RELAY_ADV_BUF_COUNT
+                int "Number of advertising buffers for relay packets"
+                default 60
+                range 6 256
+                help
+                    Number of advertising buffers for relay packets available.
+
+        endif # BLE_MESH_RELAY_ADV_BUF
+
+    endif # BLE_MESH_RELAY
+
     config BLE_MESH_LOW_POWER
         bool "Support for Low Power features"
+        depends on BLE_MESH_NODE
         help
             Enable this option to operate as a Low Power Node. If low power consumption
             is required by a node, this option should be enabled. And once the node
@@ -434,7 +470,7 @@ if BLE_MESH
 
         config BLE_MESH_LPN_ESTABLISHMENT
             bool "Perform Friendship establishment using low power"
-            default y
+            default n
             help
                 Perform the Friendship establishment using low power with the help of a
                 reduced scan duty cycle. The downside of this is that the node may miss
@@ -446,7 +482,7 @@ if BLE_MESH
 
         config BLE_MESH_LPN_AUTO
             bool "Automatically start looking for Friend nodes once provisioned"
-            default y
+            default n
             help
                 Once provisioned, automatically enable LPN functionality and start looking
                 for Friend nodes. If this option is disabled LPN mode needs to be manually
@@ -465,8 +501,8 @@ if BLE_MESH
                 before starting to look for Friend nodes.
 
         config BLE_MESH_LPN_RETRY_TIMEOUT
-            int "Retry timeout for Friend Requests"
-            default 8
+            int "Retry timeout for Friend requests"
+            default 6
             range 1 3600
             help
                 Time in seconds between Friend Requests, if a previous Friend Request did
@@ -555,6 +591,7 @@ if BLE_MESH
 
     config BLE_MESH_FRIEND
         bool "Support for acting as a Friend Node"
+        depends on BLE_MESH_NODE
         help
             Enable this option to be able to act as a Friend Node.
 
@@ -688,16 +725,6 @@ if BLE_MESH
             default 2
 
     endmenu #BLE Mesh NET BUF DEBUG LOG LEVEL
-
-    config BLE_MESH_IRQ_LOCK
-        bool "Used the IRQ lock instead of task lock"
-        help
-            To improve the real-time requirements of bt controller in BLE Mesh,
-            task lock is used to replace IRQ lock.
-            With this option enabled, interrupt lock instead of the mutex will
-            be used and the BLE Mesh stack will try to change interrupt level to
-            protect some critical situations. Users need to ensure that this option
-            is disabled so mutex will be used in the bottom layer.
 
     config BLE_MESH_CLIENT_MSG_TIMEOUT
         int "Timeout(ms) for client message response"

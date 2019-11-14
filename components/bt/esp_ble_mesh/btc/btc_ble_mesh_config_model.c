@@ -288,12 +288,17 @@ static void btc_ble_mesh_config_client_callback(esp_ble_mesh_cfg_client_cb_param
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_CONFIG_CLIENT)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_CONFIG_CLIENT;
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_cfg_client_cb_param_t), btc_ble_mesh_config_client_copy_req_data);
+                         sizeof(esp_ble_mesh_cfg_client_cb_param_t), btc_ble_mesh_config_client_copy_req_data);
 }
 
 void bt_mesh_config_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
@@ -361,7 +366,7 @@ void btc_ble_mesh_config_client_publish_callback(u32_t opcode,
     }
 
     bt_mesh_config_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_CONFIG_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+                                        BTC_BLE_MESH_EVT_CONFIG_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -398,7 +403,7 @@ static int btc_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param
     case ESP_BLE_MESH_MODEL_OP_MODEL_PUB_GET:
         return (cb->error_code =
                     bt_mesh_cfg_mod_pub_get(&ctx, get->model_pub_get.element_addr,
-                        get->model_pub_get.model_id, get->model_pub_get.company_id));
+                                            get->model_pub_get.model_id, get->model_pub_get.company_id));
     case ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_GET:
         return (cb->error_code = bt_mesh_cfg_hb_pub_get(&ctx));
     case ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_GET:
@@ -408,11 +413,11 @@ static int btc_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param
     case ESP_BLE_MESH_MODEL_OP_SIG_MODEL_SUB_GET:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_get(&ctx, get->sig_model_sub_get.element_addr,
-                        get->sig_model_sub_get.model_id));
+                                            get->sig_model_sub_get.model_id));
     case ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_SUB_GET:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_get_vnd(&ctx, get->vnd_model_sub_get.element_addr,
-                        get->vnd_model_sub_get.model_id, get->vnd_model_sub_get.company_id));
+                                                get->vnd_model_sub_get.model_id, get->vnd_model_sub_get.company_id));
     case ESP_BLE_MESH_MODEL_OP_NET_KEY_GET:
         return (cb->error_code = bt_mesh_cfg_net_key_get(&ctx));
     case ESP_BLE_MESH_MODEL_OP_APP_KEY_GET:
@@ -422,11 +427,11 @@ static int btc_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param
     case ESP_BLE_MESH_MODEL_OP_SIG_MODEL_APP_GET:
         return (cb->error_code =
                     bt_mesh_cfg_mod_app_get(&ctx, get->sig_model_app_get.element_addr,
-                        get->sig_model_app_get.model_id));
+                                            get->sig_model_app_get.model_id));
     case ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_APP_GET:
         return (cb->error_code =
                     bt_mesh_cfg_mod_app_get_vnd(&ctx, get->vnd_model_app_get.element_addr,
-                        get->vnd_model_app_get.model_id, get->vnd_model_app_get.company_id));
+                                                get->vnd_model_app_get.model_id, get->vnd_model_app_get.company_id));
     case ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_GET:
         return (cb->error_code = bt_mesh_cfg_kr_phase_get(&ctx, get->kr_phase_get.net_idx));
     case ESP_BLE_MESH_MODEL_OP_LPN_POLLTIMEOUT_GET:
@@ -475,16 +480,16 @@ static int btc_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param
     case ESP_BLE_MESH_MODEL_OP_NET_KEY_ADD:
         return (cb->error_code =
                     bt_mesh_cfg_net_key_add(&ctx, set->net_key_add.net_idx,
-                        &set->net_key_add.net_key[0]));
+                                            &set->net_key_add.net_key[0]));
     case ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD:
         return (cb->error_code =
                     bt_mesh_cfg_app_key_add(&ctx, set->app_key_add.net_idx,
-                        set->app_key_add.app_idx, &set->app_key_add.app_key[0]));
+                                            set->app_key_add.app_idx, &set->app_key_add.app_key[0]));
     case ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND:
         return (cb->error_code =
                     bt_mesh_cfg_mod_app_bind(&ctx, set->model_app_bind.element_addr,
-                        set->model_app_bind.model_app_idx, set->model_app_bind.model_id,
-                        set->model_app_bind.company_id));
+                                             set->model_app_bind.model_app_idx, set->model_app_bind.model_id,
+                                             set->model_app_bind.company_id));
     case ESP_BLE_MESH_MODEL_OP_MODEL_PUB_SET: {
         struct bt_mesh_cfg_mod_pub model_pub = {
             .addr = set->model_pub_set.publish_addr,
@@ -496,46 +501,46 @@ static int btc_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param
         };
         return (cb->error_code =
                     bt_mesh_cfg_mod_pub_set(&ctx, set->model_pub_set.element_addr,
-                        set->model_pub_set.model_id, set->model_pub_set.company_id, &model_pub));
+                                            set->model_pub_set.model_id, set->model_pub_set.company_id, &model_pub));
     }
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_add(&ctx, set->model_sub_add.element_addr,
-                        set->model_sub_add.sub_addr, set->model_sub_add.model_id,
-                        set->model_sub_add.company_id));
+                                            set->model_sub_add.sub_addr, set->model_sub_add.model_id,
+                                            set->model_sub_add.company_id));
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_DELETE:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_del(&ctx, set->model_sub_delete.element_addr,
-                        set->model_sub_delete.sub_addr, set->model_sub_delete.model_id,
-                        set->model_sub_delete.company_id));
+                                            set->model_sub_delete.sub_addr, set->model_sub_delete.model_id,
+                                            set->model_sub_delete.company_id));
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_OVERWRITE:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_overwrite(&ctx, set->model_sub_overwrite.element_addr,
-                        set->model_sub_overwrite.sub_addr, set->model_sub_overwrite.model_id,
-                        set->model_sub_overwrite.company_id));
+                            set->model_sub_overwrite.sub_addr, set->model_sub_overwrite.model_id,
+                            set->model_sub_overwrite.company_id));
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_ADD:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_va_add(&ctx, set->model_sub_va_add.element_addr,
-                        &set->model_sub_va_add.label_uuid[0], set->model_sub_va_add.model_id,
-                        set->model_sub_va_add.company_id));
+                                               &set->model_sub_va_add.label_uuid[0], set->model_sub_va_add.model_id,
+                                               set->model_sub_va_add.company_id));
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_OVERWRITE:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_va_overwrite(&ctx, set->model_sub_va_overwrite.element_addr,
-                        &set->model_sub_va_overwrite.label_uuid[0], set->model_sub_va_overwrite.model_id,
-                        set->model_sub_va_overwrite.company_id));
+                            &set->model_sub_va_overwrite.label_uuid[0], set->model_sub_va_overwrite.model_id,
+                            set->model_sub_va_overwrite.company_id));
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_DELETE:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_va_del(&ctx, set->model_sub_va_delete.element_addr,
-                        &set->model_sub_va_delete.label_uuid[0], set->model_sub_va_delete.model_id,
-                        set->model_sub_va_delete.company_id));
+                                               &set->model_sub_va_delete.label_uuid[0], set->model_sub_va_delete.model_id,
+                                               set->model_sub_va_delete.company_id));
     case ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_SET:
         return (cb->error_code =
                     bt_mesh_cfg_hb_sub_set(&ctx,
-                        (struct bt_mesh_cfg_hb_sub *)&set->heartbeat_sub_set));
+                                           (struct bt_mesh_cfg_hb_sub *)&set->heartbeat_sub_set));
     case ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_SET:
         return (cb->error_code =
                     bt_mesh_cfg_hb_pub_set(&ctx,
-                        (const struct bt_mesh_cfg_hb_pub *)&set->heartbeat_pub_set));
+                                           (const struct bt_mesh_cfg_hb_pub *)&set->heartbeat_pub_set));
     case ESP_BLE_MESH_MODEL_OP_NODE_RESET:
         return (cb->error_code = bt_mesh_cfg_node_reset(&ctx));
     case ESP_BLE_MESH_MODEL_OP_MODEL_PUB_VIRTUAL_ADDR_SET: {
@@ -548,41 +553,41 @@ static int btc_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param
         };
         return (cb->error_code =
                     bt_mesh_cfg_mod_pub_va_set(&ctx, set->model_pub_va_set.element_addr,
-                        set->model_pub_va_set.model_id, set->model_pub_va_set.company_id,
-                        set->model_pub_va_set.label_uuid, &model_pub));
+                                               set->model_pub_va_set.model_id, set->model_pub_va_set.company_id,
+                                               set->model_pub_va_set.label_uuid, &model_pub));
     }
     case ESP_BLE_MESH_MODEL_OP_MODEL_SUB_DELETE_ALL:
         return (cb->error_code =
                     bt_mesh_cfg_mod_sub_del_all(&ctx, set->model_sub_delete_all.element_addr,
-                        set->model_sub_delete_all.model_id, set->model_sub_delete_all.company_id));
+                                                set->model_sub_delete_all.model_id, set->model_sub_delete_all.company_id));
     case ESP_BLE_MESH_MODEL_OP_NET_KEY_UPDATE:
         return (cb->error_code =
                     bt_mesh_cfg_net_key_update(&ctx, set->net_key_update.net_idx,
-                        set->net_key_update.net_key));
+                                               set->net_key_update.net_key));
     case ESP_BLE_MESH_MODEL_OP_NET_KEY_DELETE:
         return (cb->error_code =
                     bt_mesh_cfg_net_key_delete(&ctx, set->net_key_delete.net_idx));
     case ESP_BLE_MESH_MODEL_OP_APP_KEY_UPDATE:
         return (cb->error_code =
                     bt_mesh_cfg_app_key_update(&ctx, set->app_key_update.net_idx,
-                        set->app_key_update.app_idx, set->app_key_update.app_key));
+                                               set->app_key_update.app_idx, set->app_key_update.app_key));
     case ESP_BLE_MESH_MODEL_OP_APP_KEY_DELETE:
         return (cb->error_code =
                     bt_mesh_cfg_app_key_delete(&ctx, set->app_key_delete.net_idx,
-                        set->app_key_delete.app_idx));
+                                               set->app_key_delete.app_idx));
     case ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_SET:
         return (cb->error_code =
                     bt_mesh_cfg_node_identity_set(&ctx, set->node_identity_set.net_idx,
-                        set->node_identity_set.identity));
+                            set->node_identity_set.identity));
     case ESP_BLE_MESH_MODEL_OP_MODEL_APP_UNBIND:
         return (cb->error_code =
                     bt_mesh_cfg_mod_app_unbind(&ctx, set->model_app_unbind.element_addr,
-                        set->model_app_unbind.model_app_idx, set->model_app_unbind.model_id,
-                        set->model_app_unbind.company_id));
+                                               set->model_app_unbind.model_app_idx, set->model_app_unbind.model_id,
+                                               set->model_app_unbind.company_id));
     case ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_SET:
         return (cb->error_code =
                     bt_mesh_cfg_kr_phase_set(&ctx, set->kr_phase_set.net_idx,
-                        set->kr_phase_set.transition));
+                                             set->kr_phase_set.transition));
     case ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_SET:
         return (cb->error_code =
                     bt_mesh_cfg_net_transmit_set(&ctx, set->net_transmit_set.net_transmit));
@@ -687,6 +692,11 @@ static void btc_ble_mesh_config_server_callback(esp_ble_mesh_cfg_server_cb_param
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_CONFIG_SERVER)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_CONFIG_SERVER;
     msg.act = act;
@@ -709,8 +719,8 @@ void bt_mesh_config_server_cb_evt_to_btc(u8_t evt_type,
     }
 
     switch (evt_type) {
-    case BTC_BLE_MESH_EVT_CONFIG_SERVER_RECV_MSG:
-        act = ESP_BLE_MESH_CFG_SERVER_RECV_MSG_EVT;
+    case BTC_BLE_MESH_EVT_CONFIG_SERVER_STATE_CHANGE:
+        act = ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT;
         break;
     default:
         LOG_ERROR("%s, Unknown config server event type %d", __func__, evt_type);
@@ -726,8 +736,8 @@ void bt_mesh_config_server_cb_evt_to_btc(u8_t evt_type,
     cb_params.ctx.recv_dst = ctx->recv_dst;
 
     if (val && len) {
-        length = (len <= sizeof(cb_params.status_cb)) ? len : sizeof(cb_params.status_cb);
-        memcpy(&cb_params.status_cb, val, length);
+        length = (len <= sizeof(cb_params.value)) ? len : sizeof(cb_params.value);
+        memcpy(&cb_params.value, val, length);
     }
 
     btc_ble_mesh_config_server_callback(&cb_params, act);

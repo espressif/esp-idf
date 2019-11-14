@@ -25,6 +25,7 @@
 #include "crypto.h"
 #include "beacon.h"
 #include "foundation.h"
+#include "proxy_client.h"
 
 #if CONFIG_BLE_MESH_NODE
 
@@ -137,6 +138,18 @@ static int secure_beacon_send(void)
                 time_diff < BEACON_THRESHOLD(sub)) {
             continue;
         }
+
+        /**
+         * If a node enables the Proxy Client functionality, and it
+         * succeeds to send Secure Network Beacon with GATT bearer,
+         * here we will continue to send Secure Network Beacon of
+         * other subnets.
+         */
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)
+        if (bt_mesh_proxy_client_beacon_send(sub)) {
+            continue;
+        }
+#endif
 
         buf = bt_mesh_adv_create(BLE_MESH_ADV_BEACON, PROV_XMIT,
                                  K_NO_WAIT);

@@ -60,5 +60,19 @@ void bt_mesh_sensor_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
         struct bt_mesh_msg_ctx *ctx,
         const u8_t *val, size_t len);
 
+typedef enum {
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_STATE_CHANGE,
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_RECV_GET_MSG,
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_RECV_SET_MSG,
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_MAX,
+} btc_ble_mesh_sensor_server_evt_t;
+
+void bt_mesh_sensor_server_cb_evt_to_btc(u8_t evt_type,
+        struct bt_mesh_model *model,
+        struct bt_mesh_msg_ctx *ctx,
+        const u8_t *val, size_t len);
+
+void btc_ble_mesh_sensor_server_cb_handler(btc_msg_t *msg);
+
 #endif /* _BTC_BLE_MESH_SENSOR_MODEL_H_ */
 

@@ -135,6 +135,25 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
                                      esp_ble_mesh_dev_role_t device_role);
 
 /**
+ * @brief        Update a server model state value. If the model publication
+ *               state is set properly (e.g. publish address is set to a valid
+ *               address), it will publish corresponding status message.
+ *
+ * @note         Currently this API is used to update bound state value, not
+ *               for all server model states.
+ *
+ * @param[in]    model: Server model which is going to update the state.
+ * @param[in]    type:  Server model state type.
+ * @param[in]    value: Server model state value.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
+        esp_ble_mesh_server_state_type_t type,
+        esp_ble_mesh_server_state_value_t *value);
+
+/**
  * @brief         Reset the provisioning procedure of the local BLE Mesh node.
  *
  * @note          All provisioning information in this node will be deleted and the node
