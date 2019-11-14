@@ -1243,6 +1243,56 @@ UT_001_42:
     - ESP32_IDF
     - UT_T1_1
 
+UT_001_43:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_001_44:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_001_45:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_001_46:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+    - psram
+
+UT_001_47:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_001_48:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_001_49:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_001_50:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+    - psram
+
 UT_002_01:
   <<: *unit_test_template
   tags:
