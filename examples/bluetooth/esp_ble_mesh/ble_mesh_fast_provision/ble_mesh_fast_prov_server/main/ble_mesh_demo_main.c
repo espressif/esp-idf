@@ -24,6 +24,7 @@
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_config_model_api.h"
 #include "esp_ble_mesh_generic_model_api.h"
+#include "esp_ble_mesh_local_data_operation_api.h"
 
 #include "board.h"
 #include "esp_fast_prov_operation.h"
@@ -58,7 +59,7 @@ esp_ble_mesh_cfg_srv_t config_server = {
 #else
     .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
 #endif
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
@@ -95,14 +96,11 @@ example_fast_prov_server_t fast_prov_server = {
     .state         = STATE_IDLE,
 };
 
-static esp_ble_mesh_model_op_t onoff_op[] = {
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET,       0),
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET,       2),
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2),
-    ESP_BLE_MESH_MODEL_OP_END,
+ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub, 2 + 3, ROLE_FAST_PROV);
+static esp_ble_mesh_gen_onoff_srv_t onoff_server = {
+    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
+    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_AUTO_RSP,
 };
-
-ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub, 2 + 1, ROLE_FAST_PROV);
 
 static esp_ble_mesh_model_op_t fast_prov_srv_op[] = {
     ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_SET,          3),
@@ -124,8 +122,7 @@ static esp_ble_mesh_model_op_t fast_prov_cli_op[] = {
 static esp_ble_mesh_model_t root_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&config_server),
     ESP_BLE_MESH_MODEL_CFG_CLI(&config_client),
-    ESP_BLE_MESH_SIG_MODEL(ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, onoff_op,
-    &onoff_pub, &led_state[1]),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub, &onoff_server),
 };
 
 static esp_ble_mesh_model_t vnd_models[] = {
@@ -158,29 +155,11 @@ static esp_ble_mesh_prov_t prov = {
     .iv_index            = 0x00,
 };
 
-static void gen_onoff_get_handler(esp_ble_mesh_model_t *model,
-                                  esp_ble_mesh_msg_ctx_t *ctx,
-                                  uint16_t len, uint8_t *data)
+static void example_change_led_state(uint8_t onoff)
 {
-    struct _led_state *led = NULL;
-    uint8_t send_data;
-    esp_err_t err;
+    struct _led_state *led = &led_state[1];
 
-    led = (struct _led_state *)model->user_data;
-    if (!led) {
-        ESP_LOGE(TAG, "%s: Failed to get generic onoff server model user_data", __func__);
-        return;
-    }
-
-    send_data = led->current;
-
-    /* Sends Generic OnOff Status as a reponse to Generic OnOff Get */
-    err = esp_ble_mesh_server_model_send_msg(model, ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-            sizeof(send_data), &send_data);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: Failed to send Generic OnOff Status message", __func__);
-        return;
-    }
+    board_led_operation(led->pin, onoff);
 
     /* When the node receives the first Generic OnOff Get/Set/Set Unack message, it will
      * start the timer used to disable fast provisioning functionality.
@@ -188,37 +167,6 @@ static void gen_onoff_get_handler(esp_ble_mesh_model_t *model,
     if (!bt_mesh_atomic_test_and_set_bit(fast_prov_server.srv_flags, DISABLE_FAST_PROV_START)) {
         k_delayed_work_submit(&fast_prov_server.disable_fast_prov_timer, DISABLE_FAST_PROV_TIMEOUT);
     }
-}
-
-static void gen_onoff_set_unack_handler(esp_ble_mesh_model_t *model,
-                                        esp_ble_mesh_msg_ctx_t *ctx,
-                                        uint16_t len, uint8_t *data)
-{
-    struct _led_state *led = NULL;
-
-    led = (struct _led_state *)model->user_data;
-    if (!led) {
-        ESP_LOGE(TAG, "%s: Failed to get generic onoff server model user_data", __func__);
-        return;
-    }
-
-    led->current = data[0];
-    gpio_set_level(led->pin, led->current);
-
-    /* When the node receives the first Generic OnOff Get/Set/Set Unack message, it will
-     * start the timer used to disable fast provisioning functionality.
-     */
-    if (!bt_mesh_atomic_test_and_set_bit(fast_prov_server.srv_flags, DISABLE_FAST_PROV_START)) {
-        k_delayed_work_submit(&fast_prov_server.disable_fast_prov_timer, DISABLE_FAST_PROV_TIMEOUT);
-    }
-}
-
-static void gen_onoff_set_handler(esp_ble_mesh_model_t *model,
-                                  esp_ble_mesh_msg_ctx_t *ctx,
-                                  uint16_t len, uint8_t *data)
-{
-    gen_onoff_set_unack_handler(model, ctx, len, data);
-    gen_onoff_get_handler(model, ctx, len, data);
 }
 
 static void node_prov_complete(uint16_t net_idx, uint16_t addr, uint8_t flags, uint32_t iv_index)
@@ -484,14 +432,6 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         }
         opcode = param->model_operation.opcode;
         switch (opcode) {
-        case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
-            gen_onoff_set_handler(param->model_operation.model, param->model_operation.ctx,
-                                  param->model_operation.length, param->model_operation.msg);
-            break;
-        case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK:
-            gen_onoff_set_unack_handler(param->model_operation.model, param->model_operation.ctx,
-                                        param->model_operation.length, param->model_operation.msg);
-            break;
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_INFO_SET:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NET_KEY_ADD:
         case ESP_BLE_MESH_VND_MODEL_OP_FAST_PROV_NODE_ADDR:
@@ -704,14 +644,14 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
              __func__, event, param->ctx.recv_op, param->ctx.addr);
 
     switch (event) {
-    case ESP_BLE_MESH_CFG_SERVER_RECV_MSG_EVT:
+    case ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT:
         switch (param->ctx.recv_op) {
         case ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD:
             ESP_LOGI(TAG, "Config Server get Config AppKey Add");
-            err = example_handle_config_app_key_add_evt(param->status_cb.app_key_add.app_idx);
+            err = example_handle_config_app_key_add_evt(param->value.state_change.appkey_add.app_idx);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to bind app_idx 0x%04x with non-config models",
-                         __func__, param->status_cb.app_key_add.app_idx);
+                    __func__, param->value.state_change.appkey_add.app_idx);
                 return;
             }
             break;
@@ -724,6 +664,27 @@ static void example_ble_mesh_config_server_cb(esp_ble_mesh_cfg_server_cb_event_t
     }
 }
 
+static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event,
+                                               esp_ble_mesh_generic_server_cb_param_t *param)
+{
+    ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
+        event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
+
+    switch (event) {
+    case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
+        ESP_LOGI(TAG, "ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT");
+        if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET ||
+            param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+            ESP_LOGI(TAG, "onoff 0x%02x", param->value.state_change.onoff_set.onoff);
+            example_change_led_state(param->value.state_change.onoff_set.onoff);
+        }
+        break;
+    default:
+        ESP_LOGW(TAG, "Unknown Generic Server event 0x%02x", event);
+        break;
+    }
+}
+
 static esp_err_t ble_mesh_init(void)
 {
     esp_err_t err;
@@ -732,6 +693,7 @@ static esp_err_t ble_mesh_init(void)
     esp_ble_mesh_register_custom_model_callback(example_ble_mesh_custom_model_cb);
     esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
     esp_ble_mesh_register_config_server_callback(example_ble_mesh_config_server_cb);
+    esp_ble_mesh_register_generic_server_callback(example_ble_mesh_generic_server_cb);
 
     err = esp_ble_mesh_init(&prov, &comp);
     if (err != ESP_OK) {

@@ -83,12 +83,16 @@ esp_err_t esp_ble_mesh_health_server_fault_update(esp_ble_mesh_elem_t *element)
     btc_ble_mesh_health_server_args_t arg = {0};
     btc_msg_t msg = {0};
 
+    if (element == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_HEALTH_SERVER;
     msg.act = BTC_BLE_MESH_ACT_HEALTH_SERVER_FAULT_UPDATE;
-    arg.fault_update.element = element;
+    arg.health_fault_update.element = element;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_health_server_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);

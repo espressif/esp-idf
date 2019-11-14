@@ -47,39 +47,123 @@
         ESP_BLE_MESH_SIG_MODEL(ESP_BLE_MESH_MODEL_ID_HEALTH_CLI,          \
                            NULL, NULL, cli_data)
 
-/** Health Server Model callbacks */
+/** @def ESP_BLE_MESH_HEALTH_PUB_DEFINE
+ *
+ *  A helper to define a health publication context
+ *
+ *  @param _name Name given to the publication context variable.
+ *  @param _max  Maximum number of faults the element can have.
+ *  @param _role Role of the device which contains the model.
+ */
+#define ESP_BLE_MESH_HEALTH_PUB_DEFINE(_name, _max, _role) \
+        ESP_BLE_MESH_MODEL_PUB_DEFINE(_name, (1 + 3 + (_max)), _role)
+
+/**
+ * SIG identifier of Health Fault Test.
+ * 0x01 ~ 0xFF: Vendor Specific Test.
+ */
+#define ESP_BLE_MESH_HEALTH_STANDARD_TEST               0x00
+
+/**
+ * Fault values of Health Fault Test.
+ * 0x33 ~ 0x7F: Reserved for Future Use.
+ * 0x80 ~ 0xFF: Vendor Specific Warning/Error.
+ */
+#define ESP_BLE_MESH_NO_FAULT                           0x00
+#define ESP_BLE_MESH_BATTERY_LOW_WARNING                0x01
+#define ESP_BLE_MESH_BATTERY_LOW_ERROR                  0x02
+#define ESP_BLE_MESH_SUPPLY_VOLTAGE_TOO_LOW_WARNING     0x03
+#define ESP_BLE_MESH_SUPPLY_VOLTAGE_TOO_LOW_ERROR       0x04
+#define ESP_BLE_MESH_SUPPLY_VOLTAGE_TOO_HIGH_WARNING    0x05
+#define ESP_BLE_MESH_SUPPLY_VOLTAGE_TOO_HIGH_ERROR      0x06
+#define ESP_BLE_MESH_POWER_SUPPLY_INTERRUPTED_WARNING   0x07
+#define ESP_BLE_MESH_POWER_SUPPLY_INTERRUPTED_ERROR     0x08
+#define ESP_BLE_MESH_NO_LOAD_WARNING                    0x09
+#define ESP_BLE_MESH_NO_LOAD_ERROR                      0x0A
+#define ESP_BLE_MESH_OVERLOAD_WARNING                   0x0B
+#define ESP_BLE_MESH_OVERLOAD_ERROR                     0x0C
+#define ESP_BLE_MESH_OVERHEAT_WARNING                   0x0D
+#define ESP_BLE_MESH_OVERHEAT_ERROR                     0x0E
+#define ESP_BLE_MESH_CONDENSATION_WARNING               0x0F
+#define ESP_BLE_MESH_CONDENSATION_ERROR                 0x10
+#define ESP_BLE_MESH_VIBRATION_WARNING                  0x11
+#define ESP_BLE_MESH_VIBRATION_ERROR                    0x12
+#define ESP_BLE_MESH_CONFIGURATION_WARNING              0x13
+#define ESP_BLE_MESH_CONFIGURATION_ERROR                0x14
+#define ESP_BLE_MESH_ELEMENT_NOT_CALIBRATED_WARNING     0x15
+#define ESP_BLE_MESH_ELEMENT_NOT_CALIBRATED_ERROR       0x16
+#define ESP_BLE_MESH_MEMORY_WARNING                     0x17
+#define ESP_BLE_MESH_MEMORY_ERROR                       0x18
+#define ESP_BLE_MESH_SELF_TEST_WARNING                  0x19
+#define ESP_BLE_MESH_SELF_TEST_ERROR                    0x1A
+#define ESP_BLE_MESH_INPUT_TOO_LOW_WARNING              0x1B
+#define ESP_BLE_MESH_INPUT_TOO_LOW_ERROR                0x1C
+#define ESP_BLE_MESH_INPUT_TOO_HIGH_WARNING             0x1D
+#define ESP_BLE_MESH_INPUT_TOO_HIGH_ERROR               0x1E
+#define ESP_BLE_MESH_INPUT_NO_CHANGE_WARNING            0x1F
+#define ESP_BLE_MESH_INPUT_NO_CHANGE_ERROR              0x20
+#define ESP_BLE_MESH_ACTUATOR_BLOCKED_WARNING           0x21
+#define ESP_BLE_MESH_ACTUATOR_BLOCKED_ERROR             0x22
+#define ESP_BLE_MESH_HOUSING_OPENED_WARNING             0x23
+#define ESP_BLE_MESH_HOUSING_OPENED_ERROR               0x24
+#define ESP_BLE_MESH_TAMPER_WARNING                     0x25
+#define ESP_BLE_MESH_TAMPER_ERROR                       0x26
+#define ESP_BLE_MESH_DEVICE_MOVED_WARNING               0x27
+#define ESP_BLE_MESH_DEVICE_MOVED_ERROR                 0x28
+#define ESP_BLE_MESH_DEVICE_DROPPED_WARNING             0x29
+#define ESP_BLE_MESH_DEVICE_DROPPED_ERROR               0x2A
+#define ESP_BLE_MESH_OVERFLOW_WARNING                   0x2B
+#define ESP_BLE_MESH_OVERFLOW_ERROR                     0x2C
+#define ESP_BLE_MESH_EMPTY_WARNING                      0x2D
+#define ESP_BLE_MESH_EMPTY_ERROR                        0x2E
+#define ESP_BLE_MESH_INTERNAL_BUS_WARNING               0x2F
+#define ESP_BLE_MESH_INTERNAL_BUS_ERROR                 0x30
+#define ESP_BLE_MESH_MECHANISM_JAMMED_WARNING           0x31
+#define ESP_BLE_MESH_MECHANISM_JAMMED_ERROR             0x32
+
+/** ESP BLE Mesh Health Server callback */
 typedef struct {
-    /** Fetch current faults */
-    int (*fault_get_cur)(esp_ble_mesh_model_t *model, uint8_t *test_id,
-                         uint16_t *company_id, uint8_t *faults, uint8_t *fault_count);
+    /** Clear health registered faults. Initialized by the stack. */
+    esp_ble_mesh_cb_t fault_clear;
 
-    /** Fetch registered faults */
-    int (*fault_get_reg)(esp_ble_mesh_model_t *model, uint16_t company_id,
-                         uint8_t *test_id, uint8_t *faults, uint8_t *fault_count);
+    /** Run a specific health test. Initialized by the stack. */
+    esp_ble_mesh_cb_t fault_test;
 
-    /** Clear registered faults */
-    int (*fault_clear)(esp_ble_mesh_model_t *model, uint16_t company_id);
+    /** Health attention on callback. Initialized by the stack. */
+    esp_ble_mesh_cb_t attention_on;
 
-    /** Run a specific test */
-    int (*fault_test)(esp_ble_mesh_model_t *model, uint8_t test_id, uint16_t company_id);
-
-    /** Attention on */
-    void (*attn_on)(esp_ble_mesh_model_t *model);
-
-    /** Attention off */
-    void (*attn_off)(esp_ble_mesh_model_t *model);
+    /** Health attention off callback. Initialized by the stack. */
+    esp_ble_mesh_cb_t attention_off;
 } esp_ble_mesh_health_srv_cb_t;
 
-/** Health Server Model Context */
+#define ESP_BLE_MESH_HEALTH_FAULT_ARRAY_SIZE    32
+
+/** ESP BLE Mesh Health Server test Context */
+typedef struct {
+    uint8_t  id_count;          /*!< Number of Health self-test ID */
+    const uint8_t *test_ids;    /*!< Array of Health self-test IDs */
+    uint16_t company_id;        /*!< Company ID used to identify the Health Fault state */
+    uint8_t  prev_test_id;      /*!< Current test ID of the health fault test */
+    uint8_t  current_faults[ESP_BLE_MESH_HEALTH_FAULT_ARRAY_SIZE];      /*!< Array of current faults */
+    uint8_t  registered_faults[ESP_BLE_MESH_HEALTH_FAULT_ARRAY_SIZE];   /*!< Array of registered faults */
+} __attribute__((packed)) esp_ble_mesh_health_test_t;
+
+/** ESP BLE Mesh Health Server Model Context */
 typedef struct {
     /** Pointer to Health Server Model */
     esp_ble_mesh_model_t *model;
 
-    /** Optional callback struct */
-    const esp_ble_mesh_health_srv_cb_t *cb;
+    /** Health callback struct */
+    esp_ble_mesh_health_srv_cb_t health_cb;
 
     /** Attention Timer state */
-    struct k_delayed_work attn_timer;
+    struct k_delayed_work attention_timer;
+
+    /** Attention Timer start flag */
+    bool attention_timer_start;
+
+    /** Health Server fault test */
+    esp_ble_mesh_health_test_t health_test;
 } esp_ble_mesh_health_srv_t;
 
 /** Parameter of Health Fault Get */
@@ -186,14 +270,54 @@ typedef enum {
     ESP_BLE_MESH_HEALTH_CLIENT_EVT_MAX,
 } esp_ble_mesh_health_client_cb_event_t;
 
-/** Health Server Model callback parameter */
+/** Parameter of publishing Health Current Status completion event */
 typedef struct {
-    int error_code;                                       /*!< Appropriate error code */
+    int error_code;                 /*!< The result of publishing Health Current Status */
+    esp_ble_mesh_elem_t *element;   /*!< Pointer to the element which contains the Health Server Model */
+} esp_ble_mesh_health_fault_update_comp_cb_t;
+
+/** Parameters of Health Fault Clear event */
+typedef struct {
+    esp_ble_mesh_model_t *model;    /*!< Pointer to the Health Server Model */
+    uint16_t company_id;            /*!< Bluetooth assigned 16-bit Company ID */
+} esp_ble_mesh_health_fault_clear_cb_t;
+
+/** Parameters of Health Fault Test event */
+typedef struct {
+    esp_ble_mesh_model_t *model;    /*!< Pointer to the Health Server Model */
+    uint8_t  test_id;               /*!< ID of a specific test to be performed */
+    uint16_t company_id;            /*!< Bluetooth assigned 16-bit Company ID */
+} esp_ble_mesh_health_fault_test_cb_t;
+
+/** Parameter of Health Attention On event */
+typedef struct {
+    esp_ble_mesh_model_t *model;    /*!< Pointer to the Health Server Model */
+    uint8_t time;                   /*!< Duration of attention timer on (in seconds) */
+} esp_ble_mesh_health_attention_on_cb_t;
+
+/** Parameter of Health Attention Off event */
+typedef struct {
+    esp_ble_mesh_model_t *model;    /*!< Pointer to the Health Server Model */
+} esp_ble_mesh_health_attention_off_cb_t;
+
+/**
+ * @brief Health Server Model callback parameters union
+ */
+typedef union {
+    esp_ble_mesh_health_fault_update_comp_cb_t  fault_update_comp;  /*!< ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMP_EVT */
+    esp_ble_mesh_health_fault_clear_cb_t        fault_clear;        /*!< ESP_BLE_MESH_HEALTH_SERVER_FAULT_CLEAR_EVT */
+    esp_ble_mesh_health_fault_test_cb_t         fault_test;         /*!< ESP_BLE_MESH_HEALTH_SERVER_FAULT_TEST_EVT */
+    esp_ble_mesh_health_attention_on_cb_t       attention_on;       /*!< ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_ON_EVT */
+    esp_ble_mesh_health_attention_off_cb_t      attention_off;      /*!< ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_OFF_EVT */
 } esp_ble_mesh_health_server_cb_param_t;
 
 /** This enum value is the event of Health Server Model */
 typedef enum {
-    ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMPLETE_EVT,
+    ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMP_EVT,
+    ESP_BLE_MESH_HEALTH_SERVER_FAULT_CLEAR_EVT,
+    ESP_BLE_MESH_HEALTH_SERVER_FAULT_TEST_EVT,
+    ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_ON_EVT,
+    ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_OFF_EVT,
     ESP_BLE_MESH_HEALTH_SERVER_EVT_MAX,
 } esp_ble_mesh_health_server_cb_event_t;
 
@@ -270,7 +394,7 @@ esp_err_t esp_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_
         esp_ble_mesh_health_client_set_state_t *set_state);
 
 /**
- * @brief         This function is called by the Health Server Model to start to publish its Current Health Fault.
+ * @brief         This function is called by the Health Server Model to update the context of its Health Current status.
  *
  * @param[in]     element: The element to which the Health Server Model belongs.
  *

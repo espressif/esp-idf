@@ -79,8 +79,8 @@ typedef struct esp_ble_mesh_cfg_srv {
         uint8_t  min_hops;              /*!< Minimum hops when receiving Heartbeat messages */
         uint8_t  max_hops;              /*!< Maximum hops when receiving Heartbeat messages */
 
-        /** Optional subscription tracking function */
-        void (*func)(uint8_t hops, uint16_t feature);
+        /** Optional heartbeat subscription tracking function */
+        esp_ble_mesh_cb_t heartbeat_recv_cb;
     } heartbeat_sub;
 } esp_ble_mesh_cfg_srv_t;
 
@@ -513,8 +513,8 @@ typedef struct {
 
 /** Parameters of Config Network Transmit Status */
 typedef struct {
-    uint8_t net_trans_count:3;          /*!< Number of transmissions for each Network PDU originating from the node */
-    uint8_t net_trans_step :5;          /*!< Maximum hops when receiving Heartbeat messages */
+    uint8_t net_trans_count: 3;         /*!< Number of transmissions for each Network PDU originating from the node */
+    uint8_t net_trans_step : 5;         /*!< Maximum hops when receiving Heartbeat messages */
 } esp_ble_mesh_cfg_net_trans_status_cb_t;
 
 /** Parameters of Config SIG/Vendor Subscription List */
@@ -610,28 +610,135 @@ typedef enum {
     ESP_BLE_MESH_CFG_CLIENT_EVT_MAX,
 } esp_ble_mesh_cfg_client_cb_event_t;
 
-/** Parameter of Config AppKey Add */
+/**
+ * @brief Configuration Server model related context.
+ */
+
 typedef struct {
-    uint16_t app_idx;   /*!< AppKey Index of the Config AppKey Add */
-} esp_ble_mesh_cfg_srv_app_key_add_cb_t;
+    uint16_t element_addr;      /*!< Element Address */
+    uint16_t pub_addr;          /*!< Publish Address */
+    uint16_t app_idx;           /*!< AppKey Index */
+    bool     cred_flag;         /*!< Friendship Credential Flag */
+    uint8_t  pub_ttl;           /*!< Publish TTL */
+    uint8_t  pub_period;        /*!< Publish Period */
+    uint8_t  pub_retransmit;    /*!< Publish Retransmit */
+    uint16_t company_id;        /*!< Company ID */
+    uint16_t model_id;          /*!< Model ID */
+} esp_ble_mesh_state_change_cfg_mod_pub_set_t;
+
+/** Parameters of Config Model Subscription Add */
+typedef struct {
+    uint16_t element_addr;      /*!< Element Address */
+    uint16_t sub_addr;          /*!< Subscription Address */
+    uint16_t company_id;        /*!< Company ID */
+    uint16_t model_id;          /*!< Model ID */
+} esp_ble_mesh_state_change_cfg_model_sub_add_t;
+
+/** Parameters of Config Model Subscription Delete */
+typedef struct {
+    uint16_t element_addr;      /*!< Element Address */
+    uint16_t sub_addr;          /*!< Subscription Address */
+    uint16_t company_id;        /*!< Company ID */
+    uint16_t model_id;          /*!< Model ID */
+} esp_ble_mesh_state_change_cfg_model_sub_delete_t;
+
+/** Parameters of Config NetKey Add */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+    uint8_t  net_key[16];       /*!< NetKey */
+} esp_ble_mesh_state_change_cfg_netkey_add_t;
+
+/** Parameters of Config NetKey Update */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+    uint8_t  net_key[16];       /*!< NetKey */
+} esp_ble_mesh_state_change_cfg_netkey_update_t;
+
+/** Parameter of Config NetKey Delete */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+} esp_ble_mesh_state_change_cfg_netkey_delete_t;
+
+/** Parameters of Config AppKey Add */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+    uint16_t app_idx;           /*!< AppKey Index */
+    uint8_t  app_key[16];       /*!< AppKey */
+} esp_ble_mesh_state_change_cfg_appkey_add_t;
+
+/** Parameters of Config AppKey Update */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+    uint16_t app_idx;           /*!< AppKey Index */
+    uint8_t  app_key[16];       /*!< AppKey */
+} esp_ble_mesh_state_change_cfg_appkey_update_t;
+
+/** Parameters of Config AppKey Delete */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+    uint16_t app_idx;           /*!< AppKey Index */
+} esp_ble_mesh_state_change_cfg_appkey_delete_t;
+
+/** Parameters of Config Model App Bind */
+typedef struct {
+    uint16_t element_addr;      /*!< Element Address */
+    uint16_t app_idx;           /*!< AppKey Index */
+    uint16_t company_id;        /*!< Company ID */
+    uint16_t model_id;          /*!< Model ID */
+} esp_ble_mesh_state_change_cfg_model_app_bind_t;
+
+/** Parameters of Config Model App Unbind */
+typedef struct {
+    uint16_t element_addr;      /*!< Element Address */
+    uint16_t app_idx;           /*!< AppKey Index */
+    uint16_t company_id;        /*!< Company ID */
+    uint16_t model_id;          /*!< Model ID */
+} esp_ble_mesh_state_change_cfg_model_app_unbind_t;
+
+/** Parameters of Config Key Refresh Phase Set */
+typedef struct {
+    uint16_t net_idx;           /*!< NetKey Index */
+    uint8_t  kr_phase;          /*!< New Key Refresh Phase Transition */
+} esp_ble_mesh_state_change_cfg_kr_phase_set_t;
 
 /**
- * @brief Configuration Server Model received message union
+ * @brief Configuration Server model state change value union
  */
 typedef union {
-    esp_ble_mesh_cfg_srv_app_key_add_cb_t   app_key_add;    /*!< The Config AppKey Add event value */
-} esp_ble_mesh_cfg_server_common_cb_param_t;
+    /**
+     * The recv_op in ctx can be used to decide which state is changed.
+     */
+    esp_ble_mesh_state_change_cfg_mod_pub_set_t         mod_pub_set;        /*!< Config Model Publication Set */
+    esp_ble_mesh_state_change_cfg_model_sub_add_t       mod_sub_add;        /*!< Config Model Subscription Add */
+    esp_ble_mesh_state_change_cfg_model_sub_delete_t    mod_sub_delete;     /*!< Config Model Subscription Delete */
+    esp_ble_mesh_state_change_cfg_netkey_add_t          netkey_add;         /*!< Config NetKey Add */
+    esp_ble_mesh_state_change_cfg_netkey_update_t       netkey_update;      /*!< Config NetKey Update */
+    esp_ble_mesh_state_change_cfg_netkey_delete_t       netkey_delete;      /*!< Config NetKey Delete */
+    esp_ble_mesh_state_change_cfg_appkey_add_t          appkey_add;         /*!< Config AppKey Add */
+    esp_ble_mesh_state_change_cfg_appkey_update_t       appkey_update;      /*!< Config AppKey Update */
+    esp_ble_mesh_state_change_cfg_appkey_delete_t       appkey_delete;      /*!< Config AppKey Delete */
+    esp_ble_mesh_state_change_cfg_model_app_bind_t      mod_app_bind;       /*!< Config Model App Bind */
+    esp_ble_mesh_state_change_cfg_model_app_unbind_t    mod_app_unbind;     /*!< Config Model App Unbind */
+    esp_ble_mesh_state_change_cfg_kr_phase_set_t        kr_phase_set;       /*!< Config Key Refresh Phase Set */
+} esp_ble_mesh_cfg_server_state_change_t;
 
-/** Configuration Server Model callback parameters */
+/**
+ * @brief Configuration Server model callback value union
+ */
+typedef union {
+    esp_ble_mesh_cfg_server_state_change_t state_change;  /*!< ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT */
+} esp_ble_mesh_cfg_server_cb_value_t;
+
+/** Configuration Server model callback parameters */
 typedef struct {
-    esp_ble_mesh_model_t *model;    /*!< Pointer to the server model structure */
-    esp_ble_mesh_msg_ctx_t ctx;     /*!< The context of the received message */
-    esp_ble_mesh_cfg_server_common_cb_param_t status_cb;    /*!< The received configuration message callback values */
+    esp_ble_mesh_model_t  *model;   /*!< Pointer to the server model structure */
+    esp_ble_mesh_msg_ctx_t ctx;     /*!< Context of the received message */
+    esp_ble_mesh_cfg_server_cb_value_t value;   /*!< Value of the received configuration messages */
 } esp_ble_mesh_cfg_server_cb_param_t;
 
-/** This enum value is the event of Configuration Server Model */
+/** This enum value is the event of Configuration Server model */
 typedef enum {
-    ESP_BLE_MESH_CFG_SERVER_RECV_MSG_EVT,
+    ESP_BLE_MESH_CFG_SERVER_STATE_CHANGE_EVT,
     ESP_BLE_MESH_CFG_SERVER_EVT_MAX,
 } esp_ble_mesh_cfg_server_cb_event_t;
 
