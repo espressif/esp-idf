@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "lan8720";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -162,6 +163,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_lan8720_t;
 
 static esp_err_t lan8720_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
@@ -214,6 +216,18 @@ static esp_err_t lan8720_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t lan8720_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
+    if (lan8720->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(lan8720->reset_gpio_num);
+        gpio_set_direction(lan8720->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(lan8720->reset_gpio_num, 0);
+        gpio_set_level(lan8720->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
@@ -365,10 +379,12 @@ esp_eth_phy_t *esp_eth_phy_new_lan8720(const eth_phy_config_t *config)
     PHY_CHECK(lan8720, "calloc lan8720 object failed", err);
     lan8720->name = "lan8720";
     lan8720->addr = config->phy_addr;
+    lan8720->reset_gpio_num = config->reset_gpio_num;
     lan8720->reset_timeout_ms = config->reset_timeout_ms;
     lan8720->link_status = ETH_LINK_DOWN;
     lan8720->autonego_timeout_ms = config->autonego_timeout_ms;
     lan8720->parent.reset = lan8720_reset;
+    lan8720->parent.reset_hw = lan8720_reset_hw;
     lan8720->parent.init = lan8720_init;
     lan8720->parent.deinit = lan8720_deinit;
     lan8720->parent.set_mediator = lan8720_set_mediator;

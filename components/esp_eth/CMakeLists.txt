@@ -15,6 +15,5 @@ endif()
 
 idf_component_register(SRCS "${esp_eth_srcs}"
                        INCLUDE_DIRS "include"
-                       LDFRAGMENTS "linker.lf"
                        REQUIRES "esp_event"
                        PRIV_REQUIRES "tcpip_adapter" "driver" "log")

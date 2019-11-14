@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "dp83848";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -90,6 +91,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_dp83848_t;
 
 static esp_err_t dp83848_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
@@ -142,6 +144,18 @@ static esp_err_t dp83848_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
+    if (dp83848->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(dp83848->reset_gpio_num);
+        gpio_set_direction(dp83848->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(dp83848->reset_gpio_num, 0);
+        gpio_set_level(dp83848->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
@@ -285,8 +299,10 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     dp83848->addr = config->phy_addr;
     dp83848->reset_timeout_ms = config->reset_timeout_ms;
     dp83848->link_status = ETH_LINK_DOWN;
+    dp83848->reset_gpio_num = config->reset_gpio_num;
     dp83848->autonego_timeout_ms = config->autonego_timeout_ms;
     dp83848->parent.reset = dp83848_reset;
+    dp83848->parent.reset_hw = dp83848_reset_hw;
     dp83848->parent.init = dp83848_init;
     dp83848->parent.deinit = dp83848_deinit;
     dp83848->parent.set_mediator = dp83848_set_mediator;

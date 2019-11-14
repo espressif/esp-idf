@@ -10,6 +10,7 @@
 #include "esp_event.h"
 #include "esp_eth.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "esp_eth_test";
 

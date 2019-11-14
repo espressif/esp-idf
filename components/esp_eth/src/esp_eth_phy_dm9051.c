@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "dm9051";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -84,6 +85,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_dm9051_t;
 
 static esp_err_t dm9051_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
@@ -141,6 +143,19 @@ static esp_err_t dm9051_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t dm9051_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    // set reset_gpio_num minus zero can skip hardware reset phy chip
+    if (dm9051->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(dm9051->reset_gpio_num);
+        gpio_set_direction(dm9051->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(dm9051->reset_gpio_num, 0);
+        gpio_set_level(dm9051->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t dm9051_negotiate(esp_eth_phy_t *phy)
@@ -283,9 +298,11 @@ esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
     dm9051->name = "dm9051";
     dm9051->addr = config->phy_addr;
     dm9051->reset_timeout_ms = config->reset_timeout_ms;
+    dm9051->reset_gpio_num = config->reset_gpio_num;
     dm9051->link_status = ETH_LINK_DOWN;
     dm9051->autonego_timeout_ms = config->autonego_timeout_ms;
     dm9051->parent.reset = dm9051_reset;
+    dm9051->parent.reset_hw = dm9051_reset_hw;
     dm9051->parent.init = dm9051_init;
     dm9051->parent.deinit = dm9051_deinit;
     dm9051->parent.set_mediator = dm9051_set_mediator;
