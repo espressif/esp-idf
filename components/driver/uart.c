@@ -413,7 +413,7 @@ static esp_err_t UART_ISR_ATTR uart_pattern_enqueue(uart_port_t uart_num, int po
 {
     UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
     esp_err_t ret = ESP_OK;
-    UART_ENTER_CRITICAL(&uart_spinlock[uart_num]);
+    UART_ENTER_CRITICAL_ISR(&uart_spinlock[uart_num]);
     uart_pat_rb_t *p_pos = &p_uart_obj[uart_num]->rx_pattern_pos;
     int next = p_pos->wr + 1;
     if (next >= p_pos->len) {
@@ -427,7 +427,7 @@ static esp_err_t UART_ISR_ATTR uart_pattern_enqueue(uart_port_t uart_num, int po
         p_pos->wr = next;
         ret = ESP_OK;
     }
-    UART_EXIT_CRITICAL(&uart_spinlock[uart_num]);
+    UART_EXIT_CRITICAL_ISR(&uart_spinlock[uart_num]);
     return ret;
 }
 
