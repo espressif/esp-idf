@@ -36,7 +36,7 @@ IP Network Layer
 .. toctree::
    :maxdepth: 1
 
-   TCP/IP Adapter <tcpip_adapter.rst>
+   ESP-NETIF <esp_netif.rst>
 
 Code examples for TCP/IP socket APIs are provided in the :example:`protocols/sockets` directory of ESP-IDF examples.
 

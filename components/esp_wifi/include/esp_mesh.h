@@ -88,6 +88,7 @@
 #include "esp_wifi.h"
 #include "esp_wifi_types.h"
 #include "esp_mesh_internal.h"
+#include "lwip/ip_addr.h"
 
 #ifdef __cplusplus
 extern "C" {

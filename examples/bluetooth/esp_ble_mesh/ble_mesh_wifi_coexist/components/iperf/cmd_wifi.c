@@ -16,7 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "iperf.h"
 
 typedef struct {
@@ -51,6 +51,8 @@ static const char *TAG = "iperf";
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
+static esp_netif_t * sta_netif = NULL;
+static esp_netif_t * ap_netif = NULL;
 
 static void scan_done_handler(void)
 {
@@ -124,9 +126,13 @@ void initialise_wifi(void)
         return;
     }
 
-    tcpip_adapter_init();
+    esp_netif_init();
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
+    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
+    assert(ap_netif);
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
 
@@ -286,22 +292,22 @@ static int wifi_cmd_query(int argc, char **argv)
 static uint32_t wifi_get_local_ip(void)
 {
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-    tcpip_adapter_if_t ifx = TCPIP_ADAPTER_IF_AP;
-    tcpip_adapter_ip_info_t ip_info;
+    esp_netif_t * ifx = ap_netif;
+    esp_netif_ip_info_t ip_info;
     wifi_mode_t mode;
 
     esp_wifi_get_mode(&mode);
     if (WIFI_MODE_STA == mode) {
         bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
         if (bits & CONNECTED_BIT) {
-            ifx = TCPIP_ADAPTER_IF_STA;
+            ifx = sta_netif;
         } else {
             ESP_LOGE(TAG, "sta has no IP");
             return 0;
         }
     }
 
-    tcpip_adapter_get_ip_info(ifx, &ip_info);
+    esp_netif_get_ip_info(ifx, &ip_info);
     return ip_info.ip.addr;
 }
 
@@ -331,7 +337,7 @@ static int wifi_cmd_iperf(int argc, char **argv)
     if (iperf_args.ip->count == 0) {
         cfg.flag |= IPERF_FLAG_SERVER;
     } else {
-        cfg.dip = ipaddr_addr(iperf_args.ip->sval[0]);
+        cfg.dip = esp_ip4addr_aton(iperf_args.ip->sval[0]);
         cfg.flag |= IPERF_FLAG_CLIENT;
     }
 

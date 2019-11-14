@@ -21,7 +21,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/sockets.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
@@ -69,7 +69,7 @@ static int sc_ack_send_get_errno(int fd)
 static void sc_ack_send_task(void *pvParameters)
 {
     sc_ack_t *ack = (sc_ack_t *)pvParameters;
-    tcpip_adapter_ip_info_t local_ip;
+    esp_netif_ip_info_t local_ip;
     uint8_t remote_ip[4];
     memcpy(remote_ip, ack->ctx.ip, sizeof(remote_ip));
     int remote_port = (ack->type == SC_TYPE_ESPTOUCH) ? SC_ACK_TOUCH_SERVER_PORT : SC_ACK_AIRKISS_SERVER_PORT;
@@ -94,7 +94,7 @@ static void sc_ack_send_task(void *pvParameters)
 
     while (s_sc_ack_send) {
         /* Get local IP address of station */
-        ret = tcpip_adapter_get_ip_info(TCPIP_ADAPTER_IF_STA, &local_ip);
+        ret = esp_netif_get_ip_info(esp_netif_get_handle_from_ifkey("WIFI_STA_DEF"), &local_ip);
         if ((ESP_OK == ret) && (local_ip.ip.addr != INADDR_ANY)) {
             /* If ESP touch, smartconfig ACK contains local IP address. */
             if (ack->type == SC_TYPE_ESPTOUCH) {

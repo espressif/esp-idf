@@ -20,7 +20,7 @@
 #include "netif/ppp/pppapi.h"
 #include "netif/ppp/pppos.h"
 #include "lwip/dns.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_modem.h"
 #include "esp_log.h"
 #include "sdkconfig.h"

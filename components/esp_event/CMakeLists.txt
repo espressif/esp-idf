@@ -11,7 +11,7 @@ idf_component_register(SRCS "default_event_loop.c"
                             "event_send.c"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "private_include"
-                    REQUIRES log tcpip_adapter
+                    REQUIRES log esp_netif
                     PRIV_REQUIRES ${priv_requires}
                     LDFRAGMENTS linker.lf)
 

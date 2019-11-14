@@ -14,14 +14,14 @@ extern "C" {
 #endif
 
 #include "esp_err.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 
 #ifdef CONFIG_EXAMPLE_CONNECT_ETHERNET
-#define EXAMPLE_INTERFACE TCPIP_ADAPTER_IF_ETH
+#define EXAMPLE_INTERFACE get_example_netif()
 #endif
 
 #ifdef CONFIG_EXAMPLE_CONNECT_WIFI
-#define EXAMPLE_INTERFACE TCPIP_ADAPTER_IF_STA
+#define EXAMPLE_INTERFACE get_example_netif()
 #endif
 
 /**
@@ -54,6 +54,11 @@ esp_err_t example_disconnect(void);
  */
 esp_err_t example_configure_stdin_stdout(void);
 
+/**
+ * @brief Returns esp-netif pointer created by example_connect()
+ *
+ */
+esp_netif_t *get_example_netif(void);
 #ifdef __cplusplus
 }
 #endif

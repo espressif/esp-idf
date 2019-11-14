@@ -25,7 +25,8 @@
 #include "lwip/debug.h"
 #include "lwip/stats.h"
 #include "lwip/tcp.h"
-void nettestif_input(void *buffer, u16_t len);
+
+extern const struct esp_netif_netstack_config _g_test_netif_stack_config;
 
 /* these data configures ARP cache so the test IPs are knows */
 static char arp1[] = {
@@ -135,21 +136,39 @@ void app_main(void)
 {
     char packet[128];
 
-    tcpip_adapter_ip_info_t ip_info;
+    // Netif configs
+    //
+    esp_netif_ip_info_t ip_info;
+    uint8_t mac[] =  { 0,0,0,0,0,1};
+    esp_netif_inherent_config_t netif_common_config = {
+            .flags = ESP_NETIF_FLAG_AUTOUP,
+            .ip_info = (esp_netif_ip_info_t*)&ip_info,
+    };
+    esp_netif_set_ip4_addr(&ip_info.ip, 10, 0 , 0, 1);
+    esp_netif_set_ip4_addr(&ip_info.gw, 10, 0 , 0, 1);
+    esp_netif_set_ip4_addr(&ip_info.netmask, 255, 255 , 255, 0);
 
-    uint8_t ap_mac[6] = { 0,0,0,0,0,1};
-    IP4_ADDR(&ip_info.ip, 10, 0 , 0, 1);
-    IP4_ADDR(&ip_info.gw, 10, 0 , 0, 1);
-    IP4_ADDR(&ip_info.netmask, 255, 255 , 255, 0);
+    esp_netif_config_t config = {
+        .base = &netif_common_config,
+        .stack = &_g_test_netif_stack_config,
+        .driver = NULL
+    };
 
-    tcpip_adapter_init();
+    // Netif creation and configure
+    //
+    esp_netif_init();
+    esp_netif_t* netif = esp_netif_new(&config);
+    assert(netif);
 
-    tcpip_adapter_test_start(ap_mac, &ip_info);
+    // Start the netif in a manual way, no need for events
+    //
+    esp_netif_set_mac(netif, mac);
+    esp_netif_action_start(netif, NULL, 0, NULL);
 
     // initializes TCP endpoint on DUT per https://github.com/intel/net-test-suites#21-endpoints
     test_tcp_init();
     // Inject ARP packet to let the network stack know about IP/MAC of the counterpart
-    nettestif_input(arp1, sizeof(arp1));
+    esp_netif_receive(netif, arp1, sizeof(arp1), NULL);
     // Initialize VFS & UART so we can use std::cout/cin
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -173,7 +192,8 @@ void app_main(void)
 
         size = process_line(line, packet);
 
-        nettestif_input(packet, size);
+        esp_netif_receive(netif, packet, size, NULL);
+
 
         linenoiseFree(line);
     }
