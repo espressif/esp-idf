@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "ip101";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -106,6 +107,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_ip101_t;
 
 static esp_err_t ip101_page_select(phy_ip101_t *ip101, uint32_t page)
@@ -212,6 +214,18 @@ static esp_err_t ip101_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
+    if (ip101->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(ip101->reset_gpio_num);
+        gpio_set_direction(ip101->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(ip101->reset_gpio_num, 0);
+        gpio_set_level(ip101->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
@@ -338,9 +352,11 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     PHY_CHECK(ip101, "calloc ip101 failed", err);
     ip101->addr = config->phy_addr;
     ip101->reset_timeout_ms = config->reset_timeout_ms;
+    ip101->reset_gpio_num = config->reset_gpio_num;
     ip101->link_status = ETH_LINK_DOWN;
     ip101->autonego_timeout_ms = config->autonego_timeout_ms;
     ip101->parent.reset = ip101_reset;
+    ip101->parent.reset_hw = ip101_reset_hw;
     ip101->parent.init = ip101_init;
     ip101->parent.deinit = ip101_deinit;
     ip101->parent.set_mediator = ip101_set_mediator;

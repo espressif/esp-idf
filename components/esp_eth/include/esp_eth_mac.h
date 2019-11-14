@@ -22,7 +22,6 @@ extern "C" {
 #include "sdkconfig.h"
 #include "esp_eth_com.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
-#include "driver/gpio.h"
 #include "driver/spi_master.h"
 #endif
 
@@ -258,6 +257,8 @@ typedef struct {
     uint32_t sw_reset_timeout_ms; /*!< Software reset timeout value (Unit: ms) */
     uint32_t rx_task_stack_size;  /*!< Stack size of the receive task */
     uint32_t rx_task_prio;        /*!< Priority of the receive task */
+    int smi_mdc_gpio_num;         /*!< SMI MDC GPIO number */
+    int smi_mdio_gpio_num;        /*!< SMI MDIO GPIO number */
 } eth_mac_config_t;
 
 /**
@@ -269,6 +270,8 @@ typedef struct {
         .sw_reset_timeout_ms = 100, \
         .rx_task_stack_size = 4096, \
         .rx_task_prio = 15,         \
+        .smi_mdc_gpio_num = 23,     \
+        .smi_mdio_gpio_num = 18,    \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
@@ -291,6 +294,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
  */
 typedef struct {
     spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
+    int int_gpio_num;            /*!< Interrupt GPIO number */
 } eth_dm9051_config_t;
 
 /**
@@ -300,6 +304,7 @@ typedef struct {
 #define ETH_DM9051_DEFAULT_CONFIG(spi_device) \
     {                                         \
         .spi_hdl = spi_device,                \
+        .int_gpio_num = 4,                    \
     }
 
 /**

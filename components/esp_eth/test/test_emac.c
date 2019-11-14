@@ -9,6 +9,7 @@
 #include "esp_event.h"
 #include "esp_eth.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"

@@ -16,6 +16,7 @@
 #include <sys/cdefs.h>
 #include "driver/periph_ctrl.h"
 #include "driver/gpio.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_system.h"
@@ -50,6 +51,8 @@ typedef struct {
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     uint32_t frames_remain;
+    int smi_mdc_gpio_num;
+    int smi_mdio_gpio_num;
     uint8_t addr[6];
     uint8_t *rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM];
     uint8_t *tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM];
@@ -264,17 +267,17 @@ static void emac_esp32_rx_task(void *arg)
     vTaskDelete(NULL);
 }
 
-static void emac_esp32_init_smi_gpio(void)
+static void emac_esp32_init_smi_gpio(emac_esp32_t *emac)
 {
     /* Setup SMI MDC GPIO */
-    gpio_set_direction(CONFIG_ETH_SMI_MDC_GPIO, GPIO_MODE_OUTPUT);
-    gpio_matrix_out(CONFIG_ETH_SMI_MDC_GPIO, EMAC_MDC_O_IDX, false, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[CONFIG_ETH_SMI_MDC_GPIO], PIN_FUNC_GPIO);
+    gpio_set_direction(emac->smi_mdc_gpio_num, GPIO_MODE_OUTPUT);
+    gpio_matrix_out(emac->smi_mdc_gpio_num, EMAC_MDC_O_IDX, false, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdc_gpio_num], PIN_FUNC_GPIO);
     /* Setup SMI MDIO GPIO */
-    gpio_set_direction(CONFIG_ETH_SMI_MDIO_GPIO, GPIO_MODE_INPUT_OUTPUT);
-    gpio_matrix_out(CONFIG_ETH_SMI_MDIO_GPIO, EMAC_MDO_O_IDX, false, false);
-    gpio_matrix_in(CONFIG_ETH_SMI_MDIO_GPIO, EMAC_MDI_I_IDX, false);
-    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[CONFIG_ETH_SMI_MDIO_GPIO], PIN_FUNC_GPIO);
+    gpio_set_direction(emac->smi_mdio_gpio_num, GPIO_MODE_INPUT_OUTPUT);
+    gpio_matrix_out(emac->smi_mdio_gpio_num, EMAC_MDO_O_IDX, false, false);
+    gpio_matrix_in(emac->smi_mdio_gpio_num, EMAC_MDI_I_IDX, false);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[emac->smi_mdio_gpio_num], PIN_FUNC_GPIO);
 }
 
 static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
@@ -287,12 +290,7 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     /* enable clock, config gpio, etc */
     emac_hal_lowlevel_init(&emac->hal);
     /* init gpio used by gpio */
-    emac_esp32_init_smi_gpio();
-#if CONFIG_ETH_PHY_USE_RST
-    gpio_pad_select_gpio(CONFIG_ETH_PHY_RST_GPIO);
-    gpio_set_direction(CONFIG_ETH_PHY_RST_GPIO, GPIO_MODE_OUTPUT);
-    gpio_set_level(CONFIG_ETH_PHY_RST_GPIO, 1);
-#endif
+    emac_esp32_init_smi_gpio(emac);
     MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
     /* software reset */
     emac_hal_reset(&emac->hal);
@@ -327,9 +325,6 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-#if CONFIG_ETH_PHY_USE_RST
-    gpio_set_level(CONFIG_ETH_PHY_RST_GPIO, 0);
-#endif
     emac_hal_stop(&emac->hal);
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     periph_module_disable(PERIPH_EMAC_MODULE);
@@ -355,7 +350,7 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
-void emac_esp32_isr_handler(void *args)
+IRAM_ATTR void emac_esp32_isr_handler(void *args)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
@@ -396,6 +391,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     /* initialize hal layer driver */
     emac_hal_init(&emac->hal, descriptors, emac->rx_buf, emac->tx_buf);
     emac->sw_reset_timeout_ms = config->sw_reset_timeout_ms;
+    emac->smi_mdc_gpio_num = config->smi_mdc_gpio_num;
+    emac->smi_mdio_gpio_num = config->smi_mdio_gpio_num;
     emac->parent.set_mediator = emac_esp32_set_mediator;
     emac->parent.init = emac_esp32_init;
     emac->parent.deinit = emac_esp32_deinit;
@@ -443,7 +440,7 @@ err:
     return ret;
 }
 
-void emac_hal_rx_complete_cb(void *arg)
+IRAM_ATTR void emac_hal_rx_complete_cb(void *arg)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
@@ -455,7 +452,7 @@ void emac_hal_rx_complete_cb(void *arg)
     }
 }
 
-void emac_hal_rx_unavail_cb(void *arg)
+IRAM_ATTR void emac_hal_rx_unavail_cb(void *arg)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
