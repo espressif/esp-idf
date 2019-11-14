@@ -495,6 +495,8 @@ TEST_CASE("unaligned heaps", "[multi_heap]")
     }
 }
 
+#ifndef CONFIG_HEAP_POISONING_NONE
+
 TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
 {
     uint8_t test_heap[1024 * 1024];
@@ -538,3 +540,5 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
     printf("[ALIGNED_ALLOC] heap_size after: %d \n", multi_heap_free_size(heap));
     REQUIRE((old_size - multi_heap_free_size(heap)) <= leakage);
 }
+
+#endif
