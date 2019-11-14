@@ -73,8 +73,8 @@ TEST_CASE("mdns api return expected err-code and do not leak memory", "[mdns][le
 TEST_CASE("mdns query api return expected err-code and do not leak memory", "[leaks=64]")
 {
     mdns_result_t * results = NULL;
-    ip6_addr_t addr6;
-    ip4_addr_t addr4;
+    esp_ip6_addr_t addr6;
+    esp_ip4_addr_t addr4;
     test_case_uses_tcpip();
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create_default());
 

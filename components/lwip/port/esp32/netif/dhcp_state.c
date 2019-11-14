@@ -19,17 +19,14 @@
 #include "lwip/dhcp.h"
 #include "lwip/netif.h"
 #include "esp_interface.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
+#include "esp_netif_net_stack.h"
 #include "netif/dhcp_state.h"
 
 #define DHCP_NAMESPACE "dhcp_state"
-#define VALID_NETIF_ID(id) ((id < ESP_IF_MAX) && (id != ESP_IF_WIFI_AP))
 
-static uint32_t restored_ip_addr[TCPIP_ADAPTER_IF_MAX];
-static const char *interface_key[] = {"IF_STA", "IF_AP", "IF_ETH", "IF_TEST"};
-
-_Static_assert(sizeof(interface_key) / sizeof(char*) == TCPIP_ADAPTER_IF_MAX,
-               "Number interface keys differs from number of interfaces");
+// DHCP_Client has to be enabled for this netif
+#define VALID_NETIF_ID(netif) (ESP_NETIF_DHCP_CLIENT&esp_netif_get_flags(netif))
 
 bool dhcp_ip_addr_restore(void *netif)
 {
@@ -37,13 +34,12 @@ bool dhcp_ip_addr_restore(void *netif)
     bool err = false;
     struct netif *net = (struct netif *)netif;
     struct dhcp *dhcp = netif_dhcp_data(net);
-    esp_interface_t netif_id = tcpip_adapter_get_esp_if(net);
+    esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
 
-    if(VALID_NETIF_ID(netif_id)) {
+    if(VALID_NETIF_ID(esp_netif)) {
         uint32_t *ip_addr = &dhcp->offered_ip_addr.addr;
         if (nvs_open(DHCP_NAMESPACE, NVS_READONLY, &nvs) == ESP_OK) {
-            if (nvs_get_u32(nvs, interface_key[netif_id], ip_addr) == ESP_OK) {
-                restored_ip_addr[netif_id] = *ip_addr;
+            if (nvs_get_u32(nvs, esp_netif_get_ifkey(esp_netif), ip_addr) == ESP_OK) {
                 err = true;
             }
             nvs_close(nvs);
@@ -58,28 +54,24 @@ void dhcp_ip_addr_store(void *netif)
     struct netif *net = (struct netif *)netif;
     struct dhcp *dhcp = netif_dhcp_data(net);
     uint32_t ip_addr = dhcp->offered_ip_addr.addr;
-    esp_interface_t netif_id = tcpip_adapter_get_esp_if(net);
+    esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
 
-    if(VALID_NETIF_ID(netif_id)) {
-        if (restored_ip_addr[netif_id] != ip_addr) {
-            if (nvs_open(DHCP_NAMESPACE, NVS_READWRITE, &nvs) == ESP_OK) {
-                nvs_set_u32(nvs, interface_key[netif_id], ip_addr);
-                nvs_commit(nvs);
-                nvs_close(nvs);
-            }
+    if(VALID_NETIF_ID(esp_netif)) {
+        if (nvs_open(DHCP_NAMESPACE, NVS_READWRITE, &nvs) == ESP_OK) {
+            nvs_set_u32(nvs,esp_netif_get_ifkey(esp_netif), ip_addr);
+            nvs_commit(nvs);
+            nvs_close(nvs);
         }
     }
 }
 
-void dhcp_ip_addr_erase(void *netif)
+void dhcp_ip_addr_erase(void *esp_netif)
 {
     nvs_handle_t nvs;
-    struct netif *net = (struct netif *)netif;
-    esp_interface_t netif_id = tcpip_adapter_get_esp_if(net);
 
-    if(VALID_NETIF_ID(netif_id)) {
+    if(VALID_NETIF_ID(esp_netif)) {
         if (nvs_open(DHCP_NAMESPACE, NVS_READWRITE, &nvs) == ESP_OK) {
-            nvs_erase_key(nvs, interface_key[netif_id]);
+            nvs_erase_key(nvs, esp_netif_get_ifkey(esp_netif));
             nvs_commit(nvs);
             nvs_close(nvs);
         }

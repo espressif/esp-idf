@@ -185,6 +185,7 @@ static void initialize_ethernet(void)
     config.stack_input = pkt_eth2wifi;
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
     esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
+    esp_eth_driver_start(s_eth_handle);
 }
 
 static void initialize_wifi(void)
@@ -192,7 +193,6 @@ static void initialize_wifi(void)
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL));
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-    ESP_ERROR_CHECK(tcpip_adapter_clear_default_wifi_handlers());
     ESP_ERROR_CHECK(esp_wifi_set_storage(WIFI_STORAGE_RAM));
     wifi_config_t wifi_config = {
         .ap = {

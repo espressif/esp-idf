@@ -15,7 +15,7 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "protocol_examples_common.h"
 
 #include "freertos/FreeRTOS.h"
@@ -138,7 +138,7 @@ void app_main(void)
     esp_log_level_set("OUTBOX", ESP_LOG_VERBOSE);
 
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.
