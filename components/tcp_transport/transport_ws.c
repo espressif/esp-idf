@@ -2,7 +2,6 @@
 #include <string.h>
 #include <ctype.h>
 #include <sys/random.h>
-
 #include "esp_log.h"
 #include "esp_transport.h"
 #include "esp_transport_tcp.h"
@@ -15,11 +14,13 @@ static const char *TAG = "TRANSPORT_WS";
 
 #define DEFAULT_WS_BUFFER (1024)
 #define WS_FIN            0x80
+#define WS_OPCODE_CONT    0x00
 #define WS_OPCODE_TEXT    0x01
 #define WS_OPCODE_BINARY  0x02
 #define WS_OPCODE_CLOSE   0x08
 #define WS_OPCODE_PING    0x09
 #define WS_OPCODE_PONG    0x0a
+
 // Second byte
 #define WS_MASK           0x80
 #define WS_SIZE16         126
@@ -27,13 +28,21 @@ static const char *TAG = "TRANSPORT_WS";
 #define MAX_WEBSOCKET_HEADER_SIZE 16
 #define WS_RESPONSE_OK    101
 
+
+typedef struct {
+    uint8_t opcode;
+    char mask_key[4];                   /*!< Mask key for this payload */
+    int payload_len;                    /*!< Total length of the payload */
+    int bytes_remaining;                /*!< Bytes left to read of the payload  */
+} ws_transport_frame_state_t;
+
 typedef struct {
     char *path;
     char *buffer;
     char *sub_protocol;
     char *user_agent;
     char *headers;
-    uint8_t read_opcode;
+    ws_transport_frame_state_t frame_state;
     esp_transport_handle_t parent;
 } transport_ws_t;
 
@@ -45,6 +54,11 @@ static inline uint8_t ws_get_bin_opcode(ws_transport_opcodes_t opcode)
 static esp_transport_handle_t ws_get_payload_transport_handle(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
+
+    /* Reading parts of a frame directly will disrupt the WS internal frame state,
+        reset bytes_remaining to prepare for reading a new frame */
+    ws->frame_state.bytes_remaining = 0;
+
     return ws->parent;
 }
 
@@ -275,12 +289,46 @@ static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeou
     return _ws_write(t, WS_OPCODE_BINARY | WS_FIN, WS_MASK, b, len, timeout_ms);
 }
 
-static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
+
+static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+
+    int bytes_to_read;
+    int rlen = 0;
+
+    if (ws->frame_state.bytes_remaining > len) {
+        ESP_LOGD(TAG, "Actual data to receive (%d) are longer than ws buffer (%d)", ws->frame_state.bytes_remaining, len);
+        bytes_to_read = len;
+
+    } else {
+        bytes_to_read = ws->frame_state.bytes_remaining;
+    }
+
+    // Receive and process payload
+    if (bytes_to_read != 0 && (rlen = esp_transport_read(ws->parent, buffer, bytes_to_read, timeout_ms)) <= 0) {
+        ESP_LOGE(TAG, "Error read data");
+        return rlen;
+    }
+    ws->frame_state.bytes_remaining -= rlen;
+
+    if (ws->frame_state.mask_key) {
+        for (int i = 0; i < bytes_to_read; i++) {
+            buffer[i] = (buffer[i] ^ ws->frame_state.mask_key[i % 4]);
+        }
+    }
+    return rlen;
+}
+
+
+/* Read and parse the WS header, determine length of payload */
+static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
     int payload_len;
+
     char ws_header[MAX_WEBSOCKET_HEADER_SIZE];
-    char *data_ptr = ws_header, mask, *mask_key = NULL;
+    char *data_ptr = ws_header, mask;
     int rlen;
     int poll_read;
     if ((poll_read = esp_transport_poll_read(ws->parent, timeout_ms)) <= 0) {
@@ -289,16 +337,17 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
 
     // Receive and process header first (based on header size)
     int header = 2;
+    int mask_len = 4;
     if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
         ESP_LOGE(TAG, "Error read data");
         return rlen;
     }
-    ws->read_opcode = (*data_ptr & 0x0F);
+    ws->frame_state.opcode = (*data_ptr & 0x0F);
     data_ptr ++;
     mask = ((*data_ptr >> 7) & 0x01);
     payload_len = (*data_ptr & 0x7F);
     data_ptr++;
-    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", ws->read_opcode, mask, payload_len);
+    ESP_LOGD(TAG, "Opcode: %d, mask: %d, len: %d\r\n", ws->frame_state.opcode, mask, payload_len);
     if (payload_len == 126) {
         // headerLen += 2;
         if ((rlen = esp_transport_read(ws->parent, data_ptr, header, timeout_ms)) <= 0) {
@@ -322,26 +371,47 @@ static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_
         }
     }
 
-    if (payload_len > len) {
-        ESP_LOGD(TAG, "Actual data to receive (%d) are longer than ws buffer (%d)", payload_len, len);
-        payload_len = len;
-    }
-
-    // Then receive and process payload
-    if (payload_len != 0 && (rlen = esp_transport_read(ws->parent, buffer, payload_len, timeout_ms)) <= 0) {
-        ESP_LOGE(TAG, "Error read data");
-        return rlen;
-    }
-
     if (mask) {
-        mask_key = buffer;
-        data_ptr = buffer + 4;
-        for (int i = 0; i < payload_len; i++) {
-            buffer[i] = (data_ptr[i] ^ mask_key[i % 4]);
+        // Read and store mask
+        if (payload_len != 0 && (rlen = esp_transport_read(ws->parent, buffer, mask_len, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error read data");
+            return rlen;
         }
+        memcpy(ws->frame_state.mask_key, buffer, mask_len);
+    } else {
+        memset(ws->frame_state.mask_key, 0, mask_len);
     }
+
+    ws->frame_state.payload_len = payload_len;
+    ws->frame_state.bytes_remaining = payload_len;
+
     return payload_len;
 }
+
+static int ws_read(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)
+{
+    int rlen = 0;
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+
+    // If message exceeds buffer len then subsequent reads will skip reading header and read whatever is left of the payload
+    if (ws->frame_state.bytes_remaining <= 0) {
+        if ( (rlen = ws_read_header(t, buffer, len, timeout_ms)) <= 0) {
+            // If something when wrong then we prepare for reading a new header
+            ws->frame_state.bytes_remaining = 0;
+            return rlen;
+        }
+    }
+    if (ws->frame_state.payload_len) {
+        if ( (rlen = ws_read_payload(t, buffer, len, timeout_ms)) <= 0) {
+            ESP_LOGE(TAG, "Error reading payload data");
+            ws->frame_state.bytes_remaining = 0;
+            return rlen;
+        }
+    }
+
+    return rlen;
+}
+
 
 static int ws_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
@@ -469,5 +539,13 @@ esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *hea
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t)
 {
     transport_ws_t *ws = esp_transport_get_context_data(t);
-    return ws->read_opcode;
+    return ws->frame_state.opcode;
 }
+
+int esp_transport_ws_get_read_payload_len(esp_transport_handle_t t)
+{
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    return ws->frame_state.payload_len;
+}
+
+

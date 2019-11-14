@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-typedef struct esp_websocket_client* esp_websocket_client_handle_t;
+typedef struct esp_websocket_client *esp_websocket_client_handle_t;
 
 ESP_EVENT_DECLARE_BASE(WEBSOCKET_EVENTS);         // declaration of the task events family
 
@@ -47,11 +47,13 @@ typedef enum {
  * @brief Websocket event data
  */
 typedef struct {
-    const char                      *data_ptr;      /*!< Data pointer */
-    int                             data_len;       /*!< Data length */
-    uint8_t                         op_code;        /*!< Received opcode */
-    esp_websocket_client_handle_t   client;         /*!< esp_websocket_client_handle_t context */
-    void                            *user_context;  /*!< user_data context, from esp_websocket_client_config_t user_data */
+    const char *data_ptr;                   /*!< Data pointer */
+    int data_len;                           /*!< Data length */
+    uint8_t op_code;                        /*!< Received opcode */
+    esp_websocket_client_handle_t client;   /*!< esp_websocket_client_handle_t context */
+    void *user_context;                     /*!< user_data context, from esp_websocket_client_config_t user_data */
+    int payload_len;                        /*!< Total payload length, payloads exceeding buffer will be posted through multiple events */
+    int payload_offset;                     /*!< Actual offset for the data associated with this event */
 } esp_websocket_event_data_t;
 
 /**
@@ -205,7 +207,7 @@ bool esp_websocket_client_is_connected(esp_websocket_client_handle_t client);
 esp_err_t esp_websocket_register_events(esp_websocket_client_handle_t client,
                                         esp_websocket_event_id_t event,
                                         esp_event_handler_t event_handler,
-                                        void* event_handler_arg);
+                                        void *event_handler_arg);
 
 #ifdef __cplusplus
 }
