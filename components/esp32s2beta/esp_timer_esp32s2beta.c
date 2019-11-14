@@ -222,7 +222,7 @@ uint64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
     // Alarm time relative to the moment when counter was 0
     uint64_t time_after_timebase_us = timestamp - s_time_base_us;
     // Adjust current time if overflow has happened
@@ -252,7 +252,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
         alarm_reg_val = (uint32_t) compare_val;
     }
     REG_WRITE(FRC_TIMER_ALARM_REG(1), alarm_reg_val);
-    portEXIT_CRITICAL(&s_time_update_lock);
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)
