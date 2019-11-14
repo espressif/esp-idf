@@ -34,10 +34,19 @@ def action_extensions(base_actions, project_path=None):
             },
             {
                 "names": ["--test-4"],
-                "help": "Deprecated option 3.",
+                "help": "Deprecated option 4.",
                 "deprecated": {
                     "since": "v4.0",
                     "removed": "v5.0"
+                }
+            },
+            {
+                "names": ["--test-5"],
+                "help": "Deprecated option 5.",
+                "deprecated": {
+                    "since": "v2.0",
+                    "removed": "v3.0",
+                    "exit_with_error": True
                 }
             },
         ],
@@ -70,6 +79,13 @@ def action_extensions(base_actions, project_path=None):
                 "callback": echo,
                 "help": "Deprecated command 1",
                 "deprecated": "Please use alternative command."
+            },
+            "test-2": {
+                "callback": echo,
+                "help": "Deprecated command 2",
+                "deprecated": {
+                    "exit_with_error": True
+                }
             },
         },
     }

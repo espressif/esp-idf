@@ -138,26 +138,39 @@ def init_cli(verbose_output=None):
     # Click is imported here to run it after check_environment()
     import click
 
-    class DeprecationMessage(object):
+    class Deprecation(object):
         """Construct deprecation notice for help messages"""
 
         def __init__(self, deprecated=False):
             self.deprecated = deprecated
             self.since = None
             self.removed = None
+            self.exit_with_error = None
             self.custom_message = ""
 
             if isinstance(deprecated, dict):
                 self.custom_message = deprecated.get("message", "")
                 self.since = deprecated.get("since", None)
                 self.removed = deprecated.get("removed", None)
+                self.exit_with_error = deprecated.get("exit_with_error", None)
             elif isinstance(deprecated, str):
                 self.custom_message = deprecated
 
         def full_message(self, type="Option"):
-            return "%s is deprecated %sand will be removed in%s.%s" % (
-                type, "since %s " % self.since if self.since else "", " %s" % self.removed
-                if self.removed else " future versions", " %s" % self.custom_message if self.custom_message else "")
+            if self.exit_with_error:
+                return "%s is deprecated %sand was removed%s.%s" % (
+                    type,
+                    "since %s " % self.since if self.since else "",
+                    " in %s" % self.removed if self.removed else "",
+                    " %s" % self.custom_message if self.custom_message else "",
+                )
+            else:
+                return "%s is deprecated %sand will be removed in%s.%s" % (
+                    type,
+                    "since %s " % self.since if self.since else "",
+                    " %s" % self.removed if self.removed else " future versions",
+                    " %s" % self.custom_message if self.custom_message else "",
+                )
 
         def help(self, text, type="Option", separator=" "):
             text = text or ""
@@ -167,12 +180,16 @@ def init_cli(verbose_output=None):
             text = text or ""
             return ("Deprecated! " + text) if self.deprecated else text
 
-    def print_deprecation_warning(ctx):
+    def check_deprecation(ctx):
         """Prints deprectation warnings for arguments in given context"""
         for option in ctx.command.params:
             default = () if option.multiple else option.default
             if isinstance(option, Option) and option.deprecated and ctx.params[option.name] != default:
-                print("Warning: %s" % DeprecationMessage(option.deprecated).full_message('Option "%s"' % option.name))
+                deprecation = Deprecation(option.deprecated)
+                if deprecation.exit_with_error:
+                    raise FatalError("Error: %s" % deprecation.full_message('Option "%s"' % option.name))
+                else:
+                    print("Warning: %s" % deprecation.full_message('Option "%s"' % option.name))
 
     class Task(object):
         def __init__(self, callback, name, aliases, dependencies, order_dependencies, action_args):
@@ -223,7 +240,7 @@ def init_cli(verbose_output=None):
             self.short_help = self.short_help or self.help.split("\n")[0]
 
             if deprecated:
-                deprecation = DeprecationMessage(deprecated)
+                deprecation = Deprecation(deprecated)
                 self.short_help = deprecation.short_help(self.short_help)
                 self.help = deprecation.help(self.help, type="Command", separator="\n")
 
@@ -251,11 +268,18 @@ def init_cli(verbose_output=None):
 
         def invoke(self, ctx):
             if self.deprecated:
-                print("Warning: %s" % DeprecationMessage(self.deprecated).full_message('Command "%s"' % self.name))
+                deprecation = Deprecation(self.deprecated)
+                message = deprecation.full_message('Command "%s"' % self.name)
+
+                if deprecation.exit_with_error:
+                    raise FatalError("Error: %s" % message)
+                else:
+                    print("Warning: %s" % message)
+
                 self.deprecated = False  # disable Click's built-in deprecation handling
 
             # Print warnings for options
-            print_deprecation_warning(ctx)
+            check_deprecation(ctx)
             return super(Action, self).invoke(ctx)
 
     class Argument(click.Argument):
@@ -324,7 +348,7 @@ def init_cli(verbose_output=None):
             self.hidden = hidden
 
             if deprecated:
-                deprecation = DeprecationMessage(deprecated)
+                deprecation = Deprecation(deprecated)
                 self.help = deprecation.help(self.help)
 
             if self.scope.is_global:
@@ -517,7 +541,7 @@ def init_cli(verbose_output=None):
                             global_args[key] = local_value
 
             # Show warnings about global arguments
-            print_deprecation_warning(ctx)
+            check_deprecation(ctx)
 
             # Make sure that define_cache_entry is mutable list and can be modified in callbacks
             global_args.define_cache_entry = list(global_args.define_cache_entry)
