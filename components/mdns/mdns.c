@@ -17,6 +17,7 @@
 #include "mdns_networking.h"
 #include "esp_log.h"
 #include <string.h>
+#include <sys/param.h>
 
 #ifdef MDNS_ENABLE_DEBUG
 void mdns_debug_packet(const uint8_t * data, size_t len);
@@ -4141,7 +4142,8 @@ static esp_err_t _mdns_service_task_start(void)
         return ESP_FAIL;
     }
     if (!_mdns_service_task_handle) {
-        xTaskCreatePinnedToCore(_mdns_service_task, "mdns", MDNS_SERVICE_STACK_DEPTH, NULL, 1, (TaskHandle_t * const)(&_mdns_service_task_handle), 0);
+        xTaskCreatePinnedToCore(_mdns_service_task, "mdns", MDNS_SERVICE_STACK_DEPTH, NULL, MDNS_TASK_PRIORITY,
+                                (TaskHandle_t * const)(&_mdns_service_task_handle), MDNS_TASK_AFFINITY);
         if (!_mdns_service_task_handle) {
             _mdns_stop_timer();
             MDNS_SERVICE_UNLOCK();
@@ -4446,12 +4448,15 @@ esp_err_t mdns_service_add(const char * instance, const char * service, const ch
         return ESP_ERR_NO_MEM;
     }
 
-    uint8_t i = 0;
-    while (_mdns_get_service_item(service, proto) == NULL && i++ < 200) {
-        vTaskDelay(1);
-    }
-    if (i >= 200) {
-        return ESP_FAIL;
+    size_t start = xTaskGetTickCount();
+    size_t timeout_ticks = pdMS_TO_TICKS(MDNS_SERVICE_ADD_TIMEOUT_MS);
+    while (_mdns_get_service_item(service, proto) == NULL)
+    {
+        uint32_t expired = xTaskGetTickCount() - start;
+        if (expired >= timeout_ticks) {
+            return ESP_FAIL; // Timeout
+        }
+        vTaskDelay(MIN(10 / portTICK_RATE_MS, timeout_ticks - expired));
     }
 
     return ESP_OK;

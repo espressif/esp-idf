@@ -56,6 +56,15 @@
 
 #define MDNS_SERVICE_PORT           5353                    // UDP port that the server runs on
 #define MDNS_SERVICE_STACK_DEPTH    4096                    // Stack size for the service thread
+#define MDNS_TASK_PRIORITY          CONFIG_MDNS_TASK_PRIORITY
+#if (MDNS_TASK_PRIORITY > ESP_TASK_PRIO_MAX)
+#error "mDNS task priority is higher than ESP_TASK_PRIO_MAX"
+#elif (MDNS_TASK_PRIORITY > ESP_TASKD_EVENT_PRIO)
+#warning "mDNS task priority is higher than ESP_TASKD_EVENT_PRIO, mDNS library might not work correctly"
+#endif
+#define MDNS_TASK_AFFINITY          CONFIG_MDNS_TASK_AFFINITY
+#define MDNS_SERVICE_ADD_TIMEOUT_MS CONFIG_MDNS_SERVICE_ADD_TIMEOUT_MS
+
 #define MDNS_PACKET_QUEUE_LEN       16                      // Maximum packets that can be queued for parsing
 #define MDNS_ACTION_QUEUE_LEN       16                      // Maximum actions pending to the server
 #define MDNS_TXT_MAX_LEN            1024                    // Maximum string length of text data in TXT record
@@ -82,7 +91,7 @@
 #define MDNS_SRV_PORT_OFFSET        4
 #define MDNS_SRV_FQDN_OFFSET        6
 
-#define MDNS_TIMER_PERIOD_US        100000
+#define MDNS_TIMER_PERIOD_US        (CONFIG_MDNS_TIMER_PERIOD_MS*1000)
 
 #define MDNS_SERVICE_LOCK()     xSemaphoreTake(_mdns_service_semaphore, portMAX_DELAY)
 #define MDNS_SERVICE_UNLOCK()   xSemaphoreGive(_mdns_service_semaphore)
