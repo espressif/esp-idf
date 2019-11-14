@@ -71,3 +71,11 @@ esp_err_t esp_ble_mesh_sensor_client_set_state(esp_ble_mesh_client_common_param_
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_mesh_register_sensor_server_callback(esp_ble_mesh_sensor_server_cb_t callback)
+{
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    return (btc_profile_cb_set(BTC_PID_SENSOR_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
+}
+
+

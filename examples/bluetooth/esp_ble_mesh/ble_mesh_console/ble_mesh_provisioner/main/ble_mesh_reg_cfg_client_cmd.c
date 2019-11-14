@@ -33,11 +33,11 @@ typedef struct {
 } ble_mesh_client_get_set_state_t;
 ble_mesh_client_get_set_state_t configuration_client_model_operation;
 
-void ble_mesh_register_configuration_client_model_command();
+void ble_mesh_register_configuration_client_model_command(void);
 void ble_mesh_configuration_client_model_cb(esp_ble_mesh_cfg_client_cb_event_t event,
         esp_ble_mesh_cfg_client_cb_param_t *param);
 
-void ble_mesh_register_configuration_client_model()
+void ble_mesh_register_configuration_client_model(void)
 {
     ble_mesh_register_configuration_client_model_command();
 }
@@ -362,7 +362,7 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
 }
 
 
-void ble_mesh_register_configuration_client_model_command()
+void ble_mesh_register_configuration_client_model_command(void)
 {
     configuration_client_model_operation.action_type = arg_str1("z", NULL, "<action>", "action type");
     configuration_client_model_operation.set_state = arg_str0("x", NULL, "<state>", "set state");

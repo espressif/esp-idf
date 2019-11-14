@@ -40,7 +40,7 @@
  * count.
  */
 _Static_assert(CONFIG_BLE_MESH_ADV_BUF_COUNT >= (CONFIG_BLE_MESH_TX_SEG_MAX + 3),
-    "Too small BLE Mesh adv buffer count");
+               "Too small BLE Mesh adv buffer count");
 
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
 
@@ -140,31 +140,31 @@ static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
     net_buf_add_mem(buf, sdu->data, sdu->len);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-        if (!bt_mesh_friend_queue_has_space(tx->sub->net_idx,
-                                            tx->src, tx->ctx->addr,
-                                            NULL, 1)) {
-            if (BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-                BT_ERR("Not enough space in Friend Queue");
+        if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+            if (!bt_mesh_friend_queue_has_space(tx->sub->net_idx,
+                                                tx->src, tx->ctx->addr,
+                                                NULL, 1)) {
+                if (BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+                    BT_ERR("Not enough space in Friend Queue");
+                    net_buf_unref(buf);
+                    return -ENOBUFS;
+                } else {
+                    BT_WARN("No space in Friend Queue");
+                    goto send;
+                }
+            }
+
+            if (bt_mesh_friend_enqueue_tx(tx, BLE_MESH_FRIEND_PDU_SINGLE,
+                                          NULL, 1, &buf->b) &&
+                    BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+                /* PDUs for a specific Friend should only go
+                 * out through the Friend Queue.
+                 */
                 net_buf_unref(buf);
-                return -ENOBUFS;
-            } else {
-                BT_WARN("No space in Friend Queue");
-                goto send;
+                send_cb_finalize(cb, cb_data);
+                return 0;
             }
         }
-
-        if (bt_mesh_friend_enqueue_tx(tx, BLE_MESH_FRIEND_PDU_SINGLE,
-                                      NULL, 1, &buf->b) &&
-                BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-            /* PDUs for a specific Friend should only go
-             * out through the Friend Queue.
-             */
-            net_buf_unref(buf);
-            send_cb_finalize(cb, cb_data);
-            return 0;
-        }
-    }
     }
 
 send:
@@ -380,12 +380,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
     BT_DBG("SeqZero 0x%04x", seq_zero);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) &&
-        !bt_mesh_friend_queue_has_space(tx->sub->net_idx, net_tx->src,
-                                        tx->dst, &tx->seq_auth,
-                                        tx->seg_n + 1) &&
-        BLE_MESH_ADDR_IS_UNICAST(tx->dst)) {
+            !bt_mesh_friend_queue_has_space(tx->sub->net_idx, net_tx->src,
+                                            tx->dst, &tx->seq_auth,
+                                            tx->seg_n + 1) &&
+            BLE_MESH_ADDR_IS_UNICAST(tx->dst)) {
         BT_ERR("Not enough space in Friend Queue for %u segments",
-                tx->seg_n + 1);
+               tx->seg_n + 1);
         seg_tx_reset(tx);
         return -ENOBUFS;
     }
@@ -428,10 +428,10 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
                 }
 
                 if (bt_mesh_friend_enqueue_tx(net_tx, type,
-                                            &tx->seq_auth,
-                                            tx->seg_n + 1,
-                                            &seg->b) &&
-                    BLE_MESH_ADDR_IS_UNICAST(net_tx->ctx->addr)) {
+                                              &tx->seq_auth,
+                                              tx->seg_n + 1,
+                                              &seg->b) &&
+                        BLE_MESH_ADDR_IS_UNICAST(net_tx->ctx->addr)) {
                     /* PDUs for a specific Friend should only go
                     * out through the Friend Queue.
                     */
@@ -466,10 +466,10 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
-            bt_mesh_lpn_established()) {
-        bt_mesh_lpn_poll();
-    }
+        if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+                bt_mesh_lpn_established()) {
+            bt_mesh_lpn_poll();
+        }
     }
 
     return 0;
@@ -760,7 +760,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
                                   BLE_MESH_NET_IVI_RX(rx));
         if (err) {
             BT_DBG("Unable to decrypt with AppKey 0x%03x",
-                    key->app_idx);
+                   key->app_idx);
             continue;
         }
 
@@ -927,45 +927,45 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && !bt_mesh_lpn_established()) {
-        switch (ctl_op) {
-        case TRANS_CTL_OP_FRIEND_POLL:
-            return bt_mesh_friend_poll(rx, buf);
-        case TRANS_CTL_OP_FRIEND_REQ:
-            return bt_mesh_friend_req(rx, buf);
-        case TRANS_CTL_OP_FRIEND_CLEAR:
-            return bt_mesh_friend_clear(rx, buf);
-        case TRANS_CTL_OP_FRIEND_CLEAR_CFM:
-            return bt_mesh_friend_clear_cfm(rx, buf);
-        case TRANS_CTL_OP_FRIEND_SUB_ADD:
-            return bt_mesh_friend_sub_add(rx, buf);
-        case TRANS_CTL_OP_FRIEND_SUB_REM:
-            return bt_mesh_friend_sub_rem(rx, buf);
+        if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && !bt_mesh_lpn_established()) {
+            switch (ctl_op) {
+            case TRANS_CTL_OP_FRIEND_POLL:
+                return bt_mesh_friend_poll(rx, buf);
+            case TRANS_CTL_OP_FRIEND_REQ:
+                return bt_mesh_friend_req(rx, buf);
+            case TRANS_CTL_OP_FRIEND_CLEAR:
+                return bt_mesh_friend_clear(rx, buf);
+            case TRANS_CTL_OP_FRIEND_CLEAR_CFM:
+                return bt_mesh_friend_clear_cfm(rx, buf);
+            case TRANS_CTL_OP_FRIEND_SUB_ADD:
+                return bt_mesh_friend_sub_add(rx, buf);
+            case TRANS_CTL_OP_FRIEND_SUB_REM:
+                return bt_mesh_friend_sub_rem(rx, buf);
+            }
         }
-    }
 
 #if defined(CONFIG_BLE_MESH_LOW_POWER)
-    if (ctl_op == TRANS_CTL_OP_FRIEND_OFFER) {
-        return bt_mesh_lpn_friend_offer(rx, buf);
-    }
-
-    if (rx->ctx.addr == bt_mesh.lpn.frnd) {
-        if (ctl_op == TRANS_CTL_OP_FRIEND_CLEAR_CFM) {
-            return bt_mesh_lpn_friend_clear_cfm(rx, buf);
+        if (ctl_op == TRANS_CTL_OP_FRIEND_OFFER) {
+            return bt_mesh_lpn_friend_offer(rx, buf);
         }
 
-        if (!rx->friend_cred) {
-            BT_WARN("Message from friend with wrong credentials");
-            return -EINVAL;
-        }
+        if (rx->ctx.addr == bt_mesh.lpn.frnd) {
+            if (ctl_op == TRANS_CTL_OP_FRIEND_CLEAR_CFM) {
+                return bt_mesh_lpn_friend_clear_cfm(rx, buf);
+            }
 
-        switch (ctl_op) {
-        case TRANS_CTL_OP_FRIEND_UPDATE:
-            return bt_mesh_lpn_friend_update(rx, buf);
-        case TRANS_CTL_OP_FRIEND_SUB_CFM:
-            return bt_mesh_lpn_friend_sub_cfm(rx, buf);
+            if (!rx->friend_cred) {
+                BT_WARN("Message from friend with wrong credentials");
+                return -EINVAL;
+            }
+
+            switch (ctl_op) {
+            case TRANS_CTL_OP_FRIEND_UPDATE:
+                return bt_mesh_lpn_friend_update(rx, buf);
+            case TRANS_CTL_OP_FRIEND_SUB_CFM:
+                return bt_mesh_lpn_friend_sub_cfm(rx, buf);
+            }
         }
-    }
 #endif /* CONFIG_BLE_MESH_LOW_POWER */
     }
 
@@ -1056,7 +1056,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
         if (bt_mesh_friend_enqueue_tx(tx, BLE_MESH_FRIEND_PDU_SINGLE,
                                       seq_auth, 1, &buf->b) &&
-            BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+                BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
             /* PDUs for a specific Friend should only go
              * out through the Friend Queue.
              */
@@ -1281,7 +1281,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 
     if (is_replay(net_rx, &rpl)) {
         BT_WARN("Replay: src 0x%04x dst 0x%04x seq 0x%06x",
-            net_rx->ctx.addr, net_rx->ctx.recv_dst, net_rx->seq);
+                net_rx->ctx.addr, net_rx->ctx.recv_dst, net_rx->seq);
         return -EINVAL;
     }
 
@@ -1375,11 +1375,11 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
      * case this message is destined to an LPN of ours.
      */
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) &&
-        net_rx->friend_match && !net_rx->local_match &&
-        !bt_mesh_friend_queue_has_space(net_rx->sub->net_idx,
-                                        net_rx->ctx.addr,
-                                        net_rx->ctx.recv_dst, seq_auth,
-                                        *seg_count)) {
+            net_rx->friend_match && !net_rx->local_match &&
+            !bt_mesh_friend_queue_has_space(net_rx->sub->net_idx,
+                                            net_rx->ctx.addr,
+                                            net_rx->ctx.recv_dst, seq_auth,
+                                            *seg_count)) {
         BT_ERR("No space in Friend Queue for %u segments", *seg_count);
         send_ack(net_rx->sub, net_rx->ctx.recv_dst, net_rx->ctx.addr,
                  net_rx->ctx.send_ttl, seq_auth, 0,
@@ -1504,12 +1504,12 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
      * be encrypted using the Friend Credentials.
      */
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
-            bt_mesh_lpn_established() && rx->net_if == BLE_MESH_NET_IF_ADV &&
-            (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
-        BT_WARN("Ignoring unexpected message in Low Power mode");
-        return -EAGAIN;
-    }
+        if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+                bt_mesh_lpn_established() && rx->net_if == BLE_MESH_NET_IF_ADV &&
+                (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
+            BT_WARN("Ignoring unexpected message in Low Power mode");
+            return -EAGAIN;
+        }
     }
 
     /* Save the app-level state so the buffer can later be placed in
@@ -1545,7 +1545,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
                 (bt_mesh_lpn_timer() ||
-                (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
+                 (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
             bt_mesh_lpn_msg_received(rx);
         }
     }
@@ -1556,10 +1556,10 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
         if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND) && rx->friend_match && !err) {
             if (seq_auth == TRANS_SEQ_AUTH_NVAL) {
                 bt_mesh_friend_enqueue_rx(rx, pdu_type, NULL,
-                                        seg_count, buf);
+                                          seg_count, buf);
             } else {
                 bt_mesh_friend_enqueue_rx(rx, pdu_type, &seq_auth,
-                                        seg_count, buf);
+                                          seg_count, buf);
             }
         }
     }
@@ -1666,5 +1666,5 @@ void bt_mesh_heartbeat_send(void)
     BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
 
     bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-                NULL, NULL, NULL);
+                     NULL, NULL, NULL);
 }
