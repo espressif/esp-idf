@@ -34,12 +34,6 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 ## Example Output
 
 ```
-I (482) system_api: Base MAC address is not set, read default base MAC address from BLK0 of EFUSE
-I (2492) example_connect: Ethernet Link Up
-I (4472) tcpip_adapter: eth ip: 192.168.2.137, mask: 255.255.255.0, gw: 192.168.2.2
-I (4472) example_connect: Connected to Ethernet
-I (4472) example_connect: IPv4 address: 192.168.2.137
-I (4472) example_connect: IPv6 address: fe80:0000:0000:0000:bedd:c2ff:fed4:a92b
 I (4482) WEBSOCKET: Connecting to ws://echo.websocket.org...
 I (5012) WEBSOCKET: WEBSOCKET_EVENT_CONNECTED
 I (5492) WEBSOCKET: Sending hello 0000
