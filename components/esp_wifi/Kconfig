@@ -309,8 +309,8 @@ menu "Wi-Fi"
         default n
 
     config ESP32_WIFI_IRAM_OPT
-        depends on !(BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         bool "WiFi IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
             Select this option to place frequently called Wi-Fi library functions in IRAM.
@@ -318,8 +318,8 @@ menu "Wi-Fi"
             but Wi-Fi throughput will be reduced.
 
     config ESP32_WIFI_RX_IRAM_OPT
-        depends on !(BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         bool "WiFi RX IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
             Select this option to place frequently called Wi-Fi library RX functions in IRAM.
