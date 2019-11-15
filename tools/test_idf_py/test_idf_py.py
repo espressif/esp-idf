@@ -65,6 +65,18 @@ class TestExtensions(unittest.TestCase):
         finally:
             os.remove(link_path)
 
+    def test_hidden_commands(self):
+        try:
+            os.symlink(extension_path, link_path)
+            os.environ["IDF_EXTRA_ACTIONS_PATH"] = ";".join([os.path.join(current_dir, 'extra_path')])
+            output = subprocess.check_output([sys.executable, idf_py_path, "--help"],
+                                             env=os.environ).decode('utf-8', 'ignore')
+            self.assertIn('test_subcommand', output)
+            self.assertNotIn('hidden_one', output)
+
+        finally:
+            os.remove(link_path)
+
 
 class TestDependencyManagement(unittest.TestCase):
     def test_dependencies(self):
