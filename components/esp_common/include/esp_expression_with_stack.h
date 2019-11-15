@@ -10,16 +10,16 @@
  * @param stack Pointer to user alocated stack, it must points to its top
  * @param expression Expression or function to be executed using the stack
  */
-#define EXECUTE_EXPRESSION_WITH_STACK(lock, stack, expression)      \
+#define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, expression)  \
 ({                                                                  \
     if(lock) {                                                      \
         uint32_t backup;                                            \
         xSemaphoreTake(lock, portMAX_DELAY);                        \
-        switch_stack_enter(stack, &backup);                         \
+        esp_switch_stack_enter(stack, &backup);                     \
         {                                                           \
             expression;                                             \
         }                                                           \
-        switch_stack_exit(&backup);                                 \
+        esp_switch_stack_exit(&backup);                             \
         xSemaphoreGive(lock);                                       \
     }                                                               \
 })
@@ -29,7 +29,7 @@
  * Should never be called directly, otherwise crashes could
  * occur
  */
-extern void switch_stack_enter(portSTACK_TYPE *stack, uint32_t *backup_stack);
-extern void switch_stack_exit(uint32_t *backup_stack);
+extern void esp_switch_stack_enter(portSTACK_TYPE *stack, uint32_t *backup_stack);
+extern void esp_switch_stack_exit(uint32_t *backup_stack);
 
 #endif
