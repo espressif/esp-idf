@@ -107,6 +107,12 @@ else
 MENUCONFIG_CMD := $(PYTHON) $(IDF_PATH)/tools/kconfig_new/menuconfig.py
 endif
 
+.PHONY: term_check
+term_check:
+ifneq ($(OS),Windows_NT)
+	${PYTHON} ${IDF_PATH}/tools/check_term.py
+endif
+
 # macro for running menuconfig
 define RunMenuConf
 	mkdir -p $(BUILD_DIR_BASE)/include/config
@@ -130,7 +136,7 @@ ifndef MAKE_RESTARTS
 # depend on any prerequisite that may cause a make restart as part of
 # the prerequisite's own recipe.
 
-menuconfig: $(KCONFIG_TOOL_DIR)/mconf-idf | check_python_dependencies prepare_kconfig_files
+menuconfig: $(KCONFIG_TOOL_DIR)/mconf-idf | check_python_dependencies term_check prepare_kconfig_files
 	$(summary) MENUCONFIG
 ifdef BATCH_BUILD
 	@echo "Can't run interactive configuration inside non-interactive build process."
