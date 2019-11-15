@@ -195,11 +195,13 @@ def init_cli(verbose_output=None):
                      deprecated=False,
                      dependencies=None,
                      order_dependencies=None,
+                     hidden=False,
                      **kwargs):
             super(Action, self).__init__(name, **kwargs)
 
             self.name = self.name or self.callback.__name__
             self.deprecated = deprecated
+            self.hidden = hidden
 
             if aliases is None:
                 aliases = []
@@ -405,7 +407,7 @@ def init_cli(verbose_output=None):
                     self._actions[name].params.append(option)
 
         def list_commands(self, ctx):
-            return sorted(self._actions)
+            return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
 
         def get_command(self, ctx, name):
             return self._actions.get(self.commands_with_aliases.get(name))
