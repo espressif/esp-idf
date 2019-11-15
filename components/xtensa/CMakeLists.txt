@@ -5,6 +5,7 @@ else()
     set(priv_requires soc freertos)
     set(srcs "debug_helpers.c"
              "debug_helpers_asm.S"
+             "expression_with_stack_xtensa.S"             
              "eri.c"
              )
 
