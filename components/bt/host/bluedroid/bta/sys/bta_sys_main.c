@@ -200,7 +200,7 @@ void bta_sys_free(void)
 
 /*******************************************************************************
 **
-** Function         bta_dm_sm_execute
+** Function         bta_sys_sm_execute
 **
 ** Description      State machine event handling function for DM
 **

@@ -418,7 +418,6 @@ typedef tBTM_START_ADV_CMPL_CBACK tBTA_START_ADV_CMPL_CBACK;
 
 typedef tBTM_START_STOP_ADV_CMPL_CBACK tBTA_START_STOP_ADV_CMPL_CBACK;
 
-
 typedef tBTM_ADD_WHITELIST_CBACK tBTA_ADD_WHITELIST_CBACK;
 
 typedef tBTM_SET_PKT_DATA_LENGTH_CBACK tBTA_SET_PKT_DATA_LENGTH_CBACK;
@@ -435,6 +434,9 @@ typedef tBTM_RSSI_RESULTS tBTA_RSSI_RESULTS;
 
 typedef tBTM_SET_AFH_CHANNELS_RESULTS tBTA_SET_AFH_CHANNELS_RESULTS;
 typedef tBTM_BLE_SET_CHANNELS_RESULTS tBTA_BLE_SET_CHANNELS_RESULTS;
+
+typedef tBTM_REMOTE_DEV_NAME tBTA_REMOTE_DEV_NAME;
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -1103,15 +1105,22 @@ typedef struct {
     tBT_UUID            service;        /* GATT based Services UUID found on peer device. */
 } tBTA_DM_DISC_BLE_RES;
 
+/* Structure associated with tBTA_DM_RMTNAME_CMPL */
+typedef struct {
+    BD_ADDR     bd_addr;
+    BD_NAME     bd_name;
+    tBTA_CMPL_CB        *read_rmtname_cb;
+} tBTA_DM_RMTNAME_CMPL;
 
 /* Union of all search callback structures */
 typedef union {
-    tBTA_DM_INQ_RES     inq_res;        /* Inquiry result for a peer device. */
-    tBTA_DM_INQ_CMPL    inq_cmpl;       /* Inquiry complete. */
-    tBTA_DM_DISC_RES    disc_res;       /* Discovery result for a peer device. */
+    tBTA_DM_INQ_RES         inq_res;        /* Inquiry result for a peer device. */
+    tBTA_DM_INQ_CMPL        inq_cmpl;       /* Inquiry complete. */
+    tBTA_DM_DISC_RES        disc_res;       /* Discovery result for a peer device. */
     tBTA_DM_DISC_BLE_RES    disc_ble_res;   /* Discovery result for GATT based service */
     tBTA_DM_DI_DISC_CMPL    di_disc;        /* DI discovery result for a peer device */
-    tBTA_DM_INQ_DISCARD     inq_dis;       /* the discarded packets information of inquiry */
+    tBTA_DM_INQ_DISCARD     inq_dis;        /* the discarded packets information of inquiry */
+    tBTA_DM_RMTNAME_CMPL    rmt_name;       /* the remote name information */
 } tBTA_DM_SEARCH;
 
 /* Structure of search callback event and structures */
@@ -1462,6 +1471,18 @@ extern void BTA_DisableTestMode(void);
 **
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(const char *p_name);
+
+/*******************************************************************************
+**
+** Function         BTA_DmGetRemoteName
+**
+** Description      This function gets the peer device's Bluetooth name.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+extern void BTA_DmGetRemoteName(BD_ADDR remote_addr, tBTA_CMPL_CB *read_remote_name_cb);
 
 /*******************************************************************************
 **

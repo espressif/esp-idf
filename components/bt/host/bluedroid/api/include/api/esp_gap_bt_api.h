@@ -207,6 +207,7 @@ typedef enum {
     ESP_BT_GAP_READ_RSSI_DELTA_EVT,                 /*!< read rssi event */
     ESP_BT_GAP_CONFIG_EIR_DATA_EVT,                 /*!< config EIR data event */
     ESP_BT_GAP_SET_AFH_CHANNELS_EVT,                /*!< set AFH channels event */
+    ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< read Remote Name event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -324,6 +325,15 @@ typedef union {
     struct set_afh_channels_param {
         esp_bt_status_t stat;                  /*!< set AFH channel status */
     } set_afh_channels;                        /*!< set AFH channel parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_READ_REMOTE_NAME_EVT
+     */
+    struct read_rmt_name_param {
+        esp_bt_status_t stat;                  /*!< read Remote Name status */
+        uint8_t rmt_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< Remote device name */
+    } read_rmt_name;                        /*!< read Remote Name parameter struct */
+
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -664,6 +674,18 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
 *
 */
 esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels);
+
+/**
+* @brief            Read the remote device name
+*
+* @param[in]        remote_bda: The remote device's address
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda);
 
 #ifdef __cplusplus
 }

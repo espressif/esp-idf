@@ -179,8 +179,6 @@ void BTA_DmSetDeviceName(const char *p_name)
 
         bta_sys_sendmsg(p_msg);
     }
-
-
 }
 
 void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
@@ -238,7 +236,6 @@ void BTA_DmConfigEir(tBTA_DM_EIR_CONF *eir_config)
 *******************************************************************************/
 void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb)
 {
-
     tBTA_DM_API_SET_AFH_CHANNELS *p_msg;
 
     if ((p_msg = (tBTA_DM_API_SET_AFH_CHANNELS *) osi_malloc(sizeof(tBTA_DM_API_SET_AFH_CHANNELS))) != NULL) {
@@ -249,10 +246,32 @@ void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb)
 
         bta_sys_sendmsg(p_msg);
     }
-
-
 }
 #endif /// CLASSIC_BT_INCLUDED == TRUE
+
+#if (SDP_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTA_DmGetRemoteName
+**
+** Description      This function gets the peer device's Bluetooth name.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmGetRemoteName(BD_ADDR remote_addr, tBTA_CMPL_CB *rmt_name_cb)
+{
+    tBTA_DM_API_GET_REMOTE_NAME *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_GET_REMOTE_NAME *) osi_malloc(sizeof(tBTA_DM_API_GET_REMOTE_NAME))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_GET_REMOTE_NAME_EVT;
+        p_msg->rmt_name_cb = rmt_name_cb;
+        bdcpy(p_msg->rmt_addr, remote_addr);
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif
 
 #if (BLE_INCLUDED == TRUE)
 /*******************************************************************************
@@ -401,6 +420,7 @@ void BTA_DmSearchCancel(void)
 
 }
 
+#if (SDP_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmDiscover
@@ -412,7 +432,6 @@ void BTA_DmSearchCancel(void)
 ** Returns          void
 **
 *******************************************************************************/
-#if (SDP_INCLUDED == TRUE)
 void BTA_DmDiscover(BD_ADDR bd_addr, tBTA_SERVICE_MASK services,
                     tBTA_DM_SEARCH_CBACK *p_cback, BOOLEAN sdp_search)
 {
