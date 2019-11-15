@@ -565,11 +565,16 @@ class IDFTool(object):
         for retry in range(DOWNLOAD_RETRY_COUNT):
             local_temp_path = local_path + '.tmp'
             info('Downloading {} to {}'.format(archive_name, local_temp_path))
-            urlretrieve(url, local_temp_path, report_progress if not global_non_interactive else None)
-            sys.stdout.write("\rDone\n")
+            try:
+                urlretrieve(url, local_temp_path, report_progress if not global_non_interactive else None)
+                sys.stdout.write("\rDone\n")
+            except Exception as e:
+                # urlretrieve could throw different exceptions, e.g. IOError when the server is down
+                # Errors are ignored because the downloaded file is checked a couple of lines later.
+                warn('Download failure {}'.format(e))
             sys.stdout.flush()
-            if not self.check_download_file(download_obj, local_temp_path):
-                warn('Failed to download file {}'.format(local_temp_path))
+            if not os.path.isfile(local_temp_path) or not self.check_download_file(download_obj, local_temp_path):
+                warn('Failed to download {} to {}'.format(url, local_temp_path))
                 continue
             rename_with_retry(local_temp_path, local_path)
             downloaded = True
