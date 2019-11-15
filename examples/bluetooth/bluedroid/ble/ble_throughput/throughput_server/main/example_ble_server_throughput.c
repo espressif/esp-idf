@@ -700,7 +700,7 @@ void app_main(void)
 
     xTaskCreate(&throughput_server_task, "throughput_server_task", 4048, NULL, 15, NULL);
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
-    gatts_semaphore = xSemaphoreCreateMutex();
+    gatts_semaphore = xSemaphoreCreateBinary();
     if (!gatts_semaphore) {
         ESP_LOGE(GATTS_TAG, "%s, init fail, the gatts semaphore create fail.", __func__);
         return;
