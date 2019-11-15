@@ -15,6 +15,7 @@
 #define MDNS_PRIVATE_H_
 
 #include "esp_event_base.h"
+#include "esp_task.h"
 
 //#define MDNS_ENABLE_DEBUG
 
