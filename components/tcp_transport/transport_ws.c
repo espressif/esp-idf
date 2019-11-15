@@ -31,6 +31,8 @@ typedef struct {
     char *path;
     char *buffer;
     char *sub_protocol;
+    char *user_agent;
+    char *headers;
     uint8_t read_opcode;
     esp_transport_handle_t parent;
 } transport_ws_t;
@@ -96,29 +98,42 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     // Size of base64 coded string is equal '((input_size * 4) / 3) + (input_size / 96) + 6' including Z-term
     unsigned char client_key[28] = {0};
 
+    const char *user_agent_ptr = (ws->user_agent)?(ws->user_agent):"ESP32 Websocket Client";
+
     size_t outlen = 0;
     mbedtls_base64_encode(client_key, sizeof(client_key), &outlen, random_key, sizeof(random_key));
     int len = snprintf(ws->buffer, DEFAULT_WS_BUFFER,
                          "GET %s HTTP/1.1\r\n"
                          "Connection: Upgrade\r\n"
                          "Host: %s:%d\r\n"
+                         "User-Agent: %s\r\n"
                          "Upgrade: websocket\r\n"
                          "Sec-WebSocket-Version: 13\r\n"
-                         "Sec-WebSocket-Key: %s\r\n"
-                         "User-Agent: ESP32 Websocket Client\r\n",
+                         "Sec-WebSocket-Key: %s\r\n",
                          ws->path,
-                         host, port,
+                         host, port, user_agent_ptr,
                          client_key);
     if (len <= 0 || len >= DEFAULT_WS_BUFFER) {
         ESP_LOGE(TAG, "Error in request generation, %d", len);
         return -1;
     }
     if (ws->sub_protocol) {
+        ESP_LOGD(TAG, "sub_protocol: %s", ws->sub_protocol);
         int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
         len += r;
         if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
             ESP_LOGE(TAG, "Error in request generation"
                           "(snprintf of subprotocol returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
+            return -1;
+        }
+    }
+    if (ws->headers) {
+        ESP_LOGD(TAG, "headers: %s", ws->headers);
+        int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "%s", ws->headers);
+        len += r;
+        if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
+            ESP_LOGE(TAG, "Error in request generation"
+                          "(strncpy of headers returned %d, desired request len: %d, buffer size: %d", r, len, DEFAULT_WS_BUFFER);
             return -1;
         }
     }
@@ -233,7 +248,7 @@ static int _ws_write(esp_transport_handle_t t, int opcode, int mask_flag, const 
         for (i = 0; i < len; ++i) {
             buffer[i] = (buffer[i] ^ mask[i % 4]);
         }
-    }    
+    }
     return ret;
 }
 
@@ -352,6 +367,8 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
     free(ws->buffer);
     free(ws->path);
     free(ws->sub_protocol);
+    free(ws->user_agent);
+    free(ws->headers);
     free(ws);
     return 0;
 }
@@ -404,6 +421,46 @@ esp_err_t esp_transport_ws_set_subprotocol(esp_transport_handle_t t, const char 
     }
     ws->sub_protocol = strdup(sub_protocol);
     if (ws->sub_protocol == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_transport_ws_set_user_agent(esp_transport_handle_t t, const char *user_agent)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->user_agent) {
+        free(ws->user_agent);
+    }
+    if (user_agent == NULL) {
+        ws->user_agent = NULL;
+        return ESP_OK;
+    }
+    ws->user_agent = strdup(user_agent);
+    if (ws->user_agent == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_transport_ws_set_headers(esp_transport_handle_t t, const char *headers)
+{
+    if (t == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    transport_ws_t *ws = esp_transport_get_context_data(t);
+    if (ws->headers) {
+        free(ws->headers);
+    }
+    if (headers == NULL) {
+        ws->headers = NULL;
+        return ESP_OK;
+    }
+    ws->headers = strdup(headers);
+    if (ws->headers == NULL) {
         return ESP_ERR_NO_MEM;
     }
     return ESP_OK;

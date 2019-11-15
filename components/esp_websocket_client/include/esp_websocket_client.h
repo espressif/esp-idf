@@ -92,6 +92,8 @@ typedef struct {
     const char                  *cert_pem;                  /*!< SSL Certification, PEM format as string, if the client requires to verify server */
     esp_websocket_transport_t   transport;                  /*!< Websocket transport type, see `esp_websocket_transport_t */
     char                        *subprotocol;               /*!< Websocket subprotocol */
+    char                        *user_agent;                /*!< Websocket user-agent */
+    char                        *headers;                   /*!< Websocket additional headers */
 } esp_websocket_client_config_t;
 
 /**
