@@ -310,11 +310,21 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
             Select this option to place frequently called Wi-Fi library functions in IRAM.
             When this option is disabled, more than 10Kbytes of IRAM memory will be saved
             but Wi-Fi throughput will be reduced.
+
+    config ESP32_WIFI_RX_IRAM_OPT
+        bool "WiFi RX IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default y
+        help
+            Select this option to place frequently called Wi-Fi library RX functions in IRAM.
+            When this option is disabled, more than 17Kbytes of IRAM memory will be saved
+            but Wi-Fi performance will be reduced.
 
 endmenu  # Wi-Fi
 
