@@ -7,6 +7,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
     set(srcs "src/dbg_stubs.c"
+             "src/esp_espression_with_stack_asm.S"
              "src/esp_err_to_name.c"
              "src/esp_timer.c"
              "src/ets_timer_legacy.c"
