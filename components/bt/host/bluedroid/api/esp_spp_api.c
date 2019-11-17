@@ -95,6 +95,11 @@ esp_err_t esp_spp_connect(esp_spp_sec_t sec_mask,
     btc_spp_args_t arg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
+    if (sec_mask != ESP_SPP_SEC_AUTHORIZE) {
+        LOG_ERROR("Only ESP_SPP_SEC_AUTHORIZE is supported!\n");
+        return ESP_ERR_INVALID_ARG;
+    }
+
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_SPP;
     msg.act = BTC_SPP_ACT_CONNECT;
@@ -130,6 +135,11 @@ esp_err_t esp_spp_start_srv(esp_spp_sec_t sec_mask,
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
     if (strlen(name) > ESP_SPP_SERVER_NAME_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (sec_mask != ESP_SPP_SEC_AUTHORIZE) {
+        LOG_ERROR("Only ESP_SPP_SEC_AUTHORIZE is supported!\n");
         return ESP_ERR_INVALID_ARG;
     }
 
