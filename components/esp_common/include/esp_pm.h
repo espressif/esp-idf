@@ -65,6 +65,11 @@ esp_err_t esp_pm_configure(const void* config);
  */
 typedef struct esp_pm_lock* esp_pm_lock_handle_t;
 
+/**
+ * @brief Automatic light sleep wakeup callback function type
+ */
+typedef void  (*esp_pm_light_sleep_wakeup_callback)();
+
 
 /**
  * @brief Initialize a lock handle for certain power management parameter
@@ -174,6 +179,13 @@ esp_err_t esp_pm_lock_delete(esp_pm_lock_handle_t handle);
  *      - ESP_ERR_NOT_SUPPORTED if CONFIG_PM_ENABLE is not enabled in sdkconfig
  */
 esp_err_t esp_pm_dump_locks(FILE* stream);
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+/**
+ * Set an optional callback function to be invoked on wakeup from automatic light sleep.
+ */
+void esp_pm_set_light_sleep_wakeup_cb(esp_pm_light_sleep_wakeup_callback cb);
+#endif
 
 
 
