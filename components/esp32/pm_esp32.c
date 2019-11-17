@@ -565,8 +565,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
         }
     }
     portEXIT_CRITICAL(&s_switch_lock);
-    if(went_to_sleep && s_light_sleep_wakeup_cb != NULL)
-    {
+    if (went_to_sleep && s_light_sleep_wakeup_cb != NULL) {
         s_light_sleep_wakeup_cb();
     }
 }
