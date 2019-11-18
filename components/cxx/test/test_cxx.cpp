@@ -196,39 +196,161 @@ TEST_CASE("before scheduler has started, static initializers work correctly", "[
     TEST_ASSERT_EQUAL(2, StaticInitTestBeforeScheduler::order);
 }
 
+/* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
+   - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
+     This info is kept until global destructors are called by __do_global_dtors_aux()
+   - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
+   - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
+   - 88 bytes are allocated by pthread_setspecific() to init internal lock
+   */
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 
-TEST_CASE("c++ exceptions work", "[cxx]")
+TEST_CASE("c++ exceptions work", "[cxx] [exceptions] [leaks=800]")
 {
-    /* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
-       - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
-         This info is kept until global destructors are called by __do_global_dtors_aux()
-       - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
-       - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
-       - 88 bytes are allocated by pthread_setspecific() to init internal lock
-       */
     int thrown_value;
-    try
-    {
+    try {
         throw 20;
-    }
-    catch (int e)
-    {
+    } catch (int e) {
         thrown_value = e;
     }
     TEST_ASSERT_EQUAL(20, thrown_value);
     printf("OK?\n");
 }
 
-TEST_CASE("c++ exceptions emergency pool", "[cxx] [ignore]")
+TEST_CASE("c++ bool exception", "[cxx] [exceptions] [leaks=800]")
 {
-    /* Note: When first exception (in system) is thrown this test produces memory leaks report (~500 bytes):
-       - 392 bytes (can vary) as libunwind allocates memory to keep stack frames info to handle exceptions.
-         This info is kept until global destructors are called by __do_global_dtors_aux()
-       - 8 bytes are allocated by __cxa_get_globals() to keep __cxa_eh_globals
-       - 16 bytes are allocated by pthread_setspecific() which is called by __cxa_get_globals() to init TLS var for __cxa_eh_globals
-       - 88 bytes are allocated by pthread_setspecific() to init internal lock
-       */
+    bool thrown_value = false;
+    try {
+        throw true;
+    } catch (bool e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(true, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ void exception", "[cxx] [exceptions] [leaks=800]")
+{
+    void* thrown_value = 0;
+    try {
+        throw (void*) 47;
+    } catch (void* e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(47, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ uint64_t exception", "[cxx] [exceptions] [leaks=800]")
+{
+    uint64_t thrown_value = 0;
+    try {
+        throw (uint64_t) 47;
+    } catch (uint64_t e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(47, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ char exception", "[cxx] [exceptions] [leaks=800]")
+{
+    char thrown_value = '0';
+    try {
+        throw '/';
+    } catch (char e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL('/', thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ wchar exception", "[cxx] [exceptions] [leaks=800]")
+{
+    wchar_t thrown_value = 0;
+    try {
+        throw (wchar_t) 47;
+    } catch (wchar_t e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL((wchar_t) 47, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ float exception", "[cxx] [exceptions] [leaks=800]")
+{
+    float thrown_value = 0;
+    try {
+        throw 23.5f;
+    } catch (float e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(23.5, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ double exception", "[cxx] [exceptions] [leaks=800]")
+{
+    double thrown_value = 0;
+    try {
+        throw 23.5d;
+    } catch (double e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL(23.5d, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ const char* exception", "[cxx] [exceptions] [leaks=800]")
+{
+    const char *thrown_value = 0;
+    try {
+        throw "Hi :)";
+    } catch (const char *e) {
+        thrown_value = e;
+    }
+    TEST_ASSERT_EQUAL_STRING("Hi :)", thrown_value);
+    printf("OK?\n");
+}
+
+struct NonExcTypeThrowee {
+    int value;
+public:
+    NonExcTypeThrowee(int value) : value(value) { }
+};
+
+TEST_CASE("c++ any class exception", "[cxx] [exceptions] [leaks=800]")
+{
+    int thrown_value = 0;
+    try {
+        throw NonExcTypeThrowee(47);
+    } catch (NonExcTypeThrowee &e) {
+        thrown_value = e.value;
+    }
+    TEST_ASSERT_EQUAL(47, thrown_value);
+    printf("OK?\n");
+}
+
+struct ExcTypeThrowee : public std::exception {
+    int value;
+public:
+    ExcTypeThrowee(int value) : value(value) { }
+};
+
+TEST_CASE("c++ std::exception child", "[cxx] [exceptions] [leaks=800]")
+{
+    int thrown_value = 0;
+    try {
+        throw ExcTypeThrowee(47);
+    } catch (ExcTypeThrowee &e) {
+        thrown_value = e.value;
+    }
+    TEST_ASSERT_EQUAL(47, thrown_value);
+    printf("OK?\n");
+}
+
+TEST_CASE("c++ exceptions emergency pool", "[cxx] [exceptions] [ignore]")
+{
     void **p, **pprev = NULL;
     int thrown_value = 0;
     // throw first exception to ensure that all initial allocations are made
