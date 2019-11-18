@@ -36,6 +36,7 @@
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+    GIT_SUBMODULE_STRATEGY: none
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
@@ -43,6 +44,9 @@
     # clone test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    # Get esptool
+    - git submodule sync
+    - git submodule update --init components/esptool_py/esptool
     - cd $TEST_FW_PATH
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
