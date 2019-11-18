@@ -556,8 +556,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults1;sdkconfig.defaults2" reconfigure > /dev/null
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults1 should be in sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig.defaults2 should be in sdkconfig"
-    rm sdkconfig.defaults1
-    rm sdkconfig.defaults2
+    rm sdkconfig.defaults1 sdkconfig.defaults2 sdkconfig
+    git checkout sdkconfig.defaults
 
     print_status "Supports git worktree"
     clean_build_dir
@@ -576,6 +576,17 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     grep "${msg}" log.txt 1>/dev/null || failure "Custom target did not produce expected output"
     git checkout CMakeLists.txt
     rm -f log.txt
+
+    print_status "Compiles with dependencies delivered by component manager"
+    clean_build_dir
+    printf "\n#include \"test_component.h\"\n" >> main/main.c
+    printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> idf_project.yml
+    ! idf.py build || failure "Build should fail if dependencies are not installed"
+    pip install ${COMPONENT_MANAGER_REPO}
+    idf.py reconfigure build || failure "Build succeeds once requirements are installed"
+    pip uninstall -y idf_component_manager
+    rm idf_project.yml
+    git checkout main/main.c
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

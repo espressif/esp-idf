@@ -649,6 +649,17 @@ def init_cli(verbose_output=None):
             if name.endswith('_ext'):
                 extensions[name] = import_module(name)
 
+    # Load component manager if available and not explicitly disabled
+    if os.getenv('IDF_COMPONENT_MANAGER', None) != '0':
+        try:
+            from idf_component_manager import idf_extensions
+
+            extensions['component_manager_ext'] = idf_extensions
+            os.environ['IDF_COMPONENT_MANAGER'] = '1'
+
+        except ImportError:
+            pass
+
     for name, extension in extensions.items():
         try:
             all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
