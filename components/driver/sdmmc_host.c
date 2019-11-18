@@ -344,7 +344,7 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t* slot_config)
         // Force D3 high to make slave enter SD mode.
         // Connect to peripheral after width configuration.
         gpio_config_t gpio_conf = {
-            .pin_bit_mask = BIT(pslot->d3_gpio),
+            .pin_bit_mask = BIT64(pslot->d3_gpio),
             .mode = GPIO_MODE_OUTPUT ,
             .pull_up_en = 0,
             .pull_down_en = 0,

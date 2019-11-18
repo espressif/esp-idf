@@ -126,7 +126,7 @@ esp_err_t slave_reset(esp_slave_context_t *context)
 static void gpio_d2_set_high(void)
 {
     gpio_config_t d2_config = {
-        .pin_bit_mask = BIT(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
+        .pin_bit_mask = BIT64(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = true,
     };
@@ -267,7 +267,7 @@ void slave_power_on(void)
     level_active = 1;
 #endif
     gpio_config_t cfg = {
-        .pin_bit_mask = BIT(GPIO_B1) | BIT(GPIO_B2) | BIT(GPIO_B3),
+        .pin_bit_mask = BIT64(GPIO_B1) | BIT64(GPIO_B2) | BIT64(GPIO_B3),
         .mode = GPIO_MODE_DEF_OUTPUT,
         .pull_up_en = false,
         .pull_down_en = false,
