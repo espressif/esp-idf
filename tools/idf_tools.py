@@ -1311,6 +1311,7 @@ def main(argv):
         global_idf_path = args.idf_path
     if not global_idf_path:
         global_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    os.environ['IDF_PATH'] = global_idf_path
 
     global global_idf_tools_path
     global_idf_tools_path = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(IDF_TOOLS_PATH_DEFAULT)
