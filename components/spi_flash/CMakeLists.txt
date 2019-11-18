@@ -3,7 +3,9 @@ if(BOOTLOADER_BUILD)
     if (CONFIG_IDF_TARGET_ESP32)
         # ESP32 Bootloader needs SPIUnlock from this file, but doesn't
         # need other parts of this component
-        set(srcs "spi_flash_rom_patch.c")
+        set(srcs "esp32/spi_flash_rom_patch.c")
+    elseif (CONFIG_IDF_TARGET_ESP32S2BETA)
+        set(srcs "esp32s2beta/spi_flash_rom_patch.c")
     else()
         # but on other platforms no source files are needed for bootloader
         set(srcs)
@@ -20,7 +22,10 @@ else()
 
     if (CONFIG_IDF_TARGET_ESP32)
         list(APPEND srcs
-            "spi_flash_rom_patch.c")
+            "esp32/spi_flash_rom_patch.c")
+    elseif (CONFIG_IDF_TARGET_ESP32S2BETA)
+        list(APPEND srcs 
+            "esp32s2beta/spi_flash_rom_patch.c")
     endif()
 
     # New implementation after IDF v4.0
