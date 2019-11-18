@@ -452,6 +452,33 @@ UT_034:
     - UT_T1_PSRAMV0
     - psram
 
+UT_035:
+  extends: .unit_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_036:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+    - psram
+
+UT_037:
+  extends: .unit_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_038:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+    - psram
 
 nvs_compatible_test:
   extends: .test_template
