@@ -168,6 +168,27 @@ static int ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel)
     return max_duty;
 }
 
+static ledc_clk_cfg_t ledc_timer_get_source_clk(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
+{
+    ledc_clk_cfg_t clk_cfg = LEDC_USE_APB_CLK;
+#ifdef CONFIG_IDF_TARGET_ESP32
+    if (speed_mode == LEDC_LOW_SPEED_MODE && LEDC.conf.slow_clk_sel == 0) {
+        clk_cfg = LEDC_USE_RTC8M_CLK;
+    } else if( LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel == 0) {
+        clk_cfg = LEDC_USE_REF_TICK;
+    }
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    if (LEDC.conf.apb_clk_sel == 2) {
+        clk_cfg = LEDC_USE_RTC8M_CLK;
+    } else if (LEDC.conf.apb_clk_sel == 1) {
+        if (LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel) {
+            clk_cfg = LEDC_USE_REF_TICK;
+        }
+    }
+#endif
+    return clk_cfg;
+}
+
 esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
         ledc_clk_src_t clk_src)
 {
@@ -176,7 +197,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.clock_divider = clock_divider;
 #ifdef CONFIG_IDF_TARGET_ESP32
-     LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
+    LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
 #elif defined CONFIG_IDF_TARGET_ESP32S2BETA
     if(clk_src == LEDC_REF_TICK) {
         //REF_TICK can only be used when APB is selected. 
@@ -184,7 +205,6 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
         LEDC.conf.apb_clk_sel = 1;
     } else {
         LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = 0;
-        LEDC.conf.apb_clk_sel = clk_src;
     }
 #endif
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution = duty_resolution;
@@ -308,12 +328,21 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     if (div_param < 256 || div_param > LEDC_TIMER_DIV_NUM_MAX) {
         goto error;
     }
+    portENTER_CRITICAL(&ledc_spinlock);
 #ifdef CONFIG_IDF_TARGET_ESP32
     // For low speed channels, if RTC_8MCLK is used as the source clock, the `slow_clk_sel` register should be cleared, otherwise it should be set.
     if (speed_mode == LEDC_LOW_SPEED_MODE) {
         LEDC.conf.slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? 0 : 1;
     }
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    if (clk_cfg == LEDC_USE_RTC8M_CLK) {
+        LEDC.conf.apb_clk_sel = 2;
+    } else {
+        LEDC.conf.apb_clk_sel = 1;
+    }
+    //TODO:Support XTAL_CLK
 #endif
+    portEXIT_CRITICAL(&ledc_spinlock);
     //Set the divisor
     ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
     // reset the timer
@@ -499,23 +528,11 @@ int ledc_get_hpoint(ledc_mode_t speed_mode, ledc_channel_t channel)
 esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t freq_hz)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    portENTER_CRITICAL(&ledc_spinlock);
     esp_err_t ret = ESP_OK;
-    uint32_t clock_divider = 0;
+    ledc_clk_cfg_t clk_cfg = LEDC_AUTO_CLK;
+    portENTER_CRITICAL(&ledc_spinlock);
     uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
-    uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
-    uint32_t precision = (0x1 << duty_resolution);
-    if (timer_source_clk == LEDC_APB_CLK) {
-        clock_divider = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
-    } else {
-        clock_divider = ((uint64_t) LEDC_REF_CLK_HZ << 8) / freq_hz / precision;
-    }
-    if (clock_divider <= 256 || clock_divider > LEDC_TIMER_DIV_NUM_MAX) {
-        ESP_LOGE(LEDC_TAG, "div param err,div_param=%u", clock_divider);
-        ret = ESP_FAIL;
-    }
-    LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider = clock_divider;
-    ledc_ls_timer_update(speed_mode, timer_num);
+    ledc_set_timer_div(speed_mode, timer_num, clk_cfg, freq_hz, duty_resolution);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ret;
 }
@@ -523,18 +540,20 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t
 uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
-    portENTER_CRITICAL(&ledc_spinlock);
     uint32_t freq = 0;
-    uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_clk_cfg_t timer_source_clk = ledc_timer_get_source_clk(speed_mode, timer_num);
     uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
     uint32_t clock_divider = LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider;
     uint32_t precision = (0x1 << duty_resolution);
-    if (timer_source_clk == LEDC_APB_CLK) {
+    portEXIT_CRITICAL(&ledc_spinlock);
+    if (timer_source_clk == LEDC_USE_APB_CLK) {
         freq = ((uint64_t) LEDC_APB_CLK_HZ << 8) / precision / clock_divider;
+    } else if(timer_source_clk == LEDC_USE_RTC8M_CLK) {
+        freq = ((uint64_t) s_ledc_slow_clk_8M << 8) / precision / clock_divider;
     } else {
         freq = ((uint64_t) LEDC_REF_CLK_HZ << 8) / precision / clock_divider;
     }
-    portEXIT_CRITICAL(&ledc_spinlock);
     return freq;
 }
 
