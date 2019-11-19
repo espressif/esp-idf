@@ -32,6 +32,10 @@ extern "C" {
 
 #define I2C_APB_CLK_FREQ  APB_CLK_FREQ /*!< I2C source clock is APB clock, 80MHz */
 #define I2C_FIFO_LEN   (32)  /*!< I2C hardware fifo length */
+
+#define I2C_CLK_SPEED_STANDARD (100000U)
+#define I2C_CLK_SPEED_FAST     (400000U)
+
 typedef enum{
     I2C_MODE_SLAVE = 0,   /*!< I2C slave mode */
     I2C_MODE_MASTER,      /*!< I2C master mode */
@@ -97,6 +101,25 @@ typedef struct{
 
     };
 }i2c_config_t;
+
+#define I2C_CONFIG_MASTER(_sda_pin, _scl_pin, _pull_up_enable, _clk_speed) { \
+    .mode             = I2C_MODE_MASTER, \
+    .sda_io_num       = (_sda_pin), \
+    .scl_io_num       = (_scl_pin), \
+    .sda_pullup_en    = (_pull_up_enable), \
+    .scl_pullup_en    = (_pull_up_enable), \
+    .master.clk_speed = (_clk_speed), \
+}
+
+#define I2C_CONFIG_SLAVE(_sda_pin, _scl_pin, _pull_up_enable, _slave_addr, _addr_10b_en) { \
+    .mode                = I2C_MODE_SLAVE, \
+    .sda_io_num          = (_sda_pin), \
+    .scl_io_num          = (_scl_pin), \
+    .sda_pullup_en       = (_pull_up_enable), \
+    .scl_pullup_en       = (_pull_up_enable), \
+    .slave.slave_addr    = (_slave_addr), \
+    .slave.addr_10bit_en = (_addr_10b_en), \
+}
 
 typedef void* i2c_cmd_handle_t;    /*!< I2C command handle  */
 
