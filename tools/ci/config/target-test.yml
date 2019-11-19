@@ -510,6 +510,33 @@ UT_039:
     - ESP32S2BETA_IDF
     - UT_T1_LEDC
 
+UT_040:
+  extends: .unit_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_041:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+    - psram
+
+UT_042:
+  extends: .unit_test_template
+  parallel: 3
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_043:
+  extends: .unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+    - psram
 
 nvs_compatible_test:
   extends: .test_template
