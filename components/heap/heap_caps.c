@@ -288,7 +288,6 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         return NULL;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
     //On esp32s2 the pointer to heap may be aliased, we need to 
     //recover it before to manage a new allocation:
     if(esp_ptr_in_diram_iram((void *)ptr)) {
@@ -297,7 +296,6 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         ptr = (void *)dram_addr[-1];
         //printf("[HEAP_CAPS_MALLOC]: obtained pointer that was aliased: %p \n", (void *)ptr);
     }
-#endif
 
     heap_t *heap = find_containing_heap(ptr);
     assert(heap != NULL && "realloc() pointer is outside heap areas");
