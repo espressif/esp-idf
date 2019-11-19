@@ -1230,6 +1230,14 @@ UT_032:
     - UT_T1_1
     - psram
 
+UT_033:
+  extends: .unit_test_template
+  parallel: 2
+  tags:
+    - ESP32_IDF
+    - UT_T1_PSRAMV0
+    - psram
+
 IT_001:
   <<: *test_template
   parallel: 3
