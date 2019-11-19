@@ -63,7 +63,7 @@ esp_err_t esp_transport_ws_set_subprotocol(esp_transport_handle_t t, const char 
  * @param[in]  opcode      ws operation code
  * @param[in]  buffer      The buffer
  * @param[in]  len         The length
- * @param[in]  timeout_ms  The timeout milliseconds
+ * @param[in]  timeout_ms  The timeout milliseconds (-1 indicates block forever)
  *
  * @return
  *  - Number of bytes was written

@@ -606,14 +606,14 @@ static int esp_websocket_client_send_with_opcode(esp_websocket_client_handle_t c
         goto unlock_and_return;
     }
 
-
     while (widx < len) {
         if (need_write > client->buffer_size) {
             need_write = client->buffer_size;
         }
         memcpy(client->tx_buffer, data + widx, need_write);
         // send with ws specific way and specific opcode
-        wlen = esp_transport_ws_send_raw(client->transport, opcode, (char *)client->tx_buffer, need_write, timeout);
+        wlen = esp_transport_ws_send_raw(client->transport, opcode, (char *)client->tx_buffer, need_write,
+                                        (timeout==portMAX_DELAY)? -1 : timeout * portTICK_PERIOD_MS);
         if (wlen <= 0) {
             ret = wlen;
             ESP_LOGE(TAG, "Network error: esp_transport_write() returned %d, errno=%d", ret, errno);

@@ -155,7 +155,7 @@ esp_err_t esp_websocket_client_destroy(esp_websocket_client_handle_t client);
  * @param[in]  client  The client
  * @param[in]  data    The data
  * @param[in]  len     The length
- * @param[in]  timeout Write data timeout
+ * @param[in]  timeout Write data timeout in RTOS ticks
  *
  * @return
  *     - Number of data was sent
@@ -169,7 +169,7 @@ int esp_websocket_client_send(esp_websocket_client_handle_t client, const char *
  * @param[in]  client  The client
  * @param[in]  data    The data
  * @param[in]  len     The length
- * @param[in]  timeout Write data timeout
+ * @param[in]  timeout Write data timeout in RTOS ticks
  *
  * @return
  *     - Number of data was sent
@@ -183,7 +183,7 @@ int esp_websocket_client_send_bin(esp_websocket_client_handle_t client, const ch
  * @param[in]  client  The client
  * @param[in]  data    The data
  * @param[in]  len     The length
- * @param[in]  timeout Write data timeout
+ * @param[in]  timeout Write data timeout in RTOS ticks
  *
  * @return
  *     - Number of data was sent
