@@ -26,6 +26,7 @@ else()
              "panic.c"
              "pm_esp32s2beta.c"
              "pm_trace.c"
+             "reset_reason.c"
              "sleep_modes.c"
              "spiram.c"
              "spiram_psram.c"

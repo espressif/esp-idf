@@ -168,8 +168,7 @@ static void task_wdt_isr(void *arg)
     if (twdt_config->panic){     //Trigger Panic if configured to do so
         ESP_EARLY_LOGE(TAG, "Aborting.");
         portEXIT_CRITICAL_ISR(&twdt_spinlock);
-        // TODO: Add support reset reason for esp32s2beta.
-        // esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
+        esp_reset_reason_set_hint(ESP_RST_TASK_WDT);
         abort();
     }
 

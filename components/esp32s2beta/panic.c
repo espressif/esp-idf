@@ -123,6 +123,20 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, s
     abort();
 }
 
+/* These two weak stubs for esp_reset_reason_{get,set}_hint are used when
+ * the application does not call esp_reset_reason() function, and
+ * reset_reason.c is not linked into the output file.
+ */
+void __attribute__((weak)) esp_reset_reason_set_hint(esp_reset_reason_t hint)
+{
+}
+
+esp_reset_reason_t __attribute__((weak)) esp_reset_reason_get_hint(void)
+{
+    return ESP_RST_UNKNOWN;
+}
+
+
 static bool abort_called;
 
 static __attribute__((noreturn)) inline void invoke_abort(void)
@@ -149,6 +163,12 @@ void abort(void)
 #if !CONFIG_ESP32S2_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
+    /* Calling code might have set other reset reason hint (such as Task WDT),
+     * don't overwrite that.
+     */
+    if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
+    }
     invoke_abort();
 }
 
@@ -326,6 +346,10 @@ void panicHandler(XtExcFrame *frame)
     }
 #endif //!CONFIG_FREERTOS_UNICORE
 
+    if (frame->exccause == PANIC_RSN_INTWDT_CPU0) {
+        esp_reset_reason_set_hint(ESP_RST_INT_WDT);
+    }
+
     haltOtherCore();
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(core_id);
@@ -428,6 +452,7 @@ void xt_unhandled_exception(XtExcFrame *frame)
         }
 #endif
         panicPutStr(". Exception was unhandled.\r\n");
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
     }
     commonErrorHandler(frame);
 }
