@@ -16,7 +16,7 @@ except ImportError:
 
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
-def test_real_time_stats_example(env, extra_data):
+def test_cpp_rtti_example(env, extra_data):
     dut = env.get_dut('cpp_rtti', 'examples/system/cpp_rtti')
     dut.start_app()
 
@@ -34,4 +34,4 @@ def test_real_time_stats_example(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_real_time_stats_example()
+    test_cpp_rtti_example()
