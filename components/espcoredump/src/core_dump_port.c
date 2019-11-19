@@ -47,8 +47,12 @@ bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snapho
         return false;
     }
     if (task_snaphort->tcb_addr == xTaskGetCurrentTaskHandleForCPU(xPortGetCoreID())) {
-        // Set correct stack top for current task
-        task_snaphort->stack_start = (uint32_t)exc_frame;
+        // Set correct stack top for current task; only modify if we came from the task,
+        // and not an ISR that crashed.
+        if (!xPortInterruptedFromISRContext()) {
+            task_snaphort->stack_start = (uint32_t)exc_frame;
+        }
+
         // This field is not initialized for crashed task, but stack frame has the structure of interrupt one,
         // so make workaround to allow espcoredump to parse it properly.
         if (exc_frame->exit == 0)
