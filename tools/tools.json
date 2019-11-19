@@ -1,0 +1,390 @@
+{
+  "tools": [
+    {
+      "description": "Toolchain for Xtensa (ESP32) based on GCC",
+      "export_paths": [
+        [
+          "xtensa-esp32-elf",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/crosstool-NG",
+      "install": "always",
+      "license": "GPL-3.0-with-GCC-exception",
+      "name": "xtensa-esp32-elf",
+      "version_cmd": [
+        "xtensa-esp32-elf-gcc",
+        "--version"
+      ],
+      "version_regex": "\\(crosstool-NG\\s+(?:crosstool-ng-)?([0-9a-z\\.\\-]+)\\)\\s*([0-9\\.]+)",
+      "version_regex_replace": "\\1-\\2",
+      "versions": [
+        {
+          "name": "1.22.0-80-g6c4433a5-5.2.0",
+          "status": "recommended",
+          "win32": {
+            "sha256": "f217fccbeaaa8c92db239036e0d6202458de4488b954a3a38f35ac2ec48058a4",
+            "size": 125719261,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip"
+          },
+          "win64": {
+            "sha256": "f217fccbeaaa8c92db239036e0d6202458de4488b954a3a38f35ac2ec48058a4",
+            "size": 125719261,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-win32-1.22.0-80-g6c4433a-5.2.0.zip"
+          }
+        },
+        {
+          "linux-amd64": {
+            "sha256": "3fe96c151d46c1d4e5edc6ed690851b8e53634041114bad04729bc16b0445156",
+            "size": 44219107,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-80-g6c4433a-5.2.0.tar.gz"
+          },
+          "linux-i686": {
+            "sha256": "b4055695ffc2dfc0bcb6dafdc2572a6e01151c4179ef5fa972b3fcb2183eb155",
+            "size": 45566336,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-linux32-1.22.0-80-g6c4433a-5.2.0.tar.gz"
+          },
+          "macos": {
+            "sha256": "a4307a97945d2f2f2745f415fbe80d727750e19f91f9a1e7e2f8a6065652f9da",
+            "size": 46517409,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-osx-1.22.0-80-g6c4433a-5.2.0.tar.gz"
+          },
+          "name": "1.22.0-80-g6c4433a-5.2.0",
+          "status": "recommended"
+        }
+      ]
+    },
+    {
+      "description": "Toolchain for ESP32 ULP coprocessor",
+      "export_paths": [
+        [
+          "esp32ulp-elf-binutils",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/binutils-esp32ulp",
+      "install": "always",
+      "license": "GPL-2.0-or-later",
+      "name": "esp32ulp-elf",
+      "version_cmd": [
+        "esp32ulp-elf-as",
+        "--version"
+      ],
+      "version_regex": "\\(GNU Binutils\\)\\s+([0-9a-z\\.\\-]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "c1bbcd65e1e30c7312a50344c8dbc70c2941580a79aa8f8abbce8e0e90c79566",
+            "size": 8246604,
+            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-linux64-2.28.51-esp32ulp-20180809.tar.gz"
+          },
+          "macos": {
+            "sha256": "c92937d85cc9a90eb6c6099ce767ca021108c18c94e34bd7b1fa0cde168f94a0",
+            "size": 5726662,
+            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-macos-2.28.51-esp32ulp-20180809.tar.gz"
+          },
+          "name": "2.28.51.20170517",
+          "status": "recommended",
+          "win32": {
+            "sha256": "92dc83e69e534c9f73d7b939088f2e84f757d2478483415d17fe9dd1c236f2fd",
+            "size": 12231559,
+            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-win32-2.28.51-esp32ulp-20180809.zip"
+          },
+          "win64": {
+            "sha256": "92dc83e69e534c9f73d7b939088f2e84f757d2478483415d17fe9dd1c236f2fd",
+            "size": 12231559,
+            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-win32-2.28.51-esp32ulp-20180809.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "CMake build system",
+      "export_paths": [
+        [
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/Kitware/CMake",
+      "install": "on_request",
+      "license": "BSD-3-Clause",
+      "name": "cmake",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win32",
+            "win64"
+          ]
+        },
+        {
+          "export_paths": [
+            [
+              "CMake.app",
+              "Contents",
+              "bin"
+            ]
+          ],
+          "platforms": [
+            "macos"
+          ]
+        }
+      ],
+      "strip_container_dirs": 1,
+      "version_cmd": [
+        "cmake",
+        "--version"
+      ],
+      "version_regex": "cmake version ([0-9.]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "563a39e0a7c7368f81bfa1c3aff8b590a0617cdfe51177ddc808f66cc0866c76",
+            "size": 38405896,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz"
+          },
+          "macos": {
+            "sha256": "fef537614d73fda848f6168273b6c7ba45f850484533361e7bc50ac1d315f780",
+            "size": 32062124,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Darwin-x86_64.tar.gz"
+          },
+          "name": "3.13.4",
+          "status": "recommended",
+          "win32": {
+            "sha256": "28daf772f55d817a13ef14e25af2a5569f8326dac66a6aa3cc5208cf1f8e943f",
+            "size": 26385104,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-win32-x86.zip"
+          },
+          "win64": {
+            "sha256": "bcd477d49e4a9400b41213d53450b474beaedb264631693c958ef9affa8e5623",
+            "size": 29696565,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-win64-x64.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "OpenOCD for ESP32",
+      "export_paths": [
+        [
+          "openocd-esp32",
+          "bin"
+        ]
+      ],
+      "export_vars": {
+        "OPENOCD_SCRIPTS": "${TOOL_PATH}/openocd-esp32/share/openocd/scripts"
+      },
+      "info_url": "https://github.com/espressif/openocd-esp32",
+      "install": "always",
+      "license": "GPL-2.0-only",
+      "name": "openocd-esp32",
+      "version_cmd": [
+        "openocd",
+        "--version"
+      ],
+      "version_regex": "Open On-Chip Debugger\\s+([a-z0-9.-]+)\\s+",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "e5b5579edffde090e426b4995b346e281843bf84394f8e68c8e41bd1e4c576bd",
+            "size": 1681596,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190313/openocd-esp32-linux64-0.10.0-esp32-20190313.tar.gz"
+          },
+          "macos": {
+            "sha256": "09504eea5aa92646a117f16573c95b34e04b4010791a2f8fefcd2bd8c430f081",
+            "size": 1760536,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190313/openocd-esp32-macos-0.10.0-esp32-20190313.tar.gz"
+          },
+          "name": "v0.10.0-esp32-20190313",
+          "status": "recommended",
+          "win32": {
+            "sha256": "b86a7f9f39dfc4d8e289fc819375bbb7a5e9fcb8895805ba2b5faf67b8b25ce2",
+            "size": 2098513,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190313/openocd-esp32-win32-0.10.0-esp32-20190313.zip"
+          },
+          "win64": {
+            "sha256": "b86a7f9f39dfc4d8e289fc819375bbb7a5e9fcb8895805ba2b5faf67b8b25ce2",
+            "size": 2098513,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190313/openocd-esp32-win32-0.10.0-esp32-20190313.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "menuconfig tool",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/kconfig-frontends",
+      "install": "never",
+      "license": "GPL-2.0-only",
+      "name": "mconf",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win32",
+            "win64"
+          ]
+        }
+      ],
+      "strip_container_dirs": 1,
+      "version_cmd": [
+        "mconf-idf",
+        "-v"
+      ],
+      "version_regex": "mconf-idf version mconf-([a-z0-9.-]+)-win32",
+      "versions": [
+        {
+          "name": "v4.6.0.0-idf-20190628",
+          "status": "recommended",
+          "win32": {
+            "sha256": "1b8f17f48740ab669c13bd89136e8cc92efe0cd29872f0d6c44148902a2dc40c",
+            "size": 826114,
+            "url": "https://github.com/espressif/kconfig-frontends/releases/download/v4.6.0.0-idf-20190628/mconf-v4.6.0.0-idf-20190628-win32.zip"
+          },
+          "win64": {
+            "sha256": "1b8f17f48740ab669c13bd89136e8cc92efe0cd29872f0d6c44148902a2dc40c",
+            "size": 826114,
+            "url": "https://github.com/espressif/kconfig-frontends/releases/download/v4.6.0.0-idf-20190628/mconf-v4.6.0.0-idf-20190628-win32.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "Ninja build system",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/ninja-build/ninja",
+      "install": "on_request",
+      "license": "Apache-2.0",
+      "name": "ninja",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win32",
+            "win64"
+          ]
+        }
+      ],
+      "version_cmd": [
+        "ninja",
+        "--version"
+      ],
+      "version_regex": "([0-9.]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "978fd9e26c2db8d33392c6daef50e9edac0a3db6680710a9f9ad47e01f3e49b7",
+            "size": 85276,
+            "url": "https://dl.espressif.com/dl/ninja-1.9.0-linux64.tar.gz"
+          },
+          "macos": {
+            "sha256": "9504cd1783ef3c242d06330a50d54dc8f838b605f5fc3e892c47254929f7350c",
+            "size": 91457,
+            "url": "https://dl.espressif.com/dl/ninja-1.9.0-osx.tar.gz"
+          },
+          "name": "1.9.0",
+          "status": "recommended",
+          "win64": {
+            "sha256": "2d70010633ddaacc3af4ffbd21e22fae90d158674a09e132e06424ba3ab036e9",
+            "size": 254497,
+            "url": "https://dl.espressif.com/dl/ninja-1.9.0-win64.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "IDF wrapper tool for Windows",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/esp-idf/tree/master/tools/windows/idf_exe",
+      "install": "never",
+      "license": "Apache-2.0",
+      "name": "idf-exe",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win32",
+            "win64"
+          ]
+        }
+      ],
+      "version_cmd": [
+        "idf.py.exe",
+        "-v"
+      ],
+      "version_regex": "([0-9.]+)",
+      "versions": [
+        {
+          "name": "1.0.1",
+          "status": "recommended",
+          "win32": {
+            "sha256": "53eb6aaaf034cc7ed1a97d5c577afa0f99815b7793905e9408e74012d357d04a",
+            "size": 11297,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.1.zip"
+          },
+          "win64": {
+            "sha256": "53eb6aaaf034cc7ed1a97d5c577afa0f99815b7793905e9408e74012d357d04a",
+            "size": 11297,
+            "url": "https://dl.espressif.com/dl/idf-exe-v1.0.1.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "Ccache (compiler cache)",
+      "export_paths": [
+        [
+          ""
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/ccache/ccache",
+      "install": "never",
+      "license": "GPL-3.0-or-later",
+      "name": "ccache",
+      "platform_overrides": [
+        {
+          "install": "always",
+          "platforms": [
+            "win64"
+          ]
+        }
+      ],
+      "version_cmd": [
+        "ccache.exe",
+        "--version"
+      ],
+      "version_regex": "ccache version ([0-9.]+)",
+      "versions": [
+        {
+          "name": "3.7",
+          "status": "recommended",
+          "win64": {
+            "sha256": "37e833f3f354f1145503533e776c1bd44ec2e77ff8a2476a1d2039b0b10c78d6",
+            "size": 142401,
+            "url": "https://dl.espressif.com/dl/ccache-3.7-w64.zip"
+          }
+        }
+      ]
+    }
+  ],
+  "version": 1
+}

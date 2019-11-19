@@ -34,6 +34,7 @@ tools/ci/test_configure_ci_environment.sh
 tools/cmake/convert_to_cmake.py
 tools/cmake/run_cmake_lint.sh
 tools/esp_app_trace/apptrace_proc.py
+tools/elf_to_ld.sh
 tools/esp_app_trace/logtrace_proc.py
 tools/format.sh
 tools/gen_esp_err_to_name.py
@@ -75,3 +76,7 @@ examples/storage/parttool/parttool_example.py
 examples/system/ota/otatool/otatool_example.py
 tools/check_kconfigs.py
 tools/test_check_kconfigs.py
+install.sh
+tools/docker/entrypoint.sh
+tools/docker/hooks/build
+tools/idf_tools.py
