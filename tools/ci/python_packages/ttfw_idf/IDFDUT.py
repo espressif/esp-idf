@@ -20,6 +20,7 @@ import re
 import functools
 import tempfile
 import subprocess
+import time
 
 # python2 and python3 queue package name is different
 try:
@@ -444,3 +445,80 @@ def get_target_by_rom_class(cls):
         if c._get_rom() == cls:
             return c.TARGET
     return None
+
+
+class IDFQEMUDUT(IDFDUT):
+    ERASE_NVS = True
+    DEFAULT_EXPECT_TIMEOUT = 30  # longer timeout, since app startup takes more time in QEMU (due to slow SHA emulation)
+    QEMU_SERIAL_PORT = 3334
+
+    def __init__(self, name, port, log_file, app, allow_dut_exception=False, **kwargs):
+        self.flash_image = tempfile.NamedTemporaryFile('rb+', suffix=".bin", prefix="qemu_flash_img")
+        self.app = app
+        self.flash_size = 4 * 1024 * 1024
+        self._write_flash_img()
+
+        args = [
+            "qemu-system-xtensa",
+            "-nographic",
+            "-machine", self.TARGET,
+            "-drive", "file={},if=mtd,format=raw".format(self.flash_image.name),
+            "-nic", "user,model=open_eth",
+            "-serial", "tcp::{},server,nowait".format(self.QEMU_SERIAL_PORT),
+            # FIXME: generate a temporary efuse binary, pass it to QEMU
+        ]
+
+        if "QEMU_BIOS_PATH" in os.environ:
+            args += [ "-L", os.environ["QEMU_BIOS_PATH"] ]
+
+        self.qemu = subprocess.Popen(args, stdin=subprocess.PIPE, stdout=sys.stdout, stderr=subprocess.STDOUT)
+
+        # FIXME: wait for QEMU to start up by interacting with its monitor
+        time.sleep(1)
+
+        super(IDFQEMUDUT, self).__init__(name, port, log_file, app, allow_dut_exception=allow_dut_exception, **kwargs)
+
+    def _write_flash_img(self):
+        self.flash_image.seek(0)
+        self.flash_image.write(b'\x00' * self.flash_size)
+        for offs, path in self.app.flash_files:
+            with open(path, "rb") as flash_file:
+                contents = flash_file.read()
+                self.flash_image.seek(offs)
+                self.flash_image.write(contents)
+        self.flash_image.flush()
+
+    @classmethod
+    def get_mac(cls, app, port):
+        # FIXME: get this from QEMU somehow(?)
+        return "11:22:33:44:55:66"
+
+    @classmethod
+    def confirm_dut(cls, port, app, **kwargs):
+        return True, cls.TARGET
+
+    def start_app(self, erase_nvs=ERASE_NVS):
+        # TODO: implement erase_nvs
+        # since the flash image is generated every time in the constructor, maybe this isn't needed...
+        self.reset()
+
+    def reset(self):
+        self.qemu.stdin.write("system_reset\n")
+        time.sleep(1)
+
+    def erase_partition(self, partition):
+        pass
+
+    def dump_flush(self, output_file, **kwargs):
+        pass
+
+    @classmethod
+    def list_available_ports(cls):
+        return ["socket://localhost:{}".format(cls.QEMU_SERIAL_PORT)]
+
+    def close(self):
+        super(IDFQEMUDUT, self).close()
+        self.qemu.kill()
+
+class ESP32QEMUDUT(IDFQEMUDUT):
+    TARGET = "esp32"

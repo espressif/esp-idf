@@ -766,7 +766,7 @@ class SerialDUT(BaseDUT):
         return formatted_data
 
     def _port_open(self):
-        self.port_inst = serial.Serial(self.port, **self.serial_configs)
+        self.port_inst = serial.serial_for_url(self.port, **self.serial_configs)
 
     def _port_close(self):
         self.port_inst.close()

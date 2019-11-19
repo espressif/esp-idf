@@ -7,8 +7,17 @@ import re
 import os
 import hashlib
 
-from tiny_test_fw import Utility
-import ttfw_idf
+try:
+    import IDF
+except ImportError:
+    # This environment variable is expected on the host machine
+    test_fw_path = os.getenv("TEST_FW_PATH")
+    if test_fw_path and test_fw_path not in sys.path:
+        sys.path.insert(0, test_fw_path)
+
+    import IDF
+from IDF.IDFDUT import ESP32DUT, ESP32QEMUDUT
+import Utility
 
 
 def verify_elf_sha256_embedding(dut):
@@ -28,9 +37,9 @@ def verify_elf_sha256_embedding(dut):
         raise ValueError('ELF file SHA256 mismatch')
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@IDF.idf_example_test(env_tag="Example_QEMU")
 def test_examples_blink(env, extra_data):
-    dut = env.get_dut("blink", "examples/get-started/blink", dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut("blink", "examples/get-started/blink", dut_class=ESP32QEMUDUT)
     binary_file = os.path.join(dut.app.binary_path, "blink.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("blink_bin_size", "{}KB".format(bin_size // 1024))
