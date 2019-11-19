@@ -175,27 +175,6 @@ class DeprecatedOptions(object):
                         f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
-def prepare_source_files():
-    """
-    Prepares source files which are sourced from the main Kconfig because upstream kconfiglib doesn't support sourcing
-    a file list.
-    """
-
-    def _dequote(var):
-        return var[1:-1] if len(var) > 0 and (var[0], var[-1]) == ('"',) * 2 else var
-
-    def _write_source_file(config_var, config_file):
-        with open(config_file, "w") as f:
-            f.write('\n'.join(['source "{}"'.format(path) for path in _dequote(config_var).split()]))
-
-    try:
-        _write_source_file(os.environ['COMPONENT_KCONFIGS'], os.environ['COMPONENT_KCONFIGS_SOURCE_FILE'])
-        _write_source_file(os.environ['COMPONENT_KCONFIGS_PROJBUILD'], os.environ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'])
-    except KeyError as e:
-        print('Error:', e, 'is not defined!')
-        raise
-
-
 def dict_enc_for_env(dic, encoding=sys.getfilesystemencoding() or 'utf-8'):
     """
     This function can be deleted after dropping support for Python 2.
@@ -266,7 +245,6 @@ def main():
         env = json.load(args.env_file)
         os.environ.update(dict_enc_for_env(env))
 
-    prepare_source_files()
     config = kconfiglib.Kconfig(args.kconfig)
     config.warn_assign_redun = False
     config.warn_assign_override = False

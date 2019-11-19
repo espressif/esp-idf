@@ -66,6 +66,9 @@ def main():
 
         cmdline = re.sub(r' +', ' ', cmdline)
 
+        # prepare_kconfig_files.py doesn't have to be called because COMPONENT_KCONFIGS and
+        # COMPONENT_KCONFIGS_PROJBUILD are empty
+
         print("Running: %s" % cmdline)
         p = pexpect.spawn(cmdline, timeout=30, logfile=args.logfile, echo=False, use_poll=True, maxread=1)
 

@@ -56,6 +56,9 @@ class GenerationModelTest(unittest.TestCase):
         os.environ['COMPONENT_KCONFIGS'] = ''
         os.environ['COMPONENT_KCONFIGS_PROJBUILD'] = ''
 
+        # prepare_kconfig_files.py doesn't have to be called because COMPONENT_KCONFIGS and
+        # COMPONENT_KCONFIGS_PROJBUILD are empty
+
         self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
 
         with open("data/sample.lf") as fragment_file_obj:

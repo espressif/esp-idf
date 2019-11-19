@@ -103,6 +103,15 @@ sdkconfig_renames = [r for r in sdkconfig_renames if "esp32s2beta" not in r]
 kconfigs_source_path = '{}/inc/kconfigs_source.in'.format(builddir)
 kconfig_projbuilds_source_path = '{}/inc/kconfig_projbuilds_source.in'.format(builddir)
 
+prepare_kconfig_files_args = [sys.executable,
+                              "../../tools/kconfig_new/prepare_kconfig_files.py",
+                              "--env", "COMPONENT_KCONFIGS={}".format(" ".join(kconfigs)),
+                              "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
+                              "--env", "COMPONENT_KCONFIGS_SOURCE_FILE={}".format(kconfigs_source_path),
+                              "--env", "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE={}".format(kconfig_projbuilds_source_path),
+                              ]
+subprocess.check_call(prepare_kconfig_files_args)
+
 confgen_args = [sys.executable,
                 "../../tools/kconfig_new/confgen.py",
                 "--kconfig", "../../Kconfig",
