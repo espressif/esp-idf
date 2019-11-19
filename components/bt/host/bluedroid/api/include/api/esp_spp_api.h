@@ -30,7 +30,7 @@ typedef enum {
     ESP_SPP_NO_RESOURCE             /*!< No more set pm control block */
 } esp_spp_status_t;
 
-/* Security Setting Mask */
+/* Security Setting Mask, Only support ESP_SPP_SEC_AUTHORIZE.*/
 #define ESP_SPP_SEC_NONE            0x0000    /*!< No security. relate to BTA_SEC_NONE in bta/bta_api.h */
 #define ESP_SPP_SEC_AUTHORIZE       0x0001    /*!< Authorization required (only needed for out going connection ) relate to BTA_SEC_AUTHORIZE in bta/bta_api.h*/
 #define ESP_SPP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required.  relate to BTA_SEC_AUTHENTICATE in bta/bta_api.h*/
@@ -229,7 +229,7 @@ esp_err_t esp_spp_start_discovery(esp_bd_addr_t bd_addr);
  *              When the connection is established or failed,
  *              the callback is called with ESP_SPP_OPEN_EVT.
  *
- * @param[in]   sec_mask:     Security Setting Mask .
+ * @param[in]   sec_mask:     Security Setting Mask. Only support ESP_SPP_SEC_AUTHORIZE.
  * @param[in]   role:         Master or slave.
  * @param[in]   remote_scn:   Remote device bluetooth device SCN.
  * @param[in]   peer_bd_addr: Remote device bluetooth device address.
@@ -260,7 +260,7 @@ esp_err_t esp_spp_disconnect(uint32_t handle);
  *              When the connection is established, the callback is called
  *              with ESP_SPP_SRV_OPEN_EVT.
  *
- * @param[in]   sec_mask:     Security Setting Mask .
+ * @param[in]   sec_mask:     Security Setting Mask. Only support ESP_SPP_SEC_AUTHORIZE.
  * @param[in]   role:         Master or slave.
  * @param[in]   local_scn:    The specific channel you want to get.
  *                            If channel is 0, means get any channel.
