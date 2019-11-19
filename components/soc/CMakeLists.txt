@@ -12,6 +12,7 @@ list(APPEND include_dirs include)
 list(APPEND srcs
     "src/memory_layout_utils.c"
     "src/lldesc.c"
+    "src/hal/rmt_hal.c"
     "src/hal/spi_hal.c"
     "src/hal/spi_hal_iram.c"
     "src/hal/spi_slave_hal.c"

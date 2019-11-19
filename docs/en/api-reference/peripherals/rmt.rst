@@ -153,7 +153,7 @@ Now, depending on how the channel is configured, we are ready to either `Transmi
 Transmit Data
 -------------
 
-Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/esp32/include/soc/rmt_struct.h`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
+Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/esp32/include/soc/rmt_caps.h`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
 
 .. packetdiag::
     :caption: Structure of RMT items (L - signal level)
@@ -176,7 +176,7 @@ Before being able to transmit some RMT pulses, we need to define the pulse patte
         127: L
     }
 
-For a simple example how to define a block of items see :example:`peripherals/rmt_tx`.
+For a simple example how to define a block of items see :example:`peripherals/rmt/morse_code`.
 
 The items are provided to the RMT controller by calling function :cpp:func:`rmt_write_items`. This function also automatically triggers start of transmission. It may be called to wait for transmission completion or exit just after transmission start. In such case you can wait for the transmission end by calling :cpp:func:`rmt_wait_tx_done`. This function does not limit the number of data items to transmit. It is using an interrupt to successively copy the new data chunks to RMT's internal memory as previously provided data are sent out.
 
@@ -188,7 +188,7 @@ Receive Data
 
 Before starting the receiver we need some storage for incoming items. The RMT controller has 512 x 32-bits of internal RAM shared between all eight channels. In typical scenarios it is not enough as an ultimate storage for all incoming (and outgoing) items. Therefore this API supports retrieval of incoming items on the fly to save them in a ring buffer of a size defined by the user. The size is provided when calling :cpp:func:`rmt_driver_install` discussed above. To get a handle to this buffer call :cpp:func:`rmt_get_ringbuf_handle`.
 
-With the above steps complete we can start the receiver by calling :cpp:func:`rmt_rx_start` and then move to checking what's inside the buffer. To do so, you can use common FreeRTOS functions that interact with the ring buffer. Please see an example how to do it in :example:`peripherals/rmt_nec_tx_rx`.
+With the above steps complete we can start the receiver by calling :cpp:func:`rmt_rx_start` and then move to checking what's inside the buffer. To do so, you can use common FreeRTOS functions that interact with the ring buffer. Please see an example how to do it in :example:`peripherals/rmt/ir_protocols`.
 
 To stop the receiver, call :cpp:func:`rmt_rx_stop`.
 
@@ -256,8 +256,9 @@ If the RMT driver has been installed with :cpp:func:`rmt_driver_install` for som
 Application Examples
 --------------------
 
-* A simple RMT TX example: :example:`peripherals/rmt_tx`.
-* NEC remote control TX and RX example: :example:`peripherals/rmt_nec_tx_rx`.
+* A simple RMT TX example: :example:`peripherals/rmt/morse_code`.
+* Another RMT TX example, specific to drive a common RGB LED strip: :example:`peripherals/rmt/led_strip`.
+* NEC remote control TX and RX example: :example:`peripherals/rmt/ir_protocols`.
 
 
 API Reference
