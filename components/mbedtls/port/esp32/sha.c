@@ -195,7 +195,7 @@ static bool esp_sha_lock_engine_common(esp_sha_type sha_type, TickType_t ticks_t
 
 void esp_sha_unlock_engine(esp_sha_type sha_type)
 {
-    SemaphoreHandle_t *engine_state = sha_get_engine_state(sha_type);
+    SemaphoreHandle_t engine_state = sha_get_engine_state(sha_type);
 
     portENTER_CRITICAL(&engines_in_use_lock);
 
@@ -231,7 +231,7 @@ void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
     uint32_t word_len = sha_length(sha_type)/4;
 #ifndef NDEBUG
     {
-        SemaphoreHandle_t *engine_state = sha_get_engine_state(sha_type);
+        SemaphoreHandle_t engine_state = sha_get_engine_state(sha_type);
         assert(uxSemaphoreGetCount(engine_state) == 0 &&
                "SHA engine should be locked" );
     }
@@ -278,7 +278,7 @@ void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_
     uint32_t *data_words = NULL;
 #ifndef NDEBUG
     {
-        SemaphoreHandle_t *engine_state = sha_get_engine_state(sha_type);
+        SemaphoreHandle_t engine_state = sha_get_engine_state(sha_type);
         assert(uxSemaphoreGetCount(engine_state) == 0 &&
                "SHA engine should be locked" );
     }
