@@ -87,7 +87,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
         client.on_message = on_message
         client.tls_set(None,
                        None,
-                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
+                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
         client.tls_insecure_set(True)
         print("Connecting...")
         client.connect(broker_url, broker_port, 60)
