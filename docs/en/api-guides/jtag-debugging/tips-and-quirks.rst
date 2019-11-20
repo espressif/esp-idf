@@ -235,6 +235,16 @@ Below is an excerpt from series of errors reported by GDB after the application 
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
 
+.. _jtag-debugging-tip-at-firmware-issue:
+
+JTAG and ESP32-WROOM-32 AT firmware Compatibility Issue
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ESP32-WROOM series of modules come pre-flashed with AT firmware. This firmware configures the pins GPIO12 to GPIO15 as SPI slave interface, which makes using JTAG impossible.
+
+To make JTAG available, build new firmware that is not using pins GPIO12 to GPIO15 dedicated to JTAG communication. After that, flash the firmware onto your module. See also :ref:`jtag-debugging-tip-jtag-pins-reconfigured`.
+
+
 .. _jtag-debugging-tip-reporting-issues:
 
 Reporting issues with OpenOCD / GDB
