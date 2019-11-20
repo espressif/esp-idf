@@ -148,7 +148,15 @@ static void eth_check_link_timer_cb(TimerHandle_t xTimer)
 {
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)pvTimerGetTimerID(xTimer);
     esp_eth_phy_t *phy = eth_driver->phy;
+    /* add reference to prevent other thread deleting the phy instance */
+    atomic_fetch_add(&phy->ref_count, 1);
     phy->get_link(phy);
+    /* only the timer obtains the instance, i.e. all other references to this phy has been released */
+    if (atomic_load(&phy->ref_count) == 1) {
+        phy->del(phy); // since this phy doesn't have other owners, delete it
+    } else {
+        atomic_fetch_sub(&phy->ref_count, 1);
+    }
 }
 
 static esp_err_t esp_eth_post_attach_driver_start(esp_netif_t * esp_netif, void * args)
@@ -206,6 +214,8 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     ETH_CHECK(eth_driver, "request memory for eth_driver failed", err, ESP_ERR_NO_MEM);
     eth_driver->mac = mac;
     eth_driver->phy = phy;
+    atomic_fetch_add(&phy->ref_count, 1);
+    atomic_fetch_add(&mac->ref_count, 1);
     eth_driver->link = ETH_LINK_DOWN;
     eth_driver->duplex = ETH_DUPLEX_HALF;
     eth_driver->speed = ETH_SPEED_10M;
@@ -216,6 +226,8 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->mediator.phy_reg_write = eth_phy_reg_write;
     eth_driver->mediator.stack_input = eth_stack_input;
     eth_driver->mediator.on_state_changed = eth_on_state_changed;
+    /* some PHY can't output RMII clock if in reset state, so hardware reset PHY chip firstly */
+    phy->reset_hw(phy);
     ETH_CHECK(mac->set_mediator(mac, &eth_driver->mediator) == ESP_OK, "set mediator for mac failed", err_mediator, ESP_FAIL);
     ETH_CHECK(phy->set_mediator(phy, &eth_driver->mediator) == ESP_OK, "set mediator for phy failed", err_mediator, ESP_FAIL);
     ETH_CHECK(mac->init(mac) == ESP_OK, "init mac failed", err_init_mac, ESP_FAIL);
@@ -233,6 +245,8 @@ err_init_phy:
     mac->deinit(mac);
 err_init_mac:
 err_mediator:
+    atomic_fetch_sub(&phy->ref_count, 1);
+    atomic_fetch_sub(&mac->ref_count, 1);
     free(eth_driver);
 err:
     return ret;
@@ -250,6 +264,8 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl)
               "send ETHERNET_EVENT_STOP event failed", err, ESP_FAIL);
     ETH_CHECK(phy->deinit(phy) == ESP_OK, "deinit phy failed", err, ESP_FAIL);
     ETH_CHECK(mac->deinit(mac) == ESP_OK, "deinit mac failed", err, ESP_FAIL);
+    atomic_fetch_sub(&phy->ref_count, 1);
+    atomic_fetch_sub(&mac->ref_count, 1);
     free(eth_driver);
     return ESP_OK;
 err:

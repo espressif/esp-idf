@@ -2,7 +2,7 @@ menu "Example Configuration"
     choice EXAMPLE_USE_ETHERNET
         prompt "Ethernet Type"
         default EXAMPLE_USE_INTERNAL_ETHERNET if IDF_TARGET_ESP32
-        default EXAMPLE_USE_SPI_ETHERNET if !IDF_TARGET_ESP32
+        default EXAMPLE_USE_DM9051 if !IDF_TARGET_ESP32
         help
             Select which kind of Ethernet will be used in the example.
 
@@ -13,9 +13,10 @@ menu "Example Configuration"
             help
                 Select internal Ethernet MAC controller.
 
-        config EXAMPLE_USE_SPI_ETHERNET
-            bool "SPI Ethernet Module"
+        config EXAMPLE_USE_DM9051
+            bool "DM9051 Module"
             select ETH_USE_SPI_ETHERNET
+            select ETH_SPI_ETHERNET_DM9051
             help
                 Select external SPI-Ethernet module.
     endchoice
@@ -51,49 +52,82 @@ menu "Example Configuration"
                     DP83848 is a single port 10/100Mb/s Ethernet Physical Layer Transceiver.
                     Goto http://www.ti.com/product/DP83848J for more information about it.
         endchoice
+
+        config EXAMPLE_ETH_MDC_GPIO
+            int "SMI MDC GPIO number"
+            default 23
+            help
+                Set the GPIO number used by SMI MDC.
+
+        config EXAMPLE_ETH_MDIO_GPIO
+            int "SMI MDIO GPIO number"
+            default 18
+            help
+                Set the GPIO number used by SMI MDIO.
     endif
 
-    if EXAMPLE_USE_SPI_ETHERNET
-        config EXAMPLE_ETH_SPI_HOST
+    if EXAMPLE_USE_DM9051
+        config EXAMPLE_DM9051_SPI_HOST
             int "SPI Host Number"
             range 0 2
             default 1
             help
                 Set the SPI host used to communicate with DM9051.
 
-        config EXAMPLE_ETH_SCLK_GPIO
+        config EXAMPLE_DM9051_SCLK_GPIO
             int "SPI SCLK GPIO number"
             range 0 33
             default 19
             help
                 Set the GPIO number used by SPI SCLK.
 
-        config EXAMPLE_ETH_MOSI_GPIO
+        config EXAMPLE_DM9051_MOSI_GPIO
             int "SPI MOSI GPIO number"
             range 0 33
             default 23
             help
                 Set the GPIO number used by SPI MOSI.
 
-        config EXAMPLE_ETH_MISO_GPIO
+        config EXAMPLE_DM9051_MISO_GPIO
             int "SPI MISO GPIO number"
             range 0 33
             default 25
             help
                 Set the GPIO number used by SPI MISO.
 
-        config EXAMPLE_ETH_CS_GPIO
+        config EXAMPLE_DM9051_CS_GPIO
             int "SPI CS GPIO number"
             range 0 33
             default 22
             help
                 Set the GPIO number used by SPI CS.
 
-        config EXAMPLE_ETH_SPI_CLOCK_MHZ
+        config EXAMPLE_DM9051_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
             range 20 80
             default 20
             help
                 Set the clock speed (MHz) of SPI interface.
+
+        config EXAMPLE_DM9051_INT_GPIO
+            int "Interrupt GPIO number"
+            default 4
+            help
+                Set the GPIO number used by DM9051 interrupt.
     endif
+
+    config EXAMPLE_ETH_PHY_RST_GPIO
+        int "PHY Reset GPIO number"
+        default 5
+        help
+            Set the GPIO number used to reset PHY chip.
+            Set to -1 to disable PHY chip hardware reset.
+
+    config EXAMPLE_ETH_PHY_ADDR
+        int "PHY Address"
+        range 0 31 if EXAMPLE_USE_INTERNAL_ETHERNET
+        range 1 1 if !EXAMPLE_USE_INTERNAL_ETHERNET
+        default 1
+        help
+            Set PHY address according your board schematic.
 endmenu

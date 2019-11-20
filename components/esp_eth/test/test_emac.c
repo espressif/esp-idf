@@ -9,6 +9,7 @@
 #include "esp_event.h"
 #include "esp_eth.h"
 #include "esp_log.h"
+#include "driver/gpio.h"
 #include "lwip/inet.h"
 #include "lwip/netdb.h"
 #include "lwip/sockets.h"
@@ -170,8 +171,6 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    // "check link timer callback" might owned the reference of phy object, make sure it has release it
-    vTaskDelay(pdMS_TO_TICKS(2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
@@ -209,8 +208,6 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    // "check link timer callback" might owned the reference of phy object, make sure it has release it
-    vTaskDelay(pdMS_TO_TICKS(2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
@@ -292,8 +289,6 @@ TEST_CASE("esp32 ethernet icmp test", "[ethernet][test_env=UT_T2_Ethernet]")
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    // "check link timer callback" might owned the reference of phy object, make sure it has release it
-    vTaskDelay(pdMS_TO_TICKS(2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));

@@ -20,6 +20,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "rtl8201";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -67,6 +68,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_rtl8201_t;
 
 static esp_err_t rtl8201_page_select(phy_rtl8201_t *rtl8201, uint32_t page)
@@ -165,6 +167,18 @@ err:
     return ESP_FAIL;
 }
 
+static esp_err_t rtl8201_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
+    if (rtl8201->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(rtl8201->reset_gpio_num);
+        gpio_set_direction(rtl8201->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(rtl8201->reset_gpio_num, 0);
+        gpio_set_level(rtl8201->reset_gpio_num, 1);
+    }
+    return ESP_OK;
+}
+
 static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
@@ -248,7 +262,9 @@ err:
 static esp_err_t rtl8201_del(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
-    free(rtl8201);
+    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
+        free(rtl8201);
+    }
     return ESP_OK;
 }
 
@@ -289,10 +305,12 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     phy_rtl8201_t *rtl8201 = calloc(1, sizeof(phy_rtl8201_t));
     PHY_CHECK(rtl8201, "calloc rtl8201 failed", err);
     rtl8201->addr = config->phy_addr;
+    rtl8201->reset_gpio_num = config->reset_gpio_num;
     rtl8201->reset_timeout_ms = config->reset_timeout_ms;
     rtl8201->link_status = ETH_LINK_DOWN;
     rtl8201->autonego_timeout_ms = config->autonego_timeout_ms;
     rtl8201->parent.reset = rtl8201_reset;
+    rtl8201->parent.reset_hw = rtl8201_reset_hw;
     rtl8201->parent.init = rtl8201_init;
     rtl8201->parent.deinit = rtl8201_deinit;
     rtl8201->parent.set_mediator = rtl8201_set_mediator;
@@ -302,6 +320,7 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->parent.get_addr = rtl8201_get_addr;
     rtl8201->parent.set_addr = rtl8201_set_addr;
     rtl8201->parent.del = rtl8201_del;
+    atomic_init(&rtl8201->parent.ref_count, 1);
 
     return &(rtl8201->parent);
 err:

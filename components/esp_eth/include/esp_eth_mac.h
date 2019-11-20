@@ -18,10 +18,10 @@ extern "C" {
 #endif
 
 #include <stdbool.h>
-#include "esp_eth_com.h"
+#include <stdatomic.h>
 #include "sdkconfig.h"
+#include "esp_eth_com.h"
 #if CONFIG_ETH_USE_SPI_ETHERNET
-#include "driver/gpio.h"
 #include "driver/spi_master.h"
 #endif
 
@@ -37,6 +37,12 @@ typedef struct esp_eth_mac_s esp_eth_mac_t;
 *
 */
 struct esp_eth_mac_s {
+    /**
+     * @brief Reference count of MAC instance
+     *
+     */
+    atomic_int ref_count;
+
     /**
     * @brief Set mediator for Ethernet MAC
     *
@@ -251,6 +257,8 @@ typedef struct {
     uint32_t sw_reset_timeout_ms; /*!< Software reset timeout value (Unit: ms) */
     uint32_t rx_task_stack_size;  /*!< Stack size of the receive task */
     uint32_t rx_task_prio;        /*!< Priority of the receive task */
+    int smi_mdc_gpio_num;         /*!< SMI MDC GPIO number */
+    int smi_mdio_gpio_num;        /*!< SMI MDIO GPIO number */
 } eth_mac_config_t;
 
 /**
@@ -262,6 +270,8 @@ typedef struct {
         .sw_reset_timeout_ms = 100, \
         .rx_task_stack_size = 4096, \
         .rx_task_prio = 15,         \
+        .smi_mdc_gpio_num = 23,     \
+        .smi_mdio_gpio_num = 18,    \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
@@ -284,6 +294,7 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
  */
 typedef struct {
     spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
+    int int_gpio_num;            /*!< Interrupt GPIO number */
 } eth_dm9051_config_t;
 
 /**
@@ -293,6 +304,7 @@ typedef struct {
 #define ETH_DM9051_DEFAULT_CONFIG(spi_device) \
     {                                         \
         .spi_hdl = spi_device,                \
+        .int_gpio_num = 4,                    \
     }
 
 /**
@@ -310,6 +322,17 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
 
 
 #if CONFIG_ETH_USE_OPENETH
+/**
+* @brief Create OpenETH MAC instance
+*
+* @note This API is only used for qemu simulation
+*
+* @param config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
 esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);
 #endif // CONFIG_ETH_USE_OPENETH
 

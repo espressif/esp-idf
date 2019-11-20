@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "lan8720";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -161,6 +162,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_lan8720_t;
 
 static esp_err_t lan8720_update_link_duplex_speed(phy_lan8720_t *lan8720)
@@ -256,6 +258,18 @@ err:
     return ESP_FAIL;
 }
 
+static esp_err_t lan8720_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
+    if (lan8720->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(lan8720->reset_gpio_num);
+        gpio_set_direction(lan8720->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(lan8720->reset_gpio_num, 0);
+        gpio_set_level(lan8720->reset_gpio_num, 1);
+    }
+    return ESP_OK;
+}
+
 static esp_err_t lan8720_negotiate(esp_eth_phy_t *phy)
 {
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
@@ -341,7 +355,9 @@ err:
 static esp_err_t lan8720_del(esp_eth_phy_t *phy)
 {
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
-    free(lan8720);
+    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
+        free(lan8720);
+    }
     return ESP_OK;
 }
 
@@ -381,10 +397,12 @@ esp_eth_phy_t *esp_eth_phy_new_lan8720(const eth_phy_config_t *config)
     phy_lan8720_t *lan8720 = calloc(1, sizeof(phy_lan8720_t));
     PHY_CHECK(lan8720, "calloc lan8720 failed", err);
     lan8720->addr = config->phy_addr;
+    lan8720->reset_gpio_num = config->reset_gpio_num;
     lan8720->reset_timeout_ms = config->reset_timeout_ms;
     lan8720->link_status = ETH_LINK_DOWN;
     lan8720->autonego_timeout_ms = config->autonego_timeout_ms;
     lan8720->parent.reset = lan8720_reset;
+    lan8720->parent.reset_hw = lan8720_reset_hw;
     lan8720->parent.init = lan8720_init;
     lan8720->parent.deinit = lan8720_deinit;
     lan8720->parent.set_mediator = lan8720_set_mediator;
@@ -394,6 +412,7 @@ esp_eth_phy_t *esp_eth_phy_new_lan8720(const eth_phy_config_t *config)
     lan8720->parent.get_addr = lan8720_get_addr;
     lan8720->parent.set_addr = lan8720_set_addr;
     lan8720->parent.del = lan8720_del;
+    atomic_init(&lan8720->parent.ref_count, 1);
 
     return &(lan8720->parent);
 err:

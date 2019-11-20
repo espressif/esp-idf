@@ -550,7 +550,7 @@ uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t 
     return len;
 }
 
-void emac_hal_isr(void *arg)
+IRAM_ATTR void emac_hal_isr(void *arg)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     typeof(hal->dma_regs->dmastatus) dma_status = hal->dma_regs->dmastatus;
@@ -621,7 +621,7 @@ void emac_hal_isr(void *arg)
     }
 }
 
-__attribute__((weak)) void emac_hal_tx_complete_cb(void *arg)
+IRAM_ATTR __attribute__((weak)) void emac_hal_tx_complete_cb(void *arg)
 {
     // This is a weak function, do nothing by default
     // Upper code can rewrite this function
@@ -629,7 +629,7 @@ __attribute__((weak)) void emac_hal_tx_complete_cb(void *arg)
     return;
 }
 
-__attribute__((weak)) void emac_hal_tx_unavail_cb(void *arg)
+IRAM_ATTR __attribute__((weak)) void emac_hal_tx_unavail_cb(void *arg)
 {
     // This is a weak function, do nothing by default
     // Upper code can rewrite this function
@@ -637,7 +637,7 @@ __attribute__((weak)) void emac_hal_tx_unavail_cb(void *arg)
     return;
 }
 
-__attribute__((weak)) void emac_hal_rx_complete_cb(void *arg)
+IRAM_ATTR __attribute__((weak)) void emac_hal_rx_complete_cb(void *arg)
 {
     // This is a weak function, do nothing by default
     // Upper code can rewrite this function
@@ -645,7 +645,7 @@ __attribute__((weak)) void emac_hal_rx_complete_cb(void *arg)
     return;
 }
 
-__attribute__((weak)) void emac_hal_rx_early_cb(void *arg)
+IRAM_ATTR __attribute__((weak)) void emac_hal_rx_early_cb(void *arg)
 {
     // This is a weak function, do nothing by default
     // Upper code can rewrite this function
@@ -653,7 +653,7 @@ __attribute__((weak)) void emac_hal_rx_early_cb(void *arg)
     return;
 }
 
-__attribute__((weak)) void emac_hal_rx_unavail_cb(void *arg)
+IRAM_ATTR __attribute__((weak)) void emac_hal_rx_unavail_cb(void *arg)
 {
     // This is a weak function, do nothing by default
     // Upper code can rewrite this function
