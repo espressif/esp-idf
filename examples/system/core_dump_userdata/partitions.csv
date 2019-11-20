@@ -1,0 +1,12 @@
+# ESP32 Partition Table
+# Name,   Type, SubType, Offset,  Size
+nvs,      data, nvs,     0x9000,  0x4000
+otadata,  data, ota,     0xd000,  0x2000
+phy_init, data, phy,     0xf000,  0x1000
+factory,  0,    factory, 0x10000, 0xf0000
+ota_0,    0,    ota_0,   0x100000,0x160000
+ota_1,    0,    ota_1,   0x260000,0x160000
+id,       0x40, 0,       0x3C0000,0xC000
+db,       0x40, 0,       0x3CC000,0x20000
+state,    0x40, 0,       0x3EC000,0x4000
+coredump, data, coredump,0x3F0000,0x10000
