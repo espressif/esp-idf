@@ -129,11 +129,11 @@ build_template_app:
     # Set the variable for 'esp-idf-template' testing
     - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
     - git clone ${ESP_IDF_TEMPLATE_GIT}
-    - cd esp-idf-template
     # Try to use the same branch name for esp-idf-template that we're
     # using on esp-idf. If it doesn't exist then just stick to the default
     # branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template
+    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
+    - cd esp-idf-template
     - make defconfig
     # Test debug build (default)
     - make all V=1
@@ -173,8 +173,8 @@ build_ssc:
       - $BOT_LABEL_REGULAR_TEST
   script:
     - git clone $SSC_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT SSC SSC
     - cd SSC
-    - python $CHECKOUT_REF_SCRIPT SSC
     - MAKEFLAGS= ./ci_build_ssc.sh
 
 .build_esp_idf_unit_test_template: &build_esp_idf_unit_test_template
@@ -809,8 +809,8 @@ assign_test:
     - python $TEST_FW_PATH/CIAssignUnitTest.py $IDF_PATH/components/idf_test/unit_test/TestCaseAll.yml $IDF_PATH/.gitlab-ci.yml $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
-    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # assgin integration test cases
     - python CIAssignTestCases.py -t $IDF_PATH/components/idf_test/integration_test -c $IDF_PATH/.gitlab-ci.yml -b $IDF_PATH/SSC/ssc_bin
 
@@ -855,8 +855,7 @@ assign_test:
     - test -e $CONFIG_FILE || exit 0
     # clone test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
-    - cd ci-test-runner-configs
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd $TEST_FW_PATH
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
@@ -919,12 +918,12 @@ assign_test:
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd ci-test-runner-configs
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
-    - python $CHECKOUT_REF_SCRIPT auto_test_script
     # run test
     - python CIRunner.py -l "$LOG_PATH/$JOG_FULL_NAME" -c $CONFIG_FILE -e $LOCAL_ENV_CONFIG_PATH -t $TEST_CASE_FILE_PATH
 
@@ -945,12 +944,12 @@ nvs_compatible_test:
     - test -e $CONFIG_FILE || exit 0
     # clone local test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
     - cd ci-test-runner-configs
-    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs
     # clone test bench
     - git clone $TEST_SCRIPT_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
     - cd auto_test_script
-    - git checkout ${CI_COMMIT_REF_NAME} || echo "Using default branch..."
     # prepare nvs bins
     - ./Tools/prepare_nvs_bin.sh
     # run test
