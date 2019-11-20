@@ -287,6 +287,7 @@ This section provides collection of links to all tips and quirks referred to fro
 * :ref:`jtag-debugging-tip-openocd-configure-target`
 * :ref:`jtag-debugging-tip-reset-by-debugger`
 * :ref:`jtag-debugging-tip-jtag-pins-reconfigured`
+* :ref:`jtag-debugging-tip-at-firmware-issue`
 * :ref:`jtag-debugging-tip-reporting-issues`
 
 
