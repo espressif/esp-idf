@@ -13,9 +13,15 @@ archive: libpp.a
 entries:
     if ESP32_WIFI_IRAM_OPT = y:
         * (wifi_iram)
+        
+    if ESP32_WIFI_RX_IRAM_OPT = y:
+        * (wifi_rx_iram)
 
 [mapping:net80211]
 archive: libnet80211.a
 entries:
     if ESP32_WIFI_IRAM_OPT = y:
         * (wifi_iram)
+
+    if ESP32_WIFI_RX_IRAM_OPT = y:
+        * (wifi_rx_iram)
