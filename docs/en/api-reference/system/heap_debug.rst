@@ -284,7 +284,7 @@ Using this file GDB will connect to the target, reset it, and start tracing when
 
 5. Quit GDB when program stops at :cpp:func:`heap_trace_stop`. Trace data are saved in ``/tmp/heap.svdat``
 
-6. Run processing script ``$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py /tmp/heap_log.svdat </path/to/program/elf>``
+6. Run processing script ``$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b </path/to/program/elf> /tmp/heap_log.svdat``
 
 The output from the heap trace will look something like this::
 
