@@ -983,7 +983,7 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
     }
     if (s_touch_pad_filter->timer == NULL) {
         s_touch_pad_filter->timer = xTimerCreate("filter_tmr", filter_period_ms / portTICK_PERIOD_MS, pdFALSE,
-        NULL, touch_pad_filter_cb);
+        NULL, (void(*)(TimerHandle_t))touch_pad_filter_cb);
         if (s_touch_pad_filter->timer == NULL) {
             free(s_touch_pad_filter);
             s_touch_pad_filter = NULL;
