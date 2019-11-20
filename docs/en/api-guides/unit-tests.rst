@@ -205,3 +205,37 @@ Similar to multiple devices test cases, multiple stages test cases will also pri
 First time you execute this case, input ``1`` to run first stage (trigger deepsleep).
 After DUT is rebooted and able to run test cases, select this case again and input ``2`` to run the second stage.
 The case only passes if the last stage passes and all previous stages trigger reset.
+
+
+Timing Code with Cache Compensated Timer
+-----------------------------------------
+
+Instructions and data stored in external memory (e.g. SPI Flash and SPI RAM) are accessed through the CPU's unified instruction and data cache. When code or data is in cache, access is very fast (i.e., a cache hit).
+
+However, if the instruction or data is not in cache, it needs to be fetched from external memory (i.e., a cache miss). Access to external memory is significantly slower, as the CPU must execute stall cycles whilst waiting for the instruction or data to be retrieved from external memory. This can cause the overall code execution speed to vary depending on the number of cache hits or misses.
+
+Code and data placements can vary between builds, and some arrangements may be more favorable with regards to cache access (i.e., minimizing cache misses). This can technically affect execution speed, however these factors are usually irrelevant as their effect 'average out' over the device's operation.
+
+The effect of the cache on execution speed, however, can be relevant in benchmarking scenarios (espcially microbenchmarks). There might be some variability in measured time
+between runs and between different builds. A technique for eliminating for some of the
+variability is to place code and data in instruction or data RAM (IRAM/DRAM), respectively. The CPU can access IRAM and DRAM directly, eliminating the cache out of the equation.
+However, this might not always be viable as the size of IRAM and DRAM is limited.
+
+The cache compensated timer is an alternative to placing the code/data to be benchmarked in IRAM/DRAM. This timer uses the processor's internal event counters in order to determine the amount 
+of time spent on waiting for code/data in case of a cache miss, then subtract that from the recorded wall time. 
+
+  .. code-block:: c
+
+    // Start the timer
+    ccomp_timer_start();
+
+    // Function to time
+    func_code_to_time();
+
+    // Stop the timer, and return the elapsed time in microseconds relative to
+    // ccomp_timer_start
+    int64_t t = ccomp_timer_stop();
+
+
+One limitation of the cache compensated timer is that the task that benchmarked functions should be pinned to a core. This is due to each core having its own event counters that are independent of each other. For example, if ``ccomp_timer_start`` gets called on one core, put to sleep by the scheduler, wakes up, and gets rescheduled on the other core, then the corresponding ``ccomp_timer_stop`` will be invalid.
+invalid.
