@@ -162,9 +162,22 @@ example_test_001:
 example_test_002:
   extends: .example_test_template
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
+  variables:
+    GIT_SUBMODULE_STRATEGY: normal
   tags:
     - ESP32
     - Example_ShieldBox_Basic
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone test env configs
+    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    - cd $TEST_FW_PATH
+    # run test
+    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
+  
 
 .example_test_003:
   extends: .example_test_template
@@ -492,20 +505,6 @@ UT_036:
 UT_037:
   extends: .unit_test_template
   parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T1_LEDC
-
-UT_038:
-  extends: .unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_LEDC
-    - psram
-
-UT_039:
-  extends: .unit_test_template
-  parallel: 28
   tags:
     - ESP32S2BETA_IDF
     - UT_T1_LEDC
