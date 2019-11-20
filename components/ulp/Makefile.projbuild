@@ -1,8 +1,4 @@
-ifdef CONFIG_IDF_TARGET_ESP32S2BETA
-ULP_BINUTILS_PREFIX ?= esp32s2ulp-elf-
-else 
 ULP_BINUTILS_PREFIX ?= esp32ulp-elf-
-endif
 #
 export ULP_AS := $(ULP_BINUTILS_PREFIX)as
 export ULP_LD := $(ULP_BINUTILS_PREFIX)ld
