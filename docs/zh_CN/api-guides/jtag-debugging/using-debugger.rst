@@ -60,10 +60,10 @@
         如果你想在启动新的调试会话之前自动更新闪存中的镜像，请在 “Initialization Commands” 文本框的开头添加以下命令行::
 
             mon reset halt
-            mon program_esp32 ${workspace_loc:blink/build/blink.bin} 0x10000 verify
+            mon program_esp ${workspace_loc:blink/build/blink.bin} 0x10000 verify
 
 
-    有关 ``program_esp32`` 命令的说明请参考 :ref:`jtag-upload-app-debug` 章节。
+    有关 ``program_esp`` 命令的说明请参考 :ref:`jtag-upload-app-debug` 章节。
 
 9.  在 “Load Image and Symbols” 下，取消选中 “Load image” 选项。
 
