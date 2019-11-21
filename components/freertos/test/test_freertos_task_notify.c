@@ -103,7 +103,7 @@ static void receiver_task (void* arg){
 static void IRAM_ATTR sender_ISR (void *arg)
 {
     int curcore = xPortGetCoreID();
-    timer_group_intr_clr_in_isr(TIMER_GROUP_0, curcore);
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, curcore);
     timer_group_set_counter_enable_in_isr(TIMER_GROUP_0, curcore, TIMER_PAUSE);
     //Re-enable alarm
     timer_group_enable_alarm_in_isr(TIMER_GROUP_0, curcore);
