@@ -27,6 +27,7 @@ if(CONFIG_COMPILER_CXX_RTTI)
     list(APPEND cxx_compile_options "-frtti")
 else()
     list(APPEND cxx_compile_options "-fno-rtti")
+    list(APPEND link_options "-fno-rtti")           # used to invoke correct multilib variant (no-rtti) during linking
 endif()
 
 if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)

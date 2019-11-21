@@ -15,7 +15,3 @@ target_link_libraries(${COMPONENT_LIB} PUBLIC stdcpp_pthread)
 if(NOT CONFIG_COMPILER_CXX_EXCEPTIONS)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __cxx_fatal_exception")
 endif()
-
-if(NOT CONFIG_COMPILER_CXX_RTTI)
-    target_link_libraries(${COMPONENT_LIB} PUBLIC -fno-rtti)
-endif()
