@@ -100,11 +100,11 @@ TEST_CASE("I2C config test", "[i2c]")
         for (int j = 0; j < 2; j++) {
             conf_master.sda_pullup_en = sda_pull_up_en[i];
             conf_master.scl_pullup_en = scl_pull_up_en[j];
-            TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-            TEST_ASSERT_EQUAL_INT32(I2C[I2C_MASTER_NUM]->ctr.ms_mode, 1);
             TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                            I2C_MASTER_RX_BUF_DISABLE,
                                            I2C_MASTER_TX_BUF_DISABLE, 0));
+            TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
+            TEST_ASSERT_EQUAL_INT32(I2C[I2C_MASTER_NUM]->ctr.ms_mode, 1);
             TEST_ESP_OK(i2c_driver_delete(I2C_MASTER_NUM));
         }
     }
@@ -113,15 +113,13 @@ TEST_CASE("I2C config test", "[i2c]")
     i2c_config_t conf_slave = i2c_slave_init();
     for (int i = 0; i < 2; i++) {
         for (int j = 0; j < 2; j++) {
-            conf_master.sda_pullup_en = sda_pull_up_en[i];
-            conf_master.scl_pullup_en = scl_pull_up_en[j];
             conf_slave.sda_pullup_en = sda_pull_up_en[i];
             conf_slave.scl_pullup_en = scl_pull_up_en[j];
-            TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
-            TEST_ASSERT_EQUAL_INT32(I2C[I2C_SLAVE_NUM] -> ctr.ms_mode, 0);
             TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                            I2C_SLAVE_RX_BUF_LEN,
                                            I2C_SLAVE_TX_BUF_LEN, 0));
+            TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
+            TEST_ASSERT_EQUAL_INT32(I2C[I2C_SLAVE_NUM] -> ctr.ms_mode, 0);
             TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
         }
     }
@@ -133,10 +131,10 @@ TEST_CASE("I2C set and get period test", "[i2c]")
 {
     int high_period, low_period;
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
 
     TEST_ESP_OK(i2c_set_period(I2C_MASTER_NUM, I2C_SCL_HIGH_PERIOD_V, I2C_SCL_HIGH_PERIOD_V));
     TEST_ESP_OK(i2c_get_period(I2C_MASTER_NUM, &high_period, &low_period));
@@ -154,12 +152,18 @@ TEST_CASE("I2C set and get period test", "[i2c]")
 
 TEST_CASE("I2C config FIFO test", "[i2c]")
 {
+    i2c_config_t conf_slave = i2c_slave_init();
+    TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
+                                           I2C_SLAVE_RX_BUF_LEN,
+                                           I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ASSERT_BIT_LOW(1, I2C[I2C_SLAVE_NUM]->fifo_conf.tx_fifo_rst);
     TEST_ESP_OK(i2c_reset_tx_fifo(I2C_SLAVE_NUM));
     TEST_ASSERT_BIT_LOW(0, I2C[I2C_SLAVE_NUM]->fifo_conf.tx_fifo_rst);
 
     TEST_ESP_OK(i2c_reset_rx_fifo(I2C_SLAVE_NUM));
     TEST_ASSERT_BIT_LOW(0, I2C[I2C_SLAVE_NUM]->fifo_conf.rx_fifo_rst);
+    TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
 
 TEST_CASE("I2C timing test", "[i2c]")
@@ -167,10 +171,10 @@ TEST_CASE("I2C timing test", "[i2c]")
     int test_setup_time, test_data_time, test_stop_time, test_hold_time;
     uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
 
     TEST_ESP_OK(i2c_set_start_timing(I2C_MASTER_NUM, 50, 60));
     TEST_ESP_OK(i2c_set_data_timing(I2C_MASTER_NUM, 80, 60));
@@ -191,28 +195,28 @@ TEST_CASE("I2C timing test", "[i2c]")
     i2c_driver_delete(I2C_MASTER_NUM);
 }
 
-
 TEST_CASE("I2C data mode test", "[i2c]")
 {
     uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
     i2c_trans_mode_t test_tx_trans_mode, test_rx_trans_mode;
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
-    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
     TEST_ESP_OK(i2c_set_data_mode(I2C_MASTER_NUM, I2C_DATA_MODE_LSB_FIRST, I2C_DATA_MODE_LSB_FIRST));
-    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
-    TEST_ASSERT_EQUAL_INT(1, I2C[I2C_MASTER_NUM]->ctr.rx_lsb_first);
-    TEST_ASSERT_EQUAL_INT(1, I2C[I2C_MASTER_NUM]->ctr.tx_lsb_first);
-
     TEST_ESP_OK(i2c_get_data_mode(I2C_MASTER_NUM, &test_tx_trans_mode, &test_rx_trans_mode));
-    TEST_ASSERT_EQUAL_INT(1, test_tx_trans_mode);
-    TEST_ASSERT_EQUAL_INT(1, test_rx_trans_mode);
+    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_LSB_FIRST, test_tx_trans_mode);
+    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_LSB_FIRST, test_rx_trans_mode);
+    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
+    TEST_ESP_OK(i2c_set_data_mode(I2C_MASTER_NUM, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST));
+    TEST_ESP_OK(i2c_get_data_mode(I2C_MASTER_NUM, &test_tx_trans_mode, &test_rx_trans_mode));
+    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_MSB_FIRST, test_tx_trans_mode);
+    TEST_ASSERT_EQUAL_INT(I2C_DATA_MODE_MSB_FIRST, test_rx_trans_mode);
+    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
     free(data_wr);
     i2c_driver_delete(I2C_MASTER_NUM);
 }
@@ -221,9 +225,6 @@ TEST_CASE("I2C data mode test", "[i2c]")
 TEST_CASE("I2C driver memory leaking check", "[i2c]")
 {
     esp_err_t ret;
-    i2c_config_t conf_slave = i2c_slave_init();
-    ret = i2c_param_config(I2C_SLAVE_NUM, &conf_slave);
-    TEST_ASSERT(ret == ESP_OK);
 
     int size = esp_get_free_heap_size();
     for (uint32_t i = 0; i <= 1000; i++) {
@@ -248,16 +249,17 @@ static void test_task(void *pvParameters)
 
     uint8_t *data = (uint8_t *) malloc(DATA_LENGTH);
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     while (exit_flag == false) {
         if (test_read_func) {
             i2c_slave_read_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
         } else {
             i2c_slave_write_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
         }
+        vTaskDelay(10/portTICK_RATE_MS);
     }
 
     free(data);

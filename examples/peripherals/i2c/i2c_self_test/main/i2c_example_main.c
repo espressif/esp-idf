@@ -151,10 +151,8 @@ static esp_err_t i2c_master_init(void)
     conf.scl_io_num = I2C_MASTER_SCL_IO;
     conf.scl_pullup_en = GPIO_PULLUP_ENABLE;
     conf.master.clk_speed = I2C_MASTER_FREQ_HZ;
-    i2c_param_config(i2c_master_port, &conf);
-    return i2c_driver_install(i2c_master_port, conf.mode,
-                              I2C_MASTER_RX_BUF_DISABLE,
-                              I2C_MASTER_TX_BUF_DISABLE, 0);
+    i2c_driver_install(i2c_master_port, conf.mode, I2C_MASTER_RX_BUF_DISABLE, I2C_MASTER_TX_BUF_DISABLE, 0);
+    return i2c_param_config(i2c_master_port, &conf);
 }
 
 /**
@@ -171,10 +169,8 @@ static esp_err_t i2c_slave_init(void)
     conf_slave.mode = I2C_MODE_SLAVE;
     conf_slave.slave.addr_10bit_en = 0;
     conf_slave.slave.slave_addr = ESP_SLAVE_ADDR;
-    i2c_param_config(i2c_slave_port, &conf_slave);
-    return i2c_driver_install(i2c_slave_port, conf_slave.mode,
-                              I2C_SLAVE_RX_BUF_LEN,
-                              I2C_SLAVE_TX_BUF_LEN, 0);
+    i2c_driver_install(i2c_slave_port, conf_slave.mode, I2C_SLAVE_RX_BUF_LEN, I2C_SLAVE_TX_BUF_LEN, 0);
+    return i2c_param_config(i2c_slave_port, &conf_slave);
 }
 
 /**

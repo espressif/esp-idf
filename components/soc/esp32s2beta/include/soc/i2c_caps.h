@@ -1,8 +1,9 @@
-// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,18 +14,23 @@
 
 #pragma once
 
-#include "soc/i2c_reg.h"
-#include "soc/i2c_struct.h"
-#include "soc/i2c_caps.h"
-#include "soc/periph_defs.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-typedef struct {
-    const uint8_t sda_out_sig;
-    const uint8_t sda_in_sig;
-    const uint8_t scl_out_sig;
-    const uint8_t scl_in_sig;
-    const uint8_t irq;
-    const periph_module_t module;
-} i2c_signal_conn_t;
+// ESP32-S2 have 2 I2C.
+#define SOC_I2C_NUM            (2)
 
-extern const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM];
+#define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
+#define I2C_INTR_MASK          (0x3fff) /*!< I2C all interrupt bitmap */
+
+//ESP32-S2 support hardware FSM reset
+#define I2C_SUPPORT_HW_FSM_RST  (1)
+//ESP32-S2 support hardware clear bus
+#define I2C_SUPPORT_HW_CLR_BUS  (1)
+
+#ifdef __cplusplus
+}
+#endif
+
+
