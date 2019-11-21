@@ -14,11 +14,18 @@
 #define SAMPLE_RATE     (36000)
 #define SAMPLE_BITS     (16)
 #define MASTER_BCK_IO 18
-#define MASTER_WS_IO 25
 #define SLAVE_BCK_IO 19
 #define SLAVE_WS_IO 26
 #define DATA_IN_IO 21
+
+#if CONFIG_IDF_TARGET_ESP32
+#define MASTER_WS_IO 25
 #define DATA_OUT_IO 22
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#define MASTER_WS_IO 28
+#define DATA_OUT_IO 20
+#endif
+
 #define PERCENT_DIFF 0.0001
 
 /**
@@ -68,6 +75,10 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ASSERT(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL) == ESP_ERR_INVALID_ARG);
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
+
+#if CONFIG_IDF_TARGET_ESP32
+
+/* ESP32S2BETA has only single I2S port and hence following test cases are not applicable */
 
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_T1_I2S]")
 {
@@ -234,6 +245,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s][test_env=UT_
     i2s_driver_uninstall(I2S_NUM_0);
     i2s_driver_uninstall(I2S_NUM_1);
 }
+#endif /* CONFIG_IDF_TARGET_ESP32 */
 
 TEST_CASE("I2S memory leaking test", "[i2s]")
 {

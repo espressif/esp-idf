@@ -27,7 +27,7 @@ extern "C" {
 
 // ESP32 have 2 I2S
 #define I2S_NUM_0             (0) /*!< I2S port 0 */
-#define I2S_NUM_1             (1) /*!< I2S port 0 */
+#define I2S_NUM_1             (1) /*!< I2S port 1 */
 #define I2S_NUM_MAX           (2) /*!< I2S port max */
 #define SOC_I2S_NUM           (I2S_NUM_MAX)
 
