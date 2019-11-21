@@ -176,7 +176,7 @@ example_test_002:
     - cd $TEST_FW_PATH
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
-  
+
 
 .example_test_003:
   extends: .example_test_template
@@ -245,17 +245,16 @@ example_test_010:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 50
+  parallel: 28
   tags:
     - ESP32_IDF
     - UT_T1_1
 
 # Max. allowed value of 'parallel' is 50.
-# See UT_030 below if you want to add more unit test jobs.
 
 UT_002:
   extends: .unit_test_template
-  parallel: 30
+  parallel: 9
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -263,14 +262,12 @@ UT_002:
 
 UT_003:
   extends: .unit_test_template
-  parallel: 3
   tags:
     - ESP32_IDF
     - UT_T1_SDMODE
 
 UT_004:
   extends: .unit_test_template
-  parallel: 3
   tags:
     - ESP32_IDF
     - UT_T1_SPIMODE
@@ -289,26 +286,12 @@ UT_006:
     - UT_T1_SPIMODE
     - psram
 
-UT_007:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T1_GPIO
-
 UT_008:
   extends: .unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_GPIO
     - psram
-
-UT_009:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
 
 UT_010:
   extends: .unit_test_template
@@ -317,26 +300,12 @@ UT_010:
     - UT_T1_PCNT
     - psram
 
-UT_011:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T1_LEDC
-
 UT_012:
   extends: .unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_LEDC
     - psram
-
-UT_013:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T2_RS485
 
 UT_014:
   extends: .unit_test_template
@@ -347,7 +316,6 @@ UT_014:
 
 UT_015:
   extends: .unit_test_template
-  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_RMT
@@ -361,25 +329,17 @@ UT_016:
 
 UT_017:
   extends: .unit_test_template
-  parallel: 3
   tags:
     - ESP32_IDF
     - EMMC
 
 UT_018:
   extends: .unit_test_template
-  parallel: 5
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_1
     - 8Mpsram
-
-UT_019:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - Example_SPI_Multi_device
 
 UT_020:
   extends: .unit_test_template
@@ -387,13 +347,6 @@ UT_020:
     - ESP32_IDF
     - Example_SPI_Multi_device
     - psram
-
-UT_021:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T2_I2C
 
 UT_022:
   extends: .unit_test_template
@@ -404,7 +357,6 @@ UT_022:
 
 UT_023:
   extends: .unit_test_template
-  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_MCPWM
@@ -416,26 +368,12 @@ UT_024:
     - UT_T1_MCPWM
     - psram
 
-UT_025:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T1_I2S
-
 UT_026:
   extends: .unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_I2S
     - psram
-
-UT_027:
-  extends: .unit_test_template
-  parallel: 3
-  tags:
-    - ESP32_IDF
-    - UT_T2_1
 
 UT_028:
   extends: .unit_test_template
@@ -444,33 +382,11 @@ UT_028:
     - UT_T2_1
     - psram
 
-UT_029:
-  extends: .unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T2_1
-    - 8Mpsram
-
-# Gitlab parallel max value is 50. We need to create another UT job if parallel is larger than 50.
-UT_030:
-  extends: .unit_test_template
-  parallel: 10
-  tags:
-    - ESP32_IDF
-    - UT_T1_1
-
 UT_031:
   extends: .unit_test_template
   tags:
     - ESP32_IDF
     - UT_T1_FlashEncryption
-
-UT_032:
-  extends: .unit_test_template
-  parallel: 4
-  tags:
-    - ESP32_IDF
-    - UT_T2_Ethernet
 
 UT_033:
   extends: .unit_test_template
@@ -481,21 +397,19 @@ UT_033:
 
 UT_034:
   extends: .unit_test_template
-  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
 
 UT_035:
   extends: .unit_test_template
-  parallel: 35
+  parallel: 16
   tags:
     - ESP32S2BETA_IDF
     - UT_T1_1
 
 UT_036:
   extends: .unit_test_template
-  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_PSRAMV0
@@ -503,17 +417,9 @@ UT_036:
 
 UT_037:
   extends: .unit_test_template
-  parallel: 4
   tags:
     - ESP32S2BETA_IDF
     - UT_T1_LEDC
-
-UT_040:
-  extends: .unit_test_template
-  parallel: 3
-  tags:
-    - ESP32_IDF
-    - UT_T1_no32kXTAL
 
 UT_041:
   extends: .unit_test_template
@@ -521,13 +427,6 @@ UT_041:
     - ESP32_IDF
     - UT_T1_no32kXTAL
     - psram
-
-UT_042:
-  extends: .unit_test_template
-  parallel: 3
-  tags:
-    - ESP32_IDF
-    - UT_T1_32kXTAL
 
 UT_043:
   extends: .unit_test_template
