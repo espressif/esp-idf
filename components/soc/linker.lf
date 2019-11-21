@@ -13,4 +13,5 @@ entries:
     spi_hal_iram (noflash_text)
     spi_slave_hal_iram (noflash_text)
     spi_flash_hal_iram (noflash)
+    ledc_hal_iram (noflash_text)
     lldesc (noflash_text)
