@@ -1,5 +1,4 @@
-idf_component_register(SRCS "expat/expat/lib/loadlibrary.c"
-                            "expat/expat/lib/xmlparse.c"
+idf_component_register(SRCS "expat/expat/lib/xmlparse.c"
                             "expat/expat/lib/xmlrole.c"
                             "expat/expat/lib/xmltok.c"
                             "expat/expat/lib/xmltok_impl.c"
