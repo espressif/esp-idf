@@ -91,8 +91,8 @@ static esp_err_t esp_dte_handle_line(esp_modem_dte_t *esp_dte)
     }
     return ESP_OK;
 err_handle:
-    /* Send MODEM_EVENT_UNKNOWN signal to event loop */
-    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_UNKNOWN,
+    /* Send ESP_MODEM_EVENT_UNKNOWN signal to event loop */
+    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_UNKNOWN,
                       (void *)line, strlen(line) + 1, pdMS_TO_TICKS(100));
 err:
     return ESP_FAIL;
@@ -445,7 +445,7 @@ err_dte_mem:
     return NULL;
 }
 
-esp_err_t esp_modem_add_event_handler(modem_dte_t *dte, esp_event_handler_t handler, int32_t event_id, void *handler_args)
+esp_err_t esp_modem_set_event_handler(modem_dte_t *dte, esp_event_handler_t handler, int32_t event_id, void *handler_args)
 {
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
     return esp_event_handler_register_with(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, event_id, handler, handler_args);
@@ -468,7 +468,7 @@ esp_err_t esp_modem_start_ppp(modem_dte_t *dte)
     MODEM_CHECK(dte->change_mode(dte, MODEM_PPP_MODE) == ESP_OK, "enter ppp mode failed", err);
 
     /* post PPP mode started event */
-    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_START, NULL, 0, 0);
+    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_PPP_START, NULL, 0, 0);
     return ESP_OK;
 err:
     return ESP_FAIL;

@@ -21,6 +21,7 @@ extern "C" {
 #include "esp_modem_dte.h"
 #include "esp_event.h"
 #include "driver/uart.h"
+#include "esp_modem_compat.h"
 
 /**
  * @brief Declare Event Base for ESP Modem
@@ -33,9 +34,9 @@ ESP_EVENT_DECLARE_BASE(ESP_MODEM_EVENT);
  *
  */
 typedef enum {
-    MODEM_EVENT_PPP_START,      /*!< ESP Modem Start PPP Session */
-    MODEM_EVENT_PPP_STOP,       /*!< ESP Modem Stop PPP Session*/
-    MODEM_EVENT_UNKNOWN         /*!< ESP Modem Unknown Response */
+    ESP_MODEM_EVENT_PPP_START = 0,       /*!< ESP Modem Start PPP Session */
+    ESP_MODEM_EVENT_PPP_STOP  = 3,       /*!< ESP Modem Stop PPP Session*/
+    ESP_MODEM_EVENT_UNKNOWN   = 4        /*!< ESP Modem Unknown Response */
 } esp_modem_event_t;
 
 /**
@@ -91,7 +92,7 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config);
  *      - ESP_ERR_NO_MEM on allocating memory for the handler failed
  *      - ESP_ERR_INVALID_ARG on invalid combination of event base and event id
  */
-esp_err_t esp_modem_add_event_handler(modem_dte_t *dte, esp_event_handler_t handler, int32_t event_id, void *handler_args);
+esp_err_t esp_modem_set_event_handler(modem_dte_t *dte, esp_event_handler_t handler, int32_t event_id, void *handler_args);
 
 /**
  * @brief Unregister event handler for ESP Modem event loop

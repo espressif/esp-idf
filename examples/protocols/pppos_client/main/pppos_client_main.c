@@ -111,14 +111,14 @@ err:
 static void modem_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     switch (event_id) {
-    case MODEM_EVENT_PPP_START:
+    case ESP_MODEM_EVENT_PPP_START:
         ESP_LOGI(TAG, "Modem PPP Started");
         break;
-    case MODEM_EVENT_PPP_STOP:
+    case ESP_MODEM_EVENT_PPP_STOP:
         ESP_LOGI(TAG, "Modem PPP Stopped");
         xEventGroupSetBits(event_group, STOP_BIT);
         break;
-    case MODEM_EVENT_UNKNOWN:
+    case ESP_MODEM_EVENT_UNKNOWN:
         ESP_LOGW(TAG, "Unknow line received: %s", (char *)event_data);
         break;
     default:
@@ -231,7 +231,7 @@ void app_main(void)
     esp_modem_dte_config_t config = ESP_MODEM_DTE_DEFAULT_CONFIG();
     modem_dte_t *dte = esp_modem_dte_init(&config);
     /* Register event handler */
-    ESP_ERROR_CHECK(esp_modem_add_event_handler(dte, modem_event_handler, ESP_EVENT_ANY_ID, NULL));
+    ESP_ERROR_CHECK(esp_modem_set_event_handler(dte, modem_event_handler, ESP_EVENT_ANY_ID, NULL));
     /* create dce object */
 #if CONFIG_EXAMPLE_MODEM_DEVICE_SIM800
     modem_dce_t *dce = sim800_init(dte);

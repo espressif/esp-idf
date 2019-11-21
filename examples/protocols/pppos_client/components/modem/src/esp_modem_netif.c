@@ -138,11 +138,11 @@ esp_err_t esp_modem_netif_set_default_handlers(void *h, esp_netif_t * esp_netif)
 {
     esp_modem_netif_driver_t *driver = h;
     esp_err_t ret;
-    ret = esp_modem_add_event_handler(driver->dte, esp_netif_action_start, MODEM_EVENT_PPP_START, esp_netif);
+    ret = esp_modem_set_event_handler(driver->dte, esp_netif_action_start, ESP_MODEM_EVENT_PPP_START, esp_netif);
     if (ret != ESP_OK) {
         goto set_event_failed;
     }
-    ret = esp_modem_add_event_handler(driver->dte, esp_netif_action_stop, MODEM_EVENT_PPP_STOP, esp_netif);
+    ret = esp_modem_set_event_handler(driver->dte, esp_netif_action_stop, ESP_MODEM_EVENT_PPP_STOP, esp_netif);
     if (ret != ESP_OK) {
         goto set_event_failed;
     }
