@@ -2077,6 +2077,10 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
+    } else if (auth_mode == WPA3_AUTH_PSK) {
+         sm->key_mgmt = WPA_KEY_MGMT_SAE; /* for WPA3 PSK */
+    } else {
+        sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
 }
 
@@ -2142,6 +2146,8 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *  Here only handle passphrase string.  Need extra step to handle 32B, 64Hex raw
      *    PMK.
      */
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+	return;
 
     /* This is really SLOW, so just re cacl while reset param */
     if (esp_wifi_sta_get_reset_param_internal() != 0) {

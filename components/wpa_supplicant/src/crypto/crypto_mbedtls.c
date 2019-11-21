@@ -477,9 +477,11 @@ int crypto_ec_point_solve_y_coord(struct crypto_ec *e,
      * such that p ≡ 3 (mod 4)
      *  y_ = (y2 ^ ((p+1)/4)) mod p
      *
-     *  if y_bit: y = p-y_
-     *   else y = y_`
+     *  if LSB of both x and y are same: y = y_
+     *   else y = p - y_
+     * y_bit is LSB of x
      */
+    y_bit = (y_bit != 0);
 
     y_sqr = (mbedtls_mpi *) crypto_ec_point_compute_y_sqr(e, x);
 
@@ -489,9 +491,9 @@ int crypto_ec_point_solve_y_coord(struct crypto_ec *e,
         MBEDTLS_MPI_CHK(mbedtls_mpi_div_int(&temp, NULL, &temp, 4));
         MBEDTLS_MPI_CHK(mbedtls_mpi_exp_mod(y, y_sqr, &temp, &e->group.P, NULL));
 
-        if (y_bit) {
+        if (y_bit != mbedtls_mpi_get_bit(y, 0))
             MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(y, &e->group.P, y));
-        }
+
         MBEDTLS_MPI_CHK(mbedtls_mpi_copy(&((mbedtls_ecp_point* )p)->X, (const mbedtls_mpi*) x));
         MBEDTLS_MPI_CHK(mbedtls_mpi_lset(&((mbedtls_ecp_point *)p)->Z, 1));
     } else {

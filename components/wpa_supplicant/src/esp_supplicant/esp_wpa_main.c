@@ -32,6 +32,7 @@
 
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
+#include "esp_wpa3_i.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid)
@@ -74,7 +75,7 @@ void  wpa_config_profile(void)
 {
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
-    } else if (esp_wifi_sta_prof_is_wpa2_internal()) {
+    } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
     } else {
         WPA_ASSERT(0);
@@ -201,6 +202,9 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
+#ifdef CONFIG_WPA3_SAE
+    esp_wifi_register_wpa3_cb(wpa_cb);
+#endif /* CONFIG_WPA3_SAE */
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 
