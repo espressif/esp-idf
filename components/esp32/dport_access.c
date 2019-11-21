@@ -144,15 +144,6 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
 #endif /* CONFIG_FREERTOS_UNICORE */
 }
 
-void IRAM_ATTR esp_dport_access_stall_other_cpu_start_wrap(void)
-{
-    DPORT_STALL_OTHER_CPU_START();
-}
-
-void IRAM_ATTR esp_dport_access_stall_other_cpu_end_wrap(void)
-{
-    DPORT_STALL_OTHER_CPU_END();
-}
 
 #ifndef CONFIG_FREERTOS_UNICORE
 static void dport_access_init_core(void *arg)

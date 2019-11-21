@@ -44,12 +44,19 @@
 #include "esp_smartconfig.h"
 #include "esp_coexist_internal.h"
 #include "esp_coexist_adapter.h"
-
-
-extern void esp_dport_access_stall_other_cpu_start_wrap(void);
-extern void esp_dport_access_stall_other_cpu_end_wrap(void);
+#include "esp32/dport_access.h"
 
 #define TAG "esp_adapter"
+
+static void IRAM_ATTR s_esp_dport_access_stall_other_cpu_start(void)
+{
+    DPORT_STALL_OTHER_CPU_START();
+}
+
+static void IRAM_ATTR s_esp_dport_access_stall_other_cpu_end(void)
+{
+    DPORT_STALL_OTHER_CPU_END();
+}
 
 /*
  If CONFIG_SPIRAM_TRY_ALLOCATE_WIFI_LWIP is enabled. Prefer to allocate a chunk of memory in SPIRAM firstly.
@@ -557,8 +564,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._event_post = esp_event_post_wrapper,
     ._get_free_heap_size = esp_get_free_heap_size,
     ._rand = esp_random,
-    ._dport_access_stall_other_cpu_start_wrap = esp_dport_access_stall_other_cpu_start_wrap,
-    ._dport_access_stall_other_cpu_end_wrap = esp_dport_access_stall_other_cpu_end_wrap,
+    ._dport_access_stall_other_cpu_start_wrap = s_esp_dport_access_stall_other_cpu_start,
+    ._dport_access_stall_other_cpu_end_wrap = s_esp_dport_access_stall_other_cpu_end,
     ._phy_rf_deinit = esp_phy_rf_deinit,
     ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
     ._phy_common_clock_enable = esp_phy_common_clock_enable,
