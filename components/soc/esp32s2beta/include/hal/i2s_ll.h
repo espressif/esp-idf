@@ -244,17 +244,6 @@ static inline void i2s_ll_enable_dma(i2s_dev_t *hw)
 }
 
 /**
- * @brief Get I2S revision
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get revision
- */
-static inline void i2s_ll_get_rev(i2s_dev_t *hw, uint32_t *val)
-{
-    *val = 1;
-}
-
-/**
  * @brief Get I2S interrupt status
  *
  * @param hw Peripheral I2S hardware instance address.
