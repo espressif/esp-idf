@@ -59,6 +59,10 @@ static void initialize_nvs(void)
 
 static void initialize_console(void)
 {
+    /* Drain stdout before reconfiguring it */
+    fflush(stdout);
+    fsync(fileno(stdout));
+
     /* Disable buffering on stdin */
     setvbuf(stdin, NULL, _IONBF, 0);
 
@@ -121,6 +125,9 @@ void app_main(void)
 
 #if CONFIG_STORE_HISTORY
     initialize_filesystem();
+    ESP_LOGI(TAG, "Command history enabled");
+#else
+    ESP_LOGI(TAG, "Command history disabled");
 #endif
 
     initialize_console();

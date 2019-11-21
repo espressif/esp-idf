@@ -56,6 +56,7 @@ FINISH_PATTERN = re.compile(r"1 Tests (\d) Failures (\d) Ignored")
 END_LIST_STR = r'\r?\nEnter test for running'
 TEST_PATTERN = re.compile(r'\((\d+)\)\s+"([^"]+)" ([^\r\n]+)\r?\n(' + END_LIST_STR + r')?')
 TEST_SUBMENU_PATTERN = re.compile(r'\s+\((\d+)\)\s+"[^"]+"\r?\n(?=(?=\()|(' + END_LIST_STR + r'))')
+UT_APP_PATH = "tools/unit-test-app"
 
 SIMPLE_TEST_ID = 0
 MULTI_STAGE_ID = 1
@@ -284,7 +285,7 @@ def run_unit_test_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=ut_config, allow_dut_exception=True)
+        dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
         if len(case_config[ut_config]) > 0:
             replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
         dut.start_app()
@@ -423,7 +424,7 @@ def get_dut(duts, env, name, ut_config, app_bin=None):
     if name in duts:
         dut = duts[name]
     else:
-        dut = env.get_dut(name, app_path=ut_config, allow_dut_exception=True)
+        dut = env.get_dut(name, app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
         duts[name] = dut
         replace_app_bin(dut, "unit-test-app", app_bin)
         dut.start_app()  # download bin to board
@@ -638,7 +639,7 @@ def run_multiple_stage_cases(env, extra_data):
 
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
-        dut = env.get_dut("unit-test-app", app_path=ut_config, allow_dut_exception=True)
+        dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config, allow_dut_exception=True)
         if len(case_config[ut_config]) > 0:
             replace_app_bin(dut, "unit-test-app", case_config[ut_config][0].get('app_bin'))
         dut.start_app()
@@ -671,7 +672,7 @@ def detect_update_unit_test_info(env, extra_data, app_bin):
     case_config = format_test_case_config(extra_data)
 
     for ut_config in case_config:
-        dut = env.get_dut("unit-test-app", app_path=ut_config)
+        dut = env.get_dut("unit-test-app", app_path=UT_APP_PATH, app_config_name=ut_config)
         replace_app_bin(dut, "unit-test-app", app_bin)
         dut.start_app()
 

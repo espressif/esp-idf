@@ -148,3 +148,10 @@ set_source_files_properties(
     PROPERTIES COMPILE_FLAGS
     -Wno-implicit-fallthrough
     )
+# "comparison is always false due to limited range of data type" warning
+# when setting CONFIG_LWIP_TCP_WND_DEFAULT to 65535
+set_source_files_properties(
+    lwip/src/core/tcp.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-type-limits
+)

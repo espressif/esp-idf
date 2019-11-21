@@ -152,7 +152,6 @@ class IDFDUT(DUT.SerialDUT):
     # if need to erase NVS partition in start app
     ERASE_NVS = True
     RECV_THREAD_CLS = IDFRecvThread
-    TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 
     def __init__(self, name, port, log_file, app, allow_dut_exception=False, **kwargs):
         super(IDFDUT, self).__init__(name, port, log_file, app, **kwargs)
@@ -174,6 +173,7 @@ class IDFDUT(DUT.SerialDUT):
         :param port: serial port as string
         :return: MAC address or None
         """
+        esp = None
         try:
             esp = cls._get_rom()(port)
             esp.connect()
@@ -181,12 +181,13 @@ class IDFDUT(DUT.SerialDUT):
         except RuntimeError:
             return None
         finally:
-            # do hard reset after use esptool
-            esp.hard_reset()
-            esp._port.close()
+            if esp:
+                # do hard reset after use esptool
+                esp.hard_reset()
+                esp._port.close()
 
     @classmethod
-    def confirm_dut(cls, port, app, **kwargs):
+    def confirm_dut(cls, port, **kwargs):
         inst = None
         try:
             expected_rom_class = cls._get_rom()
@@ -199,9 +200,9 @@ class IDFDUT(DUT.SerialDUT):
             inst = esptool.ESPLoader.detect_chip(port)
             if expected_rom_class and type(inst) != expected_rom_class:
                 raise RuntimeError("Target not expected")
-            return inst.read_mac() is not None
+            return inst.read_mac() is not None, get_target_by_rom_class(type(inst))
         except(esptool.FatalError, RuntimeError):
-            return False
+            return False, None
         finally:
             if inst is not None:
                 inst._port.close()
@@ -415,18 +416,31 @@ class IDFDUT(DUT.SerialDUT):
 
 
 class ESP32DUT(IDFDUT):
+    TARGET = "esp32"
+    TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
     @classmethod
     def _get_rom(cls):
         return esptool.ESP32ROM
 
 
 class ESP32S2DUT(IDFDUT):
+    TARGET = "esp32s2beta"
+    TOOLCHAIN_PREFIX = "xtensa-esp32s2-elf-"
     @classmethod
     def _get_rom(cls):
         return esptool.ESP32S2ROM
 
 
 class ESP8266DUT(IDFDUT):
+    TARGET = "esp8266"
+    TOOLCHAIN_PREFIX = "xtensa-lx106-elf-"
     @classmethod
     def _get_rom(cls):
         return esptool.ESP8266ROM
+
+
+def get_target_by_rom_class(cls):
+    for c in [ESP32DUT, ESP32S2DUT, ESP8266DUT]:
+        if c._get_rom() == cls:
+            return c.TARGET
+    return None

@@ -197,17 +197,20 @@ build_examples_make:
   artifacts:
     when: always
     paths:
-      - build_examples/*/*/*/*/build/*.bin
-      - build_examples/*/*/*/*/sdkconfig
-      - build_examples/*/*/*/*/build/*.elf
-      - build_examples/*/*/*/*/build/*.map
-      - build_examples/*/*/*/*/build/flasher_args.json
-      - build_examples/*/*/*/*/build/bootloader/*.bin
-      - build_examples/*/*/*/*/build/partition_table/*.bin
+      - build_examples/list.json
+      - build_examples/list_job_*.json
+      - build_examples/*/*/*/sdkconfig
+      - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/build/*.elf
+      - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/flasher_args.json
+      - build_examples/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
     expire_in: 3 days
   variables:
-    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples"
+    BUILD_PATH: "$CI_PROJECT_DIR/build_examples"
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -218,10 +221,7 @@ build_examples_make:
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
-    - rm -rf build_examples
-    - mkdir build_examples
-    - cd build_examples
-    # build some of examples
+    - mkdir -p ${BUILD_PATH}
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
     # Check if the tests demand CMake built binaries. If not, delete them

@@ -275,6 +275,7 @@ class BaseDUT(object):
     DEFAULT_EXPECT_TIMEOUT = 10
     MAX_EXPECT_FAILURES_TO_SAVED = 10
     RECV_THREAD_CLS = RecvThread
+    TARGET = None
     """ DUT subclass can specify RECV_THREAD_CLS to do add some extra stuff when receive data.
     For example, DUT can implement exception detect & analysis logic in receive thread subclass. """
     LOG_THREAD = _LogThread()
@@ -377,15 +378,14 @@ class BaseDUT(object):
 
     # methods that need to be overwritten by Tool
     @classmethod
-    def confirm_dut(cls, port, app, **kwargs):
+    def confirm_dut(cls, port, **kwargs):
         """
         confirm if it's a DUT, usually used by auto detecting DUT in by Env config.
 
         subclass (tool) must overwrite this method.
 
         :param port: comport
-        :param app: app instance
-        :return: True or False
+        :return: tuple of result (bool), and target (str)
         """
         pass
 

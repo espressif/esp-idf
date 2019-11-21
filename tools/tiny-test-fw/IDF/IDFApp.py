@@ -29,10 +29,12 @@ class IDFApp(App.BaseApp):
     IDF_DOWNLOAD_CONFIG_FILE = "download.config"
     IDF_FLASH_ARGS_FILE = "flasher_args.json"
 
-    def __init__(self, app_path):
+    def __init__(self, app_path, config_name=None, target=None):
         super(IDFApp, self).__init__(app_path)
+        self.config_name = config_name
+        self.target = target
         self.idf_path = self.get_sdk_path()
-        self.binary_path = self.get_binary_path(app_path)
+        self.binary_path = self.get_binary_path(app_path, config_name)
         self.elf_file = self._get_elf_file_path(self.binary_path)
         assert os.path.exists(self.binary_path)
         sdkconfig_dict = self.get_sdkconfig()
@@ -87,13 +89,14 @@ class IDFApp(App.BaseApp):
                     d[configs[0]] = configs[1].rstrip()
         return d
 
-    def get_binary_path(self, app_path):
+    def get_binary_path(self, app_path, config_name=None):
         """
         get binary path according to input app_path.
 
         subclass must overwrite this method.
 
         :param app_path: path of application
+        :param config_name: name of the application build config
         :return: abs app binary path
         """
         pass
@@ -206,59 +209,65 @@ class Example(IDFApp):
         """
         return [os.path.join(self.binary_path, "..", "sdkconfig")]
 
-    def get_binary_path(self, app_path):
+    def get_binary_path(self, app_path, config_name=None):
         # build folder of example path
         path = os.path.join(self.idf_path, app_path, "build")
-        if not os.path.exists(path):
-            # search for CI build folders
-            app = os.path.basename(app_path)
-            example_path = os.path.join(self.idf_path, "build_examples", "example_builds")
-            # example_path has subdirectories named after targets. So we need to look into only the right
-            # subdirectory. Currently, the target is not known at this moment.
-            for dirpath, dirnames, files in os.walk(example_path):
-                if dirnames:
-                    if dirnames[0] == app:
-                        path = os.path.join(example_path, dirpath, dirnames[0], "build")
-                        break
-            else:
-                raise OSError("Failed to find example binary")
-        return path
+        if os.path.exists(path):
+            return path
+
+        if not config_name:
+            config_name = "default"
+
+        # Search for CI build folders.
+        # Path format: $IDF_PATH/build_examples/app_path_with_underscores/config/target
+        # (see tools/ci/build_examples_cmake.sh)
+        # For example: $IDF_PATH/build_examples/examples_get-started_blink/default/esp32
+        app_path_underscored = app_path.replace(os.path.sep, "_")
+        example_path = os.path.join(self.idf_path, "build_examples")
+        for dirpath in os.listdir(example_path):
+            if os.path.basename(dirpath) == app_path_underscored:
+                path = os.path.join(example_path, dirpath, config_name, self.target, "build")
+                return path
+
+        raise OSError("Failed to find example binary")
 
 
 class UT(IDFApp):
-    def get_binary_path(self, app_path):
+    def get_binary_path(self, app_path, config_name=None):
         """
-        :param app_path: app path or app config
+        :param app_path: app path
+        :param config_name: config name
         :return: binary path
         """
-        if not app_path:
-            app_path = "default"
+        if not config_name:
+            config_name = "default"
 
         path = os.path.join(self.idf_path, app_path)
-        if not os.path.exists(path):
-            while True:
-                # try to get by config
-                if app_path == "default":
-                    # it's default config, we first try to get form build folder of unit-test-app
-                    path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
-                    if os.path.exists(path):
-                        # found, use bin in build path
-                        break
-                # ``make ut-build-all-configs`` or ``make ut-build-CONFIG`` will copy binary to output folder
-                path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", app_path)
-                if os.path.exists(path):
-                    break
-                raise OSError("Failed to get unit-test-app binary path")
-        return path
+        default_build_path = os.path.join(path, "build")
+        if os.path.exists(default_build_path):
+            return path
+
+        # first try to get from build folder of unit-test-app
+        path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
+        if os.path.exists(path):
+            # found, use bin in build path
+            return path
+
+        # ``make ut-build-all-configs`` or ``make ut-build-CONFIG`` will copy binary to output folder
+        path = os.path.join(self.idf_path, "tools", "unit-test-app", "output", config_name)
+        if os.path.exists(path):
+            return path
+
+        raise OSError("Failed to get unit-test-app binary path")
 
 
 class SSC(IDFApp):
-    def get_binary_path(self, app_path):
+    def get_binary_path(self, app_path, config_name=None):
         # TODO: to implement SSC get binary path
         return app_path
 
 
 class AT(IDFApp):
-    def get_binary_path(self, app_path):
+    def get_binary_path(self, app_path, config_name=None):
         # TODO: to implement AT get binary path
         return app_path
