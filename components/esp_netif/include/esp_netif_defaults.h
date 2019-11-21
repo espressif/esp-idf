@@ -52,6 +52,16 @@ extern "C" {
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA, \
         .driver = NULL,  \
     }
+
+/**
+* @brief  Default configuration reference of PPP client
+*/
+#define ESP_NETIF_DEFAULT_PPP()                       \
+    {                                                 \
+        .base = ESP_NETIF_BASE_DEFAULT_PPP,           \
+        .stack = ESP_NETIF_NETSTACK_DEFAULT_PPP,      \
+        .driver = NULL,     \
+    }
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI STA
  */
@@ -67,9 +77,17 @@ extern "C" {
  */
 #define ESP_NETIF_BASE_DEFAULT_ETH             &_g_esp_netif_inherent_eth_config
 
+/**
+ * @brief  Default base config (esp-netif inherent) of ppp interface
+ */
+#define ESP_NETIF_BASE_DEFAULT_PPP             &_g_esp_netif_inherent_ppp_config
+
+
 #define ESP_NETIF_NETSTACK_DEFAULT_ETH          _g_esp_netif_netstack_default_eth
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA     _g_esp_netif_netstack_default_wifi_sta
 #define ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP      _g_esp_netif_netstack_default_wifi_ap
+#define ESP_NETIF_NETSTACK_DEFAULT_PPP          _g_esp_netif_netstack_default_ppp
+
 //
 // Include default network stacks configs
 //  - Network stack configurations are provided in a specific network stack
@@ -79,6 +97,7 @@ extern "C" {
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_eth;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_sta;
 extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
+extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
 
 //
 // Include default common configs inherent to esp-netif
@@ -88,6 +107,7 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
+extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config;
 
 #ifdef __cplusplus
 }

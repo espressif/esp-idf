@@ -37,7 +37,10 @@ extern "C" {
 esp_netif_t* esp_netif_get_handle_from_netif_impl(void *dev);
 
 /**
- * @brief Returns network stack specific implementation handle
+ * @brief Returns network stack specific implementation handle (if supported)
+ *
+ * Note that it is not supported to acquire PPP netif impl pointer and
+ * this function will return NULL for esp_netif instances configured to PPP mode
  *
  * @param[in]  esp_netif Handle to esp-netif instance
  *
