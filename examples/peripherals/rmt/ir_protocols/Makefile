@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := infrared_nec
+PROJECT_NAME := ir_protocols
 
 include $(IDF_PATH)/make/project.mk
 

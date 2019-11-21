@@ -3,7 +3,7 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := rmt_tx
+PROJECT_NAME := morse_code
 
 include $(IDF_PATH)/make/project.mk
 

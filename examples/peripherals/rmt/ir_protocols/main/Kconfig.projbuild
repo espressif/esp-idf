@@ -1,0 +1,33 @@
+menu "Example Configuration"
+    choice EXAMPLE_IR_PROTOCOL
+        prompt "Infrared Protocol"
+        default EXAMPLE_IR_PROTOCOL_NEC
+        help
+            Choose the IR protocol used in the example.
+
+        config EXAMPLE_IR_PROTOCOL_NEC
+            bool "NEC"
+            help
+                NEC is a kind of Pulse Distance Protocol.
+                It uses ASK modulation and pulse distance encoding with a carrier frequency of 38 kHz.
+
+        config EXAMPLE_IR_PROTOCOL_RC5
+            bool "RC5"
+            help
+                The RC5 protocol was introduced by Philips.
+                It uses ASK modulation and Manchester encoding with carrier frequency fixed at 36 kHz.
+
+    endchoice
+
+    config EXAMPLE_RMT_TX_GPIO
+        int "RMT TX GPIO"
+        default 18
+        help
+            Set the GPIO number used for transmitting the RMT signal.
+
+    config EXAMPLE_RMT_RX_GPIO
+        int "RMT RX GPIO"
+        default 19
+        help
+            Set the GPIO number used for receiving the RMT signal.
+endmenu
