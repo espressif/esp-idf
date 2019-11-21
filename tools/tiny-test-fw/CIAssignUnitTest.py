@@ -30,6 +30,11 @@ class Group(CIAssignTest.Group):
         "execution_time": "execution time"
     }
     CI_JOB_MATCH_KEYS = ["test environment"]
+    DUT_CLS_NAME = {
+        "esp32": "ESP32DUT",
+        "esp32s2beta": "ESP32S2DUT",
+        "esp8266": "ESP8266DUT",
+    }
 
     def __init__(self, case):
         super(Group, self).__init__(case)
@@ -89,33 +94,26 @@ class Group(CIAssignTest.Group):
         """
         test_function = self._map_test_function()
 
+        target = self._get_case_attr(self.case_list[0], "chip_target")
+        if target:
+            overwrite = {
+                "dut": {
+                    "path": "IDF/IDFDUT.py",
+                    "class": self.DUT_CLS_NAME[target],
+                }
+            }
+        else:
+            overwrite = dict()
         output_data = {
             # we don't need filter for test function, as UT uses a few test functions for all cases
             "CaseConfig": [
                 {
                     "name": test_function,
                     "extra_data": self._create_extra_data(test_function),
+                    "overwrite": overwrite,
                 }
             ],
         }
-
-        target = self._get_case_attr(self.case_list[0], "chip_target")
-        if target is not None:
-            target_dut = {
-                "esp32": "ESP32DUT",
-                "esp32s2beta": "ESP32S2DUT",
-                "esp8266": "ESP8266DUT",
-            }[target]
-            output_data.update({
-                "Filter": {
-                    "overwrite": {
-                        "dut": {
-                            "path": "IDF/IDFDUT.py",
-                            "class": target_dut,
-                        }
-                    }
-                }
-            })
         return output_data
 
 
