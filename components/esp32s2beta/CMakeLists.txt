@@ -57,7 +57,7 @@ else()
 
     # Process the template file through the linker script generation mechanism, and use the output for linking the
     # final binary
-    target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32s2beta.project.ld.in" PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32.project.ld")
+    target_linker_script(${COMPONENT_LIB} INTERFACE "${CMAKE_CURRENT_LIST_DIR}/ld/esp32s2beta.project.ld.in" PROCESS "${CMAKE_CURRENT_BINARY_DIR}/ld/esp32s2beta.project.ld")
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "ld/esp32s2beta.peripherals.ld")
     target_link_libraries(${COMPONENT_LIB} PUBLIC gcc)
