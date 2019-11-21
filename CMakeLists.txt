@@ -38,19 +38,16 @@ if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
                                 "-Wno-sizeof-pointer-memaccess"
                                 "-Wno-clobbered")
 
-    # doesn't use GCC_NOT_5_2_0 because idf_set_global_variables was not called before
-    if(GCC_NOT_5_2_0)
-        list(APPEND compile_options "-Wno-format-overflow"
-                                    "-Wno-stringop-truncation"
-                                    "-Wno-misleading-indentation"
-                                    "-Wno-cast-function-type"
-                                    "-Wno-implicit-fallthrough"
-                                    "-Wno-unused-const-variable"
-                                    "-Wno-switch-unreachable"
-                                    "-Wno-format-truncation"
-                                    "-Wno-memset-elt-size"
-                                    "-Wno-int-in-bool-context")
-    endif()
+    list(APPEND compile_options "-Wno-format-overflow"
+                                "-Wno-stringop-truncation"
+                                "-Wno-misleading-indentation"
+                                "-Wno-cast-function-type"
+                                "-Wno-implicit-fallthrough"
+                                "-Wno-unused-const-variable"
+                                "-Wno-switch-unreachable"
+                                "-Wno-format-truncation"
+                                "-Wno-memset-elt-size"
+                                "-Wno-int-in-bool-context")
 endif()
 
 if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)

@@ -504,12 +504,6 @@ export CC CXX LD AR OBJCOPY OBJDUMP SIZE
 
 COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
 COMPILER_VERSION_NUM := $(subst .,,$(COMPILER_VERSION_STR))
-GCC_NOT_5_2_0 := $(shell expr $(COMPILER_VERSION_STR) != "5.2.0")
-export COMPILER_VERSION_STR COMPILER_VERSION_NUM GCC_NOT_5_2_0
-
-CPPFLAGS += -DGCC_NOT_5_2_0=$(GCC_NOT_5_2_0)
-export CPPFLAGS
-
 
 # the app is the main executable built by the project
 APP_ELF:=$(BUILD_DIR_BASE)/$(PROJECT_NAME).elf

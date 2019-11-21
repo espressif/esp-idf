@@ -15,7 +15,7 @@ idf_component_register(SRCS "default_event_loop.c"
                     PRIV_REQUIRES ${priv_requires}
                     LDFRAGMENTS linker.lf)
 
-if(GCC_NOT_5_2_0 AND CONFIG_ESP_EVENT_LOOP_PROFILING)
+if(CONFIG_ESP_EVENT_LOOP_PROFILING)
     # uses C11 atomic feature
     set_source_files_properties(esp_event.c PROPERTIES COMPILE_FLAGS -std=gnu11)
 endif()

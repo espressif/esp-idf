@@ -541,9 +541,7 @@ idf_component_register(SRCS "${srcs}"
                 REQUIRES nvs_flash soc)
 
 if(CONFIG_BT_ENABLED)
-    if(GCC_NOT_5_2_0)
-        target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
-    endif()
+    target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)
 
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-L${CMAKE_CURRENT_LIST_DIR}/controller/lib")
     target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)

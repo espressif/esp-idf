@@ -31,33 +31,8 @@
 #include "esp_log.h"
 const static char *TAG = "esp_gcov_rtio";
 
-#if GCC_NOT_5_2_0
-void __gcov_dump(void);
-void __gcov_reset(void);
-#else
-/* The next code for old GCC */
-
-static void (*s_gcov_exit)(void);
-/* Root of a program/shared-object state */
-struct gcov_root
-{
-  void *list;
-  unsigned dumped : 1;  /* counts have been dumped.  */
-  unsigned run_counted : 1;  /* run has been accounted for.  */
-  struct gcov_root *next;
-  struct gcov_root *prev;
-};
-
-/* Per-dynamic-object gcov state.  */
-extern struct gcov_root __gcov_root;
-
-static void esp_gcov_reset_status(void)
-{
-  __gcov_root.dumped = 0;
-  __gcov_root.run_counted = 0;
-}
-#endif
-
+extern void __gcov_dump(void);
+extern void __gcov_reset(void);
 
 static int esp_dbg_stub_gcov_dump_do(void)
 {
@@ -72,18 +47,9 @@ static int esp_dbg_stub_gcov_dump_do(void)
     ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
     esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
     ESP_EARLY_LOGV(TAG, "Dump data...");
-#if GCC_NOT_5_2_0
     __gcov_dump();
     // reset dump status to allow incremental data accumulation
     __gcov_reset();
-#else
-    ESP_EARLY_LOGV(TAG, "Check for dump handler %p", s_gcov_exit);
-    if (s_gcov_exit) {
-        s_gcov_exit();
-        // reset dump status to allow incremental data accumulation
-        esp_gcov_reset_status();
-    }
-#endif
     ESP_EARLY_LOGV(TAG, "Free apptrace down buf");
     free(down_buf);
     ESP_EARLY_LOGV(TAG, "Finish file transfer session");
@@ -92,27 +58,6 @@ static int esp_dbg_stub_gcov_dump_do(void)
         ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", ret);
     }
     return ret;
-}
-
-/**
- * @brief Triggers gcov info dump.
- *        This function is to be called by OpenOCD, not by normal user code.
- * TODO: what about interrupted flash access (when cache disabled)???
- *
- * @return ESP_OK on success, otherwise see esp_err_t
- */
-static int esp_dbg_stub_gcov_entry(void)
-{
-#if GCC_NOT_5_2_0
-    return esp_dbg_stub_gcov_dump_do();
-#else
-    int ret = ESP_OK;
-    // disable IRQs on this CPU, other CPU is halted by OpenOCD
-    unsigned irq_state = portENTER_CRITICAL_NESTED();
-    ret = esp_dbg_stub_gcov_dump_do();
-    portEXIT_CRITICAL_NESTED(irq_state);
-    return ret;
-#endif
 }
 
 void esp_gcov_dump(void)
@@ -139,18 +84,6 @@ void esp_gcov_dump(void)
     esp_cpu_unstall(other_core);
 #endif
     portEXIT_CRITICAL_NESTED(irq_state);
-}
-
-int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
-{
-#if GCC_NOT_5_2_0
-    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
-#else
-    ESP_EARLY_LOGV(TAG, "%s %p", __FUNCTION__, function);
-    s_gcov_exit = function;
-#endif
-    esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_GCOV, (uint32_t)&esp_dbg_stub_gcov_entry);
-    return 0;
 }
 
 void *gcov_rtio_fopen(const char *path, const char *mode)

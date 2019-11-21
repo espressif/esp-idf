@@ -34,10 +34,6 @@ else()
             list(APPEND scripts "esp32/ld/esp32.rom.newlib-nano.ld")
         endif()
 
-        if(NOT GCC_NOT_5_2_0)
-            list(APPEND scripts "esp32/ld/esp32.rom.newlib-locale.ld")
-        endif()
-
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
             list(APPEND scripts "esp32/ld/esp32.rom.spiflash.ld")
         endif()
@@ -45,7 +41,6 @@ else()
     elseif(target STREQUAL "esp32s2beta")
         # no SPIRAM workaround for esp32s2beta
         # no nano formatting function in ROM
-        # no GCC 5.2.0 for esp32s2beta, hence not linking locale functions
 
         list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.newlib-funcs.ld"
                             "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
