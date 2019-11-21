@@ -213,6 +213,21 @@ class AssignTest(object):
             test_count = int(test_count)
             self.test_cases *= test_count
 
+    @staticmethod
+    def _count_groups_by_keys(test_groups):
+        """
+        Count the number of test groups by job match keys.
+        It's an important information to update CI config file.
+        """
+        group_count = dict()
+        for group in test_groups:
+            key = ",".join(group.ci_job_match_keys)
+            try:
+                group_count[key] += 1
+            except KeyError:
+                group_count[key] = 1
+        return group_count
+
     def assign_cases(self):
         """
         separate test cases to groups and assign test cases to CI jobs.
@@ -225,6 +240,7 @@ class AssignTest(object):
         self.test_cases = self._search_cases(self.test_case_path, case_filter)
         self._apply_bot_test_count()
         test_groups = self._group_cases()
+
         for group in test_groups:
             for job in self.jobs:
                 if job.match_group(group):
@@ -232,10 +248,29 @@ class AssignTest(object):
                     break
             else:
                 failed_to_assign.append(group)
+
+        # print debug info
+        # total requirement of current pipeline
+        required_group_count = self._count_groups_by_keys(test_groups)
+        console_log("Required job count by tags:")
+        for tags in required_group_count:
+            console_log("\t{}: {}".format(tags, required_group_count[tags]))
+
+        # number of unused jobs
+        not_used_jobs = [job for job in self.jobs if "case group" not in job]
+        if not_used_jobs:
+            console_log("{} jobs not used. Please check if you define too much jobs".format(len(not_used_jobs)), "O")
+        for job in not_used_jobs:
+            console_log("\t{}".format(job["name"]), "O")
+
+        # failures
         if failed_to_assign:
-            console_log("Too many test cases vs jobs to run. Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
-            for group in failed_to_assign:
-                console_log("* Add job with: " + ",".join(group.ci_job_match_keys), "R")
+            console_log("Too many test cases vs jobs to run. "
+                        "Please increase parallel count in tools/ci/config/target-test.yml "
+                        "for jobs with specific tags:", "R")
+            failed_group_count = self._count_groups_by_keys(failed_to_assign)
+            for tags in failed_group_count:
+                console_log("\t{}: {}".format(tags, failed_group_count[tags]), "R")
             raise RuntimeError("Failed to assign test case to CI jobs")
 
     def output_configs(self, output_path):
