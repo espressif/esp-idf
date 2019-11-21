@@ -40,9 +40,9 @@ menu "Common ESP-related"
 
     config ESP_IPC_TASK_STACK_SIZE
         int "Inter-Processor Call (IPC) task stack size"
-        range 512 65536 if !ESP32_APPTRACE_ENABLE
-        range 2048 65536 if ESP32_APPTRACE_ENABLE
-        default 2048 if ESP32_APPTRACE_ENABLE
+        range 512 65536 if !APPTRACE_ENABLE
+        range 2048 65536 if APPTRACE_ENABLE
+        default 2048 if APPTRACE_ENABLE
         default 1024
         help
             Configure the IPC tasks stack size. One IPC task runs on each core
@@ -222,5 +222,13 @@ menu "Common ESP-related"
             handler to run without needing to re-enable cache first. This may be necessary to debug some
             complex issues with crashes while flash cache is disabled (for example, when writing to
             SPI flash.)
+
+    config ESP_DEBUG_STUBS_ENABLE
+        bool
+        default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+        depends on !ESP32_TRAX && !ESP32S2_TRAX
+        help
+            Debug stubs are used by OpenOCD to execute pre-compiled onboard code
+            which does some useful debugging stuff, e.g. GCOV data dump.
 
 endmenu # Common ESP-related

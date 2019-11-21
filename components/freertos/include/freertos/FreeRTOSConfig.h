@@ -178,7 +178,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configMAX_PRIORITIES			( 25 )
 #endif
 
-#ifndef CONFIG_ESP32_APPTRACE_ENABLE
+#ifndef CONFIG_APPTRACE_ENABLE
 #define configMINIMAL_STACK_SIZE		768
 #else
 /* apptrace module requires at least 2KB of stack per task */
