@@ -1237,6 +1237,56 @@ UT_033:
     - UT_T1_PSRAMV0
     - psram
 
+UT_034:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_035:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_036:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+
+UT_037:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_no32kXTAL
+    - psram
+
+UT_038:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_039:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_040:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+
+UT_041:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_32kXTAL
+    - psram
+
 IT_001:
   <<: *test_template
   parallel: 3
