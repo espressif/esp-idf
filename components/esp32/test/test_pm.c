@@ -155,12 +155,12 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm]")
     TEST_ESP_OK(ulp_process_macros_and_load(0, ulp_code, &size));
 
     light_sleep_enable();
-
+    int rtcio_num = rtc_io_number_get(ext1_wakeup_gpio);
     for (int i = 0; i < 10; ++i) {
         /* Set GPIO low */
-        REG_CLR_BIT(rtc_gpio_desc[ext1_wakeup_gpio].reg, rtc_gpio_desc[ext1_wakeup_gpio].hold_force);
+        REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold_force);
         rtc_gpio_set_level(ext1_wakeup_gpio, 0);
-        REG_SET_BIT(rtc_gpio_desc[ext1_wakeup_gpio].reg, rtc_gpio_desc[ext1_wakeup_gpio].hold_force);
+        REG_SET_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold_force);
 
         /* Wait for the next tick */
         vTaskDelay(1);
@@ -186,7 +186,7 @@ TEST_CASE("Can wake up from automatic light sleep by GPIO", "[pm]")
         TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_hs - start_hs);
         TEST_ASSERT_INT32_WITHIN(2 * portTICK_PERIOD_MS * 1000, delay_ms * 1000, end_rtc - start_rtc);
     }
-    REG_CLR_BIT(rtc_gpio_desc[ext1_wakeup_gpio].reg, rtc_gpio_desc[ext1_wakeup_gpio].hold_force);
+    REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold_force);
     rtc_gpio_deinit(ext1_wakeup_gpio);
 
     light_sleep_disable();

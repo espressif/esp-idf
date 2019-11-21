@@ -416,7 +416,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level)
         ESP_LOGE(TAG, "Conflicting wake-up triggers: touch / ULP");
         return ESP_ERR_INVALID_STATE;
     }
-    s_config.ext0_rtc_gpio_num = gpio_num;
+    s_config.ext0_rtc_gpio_num = rtc_io_number_get(gpio_num);
     s_config.ext0_trigger_level = level;
     s_config.wakeup_triggers |= RTC_EXT0_TRIG_EN;
     return ESP_OK;
@@ -430,15 +430,11 @@ static void ext0_wakeup_prepare(void)
     // Set level which will trigger wakeup
     SET_PERI_REG_BITS(RTC_CNTL_EXT_WAKEUP_CONF_REG, 0x1,
             s_config.ext0_trigger_level, RTC_CNTL_EXT_WAKEUP0_LV_S);
-    // Find GPIO descriptor in the rtc_gpio_reg table and configure the pad
-    for (size_t gpio_num = 0; gpio_num < GPIO_PIN_COUNT; ++gpio_num) {
-        if (gpio_num == rtc_gpio_num && RTC_GPIO_IS_VALID_GPIO(gpio_num)) {
-            rtc_gpio_reg[gpio_num]->mux_sel = 1;
-            rtc_gpio_reg[gpio_num]->fun_sel = 0;
-            rtc_gpio_reg[gpio_num]->fun_ie = 1;
-            break;
-        }
-    }
+    // Find GPIO descriptor in the rtc_io_desc table and configure the pad
+    const rtc_io_desc_t* desc = &rtc_io_desc[rtc_gpio_num];
+    REG_SET_BIT(desc->reg, desc->mux);
+    SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
+    REG_SET_BIT(desc->reg, desc->ie);
 }
 
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode_t mode)
@@ -456,7 +452,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t mask, esp_sleep_ext1_wakeup_mode
             ESP_LOGE(TAG, "Not an RTC IO: GPIO%d", gpio);
             return ESP_ERR_INVALID_ARG;
         }
-        rtc_gpio_mask |= BIT(gpio);
+        rtc_gpio_mask |= BIT(rtc_io_number_get(gpio));
     }
     s_config.ext1_rtc_gpio_mask = rtc_gpio_mask;
     s_config.ext1_trigger_mode = mode;
@@ -469,27 +465,27 @@ static void ext1_wakeup_prepare(void)
     // Configure all RTC IOs selected as ext1 wakeup inputs
     uint32_t rtc_gpio_mask = s_config.ext1_rtc_gpio_mask;
     for (int gpio = 0; gpio < GPIO_PIN_COUNT && rtc_gpio_mask != 0; ++gpio) {
-        if(!RTC_GPIO_IS_VALID_GPIO(gpio)) {
+        int rtc_pin = rtc_io_number_get(gpio);
+        if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
         }
-        if ((rtc_gpio_mask & BIT(gpio)) == 0) {
-            continue;
-        }
+        const rtc_io_desc_t* desc = &rtc_io_desc[rtc_pin];
         // Route pad to RTC
-        rtc_gpio_reg[gpio]->mux_sel = 1;
-        rtc_gpio_reg[gpio]->fun_sel = 0;
+        REG_SET_BIT(desc->reg, desc->mux);
+        SET_PERI_REG_BITS(desc->reg, 0x3, 0, desc->func);
         // set input enable in sleep mode
-        rtc_gpio_reg[gpio]->fun_ie = 1;
+        REG_SET_BIT(desc->reg, desc->ie);
         // Pad configuration depends on RTC_PERIPH state in sleep mode
         if (s_config.pd_options[ESP_PD_DOMAIN_RTC_PERIPH] != ESP_PD_OPTION_ON) {
             // RTC_PERIPH will be powered down, so RTC_IO_ registers will
             // loose their state. Lock pad configuration.
             // Pullups/pulldowns also need to be disabled.
-            rtc_gpio_reg[gpio]->rue = 0;
-            rtc_gpio_reg[gpio]->rde = 0;
+            REG_CLR_BIT(desc->reg, desc->pulldown);
+            REG_CLR_BIT(desc->reg, desc->pullup);
+            REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, desc->hold_force);
         }
         // Keep track of pins which are processed to bail out early
-        rtc_gpio_mask &= ~BIT(gpio);
+        rtc_gpio_mask &= ~BIT(rtc_pin);
     }
     // Clear state from previous wakeup
     REG_SET_BIT(RTC_CNTL_EXT_WAKEUP1_REG, RTC_CNTL_EXT_WAKEUP1_STATUS_CLR);
@@ -512,7 +508,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
         if (!RTC_GPIO_IS_VALID_GPIO(gpio)) {
             continue;
         }
-        int rtc_pin = gpio;
+        int rtc_pin = rtc_io_number_get(gpio);
         if ((status & BIT(rtc_pin)) == 0) {
             continue;
         }

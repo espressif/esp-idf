@@ -1,4 +1,4 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,4 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "soc/rtc_periph.h"
+#pragma once
+
+#define SOC_RTC_IO_PIN_COUNT   22
+#define SOC_PIN_FUNC_RTC_IO     0

@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #ifndef _SOC_RTC_GPIO_CHANNEL_H
-#define _SOC_RTC_GPIO_CHANNEL_H        
+#define _SOC_RTC_GPIO_CHANNEL_H
 
 #define RTC_GPIO_NUMBER             22
 
