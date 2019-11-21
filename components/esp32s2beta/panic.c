@@ -408,7 +408,6 @@ void xt_unhandled_exception(XtExcFrame *frame)
             panicPutStr("Unknown");
         }
         panicPutStr(")");
-#ifdef PANIC_COMPLETE_IN_ESP32C
         if (esp_cpu_in_ocd_debug_mode()) {
             panicPutStr(" at pc=");
             panicPutHex(frame->pc);
@@ -426,7 +425,6 @@ void xt_unhandled_exception(XtExcFrame *frame)
             setFirstBreakpoint(frame->pc);
             return;
         }
-#endif
         panicPutStr(". Exception was unhandled.\r\n");
     }
     commonErrorHandler(frame);
