@@ -211,7 +211,7 @@ uint64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
     // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
     // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
     // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
@@ -237,7 +237,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
         }
         REG_WRITE(FRC_TIMER_ALARM_REG(1), alarm_reg_val);
     } while (REG_READ(FRC_TIMER_ALARM_REG(1)) <= REG_READ(FRC_TIMER_COUNT_REG(1)));
-    portEXIT_CRITICAL(&s_time_update_lock);
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)

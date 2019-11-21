@@ -264,12 +264,12 @@ static IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
 
 static IRAM_ATTR void timer_list_lock(void)
 {
-    portENTER_CRITICAL(&s_timer_lock);
+    portENTER_CRITICAL_SAFE(&s_timer_lock);
 }
 
 static IRAM_ATTR void timer_list_unlock(void)
 {
-    portEXIT_CRITICAL(&s_timer_lock);
+    portEXIT_CRITICAL_SAFE(&s_timer_lock);
 }
 
 static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
