@@ -100,6 +100,20 @@ class Group(object):
                 added = True
         return added
 
+    def add_extra_case(self, case):
+        """
+        By default (``add_case`` method), cases will only be added when have equal values of all filters with group.
+        But in some cases, we also want to add cases which are not best fit.
+        For example, one group has can run cases require (A, B). It can also accept cases require (A, ) and (B, ).
+        When assign failed by best fit, we will use this method to try if we can assign all failed cases.
+
+        If subclass want to retry, they need to overwrite this method.
+        Logic can be applied to handle such scenario could be different for different cases.
+
+        :return: True if accepted else False
+        """
+        pass
+
     def output(self):
         """
         output data for job configs
@@ -188,6 +202,26 @@ class AssignTest(object):
                 groups.append(self.case_group(case))
         return groups
 
+    def _assign_failed_cases(self, assigned_groups, failed_groups):
+        """ try to assign failed cases to already assigned test groups """
+        still_failed_groups = []
+        failed_cases = []
+        for group in failed_groups:
+            failed_cases.extend(group.case_list)
+        for case in failed_cases:
+            # first try to assign to already assigned groups
+            for group in assigned_groups:
+                if group.add_extra_case(case):
+                    break
+            else:
+                # if failed, group the failed cases
+                for group in still_failed_groups:
+                    if group.add_case(case):
+                        break
+                else:
+                    still_failed_groups.append(self.case_group(case))
+        return still_failed_groups
+
     @staticmethod
     def _apply_bot_filter():
         """
@@ -236,6 +270,7 @@ class AssignTest(object):
         :return: None
         """
         failed_to_assign = []
+        assigned_groups = []
         case_filter = self._apply_bot_filter()
         self.test_cases = self._search_cases(self.test_case_path, case_filter)
         self._apply_bot_test_count()
@@ -245,9 +280,13 @@ class AssignTest(object):
             for job in self.jobs:
                 if job.match_group(group):
                     job.assign_group(group)
+                    assigned_groups.append(group)
                     break
             else:
                 failed_to_assign.append(group)
+
+        if failed_to_assign:
+            failed_to_assign = self._assign_failed_cases(assigned_groups, failed_to_assign)
 
         # print debug info
         # total requirement of current pipeline

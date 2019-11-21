@@ -38,6 +38,21 @@ class Group(CIAssignTest.Group):
             attr = Group.ATTR_CONVERT_TABLE[attr]
         return case[attr]
 
+    def add_extra_case(self, case):
+        """ If current group contains all tags required by case, then add succeed """
+        added = False
+        if self.accept_new_case():
+            for key in self.filters:
+                if self._get_case_attr(case, key) != self.filters[key]:
+                    if key == "tags":
+                        if self._get_case_attr(case, key).issubset(self.filters[key]):
+                            continue
+                    break
+            else:
+                self.case_list.append(case)
+                added = True
+        return added
+
     def _create_extra_data(self, test_cases, test_function):
         """
         For unit test case, we need to copy some attributes of test cases into config file.
@@ -120,6 +135,8 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
             with open(test_case_path, "r") as f:
                 raw_data = yaml.load(f)
             test_cases = raw_data["test cases"]
+            for case in test_cases:
+                case["tags"] = set(case["tags"])
         except IOError:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")
             test_cases = []
