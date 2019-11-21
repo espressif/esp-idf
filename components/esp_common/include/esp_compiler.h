@@ -22,7 +22,12 @@
  * to reorder instructions producing more optimized 
  * code.
  */ 
+#if (CONFIG_COMPILER_OPTIMIZATION_PERF)
 #define likely(x)      __builtin_expect(!!(x), 1) 
 #define unlikely(x)    __builtin_expect(!!(x), 0) 
+#else
+#define likely(x)      (x)
+#define unlikely(x)    (x) 
+#endif
 
 #endif
