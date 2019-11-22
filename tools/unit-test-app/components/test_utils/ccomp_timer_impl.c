@@ -126,29 +126,17 @@ static void set_perfmon_interrupt(bool enable)
     eri_write(ERI_PERFMON_PMCTRL0 + I_STALL_COUNTER_ID * sizeof(int32_t), i_pmctrl);
 }
 
-static void intr_alloc(void* params)
-{
-    int *id = (int*) params;
-    // Keep track of how many times each counter has overflowed.
-    esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE, 0,
-                         perf_counter_overflow_handler, NULL, &s_status[*id].intr_handle);
-}
-
-// Linker seems to be smart enough to drop this if ccomp_timer APIs are not used.
-static __attribute__((constructor)) void ccomp_timer_impl_start_init(void)
-{
-#if !CONFIG_FREERTOS_UNICORE
-    for (int i = 0; i < portNUM_PROCESSORS; i++) {
-        esp_ipc_call_blocking(i, intr_alloc, &i);
-    }
-#else
-    int i = 0;
-    intr_alloc(&i);
-#endif
-}
 
 esp_err_t ccomp_timer_impl_init(void)
 {
+    // Keep track of how many times each counter has overflowed.
+    esp_err_t err = esp_intr_alloc(ETS_INTERNAL_PROFILING_INTR_SOURCE, 0,
+                         perf_counter_overflow_handler, NULL, &s_status[xPortGetCoreID()].intr_handle);
+
+    if (err != ESP_OK) {
+        return err;
+    }
+
     xtensa_perfmon_init(D_STALL_COUNTER_ID,
                         XTPERF_CNT_D_STALL,
                         XTPERF_MASK_D_STALL_BUSY, 0, -1);
@@ -164,6 +152,13 @@ esp_err_t ccomp_timer_impl_init(void)
 esp_err_t ccomp_timer_impl_deinit(void)
 {
     set_perfmon_interrupt(false);
+
+    esp_err_t err = esp_intr_free(s_status[xPortGetCoreID()].intr_handle);
+
+    if (err != ESP_OK) {
+        return err;
+    }
+
     s_status[xPortGetCoreID()].intr_handle = NULL;
     s_status[xPortGetCoreID()].state = PERF_TIMER_UNINIT;
     return ESP_OK;
