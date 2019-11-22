@@ -16,6 +16,11 @@
 #define _ESP_NETIF_IP_ADDR_H_
 
 #include <machine/endian.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if BYTE_ORDER == BIG_ENDIAN
 #define esp_netif_htonl(x) ((uint32_t)(x))
 #else
@@ -94,5 +99,9 @@ typedef struct _ip_addr {
     } u_addr;
     uint8_t type;
 } esp_ip_addr_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_NETIF_IP_ADDR_H_

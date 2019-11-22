@@ -15,6 +15,10 @@
 #ifndef _ESP_NETIF_TYPES_H_
 #define _ESP_NETIF_TYPES_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Definition of ESP-NETIF based errors
  */
@@ -197,5 +201,9 @@ struct esp_netif_config {
  * @brief  ESP-NETIF Receive function type
  */
 typedef esp_err_t (*esp_netif_receive_t)(esp_netif_t *esp_netif, void *buffer, size_t len, void *eb);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // _ESP_NETIF_TYPES_H_
