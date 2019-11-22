@@ -310,6 +310,8 @@ def run_unit_test_cases(env, extra_data):
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
+        # close DUT when finish running all cases for one config
+        env.close_dut(dut.name)
 
     # raise exception if any case fails
     if failed_cases:
@@ -511,6 +513,10 @@ def run_multiple_devices_cases(env, extra_data):
                     failed_cases.append(format_case_name(one_case))
                     Utility.console_log("Failed: " + format_case_name(one_case), color="red")
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
+        # close all DUTs when finish running all cases for one config
+        for dut in duts:
+            env.close_dut(dut)
+        duts = {}
 
     if failed_cases:
         Utility.console_log("Failed Cases:", color="red")
@@ -662,6 +668,8 @@ def run_multiple_stage_cases(env, extra_data):
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
+        # close DUT when finish running all cases for one config
+        env.close_dut(dut.name)
 
     # raise exception if any case fails
     if failed_cases:
