@@ -20,6 +20,35 @@ menu "Core dump"
             bool "None"
     endchoice
 
+    choice ESP32_COREDUMP_DATA_FORMAT
+        prompt "Core dump data format"
+        default ESP32_COREDUMP_DATA_FORMAT_ELF
+        depends on !ESP32_ENABLE_COREDUMP_TO_NONE
+        help
+            Select the data format for core dump.
+        config ESP32_COREDUMP_DATA_FORMAT_BIN
+            bool "Binary format"
+            select ESP32_ENABLE_COREDUMP
+        config ESP32_COREDUMP_DATA_FORMAT_ELF
+            bool "ELF format"
+            select ESP32_ENABLE_COREDUMP
+    endchoice
+
+    choice ESP32_COREDUMP_CHECKSUM
+        prompt "Core dump data integrity check"
+        default ESP32_COREDUMP_CHECKSUM_CRC32
+        depends on !ESP32_ENABLE_COREDUMP_TO_NONE
+        help
+            Select the integrity check for the core dump.
+        config ESP32_COREDUMP_CHECKSUM_CRC32
+            bool "Use CRC32 for integrity verification"
+            select ESP32_ENABLE_COREDUMP
+        config ESP32_COREDUMP_CHECKSUM_SHA256
+            bool "Use SHA256 for integrity verification"
+            select ESP32_ENABLE_COREDUMP
+            depends on ESP32_COREDUMP_DATA_FORMAT_ELF
+    endchoice
+
     config ESP32_ENABLE_COREDUMP
         bool
         default F
@@ -40,6 +69,16 @@ menu "Core dump"
         help
             Config delay (in ms) before printing core dump to UART.
             Delay can be interrupted by pressing Enter key.
+
+    config ESP32_CORE_DUMP_STACK_SIZE
+        int "Reserved stack size"
+        depends on ESP32_ENABLE_COREDUMP
+        default 0
+        help
+            Size of the memory to be reserved for core dump stack. If 0 core dump process will run on
+            the stack of crashed task/ISR, otherwise special stack will be allocated.
+            To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
+            NOTE: It eats DRAM.
 
 endmenu
 
