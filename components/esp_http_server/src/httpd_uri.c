@@ -309,6 +309,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
     req->user_ctx = uri->user_ctx;
 
     /* Final step for a WebSocket handshake verification */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
     if (uri->is_websocket && aux->ws_handshake_detect && uri->method == HTTP_GET) {
         ESP_LOGD(TAG, LOG_FMT("Responding WS handshake to sock %d"), aux->sd->fd);
         esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req);
@@ -322,6 +323,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         /* Return immediately after handshake, no need to call handler here */
         return ESP_OK;
     }
+#endif
 
     /* Invoke handler */
     if (uri->handler(req) != ESP_OK) {

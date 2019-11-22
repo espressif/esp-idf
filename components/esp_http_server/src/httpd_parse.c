@@ -376,6 +376,7 @@ static esp_err_t cb_headers_complete(http_parser *parser)
 
     /* Handle upgrade requests - only WebSocket is supported for now */
     if (parser->upgrade) {
+#ifdef CONFIG_HTTPD_WS_SUPPORT
         ESP_LOGD(TAG, LOG_FMT("Got an upgrade request"));
 
         /* If there's no "Upgrade" header field, then it's not WebSocket. */
@@ -397,6 +398,12 @@ static esp_err_t cb_headers_complete(http_parser *parser)
 
         /* Now set handshake flag to true */
         ra->ws_handshake_detect = true;
+#else
+        ESP_LOGD(TAG, LOG_FMT("WS functions has been disabled, Upgrade request is not supported."));
+        parser_data->error = HTTPD_400_BAD_REQUEST;
+        parser_data->status = PARSING_FAILED;
+        return ESP_FAIL;
+#endif
     }
 
     parser_data->status = PARSING_BODY;
@@ -731,8 +738,10 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
     r->free_ctx = sd->free_ctx;
     r->ignore_sess_ctx_changes = sd->ignore_sess_ctx_changes;
 
-    /* Handle WebSocket */
     esp_err_t ret;
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    /* Handle WebSocket */
     ESP_LOGD(TAG, LOG_FMT("New request, has WS? %s, sd->ws_handler valid? %s"),
              sd->ws_handshake_done ? "Yes" : "No",
              sd->ws_handler != NULL ? "Yes" : "No");
@@ -761,6 +770,7 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
         }
         return ret;
     }
+#endif
 
     /* Parse request */
     ret = httpd_parse_req(hd);

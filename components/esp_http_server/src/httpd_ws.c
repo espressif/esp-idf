@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+
+
 #include <stdlib.h>
 #include <sys/random.h>
 #include <esp_log.h>
@@ -21,6 +23,8 @@
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
 
 #define TAG "httpd_ws"
 
@@ -362,3 +366,5 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
 
     return ESP_OK;
 }
+
+#endif /* CONFIG_HTTPD_WS_SUPPORT */

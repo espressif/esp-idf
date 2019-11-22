@@ -93,9 +93,11 @@ struct httpd_req_aux {
         const char *value;
     } *resp_hdrs;                                   /*!< Additional headers in response packet */
     struct http_parser_url url_parse_res;           /*!< URL parsing result, used for retrieving URL elements */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
     bool ws_handshake_detect;                       /*!< WebSocket handshake detection flag */
     httpd_ws_type_t ws_type;                        /*!< WebSocket frame type */
     bool ws_final;                                  /*!< WebSocket FIN bit (final frame or not) */
+#endif
 };
 
 /**

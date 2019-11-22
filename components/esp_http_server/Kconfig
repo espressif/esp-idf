@@ -39,4 +39,10 @@ menu "HTTP Server"
             Enabling this will log discarded binary HTTP request data at Debug level.
             For large content data this may not be desirable as it will clutter the log.
 
+    config HTTPD_WS_SUPPORT
+        bool "WebSocket server support"
+        default y
+        help
+            This sets the WebSocket server support.
+
 endmenu
