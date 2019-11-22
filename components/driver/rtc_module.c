@@ -41,6 +41,7 @@
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/rom/ets_sys.h"
 #endif
+#include "hal/dac_hal.h"
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -48,19 +49,17 @@
 #endif
 #include "sys/queue.h"
 
-
 #define ADC_FSM_RSTB_WAIT_DEFAULT     (8)
 #define ADC_FSM_START_WAIT_DEFAULT    (5)
 #define ADC_FSM_STANDBY_WAIT_DEFAULT  (100)
 #define ADC_FSM_TIME_KEEP             (-1)
 #define ADC_MAX_MEAS_NUM_DEFAULT      (255)
 #define ADC_MEAS_NUM_LIM_DEFAULT      (1)
-#define SAR_ADC_CLK_DIV_DEFUALT       (2)
+#define SAR_ADC_CLK_DIV_DEFAULT       (2)
 #define ADC_PATT_LEN_MAX              (16)
 #define TOUCH_PAD_FILTER_FACTOR_DEFAULT   (4)   // IIR filter coefficient.
 #define TOUCH_PAD_SHIFT_DEFAULT           (4)   // Increase computing accuracy.
 #define TOUCH_PAD_SHIFT_ROUND_DEFAULT     (8)   // ROUND = 2^(n-1); rounding off for fractional.
-#define DAC_ERR_STR_CHANNEL_ERROR   "DAC channel error"
 
 static const char *RTC_MODULE_TAG = "RTC_MODULE";
 
@@ -136,7 +135,6 @@ typedef enum {
 
 static const char TAG[] = "adc";
 
-static inline void dac_output_set_enable(dac_channel_t channel, bool enable);
 static inline void adc1_hall_enable(bool enable);
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -973,7 +971,7 @@ void adc_power_off(void)
 esp_err_t adc_set_clk_div(uint8_t clk_div)
 {
     portENTER_CRITICAL(&rtc_spinlock);
-    // ADC clock devided from APB clk, 80 / 2 = 40Mhz,
+    // ADC clock divided from APB clk, 80 / 2 = 40Mhz,
     SYSCON.saradc_ctrl.sar_clk_div = clk_div;
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
@@ -1298,7 +1296,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
     }
     portEXIT_CRITICAL(&rtc_spinlock);
     adc_set_i2s_data_source(ADC_I2S_DATA_SRC_ADC);
-    adc_set_clk_div(SAR_ADC_CLK_DIV_DEFUALT);
+    adc_set_clk_div(SAR_ADC_CLK_DIV_DEFAULT);
     // Set internal FSM wait time.
     adc_set_fsm_time(ADC_FSM_RSTB_WAIT_DEFAULT, ADC_FSM_START_WAIT_DEFAULT, ADC_FSM_STANDBY_WAIT_DEFAULT,
             ADC_FSM_TIME_KEEP);
@@ -1602,15 +1600,15 @@ static inline void adc2_dac_disable( adc2_channel_t channel)
 {
 #if CONFIG_IDF_TARGET_ESP32
     if ( channel == ADC2_CHANNEL_8 ) { // the same as DAC channel 1
-        dac_output_set_enable( DAC_CHANNEL_1, false );
+        dac_ll_power_down( DAC_CHANNEL_1 );
     } else if ( channel == ADC2_CHANNEL_9 ) {
-        dac_output_set_enable( DAC_CHANNEL_2, false );
+        dac_ll_power_down( DAC_CHANNEL_2 );
     }
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     if ( channel == ADC2_CHANNEL_6 ) { // the same as DAC channel 1
-        dac_output_set_enable( DAC_CHANNEL_1, false );
+        dac_ll_power_down( DAC_CHANNEL_1 );
     } else if ( channel == ADC2_CHANNEL_7 ) {
-        dac_output_set_enable( DAC_CHANNEL_2, false );
+        dac_ll_power_down( DAC_CHANNEL_2 );
     }
 #endif
 }
@@ -1686,110 +1684,6 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
     //set en_pad for channels 7,8,9 (bits 0x380)
     SENS.sar_meas_start2.sar2_en_pad = 1<<channel;
 #endif
-    return ESP_OK;
-}
-
-/*---------------------------------------------------------------
-                    DAC
----------------------------------------------------------------*/
-esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    RTC_MODULE_CHECK(gpio_num, "Param null", ESP_ERR_INVALID_ARG);
-
-    switch (channel) {
-    case DAC_CHANNEL_1:
-        *gpio_num = DAC_CHANNEL_1_GPIO_NUM;
-        break;
-    case DAC_CHANNEL_2:
-        *gpio_num = DAC_CHANNEL_2_GPIO_NUM;
-        break;
-    default:
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    return ESP_OK;
-}
-
-static esp_err_t dac_rtc_pad_init(dac_channel_t channel)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    gpio_num_t gpio_num = 0;
-    dac_pad_get_io_num(channel, &gpio_num);
-    rtc_gpio_init(gpio_num);
-    rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pullup_dis(gpio_num);
-    rtc_gpio_pulldown_dis(gpio_num);
-
-    return ESP_OK;
-}
-
-static inline void dac_output_set_enable(dac_channel_t channel, bool enable)
-{
-    RTCIO.pad_dac[channel-DAC_CHANNEL_1].dac_xpd_force = enable;
-    RTCIO.pad_dac[channel-DAC_CHANNEL_1].xpd_dac = enable;
-}
-
-esp_err_t dac_output_enable(dac_channel_t channel)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    dac_rtc_pad_init(channel);
-    portENTER_CRITICAL(&rtc_spinlock);
-    dac_output_set_enable(channel, true);
-    portEXIT_CRITICAL(&rtc_spinlock);
-
-    return ESP_OK;
-}
-
-esp_err_t dac_output_disable(dac_channel_t channel)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&rtc_spinlock);
-    dac_output_set_enable(channel, false);
-    portEXIT_CRITICAL(&rtc_spinlock);
-
-    return ESP_OK;
-}
-
-esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&rtc_spinlock);
-    //Disable Tone
-    CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_SW_TONE_EN);
-
-    //Disable Channel Tone
-    if (channel == DAC_CHANNEL_1) {
-        CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN1_M);
-    } else if (channel == DAC_CHANNEL_2) {
-        CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
-    }
-
-    //Set the Dac value
-    if (channel == DAC_CHANNEL_1) {
-        SET_PERI_REG_BITS(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC, dac_value, RTC_IO_PDAC1_DAC_S);   //dac_output
-    } else if (channel == DAC_CHANNEL_2) {
-        SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, dac_value, RTC_IO_PDAC2_DAC_S);   //dac_output
-    }
-
-    portEXIT_CRITICAL(&rtc_spinlock);
-
-    return ESP_OK;
-}
-
-esp_err_t dac_i2s_enable(void)
-{
-    portENTER_CRITICAL(&rtc_spinlock);
-    SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
-    portEXIT_CRITICAL(&rtc_spinlock);
-    return ESP_OK;
-}
-
-esp_err_t dac_i2s_disable(void)
-{
-    portENTER_CRITICAL(&rtc_spinlock);
-    CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
-    portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 

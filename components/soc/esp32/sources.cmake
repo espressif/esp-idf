@@ -1,4 +1,5 @@
 set(SOC_SRCS "cpu_util.c"
+    "dac_periph.c"
     "gpio_periph.c"
     "rtc_clk.c"
     "rtc_clk_init.c"

@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -12,27 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#include "soc/dac_periph.h"
 
-#include "soc/sens_reg.h"
-#include "soc/sens_struct.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_io_struct.h"
-#include "soc/rtc.h"
-#include "soc/dac_channel.h"
-#include "soc/dac_caps.h"
-
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
-typedef struct {
-    const uint8_t dac_channel_io_num[SOC_DAC_PERIPH_NUM];
-} dac_signal_conn_t;
-
-extern const dac_signal_conn_t dac_periph_signal;
-
-#ifdef __cplusplus
-}
-#endif
+/*
+ Bunch of constants for DAC peripheral: GPIO number
+*/
+const dac_signal_conn_t dac_periph_signal = {
+    .dac_channel_io_num[0] = DAC_CHANNEL_1_GPIO_NUM,
+    .dac_channel_io_num[1] = DAC_CHANNEL_2_GPIO_NUM,
+};
