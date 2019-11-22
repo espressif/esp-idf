@@ -8,6 +8,24 @@ check_permissions:
   script:
     - tools/ci/check-executable.sh
 
+check_docs_lang_sync:
+  extends: .check_job_template
+  stage: pre_check
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  script:
+    - cd docs
+    - ./check_lang_folder_sync.sh
+
+check_docs_gh_links:
+  extends: .build_docs_template
+  stage: pre_check
+  variables:
+    SUBMODULES_TO_FETCH: "none"
+  script:
+    - cd docs
+    - ./build_docs.py gh-linkcheck
+
 check_version:
   extends: .check_job_template
   # Don't run this for feature/bugfix branches, so that it is possible to modify
