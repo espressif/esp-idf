@@ -270,7 +270,7 @@ static void cycle_fault_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpw
     gpio_config_t gp;
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = (1 << FAULT_SIG_NUM);
+    gp.pin_bit_mask = (1ULL << FAULT_SIG_NUM);
     gpio_config(&gp); // gpio configure should be more previous than mcpwm configuration
     gpio_set_level(FAULT_SIG_NUM, !input_sig);
 
@@ -299,7 +299,7 @@ static void oneshot_fault_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mc
     gpio_config_t gp;
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = (1 << FAULT_SIG_NUM);
+    gp.pin_bit_mask = (1ULL << FAULT_SIG_NUM);
     gpio_config(&gp); // gpio configure should be more previous than mcpwm configuration
     gpio_set_level(FAULT_SIG_NUM, !input_sig);
 
@@ -327,7 +327,7 @@ static void sync_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_si
     gpio_config_t gp;
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = (1 << SYN_SIG_NUM);
+    gp.pin_bit_mask = (1ULL << SYN_SIG_NUM);
     gpio_config(&gp);
     gpio_set_level(SYN_SIG_NUM, 0);
 
@@ -425,10 +425,10 @@ static void gpio_test_signal(void *arg)
 {
 
     printf("intializing test signal...\n");
-    gpio_config_t gp;
+    gpio_config_t gp = {};
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = 1<<CAP_SIG_NUM;
+    gp.pin_bit_mask = 1ULL << CAP_SIG_NUM;
     gpio_config(&gp);
     for (int i=0; i<1000; i++) {
         //here the period of test signal is 20ms

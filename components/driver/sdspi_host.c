@@ -315,7 +315,7 @@ esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
     gpio_config_t io_conf = {
         .intr_type = GPIO_PIN_INTR_DISABLE,
         .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 1LL << slot_config->gpio_cs,
+        .pin_bit_mask = 1ULL << slot_config->gpio_cs,
     };
 
     ret = gpio_config(&io_conf);
@@ -333,14 +333,14 @@ esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
         .pull_up_en = true
     };
     if (slot_config->gpio_cd != SDSPI_SLOT_NO_CD) {
-        io_conf.pin_bit_mask |= (1 << slot_config->gpio_cd);
+        io_conf.pin_bit_mask |= (1ULL << slot_config->gpio_cd);
         s_slots[slot].gpio_cd = slot_config->gpio_cd;
     } else {
         s_slots[slot].gpio_cd = GPIO_UNUSED;
     }
 
     if (slot_config->gpio_wp != SDSPI_SLOT_NO_WP) {
-        io_conf.pin_bit_mask |= (1 << slot_config->gpio_wp);
+        io_conf.pin_bit_mask |= (1ULL << slot_config->gpio_wp);
         s_slots[slot].gpio_wp = slot_config->gpio_wp;
     } else {
         s_slots[slot].gpio_wp = GPIO_UNUSED;
@@ -360,7 +360,7 @@ esp_err_t sdspi_host_init_slot(int slot, const sdspi_slot_config_t* slot_config)
             .intr_type = GPIO_INTR_LOW_LEVEL,
             .mode = GPIO_MODE_INPUT,
             .pull_up_en = true,
-            .pin_bit_mask = (1 << slot_config->gpio_int),
+            .pin_bit_mask = (1ULL << slot_config->gpio_int),
         };
         ret = gpio_config(&io_conf);
         if (ret != ESP_OK) {
