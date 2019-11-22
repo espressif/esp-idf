@@ -105,6 +105,10 @@ extensions = ['breathe',
               'doxygen_idf',
               'sphinx.ext.todo',
               'include_build_file',
+              # from https://github.com/pfalcon/sphinx_selective_exclude
+              'sphinx_selective_exclude.eager_only',
+              #'sphinx_selective_exclude.search_auto_exclude',
+              #'sphinx_selective_exclude.modindex_exclude',
               ]
 
 # sphinx.ext.todo extension parameters

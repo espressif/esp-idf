@@ -73,6 +73,7 @@ def build_docs(language, target, build_dir):
                 "-d", os.path.join(build_dir, "doctrees"),
                 # TODO: support multiple sphinx-warning.log files, somehow
                 "-w", "sphinx-warning.log",
+                "-t", target,
                 "-D", "idf_target={}".format(target),
                 os.path.join(os.path.abspath(os.path.dirname(__file__)), language), # srcdir for this language
                 os.path.join(build_dir, "html")                    # build directory

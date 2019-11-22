@@ -4,8 +4,10 @@ Standard Setup of Toolchain for Windows
 
 :link_to_translation:`zh_CN:[中文]`
 
-.. note::
-      Currently only 64-bit versions of Windows are supported. 32-bit Windows can use the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>`.
+.. only:: esp32
+
+    .. note::
+        Currently only 64-bit versions of Windows are supported. 32-bit Windows can use the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>`.
 
 Introduction
 ============
