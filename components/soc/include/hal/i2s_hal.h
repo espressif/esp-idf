@@ -48,14 +48,6 @@ typedef struct {
 void i2s_hal_reset_fifo(i2s_hal_context_t *hal);
 
 /**
- * @brief Get I2S revision
- *
- * @param hal Context of the HAL layer
- * @param rev I2S revision
- */
-#define i2s_hal_get_rev(hal, rev) i2s_ll_get_rev((hal)->dev, rev)
-
-/**
  * @brief Get I2S interrupt status
  *
  * @param hal Context of the HAL layer

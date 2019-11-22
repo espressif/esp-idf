@@ -31,6 +31,7 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"
+#include "esp_efuse.h"
 
 static const char* I2S_TAG = "I2S";
 
@@ -180,12 +181,14 @@ static esp_err_t i2s_isr_register(i2s_port_t i2s_num, int intr_alloc_flags, void
 static float i2s_apll_get_fi2s(int bits_per_sample, int sdm0, int sdm1, int sdm2, int odir)
 {
     int f_xtal = (int)rtc_clk_xtal_freq_get() * 1000000;
-    uint32_t rev;
-    i2s_hal_get_rev(&(p_i2s_obj[0]->hal), &rev); // I2S hardware instance address will not be used
-    if (rev) {
+
+#if CONFIG_IDF_TARGET_ESP32
+    /* ESP32 rev0 silicon issue for APLL range/accuracy, please see ESP32 ECO document for more information on this */
+    if (esp_efuse_get_chip_ver() == 0) {
         sdm0 = 0;
         sdm1 = 0;
     }
+#endif
     float fout = f_xtal * (sdm2 + sdm1 / 256.0f + sdm0 / 65536.0f + 4);
     if (fout < APLL_MIN_FREQ || fout > APLL_MAX_FREQ) {
         return APLL_MAX_FREQ;

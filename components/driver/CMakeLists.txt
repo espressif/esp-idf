@@ -40,6 +40,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${includes}
                     PRIV_INCLUDE_DIRS "include/driver"
+                    PRIV_REQUIRES efuse
                     REQUIRES esp_ringbuf soc) #cannot totally hide soc headers, since there are a lot arguments in the driver are chip-dependent
 
 # uses C11 atomic feature
