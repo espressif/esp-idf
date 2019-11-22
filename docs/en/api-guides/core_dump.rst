@@ -7,7 +7,7 @@ Overview
 ESP-IDF provides support to generate core dumps on unrecoverable software errors. This useful technique allows post-mortem analysis of software state at the moment of failure.
 Upon the crash system enters panic state, prints some information and halts or reboots depending configuration. User can choose to generate core dump in order to analyse
 the reason of failure on PC later on. Core dump contains snapshots of all tasks in the system at the moment of failure. Snapshots include tasks control blocks (TCB) and stacks.
-So it is possible to find out what task, at what instruction (line of code) and what callstack of that task lead to the crash. 
+So it is possible to find out what task, at what instruction (line of code) and what callstack of that task lead to the crash.
 ESP-IDF provides special script `espcoredump.py` to help users to retrieve and analyse core dumps. This tool provides two commands for core dumps analysis:
 
 * info_corefile - prints crashed task's registers, callstack, list of available tasks in the system, memory regions and contents of memory stored in core dump (TCBs and stacks)
@@ -29,8 +29,8 @@ There are a number of core dump related configuration options which user can cho
 * ELF format (Executable and Linkable Format file for core dump)
 * Binary format (Basic binary format for core dump)
 
-The ELF format contains extended features and allow to save more information about broken tasks and crashed software but it requires more space in the flash memory. 
-It also stores SHA256 of crashed application image. This format of core dump is recommended for new software designs and is flexible enough to extend saved information for future revisions. 
+The ELF format contains extended features and allow to save more information about broken tasks and crashed software but it requires more space in the flash memory.
+It also stores SHA256 of crashed application image. This format of core dump is recommended for new software designs and is flexible enough to extend saved information for future revisions.
 The Binary format is kept for compatibility standpoint, it uses less space in the memory to keep data and provides better performance.
 
 3. Maximum number of tasks snapshots in core dump (`Components -> Core dump -> Maximum number of tasks`).
@@ -47,8 +47,8 @@ The SHA256 hash algorithm provides greater probability of detecting corruption t
 Save core dump to flash
 -----------------------
 
-When this option is selected core dumps are saved to special partition on flash. When using default partition table files which are provided with ESP-IDF it automatically 
-allocates necessary space on flash, But if user wants to use its own layout file together with core dump feature it should define separate partition for core dump 
+When this option is selected core dumps are saved to special partition on flash. When using default partition table files which are provided with ESP-IDF it automatically
+allocates necessary space on flash, But if user wants to use its own layout file together with core dump feature it should define separate partition for core dump
 as it is shown below::
 
   # Name,   Type, SubType, Offset,  Size
@@ -58,7 +58,7 @@ as it is shown below::
   factory,  app,  factory, 0x10000, 1M
   coredump, data, coredump,,        64K
 
-There are no special requrements for partition name. It can be choosen according to the user application needs, but partition type should be 'data' and 
+There are no special requrements for partition name. It can be choosen according to the user application needs, but partition type should be 'data' and
 sub-type should be 'coredump'. Also when choosing partition size note that core dump data structure introduces constant overhead of 20 bytes and per-task overhead of 12 bytes.
 This overhead does not include size of TCB and stack for every task. So partirion size should be at least 20 + max tasks number x (12 + TCB size + max task stack size) bytes.
 
@@ -68,7 +68,7 @@ or `espcoredump.py -p </path/to/serial/port> dbg_corefile </path/to/program/elf/
 Print core dump to UART
 -----------------------
 
-When this option is selected base64-encoded core dumps are printed on UART upon system panic. In this case user should save core dump text body to some file manually and 
+When this option is selected base64-encoded core dumps are printed on UART upon system panic. In this case user should save core dump text body to some file manually and
 then run the following command: `espcoredump.py info_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>`
 or `espcoredump.py dbg_corefile -t b64 -c </path/to/saved/base64/text> </path/to/program/elf/file>`
 
@@ -112,3 +112,4 @@ Generic command syntax:
     * --save-core,-s SAVE_CORE.     Save core to file. Othwerwise temporary core file will be deleted. Ignored with "-c".
     * --rom-elf,-r ROM_ELF.         Path to ROM ELF file to use (if skipped "esp32_rom.elf" is used).
     * --print-mem,-m                Print memory dump. Used only with "info_corefile".
+    * <prog>                        Path to program ELF file.
