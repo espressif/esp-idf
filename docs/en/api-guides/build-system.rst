@@ -16,7 +16,7 @@ Overview
 An ESP-IDF project can be seen as an amalgamation of a number of components.
 For example, for a webserver that shows the current humidity, there could be:
 
-- The ESP32 base libraries (libc, ROM bindings, etc)
+- The ESP-IDF base libraries (libc, ROM bindings, etc)
 - The WiFi drivers
 - A TCP/IP stack
 - The FreeRTOS operating system
@@ -63,7 +63,7 @@ The ``idf.py`` command line tool provides a front-end for easily managing your p
 
 - CMake_, which configures the project to be built
 - A command line build tool (either Ninja_ build or `GNU Make`)
-- `esptool.py`_ for flashing ESP32.
+- `esptool.py`_ for flashing the target.
 
 The :ref:`getting started guide <get-started-configure>` contains a brief introduction to how to set up ``idf.py`` to configure, build, and flash projects.
 
@@ -82,10 +82,10 @@ Type ``idf.py --help`` for a list of commands. Here are a summary of the most us
   Building is incremental so if no source files or configuration has changed since the last build, nothing will be done.
 - ``idf.py clean`` will "clean" the project by deleting build output files from the build directory, forcing a "full rebuild" the next time the project is built. Cleaning doesn't delete CMake configuration output and some other files.
 - ``idf.py fullclean`` will delete the entire "build" directory contents. This includes all CMake configuration output. The next time the project is built, CMake will configure it from scratch. Note that this option recursively deletes *all* files in the build directory, so use with care. Project configuration is not deleted.
-- ``idf.py flash`` will automatically build the project if necessary, and then flash it to an ESP32. The ``-p`` and ``-b`` options can be used to set serial port name and flasher baud rate, respectively.
-- ``idf.py monitor`` will display serial output from the ESP32. The ``-p`` option can be used to set the serial port name. Type ``Ctrl-]`` to exit the monitor. See :doc:`tools/idf-monitor` for more details about using the monitor.
+- ``idf.py flash`` will automatically build the project if necessary, and then flash it to the target. The ``-p`` and ``-b`` options can be used to set serial port name and flasher baud rate, respectively.
+- ``idf.py monitor`` will display serial output from the target. The ``-p`` option can be used to set the serial port name. Type ``Ctrl-]`` to exit the monitor. See :doc:`tools/idf-monitor` for more details about using the monitor.
 
-Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p COM4 clean flash monitor`` will clean the source tree, then build the project and flash it to the ESP32 before running the serial monitor.
+Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p COM4 clean flash monitor`` will clean the source tree, then build the project and flash it to the target before running the serial monitor.
 
 For commands that are not known to ``idf.py`` an attempt to execute them as a build system target will be made.
 
@@ -97,8 +97,8 @@ Advanced Commands
 ^^^^^^^^^^^^^^^^^
 
 - ``idf.py app``, ``idf.py bootloader``, ``idf.py partition_table`` can be used to build only the app, bootloader, or partition table from the project as applicable.
-- There are matching commands ``idf.py app-flash``, etc. to flash only that single part of the project to the ESP32.
-- ``idf.py -p PORT erase_flash`` will use esptool.py to erase the ESP32's entire flash chip.
+- There are matching commands ``idf.py app-flash``, etc. to flash only that single part of the project to the target.
+- ``idf.py -p PORT erase_flash`` will use esptool.py to erase the target's entire flash chip.
 - ``idf.py size`` prints some size information about the app. ``size-components`` and ``size-files`` are similar commands which print more detailed per-component or per-source-file information, respectively. If you define variable ``-DOUTPUT_JSON=1`` when running CMake (or ``idf.py``), the output will be formatted as JSON not as human readable text.
 - ``idf.py reconfigure`` re-runs CMake_ even if it doesn't seem to need re-running. This isn't necessary during normal usage, but can be useful after adding/removing files from the source tree, or when modifying CMake cache variables. For example, ``idf.py -DNAME='VALUE' reconfigure`` can be used to set variable ``NAME`` in CMake cache to value ``VALUE``.
 
