@@ -18,16 +18,31 @@ Configuration
 
 There are a number of core dump related configuration options which user can choose in project configuration menu (`idf.py menuconfig`).
 
-1. Core dump data destination (`Components -> ESP32-specific config -> Core dump -> Data destination`):
+1. Core dump data destination (`Components -> Core dump -> Data destination`):
 
-* Disable core dump generation
-* Save core dump to flash
-* Print core dump to UART
+* Save core dump to Flash (Flash)
+* Print core dump to UART (UART)
+* Disable core dump generation (None)
 
-2. Maximum number of tasks snapshots in core dump (`Components -> ESP32-specific config -> Core dump -> Maximum number of tasks`).
+2. Core dump data format (`Components -> Core dump -> Core dump data format`):
 
-3. Delay before core dump is printed to UART (`Components -> ESP32-specific config -> Core dump -> Delay before print to UART`). Value is in ms.
+* ELF format (Executable and Linkable Format file for core dump)
+* Binary format (Basic binary format for core dump)
 
+The ELF format contains extended features and allow to save more information about broken tasks and crashed software but it requires more space in the flash memory. 
+It also stores SHA256 of crashed application image. This format of core dump is recommended for new software designs and is flexible enough to extend saved information for future revisions. 
+The Binary format is kept for compatibility standpoint, it uses less space in the memory to keep data and provides better performance.
+
+3. Maximum number of tasks snapshots in core dump (`Components -> Core dump -> Maximum number of tasks`).
+
+4. Delay before core dump is printed to UART (`Components -> Core dump -> Delay before print to UART`). Value is in ms.
+
+5. Type of data integrity check for core dump (`Components -> Core dump -> Core dump data integrity check`).
+
+* Use CRC32 for core dump integrity verification
+* Use SHA256 for core dump integrity verification
+
+The SHA256 hash algorithm provides greater probability of detecting corruption than a CRC32 with multiple bit errors. The CRC32 option provides better calculation performance and consumes less memory for storage.
 
 Save core dump to flash
 -----------------------
@@ -75,7 +90,7 @@ To overcome this issue you can use ROM ELF provided by Espressif (https://dl.esp
 
 
 Running 'espcoredump.py'
-------------------------------------
+------------------------
 
 Generic command syntax:
 
