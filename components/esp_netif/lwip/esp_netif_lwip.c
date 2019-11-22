@@ -1501,9 +1501,44 @@ esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
 
 esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val,
                                  uint32_t opt_len)
-{
-    // TODO(IDF-1100): when dhcp request timeout,change the retry count
-    return ESP_ERR_NOT_SUPPORTED;
+{   
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_IF_NOT_READY;
+    }
+
+    struct dhcp *dhcp = netif_dhcp_data(esp_netif->lwip_netif);
+    if (dhcp == NULL) {
+        return ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED;
+    }
+    if (opt_val == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+    if (opt_op == ESP_NETIF_OP_GET) {
+        switch (opt_id) {
+            case ESP_NETIF_IP_REQUEST_RETRY_TIME:
+                if (opt_len == sizeof(dhcp->tries)) {
+                    *(uint8_t *)opt_val = dhcp->tries;  
+                }  
+                break;    
+            default:
+                return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                break;
+        }
+    } else if (opt_op == ESP_NETIF_OP_SET) {
+        switch (opt_id) {
+            case ESP_NETIF_IP_REQUEST_RETRY_TIME:
+                if (opt_len == sizeof(dhcp->tries)) {
+                    dhcp->tries = *(uint8_t *)opt_val;
+                }
+                break;
+            default:
+                return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+                break;
+        } 
+    } else {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }   
+    return ESP_OK;
 }
 
 int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif)
