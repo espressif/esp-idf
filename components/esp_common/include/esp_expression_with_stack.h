@@ -39,11 +39,18 @@
 })
 
 /**
- * These functions are intended to be use by the macro above, and
- * Should never be called directly, otherwise crashes could
- * occur
+ * @brief Changes CPU sp-register to use another stack space and save the previous one
+ * @param stack Caller allocated stack pointer
+ * @param backup_stack Pointer to a place to save the current stack
+ * @note Application must not call this function directly
  */
 extern void esp_switch_stack_enter(portSTACK_TYPE *stack, uint32_t *backup_stack);
+
+/**
+ * @brief Restores the previous CPU sp-register
+ * @param backup_stack Pointer to the place where stack was saved
+ * @note Application must not call this function directly
+ */
 extern void esp_switch_stack_exit(uint32_t *backup_stack);
 
 #endif
