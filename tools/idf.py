@@ -70,9 +70,10 @@ def check_environment():
     if "IDF_PATH" in os.environ:
         set_idf_path = realpath(os.environ["IDF_PATH"])
         if set_idf_path != detected_idf_path:
-            print("WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
-                  "Using the environment variable directory, but results may be unexpected..." %
-                  (set_idf_path, PROG, detected_idf_path))
+            print(
+                "WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
+                "Using the environment variable directory, but results may be unexpected..." %
+                (set_idf_path, PROG, detected_idf_path))
     else:
         print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
@@ -189,14 +190,15 @@ def init_cli(verbose_output=None):
             self.callback(self.name, context, global_args, **action_args)
 
     class Action(click.Command):
-        def __init__(self,
-                     name=None,
-                     aliases=None,
-                     deprecated=False,
-                     dependencies=None,
-                     order_dependencies=None,
-                     hidden=False,
-                     **kwargs):
+        def __init__(
+                self,
+                name=None,
+                aliases=None,
+                deprecated=False,
+                dependencies=None,
+                order_dependencies=None,
+                hidden=False,
+                **kwargs):
             super(Action, self).__init__(name, **kwargs)
 
             self.name = self.name or self.callback.__name__
@@ -232,12 +234,12 @@ def init_cli(verbose_output=None):
                 self.help = "\n".join([self.help, aliases_help])
                 self.short_help = " ".join([aliases_help, self.short_help])
 
+            self.unwrapped_callback = self.callback
             if self.callback is not None:
-                callback = self.callback
 
                 def wrapped_callback(**action_args):
                     return Task(
-                        callback=callback,
+                        callback=self.unwrapped_callback,
                         name=self.name,
                         dependencies=dependencies,
                         order_dependencies=order_dependencies,
@@ -397,8 +399,9 @@ def init_cli(verbose_output=None):
                     option = Option(**option_args)
 
                     if option.scope.is_shared:
-                        raise FatalError('"%s" is defined for action "%s". '
-                                         ' "shared" options can be declared only on global level' % (option.name, name))
+                        raise FatalError(
+                            '"%s" is defined for action "%s". '
+                            ' "shared" options can be declared only on global level' % (option.name, name))
 
                     # Promote options to global if see for the first time
                     if option.scope.is_global and option.name not in [o.name for o in self.params]:
@@ -410,7 +413,12 @@ def init_cli(verbose_output=None):
             return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
 
         def get_command(self, ctx, name):
-            return self._actions.get(self.commands_with_aliases.get(name))
+            if name in self.commands_with_aliases:
+                return self._actions.get(self.commands_with_aliases.get(name))
+
+            # Trying fallback to build target (from "all" action) if command is not known
+            else:
+                return Action(name=name, callback=self._actions.get('fallback').unwrapped_callback)
 
         def _print_closing_message(self, args, actions):
             # print a closing message of some kind
@@ -450,19 +458,21 @@ def init_cli(verbose_output=None):
                     for o, f in flash_items:
                         cmd += o + " " + flasher_path(f) + " "
 
-                print("%s %s -p %s -b %s --before %s --after %s write_flash %s" % (
-                    PYTHON,
-                    _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
-                    args.port or "(PORT)",
-                    args.baud,
-                    flasher_args["extra_esptool_args"]["before"],
-                    flasher_args["extra_esptool_args"]["after"],
-                    cmd.strip(),
-                ))
-                print("or run 'idf.py -p %s %s'" % (
-                    args.port or "(PORT)",
-                    key + "-flash" if key != "project" else "flash",
-                ))
+                print(
+                    "%s %s -p %s -b %s --before %s --after %s write_flash %s" % (
+                        PYTHON,
+                        _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
+                        args.port or "(PORT)",
+                        args.baud,
+                        flasher_args["extra_esptool_args"]["before"],
+                        flasher_args["extra_esptool_args"]["after"],
+                        cmd.strip(),
+                    ))
+                print(
+                    "or run 'idf.py -p %s %s'" % (
+                        args.port or "(PORT)",
+                        key + "-flash" if key != "project" else "flash",
+                    ))
 
             if "all" in actions or "build" in actions:
                 print_flashing_message("Project", "project")
@@ -483,9 +493,10 @@ def init_cli(verbose_output=None):
                 [item for item, count in Counter(task.name for task in tasks).items() if count > 1])
             if dupplicated_tasks:
                 dupes = ", ".join('"%s"' % t for t in dupplicated_tasks)
-                print("WARNING: Command%s found in the list of commands more than once. " %
-                      ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
-                      "Only first occurence will be executed.")
+                print(
+                    "WARNING: Command%s found in the list of commands more than once. " %
+                    ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
+                    "Only first occurence will be executed.")
 
             # Set propagated global options.
             # These options may be set on one subcommand, but available in the list of global arguments
@@ -499,9 +510,9 @@ def init_cli(verbose_output=None):
                         default = () if option.multiple else option.default
 
                         if global_value != default and local_value != default and global_value != local_value:
-                            raise FatalError('Option "%s" provided for "%s" is already defined to a different value. '
-                                             "This option can appear at most once in the command line." %
-                                             (key, task.name))
+                            raise FatalError(
+                                'Option "%s" provided for "%s" is already defined to a different value. '
+                                "This option can appear at most once in the command line." % (key, task.name))
                         if local_value != default:
                             global_args[key] = local_value
 
@@ -537,8 +548,9 @@ def init_cli(verbose_output=None):
                         # Otherwise invoke it with default set of options
                         # and put to the front of the list of unprocessed tasks
                         else:
-                            print('Adding "%s"\'s dependency "%s" to list of commands with default set of options.' %
-                                  (task.name, dep))
+                            print(
+                                'Adding "%s"\'s dependency "%s" to list of commands with default set of options.' %
+                                (task.name, dep))
                             dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
 
                             # Remove options with global scope from invoke tasks because they are alread in global_args
@@ -631,7 +643,11 @@ def init_cli(verbose_output=None):
         except NameError:
             pass
 
-    return CLI(help="ESP-IDF build management", verbose_output=verbose_output, all_actions=all_actions)
+    cli_help = (
+        "ESP-IDF CLI build management tool. "
+        "For commands that are not known to idf.py an attempt to execute it as a build system target will be made.")
+
+    return CLI(help=cli_help, verbose_output=verbose_output, all_actions=all_actions)
 
 
 def main():
@@ -709,8 +725,9 @@ if __name__ == "__main__":
             # Trying to find best utf-8 locale available on the system and restart python with it
             best_locale = _find_usable_locale()
 
-            print("Your environment is not configured to handle unicode filenames outside of ASCII range."
-                  " Environment variable LC_ALL is temporary set to %s for unicode support." % best_locale)
+            print(
+                "Your environment is not configured to handle unicode filenames outside of ASCII range."
+                " Environment variable LC_ALL is temporary set to %s for unicode support." % best_locale)
 
             os.environ["LC_ALL"] = best_locale
             ret = subprocess.call([sys.executable] + sys.argv, env=os.environ)

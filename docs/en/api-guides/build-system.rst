@@ -67,7 +67,7 @@ The :ref:`getting started guide <get-started-configure>` contains a brief introd
 
 ``idf.py`` should be run in an ESP-IDF "project" directory, ie one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
 
-Type ``idf.py --help`` for a full list of commands. Here are a summary of the most useful ones:
+Type ``idf.py --help`` for a list of commands. Here are a summary of the most useful ones:
 
 - ``idf.py menuconfig`` runs the "menuconfig" tool to configure the project.
 - ``idf.py build`` will build the project found in the current directory. This can involve multiple steps:
@@ -83,6 +83,8 @@ Type ``idf.py --help`` for a full list of commands. Here are a summary of the mo
 - ``idf.py monitor`` will display serial output from the ESP32. The ``-p`` option can be used to set the serial port name. Type ``Ctrl-]`` to exit the monitor. See :doc:`tools/idf-monitor` for more details about using the monitor.
 
 Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p COM4 clean flash monitor`` will clean the source tree, then build the project and flash it to the ESP32 before running the serial monitor.
+
+For commands that are not known to ``idf.py`` an attempt to execute them as a build system target will be made.
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
@@ -101,8 +103,8 @@ The order of multiple ``idf.py`` commands on the same invocation is not importan
 
 idf.py options
 ^^^^^^^^^^^^^^
-
-To list all available options, run ``idf.py --help``.
+To list all available root level options, run ``idf.py --help``. To list options that are specific for a subcommand, run ``idf.py <command> --help``, for example ``idf.py monitor --help``.
+Here is a list of some useful options:
 
 - ``-C <dir>`` allows overriding the project directory from the default current working directory.
 - ``-B <dir>`` allows overriding the build directory from the default ``build`` subdirectory of the project directory.
