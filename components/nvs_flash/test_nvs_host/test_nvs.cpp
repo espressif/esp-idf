@@ -772,6 +772,39 @@ TEST_CASE("nvs iterators tests", "[nvs]")
     nvs_close(handle_2);
 }
 
+TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
+{
+    SpiFlashEmulator emu(5);
+    nvs_iterator_t it;
+    nvs_handle_t my_handle;
+    const char* NAMESPACE = "test_ns_4";
+
+    const uint32_t NVS_FLASH_SECTOR = 0;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 5;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    for (uint16_t i = NVS_FLASH_SECTOR; i < NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN; ++i) {
+        spi_flash_erase_sector(i);
+    }
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    // writing string to namespace (a type which spans multiple entries)
+    TEST_ESP_OK(nvs_open(NAMESPACE, NVS_READWRITE, &my_handle));
+    TEST_ESP_OK(nvs_set_str(my_handle, "test-string", "InitString0"));
+    TEST_ESP_OK(nvs_commit(my_handle));
+    nvs_close(my_handle);
+
+    it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_I32);
+    CHECK(it == NULL);
+
+    // re-init to trigger cleaning up of broken items -> a corrupted string will be erased
+    nvs_flash_deinit();
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_STR);
+    CHECK(it != NULL);
+    nvs_release_iterator(it);
+}
 
 TEST_CASE("wifi test", "[nvs]")
 {
@@ -1955,7 +1988,7 @@ TEST_CASE("Multi-page blob erased using nvs_erase_key should not be found when p
     TEST_ESP_OK(nvs_open("Test", NVS_READWRITE, &handle));
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
     TEST_ESP_OK(nvs_erase_key(handle, "abc"));
-    TEST_ESP_ERR(nvs_get_blob(handle, "abc", NULL, &read_size), ESP_ERR_NVS_NOT_FOUND); 
+    TEST_ESP_ERR(nvs_get_blob(handle, "abc", NULL, &read_size), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
 }
