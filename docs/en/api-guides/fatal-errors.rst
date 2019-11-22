@@ -38,21 +38,27 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
 In all cases, error cause will be printed in parens. See `Guru Meditation Errors`_ for a list of possible error causes.
 
-Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP32_PANIC` configuration choice. The available options are:
+.. only:: esp32
 
-- Print registers and reboot (``CONFIG_ESP32_PANIC_PRINT_REBOOT``) — default option.
+    Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP32_PANIC` configuration choice. The available options are:
+
+.. only:: esp32s2
+
+    Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP32S2_PANIC` configuration choice. The available options are:
+
+- Print registers and reboot — default option.
   
   This will print register values at the point of the exception, print the backtrace, and restart the chip.
 
-- Print registers and halt (``CONFIG_ESP32_PANIC_PRINT_HALT``)
+- Print registers and halt
 
   Similar to the above option, but halt instead of rebooting. External reset is required to restart the program.
 
-- Silent reboot (``CONFIG_ESP32_PANIC_SILENT_REBOOT``)
+- Silent reboot
 
   Don't print registers or backtrace, restart the chip immediately.
 
-- Invoke GDB Stub (``CONFIG_ESP32_PANIC_GDBSTUB``)
+- Invoke GDB Stub
 
   Start GDB server which can communicate with GDB over console UART port. See `GDB Stub`_ for more details.
 
@@ -62,11 +68,11 @@ Behavior of panic handler is affected by two other configuration options.
 
     - If :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
-.. only:: esp32s2beta
+.. only:: esp32s2
 
     - If :ref:`CONFIG_ESP32S2_DEBUG_OCDAWARE` is enabled (which is the default), panic handler will detect whether a JTAG debugger is connected. If it is, execution will be halted and control will be passed to the debugger. In this case registers and backtrace are not dumped to the console, and GDBStub / Core Dump functions are not used.
 
-- If :doc:`Core Dump <core_dump>` feature is enabled (``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` or ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` options), then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
+- If :doc:`Core Dump <core_dump>` feature is enabled, then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
 
 - If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
   
@@ -271,7 +277,14 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_ESP32_BROWNOUT_DET` and :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` options.
+.. only:: esp32
+
+    ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_ESP32_BROWNOUT_DET` and :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` options.
+
+.. only:: esp32s2
+
+    ESP32-S2 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_ESP32S2_BROWNOUT_DET` and :ref:`CONFIG_ESP32S2_BROWNOUT_DET_LVL_SEL` options.
+
 When brownout detector triggers, the following message is printed::
 
     Brownout detector was triggered

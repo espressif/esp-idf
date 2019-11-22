@@ -168,7 +168,11 @@ The operating bit rate of the CAN controller is configured using the :cpp:type:`
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
-The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the CAN controller's source clock (80 MHz APB clock). The ``brp`` can be **any even number from 2 to 128**. If the ESP32 is a revision 2 or later chip, the ``brp`` will also support **any multiple of 4 from 132 to 256**, and can be enabled by setting the :ref:`CONFIG_ESP32_REV_MIN` to revision 2 or higher.
+The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the CAN controller's source clock (80 MHz APB clock). The ``brp`` can be **any even number from 2 to 128**.
+
+.. only:: esp32
+
+    If the ESP32 is a revision 2 or later chip, the ``brp`` will also support **any multiple of 4 from 132 to 256**, and can be enabled by setting the :ref:`CONFIG_ESP32_REV_MIN` to revision 2 or higher.
 
 .. packetdiag:: ../../../_static/diagrams/can/can_bit_timing.diag
     :caption: Bit timing configuration for 500kbit/s given BRP = 8

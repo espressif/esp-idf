@@ -31,3 +31,6 @@ actdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
 nwdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
 rackdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
 packetdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
+
+update_exclude_patterns(tags)
+

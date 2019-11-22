@@ -105,6 +105,7 @@ extensions = ['breathe',
               'doxygen_idf',
               'sphinx.ext.todo',
               'include_build_file',
+              'toctree_filter',
               # from https://github.com/pfalcon/sphinx_selective_exclude
               'sphinx_selective_exclude.eager_only',
               #'sphinx_selective_exclude.search_auto_exclude',
@@ -168,7 +169,21 @@ print('Version: {0}  Release: {1}'.format(version, release))
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['_build','README.md']
+exclude_patterns = ['**/inc/**']
+
+# Add target-specific excludes based on tags. Haven't found any better way to do this yet
+def update_exclude_patterns(tags):
+    if "esp32" not in tags:
+        # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
+        # note: in toctrees, these also need to be marked with a :esp32: filter
+        for e in ['api-guides/blufi.rst',
+                  'api-guides/build-system-legacy.rst',
+                  'api-guides/esp-ble-mesh/**',
+                  'api-guides/ulp-legacy.rst',
+                  'api-guides/unit-tests-legacy.rst',
+                  'api-reference/bluetooth/**',
+                  'get-started-legacy/**']:
+            exclude_patterns.append(e)
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

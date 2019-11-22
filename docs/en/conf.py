@@ -31,3 +31,6 @@ actdiag_fontpath = '../_static/DejaVuSans.ttf'
 nwdiag_fontpath = '../_static/DejaVuSans.ttf'
 rackdiag_fontpath = '../_static/DejaVuSans.ttf'
 packetdiag_fontpath = '../_static/DejaVuSans.ttf'
+
+update_exclude_patterns(tags)
+
