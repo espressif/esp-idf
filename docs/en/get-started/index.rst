@@ -321,6 +321,11 @@ If the previous steps have been done correctly, the following menu appears:
 
     Project configuration - Home window
 
+.. note::
+
+    The colors of the menu could be different in your terminal. You can change the appearance with the option
+    ``--style``. Please run ``idf.py menuconfig --help`` for further information.
+
 To navigate and use ``menuconfig``, press the following keys:
 
 * Arrow keys for navigation

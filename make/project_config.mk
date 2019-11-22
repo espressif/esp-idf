@@ -99,10 +99,12 @@ define RunConfGen
 		$1
 endef
 
+export MENUCONFIG_STYLE ?= aquatic
+
 ifeq ($(OS),Windows_NT)
 MENUCONFIG_CMD := $(KCONFIG_TOOL_DIR)/mconf-idf
 else
-MENUCONFIG_CMD := MENUCONFIG_STYLE=aquatic $(PYTHON) $(IDF_PATH)/tools/kconfig_new/menuconfig.py
+MENUCONFIG_CMD := $(PYTHON) $(IDF_PATH)/tools/kconfig_new/menuconfig.py
 endif
 
 # macro for running menuconfig
