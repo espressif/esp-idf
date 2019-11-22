@@ -158,6 +158,10 @@ def replace_app_bin(dut, name, new_app_bin):
             break
 
 
+def format_case_name(case):
+    return "[{}] {}".format(case["config"], case["name"])
+
+
 def reset_dut(dut):
     dut.reset()
     # esptool ``run`` cmd takes quite long time.
@@ -203,9 +207,9 @@ def run_one_normal_case(dut, one_case, junit_test_case):
         test_finish.append(True)
         output = dut.stop_capture_raw_data()
         if result:
-            Utility.console_log("Success: " + one_case["name"], color="green")
+            Utility.console_log("Success: " + format_case_name(one_case), color="green")
         else:
-            Utility.console_log("Failed: " + one_case["name"], color="red")
+            Utility.console_log("Failed: " + format_case_name(one_case), color="red")
             junit_test_case.add_failure_info(output)
             raise TestCaseFailed()
 
@@ -222,7 +226,7 @@ def run_one_normal_case(dut, one_case, junit_test_case):
         assert not exception_reset_list
         if int(data[1]):
             # case ignored
-            Utility.console_log("Ignored: " + one_case["name"], color="orange")
+            Utility.console_log("Ignored: " + format_case_name(one_case), color="orange")
             junit_test_case.add_skipped_info("ignored")
         one_case_finish(not int(data[0]))
 
@@ -299,10 +303,10 @@ def run_unit_test_cases(env, extra_data):
                 run_one_normal_case(dut, one_case, junit_test_case)
                 performance_items = dut.get_performance_items()
             except TestCaseFailed:
-                failed_cases.append(one_case["name"])
+                failed_cases.append(format_case_name(one_case))
             except Exception as e:
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
-                failed_cases.append(one_case["name"])
+                failed_cases.append(format_case_name(one_case))
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
@@ -502,10 +506,10 @@ def run_multiple_devices_cases(env, extra_data):
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
             finally:
                 if result:
-                    Utility.console_log("Success: " + one_case["name"], color="green")
+                    Utility.console_log("Success: " + format_case_name(one_case), color="green")
                 else:
-                    failed_cases.append(one_case["name"])
-                    Utility.console_log("Failed: " + one_case["name"], color="red")
+                    failed_cases.append(format_case_name(one_case))
+                    Utility.console_log("Failed: " + format_case_name(one_case), color="red")
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
 
     if failed_cases:
@@ -563,9 +567,9 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
             result = result and check_reset()
             output = dut.stop_capture_raw_data()
             if result:
-                Utility.console_log("Success: " + one_case["name"], color="green")
+                Utility.console_log("Success: " + format_case_name(one_case), color="green")
             else:
-                Utility.console_log("Failed: " + one_case["name"], color="red")
+                Utility.console_log("Failed: " + format_case_name(one_case), color="red")
                 junit_test_case.add_failure_info(output)
                 raise TestCaseFailed()
             stage_finish.append("break")
@@ -582,7 +586,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
             # in this scenario reset should not happen
             if int(data[1]):
                 # case ignored
-                Utility.console_log("Ignored: " + one_case["name"], color="orange")
+                Utility.console_log("Ignored: " + format_case_name(one_case), color="orange")
                 junit_test_case.add_skipped_info("ignored")
             # only passed in last stage will be regarded as real pass
             if last_stage():
@@ -651,10 +655,10 @@ def run_multiple_stage_cases(env, extra_data):
                 run_one_multiple_stage_case(dut, one_case, junit_test_case)
                 performance_items = dut.get_performance_items()
             except TestCaseFailed:
-                failed_cases.append(one_case["name"])
+                failed_cases.append(format_case_name(one_case))
             except Exception as e:
                 junit_test_case.add_failure_info("Unexpected exception: " + str(e))
-                failed_cases.append(one_case["name"])
+                failed_cases.append(format_case_name(one_case))
             finally:
                 TinyFW.JunitReport.update_performance(performance_items)
                 TinyFW.JunitReport.test_case_finish(junit_test_case)
