@@ -35,6 +35,7 @@
 #include "soc/sens_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/rtc_wdt.h"
+#include "soc/uart_caps.h"
 #include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -136,19 +137,15 @@ void esp_deep_sleep(uint64_t time_in_us)
 
 static void IRAM_ATTR suspend_uarts(void)
 {
-    for (int i = 0; i < 2; ++i) {
-        REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
+    for (int i = 0; i < SOC_UART_NUM; ++i) {
         uart_tx_wait_idle(i);
+        /* Note: Set `UART_FORCE_XOFF` can't stop new Tx request. */
     }
 }
 
 static void IRAM_ATTR resume_uarts(void)
 {
-    for (int i = 0; i < 2; ++i) {
-        REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XOFF);
-        REG_SET_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-        REG_CLR_BIT(UART_FLOW_CONF_REG(i), UART_FORCE_XON);
-    }
+    /* Note: Set `UART_FORCE_XOFF` can't stop new Tx request. */
 }
 
 static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
@@ -182,7 +179,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.sleep_duration > 0) {
         timer_wakeup_prepare();
     }
-    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0,0);
+    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0, 0);
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set(cpu_freq);
@@ -381,6 +378,8 @@ static void timer_wakeup_prepare(void)
     int64_t rtc_count_delta = rtc_time_us_to_slowclk(sleep_duration, period);
 
     rtc_sleep_set_wakeup_time(s_config.rtc_ticks_at_sleep_start + rtc_count_delta);
+    SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
+    SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
 }
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
