@@ -5015,13 +5015,8 @@ void mdns_debug_packet(const uint8_t * data, size_t len)
                 }
                 _mdns_dbg_printf("\n");
             } else if (type == MDNS_TYPE_AAAA) {
-<<<<<<< HEAD
-                ip6_addr_t ip6;
-                memcpy(&ip6, data_ptr, MDNS_ANSWER_AAAA_SIZE);
-=======
                 esp_ip6_addr_t ip6;
                 memcpy(&ip6, data_ptr, sizeof(esp_ip6_addr_t));
->>>>>>> mdns: update mdns to use esp-netif for mdns supported services such as STA, AP, ETH
                 _mdns_dbg_printf(IPV6STR "\n", IPV62STR(ip6));
             } else if (type == MDNS_TYPE_A) {
                 esp_ip4_addr_t ip;
