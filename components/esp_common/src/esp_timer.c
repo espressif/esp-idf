@@ -300,8 +300,10 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #if WITH_PROFILING
         uint64_t callback_start = now;
 #endif
+        esp_timer_cb_t callback = it->callback;
+        void* arg = it->arg;
         timer_list_unlock();
-        (*it->callback)(it->arg);
+        (*callback)(arg);
         timer_list_lock();
         now = esp_timer_impl_get_time();
 #if WITH_PROFILING
