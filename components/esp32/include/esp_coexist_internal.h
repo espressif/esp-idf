@@ -32,6 +32,14 @@ typedef enum {
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
 
 /**
+ * @brief Pre-Init software coexist
+ *        extern function for internal use.
+ *
+ * @return Init ok or failed.
+ */
+esp_err_t coex_pre_init(void);
+
+/**
  * @brief Init software coexist
  *        extern function for internal use.
  *
