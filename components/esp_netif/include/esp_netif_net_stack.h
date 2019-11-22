@@ -15,6 +15,10 @@
 #ifndef _ESP_NETIF_NET_STACK_H_
 #define _ESP_NETIF_NET_STACK_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Network stack API: This ESP-NETIF API are supposed to be called only from internals of TCP/IP stack
 //
@@ -75,5 +79,9 @@ void esp_netif_free_rx_buffer(void *esp_netif, void* buffer);
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_NETIF_NET_STACK_H_

@@ -22,6 +22,10 @@
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
 //  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
@@ -735,5 +739,9 @@ size_t esp_netif_get_nr_of_ifs(void);
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*  _ESP_NETIF_H_ */

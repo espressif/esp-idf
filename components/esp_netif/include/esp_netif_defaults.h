@@ -15,6 +15,10 @@
 #ifndef _ESP_NETIF_DEFAULTS_H
 #define _ESP_NETIF_DEFAULTS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //
 // Macros to assemble master configs with partial configs from netif, stack and driver
 //
@@ -84,5 +88,9 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_wifi_ap;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_NETIF_DEFAULTS_H
