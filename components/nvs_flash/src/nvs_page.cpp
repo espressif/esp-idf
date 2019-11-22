@@ -622,9 +622,9 @@ esp_err_t Page::mLoadEntryTable()
                 }
             }
 
-            /* Note that logic for duplicate detections works fine even 
-             * when old-format blob is present along with new-format blob-index 
-             * for same key on active page. Since datatype is not used in hash calculation, 
+            /* Note that logic for duplicate detections works fine even
+             * when old-format blob is present along with new-format blob-index
+             * for same key on active page. Since datatype is not used in hash calculation,
              * old-format blob will be removed.*/
             if (duplicateIndex < i) {
                 eraseEntryAndSpan(duplicateIndex);
@@ -864,6 +864,7 @@ esp_err_t Page::findItem(uint8_t nsIndex, ItemType datatype, const char* key, si
             if (key == nullptr && nsIndex == NS_ANY && chunkIdx == CHUNK_ANY) {
                 continue; // continue for bruteforce search on blob indices.
             }
+            itemIndex = i;
             return ESP_ERR_NVS_TYPE_MISMATCH;
         }
 
