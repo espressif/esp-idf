@@ -146,6 +146,11 @@
             "size": 8249059,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32ulp-linux-amd64-2.28.51-esp-20190801.tar.gz"
           },
+          "linux-armel": {
+            "sha256": "c95fcf89231bee16f48c0a50dd8d8f4404bc95f956b5482f69dac68363ffc444",
+            "size": 8033832,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32ulp-linux-armel-2.28.51-esp-20190801.tar.gz"
+          },
           "macos": {
             "sha256": "04f812bf410ae6bef438c53ff4f4a33f34884d9072ae5815814b208ab408a9a4",
             "size": 8871878,
@@ -190,6 +195,11 @@
             "sha256": "0085852b0de25a2186c874a184385c1dde107414248ec6a726b48d6616da6274",
             "size": 8253802,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32s2ulp-linux-amd64-2.28.51-esp-20190801.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "6f9d07f9e4f4040f7520beb432ed789515e19cf005fb756748d2ca5ad7eb8f04",
+            "size": 8045256,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20190801.tar.gz"
           },
           "macos": {
             "sha256": "b180a5ed3b7b5aa4503f26e5bd562d8b0f4b55f24a2ca04942804fd88b4d91b5",
