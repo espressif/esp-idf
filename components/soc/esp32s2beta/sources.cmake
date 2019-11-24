@@ -1,5 +1,6 @@
-set(SOC_SRCS    "cpu_util.c"
+set(SOC_SRCS    "adc_periph.c"
                 "dac_periph.c"
+                "cpu_util.c"
                 "gpio_periph.c"
                 "rtc_clk.c"
                 "rtc_init.c"

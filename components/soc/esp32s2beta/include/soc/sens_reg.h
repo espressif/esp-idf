@@ -96,6 +96,9 @@ extern "C" {
 #define SENS_FORCE_XPD_AMP_M  ((SENS_FORCE_XPD_AMP_V)<<(SENS_FORCE_XPD_AMP_S))
 #define SENS_FORCE_XPD_AMP_V  0x3
 #define SENS_FORCE_XPD_AMP_S  24
+#define SENS_FORCE_XPD_AMP_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_AMP_PD  2 // Force power down
+#define SENS_FORCE_XPD_AMP_PU  3 // Force power up
 /* SENS_SAR1_STOP : R/W ;bitpos:[2] ;default: 1'b0 ; */
 /*description: stop SAR ADC1 conversion*/
 #define SENS_SAR1_STOP  (BIT(2))
@@ -452,6 +455,10 @@ extern "C" {
 #define SENS_FORCE_XPD_SAR_M  ((SENS_FORCE_XPD_SAR_V)<<(SENS_FORCE_XPD_SAR_S))
 #define SENS_FORCE_XPD_SAR_V  0x3
 #define SENS_FORCE_XPD_SAR_S  29
+#define SENS_FORCE_XPD_SAR_SW_M (BIT1)
+#define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_SAR_PD  2 // Force power down
+#define SENS_FORCE_XPD_SAR_PU  3 // Force power up
 /* SENS_SAR1_DREF : R/W ;bitpos:[28:26] ;default: 3'd0 ; */
 /*description: Adjust saradc1 offset*/
 #define SENS_SAR1_DREF  0x00000007

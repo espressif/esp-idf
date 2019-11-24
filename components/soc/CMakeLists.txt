@@ -15,6 +15,7 @@ list(APPEND srcs
     "src/hal/rmt_hal.c"
     "src/hal/rtc_io_hal.c"
     "src/hal/dac_hal.c"
+    "src/hal/adc_hal.c"
     "src/hal/spi_hal.c"
     "src/hal/spi_hal_iram.c"
     "src/hal/spi_slave_hal.c"

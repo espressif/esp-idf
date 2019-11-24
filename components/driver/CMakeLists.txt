@@ -1,4 +1,5 @@
-set(srcs
+set(srcs 
+    "adc.c"
     "can.c"
     "dac.c"
     "gpio.c"
