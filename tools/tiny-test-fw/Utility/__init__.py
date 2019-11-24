@@ -38,11 +38,23 @@ def console_log(data, color="white", end="\n"):
     sys.stdout.flush()
 
 
+__LOADED_MODULES = dict()
+# we should only load one module once.
+# if we load one module twice,
+# python will regard the same object loaded in the first time and second time as different objects.
+# it will lead to strange errors like `isinstance(object, type_of_this_object)` return False
+
+
 def load_source(name, path):
     try:
-        from importlib.machinery import SourceFileLoader
-        return SourceFileLoader(name, path).load_module()
-    except ImportError:
-        # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
-        import imp
-        return imp.load_source(name, path)
+        return __LOADED_MODULES[name]
+    except KeyError:
+        try:
+            from importlib.machinery import SourceFileLoader
+            ret = SourceFileLoader(name, path).load_module()
+        except ImportError:
+            # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
+            import imp
+            ret = imp.load_source(name, path)
+        __LOADED_MODULES[name] = ret
+        return ret
