@@ -854,9 +854,9 @@ static void timer_group_test_init(void)
         .intr_type = TIMER_INTR_LEVEL,
         .auto_reload = true,
     };
-    timer_init(TIMER_GROUP_0, TIMER_0, &config);
-    timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL);
-    timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, ste_val);
+    ESP_ERROR_CHECK(timer_init(TIMER_GROUP_0, TIMER_0, &config));
+    ESP_ERROR_CHECK(timer_set_counter_value(TIMER_GROUP_0, TIMER_0, 0x00000000ULL));
+    ESP_ERROR_CHECK(timer_set_alarm_value(TIMER_GROUP_0, TIMER_0, ste_val));
     //Now the timer is ready.
     //We only need to check the interrupt status and don't have to register a interrupt routine.
 }
@@ -866,7 +866,8 @@ static void timer_group_test_first_stage(void)
     static uint8_t loop_cnt = 0;
     timer_group_test_init();
     //Start timer
-    timer_start(TIMER_GROUP_0, TIMER_0);
+    ESP_ERROR_CHECK(timer_enable_intr(TIMER_GROUP_0, TIMER_0));
+    ESP_ERROR_CHECK(timer_start(TIMER_GROUP_0, TIMER_0));
     //Waiting for timer_group to generate an interrupt
     while( !(timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0) &&
             loop_cnt++ < 100) {
@@ -882,7 +883,7 @@ static void timer_group_test_second_stage(void)
     TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
     timer_group_test_init();
     //After the timer_group is initialized, TIMERG0.int_raw.t0 should be cleared.
-    TEST_ASSERT_EQUAL(0, TIMERG0.int_raw.t0);
+    TEST_ASSERT_EQUAL(0, timer_group_get_intr_status_in_isr(TIMER_GROUP_0) & TIMER_INTR_T0);
 }
 
 TEST_CASE_MULTIPLE_STAGES("timer_group software reset test",
