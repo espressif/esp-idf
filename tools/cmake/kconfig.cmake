@@ -263,12 +263,14 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
         COMMAND ${prepare_kconfig_files_command}
-        COMMAND ${confgen_basecommand} --env "IDF_TARGET=${idf_target}" --output config ${sdkconfig}
+        COMMAND ${confgen_basecommand}
+        --env "IDF_TARGET=${idf_target}"
+        --dont-write-deprecated
+        --output config ${sdkconfig}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
         "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
         "IDF_CMAKE=y"
-        "IDF_TARGET=${IDF_TARGET}"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
         ${MENUCONFIG_CMD} ${root_kconfig}

@@ -34,7 +34,7 @@ SDKCONFIG_DEFAULTS ?= $(PROJECT_PATH)/sdkconfig.defaults
 $(KCONFIG_TOOL_DIR)/mconf-idf: $(KCONFIG_TOOL_DIR)/conf-idf
 
 # reset MAKEFLAGS as the menuconfig makefile uses implicit compile rules
-$(KCONFIG_TOOL_DIR)/mconf-idf $(KCONFIG_TOOL_DIR)/conf-idf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c)
+$(KCONFIG_TOOL_DIR)/mconf-idf $(KCONFIG_TOOL_DIR)/conf-idf: $(wildcard $(KCONFIG_TOOL_DIR)/*.c) $(wildcard $(KCONFIG_TOOL_DIR)/*.y)
 ifeq ($(OS),Windows_NT)
 	# mconf-idf is used only in MSYS
 	MAKEFLAGS="" CC=$(HOSTCC) LD=$(HOSTLD) \
@@ -66,7 +66,8 @@ SDKCONFIG_DEFAULTS_FILES := $(foreach f,$(SDKCONFIG_DEFAULTS),$(wildcard $(f)))
 SDKCONFIG_DEFAULTS_FILES += $(foreach f,$(SDKCONFIG_DEFAULTS_FILES),$(wildcard $(f).$(IDF_TARGET)))
 
 ifeq ($(OS),Windows_NT)
-SDKCONFIG_DEFAULTS_FILES := $(shell cygpath -m $(SDKCONFIG_DEFAULTS_FILES))
+# -i is for ignore missing arguments in case SDKCONFIG_DEFAULTS_FILES is empty
+SDKCONFIG_DEFAULTS_FILES := $(shell cygpath -i -m $(SDKCONFIG_DEFAULTS_FILES))
 endif
 DEFAULTS_ARG := $(foreach f,$(SDKCONFIG_DEFAULTS_FILES),--defaults $(f))
 
@@ -94,7 +95,8 @@ define RunConfGen
 		$(DEFAULTS_ARG) \
 		--output config ${SDKCONFIG} \
 		--output makefile $(SDKCONFIG_MAKEFILE) \
-		--output header $(BUILD_DIR_BASE)/include/sdkconfig.h
+		--output header $(BUILD_DIR_BASE)/include/sdkconfig.h \
+		$1
 endef
 
 ifeq ($(OS),Windows_NT)
@@ -135,23 +137,23 @@ ifdef BATCH_BUILD
 	@echo "See esp-idf documentation for more details."
 	@exit 1
 else
-	$(call RunConfGen)
+	$(call RunConfGen,--dont-write-deprecated)
 	# RunConfGen before menuconfig ensures that deprecated options won't be ignored (they've got renamed)
 	$(call RunMenuConf)
 	# RunConfGen after menuconfig ensures that deprecated options are appended to $(SDKCONFIG) for backward compatibility
-	$(call RunConfGen)
+	$(call RunConfGen,)
 endif
 
 # defconfig creates a default config, based on SDKCONFIG_DEFAULTS if present
 defconfig: | check_python_dependencies prepare_kconfig_files
 	$(summary) DEFCONFIG
-	$(call RunConfGen)
+	$(call RunConfGen,)
 
 # if neither defconfig or menuconfig are requested, use the GENCONFIG rule to
 # ensure generated config files are up to date
 $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h: $(SDKCONFIG) $(COMPONENT_KCONFIGS) $(COMPONENT_KCONFIGS_PROJBUILD) | check_python_dependencies prepare_kconfig_files $(call prereq_if_explicit,defconfig) $(call prereq_if_explicit,menuconfig)
 	$(summary) GENCONFIG
-	$(call RunConfGen)
+	$(call RunConfGen,)
 	touch $(SDKCONFIG_MAKEFILE) $(BUILD_DIR_BASE)/include/sdkconfig.h  # ensure newer than sdkconfig
 
 else  # "$(MAKE_RESTARTS)" != ""
