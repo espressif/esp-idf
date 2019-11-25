@@ -267,7 +267,7 @@ esp_err_t tcpip_adapter_dhcps_option(tcpip_adapter_dhcp_option_mode_t opt_op, tc
 
 esp_err_t tcpip_adapter_dhcpc_option(tcpip_adapter_dhcp_option_mode_t opt_op, tcpip_adapter_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len)
 {
-    return esp_netif_dhcpc_option(NULL, opt_op, opt_id, opt_val, opt_len);
+    return esp_netif_dhcpc_option(netif_from_if(TCPIP_ADAPTER_IF_STA), opt_op, opt_id, opt_val, opt_len);
 }
 
 esp_err_t tcpip_adapter_set_ip_info(tcpip_adapter_if_t tcpip_if, const tcpip_adapter_ip_info_t *ip_info)
