@@ -107,11 +107,11 @@ static void i2c_master_write_test(void)
     int i;
 
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
 
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
