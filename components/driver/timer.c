@@ -82,13 +82,10 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     if (err == ESP_OK) {
         uint16_t div;
         timer_hal_get_divider(&(p_timer_obj[group_num][timer_num]->hal), &div);
-#ifdef CONFIG_IDF_TARGET_ESP32
-        *time = (double)timer_val * div / TIMER_BASE_CLK;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        *time = (double)timer_val * div / rtc_clk_apb_freq_get();
+#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
         if (timer_hal_get_use_xtal(&(p_timer_obj[group_num][timer_num]->hal))) {
             *time = (double)timer_val * div / ((int)rtc_clk_xtal_freq_get() * 1000000);
-        } else {
-            *time = (double)timer_val * div / rtc_clk_apb_freq_get();
         }
 #endif
     }
@@ -327,7 +324,7 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     //     timer_hal_set_edge_int_enable(&(p_timer_obj[group_num][timer_num]->hal), true);
     // }
     timer_hal_set_counter_enable(&(p_timer_obj[group_num][timer_num]->hal), config->counter_en);
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
     timer_hal_set_use_xtal(&(p_timer_obj[group_num][timer_num]->hal), config->clk_src);
 #endif
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);

@@ -29,6 +29,7 @@ extern "C" {
 
 #include "hal/timer_ll.h"
 #include "hal/timer_types.h"
+#include "soc/timer_group_caps.h"
 
 /**
  * Context that should be maintained by both the driver and the HAL
@@ -293,7 +294,7 @@ void timer_hal_init(timer_hal_context_t *hal, timer_group_t group_num, timer_idx
  */
 #define timer_hal_get_intr_status_reg(hal, intr_status_reg)  timer_ll_get_intr_status_reg((hal)->dev, intr_status_reg)
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef TIMER_GROUP_SUPPORTS_XTAL_CLOCK
 /**
  * @brief Set clock source.
  *
