@@ -297,6 +297,20 @@ FORCE_INLINE_ATTR void timer_ll_get_intr_status(timg_dev_t *hw, uint32_t *intr_s
 }
 
 /**
+ * @brief Get interrupt raw status.
+ *
+ * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
+ * @param intr_raw_status Interrupt raw status
+ *
+ * @return None
+ */
+FORCE_INLINE_ATTR void timer_ll_get_intr_raw_status(timer_group_t group_num, uint32_t *intr_raw_status)
+{
+    timg_dev_t *hw = TIMER_LL_GET_HW(group_num);
+    *intr_raw_status = hw->int_raw.val;
+}
+
+/**
  * @brief Set the level interrupt status, enable or disable the level interrupt.
  *
  * @param hw Beginning address of the peripheral registers.

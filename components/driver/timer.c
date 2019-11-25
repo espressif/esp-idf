@@ -436,7 +436,9 @@ esp_err_t timer_disable_intr(timer_group_t group_num, timer_idx_t timer_num)
 /* This function is deprecated */
 timer_intr_t IRAM_ATTR timer_group_intr_get_in_isr(timer_group_t group_num)
 {
-    return timer_group_get_intr_status_in_isr(group_num);
+    uint32_t intr_raw_status = 0;
+    timer_hal_get_intr_raw_status(group_num, &intr_raw_status);
+    return intr_raw_status;
 }
 
 uint32_t IRAM_ATTR timer_group_get_intr_status_in_isr(timer_group_t group_num)
