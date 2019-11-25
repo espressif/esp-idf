@@ -115,8 +115,9 @@ class TestDependencyManagement(unittest.TestCase):
             standalone_mode=False,
         )
         sys.stdout = sys.__stdout__
-        self.assertIn('WARNING: Commands "all", "clean" are found in the list of commands more than once.',
-                      capturedOutput.getvalue())
+        self.assertIn(
+            'WARNING: Commands "all", "clean" are found in the list of commands more than once.',
+            capturedOutput.getvalue())
 
         sys.stdout = capturedOutput
         idf.init_cli()(
@@ -124,8 +125,34 @@ class TestDependencyManagement(unittest.TestCase):
             standalone_mode=False,
         )
         sys.stdout = sys.__stdout__
-        self.assertIn('WARNING: Command "clean" is found in the list of commands more than once.',
-                      capturedOutput.getvalue())
+        self.assertIn(
+            'WARNING: Command "clean" is found in the list of commands more than once.', capturedOutput.getvalue())
+
+
+class TestVerboseFlag(unittest.TestCase):
+    def test_verbose_messages(self):
+        output = subprocess.check_output(
+            [
+                sys.executable,
+                idf_py_path,
+                "-C%s" % current_dir,
+                "-v",
+                "test-verbose",
+            ], env=os.environ).decode('utf-8', 'ignore')
+
+        self.assertIn('Verbose mode on', output)
+
+    def test_verbose_messages_not_shown_by_default(self):
+        output = subprocess.check_output(
+            [
+                sys.executable,
+                idf_py_path,
+                "-C%s" % current_dir,
+                "test-verbose",
+            ], env=os.environ).decode('utf-8', 'ignore')
+
+        self.assertIn('Output from test-verbose', output)
+        self.assertNotIn('Verbose mode on', output)
 
 
 class TestGlobalAndSubcommandParameters(unittest.TestCase):

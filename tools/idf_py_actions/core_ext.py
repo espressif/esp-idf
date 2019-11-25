@@ -53,6 +53,8 @@ def action_extensions(base_actions, project_path):
         for line in ctx.command.verbose_output:
             print(line)
 
+        return value
+
     def clean(action, ctx, args):
         if not os.path.isdir(args.build_dir):
             print("Build directory '%s' not found. Nothing to clean." % args.build_dir)
@@ -157,6 +159,7 @@ def action_extensions(base_actions, project_path):
                 "names": ["--version"],
                 "help": "Show IDF version and exit.",
                 "is_flag": True,
+                "expose_value": False,
                 "callback": idf_version_callback
             },
             {
