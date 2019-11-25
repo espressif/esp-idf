@@ -593,6 +593,23 @@ void bta_dm_set_dev_name (tBTA_DM_MSG *p_data)
     bta_dm_set_eir ((char *)p_data->set_name.name);
 }
 
+/*******************************************************************************
+**
+** Function         bta_dm_set_afh_channels
+**
+** Description      Sets AFH channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data)
+{
+#if CLASSIC_BT_INCLUDED
+    BTM_SetAfhChannels (p_data->set_afh_channels.channels, p_data->set_afh_channels.set_afh_cb);
+#endif /// CLASSIC_BT_INCLUDED
+}
+
 void bta_dm_update_white_list(tBTA_DM_MSG *p_data)
 {
     BTM_BleUpdateAdvWhitelist(p_data->white_list.add_remove, p_data->white_list.remote_addr, p_data->white_list.add_wl_cb);

@@ -422,6 +422,8 @@ typedef tBTM_TX_POWER_RESULTS tBTA_TX_POWER_RESULTS;
 
 typedef tBTM_RSSI_RESULTS tBTA_RSSI_RESULTS;
 
+typedef tBTM_SET_AFH_CHANNELS_RESULTS tBTA_SET_AFH_CHANNELS_RESULTS;
+
 /* advertising channel map */
 #define BTA_BLE_ADV_CHNL_37 BTM_BLE_ADV_CHNL_37
 #define BTA_BLE_ADV_CHNL_38 BTM_BLE_ADV_CHNL_38
@@ -1450,6 +1452,18 @@ extern void BTA_DisableTestMode(void);
 *******************************************************************************/
 extern void BTA_DmSetDeviceName(const char *p_name);
 
+/*******************************************************************************
+**
+** Function         BTA_DmSetAfhChannels
+**
+** Description      This function sets the AFH channels
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb);
+
 extern void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb);
 
 extern void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb);
@@ -2292,8 +2306,8 @@ extern void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_l
 ** Returns          None
 **
 *******************************************************************************/
-extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, 
-                                                BD_ADDR device_info, 
+extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
+                                                BD_ADDR device_info,
                                                 tBTA_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK p_update_duplicate_exceptional_list_cback);
 
 /*******************************************************************************

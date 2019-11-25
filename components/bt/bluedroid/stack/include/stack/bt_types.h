@@ -361,6 +361,9 @@ typedef UINT8 ACO[ACO_LEN];                 /* Authenticated ciphering offset */
 #define COF_LEN         12
 typedef UINT8 COF[COF_LEN];                 /* ciphering offset number */
 
+#define AFH_CHANNELS_LEN    10
+typedef UINT8 AFH_CHANNELS[AFH_CHANNELS_LEN];
+
 typedef struct {
     UINT8               qos_flags;          /* TBD */
     UINT8               service_type;       /* see below */

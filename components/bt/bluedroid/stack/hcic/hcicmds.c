@@ -1876,3 +1876,28 @@ void btsnd_hcic_vendor_spec_cmd (void *buffer, UINT16 opcode, UINT8 len,
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
 }
+
+#if (CLASSIC_BT_INCLUDED == TRUE)
+BOOLEAN btsnd_hcic_set_afh_channels (AFH_CHANNELS channels)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    if ((p = HCI_GET_CMD_BUF(HCIC_PARAM_SIZE_SET_AFH_CHANNELS)) == NULL) {
+        return (FALSE);
+    }
+
+    pp = (UINT8 *)(p + 1);
+
+    p->len    = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_SET_AFH_CHANNELS;
+    p->offset = 0;
+
+    UINT16_TO_STREAM (pp, HCI_SET_AFH_CHANNELS);
+    UINT8_TO_STREAM  (pp, HCIC_PARAM_SIZE_SET_AFH_CHANNELS);
+
+    ARRAY_TO_STREAM  (pp, channels, HCIC_PARAM_SIZE_SET_AFH_CHANNELS);
+
+    btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
+    return (TRUE);
+}
+#endif /// CLASSIC_BT_INCLUDED == TRUE
