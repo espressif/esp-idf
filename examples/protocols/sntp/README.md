@@ -8,6 +8,10 @@ Open the project configuration menu (`idf.py menuconfig`):
 
 * Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
 
+* Select one method to synchronize time out of the three available in `CONFIG_SNTP_TIME_SYNC_METHOD` (default `update time immediately when received`).
+
+* The time synchronization period is defined by `CONFIG_LWIP_SNTP_UPDATE_DELAY`. This option allows you to set the time synchronization period (default is one hour). This option does not affect this example because after synchronization the program goes into deep sleep for 10 seconds. If you modify this example or use the code from this example, keep in mind that this option will trigger time synchronization. You can change it in `Component config-->LWIP-->SNTP-->Request interval to update time (ms)` menu.
+
 * When using Make build system, set `Default serial port` under `Serial flasher config`.
 
 ## Obtaining time using LwIP SNTP module

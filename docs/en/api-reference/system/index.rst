@@ -27,6 +27,7 @@ System API
     Power Management <power_management>
     Sleep Modes <sleep_modes>
     Watchdogs <wdts>
+    System Time <system_time>
 
 
 Code examples for this API section are provided in the :example:`system` directory of ESP-IDF examples.
