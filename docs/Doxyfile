@@ -92,6 +92,7 @@ INPUT = \
     ../../components/driver/include/driver/i2s.h \
     ../../components/driver/include/driver/ledc.h \
     ../../components/driver/include/driver/mcpwm.h \
+    ../../components/soc/include/hal/mcpwm_types.h \
     ../../components/driver/include/driver/pcnt.h \
     ../../components/driver/include/driver/rmt.h \
     ../../components/driver/include/driver/sigmadelta.h \
