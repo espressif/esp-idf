@@ -31,6 +31,12 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port"
                                                     RSR(reg_idx, *(uint32_t*)(reg_ptr++)); \
                                                 }
 
+#define COREDUMP_GET_EPC(reg, ptr) \
+    if (reg - EPC_1 + 1 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
+
+#define COREDUMP_GET_EPS(reg, ptr) \
+    if (reg - EPS_2 + 2 <= XCHAL_NUM_INTLEVELS) COREDUMP_GET_REG_PAIR(reg, ptr)
+
 // Enumeration of registers of exception stack frame
 // and solicited stack frame
 typedef enum
@@ -313,13 +319,13 @@ static core_dump_reg_pair_t *esp_core_dump_get_epc_regs(core_dump_reg_pair_t* sr
 {
     uint32_t* reg_ptr = (uint32_t*)src;
     // get InterruptException program counter registers
-    COREDUMP_GET_REG_PAIR(EPC_1, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPC_2, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPC_3, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPC_4, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPC_5, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPC_6, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPC_7, reg_ptr);
+    COREDUMP_GET_EPC(EPC_1, reg_ptr);
+    COREDUMP_GET_EPC(EPC_2, reg_ptr);
+    COREDUMP_GET_EPC(EPC_3, reg_ptr);
+    COREDUMP_GET_EPC(EPC_4, reg_ptr);
+    COREDUMP_GET_EPC(EPC_5, reg_ptr);
+    COREDUMP_GET_EPC(EPC_6, reg_ptr);
+    COREDUMP_GET_EPC(EPC_7, reg_ptr);
     return (core_dump_reg_pair_t*)reg_ptr;
 }
 
@@ -327,12 +333,12 @@ static core_dump_reg_pair_t *esp_core_dump_get_eps_regs(core_dump_reg_pair_t* sr
 {
     uint32_t* reg_ptr = (uint32_t*)src;
     // get InterruptException processor state registers
-    COREDUMP_GET_REG_PAIR(EPS_2, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPS_3, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPS_4, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPS_5, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPS_6, reg_ptr);
-    COREDUMP_GET_REG_PAIR(EPS_7, reg_ptr);
+    COREDUMP_GET_EPS(EPS_2, reg_ptr);
+    COREDUMP_GET_EPS(EPS_3, reg_ptr);
+    COREDUMP_GET_EPS(EPS_4, reg_ptr);
+    COREDUMP_GET_EPS(EPS_5, reg_ptr);
+    COREDUMP_GET_EPS(EPS_6, reg_ptr);
+    COREDUMP_GET_EPS(EPS_7, reg_ptr);
     return (core_dump_reg_pair_t*)reg_ptr;
 }
 
