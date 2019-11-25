@@ -41,8 +41,7 @@ def action_extensions(base_actions, project_path):
 
         except Exception:
             raise FatalError(
-                'command "%s" is not known to idf.py and is not a %s target' %
-                (target_name, GENERATORS[args.generator].command))
+                'command "%s" is not known to idf.py and is not a %s target' % (target_name, args.generator))
 
         run_target(target_name, args)
 
