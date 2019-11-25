@@ -2,6 +2,11 @@ def action_extensions(base_actions, project_path=None):
     def echo(name, *args, **kwargs):
         print(name, args, kwargs)
 
+    def verbose(name, ctx, args):
+        print("Output from test-verbose")
+        if args.verbose:
+            print("Verbose mode on")
+
     # Add global options
     extensions = {
         "global_options": [
@@ -37,11 +42,13 @@ def action_extensions(base_actions, project_path=None):
             },
         ],
         "actions": {
+            "test-verbose": {
+                "callback": verbose,
+                "help": "Command that have some verbosity",
+            },
             "test-0": {
-                "callback":
-                echo,
-                "help":
-                "Non-deprecated command 0",
+                "callback": echo,
+                "help": "Non-deprecated command 0",
                 "options": [
                     {
                         "names": ["--test-sub-0"],
