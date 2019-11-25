@@ -111,7 +111,7 @@ typedef struct {
 #define i2c_hal_slave_clr_rx_it(hal)    i2c_ll_slave_clr_rx_it((hal)->dev)
 
 /**
- * @brief  Get the I2C hardware instance and init the I2C master. Note that this function should be called before other hal layer function is called.
+ * @brief  Init the I2C master.
  *
  * @param  hal Context of the HAL layer
  * @param  i2c_num I2C port number
@@ -121,7 +121,7 @@ typedef struct {
 void i2c_hal_master_init(i2c_hal_context_t *hal, i2c_port_t i2c_num);
 
 /**
- * @brief  Get the I2C hardware instance and init the I2C slave. Note that this function should be called before other hal layer function is called.
+ * @brief  Init the I2C slave.
  *
  * @param  hal Context of the HAL layer
  * @param  i2c_num I2C port number
