@@ -42,6 +42,7 @@ IP Network Layer
     :hidden:
 
     TCP/IP Adapter Migration Guide <tcpip_adapter_migration.rst>
+    ESP-NETIF Custom I/O Driver <esp_netif_driver.rst>
 
 Code examples for TCP/IP socket APIs are provided in the :example:`protocols/sockets` directory of ESP-IDF examples.
 

@@ -90,10 +90,6 @@ B) Interaction with network interfaces using ESP-NETIF API
   * Receiving IP events (connect/disconnect)
   * Controlling application lifecycle (set interface up/down)
 
-Please note that the initialization code as well as registering event handlers for default interfaces,
-such as WiFi softAP and WiFi station, are provided as a separate APIs (for example ``esp_netif_create_default_wifi_ap()`` and
-``esp_netif_create_default_wifi_sta()``) to facilitate simple startup code for most applications.
-
 
 B) Communication driver, IO driver, media driver
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -105,7 +101,7 @@ Communication driver plays these two important roles in relation with ESP-NETIF:
 2) Glue IO layer: Adapts the input/output functions to use ESP-NETIF transmit, receive and free receive buffer
 
   * Installs driver_transmit to appropriate ESP-NETIF object, so that outgoing packets from network stack are passed to the IO driver
-  * Calls ``esp_netif_receive()`` to pass incoming data to network stack
+  * Calls :cpp:func:`esp_netif_receive()` to pass incoming data to network stack
 
 
 C) ESP-NETIF, former tcpip_adapter
@@ -140,9 +136,42 @@ Network stack has no public interaction with application code with regard to pub
 ESP-NETIF API.
 
 
+ESP-NETIF programmer's manual
+-----------------------------
+
+Please refer to the example section for basic initialization of default interfaces:
+
+- WiFi Station: :example:`examples/wifi/getting_started/station/main/station_example_main.c`
+- WiFi Access Point: :example:`examples/wifi/getting_started/softAP/main/softap_example_main.c`
+- Ethernet :example:`examples/ethernet/basic/main/ethernet_example_main.c`
+
+For more specific cases please consult this guide: :doc:`/api-reference/network/esp_netif_driver`.
+
+
+WiFi default initialization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The initialization code as well as registering event handlers for default interfaces,
+such as softAP and station, are provided in two separate APIs to facilitate simple startup code for most applications:
+
+* :cpp:func:`esp_netif_create_default_wifi_ap()`
+* :cpp:func:`esp_netif_create_default_wifi_sta()`
+
+Please note that these functions return the ``esp_netif`` handle, i.e. a pointer to a network interface object allocated and
+configured with default settings, which as a consequence, means that:
+
+* The created object has to be destroyed if a network de-initialization is provided by an application.
+* These *default* interfaces must not be created multiple times, unless the created handle is deleted using :cpp:func:`esp_netif_destroy()`.
+* When using Wifi in ``AP+STA`` mode, both these interfaces has to be created.
+
 
 API Reference
 -------------
 
 .. include:: /_build/inc/esp_netif.inc
 
+
+WiFi default API reference
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. include:: /_build/inc/esp_wifi_default.inc
