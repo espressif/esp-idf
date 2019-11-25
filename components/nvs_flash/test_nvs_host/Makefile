@@ -12,12 +12,19 @@ SOURCE_FILES = \
 		nvs_item_hash_list.cpp \
 		nvs_encr.cpp \
 		nvs_ops.cpp \
+		nvs_handle_simple.cpp \
+		nvs_handle_locked.cpp \
+		nvs_partition_manager.cpp \
+		nvs_cxx_api.cpp \
 	) \
 	spi_flash_emulation.cpp \
 	test_compressed_enum_table.cpp \
 	test_spi_flash_emulation.cpp \
 	test_intrusive_list.cpp \
 	test_nvs.cpp \
+	test_partition_manager.cpp \
+	test_nvs_handle.cpp \
+	test_nvs_cxx_api.cpp \
 	crc.cpp \
 	main.cpp
 
@@ -66,5 +73,11 @@ clean:
 	rm -f ../nvs_partition_generator/partition_encrypted.bin
 	rm -f ../nvs_partition_generator/partition_encrypted_using_keygen.bin
 	rm -f ../nvs_partition_generator/partition_encrypted_using_keyfile.bin
+	rm -f ../nvs_partition_generator/Test-1-partition-encrypted.bin
+	rm -f ../nvs_partition_generator/Test-1-partition.bin
+	rm -f ../../../tools/mass_mfg/samples/sample_values_multipage_blob_created.csv
+	rm -f ../../../tools/mass_mfg/samples/sample_values_singlepage_blob_created.csv
+
+
 
 .PHONY: clean all test long-test
