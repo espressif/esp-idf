@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import sys
+from io import open
 
 from .constants import GENERATORS
 from .errors import FatalError
@@ -96,7 +97,7 @@ def _parse_cmakecache(path):
     CMakeCache entries also each have a "type", but this is currently ignored.
     """
     result = {}
-    with open(path) as f:
+    with open(path, encoding='utf-8') as f:
         for line in f:
             # cmake cache lines look like: CMAKE_CXX_FLAGS_DEBUG:STRING=-g
             # groups are name, type, value
