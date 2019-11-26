@@ -100,8 +100,8 @@ static inline void i2c_ll_rxfifo_rst(i2c_dev_t *hw)
 static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int low_period)
 {
     hw->scl_low_period.period = low_period;
-    hw->scl_high_period.period = hight_period*0.6;
-    hw->scl_high_period.scl_wait_high_period = hight_period*0.4-1;
+    hw->scl_high_period.period = hight_period;
+    hw->scl_high_period.scl_wait_high_period = 0;
 }
 
 /**
