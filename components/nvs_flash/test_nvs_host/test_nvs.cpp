@@ -549,6 +549,34 @@ TEST_CASE("can erase items", "[nvs]")
     CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
 }
 
+TEST_CASE("readonly handle fails on writing", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    const char* str = "value 0123456789abcdef0123456789abcdef";
+    const uint8_t blob[8] = {0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7};
+
+    nvs_handle_t handle_1;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    // first, creating namespace...
+    TEST_ESP_OK(nvs_open("ro_ns", NVS_READWRITE, &handle_1));
+    nvs_close(handle_1);
+
+    TEST_ESP_OK(nvs_open("ro_ns", NVS_READONLY, &handle_1));
+    TEST_ESP_ERR(nvs_set_i32(handle_1, "key", 47), ESP_ERR_NVS_READ_ONLY);
+    TEST_ESP_ERR(nvs_set_str(handle_1, "key", str), ESP_ERR_NVS_READ_ONLY);
+    TEST_ESP_ERR(nvs_set_blob(handle_1, "key", blob, 8), ESP_ERR_NVS_READ_ONLY);
+
+    nvs_close(handle_1);
+
+    // without deinit it affects "nvs api tests"
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
+}
+
 TEST_CASE("nvs api tests", "[nvs]")
 {
     SpiFlashEmulator emu(10);
@@ -2087,7 +2115,7 @@ TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
     nvs_handle_t handle;
 
     TEST_ESP_OK( nvs_flash_init_custom("test", 0, 2) );
-    TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READONLY, &handle));
+    TEST_ESP_OK( nvs_open_from_partition("test", "dummyNamespace", NVS_READWRITE, &handle));
 
     char buf[64] = {0};
     size_t buflen = 64;
