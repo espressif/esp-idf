@@ -12,9 +12,11 @@ Some ESP-NETIF API functions are intended to be called by application code, for 
 
 In many cases, applications do not need to call ESP-NETIF APIs directly as they are called from the default network event handlers.
 
+ESP-NETIF component is a successor of the tcpip_adapter, former network interface abstraction, which has become deprecated since IDF v4.1.
+Please refer to the :doc:`/api-reference/network/tcpip_adapter_migration` section in case existing applications to be ported to use the esp-netif API instead.
 
 ESP-NETIF architecture
-======================
+----------------------
 
 .. code-block:: text
 
