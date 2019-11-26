@@ -63,7 +63,8 @@ enum {
     WPA2_AUTH_PSK       = 0x05,
     WPA_AUTH_CCKM       = 0x06,
     WPA2_AUTH_CCKM      = 0x07,
-    WPA2_AUTH_INVALID   = 0x08,
+    WPA2_AUTH_PSK_SHA256= 0x08,
+    WPA2_AUTH_INVALID   = 0x09,
 };
 
 typedef enum {
@@ -163,6 +164,13 @@ typedef struct {
     uint32_t arg_size;
 } wifi_ipc_config_t;
 
+#define WPA_IGTK_LEN 16
+typedef struct {
+    uint8_t keyid[2];
+    uint8_t pn[6];
+    uint8_t igtk[WPA_IGTK_LEN];
+} wifi_wpa_igtk_t;
+
 uint8_t *esp_wifi_ap_get_prof_pmk_internal(void);
 struct wifi_ssid *esp_wifi_ap_get_prof_ap_ssid_internal(void);
 uint8_t esp_wifi_ap_get_prof_authmode_internal(void);
@@ -217,5 +225,8 @@ esp_err_t esp_wifi_internal_supplicant_header_md5_check(const char *md5);
 int esp_wifi_sta_update_ap_info_internal(void);
 uint8_t *esp_wifi_sta_get_ap_info_prof_pmk_internal(void);
 esp_err_t esp_wifi_set_wps_start_flag_internal(bool start);
+uint16_t esp_wifi_sta_pmf_enabled(void);
+wifi_cipher_type_t esp_wifi_sta_get_mgmt_group_cipher(void);
+int esp_wifi_set_igtk_internal(uint8_t if_index, const wifi_wpa_igtk_t *igtk);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

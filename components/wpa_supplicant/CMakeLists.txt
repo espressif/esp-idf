@@ -5,12 +5,15 @@ set(srcs "port/os_xtensa.c"
     "src/ap/wpa_auth_ie.c"
     "src/common/wpa_common.c"
     "src/crypto/aes-cbc.c"
+    "src/crypto/aes-ccm.c"
     "src/crypto/aes-internal-dec.c"
     "src/crypto/aes-internal-enc.c"
     "src/crypto/aes-internal.c"
     "src/crypto/aes-unwrap.c"
     "src/crypto/aes-wrap.c"
+    "src/crypto/aes-omac1.c"
     "src/crypto/bignum.c"
+    "src/crypto/ccmp.c"
     "src/crypto/crypto_mbedtls.c"
     "src/crypto/crypto_ops.c"
     "src/crypto/crypto_internal-cipher.c"
@@ -103,4 +106,5 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     ESPRESSIF_USE
     ESP32_WORKAROUND
     CONFIG_ECC
+    CONFIG_IEEE80211W
     )

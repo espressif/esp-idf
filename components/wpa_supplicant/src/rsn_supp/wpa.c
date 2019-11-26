@@ -27,6 +27,7 @@
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
+#include "crypto/ccmp.h"
 
 /**
  * eapol_sm_notify_eap_success - Notification of external EAP success trigger
@@ -46,7 +47,7 @@
 /* fix buf for tx for now */
 #define WPA_TX_MSG_BUFF_MAXLEN 200
 
-#define ASSOC_IE_LEN 24 + 2 + PMKID_LEN
+#define ASSOC_IE_LEN 24 + 2 + PMKID_LEN + RSN_SELECTOR_LEN
 u8 assoc_ie_buf[ASSOC_IE_LEN+2]; 
 
 void set_assoc_ie(u8 * assoc_buf);
@@ -76,6 +77,65 @@ void   eapol_sm_notify_eap_success(Boolean success)
 {
 
 }
+
+wifi_cipher_type_t cipher_type_map_supp_to_public(uint32_t wpa_cipher)
+{
+    switch (wpa_cipher) {
+    case WPA_CIPHER_NONE:
+        return WIFI_CIPHER_TYPE_NONE;
+
+    case WPA_CIPHER_WEP40:
+        return WIFI_CIPHER_TYPE_WEP40;
+
+    case WPA_CIPHER_WEP104:
+        return WIFI_CIPHER_TYPE_WEP104;
+
+    case WPA_CIPHER_TKIP:
+        return WIFI_CIPHER_TYPE_TKIP;
+
+    case WPA_CIPHER_CCMP:
+        return WIFI_CIPHER_TYPE_CCMP;
+
+    case WPA_CIPHER_CCMP|WPA_CIPHER_TKIP:
+        return WIFI_CIPHER_TYPE_TKIP_CCMP;
+
+    case WPA_CIPHER_AES_128_CMAC:
+        return WIFI_CIPHER_TYPE_AES_CMAC128;
+
+    default:
+        return WIFI_CIPHER_TYPE_UNKNOWN;
+    }
+}
+
+uint32_t cipher_type_map_public_to_supp(wifi_cipher_type_t cipher)
+{
+    switch (cipher) {
+    case WIFI_CIPHER_TYPE_NONE:
+        return WPA_CIPHER_NONE;
+
+    case WIFI_CIPHER_TYPE_WEP40:
+        return WPA_CIPHER_WEP40;
+
+    case WIFI_CIPHER_TYPE_WEP104:
+        return WPA_CIPHER_WEP104;
+
+    case WIFI_CIPHER_TYPE_TKIP:
+        return WPA_CIPHER_TKIP;
+
+    case WIFI_CIPHER_TYPE_CCMP:
+        return WPA_CIPHER_CCMP;
+
+    case WIFI_CIPHER_TYPE_TKIP_CCMP:
+        return WPA_CIPHER_CCMP|WPA_CIPHER_TKIP;
+
+    case WIFI_CIPHER_TYPE_AES_CMAC128:
+        return WPA_CIPHER_AES_128_CMAC;
+
+    default:
+        return WPA_CIPHER_NONE;
+    }
+}
+
 /**
  * get_bssid - Get the current BSSID
  * @priv: private driver interface data
@@ -622,7 +682,7 @@ int   wpa_supplicant_install_ptk(struct wpa_sm *sm)
         #endif    
         return -1;
     }
-       
+
     if (sm->wpa_ptk_rekey) {
         eloop_cancel_timeout(wpa_sm_rekey_ptk, sm, NULL);
         eloop_register_timeout(sm->wpa_ptk_rekey, 0, wpa_sm_rekey_ptk,
@@ -932,7 +992,29 @@ void wpa_report_ie_mismatch(struct wpa_sm *sm, const u8 *src_addr,
 int   ieee80211w_set_keys(struct wpa_sm *sm,
                    struct wpa_eapol_ie_parse *ie)
 {
+#ifdef CONFIG_IEEE80211W
+	if (sm->mgmt_group_cipher != WPA_CIPHER_AES_128_CMAC) {
+		return -1;
+	}
+
+	if (ie->igtk) {
+		const wifi_wpa_igtk_t *igtk;
+		uint16_t keyidx;
+
+		if (ie->igtk_len != sizeof(*igtk)) {
+			return -1;
+		}
+		igtk = (const wifi_wpa_igtk_t*)ie->igtk;
+		keyidx = WPA_GET_LE16(igtk->keyid);
+		if (keyidx > 4095) {
+			return -1;
+		}
+		return esp_wifi_set_igtk_internal(ESP_IF_WIFI_STA, igtk);
+	}
+	return 0;
+#else
      return 0;
+#endif
 }
 
   int   wpa_supplicant_validate_ie(struct wpa_sm *sm,
@@ -1169,7 +1251,7 @@ int   ieee80211w_set_keys(struct wpa_sm *sm,
         }
     }
     
-    if (ieee80211w_set_keys(sm, &ie) < 0) {
+    if (sm->pmf_cfg.capable && ieee80211w_set_keys(sm, &ie) < 0) {
         #ifdef DEBUG_PRINT    
         wpa_printf(MSG_DEBUG, "RSN: Failed to configure IGTK");
         #endif    
@@ -1746,7 +1828,11 @@ int   wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     }
     key_info = WPA_GET_BE16(key->key_info);
     ver = key_info & WPA_KEY_INFO_TYPE_MASK;
+
     if (ver != WPA_KEY_INFO_TYPE_HMAC_MD5_RC4 &&
+#ifdef CONFIG_IEEE80211W
+        ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
+#endif
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
 #ifdef DEBUG_PRINT    
         wpa_printf(MSG_DEBUG, "WPA: Unsupported EAPOL-Key descriptor "
@@ -1754,6 +1840,14 @@ int   wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
 #endif        
         goto out;
     }
+
+#ifdef CONFIG_IEEE80211W
+    if (wpa_key_mgmt_sha256(sm->key_mgmt)) {
+        if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC) {
+            goto out;
+        }
+    } else
+#endif
 
     if (sm->pairwise_cipher == WPA_CIPHER_CCMP &&
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
@@ -1977,10 +2071,13 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     struct wpa_sm *sm = &gWpaSm;
 
     sm->proto = wpa_proto;
-    if (auth_mode == WPA2_AUTH_ENT)
+    if (auth_mode == WPA2_AUTH_ENT) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X; /* for wpa2 enterprise */
-    else
+    } else if (auth_mode == WPA2_AUTH_PSK) {
         sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
+    } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
+        sm->key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
+    }
 }
 
 void wpa_set_pmk(uint8_t *pmk)
@@ -2011,6 +2108,16 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
         wpa_sm_set_pmk_from_pmksa(sm);
     }
+
+#ifdef CONFIG_IEEE80211W
+    if (esp_wifi_sta_pmf_enabled()) {
+        wifi_config_t wifi_cfg;
+
+        esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_cfg);
+        sm->pmf_cfg = wifi_cfg.sta.pmf_cfg;
+        sm->mgmt_group_cipher = cipher_type_map_public_to_supp(esp_wifi_sta_get_mgmt_group_cipher());
+    }
+#endif
     set_assoc_ie(assoc_ie_buf); /* use static buffer */
     res = wpa_gen_wpa_ie(sm, sm->assoc_wpa_ie, sm->assoc_wpa_ie_len);
     if (res < 0) 
@@ -2234,10 +2341,10 @@ bool wpa_sta_in_4way_handshake(void)
     return false;
 }
 
-
 bool wpa_sta_is_cur_pmksa_set(void) {
     struct wpa_sm *sm = &gWpaSm;
     return (pmksa_cache_get_current(sm) != NULL);
 }
+
 #endif // ESP_SUPPLICANT
 
