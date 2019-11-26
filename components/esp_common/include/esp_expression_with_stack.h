@@ -17,22 +17,32 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "esp_debug_helpers.h"
+
 
 /**
  * @brief Executes a 1-line expression with a application alocated stack
  * @param lock Mutex object to protect in case of shared stack
- * @param stack Pointer to user alocated stack, it must points to its top
+ * @param stack Pointer to user alocated stack
+ * @param stack_size Size of current stack in bytes
  * @param expression Expression or function to be executed using the stack
  */
-#define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, expression)  \
+#define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, stack_size, expression)  \
 ({                                                                  \
-    if(lock) {                                                      \
+    if(lock && stack && stack_size) {                               \
         uint32_t backup;                                            \
+        int watchpoint_place=(int)stack;                            \
+        portSTACK_TYPE *top_of_stack = &stack[0] +                  \
+                    (sizeof(stack_size * sizeof(portSTACK_TYPE)) /  \
+                    sizeof(portSTACK_TYPE));                        \
+        watchpoint_place=(watchpoint_place+31)&(~31);               \
         xSemaphoreTake(lock, portMAX_DELAY);                        \
-        esp_switch_stack_enter(stack, &backup);                     \
+        esp_set_watchpoint(2, (char*)watchpoint_place, 32, ESP_WATCHPOINT_STORE);\
+        esp_switch_stack_enter(top_of_stack, &backup);              \
         {                                                           \
             expression;                                             \
         }                                                           \
+        esp_clear_watchpoint(2);                                    \
         esp_switch_stack_exit(&backup);                             \
         xSemaphoreGive(lock);                                       \
     }                                                               \

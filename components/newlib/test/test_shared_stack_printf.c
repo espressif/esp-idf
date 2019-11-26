@@ -26,7 +26,7 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
     TEST_ASSERT(shared_stack != NULL);
 
     SemaphoreHandle_t printf_lock = xSemaphoreCreateMutex();
-    ESP_EXECUTE_EXPRESSION_WITH_STACK(printf_lock, ext_stack_top, printf("Executing this from external stack! \n"));
-    ESP_EXECUTE_EXPRESSION_WITH_STACK(printf_lock, ext_stack_top, check_stack(ext_stack_top, shared_stack));    
+    ESP_EXECUTE_EXPRESSION_WITH_STACK(printf_lock, shared_stack,8192,printf("Executing printf from external stack! \n"));
+    ESP_EXECUTE_EXPRESSION_WITH_STACK(printf_lock, shared_stack,8192,check_stack(ext_stack_top, shared_stack));    
     free(shared_stack);
 }
