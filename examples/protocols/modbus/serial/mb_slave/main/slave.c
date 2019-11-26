@@ -5,15 +5,16 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include <stdio.h>
+#include <stdint.h>
 #include "esp_err.h"
-#include "sdkconfig.h"
 #include "mbcontroller.h"       // for mbcontroller defines and api
-#include "deviceparams.h"       // for device parameters structures
+#include "modbus_params.h"      // for modbus parameters structures
 #include "esp_log.h"            // for log_write
+#include "sdkconfig.h"
 
-#define MB_PORT_NUM     (2)           // Number of UART port used for Modbus connection
-#define MB_DEV_ADDR     (1)           // The address of device in Modbus network
-#define MB_DEV_SPEED    (115200)      // The communication speed of the UART
+#define MB_PORT_NUM     (CONFIG_MB_UART_PORT_NUM)   // Number of UART port used for Modbus connection
+#define MB_SLAVE_ADDR   (CONFIG_MB_SLAVE_ADDR)      // The address of device in Modbus network
+#define MB_DEV_SPEED    (CONFIG_MB_UART_BAUD_RATE)  // The communication speed of the UART
 
 // Defines below are used to define register start address for each type of Modbus registers
 #define MB_REG_DISCRETE_INPUT_START         (0x0000)
@@ -22,8 +23,8 @@
 #define MB_REG_COILS_START                  (0x0000)
 
 #define MB_PAR_INFO_GET_TOUT                (10) // Timeout for get parameter info
-#define MB_CHAN_DATA_MAX_VAL                (10)
-#define MB_CHAN_DATA_OFFSET                 (0.01f)
+#define MB_CHAN_DATA_MAX_VAL                (6)
+#define MB_CHAN_DATA_OFFSET                 (0.2f)
 #define MB_READ_MASK                        (MB_EVENT_INPUT_REG_RD \
                                                 | MB_EVENT_HOLDING_REG_RD \
                                                 | MB_EVENT_DISCRETE_RD \
@@ -32,7 +33,9 @@
                                                 | MB_EVENT_COILS_WR)
 #define MB_READ_WRITE_MASK                  (MB_READ_MASK | MB_WRITE_MASK)
 
-static const char *TAG = "MODBUS_SLAVE_APP";
+static const char *SLAVE_TAG = "SLAVE_TEST";
+
+static portMUX_TYPE param_lock = portMUX_INITIALIZER_UNLOCKED;
 
 // Set register values into known state
 static void setup_reg_data(void)
@@ -43,21 +46,18 @@ static void setup_reg_data(void)
     discrete_reg_params.discrete_input5 = 1;
     discrete_reg_params.discrete_input7 = 1;
 
-    holding_reg_params.data_chan0 = 1.34;
-    holding_reg_params.data_chan1 = 2.56;
-    holding_reg_params.data_chan2 = 3.78;
-    holding_reg_params.data_chan3 = 4.90;
+    holding_reg_params.holding_data0 = 1.34;
+    holding_reg_params.holding_data1 = 2.56;
+    holding_reg_params.holding_data2 = 3.78;
+    holding_reg_params.holding_data3 = 4.90;
 
-    coil_reg_params.coil0 = 1;
-    coil_reg_params.coil2 = 1;
-    coil_reg_params.coil4 = 1;
-    coil_reg_params.coil6 = 1;
-    coil_reg_params.coil7 = 1;
+    coil_reg_params.coils_port0 = 0x55;
+    coil_reg_params.coils_port1 = 0xAA;
 
-    input_reg_params.data_chan0 = 1.34;
-    input_reg_params.data_chan1 = 2.56;
-    input_reg_params.data_chan2 = 3.78;
-    input_reg_params.data_chan3 = 4.90;
+    input_reg_params.input_data0 = 1.12;
+    input_reg_params.input_data1 = 2.34;
+    input_reg_params.input_data2 = 3.56;
+    input_reg_params.input_data3 = 4.78;
 }
 
 // An example application of Modbus slave. It is based on freemodbus stack.
@@ -71,19 +71,23 @@ void app_main(void)
     mb_register_area_descriptor_t reg_area; // Modbus register area descriptor structure
 
     // Set UART log level
-    esp_log_level_set(TAG, ESP_LOG_INFO);
+    esp_log_level_set(SLAVE_TAG, ESP_LOG_INFO);
     void* mbc_slave_handler = NULL;
 
     ESP_ERROR_CHECK(mbc_slave_init(MB_PORT_SERIAL_SLAVE, &mbc_slave_handler)); // Initialization of Modbus controller
 
     // Setup communication parameters and start stack
-    comm_info.mode = MB_MODE_RTU;
-    comm_info.slave_addr = MB_DEV_ADDR;
+#if CONFIG_MB_COMM_MODE_ASCII
+    comm_info.mode = MB_MODE_ASCII,
+#elif CONFIG_MB_COMM_MODE_RTU
+    comm_info.mode = MB_MODE_RTU,
+#endif
+    comm_info.slave_addr = MB_SLAVE_ADDR;
     comm_info.port = MB_PORT_NUM;
     comm_info.baudrate = MB_DEV_SPEED;
     comm_info.parity = MB_PARITY_NONE;
     ESP_ERROR_CHECK(mbc_slave_setup((void*)&comm_info));
-    
+
     // The code below initializes Modbus register area descriptors
     // for Modbus Holding Registers, Input Registers, Coils and Discrete Inputs
     // Initialization should be done for each supported Modbus register area according to register map.
@@ -122,17 +126,20 @@ void app_main(void)
     // Starts of modbus controller and stack
     ESP_ERROR_CHECK(mbc_slave_start());
     
+    // Set UART pin numbers
+    ESP_ERROR_CHECK(uart_set_pin(MB_PORT_NUM, CONFIG_MB_UART_TXD,
+                            CONFIG_MB_UART_RXD, CONFIG_MB_UART_RTS,
+                            UART_PIN_NO_CHANGE));
+
     // Set UART driver mode to Half Duplex
     ESP_ERROR_CHECK(uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX));  
-
-    // Set UART pin numbers
-    ESP_ERROR_CHECK(uart_set_pin(MB_PORT_NUM, CONFIG_MB_UART_TXD, 
-                                    CONFIG_MB_UART_RXD, CONFIG_MB_UART_RTS, 
-                                    UART_PIN_NO_CHANGE));
+                                    
+    ESP_LOGI(SLAVE_TAG, "Modbus slave stack initialized.");
+    ESP_LOGI(SLAVE_TAG, "Start modbus test...");
 
     // The cycle below will be terminated when parameter holdingRegParams.dataChan0
     // incremented each access cycle reaches the CHAN_DATA_MAX_VAL value.
-    for(;holding_reg_params.data_chan0 < MB_CHAN_DATA_MAX_VAL;) {
+    for(;holding_reg_params.holding_data0 < MB_CHAN_DATA_MAX_VAL;) {
         // Check for read/write events of Modbus master for certain events
         mb_event_group_t event = mbc_slave_check_event(MB_READ_WRITE_MASK);
         const char* rw_str = (event & MB_READ_MASK) ? "READ" : "WRITE";
@@ -140,20 +147,25 @@ void app_main(void)
         if(event & (MB_EVENT_HOLDING_REG_WR | MB_EVENT_HOLDING_REG_RD)) {
             // Get parameter information from parameter queue
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            printf("HOLDING %s: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+            ESP_LOGI(SLAVE_TAG, "HOLDING %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                     rw_str,
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
                     (uint32_t)reg_info.type,
                     (uint32_t)reg_info.address,
                     (uint32_t)reg_info.size);
-            if (reg_info.address == (uint8_t*)&holding_reg_params.data_chan0)
+            if (reg_info.address == (uint8_t*)&holding_reg_params.holding_data0)
             {
-                holding_reg_params.data_chan0 += MB_CHAN_DATA_OFFSET;
+                portENTER_CRITICAL(&param_lock);
+                holding_reg_params.holding_data0 += MB_CHAN_DATA_OFFSET;
+                if (holding_reg_params.holding_data0 >= (MB_CHAN_DATA_MAX_VAL - MB_CHAN_DATA_OFFSET)) {
+                    coil_reg_params.coils_port1 = 0xFF;
+                }
+                portEXIT_CRITICAL(&param_lock);
             }
         } else if (event & MB_EVENT_INPUT_REG_RD) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            printf("INPUT READ: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+            ESP_LOGI(SLAVE_TAG, "INPUT READ (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                     (uint32_t)reg_info.time_stamp,
                     (uint32_t)reg_info.mb_offset,
                     (uint32_t)reg_info.type,
@@ -161,7 +173,7 @@ void app_main(void)
                     (uint32_t)reg_info.size);
         } else if (event & MB_EVENT_DISCRETE_RD) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            printf("DISCRETE READ: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+            ESP_LOGI(SLAVE_TAG, "DISCRETE READ (%u us): ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
                                 (uint32_t)reg_info.type,
@@ -169,16 +181,18 @@ void app_main(void)
                                 (uint32_t)reg_info.size);
         } else if (event & (MB_EVENT_COILS_RD | MB_EVENT_COILS_WR)) {
             ESP_ERROR_CHECK(mbc_slave_get_param_info(&reg_info, MB_PAR_INFO_GET_TOUT));
-            printf("COILS %s: time_stamp(us):%u, mb_addr:%u, type:%u, st_address:0x%.4x, size:%u\r\n",
+            ESP_LOGI(SLAVE_TAG, "COILS %s (%u us), ADDR:%u, TYPE:%u, INST_ADDR:0x%.4x, SIZE:%u",
                                 rw_str,
                                 (uint32_t)reg_info.time_stamp,
                                 (uint32_t)reg_info.mb_offset,
                                 (uint32_t)reg_info.type,
                                 (uint32_t)reg_info.address,
                                 (uint32_t)reg_info.size);
+            if (coil_reg_params.coils_port1 == 0xFF) break;
         }
     }
-    // Destroy of Modbus controller once get maximum value of data_chan0
-    printf("Modbus controller destroyed.");
+    // Destroy of Modbus controller on alarm
+    ESP_LOGI(SLAVE_TAG,"Modbus controller destroyed.");
+    vTaskDelay(100);
     ESP_ERROR_CHECK(mbc_slave_destroy());
 }

@@ -58,7 +58,8 @@ typedef enum
     EV_READY = 0x01,                   /*!< Startup finished. */
     EV_FRAME_RECEIVED = 0x02,          /*!< Frame received. */
     EV_EXECUTE = 0x04,                 /*!< Execute function. */
-    EV_FRAME_SENT = 0x08               /*!< Frame sent. */
+    EV_FRAME_SENT = 0x08,              /*!< Frame sent. */
+    EV_FRAME_TRANSMIT = 0x10           /*!< Frame transmit. */
 } eMBEventType;
 
 #if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
@@ -68,7 +69,7 @@ typedef enum {
     EV_MASTER_FRAME_RECEIVED = 0x0002,          /*!< Frame received. */
     EV_MASTER_EXECUTE = 0x0004,                 /*!< Execute function. */
     EV_MASTER_FRAME_SENT = 0x0008,              /*!< Frame sent. */
-    EV_MASTER_FRAME_TRANSMITTED = 0x0010,       /*!< Request execute function error. */
+    EV_MASTER_FRAME_TRANSMIT = 0x0010,          /*!< Frame transmission. */
     EV_MASTER_ERROR_PROCESS = 0x0020,           /*!< Frame error process. */
     EV_MASTER_PROCESS_SUCCESS = 0x0040,         /*!< Request process success. */
     EV_MASTER_ERROR_RESPOND_TIMEOUT = 0x0080,   /*!< Request respond timeout. */

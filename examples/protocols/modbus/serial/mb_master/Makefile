@@ -3,7 +3,9 @@
 # project subdirectory.
 #
 
-PROJECT_NAME := modbus_slave
+PROJECT_NAME := modbus_master
+
+EXTRA_COMPONENT_DIRS := $(IDF_PATH)/examples/protocols/modbus/serial/common_components
 
 include $(IDF_PATH)/make/project.mk
 

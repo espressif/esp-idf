@@ -49,6 +49,47 @@
     - cd $TEST_FW_PATH
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
+    
+.example_debug_template:
+  stage: target_test
+  when: on_success
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_EXAMPLE_TEST
+  dependencies:
+    - assign_test
+    - build_examples_make
+    - build_examples_cmake_esp32
+  artifacts:
+    when: always
+    paths:
+      - $LOG_PATH
+    expire_in: 1 week
+    reports:
+        junit: $LOG_PATH/*/XUNIT_RESULT.xml
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone test env configs
+    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    - cd $TEST_FW_PATH
+    # run test
+    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
 .unit_test_template:
   extends: .example_test_template
@@ -242,6 +283,21 @@ example_test_010:
   tags:
     - ESP32
     - Example_ExtFlash
+
+example_test_011:
+  extends: .example_debug_template
+  parallel: 4
+  tags:
+    - ESP32
+    - Example_T2_RS485
+  artifacts:
+      when: always
+      expire_in: 1 week
+      paths:
+        - $CI_PROJECT_DIR/examples/protocols/modbus/serial/*.log
+        - $LOG_PATH
+  variables:
+    SETUP_TOOLS: "1"
 
 UT_001:
   extends: .unit_test_template

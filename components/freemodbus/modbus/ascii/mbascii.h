@@ -34,6 +34,14 @@
 #ifdef __cplusplus
 PR_BEGIN_EXTERN_C
 #endif
+
+/* ----------------------- Defines ------------------------------------------*/
+#define MB_ASCII_DEFAULT_CR         '\r'    /*!< Default CR character for Modbus ASCII. */
+#define MB_ASCII_DEFAULT_LF         '\n'    /*!< Default LF character for Modbus ASCII. */
+#define MB_ASCII_SER_PDU_SIZE_MIN   3       /*!< Minimum size of a Modbus ASCII frame. */
+
+/* ----------------------- Function declaration -----------------------------*/
+
 #if MB_SLAVE_ASCII_ENABLED > 0
 eMBErrorCode    eMBASCIIInit( UCHAR slaveAddress, UCHAR ucPort,
                               ULONG ulBaudRate, eMBParity eParity );
@@ -47,6 +55,21 @@ eMBErrorCode    eMBASCIISend( UCHAR slaveAddress, const UCHAR * pucFrame,
 BOOL            xMBASCIIReceiveFSM( void );
 BOOL            xMBASCIITransmitFSM( void );
 BOOL            xMBASCIITimerT1SExpired( void );
+#endif
+
+#if MB_MASTER_ASCII_ENABLED > 0
+eMBErrorCode    eMBMasterASCIIInit( UCHAR ucPort,
+                              ULONG ulBaudRate, eMBParity eParity );
+void            eMBMasterASCIIStart( void );
+void            eMBMasterASCIIStop( void );
+
+eMBErrorCode    eMBMasterASCIIReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame,
+                                 USHORT * pusLength );
+eMBErrorCode    eMBMasterASCIISend( UCHAR slaveAddress, const UCHAR * pucFrame,
+                              USHORT usLength );
+BOOL            xMBMasterASCIIReceiveFSM( void );
+BOOL            xMBMasterASCIITransmitFSM( void );
+BOOL            xMBMasterASCIITimerT1SExpired( void );
 #endif
 
 #ifdef __cplusplus
