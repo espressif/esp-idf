@@ -218,7 +218,7 @@ cleanup:
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);
-    spicommon_dma_chan_free(dma_chan);
+    if (dma_chan != 0) spicommon_dma_chan_free(dma_chan);
     return ret;
 }
 
