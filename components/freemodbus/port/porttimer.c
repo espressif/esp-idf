@@ -94,16 +94,15 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
     // Configure timer
     xErr = timer_init(usTimerGroupIndex, usTimerIndex, &config);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-            "timer init failure, timer_init() returned (0x%x).", (uint32_t)xErr);
+            "timer init failure, timer_init() returned (0x%x).", xErr);
     // Stop timer counter
     xErr = timer_pause(usTimerGroupIndex, usTimerIndex);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-                    "stop timer failure, timer_pause() returned (0x%x).", (uint32_t)xErr);
+                    "stop timer failure, timer_pause() returned (0x%x).", xErr);
     // Reset counter value
     xErr = timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0x00000000ULL);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
-                    "timer set value failure, timer_set_counter_value() returned (0x%x).",
-                    (uint32_t)xErr);
+                    "timer set value failure, timer_set_counter_value() returned (0x%x).", xErr);
     // wait3T5_us = 35 * 11 * 100000 / baud; // the 3.5T symbol time for baudrate
     // Set alarm value for usTim1Timerout50us * 50uS
     xErr = timer_set_alarm_value(usTimerGroupIndex, usTimerIndex, (uint32_t)(usTim1Timerout50us));

@@ -53,7 +53,7 @@
                                             EV_MASTER_FRAME_RECEIVED | \
                                             EV_MASTER_EXECUTE | \
                                             EV_MASTER_FRAME_SENT | \
-                                            EV_MASTER_FRAME_TRANSMITTED | \
+                                            EV_MASTER_FRAME_TRANSMIT | \
                                             EV_MASTER_ERROR_PROCESS )
 
 // Event bit mask for eMBMasterWaitRequestFinish()

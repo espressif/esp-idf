@@ -62,6 +62,8 @@
 static UCHAR    ucMBAddress;
 static eMBMode  eMBCurrentMode;
 
+volatile UCHAR ucMbSlaveBuf[MB_SER_PDU_SIZE_MAX];
+
 static enum
 {
     STATE_ENABLED,
@@ -353,9 +355,11 @@ eMBPoll( void )
         switch ( eEvent )
         {
         case EV_READY:
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_READY", __func__);
             break;
 
         case EV_FRAME_RECEIVED:
+            ESP_LOGD(MB_PORT_TAG, "EV_FRAME_RECEIVED");
             eStatus = peMBFrameReceiveCur( &ucRcvAddress, &ucMBFrame, &usLength );
             if( eStatus == MB_ENOERR )
             {
@@ -365,9 +369,11 @@ eMBPoll( void )
                     ( void )xMBPortEventPost( EV_EXECUTE );
                 }
             }
+            ESP_LOG_BUFFER_HEX_LEVEL(MB_PORT_TAG, &ucMBFrame[MB_PDU_FUNC_OFF], usLength, ESP_LOG_DEBUG);
             break;
 
         case EV_EXECUTE:
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_EXECUTE", __func__);
             ucFunctionCode = ucMBFrame[MB_PDU_FUNC_OFF];
             eException = MB_EX_ILLEGAL_FUNCTION;
             for( i = 0; i < MB_FUNC_HANDLERS_MAX; i++ )
@@ -402,8 +408,13 @@ eMBPoll( void )
                 eStatus = peMBFrameSendCur( ucMBAddress, ucMBFrame, usLength );
             }
             break;
+        
+        case EV_FRAME_TRANSMIT:
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_FRAME_TRANSMIT", __func__);
+            break;
 
         case EV_FRAME_SENT:
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_FRAME_SENT", __func__);
             break;
         }
     }

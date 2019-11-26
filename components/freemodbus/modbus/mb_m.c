@@ -48,7 +48,7 @@
 #include "mbrtu.h"
 #endif
 #if MB_MASTER_ASCII_ENABLED == 1
-#include "mbascii_m.h"
+#include "mbascii.h"
 #endif
 #if MB_MASTER_TCP_ENABLED == 1
 #include "mbtcp.h"
@@ -65,6 +65,14 @@
 static UCHAR    ucMBMasterDestAddress;
 static BOOL     xMBRunInMasterMode = FALSE;
 static volatile eMBMasterErrorEventType eMBMasterCurErrorType;
+static volatile USHORT  usMasterSendPDULength;
+
+/*------------------------ Shared variables ---------------------------------*/
+
+volatile UCHAR  ucMasterSndBuf[MB_PDU_SIZE_MAX];
+volatile UCHAR  ucMasterRcvBuf[MB_SER_PDU_SIZE_MAX];
+volatile eMBMasterTimerMode eMasterCurTimerMode;
+volatile BOOL   xFrameIsBroadcast = FALSE;
 
 static enum
 {
@@ -157,7 +165,7 @@ eMBMasterInit( eMBMode eMode, UCHAR ucPort, ULONG ulBaudRate, eMBParity eParity 
         break;
 #endif
 #if MB_MASTER_ASCII_ENABLED > 0
-        case MB_ASCII:
+    case MB_ASCII:
         pvMBMasterFrameStartCur = eMBMasterASCIIStart;
         pvMBMasterFrameStopCur = eMBMasterASCIIStop;
         peMBMasterFrameSendCur = eMBMasterASCIISend;
@@ -350,8 +358,8 @@ eMBMasterPoll( void )
                 vMBMasterRunResRelease( );
             }
             break;
-        case EV_MASTER_FRAME_SENT:
-            ESP_LOGD(MB_PORT_TAG, "%s:EV_MASTER_FRAME_SENT", __func__);
+        case EV_MASTER_FRAME_TRANSMIT:
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_MASTER_FRAME_TRANSMIT", __func__);
             /* Master is busy now. */
             vMBMasterGetPDUSndBuf( &ucMBFrame );
             eStatus = peMBMasterFrameSendCur( ucMBMasterGetDestAddress(), ucMBFrame, usMBMasterGetPDUSndLength() );
@@ -360,15 +368,16 @@ eMBMasterPoll( void )
             }
 
             break;
-        case EV_MASTER_FRAME_TRANSMITTED:
-            ESP_LOGD(MB_PORT_TAG, "%s:EV_MASTER_FRAME_TRANSMITTED", __func__);
+        case EV_MASTER_FRAME_SENT:
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_MASTER_FRAME_SENT", __func__);
             break;
         case EV_MASTER_ERROR_PROCESS:
             ESP_LOGD(MB_PORT_TAG, "%s:EV_MASTER_ERROR_PROCESS", __func__);
             /* Execute specified error process callback function. */
             errorType = eMBMasterGetErrorType();
             vMBMasterGetPDUSndBuf( &ucMBFrame );
-            switch (errorType) {
+            switch (errorType)
+            {
             case EV_ERROR_RESPOND_TIMEOUT:
                 vMBMasterErrorCBRespondTimeout(ucMBMasterGetDestAddress(),
                         ucMBFrame, usMBMasterGetPDUSndLength());
@@ -420,7 +429,7 @@ void vMBMasterSetDestAddress( UCHAR Address )
 }
 
 // Get Modbus Master current error event type.
-eMBMasterErrorEventType eMBMasterGetErrorType( void )
+eMBMasterErrorEventType inline eMBMasterGetErrorType( void )
 {
     return eMBMasterCurErrorType;
 }
@@ -430,5 +439,46 @@ void IRAM_ATTR vMBMasterSetErrorType( eMBMasterErrorEventType errorType )
 {
     eMBMasterCurErrorType = errorType;
 }
+
+/* Get Modbus Master send PDU's buffer address pointer.*/
+void vMBMasterGetPDUSndBuf( UCHAR ** pucFrame )
+{
+    *pucFrame = ( UCHAR * ) &ucMasterSndBuf[MB_SER_PDU_PDU_OFF];
+}
+
+/* Set Modbus Master send PDU's buffer length.*/
+void vMBMasterSetPDUSndLength( USHORT SendPDULength )
+{
+    usMasterSendPDULength = SendPDULength;
+}
+
+/* Get Modbus Master send PDU's buffer length.*/
+USHORT usMBMasterGetPDUSndLength( void )
+{
+    return usMasterSendPDULength;
+}
+
+/* Set Modbus Master current timer mode.*/
+void vMBMasterSetCurTimerMode( eMBMasterTimerMode eMBTimerMode )
+{
+    eMasterCurTimerMode = eMBTimerMode;
+}
+
+/* Get Modbus Master current timer mode.*/
+eMBMasterTimerMode xMBMasterGetCurTimerMode( void )
+{
+    return eMasterCurTimerMode;
+}
+
+/* The master request is broadcast? */
+BOOL xMBMasterRequestIsBroadcast( void ){
+    return xFrameIsBroadcast;
+}
+
+/* The master request is broadcast? */
+void vMBMasterRequestSetType( BOOL xIsBroadcast ){
+    xFrameIsBroadcast = xIsBroadcast;
+}
+
 
 #endif // MB_MASTER_RTU_ENABLED > 0 || MB_MASTER_ASCII_ENABLED > 0

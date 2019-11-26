@@ -66,6 +66,12 @@ PR_BEGIN_EXTERN_C
 #define MB_PDU_FUNC_OFF     0   /*!< Offset of function code in PDU. */
 #define MB_PDU_DATA_OFF     1   /*!< Offset for response data in PDU. */
 
+#define MB_SER_PDU_SIZE_MAX 256 /*!< Maximum size of a Modbus frame. */
+#define MB_SER_PDU_SIZE_LRC 1   /*!< Size of LRC field in PDU. */
+#define MB_SER_PDU_ADDR_OFF 0   /*!< Offset of slave address in Ser-PDU. */
+#define MB_SER_PDU_PDU_OFF  1   /*!< Offset of Modbus-PDU in Ser-PDU. */
+#define MB_SER_PDU_SIZE_CRC 2   /*!< Size of CRC field in PDU. */
+
 /* ----------------------- Prototypes  0-------------------------------------*/
 typedef void    ( *pvMBFrameStart ) ( void );
 

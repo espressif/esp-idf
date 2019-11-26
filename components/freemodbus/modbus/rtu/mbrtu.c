@@ -43,12 +43,7 @@
 #include "mbcrc.h"
 #include "mbport.h"
 
-/* ----------------------- Defines ------------------------------------------*/
-#define MB_SER_PDU_SIZE_MIN     4       /*!< Minimum size of a Modbus RTU frame. */
-#define MB_SER_PDU_SIZE_MAX     256     /*!< Maximum size of a Modbus RTU frame. */
-#define MB_SER_PDU_SIZE_CRC     2       /*!< Size of CRC field in PDU. */
-#define MB_SER_PDU_ADDR_OFF     0       /*!< Offset of slave address in Ser-PDU. */
-#define MB_SER_PDU_PDU_OFF      1       /*!< Offset of Modbus-PDU in Ser-PDU. */
+#if MB_SLAVE_RTU_ENABLED > 0
 
 /* ----------------------- Type definitions ---------------------------------*/
 typedef enum
@@ -65,16 +60,18 @@ typedef enum
     STATE_TX_XMIT               /*!< Transmitter is in transfer state. */
 } eMBSndState;
 
+/* ----------------------- Shared variables ---------------------------------*/
+extern volatile UCHAR ucMbSlaveBuf[];
+
 /* ----------------------- Static variables ---------------------------------*/
 static volatile eMBSndState eSndState;
 static volatile eMBRcvState eRcvState;
-
-volatile UCHAR ucRTUBuf[MB_SER_PDU_SIZE_MAX];
 
 static volatile UCHAR *pucSndBufferCur;
 static volatile USHORT usSndBufferCount;
 
 static volatile USHORT usRcvBufferPos;
+static volatile UCHAR *ucRTUBuf = ucMbSlaveBuf;
 
 /* ----------------------- Start implementation -----------------------------*/
 eMBErrorCode
@@ -223,13 +220,13 @@ eMBRTUSend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
 BOOL
 xMBRTUReceiveFSM( void )
 {
-    BOOL            xTaskNeedSwitch = FALSE;
+    BOOL            xStatus = FALSE;
     UCHAR           ucByte;
 
     assert( eSndState == STATE_TX_IDLE );
 
     /* Always read the character. */
-    ( void )xMBPortSerialGetByte( ( CHAR * ) & ucByte );
+    xStatus = xMBPortSerialGetByte( ( CHAR * ) & ucByte );
 
     switch ( eRcvState )
     {
@@ -277,13 +274,14 @@ xMBRTUReceiveFSM( void )
         vMBPortTimersEnable(  );
         break;
     }
-    return xTaskNeedSwitch;
+
+    return xStatus;
 }
 
 BOOL
 xMBRTUTransmitFSM( void )
 {
-    BOOL xNeedPoll = FALSE;
+    BOOL xNeedPoll = TRUE;
 
     assert( eRcvState == STATE_RX_IDLE );
 
@@ -304,8 +302,8 @@ xMBRTUTransmitFSM( void )
         }
         else
         {
-            xMBPortEventPost( EV_FRAME_SENT );
-            xNeedPoll = TRUE;
+            xMBPortEventPost( EV_FRAME_TRANSMIT );
+            xNeedPoll = FALSE;
             eSndState = STATE_TX_IDLE;
             vMBPortTimersEnable(  );
         }
@@ -318,7 +316,7 @@ xMBRTUTransmitFSM( void )
 BOOL MB_PORT_ISR_ATTR
 xMBRTUTimerT35Expired( void )
 {
-    BOOL            xNeedPoll = FALSE;
+    BOOL xNeedPoll = FALSE;
 
     switch ( eRcvState )
     {
@@ -347,3 +345,4 @@ xMBRTUTimerT35Expired( void )
 
     return xNeedPoll;
 }
+#endif
