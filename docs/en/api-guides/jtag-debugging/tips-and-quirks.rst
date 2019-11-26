@@ -112,12 +112,11 @@ On startup, debugger is issuing sequence of commands to reset the chip and halt 
 Configuration of OpenOCD for specific target
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-OpenOCD needs to be told what JTAG adapter **interface** to use, as well as what type of **board** and processor the JTAG adapter is connected to. To do so, use existing configuration files located in OpenOCD's ``share/openocd/scripts/interface`` and ``share/openocd/scripts/board`` folders. 
+OpenOCD needs to be told what JTAG adapter to use and processor the JTAG adapter is connected to. To do so, use existing **board** configuration files located in OpenOCD's ``share/openocd/scripts/board`` folder.
 
 For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed (see section :ref:`esp-modules-and-boards-esp-wrover-kit-v1`), use the following configuration files:
 
-* ``interface/ftdi/esp32_devkitj_v1.cfg``
-* ``board/esp-wroom-32.cfg``
+* ``board/esp32-wrover-kit-3.3v.cfg``
 
 Optionally prepare configuration by yourself. To do so, you can check existing files and modify them to match you specific hardware. Below is the summary of available configuration parameters for **board** configuration.
 

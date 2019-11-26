@@ -115,8 +115,7 @@ OpenOCD 需要知道当前使用的 JTAG 适配器的类型，以及其连接的
 
 例如，如果使用板载 ESP-WROOM-32 模组的 ESP-WROVER-KIT 开发板（详见 :ref:`esp-modules-and-boards-esp-wrover-kit-v1`），请使用以下配置文件：
 
-* ``interface/ftdi/esp32_devkitj_v1.cfg``
-* ``board/esp-wroom-32.cfg``
+* ``board/esp32-wrover-kit-3.3v.cfg``
 
 当然也可以使用自定义的配置文件，建议在已有配置文件的基础上进行修改，以匹配你的硬件。下面列举一些常用的板级配置参数。
 
