@@ -837,9 +837,32 @@ def get_python_env_path():
         with open(version_file_path, "r") as version_file:
             idf_version_str = version_file.read()
     else:
-        idf_version_str = subprocess.check_output(['git', '--work-tree=' + global_idf_path, 'describe', '--tags'], cwd=global_idf_path, env=os.environ).decode()
+        try:
+            idf_version_str = subprocess.check_output(['git', 'describe', '--tags'],
+                                                      cwd=global_idf_path, env=os.environ).decode()
+        except subprocess.CalledProcessError as e:
+            warn('Git describe was unsuccessul: {}'.format(e))
+            idf_version_str = ''
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
-    idf_version = match.group(1)
+    if match:
+        idf_version = match.group(1)
+    else:
+        idf_version = None
+        # fallback when IDF is a shallow clone
+        try:
+            with open(os.path.join(global_idf_path, 'components', 'esp_common', 'include', 'esp_idf_version.h')) as f:
+                m = re.search(r'^#define\s+ESP_IDF_VERSION_MAJOR\s+(\d+).+?^#define\s+ESP_IDF_VERSION_MINOR\s+(\d+)',
+                              f.read(), re.DOTALL | re.MULTILINE)
+                if m:
+                    idf_version = '.'.join((m.group(1), m.group(2)))
+                else:
+                    warn('Reading IDF version from C header file failed!')
+        except Exception as e:
+            warn('Is it not possible to determine the IDF version: {}'.format(e))
+
+    if idf_version is None:
+        fatal('IDF version cannot be determined')
+        raise SystemExit(1)
 
     idf_python_env_path = os.path.join(global_idf_tools_path, 'python_env',
                                        'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
