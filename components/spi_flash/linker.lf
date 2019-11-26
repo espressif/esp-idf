@@ -4,5 +4,6 @@ entries:
     spi_flash_rom_patch (noflash_text)
     spi_flash_chip_generic (noflash)
     spi_flash_chip_issi (noflash)
+    spi_flash_chip_gd(noflash)
     memspi_host_driver (noflash)
 
