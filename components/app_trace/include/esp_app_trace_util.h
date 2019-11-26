@@ -14,6 +14,10 @@
 #ifndef ESP_APP_TRACE_UTIL_H_
 #define ESP_APP_TRACE_UTIL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
@@ -163,5 +167,9 @@ uint32_t esp_apptrace_rb_read_size_get(esp_apptrace_rb_t *rb);
  * @note Due to write pointer wrapping returned size can be less then the total size of available data.
  */
 uint32_t esp_apptrace_rb_write_size_get(esp_apptrace_rb_t *rb);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //ESP_APP_TRACE_UTIL_H_
