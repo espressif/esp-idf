@@ -15,7 +15,9 @@ set(SOC_SRCS    "adc_periph.c"
                 "spi_periph.c"
                 "ledc_periph.c"
                 "i2s_periph.c"
-                "i2c_periph.c")
+                "i2c_periph.c"
+                "uart_periph.c"
+                )
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     set_source_files_properties("esp32s2beta/rtc_clk.c" PROPERTIES

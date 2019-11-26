@@ -17,6 +17,7 @@
 #include "esp_sleep.h"
 #include "esp_log.h"
 #include "driver/uart.h"
+#include "hal/uart_ll.h"
 #include "driver/rtc_io.h"
 
 /* Most development boards have "boot" button attached to GPIO0.
@@ -57,7 +58,7 @@ void app_main(void)
         /* To make sure the complete line is printed before entering sleep mode,
          * need to wait until UART TX FIFO is empty:
          */
-        uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
+        while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
 
         /* Get timestamp before entering sleep */
         int64_t t_before_us = esp_timer_get_time();

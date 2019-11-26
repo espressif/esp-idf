@@ -12,6 +12,10 @@ entries:
     rtc_wdt (noflash_text)
     spi_hal_iram (noflash_text)
     spi_slave_hal_iram (noflash_text)
+    if UART_ISR_IN_IRAM = y:
+        uart_hal_iram (noflash_text)
+    else:
+        uart_hal_iram (default)
     spi_flash_hal_iram (noflash)
     ledc_hal_iram (noflash_text)
     i2c_hal_iram (noflash)

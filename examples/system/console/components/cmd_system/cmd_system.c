@@ -17,6 +17,7 @@
 #include "esp_spi_flash.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
+#include "hal/uart_ll.h"
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -287,11 +288,12 @@ static int light_sleep(int argc, char **argv)
     }
     if (CONFIG_ESP_CONSOLE_UART_NUM <= UART_NUM_1) {
         ESP_LOGI(TAG, "Enabling UART wakeup (press ENTER to exit light sleep)");
-        ESP_ERROR_CHECK( uart_set_wakeup_threshold(CONFIG_ESP_CONSOLE_UART_NUM, 3) );
+        uart_ll_set_wakeup_thrd(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM), 3);
         ESP_ERROR_CHECK( esp_sleep_enable_uart_wakeup(CONFIG_ESP_CONSOLE_UART_NUM) );
     }
     fflush(stdout);
-    uart_wait_tx_idle_polling(CONFIG_ESP_CONSOLE_UART_NUM);
+    //Wait UART TX idle
+    while(!uart_ll_is_tx_idle(UART_LL_GET_HW(CONFIG_ESP_CONSOLE_UART_NUM)));
     esp_light_sleep_start();
     esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
     const char *cause_str;

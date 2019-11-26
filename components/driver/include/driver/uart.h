@@ -18,107 +18,26 @@
 extern "C" {
 #endif
 
-#include "soc/uart_periph.h"
-#include "soc/uart_caps.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "driver/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/ringbuf.h"
-#include <esp_types.h>
+#include "hal/uart_types.h"
+#include "soc/uart_caps.h"
 
-#define UART_FIFO_LEN           (128)        /*!< Length of the hardware FIFO buffers */
-#define UART_INTR_MASK          0x1ff        /*!< Mask of all UART interrupts */
-#define UART_LINE_INV_MASK      (0x3f << 19) /*!< TBD */
-#define UART_BITRATE_MAX        5000000      /*!< Max bit rate supported by UART */
-#define UART_PIN_NO_CHANGE      (-1)         /*!< Constant for uart_set_pin function which indicates that UART pin should not be changed */
-
-#define UART_INVERSE_DISABLE  (0x0)            /*!< Disable UART signal inverse*/
-#define UART_INVERSE_RXD   (UART_RXD_INV_M)    /*!< UART RXD input inverse*/
-#define UART_INVERSE_CTS   (UART_CTS_INV_M)    /*!< UART CTS input inverse*/
-#define UART_INVERSE_TXD   (UART_TXD_INV_M)    /*!< UART TXD output inverse*/
-#define UART_INVERSE_RTS   (UART_RTS_INV_M)    /*!< UART RTS output inverse*/
-
-/**
- * @brief UART mode selection
- */
-typedef enum {
-    UART_MODE_UART = 0x00,                      /*!< mode: regular UART mode*/
-    UART_MODE_RS485_HALF_DUPLEX = 0x01,         /*!< mode: half duplex RS485 UART mode control by RTS pin */
-    UART_MODE_IRDA = 0x02,                      /*!< mode: IRDA  UART mode*/
-    UART_MODE_RS485_COLLISION_DETECT = 0x03,    /*!< mode: RS485 collision detection UART mode (used for test purposes)*/
-    UART_MODE_RS485_APP_CTRL = 0x04,            /*!< mode: application control RS485 UART mode (used for test purposes)*/
-} uart_mode_t;
-
-/**
- * @brief UART word length constants
- */
-typedef enum {
-    UART_DATA_5_BITS = 0x0,    /*!< word length: 5bits*/
-    UART_DATA_6_BITS = 0x1,    /*!< word length: 6bits*/
-    UART_DATA_7_BITS = 0x2,    /*!< word length: 7bits*/
-    UART_DATA_8_BITS = 0x3,    /*!< word length: 8bits*/
-    UART_DATA_BITS_MAX = 0x4,
-} uart_word_length_t;
-
-/**
- * @brief UART stop bits number
- */
-typedef enum {
-    UART_STOP_BITS_1   = 0x1,  /*!< stop bit: 1bit*/
-    UART_STOP_BITS_1_5 = 0x2,  /*!< stop bit: 1.5bits*/
-    UART_STOP_BITS_2   = 0x3,  /*!< stop bit: 2bits*/
-    UART_STOP_BITS_MAX = 0x4,
-} uart_stop_bits_t;
-
-/**
- * @brief UART peripheral number
- */
-typedef enum {
-    UART_NUM_0 = 0x0,  /*!< UART base address 0x3ff40000*/
-    UART_NUM_1 = 0x1,  /*!< UART base address 0x3ff50000*/
+// Valid UART port number
+#define UART_NUM_0             (0) /*!< UART port 0 */
+#define UART_NUM_1             (1) /*!< UART port 1 */
 #if SOC_UART_NUM > 2
-    UART_NUM_2 = 0x2,  /*!< UART base address 0x3ff6e000*/
+#define UART_NUM_2             (2) /*!< UART port 2 */
 #endif
-    UART_NUM_MAX,
-} uart_port_t;
+#define UART_NUM_MAX           (SOC_UART_NUM) /*!< UART port max */
 
-/**
- * @brief UART parity constants
- */
-typedef enum {
-    UART_PARITY_DISABLE = 0x0,  /*!< Disable UART parity*/
-    UART_PARITY_EVEN = 0x2,     /*!< Enable UART even parity*/
-    UART_PARITY_ODD  = 0x3      /*!< Enable UART odd parity*/
-} uart_parity_t;
-
-/**
- * @brief UART hardware flow control modes
- */
-typedef enum {
-    UART_HW_FLOWCTRL_DISABLE = 0x0,   /*!< disable hardware flow control*/
-    UART_HW_FLOWCTRL_RTS     = 0x1,   /*!< enable RX hardware flow control (rts)*/
-    UART_HW_FLOWCTRL_CTS     = 0x2,   /*!< enable TX hardware flow control (cts)*/
-    UART_HW_FLOWCTRL_CTS_RTS = 0x3,   /*!< enable hardware flow control*/
-    UART_HW_FLOWCTRL_MAX     = 0x4,
-} uart_hw_flowcontrol_t;
-
-/**
- * @brief UART configuration parameters for uart_param_config function
- */
-typedef struct {
-    int baud_rate;                      /*!< UART baud rate*/
-    uart_word_length_t data_bits;       /*!< UART byte size*/
-    uart_parity_t parity;               /*!< UART parity mode*/
-    uart_stop_bits_t stop_bits;         /*!< UART stop bits*/
-    uart_hw_flowcontrol_t flow_ctrl;    /*!< UART HW flow control mode (cts/rts)*/
-    uint8_t rx_flow_ctrl_thresh;        /*!< UART HW RTS threshold*/
-    bool use_ref_tick;                  /*!< Set to true if UART should be clocked from REF_TICK */
-} uart_config_t;
+#define UART_PIN_NO_CHANGE      (-1)         /*!< Constant for uart_set_pin function which indicates that UART pin should not be changed */
 
 /**
  * @brief UART interrupt configuration parameters for uart_intr_config function
@@ -156,9 +75,44 @@ typedef struct {
 typedef intr_handle_t uart_isr_handle_t;
 
 /**
+ * @brief Install UART driver and set the UART to the default configuration.
+ *
+ * UART ISR handler will be attached to the same CPU core that this function is running on.
+ *
+ * @note  Rx_buffer_size should be greater than UART_FIFO_LEN. Tx_buffer_size should be either zero or greater than UART_FIFO_LEN.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param rx_buffer_size UART RX ring buffer size.
+ * @param tx_buffer_size UART TX ring buffer size.
+ *        If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out.
+ * @param queue_size UART event queue size/depth.
+ * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
+ *        access to UART events. If set to NULL, driver will not use an event queue.
+ * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
+ *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. Do not set ESP_INTR_FLAG_IRAM here
+ *        (the driver's ISR handler is not located in IRAM)
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t* uart_queue, int intr_alloc_flags);
+
+/**
+ * @brief Uninstall UART driver.
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_driver_delete(uart_port_t uart_num);
+
+/**
  * @brief Set UART data bits.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param data_bit UART data bits
  *
  * @return
@@ -168,9 +122,9 @@ typedef intr_handle_t uart_isr_handle_t;
 esp_err_t uart_set_word_length(uart_port_t uart_num, uart_word_length_t data_bit);
 
 /**
- * @brief Get UART data bits.
+ * @brief Get the UART data bit configuration.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param data_bit Pointer to accept value of UART data bits.
  *
  * @return
@@ -182,7 +136,7 @@ esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bi
 /**
  * @brief Set UART stop bits.
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  * @param stop_bits  UART stop bits
  *
  * @return
@@ -192,9 +146,9 @@ esp_err_t uart_get_word_length(uart_port_t uart_num, uart_word_length_t* data_bi
 esp_err_t uart_set_stop_bits(uart_port_t uart_num, uart_stop_bits_t stop_bits);
 
 /**
- * @brief Get UART stop bits.
+ * @brief Get the UART stop bit configuration.
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  * @param stop_bits  Pointer to accept value of UART stop bits.
  *
  * @return
@@ -206,7 +160,7 @@ esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bits);
 /**
  * @brief Set UART parity mode.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param parity_mode the enum of uart parity configuration
  *
  * @return
@@ -216,9 +170,9 @@ esp_err_t uart_get_stop_bits(uart_port_t uart_num, uart_stop_bits_t* stop_bits);
 esp_err_t uart_set_parity(uart_port_t uart_num, uart_parity_t parity_mode);
 
 /**
- * @brief Get UART parity mode.
+ * @brief Get the UART parity mode configuration.
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  * @param parity_mode Pointer to accept value of UART parity mode.
  *
  * @return
@@ -231,7 +185,7 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 /**
  * @brief Set UART baud rate.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param baudrate UART baud rate.
  *
  * @return
@@ -241,9 +195,9 @@ esp_err_t uart_get_parity(uart_port_t uart_num, uart_parity_t* parity_mode);
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baudrate);
 
 /**
- * @brief Get UART baud rate.
+ * @brief Get the UART baud rate configuration.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param baudrate Pointer to accept value of UART baud rate
  *
  * @return
@@ -256,11 +210,8 @@ esp_err_t uart_get_baudrate(uart_port_t uart_num, uint32_t* baudrate);
 /**
  * @brief Set UART line inverse mode
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param inverse_mask Choose the wires that need to be inverted.
- *        Inverse_mask should be chosen from
- *        UART_INVERSE_RXD / UART_INVERSE_TXD / UART_INVERSE_RTS / UART_INVERSE_CTS,
- *        combined with OR operation.
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
+ * @param inverse_mask Choose the wires that need to be inverted. Using the ORred mask of `uart_signal_inv_t` 
  *
  * @return
  *     - ESP_OK   Success
@@ -271,7 +222,7 @@ esp_err_t uart_set_line_inverse(uart_port_t uart_num, uint32_t inverse_mask);
 /**
  * @brief Set hardware flow control.
  *
- * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
  * @param flow_ctrl Hardware flow control mode
  * @param rx_thresh Threshold of Hardware RX flow control (0 ~ UART_FIFO_LEN).
  *        Only when UART_HW_FLOWCTRL_RTS is set, will the rx_thresh value be set.
@@ -294,12 +245,12 @@ esp_err_t uart_set_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t flow
  *     - ESP_OK   Success
  *     - ESP_FAIL Parameter error
  */
- esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable, uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff);
+ esp_err_t uart_set_sw_flow_ctrl(uart_port_t uart_num, bool enable,  uint8_t rx_thresh_xon,  uint8_t rx_thresh_xoff);
 
 /**
- * @brief Get hardware flow control mode
+ * @brief Get the UART hardware flow control configuration.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param flow_ctrl Option for different flow control mode.
  *
  * @return
@@ -311,9 +262,8 @@ esp_err_t uart_get_hw_flow_ctrl(uart_port_t uart_num, uart_hw_flowcontrol_t* flo
 /**
  * @brief Clear UART interrupt status
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  * @param clr_mask  Bit mask of the interrupt status to be cleared.
- *                  The bit mask should be composed from the fields of register UART_INT_CLR_REG.
  *
  * @return
  *     - ESP_OK   Success
@@ -324,9 +274,8 @@ esp_err_t uart_clear_intr_status(uart_port_t uart_num, uint32_t clr_mask);
 /**
  * @brief Set UART interrupt enable
  *
- * @param uart_num     UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num     UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable_mask  Bit mask of the enable bits.
- *                     The bit mask should be composed from the fields of register UART_INT_ENA_REG.
  *
  * @return
  *     - ESP_OK   Success
@@ -337,9 +286,8 @@ esp_err_t uart_enable_intr_mask(uart_port_t uart_num, uint32_t enable_mask);
 /**
  * @brief Clear UART interrupt enable bits
  *
- * @param uart_num      UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num      UART port number, the max port number is (UART_NUM_MAX -1).
  * @param disable_mask  Bit mask of the disable bits.
- *                      The bit mask should be composed from the fields of register UART_INT_ENA_REG.
  *
  * @return
  *     - ESP_OK   Success
@@ -350,7 +298,7 @@ esp_err_t uart_disable_intr_mask(uart_port_t uart_num, uint32_t disable_mask);
 /**
  * @brief Enable UART RX interrupt (RX_FULL & RX_TIMEOUT INTERRUPT)
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return
  *     - ESP_OK   Success
@@ -361,7 +309,7 @@ esp_err_t uart_enable_rx_intr(uart_port_t uart_num);
 /**
  * @brief Disable UART RX interrupt (RX_FULL & RX_TIMEOUT INTERRUPT)
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return
  *     - ESP_OK   Success
@@ -372,7 +320,7 @@ esp_err_t uart_disable_rx_intr(uart_port_t uart_num);
 /**
  * @brief Disable UART TX interrupt (TX_FULL & TX_TIMEOUT INTERRUPT)
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number
  *
  * @return
  *     - ESP_OK   Success
@@ -383,7 +331,7 @@ esp_err_t uart_disable_tx_intr(uart_port_t uart_num);
 /**
  * @brief Enable UART TX interrupt (TX_FULL & TX_TIMEOUT INTERRUPT)
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param enable  1: enable; 0: disable
  * @param thresh  Threshold of TX interrupt, 0 ~ UART_FIFO_LEN
  *
@@ -398,7 +346,7 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  *
  * @note UART ISR handler will be attached to the same CPU core that this function is running on.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param fn  Interrupt handler function.
  * @param arg parameter for handler function
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
@@ -416,7 +364,7 @@ esp_err_t uart_isr_register(uart_port_t uart_num, void (*fn)(void*), void * arg,
  * @brief Free UART interrupt handler registered by uart_isr_register. Must be called on the same core as
  * uart_isr_register was called.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return
  *     - ESP_OK   Success
@@ -433,7 +381,7 @@ esp_err_t uart_isr_free(uart_port_t uart_num);
  * @note Instead of GPIO number a macro 'UART_PIN_NO_CHANGE' may be provided
          to keep the currently allocated pin.
  *
- * @param uart_num   UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
  * @param tx_io_num  UART TX pin GPIO number.
  * @param rx_io_num  UART RX pin GPIO number.
  * @param rts_io_num UART RTS pin GPIO number.
@@ -449,7 +397,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
  * @brief Manually set the UART RTS pin level.
  * @note  UART must be configured with hardware flow control disabled.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param level    1: RTS output low (active); 0: RTS output high (block)
  *
  * @return
@@ -461,7 +409,7 @@ esp_err_t uart_set_rts(uart_port_t uart_num, int level);
 /**
  * @brief Manually set the UART DTR pin level.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param level    1: DTR output low; 0: DTR output high
  *
  * @return
@@ -473,7 +421,7 @@ esp_err_t uart_set_dtr(uart_port_t uart_num, int level);
 /**
  * @brief Set UART idle interval after tx FIFO is empty
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param idle_num idle interval after tx FIFO is empty(unit: the time it takes to send one bit
  *        under current baudrate)
  *
@@ -486,7 +434,7 @@ esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num);
 /**
  * @brief Set UART configuration parameters.
  *
- * @param uart_num    UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num    UART port number, the max port number is (UART_NUM_MAX -1).
  * @param uart_config UART parameter settings
  *
  * @return
@@ -498,7 +446,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 /**
  * @brief Configure UART interrupts.
  *
- * @param uart_num  UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num  UART port number, the max port number is (UART_NUM_MAX -1).
  * @param intr_conf UART interrupt settings
  *
  * @return
@@ -508,44 +456,9 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
 esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_conf);
 
 /**
- * @brief Install UART driver.
- *
- * UART ISR handler will be attached to the same CPU core that this function is running on.
- *
- * @note  Rx_buffer_size should be greater than UART_FIFO_LEN. Tx_buffer_size should be either zero or greater than UART_FIFO_LEN.
- *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- * @param rx_buffer_size UART RX ring buffer size.
- * @param tx_buffer_size UART TX ring buffer size.
- *        If set to zero, driver will not use TX buffer, TX function will block task until all data have been sent out.
- * @param queue_size UART event queue size/depth.
- * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
- *        access to UART events. If set to NULL, driver will not use an event queue.
- * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. No need to set ESP_INTR_FLAG_IRAM here, as this flag
- *        will be enabled based on CONFIG_UART_ISR_IN_IRAM (i.e. if the handler located in IRAM or not)
- *
- * @return
- *     - ESP_OK   Success
- *     - ESP_FAIL Parameter error
- */
-esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_buffer_size, int queue_size, QueueHandle_t* uart_queue, int intr_alloc_flags);
-
-/**
- * @brief Uninstall UART driver.
- *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
- *
- * @return
- *     - ESP_OK   Success
- *     - ESP_FAIL Parameter error
- */
-esp_err_t uart_driver_delete(uart_port_t uart_num);
-
-/**
  * @brief Wait until UART TX FIFO is empty.
  *
- * @param uart_num      UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num      UART port number, the max port number is (UART_NUM_MAX -1).
  * @param ticks_to_wait Timeout, count in RTOS ticks
  *
  * @return
@@ -561,7 +474,7 @@ esp_err_t uart_wait_tx_done(uart_port_t uart_num, TickType_t ticks_to_wait);
  * This function will not wait for enough space in TX FIFO. It will just fill the available TX FIFO and return when the FIFO is full.
  * @note This function should only be used when UART TX buffer is not enabled.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param buffer data buffer address
  * @param len    data length to send
  *
@@ -580,7 +493,7 @@ int uart_tx_chars(uart_port_t uart_num, const char* buffer, uint32_t len);
  * Otherwise, if the 'tx_buffer_size' > 0, this function will return after copying all the data to tx ring buffer,
  * UART ISR will then move data from the ring buffer to TX FIFO gradually.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param src   data buffer address
  * @param size  data length to send
  *
@@ -601,7 +514,7 @@ int uart_write_bytes(uart_port_t uart_num, const char* src, size_t size);
  * UART ISR will then move data from the ring buffer to TX FIFO gradually.
  * After all data sent out, send a break signal.
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param src   data buffer address
  * @param size  data length to send
  * @param brk_len break signal duration(unit: the time it takes to send one bit at current baudrate)
@@ -615,7 +528,7 @@ int uart_write_bytes_with_break(uart_port_t uart_num, const char* src, size_t si
 /**
  * @brief UART read bytes from UART buffer
  *
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param buf     pointer to the buffer.
  * @param length  data length
  * @param ticks_to_wait sTimeout, count in RTOS ticks
@@ -631,7 +544,7 @@ int uart_read_bytes(uart_port_t uart_num, uint8_t* buf, uint32_t length, TickTyp
  *        UART ring buffer flush. This will discard all data in the UART RX buffer.
  * @note  Instead of waiting the data sent out, this function will clear UART rx buffer.
  *        In order to send all the data in tx FIFO, we can use uart_wait_tx_done function.
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return
  *     - ESP_OK Success
@@ -642,7 +555,7 @@ esp_err_t uart_flush(uart_port_t uart_num);
 /**
  * @brief Clear input buffer, discard all the data is in the ring-buffer.
  * @note  In order to send all the data in tx FIFO, we can use uart_wait_tx_done function.
- * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return
  *     - ESP_OK Success
@@ -653,7 +566,7 @@ esp_err_t uart_flush_input(uart_port_t uart_num);
 /**
  * @brief   UART get RX ring buffer cached data length
  *
- * @param   uart_num UART port number.
+ * @param   uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param   size Pointer of size_t to accept cached data length
  *
  * @return
@@ -667,7 +580,7 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
  *          Designed for applications like 'AT commands'.
  *          When the hardware detects a series of one same character, the interrupt will be triggered.
  *
- * @param uart_num UART port number.
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  *
  * @return
  *     - ESP_OK Success
@@ -733,7 +646,7 @@ esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_c
  *        It is the application's responsibility to ensure atomic access to the pattern queue and the rx data buffer
  *        when using pattern detect feature.
  *
- * @param uart_num UART port number
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @return
  *     - (-1) No pattern found for current index or parameter error
  *     - others the pattern position in rx buffer.
@@ -752,7 +665,7 @@ int uart_pattern_pop_pos(uart_port_t uart_num);
  *        It is the application's responsibility to ensure atomic access to the pattern queue and the rx data buffer
  *        when using pattern detect feature.
  *
- * @param uart_num UART port number
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @return
  *     - (-1) No pattern found for current index or parameter error
  *     - others the pattern position in rx buffer.
@@ -761,7 +674,8 @@ int uart_pattern_get_pos(uart_port_t uart_num);
 
 /**
  * @brief Allocate a new memory with the given length to save record the detected pattern position in rx buffer.
- * @param uart_num UART port number
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
  * @param queue_length Max queue length for the detected pattern.
  *        If the queue length is not large enough, some pattern positions might be lost.
  *        Set this value to the maximum number of patterns that could be saved in data buffer at the same time.
@@ -775,8 +689,9 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length);
 
 /**
  * @brief UART set communication mode
+ *
  * @note  This function must be executed after uart_driver_install(), when the driver object is initialized.
- * @param uart_num     Uart number to configure
+ * @param uart_num     Uart number to configure, the max port number is (UART_NUM_MAX -1).
  * @param mode UART    UART mode to set
  *
  * @return
@@ -788,7 +703,7 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
 /**
  * @brief UART set threshold timeout for TOUT feature
  *
- * @param uart_num     Uart number to configure
+ * @param uart_num     Uart number to configure, the max port number is (UART_NUM_MAX -1).
  * @param tout_thresh  This parameter defines timeout threshold in uart symbol periods. The maximum value of threshold is 126.
  *        tout_thresh = 1, defines TOUT interrupt timeout equal to transmission time of one symbol (~11 bit) on current baudrate.
  *        If the time is expired the UART_RXFIFO_TOUT_INT interrupt is triggered. If tout_thresh == 0,
@@ -807,7 +722,7 @@ esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh);
  *        *collision_flag = true, if collision detected else it is equal to false.
  *        This function should be executed when actual transmission is completed (after uart_write_bytes()).
  *
- * @param uart_num       Uart number to configure
+ * @param uart_num  Uart number to configure the max port number is (UART_NUM_MAX -1).
  * @param collision_flag Pointer to variable of type bool to return collision flag.
  *
  * @return
@@ -842,7 +757,7 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag);
  *       GPIO9 should be configured as function_5 to wake up UART1), UART2
  *       does not support light sleep wakeup feature.
  *
- * @param uart_num  UART number
+ * @param uart_num  UART number, the max port number is (UART_NUM_MAX -1).
  * @param wakeup_threshold  number of RX edges for light sleep wakeup, value is 3 .. 0x3ff.
  * @return
  *      - ESP_OK on success
@@ -857,7 +772,7 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold);
  * See description of uart_set_wakeup_threshold for the explanation of UART
  * wakeup feature.
  *
- * @param uart_num  UART number
+ * @param uart_num  UART number, the max port number is (UART_NUM_MAX -1).
  * @param[out] out_wakeup_threshold  output, set to the current value of wakeup
  *                                   threshold for the given UART.
  * @return
@@ -871,8 +786,25 @@ esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_thresh
   *
   * @param uart_num UART number
   *
+  * * @return
+  *      - ESP_OK on success
+  *      - ESP_ERR_INVALID_ARG Parameter error
+  *      - ESP_FAIL Driver not installed
   */
-void uart_wait_tx_idle_polling(uart_port_t uart_num);
+esp_err_t uart_wait_tx_idle_polling(uart_port_t uart_num);
+
+/**
+  * @brief Configure TX signal loop back to RX module, just for the test usage.
+  *
+  * @param uart_num UART number
+  * @param loop_back_en Set ture to enable the loop back function, else set it false.
+  *
+  * * @return
+  *      - ESP_OK on success
+  *      - ESP_ERR_INVALID_ARG Parameter error
+  *      - ESP_FAIL Driver not installed
+  */
+esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en);
 
 #ifdef __cplusplus
 }
