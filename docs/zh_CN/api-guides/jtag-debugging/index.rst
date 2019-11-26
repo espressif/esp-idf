@@ -166,7 +166,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
     Info : esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
 
 -  如果出现指示权限问题的错误，请参阅 ``~/esp/openocd-esp32`` 目录下 OpenOCD README 文件中关于 “Permissions delegation” 的说明。
--  如果发现配置文件有错误，例如 ``Can't find interface/ftdi/esp32_devkitj_v1.cfg``，请检查 ``-s`` 后面的路径，OpenOCD 会根据此路径来查找 ``-f`` 指定的文件。此外，还需要检查配置文件是否确实位于该路径下。
+-  如果发现配置文件有错误，例如 ``Can't find board/esp32-wrover-kit-3.3v.cfg``，请检查 ``-s`` 后面的路径，OpenOCD 会根据此路径来查找 ``-f`` 指定的文件。此外，还需要检查配置文件是否确实位于该路径下。
 -  如果看到 JTAG 错误（输出全是 1 或者全是 0），请检查硬件连接，除了 ESP32 的引脚之外是否还有其他信号连接到了 JTAG，并查看是否所有器件都已经上电。
 
 
