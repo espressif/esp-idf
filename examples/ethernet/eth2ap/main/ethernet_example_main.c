@@ -51,7 +51,7 @@ static esp_err_t pkt_wifi2eth(void *buffer, uint16_t len, void *eb)
 // Forward packets from Ethernet to Wi-Fi
 // Note that, Ethernet works faster than Wi-Fi on ESP32,
 // so we need to add an extra queue to balance their speed difference.
-static esp_err_t pkt_eth2wifi(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t len)
+static esp_err_t pkt_eth2wifi(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t len, void* priv)
 {
     esp_err_t ret = ESP_OK;
     flow_control_msg_t msg = {
@@ -190,7 +190,7 @@ static void initialize_ethernet(void)
     config.stack_input = pkt_eth2wifi;
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
     esp_eth_ioctl(s_eth_handle, ETH_CMD_S_PROMISCUOUS, (void *)true);
-    esp_eth_driver_start(s_eth_handle);
+    esp_eth_start(s_eth_handle);
 }
 
 static void initialize_wifi(void)

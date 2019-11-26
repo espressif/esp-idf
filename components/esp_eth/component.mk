@@ -15,3 +15,6 @@ endif
 ifndef CONFIG_ETH_USE_OPENETH
     COMPONENT_OBJEXCLUDE += src/esp_eth_mac_openeth.o
 endif
+
+# uses C11 atomic feature
+src/esp_eth.o: CFLAGS += -std=gnu11

@@ -106,15 +106,9 @@ void tcpip_adapter_init(void)
 }
 
 #if CONFIG_ETH_ENABLED
-static void tcpip_adapter_attach_eth_to_netif(void *esp_netif, esp_event_base_t base, int32_t event_id, void *data)
-{
-    esp_eth_handle_t eth_handle = *(esp_eth_handle_t*)data;
-    esp_netif_attach(esp_netif, eth_handle);
-}
 
 esp_err_t tcpip_adapter_clear_default_eth_handlers(void)
 {
-    ESP_ERROR_CHECK(esp_event_handler_unregister(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_attach_eth_to_netif));
     return esp_eth_clear_default_handlers(netif_from_if(TCPIP_ADAPTER_IF_ETH));
 }
 
@@ -125,18 +119,25 @@ esp_err_t tcpip_adapter_set_default_eth_handlers(void)
         esp_netif_t *eth_netif = esp_netif_new(&cfg);
 
         s_esp_netifs[TCPIP_ADAPTER_IF_ETH] = eth_netif;
-        // provide a separate "after driver start" hook to attach
-        esp_err_t ret = esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_START, tcpip_adapter_attach_eth_to_netif, eth_netif);
-        if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to register ");
-            return ret;
-        }
 
         return esp_eth_set_default_handlers(eth_netif);
     }
     return ESP_OK;
 
 }
+
+esp_err_t tcpip_adapter_compat_start_eth(void *eth_driver)
+{
+    if (s_tcpip_adapter_compat) {
+        esp_netif_t *esp_netif = netif_from_if(TCPIP_ADAPTER_IF_ETH);
+        if (esp_netif) {
+            esp_netif_attach(esp_netif, esp_eth_new_netif_glue(eth_driver));
+        }
+        esp_eth_start(eth_driver);
+    }
+    return ESP_OK;
+}
+
 #endif
 
 esp_err_t tcpip_adapter_eth_input(void *buffer, uint16_t len, void *eb)
@@ -152,15 +153,6 @@ esp_err_t tcpip_adapter_sta_input(void *buffer, uint16_t len, void *eb)
 esp_err_t tcpip_adapter_ap_input(void *buffer, uint16_t len, void *eb)
 {
     return esp_netif_receive(netif_from_if(TCPIP_ADAPTER_IF_AP), buffer, len, eb);
-}
-
-esp_err_t tcpip_adapter_compat_start_eth(void* eth_driver)
-{
-    if (s_tcpip_adapter_compat) {
-        esp_netif_t *esp_netif = netif_from_if(TCPIP_ADAPTER_IF_ETH);
-        esp_netif_attach(esp_netif, eth_driver);
-    }
-    return ESP_OK;
 }
 
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void)

@@ -25,7 +25,7 @@ static bool started = false;
 static EventGroupHandle_t eth_event_group;
 static const int GOTIP_BIT = BIT0;
 static esp_eth_handle_t eth_handle = NULL;
-static esp_netif_t* eth_netif = NULL;
+static esp_netif_t *eth_netif = NULL;
 
 /* "ethernet" command */
 static struct {
@@ -231,7 +231,8 @@ void register_ethernet(void)
 #endif
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &eth_handle));
-    ESP_ERROR_CHECK(esp_netif_attach(eth_netif, eth_handle));
+    ESP_ERROR_CHECK(esp_netif_attach(eth_netif, esp_eth_new_netif_glue(eth_handle)));
+    ESP_ERROR_CHECK(esp_eth_start(eth_handle));
 
     eth_control_args.control = arg_str1(NULL, NULL, "<info>", "Get info of Ethernet");
     eth_control_args.end = arg_end(1);

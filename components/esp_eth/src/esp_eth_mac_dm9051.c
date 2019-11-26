@@ -709,11 +709,9 @@ static esp_err_t emac_dm9051_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_dm9051_del(esp_eth_mac_t *mac)
 {
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    if (atomic_fetch_sub(&mac->ref_count, 1) == 1) {
-        vTaskDelete(emac->rx_task_hdl);
-        vSemaphoreDelete(emac->spi_lock);
-        free(emac);
-    }
+    vTaskDelete(emac->rx_task_hdl);
+    vSemaphoreDelete(emac->spi_lock);
+    free(emac);
     return ESP_OK;
 }
 
@@ -745,7 +743,6 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->parent.set_promiscuous = emac_dm9051_set_promiscuous;
     emac->parent.transmit = emac_dm9051_transmit;
     emac->parent.receive = emac_dm9051_receive;
-    atomic_init(&emac->parent.ref_count, 1);
     /* create mutex */
     emac->spi_lock = xSemaphoreCreateMutex();
     MAC_CHECK(emac->spi_lock, "create lock failed", err, NULL);
