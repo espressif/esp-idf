@@ -21,9 +21,16 @@
 #endif
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
+#if CONFIG_IDF_TARGET_ESP32
 #define GPIO_OUTPUT_IO   18  // default output GPIO
 #define GPIO_INPUT_IO   19  // default input GPIO
 #define GPIO_OUTPUT_MAX GPIO_NUM_34
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+// ESP32_S2 DEVKIC uses IO19 and IO20 as USB functions, so it is necessary to avoid using IO19, otherwise GPIO io pull up/down function cannot pass
+#define GPIO_OUTPUT_IO   18  // default output GPIO
+#define GPIO_INPUT_IO   21  // default input GPIO
+#define GPIO_OUTPUT_MAX GPIO_NUM_46
+#endif
 static volatile int disable_intr_times = 0;  // use this to calculate how many times it go into interrupt
 static volatile int level_intr_times = 0;  // use this to get how many times the level interrupt happened
 static volatile int edge_intr_times = 0;   // use this to get how many times the edge interrupt happened
@@ -135,8 +142,9 @@ static void drive_capability_set_get(gpio_num_t num, gpio_drive_cap_t capability
 TEST_CASE("GPIO config parameters test", "[gpio]")
 {
     //error param test
-    //test 41 bit
+    //ESP32 test 41 bit, ESP32-S2 test 48 bit
     gpio_config_t io_config;
+    io_config.intr_type = GPIO_PIN_INTR_DISABLE;
     io_config.pin_bit_mask = ((uint64_t)1<<(GPIO_NUM_MAX+1));
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
@@ -144,10 +152,11 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     io_config.pin_bit_mask = 0;
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
-    //test 40 bit
+    //ESP32 test 40 bit, ESP32-S2 test 47 bit
     io_config.pin_bit_mask = ((uint64_t)1<<GPIO_NUM_MAX);
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
+#if CONFIG_IDF_TARGET_ESP32
     io_config.pin_bit_mask = (uint64_t)1<<23;
     TEST_ESP_OK(gpio_config(&io_config));
 
@@ -155,8 +164,20 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     io_config.mode = GPIO_MODE_INPUT;
     TEST_ESP_OK(gpio_config(&io_config));
     io_config.mode = GPIO_MODE_OUTPUT;
-    // 34-39 input only, once set as output should log something
+    // ESP32 34-39 input only, once set as output should log something
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    io_config.pin_bit_mask = (uint64_t)1<<26;
+    TEST_ESP_OK(gpio_config(&io_config));
+
+    io_config.pin_bit_mask = ((uint64_t)1 << 46);
+    io_config.mode = GPIO_MODE_INPUT;
+    TEST_ESP_OK(gpio_config(&io_config));
+    io_config.mode = GPIO_MODE_OUTPUT;
+    // ESP32-S2 46 input only, once set as output should log something
+    TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
+#endif
+
 }
 
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
@@ -321,6 +342,7 @@ TEST_CASE("GPIO multi-level interrupt test, to cut the interrupt source exit int
 
 TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
+    disable_intr_times = 0;
     gpio_config_t output_io = init_io(GPIO_OUTPUT_IO);
     gpio_config_t input_io = init_io(GPIO_INPUT_IO);
     input_io.intr_type = GPIO_INTR_POSEDGE;
@@ -329,6 +351,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ESP_OK(gpio_config(&output_io));
     TEST_ESP_OK(gpio_config(&input_io));
 
+    TEST_ESP_OK(gpio_set_level(GPIO_OUTPUT_IO, 0)); // Because of GPIO_INTR_HIGH_LEVEL interrupt, 0 must be set first
     TEST_ESP_OK(gpio_set_intr_type(GPIO_INPUT_IO, GPIO_INTR_HIGH_LEVEL));
     TEST_ESP_OK(gpio_install_isr_service(0));
     TEST_ESP_OK(gpio_isr_handler_add(GPIO_INPUT_IO, gpio_isr_level_handler, (void*) GPIO_INPUT_IO));
@@ -348,7 +371,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_remove(GPIO_INPUT_IO) == ESP_ERR_INVALID_STATE);
 }
 
-// Connect GPIO18 with GPIO19
+// ESP32 Connect GPIO18 with GPIO19, ESP32-S2 Connect GPIO18 with GPIO21
 // use multimeter to test the voltage, so it is ignored in CI
 TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
 {
@@ -372,12 +395,20 @@ TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
     // tested voltage is around 3.3v
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), 1, "get level error! the level should be high!");
 
-    //IO34-39 are just used for input
+
+#if CONFIG_IDF_TARGET_ESP32
+    //ESP32 IO34-39 are just used for input
     io_conf.pin_bit_mask = ((uint64_t)1<<34);
     io_conf.mode = GPIO_MODE_OUTPUT;
     gpio_config(&io_conf);
     TEST_ASSERT(gpio_config(&io_conf) == ESP_ERR_INVALID_ARG);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //ESP32-S2 IO46 are just used for input
+    io_conf.pin_bit_mask = ((uint64_t)1<<46);
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    gpio_config(&io_conf);
+    TEST_ASSERT(gpio_config(&io_conf) == ESP_ERR_INVALID_ARG);
+#endif
 }
 
 // gpio17 connects to 3.3v pin, gpio19 connects to the GND pin
@@ -405,7 +436,11 @@ TEST_CASE("GPIO get input level test", "[gpio][ignore]")
 
 TEST_CASE("GPIO io pull up/down function", "[gpio]")
 {
-    gpio_config_t  io_conf = init_io(GPIO_INPUT_IO);
+    // First, ensure that the output IO will not affect the level
+    gpio_config_t  io_conf = init_io(GPIO_OUTPUT_IO);
+    gpio_config(&io_conf);
+    gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_INPUT);
+    io_conf = init_io(GPIO_INPUT_IO);
     gpio_config(&io_conf);
     gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT);
     TEST_ESP_OK(gpio_pullup_en(GPIO_INPUT_IO));  // pull up first
@@ -424,7 +459,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
 
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
-    //connect io18 and io5
+    //ESP32 connect io18 and io19, ESP32-S2 connect io18 and io21
     gpio_config_t output_io = init_io(GPIO_OUTPUT_IO);
     gpio_config_t input_io = init_io(GPIO_INPUT_IO);
     gpio_config(&output_io);
@@ -467,12 +502,6 @@ TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
     level = gpio_get_level(GPIO_INPUT_IO);
     gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_INPUT_OUTPUT);
     gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT);
-    gpio_set_level(GPIO_OUTPUT_IO, !level);
-    TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
-    // input test
-    gpio_set_direction(GPIO_OUTPUT_IO, GPIO_MODE_OUTPUT);
-    gpio_set_direction(GPIO_INPUT_IO, GPIO_MODE_INPUT_OUTPUT);
-    level = gpio_get_level(GPIO_INPUT_IO);
     gpio_set_level(GPIO_OUTPUT_IO, !level);
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), !level, "direction set error, it can't output");
 }
@@ -692,10 +721,10 @@ static void gpio_isr_handler(void* arg)
  * But this will incorrectly handle the interrupt disabled GPIOs, because the raw interrupt status register can still be set when
  * the trigger signal arrives, even if the interrupt is disabled.
  * First on the core 0:
- *     1. Configure the GPIO18 and GPIO19 input_output mode.
- *     2. Enable GPIO18 dual edge triggered interrupt, enable GPIO19 falling edge triggered interrupt.
+ *     1. Configure the GPIO18 and GPIO19(ESP32)/GPIO21(ESP32-S2) input_output mode.
+ *     2. Enable GPIO18 dual edge triggered interrupt, enable GPIO19(ESP32)/GPIO21(ESP32-S2) falling edge triggered interrupt.
  *     3. Trigger GPIO18 interrupt, than disable the GPIO8 interrupt, and than trigger GPIO18 again(This time will not respond to the interrupt).
- *     4. Trigger GPIO19 interrupt.
+ *     4. Trigger GPIO19(ESP32)/GPIO21(ESP32-S2) interrupt.
  * If the bug is not fixed, you will see, in the step 4, the interrupt of GPIO18 will also respond.
  */
 TEST_CASE("GPIO ISR service test", "[gpio][ignore]")
