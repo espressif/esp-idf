@@ -23,6 +23,10 @@
 
 #include "tcpip_adapter_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief tcpip adapter legacy init. It is used only to set the compatibility mode of esp-netif, which
  * will enable backward compatibility of esp-netif.
@@ -244,5 +248,9 @@ esp_err_t tcpip_adapter_get_hostname(tcpip_adapter_if_t tcpip_if, const char **h
  * @return ESP_OK on success
  */
 esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //_TCPIP_ADAPTER_H_
