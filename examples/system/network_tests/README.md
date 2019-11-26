@@ -14,7 +14,7 @@ Note: TTCN3 engine works reliably only on Linux and Windows.
 
 ## Setup TTCN3
 
-* Clone a repository https://github.com/intel/net-test-suites.git and install titan core a described in the README.md
+* Clone a repository https://github.com/intel/net-test-suites.git and install titan core as described in the README.md
 * Copy files `esp32_netsuite.cfg` and `esp32_netsuite.ttcn` (located in `$IDF_PATH/components/lwip/weekend_test`) to `src` subdir of the cloned repository `net-test-suites`
 * Rebuild the netsuite tests (according to README.md in net-test-suite) by executing `source make.sh` in `src` subdir
 
@@ -43,7 +43,7 @@ ttcn3_start test_suite esp32_netsuite.cfg
 
 Purpose of this test is to execute standard network suite on a ESP32 network stack.
 
-DUT (Network stack under test) runs normally on target, but a specific interface `TCPIP_ADAPTER_IF_TEST` was created for passing arbitrary data to
+DUT, Device (Network stack in this case) under test, runs normally on target, but a specific interface with configured esp-netif for passing arbitrary data to
 and from the network stack. Embedded code `net_suite.c` implements an application which serves stdin/stdout and propagates the data to/from this test interface.
 
 Standard Intel net suite executed by TTCN3 engine uses udp ports for input/ouput of network packets. Python script `net_suite.py` translates this communication 
@@ -58,8 +58,8 @@ Actual test execution, progress, evaluation and test reporting is done using sta
 |  TTCN3 engine                                           |    |  +----------------------------------+  |
 |                                                         |    |  | net_suite.c                      |  |
 | +-----------------+            +--------------+         |    |  |         +------------------------+  |
-| | net-test-suite  |--7777/udp--| net_suite.py |--stdout---------| ----->  | tcpip_adapter/lwip     |  |
-| |                 |--7771/udp--|              |--stdin----------| <-----  |  TCPIP_ADAPTER_IF_TEST |  |
+| | net-test-suite  |--7777/udp--| net_suite.py |--stdout---------| ----->  | esp_netif / lwip       |  |
+| |                 |--7771/udp--|              |--stdin----------| <-----  |                        |  |
 | +-----------------+            +--------------+         |    |  +---------+------------------------+  |
 +---------------------------------------------------------+    +----------------------------------------+
 ```
