@@ -168,7 +168,10 @@ static void friend_clear(struct bt_mesh_friend *frnd, u8_t reason)
     if (frnd->last) {
         /* Cancel the sending if necessary */
         if (frnd->pending_buf) {
+            bt_mesh_adv_buf_ref_debug(__func__, frnd->last, 2U, BLE_MESH_BUF_REF_EQUAL);
             BLE_MESH_ADV(frnd->last)->busy = 0U;
+        } else {
+            bt_mesh_adv_buf_ref_debug(__func__, frnd->last, 1U, BLE_MESH_BUF_REF_EQUAL);
         }
 
         net_buf_unref(frnd->last);

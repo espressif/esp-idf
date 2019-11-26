@@ -260,14 +260,9 @@ static void free_segments(void)
         }
 
         link.tx.buf[i] = NULL;
+        bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
         /* Mark as canceled */
         BLE_MESH_ADV(buf)->busy = 0U;
-        /** Changed by Espressif. Add this to avoid buf->ref is 2 which will
-         *  cause lack of buf.
-         */
-        if (buf->ref > 1) {
-            buf->ref = 1;
-        }
         net_buf_unref(buf);
     }
 }
@@ -1311,7 +1306,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
             BT_DBG("Resending link ack");
             bearer_ctl_send(LINK_ACK, NULL, 0);
         } else {
-            BT_WARN("Ignoring bearer open: link already active");
+            BT_INFO("Ignoring bearer open: link already active");
         }
 
         return;
@@ -1436,19 +1431,11 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
     BT_DBG("len %u, seg_index %u", buf->len, seg);
 
     if (!link.rx.seg && link.rx.prev_id == rx->xact_id) {
-        BT_WARN("Resending ack");
+        BT_INFO("Resending ack");
         gen_prov_ack_send(rx->xact_id);
         return;
     }
 
-    /* An issue here:
-     * If the Transaction Start PDU is lost and the device receives corresponding
-     * Transaction Continuation PDU fist, this will trigger the following error -
-     * handling code to be executed and the device must wait for the timeout of
-     * PB-ADV provisioning procedure. Then another provisioning procedure can be
-     * started (link.rx.id will be reset after each provisioning PDU is received
-     * completely). This issue also exists in Provisioner.
-     */
     if (rx->xact_id != link.rx.id) {
         BT_WARN("Data for unknown transaction (%u != %u)",
                 rx->xact_id, link.rx.id);
@@ -1473,7 +1460,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
     }
 
     if (!(link.rx.seg & BIT(seg))) {
-        BT_WARN("Ignoring already received segment");
+        BT_INFO("Ignoring already received segment");
         return;
     }
 
@@ -1501,12 +1488,12 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 {
     if (link.rx.seg) {
-        BT_WARN("Got Start while there are unreceived segments");
+        BT_INFO("Got Start while there are unreceived segments");
         return;
     }
 
     if (link.rx.prev_id == rx->xact_id) {
-        BT_WARN("Resending ack");
+        BT_INFO("Resending ack");
         gen_prov_ack_send(rx->xact_id);
         return;
     }

@@ -205,12 +205,8 @@ static void seg_tx_reset(struct seg_tx *tx)
             continue;
         }
 
-        /** Change by Espressif. Add this to avoid buf->ref is 2 which will
-         *  cause lack of buf.
-         */
-        if (tx->seg[i]->ref > 1) {
-            tx->seg[i]->ref = 1;
-        }
+        bt_mesh_adv_buf_ref_debug(__func__, tx->seg[i], 3U, BLE_MESH_BUF_REF_SMALL);
+        BLE_MESH_ADV(tx->seg[i])->busy = 0U;
         net_buf_unref(tx->seg[i]);
         tx->seg[i] = NULL;
     }
