@@ -58,6 +58,10 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_FT_PSK)
 		return WPA_KEY_MGMT_FT_PSK;
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_WPA3_SAE
+        if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE)
+                return WPA_KEY_MGMT_SAE;
+#endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_IEEE80211W
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SHA256)
 		return WPA_KEY_MGMT_IEEE8021X_SHA256;
@@ -390,6 +394,9 @@ int wpa_eapol_key_mic(const u8 *key, int ver, const u8 *buf, size_t len,
 		memcpy(mic, hash, MD5_MAC_LEN);
 		break;
 #ifdef CONFIG_IEEE80211W
+#ifdef CONFIG_WPA3_SAE
+       case WPA_KEY_INFO_TYPE_AKM_DEFINED:
+#endif
 	case WPA_KEY_INFO_TYPE_AES_128_CMAC:
 		return omac1_aes_128(key, buf, len, mic);
 #endif
@@ -510,13 +517,11 @@ void wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 			  WPA_NONCE_LEN);
 	}
 
-#ifdef CONFIG_IEEE80211W
 	if (use_sha256) {
 		sha256_prf(pmk, pmk_len, label, data, sizeof(data),
 			ptk, ptk_len);
 	}
 	else
-#endif /* CONFIG_IEEE80211W */
 	{
 	    sha1_prf(pmk, pmk_len, label, data, sizeof(data), ptk, ptk_len);
 	}

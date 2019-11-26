@@ -454,4 +454,6 @@ void * __hide_aliasing_typecast(void *foo);
 #define WPA_MEM_DEFINED(ptr, len) do { } while (0)
 #endif /* CONFIG_VALGRIND */
 
+#define IANA_SECP256R1 19
+
 #endif /* COMMON_H */

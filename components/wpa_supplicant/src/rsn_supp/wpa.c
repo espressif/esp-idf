@@ -245,6 +245,8 @@ void   wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
         ver = WPA_KEY_INFO_TYPE_AES_128_CMAC;
     else if (sm->pairwise_cipher == WPA_CIPHER_CCMP)
         ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
+    else if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+	ver = 0;
     else
         ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
 
@@ -1661,7 +1663,8 @@ failed:
             return -1;
         }
     } else if (ver == WPA_KEY_INFO_TYPE_HMAC_SHA1_AES ||
-           ver == WPA_KEY_INFO_TYPE_AES_128_CMAC) {
+               ver == WPA_KEY_INFO_TYPE_AES_128_CMAC ||
+               sm->key_mgmt == WPA_KEY_MGMT_SAE) {
         u8 *buf;
         if (keydatalen % 8) {
             #ifdef DEBUG_PRINT    
@@ -1832,6 +1835,9 @@ int   wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
     if (ver != WPA_KEY_INFO_TYPE_HMAC_MD5_RC4 &&
 #ifdef CONFIG_IEEE80211W
         ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
+#ifdef CONFIG_WPA3_SAE
+        sm->key_mgmt != WPA_KEY_MGMT_SAE &&
+#endif
 #endif
         ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
 #ifdef DEBUG_PRINT    
@@ -1843,14 +1849,16 @@ int   wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
 
 #ifdef CONFIG_IEEE80211W
     if (wpa_key_mgmt_sha256(sm->key_mgmt)) {
-        if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC) {
+        if (ver != WPA_KEY_INFO_TYPE_AES_128_CMAC &&
+	    sm->key_mgmt != WPA_KEY_MGMT_SAE) {
             goto out;
         }
     } else
 #endif
 
     if (sm->pairwise_cipher == WPA_CIPHER_CCMP &&
-        ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES) {
+        ver != WPA_KEY_INFO_TYPE_HMAC_SHA1_AES &&
+        sm->key_mgmt != WPA_KEY_MGMT_SAE) {
 #ifdef DEBUG_PRINT    
            wpa_printf(MSG_DEBUG, "WPA: CCMP is used, but EAPOL-Key "
                "descriptor version (%d) is not 2.", ver);
@@ -2073,10 +2081,12 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     sm->proto = wpa_proto;
     if (auth_mode == WPA2_AUTH_ENT) {
         sm->key_mgmt = WPA_KEY_MGMT_IEEE8021X; /* for wpa2 enterprise */
-    } else if (auth_mode == WPA2_AUTH_PSK) {
-        sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     } else if (auth_mode == WPA2_AUTH_PSK_SHA256) {
         sm->key_mgmt = WPA_KEY_MGMT_PSK_SHA256;
+    } else if (auth_mode == WPA3_AUTH_PSK) {
+         sm->key_mgmt = WPA_KEY_MGMT_SAE; /* for WPA3 PSK */
+    } else {
+        sm->key_mgmt = WPA_KEY_MGMT_PSK;  /* fixed to PSK for now */
     }
 }
 
@@ -2142,6 +2152,8 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *  Here only handle passphrase string.  Need extra step to handle 32B, 64Hex raw
      *    PMK.
      */
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
+	return;
 
     /* This is really SLOW, so just re cacl while reset param */
     if (esp_wifi_sta_get_reset_param_internal() != 0) {

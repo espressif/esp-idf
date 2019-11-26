@@ -50,6 +50,7 @@ static inline int wpa_key_mgmt_wpa_ieee8021x(int akm)
 			 WPA_KEY_MGMT_FT_IEEE8021X |
 			 WPA_KEY_MGMT_CCKM |
 			 WPA_KEY_MGMT_OSEN |
+			 WPA_KEY_MGMT_SAE |
 			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B_192));
@@ -82,6 +83,7 @@ static inline int wpa_key_mgmt_sha256(int akm)
 	return !!(akm & (WPA_KEY_MGMT_PSK_SHA256 |
 			 WPA_KEY_MGMT_IEEE8021X_SHA256 |
 			 WPA_KEY_MGMT_OSEN |
+			 WPA_KEY_MGMT_SAE |
 			 WPA_KEY_MGMT_IEEE8021X_SUITE_B));
 }
 
