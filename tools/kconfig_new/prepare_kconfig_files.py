@@ -54,7 +54,9 @@ def _prepare_source_files(env_dict):
                 old_content = f.read()
         except Exception:
             # File doesn't exist or other issue
-            old_content = ''
+            old_content = None
+            # "None" ensures that it won't be equal to new_content when it is empty string because files need to be
+            # created for empty environment variables as well
 
         if new_content != old_content:
             # write or rewrite file only if it is necessary
