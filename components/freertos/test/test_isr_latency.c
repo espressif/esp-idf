@@ -17,10 +17,10 @@
 
 static SemaphoreHandle_t sync;
 static SemaphoreHandle_t end_sema;
-uint32_t cycle_before_trigger;
-uint32_t cycle_before_exit;
-uint32_t delta_enter_cycles = 0;
-uint32_t delta_exit_cycles = 0;
+static uint32_t cycle_before_trigger;
+static uint32_t cycle_before_exit;
+static uint32_t delta_enter_cycles = 0;
+static uint32_t delta_exit_cycles = 0;
 
 static void software_isr(void *arg) {
     (void)arg;

@@ -29,11 +29,9 @@
 
 /**
  * @note For some reason setjmp does not work with 
- * unity in local tests for, at least now, unknown 
- * reasons since the interrupt handling was modified
- * so if you want to perform tests locally, 
- * uncomment this line. Remote tests on CI
- * still working as expected 
+ * unity, since it is only used on test entry and
+ * exit it should not impact the rest of test
+ * framework. So we disable it here.  
  */ 
 #define UNITY_EXCLUDE_SETJMP_H
 

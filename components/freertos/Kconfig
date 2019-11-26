@@ -439,4 +439,5 @@ menu "FreeRTOS"
         bool
         help
             Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
+
 endmenu
