@@ -70,7 +70,33 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-linux-toolchain-add-it-to-path-legacy>` to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``.
+
+Add Toolchain to PATH
+=====================
+
+The custom toolchain needs to be copied to a binary directory and added to the ``PATH``.
+
+Choose a directory, for example ``~/esp/xtensa-esp32-elf/``, and copy the build output to this directory.
+
+To use it, you will need to update your ``PATH`` environment variable in ``~/.profile`` file. To make ``xtensa-esp32-elf`` available for all terminal sessions, add the following line to your ``~/.profile`` file::
+
+    export PATH="$HOME/esp/xtensa-esp32-elf/bin:$PATH"
+
+.. note::
+
+    If you have ``/bin/bash`` set as login shell, and both ``.bash_profile`` and ``.profile`` exist, then update ``.bash_profile`` instead. In CentOS, ``alias`` should set in ``.bashrc``.
+
+Log off and log in back to make the ``.profile`` changes effective. Run the following command to verify if ``PATH`` is correctly set::
+
+    printenv PATH
+
+You are looking for similar result containing toolchain's path at the beginning of displayed string::
+
+    $ printenv PATH
+    /home/user-name/esp/xtensa-esp32-elf/bin:/home/user-name/bin:/home/user-name/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+
+Instead of ``/home/user-name`` there should be a home path specific to your installation.
 
 
 Next Steps

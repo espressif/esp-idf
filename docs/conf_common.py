@@ -182,7 +182,8 @@ def update_exclude_patterns(tags):
                   'api-guides/ulp-legacy.rst',
                   'api-guides/unit-tests-legacy.rst',
                   'api-reference/bluetooth/**',
-                  'get-started-legacy/**']:
+                  'get-started-legacy/**',
+                  'gnu-make-legacy.rst']:
             exclude_patterns.append(e)
 
 # The reST default role (used for this markup: `text`) to use for all

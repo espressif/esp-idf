@@ -44,7 +44,7 @@ Related Documents
 .. toctree::
     :maxdepth: 1
 
-    linux-setup-scratch
+    :esp32: linux-setup-scratch
 
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository
