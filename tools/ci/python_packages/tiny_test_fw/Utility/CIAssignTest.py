@@ -44,13 +44,12 @@ import re
 import json
 
 import yaml
-
-from Utility import (CaseConfig, SearchCases, GitlabCIJob, console_log)
-
 try:
     from yaml import CLoader as Loader
 except ImportError:
     from yaml import Loader as Loader
+
+from . import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
 
 class Group(object):

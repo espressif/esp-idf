@@ -17,7 +17,7 @@ import subprocess
 
 import os
 import json
-import App
+from tiny_test_fw import App
 
 
 class IDFApp(App.BaseApp):

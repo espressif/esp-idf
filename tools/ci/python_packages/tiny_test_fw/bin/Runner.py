@@ -26,8 +26,8 @@ import sys
 import argparse
 import threading
 
-import TinyFW
-from Utility import SearchCases, CaseConfig
+from tiny_test_fw import TinyFW
+from tiny_test_fw.Utility import SearchCases, CaseConfig
 
 
 class Runner(threading.Thread):
