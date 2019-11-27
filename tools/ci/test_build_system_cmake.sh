@@ -120,9 +120,24 @@ function run_tests()
 
     print_status "Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit."
     idf.py reconfigure >> log.log || failure "Failed to build"
-    version="Project version: "
+    version="App \"app-template\" version: "
     version+=$(git describe --always --tags --dirty)
     grep "${version}" log.log || failure "Project version should have a hash commit"
+
+    print_status "Get the version of app from Kconfig option"
+    idf.py clean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "project_version_from_txt" > ${TESTDIR}/template/version.txt
+    echo "CONFIG_APP_PROJECT_VER_FROM_CONFIG=y" >> sdkconfig.defaults
+    echo 'CONFIG_APP_PROJECT_VER="project_version_from_Kconfig"' >> sdkconfig.defaults
+    idf.py build >> log.log || failure "Failed to build"
+    version="App \"app-template\" version: "
+    version+="project_version_from_Kconfig"
+    grep "${version}" log.log || failure "Project version should be from Kconfig"
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    rm -f ${TESTDIR}/template/version.txt
 
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
@@ -555,7 +570,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     clean_build_dir
     git branch test_build_system
     git worktree add ../esp-idf-template-test test_build_system
-    diff <(idf.py reconfigure | grep "Project version") <(cd ../esp-idf-template-test && idf.py reconfigure | grep "Project version") \
+    diff <(idf.py reconfigure | grep "App \"app-template\" version: ") <(cd ../esp-idf-template-test && idf.py reconfigure | grep "App \"app-template\" version: ") \
         || failure "Version on worktree should have been properly resolved"
     git worktree remove ../esp-idf-template-test
 
