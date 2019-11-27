@@ -34,6 +34,10 @@
 
 #endif
 
+#define BLE_MESH_GAP_ADV_MAX_LEN    31
+
+#define BLE_MESH_GATT_DEF_MTU_SIZE  23
+
 /* BD ADDR types */
 #define BLE_MESH_ADDR_PUBLIC         0x00
 #define BLE_MESH_ADDR_RANDOM         0x01
@@ -680,6 +684,8 @@ u16_t bt_mesh_gatt_get_mtu(struct bt_mesh_conn *conn);
 /** APIs added by Espressif */
 int bt_mesh_gatts_service_stop(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc);
+
+int bt_mesh_gatts_set_local_device_name(const char *name);
 
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb);
 
