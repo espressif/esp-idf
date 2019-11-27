@@ -22,23 +22,27 @@ import sys
 import re
 import argparse
 
-try:
-    from Utility.CIAssignTest import AssignTest
-except ImportError:
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path:
-        sys.path.insert(0, test_fw_path)
-    from Utility.CIAssignTest import AssignTest
-
-from Utility.CIAssignTest import Group
+import gitlab_api
+from tiny_test_fw.Utility import CIAssignTest
 
 
-class ExampleGroup(Group):
+class ExampleGroup(CIAssignTest.Group):
     SORT_KEYS = CI_JOB_MATCH_KEYS = ["env_tag", "chip"]
 
 
-class CIExampleAssignTest(AssignTest):
+class CIExampleAssignTest(CIAssignTest.AssignTest):
     CI_TEST_JOB_PATTERN = re.compile(r"^example_test_.+")
+
+
+class ArtifactFile(object):
+    def __init__(self, project_id, job_name, artifact_file_path):
+        self.gitlab_api = gitlab_api.Gitlab(project_id)
+
+    def process(self):
+        pass
+
+    def output(self):
+        pass
 
 
 if __name__ == '__main__':

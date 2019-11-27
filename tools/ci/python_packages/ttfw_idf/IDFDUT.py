@@ -30,8 +30,7 @@ except ImportError:
 
 from serial.tools import list_ports
 
-import DUT
-import Utility
+from tiny_test_fw import DUT, Utility
 
 try:
     import esptool

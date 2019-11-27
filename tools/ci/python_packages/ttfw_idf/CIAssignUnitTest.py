@@ -3,19 +3,16 @@ Command line tool to assign unit tests to CI test jobs.
 """
 
 import re
-import os
-import sys
 import argparse
 
 import yaml
 
 try:
-    from Utility import CIAssignTest
+    from yaml import CLoader as Loader
 except ImportError:
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path:
-        sys.path.insert(0, test_fw_path)
-    from Utility import CIAssignTest
+    from yaml import Loader as Loader
+
+from tiny_test_fw.Utility import CIAssignTest
 
 
 class Group(CIAssignTest.Group):
@@ -133,7 +130,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
 
         try:
             with open(test_case_path, "r") as f:
-                raw_data = yaml.load(f)
+                raw_data = yaml.load(f, Loader=Loader)
             test_cases = raw_data["test cases"]
             for case in test_cases:
                 case["tags"] = set(case["tags"])

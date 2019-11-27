@@ -20,7 +20,7 @@ Template Config File::
 
     TestConfig:
       app:
-        path: Users/Test/TinyTestFW/IDF/IDFApp.py
+        package: ttfw_idf
         class: Example
       dut:
         path:
@@ -38,16 +38,19 @@ Template Config File::
         extra_data: some extra data passed to case with kwarg extra_data
         overwrite:  # overwrite test configs
           app:
-            path: Users/Test/TinyTestFW/IDF/IDFApp.py
+            package: ttfw_idf
             class: Example
       - name: xxx
 """
+import importlib
 
 import yaml
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
 
-import TestCase
-
-from Utility import load_source
+from . import TestCase
 
 
 def _convert_to_lower_case_bytes(item):
@@ -154,7 +157,7 @@ class Parser(object):
         configs = cls.DEFAULT_CONFIG.copy()
         if config_file:
             with open(config_file, "r") as f:
-                configs.update(yaml.load(f))
+                configs.update(yaml.load(f, Loader=Loader))
         return configs
 
     @classmethod
@@ -167,9 +170,8 @@ class Parser(object):
         """
         output = dict()
         for key in overwrite:
-            _path = overwrite[key]["path"]
-            _module = load_source(str(hash(_path)), overwrite[key]["path"])
-            output[key] = _module.__getattribute__(overwrite[key]["class"])
+            module = importlib.import_module(overwrite[key]["package"])
+            output[key] = module.__getattribute__(overwrite[key]["class"])
         return output
 
     @classmethod

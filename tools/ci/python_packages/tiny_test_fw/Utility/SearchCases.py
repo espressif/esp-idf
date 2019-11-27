@@ -17,7 +17,8 @@ import os
 import fnmatch
 import types
 import copy
-from Utility import load_source
+
+from . import load_source
 
 
 class Search(object):

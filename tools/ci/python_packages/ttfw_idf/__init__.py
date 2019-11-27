@@ -14,10 +14,9 @@
 import os
 import re
 
-import TinyFW
-import Utility
-from IDF.IDFApp import IDFApp, Example, UT
-from IDF.IDFDUT import IDFDUT
+from tiny_test_fw import TinyFW, Utility
+from IDFApp import IDFApp, Example, UT
+from IDFDUT import IDFDUT
 
 
 def format_case_id(chip, case_name):
