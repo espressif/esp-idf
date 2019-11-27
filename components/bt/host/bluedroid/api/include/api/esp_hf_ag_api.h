@@ -49,10 +49,11 @@ typedef enum
 {
     ESP_HF_CONNECTION_STATE_EVT = 0,          /*!< Connection state changed event */
     ESP_HF_AUDIO_STATE_EVT,                   /*!< Audio connection state change event */
-    ESP_HF_BVRA_EVT,                          /*!< Voice recognition state change event */
+    ESP_HF_BVRA_RESPONSE_EVT,                 /*!< Voice recognition state change event */
     ESP_HF_VOLUME_CONTROL_EVT,                /*!< Audio volume control command from HF Client, provided by +VGM or +VGS message */
 
     ESP_HF_UNAT_RESPONSE_EVT,                 /*!< Unknown AT cmd Response*/
+    ESP_HF_IND_UPDATE_EVT,                    /*!< Indicator Update Event*/
     ESP_HF_CIND_RESPONSE_EVT,                 /*!< Call And Device Indicator Response*/
     ESP_HF_COPS_RESPONSE_EVT,                 /*!< Current operator information */
     ESP_HF_CLCC_RESPONSE_EVT,                 /*!< List of current calls notification */
@@ -67,7 +68,7 @@ typedef enum
     ESP_HF_BCS_RESPONSE_EVT,                  /*!< Codec Negotiation */
 } esp_hf_cb_event_t;
 
-// HF callback parameters of corresponding esp event in esp_hf_cb_event_t
+/// HFP AG callback parameters
 typedef union
 {
     /**
@@ -75,98 +76,85 @@ typedef union
      */
     struct hf_conn_stat_param {
         esp_bd_addr_t remote_bda;                 /*!< remote bluetooth device address */
-        esp_hf_connection_state_t state;          /*!< HF connection state */
-        uint32_t peer_feat;                       /*!< AG supported features */
+        esp_hf_connection_state_t state;          /*!< Connection state */
+        uint32_t peer_feat;                       /*!< HF supported features */
         uint32_t chld_feat;                       /*!< AG supported features on call hold and multiparty services */
-    } conn_stat;                                  /*!< AG callback param of ESP_AG_CONNECTION_STATE_EVT */
+    } conn_stat;                                  /*!< AG callback param of ESP_HF_CONNECTION_STATE_EVT */
 
     /**
      * @brief ESP_HF_AUDIO_STATE_EVT
      */
     struct hf_audio_stat_param {
-        esp_bd_addr_t remote_addr;                 /*!< remote bluetooth device address */
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
         esp_hf_audio_state_t state;               /*!< audio connection state */
-    } audio_stat;                                 /*!< AG callback param of ESP_AG_AUDIO_STATE_EVT */
+    } audio_stat;                                 /*!< AG callback param of ESP_HF_AUDIO_STATE_EVT */
 
     /**
-     * @brief ESP_HF_BVRA_EVT
+     * @brief ESP_HF_BVRA_RESPONSE_EVT
      */
-    struct hf_bvra_param {
-        esp_bd_addr_t     remote_addr;
+    struct hf_vra_rep_param {
+        esp_bd_addr_t     remote_addr;            /*!< remote bluetooth device address */
         esp_hf_vr_state_t value;                  /*!< voice recognition state */
-    } vra_rep;                                       /*!< AG callback param of ESP_AG_BVRA_EVT */
+    } vra_rep;                                    /*!< AG callback param of ESP_HF_BVRA_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_VOLUME_CONTROL_EVT
      */
     struct hf_volume_control_param {
-        esp_hf_volume_type_t type;                    /*!< volume control target, speaker or microphone */
-        int volume;                              /*!< gain, ranges from 0 to 15 */
-    } volume_control;                            /*!< AG callback param of ESP_AG_VOLUME_CONTROL_EVT */
+        esp_hf_volume_type_t type;                /*!< volume control target, speaker or microphone */
+        int volume;                               /*!< gain, ranges from 0 to 15 */
+    } volume_control;                             /*!< AG callback param of ESP_HF_VOLUME_CONTROL_EVT */
 
     /**
      * @brief ESP_HF_UNAT_RESPOSNE_EVT
      */
-    struct hf_unat_param {
-        char *unat;
-    }unat_rep;
+    struct hf_unat_rep_param {
+        char *unat;                               /*!< unknown AT command string */
+    }unat_rep;                                    /*!< AG callback param of ESP_HF_UNAT_RESPONSE_EVT */
 
     /**
-     * @brief ESP_HF_AT_RESPONSE_EVT
-     */
-    struct hf_at_code_param {
-        esp_hf_at_response_code_t code;          /*!< AT response code */
-        esp_hf_cme_err_t cme;                    /*!< Extended Audio Gateway Error Result Code */
-    } at;                               /*!< AG callback param of ESP_HF_EXT_AT_EVT */
-
-   /**
-     * @brief ESP_HF_CIND_CALL_EVT
+     * @brief ESP_HF_CIND_RESPONSE_EVT
      */
     struct hf_cind_param {
         esp_hf_call_status_t       call_status;         /*!< call status indicator */
         esp_hf_call_setup_status_t call_setup_status;   /*!< call setup status indicator */
-        esp_hf_network_state_t svc;       /*!< bluetooth proprietary call hold status indicator */
+        esp_hf_network_state_t svc;                     /*!< bluetooth proprietary call hold status indicator */
         int signal_strength;                            /*!< bluetooth proprietary call hold status indicator */
         esp_hf_roaming_status_t roam;                   /*!< bluetooth proprietary call hold status indicator */
         int battery_level;                              /*!< battery charge value, ranges from 0 to 5 */
         esp_hf_call_held_status_t  call_held_status;    /*!< bluetooth proprietary call hold status indicator */
-    } cind;
+    } cind;                                             /*!< AG callback param of ESP_HF_CIND_RESPONSE_EVT */
+
+    /**
+     * @brief ESP_HF_DIAL_EVT
+     */
+    struct hf_out_call_param {
+        esp_bd_addr_t remote_addr;                /*!< remote bluetooth device address */
+        char *num_or_loc;                         /*!< location in phone memory */
+    } out_call;                                   /*!< AG callback param of ESP_HF_DIAL_EVT */
 
     /**
      * @brief ESP_HF_VTS_RESPOSNE_EVT
      */
-    struct hf_vts_param {
-        char *code;
-    }vts_rep;
+    struct hf_vts_rep_param {
+        char *code;                               /*!< MTF code from HF Client */
+    }vts_rep;                                     /*!< AG callback param of ESP_HF_VTS_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_NREC_RESPOSNE_EVT
      */
     struct hf_nrec_param {
-       esp_hf_nrec_t state;
-    } nrec;
-
-    struct hf_outcall_param {
-        esp_bd_addr_t remote_addr;
-        char *num_or_loc;
-    } out_call;
-
-    /**
-     * @brief ESP_HF_BSIR_EVT
-     */
-    struct hf_bsir_param {
-        esp_bd_addr_t remote_addr;
-        esp_hf_in_band_ring_state_t state;         /*!< setting state of in-band ring tone */
-    } bsir;                                        
+       esp_hf_nrec_t state;                       /*!< NREC enabled or disabled */
+    } nrec;                                       /*!< AG callback param of ESP_HF_NREC_RESPONSE_EVT */
 
     /**
      * @brief ESP_HF_BCS_RESPONSE_EVT
      */
     struct hf_codec_param {
-        esp_hf_wbs_config_t mode;
-    } codec;
+        esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
+    } codec;                                      /*!< AG callback param of ESP_HF_BAC_RESPONSE_EVT */
 
-} esp_hf_cb_param_t;
+} esp_hf_cb_param_t;                              /*!< HFP AG callback param compound*/
 
 /**
  * @brief           AG incoming data callback function, the callback is useful in case of
@@ -206,8 +194,8 @@ typedef void (* esp_hf_cb_t) (esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 **  ESP HF API
 ************************************************************************************/
 /**
- * @brief           Register application callback function to HFP client module. This function should be called
- *                  only after esp_bluedroid_enable() completes successfully, used by HFP client
+ * @brief           Register application callback function to HFP AG module. This function should be called
+ *                  only after esp_bluedroid_enable() completes successfully, used by HFP AG
  *
  * @param[in]       callback: HFP AG event callback function
  *
@@ -224,6 +212,7 @@ esp_err_t esp_bt_hf_register_callback(esp_hf_cb_t callback);
  * @brief           Initialize the bluetooth HF AG module. This function should be called
  *                  after esp_bluedroid_enable() completes successfully
  *
+ * @param[in]       remote_addr: remote bluetooth device address
  * @return
  *                  - ESP_OK: if the initialization request is sent successfully
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -237,6 +226,7 @@ esp_err_t esp_bt_hf_init(esp_bd_addr_t remote_addr);
  * @brief           De-initialize for HF AG module. This function
  *                  should be called only after esp_bluedroid_enable() completes successfully
  *
+ * @param[in]       remote_addr: remote bluetooth device address
  * @return
  *                  - ESP_OK: success
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -304,8 +294,8 @@ esp_err_t esp_bt_hf_disconnect_audio(esp_bd_addr_t remote_bda);
  * @brief           Response of Volume Recognition Command(AT+VRA) from HFP client. As a precondition to use this API,
  *                  Service Level Connection shall exist with HFP client.
  *
- * @param[in]       remote: volume control target, speaker or microphone
- * @param[in]       volume: gain of the speaker of microphone, ranges 0 to 15
+ * @param[in]       remote_bda: volume control target, speaker or microphone
+ * @param[in]       value: gain of the speaker of microphone, ranges 0 to 15
  *
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
@@ -318,8 +308,9 @@ esp_err_t esp_bt_hf_vra(esp_bd_addr_t remote_bda, esp_hf_vr_state_t value);
 /**
  *
  * @brief           Volume synchronization with HFP client. As a precondition to use this API,
- *                  Service Level Connection shall exist with HFP client
+ *                  Service Level Connection shall exist with HFP client.
  *
+ * @param[in]       remote_bda: remote bluetooth device address
  * @param[in]       type: volume control target, speaker or microphone
  * @param[in]       volume: gain of the speaker of microphone, ranges 0 to 15
  *
@@ -334,8 +325,10 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_contr
  /**
  *
  * @brief           Handle Unknown AT command from HFP Client.
- *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client
+ *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       unat: AT command string from HF Client
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -347,8 +340,11 @@ esp_err_t esp_hf_unat_response(esp_bd_addr_t remote_addr, char *unat);
  /**
  *
  * @brief           Unsolicited send extend AT error code to HFP Client.
- *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client
+ *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client.
  *
+ * @param[in]       remote_bda: remote bluetooth device address
+ * @param[in]       response_code: AT command response code
+ * @param[in]       error_code: CME error code
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -362,6 +358,11 @@ esp_err_t esp_bt_hf_cmee_response(esp_bd_addr_t remote_bda, esp_hf_at_response_c
  * @brief           Usolicited send device status notificationto HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       call_state: call state
+ * @param[in]       call_setup_state: call setup state
+ * @param[in]       ntk_state: network service state
+ * @param[in]       signal: signal strength from 0 to 5
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -377,6 +378,14 @@ esp_err_t esp_bt_hf_indchange_notification(esp_bd_addr_t remote_addr, esp_hf_cal
  * @brief           Response to device individual indicatiors to HFP Client.
  *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       call_state: call state
+ * @param[in]       call_setup_state: call setup state
+ * @param[in]       ntk_state: network service state
+ * @param[in]       signal: signal strength from 0 to 5
+ * @param[in]       roam: roam state
+ * @param[in]       batt_lev: batery level from 0 to 5
+ * @param[in]       call_held_status: call held status
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -391,9 +400,11 @@ esp_err_t esp_bt_hf_cind_response(esp_bd_addr_t remote_addr,
 
 /**
  *
- * @brief           Query the name of currently selected network operator in AG,
- *                  As a precondition to use this API, Service Level Connection shall exist with HFP Client
+ * @brief           Reponse for AT+COPS command from HF Client.
+ *                  As a precondition to use this API, Service Level Connection shall exist with HFP Client.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       name: current operator name
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -404,9 +415,17 @@ esp_err_t esp_bt_hf_cops_response(esp_bd_addr_t remote_addr, char *name);
 
 /**
  *
- * @brief           Response to Query list of current calls from HFP Client (use AT+CLCC command), 
- *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client
+ * @brief           Response to AT+CLCC command from HFP Client. 
+ *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       index: the index of current call
+ * @param[in]       dir: call direction (incoming/outgoing)
+ * @param[in]       current_call_state: current call state
+ * @param[in]       mode: current call mode (voice/data/fax)
+ * @param[in]       mpty: single or multi type
+ * @param[in]       number: current call number
+ * @param[in]       type: international type or unknow
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -419,9 +438,12 @@ esp_err_t esp_bt_hf_clcc_response(esp_bd_addr_t remote_addr, int index, esp_hf_c
 
 /**
  *
- * @brief           Get subscriber information number from HFP client(send AT+CNUM command),
- *                  As a precondition to use this API, Service Level Connection shall exist with AG
+ * @brief           Response for AT+CNUM command from HF Client.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       number: registration number
+ * @param[in]       type: service type (unknown/voice/fax)
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -432,9 +454,11 @@ esp_err_t esp_bt_hf_cnum_response(esp_bd_addr_t remote_addr, char *number, esp_h
 
 /**
  *
- * @brief           Inform HF Client of Provided or not Inband Ring Tone.
- *                  As a precondition to use this API, Service Level Connection shall exist with AG
+ * @brief           Inform HF Client that AG Provided in-band ring tone or not.
+ *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       state: in-band ring tone state
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -445,9 +469,16 @@ esp_err_t esp_bt_hf_bsir(esp_bd_addr_t remote_addr, esp_hf_in_band_ring_state_t 
 
 /**
  *
- * @brief           Answer Incoming Call by AG or response to the AT+A command from Hands-Free Unit.
+ * @brief           Answer Incoming Call from AG.
  *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       num_active: the number of active call
+ * @param[in]       num_held: the number of held call
+ * @param[in]       call_state: call state
+ * @param[in]       call_setup_state: call setup state
+ * @param[in]       number: number of the incoming call
+ * @param[in]       call_addr_type: call address type
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -460,9 +491,16 @@ esp_err_t esp_bt_hf_answer_call(esp_bd_addr_t remote_addr, int num_active, int n
 
 /**
  *
- * @brief           Reject Incoming Call by AG or response to the AT+CHUP command from Hands-Free Unit.
+ * @brief           Reject Incoming Call from AG.
  *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       num_active: the number of active call
+ * @param[in]       num_held: the number of held call
+ * @param[in]       call_state: call state
+ * @param[in]       call_setup_state: call setup state
+ * @param[in]       number: number of the incoming call
+ * @param[in]       call_addr_type: call address type
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -475,9 +513,16 @@ esp_err_t esp_bt_hf_reject_call(esp_bd_addr_t remote_addr, int num_active, int n
 
 /**
  *
- * @brief           Reject Incoming Call by AG or response to the AT+CHUP command from Hands-Free Unit.
+ * @brief           Reject incoming call from AG.
  *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       num_active: the number of active call
+ * @param[in]       num_held: the number of held call
+ * @param[in]       call_state: call state
+ * @param[in]       call_setup_state: call setup state
+ * @param[in]       number: number of the outgoing call
+ * @param[in]       call_addr_type: call address type
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
@@ -490,9 +535,16 @@ esp_err_t esp_bt_hf_out_call(esp_bd_addr_t remote_addr, int num_active, int num_
 
 /**
  *
- * @brief           Reject Incoming Call by AG or response to the AT+CHUP command from Hands-Free Unit.
+ * @brief           End an ongoing call.
  *                  As a precondition to use this API, Service Level Connection shall exist with AG.
  *
+ * @param[in]       remote_addr: remote bluetooth device address
+ * @param[in]       num_active: the number of active call
+ * @param[in]       num_held: the number of held call
+ * @param[in]       call_state: call state
+ * @param[in]       call_setup_state: call setup state
+ * @param[in]       number: number of the call
+ * @param[in]       call_addr_type: call address type
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled

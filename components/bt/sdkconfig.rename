@@ -45,6 +45,7 @@ CONFIG_A2DP_ENABLE                                          CONFIG_BT_A2DP_ENABL
 CONFIG_HFP_ENABLE                                           CONFIG_BT_HFP_ENABLE
 CONFIG_HFP_ROLE                                             CONFIG_BT_HFP_ROLE
 CONFIG_HFP_CLIENT_ENABLE                                    CONFIG_BT_HFP_CLIENT_ENABLE
+CONFIG_HFP_AG_ENABLE                                        CONFIG_BT_HFP_AG_ENABLE
 CONFIG_HFP_AUDIO_DATA_PATH                                  CONFIG_BT_HFP_AUDIO_DATA_PATH
 CONFIG_HFP_AUDIO_DATA_PATH_PCM                              CONFIG_BT_HFP_AUDIO_DATA_PATH_PCM
 CONFIG_HFP_AUDIO_DATA_PATH_HCI                              CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI

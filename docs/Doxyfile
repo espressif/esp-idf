@@ -57,6 +57,7 @@ INPUT = \
     ../../components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_ag_api.h \
     ## NimBLE related Bluetooth APIs
     ../../components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     ## ESP BLE Mesh APIs

@@ -228,14 +228,15 @@ static void hci_update_adv_report_flow_control(BT_HDR *packet)
         // update adv free number
         hci_hal_env.adv_free_num ++;
         if (esp_vhci_host_check_send_available()){
+#if (BLE_INCLUDED == TRUE)
             // send hci cmd
             btsnd_hcic_ble_update_adv_report_flow_control(hci_hal_env.adv_free_num);
+#endif
             hci_hal_env.adv_free_num = 0;
         } else {
             //do nothing
         }
     }
-
 }
 #endif
 
@@ -338,7 +339,7 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 
     pkt_size = BT_HDR_SIZE + len;
     pkt = (BT_HDR *) osi_calloc(pkt_size);
-    //pkt = (BT_HDR *)hci_hal_env.allocator->alloc(pkt_size);
+
     if (!pkt) {
         HCI_TRACE_ERROR("%s couldn't aquire memory for inbound data buffer.\n", __func__);
         return -1;

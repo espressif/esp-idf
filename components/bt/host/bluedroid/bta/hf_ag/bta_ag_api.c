@@ -262,8 +262,6 @@ void BTA_AgResult(UINT16 handle, tBTA_AG_RES result, tBTA_AG_RES_DATA *p_data)
 {
     tBTA_AG_API_RESULT  *p_buf;
 
-    // printf("BTA_AgReslut: %d\n",result);
-    
     if ((p_buf = (tBTA_AG_API_RESULT *) osi_malloc(sizeof(tBTA_AG_API_RESULT))) != NULL) {
         p_buf->hdr.event = BTA_AG_API_RESULT_EVT;
         p_buf->hdr.layer_specific = handle;

@@ -1301,7 +1301,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.vra_rep.value = p_data->val.num;
-                btc_hf_cb_to_app(ESP_HF_BVRA_EVT, &param);
+                btc_hf_cb_to_app(ESP_HF_BVRA_RESPONSE_EVT, &param);
+                if (p_data->val.num) {
+                    btc_hf_connect_audio(&hf_local_param[idx].btc_hf_cb.connected_bda);
+                } else {
+                    btc_hf_disconnect_audio(&hf_local_param[idx].btc_hf_cb.connected_bda);
+                }
             } while (0);
             break;
         }
@@ -1327,6 +1332,11 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         }
 
         case BTA_AG_AT_CBC_EVT:
+        {
+            btc_hf_cb_to_app(ESP_HF_IND_UPDATE_EVT, NULL);
+            break;
+        }
+
         case BTA_AG_AT_CIND_EVT:
         {
             btc_hf_cind_evt(&p_data->ind);
@@ -1422,6 +1432,14 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             break;
         }
 
+        case BTA_AG_AT_BCS_EVT:
+        {
+            BTC_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
+            memset(&param, 0, sizeof(esp_hf_cb_param_t));
+            param.codec.mode = p_data->val.num;
+            btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
+            break;
+        }
 #if (BTM_WBS_INCLUDED == TRUE )
         case BTA_AG_WBS_EVT:
         {
@@ -1452,11 +1470,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
                   BTA_AgSetCodec(hf_local_param[idx].btc_hf_cb.handle,BTA_AG_CODEC_CVSD);
             }
 #endif
-            break;
-        case BTA_AG_AT_BCS_EVT:
-            BTC_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC", p_data->val.num);
-            /*  no ESP_HF_WBS_NONE case, becuase HF 1.6 supported device can send BCS */
-            btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
             break;
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);

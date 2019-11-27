@@ -24,6 +24,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include "bta_ag_int.h"
 #include "bta/bta_api.h"
 #include "bta/bta_sys.h"
 #include "bta/bta_ag_api.h"
@@ -32,7 +33,6 @@
 #include "common/bt_defs.h"
 #include "common/bt_trace.h"
 #include "osi/allocator.h"
-#include "bta_ag_int.h"
 
 #if (BTA_AG_INCLUDED == TRUE)
 /*****************************************************************************
@@ -272,7 +272,7 @@ const tBTA_AG_ST_TBL bta_ag_st_tbl[] =
 /*****************************************************************************
 ** Global data
 *****************************************************************************/
-const char *bta_ag_version = "1.5"; //"1.6"
+const char *bta_ag_version = "1.6";
 /* AG control block */
 #if BTA_DYNAMIC_MEMORY == FALSE
 tBTA_AG_CB  bta_ag_cb;
