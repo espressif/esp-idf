@@ -879,6 +879,8 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
             // When fifo overflows, we reset the fifo.
             UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
             uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
+            UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
+            UART_ENTER_CRITICAL_ISR(&uart_selectlock);
             if (p_uart->uart_select_notif_callback) {
                 p_uart->uart_select_notif_callback(uart_num, UART_SELECT_ERROR_NOTIF, &HPTaskAwoken);
             }
@@ -1472,7 +1474,6 @@ esp_err_t uart_get_collision_flag(uart_port_t uart_num, bool* collision_flag)
 esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
-    UART_CHECK((p_uart_obj[uart_num]), "uart driver error", ESP_FAIL);
     UART_CHECK((wakeup_threshold <= UART_ACTIVE_THRESHOLD_V &&
                 wakeup_threshold > UART_MIN_WAKEUP_THRESH),
                 "wakeup_threshold out of bounds", ESP_ERR_INVALID_ARG);
