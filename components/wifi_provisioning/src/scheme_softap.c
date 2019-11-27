@@ -33,7 +33,7 @@ typedef struct softap_config {
 static const char *TAG = "wifi_prov_scheme_softap";
 
 extern const wifi_prov_scheme_t wifi_prov_scheme_softap;
-
+static void *scheme_softap_prov_httpd_handle;
 static esp_err_t start_wifi_ap(const char *ssid, const char *pass)
 {
     /* Build Wi-Fi configuration for AP mode */
@@ -84,6 +84,11 @@ static esp_err_t prov_start(protocomm_t *pc, void *config)
     wifi_prov_softap_config_t *softap_config = (wifi_prov_softap_config_t *) config;
 
     protocomm_httpd_config_t *httpd_config = &softap_config->httpd_config;
+
+    if (scheme_softap_prov_httpd_handle) {
+        httpd_config->ext_handle_provided = true;
+        httpd_config->data.handle = scheme_softap_prov_httpd_handle;
+    }
 
     /* Start protocomm server on top of HTTP */
     esp_err_t err = protocomm_httpd_start(pc, httpd_config);
@@ -184,6 +189,11 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
 static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, uint16_t uuid)
 {
     return ESP_OK;
+}
+
+void wifi_prov_scheme_softap_set_httpd_handle(void *handle)
+{
+    scheme_softap_prov_httpd_handle = handle;
 }
 
 const wifi_prov_scheme_t wifi_prov_scheme_softap = {
