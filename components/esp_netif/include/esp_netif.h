@@ -614,6 +614,22 @@ esp_err_t esp_netif_create_ip6_linklocal(esp_netif_t *esp_netif);
 esp_err_t esp_netif_get_ip6_linklocal(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6);
 
 /**
+ * @brief  Get interface global IPv6 address
+ *
+ * If the specified interface is up and a preferred global IPv6 address
+ * has been created for the interface, return a copy of it.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[out] if_ip6 IPv6 information will be returned in this argument if successful.
+ *
+ * @return
+ *      - ESP_OK
+ *      - ESP_FAIL If interface is down, does not have a global IPv6 address,
+ *        or the global IPv6 address is not a preferred address.
+ */
+esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6);
+
+/**
  * @brief Sets IPv4 address to the specified octets
  *
  * @param[out] addr IP address to be set
