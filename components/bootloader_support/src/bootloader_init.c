@@ -115,19 +115,13 @@ esp_err_t bootloader_init(void)
        (in case serial bootloader was running) */
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
-#if !CONFIG_FREERTOS_UNICORE
     Cache_Read_Disable(1);
-#endif
     Cache_Flush(0);
-#if !CONFIG_FREERTOS_UNICORE
     Cache_Flush(1);
-#endif
     mmu_init(0);
-#if !CONFIG_FREERTOS_UNICORE
     DPORT_REG_SET_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
     mmu_init(1);
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MMU_IA_CLR);
-#endif
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     //TODO, save the autoload value
     Cache_Suspend_ICache();
@@ -146,9 +140,7 @@ esp_err_t bootloader_init(void)
     */
 #if CONFIG_IDF_TARGET_ESP32
     DPORT_REG_CLR_BIT(DPORT_PRO_CACHE_CTRL1_REG, DPORT_PRO_CACHE_MASK_DROM0);
-#if !CONFIG_FREERTOS_UNICORE
     DPORT_REG_CLR_BIT(DPORT_APP_CACHE_CTRL1_REG, DPORT_APP_CACHE_MASK_DROM0);
-#endif
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     DPORT_REG_CLR_BIT(DPORT_PRO_ICACHE_CTRL1_REG, DPORT_PRO_ICACHE_MASK_DROM0);
 #endif
@@ -193,9 +185,6 @@ static esp_err_t bootloader_main(void)
     ESP_LOGI(TAG, "ESP-IDF %s 2nd stage bootloader", IDF_VER);
 
     ESP_LOGI(TAG, "compile time " __TIME__ );
-#if !CONFIG_FREERTOS_UNICORE
-    ets_set_appcpu_boot_addr(0);
-#endif
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     ESP_LOGD(TAG, "Enabling RTCWDT(%d ms)", CONFIG_BOOTLOADER_WDT_TIME_MS);
@@ -456,9 +445,7 @@ static void wdt_reset_info_dump(int cpu)
         lsstat  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0STAT_REG);
         lsaddr  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0ADDR_REG);
         lsdata  = DPORT_REG_READ(DPORT_PRO_CPU_RECORD_PDEBUGLS0DATA_REG);
-
     } else {
-#if !CONFIG_FREERTOS_UNICORE
         stat    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_STATUS_REG);
         pid     = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PID_REG);
         inst    = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGINST_REG);
@@ -468,10 +455,6 @@ static void wdt_reset_info_dump(int cpu)
         lsstat  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0STAT_REG);
         lsaddr  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0ADDR_REG);
         lsdata  = DPORT_REG_READ(DPORT_APP_CPU_RECORD_PDEBUGLS0DATA_REG);
-#else
-        ESP_LOGE(TAG, "WDT reset info: &s CPU not support!\n", cpu_name);
-        return;
-#endif
     }
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
     stat    = 0xdeadbeef;
