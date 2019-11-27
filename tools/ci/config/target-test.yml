@@ -30,7 +30,6 @@
     reports:
         junit: $LOG_PATH/*/XUNIT_RESULT.xml
   variables:
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
@@ -42,7 +41,7 @@
     # clone test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    - cd $TEST_FW_PATH
+    - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
@@ -125,7 +124,6 @@ test_weekend_mqtt:
       - $BOT_LABEL_WEEKEND_TEST
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/config.yml"
@@ -142,7 +140,6 @@ test_weekend_network:
       - $BOT_LABEL_WEEKEND_TEST
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
     CONFIG_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/config.yml"
@@ -160,6 +157,16 @@ example_test_002:
   tags:
     - ESP32
     - Example_ShieldBox_Basic
+  script:
+    - *define_config_file_name
+    # first test if config file exists, if not exist, exit 0
+    - test -e $CONFIG_FILE || exit 0
+    # clone test env configs
+    - git clone $TEST_ENV_CONFIG_REPOSITORY
+    - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
+    - cd tools/ci/python_packages/tiny_test_fw/bin
+    # run test
+    - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
 .example_test_003:
   extends: .example_test_template
@@ -167,11 +174,17 @@ example_test_002:
     - ESP32
     - Example_SDIO
 
-example_test_004:
+example_test_004A:
   extends: .example_test_template
   tags:
     - ESP32
-    - Example_CAN
+    - Example_CAN1
+
+example_test_004B:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_CAN2
 
 example_test_005:
   extends: .example_test_template

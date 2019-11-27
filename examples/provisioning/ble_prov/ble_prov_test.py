@@ -17,30 +17,16 @@
 from __future__ import print_function
 import re
 import os
-import sys
 import time
 
-try:
-    import IDF
-except ImportError:
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-try:
-    import esp_prov
-except ImportError:
-    esp_prov_path = os.getenv("IDF_PATH") + "/tools/esp_prov"
-    if esp_prov_path and esp_prov_path not in sys.path:
-        sys.path.insert(0, esp_prov_path)
-    import esp_prov
+import ttfw_idf
+import esp_prov
 
 # Have esp_prov throw exception
 esp_prov.config_throw_except = True
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI_BT")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_ble(env, extra_data):
     # Acquire DUT
     dut1 = env.get_dut("ble_prov", "examples/provisioning/ble_prov")
@@ -48,8 +34,8 @@ def test_examples_provisioning_ble(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "ble_prov.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("ble_prov_bin_size", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("ble_prov_bin_size", bin_size // 1024)
+    ttfw_idf.log_performance("ble_prov_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("ble_prov_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
     dut1.start_app()

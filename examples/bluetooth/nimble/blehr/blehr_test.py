@@ -16,41 +16,19 @@
 
 from __future__ import print_function
 import os
-import sys
 import re
 import threading
 import traceback
 import Queue
 import subprocess
 
-try:
-    # This environment variable is expected on the host machine
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-except ImportError as e:
-    print(e)
-    print("\nCheck your IDF_PATH\nOR")
-    print("Try `export TEST_FW_PATH=$IDF_PATH/tools/tiny-test-fw` for resolving the issue\nOR")
-    print("Try `pip install -r $IDF_PATH/tools/tiny-test-fw/requirements.txt` for resolving the issue\n")
-    import IDF
-
-try:
-    import lib_ble_client
-except ImportError:
-    lib_ble_client_path = os.getenv("IDF_PATH") + "/tools/ble"
-    if lib_ble_client_path and lib_ble_client_path not in sys.path:
-        sys.path.insert(0, lib_ble_client_path)
-    import lib_ble_client
-
-
-import Utility
+from tiny_test_fw import Utility
+import ttfw_idf
+from ble import lib_ble_client
 
 # When running on local machine execute the following before running this script
 # > make app bootloader
 # > make print_flash_cmd | tail -n 1 > build/download.config
-# > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
 
 def blehr_client_task(hr_obj, dut_addr):
@@ -114,7 +92,7 @@ class BleHRThread(threading.Thread):
             self.exceptions_queue.put(traceback.format_exc(), block=False)
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI_BT")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
 def test_example_app_ble_hr(env, extra_data):
     """
         Steps:
@@ -133,8 +111,8 @@ def test_example_app_ble_hr(env, extra_data):
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, "blehr.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("blehr_bin_size", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("blehr_bin_size", bin_size // 1024)
+    ttfw_idf.log_performance("blehr_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("blehr_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
     Utility.console_log("Starting blehr simple example test app")
