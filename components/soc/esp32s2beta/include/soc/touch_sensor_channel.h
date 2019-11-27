@@ -16,6 +16,9 @@
 #define _SOC_TOUCH_CHANNEL_H
 
 //Touch channels
+
+/* Note: T0 is an internal channel that does not have a corresponding external GPIO. */
+
 #define TOUCH_PAD_GPIO1_CHANNEL     TOUCH_PAD_NUM1
 #define TOUCH_PAD_NUM1_GPIO_NUM     1
 

@@ -172,5 +172,5 @@ e.g.
 1. ``TOUCH_PAD_NUM5_GPIO_NUM`` is the GPIO number of channel 5 (12);
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` is the channel number of GPIO 4 (channel 0).
 
-.. include:: /_build/inc/touch_channel.inc
-
+.. include:: /_build/inc/touch_sensor_channel.inc
+.. include:: /_build/inc/touch_sensor_types.inc

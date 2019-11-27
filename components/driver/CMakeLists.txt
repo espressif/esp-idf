@@ -19,6 +19,7 @@ set(srcs
     "spi_master.c"
     "spi_slave.c"
     "timer.c"
+    "touch_sensor_common.c"
     "uart.c")
 
 set(includes "include")
@@ -28,12 +29,14 @@ if(IDF_TARGET STREQUAL "esp32")
     list(APPEND srcs "mcpwm.c"
                      "sdio_slave.c"
                      "sdmmc_host.c"
-                     "sdmmc_transaction.c")
+                     "sdmmc_transaction.c"
+                     "esp32/touch_sensor.c")
+    list(APPEND includes "esp32/include")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2beta")
     list(APPEND srcs "esp32s2beta/rtc_tempsensor.c"
-                     "esp32s2beta/rtc_touchpad.c")
+                     "esp32s2beta/touch_sensor.c")
     # currently only S2 beta has its own target-specific includes
     list(APPEND includes "esp32s2beta/include")
 endif()

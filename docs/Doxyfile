@@ -118,9 +118,10 @@ INPUT = \
     ../../components/soc/include/hal/adc_types.h \
     ../../components/soc/include/hal/gpio_types.h \
     ../../components/soc/include/hal/uart_types.h \
+    ../../components/soc/include/hal/touch_sensor_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
-    ../../components/soc/esp32/include/soc/touch_channel.h \
+    ../../components/soc/esp32/include/soc/touch_sensor_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
     ../../components/soc/esp32/include/soc/rtc_io_channel.h \
     ## esp_netif - API Reference

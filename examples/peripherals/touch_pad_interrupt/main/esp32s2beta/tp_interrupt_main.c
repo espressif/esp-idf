@@ -60,12 +60,12 @@ static void touchsensor_interrupt_cb(void *arg)
     int task_awoken = pdFALSE;
     touch_event_t evt;
 
-    evt.intr_mask = touch_pad_intr_status_get_mask();
+    evt.intr_mask = touch_pad_read_intr_status_mask();
     evt.pad_status = touch_pad_get_status();
-    evt.pad_num = touch_pad_get_scan_curr();
+    evt.pad_num = touch_pad_get_current_meas_channel();
 
     if (evt.intr_mask & TOUCH_PAD_INTR_MASK_DONE) {
-        touch_pad_filter_baseline_read(evt.pad_num, &evt.pad_val);
+        touch_pad_filter_read_baseline(evt.pad_num, &evt.pad_val);
     }
     xQueueSendFromISR(que_touch, &evt, &task_awoken);
     if (task_awoken == pdTRUE) {
@@ -78,7 +78,7 @@ static void tp_example_set_thresholds(void)
     uint32_t touch_value;
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
         //read baseline value
-        touch_pad_read_raw_data(button[i], &touch_value);
+        touch_pad_filter_read_baseline(button[i], &touch_value);
         //set interrupt threshold.
         touch_pad_set_thresh(button[i], touch_value * button_threshold[i]);
         ESP_LOGI(TAG, "test init: touch pad [%d] base %d, thresh %d", \
@@ -92,16 +92,16 @@ static void touchsensor_filter_set(touch_filter_mode_t mode)
     touch_filter_config_t filter_info = {
         .mode = mode,           // Test jitter and filter 1/4.
         .debounce_cnt = 1,      // 1 time count.
-        .hysteresis_thr = 1,    // 9.4%
-        .noise_thr = 1,         // 37.5%
-        .noise_neg_thr = 1,     // 37.5%
+        .hysteresis_thr = 3,    // 3%
+        .noise_thr = 0,         // 50%
+        .noise_neg_thr = 0,     // 50%
         .neg_noise_limit = 10,  // 10 time count.
         .jitter_step = 4,       // use for jitter mode.
     };
     touch_pad_filter_set_config(&filter_info);
     touch_pad_filter_enable();
-    touch_pad_filter_baseline_reset(TOUCH_PAD_MAX);
-    ESP_LOGI(TAG, "touch pad filter init %d", mode);
+    touch_pad_filter_reset_baseline(TOUCH_PAD_MAX);
+    ESP_LOGI(TAG, "touch pad filter init");
 }
 
 static void tp_example_read_task(void *pvParameter)
@@ -158,9 +158,16 @@ void app_main(void)
     touch_pad_init();
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
         touch_pad_config(button[i]);
-        touch_pad_set_thresh(button[i], TOUCH_PAD_THRESHOLD_MAX);
     }
-
+#if 0
+    /* If you want change the touch sensor default setting, please write here(after initialize). There are examples: */
+    touch_pad_set_meas_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
+    touch_pad_set_voltage(TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
+    touch_pad_set_inactive_connect(TOUCH_PAD_INACTIVE_CONNECT_DEFAULT);
+    for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
+        touch_pad_set_cnt_mode(i, TOUCH_PAD_SLOPE_DEFAULT, TOUCH_PAD_TIE_OPT_DEFAULT);
+    }
+#endif
 #if TOUCH_BUTTON_DENOISE_ENABLE
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
@@ -168,7 +175,7 @@ void app_main(void)
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L7,
     };
-    touch_pad_denoise_set_config(denoise);
+    touch_pad_denoise_set_config(&denoise);
     touch_pad_denoise_enable();
     ESP_LOGI(TAG, "Denoise function init");
 #endif
@@ -180,7 +187,7 @@ void app_main(void)
         /* It depends on the number of the parasitic capacitance of the shield pad. */
         .shield_driver = TOUCH_PAD_SHIELD_DRV_L0,   //40pf
     };
-    touch_pad_waterproof_set_config(waterproof);
+    touch_pad_waterproof_set_config(&waterproof);
     touch_pad_waterproof_enable();
     ESP_LOGI(TAG, "touch pad waterproof init");
 #endif
