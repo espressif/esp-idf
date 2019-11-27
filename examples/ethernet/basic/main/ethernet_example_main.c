@@ -119,6 +119,20 @@ void app_main(void)
     dm9051_config.int_gpio_num = CONFIG_EXAMPLE_DM9051_INT_GPIO;
     esp_eth_mac_t *mac = esp_eth_mac_new_dm9051(&dm9051_config, &mac_config);
     esp_eth_phy_t *phy = esp_eth_phy_new_dm9051(&phy_config);
+#elif CONFIG_EXAMPLE_ETH_PHY_ENC28J60
+    /* ENC28J60 ethernet driver is based on spi driver */
+    spi_device_interface_config_t devcfg = {
+        .command_bits = 3,
+        .address_bits = 5,
+        .mode = 0,
+        .clock_speed_hz = CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ * 1000 * 1000,
+        .spics_io_num = CONFIG_EXAMPLE_ETH_CS_GPIO,
+        .queue_size = 20
+    };
+    ESP_ERROR_CHECK(spi_bus_add_device(CONFIG_EXAMPLE_ETH_SPI_HOST, &devcfg, &spi_handle));
+    eth_ENC28J60_config_t ENC28J60_config = ETH_ENC28J60_DEFAULT_CONFIG(spi_handle);
+    esp_eth_mac_t *mac = esp_eth_mac_new_ENC28J60(&ENC28J60_config, &mac_config);
+    esp_eth_phy_t *phy = esp_eth_phy_new_ENC28J60(&phy_config);
 #endif
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
