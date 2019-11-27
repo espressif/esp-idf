@@ -19,7 +19,21 @@
 #define BLE_MESH_PROXY_CONFIG    0x02
 #define BLE_MESH_PROXY_PROV      0x03
 
-#define DEVICE_NAME_SIZE        29
+#if CONFIG_BLE_MESH_PROXY
+/**
+ * Device Name Characteristic:
+ * 1. For iOS, when it tries to get the value of Device Name Characteristic, the PDU
+ *    "Read By Type Request" will be used, and the valid length of corresponding
+ *    response is 19 (23 - 1 - 1 - 2).
+ * 2. For Android, when it tries to get the value of Device Name Characteristic, the
+ *    PDU "Read Request" will be used, and the valid length of corresponding response
+ *    is 22 (23 - 1).
+ */
+#define DEVICE_NAME_SIZE    MIN((BLE_MESH_GATT_DEF_MTU_SIZE - 4), (BLE_MESH_GAP_ADV_MAX_LEN - 2))
+#else
+/* For Scan Response Data, the maximum length is 29 (31 - 1 - 1) currently. */
+#define DEVICE_NAME_SIZE    (BLE_MESH_GAP_ADV_MAX_LEN - 2)
+#endif
 
 int bt_mesh_set_device_name(const char *name);
 
