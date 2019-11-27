@@ -17,7 +17,8 @@ set(SOC_SRCS    "adc_periph.c"
                 "i2s_periph.c"
                 "i2c_periph.c"
                 "uart_periph.c"
-                )
+                "touch_sensor_hal.c"
+                "touch_sensor_periph.c")
 
 if(NOT CMAKE_BUILD_EARLY_EXPANSION)
     set_source_files_properties("esp32s2beta/rtc_clk.c" PROPERTIES

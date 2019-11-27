@@ -173,29 +173,28 @@ void app_main(void)
     touch_pad_init();
     /* Only support one touch channel in sleep mode. */
     touch_pad_config(TOUCH_PAD_NUM9);
-    touch_pad_set_thresh(TOUCH_PAD_NUM9, TOUCH_PAD_THRESHOLD_MAX);
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
         /* The bits to be cancelled are determined according to the noise level. */
         .grade = TOUCH_PAD_DENOISE_BIT4,
         .cap_level = TOUCH_PAD_DENOISE_CAP_L7,
     };
-    touch_pad_denoise_set_config(denoise);
+    touch_pad_denoise_set_config(&denoise);
     touch_pad_denoise_enable();
     printf("Denoise function init\n");
     /* Filter setting */
     touch_filter_config_t filter_info = {
-            .mode = TOUCH_PAD_FILTER_IIR_8,
-            .debounce_cnt = 1,      // 1 time count.
-            .hysteresis_thr = 1,    // 9.4%
-            .noise_thr = 1,         // 37.5%
-            .noise_neg_thr = 1,     // 37.5%
-            .neg_noise_limit = 10,  // 10 time count.
-            .jitter_step = 4,       // use for jitter mode.
+        .mode = TOUCH_PAD_FILTER_IIR_8,
+        .debounce_cnt = 1,      // 1 time count.
+        .hysteresis_thr = 3,    // 3%
+        .noise_thr = 0,         // 50%
+        .noise_neg_thr = 0,     // 50%
+        .neg_noise_limit = 10,  // 10 time count.
+        .jitter_step = 4,       // use for jitter mode.
     };
     touch_pad_filter_set_config(&filter_info);
     touch_pad_filter_enable();
-    touch_pad_filter_baseline_reset(TOUCH_PAD_NUM9);
+    touch_pad_filter_reset_baseline(TOUCH_PAD_NUM9);
     printf("touch pad filter init %d\n", TOUCH_PAD_FILTER_IIR_8);
     /* Set sleep touch pad. */
     touch_pad_sleep_channel_t slp_config = {
@@ -203,16 +202,16 @@ void app_main(void)
         .sleep_pad_threshold = TOUCH_PAD_THRESHOLD_MAX,
         .en_proximity = false,
     };
-    touch_pad_sleep_channel_config(slp_config);
+    touch_pad_sleep_channel_config(&slp_config);
     /* Enable touch sensor clock. Work mode is "timer trigger". */
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_fsm_start();
     vTaskDelay(100 / portTICK_RATE_MS);
     /* read sleep touch pad value */
     uint32_t touch_value;
-    touch_pad_sleep_channel_baseline_get(&touch_value);
+    touch_pad_sleep_channel_read_baseline(&touch_value);
     slp_config.sleep_pad_threshold = touch_value * 0.1;
-    touch_pad_sleep_channel_config(slp_config); //10%
+    touch_pad_sleep_channel_config(&slp_config); //10%
     printf("test init: touch pad [%d] slp %d, thresh %d\n", 
         TOUCH_PAD_NUM9, touch_value, (uint32_t)(touch_value * 0.1));
 #endif

@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,4 +14,12 @@
 
 #pragma once
 
-#include "touch_sensor_common.h"
+#include "soc/touch_sensor_channel.h"
+#include "soc/touch_sensor_caps.h"
+#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_cntl_struct.h"
+#include "soc/sens_reg.h"
+#include "soc/sens_struct.h"
+#include "soc/rtc_io_struct.h"
+
+extern const int touch_sensor_channel_io_map[SOC_TOUCH_SENSOR_NUM];

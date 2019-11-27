@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -14,4 +14,16 @@
 
 #pragma once
 
-#include "touch_sensor_common.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define SOC_TOUCH_SENSOR_NUM            (10)
+#define SOC_TOUCH_SENSOR_BIT_MASK_MAX   (0x3ff)
+
+#define SOC_TOUCH_PAD_MEASURE_WAIT      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
+#define SOC_TOUCH_PAD_THRESHOLD_MAX     (0)     /*!<If set touch threshold max value, The touch sensor can't be in touched status */
+
+#ifdef __cplusplus
+}
+#endif

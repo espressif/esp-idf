@@ -20,6 +20,7 @@ list(APPEND srcs
     "src/hal/spi_hal_iram.c"
     "src/hal/spi_slave_hal.c"
     "src/hal/spi_slave_hal_iram.c"
+    "src/hal/touch_sensor_hal.c"
     "src/soc_include_legacy_warn.c"
     "src/hal/pcnt_hal.c"
     "src/hal/i2s_hal.c"
