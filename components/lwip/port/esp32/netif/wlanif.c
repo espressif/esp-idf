@@ -52,6 +52,18 @@
 
 #include "tcpip_adapter.h"
 
+/**
+ * @brief Free resources allocated in L2 layer
+ *
+ * This function translates the free_tx_buf to the prototype used on 2.1.2-esp branch
+ *
+ * @param buf memory alloc in L2 layer
+ * @note this function is also the callback when invoke pbuf_free
+ */
+static void wlanif_free_rx_buf_l2(struct netif *netif, void *buf)
+{
+    esp_wifi_internal_free_rx_buffer(buf);
+}
 
 /**
  * In this function, the hardware should be initialized.
@@ -82,7 +94,7 @@ low_level_init(struct netif *netif)
 #endif
 
 #if !ESP_L2_TO_L3_COPY
-  netif->l2_buffer_free_notify = esp_wifi_internal_free_rx_buffer;
+  netif->l2_buffer_free_notify = wlanif_free_rx_buf_l2;
 #endif
 }
 
