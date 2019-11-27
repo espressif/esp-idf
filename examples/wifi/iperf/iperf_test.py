@@ -26,34 +26,13 @@ from builtins import range
 from builtins import object
 import re
 import os
-import sys
 import time
 import subprocess
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # this is a test case write with tiny-test-fw.
-    # to run test cases outside tiny-test-fw,
-    # we need to set environment variable `TEST_FW_PATH`,
-    # then get and insert `TEST_FW_PATH` to sys path before import FW module
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+from tiny_test_fw import TinyFW, DUT, Utility
+import ttfw_idf
+from idf_iperf_test_util import (Attenuator, PowerControl, LineChart, TestReport)
 
-import DUT
-import TinyFW
-import Utility
-from Utility import (Attenuator, PowerControl, LineChart)
-
-try:
-    from test_report import (ThroughputForConfigsReport, ThroughputVsRssiReport)
-except ImportError:
-    # add current folder to system path for importing test_report
-    sys.path.append(os.path.dirname(__file__))
-    from test_report import (ThroughputForConfigsReport, ThroughputVsRssiReport)
 
 # configurations
 TEST_TIME = TEST_TIMEOUT = 60
@@ -166,8 +145,8 @@ class TestResult(object):
             throughput = 0.0
 
         if throughput == 0 and rssi > self.ZERO_THROUGHPUT_THRESHOLD:
-                self.error_list.append("[Error][Fatal][{}][att: {}][rssi: {}]: No throughput data found"
-                                       .format(ap_ssid, att, rssi))
+            self.error_list.append("[Error][Fatal][{}][att: {}][rssi: {}]: No throughput data found"
+                                   .format(ap_ssid, att, rssi))
 
         self._save_result(throughput, ap_ssid, att, rssi, heap_size)
 
@@ -467,7 +446,7 @@ class IperfTestUtility(object):
         return ret
 
 
-@IDF.idf_example_test(env_tag="Example_ShieldBox_Basic", category="stress")
+@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox_Basic", category="stress")
 def test_wifi_throughput_with_different_configs(env, extra_data):
     """
     steps: |
@@ -492,7 +471,8 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
                                                     "sdkconfig.ci.{}".format(config_name))
 
         # 2. get DUT and download
-        dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ESP32DUT, app_config_name=config_name)
+        dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
+                          app_config_name=config_name)
         dut.start_app()
         dut.expect("esp32>")
 
@@ -519,12 +499,12 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
         env.close_dut("iperf")
 
     # 5. generate report
-    report = ThroughputForConfigsReport(os.path.join(env.log_path, "ThroughputForConfigsReport"),
-                                        ap_info["ssid"], test_result, sdkconfig_files)
+    report = TestReport.ThroughputForConfigsReport(os.path.join(env.log_path, "ThroughputForConfigsReport"),
+                                                   ap_info["ssid"], test_result, sdkconfig_files)
     report.generate_report()
 
 
-@IDF.idf_example_test(env_tag="Example_ShieldBox", category="stress")
+@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox", category="stress")
 def test_wifi_throughput_vs_rssi(env, extra_data):
     """
     steps: |
@@ -547,7 +527,8 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     }
 
     # 1. get DUT and download
-    dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ESP32DUT, app_config_name=BEST_PERFORMANCE_CONFIG)
+    dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
+                      app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
     dut.expect("esp32>")
 
@@ -573,12 +554,12 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     env.close_dut("iperf")
 
     # 4. generate report
-    report = ThroughputVsRssiReport(os.path.join(env.log_path, "ThroughputVsRssiReport"),
-                                    test_result)
+    report = TestReport.ThroughputVsRssiReport(os.path.join(env.log_path, "ThroughputVsRssiReport"),
+                                               test_result)
     report.generate_report()
 
 
-@IDF.idf_example_test(env_tag="Example_ShieldBox_Basic")
+@ttfw_idf.idf_example_test(env_tag="Example_ShieldBox_Basic")
 def test_wifi_throughput_basic(env, extra_data):
     """
     steps: |
@@ -593,7 +574,8 @@ def test_wifi_throughput_basic(env, extra_data):
     }
 
     # 1. get DUT
-    dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ESP32DUT, app_config_name=BEST_PERFORMANCE_CONFIG)
+    dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
+                      app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
     dut.expect("esp32>")
 
@@ -615,8 +597,8 @@ def test_wifi_throughput_basic(env, extra_data):
     # 4. log performance and compare with pass standard
     performance_items = []
     for throughput_type in test_result:
-        IDF.log_performance("{}_throughput".format(throughput_type),
-                            "{:.02f} Mbps".format(test_result[throughput_type].get_best_throughput()))
+        ttfw_idf.log_performance("{}_throughput".format(throughput_type),
+                                 "{:.02f} Mbps".format(test_result[throughput_type].get_best_throughput()))
         performance_items.append(["{}_throughput".format(throughput_type),
                                   "{:.02f} Mbps".format(test_result[throughput_type].get_best_throughput())])
 
@@ -624,8 +606,8 @@ def test_wifi_throughput_basic(env, extra_data):
     TinyFW.JunitReport.update_performance(performance_items)
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
-        IDF.check_performance("{}_throughput".format(throughput_type),
-                              test_result[throughput_type].get_best_throughput())
+        ttfw_idf.check_performance("{}_throughput".format(throughput_type),
+                                   test_result[throughput_type].get_best_throughput())
 
     env.close_dut("iperf")
 

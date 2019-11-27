@@ -20,19 +20,8 @@ from builtins import str
 import http.client
 import argparse
 
-try:
-    import Utility
-except ImportError:
-    import sys
-    import os
 
-    # This environment variable is expected on the host machine
-    # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-
-    import Utility
+from tiny_test_fw import Utility
 
 
 def verbose_print(verbosity, *args):

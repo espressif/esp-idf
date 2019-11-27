@@ -1,19 +1,11 @@
 from __future__ import print_function
-import os
-import sys
 
-try:
-    import IDF
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 EXPECT_TIMEOUT = 20
 
 
-@IDF.idf_example_test(env_tag='Example_RMT_IR_PROTOCOLS')
+@ttfw_idf.idf_example_test(env_tag='Example_RMT_IR_PROTOCOLS')
 def test_examples_rmt_ir_protocols(env, extra_data):
     dut = env.get_dut('ir_protocols_example', 'examples/peripherals/rmt/ir_protocols', app_config_name='nec')
     print("Using binary path: {}".format(dut.app.binary_path))

@@ -1,19 +1,12 @@
 import os
-import pexpect
-import serial
-import sys
 import threading
 import time
 
-try:
-    import IDF
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import pexpect
+import serial
 
-import Utility
+from tiny_test_fw import Utility
+import ttfw_idf
 
 
 class CustomProcess(object):
@@ -125,13 +118,13 @@ class SerialThread(object):
             Utility.console_log('The pyserial thread is still alive', 'O')
 
 
-@IDF.idf_example_test(env_tag="test_jtag_arm")
+@ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
 def test_examples_loadable_elf(env, extra_data):
 
     idf_path = os.environ['IDF_PATH']
     rel_project_path = os.path.join('examples', 'get-started', 'hello_world')
     proj_path = os.path.join(idf_path, rel_project_path)
-    example = IDF.Example(rel_project_path, target="esp32")
+    example = ttfw_idf.Example(rel_project_path, target="esp32")
     sdkconfig = example.get_sdkconfig()
     elf_path = os.path.join(example.get_binary_path(rel_project_path), 'hello-world.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
