@@ -47,7 +47,8 @@ esp_switch_stack_exit:
     #ifndef __XTENSA_CALL0_ABI__
         entry   sp, 0x10
         movi a6, 2
-        call4 esp_clear_watchpoint /* clear the watchpoint before releasing stack */
+        movi a4, esp_clear_watchpoint
+        callx4 a4 /* clear the watchpoint before releasing stack */
         l32i a4, a2, 0  /* recover the original task stack */
         mov a1, a4      /* put it on sp register again */
         retw
