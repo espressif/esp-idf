@@ -255,7 +255,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
         set(MENUCONFIG_CMD ${mconf})
     else()
-        set(MENUCONFIG_CMD "MENUCONFIG_STYLE=aquatic" ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
+        set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
     endif()
 
     # Generate the menuconfig target

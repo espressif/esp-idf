@@ -30,6 +30,14 @@ def action_extensions(base_actions, project_path):
         ensure_build_directory(args, ctx.info_name)
         run_target(target_name, args)
 
+    def menuconfig(target_name, ctx, args, style):
+        """
+        Menuconfig target is build_target extended with the style argument for setting the value for the environment
+        variable.
+        """
+        os.environ['MENUCONFIG_STYLE'] = style
+        build_target(target_name, ctx, args)
+
     def fallback_target(target_name, ctx, args):
         """
         Execute targets that are not explicitly known to idf.py
@@ -236,9 +244,22 @@ def action_extensions(base_actions, project_path):
                 ],
             },
             "menuconfig": {
-                "callback": build_target,
+                "callback": menuconfig,
                 "help": 'Run "menuconfig" project configuration tool.',
-                "options": global_options,
+                "options": global_options + [
+                    {
+                        "names": ["--style", "--color-scheme", "style"],
+                        "help": (
+                            "Menuconfig style.\n"
+                            "Is it possible to customize the menuconfig style by either setting the MENUCONFIG_STYLE "
+                            "environment variable or through this option. The built-in styles include:\n\n"
+                            "- default - a yellowish theme,\n\n"
+                            "- monochrome -  a black and white theme, or\n"
+                            "- aquatic - a blue theme.\n\n"
+                            "The default value is \"aquatic\". It is possible to customize these themes further "
+                            "as it is described in the Color schemes section of the kconfiglib documentation."),
+                        "default": os.environ.get('MENUCONFIG_STYLE', 'aquatic'),
+                    }],
             },
             "confserver": {
                 "callback": build_target,
