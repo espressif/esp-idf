@@ -276,6 +276,7 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config);
 #endif
+
 #if CONFIG_ETH_SPI_ETHERNET_DM9051
 /**
  * @brief DM9051 specific configuration

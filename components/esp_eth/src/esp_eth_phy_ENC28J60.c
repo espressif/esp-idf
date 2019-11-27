@@ -26,7 +26,7 @@ static const char *TAG = "ENC28J60";
  */
 typedef union {
     struct {
-    	uint32_t PHY_ID_MSB : 16; /*!< Organizationally Unique Identifier(OUI) most significant bits */
+        uint32_t PHY_ID_MSB : 16; /*!< Organizationally Unique Identifier(OUI) most significant bits */
     };
     uint32_t val;
 } phy_id1_reg_t;
@@ -38,9 +38,9 @@ typedef union {
  */
 typedef union {
     struct {
-    	uint32_t PHY_ID_LSB : 6; 	/*!< Model revision number */
-    	uint32_t PHY_PN : 6;   		/*!< Vendor model number */
-    	uint32_t PHY_rev : 4;		/*!< Organizationally Unique Identifier(OUI) least significant bits */
+        uint32_t PHY_ID_LSB : 6;    /*!< Model revision number */
+        uint32_t PHY_PN : 6;        /*!< Vendor model number */
+        uint32_t PHY_rev : 4;       /*!< Organizationally Unique Identifier(OUI) least significant bits */
     };
     uint32_t val;
 } phy_id2_reg_t;
@@ -54,7 +54,7 @@ typedef union {
 typedef union {
     struct {
         uint32_t reserved_4_0 : 5;
-    	uint32_t PLRITY : 1;
+        uint32_t PLRITY : 1;
         uint32_t reserved_8_6 : 3;
         uint32_t DPXSTAT : 1;
         uint32_t LSTAT : 1;
@@ -105,8 +105,7 @@ static esp_err_t ENC28J60_get_link(esp_eth_phy_t *phy)
     if (ENC28J60->link_status != link) {
         if (link == ETH_LINK_UP) {
             phy->negotiate(phy);
-        }
-        else {
+        } else {
             PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK, "send link event failed", err);
             ENC28J60->link_status = link;
         }
@@ -118,7 +117,7 @@ err:
 
 static esp_err_t ENC28J60_reset(esp_eth_phy_t *phy)
 {
-	/*ENC28J60 should be reset using the MAC reset function*/
+    /*ENC28J60 should be reset using the MAC reset function*/
     return ESP_OK;
 
 }
@@ -132,7 +131,7 @@ static esp_err_t ENC28J60_negotiate(esp_eth_phy_t *phy)
         .speed_select = 0,     /* 10Mbps */
         .duplex_mode = 0,      /* Half Duplex */
         .en_auto_nego = 0,     /* no Auto Negotiation */
-		.restart_auto_nego = 0 /* dont Restart Auto Negotiation */
+        .restart_auto_nego = 0 /* dont Restart Auto Negotiation */
     };
     PHY_CHECK(eth->phy_reg_write(eth, ENC28J60->addr, ETH_PHY_BMCR_REG_ADDR, PHCON1.val) == ESP_OK, "write PHCON1 failed", err);
 
@@ -162,8 +161,8 @@ err:
 
 static esp_err_t ENC28J60_pwrctl(esp_eth_phy_t *phy, bool enable)
 {
-/*ToDo: Add power control function*/
-	return ESP_OK;
+    /*ToDo: Add power control function*/
+    return ESP_OK;
 }
 
 static esp_err_t ENC28J60_set_addr(esp_eth_phy_t *phy, uint32_t addr)

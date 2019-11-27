@@ -53,7 +53,7 @@ menu "Example Configuration"
         endchoice
     endif
 
- if EXAMPLE_USE_SPI_ETHERNET
+ 	if EXAMPLE_USE_SPI_ETHERNET
     	choice SPI_ETH_MODULE
     		prompt "SPI Ethernet PHY Device"
     		default EXAMPLE_ETH_PHY_dm9051
@@ -111,7 +111,7 @@ menu "Example Configuration"
         config EXAMPLE_ETH_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
             range 5 80
-            default 5
+            default 20
             help
                 Set the clock speed (MHz) of SPI interface.
     endif

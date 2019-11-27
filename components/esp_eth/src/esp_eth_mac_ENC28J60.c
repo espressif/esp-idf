@@ -305,33 +305,33 @@ static inline bool ENC28J60_unlock(emac_ENC28J60_t *emac)
 }
 
 /**
- * @brief 	Set the register bank to which you are reading/writing
- * 	 		Used by register_read, register_write, BFS, BFC
- * @param	eth: ENC28J60 Ethernet mediator
- * 			reg_addr: register address to which you want to access
+ * @brief   Set the register bank to which you are reading/writing
+ *          Used by register_read, register_write, BFS, BFC
+ * @param   eth: ENC28J60 Ethernet mediator
+ *          reg_addr: register address to which you want to access
  */
 static esp_err_t ENC28J60_set_bank(emac_ENC28J60_t *emac, uint8_t reg_addr)
 {
     esp_err_t ret = ESP_OK;
     //check if we need to set the bank
-    if((reg_addr & BANK_MASK) != ENC28J60_Bank) {
+    if ((reg_addr & BANK_MASK) != ENC28J60_Bank) {
         spi_transaction_t trans = {
             .cmd = 0b101,
             .addr = ECON1,
             .length = 8,
             .flags = SPI_TRANS_USE_TXDATA,
-			.tx_data[0] = 0x03
+            .tx_data[0] = 0x03
         };
 
         if (ENC28J60_lock(emac)) {
-        	//First, clear the bank select bits using a BFC on the last two bits of the ECON1 register
+            //First, clear the bank select bits using a BFC on the last two bits of the ECON1 register
             if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
                 ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
                 ret = ESP_FAIL;
             }
-        	//Then, set the bank select bits using a BFS on the last two bits of the ECON1 register
+            //Then, set the bank select bits using a BFS on the last two bits of the ECON1 register
             trans.cmd = 0b100;
-            trans.tx_data[0] = ((reg_addr & BANK_MASK)>>5);
+            trans.tx_data[0] = ((reg_addr & BANK_MASK) >> 5);
             if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
                 ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
                 ret = ESP_FAIL;
@@ -339,23 +339,23 @@ static esp_err_t ENC28J60_set_bank(emac_ENC28J60_t *emac, uint8_t reg_addr)
             ENC28J60_unlock(emac);
         } else {
             ret = ESP_ERR_TIMEOUT;
+        }
+        ENC28J60_Bank = (reg_addr & BANK_MASK);
     }
-    ENC28J60_Bank = (reg_addr & BANK_MASK);
-    }
-    if (ret != ESP_OK){
-    	ESP_LOGE(TAG, "ERROR: COULD NOT SET THE BANK!");
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "ERROR: COULD NOT SET THE BANK!");
     }
     return ret;
 }
 
 /**
- * @brief	Bit Field Set
- * @param	eth: ENC28J60 Ethernet mediator
- * 			reg_addr: register address to set
- * 			value: Which bits should be set
- * @return	ESP_OK: sucess
- * 			ESP_FAIL: SPI command fail
- * 			ESP_ERR_TIMEOUT: timeout
+ * @brief   Bit Field Set
+ * @param   eth: ENC28J60 Ethernet mediator
+ *          reg_addr: register address to set
+ *          value: Which bits should be set
+ * @return  ESP_OK: sucess
+ *          ESP_FAIL: SPI command fail
+ *          ESP_ERR_TIMEOUT: timeout
  *
  *
  * BFS function performs a bit-wise OR operation to set
@@ -363,9 +363,9 @@ static esp_err_t ENC28J60_set_bank(emac_ENC28J60_t *emac, uint8_t reg_addr)
  *
  * CAN ONLY BE USED FOR ETH REGISTERS (not MAC, MII, PHY registers or buffer)
  *
- * Example: if the register has value 		01110110
- * and the argument has value 				00110011
- * the specified register will be set to: 	01110111
+ * Example: if the register has value       01110110
+ * and the argument has value               00110011
+ * the specified register will be set to:   01110111
  */
 static esp_err_t ENC28J60_BFS(emac_ENC28J60_t *emac, uint8_t reg_addr, uint8_t value)
 {
@@ -392,21 +392,21 @@ static esp_err_t ENC28J60_BFS(emac_ENC28J60_t *emac, uint8_t reg_addr, uint8_t v
 }
 
 /**
- * @brief	Bit Field Clear
- * @param	eth: ENC28J60 Ethernet mediator
- * 			reg_addr: register address to clear
- * 			value: Which bits should be clear
- * @return	ESP_OK: sucess
- * 			ESP_FAIL: SPI command fail
- * 			ESP_ERR_TIMEOUT: timeout
+ * @brief   Bit Field Clear
+ * @param   eth: ENC28J60 Ethernet mediator
+ *          reg_addr: register address to clear
+ *          value: Which bits should be clear
+ * @return  ESP_OK: sucess
+ *          ESP_FAIL: SPI command fail
+ *          ESP_ERR_TIMEOUT: timeout
  *
  * Sets all bits that are a 1 in the argument to be 0 in the register
  *
  * CAN ONLY BE USED FOR ETH REGISTERS (not MAC, MII, PHY registers or buffer)
  *
- * Example: if the register has value 		11110001
- * and the argument has value 				00010111
- * the specified register will be set to: 	11100000
+ * Example: if the register has value       11110001
+ * and the argument has value               00010111
+ * the specified register will be set to:   11100000
  *
  */
 static esp_err_t ENC28J60_BFC(emac_ENC28J60_t *emac, uint8_t reg_addr, uint8_t value)
@@ -434,13 +434,13 @@ static esp_err_t ENC28J60_BFC(emac_ENC28J60_t *emac, uint8_t reg_addr, uint8_t v
 }
 
 /**
- * @brief 	write value to ENC28J60 internal register
+ * @brief   write value to ENC28J60 internal register
  * @param   eth: ENC28J60 Ethernet mediator
- * 			reg_addr: Address of register being read
- * 			value: Value written to register
+ *          reg_addr: Address of register being read
+ *          value: Value written to register
  * @return  ESP_OK: sucess
- * 			ESP_FAIL: SPI command fail
- * 			ESP_ERR_TIMEOUT: timeout
+ *          ESP_FAIL: SPI command fail
+ *          ESP_ERR_TIMEOUT: timeout
  */
 static esp_err_t ENC28J60_register_write(emac_ENC28J60_t *emac, uint8_t reg_addr, uint8_t value)
 {
@@ -461,7 +461,7 @@ static esp_err_t ENC28J60_register_write(emac_ENC28J60_t *emac, uint8_t reg_addr
             ret = ESP_FAIL;
         }
         ENC28J60_unlock(emac);
-    	ets_delay_us(10);
+        ets_delay_us(10);
     } else {
         ret = ESP_ERR_TIMEOUT;
     }
@@ -469,13 +469,13 @@ static esp_err_t ENC28J60_register_write(emac_ENC28J60_t *emac, uint8_t reg_addr
 }
 
 /**
- * @brief	read value from ENC28J60 internal register
+ * @brief   read value from ENC28J60 internal register
  *
  * @param   mac: ENC28J60 MAC instance
- * 			is_eth_reg: 0 if the register is of type ETH, 1 if register is not of type ETH.
- * 			reg_addr: Address of register being read
- * 			ESP_FAIL: SPI command fail
- * 			ESP_ERR_TIMEOUT: timeout
+ *          is_eth_reg: 0 if the register is of type ETH, 1 if register is not of type ETH.
+ *          reg_addr: Address of register being read
+ *          ESP_FAIL: SPI command fail
+ *          ESP_ERR_TIMEOUT: timeout
  */
 static esp_err_t ENC28J60_register_read(emac_ENC28J60_t *emac, uint8_t is_eth_reg, uint8_t reg_addr, uint8_t *value)
 {
@@ -490,36 +490,33 @@ static esp_err_t ENC28J60_register_read(emac_ENC28J60_t *emac, uint8_t is_eth_re
         .rxlength = 8,
         .flags = SPI_TRANS_USE_RXDATA
     };
-	if(!is_eth_reg){
-		trans.length = 16;
-		trans.rxlength = 16;
-	}
+    if (!is_eth_reg) {
+        trans.length = 16;
+        trans.rxlength = 16;
+    }
     if (ENC28J60_lock(emac)) {
         if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
             ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
             ret = ESP_FAIL;
-        }
-        else {
-        	if(is_eth_reg){
+        } else {
+            if (is_eth_reg) {
                 *value = trans.rx_data[0];
-        	}
-        	else{
+            } else {
                 *value = trans.rx_data[1];
-        	}
+            }
         }
         ENC28J60_unlock(emac);
-    }
-    else {
+    } else {
         ret = ESP_ERR_TIMEOUT;
     }
     return ret;
 }
 
 /**
- * @brief 	verify ENC28J60 chip ID
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Device ID returns non-zero value
- * 			ESP_ERR_INVALID_VERSION: Cannot read device ID (communication error)
+ * @brief   verify ENC28J60 chip ID
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Device ID returns non-zero value
+ *          ESP_ERR_INVALID_VERSION: Cannot read device ID (communication error)
  */
 static esp_err_t ENC28J60_verify_id(emac_ENC28J60_t *emac)
 {
@@ -528,7 +525,7 @@ static esp_err_t ENC28J60_verify_id(emac_ENC28J60_t *emac)
     MAC_CHECK(ENC28J60_register_read(emac, 1, EREVID, &id) == ESP_OK, "read register failed", err, ESP_FAIL);
     MAC_CHECK(id, "wrong Vendor ID", err, ESP_ERR_INVALID_VERSION);
 
-    ESP_LOGI(TAG,"ENC28J60 Device revision:  %d", id);
+    ESP_LOGI(TAG, "ENC28J60 Device revision:  %d", id);
 
     return ESP_OK;
 err:
@@ -537,12 +534,12 @@ err:
 
 /**
  * @brief Write 16-bit value to  ENC28J60 PHY register
- * @param 	mac: ENC28J60 MAC instance
- * 			NOT_USED: empty (to conform with number of MAC params)
- * 			reg_addr: PHY register being written to
- * 			reg_value: Value being written to PHY reg
- * @return 	ESP_OK: Write success
- * 			ESP_FAIL: Cannot write to PHY reg
+ * @param   mac: ENC28J60 MAC instance
+ *          NOT_USED: empty (to conform with number of MAC params)
+ *          reg_addr: PHY register being written to
+ *          reg_value: Value being written to PHY reg
+ * @return  ESP_OK: Write success
+ *          ESP_FAIL: Cannot write to PHY reg
  */
 static esp_err_t ENC28J60_PHY_write(esp_eth_mac_t *mac, uint32_t NOT_USED, uint32_t reg_addr, uint32_t reg_value)
 {
@@ -557,9 +554,9 @@ static esp_err_t ENC28J60_PHY_write(esp_eth_mac_t *mac, uint32_t NOT_USED, uint3
     data[1] = (uint8_t)((reg_value & 0xFF00) >> 8);
 
     //check if the PHY is being read/written to allready
-    while (busy){
-    	MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
-    	busy &= BUSY;
+    while (busy) {
+        MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
+        busy &= BUSY;
     }
 
     MAC_CHECK(ENC28J60_register_write(emac, MIREGADR, reg_addr) == ESP_OK, "write register failed", err, ESP_FAIL);
@@ -570,11 +567,11 @@ static esp_err_t ENC28J60_PHY_write(esp_eth_mac_t *mac, uint32_t NOT_USED, uint3
     MAC_CHECK(ENC28J60_register_write(emac, MICMD, MICMD_holder) == ESP_OK, "write register failed", err, ESP_FAIL);
 
     //wait for task to complete
-	ets_delay_us(11);
+    ets_delay_us(11);
     busy = 1;
-    while (busy){
-    	MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
-    	busy &= BUSY;
+    while (busy) {
+        MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
+        busy &= BUSY;
     }
 
     return ESP_OK;
@@ -584,12 +581,12 @@ err:
 
 /**
  * @brief read value from ENC28J60 PHY register
- * @param 	mac: device handle
- * 			NOT_USED: empty (to conform with number of MAC params)
- * 			reg_addr: PHY register being read
- * 			reg_value: Pointer to where read value is stored
- * @return 	ESP_OK: read success
- * 			ESP_FAIL: Cannot read PHY reg
+ * @param   mac: device handle
+ *          NOT_USED: empty (to conform with number of MAC params)
+ *          reg_addr: PHY register being read
+ *          reg_value: Pointer to where read value is stored
+ * @return  ESP_OK: read success
+ *          ESP_FAIL: Cannot read PHY reg
  */
 static esp_err_t ENC28J60_PHY_read(esp_eth_mac_t *mac, uint32_t NOT_USED, uint32_t reg_addr, uint32_t *reg_value)
 {
@@ -601,9 +598,9 @@ static esp_err_t ENC28J60_PHY_read(esp_eth_mac_t *mac, uint32_t NOT_USED, uint32
     uint8_t MICMD_holder;
 
     //check if the PHY is being read/written to allready
-    while (busy){
-    	MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
-    	busy &= BUSY;
+    while (busy) {
+        MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
+        busy &= BUSY;
     }
     MAC_CHECK(ENC28J60_register_write(emac, MIREGADR, reg_addr) == ESP_OK, "write register failed", err, ESP_FAIL);
     //set MICMD.MIIRD bit to begin read operation
@@ -612,9 +609,9 @@ static esp_err_t ENC28J60_PHY_read(esp_eth_mac_t *mac, uint32_t NOT_USED, uint32
     MAC_CHECK(ENC28J60_register_write(emac, MICMD, MICMD_holder) == ESP_OK, "write register failed", err, ESP_FAIL);
     //wait for task to complete
     busy = 1;
-    while (busy){
-    	MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
-    	busy &= BUSY;
+    while (busy) {
+        MAC_CHECK(ENC28J60_register_read(emac, 0, MISTAT, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
+        busy &= BUSY;
     }
     //clear MICMD.MIIRD bit
     MICMD_holder &= (~MIIRD);
@@ -629,12 +626,12 @@ err:
 }
 
 /**
- * @brief 	write buffer to ENC28J60 internal memory (to transmit ETH packets)
- * @param 	eth: ENC28J60 Ethernet mediator
- * 			buffer: pointer to where the data to be written is stored
- * 			len: length of data to write
- * @return 	ESP_OK: Write to buffer success
- * 			ESP_FAIL: Cannot write to buffer
+ * @brief   write buffer to ENC28J60 internal memory (to transmit ETH packets)
+ * @param   eth: ENC28J60 Ethernet mediator
+ *          buffer: pointer to where the data to be written is stored
+ *          len: length of data to write
+ * @return  ESP_OK: Write to buffer success
+ *          ESP_FAIL: Cannot write to buffer
  */
 static esp_err_t ENC28J60_memory_write(emac_ENC28J60_t *emac, uint8_t *buffer, uint32_t len)
 {
@@ -658,12 +655,12 @@ static esp_err_t ENC28J60_memory_write(emac_ENC28J60_t *emac, uint8_t *buffer, u
 }
 
 /**
- * @brief 	read buffer from ENC28J60 internal memory (to receive ETH packets)
- * @param 	eth: ENC28J60 Ethernet mediator
- * 			buffer: pointer to where the read data is stored
- * 			len: length of read data
- * @return 	ESP_OK: Read buffer success
- * 			ESP_FAIL: Cannot read buffer
+ * @brief   read buffer from ENC28J60 internal memory (to receive ETH packets)
+ * @param   eth: ENC28J60 Ethernet mediator
+ *          buffer: pointer to where the read data is stored
+ *          len: length of read data
+ * @return  ESP_OK: Read buffer success
+ *          ESP_FAIL: Cannot read buffer
  *
  */
 static esp_err_t ENC28J60_memory_read(emac_ENC28J60_t *emac, uint8_t *buffer, uint32_t len)
@@ -690,10 +687,10 @@ static esp_err_t ENC28J60_memory_read(emac_ENC28J60_t *emac, uint8_t *buffer, ui
 }
 
 /**
- * @brief 	Store MAC address to the Ethernet mediator struct
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Read mac address success
- * 			ESP_FAIL: Cannot read mac address
+ * @brief   Store MAC address to the Ethernet mediator struct
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Read mac address success
+ *          ESP_FAIL: Cannot read mac address
  */
 static esp_err_t ENC28J60_get_mac_addr(emac_ENC28J60_t *emac)
 {
@@ -713,15 +710,15 @@ err:
 
 /**
  * @brief set new mac address (from ESP32) to internal ENC28J60 registers
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Write mac address success
- * 			ESP_FAIL: Cannot write mac address
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Write mac address success
+ *          ESP_FAIL: Cannot write mac address
  */
 static esp_err_t ENC28J60_set_mac_addr(emac_ENC28J60_t *emac)
 {
-	esp_err_t ret = ESP_OK;
+    esp_err_t ret = ESP_OK;
 
-	uint8_t mac_addr[6];
+    uint8_t mac_addr[6];
     memset(mac_addr, 0, sizeof(mac_addr));
     esp_read_mac(mac_addr, 3);
     assert(mac_addr[0] != 0);
@@ -740,10 +737,10 @@ err:
 }
 
 /**
- * @brief 	Clear multicast hash table
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Clear multicast hash table success
- * 			ESP_FAIL: Clear multicast hash table failure
+ * @brief   Clear multicast hash table
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Clear multicast hash table success
+ *          ESP_FAIL: Clear multicast hash table failure
  */
 static esp_err_t ENC28J60_clear_multicast_table(emac_ENC28J60_t *emac)
 {
@@ -759,9 +756,9 @@ err:
 
 /**
  * @brief   ENC28J60 software reset
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Reset success
- * 			ESP_FAIL: Reset failure
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Reset success
+ *          ESP_FAIL: Reset failure
  *
  */
 static esp_err_t ENC28J60_reset(emac_ENC28J60_t *emac)
@@ -777,14 +774,12 @@ static esp_err_t ENC28J60_reset(emac_ENC28J60_t *emac)
         if (spi_device_polling_transmit(emac->spi_hdl, &trans) != ESP_OK) {
             ESP_LOGE(TAG, "%s(%d): spi transmit failed", __FUNCTION__, __LINE__);
             ret = ESP_FAIL;
-        }
-        else{
+        } else {
             ENC28J60_Bank = 0xFF;
-        	ets_delay_us(100);
+            ets_delay_us(100);
         }
         ENC28J60_unlock(emac);
-    }
-    else {
+    } else {
         ret = ESP_ERR_TIMEOUT;
     }
     return ret;
@@ -792,9 +787,9 @@ static esp_err_t ENC28J60_reset(emac_ENC28J60_t *emac)
 
 /**
  * @brief default setup for ENC28J60 internal registers
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Setup success
- * 			ESP_FAIL: Setup failure
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Setup success
+ *          ESP_FAIL: Setup failure
  */
 static esp_err_t ENC28J60_setup_default(esp_eth_mac_t *mac)
 {
@@ -803,23 +798,23 @@ static esp_err_t ENC28J60_setup_default(esp_eth_mac_t *mac)
 
     //set up buffer boundaries
     MAC_CHECK(ENC28J60_register_write(emac, ERXSTL, RXSTART_INIT) == ESP_OK, "write register failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_register_write(emac, ERXSTH, RXSTART_INIT>>8) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ERXSTH, RXSTART_INIT >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
 
     MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTL, RXSTART_INIT) == ESP_OK, "write register failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTH, RXSTART_INIT>>8) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTH, RXSTART_INIT >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
 
     MAC_CHECK(ENC28J60_register_write(emac, ERXNDL, RXSTOP_INIT) == ESP_OK, "write register failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_register_write(emac, ERXNDH, RXSTOP_INIT>>8) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ERXNDH, RXSTOP_INIT >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
 
     MAC_CHECK(ENC28J60_register_write(emac, ETXSTL, TXSTART_INIT) == ESP_OK, "write register failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_register_write(emac, ETXSTH, TXSTART_INIT>>8) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ETXSTH, TXSTART_INIT >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
 
     //poll ESTAT.CLKRDY to make sure that the MAC and MII registers are ready to be programmed.
 
     uint8_t holder;
     MAC_CHECK(ENC28J60_register_read(emac, 1, ESTAT, &holder) == ESP_OK, "read ESTAT.CLKRDY failed", err, ESP_FAIL);
 
-    while ((holder & CLKRDY) == 0){
+    while ((holder & CLKRDY) == 0) {
         MAC_CHECK(ENC28J60_register_read(emac, 1, ESTAT, &holder) == ESP_OK, "read ESTAT.CLKRDY failed", err, ESP_FAIL);
     }
 
@@ -848,25 +843,25 @@ static esp_err_t ENC28J60_setup_default(esp_eth_mac_t *mac)
     MAC_CHECK(ENC28J60_register_write(emac, MABBIPG, 0x12) == ESP_OK, "write register failed", err, ESP_FAIL);
     MAC_CHECK(ENC28J60_set_mac_addr(emac) == ESP_OK, "set MAC ADDR failed", err, ESP_FAIL);
     MAC_CHECK(ENC28J60_BFS(emac, ECON2, AUTOINC) == ESP_OK, "BFS failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_BFS(emac, EIE, INTIE|PKTIE) == ESP_OK, "BFS failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_BFS(emac, EIE, INTIE | PKTIE) == ESP_OK, "BFS failed", err, ESP_FAIL);
     return ESP_OK;
 err:
     return ret;
 }
 
 /**
- * @brief 	Start ENC28J60: enable interrupt pin and start ETH receiving packets
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Start success
- * 			ESP_FAIL: Start failure
+ * @brief   Start ENC28J60: enable interrupt pin and start ETH receiving packets
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Start success
+ *          ESP_FAIL: Start failure
  */
 static esp_err_t ENC28J60_start(emac_ENC28J60_t *emac)
 {
     esp_err_t ret = ESP_OK;
 
-    MAC_CHECK(ENC28J60_register_write(emac, ERXFCON, (UCEN|BCEN|CRCEN)) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ERXFCON, (UCEN | BCEN | CRCEN)) == ESP_OK, "write register failed", err, ESP_FAIL);
     /* enable interrupt */
-    MAC_CHECK(ENC28J60_BFS(emac, EIE, (PKTIE|INTIE)) == ESP_OK, "BFS  failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_BFS(emac, EIE, (PKTIE | INTIE)) == ESP_OK, "BFS  failed", err, ESP_FAIL);
     /* enable rx */
     MAC_CHECK(ENC28J60_BFS(emac, ECON1, RXEN) == ESP_OK, "BFS failed", err, ESP_FAIL);
 
@@ -880,16 +875,16 @@ err:
 }
 
 /**
- * @brief 	Stop ENC28J60: disable interrupt pin and stop receiving packets
- * @param 	eth: ENC28J60 Ethernet mediator
- * @return 	ESP_OK: Stop success
- * 			ESP_FAIL: Stop failure
+ * @brief   Stop ENC28J60: disable interrupt pin and stop receiving packets
+ * @param   eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: Stop success
+ *          ESP_FAIL: Stop failure
  */
 static esp_err_t ENC28J60_stop(emac_ENC28J60_t *emac)
 {
     esp_err_t ret = ESP_OK;
     /* disable interrupt */
-    MAC_CHECK(ENC28J60_BFC(emac, EIE, (PKTIE|INTIE)) == ESP_OK, "BFC failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_BFC(emac, EIE, (PKTIE | INTIE)) == ESP_OK, "BFC failed", err, ESP_FAIL);
     /* disable rx */
     MAC_CHECK(ENC28J60_BFC(emac, ECON1, RXEN) == ESP_OK, "BFC failed", err, ESP_FAIL);
 
@@ -899,8 +894,8 @@ err:
 }
 
 /**
- * @brief 	Interrupt handler
- * @param 	arg: Used to pass ENC28J60 Ethernet mediator
+ * @brief   Interrupt handler
+ * @param   arg: Used to pass ENC28J60 Ethernet mediator
  */
 static void ENC28J60_isr_handler(void *arg)
 {
@@ -914,8 +909,8 @@ static void ENC28J60_isr_handler(void *arg)
 }
 
 /**
- * @brief 	Function to receive the Ethernet packets (called by ENC28J60_isr_handler)
- * @param 	*arg: Used to pass ENC28J60 Ethernet mediator
+ * @brief   Function to receive the Ethernet packets (called by ENC28J60_isr_handler)
+ * @param   *arg: Used to pass ENC28J60 Ethernet mediator
  */
 static void emac_ENC28J60_task(void *arg)
 {
@@ -937,7 +932,7 @@ static void emac_ENC28J60_task(void *arg)
                         /* pass the buffer to stack (e.g. TCP/IP layer) */
                         emac->eth->stack_input(emac->eth, buffer, length);
                     } else {
-                    	printf("\n\n\n***FREE***\n\n\n");
+                        printf("\n\n\n***FREE***\n\n\n");
                         free(buffer);
                     }
                 } while (emac->packets_remain);
@@ -948,11 +943,11 @@ static void emac_ENC28J60_task(void *arg)
 }
 
 /**
- * @brief 	Set mediator for Ethernet MAC
- * @param	mac: ENC28J60 Ethernet MAC instance
- * 			eth: ENC28J60 Ethernet mediator
- * @return	ESP_OK: set mediator for Ethernet MAC successfully
- *      	ESP_ERR_INVALID_ARG: set mediator for Ethernet MAC failed because of invalid argument
+ * @brief   Set mediator for Ethernet MAC
+ * @param   mac: ENC28J60 Ethernet MAC instance
+ *          eth: ENC28J60 Ethernet mediator
+ * @return  ESP_OK: set mediator for Ethernet MAC successfully
+ *          ESP_ERR_INVALID_ARG: set mediator for Ethernet MAC failed because of invalid argument
  */
 static esp_err_t emac_ENC28J60_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
@@ -1020,13 +1015,13 @@ err:
  */
 static esp_err_t emac_ENC28J60_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
 {
-	esp_err_t ret = ESP_OK;
-	switch (speed) {
+    esp_err_t ret = ESP_OK;
+    switch (speed) {
     case ETH_SPEED_10M:
         break;
     default:
-    	ESP_LOGE(TAG, "SPEED MUST BE SET TO 10M\n");
-    	ret = ESP_ERR_INVALID_STATE;
+        ESP_LOGE(TAG, "SPEED MUST BE SET TO 10M\n");
+        ret = ESP_ERR_INVALID_STATE;
         break;
     }
     return ret;
@@ -1044,14 +1039,14 @@ static esp_err_t emac_ENC28J60_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duple
 
     switch (duplex) {
     case ETH_DUPLEX_HALF:
-    	mac3 &= (~FULDPX);
+        mac3 &= (~FULDPX);
         phc1 &= (~PDPXMD);
 
         MAC_CHECK(ENC28J60_register_write(emac, MACON3, mac3) == ESP_OK, "write register failed", err, ESP_FAIL);
         MAC_CHECK(ENC28J60_PHY_write(mac, 1, PHCON1, phc1) == ESP_OK, "write PHY register failed", err, ESP_FAIL);
         break;
     case ETH_DUPLEX_FULL:
-    	mac3 |= FULDPX;
+        mac3 |= FULDPX;
         phc1 |= PDPXMD;
 
         MAC_CHECK(ENC28J60_register_write(emac, MACON3, mac3) == ESP_OK, "write register failed", err, ESP_FAIL);
@@ -1089,23 +1084,23 @@ static esp_err_t emac_ENC28J60_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32
     // Check if last transmit complete
     MAC_CHECK(ENC28J60_register_read(emac, 1, ECON1, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
     busy &= TXRTS;
-    while(busy){
+    while (busy) {
         MAC_CHECK(ENC28J60_register_read(emac, 1, ECON1, &busy) == ESP_OK, "read register failed", err, ESP_FAIL);
         busy &= TXRTS;
         ESP_LOGW(TAG, "TRANSMIT DELAY, last transmit still in progress");
         MAC_CHECK(ENC28J60_register_read(emac, 1, EIR, &pkt_rcvd) == ESP_OK, "read register failed", err, ESP_FAIL);
-        if(pkt_rcvd & TXERIF){
+        if (pkt_rcvd & TXERIF) {
             MAC_CHECK(ENC28J60_BFS(emac, ECON1, TXRST) == ESP_OK, "BFS failed", err, ESP_FAIL);
             //MAC_CHECK(ENC28J60_BFC(emac, ECON1, TXRST) == ESP_OK, "BFC ECON1 failed", err, ESP_FAIL);
             ESP_LOGE(TAG, "TRANSMIT ERROR!");
         }
     }
     /* set tx length */
-    MAC_CHECK(ENC28J60_register_write(emac, EWRPTL, (TXSTART_INIT+1)) == ESP_OK, "write register failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_register_write(emac, EWRPTH, (TXSTART_INIT+1)>>8) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, EWRPTL, (TXSTART_INIT + 1)) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, EWRPTH, (TXSTART_INIT + 1) >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
 
-    MAC_CHECK(ENC28J60_register_write(emac, ETXNDL, (TXSTART_INIT+length) & 0xFF) == ESP_OK, "write register failed", err, ESP_FAIL);
-    MAC_CHECK(ENC28J60_register_write(emac, ETXNDH, (TXSTART_INIT+length) >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ETXNDL, (TXSTART_INIT + length) & 0xFF) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ETXNDH, (TXSTART_INIT + length) >> 8) == ESP_OK, "write register failed", err, ESP_FAIL);
     /* copy data to tx memory */
     MAC_CHECK(ENC28J60_memory_write(emac, buf, length) == ESP_OK, "buffer memory write failed", err, ESP_FAIL);
 
@@ -1140,14 +1135,14 @@ static esp_err_t emac_ENC28J60_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_
     MAC_CHECK(ENC28J60_memory_read(emac, buf, rx_len) == ESP_OK, "read rx data failed", err, ESP_FAIL);
     *length = rx_len - 4; // substract the CRC length
 
-	MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTL, (current_packet_ptr && 0x00FF)) == ESP_OK, "write register failed", err, ESP_FAIL);
-	MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTH, (current_packet_ptr >> 8)) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTL, (current_packet_ptr && 0x00FF)) == ESP_OK, "write register failed", err, ESP_FAIL);
+    MAC_CHECK(ENC28J60_register_write(emac, ERXRDPTH, (current_packet_ptr >> 8)) == ESP_OK, "write register failed", err, ESP_FAIL);
 
     MAC_CHECK(ENC28J60_register_read(emac, 1, ERDPTL, &rxbyte) == ESP_OK, "read register failed", err, ESP_FAIL);
-    if (rxbyte & 1){
+    if (rxbyte & 1) {
         MAC_CHECK(ENC28J60_register_read(emac, 1, ERDPTL, &rxbyte) == ESP_OK, "read register failed", err, ESP_FAIL);
         MAC_CHECK(ENC28J60_register_write(emac, ERDPTL, (rxbyte + 1)) == ESP_OK, "write register failed", err, ESP_FAIL);
-        if (rxbyte == 0xFF){
+        if (rxbyte == 0xFF) {
             MAC_CHECK(ENC28J60_register_read(emac, 1, ERDPTH, &rxbyte) == ESP_OK, "read register failed", err, ESP_FAIL);
             MAC_CHECK(ENC28J60_register_write(emac, ERDPTH, (rxbyte + 1)) == ESP_OK, "write register failed", err, ESP_FAIL);
         }
@@ -1177,7 +1172,7 @@ static esp_err_t emac_ENC28J60_init(esp_eth_mac_t *mac)
     MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
 
     //delay 500 us to wait for the clock to be ready
-	ets_delay_us(500);
+    ets_delay_us(500);
     /* reset ENC28J60 */
     MAC_CHECK(ENC28J60_reset(emac) == ESP_OK, "reset ENC28J60 failed", err, ESP_FAIL);
     MAC_CHECK(ENC28J60_reset(emac) == ESP_OK, "reset ENC28J60 failed", err, ESP_FAIL);
@@ -1249,7 +1244,7 @@ esp_eth_mac_t *esp_eth_mac_new_ENC28J60(const eth_ENC28J60_config_t *ENC28J60_co
     MAC_CHECK(emac->spi_lock, "create lock failed", err_lock, NULL);
     /* create ENC28J60 task */
     BaseType_t xReturned = xTaskCreate(emac_ENC28J60_task, "ENC28J60_tsk", mac_config->rx_task_stack_size, emac,
-    		mac_config->rx_task_prio, &emac->rx_task_hdl);
+                                       mac_config->rx_task_prio, &emac->rx_task_hdl);
     MAC_CHECK(xReturned == pdPASS, "create ENC28J60 task failed", err_tsk, NULL);
     return &(emac->parent);
 err_tsk:
