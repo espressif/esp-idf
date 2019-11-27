@@ -167,6 +167,8 @@ endif
 .PHONY: config-clean defconfig menuconfig
 config-clean:
 	$(summary) RM CONFIG
+ifeq ($(OS),Windows_NT)
 	MAKEFLAGS="" $(MAKE) -C $(KCONFIG_TOOL_DIR) clean
+endif
 	rm -rf $(BUILD_DIR_BASE)/include/config $(BUILD_DIR_BASE)/include/sdkconfig.h \
 		$(COMPONENT_KCONFIGS_SOURCE_FILE) $(COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE)
