@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include <sys/cdefs.h>
+#include <stdatomic.h>
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_event.h"
@@ -51,6 +52,7 @@ typedef struct {
     eth_speed_t speed;
     eth_duplex_t duplex;
     eth_link_t link;
+    atomic_int ref_count;
     esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length);
     esp_err_t (*on_lowlevel_init_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
@@ -145,7 +147,9 @@ static void eth_check_link_timer_cb(TimerHandle_t xTimer)
 {
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)pvTimerGetTimerID(xTimer);
     esp_eth_phy_t *phy = eth_driver->phy;
+    esp_eth_increase_reference(eth_driver);
     phy->get_link(phy);
+    esp_eth_decrease_reference(eth_driver);
 }
 
 ////////////////////////////////User face APIs////////////////////////////////////////////////
@@ -164,6 +168,7 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     ETH_CHECK(mac && phy, "can't set eth->mac or eth->phy to null", err, ESP_ERR_INVALID_ARG);
     esp_eth_driver_t *eth_driver = calloc(1, sizeof(esp_eth_driver_t));
     ETH_CHECK(eth_driver, "request memory for eth_driver failed", err, ESP_ERR_NO_MEM);
+    atomic_init(&eth_driver->ref_count, 1);
     eth_driver->mac = mac;
     eth_driver->phy = phy;
     eth_driver->link = ETH_LINK_DOWN;
@@ -210,6 +215,9 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl)
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    // don't uninstall driver unless there's only one reference
+    ETH_CHECK(atomic_load(&eth_driver->ref_count) == 1,
+              "more than one reference to ethernet driver", err, ESP_ERR_INVALID_STATE);
     esp_eth_mac_t *mac = eth_driver->mac;
     esp_eth_phy_t *phy = eth_driver->phy;
     ETH_CHECK(xTimerDelete(eth_driver->check_link_timer, 0) == pdPASS, "delete eth_link_timer failed", err, ESP_FAIL);
@@ -280,6 +288,28 @@ esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data)
         ETH_CHECK(false, "unknown io command: %d", err, ESP_ERR_INVALID_ARG, cmd);
         break;
     }
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    atomic_fetch_add(&eth_driver->ref_count, 1);
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_decrease_reference(esp_eth_handle_t hdl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    atomic_fetch_sub(&eth_driver->ref_count, 1);
     return ESP_OK;
 err:
     return ret;

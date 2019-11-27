@@ -117,12 +117,16 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
 
 /**
 * @brief Uninstall Ethernet driver
+* @note It's not recommended to uninstall Ethernet driver unless it won't get used any more in application code.
+*       To uninstall Ethernet driver, you have to make sure, all references to the driver are released.
+*       Ethernet driver can only be uninstalled successfully when reference counter equals to one.
 *
 * @param[in] hdl: handle of Ethernet driver
 *
 * @return
 *       - ESP_OK: uninstall esp_eth driver successfully
 *       - ESP_ERR_INVALID_ARG: uninstall esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: uninstall esp_eth driver failed because it has more than one reference
 *       - ESP_FAIL: uninstall esp_eth driver failed because some other error occurred
 */
 esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
@@ -168,6 +172,31 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);
 *       - ESP_FAIL: process io command failed because some other error occurred
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
+
+/**
+* @brief Increase Ethernet driver reference
+* @note Ethernet driver handle can be obtained by os timer, netif, etc.
+*       It's dangerous when thread A is using Ethernet but thread B uninstall the driver.
+*       Using reference counter can prevent such risk, but care should be taken, when you obtain Ethernet driver,
+*       this API must be invoked so that the driver won't be uninstalled during your using time.
+*
+*
+* @param[in] hdl: handle of Ethernet driver
+* @return
+*       - ESP_OK: increase reference successfully
+*       - ESP_ERR_INVALID_ARG: increase reference failed because of some invalid argument
+*/
+esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl);
+
+/**
+* @brief Decrease Ethernet driver reference
+*
+* @param[in] hdl: handle of Ethernet driver
+* @return
+*       - ESP_OK: increase reference successfully
+*       - ESP_ERR_INVALID_ARG: increase reference failed because of some invalid argument
+*/
+esp_err_t esp_eth_decrease_reference(esp_eth_handle_t hdl);
 
 #ifdef __cplusplus
 }

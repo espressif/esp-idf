@@ -17,3 +17,6 @@ idf_component_register(SRCS "${esp_eth_srcs}"
                        INCLUDE_DIRS "include"
                        REQUIRES "esp_event"
                        PRIV_REQUIRES "tcpip_adapter" "driver" "log")
+
+# uses C11 atomic feature
+set_source_files_properties(src/esp_eth.c PROPERTIES COMPILE_FLAGS -std=gnu11)
