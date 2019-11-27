@@ -31,22 +31,25 @@
 ({                                                                  \
     if(lock && stack && stack_size) {                               \
         uint32_t backup;                                            \
-        int watchpoint_place=(int)stack;                            \
-        portSTACK_TYPE *top_of_stack = &stack[0] +                  \
-                    (sizeof(stack_size * sizeof(portSTACK_TYPE)) /  \
-                    sizeof(portSTACK_TYPE));                        \
-        watchpoint_place=(watchpoint_place+31)&(~31);               \
         xSemaphoreTake(lock, portMAX_DELAY);                        \
-        esp_set_watchpoint(2, (char*)watchpoint_place, 32, ESP_WATCHPOINT_STORE);\
+        StackType_t *top_of_stack = esp_switch_stack_setup(stack, stack_size);\
         esp_switch_stack_enter(top_of_stack, &backup);              \
         {                                                           \
             expression;                                             \
         }                                                           \
-        esp_clear_watchpoint(2);                                    \
         esp_switch_stack_exit(&backup);                             \
         xSemaphoreGive(lock);                                       \
     }                                                               \
 })
+
+/**
+ * @brief Fill stack frame with CPU-specifics value before use
+ * @param stack Caller allocated stack pointer
+ * @param stack_size Size of stack in bytes
+ * @return New pointer to the top of stack
+ * @note Application must not call this function directly
+ */
+StackType_t * esp_switch_stack_setup(StackType_t *stack, size_t stack_size);
 
 /**
  * @brief Changes CPU sp-register to use another stack space and save the previous one
@@ -54,7 +57,7 @@
  * @param backup_stack Pointer to a place to save the current stack
  * @note Application must not call this function directly
  */
-extern void esp_switch_stack_enter(portSTACK_TYPE *stack, uint32_t *backup_stack);
+extern void esp_switch_stack_enter(StackType_t *stack, uint32_t *backup_stack);
 
 /**
  * @brief Restores the previous CPU sp-register
