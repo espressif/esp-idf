@@ -202,9 +202,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
-#ifdef CONFIG_WPA3_SAE
     esp_wifi_register_wpa3_cb(wpa_cb);
-#endif /* CONFIG_WPA3_SAE */
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 
