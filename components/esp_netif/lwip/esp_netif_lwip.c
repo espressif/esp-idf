@@ -1396,6 +1396,29 @@ esp_err_t esp_netif_get_ip6_linklocal(esp_netif_t *esp_netif, esp_ip6_addr_t *if
     return ESP_OK;
 }
 
+esp_err_t esp_netif_get_ip6_global(esp_netif_t *esp_netif, esp_ip6_addr_t *if_ip6)
+{
+    ESP_LOGD(TAG, "%s esp-netif:%p", __func__, esp_netif);
+
+    if (esp_netif == NULL || if_ip6 == NULL) {
+        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+    }
+
+    int i;
+    struct netif *p_netif = esp_netif->lwip_netif;
+
+    if (p_netif != NULL && netif_is_up(p_netif)) {
+        for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+            if (ip6_addr_ispreferred(netif_ip6_addr_state(p_netif, i))) {
+                memcpy(if_ip6, &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
+                return ESP_OK;
+            }
+        }
+    }
+    
+    return ESP_FAIL;
+}
+
 esp_netif_flags_t esp_netif_get_flags(esp_netif_t *esp_netif)
 {
     return esp_netif->flags;
