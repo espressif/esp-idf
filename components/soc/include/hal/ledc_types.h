@@ -20,9 +20,10 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "soc/ledc_caps.h"
 
 typedef enum {
-#ifdef CONFIG_IDF_TARGET_ESP32
+#ifdef SOC_LEDC_SUPPORT_HS_MODE
     LEDC_HIGH_SPEED_MODE = 0, /*!< LEDC high speed speed_mode */
 #endif
     LEDC_LOW_SPEED_MODE,      /*!< LEDC low speed speed_mode */
@@ -49,7 +50,7 @@ typedef enum  {
 typedef enum {
     LEDC_SLOW_CLK_RTC8M = 0,  /*!< LEDC low speed timer clock source is 8MHz RTC clock*/
     LEDC_SLOW_CLK_APB,     /*!< LEDC low speed timer clock source is 80MHz APB clock*/
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_SLOW_CLK_XTAL,    /*!< LEDC low speed timer clock source XTAL clock*/
 #endif
 } ledc_slow_clk_sel_t;
@@ -59,7 +60,7 @@ typedef enum {
     LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
     LEDC_USE_APB_CLK,     /*!< LEDC timer select APB clock as source clock*/
     LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef SOC_LEDC_SUPPORT_XTAL_CLOCK
     LEDC_USE_XTAL_CLK,    /*!< LEDC timer select XTAL clock as source clock*/
 #endif
 } ledc_clk_cfg_t;

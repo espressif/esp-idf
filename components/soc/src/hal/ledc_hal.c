@@ -37,7 +37,7 @@ void ledc_hal_get_clk_cfg(ledc_hal_context_t *hal, ledc_timer_t timer_sel, ledc_
             ledc_hal_get_slow_clk_sel(hal, &slow_clk);
             if (slow_clk == LEDC_SLOW_CLK_RTC8M) {
                 *clk_cfg = LEDC_USE_RTC8M_CLK;
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef SOC_LEDC_SUPPORT_XTAL_CLOCK
             } else if (slow_clk == LEDC_SLOW_CLK_XTAL) {
                 *clk_cfg = LEDC_USE_XTAL_CLK;
 #endif
@@ -50,11 +50,11 @@ void ledc_hal_set_slow_clk(ledc_hal_context_t *hal, ledc_clk_cfg_t clk_cfg)
 {
     // For low speed channels, if RTC_8MCLK is used as the source clock, the `slow_clk_sel` register should be cleared, otherwise it should be set.
     ledc_slow_clk_sel_t slow_clk_sel = LEDC_SLOW_CLK_APB;
-#ifdef CONFIG_IDF_TARGET_ESP32
-    slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? LEDC_SLOW_CLK_RTC8M : LEDC_SLOW_CLK_APB;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef SOC_LEDC_SUPPORT_XTAL_CLOCK
     slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? LEDC_SLOW_CLK_RTC8M :
                                        ((clk_cfg == LEDC_USE_XTAL_CLK) ? LEDC_SLOW_CLK_XTAL : LEDC_SLOW_CLK_APB);
+#else
+    slow_clk_sel = (clk_cfg == LEDC_USE_RTC8M_CLK) ? LEDC_SLOW_CLK_RTC8M : LEDC_SLOW_CLK_APB;
 #endif
     ledc_hal_set_slow_clk_sel(hal, slow_clk_sel);
 }
