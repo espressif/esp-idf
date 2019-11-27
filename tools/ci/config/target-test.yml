@@ -21,7 +21,6 @@
       - $BOT_LABEL_EXAMPLE_TEST
   dependencies:
     - assign_test
-    - build_examples_cmake_esp32
   artifacts:
     when: always
     paths:
@@ -34,6 +33,7 @@
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+    GIT_SUBMODULE_STRATEGY: none
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
