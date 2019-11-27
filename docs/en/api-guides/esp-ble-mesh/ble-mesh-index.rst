@@ -2,13 +2,13 @@
 ESP-BLE-MESH
 ************
 
-Bluetooth mesh networking enables many-to-many (m:m) device communications and is optimized for creating large-scale device networks.
+Bluetooth® mesh networking enables many-to-many (m:m) device communications and is optimized for creating large-scale device networks.
 
 Devices may relay data to other devices not in direct radio range of the originating device. In this way, mesh networks can span very large physical areas and contain large numbers of devices. It is ideally suited for building automation, sensor networks, and other IoT solutions where tens, hundreds, or thousands of devices need to reliably and securely communicate with one another.
 
 Bluetooth mesh is not a wireless communications technology, but a networking technology. This technology is dependent upon Bluetooth Low Energy (BLE) - a wireless communications protocol stack.
 
-Built on top of Zephyr ESP-BLE-MESH stack, the ESP-BLE-MESH implementation supports device provisioning and node control. It also supports such node features as Proxy, Relay, Low power and Friend.
+Built on top of Zephyr Bluetooth Mesh stack, the ESP-BLE-MESH implementation supports device provisioning and node control. It also supports such node features as Proxy, Relay, Low power and Friend.
 
 Please see the :doc:`ble-mesh-architecture` for information about the implementation of ESP-BLE-MESH architecture and :doc:`ESP-BLE-MESH API Reference <../../api-reference/bluetooth/esp-ble-mesh>` for information about respective API.
 
@@ -43,7 +43,7 @@ Hardware:
 
 Software:
 
-* Example application :example:`bluetooth/esp_ble_mesh/ble_mesh_node` code to load to the ESP32 boards.
+* Example application :example:`bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server` code to load to the ESP32 boards.
 * Mobile App: **nRF Mesh** for Android or iOS. Optionally you can use some other Apps:
 
     - `EspBleMesh <https://github.com/EspressifApp/EspBLEMeshForAndroid/releases/tag/v1.0.0>`_ Android App
@@ -70,12 +70,12 @@ Both `ESP32-DevKitC`_ and `ESP-WROVER-KIT`_ development boards are supported for
 Step 2. Configure Software
 """"""""""""""""""""""""""
 
-Enter the :example:`bluetooth/esp_ble_mesh/ble_mesh_node` example directory, run :code:`idf.py menuconfig` to select your board and then run :code:`idf.py build` to compile the example.
+Enter the :example:`bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server` example directory, run :code:`idf.py menuconfig` to select your board and then run :code:`idf.py build` to compile the example.
 
 Step 3. Upload Application to Nodes
 """""""""""""""""""""""""""""""""""
 
-After the :example:`bluetooth/esp_ble_mesh/ble_mesh_node` example is compiled successfully, users can run :code:`idf.py flash` to upload the same generated binary files into each of the three development boards.
+After the :example:`bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server` example is compiled successfully, users can run :code:`idf.py flash` to upload the same generated binary files into each of the three development boards.
 
 Once boards are powered on, the RGB LED on each board should turn **GREEN**.
 
@@ -185,7 +185,7 @@ Step 5. Operate Network
 
 After all the Generic OnOff Server Models within the three elements are bound with proper AppKey, users can use the App to turn on/off the RGB LED.
 
-In the :example:`bluetooth/esp_ble_mesh/ble_mesh_node` example, the first Generic OnOff Server Model is used to control the **RED** color, the second one is used to control the **GREEN** color and the third one is used to control the **BLUE** color.
+In the :example:`bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server` example, the first Generic OnOff Server Model is used to control the **RED** color, the second one is used to control the **GREEN** color and the third one is used to control the **BLUE** color.
 
 .. figure:: ../../../_static/ble-mesh-generic-onoff.png
     :align: center
@@ -209,17 +209,17 @@ The following screenshot shows different board with different color on.
 ESP-BLE-MESH Examples
 =====================
 
-* :example:`ESP-BLE-MESH Node <bluetooth/esp_ble_mesh/ble_mesh_node/tutorial/Ble_Mesh_Node_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node device having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH provisioner can then provision the node and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node>`.
+* :example:`ESP-BLE-MESH Node OnOff Server <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH Provisioner can then provision the unprovisioned device and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server>`.
 
-* :example:`ESP-BLE-MESH Client Model <bluetooth/esp_ble_mesh/ble_mesh_client_model/tutorial/ble_mesh_client_model.md>` - shows how a Generic OnOff Client model works within a node. The node has a Configuration Server model, a Generic OnOff Server model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_client_model>`.
+* :example:`ESP-BLE-MESH Node OnOff Client <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Waclthrough.md>` - shows how a Generic OnOff Client model works within a node. The node has a Configuration Server model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client>`.
 
-* :example:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/Ble_Mesh_Provisioner_Example_Walkthrough.md>` - shows how a device can act as a ESP-BLE-MESH provisioner to provision devices. The provisioner has a Configuration Server model, a Configuration Client model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`.
+* :example:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/Ble_Mesh_Provisioner_Example_Walkthrough.md>` - shows how a device can act as an ESP-BLE-MESH Provisioner to provision devices. The Provisioner has a Configuration Server model, a Configuration Client model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`.
 
-* ESP-BLE-MESH Fast Provisioning - :example:`Client <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client/tutorial/ble_mesh_fast_provision_client.md>` and :example:`Server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server/tutorial/ble_mesh_fast_provision_server.md>` - this demo is used for fast provisioning networks. It takes no more than 60 seconds to provision 100 devices, see :example:`example client code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client>` and :example:`example server code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>`.
+* ESP-BLE-MESH Fast Provisioning - :example:`Client <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` and :example:`Server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - this example is used for showing how fast provisioning can be used in order to create a mesh network. It takes no more than 60 seconds to provision 100 devices, see :example:`example client code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client>` and :example:`example server code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>`.
 
-* :example:`ESP-BLE-MESH and Wi-Fi Coexistence <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/ble_mesh_wifi_coexist.md>` - a demo that demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi while operating Bluetooth, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`.
+* :example:`ESP-BLE-MESH and Wi-Fi Coexistence <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - an example that demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi while operating Bluetooth, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`.
 
-* ESP-BLE-MESH Node Console - a demo that implements BLE mesh node basic features. Within this demo a node can be scanned and provisioned by provisioner and reply to get/set message from provisioner, see :example:`example node code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_node>` and :example:`example provisioner code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_provisioner>`.
+* ESP-BLE-MESH Node Console - an example that implements BLE Mesh node basic features. Within this example a node can be scanned and provisioned by Provisioner and reply to get/set message from Provisioner, see :example:`example node code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_node>` and :example:`example Provisioner code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_provisioner>`.
 
 
 .. _esp-ble-mesh-demo-videos:

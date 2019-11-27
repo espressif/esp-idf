@@ -1,5 +1,5 @@
-Espressif ESP-BLE-MESH Feature List
-===================================
+ESP-BLE-MESH Feature List
+=========================
 
 Supported Features
 ------------------
@@ -22,7 +22,8 @@ Mesh Core
     * IV Update Procedure
     * Friend
     * Low Power
-    * Proxy
+    * Proxy Server
+    * Proxy Client
 
 * Multiple Client Models Run Simultaneously
     * Support multiple client models send packets to different nodes simultaneously
@@ -34,13 +35,13 @@ Mesh Core
 Mesh Models
 """""""""""
 
-* Foundation Models
-    * Configuration Server Model
-    * Configuration Client Model
-    * Health Server Model
-    * Health Client Model
+* Foundation models
+    * Configuration Server model
+    * Configuration Client model
+    * Health Server model
+    * Health Client model
 
-* Generic Client Models
+* Generic client models
     * Generic OnOff Client
     * Generic Level Client
     * Generic Default Transition Time Client
@@ -50,43 +51,81 @@ Mesh Models
     * Generic Location Client
     * Generic Property Client
 
-* Sensor Client Models
+* Sensor client models
     * Sensor Client
 
-* Time and Scenes Client Models
+* Time and Scenes client models
     * Time Client
     * Scene Client
     * Scheduler Client
 
-* Lighting Client Models
+* Lighting client models
     * Light Lightness Client
     * Light CTL Client
     * Light HSL Client
     * Light xyL Client
-    * Light LC Client 
+    * Light LC Client
 
-* Generic Server Models
-    * Generic OnOff Server (Simple)
+* Generic server models
+    * Generic OnOff Server
+    * Generic Level Server
+    * Generic Default Transition Time Server
+    * Generic Power OnOff Server
+    * Generic Power OnOff Setup Server
+    * Generic Power Level Server
+    * Generic Power Level Setup Server
+    * Generic Battery Server
+    * Generic Location Server
+    * Generic Location Setup Server
+    * Generic User Property Server
+    * Generic Admin Property Server
+    * Generic Manufacturer Property Server
+    * Generic Client Property Server
+
+* Sensor server models
+    * Sensor Server
+    * Sensor Setup Server
+
+* Time and Scenes server models
+    * Time Server
+    * Time Setup Server
+    * Scene Server
+    * Scene Setup Server
+    * Scheduler Server
+    * Scheduler Setup Server
+
+* Lighting server models
+    * Light Lightness Server
+    * Light Lightness Setup Server
+    * Light CTL Server
+    * Light CTL Temperature Server
+    * Light CTL Setup Server
+    * Light HSL Server
+    * Light HSL Hue Server
+    * Light HSL Saturation Server
+    * Light HSL Setup Server
+    * Light xyL Server
+    * Light xyL Setup Server
+    * Light LC Server
+    * Light LC Setup Server
 
 Mesh Applications
 """""""""""""""""
 
 * ESP-BLE-MESH Node
-    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_node/tutorial/Ble_Mesh_Node_Example_Walkthrough.md>`
+    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>`
+    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_node>`
-* ESP-BLE-MESH Node with client model
-    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_client_model/tutorial/ble_mesh_client_model.md>`
-    * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_client_model>`
 * ESP-BLE-MESH Provisioner
-    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/Ble_Mesh_Provisioner_Example_Walkthrough.md>`
+    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`
 * ESP-BLE-MESH Fast Provisioning
-    * :example:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client/tutorial/ble_mesh_fast_provision_client.md>`
-    * :example:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server/tutorial/ble_mesh_fast_provision_server.md>`
+    * :example:`Fast Provisioning Client Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>`
+    * :example:`Fast Provisioning Server Model Tutorial <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_fast_provision>`
     * `Demo Video <http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.4_Demo_Fast_Provision/ESP32_BLE_Mesh_Fast_Provision.mp4>`__
 * ESP-BLE-MESH and Wi-Fi Coexistence
-    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/ble_mesh_wifi_coexist.md>`
+    * :example:`Tutorial <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>`
     * :example:`Example <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`
     * `Demo Video <http://download.espressif.com/BLE_MESH/BLE_Mesh_Demo/V0.5_Demo_Coexistence/ESP_BLE_MESH_%26_WIFI_Coexistence.mp4>`__
 * ESP-BLE-MESH Console Commands
@@ -99,15 +138,7 @@ Future Release Features
 Mesh Core
 """""""""
 
-* Proxy Client
-
-Mesh Models
-"""""""""""
-
-* Generic Server Models
-* Sensor Server Models
-* Time and Scenes Server Models
-* Lighting Server Models
+* Provisioner NVS Storage
 
 Mesh Applications
 """""""""""""""""
