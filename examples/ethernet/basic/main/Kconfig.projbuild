@@ -53,13 +53,32 @@ menu "Example Configuration"
         endchoice
     endif
 
-    if EXAMPLE_USE_SPI_ETHERNET
+ if EXAMPLE_USE_SPI_ETHERNET
+    	choice SPI_ETH_MODULE
+    		prompt "SPI Ethernet PHY Device"
+    		default EXAMPLE_ETH_PHY_dm9051
+    		help
+    			Select the SPI Ethernet PHY device to use in the example.
+    			
+    		config EXAMPLE_ETH_PHY_dm9051
+    			bool "dm9051"
+    			help
+    				DM9051 is a DAVICOM SPI to Ethernet Controller. 
+    				Goto https://datasheetspdf.com/datasheet/DM9051.html for more information about it.
+    		
+    		config EXAMPLE_ETH_PHY_ENC28J60
+    			bool "ENC28J60"
+    			help
+    				ENC28J60 is a Microchop Ethernet Controller with SPI Interface.
+    				Goto https://www.microchip.com/wwwproducts/en/en022889 for more information about it.
+    	endchoice
+    		
         config EXAMPLE_ETH_SPI_HOST
             int "SPI Host Number"
             range 0 2
             default 1
             help
-                Set the SPI host used to communicate with DM9051.
+                Set the SPI host used to communicate with the SPI Ethernet Controller.
 
         config EXAMPLE_ETH_SCLK_GPIO
             int "SPI SCLK GPIO number"
@@ -91,9 +110,10 @@ menu "Example Configuration"
 
         config EXAMPLE_ETH_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
-            range 20 80
-            default 20
+            range 5 80
+            default 5
             help
                 Set the clock speed (MHz) of SPI interface.
     endif
+
 endmenu
