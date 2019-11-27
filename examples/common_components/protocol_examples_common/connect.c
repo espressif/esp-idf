@@ -134,7 +134,7 @@ static void start(void)
 
     esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_WIFI_STA();
 
-    esp_netif_t* netif = esp_netif_new(&netif_config);
+    esp_netif_t *netif = esp_netif_new(&netif_config);
 
     assert(netif);
 
@@ -212,15 +212,12 @@ static esp_eth_phy_t *s_phy = NULL;
 static void start(void)
 {
     esp_netif_config_t netif_config = ESP_NETIF_DEFAULT_ETH();
-
-    esp_netif_t* netif = esp_netif_new(&netif_config);
-
+    esp_netif_t *netif = esp_netif_new(&netif_config);
     assert(netif);
-
-    ESP_ERROR_CHECK(esp_eth_set_default_handlers(netif));
-
     s_example_esp_netif = netif;
-
+    // Set default handlers to process TCP/IP stuffs
+    ESP_ERROR_CHECK(esp_eth_set_default_handlers(netif));
+    // Register user defined event handers
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &on_got_ip, NULL));
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ETHERNET_EVENT_CONNECTED, &on_eth_event, netif));
@@ -274,11 +271,12 @@ static void start(void)
     s_phy = esp_eth_phy_new_dp83848(&phy_config);
 #endif
 
+    // Install Ethernet driver
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
-
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
-
-    esp_netif_attach(netif, s_eth_handle);
+    // combine driver with netif
+    esp_netif_attach(netif, esp_eth_new_netif_glue(s_eth_handle));
+    esp_eth_start(s_eth_handle);
     s_connection_name = "Ethernet";
 }
 

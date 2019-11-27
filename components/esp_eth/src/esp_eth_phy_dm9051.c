@@ -276,9 +276,7 @@ err:
 static esp_err_t dm9051_del(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
-    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
-        free(dm9051);
-    }
+    free(dm9051);
     return ESP_OK;
 }
 
@@ -335,8 +333,6 @@ esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
     dm9051->parent.get_addr = dm9051_get_addr;
     dm9051->parent.set_addr = dm9051_set_addr;
     dm9051->parent.del = dm9051_del;
-    atomic_init(&dm9051->parent.ref_count, 1);
-
     return &(dm9051->parent);
 err:
     return NULL;

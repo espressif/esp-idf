@@ -334,19 +334,17 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    if (atomic_fetch_sub(&mac->ref_count, 1) == 1) {
-        esp_intr_free(emac->intr_hdl);
-        vTaskDelete(emac->rx_task_hdl);
-        int i = 0;
-        for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
-            free(emac->hal.rx_buf[i]);
-        }
-        for (i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
-            free(emac->hal.tx_buf[i]);
-        }
-        free(emac->hal.descriptors);
-        free(emac);
+    esp_intr_free(emac->intr_hdl);
+    vTaskDelete(emac->rx_task_hdl);
+    int i = 0;
+    for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
+        free(emac->hal.rx_buf[i]);
     }
+    for (i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
+        free(emac->hal.tx_buf[i]);
+    }
+    free(emac->hal.descriptors);
+    free(emac);
     return ESP_OK;
 }
 
@@ -407,7 +405,6 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.set_promiscuous = emac_esp32_set_promiscuous;
     emac->parent.transmit = emac_esp32_transmit;
     emac->parent.receive = emac_esp32_receive;
-    atomic_init(&emac->parent.ref_count, 1);
     /* Interrupt configuration */
     MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_esp32_isr_handler,
                              &emac->hal, &(emac->intr_hdl)) == ESP_OK,

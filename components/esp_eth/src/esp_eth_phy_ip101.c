@@ -311,9 +311,7 @@ err:
 static esp_err_t ip101_del(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
-    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
-        free(ip101);
-    }
+    free(ip101);
     return ESP_OK;
 }
 
@@ -366,7 +364,6 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     ip101->parent.get_addr = ip101_get_addr;
     ip101->parent.set_addr = ip101_set_addr;
     ip101->parent.del = ip101_del;
-    atomic_init(&ip101->parent.ref_count, 1);
 
     return &(ip101->parent);
 err:

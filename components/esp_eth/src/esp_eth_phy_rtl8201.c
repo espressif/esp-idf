@@ -262,9 +262,7 @@ err:
 static esp_err_t rtl8201_del(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
-    if (atomic_fetch_sub(&phy->ref_count, 1) == 1) {
-        free(rtl8201);
-    }
+    free(rtl8201);
     return ESP_OK;
 }
 
@@ -320,7 +318,6 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
     rtl8201->parent.get_addr = rtl8201_get_addr;
     rtl8201->parent.set_addr = rtl8201_set_addr;
     rtl8201->parent.del = rtl8201_del;
-    atomic_init(&rtl8201->parent.ref_count, 1);
 
     return &(rtl8201->parent);
 err:

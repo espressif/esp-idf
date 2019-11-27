@@ -51,3 +51,8 @@ API Reference - PHY Interface
 -----------------------------
 
 .. include:: /_build/inc/esp_eth_phy.inc
+
+API Reference - Glue for esp_netif
+----------------------------------
+
+.. include:: /_build/inc/esp_eth_netif_glue.inc

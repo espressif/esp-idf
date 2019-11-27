@@ -80,6 +80,7 @@ INPUT = \
     ../../components/esp_eth/include/esp_eth_com.h \
     ../../components/esp_eth/include/esp_eth_mac.h \
     ../../components/esp_eth/include/esp_eth_phy.h \
+    ../../components/esp_eth/include/esp_eth_netif_glue.h \
     ##
     ## Peripherals - API Reference
     ##

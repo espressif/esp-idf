@@ -16,11 +16,15 @@
 #define _ESP_NETIF_H_
 
 #include <stdint.h>
-#include "esp_wifi_types.h"
 #include "sdkconfig.h"
+#include "esp_wifi_types.h"
 #include "esp_netif_ip_addr.h"
 #include "esp_netif_types.h"
 #include "esp_netif_defaults.h"
+
+#if CONFIG_ETH_ENABLED
+#include "esp_eth_netif_glue.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
