@@ -323,6 +323,7 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
 
     /* Callout function must free the data. */
     bta_ag_sco_co_in_data(p_data, status);
+    osi_free(p_data);
 }
 #endif
 /*******************************************************************************
