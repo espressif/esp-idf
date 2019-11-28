@@ -45,6 +45,8 @@ def setup(app):
     # to create HTML redirects
     app.connect('html-collect-pages', create_redirect_pages)
 
+    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+
 
 def create_redirect_pages(app):
     if not isinstance(app.builder, StandaloneHTMLBuilder):

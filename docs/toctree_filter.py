@@ -7,6 +7,7 @@ from sphinx.util import docname_join
 def setup(app):
     app.add_directive('toctree', TocTreeFilt, override=True)
 
+    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
 
 class TocTreeFilt(TocTree):
     """

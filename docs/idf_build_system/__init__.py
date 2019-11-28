@@ -26,6 +26,8 @@ def setup(app):
     # we want this to run early in the docs build but unclear exactly when
     app.connect('env-get-outdated', generate_idf_info)
 
+    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+
 def generate_idf_info(app, env, added, changed, removed):
     print("Running CMake on dummy project to get build info...")
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))

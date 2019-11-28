@@ -10,6 +10,8 @@ def setup(app):
     # has parsed the IDF project's information
     app.connect('idf-info', generate_reference)
 
+    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+
 def generate_reference(app, project_description):
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
 

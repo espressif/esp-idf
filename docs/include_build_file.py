@@ -16,3 +16,5 @@ class IncludeBuildFile(BaseInclude, SphinxDirective):
 
 def setup(app):
       directives.register_directive('include-build-file', IncludeBuildFile)
+
+      return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }

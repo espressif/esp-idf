@@ -12,6 +12,8 @@ def setup(app):
     # The idf_build_system extension will emit this event once it
     app.connect('idf-info', generate_doxygen)
 
+    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+
 
 def _parse_defines(header_path):
     defines = {}

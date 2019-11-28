@@ -69,6 +69,7 @@ def build_docs(language, target, build_dir):
         environ['BUILDDIR'] = build_dir
 
         args = [sys.executable, "-m", "sphinx",
+                "-j", "auto",  # use all the cores! (where possible)
                 "-b", "html",  # TODO: PDFs
                 "-d", os.path.join(build_dir, "doctrees"),
                 # TODO: support multiple sphinx-warning.log files, somehow
