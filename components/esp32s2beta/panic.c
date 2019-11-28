@@ -300,13 +300,6 @@ static inline void printCacheError(void)
     panicPutStr("\r\n");
 }
 
-//When interrupt watchdog happen in one core, both cores will be interrupted.
-//The core which doesn't trigger the interrupt watchdog will save the frame and return.
-//The core which triggers the interrupt watchdog will use the saved frame, and dump frames for both cores.
-#if !CONFIG_FREERTOS_UNICORE
-static volatile XtExcFrame * other_core_frame = NULL;
-#endif //!CONFIG_FREERTOS_UNICORE
-
 void panicHandler(XtExcFrame *frame)
 {
     int core_id = xPortGetCoreID();
@@ -326,25 +319,6 @@ void panicHandler(XtExcFrame *frame)
     if (frame->exccause <= PANIC_RSN_MAX) {
         reason = reasons[frame->exccause];
     }
-
-#if !CONFIG_FREERTOS_UNICORE
-    //Save frame for other core.
-    if ((frame->exccause == PANIC_RSN_INTWDT_CPU0 && core_id == 1) || (frame->exccause == PANIC_RSN_INTWDT_CPU1 && core_id == 0)) {
-        other_core_frame = frame;
-        while (1);
-    }
-
-    //The core which triggers the interrupt watchdog will delay 1 us, so the other core can save its frame.
-    if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-        ets_delay_us(1);
-    }
-
-    if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
-        // Cache error interrupt will be handled by the panic handler
-        // on the other CPU.
-        while (1);
-    }
-#endif //!CONFIG_FREERTOS_UNICORE
 
     if (frame->exccause == PANIC_RSN_INTWDT_CPU0) {
         esp_reset_reason_set_hint(ESP_RST_INT_WDT);
@@ -579,11 +553,7 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
             panicPutStr("\r\n");
         }
 
-        if (xPortInterruptedFromISRContext()
-#if !CONFIG_FREERTOS_UNICORE
-            && other_core_frame != frame
-#endif //!CONFIG_FREERTOS_UNICORE
-            ) {
+        if (xPortInterruptedFromISRContext()) {
             //If the core which triggers the interrupt watchdog was in ISR context, dump the epc registers.
             uint32_t __value;
             panicPutStr("Core");
@@ -642,11 +612,6 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     reconfigureAllWdts();
 
     commonErrorHandler_dump(frame, core_id);
-#if !CONFIG_FREERTOS_UNICORE
-    if (other_core_frame != NULL) {
-        commonErrorHandler_dump((XtExcFrame *)other_core_frame, (core_id ? 0 : 1));
-    }
-#endif //!CONFIG_FREERTOS_UNICORE
 
 #if CONFIG_APPTRACE_ENABLE
     disableAllWdts();

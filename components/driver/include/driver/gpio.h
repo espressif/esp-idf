@@ -13,16 +13,20 @@
 // limitations under the License.
 
 #pragma once
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include <esp_types.h>
 #include <esp_bit_defs.h>
-#include "esp32/rom/gpio.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "soc/gpio_periph.h"
 #include "hal/gpio_types.h"
 
-#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/gpio.h"
+#endif
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/rtc_io_reg.h"
@@ -413,14 +417,14 @@ void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
 #if GPIO_SUPPORTS_FORCE_HOLD
 /**
-  * @brief Force hold digital and rtc gpio pad. 
-  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode. 
+  * @brief Force hold digital and rtc gpio pad.
+  * @note GPIO force hold, whether the chip in sleep mode or wakeup mode.
   * */
 esp_err_t gpio_force_hold_all(void);
 
 /**
-  * @brief Force unhold digital and rtc gpio pad. 
-  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode. 
+  * @brief Force unhold digital and rtc gpio pad.
+  * @note GPIO force unhold, whether the chip in sleep mode or wakeup mode.
   * */
 esp_err_t gpio_force_unhold_all(void);
 #endif

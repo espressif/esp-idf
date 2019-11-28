@@ -613,7 +613,9 @@ static void load_image(const esp_image_metadata_t *image_data)
 #endif
 
     ESP_LOGI(TAG, "Disabling RNG early entropy source...");
+#if !CONFIG_IDF_ENV_FPGA
     bootloader_random_disable();
+#endif
 
     // copy loaded segments to RAM, set up caches for mapped segments, and start application
     unpack_load_app(image_data);
