@@ -1,4 +1,5 @@
 from __future__ import print_function
+import os.path
 import sys
 
 
@@ -45,16 +46,26 @@ __LOADED_MODULES = dict()
 # it will lead to strange errors like `isinstance(object, type_of_this_object)` return False
 
 
-def load_source(name, path):
+def load_source(path):
+    """
+    Dynamic loading python file. Note that this function SHOULD NOT be used to replace ``import``.
+    It should only be used when the package path is only available in runtime.
+
+    :param path: The path of python file
+    :return: Loaded object
+    """
+    path = os.path.realpath(path)
+    # load name need to be unique, otherwise it will update the already loaded module
+    load_name = str(len(__LOADED_MODULES))
     try:
-        return __LOADED_MODULES[name]
+        return __LOADED_MODULES[path]
     except KeyError:
         try:
             from importlib.machinery import SourceFileLoader
-            ret = SourceFileLoader(name, path).load_module()
+            ret = SourceFileLoader(load_name, path).load_module()
         except ImportError:
             # importlib.machinery doesn't exists in Python 2 so we will use imp (deprecated in Python 3)
             import imp
-            ret = imp.load_source(name, path)
-        __LOADED_MODULES[name] = ret
+            ret = imp.load_source(load_name, path)
+        __LOADED_MODULES[path] = ret
         return ret

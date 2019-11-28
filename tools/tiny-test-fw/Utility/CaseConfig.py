@@ -172,9 +172,9 @@ class Parser(object):
         """
         output = dict()
         for key in overwrite:
-            _path = overwrite[key]["path"]
-            _module = load_source(str(hash(_path)), overwrite[key]["path"])
-            output[key] = _module.__getattribute__(overwrite[key]["class"])
+            path = overwrite[key]["path"]
+            module = load_source(path)
+            output[key] = module.__getattribute__(overwrite[key]["class"])
         return output
 
     @classmethod

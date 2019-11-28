@@ -40,8 +40,9 @@ import Utility
 # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
 # Import client module
+# TODO: replace with import
 expath = os.path.dirname(os.path.realpath(__file__))
-client = Utility.load_source("client", expath + "/scripts/test.py")
+client = Utility.load_source(expath + "/scripts/test.py")
 
 
 # Due to connectivity issues (between runner host and DUT) in the runner environment,
