@@ -1010,6 +1010,28 @@ Espressif's fork of `mbedtls <https://github.com/ARMmbed/mbedtls>`_. See its :co
 
 The CMake variable ``ESP_PLATFORM`` is set to 1 whenever the ESP-IDF build system is being used. Tests such as ``if (ESP_PLATFORM)`` can be used in generic CMake code if special IDF-specific logic is required.
 
+Using Prebuilt Libraries with Components
+========================================
+
+.. highlight:: cmake
+
+The ESP-IDF build system provides a utility function ``add_prebuilt_library`` for users to be able to easily import and use
+prebuilt libraries::
+
+  add_prebuilt_library(target_name lib_path [REQUIRES req1 req2 ...] [PRIV_REQUIRES req1 req2 ...])
+
+where:
+
+- ``target_name``- name that can be used to reference the imported library, such as when linking to other targets
+- ``lib_path``- path to prebuilt library; may be an absolute or relative path to the component directory
+
+Optional arguments ``REQUIRES`` and ``PRIV_REQUIRES`` specify dependency on other components. These have the same meaning as the arguments for ``idf_component_register``. 
+
+Take note that the prebuilt library must have been compiled for the same target as the consuming project. Configuration relevant to the prebuilt
+library must also match. If not paid attention to, these two factors may contribute to subtle bugs in the app.
+
+For an example, take a look at :example:`build_system/cmake/import_prebuilt`.
+
 
 Using ESP-IDF in Custom CMake Projects
 ======================================
