@@ -26,7 +26,7 @@
 #define SPI_IOMUX_PIN_NUM_WP    28
 //TODO: add the next slot
 
-#define FSPI_FUNC_NUM           0
+#define FSPI_FUNC_NUM           2
 #define FSPI_IOMUX_PIN_NUM_HD   9
 #define FSPI_IOMUX_PIN_NUM_CS   10
 #define FSPI_IOMUX_PIN_NUM_MOSI 11
@@ -43,3 +43,7 @@
 #define SOC_SPI_SUPPORT_DDRCLK              1
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
+
+// Peripheral supports DIO, DOUT, QIO, or QOUT
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)  (!((void*)spi_dev == (void*)&GPSPI3 \
+                                                           || (void*)spi_dev == (void*)&GPSPI4))

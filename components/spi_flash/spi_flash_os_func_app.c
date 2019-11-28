@@ -17,6 +17,7 @@
 #include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
 #include "esp_flash_partitions.h"
+#include "hal/spi_types.h"
 
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -99,22 +100,28 @@ static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_a
 }
 
 static DRAM_ATTR spi1_app_func_arg_t spi1_arg = {
-    .host_id = 0,   //for SPI1,
+    .host_id = SPI1_HOST,   //for SPI1,
     .no_protect = true,
 };
 
 static DRAM_ATTR spi1_app_func_arg_t main_flash_arg = {
-    .host_id = 0,   //for SPI1,
+    .host_id = SPI1_HOST,   //for SPI1,
     .no_protect = false,
 };
 
 static app_func_arg_t spi2_arg = {
-    .host_id = 1,   //for SPI2,
+    .host_id = SPI2_HOST,   //for SPI2,
 };
 
 static app_func_arg_t spi3_arg = {
-    .host_id = 2,   //for SPI3,
+    .host_id = SPI3_HOST,   //for SPI3,
 };
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+static app_func_arg_t spi4_arg = {
+    .host_id = SPI4_HOST,   //for SPI4,
+};
+#endif
 
 //for SPI1, we have to disable the cache and interrupts before using the SPI bus
 const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
@@ -132,14 +139,22 @@ const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
 
 esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
 {
-    if (host_id == 0) {
+    if (host_id == SPI1_HOST) {
         //SPI1
         chip->os_func = &esp_flash_spi1_default_os_functions;
         chip->os_func_data = &spi1_arg;
-    } else if (host_id == 1 || host_id == 2) {
-        //SPI2,3
+    } else if (host_id == SPI2_HOST || host_id == SPI3_HOST
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+        || host_id == SPI4_HOST
+#endif
+    ) {
+        //SPI2,3,4
         chip->os_func = &esp_flash_spi23_default_os_functions;
-        chip->os_func_data = (host_id == 1) ? &spi2_arg : &spi3_arg;
+#if CONFIG_IDF_TARGET_ESP32
+        chip->os_func_data = (host_id == SPI2_HOST) ? &spi2_arg : &spi3_arg;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        chip->os_func_data = (host_id == SPI2_HOST) ? &spi2_arg : ((host_id == SPI3_HOST) ? &spi3_arg : &spi4_arg);
+#endif
     } else {
         return ESP_ERR_INVALID_ARG;
     }

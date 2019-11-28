@@ -16,12 +16,12 @@
 #include <sys/param.h>
 
 #include "esp_spi_flash.h"
-#include "esp_spi_flash_chip.h"
-#include "cache_utils.h"
 #include "soc/system_reg.h"
 #include "soc/soc_memory_layout.h"
 #include "esp32s2beta/rom/spi_flash.h"
 #include "esp32s2beta/rom/cache.h"
+#include "hal/spi_flash_hal.h"
+#include "esp_flash.h"
 
 esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_addr, const void *src, size_t size)
 {
@@ -48,7 +48,7 @@ esp_rom_spiflash_result_t IRAM_ATTR spi_flash_write_encrypted_chip(size_t dest_a
         return ESP_ROM_SPIFLASH_RESULT_OK;
     }
     else { // Already in internal memory
-        rc = spi_flash_unlock();
+        rc = esp_rom_spiflash_unlock();
         if (rc != ESP_ROM_SPIFLASH_RESULT_OK) {
             return rc;
         }
@@ -113,7 +113,7 @@ esp_err_t spi_flash_enable_wrap(uint32_t wrap_size)
     }
 }
 
-void spi_flash_disable_wrap()
+void spi_flash_disable_wrap(void)
 {
     spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
 }

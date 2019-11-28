@@ -25,6 +25,7 @@
 #include "sdkconfig.h"
 #if CONFIG_IDF_TARGET_ESP32S2BETA
 #include "soc/spi_mem_struct.h"
+#include "soc/spi_mem_reg.h"
 #endif
 
 #ifdef __cplusplus

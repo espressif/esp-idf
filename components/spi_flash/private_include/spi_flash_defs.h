@@ -19,8 +19,8 @@
 */
 #define CMD_RDID       0x9F
 #define CMD_WRSR       0x01
-#define  SR_WIP        (1<<0) /* Status register write-in-progress bit */
-#define  SR_WREN       (1<<1) /* Status register write enable bit */
+#define  SR_WIP         (1<<0) /* Status register write-in-progress bit */
+#define  SR_WREN        (1<<1) /* Status register write enable bit */
 #define CMD_WRSR2      0x31 /* Not all SPI flash uses this command */
 #define CMD_WREN       0x06
 #define CMD_WRDI       0x04
@@ -37,8 +37,7 @@
 #define CMD_CHIP_ERASE 0xC7
 #define CMD_SECTOR_ERASE 0x20
 #define CMD_LARGE_BLOCK_ERASE 0xD8 /* 64KB block erase command */
+#define CMD_PROGRAM_PAGE 0x02
 
 #define CMD_RST_EN      0x66
 #define CMD_RST_DEV     0x99
-
-

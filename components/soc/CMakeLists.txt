@@ -33,14 +33,16 @@ list(APPEND srcs
     "src/hal/gpio_hal.c"
     "src/hal/uart_hal.c"
     "src/hal/uart_hal_iram.c"
+    "src/hal/spi_flash_hal.c"
+    "src/hal/spi_flash_hal_iram.c"
     )
 
-# TODO: SPI Flash HAL for ESP32S2Beta also
 if(IDF_TARGET STREQUAL "esp32")
-    list(APPEND srcs "src/hal/spi_flash_hal.c"
-                     "src/hal/spi_flash_hal_iram.c"
-                     "src/hal/mcpwm_hal.c"
-                     )
+    list(APPEND srcs "src/hal/mcpwm_hal.c")
+endif()
+
+if(IDF_TARGET STREQUAL "esp32s2beta")
+    list(APPEND srcs "src/hal/spi_flash_hal_gpspi.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"

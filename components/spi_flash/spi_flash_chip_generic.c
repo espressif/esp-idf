@@ -140,7 +140,12 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
 {
     esp_err_t err = ESP_OK;
     // Configure the host, and return
-    spi_flash_chip_generic_config_host_io_mode(chip);
+    err = spi_flash_chip_generic_config_host_io_mode(chip);
+
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGE(TAG, "configure host io mode failed - unsupported");
+        return err;
+    }
 
     while (err == ESP_OK && length > 0) {
         uint32_t read_len = MIN(length, chip->host->max_read_bytes);
@@ -386,14 +391,14 @@ const spi_flash_chip_t esp_flash_chip_generic = {
 
 static esp_err_t spi_flash_common_read_qe_sr(esp_flash_t *chip, uint8_t qe_rdsr_command, uint8_t qe_sr_bitwidth, uint32_t *sr)
 {
+    uint32_t sr_buf = 0;
     spi_flash_trans_t t = {
         .command = qe_rdsr_command,
-        .mosi_data = 0,
-        .mosi_len = 0,
-        .miso_len = qe_sr_bitwidth,
+        .miso_data = (uint8_t*) &sr_buf,
+        .miso_len = qe_sr_bitwidth / 8,
     };
     esp_err_t ret = chip->host->common_command(chip->host, &t);
-    *sr = t.miso_data[0];
+    *sr = sr_buf;
     return ret;
 }
 
@@ -401,8 +406,8 @@ static esp_err_t spi_flash_common_write_qe_sr(esp_flash_t *chip, uint8_t qe_wrsr
 {
     spi_flash_trans_t t = {
         .command = qe_wrsr_command,
-        .mosi_data = qe,
-        .mosi_len = qe_sr_bitwidth,
+        .mosi_data = ((uint8_t*) &qe),
+        .mosi_len = qe_sr_bitwidth / 8,
         .miso_len = 0,
     };
     return chip->host->common_command(chip->host, &t);
