@@ -87,7 +87,6 @@ static esp_err_t test_uninstall_driver(esp_eth_handle_t eth_hdl, uint32_t ms_to_
 
 TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
 {
-    TEST_ESP_OK(esp_event_loop_create_default());
     eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
     esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
@@ -95,7 +94,6 @@ TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
-    vTaskDelay(pdMS_TO_TICKS(1000));
     /* get MAC address */
     uint8_t mac_addr[6];
     memset(mac_addr, 0, sizeof(mac_addr));
@@ -112,7 +110,6 @@ TEST_CASE("esp32 ethernet io test", "[ethernet][test_env=UT_T2_Ethernet]")
     TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
-    TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
 TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
@@ -129,19 +126,20 @@ TEST_CASE("esp32 ethernet event test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for connection start */
     bits = xEventGroupWaitBits(eth_event_group, ETH_START_BIT, true, true, pdMS_TO_TICKS(ETH_START_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_START_BIT) == ETH_START_BIT);
     /* wait for connection establish */
     bits = xEventGroupWaitBits(eth_event_group, ETH_CONNECT_BIT, true, true, pdMS_TO_TICKS(ETH_CONNECT_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_CONNECT_BIT) == ETH_CONNECT_BIT);
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    // "check link timer callback" might owned the reference of phy object, make sure it has release it
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    /* driver should be uninstalled within 2 seconds */
+    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
@@ -166,16 +164,58 @@ TEST_CASE("esp32 ethernet dhcp test", "[ethernet][test_env=UT_T2_Ethernet]")
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    TEST_ESP_OK(esp_eth_start(eth_handle));
     /* wait for IP lease */
     bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
-    /* driver should be uninstalled within 2 seconds */
-    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
     /* wait for connection stop */
     bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
     TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
-    // "check link timer callback" might owned the reference of phy object, make sure it has release it
-    vTaskDelay(pdMS_TO_TICKS(2000));
+    /* driver should be uninstalled within 2 seconds */
+    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
+    TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+    TEST_ESP_OK(tcpip_adapter_clear_default_eth_handlers());
+    TEST_ESP_OK(esp_event_loop_delete_default());
+    vEventGroupDelete(eth_event_group);
+}
+
+TEST_CASE("esp32 ethernet start/stop stress test", "[ethernet][test_env=UT_T2_Ethernet][timeout=240]")
+{
+    EventBits_t bits = 0;
+    EventGroupHandle_t eth_event_group = xEventGroupCreate();
+    TEST_ASSERT(eth_event_group != NULL);
+    test_case_uses_tcpip();
+    TEST_ESP_OK(esp_event_loop_create_default());
+    TEST_ESP_OK(tcpip_adapter_set_default_eth_handlers());
+    TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
+    TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
+    eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();
+    esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&mac_config);
+    eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+    esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
+    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+    esp_eth_handle_t eth_handle = NULL;
+    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+
+    for (int i = 0; i < 10; i++) {
+        TEST_ESP_OK(esp_eth_start(eth_handle));
+        /* wait for IP lease */
+        bits = xEventGroupWaitBits(eth_event_group, ETH_GOT_IP_BIT, true, true, pdMS_TO_TICKS(ETH_GET_IP_TIMEOUT_MS));
+        TEST_ASSERT((bits & ETH_GOT_IP_BIT) == ETH_GOT_IP_BIT);
+        // stop Ethernet driver
+        TEST_ESP_OK(esp_eth_stop(eth_handle));
+        /* wait for connection stop */
+        bits = xEventGroupWaitBits(eth_event_group, ETH_STOP_BIT, true, true, pdMS_TO_TICKS(ETH_STOP_TIMEOUT_MS));
+        TEST_ASSERT((bits & ETH_STOP_BIT) == ETH_STOP_BIT);
+    }
+
+    /* driver should be uninstalled within 2 seconds */
+    TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
     TEST_ESP_OK(esp_event_handler_unregister(IP_EVENT, IP_EVENT_ETH_GOT_IP, got_ip_event_handler));
@@ -220,7 +260,10 @@ TEST_CASE("dm9051 io test", "[ethernet][ignore]")
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(mac, phy);
     esp_eth_handle_t eth_handle = NULL;
     TEST_ESP_OK(esp_eth_driver_install(&config, &eth_handle));
+    TEST_ESP_OK(esp_eth_start(eth_handle));
     vTaskDelay(pdMS_TO_TICKS(portMAX_DELAY));
+    // stop Ethernet driver
+    TEST_ESP_OK(esp_eth_stop(eth_handle));
     /* driver should be uninstalled within 2 seconds */
     TEST_ESP_OK(test_uninstall_driver(eth_handle, 2000));
     TEST_ESP_OK(phy->del(phy));

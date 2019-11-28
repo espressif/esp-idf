@@ -122,6 +122,7 @@ err:
 static esp_err_t dm9051_reset(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
+    dm9051->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = dm9051->eth;
     dscr_reg_t dscr;
     PHY_CHECK(eth->phy_reg_read(eth, dm9051->addr, ETH_PHY_DSCR_REG_ADDR, &(dscr.val)) == ESP_OK, "read DSCR failed", err);

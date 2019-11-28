@@ -132,6 +132,35 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
 esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
 
 /**
+* @brief Start Ethernet driver
+*
+* @note This API will start driver state machine and internal software timer (for checking link status).
+*
+* @param[in] hdl handle of Ethernet driver
+*
+* @return
+*       - ESP_OK: start esp_eth driver successfully
+*       - ESP_ERR_INVALID_ARG: start esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: start esp_eth driver failed because driver has started already
+*       - ESP_FAIL: start esp_eth driver failed because some other error occurred
+*/
+esp_err_t esp_eth_start(esp_eth_handle_t hdl);
+
+/**
+* @brief Stop Ethernet driver
+*
+* @note This function does the oppsite operation of `esp_eth_start`.
+*
+* @param[in] hdl handle of Ethernet driver
+* @return
+*       - ESP_OK: stop esp_eth driver successfully
+*       - ESP_ERR_INVALID_ARG: stop esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: stop esp_eth driver failed because driver has not started yet
+*       - ESP_FAIL: stop esp_eth driver failed because some other error occurred
+*/
+esp_err_t esp_eth_stop(esp_eth_handle_t hdl);
+
+/**
 * @brief General Transmit
 *
 * @param[in] hdl: handle of Ethernet driver

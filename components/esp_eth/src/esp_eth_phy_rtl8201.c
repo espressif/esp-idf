@@ -118,6 +118,7 @@ err:
 static esp_err_t rtl8201_reset(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
+    rtl8201->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = rtl8201->eth;
     bmcr_reg_t bmcr = {.reset = 1};
     PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK, "write BMCR failed", err);

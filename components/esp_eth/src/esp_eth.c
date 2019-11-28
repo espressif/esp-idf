@@ -34,6 +34,8 @@ static const char *TAG = "esp_eth";
 
 ESP_EVENT_DEFINE_BASE(ETH_EVENT);
 
+#define ESP_ETH_FLAGS_STARTED (1<<0)
+
 /**
  * @brief The Ethernet driver mainly consists of PHY, MAC and
  * the mediator who will handle the request/response from/to MAC, PHY and Users.
@@ -53,6 +55,7 @@ typedef struct {
     eth_duplex_t duplex;
     eth_link_t link;
     atomic_int ref_count;
+    uint32_t flags;
     esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length);
     esp_err_t (*on_lowlevel_init_done)(esp_eth_handle_t eth_handle);
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
@@ -190,15 +193,8 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     eth_driver->check_link_timer = xTimerCreate("eth_link_timer", pdMS_TO_TICKS(config->check_link_period_ms), pdTRUE,
                                    eth_driver, eth_check_link_timer_cb);
     ETH_CHECK(eth_driver->check_link_timer, "create eth_link_timer failed", err_create_timer, ESP_FAIL);
-    ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS, "start eth_link_timer failed", err_start_timer, ESP_FAIL);
-    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
-              "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
     *out_hdl = (esp_eth_handle_t)eth_driver;
     return ESP_OK;
-err_event:
-    xTimerStop(eth_driver->check_link_timer, 0);
-err_start_timer:
-    xTimerDelete(eth_driver->check_link_timer, 0);
 err_create_timer:
     phy->deinit(phy);
 err_init_phy:
@@ -221,11 +217,55 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl)
     esp_eth_mac_t *mac = eth_driver->mac;
     esp_eth_phy_t *phy = eth_driver->phy;
     ETH_CHECK(xTimerDelete(eth_driver->check_link_timer, 0) == pdPASS, "delete eth_link_timer failed", err, ESP_FAIL);
-    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_STOP, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
-              "send ETHERNET_EVENT_STOP event failed", err, ESP_FAIL);
     ETH_CHECK(phy->deinit(phy) == ESP_OK, "deinit phy failed", err, ESP_FAIL);
     ETH_CHECK(mac->deinit(mac) == ESP_OK, "deinit mac failed", err, ESP_FAIL);
     free(eth_driver);
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_start(esp_eth_handle_t hdl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    // check if driver has started
+    if (eth_driver->flags & ESP_ETH_FLAGS_STARTED) {
+        ESP_LOGW(TAG, "driver started already");
+        ret = ESP_ERR_INVALID_STATE;
+        goto err;
+    }
+    eth_driver->flags |= ESP_ETH_FLAGS_STARTED;
+    ETH_CHECK(eth_driver->phy->reset(eth_driver->phy) == ESP_OK, "reset phy failed", err, ESP_FAIL);
+    ETH_CHECK(xTimerStart(eth_driver->check_link_timer, 0) == pdPASS,
+              "start eth_link_timer failed", err, ESP_FAIL);
+    ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_START, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
+              "send ETHERNET_EVENT_START event failed", err_event, ESP_FAIL);
+    return ESP_OK;
+err_event:
+    xTimerStop(eth_driver->check_link_timer, 0);
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_stop(esp_eth_handle_t hdl)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    // check if driver has started
+    if (eth_driver->flags & ESP_ETH_FLAGS_STARTED) {
+        eth_driver->flags &= ~ESP_ETH_FLAGS_STARTED;
+        ETH_CHECK(xTimerStop(eth_driver->check_link_timer, 0) == pdPASS,
+                  "stop eth_link_timer failed", err, ESP_FAIL);
+        ETH_CHECK(esp_event_post(ETH_EVENT, ETHERNET_EVENT_STOP, &eth_driver, sizeof(eth_driver), 0) == ESP_OK,
+                  "send ETHERNET_EVENT_STOP event failed", err, ESP_FAIL);
+    } else {
+        ESP_LOGW(TAG, "driver not started yet");
+        ret = ESP_ERR_INVALID_STATE;
+        goto err;
+    }
     return ESP_OK;
 err:
     return ret;
