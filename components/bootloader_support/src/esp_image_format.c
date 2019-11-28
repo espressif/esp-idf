@@ -311,9 +311,6 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
         }
         err = ESP_ERR_IMAGE_INVALID;
     }
-    if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
-        err = ESP_ERR_IMAGE_INVALID;
-    }
     if (!silent) {
         if (image->spi_mode > ESP_IMAGE_SPI_MODE_SLOW_READ) {
             ESP_LOGW(TAG, "image at 0x%x has invalid SPI mode %d", src_addr, image->spi_mode);
@@ -325,6 +322,16 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
             ESP_LOGW(TAG, "image at 0x%x has invalid SPI size %d", src_addr, image->spi_size);
         }
     }
+
+    if (err == ESP_OK) {
+        // Checking the chip revision header *will* print a bunch of other info
+        // regardless of silent setting as this may be important, but don't bother checking it
+        // if it looks like the app partition is erased or otherwise garbage
+        if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
+            err = ESP_ERR_IMAGE_INVALID;
+        }
+    }
+
     return err;
 }
 

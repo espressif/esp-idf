@@ -293,7 +293,9 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         ESP_LOGE(TAG, "can't run on lower chip revision, expected %d, found %d", revision, img_hdr->min_chip_rev);
         err = ESP_FAIL;
     } else if (revision != img_hdr->min_chip_rev) {
-        ESP_LOGI(TAG, "min. %s chip revision: %d", type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
+#ifdef BOOTLOADER_BUILD
+        ESP_LOGI(TAG, "chip revision: %d, min. %s chip revision: %d", revision, type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
+#endif
     }
     return err;
 }
