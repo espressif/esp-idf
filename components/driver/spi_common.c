@@ -275,43 +275,23 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
         ESP_LOGD(SPI_TAG, "SPI%d use iomux pins.", host+1);
         if (bus_config->mosi_io_num >= 0) {
             gpio_iomux_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in);
-#if CONFIG_IDF_TARGET_ESP32
             gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-            gpio_iomux_out(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
-#endif
         }
         if (bus_config->miso_io_num >= 0) {
             gpio_iomux_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in);
-#if CONFIG_IDF_TARGET_ESP32
             gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-            gpio_iomux_out(bus_config->miso_io_num, spi_periph_signal[host].func, false);
-#endif
         }
         if (bus_config->quadwp_io_num >= 0) {
             gpio_iomux_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in);
-#if CONFIG_IDF_TARGET_ESP32
             gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-            gpio_iomux_out(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
-#endif
         }
         if (bus_config->quadhd_io_num >= 0) {
             gpio_iomux_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in);
-#if CONFIG_IDF_TARGET_ESP32
             gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-            gpio_iomux_out(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
-#endif
         }
         if (bus_config->sclk_io_num >= 0) {
             gpio_iomux_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in);
-#if CONFIG_IDF_TARGET_ESP32
             gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-            gpio_iomux_out(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
-#endif
         }
         temp_flag |= SPICOMMON_BUSFLAG_IOMUX_PINS;
     } else {

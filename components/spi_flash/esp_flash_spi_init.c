@@ -70,17 +70,15 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     int cs_io_num = config->cs_io_num;
     int spics_in = spi_periph_signal[config->host_id].spics_in;
     int spics_out = spi_periph_signal[config->host_id].spics_out[config->cs_id];
+    int spics_func = spi_periph_signal[config->host_id].func;
     uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
 
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
     if (use_iomux) {
-        GPIO.func_in_sel_cfg[spics_in].sig_in_sel = 0;
-        PIN_INPUT_ENABLE(iomux_reg);
-        GPIO.func_out_sel_cfg[spics_out].oen_sel = 0;
-        GPIO.func_out_sel_cfg[spics_out].oen_inv_sel = false;
-        PIN_FUNC_SELECT(iomux_reg, 1);
+        gpio_iomux_in(cs_io_num, spics_in);
+        gpio_iomux_out(cs_io_num, spics_func, false);
     } else {
         PIN_INPUT_ENABLE(iomux_reg);
         if (cs_io_num < 32) {

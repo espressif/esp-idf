@@ -23,11 +23,13 @@ extern "C" {
 
 /** Definition of a common transaction. Also holds the return value. */
 typedef struct {
-    uint8_t command;        ///< Command to send, always 8bits
-    uint8_t mosi_len;       ///< Output data length, in bits
-    uint8_t miso_len;       ///< Input data length, in bits
-    uint32_t mosi_data;     ///< Output data to slave
-    uint32_t miso_data[2];  ///< [out] Input data from slave, little endian
+    uint8_t command;            ///< Command to send, always 8bits
+    uint8_t mosi_len;           ///< Output data length, in bytes
+    uint8_t miso_len;           ///< Input data length, in bytes
+    uint8_t address_bitlen;     ///< Length of address in bits, set to 0 if command does not need an address
+    uint32_t address;           ///< Address to perform operation on
+    const uint8_t *mosi_data;   ///< Output data to salve
+    uint8_t *miso_data;         ///< [out] Input data from slave, little endian
 } spi_flash_trans_t;
 
 /**
