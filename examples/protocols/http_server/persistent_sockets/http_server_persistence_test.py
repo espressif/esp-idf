@@ -42,8 +42,9 @@ import Utility
 # > export TEST_FW_PATH=~/esp/esp-idf/tools/tiny-test-fw
 
 # Import client module
+# TODO: replace with import
 expath = os.path.dirname(os.path.realpath(__file__))
-client = Utility.load_source("client", expath + "/scripts/adder.py")
+client = Utility.load_source(expath + "/scripts/adder.py")
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")

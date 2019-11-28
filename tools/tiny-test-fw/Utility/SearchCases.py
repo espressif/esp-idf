@@ -30,7 +30,7 @@ class Search(object):
         print("Try to get cases from: " + file_name)
         test_functions = []
         try:
-            mod = load_source(str(hash(file_name)), file_name)
+            mod = load_source(file_name)
             for func in [mod.__getattribute__(x) for x in dir(mod)
                          if isinstance(mod.__getattribute__(x), types.FunctionType)]:
                 try:
