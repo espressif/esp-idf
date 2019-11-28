@@ -573,7 +573,7 @@ void app_main(void)
 
     xTaskCreate(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL);
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
-    gattc_semaphore = xSemaphoreCreateMutex();
+    gattc_semaphore = xSemaphoreCreateBinary();
     if (!gattc_semaphore) {
         ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
         return;
