@@ -109,7 +109,6 @@
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
-#include "esp_compiler.h"
 
 #include "esp_task_wdt.h"
 #include "esp_task.h"
@@ -290,6 +289,7 @@ void vPortEndScheduler( void )
 {
 	/* It is unlikely that the Xtensa port will get stopped.  If required simply
 	disable the tick interrupt here. */
+	abort();
 }
 
 /*-----------------------------------------------------------*/

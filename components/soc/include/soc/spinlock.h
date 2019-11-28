@@ -45,9 +45,8 @@ typedef struct {
  */
 static inline void __attribute__((always_inline)) spinlock_initialize(spinlock_t *lock)
 {
-    assert(lock);
-
 #if !CONFIG_FREERTOS_UNICORE
+    assert(lock);
     lock->owner = SPINLOCK_FREE;
     lock->count = 0;
 #endif

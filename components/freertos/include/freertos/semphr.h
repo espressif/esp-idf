@@ -1,71 +1,29 @@
 /*
-    FreeRTOS V8.2.0 - Copyright (C) 2015 Real Time Engineers Ltd.
-    All rights reserved
-
-    VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
-
-    This file is part of the FreeRTOS distribution.
-
-    FreeRTOS is free software; you can redistribute it and/or modify it under
-    the terms of the GNU General Public License (version 2) as published by the
-    Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
-
-	***************************************************************************
-    >>!   NOTE: The modification to the GPL is included to allow you to     !<<
-    >>!   distribute a combined work that includes FreeRTOS without being   !<<
-    >>!   obliged to provide the source code for proprietary components     !<<
-    >>!   outside of the FreeRTOS kernel.                                   !<<
-	***************************************************************************
-
-    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
-    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-    FOR A PARTICULAR PURPOSE.  Full license text is available on the following
-    link: http://www.freertos.org/a00114.html
-
-    ***************************************************************************
-     *                                                                       *
-     *    FreeRTOS provides completely free yet professionally developed,    *
-     *    robust, strictly quality controlled, supported, and cross          *
-     *    platform software that is more than just the market leader, it     *
-     *    is the industry's de facto standard.                               *
-     *                                                                       *
-     *    Help yourself get started quickly while simultaneously helping     *
-     *    to support the FreeRTOS project by purchasing a FreeRTOS           *
-     *    tutorial book, reference manual, or both:                          *
-     *    http://www.FreeRTOS.org/Documentation                              *
-     *                                                                       *
-    ***************************************************************************
-
-    http://www.FreeRTOS.org/FAQHelp.html - Having a problem?  Start by reading
-	the FAQ page "My application does not run, what could be wrong?".  Have you
-	defined configASSERT()?
-
-	http://www.FreeRTOS.org/support - In return for receiving this top quality
-	embedded software for free we request you assist our global community by
-	participating in the support forum.
-
-	http://www.FreeRTOS.org/training - Investing in training allows your team to
-	be as productive as possible as early as possible.  Now you can receive
-	FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
-	Ltd, and the world's leading authority on the world's leading RTOS.
-
-    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
-    including FreeRTOS+Trace - an indispensable productivity tool, a DOS
-    compatible FAT file system, and our tiny thread aware UDP/IP stack.
-
-    http://www.FreeRTOS.org/labs - Where new FreeRTOS products go to incubate.
-    Come and try FreeRTOS+TCP, our new open source TCP/IP stack for FreeRTOS.
-
-    http://www.OpenRTOS.com - Real Time Engineers ltd. license FreeRTOS to High
-    Integrity Systems ltd. to sell under the OpenRTOS brand.  Low cost OpenRTOS
-    licenses offer ticketed support, indemnification and commercial middleware.
-
-    http://www.SafeRTOS.com - High Integrity Systems also provide a safety
-    engineered and independently SIL3 certified version for use in safety and
-    mission critical applications that require provable dependability.
-
-    1 tab == 4 spaces!
-*/
+ * FreeRTOS Kernel V10.2.1
+ * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * http://www.FreeRTOS.org
+ * http://aws.amazon.com/freertos
+ *
+ * 1 tab == 4 spaces!
+ */
 
 #ifndef SEMAPHORE_H
 #define SEMAPHORE_H
@@ -84,6 +42,13 @@ typedef QueueHandle_t SemaphoreHandle_t;
 
 /** @cond */
 /**
+ * semphr. h
+ * <pre>vSemaphoreCreateBinary( SemaphoreHandle_t xSemaphore )</pre>
+ *
+ * In many usage scenarios it is faster and more memory efficient to use a
+ * direct to task notification in place of a binary semaphore!
+ * http://www.freertos.org/RTOS-task-notifications.html
+ *
  * This old vSemaphoreCreateBinary() macro is now deprecated in favour of the
  * xSemaphoreCreateBinary() function.  Note that binary semaphores created using
  * the vSemaphoreCreateBinary() macro are created in a state such that the
@@ -160,11 +125,6 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * created using xSemaphoreCreateBinary() are created in a state such that the
  * the semaphore must first be 'given' before it can be 'taken'.
  *
- * Function that creates a semaphore by using the existing queue mechanism.
- * The queue length is 1 as this is a binary semaphore.  The data size is 0
- * as nothing is actually stored - all that is important is whether the queue is
- * empty or full (the binary semaphore is available or not).
- *
  * This type of semaphore can be used for pure synchronisation between tasks or
  * between an interrupt and a task.  The semaphore need not be given back once
  * obtained, so one task/interrupt can continuously 'give' the semaphore while
@@ -172,7 +132,8 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * semaphore does not use a priority inheritance mechanism.  For an alternative
  * that does use priority inheritance see xSemaphoreCreateMutex().
  *
- * @return Handle to the created semaphore.
+ * @return Handle to the created semaphore, or NULL if the memory required to
+ * hold the semaphore's data structures could not be allocated.
  *
  * Example usage:
  * @code{c}
@@ -255,7 +216,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 
 /**
  * <i>Macro</i> to obtain a semaphore.  The semaphore must have previously been
- * created with a call to vSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
+ * created with a call to xSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
  * xSemaphoreCreateCounting().
  *
  * @param xSemaphore A handle to the semaphore being taken - obtained when
@@ -311,7 +272,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * @endcode
  * \ingroup Semaphores
  */
-#define xSemaphoreTake( xSemaphore, xBlockTime )		xQueueGenericReceive( ( QueueHandle_t ) ( xSemaphore ), NULL, ( xBlockTime ), pdFALSE )
+#define xSemaphoreTake( xSemaphore, xBlockTime )		xQueueSemaphoreTake( ( xSemaphore ), ( xBlockTime ) )
 
 /**
  * <i>Macro</i> to recursively obtain, or 'take', a mutex type semaphore.
@@ -417,7 +378,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 
 /**
  * <i>Macro</i> to release a semaphore.  The semaphore must have previously been
- * created with a call to vSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
+ * created with a call to xSemaphoreCreateBinary(), xSemaphoreCreateMutex() or
  * xSemaphoreCreateCounting(). and obtained using sSemaphoreTake().
  *
  * This macro must not be used from an ISR.  See xSemaphoreGiveFromISR () for
@@ -475,6 +436,9 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreGive( xSemaphore )		xQueueGenericSend( ( QueueHandle_t ) ( xSemaphore ), NULL, semGIVE_BLOCK_TIME, queueSEND_TO_BACK )
 
 /**
+ * semphr. h
+ * <pre>xSemaphoreGiveRecursive( SemaphoreHandle_t xMutex )</pre>
+ *
  * <i>Macro</i> to recursively release, or 'give', a mutex type semaphore.
  * The mutex must have previously been created using a call to
  * xSemaphoreCreateRecursiveMutex();
@@ -573,7 +537,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 
 /**
  * <i>Macro</i> to  release a semaphore.  The semaphore must have previously been
- * created with a call to vSemaphoreCreateBinary() or xSemaphoreCreateCounting().
+ * created with a call to xSemaphoreCreateBinary() or xSemaphoreCreateCounting().
  *
  * Mutex type semaphores (those created using a call to xSemaphoreCreateMutex())
  * must not be used with this macro.
@@ -583,7 +547,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  * @param xSemaphore A handle to the semaphore being released.  This is the
  * handle returned when the semaphore was created.
  *
- * @param[out] pxHigherPriorityTaskWoken xSemaphoreGiveFromISR() will set
+ * @param pxHigherPriorityTaskWoken xSemaphoreGiveFromISR() will set
  * *pxHigherPriorityTaskWoken to pdTRUE if giving the semaphore caused a task
  * to unblock, and the unblocked task has a priority higher than the currently
  * running task.  If xSemaphoreGiveFromISR() sets this value to pdTRUE then
@@ -656,7 +620,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
 
 /**
  * <i>Macro</i> to  take a semaphore from an ISR.  The semaphore must have
- * previously been created with a call to vSemaphoreCreateBinary() or
+ * previously been created with a call to xSemaphoreCreateBinary() or
  * xSemaphoreCreateCounting().
  *
  * Mutex type semaphores (those created using a call to xSemaphoreCreateMutex())
@@ -704,7 +668,7 @@ typedef QueueHandle_t SemaphoreHandle_t;
  *
  * Mutex type semaphores cannot be used from within interrupt service routines.
  *
- * See vSemaphoreCreateBinary() for an alternative implementation that can be
+ * See xSemaphoreCreateBinary() for an alternative implementation that can be
  * used for pure synchronisation (where one task or interrupt always 'gives' the
  * semaphore and another always 'takes' the semaphore) and from within interrupt
  * service routines.
@@ -1106,6 +1070,18 @@ typedef QueueHandle_t SemaphoreHandle_t;
 #define xSemaphoreGetMutexHolder( xSemaphore ) xQueueGetMutexHolder( ( xSemaphore ) )
 
 /**
+ *
+ * If xMutex is indeed a mutex type semaphore, return the current mutex holder.
+ * If xMutex is not a mutex type semaphore, or the mutex is available (not held
+ * by a task), return NULL.
+ *
+ */
+#define xSemaphoreGetMutexHolderFromISR( xSemaphore ) xQueueGetMutexHolderFromISR( ( xSemaphore ) )
+
+/**
+ * semphr.h
+ * <pre>UBaseType_t uxSemaphoreGetCount( SemaphoreHandle_t xSemaphore );</pre>
+ *
  * If the semaphore is a counting semaphore then uxSemaphoreGetCount() returns
  * its current count value.  If the semaphore is a binary semaphore then
  * uxSemaphoreGetCount() returns 1 if the semaphore is available, and 0 if the

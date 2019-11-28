@@ -424,7 +424,7 @@ static void handle_sync_timeout(void *arg)
     static bool run_first = true;
     if (run_first == true) {
         xSemaphoreTake((SemaphoreHandle_t)arg, (portTickType)portMAX_DELAY);
-        esp_timer_start_periodic( (SemaphoreHandle_t)arg, 1000000);
+        esp_timer_start_periodic( (esp_timer_handle_t)arg, 1000000);
         run_first = false;
     }
     switch (sync_obj.state) {

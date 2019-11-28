@@ -119,7 +119,6 @@ static void *thread_test_pthread_destructor(void *v_key)
 
 static void test_pthread_destructor(void *value)
 {
-    printf("Destructor called...\n");
     actual_destructor_ptr = value;
 }
 

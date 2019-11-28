@@ -21,59 +21,47 @@ found via https://www.freertos.org/a00106.html
 For information regarding features that are exclusive to ESP-IDF FreeRTOS,
 see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>`.
 
-:ref:`backported-features`: Although ESP-IDF FreeRTOS is based on the Xtensa
-port of FreeRTOS v8.2.0, a number of FreeRTOS v9.0.0 features have been backported
-to ESP-IDF.
+.. only:: esp32
 
-.. only:: not CONFIG_FREERTOS_UNICORE
-
-  :ref:`tasks-and-task-creation`: Use :cpp:func:`xTaskCreatePinnedToCore` or
-  :cpp:func:`xTaskCreateStaticPinnedToCore` to create tasks in ESP-IDF FreeRTOS. The
-  last parameter of the two functions is ``xCoreID``. This parameter specifies
-  which core the task is pinned to. Acceptable values are ``0`` for **PRO_CPU**,
+  :ref:`tasks-and-task-creation`: Use :cpp:func:`xTaskCreatePinnedToCore` or 
+  :cpp:func:`xTaskCreateStaticPinnedToCore` to create tasks in ESP-IDF FreeRTOS. The 
+  last parameter of the two functions is ``xCoreID``. This parameter specifies 
+  which core the task is pinned to. Acceptable values are ``0`` for **PRO_CPU**, 
   ``1`` for **APP_CPU**, or ``tskNO_AFFINITY`` which allows the task to run on
   both.
 
-  :ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler will skip tasks when
-  implementing Round-Robin scheduling between multiple tasks in the Ready state
-  that are of the same priority. To avoid this behavior, ensure that those tasks either
+  :ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler will skip tasks when 
+  implementing Round-Robin scheduling between multiple tasks in the Ready state 
+  that are of the same priority. To avoid this behavior, ensure that those tasks either 
   enter a blocked state, or are distributed across a wider range of priorities.
 
-  :ref:`scheduler-suspension`: Suspending the scheduler in ESP-IDF FreeRTOS will only
-  affect the scheduler on the the calling core. In other words, calling
+  :ref:`scheduler-suspension`: Suspending the scheduler in ESP-IDF FreeRTOS will only 
+  affect the scheduler on the the calling core. In other words, calling 
   :cpp:func:`vTaskSuspendAll` on **PRO_CPU** will not prevent **APP_CPU** from scheduling, and
   vice versa. Use critical sections or semaphores instead for simultaneous
   access protection.
 
-  :ref:`tick-interrupt-synchronicity`: Tick interrupts of **PRO_CPU** and **APP_CPU**
-  are not synchronized. Do not expect to use :cpp:func:`vTaskDelay` or
-  :cpp:func:`vTaskDelayUntil` as an accurate method of synchronizing task execution
-  between the two cores. Use a counting semaphore instead as their context
+  :ref:`tick-interrupt-synchronicity`: Tick interrupts of **PRO_CPU** and **APP_CPU** 
+  are not synchronized. Do not expect to use :cpp:func:`vTaskDelay` or 
+  :cpp:func:`vTaskDelayUntil` as an accurate method of synchronizing task execution 
+  between the two cores. Use a counting semaphore instead as their context 
   switches are not tied to tick interrupts due to preemption.
 
   :ref:`critical-sections`: In ESP-IDF FreeRTOS, critical sections are implemented using
-  mutexes. Entering critical sections involve taking a mutex, then disabling the
-  scheduler and interrupts of the calling core. However the other core is left
+  mutexes. Entering critical sections involve taking a mutex, then disabling the 
+  scheduler and interrupts of the calling core. However the other core is left 
   unaffected. If the other core attemps to take same mutex, it will spin until
   the calling core has released the mutex by exiting the critical section.
 
-  :ref:`floating-points`: The {IDF_TARGET_NAME} supports hardware acceleration of single
+  :ref:`floating-points`: The ESP32 supports hardware acceleration of single
   precision floating point arithmetic (``float``). However the use of hardware
   acceleration leads to some behavioral restrictions in ESP-IDF FreeRTOS.
-  Therefore, tasks that utilize ``float`` will automatically be pinned to a core if
-  not done so already. Furthermore, ``float`` cannot be used in interrupt service
+  Therefore, tasks that utilize ``float`` will automatically be pinned to a core if 
+  not done so already. Furthermore, ``float`` cannot be used in interrupt service 
   routines.
 
-`Task Deletion`_: Task deletion behavior has been backported from FreeRTOS
-v9.0.0 and modified to be SMP compatible. Task memory will be freed immediately
-when :cpp:func:`vTaskDelete` is called to delete a task that is not currently running
-and not pinned to the other core. Otherwise, freeing of task memory will still
-be delegated to the Idle Task.
-
-:ref:`deletion-callbacks`: ESP-IDF FreeRTOS has backported the Thread Local
-Storage Pointers (TLSP) feature. However the extra feature of Deletion Callbacks has been
-added. Deletion callbacks are called automatically during task deletion and are
-used to free memory pointed to by TLSP. Call
+:ref:`deletion-callbacks`: Deletion callbacks are called automatically during task deletion and are
+used to free memory pointed to by TLSP. Call 
 :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback()` to set TLSP and Deletion
 Callbacks.
 
@@ -81,64 +69,6 @@ Callbacks.
 set in the project configuration (``idf.py menuconfig``) such as running ESP-IDF in
 Unicore (single core) Mode, or configuring the number of Thread Local Storage Pointers
 each task will have.
-
-
-.. _backported-features:
-
-Backported Features
--------------------
-
-The following features have been backported from FreeRTOS v9.0.0 to ESP-IDF.
-
-Static Alocation
-^^^^^^^^^^^^^^^^^
-
-This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The
-:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
-in order for static allocation functions to be available. Once enabled, the
-following functions can be called...
-
- - :cpp:func:`xTaskCreateStatic` (see :ref:`backporting-notes` below)
- - :c:macro:`xQueueCreateStatic`
- - :c:macro:`xSemaphoreCreateBinaryStatic`
- - :c:macro:`xSemaphoreCreateCountingStatic`
- - :c:macro:`xSemaphoreCreateMutexStatic`
- - :c:macro:`xSemaphoreCreateRecursiveMutexStatic`
- - :cpp:func:`xTimerCreateStatic`  (see :ref:`backporting-notes` below)
- - :cpp:func:`xEventGroupCreateStatic`
-
-Other Features
-^^^^^^^^^^^^^^
-
- - :cpp:func:`vTaskSetThreadLocalStoragePointer` (see :ref:`backporting-notes` below)
- - :cpp:func:`pvTaskGetThreadLocalStoragePointer` (see :ref:`backporting-notes` below)
- - :cpp:func:`vTimerSetTimerID`
- - :cpp:func:`xTimerGetPeriod`
- - :cpp:func:`xTimerGetExpiryTime`
- - :cpp:func:`pcQueueGetName`
- - :c:macro:`uxSemaphoreGetCount`
-
-.. _backporting-notes:
-
-Backporting Notes
-^^^^^^^^^^^^^^^^^
-
-**1)** :cpp:func:`xTaskCreateStatic` has been made SMP compatible in a similar
-fashion to :cpp:func:`xTaskCreate` (see :ref:`tasks-and-task-creation`). Therefore
-:cpp:func:`xTaskCreateStaticPinnedToCore` can also be called.
-
-**2)** Although vanilla FreeRTOS allows the Timer feature's daemon task to
-be statically allocated, the daemon task is always dynamically allocated in
-ESP-IDF. Therefore ``vApplicationGetTimerTaskMemory`` **does not** need to be
-defined when using statically allocated timers in ESP-IDF FreeRTOS.
-
-**3)** The Thread Local Storage Pointer feature has been modified in ESP-IDF
-FreeRTOS to include Deletion Callbacks (see :ref:`deletion-callbacks`). Therefore
-the function :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback` can also be
-called.
-
-
-
 
 .. _tasks-and-task-creation:
 
@@ -149,9 +79,9 @@ Tasks in ESP-IDF FreeRTOS are designed to run on a particular core, therefore
 two new task creation functions have been added to ESP-IDF FreeRTOS by
 appending ``PinnedToCore`` to the names of the task creation functions in
 vanilla FreeRTOS. The vanilla FreeRTOS functions of :cpp:func:`xTaskCreate`
-and :cpp:func:`xTaskCreateStatic` have led to the addition of
-:cpp:func:`xTaskCreatePinnedToCore` and :cpp:func:`xTaskCreateStaticPinnedToCore` in
-ESP-IDF FreeRTOS (see :ref:`backported-features`).
+and :cpp:func:`xTaskCreateStatic` have led to the addition of 
+:cpp:func:`xTaskCreatePinnedToCore` and :cpp:func:`xTaskCreateStaticPinnedToCore` in 
+ESP-IDF FreeRTOS 
 
 For more details see :component_file:`freertos/tasks.c`
 
@@ -434,10 +364,9 @@ matter.
 Task Deletion
 -------------
 
-FreeRTOS task deletion prior to v9.0.0 delegated the freeing of task memory
-entirely to the Idle Task. Currently, the freeing of task memory will occur
-immediately (within :cpp:func:`vTaskDelete`) if the task being deleted is not currently
-running or is not pinned to the other core (with respect to the core
+In FreeRTOS task deletion the freeing of task memory will occur
+immediately (within :cpp:func:`vTaskDelete`) if the task being deleted is not currently 
+running or is not pinned to the other core (with respect to the core 
 :cpp:func:`vTaskDelete` is called on). TLSP deletion callbacks will also run immediately
 if the same conditions are met.
 
@@ -479,9 +408,6 @@ called for that TLSP during task deletion. If a deletion callback is `NULL`,
 users should manually free the memory pointed to by the associated TLSP before
 task deletion in order to avoid memory leak.
 
-:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` in menuconfig can be used
-to configure the number TLSP and Deletion Callbacks a TCB will have.
-
 For more details see :doc:`FreeRTOS API reference<../api-reference/system/freertos>`.
 
 
@@ -512,11 +438,7 @@ ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
     will be modified. For more details regarding the effects of running ESP-IDF FreeRTOS
     on a single core, search for occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
-:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` will define the
-number of Thread Local Storage Pointers each task will have in ESP-IDF
-FreeRTOS.
-
-:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` will enable the backported
+:ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` will enable the 
 functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
 
 :ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in

@@ -39,4 +39,13 @@ Event Group API
 
 .. include-build-file:: inc/event_groups.inc
 
+Stream Buffer API
+-----------------
 
+.. include-build-file:: inc/stream_buffer.inc
+
+
+Message Buffer API
+------------------
+
+.. include-build-file:: inc/message_buffer.inc

@@ -84,10 +84,10 @@
 #define portNUM_PROCESSORS 1
 #endif
 
-#define XT_USE_THREAD_SAFE_CLIB			0
-#define configASSERT_2	0
-#define portUSING_MPU_WRAPPERS 0
-#define configUSE_MUTEX 1
+#define XT_USE_THREAD_SAFE_CLIB		0
+#define configASSERT_2	            0
+#define portUSING_MPU_WRAPPERS      0
+#define configUSE_MUTEX             1
 #undef XT_USE_SWPRI
 
 #if CONFIG_FREERTOS_CORETIMER_0
@@ -96,7 +96,7 @@
 #define XT_TIMER_INDEX 1
 #endif
 
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
+#define configNUM_THREAD_LOCAL_STORAGE_POINTERS  CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS
 #define configTHREAD_LOCAL_STORAGE_DELETE_CALLBACKS 1
 
 #ifndef __ASSEMBLER__
@@ -171,7 +171,7 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #define configUSE_PREEMPTION			1
 #define configUSE_IDLE_HOOK				1
 #define configUSE_TICK_HOOK				1
-
+#define configRECORD_STACK_HIGH_ADDRESS 1
 #define configTICK_RATE_HZ				( CONFIG_FREERTOS_HZ )
 
 /* Default clock rate for simulator */
@@ -254,8 +254,6 @@ int xt_clock_freq(void) __attribute__((deprecated));
 #elif CONFIG_FREERTOS_CHECK_STACKOVERFLOW_CANARY
 #define configCHECK_FOR_STACK_OVERFLOW	2
 #endif
-
-
 
 
 /* Co-routine definitions. */

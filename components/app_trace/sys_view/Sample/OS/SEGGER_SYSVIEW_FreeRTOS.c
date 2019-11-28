@@ -1,9 +1,9 @@
 /*********************************************************************
-*                SEGGER Microcontroller GmbH & Co. KG                *
+*                    SEGGER Microcontroller GmbH                     *
 *                        The Embedded Experts                        *
 **********************************************************************
 *                                                                    *
-*       (c) 2015 - 2017  SEGGER Microcontroller GmbH & Co. KG        *
+*            (c) 1995 - 2019 SEGGER Microcontroller GmbH             *
 *                                                                    *
 *       www.segger.com     Support: support@segger.com               *
 *                                                                    *
@@ -17,24 +17,14 @@
 *                                                                    *
 * SEGGER strongly recommends to not make any changes                 *
 * to or modify the source code of this software in order to stay     *
-* compatible with the RTT protocol and J-Link.                       *
+* compatible with the SystemView and RTT protocol, and J-Link.       *
 *                                                                    *
 * Redistribution and use in source and binary forms, with or         *
 * without modification, are permitted provided that the following    *
-* conditions are met:                                                *
+* condition is met:                                                  *
 *                                                                    *
 * o Redistributions of source code must retain the above copyright   *
-*   notice, this list of conditions and the following disclaimer.    *
-*                                                                    *
-* o Redistributions in binary form must reproduce the above          *
-*   copyright notice, this list of conditions and the following      *
-*   disclaimer in the documentation and/or other materials provided  *
-*   with the distribution.                                           *
-*                                                                    *
-* o Neither the name of SEGGER Microcontroller GmbH & Co. KG         *
-*   nor the names of its contributors may be used to endorse or      *
-*   promote products derived from this software without specific     *
-*   prior written permission.                                        *
+*   notice, this condition and the following disclaimer.             *
 *                                                                    *
 * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND             *
 * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,        *
@@ -52,14 +42,14 @@
 *                                                                    *
 **********************************************************************
 *                                                                    *
-*       SystemView version: V2.42                                    *
+*       SystemView version: 3.10                                    *
 *                                                                    *
 **********************************************************************
 -------------------------- END-OF-HEADER -----------------------------
 
 File    : SEGGER_SYSVIEW_FreeRTOS.c
 Purpose : Interface between FreeRTOS and SystemView.
-Revision: $Rev: 3734 $
+Revision: $Rev: 7947 $
 */
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -80,6 +70,7 @@ struct SYSVIEW_FREERTOS_TASK_STATUS {
 };
 
 static SYSVIEW_FREERTOS_TASK_STATUS _aTasks[SYSVIEW_FREERTOS_MAX_NOF_TASKS];
+static unsigned _NumTasks;
 
 /*********************************************************************
 *
@@ -93,13 +84,11 @@ static SYSVIEW_FREERTOS_TASK_STATUS _aTasks[SYSVIEW_FREERTOS_MAX_NOF_TASKS];
 static void _cbSendTaskList(void) {
   unsigned n;
 
-  for (n = 0; n < SYSVIEW_FREERTOS_MAX_NOF_TASKS; n++) {
-    if (_aTasks[n].xHandle) {
+  for (n = 0; n < _NumTasks; n++) {
 #if INCLUDE_uxTaskGetStackHighWaterMark // Report Task Stack High Watermark
-      _aTasks[n].uStackHighWaterMark = uxTaskGetStackHighWaterMark((TaskHandle_t)_aTasks[n].xHandle);
+    _aTasks[n].uStackHighWaterMark = uxTaskGetStackHighWaterMark((TaskHandle_t)_aTasks[n].xHandle);
 #endif
-      SYSVIEW_SendTaskInfo((U32)_aTasks[n].xHandle, _aTasks[n].pcTaskName, (unsigned)_aTasks[n].uxCurrentPriority, (U32)_aTasks[n].pxStack, (unsigned)_aTasks[n].uStackHighWaterMark);
-    }
+    SYSVIEW_SendTaskInfo((U32)_aTasks[n].xHandle, _aTasks[n].pcTaskName, (unsigned)_aTasks[n].uxCurrentPriority, (U32)_aTasks[n].pxStack, (unsigned)_aTasks[n].uStackHighWaterMark);
   }
 }
 
@@ -135,27 +124,23 @@ static U64 _cbGetTime(void) {
 *    Add a task to the internal list and record its information.
 */
 void SYSVIEW_AddTask(U32 xHandle, const char* pcTaskName, unsigned uxCurrentPriority, U32  pxStack, unsigned uStackHighWaterMark) {
-  unsigned n;
   
   if (memcmp(pcTaskName, "IDLE", 5) == 0) {
     return;
   }
   
-  for (n = 0; n < SYSVIEW_FREERTOS_MAX_NOF_TASKS; n++) {
-    if (_aTasks[n].xHandle == 0) {
-      break;
-    }
-  }
-  if (n == SYSVIEW_FREERTOS_MAX_NOF_TASKS) {
+  if (_NumTasks >= SYSVIEW_FREERTOS_MAX_NOF_TASKS) {
     SEGGER_SYSVIEW_Warn("SYSTEMVIEW: Could not record task information. Maximum number of tasks reached.");
     return;
   }
 
-  _aTasks[n].xHandle = xHandle;
-  _aTasks[n].pcTaskName = pcTaskName;
-  _aTasks[n].uxCurrentPriority = uxCurrentPriority;
-  _aTasks[n].pxStack = pxStack;
-  _aTasks[n].uStackHighWaterMark = uStackHighWaterMark;
+  _aTasks[_NumTasks].xHandle = xHandle;
+  _aTasks[_NumTasks].pcTaskName = pcTaskName;
+  _aTasks[_NumTasks].uxCurrentPriority = uxCurrentPriority;
+  _aTasks[_NumTasks].pxStack = pxStack;
+  _aTasks[_NumTasks].uStackHighWaterMark = uStackHighWaterMark;
+
+  _NumTasks++;
 
   SYSVIEW_SendTaskInfo(xHandle, pcTaskName,uxCurrentPriority, pxStack, uStackHighWaterMark);
 
@@ -175,12 +160,12 @@ void SYSVIEW_UpdateTask(U32 xHandle, const char* pcTaskName, unsigned uxCurrentP
     return;
   }
 
-  for (n = 0; n < SYSVIEW_FREERTOS_MAX_NOF_TASKS; n++) {
+  for (n = 0; n < _NumTasks; n++) {
     if (_aTasks[n].xHandle == xHandle) {
       break;
     }
   }
-  if (n < SYSVIEW_FREERTOS_MAX_NOF_TASKS) {
+  if (n < _NumTasks) {
     _aTasks[n].pcTaskName = pcTaskName;
     _aTasks[n].uxCurrentPriority = uxCurrentPriority;
     _aTasks[n].pxStack = pxStack;
@@ -201,18 +186,36 @@ void SYSVIEW_UpdateTask(U32 xHandle, const char* pcTaskName, unsigned uxCurrentP
 */
 void SYSVIEW_DeleteTask(U32 xHandle) {
   unsigned n;
-
-  for (n = 0; n < SYSVIEW_FREERTOS_MAX_NOF_TASKS; n++) {
+  
+  if (_NumTasks == 0) {
+    return; // Early out
+  }  
+  for (n = 0; n < _NumTasks; n++) {
     if (_aTasks[n].xHandle == xHandle) {
       break;
     }
   }
-  if (n == SYSVIEW_FREERTOS_MAX_NOF_TASKS) {
-    SEGGER_SYSVIEW_Warn("SYSTEMVIEW: Could not find task information. Cannot delete task.");
-    return;
+  if (n == (_NumTasks - 1)) {  
+    //
+    // Task is last item in list.
+    // Simply zero the item and decrement number of tasks.
+    //
+    memset(&_aTasks[n], 0, sizeof(_aTasks[n]));
+    _NumTasks--;
+  } else if (n < _NumTasks) {
+    //
+    // Task is in the middle of the list.
+    // Move last item to current position and decrement number of tasks.
+    // Order of tasks does not really matter, so no need to move all following items.
+    //
+    _aTasks[n].xHandle             = _aTasks[_NumTasks - 1].xHandle;
+    _aTasks[n].pcTaskName          = _aTasks[_NumTasks - 1].pcTaskName;
+    _aTasks[n].uxCurrentPriority   = _aTasks[_NumTasks - 1].uxCurrentPriority;
+    _aTasks[n].pxStack             = _aTasks[_NumTasks - 1].pxStack;
+    _aTasks[n].uStackHighWaterMark = _aTasks[_NumTasks - 1].uStackHighWaterMark;
+    memset(&_aTasks[_NumTasks - 1], 0, sizeof(_aTasks[_NumTasks - 1]));
+    _NumTasks--;
   }
-
-  _aTasks[n].xHandle = 0;
 }
 
 /*********************************************************************
@@ -232,47 +235,6 @@ void SYSVIEW_SendTaskInfo(U32 TaskID, const char* sName, unsigned Prio, U32 Stac
   TaskInfo.StackBase  = StackBase;
   TaskInfo.StackSize  = StackSize;
   SEGGER_SYSVIEW_SendTaskInfo(&TaskInfo);
-}
-
-/*********************************************************************
-*
-*       SYSVIEW_RecordU32x4()
-*
-*  Function description
-*    Record an event with 4 parameters
-*/
-void SYSVIEW_RecordU32x4(unsigned Id, U32 Para0, U32 Para1, U32 Para2, U32 Para3) {
-      U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + 4 * SEGGER_SYSVIEW_QUANTA_U32];
-      U8* pPayload;
-      //
-      pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);                // Prepare the packet for SystemView
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para0);             // Add the first parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para1);             // Add the second parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para2);             // Add the third parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para3);             // Add the fourth parameter to the packet
-      //
-      SEGGER_SYSVIEW_SendPacket(&aPacket[0], pPayload, Id);             // Send the packet
-}
-
-/*********************************************************************
-*
-*       SYSVIEW_RecordU32x5()
-*
-*  Function description
-*    Record an event with 5 parameters
-*/
-void SYSVIEW_RecordU32x5(unsigned Id, U32 Para0, U32 Para1, U32 Para2, U32 Para3, U32 Para4) {
-      U8  aPacket[SEGGER_SYSVIEW_INFO_SIZE + 5 * SEGGER_SYSVIEW_QUANTA_U32];
-      U8* pPayload;
-      //
-      pPayload = SEGGER_SYSVIEW_PREPARE_PACKET(aPacket);                // Prepare the packet for SystemView
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para0);             // Add the first parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para1);             // Add the second parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para2);             // Add the third parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para3);             // Add the fourth parameter to the packet
-      pPayload = SEGGER_SYSVIEW_EncodeU32(pPayload, Para4);             // Add the fifth parameter to the packet
-      //
-      SEGGER_SYSVIEW_SendPacket(&aPacket[0], pPayload, Id);             // Send the packet
 }
 
 /*********************************************************************

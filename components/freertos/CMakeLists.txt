@@ -16,11 +16,12 @@ set(srcs
 list(APPEND srcs 
     "croutine.c"
     "event_groups.c"
-    "FreeRTOS-openocd.c"
     "list.c"
     "queue.c"
     "tasks.c"
-    "timers.c")
+    "timers.c"
+    "stream_buffer.c"
+    "FreeRTOS-openocd.c")
 
 set(include_dirs 
     include
@@ -57,6 +58,7 @@ set_source_files_properties(
     event_groups.c
     timers.c
     queue.c
+    stream_buffer.c
     PROPERTIES COMPILE_DEFINITIONS
     _ESP_FREERTOS_INTERNAL
     )

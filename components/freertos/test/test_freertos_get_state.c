@@ -19,7 +19,7 @@ void test_task_get_state(void* arg)
     //Idle task of current core should return eReady
     TEST_ASSERT(eTaskGetState(xTaskGetIdleTaskHandle()) == eReady);
     //Blocked Task should return eBlocked
-    TEST_ASSERT(eTaskGetState(blocked_task_handle) == eBlocked);
+    TEST_ASSERT(eTaskGetState(blocked_task_handle) == eSuspended);
     //Suspended Task should return eSuspended
     TEST_ASSERT(eTaskGetState(suspended_task_handle) == eSuspended);
 

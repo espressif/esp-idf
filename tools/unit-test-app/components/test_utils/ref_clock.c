@@ -48,7 +48,7 @@
 
 static void IRAM_ATTR pcnt_isr(void *arg);
 
-static intr_handle_t s_intr_handle;
+static intr_handle_t s_intr_handle = NULL;
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t s_milliseconds;
 

@@ -72,6 +72,7 @@ extern "C" {
 
 #ifndef __ASSEMBLER__
 
+#include <sdkconfig.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -82,6 +83,8 @@ extern "C" {
 #include <xtensa/xtruntime.h>
 #include "esp_private/crosscore_int.h"
 #include "esp_timer.h"              /* required for FreeRTOS run time stats */
+#include "esp_system.h"
+#include "esp_newlib.h"
 #include "soc/spinlock.h"
 #include <esp_heap_caps.h>
 #include "esp_rom_sys.h"
@@ -90,7 +93,8 @@ extern "C" {
 
 #ifdef CONFIG_LEGACY_INCLUDE_COMMON_HEADERS
 #include "soc/soc_memory_layout.h"
-#endif
+#include "esp_system.h"
+#include "soc/cpu.h"
 
 /*-----------------------------------------------------------
  * Port specific definitions.
@@ -127,17 +131,13 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 
 // portbenchmark
 #include "portbenchmark.h"
+
 #include "sdkconfig.h"
 #include "esp_attr.h"
 
-static inline uint32_t xPortGetCoreID(void);
 
-// Critical section management. NW-TODO: replace XTOS_SET_INTLEVEL with more efficient version, if any?
-// These cannot be nested. They should be used with a lot of care and cannot be called from interrupt level.
-//
-// Only applies to one CPU. See notes above & below for reasons not to use these.
-#define portDISABLE_INTERRUPTS()      do { XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); } while (0)
-#define portENABLE_INTERRUPTS()       do { portbenchmarkINTERRUPT_RESTORE(0); XTOS_SET_INTLEVEL(0); } while (0)
+#define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
+void vPortAssertIfInISR(void);
 
 // Cleaner solution allows nested interrupts disabling and restoring via local registers or stack.
 // They can be called from interrupts too.
@@ -172,19 +172,16 @@ This all assumes that interrupts are either entirely disabled or enabled. Interr
 will break this scheme.
 
 Remark: For the ESP32, portENTER_CRITICAL and portENTER_CRITICAL_ISR both alias vTaskEnterCritical, meaning
-that either function can be called both from ISR as well as task context. This is not standard FreeRTOS
+that either function can be called both from ISR as well as task context. This is not standard FreeRTOS 
 behaviour; please keep this in mind if you need any compatibility with other FreeRTOS implementations.
 */
-
 /* "mux" data structure (spinlock) */
-typedef struct {
-    spinlock_t spinlock;
-} portMUX_TYPE;
+typedef spinlock_t portMUX_TYPE;
 
 #define portMUX_FREE_VAL		SPINLOCK_FREE
 #define portMUX_NO_TIMEOUT      SPINLOCK_WAIT_FOREVER  /* When passed for 'timeout_cycles', spin forever if necessary */
 #define portMUX_TRY_LOCK        SPINLOCK_NO_WAIT       /* Try to acquire the spinlock a single time only */
-#define portMUX_INITIALIZER_UNLOCKED  {.spinlock=SPINLOCK_INITIALIZER} 
+#define portMUX_INITIALIZER_UNLOCKED  SPINLOCK_INITIALIZER 
 
 #define portASSERT_IF_IN_ISR()        vPortAssertIfInISR()
 void vPortAssertIfInISR(void);
@@ -193,22 +190,22 @@ void vPortAssertIfInISR(void);
 
 static inline void __attribute__((always_inline)) vPortCPUInitializeMutex(portMUX_TYPE *mux) 
 {
-    spinlock_initialize(&mux->spinlock);
+    spinlock_initialize(mux);
 }
 
 static inline void __attribute__((always_inline)) vPortCPUAcquireMutex(portMUX_TYPE *mux) 
 {
-    spinlock_acquire(&mux->spinlock, portMUX_NO_TIMEOUT);
+    spinlock_acquire(mux, portMUX_NO_TIMEOUT);
 }
 
 static inline bool __attribute__((always_inline)) vPortCPUAcquireMutexTimeout(portMUX_TYPE *mux, int timeout) 
 {
-    return (spinlock_acquire(&mux->spinlock, timeout));
+    return (spinlock_acquire(mux, timeout));
 }
 
 static inline void __attribute__((always_inline)) vPortCPUReleaseMutex(portMUX_TYPE *mux)
 {
-    spinlock_release(&mux->spinlock);
+    spinlock_release(mux);
 }
 
 void vPortEnterCritical(portMUX_TYPE *mux);
@@ -246,8 +243,8 @@ static inline void __attribute__((always_inline)) vPortExitCriticalCompliance(po
 /* Calling port*_CRITICAL from ISR context would cause an assert failure.
  * If the parent function is called from both ISR and Non-ISR context then call port*_CRITICAL_SAFE
  */
-#define portENTER_CRITICAL(mux)  vPortEnterCriticalCompliance(mux)   
-#define portEXIT_CRITICAL(mux)   vPortExitCriticalCompliance(mux)     
+#define portENTER_CRITICAL(mux)        vPortEnterCriticalCompliance(mux)
+#define portEXIT_CRITICAL(mux)         vPortExitCriticalCompliance(mux) 
 #else
 #define portENTER_CRITICAL(mux)        vPortEnterCritical(mux)
 #define portEXIT_CRITICAL(mux)         vPortExitCritical(mux)
@@ -276,6 +273,7 @@ static inline void __attribute__((always_inline)) vPortExitCriticalSafe(portMUX_
 
 #define portENTER_CRITICAL_SAFE(mux)  vPortEnterCriticalSafe(mux)
 #define portEXIT_CRITICAL_SAFE(mux)  vPortExitCriticalSafe(mux)
+
 /*
  * Wrapper for the Xtensa compare-and-set instruction. This subroutine will atomically compare
  * *addr to 'compare'. If *addr == compare, *addr is set to *set. *set is updated with the previous
@@ -289,6 +287,14 @@ static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint
     compare_and_set_native(addr, compare, set);
 }
 
+// Critical section management. NW-TODO: replace XTOS_SET_INTLEVEL with more efficient version, if any?
+// These cannot be nested. They should be used with a lot of care and cannot be called from interrupt level.
+//
+// Only applies to one CPU. See notes above & below for reasons not to use these.
+#define portDISABLE_INTERRUPTS()      do { XTOS_SET_INTLEVEL(XCHAL_EXCM_LEVEL); portbenchmarkINTERRUPT_DISABLE(); } while (0)
+#define portENABLE_INTERRUPTS()       do { portbenchmarkINTERRUPT_RESTORE(0); XTOS_SET_INTLEVEL(0); } while (0)
+
+
 // These FreeRTOS versions are similar to the nested versions above
 #define portSET_INTERRUPT_MASK_FROM_ISR()            portENTER_CRITICAL_NESTED()
 #define portCLEAR_INTERRUPT_MASK_FROM_ISR(state)     portEXIT_CRITICAL_NESTED(state)
@@ -297,9 +303,25 @@ static inline void __attribute__((always_inline)) uxPortCompareSet(volatile uint
 //the stack memory to always be internal.
 #define portTcbMemoryCaps (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
 #define portStackMemoryCaps (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT)
-
 #define pvPortMallocTcbMem(size) heap_caps_malloc(size, portTcbMemoryCaps)
 #define pvPortMallocStackMem(size)  heap_caps_malloc(size, portStackMemoryCaps)
+
+//xTaskCreateStatic uses these functions to check incoming memory.
+#define portVALID_TCB_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#define portVALID_STACK_MEM(ptr) esp_ptr_byte_accessible(ptr)
+#else
+#define portVALID_STACK_MEM(ptr) (esp_ptr_internal(ptr) && esp_ptr_byte_accessible(ptr))
+#endif
+
+
+static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set) 
+{
+#if defined(CONFIG_ESP32_SPIRAM_SUPPORT) || defined(ESP32S2_SPIRAM_SUPPORT)   
+    compare_and_set_extram(addr, compare, set);
+#endif    
+}
+
 
 /*-----------------------------------------------------------*/
 
@@ -397,13 +419,11 @@ extern void esp_vApplicationTickHook( void );
 #define vApplicationTickHook    esp_vApplicationTickHook
 #endif /* !CONFIG_FREERTOS_LEGACY_HOOKS */
 
-void _xt_coproc_release(volatile void * coproc_sa_base);
 void vApplicationSleep( TickType_t xExpectedIdleTime );
-void vPortSetStackWatchpoint( void* pxStackStart );
 
 #define portSUPPRESS_TICKS_AND_SLEEP( idleTime ) vApplicationSleep( idleTime )
 
-/*-----------------------------------------------------------*/
+void _xt_coproc_release(volatile void * coproc_sa_base);
 
 /* Architecture specific optimisations. */
 #if configUSE_PORT_OPTIMISED_TASK_SELECTION == 1
@@ -423,7 +443,68 @@ void vPortSetStackWatchpoint( void* pxStackStart );
 
 #endif /* configUSE_PORT_OPTIMISED_TASK_SELECTION */
 
-/*-----------------------------------------------------------*/
+/*
+ * Send an interrupt to another core in order to make the task running
+ * on it yield for a higher-priority task.
+ */
+
+void vPortYieldOtherCore( BaseType_t coreid) ;
+
+/*
+ Callback to set a watchpoint on the end of the stack. Called every context switch to change the stack
+ watchpoint around.
+ */
+void vPortSetStackWatchpoint( void* pxStackStart );
+
+/*
+ * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
+ * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
+ */
+BaseType_t xPortInIsrContext(void);
+
+/*
+ * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
+ * before calling into high prio ISR context.
+ */
+BaseType_t xPortInterruptedFromISRContext(void);
+
+/*
+ * The structures and methods of manipulating the MPU are contained within the
+ * port layer.
+ *
+ * Fills the xMPUSettings structure with the memory region information
+ * contained in xRegions.
+ */
+#if( portUSING_MPU_WRAPPERS == 1 )
+    //struct xMEMORY_REGION;
+    //void vPortStoreTaskMPUSettings( xMPU_SETTINGS *xMPUSettings, const struct xMEMORY_REGION * const xRegions, StackType_t *pxBottomOfStack, uint32_t usStackDepth ) PRIVILEGED_FUNCTION;
+    void vPortReleaseTaskMPUSettings( xMPU_SETTINGS *xMPUSettings );
+#endif
+
+/* Multi-core: get current core ID */
+static inline uint32_t IRAM_ATTR xPortGetCoreID(void) {
+    return cpu_hal_get_core_id();
+}
+
+/* Get tick rate per second */
+uint32_t xPortGetTickRateHz(void);
+
+static inline bool IRAM_ATTR xPortCanYield(void)
+{
+    uint32_t ps_reg = 0;
+
+    //Get the current value of PS (processor status) register
+    RSR(PS, ps_reg);
+
+    /*
+     * intlevel = (ps_reg & 0xf);
+     * excm  = (ps_reg >> 4) & 0x1;
+     * CINTLEVEL is max(excm * EXCMLEVEL, INTLEVEL), where EXCMLEVEL is 3.
+     * However, just return true, only intlevel is zero.
+     */
+
+    return ((ps_reg & PS_INTLEVEL_MASK) == 0);
+}
 
 // porttrace
 #if configUSE_TRACE_FACILITY_2

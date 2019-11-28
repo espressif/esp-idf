@@ -1,71 +1,29 @@
 /*
-    FreeRTOS V8.2.0 - Copyright (C) 2015 Real Time Engineers Ltd.
-    All rights reserved
-
-    VISIT http://www.FreeRTOS.org TO ENSURE YOU ARE USING THE LATEST VERSION.
-
-    This file is part of the FreeRTOS distribution.
-
-    FreeRTOS is free software; you can redistribute it and/or modify it under
-    the terms of the GNU General Public License (version 2) as published by the
-    Free Software Foundation >>!AND MODIFIED BY!<< the FreeRTOS exception.
-
-	***************************************************************************
-    >>!   NOTE: The modification to the GPL is included to allow you to     !<<
-    >>!   distribute a combined work that includes FreeRTOS without being   !<<
-    >>!   obliged to provide the source code for proprietary components     !<<
-    >>!   outside of the FreeRTOS kernel.                                   !<<
-	***************************************************************************
-
-    FreeRTOS is distributed in the hope that it will be useful, but WITHOUT ANY
-    WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-    FOR A PARTICULAR PURPOSE.  Full license text is available on the following
-    link: http://www.freertos.org/a00114.html
-
-    ***************************************************************************
-     *                                                                       *
-     *    FreeRTOS provides completely free yet professionally developed,    *
-     *    robust, strictly quality controlled, supported, and cross          *
-     *    platform software that is more than just the market leader, it     *
-     *    is the industry's de facto standard.                               *
-     *                                                                       *
-     *    Help yourself get started quickly while simultaneously helping     *
-     *    to support the FreeRTOS project by purchasing a FreeRTOS           *
-     *    tutorial book, reference manual, or both:                          *
-     *    http://www.FreeRTOS.org/Documentation                              *
-     *                                                                       *
-    ***************************************************************************
-
-    http://www.FreeRTOS.org/FAQHelp.html - Having a problem?  Start by reading
-	the FAQ page "My application does not run, what could be wrong?".  Have you
-	defined configASSERT()?
-
-	http://www.FreeRTOS.org/support - In return for receiving this top quality
-	embedded software for free we request you assist our global community by
-	participating in the support forum.
-
-	http://www.FreeRTOS.org/training - Investing in training allows your team to
-	be as productive as possible as early as possible.  Now you can receive
-	FreeRTOS training directly from Richard Barry, CEO of Real Time Engineers
-	Ltd, and the world's leading authority on the world's leading RTOS.
-
-    http://www.FreeRTOS.org/plus - A selection of FreeRTOS ecosystem products,
-    including FreeRTOS+Trace - an indispensable productivity tool, a DOS
-    compatible FAT file system, and our tiny thread aware UDP/IP stack.
-
-    http://www.FreeRTOS.org/labs - Where new FreeRTOS products go to incubate.
-    Come and try FreeRTOS+TCP, our new open source TCP/IP stack for FreeRTOS.
-
-    http://www.OpenRTOS.com - Real Time Engineers ltd. license FreeRTOS to High
-    Integrity Systems ltd. to sell under the OpenRTOS brand.  Low cost OpenRTOS
-    licenses offer ticketed support, indemnification and commercial middleware.
-
-    http://www.SafeRTOS.com - High Integrity Systems also provide a safety
-    engineered and independently SIL3 certified version for use in safety and
-    mission critical applications that require provable dependability.
-
-    1 tab == 4 spaces!
-*/
+ * FreeRTOS Kernel V10.2.1
+ * Copyright (C) 2019 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of
+ * this software and associated documentation files (the "Software"), to deal in
+ * the Software without restriction, including without limitation the rights to
+ * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+ * the Software, and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+ * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+ * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+ * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ *
+ * http://www.FreeRTOS.org
+ * http://aws.amazon.com/freertos
+ *
+ * 1 tab == 4 spaces!
+ */
 
 
 #ifndef TIMERS_H
@@ -75,10 +33,10 @@
 	#error "include FreeRTOS.h must appear in source files before include timers.h"
 #endif
 
-/*lint -e537 This headers are only multiply included if the application code
+/*lint -save -e537 This headers are only multiply included if the application code
 happens to also be including task.h. */
 #include "task.h"
-/*lint +e537 */
+/*lint -restore */
 
 #ifdef __cplusplus
 extern "C" {
@@ -115,14 +73,15 @@ or interrupt version of the queue send function should be used. */
  * reference the subject timer in calls to other software timer API functions
  * (for example, xTimerStart(), xTimerReset(), etc.).
  */
-typedef void * TimerHandle_t;
-
-/**
+struct tmrTimerControl; /* The old naming convention is used to prevent breaking kernel aware debuggers. */
+//typedef struct tmrTimerControl * TimerHandle_t;
+typedef void* TimerHandle_t;
+/*
  * Defines the prototype to which timer callback functions must conform.
  */
 typedef void (*TimerCallbackFunction_t)( TimerHandle_t xTimer );
 
-/**
+/*
  * Defines the prototype to which functions used with the
  * xTimerPendFunctionCallFromISR() function must conform.
  */
@@ -260,11 +219,11 @@ typedef void (*PendedFunction_t)( void *, uint32_t );
  * @endcode
  */
 #if( configSUPPORT_DYNAMIC_ALLOCATION == 1 )
-	TimerHandle_t xTimerCreate(	const char * const pcTimerName,
+	TimerHandle_t xTimerCreate(	const char * const pcTimerName,			/*lint !e971 Unqualified char types are allowed for strings and single characters only. */
 								const TickType_t xTimerPeriodInTicks,
 								const UBaseType_t uxAutoReload,
 								void * const pvTimerID,
-								TimerCallbackFunction_t pxCallbackFunction ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+								TimerCallbackFunction_t pxCallbackFunction ) PRIVILEGED_FUNCTION;
 #endif
 
  /**
@@ -388,18 +347,20 @@ typedef void (*PendedFunction_t)( void *, uint32_t );
 										const UBaseType_t uxAutoReload,
 										void * const pvTimerID,
 										TimerCallbackFunction_t pxCallbackFunction,
-										StaticTimer_t *pxTimerBuffer ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
- #endif /* configSUPPORT_STATIC_ALLOCATION */
+										StaticTimer_t *pxTimerBuffer ) PRIVILEGED_FUNCTION;
+#endif /* configSUPPORT_STATIC_ALLOCATION */
 
 /**
+ * void *pvTimerGetTimerID( TimerHandle_t xTimer );
+ *
  * Returns the ID assigned to the timer.
  *
  * IDs are assigned to timers using the pvTimerID parameter of the call to
- * xTimerCreated() that was used to create the timer.
+ * xTimerCreated() that was used to create the timer, and by calling the
+ * vTimerSetTimerID() API function.
  *
  * If the same callback function is assigned to multiple timers then the timer
- * ID can be used within the callback function to identify which timer actually
- * expired.
+ * ID can be used as time specific (timer local) storage.
  *
  * @param xTimer The timer being queried.
  *
@@ -409,9 +370,11 @@ typedef void (*PendedFunction_t)( void *, uint32_t );
  *
  * See the xTimerCreate() API function example usage scenario.
  */
-void *pvTimerGetTimerID( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
+void *pvTimerGetTimerID( const TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /**
+ * void vTimerSetTimerID( TimerHandle_t xTimer, void *pvNewID );
+ *
  * Sets the ID assigned to the timer.
  *
  * IDs are assigned to timers using the pvTimerID parameter of the call to
@@ -431,12 +394,12 @@ void *pvTimerGetTimerID( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 void vTimerSetTimerID( TimerHandle_t xTimer, void *pvNewID ) PRIVILEGED_FUNCTION;
 
 /**
+ * BaseType_t xTimerIsTimerActive( TimerHandle_t xTimer );
+ *
  * Queries a timer to see if it is active or dormant.
  *
  * A timer will be dormant if:
- *
  *     1) It has been created but not started, or
- *
  *     2) It is an expired one-shot timer that has not been restarted.
  *
  * Timers are created in the dormant state.  The xTimerStart(), xTimerReset(),
@@ -474,31 +437,11 @@ BaseType_t xTimerIsTimerActive( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
  * Simply returns the handle of the timer service/daemon task.  It it not valid
  * to call xTimerGetTimerDaemonTaskHandle() before the scheduler has been started.
  */
-TaskHandle_t xTimerGetTimerDaemonTaskHandle( void );
+TaskHandle_t xTimerGetTimerDaemonTaskHandle( void ) PRIVILEGED_FUNCTION;
 
 /**
- * Returns the period of a timer.
+ * BaseType_t xTimerStart( TimerHandle_t xTimer, TickType_t xTicksToWait );
  *
- * @param xTimer The handle of the timer being queried.
- *
- * @return The period of the timer in ticks.
- */
-TickType_t xTimerGetPeriod( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
-
-/**
- * Returns the time in ticks at which the timer will expire.  If this is less
- * than the current tick count then the expiry time has overflowed from the
- * current time.
- *
- * @param xTimer The handle of the timer being queried.
- *
- * @return If the timer is running then the time in ticks at which the timer
- * will next expire is returned.  If the timer is not running then the return
- * value is undefined.
- */
-TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
-
-/**
  * Timer functionality is provided by a timer service/daemon task.  Many of the
  * public FreeRTOS timer API functions send commands to the timer service task
  * through a queue called the timer command queue.  The timer command queue is
@@ -813,7 +756,7 @@ TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
  *
  *     // Starting the scheduler will start the timer running as it has already
  *     // been set into the active state.
- *     xTaskStartScheduler();
+ *     vTaskStartScheduler();
  *
  *     // Should not reach here.
  *     for( ;; );
@@ -1200,7 +1143,7 @@ TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
  *	}
  * @endcode
  */
-BaseType_t xTimerPendFunctionCallFromISR( PendedFunction_t xFunctionToPend, void *pvParameter1, uint32_t ulParameter2, BaseType_t *pxHigherPriorityTaskWoken );
+BaseType_t xTimerPendFunctionCallFromISR( PendedFunction_t xFunctionToPend, void *pvParameter1, uint32_t ulParameter2, BaseType_t *pxHigherPriorityTaskWoken ) PRIVILEGED_FUNCTION;
 
  /**
   * Used to defer the execution of a function to the RTOS daemon task (the timer
@@ -1228,24 +1171,75 @@ BaseType_t xTimerPendFunctionCallFromISR( PendedFunction_t xFunctionToPend, void
   * timer daemon task, otherwise pdFALSE is returned.
   *
   */
-BaseType_t xTimerPendFunctionCall( PendedFunction_t xFunctionToPend, void *pvParameter1, uint32_t ulParameter2, TickType_t xTicksToWait );
+BaseType_t xTimerPendFunctionCall( PendedFunction_t xFunctionToPend, void *pvParameter1, uint32_t ulParameter2, TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
 
 /**
+ * const char * const pcTimerGetName( TimerHandle_t xTimer );
+ *
  * Returns the name that was assigned to a timer when the timer was created.
  *
  * @param xTimer The handle of the timer being queried.
  *
  * @return The name assigned to the timer specified by the xTimer parameter.
  */
-const char * pcTimerGetTimerName( TimerHandle_t xTimer ); /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+const char * pcTimerGetName( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION; /*lint !e971 Unqualified char types are allowed for strings and single characters only. */
+
+/**
+ * void vTimerSetReloadMode( TimerHandle_t xTimer, const UBaseType_t uxAutoReload );
+ *
+ * Updates a timer to be either an autoreload timer, in which case the timer
+ * automatically resets itself each time it expires, or a one shot timer, in
+ * which case the timer will only expire once unless it is manually restarted.
+ *
+ * @param xTimer The handle of the timer being updated.
+ *
+ * @param uxAutoReload If uxAutoReload is set to pdTRUE then the timer will
+ * expire repeatedly with a frequency set by the timer's period (see the
+ * xTimerPeriodInTicks parameter of the xTimerCreate() API function).  If
+ * uxAutoReload is set to pdFALSE then the timer will be a one-shot timer and
+ * enter the dormant state after it expires.
+ */
+void vTimerSetReloadMode( TimerHandle_t xTimer, const UBaseType_t uxAutoReload ) PRIVILEGED_FUNCTION;
+
+/**
+ * TickType_t xTimerGetPeriod( TimerHandle_t xTimer );
+ *
+ * Returns the period of a timer.
+ *
+ * @param xTimer The handle of the timer being queried.
+ *
+ * @return The period of the timer in ticks.
+ */
+TickType_t xTimerGetPeriod( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
+
+/**
+* TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer );
+*
+* Returns the time in ticks at which the timer will expire.  If this is less
+* than the current tick count then the expiry time has overflowed from the
+* current time.
+*
+* @param xTimer The handle of the timer being queried.
+*
+* @return If the timer is running then the time in ticks at which the timer
+* will next expire is returned.  If the timer is not running then the return
+* value is undefined.
+*/
+TickType_t xTimerGetExpiryTime( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
 
 /** @cond */
+
 /*
  * Functions beyond this part are not part of the public API and are intended
  * for use by the kernel only.
  */
 BaseType_t xTimerCreateTimerTask( void ) PRIVILEGED_FUNCTION;
 BaseType_t xTimerGenericCommand( TimerHandle_t xTimer, const BaseType_t xCommandID, const TickType_t xOptionalValue, BaseType_t * const pxHigherPriorityTaskWoken, const TickType_t xTicksToWait ) PRIVILEGED_FUNCTION;
+
+#if( configUSE_TRACE_FACILITY == 1 )
+	void vTimerSetTimerNumber( TimerHandle_t xTimer, UBaseType_t uxTimerNumber ) PRIVILEGED_FUNCTION;
+	UBaseType_t uxTimerGetTimerNumber( TimerHandle_t xTimer ) PRIVILEGED_FUNCTION;
+#endif
 
 /** @endcond */
 
