@@ -114,6 +114,17 @@ check_submodule_sync:
     - git submodule update --recursive
     - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
 
+check_wifi_lib_md5:
+  extends: .check_job_template
+  tags:
+    - build
+  dependencies: []
+  script:
+    - tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)"
+    - git submodule update --init components/esp_wifi/lib
+    - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s2beta $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+
 check_artifacts_expire_time:
   extends: .check_job_template
   script:
