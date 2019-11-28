@@ -1,5 +1,17 @@
 menu "Example Configuration"
 
+    choice
+        bool "Device type"
+        default MESH_SET_ROOT
+        help
+            Device type (root or node).
+
+        config MESH_SET_ROOT
+            bool "MESH_SET_ROOT"
+        config MESH_SET_NODE
+            bool "MESH_SET_NODE"
+    endchoice
+
     config MESH_CHANNEL
         int "channel"
         range 1 14
