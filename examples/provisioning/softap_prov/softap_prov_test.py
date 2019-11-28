@@ -55,7 +55,7 @@ def test_examples_provisioning_softap(env, extra_data):
     ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
     print("Connecting to DUT SoftAP...")
     ip = ctrl.connect(ssid, password)
-    got_ip = dut1.expect(re.compile(r"softAP assign IP to station,IP is: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
+    got_ip = dut1.expect(re.compile(r"DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
     if ip != got_ip:
         raise RuntimeError("SoftAP connected to another host! " + ip + "!=" + got_ip)
     print("Connected to DUT SoftAP")
