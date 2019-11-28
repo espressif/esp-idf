@@ -229,18 +229,19 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             if (sha_handle != NULL) {
                 bootloader_sha256_finish(sha_handle, NULL);
             }
-
-            if (data->image.hash_appended) {
-                const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
-                if (hash == NULL) {
-                    err = ESP_FAIL;
-                    goto err;
-                }
-                memcpy(data->image_digest, hash, HASH_LEN);
-                bootloader_munmap(hash);
-            }
             sha_handle = NULL;
-        } // verify_sha
+        } //verify_sha
+
+        // Separately, if there's a hash appended to the image then copy it out to the data->image_digest field
+        if (data->image.hash_appended) {
+            const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
+            if (hash == NULL) {
+                err = ESP_FAIL;
+                goto err;
+            }
+            memcpy(data->image_digest, hash, HASH_LEN);
+            bootloader_munmap(hash);
+        }
     } // do_verify
 
     if (err != ESP_OK) {
