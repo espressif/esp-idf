@@ -1,7 +1,7 @@
 /* xdm-regs.h  -  Common register and related definitions for the XDM
                   (Xtensa Debug Module) */
 
-/* Copyright (c) 2011-2012 Tensilica Inc.
+/* Copyright (c) 2016 Cadence Design Systems Inc.
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -48,110 +48,113 @@
 /*       XDM_....     		ERI addr  [NAR addr] Description...... */
 
 /*  TRAX  */
-#define  XDM_TRAX_ID		0x0000	/*[0x00] ID */
-#define  XDM_TRAX_CONTROL 	0x0004	/*[0x01] Control */
-#define  XDM_TRAX_STATUS	0x0008	/*[0x02] Status */
-#define  XDM_TRAX_DATA		0x000C	/*[0x03] Data */
-#define  XDM_TRAX_ADDRESS	0x0010	/*[0x04] Address */
-#define  XDM_TRAX_TRIGGER	0x0014	/*[0x05] Stop PC */
-#define  XDM_TRAX_MATCH		0x0018	/*[0x06] Stop PC Range */
-#define  XDM_TRAX_DELAY		0x001C	/*[0x07] Post Stop Trigger Capture Size */
-#define  XDM_TRAX_STARTADDR	0x0020	/*[0x08] Trace Memory Start */
-#define  XDM_TRAX_ENDADDR	0x0024	/*[0x09] Trace Memory End */
-#define  XDM_TRAX_DEBUGPC	0x003C	/*[0x0F] Debug PC */
-#define  XDM_TRAX_P4CHANGE	0x0040	/*[0x10] X */
-#define  XDM_TRAX_TIME0		0x0040	/*[0x10] First Time Register */
-#define  XDM_TRAX_P4REV		0x0044	/*[0x11] X */
-#define  XDM_TRAX_TIME1		0x0044	/*[0x11] Second Time Register */
-#define  XDM_TRAX_P4DATE	0x0048	/*[0x12] X */
-#define  XDM_TRAX_INTTIME_MAX	0x0048 /*[0x12] maximal Value of Timestamp IntTime */
-#define  XDM_TRAX_P4TIME	0x004C	/*[0x13] X */
-#define  XDM_TRAX_PDSTATUS	0x0050	/*[0x14] Sample of PDebugStatus */
-#define  XDM_TRAX_PDDATA	0x0054	/*[0x15] Sample of PDebugData */
-#define  XDM_TRAX_STOP_PC	0x0058	/*[0x16] X */
-#define  XDM_TRAX_STOP_ICNT	0x005C	/*[0x16] X */
-#define  XDM_TRAX_MSG_STATUS	0x0060	/*[0x17] X */
-#define  XDM_TRAX_FSM_STATUS	0x0064	/*[0x18] X */
-#define  XDM_TRAX_IB_STATUS	0x0068	/*[0x19] X */
-#define  XDM_TRAX_STOPCNT	0x006C	/*[0x1A] X */
+#define  XDM_TRAX_ID		 0x100000	/*[0x00] ID */
+#define  XDM_TRAX_CONTROL 	 0x100004	/*[0x01] Control */
+#define  XDM_TRAX_STATUS	 0x100008	/*[0x02] Status */
+#define  XDM_TRAX_DATA		 0x10000C	/*[0x03] Data */
+#define  XDM_TRAX_ADDRESS	 0x100010	/*[0x04] Address */
+#define  XDM_TRAX_TRIGGER	 0x100014	/*[0x05] Stop PC */
+#define  XDM_TRAX_MATCH		 0x100018	/*[0x06] Stop PC Range */
+#define  XDM_TRAX_DELAY		 0x10001C	/*[0x07] Post Stop Trigger Capture Size */
+#define  XDM_TRAX_STARTADDR	 0x100020	/*[0x08] Trace Memory Start */
+#define  XDM_TRAX_ENDADDR	 0x100024	/*[0x09] Trace Memory End */
+#define  XDM_TRAX_DEBUGPC	 0x10003C	/*[0x0F] Debug PC */
+#define  XDM_TRAX_P4CHANGE	 0x100040	/*[0x10] X */
+#define  XDM_TRAX_TIME0		 0x100040	/*[0x10] First Time Register */
+#define  XDM_TRAX_P4REV		 0x100044	/*[0x11] X */
+#define  XDM_TRAX_TIME1		 0x100044	/*[0x11] Second Time Register */
+#define  XDM_TRAX_P4DATE	 0x100048	/*[0x12] X */
+#define  XDM_TRAX_INTTIME_MAX	 0x100048 	/*[0x12] maximal Value of Timestamp IntTime */
+#define  XDM_TRAX_P4TIME	 0x10004C	/*[0x13] X */
+#define  XDM_TRAX_PDSTATUS	 0x100050	/*[0x14] Sample of PDebugStatus */
+#define  XDM_TRAX_PDDATA	 0x100054	/*[0x15] Sample of PDebugData */
+#define  XDM_TRAX_STOP_PC	 0x100058	/*[0x16] X */
+#define  XDM_TRAX_STOP_ICNT	 0x10005C	/*[0x16] X */
+#define  XDM_TRAX_MSG_STATUS	 0x100060	/*[0x17] X */
+#define  XDM_TRAX_FSM_STATUS	 0x100064	/*[0x18] X */
+#define  XDM_TRAX_IB_STATUS	 0x100068	/*[0x19] X */
+#define  XDM_TRAX_STOPCNT	 0x10006C	/*[0x1A] X */
 
 /*  Performance Monitoring Counters  */
-#define  XDM_PERF_PMG		0x1000	/*[0x20] perf. mon. global control register */
-#define  XDM_PERF_INTPC		0x1010	/*[0x24] perf. mon. interrupt PC */
-#define  XDM_PERF_PM0		0x1080	/*[0x28] perf. mon. counter 0 value */
-#define  XDM_PERF_PM1		0x1084	/*[0x29] perf. mon. counter 1 value */
-#define  XDM_PERF_PM2		0x1088	/*[0x2A] perf. mon. counter 2 value */
-#define  XDM_PERF_PM3		0x108C	/*[0x2B] perf. mon. counter 3 value */
-#define  XDM_PERF_PM4		0x1090	/*[0x2C] perf. mon. counter 4 value */
-#define  XDM_PERF_PM5		0x1094	/*[0x2D] perf. mon. counter 5 value */
-#define  XDM_PERF_PM6		0x1098	/*[0x2E] perf. mon. counter 6 value */
-#define  XDM_PERF_PM7		0x109C	/*[0x2F] perf. mon. counter 7 value */
-#define  XDM_PERF_PM(n)		(0x1080+((n)<<2)) /* perfmon cnt n=0..7 value */
-#define  XDM_PERF_PMCTRL0	0x1100	/*[0x30] perf. mon. counter 0 control */
-#define  XDM_PERF_PMCTRL1	0x1104	/*[0x31] perf. mon. counter 1 control */
-#define  XDM_PERF_PMCTRL2	0x1108	/*[0x32] perf. mon. counter 2 control */
-#define  XDM_PERF_PMCTRL3	0x110C	/*[0x33] perf. mon. counter 3 control */
-#define  XDM_PERF_PMCTRL4	0x1110	/*[0x34] perf. mon. counter 4 control */
-#define  XDM_PERF_PMCTRL5	0x1114	/*[0x35] perf. mon. counter 5 control */
-#define  XDM_PERF_PMCTRL6	0x1118	/*[0x36] perf. mon. counter 6 control */
-#define  XDM_PERF_PMCTRL7	0x111C	/*[0x37] perf. mon. counter 7 control */
-#define  XDM_PERF_PMCTRL(n)	(0x1100+((n)<<2)) /* perfmon cnt n=0..7 control */
-#define  XDM_PERF_PMSTAT0	0x1180	/*[0x38] perf. mon. counter 0 status */
-#define  XDM_PERF_PMSTAT1	0x1184	/*[0x39] perf. mon. counter 1 status */
-#define  XDM_PERF_PMSTAT2	0x1188	/*[0x3A] perf. mon. counter 2 status */
-#define  XDM_PERF_PMSTAT3	0x118C	/*[0x3B] perf. mon. counter 3 status */
-#define  XDM_PERF_PMSTAT4	0x1190	/*[0x3C] perf. mon. counter 4 status */
-#define  XDM_PERF_PMSTAT5	0x1194	/*[0x3D] perf. mon. counter 5 status */
-#define  XDM_PERF_PMSTAT6	0x1198	/*[0x3E] perf. mon. counter 6 status */
-#define  XDM_PERF_PMSTAT7	0x119C	/*[0x3F] perf. mon. counter 7 status */
-#define  XDM_PERF_PMSTAT(n)	(0x1180+((n)<<2)) /* perfmon cnt n=0..7 status */
+#define  XDM_PERF_PMG		0x101000	/*[0x20] perf. mon. global control register */
+#define  XDM_PERF_INTPC		0x101010	/*[0x24] perf. mon. interrupt PC */
+#define  XDM_PERF_PM0		0x101080	/*[0x28] perf. mon. counter 0 value */
+#define  XDM_PERF_PM1		0x101084	/*[0x29] perf. mon. counter 1 value */
+#define  XDM_PERF_PM2		0x101088	/*[0x2A] perf. mon. counter 2 value */
+#define  XDM_PERF_PM3		0x10108C	/*[0x2B] perf. mon. counter 3 value */
+#define  XDM_PERF_PM4		0x101090	/*[0x2C] perf. mon. counter 4 value */
+#define  XDM_PERF_PM5		0x101094	/*[0x2D] perf. mon. counter 5 value */
+#define  XDM_PERF_PM6		0x101098	/*[0x2E] perf. mon. counter 6 value */
+#define  XDM_PERF_PM7		0x10109C	/*[0x2F] perf. mon. counter 7 value */
+#define  XDM_PERF_PM(n)		(0x101080+((n)<<2)) /* perfmon cnt n=0..7 value */
+#define  XDM_PERF_PMCTRL0	0x101100	/*[0x30] perf. mon. counter 0 control */
+#define  XDM_PERF_PMCTRL1	0x101104	/*[0x31] perf. mon. counter 1 control */
+#define  XDM_PERF_PMCTRL2	0x101108	/*[0x32] perf. mon. counter 2 control */
+#define  XDM_PERF_PMCTRL3	0x10110C	/*[0x33] perf. mon. counter 3 control */
+#define  XDM_PERF_PMCTRL4	0x101110	/*[0x34] perf. mon. counter 4 control */
+#define  XDM_PERF_PMCTRL5	0x101114	/*[0x35] perf. mon. counter 5 control */
+#define  XDM_PERF_PMCTRL6	0x101118	/*[0x36] perf. mon. counter 6 control */
+#define  XDM_PERF_PMCTRL7	0x10111C	/*[0x37] perf. mon. counter 7 control */
+#define  XDM_PERF_PMCTRL(n)	(0x101100+((n)<<2)) /* perfmon cnt n=0..7 control */
+#define  XDM_PERF_PMSTAT0	0x101180	/*[0x38] perf. mon. counter 0 status */
+#define  XDM_PERF_PMSTAT1	0x101184	/*[0x39] perf. mon. counter 1 status */
+#define  XDM_PERF_PMSTAT2	0x101188	/*[0x3A] perf. mon. counter 2 status */
+#define  XDM_PERF_PMSTAT3	0x10118C	/*[0x3B] perf. mon. counter 3 status */
+#define  XDM_PERF_PMSTAT4	0x101190	/*[0x3C] perf. mon. counter 4 status */
+#define  XDM_PERF_PMSTAT5	0x101194	/*[0x3D] perf. mon. counter 5 status */
+#define  XDM_PERF_PMSTAT6	0x101198	/*[0x3E] perf. mon. counter 6 status */
+#define  XDM_PERF_PMSTAT7	0x10119C	/*[0x3F] perf. mon. counter 7 status */
+#define  XDM_PERF_PMSTAT(n)	(0x101180+((n)<<2)) /* perfmon cnt n=0..7 status */
 
 /*  On-Chip-Debug (OCD)  */
-#define  XDM_OCD_ID		0x2000	/*[0x40] ID register */
-#define  XDM_OCD_DCR_CLR	0x2008	/*[0x42] Debug Control reg clear */
-#define  XDM_OCD_DCR_SET	0x200C	/*[0x43] Debug Control reg set */
-#define  XDM_OCD_DSR		0x2010	/*[0x44] Debug Status reg */
-#define  XDM_OCD_DDR		0x2014	/*[0x45] Debug Data reg */
-#define  XDM_OCD_DDREXEC	0x2018	/*[0x46] Debug Data reg + execute-DIR */
-#define  XDM_OCD_DIR0EXEC	0x201C	/*[0x47] Debug Instruction reg, word 0 + execute-DIR */
-#define  XDM_OCD_DIR0		0x2020	/*[0x48] Debug Instruction reg, word 1 */
-#define  XDM_OCD_DIR1		0x2024	/*[0x49] Debug Instruction reg, word 2 */
-#define  XDM_OCD_DIR2		0x2028	/*[0x4A] Debug Instruction reg, word 3 */
-#define  XDM_OCD_DIR3		0x202C	/*[0x49] Debug Instruction reg, word 4 */
-#define  XDM_OCD_DIR4		0x2030	/*[0x4C] Debug Instruction reg, word 5 */
-#define  XDM_OCD_DIR5		0x2034	/*[0x4D] Debug Instruction reg, word 5 */
-#define  XDM_OCD_DIR6		0x2038	/*[0x4E] Debug Instruction reg, word 6 */
-#define  XDM_OCD_DIR7		0x203C	/*[0x4F] Debug Instruction reg, word 7 */
+#define  XDM_OCD_ID		0x102000	/*[0x40] ID register */
+#define  XDM_OCD_DCR_CLR	0x102008	/*[0x42] Debug Control reg clear */
+#define  XDM_OCD_DCR_SET	0x10200C	/*[0x43] Debug Control reg set */
+#define  XDM_OCD_DSR		0x102010	/*[0x44] Debug Status reg */
+#define  XDM_OCD_DDR		0x102014	/*[0x45] Debug Data reg */
+#define  XDM_OCD_DDREXEC	0x102018	/*[0x46] Debug Data reg + execute-DIR */
+#define  XDM_OCD_DIR0EXEC	0x10201C	/*[0x47] Debug Instruction reg, word 0 + execute-DIR */
+#define  XDM_OCD_DIR0		0x102020	/*[0x48] Debug Instruction reg, word 1 */
+#define  XDM_OCD_DIR1		0x102024	/*[0x49] Debug Instruction reg, word 2 */
+#define  XDM_OCD_DIR2		0x102028	/*[0x4A] Debug Instruction reg, word 3 */
+#define  XDM_OCD_DIR3		0x10202C	/*[0x49] Debug Instruction reg, word 4 */
+#define  XDM_OCD_DIR4		0x102030	/*[0x4C] Debug Instruction reg, word 5 */
+#define  XDM_OCD_DIR5		0x102034	/*[0x4D] Debug Instruction reg, word 5 */
+#define  XDM_OCD_DIR6		0x102038	/*[0x4E] Debug Instruction reg, word 6 */
+#define  XDM_OCD_DIR7		0x10203C	/*[0x4F] Debug Instruction reg, word 7 */
 
 /*  Miscellaneous Registers  */
-#define  XDM_MISC_PWRCTL	0x3020	/*[0x58] Power and Reset Control */
-#define  XDM_MISC_PWRSTAT	0x3024	/*[0x59] Power and Reset Status */
-#define  XDM_MISC_ERISTAT	0x3028	/*[0x5A] ERI Transaction Status */
-#define  XDM_MISC_DATETIME	0x3034	/*[0x5D] [INTERNAL] Timestamps of build */
-#define  XDM_MISC_UBID		0x3038	/*[0x5E] [INTERNAL] Build Unique ID */
-#define  XDM_MISC_CID		0x303C	/*[0x5F] [INTERNAL] Customer ID */
+#define  XDM_MISC_PWRCTL	0x103020	/*[0x58] Power and Reset Control */
+#define  XDM_MISC_PWRSTAT	0x103024	/*[0x59] Power and Reset Status */
+#define  XDM_MISC_ERISTAT	0x103028	/*[0x5A] ERI Transaction Status */
+#define  XDM_MISC_DATETIME	0x103034
+#define  XDM_MISC_CONFIGID1_V0	0x103034	/*[0x5D] [INTERNAL] ConfigID1 in XDM v0/1 */
+#define  XDM_MISC_CONFIGID1_V2	0x10007c	/*[0x1F] [INTERNAL] ConfigID1 since XDM v2 */
+#define  XDM_MISC_CONFIGID0_V2	0x100078	/*[0x1E] [INTERNAL] ConfigID0 since XDM v2 */
+#define  XDM_MISC_UBID		0x103038	/*[0x5E] [INTERNAL] Build Unique ID */
+#define  XDM_MISC_CID		0x10303C	/*[0x5F] [INTERNAL] Customer ID */
 
 /*  CoreSight compatibility  */
-#define  XDM_CS_ITCTRL		0x3F00	/*[0x60] InTegration Mode control reg */
-#define  XDM_CS_CLAIMSET	0x3FA0	/*[0x68] Claim Tag Set reg */
-#define  XDM_CS_CLAIMCLR	0x3FA4	/*[0x69] Claim Tag Clear reg */
-#define  XDM_CS_LOCK_ACCESS	0x3FB0	/*[0x6B] Lock Access (writing 0xC5ACCE55 unlocks) */
-#define  XDM_CS_LOCK_STATUS	0x3FB4	/*[0x6D] Lock Status */
-#define  XDM_CS_AUTH_STATUS	0x3FB8	/*[0x6E] Authentication Status */
-#define  XDM_CS_DEV_ID		0x3FC8	/*[0x72] Device ID */
-#define  XDM_CS_DEV_TYPE	0x3FCC	/*[0x73] Device Type */
-#define  XDM_CS_PER_ID4		0x3FD0	/*[0x74] Peripheral ID reg byte 4 */
-#define  XDM_CS_PER_ID5		0x3FD4	/*[0x75] Peripheral ID reg byte 5 */
-#define  XDM_CS_PER_ID6		0x3FD8	/*[0x76] Peripheral ID reg byte 6 */
-#define  XDM_CS_PER_ID7		0x3FDC	/*[0x77] Peripheral ID reg byte 7 */
-#define  XDM_CS_PER_ID0		0x3FE0	/*[0x78] Peripheral ID reg byte 0 */
-#define  XDM_CS_PER_ID1		0x3FE4	/*[0x79] Peripheral ID reg byte 1 */
-#define  XDM_CS_PER_ID2		0x3FE8	/*[0x7A] Peripheral ID reg byte 2 */
-#define  XDM_CS_PER_ID3		0x3FEC	/*[0x7B] Peripheral ID reg byte 3 */
-#define  XDM_CS_COMP_ID0	0x3FF0	/*[0x7C] Component ID reg byte 0 */
-#define  XDM_CS_COMP_ID1	0x3FF4	/*[0x7D] Component ID reg byte 1 */
-#define  XDM_CS_COMP_ID2	0x3FF8	/*[0x7E] Component ID reg byte 2 */
-#define  XDM_CS_COMP_ID3	0x3FFC	/*[0x7F] Component ID reg byte 3 */
+#define  XDM_CS_ITCTRL		0x103F00	/*[0x60] InTegration Mode control reg */
+#define  XDM_CS_CLAIMSET	0x103FA0	/*[0x68] Claim Tag Set reg */
+#define  XDM_CS_CLAIMCLR	0x103FA4	/*[0x69] Claim Tag Clear reg */
+#define  XDM_CS_LOCK_ACCESS	0x103FB0	/*[0x6B] Lock Access (writing 0xC5ACCE55 unlocks) */
+#define  XDM_CS_LOCK_STATUS	0x103FB4	/*[0x6D] Lock Status */
+#define  XDM_CS_AUTH_STATUS	0x103FB8	/*[0x6E] Authentication Status */
+#define  XDM_CS_DEV_ID		0x103FC8	/*[0x72] Device ID */
+#define  XDM_CS_DEV_TYPE	0x103FCC	/*[0x73] Device Type */
+#define  XDM_CS_PER_ID4		0x103FD0	/*[0x74] Peripheral ID reg byte 4 */
+#define  XDM_CS_PER_ID5		0x103FD4	/*[0x75] Peripheral ID reg byte 5 */
+#define  XDM_CS_PER_ID6		0x103FD8	/*[0x76] Peripheral ID reg byte 6 */
+#define  XDM_CS_PER_ID7		0x103FDC	/*[0x77] Peripheral ID reg byte 7 */
+#define  XDM_CS_PER_ID0		0x103FE0	/*[0x78] Peripheral ID reg byte 0 */
+#define  XDM_CS_PER_ID1		0x103FE4	/*[0x79] Peripheral ID reg byte 1 */
+#define  XDM_CS_PER_ID2		0x103FE8	/*[0x7A] Peripheral ID reg byte 2 */
+#define  XDM_CS_PER_ID3		0x103FEC	/*[0x7B] Peripheral ID reg byte 3 */
+#define  XDM_CS_COMP_ID0	0x103FF0	/*[0x7C] Component ID reg byte 0 */
+#define  XDM_CS_COMP_ID1	0x103FF4	/*[0x7D] Component ID reg byte 1 */
+#define  XDM_CS_COMP_ID2	0x103FF8	/*[0x7E] Component ID reg byte 2 */
+#define  XDM_CS_COMP_ID3	0x103FFC	/*[0x7F] Component ID reg byte 3 */
 
 #define CS_PER_ID0	0x00000003
 #define CS_PER_ID1	0x00000021
@@ -168,7 +171,9 @@
 
 #define XTENSA_IDCODE	0x120034e5    // FIXME (upper bits not spec. out but BE is !)
 #define XTENSA_MFC_ID	(XTENSA_IDCODE & 0xFFF)
-#define CS_DEV_ID	XTENSA_IDCODE
+#define CS_DEV_ID	XTENSA_IDCODE //FIXME - for XDM v0 only, for v2 is the new ID, that includes vars like PRID but also can be custom
+#define CS_DEV_ID_v0_MASK	0x00000FFF // can compare only the lower 12 bits
+#define CS_DEV_ID_v2_MASK	0xF0000000 // can compare only the upper 4 bits
 
 #define NXS_OCD_REG(val)  ((val >= 0x40) && (val <= 0x5F))
 #define NXS_TRAX_REG(val)  val <= 0x3F
@@ -197,7 +202,7 @@
 				: -1)
 
 #define XDM_NAR_TO_APB(a)	_XDM_NAR_TO_APB((a & 0xFFFF))
-#define XDM_NAR_TO_ERI(a)	_XDM_NAR_TO_APB((a & 0xFFFF)) | 0x000000
+#define XDM_NAR_TO_ERI(a)	_XDM_NAR_TO_APB((a & 0xFFFF)) | 0x100000
 
 /* Convert APB to ERI address */
 #define XDM_APB_TO_ERI(a)	((a) | (0x100000))
@@ -212,6 +217,8 @@
 #define OCD_ID_PSO_SHIFT			 2
 #define OCD_ID_TRACEPORT		0x00000080
 #define OCD_ID_TRACEPORT_SHIFT			 7
+
+#define OCD_ID_LSDDRP_XEA3		0x00000400
 
 /*  Power Status register.  NOTE:  different bit positions in JTAG vs. ERI/APB !!  */
 /*  ERI/APB:  */
@@ -228,7 +235,7 @@
 #define PWRSTAT_MEM_DOMAIN_ON_SHIFT		8
 #define PWRSTAT_DEBUG_DOMAIN_ON		0x00001000	/* set if debug domain is powered on */
 #define PWRSTAT_DEBUG_DOMAIN_ON_SHIFT		12
-#define PWRSTAT_ALL_ON			PWRSTAT_CORE_DOMAIN_ON | PWRSTAT_MEM_DOMAIN_ON | PWRSTAT_DEBUG_DOMAIN_ON
+#define PWRSTAT_ALL_ON			(PWRSTAT_CORE_DOMAIN_ON | PWRSTAT_MEM_DOMAIN_ON | PWRSTAT_DEBUG_DOMAIN_ON)
 #define PWRSTAT_CORE_WAS_RESET		0x00010000	/* [APB only] set if core got reset */
 #define PWRSTAT_CORE_WAS_RESET_SHIFT		16
 #define PWRSTAT_DEBUG_WAS_RESET		0x10000000	/* set if debug module got reset */
@@ -237,7 +244,7 @@
 #define J_PWRSTAT_CORE_DOMAIN_ON	0x01		/* set if core is powered on */
 #define J_PWRSTAT_MEM_DOMAIN_ON		0x02		/* set if memory domain is powered on */
 #define J_PWRSTAT_DEBUG_DOMAIN_ON	0x04		/* set if debug domain is powered on */
-#define J_PWRSTAT_ALL_ON		J_PWRSTAT_CORE_DOMAIN_ON | J_PWRSTAT_MEM_DOMAIN_ON | J_PWRSTAT_DEBUG_DOMAIN_ON
+#define J_PWRSTAT_ALL_ON		(J_PWRSTAT_CORE_DOMAIN_ON | J_PWRSTAT_MEM_DOMAIN_ON | J_PWRSTAT_DEBUG_DOMAIN_ON)
 #define J_PWRSTAT_CORE_STILL_NEEDED	0x08		/* set if others keeping core awake */
 #define J_PWRSTAT_CORE_WAS_RESET	0x10		/* set if core got reset */
 #define J_PWRSTAT_DEBUG_WAS_RESET	0x40		/* set if debug module got reset */
@@ -252,7 +259,7 @@
 #define PWRCTL_MEM_WAKEUP_SHIFT			8
 #define PWRCTL_DEBUG_WAKEUP		0x00001000	/* set to force debug domain to stay powered on */
 #define PWRCTL_DEBUG_WAKEUP_SHIFT		12
-#define PWRCTL_ALL_ON			PWRCTL_CORE_WAKEUP | PWRCTL_MEM_WAKEUP | PWRCTL_DEBUG_WAKEUP
+#define PWRCTL_ALL_ON			(PWRCTL_CORE_WAKEUP | PWRCTL_MEM_WAKEUP | PWRCTL_DEBUG_WAKEUP)
 #define PWRCTL_CORE_RESET		0x00010000	/* [APB only] set to assert core reset */
 #define PWRCTL_CORE_RESET_SHIFT			16
 #define PWRCTL_DEBUG_RESET		0x10000000	/* set to assert debug module reset */
@@ -262,7 +269,7 @@
 #define J_PWRCTL_MEM_WAKEUP		0x02		/* set to force memory domain to stay powered on */
 #define J_PWRCTL_DEBUG_WAKEUP		0x04		/* set to force debug domain to stay powered on */
 #define J_DEBUG_USE			0x80		/*  */
-#define J_PWRCTL_ALL_ON			J_DEBUG_USE | J_PWRCTL_CORE_WAKEUP | J_PWRCTL_MEM_WAKEUP | J_PWRCTL_DEBUG_WAKEUP
+#define J_PWRCTL_ALL_ON			(J_DEBUG_USE | J_PWRCTL_CORE_WAKEUP | J_PWRCTL_MEM_WAKEUP | J_PWRCTL_DEBUG_WAKEUP)
 #define J_PWRCTL_DEBUG_ON		J_DEBUG_USE | J_PWRCTL_DEBUG_WAKEUP
 #define J_PWRCTL_CORE_RESET		0x10		/* set to assert core reset */
 #define J_PWRCTL_DEBUG_RESET		0x40		/* set to assert debug module reset */
@@ -303,10 +310,12 @@
 #define DCR_ENABLEOCD_SHIFT		0
 #define DCR_DEBUG_INT		0x0000002
 #define DCR_DEBUG_INT_SHIFT		1
-#define DCR_DEBUG_OVERRIDE	0x0000004
+#define DCR_DEBUG_OVERRIDE	0x0000004  //ER or later
 #define DCR_DEBUG_OVERRIDE_SHIFT	2
-#define DCR_DEBUG_INTERCEPT	0x0000008
-#define DCR_DEBUG_INTERCEPT_SHIFT	3
+#define DCR_DEBUG_SS_REQ	0x0000008
+#define DCR_DEBUG_SS_REQ_SHIFT		3
+#define DCR_DEBUG_OVERRIDE_CW	0x0000010  //RD and earlier
+#define DCR_DEBUG_OVERRIDE_CW_SHIFT	4
 #define DCR_MASK_NMI		0x0000020
 #define DCR_MASK_NMI_SHIFT		5
 #define DCR_STEP_ENABLE		0x0000040
@@ -329,6 +338,10 @@
 
 /************  Define DSR register bits  **************/
 
+#define DOSR_STOP_CAUSE_SHIFT	5
+#define DOSR_STOP_CAUSE_MASK	0xF
+
+#define DOSR_EXECDONE_SHIFT	0
 #define DOSR_EXECDONE_ER	0x01
 #define DOSR_EXECDONE_SHIFT	0
 #define DOSR_EXCEPTION_ER	0x02
@@ -351,7 +364,7 @@
 #define DOSR_DEBUG_PEND_BIN		0x10000
 #define DOSR_DEBUG_PEND_HOST		0x20000
 #define DOSR_DEBUG_PEND_TRAX		0x40000
-#define DOSR_DEBUG_BIN		        0x100000
+#define DOSR_DEBUG_BIN		 	0x100000
 #define DOSR_DEBUG_HOST			0x200000
 #define DOSR_DEBUG_TRAX			0x400000
 #define DOSR_DEBUG_PEND_BIN_SHIFT	16
@@ -398,26 +411,17 @@ typedef struct {
     char*  name;
 } regdef_t;
 
-/*char* regname(regdef_t* list, int regno)
-{
-  unsigned i;
-  for(i = 0 ; i < (sizeof(list) / sizeof(regdef_t)); i++){
-    if(list[i].reg == regno)
-      return list[i].name;
-  }
-  return "???";
-}*/
-
 /*
  *  Returns the name of the specified XDM register number,
  *  or simply "???" if the register number is not recognized.
  *  FIXME - requires -1 as the last entry - change to compare the name to ???
  *  or even better, make the code above to work.
  */
-static char * regname(regdef_t* list, int reg)
+static char*
+regname(regdef_t* list, int reg)
 {
   int i = 0;
-  while (list[i].reg != -1){
+  while (list[i].reg != -1) {
     if (list[i].reg == reg)
       break;
     i++;
@@ -426,38 +430,40 @@ static char * regname(regdef_t* list, int reg)
 }
 
 #if defined (USE_XDM_REGNAME)
-regdef_t xdm_reglist[] =
+static regdef_t xdm_reglist[] =
 {
-  {XDM_TRAX_ID		  ,"TRAX_ID"      },
-  {XDM_TRAX_CONTROL	  ,"CONTROL"      },
-  {XDM_TRAX_STATUS	  ,"STATUS"       },
-  {XDM_TRAX_DATA          ,"DATA"         },
-  {XDM_TRAX_ADDRESS	  ,"ADDRESS"      },
-  {XDM_TRAX_TRIGGER	  ,"TRIGGER PC"   },
-  {XDM_TRAX_MATCH         ,"PC MATCH"     },
-  {XDM_TRAX_DELAY	  ,"DELAY CNT."   },
-  {XDM_TRAX_STARTADDR	  ,"START ADDRESS"},
-  {XDM_TRAX_ENDADDR	  ,"END ADDRESS"  },
-  {XDM_TRAX_DEBUGPC	  ,"DEBUG PC"  },
-  {XDM_TRAX_P4CHANGE	  ,"P4 CHANGE"    },
-  {XDM_TRAX_P4REV         ,"P4 REV."      },
-  {XDM_TRAX_P4DATE	  ,"P4 DATE"      },
-  {XDM_TRAX_P4TIME	  ,"P4 TIME"      },
-  {XDM_TRAX_PDSTATUS	  ,"PD STATUS"    },
-  {XDM_TRAX_PDDATA	  ,"PD DATA"      },
-  {XDM_TRAX_STOP_PC	  ,"STOP PC"      },
-  {XDM_TRAX_STOP_ICNT	  ,"STOP ICNT"    },
-  {XDM_TRAX_MSG_STATUS	  ,"MSG STAT."    },
-  {XDM_TRAX_FSM_STATUS	  ,"FSM STAT."    },
-  {XDM_TRAX_IB_STATUS	  ,"IB STAT."     },
-
-  {XDM_OCD_ID         ,"OCD_ID"  },
-  {XDM_OCD_DCR_CLR    ,"DCR_CLR" },
-  {XDM_OCD_DCR_SET    ,"DCR_SET" },
   {XDM_OCD_DSR        ,"DOSR"    },
   {XDM_OCD_DDR        ,"DDR"     },
   {XDM_OCD_DDREXEC    ,"DDREXEC" },
   {XDM_OCD_DIR0EXEC   ,"DIR0EXEC"},
+  {XDM_OCD_DCR_CLR    ,"DCR_CLR" },
+  {XDM_OCD_DCR_SET    ,"DCR_SET" },
+  {XDM_TRAX_CONTROL   ,"CONTROL" },
+  {XDM_TRAX_STATUS    ,"STATUS"  },
+  {XDM_TRAX_DATA      ,"DATA"    },
+  {XDM_TRAX_ADDRESS   ,"ADDRESS" },
+
+  {XDM_TRAX_ID        ,"TRAX_ID"      },
+
+  {XDM_TRAX_TRIGGER   ,"TRIGGER PC"   },
+  {XDM_TRAX_MATCH     ,"PC MATCH"     },
+  {XDM_TRAX_DELAY     ,"DELAY CNT."   },
+  {XDM_TRAX_STARTADDR ,"START ADDRESS"},
+  {XDM_TRAX_ENDADDR   ,"END ADDRESS"  },
+  {XDM_TRAX_DEBUGPC   ,"DEBUG PC"  },
+  {XDM_TRAX_P4CHANGE  ,"P4 CHANGE"    },
+  {XDM_TRAX_P4REV     ,"P4 REV."      },
+  {XDM_TRAX_P4DATE    ,"P4 DATE"      },
+  {XDM_TRAX_P4TIME    ,"P4 TIME"      },
+  {XDM_TRAX_PDSTATUS  ,"PD STATUS"    },
+  {XDM_TRAX_PDDATA    ,"PD DATA"      },
+  {XDM_TRAX_STOP_PC   ,"STOP PC"      },
+  {XDM_TRAX_STOP_ICNT ,"STOP ICNT"    },
+  {XDM_TRAX_MSG_STATUS,"MSG STAT."    },
+  {XDM_TRAX_FSM_STATUS,"FSM STAT."    },
+  {XDM_TRAX_IB_STATUS ,"IB STAT."     },
+
+  {XDM_OCD_ID         ,"OCD_ID"  },
   {XDM_OCD_DIR0       ,"DIR0"    },
   {XDM_OCD_DIR1       ,"DIR1"    },
   {XDM_OCD_DIR2       ,"DIR2"    },

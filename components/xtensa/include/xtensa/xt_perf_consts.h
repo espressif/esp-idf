@@ -1,5 +1,5 @@
 /*
- * Customer ID=11656; Build=0x5f626; Copyright (c) 2012 by Tensilica Inc. ALL RIGHTS RESERVED.
+ * Copyright (c) 2012 by Tensilica Inc. ALL RIGHTS RESERVED.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,6 +23,8 @@
 #ifndef __XT_PERF_CONSTS_H__
 #define __XT_PERF_CONSTS_H__
 
+#include <xtensa/config/core.h>
+
 /*
  * Performance monitor counter selectors
  */
@@ -34,7 +36,7 @@
 #define XTPERF_CNT_DCACHE_MISSES         0x8006  /* DCache misses penalty in cycles */
 
 #define XTPERF_CNT_CYCLES         0  /* Count cycles */
-#define XTPERF_CNT_OVERFLOW       1  /* Overflow of counter n-1 (assuming this is counter n) */  
+#define XTPERF_CNT_OVERFLOW       1  /* Overflow of counter n-1 (assuming this is counter n) */
 #define XTPERF_CNT_INSN           2  /* Successfully completed instructions */
 #define XTPERF_CNT_D_STALL        3  /* Data-related GlobalStall cycles */
 #define XTPERF_CNT_I_STALL        4  /* Instruction-related and other GlobalStall cycles */
@@ -56,8 +58,13 @@
 #define XTPERF_CNT_OUTBOUND_PIF   23 /* Outbound PIF transactions */
 #define XTPERF_CNT_INBOUND_PIF    24 /* Inbound PIF transactions */
 #define XTPERF_CNT_PREFETCH       26 /* Prefetch events */
+
+#if XCHAL_HW_VERSION >= 270004
+
 #define XTPERF_CNT_IDMA           27 /* iDMA counters */
 #define XTPERF_CNT_INSN_LENGTH    28 /* Instruction length counters */
+
+#endif /* HW version >= 270004 */
 
 /*
  * Masks for each of the selector listed above
@@ -68,18 +75,18 @@
 #define XTPERF_MASK_COMMITTED_INSN               0x0001
 
 /* XTPERF_CNT_BRANCH_PENALTY selector mask */
- 
+
 #define XTPERF_MASK_BRANCH_PENALTY               0x0001
 
 /* XTPERF_CNT_PIPELINE_INTERLOCKS selector mask */
 
 #define XTPERF_MASK_PIPELINE_INTERLOCKS          0x0001
 
-/* XTPERF_CNT_ICACHE_MISSES selector mask */ 
+/* XTPERF_CNT_ICACHE_MISSES selector mask */
 
 #define XTPERF_MASK_ICACHE_MISSES                0x0001
 
-/* XTPERF_CNT_DCACHE_MISSES selector mask */ 
+/* XTPERF_CNT_DCACHE_MISSES selector mask */
 
 #define XTPERF_MASK_DCACHE_MISSES                0x0001
 
@@ -281,6 +288,8 @@
 #define XTPERF_MASK_PREFETCH_D_MISS                0x0008 /* D prefetch-buffer-lookup miss */
 #define XTPERF_MASK_PREFETCH_D_L1_FILL             0x0020 /* Fill directly to DCache L1 */
 
+#if XCHAL_HW_VERSION >= 270004
+
 /*
  * XTPERF_CNT_IDMA selector mask
  */
@@ -310,4 +319,7 @@
 #define XTPERF_MASK_INSN_LENGTH_112                0x1000 /* 112-bit instruction length */
 #define XTPERF_MASK_INSN_LENGTH_120                0x2000 /* 120-bit instruction length */
 #define XTPERF_MASK_INSN_LENGTH_128                0x4000 /* 128-bit instruction length */
+
+#endif /* HW version >= 270004 */
+
 #endif /* __XT_PERF_CONSTS_H__ */
