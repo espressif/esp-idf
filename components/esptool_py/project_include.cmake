@@ -1,8 +1,9 @@
 # Set some global esptool.py variables
 #
 # Many of these are read when generating flash_app_args & flash_project_args
+idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
-set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${IDF_TARGET})
+set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${target})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
@@ -12,6 +13,8 @@ set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
 
 set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
 set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
+set(ESPTOOLPY_CHIP "${target}")
+set(ESPTOOLPY_WITH_STUB TRUE)
 
 if(CONFIG_SECURE_BOOT_ENABLED OR CONFIG_SECURE_FLASH_ENC_ENABLED)
     # If security enabled then override post flash option

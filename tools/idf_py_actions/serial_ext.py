@@ -42,6 +42,9 @@ def action_extensions(base_actions, project_path):
         extra_esptool_args = flasher_args["extra_esptool_args"]
         result += ["--before", extra_esptool_args["before"]]
         result += ["--after", extra_esptool_args["after"]]
+        result += ["--chip", extra_esptool_args["chip"]]
+        if not extra_esptool_args["stub"]:
+            result += ["--no-stub"]
         return result
 
     def _get_commandline_options(ctx):

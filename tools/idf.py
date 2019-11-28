@@ -483,13 +483,15 @@ def init_cli(verbose_output=None):
                         cmd += o + " " + flasher_path(f) + " "
 
                 print(
-                    "%s %s -p %s -b %s --before %s --after %s write_flash %s" % (
+                    "%s %s -p %s -b %s --before %s --after %s --chip %s %s write_flash %s" % (
                         PYTHON,
                         _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
                         args.port or "(PORT)",
                         args.baud,
                         flasher_args["extra_esptool_args"]["before"],
                         flasher_args["extra_esptool_args"]["after"],
+                        flasher_args["extra_esptool_args"]["chip"],
+                        "--no-stub" if not flasher_args["extra_esptool_args"]["stub"] else "",
                         cmd.strip(),
                     ))
                 print(
