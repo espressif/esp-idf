@@ -10,7 +10,7 @@ check_submodule_sync:
   retry: 2
   variables:
     GIT_STRATEGY: clone
-    GIT_SUBMODULE_STRATEGY: none
+    SUBMODULES_TO_FETCH: "none"
     PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
   before_script: []
   after_script: []
