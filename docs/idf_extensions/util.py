@@ -29,10 +29,6 @@ except ImportError:
     _urlretrieve = urllib.urlretrieve
 
 
-def run_cmd_get_output(cmd):
-    return os.popen(cmd).read().strip()
-
-
 def files_equal(path_1, path_2):
     if not os.path.exists(path_1) or not os.path.exists(path_2):
         return False
@@ -76,6 +72,7 @@ def download_file_if_missing(from_url, to_path):
         with open(filename_with_path, 'wb') as fobj:
             with open(tmp_file, 'rb') as tmp:
                 fobj.write(tmp.read())
+
 
 def call_with_python(cmd):
     # using sys.executable ensures that the scripts are called with the same Python interpreter

@@ -122,6 +122,7 @@ External RAM use has the following restrictions:
  * External RAM cannot be used as task stack memory. Due to this, :cpp:func:`xTaskCreate` and similar functions will always allocate internal memory for stack and task TCBs, and functions such as :cpp:func:`xTaskCreateStatic` will check if the buffers passed are internal.
  * By default, failure to initialize external RAM will cause the ESP-IDF startup to abort. This can be disabled by enabling the config item :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND`. If :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY` is enabled, the option to ignore failure is not available as the linker will have assigned symbols to external memory addresses at link time.
 
+
 .. only:: esp32
 
     .. include:: inc/external-ram-esp32-notes.inc

@@ -4,17 +4,20 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import re
 import os
+import subprocess
 from docutils import nodes
-from local_util import run_cmd_get_output
 
 
 def get_github_rev():
-    path = run_cmd_get_output('git rev-parse --short HEAD')
-    tag = run_cmd_get_output('git describe --exact-match')
+    path = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+    try:
+        tag = subprocess.check_output(['git', 'describe', '--exact-match']).strip()
+    except subprocess.CalledProcessError:
+        tag = None
     print('Git commit ID: ', path)
-    if len(tag):
+    if tag:
         print('Git tag: ', tag)
-        path = tag
+        return tag
     return path
 
 
@@ -38,15 +41,15 @@ def setup(app):
     if on_rtd:
         # provide RTD specific commit identification to be included in the link
         tag_rev = 'latest'
-        if (run_cmd_get_output('git rev-parse --short HEAD') != rev):
+        if (subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() != rev):
             tag_rev = rev
     else:
         # if not on the RTD then provide generic identification
-        tag_rev = run_cmd_get_output('git describe --always')
+        tag_rev = subprocess.check_output(['git', 'describe', '--always']).strip()
 
     app.add_role('link_to_translation', crosslink('%s../../%s/{}/%s.html'.format(tag_rev)))
 
-    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
 
 
 def autolink(pattern):

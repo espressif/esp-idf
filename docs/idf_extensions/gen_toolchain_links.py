@@ -1,15 +1,10 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# This script generates toolchain download links and toolchain unpacking
-# code snippets based on information found in $IDF_PATH/tools/toolchain_versions.mk
-#
-
+# Generate toolchain download links from toolchain info makefile
 from __future__ import print_function
-
-import sys
-import os
+import os.path
 from collections import namedtuple
+from util import copy_if_modified
+
+BASE_URL = 'https://dl.espressif.com/dl/'
 
 PlatformInfo = namedtuple("PlatformInfo", [
     "platform_name",
@@ -20,19 +15,22 @@ PlatformInfo = namedtuple("PlatformInfo", [
 ])
 
 
-def main():
-    if len(sys.argv) != 4:
-        print("Usage: gen-toolchain-links.py <versions file> <base download URL> <output directory>")
-        sys.exit(1)
+def setup(app):
+    # we don't actually need idf-info, just a convenient event to trigger this on
+    app.connect('idf-info', generate_toolchain_download_links)
 
-    out_dir = sys.argv[3]
-    if not os.path.exists(out_dir):
-        print("Creating directory %s" % out_dir)
-        os.mkdir(out_dir)
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
 
-    base_url = sys.argv[2]
 
-    versions_file = sys.argv[1]
+def generate_toolchain_download_links(app, project_description):
+    print("Generating toolchain download links")
+    toolchain_tmpdir = '{}/toolchain_inc'.format(app.config.build_dir)
+    toolchain_versions = os.path.join(app.config.idf_path, "tools/toolchain_versions.mk")
+    gen_toolchain_links(toolchain_versions, toolchain_tmpdir)
+    copy_if_modified(toolchain_tmpdir, '{}/inc'.format(app.config.build_dir))
+
+
+def gen_toolchain_links(versions_file, out_dir):
     version_vars = {}
     with open(versions_file) as f:
         for line in f:
@@ -67,13 +65,18 @@ def main():
         PlatformInfo("win32", "win32", "zip", None, None)
     ]
 
+    try:
+        os.mkdir(out_dir)
+    except OSError:
+        pass
+
     with open(os.path.join(out_dir, 'download-links.inc'), "w") as links_file:
         for p in platform_info:
             archive_name = 'xtensa-esp32-elf-gcc{}-{}-{}.{}'.format(
                 gcc_version.replace('.', '_'), toolchain_desc, p.platform_archive_suffix, p.extension)
 
             print('.. |download_link_{}| replace:: {}{}'.format(
-                p.platform_name, base_url, archive_name), file=links_file)
+                p.platform_name, BASE_URL, archive_name), file=links_file)
 
             if p.unpack_code is not None:
                 with open(os.path.join(out_dir, 'unpack-code-%s.inc' % p.platform_name), "w") as f:
@@ -81,7 +84,3 @@ def main():
 
     with open(os.path.join(out_dir, 'scratch-build-code.inc'), "w") as code_file:
         print(scratch_build_code_linux_macos.format(toolchain_desc), file=code_file)
-
-
-if __name__ == "__main__":
-    main()

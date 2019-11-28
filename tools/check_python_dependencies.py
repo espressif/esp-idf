@@ -16,6 +16,7 @@
 
 import argparse
 import os
+import re
 import sys
 
 try:
@@ -52,6 +53,8 @@ if __name__ == "__main__":
             # adjustments for options which we use.
             if line.startswith('file://'):
                 line = os.path.basename(line)
+            if line.startswith('-e') and '#egg=' in line:  # version control URLs, take the egg= part at the end only
+                line = re.search(r'#egg=([^\s]+)', line).group(1)
             try:
                 pkg_resources.require(line)
             except Exception:

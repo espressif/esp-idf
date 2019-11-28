@@ -18,72 +18,19 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import sys
 import os
+import os.path
 import re
 import subprocess
-
-# Note: If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute
-
-from local_util import run_cmd_get_output, copy_if_modified, call_with_python
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
 
-try:
-    build_dir = os.environ['BUILDDIR']
-except KeyError:
-    build_dir = '_build'
-
-build_dir = os.path.abspath(build_dir)
-
-# Fill in a default IDF_PATH if it's missing (ie when Read The Docs is building the docs)
-try:
-    idf_path = os.environ['IDF_PATH']
-except KeyError:
-    idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
-
-docs_root = os.path.join(idf_path, "docs")
-
-try:
-    os.mkdir(build_dir)
-except OSError:
-    pass
-
-try:
-    os.mkdir(os.path.join(build_dir, 'inc'))
-except OSError:
-    pass
-
-# Generate version-related includes
-#
-# (Note: this is in a function as it needs to access configuration to get the language)
-def generate_version_specific_includes(app):
-    print("Generating version-specific includes...")
-    version_tmpdir = '{}/version_inc'.format(build_dir)
-    call_with_python('{}/gen-version-specific-includes.py {} {}'.format(docs_root, app.config.language, version_tmpdir))
-    copy_if_modified(version_tmpdir, '{}/inc'.format(build_dir))
-
-# Generate toolchain download links
-print("Generating toolchain download links")
-base_url = 'https://dl.espressif.com/dl/'
-toolchain_tmpdir = '{}/toolchain_inc'.format(build_dir)
-call_with_python('{}/gen-toolchain-links.py ../../tools/toolchain_versions.mk {} {}'.format(docs_root, base_url, toolchain_tmpdir))
-copy_if_modified(toolchain_tmpdir, '{}/inc'.format(build_dir))
-
-print("Generating IDF Tools list")
-os.environ["IDF_MAINTAINER"] = "1"
-tools_rst = os.path.join(builddir, 'idf-tools-inc.rst')
-tools_rst_tmp = os.path.join(builddir, 'inc', 'idf-tools-inc.rst')
-call_with_python("{}/tools/idf_tools.py gen-doc --output {}".format(idf_path, tools_rst_tmp))
-copy_if_modified(tools_rst_tmp, tools_rst)
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 #
 suppress_warnings = ['image.nonlocal_uri']
 
 # -- General configuration ------------------------------------------------
-
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.0'
@@ -92,24 +39,33 @@ suppress_warnings = ['image.nonlocal_uri']
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['breathe',
-              'link-roles',
+
+              'sphinx.ext.todo',
+
               'sphinxcontrib.blockdiag',
               'sphinxcontrib.seqdiag',
               'sphinxcontrib.actdiag',
               'sphinxcontrib.nwdiag',
               'sphinxcontrib.rackdiag',
               'sphinxcontrib.packetdiag',
-              'html_redirects',
-              'idf_build_system',
-              'kconfig_reference',
-              'doxygen_idf',
-              'sphinx.ext.todo',
-              'include_build_file',
-              'toctree_filter',
+
+              'extensions.html_redirects',
+              'extensions.toctree_filter',
+
+              'idf_extensions.include_build_file',
+              'idf_extensions.link_roles',
+              'idf_extensions.build_system',
+              'idf_extensions.esp_err_definitions',
+              'idf_extensions.gen_toolchain_links',
+              'idf_extensions.gen_version_specific_includes',
+              'idf_extensions.kconfig_reference',
+              'idf_extensions.run_doxygen',
+              'idf_extensions.gen_idf_tools_links',
+
               # from https://github.com/pfalcon/sphinx_selective_exclude
               'sphinx_selective_exclude.eager_only',
-              #'sphinx_selective_exclude.search_auto_exclude',
-              #'sphinx_selective_exclude.modindex_exclude',
+              # TODO: determine if we need search_auto_exclude
+              # 'sphinx_selective_exclude.search_auto_exclude',
               ]
 
 # sphinx.ext.todo extension parameters
@@ -120,13 +76,6 @@ todo_include_todos = False
 # Enabling this fixes cropping of blockdiag edge labels
 seqdiag_antialias = True
 
-# Breathe extension variables
-
-# Doxygen regenerates files in 'xml/' directory every time,
-# but we copy files to 'xml_in/' only when they change, to speed up
-# incremental builds.
-breathe_projects = {"esp32-idf": os.path.join(build_dir, "xml_in/")}
-breathe_default_project = "esp32-idf"
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -155,7 +104,7 @@ master_doc = 'index'
 # This is supposed to be "the short X.Y version", but it's the only version
 # visible when you open index.html.
 # Display full version to make things less confusing.
-version = run_cmd_get_output('git describe')
+version = subprocess.check_output(['git', 'describe']).strip()
 # The full version, including alpha/beta/rc tags.
 # If needed, nearest tag is returned by 'git describe --abbrev=0'.
 release = version
@@ -171,7 +120,8 @@ print('Version: {0}  Release: {1}'.format(version, release))
 # directories to ignore when looking for source files.
 exclude_patterns = ['**/inc/**']
 
-# Add target-specific excludes based on tags. Haven't found any better way to do this yet
+
+# Add target-specific excludes based on tags (for the IDF_TARGET). Haven't found any better way to do this yet
 def update_exclude_patterns(tags):
     if "esp32" not in tags:
         # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
@@ -185,6 +135,7 @@ def update_exclude_patterns(tags):
                   'get-started-legacy/**',
                   'gnu-make-legacy.rst']:
             exclude_patterns.append(e)
+
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -389,6 +340,9 @@ texinfo_documents = [
 # Override RTD CSS theme to introduce the theme corrections
 # https://github.com/rtfd/sphinx_rtd_theme/pull/432
 def setup(app):
-    app.config.build_dir = build_dir
     app.add_stylesheet('theme_overrides.css')
-    generate_version_specific_includes(app)
+
+    # Breathe extension variables (depend on build_dir)
+    # note: we generate into xml_in and then copy_if_modified to xml dir
+    app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}
+    app.config.breathe_default_project = "esp32-idf"

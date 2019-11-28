@@ -1,7 +1,8 @@
 import os.path
-from docutils.parsers.rst import Directive, directives
+from docutils.parsers.rst import directives
 from docutils.parsers.rst.directives.misc import Include as BaseInclude
 from sphinx.util.docutils import SphinxDirective
+
 
 class IncludeBuildFile(BaseInclude, SphinxDirective):
     """
@@ -14,7 +15,8 @@ class IncludeBuildFile(BaseInclude, SphinxDirective):
         self.env.note_included(abspath)
         return super(IncludeBuildFile, self).run()
 
-def setup(app):
-      directives.register_directive('include-build-file', IncludeBuildFile)
 
-      return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+def setup(app):
+    directives.register_directive('include-build-file', IncludeBuildFile)
+
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}

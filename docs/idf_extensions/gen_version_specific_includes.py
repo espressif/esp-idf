@@ -1,15 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Python script to generate ReSTructured Text .inc snippets
+# Sphinx extension to generate ReSTructured Text .inc snippets
 # with version-based content for this IDF version
 
 from __future__ import print_function
 from __future__ import unicode_literals
 from io import open
+from util import copy_if_modified
 import subprocess
 import os
-import sys
 import re
 
 TEMPLATES = {
@@ -120,23 +120,26 @@ TEMPLATES = {
 }
 
 
-def main():
-    if len(sys.argv) != 3:
-        print("Usage: gen-git-clone.py <language> <output file path>")
-        sys.exit(1)
+def setup(app):
+    # doesn't need to be this event specifically, but this is roughly the right time
+    app.connect('idf-info', generate_version_specific_includes)
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
 
-    language = sys.argv[1]
-    out_dir = sys.argv[2]
-    if not os.path.exists(out_dir):
-        print("Creating directory %s" % out_dir)
-        os.mkdir(out_dir)
+
+def generate_version_specific_includes(app, project_description):
+    language = app.config.language
+    tmp_out_dir = os.path.join(app.config.build_dir, "version_inc")
+    if not os.path.exists(tmp_out_dir):
+        print("Creating directory %s" % tmp_out_dir)
+        os.mkdir(tmp_out_dir)
 
     template = TEMPLATES[language]
 
     version, ver_type, is_stable = get_version()
 
-    write_git_clone_inc_files(template, out_dir, version, ver_type, is_stable)
-    write_version_note(template["version-note"], out_dir, version, ver_type, is_stable)
+    write_git_clone_inc_files(template, tmp_out_dir, version, ver_type, is_stable)
+    write_version_note(template["version-note"], tmp_out_dir, version, ver_type, is_stable)
+    copy_if_modified(tmp_out_dir, os.path.join(app.config.build_dir, "inc"))
     print("Done")
 
 
@@ -217,7 +220,3 @@ def get_version():
         return ("master", "branch", False)
     else:
         return (branches[0], "branch", False)  # take whatever the first branch is
-
-
-if __name__ == "__main__":
-    main()

@@ -17,6 +17,7 @@ import sys
 LANGUAGES = ["en", "zh_CN"]
 TARGETS = ["esp32", "esp32s2"]
 
+
 def main():
     # check Python dependencies for docs
     try:
@@ -43,13 +44,13 @@ def main():
         print("Building all languages")
         languages = LANGUAGES
     else:
-        languages = [ args.language ]
+        languages = [args.language]
 
     if args.target is None:
         print("Building all targets")
         targets = TARGETS
     else:
-        targets = [ args.target ]
+        targets = [args.target]
 
     for language in languages:
         for target in targets:
@@ -76,9 +77,9 @@ def build_docs(language, target, build_dir):
                 "-w", "sphinx-warning.log",
                 "-t", target,
                 "-D", "idf_target={}".format(target),
-                os.path.join(os.path.abspath(os.path.dirname(__file__)), language), # srcdir for this language
+                os.path.join(os.path.abspath(os.path.dirname(__file__)), language),  # srcdir for this language
                 os.path.join(build_dir, "html")                    # build directory
-        ]
+                ]
         cwd = build_dir  # also run sphinx in the build directory
         print("Running '{}'".format(" ".join(args)))
         subprocess.check_call(args, cwd=cwd, env=environ)

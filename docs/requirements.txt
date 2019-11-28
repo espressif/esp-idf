@@ -12,4 +12,4 @@ sphinxcontrib-nwdiag>=0.9.5, <2.0.0
 nwdiag==1.0.4
 recommonmark
 future>=0.16.0 # for ../tools/gen_esp_err_to_name.py
-sphinx_selective_exclude==1.0.1
+sphinx_selective_exclude>=1.0.3

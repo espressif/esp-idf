@@ -3,14 +3,16 @@ import os.path
 import sys
 import subprocess
 
-from local_util import copy_if_modified
+from util import copy_if_modified
+
 
 def setup(app):
     # The idf_build_system extension will emit this event once it
     # has parsed the IDF project's information
     app.connect('idf-info', generate_reference)
 
-    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
+
 
 def generate_reference(app, project_description):
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
@@ -40,7 +42,7 @@ def generate_reference(app, project_description):
                                   "--env", "COMPONENT_KCONFIGS_PROJBUILD={}".format(" ".join(kconfig_projbuilds)),
                                   "--env", "COMPONENT_KCONFIGS_SOURCE_FILE={}".format(kconfigs_source_path),
                                   "--env", "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE={}".format(kconfig_projbuilds_source_path),
-    ]
+                                  ]
     subprocess.check_call(prepare_kconfig_files_args)
 
     confgen_args = [sys.executable,
@@ -56,8 +58,6 @@ def generate_reference(app, project_description):
                     "--env", "IDF_PATH={}".format(app.config.idf_path),
                     "--env", "IDF_TARGET={}".format(app.config.idf_target),
                     "--output", "docs", kconfig_inc_path + '.in'
-    ]
+                    ]
     subprocess.check_call(confgen_args, cwd=app.config.idf_path)
     copy_if_modified(kconfig_inc_path + '.in', kconfig_inc_path)
-
-

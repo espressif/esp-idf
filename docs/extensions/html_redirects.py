@@ -17,7 +17,7 @@
 # Mechanism to generate static HTML redirect pages in the output
 #
 # Uses redirect_template.html and the list of pages given in
-# conf.html_redirect_pages
+# the file conf.html_redirect_pages
 #
 # Adapted from ideas in https://tech.signavio.com/2017/managing-sphinx-redirects
 import os.path
@@ -45,7 +45,7 @@ def setup(app):
     # to create HTML redirects
     app.connect('html-collect-pages', create_redirect_pages)
 
-    return { 'parallel_read_safe' : True, 'parallel_write_safe': True, 'version': '0.1' }
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
 
 
 def create_redirect_pages(app):

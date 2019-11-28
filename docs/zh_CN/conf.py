@@ -10,7 +10,7 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath('..'))
 from conf_common import *  # noqa: F401, F403 - need to make available everything from common
-from local_util import download_file_if_missing  # noqa: E402 - need to import from common folder
+from idf_extensions.util import download_file_if_missing  # noqa: E402 - need to import from common folder
 
 # General information about the project.
 project = u'ESP-IDF 编程指南'
@@ -32,5 +32,4 @@ nwdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
 rackdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
 packetdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
 
-update_exclude_patterns(tags)
-
+update_exclude_patterns(tags)  # noqa: F405, need to import * from conf_common

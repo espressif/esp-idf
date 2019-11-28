@@ -1,40 +1,15 @@
-#!/usr/bin/env python
-#
-# gen-dxd.py - Generate Doxygen Directives
-#
-# This code is in the Public Domain (or CC0 licensed, at your option.)
-# Unless required by applicable law or agreed to in writing, this
-# software is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-# CONDITIONS OF ANY KIND, either express or implied.
-#
-
+# Extension to generate Doxygen XML include files, with IDF config & soc macros included
 from __future__ import print_function
 from __future__ import unicode_literals
-from builtins import range
 from io import open
-import sys
+import glob
 import os
+import os.path
 import re
+import subprocess
+from util import copy_if_modified
 
-# Determime build directory
-builddir = '_build'
-if 'BUILDDIR' in os.environ:
-    builddir = os.environ['BUILDDIR']
-
-# Script configuration
-header_file_path_prefix = "../components/"
-"""string: path prefix for header files.
-"""
-doxyfile_path = "./Doxyfile"
-"""string: path to a file containing header files to processs.
-"""
-xml_directory_path = os.path.join(builddir, "xml")
-"""string: path to directory with XML files by Doxygen.
-"""
-inc_directory_path = os.path.join(builddir, 'inc')
-"""string: path prefix for header files.
-"""
-all_kinds = [
+ALL_KINDS = [
     ("function", "Functions"),
     ("union", "Unions"),
     ("struct", "Structures"),
@@ -124,7 +99,7 @@ def convert_api_xml_to_inc(app, doxyfile):
     if not os.path.exists(inc_directory_path):
         os.makedirs(inc_directory_path)
 
-    header_paths = get_doxyfile_input_paths(app, doxyfile)
+    header_paths = get_doxyfile_input_paths(doxyfile)
     print("Generating 'api_name.inc' files with Doxygen directives")
     for header_file_path in header_paths:
         api_name = get_api_name(header_file_path)
@@ -141,7 +116,7 @@ def convert_api_xml_to_inc(app, doxyfile):
                 inc_file.write(rst_output)
 
 
-def get_doxyfile_input_paths(app, doxyfile_path):
+def get_doxyfile_input_paths(doxyfile_path):
     """Get contents of Doxyfile's INPUT statement.
 
     Returns:
@@ -149,37 +124,35 @@ def get_doxyfile_input_paths(app, doxyfile_path):
 
     """
     if not os.path.isfile(doxyfile_path):
-        print("Doxyfile '%s' does not exist!" % doxyfile_path)
-        sys.exit()
+        raise RuntimeError("Doxyfile '{}' does not exist!".format(doxyfile_path))
 
     print("Getting Doxyfile's INPUT")
 
-    input_file = open(doxyfile_path, "r", encoding='utf-8')
-
-    line = input_file.readline()
-    # read contents of Doxyfile until 'INPUT' statement
-    while line:
-        if line.find("INPUT") == 0:
-            break
+    with open(doxyfile_path, "r", encoding='utf-8') as input_file:
         line = input_file.readline()
+        # read contents of Doxyfile until 'INPUT' statement
+        while line:
+            if line.find("INPUT") == 0:
+                break
+            line = input_file.readline()
 
-    doxyfile_INPUT = ""
-    line = input_file.readline()
-    # skip input_file contents until end of 'INPUT' statement
-    while line:
-        if line.isspace():
-            # we have reached the end of 'INPUT' statement
-            break
-        # process only lines that are not comments
-        if line.find("#") == -1:
-            # extract header file path inside components folder
-            m = re.search(header_file_path_prefix + "(.*\.h)", line)  # noqa: W605 - regular expression
-            header_file_path = m.group(1)
-            doxyfile_INPUT += header_file_path + "\n"
-        # proceed reading next line
+        doxyfile_INPUT = []
         line = input_file.readline()
+        # skip input_file contents until end of 'INPUT' statement
+        while line:
+            if line.isspace():
+                # we have reached the end of 'INPUT' statement
+                break
+            # process only lines that are not comments
+            if line.find("#") == -1:
+                # extract header file path inside components folder
+                m = re.search("components/(.*\.h)", line)  # noqa: W605 - regular expression
+                header_file_path = m.group(1)
+                doxyfile_INPUT.append(header_file_path)
 
-    input_file.close()
+            # proceed reading next line
+            line = input_file.readline()
+
     return doxyfile_INPUT
 
 
@@ -200,6 +173,42 @@ def get_api_name(header_file_path):
         api_name = m.group(1)
 
     return api_name
+
+
+def generate_directives(header_file_path, xml_directory_path):
+    """Generate API reference with Doxygen directives for a header file.
+
+    Args:
+        header_file_path: a path to the header file with API.
+
+    Returns:
+        Doxygen directives for the header file.
+
+    """
+
+    api_name = get_api_name(header_file_path)
+
+    # in XLT file name each "_" in the api name is expanded by Doxygen to "__"
+    xlt_api_name = api_name.replace("_", "__")
+    xml_file_path = "%s/%s_8h.xml" % (xml_directory_path, xlt_api_name)
+
+    rst_output = ""
+    rst_output = ".. File automatically generated by 'gen-dxd.py'\n"
+    rst_output += "\n"
+    rst_output += get_rst_header("Header File")
+    rst_output += "* :component_file:`" + header_file_path + "`\n"
+    rst_output += "\n"
+
+    try:
+        import xml.etree.cElementTree as ET
+    except ImportError:
+        import xml.etree.ElementTree as ET
+
+    tree = ET.ElementTree(file=xml_file_path)
+    for kind, label in ALL_KINDS:
+        rst_output += get_directives(tree, kind)
+
+    return rst_output
 
 
 def get_rst_header(header_name):
@@ -305,109 +314,7 @@ def get_directives(tree, kind):
             rst_output += ".. doxygen%s:: " % kind
             rst_output += name.text + "\n"
     if rst_output:
-        all_kinds_dict = dict(all_kinds)
+        all_kinds_dict = dict(ALL_KINDS)
         rst_output = get_rst_header(all_kinds_dict[kind]) + rst_output + "\n"
 
     return rst_output
-
-
-def generate_directives(header_file_path):
-    """Generate API reference with Doxygen directives for a header file.
-
-    Args:
-        header_file_path: a path to the header file with API.
-
-    Returns:
-        Doxygen directives for the header file.
-
-    """
-
-    api_name = get_api_name(header_file_path)
-
-    # in XLT file name each "_" in the api name is expanded by Doxygen to "__"
-    xlt_api_name = api_name.replace("_", "__")
-    xml_file_path = "%s/%s_8h.xml" % (xml_directory_path, xlt_api_name)
-
-    rst_output = ""
-    rst_output = ".. File automatically generated by 'gen-dxd.py'\n"
-    rst_output += "\n"
-    rst_output += get_rst_header("Header File")
-    rst_output += "* :component_file:`" + header_file_path + "`\n"
-    rst_output += "\n"
-
-    try:
-        import xml.etree.cElementTree as ET
-    except ImportError:
-        import xml.etree.ElementTree as ET
-
-    tree = ET.ElementTree(file=xml_file_path)
-    for i in range(len(all_kinds)):
-        kind = all_kinds[i][0]
-        rst_output += get_directives(tree, kind)
-
-    return rst_output
-
-
-def generate_api_inc_files():
-    """Generate header_file.inc files
-    with API reference made of doxygen directives
-    for each header file
-    specified in the 'INPUT' statement of Doxyfile.
-
-    """
-
-    if not os.path.isdir(xml_directory_path):
-        print("Directory %s does not exist!" % xml_directory_path)
-        sys.exit()
-
-    if not os.path.exists(inc_directory_path):
-        os.makedirs(inc_directory_path)
-
-    list_to_generate = get_doxyfile_input()
-    print("Generating 'api_name.inc' files with Doxygen directives")
-    for header_file_path in list_to_generate.splitlines():
-        api_name = get_api_name(header_file_path)
-        inc_file_path = inc_directory_path + "/" + api_name + ".inc"
-        rst_output = generate_directives(header_file_path)
-
-        previous_rst_output = ''
-        if os.path.isfile(inc_file_path):
-            with open(inc_file_path, "r", encoding='utf-8') as inc_file_old:
-                previous_rst_output = inc_file_old.read()
-
-        if previous_rst_output != rst_output:
-            with open(inc_file_path, "w", encoding='utf-8') as inc_file:
-                inc_file.write(rst_output)
-
-
-if __name__ == "__main__":
-    """The main script that generates
-    Doxygen directives.
-
-    """
-
-    # Process command line arguments, if any
-    if len(sys.argv) > 1:
-        if not os.path.isdir(xml_directory_path):
-            print("Directory %s does not exist!" % xml_directory_path)
-            sys.exit()
-        header_file_path = sys.argv[1]
-        api_name = get_api_name(header_file_path)
-        if api_name:
-            rst_output = generate_directives(header_file_path)
-            print("Doxygen directives for '%s'" % header_file_path)
-            print()
-            print(rst_output)
-        else:
-            print("Options to execute 'gen-dxd.py' application:")
-            print("1: $ python gen-dxd.py")
-            print("   Generate API 'header_file.inc' files for headers defined in '%s'" % doxyfile_path)
-            print("2: $ python gen-dxd.py header_file_path")
-            print("   Print out Doxygen directives for a single header file")
-            print("   example: $ python gen-dxd.py mdns/include/mdns.h")
-            print("   NOTE: Run Doxygen first to get XML files for the header file")
-
-        sys.exit()
-
-    # No command line arguments given
-    generate_api_inc_files()
