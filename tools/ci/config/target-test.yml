@@ -33,7 +33,7 @@
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
-    GIT_SUBMODULE_STRATEGY: none
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
@@ -93,7 +93,7 @@
       - $LOG_PATH
     expire_in: 1 week
   variables:
-    GIT_SUBMODULE_STRATEGY: none
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/${CI_COMMIT_SHA}"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"

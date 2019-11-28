@@ -10,6 +10,7 @@ assign_test:
     - build_ssc
     - build_esp_idf_tests_cmake
   variables:
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
   artifacts:
@@ -55,6 +56,7 @@ update_test_cases:
       - ${CI_PROJECT_DIR}/test-management/*.log
     expire_in: 1 week
   variables:
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"

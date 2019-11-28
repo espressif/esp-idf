@@ -22,9 +22,14 @@ variables:
   # GIT_STRATEGY is not defined here.
   # Use an option from  "CI / CD Settings" - "General pipelines".
 
-  # "normal" strategy for fetching only top-level submodules since nothing requires the sub-submodules code for building IDF.
-  # If the "recursive" strategy is used we have a problem with using relative URLs for sub-submodules.
-  GIT_SUBMODULE_STRATEGY: normal
+  # we will download archive for each submodule instead of clone.
+  # we don't do "recursive" when fetch submodule as they're not used in CI now.
+  GIT_SUBMODULE_STRATEGY: none
+  SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
+  # by default we will fetch all submodules
+  # jobs can overwrite this variable to only fetch submodules they required
+  # set to "none" if don't need to fetch submodules
+  SUBMODULES_TO_FETCH: "all"
 
   UNIT_TEST_BUILD_SYSTEM: make
 # IDF environment
@@ -40,6 +45,7 @@ variables:
   BOT_DOCKER_IMAGE_TAG: ":latest"
 # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/tools/ci/config/target-test.yml"
+
 
 
 # before each job, we need to check if this job is filtered by bot stage/job filter
@@ -70,12 +76,10 @@ variables:
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 
-.show_submodule_urls: &show_submodule_urls |
-  git config --get-regexp '^submodule\..*\.url$' || true
+.fetch_submodules: &fetch_submodules |
+  python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
 
 before_script:
-  - echo "Running common script"
-  - *show_submodule_urls
   - source tools/ci/setup_python.sh
   # apply bot filter in before script
   - *apply_bot_filter
@@ -90,6 +94,8 @@ before_script:
   - source tools/ci/configure_ci_environment.sh
 
   - *setup_tools_unless_target_test
+
+  - *fetch_submodules
 
   - *setup_custom_toolchain
 
