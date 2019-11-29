@@ -19,6 +19,7 @@
 #include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_eth.h"
+#include "esp_pm.h"
 #include "esp_system.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
@@ -57,6 +58,9 @@ typedef struct {
     uint8_t *rx_buf[CONFIG_ETH_DMA_RX_BUFFER_NUM];
     uint8_t *tx_buf[CONFIG_ETH_DMA_TX_BUFFER_NUM];
     bool isr_need_yield;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_handle_t pm_lock;
+#endif
 } emac_esp32_t;
 
 static esp_err_t emac_esp32_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
@@ -314,6 +318,9 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     MAC_CHECK(esp_read_mac(emac->addr, ESP_MAC_ETH) == ESP_OK, "fetch ethernet mac address failed", err, ESP_FAIL);
     /* set MAC address to emac register */
     emac_hal_set_address(&emac->hal, emac->addr);
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_acquire(emac->pm_lock);
+#endif
     return ESP_OK;
 err:
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
@@ -325,6 +332,9 @@ static esp_err_t emac_esp32_deinit(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_release(emac->pm_lock);
+#endif
     emac_hal_stop(&emac->hal);
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     periph_module_disable(PERIPH_EMAC_MODULE);
@@ -335,6 +345,11 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_intr_free(emac->intr_hdl);
+#ifdef CONFIG_PM_ENABLE
+    if (emac->pm_lock) {
+        esp_pm_lock_delete(emac->pm_lock);
+    }
+#endif
     vTaskDelete(emac->rx_task_hdl);
     int i = 0;
     for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
@@ -409,6 +424,10 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_esp32_isr_handler,
                              &emac->hal, &(emac->intr_hdl)) == ESP_OK,
               "alloc emac interrupt failed", err, NULL);
+#ifdef CONFIG_PM_ENABLE
+    MAC_CHECK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock) == ESP_OK,
+              "create pm lock failed", err, NULL);
+#endif
     /* create rx task */
     BaseType_t xReturned = xTaskCreate(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
                                        config->rx_task_prio, &emac->rx_task_hdl);
@@ -429,6 +448,11 @@ err:
         for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
             free(emac->rx_buf[i]);
         }
+#ifdef CONFIG_PM_ENABLE
+        if (emac->pm_lock) {
+            esp_pm_lock_delete(emac->pm_lock);
+        }
+#endif
         free(emac);
     }
     if (descriptors) {
