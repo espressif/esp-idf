@@ -130,6 +130,7 @@ typedef enum {
     /* 3xx - Redirection */
     HttpStatus_MovedPermanently  = 301,
     HttpStatus_Found             = 302,
+    HttpStatus_TemporaryRedirect = 307,
 
     /* 4xx - Client Error */
     HttpStatus_Unauthorized      = 401
