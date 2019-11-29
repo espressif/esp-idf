@@ -657,6 +657,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     switch (client->response->status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_TemporaryRedirect:
             esp_http_client_set_redirection(client);
             client->redirect_counter ++;
             client->process_again = 1;
