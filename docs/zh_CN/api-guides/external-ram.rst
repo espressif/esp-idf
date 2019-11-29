@@ -118,30 +118,10 @@ ESP-IDF 启动过程中，片外 RAM 被映射到以 0x3F800000 起始的数据�
  
  * 默认情况下，片外 RAM 初始化失败将终止 ESP-IDF 启动。如果想禁用此功能，可启用 :ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 配置选项。如果启用 :ref:`CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY`，:ref:`CONFIG_SPIRAM_IGNORE_NOTFOUND` 选项将不能使用，这是因为在链接时，链接器已经向片外 RAM 分配符号。
 
- * 时钟频率为 80 MHz 时，片外 RAM 须占用 HSPI 总线或 VSPI 总线。请使用 :ref:`CONFIG_SPIRAM_OCCUPY_SPI_HOST` 选择要用的 SPI 主机。 
 
+.. only:: esp32
 
-芯片版本
-==============
-
-有些 ESP32 芯片版本存在某些已知问题，可能会影响片外 RAM 的使用。请参考 ESP32 勘误表_，查看详细信息。为了解决这些问题，ESP-IDF 采取了以下措施：  
-
-ESP32 rev v0
-------------
-ESP-IDF 尚未提供针对此版本硅片 bug 的解决方法，因此在 ESP32 rev v0 中，ESP-IDF 无法将片外 PSRAM 映射到 ESP32 主内存映射中。
-
-ESP32 rev v1
-------------
-当某些机器指令序列在片外存储器位置上运行时，此芯片版本中的错误可能会引发芯片故障（详情见 ESP32 勘误表_ 第 3.2 章节）。 为了解决这个问题，用于编译 ESP-IDF 项目的 GCC 编译器扩展了一个旗标：-mfix-esp32-psram-cache-issue。在命令行中将此旗标传递给 GCC，编译器对这些序列进行处理，然后仅输出可以安全执行的代码。如需启用此旗标，请选择 :ref:`CONFIG_SPIRAM_CACHE_WORKAROUND`。
-
-ESP-IDF 还采取了其他措施确保不同时使用 PSRAM 访问和出错指令集：
-
-- 链接到使用 GCC 旗标重新编译的 Newlib 版本；
-- 避免使用某些 ROM 函数；
-- 为 Wi-Fi 栈分配静态内存。
-
-.. _勘误表: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_cn.pdf
-
+   .. include:: inc/external-ram-esp32-notes.rst
 
 
 

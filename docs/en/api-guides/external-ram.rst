@@ -125,6 +125,6 @@ External RAM use has the following restrictions:
 
 .. only:: esp32
 
-    .. include:: inc/external-ram-esp32-notes.inc
+    .. include:: inc/external-ram-esp32-notes.rst
 
 .. _ESP32 ECO: https://www.espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf

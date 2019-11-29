@@ -7,7 +7,7 @@ API 指南
 
    一般注意事项 <general-notes>
    构建系统 <build-system>
-   构建系统 (传统 GNU Make) <build-system-legacy>
+   :esp32: 构建系统 (传统 GNU Make) <build-system-legacy>
    错误处理 <error-handling>
    严重错误 <fatal-errors>
    Event Handling <event-handling>
@@ -22,17 +22,17 @@ API 指南
    分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP 协处理器 <ulp>
-   ULP ( Legacy GNU Make) <ulp-legacy>
+   :esp32: ULP (传统 GNU Make) <ulp-legacy>
    单元测试 <unit-tests>
-   单元测试 (传统 GNU Make) <unit-tests-legacy>
+   :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
    应用层跟踪 <app_trace>
    控制台终端组件 <console>
    ROM debug console <romconsole>
    RF Calibration <RF_calibration>
    WiFi Driver <wifi>
-   ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+   :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
-   BluFi <blufi>
+   :esp32: BluFi <blufi>
    External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>
    LwIP <lwip>

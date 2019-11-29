@@ -27,12 +27,25 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 应用程序可以通过调用 :cpp:func:`esp_pm_configure` 函数启用动态调频 (DFS) 功能和自动 Light-sleep 模式。此函数的参数为 :cpp:class:`esp_pm_config_esp32_t`，定义了频率调节的相关设置。在此参数结构中，需要初始化下面三个字段：
 
-- ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`。  
+.. only:: esp32
+
+    - ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`。
+
+.. only:: esp32s2
+
+    - ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`。
+
 - ``min_freq_mhz``：最小 CPU 频率 (MHz)，即仅获取 ``ESP_PM_APB_FREQ_MAX`` 锁后所使用的频率。该字段可设置为晶振 (XTAL) 频率值，或者 XTAL 频率值除以整数。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。 
 
 - ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。 
 
-或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。 
+.. only:: esp32
+
+    或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。 
+
+.. only:: esp32s2
+
+    或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。 
 
 .. note::
 
@@ -58,37 +71,9 @@ ESP32 支持下表中所述的三种电源管理锁。
 ``ESP_PM_NO_LIGHT_SLEEP``     禁止自动切换至 Light-sleep 模式。
 ============================  ======================================================
 
+.. only:: esp32
 
-电源管理算法
---------------------------------
-
-下表列出了启用动态调频时如何切换 CPU 频率和 APB 频率。您可以使用 :cpp:func:`esp_pm_configure` 或者 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 指定 CPU 最大频率。
-
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| CPU 最高频率 | 电源管理锁获取情况                                      | CPU 频率和 APB 频率                                |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| 240 MHz      | 获取 ``ESP_PM_CPU_FREQ_MAX`` 或 ``ESP_PM_APB_FREQ_MAX`` | CPU: 240 MHz APB: 80 MHz                           |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 无                                                      | 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值 |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| 160 MHz      | 获取 ``ESP_PM_CPU_FREQ_MAX``                            | CPU: 160 MHz APB: 80 MHz                           |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 获取 ``ESP_PM_CPU_FREQ_MAX``，                          | CPU: 80 MHz APB: 80 MHz                            |
-|              | 未获取 ``ESP_PM_APB_FREQ_MAX``                          |                                                    |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 无                                                      | 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值 |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| 80 MHz       | 获取 ``ESP_PM_CPU_FREQ_MAX`` 或 ``ESP_PM_APB_FREQ_MAX`` | CPU: 80 MHz APB: 80 MHz                            |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 无                                                      | 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值 |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-
-如果没有获取任何管理锁，调用 :cpp:func:`esp_pm_configure` 将启动 Light-sleep 模式。 Light-sleep 模式持续时间由以下因素决定：
-
-- 处于阻塞状态的 FreeRTOS 任务数（有限超时）
-- :doc:`高分辨率定时器 <esp_timer>` API 注册的计数器数量
-
-您也可以设置 Light-sleep 模式在最近事件（任务解除阻塞，或计时器超时）之前持续多久才唤醒芯片。
+   .. include:: inc/power_management_esp32.rst
 
 动态调频和外设驱动
 ------------------------------------------------
@@ -113,15 +98,26 @@ ESP32 支持下表中所述的三种电源管理锁。
 - **SPI slave**：从调用 :cpp:func:`spi_slave_initialize` 至 :cpp:func:`spi_slave_free` 期间。
 - **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
 - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
-- **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
 - **CAN**：从调用 :cpp:func:`can_driver_install` 至 :cpp:func:`can_driver_uninstall` 期间。 
+
+.. only:: esp32
+
+    - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
 
 以下外设驱动程序无法感知动态调频，应用程序需自己获取/释放管理锁：
 
-- MCPWM
-- PCNT
-- Sigma-delta
-- Timer Group
+.. only:: esp32
+
+    - PCNT
+    - Sigma-delta
+    - Timer group
+    - MCPWM
+
+.. only:: esp32s2
+
+    - PCNT
+    - Sigma-delta
+    - Timer group
 
 
 API 参考

@@ -457,19 +457,21 @@ Windows 操作系统
 
 您可使用快捷键 ``Ctrl+]``，退出 IDF 监视器。
 
-如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（见下），很有可能是因为您的开发板采用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
+.. only:: esp32
 
-.. figure:: ../../_static/get-started-garbled-output.png
-    :align: center
-    :alt: 乱码输出
-    :figclass: align-center
+    如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（见下），很有可能是因为您的开发板采用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
 
-此时，您可以：
-
-1. 退出监视器。
-2. 打开 :ref:`menuconfig <get-started-configure>`。
-3. 进入 ``Component config`` --> ``ESP32-specific`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 设置为 26 MHz。
-4. 然后，请重新 :ref:`编译和烧录 <get-started-flash>` 应用程序。
+    .. figure:: ../../_static/get-started-garbled-output.png
+        :align: center
+        :alt: 乱码输出
+        :figclass: align-center
+    
+    此时，您可以：
+    
+    1. 退出监视器。
+    2. 打开 :ref:`menuconfig <get-started-configure>`。
+    3. 进入 ``Component config`` --> ``ESP32-specific`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 设置为 26 MHz。
+    4. 然后，请重新 :ref:`编译和烧录 <get-started-flash>` 应用程序。
 
 .. note::
 
@@ -507,7 +509,7 @@ Windows 操作系统
     eclipse-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
-    ../get-started-legacy/index
+    :esp32: ../get-started-legacy/index
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

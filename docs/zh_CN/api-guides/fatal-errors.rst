@@ -39,7 +39,13 @@
 
 不管哪种情况，错误原因都会被打印在括号中。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
-紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP32_PANIC` 的设置，支持的选项包括：
+.. only:: esp32
+
+    紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP32_PANIC` 的设置，支持的选项包括：
+
+.. only:: esp32s2
+
+    紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP32S2_PANIC` 的设置，支持的选项包括：
 
 - 打印 CPU 寄存器，然后重启（``CONFIG_ESP32_PANIC_PRINT_REBOOT``）- 默认选项
 
@@ -59,7 +65,13 @@
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
-- 如果 :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 ESP32 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+.. only:: esp32
+
+    - 如果 :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 ESP32 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
+
+.. only:: esp32s2
+
+    - 如果 :ref:`CONFIG_ESP32S2_DEBUG_OCDAWARE` 被使能了（默认），紧急处理程序会检测 ESP32-S2 是否已经连接 JTAG 调试器。如果检测成功，程序会暂停运行，并将控制权交给调试器。在这种情况下，寄存器和回溯不会被打印到控制台，并且也不会使用 GDB Stub 和 Core Dump 的功能。
 
 - 如果使能了 :doc:`Core Dump <core_dump>` 功能（``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` 或者 ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` 选项），系统状态（任务堆栈和寄存器）会被转储到 Flash 或者 UART 以供后续分析。
 
@@ -265,7 +277,14 @@ Cache disabled but cached memory region accessed
 欠压
 ^^^^
 
-ESP32 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP32_BROWNOUT_DET` 和 :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+.. only:: esp32
+
+    ESP32 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP32_BROWNOUT_DET` 和 :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+
+.. only:: esp32s2
+
+    ESP32-S2 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP32S2_BROWNOUT_DET` 和 :ref:`CONFIG_ESP32S2_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
+
 当掉电检测器被触发时，会打印如下信息::
 
     Brownout detector was triggered

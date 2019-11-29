@@ -167,4 +167,4 @@ GPIO 宏查找表
 
 
 .. include-build-file:: inc/touch_sensor_channel.inc
-.. include-build-file:: inc/touch_channel.inc
+.. include-build-file:: inc/touch_sensor_types.inc

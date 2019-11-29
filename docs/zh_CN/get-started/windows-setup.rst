@@ -4,8 +4,10 @@ Windows 平台工具链的标准设置
 
 :link_to_translation:`en:[English]`
 
-.. note::
-	目前，基于 CMake 的构建系统仅支持 64 位 Windows 版本。32 位 Windows 版本的用户可根据 :doc:`传统 GNU Make 构建系统<../get-started-legacy/windows-setup>` 中的介绍进行操作。
+.. only:: esp32
+
+    .. note::
+	    目前，基于 CMake 的构建系统仅支持 64 位 Windows 版本。32 位 Windows 版本的用户可根据 :doc:`传统 GNU Make 构建系统<../get-started-legacy/windows-setup>` 中的介绍进行操作。
 
 概述
 ============
@@ -14,8 +16,10 @@ ESP-IDF 需要安装一些必备工具，才能围绕 ESP32 构建固件，包�
 
 在本入门指南中，我们通过 **命令提示符** 进行有关操作。不过，您在安装 ESP-IDF 后还可以使用 :doc:`Eclipse <eclipse-setup>` 或其他支持 CMake 的图形化工具 IDE。
 
-.. note::
-	较早 ESP-IDF 版本使用 :doc:`传统 GNU Make 编译系统<../get-started-legacy/windows-setup>` 和 MSYS2_ Unix 兼容环境。但如今已非必需，用户可直接通过 Windows 命令提示符使用 ESP-IDF。
+.. only:: esp32
+
+    .. note::
+	    较早 ESP-IDF 版本使用 :doc:`传统 GNU Make 编译系统<../get-started-legacy/windows-setup>` 和 MSYS2_ Unix 兼容环境。但如今已非必需，用户可直接通过 Windows 命令提示符使用 ESP-IDF。
 
 .. _get-started-windows-tools-installer:
 
