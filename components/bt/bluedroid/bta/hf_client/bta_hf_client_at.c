@@ -1024,20 +1024,20 @@ static char *bta_hf_client_parse_clcc(char *buffer)
 static char *bta_hf_client_parse_cnum(char *buffer)
 {
     char numstr[33];     /* spec forces 32 chars, plus one for \0*/
-    UINT16 type;
-    UINT16 service = 0; /* 0 in case this optional parameter is not being sent */
+    int type;
+    int service = 0; /* 0 in case this optional parameter is not being sent */
     int res;
     int offset;
 
     AT_CHECK_EVENT(buffer, "+CNUM:");
 
-    res = sscanf(buffer, ",\"%32[^\"]\",%hu%n,,%hu%n", numstr, &type, &offset, &service, &offset);
+    res = sscanf(buffer, ",\"%32[^\"]\",%d%n,,%d%n", numstr, &type, &offset, &service, &offset);
     if (res < 0) {
         return NULL;
     }
 
     if (res == 0) {
-        res = sscanf(buffer, ",\"\",%hu%n,,%hu%n", &type, &offset, &service, &offset);
+        res = sscanf(buffer, ",\"\",%d%n,,%d%n", &type, &offset, &service, &offset);
         if (res < 0) {
             return NULL;
         }
