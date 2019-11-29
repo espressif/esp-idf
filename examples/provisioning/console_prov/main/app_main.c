@@ -83,7 +83,7 @@ static void start_console_provisioning(void)
 void app_main(void)
 {
     /* Initialize networking stack */
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
 
     /* Create default event loop needed by the
      * main app and the provisioning service */

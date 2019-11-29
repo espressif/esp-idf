@@ -156,7 +156,7 @@ void app_main(void)
 
     // Netif creation and configure
     //
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     esp_netif_t* netif = esp_netif_new(&config);
     assert(netif);
 

@@ -43,7 +43,7 @@ static void socket_init(void)
     int err;
     struct sockaddr_in saddr = { 0 };
 
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
 
     err = getaddrinfo("localhost", "80", &hints, &res);
 
