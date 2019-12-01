@@ -21,10 +21,21 @@
 #include <sys/reent.h>
 
 
+int system(const char* str)
+{
+    errno = ENOSYS;
+    return -1;
+}
+
 int _system_r(struct _reent *r, const char *str)
 {
     __errno_r(r) = ENOSYS;
     return -1;
+}
+
+int raise(int sig)
+{
+    abort();
 }
 
 int _raise_r(struct _reent *r, int sig)

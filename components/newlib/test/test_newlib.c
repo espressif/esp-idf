@@ -182,3 +182,8 @@ TEST_CASE("fmod and fmodf work as expected", "[newlib]")
     TEST_ASSERT_EQUAL(0.1, fmod(10.1, 2.0));
     TEST_ASSERT_EQUAL(0.1f, fmodf(10.1f, 2.0f));
 }
+
+TEST_CASE("newlib: can link 'system', 'raise'", "[newlib]")
+{
+    printf("system: %p, raise: %p\n", &system, &raise);
+}
