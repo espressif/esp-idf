@@ -5,7 +5,6 @@ components/espcoredump/espcoredump.py
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
 components/heap/test_multi_heap_host/test_all_configs.sh
-components/idf_test/unit_test/TestCaseScript/IDFUnitTest/__init__.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
