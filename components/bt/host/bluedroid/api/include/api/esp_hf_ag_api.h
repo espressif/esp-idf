@@ -64,8 +64,8 @@ typedef enum
     ESP_HF_ATA_RESPONSE_EVT,                  /*!< Answer an Incoming Call */
     ESP_HF_CHUP_RESPONSE_EVT,                 /*!< Reject an Incoming Call */
     ESP_HF_DIAL_EVT,                          /*!< Origin an outgoing call with specific number or the dial the last number */
-    ESP_HF_BAC_RESPONSE_EVT,                  /*!< Codec Negotiation */
-    ESP_HF_BCS_RESPONSE_EVT,                  /*!< Codec Negotiation */
+    ESP_HF_WBS_RESPONSE_EVT,                  /*!< Codec Status */
+    ESP_HF_BCS_RESPONSE_EVT,                  /*!< Final Codec Choice */
 } esp_hf_cb_event_t;
 
 /// HFP AG callback parameters
@@ -148,11 +148,18 @@ typedef union
     } nrec;                                       /*!< AG callback param of ESP_HF_NREC_RESPONSE_EVT */
 
     /**
+     * @brief ESP_HF_WBS_RESPONSE_EVT
+     */
+    struct hf_wbs_rep_param {
+        esp_hf_wbs_config_t codec;                /*!< codec mode CVSD or mSBC */
+    } wbs_rep;                                    /*!< AG callback param of ESP_HF_WBS_RESPONSE_EVT */
+
+    /**
      * @brief ESP_HF_BCS_RESPONSE_EVT
      */
-    struct hf_codec_param {
+    struct hf_bcs_rep_param {
         esp_hf_wbs_config_t mode;                 /*!< codec mode CVSD or mSBC */
-    } codec;                                      /*!< AG callback param of ESP_HF_BAC_RESPONSE_EVT */
+    } bcs_rep;                                    /*!< AG callback param of ESP_HF_BCS_RESPONSE_EVT */
 
 } esp_hf_cb_param_t;                              /*!< HFP AG callback param compound*/
 

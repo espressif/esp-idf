@@ -21,7 +21,7 @@ static QueueHandle_t uart_queue;
 static hf_msg_prs_cb_t hf_msg_parser;
 
 static const uart_config_t uart_cfg = {
-    .baud_rate = 115200,   //1.5M
+    .baud_rate = 115200,
     .data_bits = UART_DATA_8_BITS,
     .parity = UART_PARITY_DISABLE,
     .stop_bits = UART_STOP_BITS_1,

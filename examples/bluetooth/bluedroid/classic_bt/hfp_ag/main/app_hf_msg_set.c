@@ -194,7 +194,7 @@ HF_CMD_HANDLER(ir_off)
 HF_CMD_HANDLER(ac)
 {
     printf("Answer Call from AG.\n");
-    char *number = {"186xxxx5549"};
+    char *number = {"123456"};
     esp_bt_hf_answer_call(hf_peer_addr,1,0,1,1,number,0);
 }
 
@@ -202,7 +202,7 @@ HF_CMD_HANDLER(ac)
 HF_CMD_HANDLER(rc)
 {
     printf("Reject Call from AG.\n");
-    char *number = {"186xxxx5549"};
+    char *number = {"123456"};
     esp_bt_hf_reject_call(hf_peer_addr,0,0,0,0,number,0);
 }
 
@@ -210,7 +210,7 @@ HF_CMD_HANDLER(rc)
 HF_CMD_HANDLER(end)
 {
     printf("End Call from AG.\n");
-    char *number = {"186xxxx5549"};
+    char *number = {"123456"};
     esp_bt_hf_end_call(hf_peer_addr,0,0,0,0,number,0);
 }
 

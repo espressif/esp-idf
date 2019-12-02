@@ -40,7 +40,7 @@ const char *c_hf_evt_str[] = {
     "ANSWER_INCOMING_EVT",               /*!< ANSWER INCOMING EVT */
     "REJECT_INCOMING_EVT",               /*!< AREJECT INCOMING EVT */
     "DIAL_EVT",                          /*!< DIAL INCOMING EVT */
-    "BAC_EVT",                           /*!< CODEC NEGO EVT */
+    "WBS_EVT",                           /*!< CURRENT CODEC EVT */
     "BCS_EVT",                           /*!< CODEC NEGO EVT */
 };
 
@@ -231,7 +231,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             esp_hf_current_call_mode_t mode = 0;
             esp_hf_current_call_mpty_type_t mpty = 0;
             //option
-            char *number = {"186xxxx5549"};
+            char *number = {"123456"};
             esp_hf_call_addr_type_t type = ESP_HF_CALL_ADDR_TYPE_UNKNOWN;
 
             ESP_LOGI(BT_HF_TAG, "--Calling Line Identification.");
@@ -241,7 +241,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 
         case ESP_HF_CNUM_RESPONSE_EVT:
         {
-            char *number = {"186xxxx5549"};
+            char *number = {"123456"};
             esp_hf_subscriber_service_type_t type = 1;
             ESP_LOGI(BT_HF_TAG, "--Current Number is %s ,Type is %s.", number, c_subscriber_service_type_str[type]);
             esp_bt_hf_cnum_response(hf_peer_addr, number,type);
@@ -288,11 +288,16 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
             }
             break;
         }
-
-        case ESP_HF_BAC_RESPONSE_EVT:
+#if (BTM_WBS_INCLUDED == TRUE)
+        case ESP_HF_WBS_RESPONSE_EVT:
+        {
+            ESP_LOGI(BT_HF_TAG, "--Current codec: %s",c_codec_mode_str[param->wbs_rep.codec]);
+            break;
+        }
+#endif
         case ESP_HF_BCS_RESPONSE_EVT:
         {
-            ESP_LOGI(BT_HF_TAG, "--AG choose codec mode: %s",c_codec_mode_str[param->codec.mode]);
+            ESP_LOGI(BT_HF_TAG, "--Consequence of codec negotiation: %s",c_codec_mode_str[param->bcs_rep.mode]);
             break;
         }
 

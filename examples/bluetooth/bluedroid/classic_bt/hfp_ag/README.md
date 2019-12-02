@@ -6,7 +6,7 @@ This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate it should be connected to an Hands-Free Unit running on a Headphone/Headset or on another ESP32 development board loaded with Hands Free Unit (hfp_hf) example from ESP-IDF.
+This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate this example, it should be connected to an Hands-Free Unit running on a Headphone/Headset or on another ESP32 development board loaded with Hands Free Unit (hfp_hf) example from ESP-IDF.
 
 ### Configure the project
 
@@ -177,8 +177,8 @@ I (159311) BT_APP_HF: --ESP AG Audio Connection Disconnected.
 You can type `hf d <num>;` to dial `<num>` from AG and log prints such as:
 
 ```
-E (207351) CNSL: Command [hf d 18629485549;]
-Dial number 18629485549
+E (207351) CNSL: Command [hf d 123456;]
+Dial number 123456
 I (207361) BT_APP_HF: APP HFP event: AUDIO_STATE_EVT
 I (207361) BT_APP_HF: --Audio State connecting
 W (207361) BT_APPL: BTA_AG_SCO_OPENING_ST: Ignoring event 1
