@@ -30,6 +30,9 @@ idf_component_register(SRCS "${srcs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES app_trace
                     PRIV_REQUIRES soc)
+    
+idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
+idf_component_set_property(freertos ORIG_INCLUDE_PATH "${COMPONENT_DIR}/include/freertos/")
 
 if(CONFIG_FREERTOS_DEBUG_OCDAWARE)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--undefined=uxTopUsedPriority")
