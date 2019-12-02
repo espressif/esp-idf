@@ -14,14 +14,21 @@
 
 // This module implements runtime file I/O API for GCOV.
 
+#include <string.h>
 #include "esp_task_wdt.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "soc/cpu.h"
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
 #include "hal/timer_ll.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/libc_stubs.h"
+#endif
 
 #if CONFIG_APPTRACE_GCOV_ENABLE
 
@@ -34,9 +41,34 @@ const static char *TAG = "esp_gcov_rtio";
 extern void __gcov_dump(void);
 extern void __gcov_reset(void);
 
+static struct syscall_stub_table s_gcov_stub_table;
+
+
+static int gcov_stub_lock_try_acquire_recursive(_lock_t *lock)
+{
+    if (*lock && uxSemaphoreGetCount((xSemaphoreHandle)(*lock)) == 0) {
+        // we can do nothing here, gcov dump is initiated with some resource locked
+        // which is also used by gcov functions
+        ESP_EARLY_LOGE(TAG, "Lock 0x%x is busy during GCOV dump! System state can be inconsistent after dump!", lock);
+    }
+    return pdTRUE;
+}
+
+static void gcov_stub_lock_acquire_recursive(_lock_t *lock)
+{
+    gcov_stub_lock_try_acquire_recursive(lock);
+}
+
+static void gcov_stub_lock_release_recursive(_lock_t *lock)
+{
+}
+
 static int esp_dbg_stub_gcov_dump_do(void)
 {
     int ret = ESP_OK;
+    FILE* old_stderr = stderr;
+    FILE* old_stdout = stdout;
+    struct syscall_stub_table* old_table = syscall_table_ptr_pro;
 
     ESP_EARLY_LOGV(TAG, "Alloc apptrace down buf %d bytes", ESP_GCOV_DOWN_BUF_SIZE);
     void *down_buf = malloc(ESP_GCOV_DOWN_BUF_SIZE);
@@ -47,9 +79,22 @@ static int esp_dbg_stub_gcov_dump_do(void)
     ESP_EARLY_LOGV(TAG, "Config apptrace down buf");
     esp_apptrace_down_buffer_config(down_buf, ESP_GCOV_DOWN_BUF_SIZE);
     ESP_EARLY_LOGV(TAG, "Dump data...");
+    // incase of dual-core chip APP and PRO CPUs share the same table, so it is safe to save only PRO's table
+    memcpy(&s_gcov_stub_table, old_table, sizeof(s_gcov_stub_table));
+    s_gcov_stub_table._lock_acquire_recursive = &gcov_stub_lock_acquire_recursive;
+    s_gcov_stub_table._lock_release_recursive = &gcov_stub_lock_release_recursive;
+    s_gcov_stub_table._lock_try_acquire_recursive = &gcov_stub_lock_try_acquire_recursive,
+
+    syscall_table_ptr_pro = &s_gcov_stub_table;
+    stderr = (FILE*) &__sf_fake_stderr;
+    stdout = (FILE*) &__sf_fake_stdout;
     __gcov_dump();
     // reset dump status to allow incremental data accumulation
     __gcov_reset();
+    stdout = old_stdout;
+    stderr = old_stderr;
+    syscall_table_ptr_pro = old_table;
+
     ESP_EARLY_LOGV(TAG, "Free apptrace down buf");
     free(down_buf);
     ESP_EARLY_LOGV(TAG, "Finish file transfer session");
@@ -58,6 +103,25 @@ static int esp_dbg_stub_gcov_dump_do(void)
         ESP_EARLY_LOGE(TAG, "Failed to send files transfer stop cmd (%d)!", ret);
     }
     return ret;
+}
+
+/**
+ * @brief Triggers gcov info dump.
+ *        This function is to be called by OpenOCD, not by normal user code.
+ * TODO: what about interrupted flash access (when cache disabled)???
+ *
+ * @return ESP_OK on success, otherwise see esp_err_t
+ */
+static int esp_dbg_stub_gcov_entry(void)
+{
+    return esp_dbg_stub_gcov_dump_do();
+}
+
+int gcov_rtio_atexit(void (*function)(void) __attribute__ ((unused)))
+{
+    ESP_EARLY_LOGV(TAG, "%s", __FUNCTION__);
+    esp_dbg_stub_entry_set(ESP_DBG_STUB_ENTRY_GCOV, (uint32_t)&esp_dbg_stub_gcov_entry);
+    return 0;
 }
 
 void esp_gcov_dump(void)
