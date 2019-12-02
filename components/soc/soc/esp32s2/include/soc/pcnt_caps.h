@@ -19,18 +19,8 @@ extern "C" {
 #endif
 
 // ESP32-S2 have 1 PCNT peripheral
-#define PCNT_PORT_0            (0) /*!< PCNT port 0 */
-#define PCNT_PORT_MAX          (1) /*!< PCNT port max */
-#define SOC_PCNT_NUM           (PCNT_PORT_MAX)
-
-#define PCNT_PIN_NOT_USED     (-1)  /*!< When selected for a pin, this pin will not be used */
-
-// ESP32-S2 only have 4 unit
-#define PCNT_UNIT_0   (0)   /*!< PCNT unit 0 */
-#define PCNT_UNIT_1   (1)   /*!< PCNT unit 1 */
-#define PCNT_UNIT_2   (2)   /*!< PCNT unit 2 */
-#define PCNT_UNIT_3   (3)   /*!< PCNT unit 3 */
-#define PCNT_UNIT_MAX (4)
+#define SOC_PCNT_PORT_NUM      (1)
+#define SOC_PCNT_UNIT_NUM      (4) // ESP32-S2 only have 4 unit
 
 #ifdef __cplusplus
 }
