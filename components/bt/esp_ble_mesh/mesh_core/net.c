@@ -935,8 +935,9 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 #endif
 
     /* Deliver to local network interface if necessary */
-    if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
-            bt_mesh_elem_find(tx->ctx->addr)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() &&
+        (bt_mesh_fixed_group_match(tx->ctx->addr) ||
+            bt_mesh_elem_find(tx->ctx->addr))) {
         if (cb && cb->start) {
             cb->start(0, 0, cb_data);
         }
