@@ -411,7 +411,7 @@ void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
   */
 void gpio_iomux_out(uint8_t gpio_num, int func, bool oen_inv);
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if GPIO_SUPPORTS_FORCE_HOLD
 /**
   * @brief Force hold digital and rtc gpio pad. 
   * @note GPIO force hold, whether the chip in sleep mode or wakeup mode. 

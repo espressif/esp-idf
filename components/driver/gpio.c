@@ -75,12 +75,12 @@ esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
-    if (rtc_gpio_is_valid_gpio(gpio_num)) {
-        rtc_gpio_pullup_en(gpio_num);
-    } else {
+    if (!rtc_gpio_is_valid_gpio(gpio_num) || GPIO_SUPPORTS_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_pullup_en(gpio_context.gpio_hal, gpio_num);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        rtc_gpio_pullup_en(gpio_num);
     }
 
     return ESP_OK;
@@ -90,12 +90,12 @@ esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
-    if (rtc_gpio_is_valid_gpio(gpio_num)) {
-        rtc_gpio_pullup_dis(gpio_num);
-    } else {
+    if (!rtc_gpio_is_valid_gpio(gpio_num) || GPIO_SUPPORTS_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_pullup_dis(gpio_context.gpio_hal, gpio_num);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        rtc_gpio_pullup_dis(gpio_num);
     }
 
     return ESP_OK;
@@ -105,12 +105,12 @@ esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
-    if (rtc_gpio_is_valid_gpio(gpio_num)) {
-        rtc_gpio_pulldown_en(gpio_num);
-    } else {
+    if (!rtc_gpio_is_valid_gpio(gpio_num) || GPIO_SUPPORTS_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_pulldown_en(gpio_context.gpio_hal, gpio_num);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        rtc_gpio_pulldown_en(gpio_num);
     }
 
     return ESP_OK;
@@ -120,12 +120,12 @@ esp_err_t gpio_pulldown_dis(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
-    if (rtc_gpio_is_valid_gpio(gpio_num)) {
-        rtc_gpio_pulldown_dis(gpio_num);
-    } else {
+    if (!rtc_gpio_is_valid_gpio(gpio_num) || GPIO_SUPPORTS_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_pulldown_dis(gpio_context.gpio_hal, gpio_num);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        rtc_gpio_pulldown_dis(gpio_num);
     }
 
     return ESP_OK;
@@ -429,7 +429,7 @@ static void IRAM_ATTR gpio_intr_service(void *arg)
 
     if (gpio_intr_status_h) {
         gpio_isr_loop(gpio_intr_status_h, 32);
-        gpio_hal_clear_intr_status_high(gpio_context.gpio_hal, gpio_intr_status);
+        gpio_hal_clear_intr_status_high(gpio_context.gpio_hal, gpio_intr_status_h);
     }
 }
 
@@ -569,13 +569,14 @@ esp_err_t gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t streng
     GPIO_CHECK(strength < GPIO_DRIVE_CAP_MAX, "GPIO drive capability error", ESP_ERR_INVALID_ARG);
     esp_err_t ret = ESP_OK;
 
-    if (rtc_gpio_is_valid_gpio(gpio_num)) {
-        ret = rtc_gpio_set_drive_capability(gpio_num, strength);
-    } else {
+    if (!rtc_gpio_is_valid_gpio(gpio_num) || GPIO_SUPPORTS_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_set_drive_capability(gpio_context.gpio_hal, gpio_num, strength);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        ret = rtc_gpio_set_drive_capability(gpio_num, strength);
     }
+
     return ret;
 }
 
@@ -585,13 +586,14 @@ esp_err_t gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t *stren
     GPIO_CHECK(strength != NULL, "GPIO drive capability pointer error", ESP_ERR_INVALID_ARG);
     esp_err_t ret = ESP_OK;
 
-    if (rtc_gpio_is_valid_gpio(gpio_num)) {
-        ret = rtc_gpio_get_drive_capability(gpio_num, strength);
-    } else {
+    if (!rtc_gpio_is_valid_gpio(gpio_num) || GPIO_SUPPORTS_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
         gpio_hal_get_drive_capability(gpio_context.gpio_hal, gpio_num, strength);
         portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+    } else {
+        ret = rtc_gpio_get_drive_capability(gpio_num, strength);
     }
+
     return ret;
 }
 
@@ -645,14 +647,13 @@ void gpio_deep_sleep_hold_dis(void)
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if GPIO_SUPPORTS_FORCE_HOLD
 
 esp_err_t gpio_force_hold_all()
 {
     rtc_gpio_force_hold_all();
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
+    gpio_hal_force_hold_all(gpio_context.gpio_hal);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
@@ -661,9 +662,7 @@ esp_err_t gpio_force_unhold_all()
 {
     rtc_gpio_force_hold_dis_all();
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_HOLD);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_DG_PAD_FORCE_UNHOLD);
-    SET_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CLR_DG_PAD_AUTOHOLD);
+    gpio_hal_force_unhold_all(gpio_context.gpio_hal);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
     return ESP_OK;
 }
