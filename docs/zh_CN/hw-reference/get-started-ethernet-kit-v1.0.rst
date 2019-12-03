@@ -20,7 +20,7 @@ ESP32-Ethernet-Kit V1.0 入门指南
 概述
 --------
 
-ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板，由以太网子板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网子板（A 板） <get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
+ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发板，由以太网子板（A 板）和 PoE 子板（B 板）两部分组成。其中 :ref:`以太网子板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>` 贴蓝牙 / Wi-Fi 双模 ESP32-WROVER-B 模组和单端口 10/100 快速以太网收发器 (PHY) IP101GRI。:ref:`PoE 子板（B 板） <get-started-esp32-ethernet-kit-b-v1.0-layout>` 提供以太网供电功能。ESP32-Ethernet-Kit 的 A 板可在不连接 B 板的情况下独立工作。
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
@@ -31,7 +31,7 @@ ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发�
 
     ESP32-Ethernet-Kit V1.0
 
-为了实现程序下载和监控，A 板还集成了一款先进多协议 USB 桥接器（FTDI FT2232HL 芯片），进而允许开发人员直接通过 USB 接口，使用 JTAG 对 ESP32 进行调试，无需额外的 JTAG 调试器。
+为了实现程序下载和监控，A 板还集成了一款先进多协议 USB 桥接器（FTDI FT2232H 芯片），进而允许开发人员直接通过 USB 接口，使用 JTAG 对 ESP32 进行调试，无需额外的 JTAG 适配器。
 
 
 功能概述
@@ -84,7 +84,7 @@ Tx/Rx LED                2 个 LED，可显示 UART 传输的状态。
 
 GPIO Header 3            可连接至 ESP32 的部分 GPIO，根据 `功能选择开关`_ 的位置有不同功能。
 
-FT2232                    FT2232 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232 芯片进行控制和编程，与 ESP32 建立连接。FT2232 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图`_。
+FT2232H                    FT2232H 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232H 芯片进行控制和编程，与 ESP32 建立连接。FT2232H 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图`_。
 
 USB 端口                  USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
  
@@ -158,11 +158,11 @@ A 板连接器                    1 个 4 针排母，用于将 B 板连接至 :
 =======  ================  ================================================================
 DIP SW    GPIO 管脚          管脚功能（ DIP SW 开启状态）
 =======  ================  ================================================================
-1.        GPIO14            连接至 FT2232，提供 JTAG 功能
-2.        GPIO12            连接至 FT2232，提供 JTAG 功能
-3.        GPIO13            连接至 FT2232，提供 JTAG 功能
-4.        GPIO15            连接至 FT2232，提供 JTAG 功能
-5.        GPIO4             连接至 FT2232，提供 JTAG 功能
+1.        GPIO14            连接至 FT2232H，提供 JTAG 功能
+2.        GPIO12            连接至 FT2232H，提供 JTAG 功能
+3.        GPIO13            连接至 FT2232H，提供 JTAG 功能
+4.        GPIO15            连接至 FT2232H，提供 JTAG 功能
+5.        GPIO4             连接至 FT2232H，提供 JTAG 功能
 6.        GPIO2             连接至板上 25 MHz 晶振
 7.        GPIO5             连接至 IP101GRI 的 RESET_N 输入
 8.        n/a
@@ -181,8 +181,8 @@ DIP SW    GPIO 管脚          管脚功能（ DIP SW 开启状态）
 ====  =======  =================================================
 1.    MTDO     GPIO13，见 `功能选择开关`_。
 2.    MTCK     GPIO15，见 `功能选择开关`_。
-3.    RTS      FT2232 的 RTS 信号
-4.    CTS      FT2232 的 CTS 信号
+3.    RTS      FT2232H 的 RTS 信号
+4.    CTS      FT2232H 的 CTS 信号
 ====  =======  =================================================
 
 
