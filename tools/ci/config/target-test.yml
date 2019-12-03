@@ -307,7 +307,7 @@ example_test_012:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 28
+  parallel: 30
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -316,7 +316,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 9
+  parallel: 11
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -466,7 +466,7 @@ UT_034:
 
 UT_035:
   extends: .unit_test_template
-  parallel: 17
+  parallel: 20
   tags:
     - ESP32S2BETA_IDF
     - UT_T1_1
