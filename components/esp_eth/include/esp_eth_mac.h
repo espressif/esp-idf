@@ -307,8 +307,36 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
 #endif
+#if CONFIG_ETH_SPI_ETHERNET_ENC28J60
+/**
+ * @brief ENC28J60 specific configuration
+ *
+ */
+typedef struct {
+    spi_device_handle_t spi_hdl; /*!< Handle of SPI device driver */
+} eth_ENC28J60_config_t;
 
+/**
+ * @brief Default ENC28J60 specific configuration
+ *
+ */
+#define ETH_ENC28J60_DEFAULT_CONFIG(spi_device) \
+    {                                         \
+        .spi_hdl = spi_device,                \
+    }
 
+/**
+* @brief Create ENC28J60 Ethernet MAC instance
+*
+* @param ENC28J60_config: ENC28J60 specific configuration
+* @param mac_config: Ethernet MAC configuration
+*
+* @return
+*      - instance: create MAC instance successfully
+*      - NULL: create MAC instance failed because some error occurred
+*/
+esp_eth_mac_t *esp_eth_mac_new_ENC28J60(const eth_ENC28J60_config_t *ENC28J60_config, const eth_mac_config_t *mac_config);
+#endif
 #if CONFIG_ETH_USE_OPENETH
 esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);
 #endif // CONFIG_ETH_USE_OPENETH

@@ -143,14 +143,24 @@ menu "Ethernet"
             ESP-IDF can also support some SPI-Ethernet modules.
 
     if ETH_USE_SPI_ETHERNET
-        menuconfig ETH_SPI_ETHERNET_DM9051
+        choice ETH_SPI_INTERFACE
+            prompt "SPI PHY interface"
+            default ETH_SPI_ETHERNET_DM9051
+            help
+                select which SPI-Ethernet module is being used
+            config ETH_SPI_ETHERNET_DM9051
             bool "Use DM9051"
-            default y
             help
                 DM9051 is a fast Ethernet controller with an SPI interface.
                 It's also integrated with a 10/100M PHY and MAC.
                 Set true to enable DM9051 driver.
-
+            config ETH_SPI_ETHERNET_ENC28J60
+            bool "Use ENC28J60"
+            help
+                ENC28J60 is a Stand-Alone Ethernet Controller with SPI Interface.
+                It has an integrated MAC and 10Base-T PHY.
+                Select to enable ENC28J60 driver.
+        endchoice
         if ETH_SPI_ETHERNET_DM9051
             config ETH_DM9051_INT_GPIO
                 int "DM9051 Interrupt GPIO number"
@@ -158,6 +168,14 @@ menu "Ethernet"
                 range 0 33
                 help
                     Set the GPIO number used by DM9051's Interrupt pin.
+        endif        
+        if ETH_SPI_ETHERNET_ENC28J60
+            config ENC28J60_INT_GPIO
+                int "ENC28J60 Interrupt GPIO number"
+                default 25
+                range 0 33
+                help
+                    Set the GPIO number used by ENC28J60's Interrupt pin.
         endif
     endif
 
