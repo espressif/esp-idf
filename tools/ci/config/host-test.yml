@@ -301,6 +301,7 @@ check_doc_links:
     paths:
       - docs/_build/linkcheck
     expire_in: 1 week
+  dependencies: []
   script:
     # must be triggered with CHECK_LINKS=Yes, otherwise exit without test
     - test "$CHECK_LINKS" = "Yes" || exit 0
