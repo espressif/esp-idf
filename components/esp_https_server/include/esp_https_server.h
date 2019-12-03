@@ -47,6 +47,12 @@ struct httpd_ssl_config {
     /** CA certificate byte length */
     size_t cacert_len;
 
+    /** Server certificate */
+    const uint8_t *servercert_pem;
+
+    /** Server certificate byte length */
+    size_t servercert_len;
+
     /** Private key */
     const uint8_t *prvtkey_pem;
 
@@ -100,6 +106,8 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     },                                            \
     .cacert_pem = NULL,                           \
     .cacert_len = 0,                              \
+    .servercert_pem = NULL,                       \
+    .servercert_len = 0,                          \
     .prvtkey_pem = NULL,                          \
     .prvtkey_len = 0,                             \
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
