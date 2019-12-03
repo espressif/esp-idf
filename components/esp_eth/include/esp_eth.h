@@ -142,6 +142,7 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
 * @return
 *       - ESP_OK: start esp_eth driver successfully
 *       - ESP_ERR_INVALID_ARG: start esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: start esp_eth driver failed because driver has started already
 *       - ESP_FAIL: start esp_eth driver failed because some other error occurred
 */
 esp_err_t esp_eth_start(esp_eth_handle_t hdl);
@@ -155,6 +156,7 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl);
 * @return
 *       - ESP_OK: stop esp_eth driver successfully
 *       - ESP_ERR_INVALID_ARG: stop esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: stop esp_eth driver failed because driver has not started yet
 *       - ESP_FAIL: stop esp_eth driver failed because some other error occurred
 */
 esp_err_t esp_eth_stop(esp_eth_handle_t hdl);

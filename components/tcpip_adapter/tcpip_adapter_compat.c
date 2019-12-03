@@ -133,7 +133,6 @@ esp_err_t tcpip_adapter_compat_start_eth(void *eth_driver)
         if (esp_netif) {
             esp_netif_attach(esp_netif, esp_eth_new_netif_glue(eth_driver));
         }
-        esp_eth_start(eth_driver);
     }
     return ESP_OK;
 }

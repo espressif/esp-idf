@@ -196,6 +196,7 @@ err:
 static esp_err_t ip101_reset(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
+    ip101->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = ip101->eth;
     bmcr_reg_t bmcr = {.reset = 1};
     PHY_CHECK(eth->phy_reg_write(eth, ip101->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
