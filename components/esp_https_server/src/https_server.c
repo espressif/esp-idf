@@ -135,6 +135,9 @@ static void free_secure_context(void *ctx)
     assert(ctx != NULL);
     esp_tls_cfg_server_t *cfg = (esp_tls_cfg_server_t *)ctx;
     ESP_LOGI(TAG, "Server shuts down, releasing SSL context");
+    if (cfg->cacert_buf) {
+        free((void *)cfg->cacert_buf);
+    }
     if (cfg->servercert_buf) {
         free((void *)cfg->servercert_buf);
     }
@@ -150,17 +153,27 @@ static esp_tls_cfg_server_t *create_secure_context(const struct httpd_ssl_config
     if (!cfg) {
         return NULL;
     }
-    cfg->servercert_buf = (unsigned char *)malloc(config->cacert_len);
-    if (!cfg->servercert_buf) {
+    cfg->cacert_buf = (unsigned char *)malloc(config->cacert_len);
+    if (!cfg->cacert_buf) {
         free(cfg);
         return NULL;
     }
-    memcpy((char *)cfg->servercert_buf, config->cacert_pem, config->cacert_len);
+    memcpy((char *)cfg->cacert_buf, config->cacert_pem, config->cacert_len);
+    cfg->cacert_bytes = config->cacert_len;
+
+    cfg->servercert_buf = (unsigned char *)malloc(config->cacert_len);
+    if (!cfg->servercert_buf) {
+        free((void *)cfg->cacert_buf);
+        free(cfg);
+        return NULL;
+    }
+    memcpy((char *)cfg->servercert_buf, config->servercert_pem, config->servercert_len);
     cfg->servercert_bytes = config->cacert_len;
 
     cfg->serverkey_buf = (unsigned char *)malloc(config->prvtkey_len);
     if (!cfg->serverkey_buf) {
         free((void *)cfg->servercert_buf);
+        free((void *)cfg->cacert_buf);
         free(cfg);
         return NULL;
     }
