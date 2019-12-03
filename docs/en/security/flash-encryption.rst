@@ -8,7 +8,10 @@ Flash Encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, 
 When using any non-default configuration in production, additional steps may also be needed to ensure effectiveness of flash encryption. See :ref:`securing-flash-encryption` for more details.
 
 .. important::
-  Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.
+    Enabling flash encryption limits your options for further updates of your ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.
+
+.. note::
+    Flash encryption is only supported when using the default GNU Make build system. The CMake build system preview in ESP-IDF v3.x does not support flash encryption.
 
 Background
 ----------
