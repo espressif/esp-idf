@@ -75,14 +75,28 @@ static _lock_t s_modem_sleep_lock;
 static int64_t s_phy_rf_en_ts = 0;
 #endif
 
+static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
+
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
-    return portENTER_CRITICAL_NESTED();
+    if (xPortInIsrContext()) {
+        portENTER_CRITICAL_ISR(&s_phy_int_mux);
+
+    } else {
+        portENTER_CRITICAL(&s_phy_int_mux);
+    }
+    // Interrupt level will be stored in current tcb, so always return zero.
+    return 0;
 }
 
 void IRAM_ATTR phy_exit_critical(uint32_t level)
 {
-    portEXIT_CRITICAL_NESTED(level);
+    // Param level don't need any more, ignore it.
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(&s_phy_int_mux);
+    } else {
+        portEXIT_CRITICAL(&s_phy_int_mux);
+    }
 }
 
 #if CONFIG_IDF_TARGET_ESP32
