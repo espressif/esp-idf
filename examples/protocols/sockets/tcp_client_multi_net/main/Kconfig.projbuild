@@ -1,0 +1,16 @@
+menu "Example Configuration"
+
+    config EXAMPLE_HOST_NAME
+        string "Host Name"
+        default "baidu.com"
+        help
+            host name
+
+    config EXAMPLE_HOST_PORT
+        int "Host Port"
+        default 80
+        range 0 65535
+        help
+            host port
+
+endmenu
