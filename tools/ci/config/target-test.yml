@@ -49,7 +49,7 @@
     - cd $TEST_FW_PATH
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
-    
+
 .example_debug_template:
   stage: target_test
   when: on_success
@@ -298,6 +298,12 @@ example_test_011:
         - $LOG_PATH
   variables:
     SETUP_TOOLS: "1"
+
+example_test_012:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_RMT_IR_PROTOCOLS
 
 UT_001:
   extends: .unit_test_template
