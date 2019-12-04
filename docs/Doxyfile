@@ -145,6 +145,9 @@ INPUT = \
     ../../components/esp_https_server/include/esp_https_server.h \
     ## ESP Local Ctrl
     ../../components/esp_local_ctrl/include/esp_local_ctrl.h \
+    ## ESP Serial Slave Link
+    ../../components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
+    ../../components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
     ##
     ## Provisioning - API Reference
     ##

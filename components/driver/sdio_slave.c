@@ -162,7 +162,7 @@ typedef enum {
     ringbuf_free_ptr = offset_of(sdio_ringbuf_t, free_ptr),
 } sdio_ringbuf_pointer_t;
 
-#define SDIO_RINGBUF_INITIALIZER()    (sdio_ringbuf_t){.write_spinlock = portMUX_INITIALIZER_UNLOCKED,}
+#define SDIO_RINGBUF_INITIALIZER    {.write_spinlock = portMUX_INITIALIZER_UNLOCKED,}
 
 typedef struct {
     sdio_slave_config_t     config;
@@ -191,24 +191,26 @@ typedef struct {
     portMUX_TYPE    recv_spinlock;
 } sdio_context_t;
 
-static sdio_context_t context = {
-    .intr_handle = NULL,
-    /*------- events ---------------*/
-    .events     =   {},
-    .reg_spinlock = portMUX_INITIALIZER_UNLOCKED,
-    /*------- sending ---------------*/
-    .send_state     =   STATE_IDLE,
-    .sendbuf        =   SDIO_RINGBUF_INITIALIZER(),
-    .ret_queue      =   NULL,
-    .in_flight      =   NULL,
-    .in_flight_end  =   NULL,
-    .in_flight_next =   NULL,
-    /*------- receiving ---------------*/
-    .recv_link_list =   STAILQ_HEAD_INITIALIZER(context.recv_link_list),
-    .recv_reg_list  =   TAILQ_HEAD_INITIALIZER(context.recv_reg_list),
-    .recv_cur_ret   =   NULL,
-    .recv_spinlock  =   portMUX_INITIALIZER_UNLOCKED,
-};
+#define CONTEXT_INIT_VAL { \
+    .intr_handle = NULL, \
+    /*------- events ---------------*/ \
+    .events     =   {}, \
+    .reg_spinlock = portMUX_INITIALIZER_UNLOCKED, \
+    /*------- sending ---------------*/ \
+    .send_state     =   STATE_IDLE, \
+    .sendbuf        =   SDIO_RINGBUF_INITIALIZER, \
+    .ret_queue      =   NULL, \
+    .in_flight      =   NULL, \
+    .in_flight_end  =   NULL, \
+    .in_flight_next =   NULL, \
+    /*------- receiving ---------------*/ \
+    .recv_link_list =   STAILQ_HEAD_INITIALIZER(context.recv_link_list), \
+    .recv_reg_list  =   TAILQ_HEAD_INITIALIZER(context.recv_reg_list), \
+    .recv_cur_ret   =   NULL, \
+    .recv_spinlock  =   portMUX_INITIALIZER_UNLOCKED, \
+}
+
+static sdio_context_t context = CONTEXT_INIT_VAL;
 
 static void sdio_intr(void*);
 static void sdio_intr_host(void*);
@@ -238,7 +240,7 @@ static void sdio_ringbuf_deinit(sdio_ringbuf_t* buf)
 {
     if (buf->remain_cnt != NULL) vSemaphoreDelete(buf->remain_cnt);
     if (buf->data != NULL) free(buf->data);
-    *buf = SDIO_RINGBUF_INITIALIZER();
+    *buf = (sdio_ringbuf_t) SDIO_RINGBUF_INITIALIZER;
 }
 
 static esp_err_t sdio_ringbuf_init(sdio_ringbuf_t* buf, int item_size, int item_cnt)
@@ -251,7 +253,7 @@ static esp_err_t sdio_ringbuf_init(sdio_ringbuf_t* buf, int item_size, int item_
     //one item is not used.
     buf->size = item_size * (item_cnt+1);
     //apply for resources
-    buf->data = (uint8_t*)malloc(buf->size);
+    buf->data = (uint8_t*)heap_caps_malloc(buf->size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (buf->data == NULL) goto no_mem;
     buf->remain_cnt = xSemaphoreCreateCounting(item_cnt, item_cnt);
     if (buf->remain_cnt == NULL) goto no_mem;
@@ -451,6 +453,7 @@ static esp_err_t init_context(sdio_slave_config_t *config)
 {
     SDIO_SLAVE_CHECK(*(uint32_t*)&context.config == 0, "sdio slave already initialized", ESP_ERR_INVALID_STATE);
 
+    context = (sdio_context_t)CONTEXT_INIT_VAL;
     context.config = *config;
 
     // in theory we can queue infinite buffers in the linked list, but for multi-core reason we have to use a queue to
@@ -472,8 +475,6 @@ static esp_err_t init_context(sdio_slave_config_t *config)
     context.ret_queue = xQueueCreate(config->send_queue_size, sizeof(void*));
     if (context.ret_queue == NULL) goto no_mem;
 
-    context.recv_link_list = (buf_stailq_t)STAILQ_HEAD_INITIALIZER(context.recv_link_list);
-    context.recv_reg_list  = (buf_tailq_t)TAILQ_HEAD_INITIALIZER(context.recv_reg_list);
     return ESP_OK;
 
 no_mem:
@@ -485,9 +486,9 @@ static void configure_pin(int pin, uint32_t func, bool pullup)
 {
     const int sdmmc_func = func;
     const int drive_strength = 3;
-    assert(pin!=-1);
+    assert(pin != -1);
     uint32_t reg = GPIO_PIN_MUX_REG[pin];
-    assert(reg!=UINT32_MAX);
+    assert(reg != UINT32_MAX);
 
     PIN_INPUT_ENABLE(reg);
     PIN_FUNC_SELECT(reg, sdmmc_func);
@@ -574,6 +575,29 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
     return ESP_OK;
 }
 
+static void recover_pin(int pin, int sdio_func)
+{
+    uint32_t reg = GPIO_PIN_MUX_REG[pin];
+    assert(reg != UINT32_MAX);
+
+    int func = REG_GET_FIELD(reg, MCU_SEL);
+    if (func == sdio_func) {
+        gpio_set_direction(pin, GPIO_MODE_INPUT);
+        PIN_FUNC_SELECT(reg, PIN_FUNC_GPIO);
+    }
+}
+
+static void sdio_slave_hw_deinit(void)
+{
+    const sdio_slave_slot_info_t *slot = &sdio_slave_slot_info[1];
+    recover_pin(slot->clk_gpio, slot->func);
+    recover_pin(slot->cmd_gpio, slot->func);
+    recover_pin(slot->d0_gpio, slot->func);
+    recover_pin(slot->d1_gpio, slot->func);
+    recover_pin(slot->d2_gpio, slot->func);
+    recover_pin(slot->d3_gpio, slot->func);
+}
+
 esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
 {
     esp_err_t r;
@@ -594,6 +618,20 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
 
 void sdio_slave_deinit(void)
 {
+    sdio_slave_hw_deinit();
+
+    //unregister all buffers in the queue, and not in the queue
+    buf_desc_t *temp_desc;
+    buf_desc_t *desc;
+    TAILQ_FOREACH_SAFE(desc, &context.recv_reg_list, te, temp_desc) {
+        TAILQ_REMOVE(&context.recv_reg_list, desc, te);
+        free(desc);
+    }
+    STAILQ_FOREACH_SAFE(desc, &context.recv_link_list, qe, temp_desc) {
+        STAILQ_REMOVE(&context.recv_link_list, desc, buf_desc_s, qe);
+        free(desc);
+    }
+
     esp_err_t ret = esp_intr_free(context.intr_handle);
     assert(ret==ESP_OK);
     context.intr_handle = NULL;
@@ -1165,9 +1203,9 @@ static void sdio_intr_recv(void* arg)
             // This may cause the ``cur_ret`` pointer to be NULL, indicating the list is empty,
             // in this case the ``tx_done`` should happen no longer until new desc is appended.
             // The app is responsible to place the pointer to the right place again when appending new desc.
-            critical_enter_recv();
+            portENTER_CRITICAL_ISR(&context.recv_spinlock);
             context.recv_cur_ret = STAILQ_NEXT(context.recv_cur_ret, qe);
-            critical_exit_recv();
+            portEXIT_CRITICAL_ISR(&context.recv_spinlock);
             ESP_EARLY_LOGV(TAG, "intr_recv: Give");
             xSemaphoreGiveFromISR(context.recv_event, &yield);
             SLC.slc0_int_clr.tx_done = 1;
@@ -1201,6 +1239,7 @@ esp_err_t sdio_slave_recv_load_buf(sdio_slave_buf_handle_t handle)
         SLC.slc0_tx_link.addr = (uint32_t)desc;
         SLC.slc0_tx_link.start = 1;
         ESP_LOGV(TAG, "recv_load_buf: start new");
+        SLC.slc0_int_ena.tx_done = 1;
     } else {
         //restart former ll operation
         SLC.slc0_tx_link.restart = 1;
@@ -1216,7 +1255,7 @@ sdio_slave_buf_handle_t sdio_slave_recv_register_buf(uint8_t *start)
 {
     SDIO_SLAVE_CHECK(esp_ptr_dma_capable(start) && (uint32_t)start%4==0,
         "buffer to register should be DMA capable and 32-bit aligned", NULL);
-    buf_desc_t *desc = (buf_desc_t*)malloc(sizeof(buf_desc_t));
+    buf_desc_t *desc = (buf_desc_t*)heap_caps_malloc(sizeof(buf_desc_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (desc == NULL) {
         SDIO_SLAVE_LOGE("cannot allocate lldesc for new buffer");
         return NULL;

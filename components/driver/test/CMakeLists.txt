@@ -5,5 +5,5 @@ endif()
 
 idf_component_register(SRC_DIRS ${srcdirs}
                        INCLUDE_DIRS include param_test/include
-                       REQUIRES unity test_utils driver nvs_flash
+                       REQUIRES unity test_utils driver nvs_flash esp_serial_slave_link
                        )

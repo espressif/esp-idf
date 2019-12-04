@@ -76,7 +76,10 @@ ESP SDIO slave protocol
 -----------------------
 
 The protocol is based on Function 1 access by CMD52 and CMD53, offering 3 services: (1) sending and receiving FIFO, (2) 52 8-bit R/W
-register shared by host and slave, (3) 8 general purpose interrupt sources from host to slave and 8 in the oppsite direction.
+register shared by host and slave, (3) 8 general purpose interrupt sources from host to slave and 8 in the opposite direction.
+
+There is a component `esp_serial_slave_link` implementing the logic of this protocol for
+ESP32 master to communicate with the ESP32 slave. See :doc:`/api-reference/protocols/esp_serial_slave_link`.
 
 The host should access the registers below as described to communicate with slave.
 
@@ -154,7 +157,7 @@ To write the receiving FIFO in the slave, host should work in the following step
 
 1. Read the TOKEN1 field (bits 27-16) of TOKEN_RDATA (0x044) register. The buffer number remaining is TOKEN1 minus
    the number of buffers used by host.
-2. Make sure the buffer number is sufficient (*buffer_size* * *buffer_num* is greater than data to write, *buffer_size*
+2. Make sure the buffer number is sufficient (*recv_buffer_size* * *buffer_num* is greater than data to write, *recv_buffer_size*
    is pre-defined between the host and the slave before the communication starts). Or go back to step 1 until the buffer
    is enough.
 3. Write to the FIFO address with CMD53. Note that the *requested length* should not be larger than calculated in step 2,

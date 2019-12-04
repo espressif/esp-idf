@@ -35,6 +35,9 @@
 #if __has_include("esp_ping.h")
 #include "esp_ping.h"
 #endif
+#if __has_include("esp_serial_slave_link/essl.h")
+#include "esp_serial_slave_link/essl.h"
+#endif
 #if __has_include("esp_spi_flash.h")
 #include "esp_spi_flash.h"
 #endif
@@ -105,6 +108,10 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_INVALID_MAC
     ERR_TBL_IT(ESP_ERR_INVALID_MAC),                            /*   267 0x10b MAC address was invalid */
+#   endif
+    // components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
+#   ifdef      ESP_ERR_NOT_FINISHED
+    ERR_TBL_IT(ESP_ERR_NOT_FINISHED),                           /*   513 0x201 */
 #   endif
     // components/nvs_flash/include/nvs.h
 #   ifdef      ESP_ERR_NVS_BASE
