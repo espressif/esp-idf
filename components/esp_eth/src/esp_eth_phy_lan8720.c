@@ -238,6 +238,7 @@ err:
 static esp_err_t lan8720_reset(esp_eth_phy_t *phy)
 {
     phy_lan8720_t *lan8720 = __containerof(phy, phy_lan8720_t, parent);
+    lan8720->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = lan8720->eth;
     bmcr_reg_t bmcr = {.reset = 1};
     PHY_CHECK(eth->phy_reg_write(eth, lan8720->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,

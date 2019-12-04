@@ -156,6 +156,7 @@ err:
 static esp_err_t dp83848_reset(esp_eth_phy_t *phy)
 {
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
+    dp83848->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = dp83848->eth;
     bmcr_reg_t bmcr = {.reset = 1};
     PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
