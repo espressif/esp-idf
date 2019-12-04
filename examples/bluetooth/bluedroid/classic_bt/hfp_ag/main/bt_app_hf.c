@@ -161,8 +161,11 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         {
             ESP_LOGI(BT_HF_TAG, "--Audio State %s", c_audio_state_str[param->audio_stat.state]);
 #if CONFIG_BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
-            if (param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED ||
-                param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED_MSBC) {
+            if (param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED
+#if (BTM_WBS_INCLUDED == TRUE)
+                || param->audio_stat.state == ESP_HF_AUDIO_STATE_CONNECTED_MSBC
+#endif
+            ) {
                 esp_bt_hf_register_data_callback(bt_app_hf_incoming_cb, bt_app_hf_outgoing_cb);
             } else if (param->audio_stat.state == ESP_HF_AUDIO_STATE_DISCONNECTED) {
                 ESP_LOGI(BT_HF_TAG, "--ESP AG Audio Connection Disconnected.");
@@ -263,7 +266,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_ATA_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--Asnwer Incoming Call.");
-            char *number = {"186xxxx5549"};
+            char *number = {"123456"};
             esp_bt_hf_answer_call(hf_peer_addr,1,0,1,0,number,0);
             break;
         }
@@ -271,7 +274,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_CHUP_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--Reject Incoming Call.");
-            char *number = {"186xxxx5549"};
+            char *number = {"123456"};
             esp_bt_hf_reject_call(hf_peer_addr,0,0,0,0,number,0);
             break;
         }

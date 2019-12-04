@@ -1441,7 +1441,6 @@ void btc_hf_cb_handler(btc_msg_t *msg)
 #endif
             break;
         }
-
 #if (BTM_WBS_INCLUDED == TRUE)
         case BTA_AG_WBS_EVT:
         {
@@ -1451,7 +1450,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             btc_hf_cb_to_app(ESP_HF_WBS_RESPONSE_EVT, &param);
             break;
         }
-#endif
+
         case BTA_AG_AT_BCS_EVT:
         {
             BTC_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC", p_data->val.num);
@@ -1461,6 +1460,7 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
             break;
         }
+#endif
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;

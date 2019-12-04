@@ -628,7 +628,7 @@ static UINT8 bta_ag_parse_chld(tBTA_AG_SCB *p_scb, char *p_s)
     return(retval);
 }
 
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_ag_parse_bac
@@ -1101,7 +1101,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB *p_scb, UINT16 cmd, UINT8 arg_type,
             }
             break;
 
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
         case BTA_AG_HF_CMD_BAC:
         {
             bta_ag_send_ok(p_scb);
