@@ -1397,7 +1397,7 @@ Initialization
     - Upon inclusion of ``idf.cmake`` in ``project.cmake``, the following steps are performed:
         - Set ``IDF_PATH`` from environment variable or inferred from path to ``project.cmake`` included in the top-level CMakeLists.txt.
         - Add :idf:`/tools/cmake` to ``CMAKE_MODULE_PATH`` and include core modules plus the various helper/third-party scripts.
-        - Set build tools/executables such as default Python interpreter, mconf, etc.
+        - Set build tools/executables such as default Python interpreter.
         - Get ESP-IDF git revision and store as ``IDF_VER``.
         - Set global build specifications i.e. compile options, compile definitions, include directories for all components in the build.
         - Add components in :idf:`components` to the build.
