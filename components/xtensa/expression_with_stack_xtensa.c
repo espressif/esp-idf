@@ -10,7 +10,7 @@ StackType_t * esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
             sizeof(StackType_t));
 
     //Align stack to a 16byte boundary, as required by CPU specific:
-    top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 1) -
+    top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 31) -
                                     ALIGNUP(0x10, sizeof(XtSolFrame) )) & 
                                     ~0xf);
 
