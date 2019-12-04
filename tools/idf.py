@@ -677,7 +677,7 @@ def init_cli(verbose_output=None):
 def main():
     checks_output = check_environment()
     cli = init_cli(verbose_output=checks_output)
-    cli(prog_name=PROG)
+    cli(sys.argv[1:], prog_name=PROG)
 
 
 def _valid_unicode_config():

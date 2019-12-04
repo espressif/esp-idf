@@ -35,7 +35,9 @@ def action_extensions(base_actions, project_path):
         Menuconfig target is build_target extended with the style argument for setting the value for the environment
         variable.
         """
-        os.environ['MENUCONFIG_STYLE'] = style
+        # The subprocess lib cannot accept environment variables as "unicode" . This is a problem
+        # only in Python 2.
+        os.environ['MENUCONFIG_STYLE'] = style.encode(sys.getfilesystemencoding() or 'utf-8')
         build_target(target_name, ctx, args)
 
     def fallback_target(target_name, ctx, args):
