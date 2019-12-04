@@ -6,7 +6,7 @@ This example is to show how to use the APIs of Hands-Free (HF) Audio Gateway (AG
 
 ### Hardware Required
 
-This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate this example, it should be connected to an Hands-Free Unit running on a Headphone/Headset or on another ESP32 development board loaded with Hands Free Unit (hfp_hf) example from ESP-IDF.
+This example is designed to run on commonly available ESP32 development board, e.g. ESP32-DevKitC. To operate this example, it should be connected to a Hands-Free Unit running on a Headphone/Headset or on another ESP32 development board loaded with Hands Free Unit (hfp_hf) example from ESP-IDF.
 
 ### Configure the project
 
@@ -14,10 +14,10 @@ This example is designed to run on commonly available ESP32 development board, e
 idf.py menuconfig
 ```
 
-ESP32 supports two types of audio data paths: PCM and HCI but the default sdkconfig of this example does not config the data path in a specific way. You should config the data path you want:
+ESP32 supports two types of audio data paths: PCM and HCI. Because the default sdkconfig of this example does not configured the data path in a specific way. You should config the data path you want:
 
 - PCM : When using PCM, audio data stream is directed to GPIO pins and you should link these GPIO pins to a speaker via I2S port. You should choose PCM in `menuconfig` path: `Component config --> Bluetooth controller --> BR/EDR Sync(SCO/eSCO) default data path --> PCM`and also `Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> PCM`.
-- HCI : When using HCI, audio data stream will be transport to HF unit app via HCI. You should choose HCI in `menuconfig` path: `Component config -->Bluetooth controller -->BR/EDR Sync(SCO/eSCO) default data path --> HCI` and also `Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
+- HCI : When using HCI, audio data stream will be transported to HF unit app via HCI. You should choose HCI in `menuconfig` path: `Component config -->Bluetooth controller -->BR/EDR Sync(SCO/eSCO) default data path --> HCI` and also `Component config --> Bluetooth --> Bluedroid Options -->Hands Free/Handset Profile --> audio(SCO) data path --> HCI`.
 
 **Note: Wide Band Speech is disabled by default, if you want to use it please select it in the menuconfig path: `Component config --> Bluetooth --> Bluedroid Options --> Wide Band Speech`.**
 
@@ -37,7 +37,7 @@ See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/l
 
 ## Example Output
 
-When you flash and monitor this example the commands help table prints the following at the very begining:
+When you flash and monitor this example, the commands help table prints the following log at the very begining:
 
 ```
 ########################################################################
@@ -45,10 +45,10 @@ HFP AG command usage manual
 HFP AG commands begins with "hf" and end with ";"
 Supported commands are as follows, arguments are embraced with < and >
 
-hf con;                   -- setup connection with peer device
+hf con;                   -- set up connection with peer device
 hf dis;                   -- release connection with peer device
-hf cona;                  -- setup audio connection with peer device
-hf disa;                  -- release connection with peer device
+hf cona;                  -- set up audio connection with peer device
+hf disa;                  -- release audio connection with peer device
 hf vron;                  -- start voice recognition
 hf vroff;                 -- stop voice recognition
 hf vu <tgt> <vol>;        -- volume update
@@ -75,8 +75,8 @@ hf h;                     -- to see the command for HFP AG
 **Note:**
 
 - This command help table will print out in monitor whenever you type `hf h;` or if you input a command that is not required by the command parse rule.
-- The command you type will not echo in monitor and your command should always start with `hf` and end with `;` or the example will not responds.
-- The command you typed will not echo in monitor.
+- The command you type will not echo in monitor and your command should always start with `hf` and end with `;` or the example will not respond.
+- The command you type in will not echo in monitor.
 
 ### Service Level Connection and Disconnection
 
@@ -121,7 +121,7 @@ You can type `hf cona;` to establish the audio connection between HF Unit and AG
 - Reject an incoming call
 - Disable the voice recognition
 
-#### Choise of Codec
+#### Choice of Codec
 
 ESP32 supports both CVSD and mSBC codec. HF Unit and AG device determine which codec to use by exchanging features during service level connection. The choice of codec also depends on the your configuration in `menuconfig`.
 
@@ -211,7 +211,7 @@ E (32087) BT_HF: --volume_target: MICROPHONE, volume 9
 
 #### Voice Recognition
 
-You can type `hf vron;` to start the voice recognition and type `hf vroff;` to terminate this function in the AG device. Both commands will notify the HF Unit the status of voice recognition. For example, type `hf vron;` and the log will prints:
+You can type `hf vron;` to start the voice recognition and type `hf vroff;` to terminate this function in the AG device. Both commands will notify the HF Unit the status of voice recognition. For example, type `hf vron;` and the log will print:
 
 ```
 E (244131) CNSL: Command [hf vron;]
@@ -274,7 +274,7 @@ If you encounter any problems, please check if the following rules are followed:
 
 Due to the complexity of the HFP, this example has more source files than other bluetooth examples. To show the functions of HFP in a simple way, we use the Commands and Effects scheme to illustrate APIs of the HFP in ESP-IDF.
 
-- The example will respond to user command through the UART console. Please go to `console_uart.c`  for the configuration details.
+- The example will respond to user command through the UART console. Please go to `console_uart.c` for the configuration details.
 - For the voice interface, ESP32 has provided PCM input/output signals which can be directed to GPIO pins. So, please go to `gpio_pcm_config.c` for the configuration details.
 - If you want to update the command table, please refer to `app_hf_msg_set.c`.
 - If you want to update the command parse rules, please refer to `app_hf_msg_prs.c`.

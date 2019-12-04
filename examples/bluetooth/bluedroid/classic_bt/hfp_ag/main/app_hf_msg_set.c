@@ -21,10 +21,10 @@ void hf_msg_show_usage(void)
     printf("HFP AG command usage manual\n");
     printf("HFP AG commands begins with \"hf\" and end with \";\"\n");
     printf("Supported commands are as follows, arguments are embraced with < and >\n\n");
-    printf("hf con;                   -- setup connection with peer device\n");
-    printf("hf dis;                   -- release connection with peer device\n");
-    printf("hf cona;                  -- setup audio connection with peer device\n");
-    printf("hf disa;                  -- release connection with peer device\n");
+    printf("hf con;                   -- set up connection with peer device\n");
+    printf("hf dis;                   -- disconnection with peer device\n");
+    printf("hf cona;                  -- set up audio connection with peer device\n");
+    printf("hf disa;                  -- release audio connection with peer device\n");
     printf("hf vron;                  -- start voice recognition\n");
     printf("hf vroff;                 -- stop voice recognition\n");
     printf("hf vu <tgt> <vol>;        -- volume update\n");

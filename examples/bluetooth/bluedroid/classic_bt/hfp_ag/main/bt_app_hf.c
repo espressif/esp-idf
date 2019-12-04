@@ -31,6 +31,7 @@ const char *c_hf_evt_str[] = {
     "VR_STATE_CHANGE_EVT",               /*!< VOICE RECOGNITION CHANGE */
     "VOLUME_CONTROL_EVT",                /*!< AUDIO VOLUME CONTROL */
     "UNKNOW_AT_CMD",                     /*!< UNKNOW AT COMMAND RECIEVED */
+    "IND_UPDATE",                        /*!< INDICATION UPDATE */
     "CIND_RESPONSE_EVT",                 /*!< CALL & DEVICE INDICATION */
     "COPS_RESPONSE_EVT",                 /*!< CURRENT OPERATOR EVENT */
     "CLCC_RESPONSE_EVT",                 /*!< LIST OF CURRENT CALL EVENT */

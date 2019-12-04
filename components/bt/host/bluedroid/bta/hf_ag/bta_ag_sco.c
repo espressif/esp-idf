@@ -316,7 +316,7 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
 {
     if (status != BTM_SCO_DATA_CORRECT)
     {
-        APPL_TRACE_DEBUG("bta_ag_sco_read_cback: status(%d)", status);
+        ets_printf("bta_ag_sco_read_cback: status(%d)", status);
     }
 
     /* Callout function must free the data. */
