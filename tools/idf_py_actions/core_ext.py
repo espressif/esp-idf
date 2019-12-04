@@ -45,7 +45,7 @@ def action_extensions(base_actions, project_path):
         ensure_build_directory(args, ctx.info_name)
 
         try:
-            subprocess.check_output(GENERATORS[args.generator]["dry_run"] + [target_name], cwd=args.cwd)
+            subprocess.check_output(GENERATORS[args.generator]["dry_run"] + [target_name], cwd=args.build_dir)
 
         except Exception:
             raise FatalError(

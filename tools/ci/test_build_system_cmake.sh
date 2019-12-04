@@ -576,6 +576,16 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
         || failure "Version on worktree should have been properly resolved"
     git worktree remove ../esp-idf-template-test
 
+    print_status "idf.py fallback to build system target"
+    clean_build_dir
+    msg="Custom target is running"
+    echo "" >> CMakeLists.txt
+    echo "add_custom_target(custom_target COMMAND \${CMAKE_COMMAND} -E echo \"${msg}\")" >> CMakeLists.txt
+    idf.py custom_target 1>log.txt || failure "Could not invoke idf.py with custom target"
+    grep "${msg}" log.txt 1>/dev/null || failure "Custom target did not produce expected output"
+    git checkout CMakeLists.txt
+    rm -f log.txt
+
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then
         echo "Some failures were detected:"
