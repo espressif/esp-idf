@@ -125,7 +125,7 @@ Currently, the following peripheral drivers are aware of DFS and will use the ``
 The following drivers will hold the ``ESP_PM_APB_FREQ_MAX`` lock while the driver is enabled:
 
 - **SPI slave**: between calls to :cpp:func:`spi_slave_initialize` and :cpp:func:`spi_slave_free`.
-- **Ethernet**: between calls to :cpp:func:`esp_eth_enable` and :cpp:func:`esp_eth_disable`.
+- **Ethernet**: between calls to :cpp:func:`esp_eth_driver_install` and :cpp:func:`esp_eth_driver_uninstall`.
 - **WiFi**: between calls to :cpp:func:`esp_wifi_start` and :cpp:func:`esp_wifi_stop`. If modem sleep is enabled, the lock will be released for the periods of time when radio is disabled.
 - **Bluetooth**: between calls to :cpp:func:`esp_bt_controller_enable` and :cpp:func:`esp_bt_controller_disable`. If Bluetooth modem sleep is enabled, the ``ESP_PM_APB_FREQ_MAX`` lock will be released for the periods of time when radio is disabled. However the ``ESP_PM_NO_LIGHT_SLEEP`` lock will still be held, unless :ref:`CONFIG_BTDM_LOW_POWER_CLOCK` option is set to "External 32kHz crystal".
 - **CAN**: between calls to :cpp:func:`can_driver_install` and :cpp:func:`can_driver_uninstall`.
