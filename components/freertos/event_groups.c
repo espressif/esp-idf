@@ -444,7 +444,7 @@ BaseType_t xTimeoutOccurred = pdFALSE;
 		event list item, and they should now be retrieved then cleared. */
 		uxReturn = uxTaskResetEventItemValue();
 
-		if( unlikely (( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0) )
+		if( ( uxReturn & eventUNBLOCKED_DUE_TO_BIT_SET ) == ( EventBits_t ) 0 )
 		{
 			taskENTER_CRITICAL( &pxEventBits->eventGroupMux );
 			{

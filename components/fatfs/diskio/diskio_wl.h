@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 #include "wear_levelling.h"
-#include "esp_compiler.h"
 
 
 /**

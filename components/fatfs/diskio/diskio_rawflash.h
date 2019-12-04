@@ -20,7 +20,6 @@ extern "C" {
 #endif
 
 #include "esp_partition.h"
-#include "esp_compiler.h"
 
 /**
  * Register spi flash partition

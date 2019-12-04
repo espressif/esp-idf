@@ -16,7 +16,6 @@
 
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_host.h"
-#include "esp_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -17,6 +17,7 @@
 #include "ff.h"
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
+#include "esp_compiler.h"
 
 static sdmmc_card_t* s_cards[FF_VOLUMES] = { NULL };
 

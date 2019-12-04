@@ -2467,7 +2467,7 @@ BaseType_t xSwitchRequired = pdFALSE;
 	/* Only allow core 0 increase the tick count in the case of xPortSysTickHandler processing. */
 	/* And allow core 0 and core 1 to unwind uxPendedTicks during xTaskResumeAll. */
 
-	if (likely(xPortInIsrContext()))
+	if (xPortInIsrContext())
 	{
 		#if ( configUSE_TICK_HOOK == 1 )
 		vApplicationTickHook();
@@ -4188,7 +4188,7 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 	{
 		BaseType_t oldInterruptLevel=0;
 		BaseType_t schedulerRunning = xSchedulerRunning;
-		if(likely(schedulerRunning != pdFALSE))
+		if(schedulerRunning != pdFALSE)
 		{
 			//Interrupts may already be disabled (because we're doing this recursively) but we can't get the interrupt level after
 			//vPortCPUAquireMutex, because it also may mess with interrupts. Get it here first, then later figure out if we're nesting
@@ -4201,7 +4201,7 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT );
 #endif
 
-		if(likely(schedulerRunning != pdFALSE))
+		if(schedulerRunning != pdFALSE)
 		{
 			TCB_t *tcb = pxCurrentTCB[xPortGetCoreID()];
 			BaseType_t newNesting = tcb->uxCriticalNesting + 1;
@@ -4260,11 +4260,11 @@ For ESP32 FreeRTOS, vTaskExitCritical implements both portEXIT_CRITICAL and port
 #else
 		vPortCPUReleaseMutexIntsDisabled( mux );
 #endif
-		if(likely(xSchedulerRunning != pdFALSE))
+		if(xSchedulerRunning != pdFALSE)
 		{
 			TCB_t *tcb = pxCurrentTCB[xPortGetCoreID()];
 			BaseType_t nesting = tcb->uxCriticalNesting;
-			if(likely(nesting > 0U))
+			if(nesting > 0U)
 			{
 				nesting--;
 				tcb->uxCriticalNesting = nesting;

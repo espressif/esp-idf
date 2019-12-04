@@ -410,7 +410,7 @@ DaemonTaskMessage_t xMessage;
 
 	/* Send a message to the timer service task to perform a particular action
 	on a particular timer definition. */
-	if(unlikely( xTimerQueue != NULL ))
+	if( xTimerQueue != NULL )
 	{
 		/* Send a command to the timer service task to start the xTimer timer. */
 		xMessage.xMessageID = xCommandID;
@@ -725,7 +725,7 @@ TickType_t xTimeNow;
 
 		/* Commands that are positive are timer commands rather than pended
 		function calls. */
-		if(likely( xMessage.xMessageID >= ( BaseType_t ) 0) )
+		if( xMessage.xMessageID >= ( BaseType_t ) 0 )
 		{
 			/* The messages uses the xTimerParameters member to work on a
 			software timer. */
@@ -759,7 +759,7 @@ TickType_t xTimeNow;
 			    case tmrCOMMAND_RESET_FROM_ISR :
 				case tmrCOMMAND_START_DONT_TRACE :
 					/* Start or restart a timer. */
-					if(likely( prvInsertTimerInActiveList( pxTimer,  xMessage.u.xTimerParameters.xMessageValue + pxTimer->xTimerPeriodInTicks, xTimeNow, xMessage.u.xTimerParameters.xMessageValue ) == pdTRUE ))
+					if( prvInsertTimerInActiveList( pxTimer,  xMessage.u.xTimerParameters.xMessageValue + pxTimer->xTimerPeriodInTicks, xTimeNow, xMessage.u.xTimerParameters.xMessageValue ) == pdTRUE )
 					{
 						/* The timer expired before it was added to the active
 						timer list.  Process it now. */

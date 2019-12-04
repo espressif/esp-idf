@@ -18,6 +18,7 @@
 #include "ff.h"
 #include "esp_log.h"
 #include "diskio_rawflash.h"
+#include "esp_compiler.h"
 
 static const char* TAG = "diskio_rawflash";
 
