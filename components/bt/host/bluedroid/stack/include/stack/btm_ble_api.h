@@ -1720,6 +1720,20 @@ void BTM_BleConfigLocalIcon(uint16_t icon);
 
 /*******************************************************************************
 **
+** Function         BTM_BleConfigConnParams
+**
+** Description      This function is called to set the connection parameters
+**
+** Parameters       int_min:  minimum connection interval
+**                  int_max:  maximum connection interval
+**                  latency:  slave latency
+**                  timeout:  supervision timeout
+**
+*******************************************************************************/
+void BTM_BleConfigConnParams(uint16_t int_min, uint16_t int_max, uint16_t latency, uint16_t timeout);
+
+/*******************************************************************************
+**
 ** Function         BTM_BleLocalPrivacyEnabled
 **
 ** Description        Checks if local device supports private address

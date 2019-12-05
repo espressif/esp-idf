@@ -4874,6 +4874,9 @@ void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data)
                              p_data->ble_set_conn_params.conn_int_max,
                              p_data->ble_set_conn_params.slave_latency,
                              p_data->ble_set_conn_params.supervision_tout);
+
+    BTM_BleConfigConnParams(p_data->ble_set_conn_params.conn_int_min, p_data->ble_set_conn_params.conn_int_max,
+            p_data->ble_set_conn_params.slave_latency, p_data->ble_set_conn_params.supervision_tout);
 }
 
 /*******************************************************************************
@@ -4958,6 +4961,9 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
                                   p_data->ble_update_conn_params.latency,
                                   p_data->ble_update_conn_params.timeout)) {
         APPL_TRACE_ERROR("Update connection parameters failed!");
+    } else {
+        BTM_BleConfigConnParams(p_data->ble_update_conn_params.min_int, p_data->ble_update_conn_params.max_int,
+            p_data->ble_update_conn_params.latency, p_data->ble_update_conn_params.timeout);
     }
 }
 /*******************************************************************************
