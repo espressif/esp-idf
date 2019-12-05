@@ -61,7 +61,7 @@
  * @param buf memory alloc in L2 layer
  * @note this function is also the callback when invoke pbuf_free
  */
-static void ethernet_free_rx_buf_l2(void *buf)
+static void ethernet_free_rx_buf_l2(struct netif *netif, void *buf)
 {
     free(buf);
 }
@@ -158,7 +158,7 @@ void ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
 
     if (buffer == NULL || !netif_is_up(netif)) {
         if (buffer) {
-            ethernet_free_rx_buf_l2(buffer);
+            ethernet_free_rx_buf_l2(netif, buffer);
         }
         return;
     }
@@ -166,7 +166,7 @@ void ethernetif_input(struct netif *netif, void *buffer, uint16_t len)
     /* acquire new pbuf, type: PBUF_REF */
     p = pbuf_alloc(PBUF_RAW, len, PBUF_REF);
     if (p == NULL) {
-        ethernet_free_rx_buf_l2(buffer);
+        ethernet_free_rx_buf_l2(netif, buffer);
         return;
     }
     p->payload = buffer;
