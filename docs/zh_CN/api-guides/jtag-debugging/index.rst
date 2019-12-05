@@ -60,7 +60,7 @@ ESP32 具有两个强大的 Xtensa 内核，支持多种程序架构。ESP-IDF �
 
 如果你使用的是 :doc:`ESP-WROVER-KIT 开发板 <../../hw-reference/modules-and-boards>`，得益于板载的 FT232H 芯片，PC 和 ESP32 的连接仅仅需要一根 USB 线即可完成。FT232H 提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 UART。
 
-根据用户的喜好，除了使用 Eclipse 集成开发环境，上述的调试工具和构建工具还可以直接在命令行终端运行。
+根据用户的喜好，除了使用 Eclipse 集成开发环境，还可以直接在命令行终端运行 `debugger` 和 `idf.py build`。
 
 .. _jtag-debugging-selecting-jtag-adapter:
 

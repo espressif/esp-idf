@@ -1,5 +1,5 @@
-ESP32 中的单元测试
-==================
+单元测试（传统的 GNU Make）
+=====================================
 :link_to_translation:`en:[English]`
 
 .. include:: ../gnu-make-legacy.rst
@@ -26,20 +26,16 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
            // 在这里添加测试用例
    }
 
--  第一个参数是字符串，用来描述当前测试。
+第一个参数是字符串，用来描述当前测试。第二个参数是字符串，用方括号中的标识符来表示，标识符用来对相关测试或具有特定属性的测试进行分组。
 
--  第二个参数是字符串，用方括号中的标识符来表示，标识符用来对相关测试或具有特定属性的测试进行分组。
+.. note::
+    没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()``
+    来声明主函数的区域， ``unity_platform.c`` 会自动调用 ``UNITY_BEGIN()``， 然后运行测试用例，最后调用 ``UNITY_END()``。
 
-没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()``
-来声明主函数的区域， ``unity_platform.c`` 会自动调用
-``UNITY_BEGIN()``\ ， 然后运行测试用例，最后调用 ``UNITY_END()``\ 。
+每一个 `测试` 子目录下都需包含
+``component.mk`` 文件，并且其中至少要包含如下的一行代码::
 
-每一个测试子目录下都应该包含一个
-``component.mk``\ ，并且里面至少要包含如下的一行内容：
-
-.. code:: makefile
-
-   COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-archive
+    COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-archive
 
 更多关于如何在 Unity 下编写测试用例的信息，请查阅
 http://www.throwtheswitch.org/unity 。
@@ -48,10 +44,8 @@ http://www.throwtheswitch.org/unity 。
 添加多设备测试用例
 ------------------
 
-常规测试用例会在一个 DUT（Device Under
-Test，在试设备）上执行，那些需要互相通信的组件（比如
-GPIO，SPI...）不能使用常规测试用例进行测试。多设备测试用例支持使用多个
-DUT 进行写入和运行测试。
+常规测试用例会在一个 DUT（Device Under Test，在试设备）上执行.但是，那些需要互相通信的组件（比如
+GPIO、SPI）需要与其通信的其他设备，因此不能使用常规测试用例进行测试。多设备测试用例包括写入多个测试函数，并在多个 DUT 进行运行测试。
 
 以下是一个多设备测试用例：
 
@@ -109,11 +103,11 @@ DUT2（slave）终端：
 
    Send signal: [output high level]!
 
-一旦 DUT2 发送了该信号，您需要在 DUT2 的终端输入回车，然后 DUT1 会从
+一旦 DUT2 发送了该信号，您需要在 DUT1 按回车键，然后 DUT1 会从
 ``unity_wait_for_signal`` 函数中解除阻塞，并开始更改 GPIO 的电平。
 
-信号也可以用来在不同 DUT 之间传递参数。例如，DUT1 希望能够拿到 DUT2 的 MAC 地址，来进行蓝牙连接。
-这时，我们可以使用 ``unity_wait_for_signal_param`` 以及 ``unity_send_signal_param``。
+信号也可以用来在不同设备之间传递参数。例如，DUT1 希望得到 DUT2 的 MAC 地址来进行蓝牙连接，
+这时，可使用 ``unity_wait_for_signal_param`` 以及 ``unity_send_signal_param``。
 
 DUT1 终端::
 
@@ -125,7 +119,7 @@ DUT2 终端::
 
     Send signal: [dut2 mac address][10:20:30:40:50:60]!
 
-一旦 DUT2 发送信号，您需要在 DUT1 输入 ``10:20:30:40:50:60`` 及回车，然后 DUT1 会从 ``unity_wait_for_signal_param`` 中获取到蓝牙地址的字符串，并解除阻塞开始蓝牙连接。
+一旦 DUT2 发送信号，您需要在 DUT1 输入 ``10:20:30:40:50:60`` 并按回车键，然后 DUT1 会获取 DUT2 的 MAC 地址字符串，并从 ``unity_wait_for_signal_param`` 函数中解除阻塞，然后蓝牙连接 DUT2。
 
 
 添加多阶段测试用例
@@ -168,9 +162,9 @@ DUT2 终端::
 -  ``make TEST_COMPONENTS='xxx'`` - 编译单元测试程序，测试指定的组件。
 
 -  ``make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='xxx'`` -
-   编译单元测试程序，测试所有（除开指定）的组件。例如
+   编译单元测试程序，测试所有（除开指定）的组件。（例如
    ``make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='ulp mbedtls'`` -
-   编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls``\ 组件。
+   编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls`` 组件。）
 
 当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``make flash``
 即可烧写所有编译输出的文件。
@@ -225,7 +219,7 @@ DUT2 终端::
 
 -  测试用例的序号（例如 ``1``），运行单个测试用例。
 
--  方括号中的模块名字（例如 ``[cxx]``），运行指定模块所有的测试用例。
+-  方括号中的模组名称（例如 ``[cxx]``），运行指定模组的所有的测试用例。
 
 -  星号 (``*``)，运行所有测试用例。
 

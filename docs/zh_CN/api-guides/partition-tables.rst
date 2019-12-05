@@ -11,7 +11,7 @@
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
-在使用分区表时，最简单的方法就是用 `idf.py menuconfig` 选择一张预定义的分区表：
+在使用分区表时，最简单的方法就是打开项目配置菜单（``idf.py menuconfig``），并在 :ref:`CONFIG_PARTITION_TABLE_TYPE` 下选择一张预定义的分区表：
 
 -  "Single factory app, no OTA"
 -  "Factory app, two OTA definitions"
@@ -102,7 +102,7 @@ SubType 字段长度为 8 bit，内容与具体 Type 有关。目前，esp-idf �
    -  phy (1) 分区用于存放 PHY 初始化数据，从而保证可以为每个设备单独配置 PHY，而非必须采用固件中的统一 PHY 初始化数据。
  
       -  默认配置下，phy 分区并不启用，而是直接将 phy 初始化数据编译至应用程序中，从而节省分区表空间（直接将此分区删掉）。
-      -  如果需要从此分区加载 phy 初始化数据，请运行 ``idf.py menuconfig``，并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
+      -  如果需要从此分区加载 phy 初始化数据，请打开项目配置菜单（``idf.py menuconfig``），并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
    -  nvs (2) 是专门给 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 使用的分区。
 
       -  用于存储每台设备的 PHY 校准数据（注意，并不是 PHY 初始化数据）。
@@ -142,7 +142,7 @@ Flags 字段
 
 烧写到 ESP32 中的分区表采用二进制格式，而不是 CSV 文件本身。此时，:component_file:`partition_table/gen_esp32part.py` 工具可以实现 CSV 和二进制文件之间的转换。
 
-如果您在 ``idf.py menuconfig`` 指定了分区表 CSV 文件的名称，然后执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
+如果您在项目配置菜单（``idf.py menuconfig``）中设置了分区表 CSV 文件的名称，然后构建项目获执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
 
 手动将 CSV 文件转换为二进制文件:
 
