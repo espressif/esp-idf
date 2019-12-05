@@ -62,7 +62,7 @@ Debugging using JTAG and application loading / monitoring is integrated under th
 
 If the :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
 
-Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal / command line, instead from Eclipse.
+Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal/command line, instead from Eclipse.
 
 
 .. _jtag-debugging-selecting-jtag-adapter:

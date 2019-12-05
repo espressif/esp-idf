@@ -17,7 +17,7 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
 
 测试用例需要通过 C 文件中特定的函数来添加，如下所示：
 
-.. code:: c
+.. code-block:: c
 
    TEST_CASE("test name", "[module name]"
    {
@@ -28,23 +28,21 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
 
 -  第二个参数是字符串，用方括号中的标识符来表示，标识符用来对相关测试或具有特定属性的测试进行分组。
 
-没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()``
-来声明主函数的区域， ``unity_platform.c`` 会自动调用
-``UNITY_BEGIN()``\ ， 然后运行测试用例，最后调用 ``UNITY_END()``\ 。
+.. note::
+    没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()``
+    来声明主函数的区域， ``unity_platform.c`` 会自动调用 ``UNITY_BEGIN()``\ ， 然后运行测试用例，最后调用 ``UNITY_END()``。
 
-``test`` 子目录需要包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了 
+``test`` 子目录应包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了 
 ``unity`` 测试框架，需要将其指定为组件的依赖项。通常，组件
-：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽了，仅仅是建议使用 “COMPONENT_SRCDIRS”。
+：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。 
 
-总的来说，``test`` 子目录下最简单的 CMakeLists.txt 文件可能如下所示:
+总的来说，``test`` 子目录下最小的 CMakeLists.txt 文件可能如下所示:
 
 .. code:: cmake
 
-    set(COMPONENT_SRCDIRS ".")
-    set(COMPONENT_ADD_INCLUDEDIRS ".")
-    set(COMPONENT_REQUIRES unity)
-
-    register_component()
+    idf_component_register(SRC_DIRS "."
+                           INCLUDE_DIRS "."
+                           REQUIRES unity)
 
 更多关于如何在 Unity 下编写测试用例的信息，请查阅
 http://www.throwtheswitch.org/unity 。
@@ -53,10 +51,8 @@ http://www.throwtheswitch.org/unity 。
 添加多设备测试用例
 ------------------
 
-常规测试用例会在一个 DUT（Device Under
-Test，在试设备）上执行，那些需要互相通信的组件（比如
-GPIO，SPI...）不能使用常规测试用例进行测试。多设备测试用例支持使用多个
-DUT 进行写入和运行测试。
+常规测试用例会在一个 DUT（Device Under Test，在试设备）上执行.但是，那些需要互相通信的组件（比如
+GPIO、SPI）需要与其通信的其他设备，因此不能使用常规测试用例进行测试。多设备测试用例包括写入多个测试函数，并在多个 DUT 进行运行测试。
 
 以下是一个多设备测试用例：
 
@@ -114,7 +110,7 @@ DUT2（slave）终端：
 
    Send signal: [output high level]!
 
-一旦 DUT2 发送了该信号，您需要在 DUT2 的终端输入回车，然后 DUT1 会从
+一旦 DUT2 发送了该信号，您需要在 DUT1 的终端按回车键，然后 DUT1 会从
 ``unity_wait_for_signal`` 函数中解除阻塞，并开始更改 GPIO 的电平。
 
 
@@ -157,10 +153,10 @@ DUT2（slave）终端：
 
 -  ``idf.py -T xxx build`` - 编译单元测试程序，测试指定的组件。
 
--  ``idf.py -T all -E xxx build`` -
-   编译单元测试程序，测试所有（除开指定）的组件。例如
+-  ``idf.py -T all -E xxxbuild`` -
+   编译单元测试程序，测试所有（除开指定）的组件。（例如
    ``idf.py -T all -E ulp mbedtls build`` -
-   编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls``\ 组件。
+   编译所有的单元测试，不包括 ``ulp`` 和 ``mbedtls`` 组件。）
 
 当编译完成时，它会打印出烧写芯片的指令。您只需要运行 ``idf.py flash``
 即可烧写所有编译输出的文件。
