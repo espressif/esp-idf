@@ -84,6 +84,8 @@ typedef struct {
     int32_t (* _phy_rf_init)(const void * init_data, uint32_t mode, void * calibration_data, uint32_t module);
     int32_t (* _phy_rf_deinit)(uint32_t module);
     void (* _phy_load_cal_and_init)(uint32_t module);
+    void (* _phy_common_clock_enable)(void);
+    void (* _phy_common_clock_disable)(void);
     int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
     void (* _timer_init)(void);
     void (* _timer_deinit)(void);
