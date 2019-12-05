@@ -27,6 +27,14 @@
 
 #define UNITY_EXCLUDE_TIME_H
 
+/**
+ * @note For some reason setjmp does not work with 
+ * unity, since it is only used on test entry and
+ * exit it should not impact the rest of test
+ * framework. So we disable it here.  
+ */ 
+#define UNITY_EXCLUDE_SETJMP_H
+
 void unity_flush(void);
 void unity_putc(int c);
 void unity_gets(char* dst, size_t len);

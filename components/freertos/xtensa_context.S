@@ -51,14 +51,13 @@ NOERROR: .error "C preprocessor needed for this file: make sure its filename\
 
 #include "xtensa_rtos.h"
 #include "xtensa_context.h"
+#include "xt_asm_utils.h"
 
 #ifdef XT_USE_OVLY
 #include <xtensa/overlay_os_asm.h>
 #endif
 
     .text
-
-
 
 /*******************************************************************************
 
@@ -97,8 +96,8 @@ Exit conditions:
     .align  4
 	.literal_position
     .align  4
-_xt_context_save:
 
+_xt_context_save:
     s32i    a2,  sp, XT_STK_A2
     s32i    a3,  sp, XT_STK_A3
     s32i    a4,  sp, XT_STK_A4
@@ -143,49 +142,15 @@ _xt_context_save:
     mov     a9,  a0                     /* preserve ret addr */
     #endif
 
-    #ifndef __XTENSA_CALL0_ABI__
-    /*
-    To spill the reg windows, temp. need pre-interrupt stack ptr and a4-15.
-    Need to save a9,12,13 temporarily (in frame temps) and recover originals.
-    Interrupts need to be disabled below XCHAL_EXCM_LEVEL and window overflow
-    and underflow exceptions disabled (assured by PS.EXCM == 1).
-    */
     s32i    a12, sp, XT_STK_TMP0        /* temp. save stuff in stack frame */
     s32i    a13, sp, XT_STK_TMP1    
     s32i    a9,  sp, XT_STK_TMP2    
 
-    /*
-    Save the overlay state if we are supporting overlays. Since we just saved
-    three registers, we can conveniently use them here. Note that as of now,
-    overlays only work for windowed calling ABI.
-    */
-    #ifdef XT_USE_OVLY
-    l32i    a9,  sp, XT_STK_PC          /* recover saved PC */
-    _xt_overlay_get_state    a9, a12, a13
-    s32i    a9,  sp, XT_STK_OVLY        /* save overlay state */
-    #endif
-
     l32i    a12, sp, XT_STK_A12         /* recover original a9,12,13 */
     l32i    a13, sp, XT_STK_A13
     l32i    a9,  sp, XT_STK_A9
-    addi    sp,  sp, XT_STK_FRMSZ       /* restore the interruptee's SP */
-    call0   xthal_window_spill_nw       /* preserves only a4,5,8,9,12,13 */
-    addi    sp,  sp, -XT_STK_FRMSZ
-    l32i    a12, sp, XT_STK_TMP0        /* recover stuff from stack frame */
-    l32i    a13, sp, XT_STK_TMP1    
-    l32i    a9,  sp, XT_STK_TMP2    
-    #endif
 
     #if XCHAL_EXTRA_SA_SIZE > 0
-    /*  
-    NOTE: Normally the xthal_save_extra_nw macro only affects address
-    registers a2-a5. It is theoretically possible for Xtensa processor
-    designers to write TIE that causes more address registers to be
-    affected, but it is generally unlikely. If that ever happens,
-    more registers need to be saved/restored around this macro invocation.
-    Here we assume a9,12,13 are preserved.
-    Future Xtensa tools releases might limit the regs that can be affected.
-    */
     addi    a2,  sp, XT_STK_EXTRA       /* where to save it */
     # if XCHAL_EXTRA_SA_ALIGN > 16
     movi    a3, -XCHAL_EXTRA_SA_ALIGN
@@ -193,6 +158,38 @@ _xt_context_save:
     # endif
     call0   xthal_save_extra_nw         /* destroys a0,2,3,4,5 */
     #endif
+
+    #ifndef __XTENSA_CALL0_ABI__
+    #ifdef XT_USE_OVLY
+    l32i    a9,  sp, XT_STK_PC          /* recover saved PC */
+    _xt_overlay_get_state    a9, a12, a13
+    s32i    a9,  sp, XT_STK_OVLY        /* save overlay state */
+    #endif
+
+    rsr     a2, PS                      /* We need to enable window exceptions to */ 
+    movi    a3, PS_INTLEVEL_MASK        /* perform spill registers*/
+    and     a2, a2, a3
+    bnez    a2, _not_l1
+    rsr     a2, PS
+    movi    a3, PS_INTLEVEL(1)          /* For some curious reason the level 1 interrupts */
+    or      a2, a2, a3                  /* dont set the intlevel correctly on PS, we need to */     
+    wsr     a2, PS                      /* do this manually */
+_not_l1:
+    rsr     a2, PS                      /* finally umask the window exceptions */
+    movi    a3, ~(PS_EXCM_MASK)
+    and     a2, a2, a3
+    wsr     a2, PS
+    rsync
+
+    addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
+    SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
+    addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with context save*/
+    
+    #endif
+
+    l32i    a12, sp, XT_STK_TMP0       /* restore the temp saved registers */
+    l32i    a13, sp, XT_STK_TMP1       /* our return address is there */
+    l32i    a9,  sp, XT_STK_TMP2  
 
     #if XCHAL_EXTRA_SA_SIZE > 0 || !defined(__XTENSA_CALL0_ABI__)
     mov     a0, a9                      /* retrieve ret addr */
