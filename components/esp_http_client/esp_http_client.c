@@ -339,6 +339,12 @@ esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *pa
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http_client_auth_type_t auth_type)
+{
+    client->connection_info.auth_type = auth_type;
+    return ESP_OK;
+}
+
 static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_client_config_t *config)
 {
     client->connection_info.method = config->method;
