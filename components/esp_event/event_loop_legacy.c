@@ -50,7 +50,7 @@ esp_err_t esp_event_send_legacy(system_event_t *event)
         return ESP_ERR_INVALID_STATE;
     }
 
-    return esp_event_post(SYSTEM_EVENT, event->event_id, event, sizeof(*event), 0);
+    return esp_event_post(SYSTEM_EVENT, event->event_id, event, sizeof(*event), portMAX_DELAY);
 }
 
 esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx)
