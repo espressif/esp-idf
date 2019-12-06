@@ -8,6 +8,5 @@ The examples are grouped into subdirectories by category. Each category director
 * `classic_bt` contains Classic BT examples
 * `ble` contains BLE examples
 * `coex` contains Classic BT and BLE coex examples 
-* `hci` contains HCI transport (VHCI and HCI UART) examples
 
 See the [README.md](../../README.md) file in the upper level [examples](../../) directory for more information about examples.
