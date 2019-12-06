@@ -39,20 +39,19 @@ def setup(app):
     except KeyError:
         idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
+
     app.add_config_value('docs_root', os.path.join(idf_path, "docs"), 'env')
     app.add_config_value('idf_path', idf_path, 'env')
-    app.add_config_value('idf_target', 'esp32', 'env')
     app.add_config_value('build_dir', build_dir, 'env')  # not actually an IDF thing
     app.add_event('idf-info')
 
-    # Attaching the generate event to env-get-outdated is a bit of a hack,
     # we want this to run early in the docs build but unclear exactly when
-    app.connect('env-get-outdated', generate_idf_info)
+    app.connect('config-inited', generate_idf_info)
 
     return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
 
 
-def generate_idf_info(app, env, added, changed, removed):
+def generate_idf_info(app, config):
     print("Running CMake on dummy project to get build info...")
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
     cmake_build_dir = os.path.join(build_dir, "build_dummy_project")
@@ -66,7 +65,7 @@ def generate_idf_info(app, env, added, changed, removed):
               project_path]
     if not os.path.exists(os.path.join(cmake_build_dir, "CMakeCache.txt")):
         # if build directory not created yet, run a reconfigure pass over it
-        print("Starting new dummy IDF project...")
+        print("Starting new dummy IDF project... w")
         subprocess.check_call(idf_py + ["set-target", app.config.idf_target])
     else:
         print("Re-running CMake on the existing IDF project in {}".format(cmake_build_dir))

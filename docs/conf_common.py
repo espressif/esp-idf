@@ -34,7 +34,7 @@ suppress_warnings = ['image.nonlocal_uri']
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.0'
-
+idf_target = ''
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
@@ -61,6 +61,7 @@ extensions = ['breathe',
               'idf_extensions.kconfig_reference',
               'idf_extensions.run_doxygen',
               'idf_extensions.gen_idf_tools_links',
+              'idf_extensions.format_idf_target',
 
               # from https://github.com/pfalcon/sphinx_selective_exclude
               'sphinx_selective_exclude.eager_only',
@@ -131,7 +132,13 @@ def update_exclude_patterns(tags):
                   'api-guides/esp-ble-mesh/**',
                   'api-guides/ulp-legacy.rst',
                   'api-guides/unit-tests-legacy.rst',
+                  'api-guides/jtag-debugging/configure-wrover.rst',
                   'api-reference/bluetooth/**',
+                  'api-reference/system/himem.rst',
+                  'hw-reference/get-started-devkitc.rst',
+                  'hw-reference/get-started-ethernet-kit.rst',
+                  'hw-reference/get-started-pico-kit.rst',
+                  'hw-reference/get-started-wrover-kit.rst',
                   'get-started-legacy/**',
                   'gnu-make-legacy.rst']:
             exclude_patterns.append(e)
@@ -337,11 +344,12 @@ texinfo_documents = [
 # texinfo_no_detailmenu = False
 
 
+
 # Override RTD CSS theme to introduce the theme corrections
 # https://github.com/rtfd/sphinx_rtd_theme/pull/432
 def setup(app):
     app.add_stylesheet('theme_overrides.css')
-
+    app.add_config_value('idf_target', '', 'env')
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir
     app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}
