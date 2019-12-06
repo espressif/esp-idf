@@ -457,11 +457,9 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
         send_cb_finalize(cb, cb_data);
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
-                bt_mesh_lpn_established()) {
-            bt_mesh_lpn_poll();
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+        bt_mesh_lpn_established()) {
+        bt_mesh_lpn_poll();
     }
 
     return 0;
@@ -917,31 +915,29 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
         }
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
 #if defined(CONFIG_BLE_MESH_LOW_POWER)
-        if (ctl_op == TRANS_CTL_OP_FRIEND_OFFER) {
-            return bt_mesh_lpn_friend_offer(rx, buf);
-        }
-
-        if (rx->ctx.addr == bt_mesh.lpn.frnd) {
-            if (ctl_op == TRANS_CTL_OP_FRIEND_CLEAR_CFM) {
-                return bt_mesh_lpn_friend_clear_cfm(rx, buf);
-            }
-
-            if (!rx->friend_cred) {
-                BT_WARN("Message from friend with wrong credentials");
-                return -EINVAL;
-            }
-
-            switch (ctl_op) {
-            case TRANS_CTL_OP_FRIEND_UPDATE:
-                return bt_mesh_lpn_friend_update(rx, buf);
-            case TRANS_CTL_OP_FRIEND_SUB_CFM:
-                return bt_mesh_lpn_friend_sub_cfm(rx, buf);
-            }
-        }
-#endif /* CONFIG_BLE_MESH_LOW_POWER */
+    if (ctl_op == TRANS_CTL_OP_FRIEND_OFFER) {
+        return bt_mesh_lpn_friend_offer(rx, buf);
     }
+
+    if (rx->ctx.addr == bt_mesh.lpn.frnd) {
+        if (ctl_op == TRANS_CTL_OP_FRIEND_CLEAR_CFM) {
+            return bt_mesh_lpn_friend_clear_cfm(rx, buf);
+        }
+
+        if (!rx->friend_cred) {
+            BT_WARN("Message from friend with wrong credentials");
+            return -EINVAL;
+        }
+
+        switch (ctl_op) {
+        case TRANS_CTL_OP_FRIEND_UPDATE:
+            return bt_mesh_lpn_friend_update(rx, buf);
+        case TRANS_CTL_OP_FRIEND_SUB_CFM:
+            return bt_mesh_lpn_friend_sub_cfm(rx, buf);
+        }
+    }
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
 
     BT_WARN("Unhandled TransOpCode 0x%02x", ctl_op);
 
@@ -1477,13 +1473,11 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
      * requested the Friend to send them. The messages must also
      * be encrypted using the Friend Credentials.
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
-                bt_mesh_lpn_established() && rx->net_if == BLE_MESH_NET_IF_ADV &&
-                (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
-            BT_WARN("Ignoring unexpected message in Low Power mode");
-            return -EAGAIN;
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+        bt_mesh_lpn_established() && rx->net_if == BLE_MESH_NET_IF_ADV &&
+        (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
+        BT_WARN("Ignoring unexpected message in Low Power mode");
+        return -EAGAIN;
     }
 
     /* Save the app-level state so the buffer can later be placed in
@@ -1516,12 +1510,10 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
      * timer, in which case we want to reset the timer at this point.
      *
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
-                (bt_mesh_lpn_timer() ||
-                 (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
-            bt_mesh_lpn_msg_received(rx);
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) &&
+        (bt_mesh_lpn_timer() ||
+        (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
+        bt_mesh_lpn_msg_received(rx);
     }
 
     net_buf_simple_restore(buf, &state);
