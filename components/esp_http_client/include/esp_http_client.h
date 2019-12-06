@@ -308,6 +308,18 @@ esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **v
 esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *password);
 
 /**
+ * @brief      Set http request auth_type.
+ *
+ * @param[in]  client    The esp_http_client handle
+ * @param[in]  auth_type The esp_http_client auth type
+ *
+ * @return
+ *     - ESP_OK
+ *     - ESP_ERR_INVALID_ARG
+ */
+esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http_client_auth_type_t auth_type);
+
+/**
  * @brief      Set http request method
  *
  * @param[in]  client  The esp_http_client handle
