@@ -134,7 +134,7 @@ protected:
 
     void clearNamespaces();
 
-    void populateBlobIndices(TBlobIndexList&);
+    esp_err_t populateBlobIndices(TBlobIndexList&);
 
     void eraseOrphanDataBlobs(TBlobIndexList&);
 
