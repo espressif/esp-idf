@@ -121,12 +121,13 @@ class SerialThread(object):
 @ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
 def test_examples_loadable_elf(env, extra_data):
 
-    idf_path = os.environ['IDF_PATH']
     rel_project_path = os.path.join('examples', 'get-started', 'hello_world')
+    app_files = ['hello-world.elf', 'partition_table/partition-table.bin']
+    example = ttfw_idf.LoadableElfExample(rel_project_path, app_files, target="esp32")
+    idf_path = example.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
-    example = ttfw_idf.Example(rel_project_path, target="esp32")
     sdkconfig = example.get_sdkconfig()
-    elf_path = os.path.join(example.get_binary_path(rel_project_path), 'hello-world.elf')
+    elf_path = os.path.join(example.binary_path, 'hello-world.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
 
     assert(sdkconfig['CONFIG_IDF_TARGET_ESP32'] == 'y'), "Only ESP32 target is supported"
