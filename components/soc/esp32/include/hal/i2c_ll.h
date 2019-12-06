@@ -48,6 +48,19 @@ typedef enum {
     I2C_INTR_EVENT_TXFIFO_EMPTY, /*!< I2C txfifo empty event */
 } i2c_intr_event_t;
 
+/**
+ * @brief Data structure for calculating I2C bus timing.
+ */
+typedef struct {
+    uint16_t scl_low;           /*!< I2C scl low period */
+    uint16_t scl_high;          /*!< I2C scl hight period */
+    uint16_t sda_hold;          /*!< I2C scl low period */
+    uint16_t sda_sample;        /*!< I2C sda sample time */
+    uint16_t setup;             /*!< I2C start and stop condition setup period */
+    uint16_t hold;              /*!< I2C start and stop condition hold period  */
+    uint16_t tout;              /*!< I2C bus timeout period */
+} i2c_clk_cal_t;
+
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 // Get the I2C hardware FIFO address
@@ -62,6 +75,53 @@ typedef enum {
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_FULL_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
 //I2C base clock freq 80M
 #define I2C_BASE_CLK_FREQ             (80000000)
+
+
+/**
+ * @brief  Calculate I2C bus frequency
+ *
+ * @param  source_clk I2C source clock
+ * @param  bus_freq I2C bus frequency
+ * @param  clk_cal Pointer to accept the clock configuration
+ *
+ * @return None
+ */
+static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_clk_cal_t *clk_cal)
+{
+    uint32_t half_cycle = source_clk / bus_freq / 2;
+    clk_cal->scl_low = half_cycle;
+    clk_cal->scl_high = half_cycle;
+    clk_cal->sda_hold = half_cycle / 2;
+    clk_cal->sda_sample = clk_cal->scl_high / 2;
+    clk_cal->setup = half_cycle;
+    clk_cal->hold = half_cycle;
+    clk_cal->tout = half_cycle * 20; //default we set the timeout value to 10 bus cycles.
+}
+
+/**
+ * @brief  Configure the I2C bus timing related register.
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  bus_cfg Pointer to the data structure holding the register configuration.
+ *
+ * @return None
+ */
+static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
+{
+    //scl period
+    hw->scl_low_period.period = bus_cfg->scl_low;
+    hw->scl_high_period.period = bus_cfg->scl_high;
+    //sda sample
+    hw->sda_hold.time = bus_cfg->sda_hold;
+    hw->sda_sample.time = bus_cfg->sda_sample;
+    //setup
+    hw->scl_rstart_setup.time = bus_cfg->setup;
+    hw->scl_stop_setup.time = bus_cfg->setup;
+    //hold
+    hw->scl_start_hold.time = bus_cfg->hold;
+    hw->scl_stop_hold.time = bus_cfg->hold;
+    hw->timeout.tout = bus_cfg->tout;
+}
 
 /**
  * @brief  Reset I2C txFIFO
@@ -178,7 +238,7 @@ static inline void i2c_ll_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
  */
 static inline void i2c_ll_set_tout(i2c_dev_t *hw, int tout)
 {
-    hw->timeout.tout = tout;   
+    hw->timeout.tout = tout;
 }
 
 /**

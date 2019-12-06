@@ -48,6 +48,20 @@ typedef enum {
     I2C_INTR_EVENT_TXFIFO_EMPTY, /*!< I2C txfifo empty event */
 } i2c_intr_event_t;
 
+/**
+ * @brief Data structure for calculating I2C bus timing.
+ */
+typedef struct {
+    uint16_t scl_low;           /*!< I2C scl low period */
+    uint16_t scl_high;          /*!< I2C scl hight period */
+    uint16_t scl_wait_high;     /*!< I2C scl wait_high period */
+    uint16_t sda_hold;          /*!< I2C scl low period */
+    uint16_t sda_sample;        /*!< I2C sda sample time */
+    uint16_t setup;             /*!< I2C start and stop condition setup period */
+    uint16_t hold;              /*!< I2C start and stop condition hold period  */
+    uint16_t tout;              /*!< I2C bus timeout period */
+} i2c_clk_cal_t;
+
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 // Get the I2C hardware FIFO address
@@ -61,6 +75,58 @@ typedef enum {
 // I2C slave RX interrupt bitmap
 #define I2C_LL_SLAVE_RX_INT           (I2C_RXFIFO_FULL_INT_ENA_M | I2C_TRANS_COMPLETE_INT_ENA_M)
 
+
+/**
+ * @brief  Calculate I2C bus frequency
+ *
+ * @param  source_clk I2C source clock
+ * @param  bus_freq I2C bus frequency
+ * @param  clk_cal Pointer to accept the clock configuration
+ *
+ * @return None
+ */
+static inline void i2c_ll_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_clk_cal_t *clk_cal)
+{
+    uint32_t half_cycle = source_clk / bus_freq / 2;
+    //SCL
+    clk_cal->scl_low = half_cycle;
+    // default, scl_wait_high < scl_high
+    clk_cal->scl_high = half_cycle / 2 + 2;
+    clk_cal->scl_wait_high = half_cycle - clk_cal->scl_high;
+    clk_cal->sda_hold = half_cycle / 2;
+    // scl_wait_high < sda_sample <= scl_high
+    clk_cal->sda_sample = half_cycle / 2 - 1;
+    clk_cal->setup = half_cycle;
+    clk_cal->hold = half_cycle;
+    //default we set the timeout value to 10 bus cycles
+    clk_cal->tout = half_cycle * 20;
+}
+
+/**
+ * @brief  Configure the I2C bus timing related register.
+ *
+ * @param  hw Beginning address of the peripheral registers
+ * @param  bus_cfg Pointer to the data structure holding the register configuration.
+ *
+ * @return None
+ */
+static inline void i2c_ll_set_bus_timing(i2c_dev_t *hw, i2c_clk_cal_t *bus_cfg)
+{
+    //scl period
+    hw->scl_low_period.period = bus_cfg->scl_low - 1;
+    hw->scl_high_period.period = bus_cfg->scl_high;
+    hw->scl_high_period.scl_wait_high_period = bus_cfg->scl_wait_high;
+    //sda sample
+    hw->sda_hold.time = bus_cfg->sda_hold;
+    hw->sda_sample.time = bus_cfg->sda_sample;
+    //setup
+    hw->scl_rstart_setup.time = bus_cfg->setup;
+    hw->scl_stop_setup.time = bus_cfg->setup;
+    //hold
+    hw->scl_start_hold.time = bus_cfg->hold - 1;
+    hw->scl_stop_hold.time = bus_cfg->hold;
+    hw->timeout.tout = bus_cfg->tout;
+}
 
 /**
  * @brief  Reset I2C txFIFO
@@ -92,16 +158,16 @@ static inline void i2c_ll_rxfifo_rst(i2c_dev_t *hw)
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  hight_period The I2C SCL hight period (in APB cycle)
- * @param  low_period The I2C SCL low period (in APB cycle)
+ * @param  hight_period The I2C SCL hight period (in APB cycle, hight_period > 2)
+ * @param  low_period The I2C SCL low period (in APB cycle, low_period > 1)
  *
  * @return None.
  */
 static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int low_period)
 {
-    hw->scl_low_period.period = low_period;
-    hw->scl_high_period.period = hight_period;
-    hw->scl_high_period.scl_wait_high_period = 0;
+    hw->scl_low_period.period = low_period-1;
+    hw->scl_high_period.period = hight_period/2+2;
+    hw->scl_high_period.scl_wait_high_period = hight_period - hw->scl_high_period.period;
 }
 
 /**
@@ -222,7 +288,7 @@ static inline void i2c_ll_write_cmd_reg(i2c_dev_t *hw, i2c_hw_cmd_t cmd, int cmd
 static inline void i2c_ll_set_start_timing(i2c_dev_t *hw, int start_setup, int start_hold)
 {
     hw->scl_rstart_setup.time = start_setup;
-    hw->scl_start_hold.time = start_hold;
+    hw->scl_start_hold.time = start_hold-1;
 }
 
 /**
@@ -422,7 +488,7 @@ static inline void i2c_ll_trans_start(i2c_dev_t *hw)
 static inline void i2c_ll_get_start_timing(i2c_dev_t *hw, int *setup_time, int *hold_time)
 {
     *setup_time = hw->scl_rstart_setup.time;
-    *hold_time = hw->scl_start_hold.time;
+    *hold_time = hw->scl_start_hold.time+1;
 }
 
 /**
@@ -451,8 +517,8 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
  */
 static inline void i2c_ll_get_scl_timing(i2c_dev_t *hw, int *high_period, int *low_period)
 {
-    *high_period = hw->scl_high_period.period;
-    *low_period = hw->scl_low_period.period;
+    *high_period = hw->scl_high_period.period + hw->scl_high_period.scl_wait_high_period;
+    *low_period = hw->scl_low_period.period + 1;
 }
 
 /**

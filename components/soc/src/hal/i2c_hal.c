@@ -177,21 +177,13 @@ void i2c_hal_disable_slave_rx_it(i2c_hal_context_t *hal)
 void i2c_hal_set_bus_timing(i2c_hal_context_t *hal, uint32_t scl_freq, i2c_sclk_t src_clk)
 {
     uint32_t sclk = (src_clk == I2C_SCLK_REF_TICK) ? 1000000 : 80000000;
-    uint32_t cycle = sclk / scl_freq;
-    i2c_ll_set_source_clk(hal->dev, src_clk);
-    // Set SDA timing
-    i2c_ll_set_sda_timing(hal->dev, cycle/4, cycle/4);
-    // Set start timing
-    i2c_ll_set_start_timing(hal->dev, cycle/2, cycle/2);
-    i2c_ll_set_scl_timing(hal->dev, cycle/2, cycle/2);
-    i2c_ll_set_stop_timing(hal->dev, cycle/2, cycle/2);
-    //Set time out value
-    i2c_ll_set_tout(hal->dev, cycle * 9);
+    i2c_clk_cal_t clk_cal = {0};
+    i2c_ll_cal_bus_clk(sclk, scl_freq, &clk_cal);
+    i2c_ll_set_bus_timing(hal->dev, &clk_cal);
 }
 
 void i2c_hal_slave_init(i2c_hal_context_t *hal, int i2c_num)
 {
-    hal->dev = I2C_LL_GET_HW(i2c_num);
     i2c_ll_slave_init(hal->dev);
     //Use fifo mode
     i2c_ll_set_fifo_mode(hal->dev, true);
@@ -214,7 +206,6 @@ void i2c_hal_master_fsm_rst(i2c_hal_context_t *hal)
 
 void i2c_hal_master_init(i2c_hal_context_t *hal, int i2c_num)
 {
-    hal->dev = I2C_LL_GET_HW(i2c_num);
     hal->version = i2c_ll_get_hw_version(hal->dev);
     i2c_ll_master_init(hal->dev);
     //Use fifo mode
