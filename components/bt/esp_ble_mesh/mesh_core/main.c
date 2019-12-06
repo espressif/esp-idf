@@ -413,6 +413,10 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
         provisioner_pb_gatt_enable();
     }
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        bt_mesh_friend_init();
+    }
+
     provisioner_en = true;
 
     return 0;
@@ -435,6 +439,10 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
             (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
              (bearers & BLE_MESH_PROV_GATT))) {
         bt_mesh_scan_disable();
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
     }
 
     provisioner_en = false;

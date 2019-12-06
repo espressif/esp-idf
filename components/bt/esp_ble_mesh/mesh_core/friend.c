@@ -26,6 +26,8 @@
 #include "access.h"
 #include "foundation.h"
 #include "friend.h"
+#include "client_common.h"
+#include "provisioner_main.h"
 
 #ifdef CONFIG_BLE_MESH_FRIEND
 
@@ -72,7 +74,18 @@ enum {
 
 static void (*friend_cb)(bool establish, u16_t lpn_addr, u8_t reason);
 
+static struct bt_mesh_subnet *friend_subnet_get(u16_t net_idx)
+{
+    struct bt_mesh_subnet *sub = NULL;
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        sub = bt_mesh_subnet_get(net_idx);
+    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        sub = provisioner_subnet_get(net_idx);
+    }
+
+    return sub;
+}
 
 static struct bt_mesh_adv *adv_alloc(int id)
 {
@@ -357,20 +370,31 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
                                 struct unseg_app_sdu_meta *meta)
 {
     u16_t app_idx = FRIEND_ADV(buf)->app_idx;
+    u8_t role;
     int err;
 
-    meta->subnet = bt_mesh_subnet_get(frnd->net_idx);
+    meta->subnet = friend_subnet_get(frnd->net_idx);
+    if (!meta->subnet) {
+        BT_ERR("Invalid subnet for unseg app sdu");
+        return -EINVAL;
+    }
+
+    role = (IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+            bt_mesh_is_provisioned()) ? NODE : PROVISIONER;
+
     meta->is_dev_key = (app_idx == BLE_MESH_KEY_DEV);
     bt_mesh_net_header_parse(&buf->b, &meta->net);
     err = bt_mesh_app_key_get(meta->subnet, app_idx, &meta->key,
-                              &meta->aid, 0x0, meta->net.ctx.addr);
+                              &meta->aid, role, meta->net.ctx.addr);
     if (err) {
+        BT_ERR("Failed to get AppKey");
         return err;
     }
 
     if (BLE_MESH_ADDR_IS_VIRTUAL(meta->net.ctx.recv_dst)) {
         meta->ad = bt_mesh_label_uuid_get(meta->net.ctx.recv_dst);
         if (!meta->ad) {
+            BT_ERR("Failed to get label uuid");
             return -ENOENT;
         }
     } else {
@@ -451,12 +475,17 @@ static int unseg_app_sdu_prepare(struct bt_mesh_friend *frnd,
 static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
                               bool master_cred)
 {
-    struct bt_mesh_subnet *sub = bt_mesh_subnet_get(frnd->net_idx);
+    struct bt_mesh_subnet *sub = friend_subnet_get(frnd->net_idx);
     const u8_t *enc, *priv;
     u32_t iv_index;
     u16_t src;
     u8_t nid;
     int err;
+
+    if (!sub) {
+        BT_ERR("Invalid subnet to encrypt friend pdu");
+        return -EINVAL;
+    }
 
     if (master_cred) {
         enc = sub->keys[sub->kr_flag].enc;
@@ -534,7 +563,7 @@ static struct net_buf *encode_update(struct bt_mesh_friend *frnd, u8_t md)
 {
     struct bt_mesh_ctl_friend_update *upd;
     NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*upd));
-    struct bt_mesh_subnet *sub = bt_mesh_subnet_get(frnd->net_idx);
+    struct bt_mesh_subnet *sub = friend_subnet_get(frnd->net_idx);
 
     __ASSERT_NO_MSG(sub != NULL);
 
@@ -774,7 +803,7 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
         .send_ttl = BLE_MESH_TTL_MAX,
     };
     struct bt_mesh_net_tx tx = {
-        .sub  = bt_mesh_subnet_get(frnd->net_idx),
+        .sub  = friend_subnet_get(frnd->net_idx),
         .ctx  = &ctx,
         .src  = bt_mesh_primary_addr(),
         .xmit = bt_mesh_net_transmit_get(),
@@ -785,6 +814,11 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
     };
 
     BT_DBG("%s", __func__);
+
+    if (!tx.sub) {
+        BT_ERR("Invalid subnet for Friend Clear");
+        return;
+    }
 
     bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
                      sizeof(req), NULL, &clear_sent_cb, frnd);
@@ -1644,6 +1678,16 @@ void bt_mesh_friend_clear_incomplete(struct bt_mesh_subnet *sub, u16_t src,
             seg->seg_count = 0U;
             break;
         }
+    }
+}
+
+void bt_mesh_friend_remove_lpn(u16_t lpn_addr)
+{
+    struct bt_mesh_friend *frnd;
+
+    frnd = bt_mesh_friend_find(BLE_MESH_KEY_ANY, lpn_addr, false, false);
+    if (frnd) {
+        friend_clear(frnd, BLE_MESH_FRIENDSHIP_TERMINATE_DISABLE);
     }
 }
 

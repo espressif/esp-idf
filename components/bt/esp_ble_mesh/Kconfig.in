@@ -590,8 +590,7 @@ if BLE_MESH
     endif # BLE_MESH_LOW_POWER
 
     config BLE_MESH_FRIEND
-        bool "Support for acting as a Friend Node"
-        depends on BLE_MESH_NODE
+        bool "Support for Friend feature"
         help
             Enable this option to be able to act as a Friend Node.
 

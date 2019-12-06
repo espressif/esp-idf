@@ -1123,18 +1123,14 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
             continue;
         }
 
-#if CONFIG_BLE_MESH_NODE
-        if (bt_mesh_is_provisioned()) {
 #if (defined(CONFIG_BLE_MESH_LOW_POWER) || defined(CONFIG_BLE_MESH_FRIEND))
-            if (!friend_decrypt(sub, data, data_len, rx, buf)) {
-                rx->friend_cred = 1;
-                rx->ctx.net_idx = sub->net_idx;
-                rx->sub = sub;
-                return true;
-            }
-#endif
+        if (!friend_decrypt(sub, data, data_len, rx, buf)) {
+            rx->friend_cred = 1;
+            rx->ctx.net_idx = sub->net_idx;
+            rx->sub = sub;
+            return true;
         }
-#endif /* CONFIG_BLE_MESH_NODE */
+#endif
 
         if (NID(data) == sub->keys[0].nid &&
                 !net_decrypt(sub, sub->keys[0].enc, sub->keys[0].privacy,
