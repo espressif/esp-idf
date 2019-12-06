@@ -65,6 +65,8 @@ Revision: $Rev: 5927 $
 #ifndef SEGGER_SYSVIEW_CONF_H
 #define SEGGER_SYSVIEW_CONF_H
 
+#include "soc/soc.h"
+
 /*********************************************************************
 *
 *       Defines, fixed
@@ -147,7 +149,7 @@ Revision: $Rev: 5927 $
 *       SystemView Id configuration
 */
 //TODO: optimise it
-#define SEGGER_SYSVIEW_ID_BASE         0x3F400000                               // Default value for the lowest Id reported by the application. Can be overridden by the application via SEGGER_SYSVIEW_SetRAMBase(). (i.e. 0x20000000 when all Ids are an address in this RAM)
+#define SEGGER_SYSVIEW_ID_BASE         SOC_DROM_LOW                             // Default value for the lowest Id reported by the application. Can be overridden by the application via SEGGER_SYSVIEW_SetRAMBase(). (i.e. 0x20000000 when all Ids are an address in this RAM)
 #define SEGGER_SYSVIEW_ID_SHIFT        0                                        // Number of bits to shift the Id to save bandwidth. (i.e. 2 when Ids are 4 byte aligned)
 
 /*********************************************************************
@@ -166,7 +168,7 @@ Revision: $Rev: 5927 $
   #define SEGGER_SYSVIEW_GET_INTERRUPT_ID()   SEGGER_SYSVIEW_X_GetInterruptId() // Get the currently active interrupt Id from the user-provided function.
 #endif
 
-unsigned SEGGER_SYSVIEW_X_SysView_Lock();
+unsigned SEGGER_SYSVIEW_X_SysView_Lock(void);
 void SEGGER_SYSVIEW_X_SysView_Unlock(unsigned int_state);
 // to be recursive save IRQ status on the stack of the caller
 #define SEGGER_SYSVIEW_LOCK()   unsigned _SYSVIEW_int_state = SEGGER_SYSVIEW_X_SysView_Lock()

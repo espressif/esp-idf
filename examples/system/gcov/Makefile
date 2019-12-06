@@ -7,7 +7,7 @@ PROJECT_NAME := gcov_example
 
 include $(IDF_PATH)/make/project.mk
 
-GCOV := $(call dequote,$(CONFIG_TOOLPREFIX))gcov
+GCOV := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcov
 REPORT_DIR := $(BUILD_DIR_BASE)/coverage_report
 
 lcov-report:

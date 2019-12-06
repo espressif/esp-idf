@@ -17,9 +17,9 @@
 #include "mbedtls/bignum.h"
 #endif
 
-#include "crypto/includes.h"
-#include "crypto/common.h"
-#include "crypto/crypto.h"
+#include "utils/includes.h"
+#include "utils/common.h"
+#include "crypto.h"
 
 #include "mbedtls/ecp.h"
 #include "mbedtls/entropy.h"

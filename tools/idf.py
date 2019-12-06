@@ -7,7 +7,7 @@
 #
 #
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -26,23 +26,19 @@
 # check_environment() function below. If possible, avoid importing
 # any external libraries here - put in external script, or import in
 # their specific function instead.
-import sys
-import argparse
+import codecs
+import json
+import locale
 import os
 import os.path
 import subprocess
-import multiprocessing
-import re
-import shutil
-import json
+import sys
+from collections import Counter, OrderedDict
+from importlib import import_module
+from pkgutil import iter_modules
 
-
-class FatalError(RuntimeError):
-    """
-    Wrapper class for runtime errors that aren't caused by bugs in idf.py or the build proces.s
-    """
-    pass
-
+from idf_py_actions.errors import FatalError
+from idf_py_actions.tools import (executable_exists, idf_version, merge_action_lists, realpath)
 
 # Use this Python interpreter for any subprocesses we launch
 PYTHON = sys.executable
@@ -51,41 +47,9 @@ PYTHON = sys.executable
 # you have to pass env=os.environ explicitly anywhere that we create a process
 os.environ["PYTHON"] = sys.executable
 
-# Make flavors, across the various kinds of Windows environments & POSIX...
-if "MSYSTEM" in os.environ:  # MSYS
-    MAKE_CMD = "make"
-    MAKE_GENERATOR = "MSYS Makefiles"
-elif os.name == 'nt':  # other Windows
-    MAKE_CMD = "mingw32-make"
-    MAKE_GENERATOR = "MinGW Makefiles"
-else:
-    MAKE_CMD = "make"
-    MAKE_GENERATOR = "Unix Makefiles"
-
-GENERATORS = \
-    [
-        # ('generator name', 'build command line', 'version command line', 'verbose flag')
-        ("Ninja", ["ninja"], ["ninja", "--version"], "-v"),
-        (MAKE_GENERATOR, [MAKE_CMD, "-j", str(multiprocessing.cpu_count() + 2)], ["make", "--version"], "VERBOSE=1"),
-    ]
-GENERATOR_CMDS = dict((a[0], a[1]) for a in GENERATORS)
-GENERATOR_VERBOSE = dict((a[0], a[3]) for a in GENERATORS)
-
-
-def _run_tool(tool_name, args, cwd):
-    def quote_arg(arg):
-        " Quote 'arg' if necessary "
-        if " " in arg and not (arg.startswith('"') or arg.startswith("'")):
-            return "'" + arg + "'"
-        return arg
-    display_args = " ".join(quote_arg(arg) for arg in args)
-    print("Running %s in directory %s" % (tool_name, quote_arg(cwd)))
-    print('Executing "%s"...' % str(display_args))
-    try:
-        # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
-        subprocess.check_call(args, env=os.environ, cwd=cwd)
-    except subprocess.CalledProcessError as e:
-        raise FatalError("%s failed with exit code %d" % (tool_name, e.returncode))
+# Name of the program, normally 'idf.py'.
+# Can be overridden from idf.bat using IDF_PY_PROGRAM_NAME
+PROG = os.getenv("IDF_PY_PROGRAM_NAME", sys.argv[0])
 
 
 def check_environment():
@@ -94,263 +58,43 @@ def check_environment():
 
     (cmake will check a lot of other things)
     """
+    checks_output = []
+
     if not executable_exists(["cmake", "--version"]):
-        raise FatalError("'cmake' must be available on the PATH to use idf.py")
+        print_idf_version()
+        raise FatalError("'cmake' must be available on the PATH to use %s" % PROG)
+
+    # verify that IDF_PATH env variable is set
     # find the directory idf.py is in, then the parent directory of this, and assume this is IDF_PATH
-    detected_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    detected_idf_path = realpath(os.path.join(os.path.dirname(__file__), ".."))
     if "IDF_PATH" in os.environ:
-        set_idf_path = os.path.realpath(os.environ["IDF_PATH"])
+        set_idf_path = realpath(os.environ["IDF_PATH"])
         if set_idf_path != detected_idf_path:
-            print("WARNING: IDF_PATH environment variable is set to %s but idf.py path indicates IDF directory %s. "
-                  "Using the environment variable directory, but results may be unexpected..."
-                  % (set_idf_path, detected_idf_path))
+            print("WARNING: IDF_PATH environment variable is set to %s but %s path indicates IDF directory %s. "
+                  "Using the environment variable directory, but results may be unexpected..." %
+                  (set_idf_path, PROG, detected_idf_path))
     else:
         print("Setting IDF_PATH environment variable: %s" % detected_idf_path)
         os.environ["IDF_PATH"] = detected_idf_path
 
     # check Python dependencies
-    print("Checking Python dependencies...")
+    checks_output.append("Checking Python dependencies...")
     try:
-        subprocess.check_call([os.environ["PYTHON"],
-                               os.path.join(os.environ["IDF_PATH"], "tools", "check_python_dependencies.py")],
-                              env=os.environ)
-    except subprocess.CalledProcessError:
+        out = subprocess.check_output(
+            [
+                os.environ["PYTHON"],
+                os.path.join(os.environ["IDF_PATH"], "tools", "check_python_dependencies.py"),
+            ],
+            env=os.environ,
+        )
+
+        checks_output.append(out.decode('utf-8', 'ignore').strip())
+    except subprocess.CalledProcessError as e:
+        print(e.output.decode('utf-8', 'ignore'))
+        print_idf_version()
         raise SystemExit(1)
 
-
-def executable_exists(args):
-    try:
-        subprocess.check_output(args)
-        return True
-    except Exception:
-        return False
-
-
-def detect_cmake_generator():
-    """
-    Find the default cmake generator, if none was specified. Raises an exception if no valid generator is found.
-    """
-    for (generator, _, version_check, _) in GENERATORS:
-        if executable_exists(version_check):
-            return generator
-    raise FatalError("To use idf.py, either the 'ninja' or 'GNU make' build tool must be available in the PATH")
-
-
-def _ensure_build_directory(args, always_run_cmake=False):
-    """Check the build directory exists and that cmake has been run there.
-
-    If this isn't the case, create the build directory (if necessary) and
-    do an initial cmake run to configure it.
-
-    This function will also check args.generator parameter. If the parameter is incompatible with
-    the build directory, an error is raised. If the parameter is None, this function will set it to
-    an auto-detected default generator or to the value already configured in the build directory.
-    """
-    project_dir = args.project_dir
-    # Verify the project directory
-    if not os.path.isdir(project_dir):
-        if not os.path.exists(project_dir):
-            raise FatalError("Project directory %s does not exist")
-        else:
-            raise FatalError("%s must be a project directory")
-    if not os.path.exists(os.path.join(project_dir, "CMakeLists.txt")):
-        raise FatalError("CMakeLists.txt not found in project directory %s" % project_dir)
-
-    # Verify/create the build directory
-    build_dir = args.build_dir
-    if not os.path.isdir(build_dir):
-        os.makedirs(build_dir)
-    cache_path = os.path.join(build_dir, "CMakeCache.txt")
-    if not os.path.exists(cache_path) or always_run_cmake:
-        if args.generator is None:
-            args.generator = detect_cmake_generator()
-        try:
-            cmake_args = ["cmake", "-G", args.generator, "-DPYTHON_DEPS_CHECKED=1", "-DESP_PLATFORM=1"]
-            if not args.no_warnings:
-                cmake_args += ["--warn-uninitialized"]
-            if args.no_ccache:
-                cmake_args += ["-DCCACHE_DISABLE=1"]
-            if args.define_cache_entry:
-                cmake_args += ["-D" + d for d in args.define_cache_entry]
-            cmake_args += [project_dir]
-
-            _run_tool("cmake", cmake_args, cwd=args.build_dir)
-        except Exception:
-            # don't allow partially valid CMakeCache.txt files,
-            # to keep the "should I run cmake?" logic simple
-            if os.path.exists(cache_path):
-                os.remove(cache_path)
-            raise
-
-    # Learn some things from the CMakeCache.txt file in the build directory
-    cache = parse_cmakecache(cache_path)
-    try:
-        generator = cache["CMAKE_GENERATOR"]
-    except KeyError:
-        generator = detect_cmake_generator()
-    if args.generator is None:
-        args.generator = generator  # reuse the previously configured generator, if none was given
-    if generator != args.generator:
-        raise FatalError("Build is configured for generator '%s' not '%s'. Run 'idf.py fullclean' to start again."
-                         % (generator, args.generator))
-
-    try:
-        home_dir = cache["CMAKE_HOME_DIRECTORY"]
-        if os.path.normcase(os.path.realpath(home_dir)) != os.path.normcase(os.path.realpath(project_dir)):
-            raise FatalError("Build directory '%s' configured for project '%s' not '%s'. Run 'idf.py fullclean' to start again."
-                             % (build_dir, os.path.realpath(home_dir), os.path.realpath(project_dir)))
-    except KeyError:
-        pass  # if cmake failed part way, CMAKE_HOME_DIRECTORY may not be set yet
-
-
-def parse_cmakecache(path):
-    """
-    Parse the CMakeCache file at 'path'.
-
-    Returns a dict of name:value.
-
-    CMakeCache entries also each have a "type", but this is currently ignored.
-    """
-    result = {}
-    with open(path) as f:
-        for line in f:
-            # cmake cache lines look like: CMAKE_CXX_FLAGS_DEBUG:STRING=-g
-            # groups are name, type, value
-            m = re.match(r"^([^#/:=]+):([^:=]+)=(.+)\n$", line)
-            if m:
-                result[m.group(1)] = m.group(3)
-    return result
-
-
-def build_target(target_name, args):
-    """
-    Execute the target build system to build target 'target_name'
-
-    Calls _ensure_build_directory() which will run cmake to generate a build
-    directory (with the specified generator) as needed.
-    """
-    _ensure_build_directory(args)
-    generator_cmd = GENERATOR_CMDS[args.generator]
-
-    if not args.no_ccache:
-        # Setting CCACHE_BASEDIR & CCACHE_NO_HASHDIR ensures that project paths aren't stored in the ccache entries
-        # (this means ccache hits can be shared between different projects. It may mean that some debug information
-        # will point to files in another project, if these files are perfect duplicates of each other.)
-        #
-        # It would be nicer to set these from cmake, but there's no cross-platform way to set build-time environment
-        # os.environ["CCACHE_BASEDIR"] = args.build_dir
-        # os.environ["CCACHE_NO_HASHDIR"] = "1"
-        pass
-    if args.verbose:
-        generator_cmd += [GENERATOR_VERBOSE[args.generator]]
-
-    _run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir)
-
-
-def _get_esptool_args(args):
-    esptool_path = os.path.join(os.environ["IDF_PATH"], "components/esptool_py/esptool/esptool.py")
-    if args.port is None:
-        args.port = get_default_serial_port()
-    result = [PYTHON, esptool_path]
-    result += ["-p", args.port]
-    result += ["-b", str(args.baud)]
-
-    with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
-        flasher_args = json.load(f)
-
-    extra_esptool_args = flasher_args["extra_esptool_args"]
-    result += ["--after", extra_esptool_args["after"]]
-    return result
-
-
-def flash(action, args):
-    """
-    Run esptool to flash the entire project, from an argfile generated by the build system
-    """
-    flasher_args_path = {  # action -> name of flasher args file generated by build system
-        "bootloader-flash":      "flash_bootloader_args",
-        "partition_table-flash": "flash_partition_table_args",
-        "app-flash":             "flash_app_args",
-        "flash":                 "flash_project_args",
-    }[action]
-    esptool_args = _get_esptool_args(args)
-    esptool_args += ["write_flash", "@" + flasher_args_path]
-    _run_tool("esptool.py", esptool_args, args.build_dir)
-
-
-def erase_flash(action, args):
-    esptool_args = _get_esptool_args(args)
-    esptool_args += ["erase_flash"]
-    _run_tool("esptool.py", esptool_args, args.build_dir)
-
-
-def monitor(action, args):
-    """
-    Run idf_monitor.py to watch build output
-    """
-    if args.port is None:
-        args.port = get_default_serial_port()
-    desc_path = os.path.join(args.build_dir, "project_description.json")
-    if not os.path.exists(desc_path):
-        _ensure_build_directory(args)
-    with open(desc_path, "r") as f:
-        project_desc = json.load(f)
-
-    elf_file = os.path.join(args.build_dir, project_desc["app_elf"])
-    if not os.path.exists(elf_file):
-        raise FatalError("ELF file '%s' not found. You need to build & flash the project before running 'monitor', "
-                         "and the binary on the device must match the one in the build directory exactly. "
-                         "Try 'idf.py flash monitor'." % elf_file)
-    idf_monitor = os.path.join(os.environ["IDF_PATH"], "tools/idf_monitor.py")
-    monitor_args = [PYTHON, idf_monitor]
-    if args.port is not None:
-        monitor_args += ["-p", args.port]
-    monitor_args += ["-b", project_desc["monitor_baud"]]
-    monitor_args += [elf_file]
-
-    idf_py = [PYTHON] + get_commandline_options()  # commands to re-run idf.py
-    monitor_args += ["-m", " ".join("'%s'" % a for a in idf_py)]
-
-    if "MSYSTEM" in os.environ:
-        monitor_args = ["winpty"] + monitor_args
-    _run_tool("idf_monitor", monitor_args, args.project_dir)
-
-
-def clean(action, args):
-    if not os.path.isdir(args.build_dir):
-        print("Build directory '%s' not found. Nothing to clean." % args.build_dir)
-        return
-    build_target("clean", args)
-
-
-def reconfigure(action, args):
-    _ensure_build_directory(args, True)
-
-
-def fullclean(action, args):
-    build_dir = args.build_dir
-    if not os.path.isdir(build_dir):
-        print("Build directory '%s' not found. Nothing to clean." % build_dir)
-        return
-    if len(os.listdir(build_dir)) == 0:
-        print("Build directory '%s' is empty. Nothing to clean." % build_dir)
-        return
-
-    if not os.path.exists(os.path.join(build_dir, "CMakeCache.txt")):
-        raise FatalError("Directory '%s' doesn't seem to be a CMake build directory. Refusing to automatically "
-                         "delete files in this directory. Delete the directory manually to 'clean' it." % build_dir)
-    red_flags = ["CMakeLists.txt", ".git", ".svn"]
-    for red in red_flags:
-        red = os.path.join(build_dir, red)
-        if os.path.exists(red):
-            raise FatalError("Refusing to automatically delete files in directory containing '%s'. Delete files manually if you're sure." % red)
-    # OK, delete everything in the build directory...
-    for f in os.listdir(build_dir):  # TODO: once we are Python 3 only, this can be os.scandir()
-        f = os.path.join(build_dir, f)
-        if os.path.isdir(f):
-            shutil.rmtree(f)
-        else:
-            os.remove(f)
+    return checks_output
 
 
 def _safe_relpath(path, start=None):
@@ -364,209 +108,580 @@ def _safe_relpath(path, start=None):
         return os.path.abspath(path)
 
 
-def print_closing_message(args):
-    # print a closing message of some kind
-    #
-    if "flash" in str(args.actions):
-        print("Done")
-        return
-
-    # Otherwise, if we built any binaries print a message about
-    # how to flash them
-    def print_flashing_message(title, key):
-        print("\n%s build complete. To flash, run this command:" % title)
-
-        with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
-            flasher_args = json.load(f)
-
-        def flasher_path(f):
-            return _safe_relpath(os.path.join(args.build_dir, f))
-
-        if key != "project":  # flashing a single item
-            cmd = ""
-            if key == "bootloader":  # bootloader needs --flash-mode, etc to be passed in
-                cmd = " ".join(flasher_args["write_flash_args"]) + " "
-
-            cmd += flasher_args[key]["offset"] + " "
-            cmd += flasher_path(flasher_args[key]["file"])
-        else:  # flashing the whole project
-            cmd = " ".join(flasher_args["write_flash_args"]) + " "
-            flash_items = sorted(((o,f) for (o,f) in flasher_args["flash_files"].items() if len(o) > 0),
-                                 key=lambda x: int(x[0], 0))
-            for o,f in flash_items:
-                cmd += o + " " + flasher_path(f) + " "
-
-        print("%s -p %s -b %s --after %s write_flash %s" % (
-            _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
-            args.port or "(PORT)",
-            args.baud,
-            flasher_args["extra_esptool_args"]["after"],
-            cmd.strip()))
-        print("or run 'idf.py -p %s %s'" % (args.port or "(PORT)", key + "-flash" if key != "project" else "flash",))
-
-    if "all" in args.actions or "build" in args.actions:
-        print_flashing_message("Project", "project")
+def print_idf_version():
+    version = idf_version()
+    if version:
+        print("ESP-IDF %s" % version)
     else:
-        if "app" in args.actions:
-            print_flashing_message("App", "app")
-        if "partition_table" in args.actions:
-            print_flashing_message("Partition Table", "partition_table")
-        if "bootloader" in args.actions:
-            print_flashing_message("Bootloader", "bootloader")
+        print("ESP-IDF version unknown")
 
 
-ACTIONS = {
-    # action name : ( function (or alias), dependencies, order-only dependencies )
-    "all":                   (build_target, [], ["reconfigure", "menuconfig", "clean", "fullclean"]),
-    "build":                 ("all",        [], []),  # build is same as 'all' target
-    "clean":                 (clean,        [], ["fullclean"]),
-    "fullclean":             (fullclean,    [], []),
-    "reconfigure":           (reconfigure,  [], ["menuconfig"]),
-    "menuconfig":            (build_target, [], []),
-    "defconfig":             (build_target, [], []),
-    "confserver":            (build_target, [], []),
-    "size":                  (build_target, ["app"], []),
-    "size-components":       (build_target, ["app"], []),
-    "size-files":            (build_target, ["app"], []),
-    "bootloader":            (build_target, [], []),
-    "bootloader-clean":      (build_target, [], []),
-    "bootloader-flash":      (flash,        ["bootloader"], ["erase_flash"]),
-    "app":                   (build_target, [], ["clean", "fullclean", "reconfigure"]),
-    "app-flash":             (flash,        ["app"], ["erase_flash"]),
-    "efuse_common_table":    (build_target, [], ["reconfigure"]),
-    "efuse_custom_table":    (build_target, [], ["reconfigure"]),
-    "show_efuse_table":      (build_target, [], ["reconfigure"]),
-    "partition_table":       (build_target, [], ["reconfigure"]),
-    "partition_table-flash": (flash,        ["partition_table"], ["erase_flash"]),
-    "flash":                 (flash,        ["all"], ["erase_flash"]),
-    "erase_flash":           (erase_flash,  [], []),
-    "monitor":               (monitor,      [], ["flash", "partition_table-flash", "bootloader-flash", "app-flash"]),
-    "erase_otadata":         (build_target, [], []),
-    "read_otadata":          (build_target, [], []),
-}
-
-
-def get_commandline_options():
-    """ Return all the command line options up to but not including the action """
-    result = []
-    for a in sys.argv:
-        if a in ACTIONS.keys():
-            break
+class PropertyDict(dict):
+    def __getattr__(self, name):
+        if name in self:
+            return self[name]
         else:
-            result.append(a)
-    return result
+            raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
+
+    def __setattr__(self, name, value):
+        self[name] = value
+
+    def __delattr__(self, name):
+        if name in self:
+            del self[name]
+        else:
+            raise AttributeError("'PropertyDict' object has no attribute '%s'" % name)
 
 
-def get_default_serial_port():
-    """ Return a default serial port. esptool can do this (smarter), but it can create
-    inconsistencies where esptool.py uses one port and idf_monitor uses another.
+def init_cli(verbose_output=None):
+    # Click is imported here to run it after check_environment()
+    import click
 
-    Same logic as esptool.py search order, reverse sort by name and choose the first port.
-    """
-    # Import is done here in order to move it after the check_environment() ensured that pyserial has been installed
-    import serial.tools.list_ports
+    class DeprecationMessage(object):
+        """Construct deprecation notice for help messages"""
 
-    ports = list(reversed(sorted(
-        p.device for p in serial.tools.list_ports.comports())))
-    try:
-        print("Choosing default port %s (use '-p PORT' option to set a specific serial port)" % ports[0])
-        return ports[0]
-    except IndexError:
-        raise RuntimeError("No serial ports found. Connect a device, or use '-p PORT' option to set a specific port.")
+        def __init__(self, deprecated=False):
+            self.deprecated = deprecated
+            self.since = None
+            self.removed = None
+            self.custom_message = ""
 
+            if isinstance(deprecated, dict):
+                self.custom_message = deprecated.get("message", "")
+                self.since = deprecated.get("since", None)
+                self.removed = deprecated.get("removed", None)
+            elif isinstance(deprecated, str):
+                self.custom_message = deprecated
 
-# Import the actions, arguments extension file
-if os.path.exists(os.path.join(os.getcwd(), "idf_ext.py")):
-    sys.path.append(os.getcwd())
-    try:
-        from idf_ext import add_action_extensions, add_argument_extensions
-    except ImportError:
-        print("Error importing extension file idf_ext.py. Skipping.")
-        print("Please make sure that it contains implementations (even if they're empty implementations) of")
-        print("add_action_extensions and add_argument_extensions.")
+        def full_message(self, type="Option"):
+            return "%s is deprecated %sand will be removed in%s.%s" % (
+                type, "since %s " % self.since if self.since else "", " %s" % self.removed
+                if self.removed else " future versions", " %s" % self.custom_message if self.custom_message else "")
+
+        def help(self, text, type="Option", separator=" "):
+            text = text or ""
+            return self.full_message(type) + separator + text if self.deprecated else text
+
+        def short_help(self, text):
+            text = text or ""
+            return ("Deprecated! " + text) if self.deprecated else text
+
+    def print_deprecation_warning(ctx):
+        """Prints deprectation warnings for arguments in given context"""
+        for option in ctx.command.params:
+            default = () if option.multiple else option.default
+            if isinstance(option, Option) and option.deprecated and ctx.params[option.name] != default:
+                print("Warning: %s" % DeprecationMessage(option.deprecated).full_message('Option "%s"' % option.name))
+
+    class Task(object):
+        def __init__(self, callback, name, aliases, dependencies, order_dependencies, action_args):
+            self.callback = callback
+            self.name = name
+            self.dependencies = dependencies
+            self.order_dependencies = order_dependencies
+            self.action_args = action_args
+            self.aliases = aliases
+
+        def run(self, context, global_args, action_args=None):
+            if action_args is None:
+                action_args = self.action_args
+
+            self.callback(self.name, context, global_args, **action_args)
+
+    class Action(click.Command):
+        def __init__(self,
+                     name=None,
+                     aliases=None,
+                     deprecated=False,
+                     dependencies=None,
+                     order_dependencies=None,
+                     hidden=False,
+                     **kwargs):
+            super(Action, self).__init__(name, **kwargs)
+
+            self.name = self.name or self.callback.__name__
+            self.deprecated = deprecated
+            self.hidden = hidden
+
+            if aliases is None:
+                aliases = []
+            self.aliases = aliases
+
+            self.help = self.help or self.callback.__doc__
+            if self.help is None:
+                self.help = ""
+
+            if dependencies is None:
+                dependencies = []
+
+            if order_dependencies is None:
+                order_dependencies = []
+
+            # Show first line of help if short help is missing
+            self.short_help = self.short_help or self.help.split("\n")[0]
+
+            if deprecated:
+                deprecation = DeprecationMessage(deprecated)
+                self.short_help = deprecation.short_help(self.short_help)
+                self.help = deprecation.help(self.help, type="Command", separator="\n")
+
+            # Add aliases to help string
+            if aliases:
+                aliases_help = "Aliases: %s." % ", ".join(aliases)
+
+                self.help = "\n".join([self.help, aliases_help])
+                self.short_help = " ".join([aliases_help, self.short_help])
+
+            if self.callback is not None:
+                callback = self.callback
+
+                def wrapped_callback(**action_args):
+                    return Task(
+                        callback=callback,
+                        name=self.name,
+                        dependencies=dependencies,
+                        order_dependencies=order_dependencies,
+                        action_args=action_args,
+                        aliases=self.aliases,
+                    )
+
+                self.callback = wrapped_callback
+
+        def invoke(self, ctx):
+            if self.deprecated:
+                print("Warning: %s" % DeprecationMessage(self.deprecated).full_message('Command "%s"' % self.name))
+                self.deprecated = False  # disable Click's built-in deprecation handling
+
+            # Print warnings for options
+            print_deprecation_warning(ctx)
+            return super(Action, self).invoke(ctx)
+
+    class Argument(click.Argument):
+        """
+        Positional argument
+
+        names - alias of 'param_decls'
+        """
+
+        def __init__(self, **kwargs):
+            names = kwargs.pop("names")
+            super(Argument, self).__init__(names, **kwargs)
+
+    class Scope(object):
+        """
+            Scope for sub-command option.
+            possible values:
+            - default - only available on defined level (global/action)
+            - global - When defined for action, also available as global
+            - shared - Opposite to 'global': when defined in global scope, also available for all actions
+        """
+
+        SCOPES = ("default", "global", "shared")
+
+        def __init__(self, scope=None):
+            if scope is None:
+                self._scope = "default"
+            elif isinstance(scope, str) and scope in self.SCOPES:
+                self._scope = scope
+            elif isinstance(scope, Scope):
+                self._scope = str(scope)
+            else:
+                raise FatalError("Unknown scope for option: %s" % scope)
+
+        @property
+        def is_global(self):
+            return self._scope == "global"
+
+        @property
+        def is_shared(self):
+            return self._scope == "shared"
+
+        def __str__(self):
+            return self._scope
+
+    class Option(click.Option):
+        """Option that knows whether it should be global"""
+
+        def __init__(self, scope=None, deprecated=False, hidden=False, **kwargs):
+            """
+            Keyword arguments additional to Click's Option class:
+
+            names - alias of 'param_decls'
+            deprecated - marks option as deprecated. May be boolean, string (with custom deprecation message)
+            or dict with optional keys:
+                since: version of deprecation
+                removed: version when option will be removed
+                custom_message:  Additional text to deprecation warning
+            """
+
+            kwargs["param_decls"] = kwargs.pop("names")
+            super(Option, self).__init__(**kwargs)
+
+            self.deprecated = deprecated
+            self.scope = Scope(scope)
+            self.hidden = hidden
+
+            if deprecated:
+                deprecation = DeprecationMessage(deprecated)
+                self.help = deprecation.help(self.help)
+
+            if self.scope.is_global:
+                self.help += " This option can be used at most once either globally, or for one subcommand."
+
+        def get_help_record(self, ctx):
+            # Backport "hidden" parameter to click 5.0
+            if self.hidden:
+                return
+
+            return super(Option, self).get_help_record(ctx)
+
+    class CLI(click.MultiCommand):
+        """Action list contains all actions with options available for CLI"""
+
+        def __init__(self, all_actions=None, verbose_output=None, help=None):
+            super(CLI, self).__init__(
+                chain=True,
+                invoke_without_command=True,
+                result_callback=self.execute_tasks,
+                context_settings={"max_content_width": 140},
+                help=help,
+            )
+            self._actions = {}
+            self.global_action_callbacks = []
+            self.commands_with_aliases = {}
+
+            if verbose_output is None:
+                verbose_output = []
+
+            self.verbose_output = verbose_output
+
+            if all_actions is None:
+                all_actions = {}
+
+            shared_options = []
+
+            # Global options
+            for option_args in all_actions.get("global_options", []):
+                option = Option(**option_args)
+                self.params.append(option)
+
+                if option.scope.is_shared:
+                    shared_options.append(option)
+
+            # Global options validators
+            self.global_action_callbacks = all_actions.get("global_action_callbacks", [])
+
+            # Actions
+            for name, action in all_actions.get("actions", {}).items():
+                arguments = action.pop("arguments", [])
+                options = action.pop("options", [])
+
+                if arguments is None:
+                    arguments = []
+
+                if options is None:
+                    options = []
+
+                self._actions[name] = Action(name=name, **action)
+                for alias in [name] + action.get("aliases", []):
+                    self.commands_with_aliases[alias] = name
+
+                for argument_args in arguments:
+                    self._actions[name].params.append(Argument(**argument_args))
+
+                # Add all shared options
+                for option in shared_options:
+                    self._actions[name].params.append(option)
+
+                for option_args in options:
+                    option = Option(**option_args)
+
+                    if option.scope.is_shared:
+                        raise FatalError('"%s" is defined for action "%s". '
+                                         ' "shared" options can be declared only on global level' % (option.name, name))
+
+                    # Promote options to global if see for the first time
+                    if option.scope.is_global and option.name not in [o.name for o in self.params]:
+                        self.params.append(option)
+
+                    self._actions[name].params.append(option)
+
+        def list_commands(self, ctx):
+            return sorted(filter(lambda name: not self._actions[name].hidden, self._actions))
+
+        def get_command(self, ctx, name):
+            return self._actions.get(self.commands_with_aliases.get(name))
+
+        def _print_closing_message(self, args, actions):
+            # print a closing message of some kind
+            #
+            if "flash" in str(actions):
+                print("Done")
+                return
+
+            if not os.path.exists(os.path.join(args.build_dir, "flasher_args.json")):
+                print("Done")
+                return
+
+            # Otherwise, if we built any binaries print a message about
+            # how to flash them
+            def print_flashing_message(title, key):
+                print("\n%s build complete. To flash, run this command:" % title)
+
+                with open(os.path.join(args.build_dir, "flasher_args.json")) as f:
+                    flasher_args = json.load(f)
+
+                def flasher_path(f):
+                    return _safe_relpath(os.path.join(args.build_dir, f))
+
+                if key != "project":  # flashing a single item
+                    cmd = ""
+                    if (key == "bootloader"):  # bootloader needs --flash-mode, etc to be passed in
+                        cmd = " ".join(flasher_args["write_flash_args"]) + " "
+
+                    cmd += flasher_args[key]["offset"] + " "
+                    cmd += flasher_path(flasher_args[key]["file"])
+                else:  # flashing the whole project
+                    cmd = " ".join(flasher_args["write_flash_args"]) + " "
+                    flash_items = sorted(
+                        ((o, f) for (o, f) in flasher_args["flash_files"].items() if len(o) > 0),
+                        key=lambda x: int(x[0], 0),
+                    )
+                    for o, f in flash_items:
+                        cmd += o + " " + flasher_path(f) + " "
+
+                print("%s %s -p %s -b %s --before %s --after %s write_flash %s" % (
+                    PYTHON,
+                    _safe_relpath("%s/components/esptool_py/esptool/esptool.py" % os.environ["IDF_PATH"]),
+                    args.port or "(PORT)",
+                    args.baud,
+                    flasher_args["extra_esptool_args"]["before"],
+                    flasher_args["extra_esptool_args"]["after"],
+                    cmd.strip(),
+                ))
+                print("or run 'idf.py -p %s %s'" % (
+                    args.port or "(PORT)",
+                    key + "-flash" if key != "project" else "flash",
+                ))
+
+            if "all" in actions or "build" in actions:
+                print_flashing_message("Project", "project")
+            else:
+                if "app" in actions:
+                    print_flashing_message("App", "app")
+                if "partition_table" in actions:
+                    print_flashing_message("Partition Table", "partition_table")
+                if "bootloader" in actions:
+                    print_flashing_message("Bootloader", "bootloader")
+
+        def execute_tasks(self, tasks, **kwargs):
+            ctx = click.get_current_context()
+            global_args = PropertyDict(kwargs)
+
+            # Show warning if some tasks are present several times in the list
+            dupplicated_tasks = sorted(
+                [item for item, count in Counter(task.name for task in tasks).items() if count > 1])
+            if dupplicated_tasks:
+                dupes = ", ".join('"%s"' % t for t in dupplicated_tasks)
+                print("WARNING: Command%s found in the list of commands more than once. " %
+                      ("s %s are" % dupes if len(dupplicated_tasks) > 1 else " %s is" % dupes) +
+                      "Only first occurence will be executed.")
+
+            # Set propagated global options.
+            # These options may be set on one subcommand, but available in the list of global arguments
+            for task in tasks:
+                for key in list(task.action_args):
+                    option = next((o for o in ctx.command.params if o.name == key), None)
+
+                    if option and (option.scope.is_global or option.scope.is_shared):
+                        local_value = task.action_args.pop(key)
+                        global_value = global_args[key]
+                        default = () if option.multiple else option.default
+
+                        if global_value != default and local_value != default and global_value != local_value:
+                            raise FatalError('Option "%s" provided for "%s" is already defined to a different value. '
+                                             "This option can appear at most once in the command line." %
+                                             (key, task.name))
+                        if local_value != default:
+                            global_args[key] = local_value
+
+            # Show warnings about global arguments
+            print_deprecation_warning(ctx)
+
+            # Make sure that define_cache_entry is mutable list and can be modified in callbacks
+            global_args.define_cache_entry = list(global_args.define_cache_entry)
+
+            # Execute all global action callback - first from idf.py itself, then from extensions
+            for action_callback in ctx.command.global_action_callbacks:
+                action_callback(ctx, global_args, tasks)
+
+            # Always show help when command is not provided
+            if not tasks:
+                print(ctx.get_help())
+                ctx.exit()
+
+            # Build full list of tasks to and deal with dependencies and order dependencies
+            tasks_to_run = OrderedDict()
+            while tasks:
+                task = tasks[0]
+                tasks_dict = dict([(t.name, t) for t in tasks])
+
+                dependecies_processed = True
+
+                # If task have some dependecies they have to be executed before the task.
+                for dep in task.dependencies:
+                    if dep not in tasks_to_run.keys():
+                        # If dependent task is in the list of unprocessed tasks move to the front of the list
+                        if dep in tasks_dict.keys():
+                            dep_task = tasks.pop(tasks.index(tasks_dict[dep]))
+                        # Otherwise invoke it with default set of options
+                        # and put to the front of the list of unprocessed tasks
+                        else:
+                            print('Adding "%s"\'s dependency "%s" to list of commands with default set of options.' %
+                                  (task.name, dep))
+                            dep_task = ctx.invoke(ctx.command.get_command(ctx, dep))
+
+                            # Remove options with global scope from invoke tasks because they are alread in global_args
+                            for key in list(dep_task.action_args):
+                                option = next((o for o in ctx.command.params if o.name == key), None)
+                                if option and (option.scope.is_global or option.scope.is_shared):
+                                    dep_task.action_args.pop(key)
+
+                        tasks.insert(0, dep_task)
+                        dependecies_processed = False
+
+                # Order only dependencies are moved to the front of the queue if they present in command list
+                for dep in task.order_dependencies:
+                    if dep in tasks_dict.keys() and dep not in tasks_to_run.keys():
+                        tasks.insert(0, tasks.pop(tasks.index(tasks_dict[dep])))
+                        dependecies_processed = False
+
+                if dependecies_processed:
+                    # Remove task from list of unprocessed tasks
+                    tasks.pop(0)
+
+                    # And add to the queue
+                    if task.name not in tasks_to_run.keys():
+                        tasks_to_run.update([(task.name, task)])
+
+            # Run all tasks in the queue
+            # when global_args.dry_run is true idf.py works in idle mode and skips actual task execution
+            if not global_args.dry_run:
+                for task in tasks_to_run.values():
+                    name_with_aliases = task.name
+                    if task.aliases:
+                        name_with_aliases += " (aliases: %s)" % ", ".join(task.aliases)
+
+                    print("Executing action: %s" % name_with_aliases)
+                    task.run(ctx, global_args, task.action_args)
+
+                self._print_closing_message(global_args, tasks_to_run.keys())
+
+            return tasks_to_run
+
+    # That's a tiny parser that parse project-dir even before constructing
+    # fully featured click parser to be sure that extensions are loaded from the right place
+    @click.command(
+        add_help_option=False,
+        context_settings={
+            "allow_extra_args": True,
+            "ignore_unknown_options": True
+        },
+    )
+    @click.option("-C", "--project-dir", default=os.getcwd())
+    def parse_project_dir(project_dir):
+        return realpath(project_dir)
+
+    project_dir = parse_project_dir(standalone_mode=False)
+
+    all_actions = {}
+    # Load extensions from components dir
+    idf_py_extensions_path = os.path.join(os.environ["IDF_PATH"], "tools", "idf_py_actions")
+    extra_paths = os.environ.get("IDF_EXTRA_ACTIONS_PATH", "").split(';')
+    extension_dirs = [idf_py_extensions_path] + extra_paths
+    extensions = {}
+
+    for directory in extension_dirs:
+        if directory and not os.path.exists(directory):
+            print('WARNING: Directroy with idf.py extensions doesn\'t exist:\n    %s' % directory)
+            continue
+
+        sys.path.append(directory)
+        for _finder, name, _ispkg in sorted(iter_modules([directory])):
+            if name.endswith('_ext'):
+                extensions[name] = import_module(name)
+
+    for name, extension in extensions.items():
+        try:
+            all_actions = merge_action_lists(all_actions, extension.action_extensions(all_actions, project_dir))
+        except AttributeError:
+            print('WARNING: Cannot load idf.py extension "%s"' % name)
+
+    # Load extensions from project dir
+    if os.path.exists(os.path.join(project_dir, "idf_ext.py")):
+        sys.path.append(project_dir)
+        try:
+            from idf_ext import action_extensions
+        except ImportError:
+            print("Error importing extension file idf_ext.py. Skipping.")
+            print("Please make sure that it contains implementation (even if it's empty) of add_action_extensions")
+
+        try:
+            all_actions = merge_action_lists(all_actions, action_extensions(all_actions, project_dir))
+        except NameError:
+            pass
+
+    return CLI(help="ESP-IDF build management", verbose_output=verbose_output, all_actions=all_actions)
 
 
 def main():
-    if sys.version_info[0] != 2 or sys.version_info[1] != 7:
-        print("Note: You are using Python %d.%d.%d. Python 3 support is new, please report any problems "
-              "you encounter. Search for 'Setting the Python Interpreter' in the ESP-IDF docs if you want to use "
-              "Python 2.7." % sys.version_info[:3])
+    checks_output = check_environment()
+    cli = init_cli(verbose_output=checks_output)
+    cli(prog_name=PROG)
 
-    # Add actions extensions
+
+def _valid_unicode_config():
+    # Python 2 is always good
+    if sys.version_info[0] == 2:
+        return True
+
+    # With python 3 unicode environment is required
     try:
-        add_action_extensions({
-            "build_target": build_target,
-            "reconfigure": reconfigure,
-            "flash": flash,
-            "monitor": monitor,
-            "clean": clean,
-            "fullclean": fullclean
-        }, ACTIONS)
-    except NameError:
-        pass
+        return codecs.lookup(locale.getpreferredencoding()).name != "ascii"
+    except Exception:
+        return False
 
-    parser = argparse.ArgumentParser(description='ESP-IDF build management tool')
-    parser.add_argument('-p', '--port', help="Serial port",
-                        default=os.environ.get('ESPPORT', None))
-    parser.add_argument('-b', '--baud', help="Baud rate",
-                        default=os.environ.get('ESPBAUD', 460800))
-    parser.add_argument('-C', '--project-dir', help="Project directory", default=os.getcwd())
-    parser.add_argument('-B', '--build-dir', help="Build directory", default=None)
-    parser.add_argument('-G', '--generator', help="Cmake generator", choices=GENERATOR_CMDS.keys())
-    parser.add_argument('-n', '--no-warnings', help="Disable Cmake warnings", action="store_true")
-    parser.add_argument('-v', '--verbose', help="Verbose build output", action="store_true")
-    parser.add_argument('-D', '--define-cache-entry', help="Create a cmake cache entry", nargs='+')
-    parser.add_argument('--no-ccache', help="Disable ccache. Otherwise, if ccache is available on the PATH then it will be used for faster builds.",
-                        action="store_true")
-    parser.add_argument('actions', help="Actions (build targets or other operations)", nargs='+',
-                        choices=ACTIONS.keys())
 
-    # Add arguments extensions
+def _find_usable_locale():
     try:
-        add_argument_extensions(parser)
-    except NameError:
-        pass
+        locales = subprocess.Popen(["locale", "-a"], stdout=subprocess.PIPE, stderr=subprocess.PIPE).communicate()[0]
+    except OSError:
+        locales = ""
+    if isinstance(locales, bytes):
+        locales = locales.decode("ascii", "replace")
 
-    args = parser.parse_args()
+    usable_locales = []
+    for line in locales.splitlines():
+        locale = line.strip()
+        locale_name = locale.lower().replace("-", "")
 
-    check_environment()
+        # C.UTF-8 is the best option, if supported
+        if locale_name == "c.utf8":
+            return locale
 
-    # Advanced parameter checks
-    if args.build_dir is not None and os.path.realpath(args.project_dir) == os.path.realpath(args.build_dir):
-        raise FatalError("Setting the build directory to the project directory is not supported. Suggest dropping "
-                         "--build-dir option, the default is a 'build' subdirectory inside the project directory.")
-    if args.build_dir is None:
-        args.build_dir = os.path.join(args.project_dir, "build")
-    args.build_dir = os.path.realpath(args.build_dir)
+        if locale_name.endswith(".utf8"):
+            # Make a preference of english locales
+            if locale.startswith("en_"):
+                usable_locales.insert(0, locale)
+            else:
+                usable_locales.append(locale)
 
-    completed_actions = set()
+    if not usable_locales:
+        raise FatalError(
+            "Support for Unicode filenames is required, but no suitable UTF-8 locale was found on your system."
+            " Please refer to the manual for your operating system for details on locale reconfiguration.")
 
-    def execute_action(action, remaining_actions):
-        (function, dependencies, order_dependencies) = ACTIONS[action]
-        # very simple dependency management, build a set of completed actions and make sure
-        # all dependencies are in it
-        for dep in dependencies:
-            if dep not in completed_actions:
-                execute_action(dep, remaining_actions)
-        for dep in order_dependencies:
-            if dep in remaining_actions and dep not in completed_actions:
-                execute_action(dep, remaining_actions)
-
-        if action in completed_actions:
-            pass  # we've already done this, don't do it twice...
-        elif function in ACTIONS:  # alias of another action
-            execute_action(function, remaining_actions)
-        else:
-            function(action, args)
-
-        completed_actions.add(action)
-
-    actions = list(args.actions)
-    while len(actions) > 0:
-        execute_action(actions[0], actions[1:])
-        actions.pop(0)
-
-    print_closing_message(args)
+    return usable_locales[0]
 
 
 if __name__ == "__main__":
@@ -575,16 +690,36 @@ if __name__ == "__main__":
         # keyboard interrupt (CTRL+C).
         # Using an own global variable for indicating that we are running with "winpty" seems to be the most suitable
         # option as os.environment['_'] contains "winpty" only when it is run manually from console.
-        WINPTY_VAR = 'WINPTY'
-        WINPTY_EXE = 'winpty'
-        if ('MSYSTEM' in os.environ) and (not os.environ['_'].endswith(WINPTY_EXE) and WINPTY_VAR not in os.environ):
-            os.environ[WINPTY_VAR] = '1'    # the value is of no interest to us
-            # idf.py calls itself with "winpty" and WINPTY global variable set
-            ret = subprocess.call([WINPTY_EXE, sys.executable] + sys.argv, env=os.environ)
+        WINPTY_VAR = "WINPTY"
+        WINPTY_EXE = "winpty"
+        if ("MSYSTEM" in os.environ) and (not os.environ.get("_", "").endswith(WINPTY_EXE)
+                                          and WINPTY_VAR not in os.environ):
+
+            if 'menuconfig' in sys.argv:
+                # don't use winpty for menuconfig because it will print weird characters
+                main()
+            else:
+                os.environ[WINPTY_VAR] = "1"  # the value is of no interest to us
+                # idf.py calls itself with "winpty" and WINPTY global variable set
+                ret = subprocess.call([WINPTY_EXE, sys.executable] + sys.argv, env=os.environ)
+                if ret:
+                    raise SystemExit(ret)
+
+        elif os.name == "posix" and not _valid_unicode_config():
+            # Trying to find best utf-8 locale available on the system and restart python with it
+            best_locale = _find_usable_locale()
+
+            print("Your environment is not configured to handle unicode filenames outside of ASCII range."
+                  " Environment variable LC_ALL is temporary set to %s for unicode support." % best_locale)
+
+            os.environ["LC_ALL"] = best_locale
+            ret = subprocess.call([sys.executable] + sys.argv, env=os.environ)
             if ret:
                 raise SystemExit(ret)
+
         else:
             main()
+
     except FatalError as e:
         print(e)
         sys.exit(2)

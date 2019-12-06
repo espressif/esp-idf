@@ -1,14 +1,14 @@
 menu "Example Configuration"
 
-    choice WIFI_MODE
+    choice ESPNOW_WIFI_MODE
         prompt "WiFi mode"
-        default STATION_MODE
+        default ESPNOW_WIFI_MODE_STATION
         help
             WiFi mode(station or softap).
 
-        config STATION_MODE
+        config ESPNOW_WIFI_MODE_STATION
             bool "Station"
-        config SOFTAP_MODE
+        config ESPNOW_WIFI_MODE_STATION_SOFTAP
             bool "Softap"
     endchoice
 
@@ -52,7 +52,7 @@ menu "Example Configuration"
         help
             Length of ESPNOW data to be sent, unit: byte.
 
-    config ENABLE_LONG_RANGE
+    config ESPNOW_ENABLE_LONG_RANGE
         bool "Enable Long Range"
         default "n"
         help

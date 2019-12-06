@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-TEST_CASE("Capabilities allocator test", "[heap]")
+TEST_CASE_ESP32("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
     int x;
@@ -114,7 +114,7 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
-static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test()
+static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 {
     spi_flash_guard_get()->start(); // Disables flash cache
 

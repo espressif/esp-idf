@@ -11,9 +11,8 @@
 #include "driver/i2c.h"
 #include "esp_attr.h"
 #include "esp_log.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/i2c_struct.h"
-#include "soc/i2c_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2c_periph.h"
 #include "esp_system.h"
 #include "driver/pcnt.h"
 
@@ -63,20 +62,7 @@ static esp_err_t i2c_master_write_slave(i2c_port_t i2c_num, uint8_t *data_wr, si
     return ret;
 }
 
-// print the reading buffer
-static void disp_buf(uint8_t *buf, int len)
-{
-    int i;
-    for (i = 0; i < len; i++) {
-        printf("%02x ", buf[i]);
-        if (( i + 1 ) % 16 == 0) {
-            printf("\n");
-        }
-    }
-    printf("\n");
-}
-
-static i2c_config_t i2c_master_init()
+static i2c_config_t i2c_master_init(void)
 {
     i2c_config_t conf_master = {
         .mode = I2C_MODE_MASTER,
@@ -89,7 +75,7 @@ static i2c_config_t i2c_master_init()
     return conf_master;
 }
 
-static i2c_config_t i2c_slave_init()
+static i2c_config_t i2c_slave_init(void)
 {
     i2c_config_t conf_slave = {
         .mode = I2C_MODE_SLAVE,
@@ -253,256 +239,66 @@ TEST_CASE("I2C driver memory leaking check", "[i2c]")
     TEST_ASSERT_INT_WITHIN(100, size, esp_get_free_heap_size());
 }
 
-static void i2c_master_write_test()
+static volatile bool exit_flag;
+static bool test_read_func;
+
+static void test_task(void *pvParameters)
 {
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-    int i;
+    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
 
-    i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-
-    TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
-                                   I2C_MASTER_RX_BUF_DISABLE,
-                                   I2C_MASTER_TX_BUF_DISABLE, 0));
-    unity_wait_for_signal("i2c slave init finish");
-
-    unity_send_signal("master write");
-    for (i = 0; i < DATA_LENGTH / 2; i++) {
-        data_wr[i] = i;
-    }
-    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, DATA_LENGTH / 2);
-    disp_buf(data_wr, i + 1);
-    free(data_wr);
-    unity_wait_for_signal("ready to delete");
-    TEST_ESP_OK(i2c_driver_delete(I2C_MASTER_NUM));
-}
-
-static void i2c_slave_read_test()
-{
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
-    int size_rd = 0;
-    int len = 0;
-
+    uint8_t *data = (uint8_t *) malloc(DATA_LENGTH);
     i2c_config_t conf_slave = i2c_slave_init();
     TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
-    unity_send_signal("i2c slave init finish");
-
-    unity_wait_for_signal("master write");
-    while (1) {
-        len = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd + size_rd, DATA_LENGTH, 10000 / portTICK_RATE_MS);
-        if (len == 0) {
-            break;
+    while (exit_flag == false) {
+        if (test_read_func) {
+            i2c_slave_read_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
+        } else {
+            i2c_slave_write_buffer(I2C_SLAVE_NUM, data, DATA_LENGTH, 0);
         }
-        size_rd += len;
     }
-    disp_buf(data_rd, size_rd);
-    for (int i = 0; i < size_rd; i++) {
-        TEST_ASSERT(data_rd[i] == i);
+
+    free(data);
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("test i2c_slave_read_buffer is not blocked when ticks_to_wait=0", "[i2c]")
+{
+    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    exit_flag = false;
+
+    test_read_func = true;
+    xTaskCreate(test_task, "tsk1", 2048, &exit_sema, 5, NULL);
+
+    printf("Waiting for 5 sec\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    exit_flag = true;
+    if (xSemaphoreTake(exit_sema, 1000 / portTICK_PERIOD_MS) == pdTRUE) {
+        vSemaphoreDelete(exit_sema);
+    } else {
+        TEST_FAIL_MESSAGE("i2c_slave_read_buffer is blocked");
     }
-    free(data_rd);
-    unity_send_signal("ready to delete");
     TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
 
-TEST_CASE_MULTIPLE_DEVICES("I2C master write slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_write_test, i2c_slave_read_test);
-
-static void master_read_slave_test()
+TEST_CASE("test i2c_slave_write_buffer is not blocked when ticks_to_wait=0", "[i2c]")
 {
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
-    memset(data_rd, 0, DATA_LENGTH);
-    i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-    TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
-                                   I2C_MASTER_RX_BUF_DISABLE,
-                                   I2C_MASTER_TX_BUF_DISABLE, 0));
-    unity_wait_for_signal("i2c slave init finish");
+    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
+    exit_flag = false;
 
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | READ_BIT, ACK_CHECK_EN);
+    test_read_func = false;
+    xTaskCreate(test_task, "tsk1", 2048, &exit_sema, 5, NULL);
 
-    unity_send_signal("slave write");
-    unity_wait_for_signal("master read");
-    i2c_master_read(cmd, data_rd, RW_TEST_LENGTH-1, ACK_VAL);
-    i2c_master_read_byte(cmd, data_rd + RW_TEST_LENGTH-1, NACK_VAL);
-    i2c_master_stop(cmd);
-    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 5000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-    vTaskDelay(100 / portTICK_RATE_MS);
-    for (int i = 0; i < RW_TEST_LENGTH; i++) {
-        printf("%d\n", data_rd[i]);
-        TEST_ASSERT(data_rd[i]==i);
+    printf("Waiting for 5 sec\n");
+    vTaskDelay(5000 / portTICK_PERIOD_MS);
+    exit_flag = true;
+    if (xSemaphoreTake(exit_sema, 1000 / portTICK_PERIOD_MS) == pdTRUE) {
+        vSemaphoreDelete(exit_sema);
+    } else {
+        TEST_FAIL_MESSAGE("i2c_slave_write_buffer is blocked");
     }
-    free(data_rd);
-    unity_send_signal("ready to delete");
-    i2c_driver_delete(I2C_MASTER_NUM);
+    TEST_ESP_OK(i2c_driver_delete(I2C_SLAVE_NUM));
 }
-
-static void slave_write_buffer_test()
-{
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-    int size_rd;
-
-    i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
-    TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
-                                   I2C_SLAVE_RX_BUF_LEN,
-                                   I2C_SLAVE_TX_BUF_LEN, 0));
-    unity_send_signal("i2c slave init finish");
-
-    unity_wait_for_signal("slave write");
-    for (int i = 0; i < DATA_LENGTH / 2; i++) {
-        data_wr[i] = i;
-    }
-    size_rd = i2c_slave_write_buffer(I2C_SLAVE_NUM, data_wr, RW_TEST_LENGTH, 2000 / portTICK_RATE_MS);
-    disp_buf(data_wr, size_rd);
-    unity_send_signal("master read");
-    unity_wait_for_signal("ready to delete");
-    free(data_wr);
-    i2c_driver_delete(I2C_SLAVE_NUM);
-}
-
-
-TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=UT_T2_I2C][timeout=150]", master_read_slave_test, slave_write_buffer_test);
-
-static void i2c_master_write_read_test()
-{
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
-    memset(data_rd, 0, DATA_LENGTH);
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-
-    i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-    TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
-                                   I2C_MASTER_RX_BUF_DISABLE,
-                                   I2C_MASTER_TX_BUF_DISABLE, 0));
-    unity_wait_for_signal("i2c slave init finish");
-    i2c_cmd_handle_t cmd = i2c_cmd_link_create();
-    i2c_master_start(cmd);
-    i2c_master_write_byte(cmd, ( ESP_SLAVE_ADDR << 1 ) | READ_BIT, ACK_CHECK_EN);
-
-    unity_send_signal("slave write");
-    unity_wait_for_signal("master read and write");
-    i2c_master_read(cmd, data_rd, RW_TEST_LENGTH, ACK_VAL);
-    i2c_master_read_byte(cmd, data_rd + RW_TEST_LENGTH, NACK_VAL);
-    i2c_master_stop(cmd);
-    i2c_master_cmd_begin(I2C_MASTER_NUM, cmd, 5000 / portTICK_RATE_MS);
-    i2c_cmd_link_delete(cmd);
-    vTaskDelay(100 / portTICK_RATE_MS);
-    disp_buf(data_rd, RW_TEST_LENGTH);
-    for (int i = 0; i < RW_TEST_LENGTH; i++) {
-        TEST_ASSERT(data_rd[i] == i/2);
-    }
-
-    for (int i = 0; i < DATA_LENGTH; i++) {
-        data_wr[i] = i % 3;
-    }
-
-    vTaskDelay(100 / portTICK_RATE_MS);
-    i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
-    free(data_wr);
-    free(data_rd);
-    unity_send_signal("slave read");
-    unity_wait_for_signal("ready to delete");
-    i2c_driver_delete(I2C_MASTER_NUM);
-}
-
-static void i2c_slave_read_write_test()
-{
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
-    memset(data_rd, 0, DATA_LENGTH);
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-    int size_rd;
-
-    i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
-    TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
-                                   I2C_SLAVE_RX_BUF_LEN,
-                                   I2C_SLAVE_TX_BUF_LEN, 0));
-    unity_send_signal("i2c slave init finish");
-    unity_wait_for_signal("slave write");
-
-    for (int i = 0; i < DATA_LENGTH / 2; i++) {
-        data_wr[i] = i/2;
-    }
-    size_rd = i2c_slave_write_buffer(I2C_SLAVE_NUM, data_wr, RW_TEST_LENGTH, 2000 / portTICK_RATE_MS);
-    disp_buf(data_wr, size_rd);
-    unity_send_signal("master read and write");
-    unity_wait_for_signal("slave read");
-    size_rd = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd, RW_TEST_LENGTH, 1000 / portTICK_RATE_MS);
-    printf("slave read data is:\n");
-    disp_buf(data_rd, size_rd);
-    for (int i = 0; i < RW_TEST_LENGTH; i++) {
-        TEST_ASSERT(data_rd[i] == i % 3);
-    }
-    free(data_wr);
-    free(data_rd);
-    unity_send_signal("ready to delete");
-    i2c_driver_delete(I2C_SLAVE_NUM);
-}
-
-TEST_CASE_MULTIPLE_DEVICES("I2C read and write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_write_read_test, i2c_slave_read_write_test);
-
-static void i2c_master_repeat_write()
-{
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-    int times = 3;
-
-    i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-
-    TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
-                                   I2C_MASTER_RX_BUF_DISABLE,
-                                   I2C_MASTER_TX_BUF_DISABLE, 0));
-    unity_wait_for_signal("i2c slave init finish");
-
-    for (int j = 0; j < times; j++) {
-        for (int i = 0; i < DATA_LENGTH; i++) {
-            data_wr[i] = j + i;
-        }
-        i2c_master_write_slave(I2C_MASTER_NUM, data_wr, RW_TEST_LENGTH);
-        disp_buf(data_wr, RW_TEST_LENGTH);
-    }
-    free(data_wr);
-    unity_send_signal("master write");
-    unity_wait_for_signal("ready to delete");
-    i2c_driver_delete(I2C_MASTER_NUM);
-}
-
-static void i2c_slave_repeat_read()
-{
-    int size_rd = 0;
-    int times = 3;
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH * 3);
-
-    i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
-    TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
-                                   I2C_SLAVE_RX_BUF_LEN,
-                                   I2C_SLAVE_TX_BUF_LEN, 0));
-    unity_send_signal("i2c slave init finish");
-    unity_wait_for_signal("master write");
-
-    while (1) {
-        int len = i2c_slave_read_buffer( I2C_SLAVE_NUM, data_rd + size_rd, RW_TEST_LENGTH * 3, 10000 / portTICK_RATE_MS);
-        if (len == 0) {
-            break;
-        }
-        size_rd += len;
-    }
-    disp_buf(data_rd, size_rd);
-    for (int j = 0; j < times; j++) {
-        for (int i = 0; i < RW_TEST_LENGTH; i++) {
-            printf("data: %d, %d\n", data_rd[j * RW_TEST_LENGTH + i], (i % 129 + j));
-            TEST_ASSERT(data_rd[j * RW_TEST_LENGTH + i] == (i % 129 + j));
-        }
-    }
-    free(data_rd);
-    unity_send_signal("ready to delete");
-    i2c_driver_delete(I2C_SLAVE_NUM);
-}
-
-TEST_CASE_MULTIPLE_DEVICES("I2C repeat write test", "[i2c][test_env=UT_T2_I2C][timeout=150]", i2c_master_repeat_write, i2c_slave_repeat_read);

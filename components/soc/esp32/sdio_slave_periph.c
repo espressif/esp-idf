@@ -14,8 +14,7 @@
 
 #include <stdint.h>
 #include "soc/sdio_slave_periph.h"
-#include "soc/io_mux_reg.h"
-#include "soc/sdio_slave_pins.h"
+#include "soc/gpio_periph.h"
 
 // I/O slot of sdio slave:
 // 0: GPIO 6, 11, 7, 8, 9, 10,

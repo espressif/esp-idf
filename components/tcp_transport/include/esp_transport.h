@@ -22,7 +22,7 @@ extern "C" {
 #endif
 
 
-typedef struct esp_transport_list_t* esp_transport_list_handle_t;
+typedef struct esp_transport_internal* esp_transport_list_handle_t;
 typedef struct esp_transport_item_t* esp_transport_handle_t;
 
 typedef int (*connect_func)(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
@@ -33,12 +33,14 @@ typedef int (*poll_func)(esp_transport_handle_t t, int timeout_ms);
 typedef int (*connect_async_func)(esp_transport_handle_t t, const char *host, int port, int timeout_ms);
 typedef esp_transport_handle_t (*payload_transfer_func)(esp_transport_handle_t);
 
+typedef struct esp_tls_last_error* esp_tls_error_handle_t;
+
 /**
  * @brief      Create transport list
  *
  * @return     A handle can hold all transports
  */
-esp_transport_list_handle_t esp_transport_list_init();
+esp_transport_list_handle_t esp_transport_list_init(void);
 
 /**
  * @brief      Cleanup and free all transports, include itself,
@@ -91,7 +93,7 @@ esp_transport_handle_t esp_transport_list_get_transport(esp_transport_list_handl
  *
  * @return     The transport handle
  */
-esp_transport_handle_t esp_transport_init();
+esp_transport_handle_t esp_transport_init(void);
 
 /**
  * @brief      Cleanup and free memory the transport
@@ -297,6 +299,21 @@ esp_err_t esp_transport_set_async_connect_func(esp_transport_handle_t t, connect
  *     - ESP_FAIL
  */
 esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payload_transfer_func _parent_transport);
+
+/**
+ * @brief      Returns esp_tls error handle.
+ *             Warning: The returned pointer is valid only as long as esp_transport_handle_t exists. Once transport
+ *             handle gets destroyed, this value (esp_tls_error_handle_t) is freed automatically.
+ *
+ * @param[in]  A transport handle
+ *
+ * @return
+ *            - valid pointer of esp_error_handle_t
+ *            - NULL if invalid transport handle
+  */
+esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t);
+
+
 
 #ifdef __cplusplus
 }

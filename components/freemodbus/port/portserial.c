@@ -1,3 +1,17 @@
+/* Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /*
  * FreeModbus Libary: ESP32 Port Demo Application
  * Copyright (C) 2010 Christian Walter <cwalter@embedded-solutions.at>
@@ -30,7 +44,7 @@
 #include "port.h"
 #include "driver/uart.h"
 #include "freertos/queue.h" // for queue support
-#include "soc/uart_reg.h"
+#include "soc/uart_periph.h"
 #include "driver/gpio.h"
 #include "esp_log.h"        // for esp_log
 #include "esp_err.h"        // for ESP_ERROR_CHECK macro
@@ -39,6 +53,7 @@
 #include "mb.h"
 #include "mbport.h"
 #include "sdkconfig.h"              // for KConfig options
+#include "port_serial_slave.h"
 
 // Definitions of UART default pin numbers
 #define MB_UART_RXD   (CONFIG_MB_UART_RXD)
@@ -46,14 +61,16 @@
 #define MB_UART_RTS   (CONFIG_MB_UART_RTS)
 
 #define MB_BAUD_RATE_DEFAULT        (115200)
-#define MB_QUEUE_LENGTH             (CONFIG_MB_QUEUE_LENGTH)
+#define MB_QUEUE_LENGTH             (CONFIG_FMB_QUEUE_LENGTH)
 
-#define MB_SERIAL_TASK_PRIO         (CONFIG_MB_SERIAL_TASK_PRIO)
-#define MB_SERIAL_TASK_STACK_SIZE   (CONFIG_MB_SERIAL_TASK_STACK_SIZE)
+#define MB_SERIAL_TASK_PRIO         (CONFIG_FMB_SERIAL_TASK_PRIO)
+#define MB_SERIAL_TASK_STACK_SIZE   (CONFIG_FMB_SERIAL_TASK_STACK_SIZE)
 #define MB_SERIAL_TOUT              (3) // 3.5*8 = 28 ticks, TOUT=3 -> ~24..33 ticks
 
+#define MB_SERIAL_TX_TOUT_MS        (100)
+#define MB_SERIAL_TX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS) // timeout for transmission
 // Set buffer size for transmission
-#define MB_SERIAL_BUF_SIZE          (CONFIG_MB_SERIAL_BUF_SIZE)
+#define MB_SERIAL_BUF_SIZE          (CONFIG_FMB_SERIAL_BUF_SIZE)
 
 // Note: This code uses mixed coding standard from legacy IDF code and used freemodbus stack
 
@@ -63,7 +80,7 @@ static TaskHandle_t  xMbTaskHandle;
 static const CHAR *TAG = "MB_SERIAL";
 
 // The UART hardware port number
-static UCHAR ucUartNumber = UART_NUM_2;
+static UCHAR ucUartNumber = UART_NUM_MAX - 1;
 
 static BOOL bRxStateEnabled = FALSE; // Receiver enabled flag
 static BOOL bTxStateEnabled = FALSE; // Transmitter enabled flag
@@ -110,14 +127,13 @@ static void vMBPortSerialRxPoll(size_t xEventSize)
             // Let the stack know that T3.5 time is expired and data is received
             (void)pxMBPortCBTimerExpired(); // calls callback xMBRTUTimerT35Expired();
 #endif
-            ESP_LOGD(TAG, "RX_T35_timeout: %d(bytes in buffer)\n", (uint32_t)usLength);
+            ESP_LOGD(TAG, "Receive: %d(bytes in buffer)\n", (uint32_t)usLength);
         }
     }
 }
 
-BOOL xMBPortSerialTxPoll()
+BOOL xMBPortSerialTxPoll(void)
 {
-    BOOL bStatus = FALSE;
     USHORT usCount = 0;
     BOOL bNeedPoll = FALSE;
 
@@ -127,10 +143,14 @@ BOOL xMBPortSerialTxPoll()
             // Calls the modbus stack callback function to let it fill the UART transmit buffer.
             bNeedPoll = pxMBFrameCBTransmitterEmpty( ); // calls callback xMBRTUTransmitFSM();
         }
-        ESP_LOGD(TAG, "MB_TX_buffer sent: (%d) bytes\n", (uint16_t)usCount);
-        bStatus = TRUE;
+        ESP_LOGD(TAG, "MB_TX_buffer send: (%d) bytes\n", (uint16_t)usCount);
+        // Waits while UART sending the packet
+        esp_err_t xTxStatus = uart_wait_tx_done(ucUartNumber, MB_SERIAL_TX_TOUT_TICKS);
+        vMBPortSerialEnable(TRUE, FALSE);
+        MB_PORT_CHECK((xTxStatus == ESP_OK), FALSE, "mb serial sent buffer failure.");
+        return TRUE;
     }
-    return bStatus;
+    return FALSE;
 }
 
 static void vUartTask(void *pvParameters)
@@ -139,7 +159,6 @@ static void vUartTask(void *pvParameters)
     for(;;) {
         if (xQueueReceive(xMbUartQueue, (void*)&xEvent, portMAX_DELAY) == pdTRUE) {
             ESP_LOGD(TAG, "MB_uart[%d] event:", ucUartNumber);
-            //vMBPortTimersEnable();
             switch(xEvent.type) {
                 //Event of UART receving data
                 case UART_DATA:
@@ -231,7 +250,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
             FALSE, "mb config failure, uart_param_config() returned (0x%x).", (uint32_t)xErr);
     // Install UART driver, and get the queue.
     xErr = uart_driver_install(ucUartNumber, MB_SERIAL_BUF_SIZE, MB_SERIAL_BUF_SIZE,
-            MB_QUEUE_LENGTH, &xMbUartQueue, ESP_INTR_FLAG_LOWMED);
+                                    MB_QUEUE_LENGTH, &xMbUartQueue, MB_PORT_SERIAL_ISR_FLAG);
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
             "mb serial driver failure, uart_driver_install() returned (0x%x).", (uint32_t)xErr);
 #ifndef MB_TIMER_PORT_ENABLED
@@ -256,7 +275,7 @@ BOOL xMBPortSerialInit(UCHAR ucPORT, ULONG ulBaudRate,
     return TRUE;
 }
 
-void vMBPortSerialClose()
+void vMBPortSerialClose(void)
 {
     (void)vTaskSuspend(xMbTaskHandle);
     (void)vTaskDelete(xMbTaskHandle);

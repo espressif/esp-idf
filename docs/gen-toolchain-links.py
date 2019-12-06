@@ -9,6 +9,15 @@ from __future__ import print_function
 
 import sys
 import os
+from collections import namedtuple
+
+PlatformInfo = namedtuple("PlatformInfo", [
+    "platform_name",
+    "platform_archive_suffix",
+    "extension",
+    "unpack_cmd",
+    "unpack_code"
+])
 
 
 def main():
@@ -44,35 +53,34 @@ def main():
     scratch_build_code_linux_macos = """
 ::
 
-    git clone -b xtensa-1.22.x https://github.com/espressif/crosstool-NG.git
+    git clone https://github.com/espressif/crosstool-NG.git
     cd crosstool-NG
-    ./bootstrap && ./configure --enable-local && make install
+    git checkout {}
+    git submodule update --init
+    ./bootstrap && ./configure --enable-local && make
 """
 
-    platform_info = [["linux64", "tar.gz", "z", unpack_code_linux_macos],
-                     ["linux32", "tar.gz", "z", unpack_code_linux_macos],
-                     ["osx", "tar.gz", "z", unpack_code_linux_macos],
-                     ["win32", "zip", None, None]]
+    platform_info = [
+        PlatformInfo("linux64", "linux-amd64", "tar.gz", "z", unpack_code_linux_macos),
+        PlatformInfo("linux32", "linux-i686","tar.gz", "z", unpack_code_linux_macos),
+        PlatformInfo("osx", "macos", "tar.gz", "z", unpack_code_linux_macos),
+        PlatformInfo("win32", "win32", "zip", None, None)
+    ]
 
     with open(os.path.join(out_dir, 'download-links.inc'), "w") as links_file:
         for p in platform_info:
-            platform_name = p[0]
-            extension = p[1]
-            unpack_cmd = p[2]
-            unpack_code = p[3]
-
-            archive_name = 'xtensa-esp32-elf-{}-{}-{}.{}'.format(
-                platform_name, toolchain_desc, gcc_version, extension)
+            archive_name = 'xtensa-esp32-elf-gcc{}-{}-{}.{}'.format(
+                gcc_version.replace('.', '_'), toolchain_desc, p.platform_archive_suffix, p.extension)
 
             print('.. |download_link_{}| replace:: {}{}'.format(
-                platform_name, base_url, archive_name), file=links_file)
+                p.platform_name, base_url, archive_name), file=links_file)
 
-            if unpack_code is not None:
-                with open(os.path.join(out_dir, 'unpack-code-%s.inc' % platform_name), "w") as f:
-                    print(unpack_code.format(unpack_cmd, archive_name), file=f)
+            if p.unpack_code is not None:
+                with open(os.path.join(out_dir, 'unpack-code-%s.inc' % p.platform_name), "w") as f:
+                    print(p.unpack_code.format(p.unpack_cmd, archive_name), file=f)
 
     with open(os.path.join(out_dir, 'scratch-build-code.inc'), "w") as code_file:
-        print(scratch_build_code_linux_macos, file=code_file)
+        print(scratch_build_code_linux_macos.format(toolchain_desc), file=code_file)
 
 
 if __name__ == "__main__":

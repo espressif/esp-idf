@@ -6,7 +6,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "soc/uart_reg.h"
+#include "soc/uart_periph.h"
 #include "test_apb_dport_access.h"
 #include "test_utils.h"
 
@@ -17,7 +17,7 @@ static void apb_access_loop_task(void *ignore);
 static volatile bool apb_access_corrupt;
 static TaskHandle_t apb_task_handle;
 
-void start_apb_access_loop()
+void start_apb_access_loop(void)
 {
     apb_access_corrupt = false;
     xTaskCreatePinnedToCore(apb_access_loop_task, "accessAPB", 2048, NULL,
@@ -25,7 +25,7 @@ void start_apb_access_loop()
                             &apb_task_handle, !UNITY_FREERTOS_CPU);
 }
 
-void verify_apb_access_loop()
+void verify_apb_access_loop(void)
 {
     vTaskDelete(apb_task_handle);
     apb_task_handle = NULL;
@@ -45,11 +45,11 @@ static void apb_access_loop_task(void *ignore)
 
 #else /*CONFIG_FREERTOS_UNICORE */
 
-void start_apb_access_loop()
+void start_apb_access_loop(void)
 {
 }
 
-void verify_apb_access_loop()
+void verify_apb_access_loop(void)
 {
 }
 

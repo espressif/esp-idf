@@ -1,15 +1,18 @@
-set(COMPONENT_SRCS "src/diskio.c"
-                   "src/diskio_rawflash.c"
-                   "src/diskio_sdmmc.c"
-                   "src/diskio_wl.c"
-                   "src/ff.c"
-                   "src/ffsystem.c"
-                   "src/ffunicode.c"
-                   "src/vfs_fat.c"
-                   "src/vfs_fat_sdmmc.c"
-                   "src/vfs_fat_spiflash.c")
-set(COMPONENT_ADD_INCLUDEDIRS src)
+set(srcs "diskio/diskio.c"
+         "diskio/diskio_rawflash.c"
+         "diskio/diskio_sdmmc.c"
+         "diskio/diskio_wl.c"
+         "src/ff.c"
+         "port/freertos/ffsystem.c"
+         "src/ffunicode.c"
+         "vfs/vfs_fat.c"
+         "vfs/vfs_fat_spiflash.c")
 
-set(COMPONENT_REQUIRES wear_levelling sdmmc)
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND srcs "vfs/vfs_fat_sdmmc.c")
+endif()
 
-register_component()
+idf_component_register(SRCS ${srcs}
+                       INCLUDE_DIRS diskio vfs src
+                       REQUIRES wear_levelling sdmmc
+                      )

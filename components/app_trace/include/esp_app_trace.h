@@ -33,7 +33,7 @@ typedef enum {
  *
  * @return ESP_OK on success, otherwise see esp_err_t
  */
-esp_err_t esp_apptrace_init();
+esp_err_t esp_apptrace_init(void);
 
 /**
  * @brief Configures down buffer.

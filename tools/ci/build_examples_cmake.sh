@@ -34,7 +34,7 @@ set -o pipefail # Exit if pipe failed.
 # Remove the initial space and instead use '\n'.
 IFS=$'\n\t'
 
-export PATH="$IDF_PATH/tools:$PATH"  # for idf.py
+export PATH="$IDF_PATH/tools/ci:$IDF_PATH/tools:$PATH"
 
 # -----------------------------------------------------------------------------
 
@@ -49,10 +49,10 @@ die() {
 
 set -o nounset # Exit if variable not set.
 
-echo "build_examples running in ${PWD}"
+echo "build_examples running in ${PWD} for target $IDF_TARGET"
 
 # only 0 or 1 arguments
-[ $# -le 1 ] || die "Have to run as $(basename $0) [<JOB_NAME>]"
+[ $# -le 1 ] || die "Have to run as $(basename $0) [<START_EXAMPLE_NUMBER>]"
 
 export BATCH_BUILD=1
 export V=0 # only build verbose if there's an error
@@ -66,32 +66,26 @@ LOG_SUSPECTED=${LOG_PATH}/common_log.txt
 touch ${LOG_SUSPECTED}
 SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
-EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/common_components/" | grep -v "/main/" | sort )
+EXAMPLE_PATHS=$( get_supported_examples.sh $IDF_TARGET | sed "s#^#${IDF_PATH}\/examples\/#g" | awk '{print $0"/CmakeLists.txt"}' )
+NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
+# just a plausibility check
+[ ${NUM_OF_EXAMPLES} -lt 50 ] && die "NUM_OF_EXAMPLES is bad"
 
-if [ $# -eq 0 ]
+echo "All examples found for target $IDF_TARGET:"
+echo $EXAMPLE_PATHS
+echo "Number of examples: $NUM_OF_EXAMPLES"
+
+if [ -z "${CI_NODE_TOTAL:-}" ]
 then
     START_NUM=0
-    END_NUM=999
+    if [ "${1:-}" ]; then
+        START_NUM=$1
+    fi
+    END_NUM=${NUM_OF_EXAMPLES}
 else
-    JOB_NAME=$1
-
-    # parse text prefix at the beginning of string 'some_your_text_NUM'
-    # (will be 'some_your_text' without last '_')
-    JOB_PATTERN=$( echo ${JOB_NAME} | sed -n -r 's/^(.*)_[0-9]+$/\1/p' )
-    [ -z ${JOB_PATTERN} ] && die "JOB_PATTERN is bad"
-
-    # parse number 'NUM' at the end of string 'some_your_text_NUM'
-    # NOTE: Getting rid of the leading zero to get the decimal
-    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_0*([0-9]+)$/\1/p' )
-    [ -z ${JOB_NUM} ] && die "JOB_NUM is bad"
-
+    JOB_NUM=${CI_NODE_INDEX}
     # count number of the jobs
-    NUM_OF_JOBS=$( grep -c -E "^${JOB_PATTERN}_[0-9]+:$" "${IDF_PATH}/.gitlab-ci.yml" )
-    [ -z ${NUM_OF_JOBS} ] && die "NUM_OF_JOBS is bad"
-
-    # count number of examples
-    NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
-    [ ${NUM_OF_EXAMPLES} -lt 100 ] && die "NUM_OF_EXAMPLES is bad"
+    NUM_OF_JOBS=${CI_NODE_TOTAL}
 
     # separate intervals
     #57 / 5 == 12
@@ -99,10 +93,10 @@ else
     [ -z ${NUM_OF_EX_PER_JOB} ] && die "NUM_OF_EX_PER_JOB is bad"
 
     # ex.: [0; 12); [12; 24); [24; 36); [36; 48); [48; 60)
-    START_NUM=$(( ${JOB_NUM} * ${NUM_OF_EX_PER_JOB} ))
+    START_NUM=$(( (${JOB_NUM} - 1) * ${NUM_OF_EX_PER_JOB} ))
     [ -z ${START_NUM} ] && die "START_NUM is bad"
 
-    END_NUM=$(( (${JOB_NUM} + 1) * ${NUM_OF_EX_PER_JOB} ))
+    END_NUM=$(( ${JOB_NUM} * ${NUM_OF_EX_PER_JOB} ))
     [ -z ${END_NUM} ] && die "END_NUM is bad"
 fi
 
@@ -115,13 +109,13 @@ build_example () {
     local EXAMPLE_DIR=$(dirname "${CMAKELISTS}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
 
-    echo "Building ${EXAMPLE_NAME} as ${ID}..."
-    mkdir -p "example_builds/${ID}"
-    cp -r "${EXAMPLE_DIR}" "example_builds/${ID}"
-    pushd "example_builds/${ID}/${EXAMPLE_NAME}"
+    echo "Building ${EXAMPLE_NAME} for ${IDF_TARGET} as ${ID}..."
+    mkdir -p "example_builds/${IDF_TARGET}/${ID}"
+    cp -r "${EXAMPLE_DIR}" "example_builds/${IDF_TARGET}/${ID}"
+    pushd "example_builds/${IDF_TARGET}/${ID}/${EXAMPLE_NAME}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-        export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+        export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
         # sdkconfig files are normally not checked into git, but may be present when
         # a developer runs this script locally
@@ -142,8 +136,8 @@ build_example () {
             idf.py build >>${BUILDLOG} 2>&1
         else
             rm -rf build &&
-            ./build.sh >>${BUILDLOG} 2>&1
-        fi &&
+            ./build-esp32.sh >>${BUILDLOG} 2>&1
+        fi ||
         {
             RESULT=$?; FAILED_EXAMPLES+=" ${EXAMPLE_NAME}" ;
         }
@@ -151,10 +145,12 @@ build_example () {
         cat ${BUILDLOG}
     popd
 
-    grep -i "error\|warning" "${BUILDLOG}" 2>&1 | grep -v "error.c.obj" >> "${LOG_SUSPECTED}" || :
+    grep -i "error\|warning" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
 }
 
 EXAMPLE_NUM=0
+
+echo "Current job will build example ${START_NUM} - ${END_NUM}"
 
 for EXAMPLE_PATH in ${EXAMPLE_PATHS}
 do
@@ -179,6 +175,7 @@ echo -e "\nFound issues:"
 # 'Compiler and toochain versions is not supported' from crosstool_version_check.cmake
 IGNORE_WARNS="\
 library/error\.o\
+\|.*error.*\.c\.obj\
 \|\ -Werror\
 \|error\.d\
 \|reassigning to symbol\

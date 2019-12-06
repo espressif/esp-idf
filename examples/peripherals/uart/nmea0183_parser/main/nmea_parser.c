@@ -699,7 +699,7 @@ nmea_parser_handle_t nmea_parser_init(const nmea_parser_config_t *config)
         goto err_uart_install;
     }
     /* Set pattern interrupt, used to detect the end of a line */
-    uart_enable_pattern_det_intr(esp_gps->uart_port, '\n', 1, 10000, 10, 10);
+    uart_enable_pattern_det_baud_intr(esp_gps->uart_port, '\n', 1, 9, 0, 0);
     /* Set pattern queue size */
     uart_pattern_queue_reset(esp_gps->uart_port, config->uart.event_queue_size);
     uart_flush(esp_gps->uart_port);

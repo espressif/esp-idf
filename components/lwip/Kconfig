@@ -1,6 +1,20 @@
 menu "LWIP"
 
-    config L2_TO_L3_COPY
+    config LWIP_LOCAL_HOSTNAME
+        string "Local netif hostname"
+        default 'espressif'
+        help
+            The name this device will report to other devices on the network
+
+    config LWIP_DNS_SUPPORT_MDNS_QUERIES
+        bool "Enable mDNS queries in resolving host name"
+        default y
+        help
+            If this feature is enabled, standard API such as gethostbyname
+            support .local addresses by sending one shot multicast mDNS
+            query
+
+    config LWIP_L2_TO_L3_COPY
         bool "Enable copy between Layer2 and Layer3 packets"
         default n
         help
@@ -27,6 +41,16 @@ menu "LWIP"
 
             If this feature is disabled, all lwip functions will be put into FLASH.
 
+    config LWIP_TIMERS_ONDEMAND
+        bool "Enable LWIP Timers on demand"
+        default y
+        help
+            If this feature is enabled, IGMP and MLD6 timers will be activated only
+            when joining groups or receiving QUERY packets.
+
+            This feature will reduce the power consumption for applications which do not
+            use IGMP and MLD6.
+
     config LWIP_MAX_SOCKETS
         int "Max number of open sockets"
         range 1 16
@@ -37,7 +61,7 @@ menu "LWIP"
             the maximum amount of sockets here. The valid value is from 1
             to 16.
 
-    config USE_ONLY_LWIP_SELECT
+    config LWIP_USE_ONLY_LWIP_SELECT
         bool "Support LWIP socket select() only"
         default n
         help
@@ -74,14 +98,12 @@ menu "LWIP"
         help
             Enabling this option allows checking for available data on a netconn.
 
-    config LWIP_DHCP_MAX_NTP_SERVERS
-        int "Maximum number of NTP servers"
-        default 1
-        range 1 16
+    config LWIP_NETBUF_RECVINFO
+        bool "Enable IP_PKTINFO option"
+        default n
         help
-            Set maximum number of NTP servers used by LwIP SNTP module.
-            First argument of sntp_setserver/sntp_setservername functions
-            is limited to this value.
+            Enabling this option allows checking for the destination address
+            of a received IPv4 Packet.
 
     config LWIP_IP_FRAG
         bool "Enable fragment outgoing IP packets"
@@ -128,7 +150,7 @@ menu "LWIP"
             So the recommendation is to disable this option.
             Here the LAN peer means the other side to which the ESP station or soft-AP is connected.
 
-    config ESP_GRATUITOUS_ARP
+    config LWIP_ESP_GRATUITOUS_ARP
         bool "Send gratuitous ARP periodically"
         default y
         help
@@ -138,17 +160,18 @@ menu "LWIP"
             doesn't send ARP request to update it's ARP table, this will lead to the STA sending IP packet fail.
             Thus we send gratuitous ARP periodically to let AP update it's ARP table.
 
-    config GARP_TMR_INTERVAL
+    config LWIP_GARP_TMR_INTERVAL
         int "GARP timer interval(seconds)"
         default 60
-        depends on ESP_GRATUITOUS_ARP
+        depends on LWIP_ESP_GRATUITOUS_ARP
         help
             Set the timer interval for gratuitous ARP. The default value is 60s
 
-    config TCPIP_RECVMBOX_SIZE
+    config LWIP_TCPIP_RECVMBOX_SIZE
         int "TCPIP task receive mail box size"
         default 32
-        range 6 64
+        range 6 64 if !LWIP_WND_SCALE
+        range 6 1024 if LWIP_WND_SCALE
         help
             Set TCPIP task receive mail box size. Generally bigger value means higher throughput
             but more memory. The value should be bigger than UDP/TCP mail box size.
@@ -278,36 +301,47 @@ menu "LWIP"
                 new listening TCP connections after the limit is reached.
 
 
-        config TCP_MAXRTX
+        config LWIP_TCP_MAXRTX
             int "Maximum number of retransmissions of data segments"
             default 12
             range 3 12
             help
                 Set maximum number of retransmissions of data segments.
 
-        config TCP_SYNMAXRTX
+        config LWIP_TCP_SYNMAXRTX
             int "Maximum number of retransmissions of SYN segments"
             default 6
             range 3 12
             help
                 Set maximum number of retransmissions of SYN segments.
 
-        config TCP_MSS
+        config LWIP_TCP_MSS
             int "Maximum Segment Size (MSS)"
-            default 1436
-            range 1220 1436
+            default 1440
+            range 536 1460
             help
                 Set maximum segment size for TCP transmission.
 
-                Can be set lower to save RAM, the default value 1436 will give best throughput.
+                Can be set lower to save RAM, the default value 1460(ipv4)/1440(ipv6) will give best throughput.
+                IPv4 TCP_MSS Range: 576 <= TCP_MSS <= 1460
+                IPv6 TCP_MSS Range: 1220<= TCP_mSS <= 1440
 
-        config TCP_MSL
+        config LWIP_TCP_TMR_INTERVAL
+            int "TCP timer interval(ms)"
+            default 250
+            help
+                Set TCP timer interval in milliseconds.
+
+                Can be used to speed connections on bad networks.
+                A lower value will redeliver unacked packets faster.
+
+        config LWIP_TCP_MSL
             int "Maximum segment lifetime (MSL)"
             default 60000
             help
                 Set maximum segment lifetime in in milliseconds.
 
-        config TCP_SND_BUF_DEFAULT
+        config LWIP_TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
             default 5744  # 4 * default MSS
             range 2440 65535
@@ -323,7 +357,7 @@ menu "LWIP"
                 Setting a smaller default SNDBUF size can save some RAM, but
                 will decrease performance.
 
-        config TCP_WND_DEFAULT
+        config LWIP_TCP_WND_DEFAULT
             int "Default receive window size"
             default 5744 # 4 * default MSS
             range 2440 65535
@@ -336,27 +370,28 @@ menu "LWIP"
                 Setting a smaller default receive window size can save some RAM,
                 but will significantly decrease performance.
 
-        config TCP_RECVMBOX_SIZE
+        config LWIP_TCP_RECVMBOX_SIZE
             int "Default TCP receive mail box size"
             default 6
-            range 6 64
+            range 6 64 if !LWIP_WND_SCALE
+            range 6 1024 if LWIP_WND_SCALE
             help
                 Set TCP receive mail box size. Generally bigger value means higher throughput
-                but more memory. The recommended value is: TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if
-                TCP_WND_DEFAULT=14360, TCP_MSS=1436, then the recommended receive mail box size is
+                but more memory. The recommended value is: LWIP_TCP_WND_DEFAULT/TCP_MSS + 2, e.g. if
+                LWIP_TCP_WND_DEFAULT=14360, TCP_MSS=1436, then the recommended receive mail box size is
                 (14360/1436 + 2) = 12.
 
                 TCP receive mail box is a per socket mail box, when the application receives packets
                 from TCP socket, LWIP core firstly posts the packets to TCP receive mail box and the
                 application then fetches the packets from mail box. It means LWIP can caches maximum
-                TCP_RECCVMBOX_SIZE packets for each TCP socket, so the maximum possible cached TCP packets
-                for all TCP sockets is TCP_RECCVMBOX_SIZE multiples the maximum TCP socket number. In other
-                words, the bigger TCP_RECVMBOX_SIZE means more memory.
+                LWIP_TCP_RECCVMBOX_SIZE packets for each TCP socket, so the maximum possible cached TCP packets
+                for all TCP sockets is LWIP_TCP_RECCVMBOX_SIZE multiples the maximum TCP socket number. In other
+                words, the bigger LWIP_TCP_RECVMBOX_SIZE means more memory.
                 On the other hand, if the receiv mail box is too small, the mail box may be full. If the
                 mail box is full, the LWIP drops the packets. So generally we need to make sure the TCP
                 receive mail box is big enough to avoid packet drop between LWIP core and application.
 
-        config TCP_QUEUE_OOSEQ
+        config LWIP_TCP_QUEUE_OOSEQ
             bool "Queue incoming out-of-order segments"
             default y
             help
@@ -365,7 +400,7 @@ menu "LWIP"
                 Disable this option to save some RAM during TCP sessions, at the expense
                 of increased retransmissions if segments arrive out of order.
 
-        config ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
+        config LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
             bool "Keep TCP connections when IP changed"
             default n
             help
@@ -375,9 +410,9 @@ menu "LWIP"
                 Disable this option to keep consistent with the original LWIP code behavior.
 
 
-        choice TCP_OVERSIZE
+        choice LWIP_TCP_OVERSIZE
             prompt "Pre-allocate transmit PBUF size"
-            default TCP_OVERSIZE_MSS
+            default LWIP_TCP_OVERSIZE_MSS
             help
                 Allows enabling "oversize" allocation of TCP transmission pbufs ahead of time,
                 which can reduce the length of pbuf chains used for transmission.
@@ -390,14 +425,29 @@ menu "LWIP"
                 have worst performance and fragmentation characteristics, but uses
                 least RAM overall.
 
-            config TCP_OVERSIZE_MSS
+            config LWIP_TCP_OVERSIZE_MSS
                 bool "MSS"
-            config TCP_OVERSIZE_QUARTER_MSS
+            config LWIP_TCP_OVERSIZE_QUARTER_MSS
                 bool "25% MSS"
-            config TCP_OVERSIZE_DISABLE
+            config LWIP_TCP_OVERSIZE_DISABLE
                 bool "Disabled"
 
         endchoice
+
+        config LWIP_WND_SCALE
+            bool "Support TCP window scale"
+            depends on SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default n
+            help
+                Enable this feature to support TCP window scaling.
+
+        config LWIP_TCP_RCV_SCALE
+            int "Set TCP receiving window scaling factor"
+            depends on LWIP_WND_SCALE
+            range 0 14
+            default 0
+            help
+                Enable this feature to support TCP window scaling.
 
     endmenu # TCP
 
@@ -413,7 +463,7 @@ menu "LWIP"
                 The practical maximum limit is determined by available
                 heap memory at runtime.
 
-        config UDP_RECVMBOX_SIZE
+        config LWIP_UDP_RECVMBOX_SIZE
             int "Default UDP receive mail box size"
             default 6
             range 6 64
@@ -432,7 +482,7 @@ menu "LWIP"
 
     endmenu # UDP
 
-    config TCPIP_TASK_STACK_SIZE
+    config LWIP_TCPIP_TASK_STACK_SIZE
         int "TCP/IP Task Stack Size"
         default 3072
         # for high log levels, tcpip_adapter API calls can end up
@@ -443,32 +493,32 @@ menu "LWIP"
             Configure TCP/IP task stack size, used by LWIP to process multi-threaded TCP/IP operations.
             Setting this stack too small will result in stack overflow crashes.
 
-    choice TCPIP_TASK_AFFINITY
+    choice LWIP_TCPIP_TASK_AFFINITY
         prompt "TCP/IP task affinity"
-        default TCPIP_TASK_AFFINITY_NO_AFFINITY
+        default LWIP_TCPIP_TASK_AFFINITY_NO_AFFINITY
         help
             Allows setting LwIP tasks affinity, i.e. whether the task is pinned to
             CPU0, pinned to CPU1, or allowed to run on any CPU.
             Currently this applies to "TCP/IP" task and "Ping" task.
 
-        config TCPIP_TASK_AFFINITY_NO_AFFINITY
+        config LWIP_TCPIP_TASK_AFFINITY_NO_AFFINITY
             bool "No affinity"
-        config TCPIP_TASK_AFFINITY_CPU0
+        config LWIP_TCPIP_TASK_AFFINITY_CPU0
             bool "CPU0"
-        config TCPIP_TASK_AFFINITY_CPU1
+        config LWIP_TCPIP_TASK_AFFINITY_CPU1
             bool "CPU1"
             depends on !FREERTOS_UNICORE
 
     endchoice
 
-    config TCPIP_TASK_AFFINITY
+    config LWIP_TCPIP_TASK_AFFINITY
         hex
-        default FREERTOS_NO_AFFINITY if TCPIP_TASK_AFFINITY_NO_AFFINITY
-        default 0x0 if TCPIP_TASK_AFFINITY_CPU0
-        default 0x1 if TCPIP_TASK_AFFINITY_CPU1
+        default FREERTOS_NO_AFFINITY if LWIP_TCPIP_TASK_AFFINITY_NO_AFFINITY
+        default 0x0 if LWIP_TCPIP_TASK_AFFINITY_CPU0
+        default 0x1 if LWIP_TCPIP_TASK_AFFINITY_CPU1
 
 
-    menuconfig PPP_SUPPORT
+    menuconfig LWIP_PPP_SUPPORT
         bool "Enable PPP support (new/experimental)"
         default n
         help
@@ -476,44 +526,44 @@ menu "LWIP"
 
             PPP over serial support is experimental and unsupported.
 
-    config PPP_NOTIFY_PHASE_SUPPORT
+    config LWIP_PPP_NOTIFY_PHASE_SUPPORT
         bool "Enable Notify Phase Callback"
-        depends on PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT
         default n
         help
             Enable to set a callback which is called on change of the internal PPP state machine.
 
-    config PPP_PAP_SUPPORT
+    config LWIP_PPP_PAP_SUPPORT
         bool "Enable PAP support"
-        depends on PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT
         default n
         help
             Enable Password Authentication Protocol (PAP) support
 
-    config PPP_CHAP_SUPPORT
+    config LWIP_PPP_CHAP_SUPPORT
         bool "Enable CHAP support"
-        depends on PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT
         default n
         help
             Enable Challenge Handshake Authentication Protocol (CHAP) support
 
-    config PPP_MSCHAP_SUPPORT
+    config LWIP_PPP_MSCHAP_SUPPORT
         bool "Enable MSCHAP support"
-        depends on PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT
         default n
         help
             Enable Microsoft version of the Challenge-Handshake Authentication Protocol (MSCHAP) support
 
-    config PPP_MPPE_SUPPORT
+    config LWIP_PPP_MPPE_SUPPORT
         bool "Enable MPPE support"
-        depends on PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT
         default n
         help
             Enable Microsoft Point-to-Point Encryption (MPPE) support
 
-    config PPP_DEBUG_ON
+    config LWIP_PPP_DEBUG_ON
         bool "Enable PPP debug log output"
-        depends on PPP_SUPPORT
+        depends on LWIP_PPP_SUPPORT
         default n
         help
             Enable PPP debug log output
@@ -542,5 +592,27 @@ menu "LWIP"
                 limit is determined by available heap memory at runtime.
 
     endmenu  # LWIP RAW API
+
+    menu "SNTP"
+
+        config LWIP_DHCP_MAX_NTP_SERVERS
+            int "Maximum number of NTP servers"
+            default 1
+            range 1 16
+            help
+                Set maximum number of NTP servers used by LwIP SNTP module.
+                First argument of sntp_setserver/sntp_setservername functions
+                is limited to this value.
+
+        config LWIP_SNTP_UPDATE_DELAY
+            int "Request interval to update time (ms)"
+            range 15000 4294967295
+            default 3600000
+            help
+                This option allows you to set the time update period via SNTP.
+                Default is 1 hour. Must not be below 15 seconds by specification.
+                (SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds).
+
+    endmenu # SNTP
 
 endmenu

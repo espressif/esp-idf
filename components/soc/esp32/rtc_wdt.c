@@ -16,34 +16,34 @@
 #include "soc/rtc.h"
 
 
-bool rtc_wdt_get_protect_status()
+bool rtc_wdt_get_protect_status(void)
 {
     return READ_PERI_REG(RTC_CNTL_WDTWPROTECT_REG) != RTC_CNTL_WDT_WKEY_VALUE;
 }
 
-void rtc_wdt_protect_off()
+void rtc_wdt_protect_off(void)
 {
     WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, RTC_CNTL_WDT_WKEY_VALUE);
 }
 
-void rtc_wdt_protect_on()
+void rtc_wdt_protect_on(void)
 {
     WRITE_PERI_REG(RTC_CNTL_WDTWPROTECT_REG, 0);
 }
 
 
-void rtc_wdt_enable()
+void rtc_wdt_enable(void)
 {
     REG_SET_BIT(RTC_CNTL_WDTFEED_REG, RTC_CNTL_WDT_FEED);
     SET_PERI_REG_MASK(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN | RTC_CNTL_WDT_PAUSE_IN_SLP);
 }
 
-void rtc_wdt_flashboot_mode_enable()
+void rtc_wdt_flashboot_mode_enable(void)
 {
     REG_SET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN);
 }
 
-void rtc_wdt_disable()
+void rtc_wdt_disable(void)
 {
     bool protect = rtc_wdt_get_protect_status();
     if (protect) {
@@ -61,7 +61,7 @@ void rtc_wdt_disable()
     }
 }
 
-void rtc_wdt_feed()
+void rtc_wdt_feed(void)
 {
     bool protect = rtc_wdt_get_protect_status();
     if (protect) {
@@ -145,7 +145,7 @@ esp_err_t rtc_wdt_set_length_of_reset_signal(rtc_wdt_reset_sig_t reset_src, rtc_
     return ESP_OK;
 }
 
-bool rtc_wdt_is_on()
+bool rtc_wdt_is_on(void)
 {
     return (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_EN) != 0) || (REG_GET_BIT(RTC_CNTL_WDTCONFIG0_REG, RTC_CNTL_WDT_FLASHBOOT_MOD_EN) != 0);
 }

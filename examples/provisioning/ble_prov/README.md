@@ -47,7 +47,7 @@ There are various applications, specific to Windows and macOS platform which can
 ### Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 * Set serial port under Serial Flasher Options.
@@ -61,7 +61,7 @@ make menuconfig
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)
@@ -80,7 +80,7 @@ Make sure to note down the BLE device name (starting with PROV_) displayed in th
 In a separate terminal run the `esp_prov.py` script under `$IDP_PATH/tools/esp_prov` directory (please replace `myssid` and `mypassword` with the credentials of the AP to which the device is supposed to connect to after provisioning). Assuming default example configuration :
 
 ```
-python esp_prov.py --ssid myssid --passphrase mypassword --sec_ver 1 --pop abcd1234 --transport ble --ble_devname PROV_261FCC
+python esp_prov.py --transport ble --service_name PROV_261FCC --sec_ver 1 --pop abcd1234 --ssid myssid --passphrase mypassword
 ```
 
 Above command will perform the provisioning steps, and the monitor log should display something like this :
@@ -140,7 +140,7 @@ It means the Wi-Fi credentials were already set by some other application flashe
 
 ```
 make erase_flash
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 Or, enable `Reset Provisioning` option under `Example Configuration` under menuconfig. But this will erase the saved Wi-Fi credentials every time the device boots, so this is not the preferred solution.
@@ -150,7 +150,6 @@ Or, enable `Reset Provisioning` option under `Example Configuration` under menuc
 If the platform requirement, for running `esp_prov` is not satisfied, then the script execution will fallback to console mode, in which case the full process (involving user inputs) will look like this :
 
 ```
-==== Esp_Prov Version: V0.1 ====
 BLE client is running in console mode
     This could be due to your platform not being supported or dependencies not being met
     Please ensure all pre-requisites are met to run the full fledged client

@@ -56,7 +56,7 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic);
  *      - ESP_ERR_INVALID_STATE: Error, tasks are still subscribed to the TWDT
  *      - ESP_ERR_NOT_FOUND: Error, TWDT has already been deinitialized
  */
-esp_err_t esp_task_wdt_deinit();
+esp_err_t esp_task_wdt_deinit(void);
 
 /**
   * @brief  Subscribe a task to the Task Watchdog Timer (TWDT)
@@ -102,7 +102,7 @@ esp_err_t esp_task_wdt_add(TaskHandle_t handle);
   *                          to the TWDT
   *     - ESP_ERR_INVALID_STATE: Error, the TWDT has not been initialized yet
   */
-esp_err_t esp_task_wdt_reset();
+esp_err_t esp_task_wdt_reset(void);
 
 /**
   * @brief  Unsubscribes a task from the Task Watchdog Timer (TWDT)
@@ -140,22 +140,6 @@ esp_err_t esp_task_wdt_delete(TaskHandle_t handle);
   *                              can be subscribed
   */
 esp_err_t esp_task_wdt_status(TaskHandle_t handle);
-
-/**
-  * @brief      Reset the TWDT on behalf of the current running task, or
-  *             subscribe the TWDT to if it has not done so already
-  *
-  * @warning    This function is deprecated, use esp_task_wdt_add() and
-  *             esp_task_wdt_reset() instead
-  *
-  * This function is similar to esp_task_wdt_reset() and will reset the TWDT on
-  * behalf of the current running task. However if this task has not subscribed
-  * to the TWDT, this function will automatically subscribe the task. Therefore,
-  * an unsubscribed task will subscribe to the TWDT on its first call to this
-  * function, then proceed to reset the TWDT on subsequent calls of this
-  * function.
-  */
-void esp_task_wdt_feed() __attribute__ ((deprecated));
 
 
 #ifdef __cplusplus

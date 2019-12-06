@@ -18,7 +18,7 @@
 //
 // This exception stub is enabled only if exceptions are disabled in menuconfig
 //
-#if !defined(CONFIG_CXX_EXCEPTIONS) && defined (ASIO_NO_EXCEPTIONS)
+#if !defined(CONFIG_COMPILER_CXX_EXCEPTIONS) && defined (ASIO_NO_EXCEPTIONS)
 
 #include "esp_log.h"
 
@@ -34,6 +34,6 @@ void throw_exception(const Exception& e)
   abort();
 }
 }}
-#endif // CONFIG_CXX_EXCEPTIONS==1 && defined (ASIO_NO_EXCEPTIONS)
+#endif // CONFIG_COMPILER_CXX_EXCEPTIONS==1 && defined (ASIO_NO_EXCEPTIONS)
 
 #endif // _ESP_EXCEPTION_H_

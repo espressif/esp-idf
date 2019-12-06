@@ -21,7 +21,9 @@ void spi_hal_setup_device(const spi_hal_context_t *hal)
 {
     //Configure clock settings
     spi_dev_t *hw = hal->hw;
+#ifdef SOC_SPI_SUPPORT_AS_CS
     spi_ll_master_set_cksel(hw, hal->cs_pin_id, hal->as_cs);
+#endif
     spi_ll_master_set_pos_cs(hw, hal->cs_pin_id, hal->positive_cs);
     spi_ll_master_set_clock_by_reg(hw, &hal->timing_conf->clock_reg);
     //Configure bit order
@@ -41,11 +43,12 @@ void spi_hal_setup_trans(const spi_hal_context_t *hal)
 {
     spi_dev_t *hw = hal->hw;
 
+    //clear int bit
     spi_ll_clear_int_stat(hal->hw);
+    //We should be done with the transmission.
     assert(spi_ll_get_running_cmd(hw) == 0);
 
-    //clear int bit
-    spi_ll_master_set_io_mode(hw, SPI_LL_IO_MODE_NORMAL);
+    spi_ll_master_set_io_mode(hw, hal->io_mode);
 
     int extra_dummy = 0;
     //when no_dummy is not set and in half-duplex mode, sets the dummy bit if RX phase exist

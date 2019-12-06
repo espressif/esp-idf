@@ -20,7 +20,6 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "driver/sdmmc_defs.h"
-#include "soc/gpio_reg.h"
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
@@ -29,7 +28,7 @@
 #include <unistd.h>
 
 // Can't test eMMC (slot 0) and PSRAM together
-#ifndef CONFIG_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
 #define WITH_EMMC_TEST
 #endif
 
@@ -49,7 +48,7 @@
 #define CD_WP_TEST_GPIO 18
 
 
-static void sd_test_board_power_on()
+static void sd_test_board_power_on(void)
 {
     gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_OUTPUT);
     gpio_set_level(SD_TEST_BOARD_VSEL_GPIO, SD_TEST_BOARD_VSEL_3V3);
@@ -60,7 +59,7 @@ static void sd_test_board_power_on()
     usleep(SD_TEST_BOARD_PWR_ON_DELAY_MS * 1000);
 }
 
-static void sd_test_board_power_off()
+static void sd_test_board_power_off(void)
 {
     gpio_set_level(SD_TEST_BOARD_VSEL_EN_GPIO, 0);
     gpio_set_direction(SD_TEST_BOARD_VSEL_GPIO, GPIO_MODE_INPUT);

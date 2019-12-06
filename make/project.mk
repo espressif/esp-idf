@@ -126,7 +126,7 @@ export PROJECT_PATH
 endif
 
 # A list of the "common" makefiles, to use as a target dependency
-COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/version.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
 export COMMON_MAKEFILES
 
 # The directory where we put all objects/libraries/binaries. The project Makefile can
@@ -320,9 +320,15 @@ ifndef CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 endif
 	@echo "To flash app & partition table, run 'make flash' or:"
 else
+ifdef CONFIG_APP_BUILD_GENERATE_BINARIES
 	@echo "To flash all build output, run 'make flash' or:"
 endif
+endif
+ifdef CONFIG_APP_BUILD_GENERATE_BINARIES
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)
+else
+	@echo "Binary is not available for flashing"
+endif
 
 
 # If we have `version.txt` then prefer that for extracting IDF version
@@ -375,7 +381,7 @@ COMMON_WARNING_FLAGS = -Wall -Werror=all \
 	-Wextra \
 	-Wno-unused-parameter -Wno-sign-compare
 
-ifdef CONFIG_DISABLE_GCC8_WARNINGS
+ifdef CONFIG_COMPILER_DISABLE_GCC8_WARNINGS
 COMMON_WARNING_FLAGS += -Wno-parentheses \
 	-Wno-sizeof-pointer-memaccess \
 	-Wno-clobbered \
@@ -391,9 +397,9 @@ COMMON_WARNING_FLAGS += -Wno-parentheses \
 	-Wno-int-in-bool-context
 endif
 
-ifdef CONFIG_WARN_WRITE_STRINGS
+ifdef CONFIG_COMPILER_WARN_WRITE_STRINGS
 COMMON_WARNING_FLAGS += -Wwrite-strings
-endif #CONFIG_WARN_WRITE_STRINGS
+endif #CONFIG_COMPILER_WARN_WRITE_STRINGS
 
 # Flags which control code generation and dependency generation, both for C and C++
 COMMON_FLAGS = \
@@ -405,25 +411,35 @@ COMMON_FLAGS = \
 
 ifndef IS_BOOTLOADER_BUILD
 # stack protection (only one option can be selected in menuconfig)
-ifdef CONFIG_STACK_CHECK_NORM
+ifdef CONFIG_COMPILER_STACK_CHECK_MODE_NORM
 COMMON_FLAGS += -fstack-protector
 endif
-ifdef CONFIG_STACK_CHECK_STRONG
+ifdef CONFIG_COMPILER_STACK_CHECK_MODE_STRONG
 COMMON_FLAGS += -fstack-protector-strong
 endif
-ifdef CONFIG_STACK_CHECK_ALL
+ifdef CONFIG_COMPILER_STACK_CHECK_MODE_ALL
 COMMON_FLAGS += -fstack-protector-all
 endif
 endif
 
 # Optimization flags are set based on menuconfig choice
-ifdef CONFIG_OPTIMIZATION_LEVEL_RELEASE
-OPTIMIZATION_FLAGS = -Os
-else
+ifdef CONFIG_COMPILER_OPTIMIZATION_SIZE
+OPTIMIZATION_FLAGS = -Os -freorder-blocks
+endif
+
+ifdef CONFIG_COMPILER_OPTIMIZATION_DEFAULT
 OPTIMIZATION_FLAGS = -Og
 endif
 
-ifdef CONFIG_OPTIMIZATION_ASSERTIONS_DISABLED
+ifdef CONFIG_COMPILER_OPTIMIZATION_NONE
+OPTIMIZATION_FLAGS = -O0
+endif
+
+ifdef CONFIG_COMPILER_OPTIMIZATION_PERF
+OPTIMIZATION_FLAGS = -O2
+endif
+
+ifdef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
 CPPFLAGS += -DNDEBUG
 endif
 
@@ -452,17 +468,23 @@ CXXFLAGS ?=
 EXTRA_CXXFLAGS ?=
 CXXFLAGS := $(strip \
 	-std=gnu++11 \
-	-fno-rtti \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
 	$(CXXFLAGS) \
 	$(EXTRA_CXXFLAGS))
 
-ifdef CONFIG_CXX_EXCEPTIONS
+ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
 CXXFLAGS += -fexceptions
 else
 CXXFLAGS += -fno-exceptions
+endif
+
+ifdef CONFIG_COMPILER_CXX_RTTI
+CXXFLAGS += -frtti
+else
+CXXFLAGS += -fno-rtti
+LDFLAGS += -fno-rtti
 endif
 
 ARFLAGS := cru
@@ -471,13 +493,13 @@ export CFLAGS CPPFLAGS CXXFLAGS ARFLAGS
 
 # Set target compiler. Defaults to whatever the user has
 # configured as prefix + ye olde gcc commands
-CC := $(call dequote,$(CONFIG_TOOLPREFIX))gcc
-CXX := $(call dequote,$(CONFIG_TOOLPREFIX))c++
-LD := $(call dequote,$(CONFIG_TOOLPREFIX))ld
-AR := $(call dequote,$(CONFIG_TOOLPREFIX))ar
-OBJCOPY := $(call dequote,$(CONFIG_TOOLPREFIX))objcopy
-OBJDUMP := $(call dequote,$(CONFIG_TOOLPREFIX))objdump
-SIZE := $(call dequote,$(CONFIG_TOOLPREFIX))size
+CC := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcc
+CXX := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))c++
+LD := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))ld
+AR := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))ar
+OBJCOPY := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))objcopy
+OBJDUMP := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))objdump
+SIZE := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))size
 export CC CXX LD AR OBJCOPY OBJDUMP SIZE
 
 COMPILER_VERSION_STR := $(shell $(CC) -dumpversion)
@@ -502,7 +524,9 @@ $(eval $(call ldgen_create_commands))
 # Include any Makefile.projbuild file letting components add
 # configuration at the project level
 define includeProjBuildMakefile
-$(if $(V),$$(info including $(1)/Makefile.projbuild...))
+ifeq ("$(V)","1")
+$$(info including $(1)/Makefile.projbuild...)
+endif
 COMPONENT_PATH := $(1)
 include $(1)/Makefile.projbuild
 endef
@@ -521,6 +545,7 @@ $(APP_ELF): $(foreach libcomp,$(COMPONENT_LIBRARIES),$(BUILD_DIR_BASE)/$(libcomp
 	$(CC) $(LDFLAGS) -o $@ -Wl,-Map=$(APP_MAP)
 
 app: $(APP_BIN) partition_table_get_info
+ifeq ("$(CONFIG_APP_BUILD_GENERATE_BINARIES)","y")
 ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)","y") # secure boot enabled, but remote sign app image
 	@echo "App built but not signed. Signing step via espsecure.py:"
 	@echo "espsecure.py sign_data --keyfile KEYFILE $(APP_BIN)"
@@ -529,6 +554,9 @@ ifeq ("$(CONFIG_SECURE_BOOT_ENABLED)$(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)"
 else
 	@echo "App built. Default flash app command is:"
 	@echo $(ESPTOOLPY_WRITE_FLASH) $(APP_OFFSET) $(APP_BIN)
+endif
+else
+	@echo "Application in not built and cannot be flashed."
 endif
 
 all_binaries: $(APP_BIN)
@@ -665,7 +693,7 @@ print_flash_cmd: partition_table_get_info blank_ota_data
 # The output normally looks as follows
 #     xtensa-esp32-elf-gcc (crosstool-NG crosstool-ng-1.22.0-80-g6c4433a) 5.2.0
 # The part in brackets is extracted into TOOLCHAIN_COMMIT_DESC variable
-ifdef CONFIG_TOOLPREFIX
+ifdef CONFIG_SDK_TOOLPREFIX
 ifndef MAKE_RESTARTS
 
 TOOLCHAIN_HEADER := $(shell $(CC) --version | head -1)
@@ -704,7 +732,7 @@ $(info WARNING: Failed to find Xtensa toolchain, may need to alter PATH or set o
 endif # TOOLCHAIN_COMMIT_DESC
 
 endif #MAKE_RESTARTS
-endif #CONFIG_TOOLPREFIX
+endif #CONFIG_SDK_TOOLPREFIX
 
 #####################################################################
 endif #CONFIG_IDF_TARGET

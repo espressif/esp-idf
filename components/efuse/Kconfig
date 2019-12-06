@@ -9,7 +9,7 @@ menu "eFuse Bit Manager"
     config EFUSE_CUSTOM_TABLE_FILENAME
         string "Custom eFuse CSV file"
         depends on EFUSE_CUSTOM_TABLE
-        default main/esp_efuse_custom_table.csv
+        default "main/esp_efuse_custom_table.csv"
         help
             Name of the custom eFuse CSV filename. This path is evaluated
             relative to the project root directory.
@@ -25,6 +25,7 @@ menu "eFuse Bit Manager"
     choice EFUSE_CODE_SCHEME_SELECTOR
         prompt "Coding Scheme Compatibility"
         default EFUSE_CODE_SCHEME_COMPAT_3_4
+        depends on IDF_TARGET_ESP32
         help
             Selector eFuse code scheme.
 
@@ -41,5 +42,6 @@ menu "eFuse Bit Manager"
         default 256 if EFUSE_CODE_SCHEME_COMPAT_NONE
         default 192 if EFUSE_CODE_SCHEME_COMPAT_3_4
         default 128 if EFUSE_CODE_SCHEME_COMPAT_REPEAT
+        default 256 if IDF_TARGET_ESP32S2BETA
 
 endmenu

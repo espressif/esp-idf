@@ -1,1 +1,0 @@
-.. include:: ../../en/get-started/get-started-pico-kit-v3.rst

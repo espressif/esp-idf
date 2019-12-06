@@ -10,37 +10,24 @@ if(NOT IDF_PATH)
         "in by the parent build process.")
 endif()
 
-set(COMPONENTS bootloader esptool_py partition_table soc bootloader_support log spi_flash micro-ecc main efuse)
-set(BOOTLOADER_BUILD 1)
-add_definitions(-DBOOTLOADER_BUILD=1)
-
-set(COMPONENT_REQUIRES_COMMON log esp_rom esp_common xtensa)
-
-if (CONFIG_LEGACY_INCLUDE_COMMON_HEADERS)
-    list(APPEND COMPONENT_REQUIRES_COMMON "soc")
+if(NOT IDF_TARGET)
+    message(FATAL_ERROR "Bootloader subproject expects the IDF_TARGET variable to be passed "
+        "in by the parent build process.")
 endif()
 
+set(COMPONENTS bootloader esptool_py partition_table soc bootloader_support log spi_flash micro-ecc main efuse)
+set(BOOTLOADER_BUILD 1)
 include("${IDF_PATH}/tools/cmake/project.cmake")
+set(common_req log esp_rom esp_common xtensa)
+if(LEGACY_INCLUDE_COMMON_HEADERS)
+    list(APPEND common_req soc)
+endif()
+idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
+idf_build_set_property(__OUTPUT_SDKCONFIG 0)
 project(bootloader)
 
-target_linker_script(bootloader.elf
-    "main/${IDF_TARGET}.bootloader.ld"
-    "main/${IDF_TARGET}.bootloader.rom.ld"
-)
-
-# as cmake won't attach linker args to a header-only library, attach
-# linker args directly to the bootloader.elf
-# esp32.rom.newlib-funcs.ld is included to use memset/memcpy.
-set(BOOTLOADER_LINKER_SCRIPTS
-    "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.ld"
-    "${IDF_PATH}/components/esp_rom/${IDF_TARGET}/ld/${IDF_TARGET}.rom.newlib-funcs.ld"
-    "${IDF_PATH}/components/${IDF_TARGET}/ld/${IDF_TARGET}.peripherals.ld")
-
-target_linker_script(bootloader.elf ${BOOTLOADER_LINKER_SCRIPTS})
-
-target_link_libraries(bootloader.elf gcc)
-
-set(secure_boot_signing_key ${SECURE_BOOT_SIGNING_KEY})
+idf_build_set_property(COMPILE_DEFINITIONS "-DBOOTLOADER_BUILD=1" APPEND)
+idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 
 string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
 string(REPLACE ";" " " espefusepy "${ESPEFUSEPY}")
@@ -64,7 +51,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     add_custom_command(OUTPUT "${secure_bootloader_key}"
         COMMAND ${ESPSECUREPY} digest_private_key
             --keylen "${key_digest_len}"
-            --keyfile "${secure_boot_signing_key}"
+            --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             "${secure_bootloader_key}"
         VERBATIM)
 
@@ -78,7 +65,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
                 "\nTo generate one, you can use this command:"
                 "\n\t${espsecurepy} generate_flash_encryption_key ${secure_bootloader_key}"
                 "\nIf a signing key is present, then instead use:"
-                "\n\t${ESPSECUREPY} digest_private_key "
+                "\n\t${espsecurepy} digest_private_key "
                 "--keylen (192/256) --keyfile KEYFILE "
                 "${secure_bootloader_key}")
         endif()
@@ -88,15 +75,16 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     add_custom_command(OUTPUT "${bootloader_digest_bin}"
         COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
         COMMAND ${ESPSECUREPY} digest_secure_bootloader --keyfile "${secure_bootloader_key}"
-            -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
-        DEPENDS gen_secure_bootloader_key "${CMAKE_BINARY_DIR}/bootloader.bin"
+        -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
+        MAIN_DEPENDENCY gen_project_binary
+        DEPENDS gen_secure_bootloader_key gen_project_binary
         VERBATIM)
 
     add_custom_target (gen_bootloader_digest_bin ALL DEPENDS "${bootloader_digest_bin}")
 endif()
 
 if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
-    add_custom_command(TARGET bootloader POST_BUILD
+    add_custom_command(TARGET bootloader.elf POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo
@@ -108,9 +96,8 @@ if(CONFIG_SECURE_BOOTLOADER_ONE_TIME_FLASH)
         COMMAND ${CMAKE_COMMAND} -E echo
             "* IMPORTANT: After first boot, BOOTLOADER CANNOT BE RE-FLASHED on same device"
         VERBATIM)
-
 elseif(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
-    add_custom_command(TARGET bootloader POST_BUILD
+    add_custom_command(TARGET bootloader.elf POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E echo
             "=============================================================================="
         COMMAND ${CMAKE_COMMAND} -E echo

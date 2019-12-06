@@ -21,9 +21,9 @@
 #define I2S_NUM         (0)
 #define WAVE_FREQ_HZ    (100)
 #define PI              (3.14159265)
-#define I2S_BCK_IO      (GPIO_NUM_26)
-#define I2S_WS_IO       (GPIO_NUM_25)
-#define I2S_DO_IO       (GPIO_NUM_22)
+#define I2S_BCK_IO      (GPIO_NUM_13)
+#define I2S_WS_IO       (GPIO_NUM_15)
+#define I2S_DO_IO       (GPIO_NUM_21)
 #define I2S_DI_IO       (-1)
 
 #define SAMPLE_PER_CYCLE (SAMPLE_RATE/WAVE_FREQ_HZ)
@@ -77,7 +77,7 @@ static void setup_triangle_sine_waves(int bits)
 
     free(samples_data);
 }
-void app_main()
+void app_main(void)
 {
     //for 36Khz sample rates, we create 100Hz sine wave, every cycle need 36000/100 = 360 samples (4-bytes or 8-bytes each sample)
     //depend on bits_per_sample

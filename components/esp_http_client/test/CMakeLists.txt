@@ -1,6 +1,3 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_REQUIRES unity test_utils esp_http_client)
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                    INCLUDE_DIRS "."
+                    REQUIRES unity test_utils esp_http_client)

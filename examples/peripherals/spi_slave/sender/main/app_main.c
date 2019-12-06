@@ -24,15 +24,12 @@
 #include "esp_wifi.h"
 #include "esp_system.h"
 #include "esp_event.h"
-#include "esp_event_loop.h"
 #include "nvs_flash.h"
-#include "soc/rtc_cntl_reg.h"
-#include "esp32/rom/cache.h"
+#include "soc/rtc_periph.h"
 #include "driver/spi_master.h"
 #include "esp_log.h"
 #include "esp_spi_flash.h"
 
-#include "soc/gpio_reg.h"
 #include "driver/gpio.h"
 #include "esp_intr_alloc.h"
 
@@ -40,12 +37,12 @@
 /*
 SPI sender (master) example.
 
-This example is supposed to work together with the SPI receiver. It uses the standard SPI pins (MISO, MOSI, SCLK, CS) to 
+This example is supposed to work together with the SPI receiver. It uses the standard SPI pins (MISO, MOSI, SCLK, CS) to
 transmit data over in a full-duplex fashion, that is, while the master puts data on the MOSI pin, the slave puts its own
 data on the MISO pin.
 
 This example uses one extra pin: GPIO_HANDSHAKE is used as a handshake pin. The slave makes this pin high as soon as it is
-ready to receive/send data. This code connects this line to a GPIO interrupt which gives the rdySem semaphore. The main 
+ready to receive/send data. This code connects this line to a GPIO interrupt which gives the rdySem semaphore. The main
 task waits for this semaphore to be given before queueing a transmission.
 */
 
@@ -58,6 +55,17 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define GPIO_MISO 13
 #define GPIO_SCLK 15
 #define GPIO_CS 14
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define SENDER_HOST HSPI_HOST
+#define DMA_CHAN    2
+
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define SENDER_HOST SPI2_HOST
+#define DMA_CHAN    SENDER_HOST
+
+#endif
+
 
 //The semaphore indicating the slave is ready to receive stuff.
 static xQueueHandle rdySem;
@@ -82,7 +90,7 @@ static void IRAM_ATTR gpio_handshake_isr_handler(void* arg)
 }
 
 //Main application
-void app_main()
+void app_main(void)
 {
     esp_err_t ret;
     spi_device_handle_t handle;
@@ -133,12 +141,12 @@ void app_main()
     gpio_isr_handler_add(GPIO_HANDSHAKE, gpio_handshake_isr_handler, NULL);
 
     //Initialize the SPI bus and add the device we want to send stuff to.
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    ret=spi_bus_initialize(SENDER_HOST, &buscfg, DMA_CHAN);
     assert(ret==ESP_OK);
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &handle);
+    ret=spi_bus_add_device(SENDER_HOST, &devcfg, &handle);
     assert(ret==ESP_OK);
 
-    //Assume the slave is ready for the first transmission: if the slave started up before us, we will not detect 
+    //Assume the slave is ready for the first transmission: if the slave started up before us, we will not detect
     //positive edge on the handshake line.
     xSemaphoreGive(rdySem);
 

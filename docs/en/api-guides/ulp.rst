@@ -1,5 +1,7 @@
 ULP coprocessor programming
-===========================
+===================================
+
+:link_to_translation:`zh_CN:[中文]`
 
 .. toctree::
    :maxdepth: 1
@@ -15,49 +17,44 @@ Installing the toolchain
 
 ULP coprocessor code is written in assembly and compiled using the `binutils-esp32ulp toolchain`_.
 
-1. Download pre-built binaries of the latest toolchain release from:
-https://github.com/espressif/binutils-esp32ulp/releases.
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then the ULP toolchain is already installed.
 
-2. Extract the toolchain into a directory, and add the path to the ``bin/`` directory of the toolchain to the ``PATH`` environment variable.
+If you are using ESP-IDF with the legacy GNU Make based build system, refer to the instructions on this page: :doc:`ulp-legacy`.
 
 Compiling ULP code
 ------------------
 
 To compile ULP code as part of a component, the following steps must be taken:
 
-1. ULP code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside component directory, for instance `ulp/`. 
+1. ULP code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside component directory, for instance `ulp/`.
 
-.. note: This directory should not be added to the ``COMPONENT_SRCDIRS`` environment variable. The logic behind this is that the ESP-IDF build system will compile files found in ``COMPONENT_SRCDIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory.
+.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
 
-2. Modify the component makefile, adding the following::
+2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 
-    ULP_APP_NAME ?= ulp_$(COMPONENT_NAME)
-    ULP_S_SOURCES = $(COMPONENT_PATH)/ulp/ulp_source_file.S
-    ULP_EXP_DEP_OBJECTS := main.o
-    include $(IDF_PATH)/components/ulp/component_ulp_common.mk
-   
-   Here is each line explained:
+    ...
+    idf_component_register()
 
-   ULP_APP_NAME
-    Name of the generated ULP application, without an extension. This name is used for build products of the ULP application: ELF file, map file, binary file, generated header file, and generated linker export file.
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_s_sources ulp/ulp_assembly_source_file.S)
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
 
-   ULP_S_SOURCES
-    List of assembly files to be passed to the ULP assembler. These must be absolute paths, i.e. start with ``$(COMPONENT_PATH)``. Consider using ``$(addprefix)`` function if more than one file needs to be listed. Paths are relative to component build directory, so prefixing them is not necessary.
+    ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
 
-   ULP_EXP_DEP_OBJECTS
-    List of object files names within the component which include the generated header file. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See section below explaining the concept of generated header files for ULP applications.
+ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used other generated artifacts 
+ such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP assembly source files. 
+ Finally, the third argument specifies the list of component source files which include the header file to be generated. 
+ This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. 
+ See section below explaining the concept of generated header files for ULP applications. 
 
-   include $(IDF_PATH)/components/ulp/component_ulp_common.mk
-    Includes common definitions of ULP build steps. Defines build targets for ULP object files, ELF file, binary file, etc.
+3. Build the application as usual (e.g. `idf.py app`)
 
-3. Build the application as usual (e.g. `make app`)
-   
    Inside, the build system will take the following steps to build ULP program:
 
-   1. **Run each assembly file (foo.S) through C preprocessor.** This step generates the preprocessed assembly files (foo.ulp.pS) in the component build directory. This step also generates dependency files (foo.ulp.d).
+   1. **Run each assembly file (foo.S) through C preprocessor.** This step generates the preprocessed assembly files (foo.ulp.S) in the component build directory. This step also generates dependency files (foo.ulp.d).
 
    2. **Run preprocessed assembly sources through assembler.** This produces objects (foo.ulp.o) and listing (foo.ulp.lst) files. Listing files are generated for debugging purposes and are not used at later stages of build process.
- 
+
    3. **Run linker script template through C preprocessor.** The template is located in components/ulp/ld directory.
 
    4. **Link object files into an output ELF file** (ulp_app_name.elf). Map file (ulp_app_name.map) generated at this stage may be useful for debugging purposes.
@@ -73,7 +70,7 @@ To compile ULP code as part of a component, the following steps must be taken:
 Accessing ULP program variables
 -------------------------------
 
-Global symbols defined in the ULP program may be used inside the main program. 
+Global symbols defined in the ULP program may be used inside the main program.
 
 For example, ULP program may define a variable ``measurement_count`` which will define the number of ADC measurements the program needs to make before waking up the chip from deep sleep::
 
@@ -84,10 +81,10 @@ For example, ULP program may define a variable ``measurement_count`` which will 
                             move r3, measurement_count
                             ld r3, r3, 0
 
-Main program needs to initialize this variable before ULP program is started. Build system makes this possible by generating a ``$(ULP_APP_NAME).h`` and ``$(ULP_APP_NAME).ld`` files which define global symbols present in the ULP program. This files include each global symbol defined in the ULP program, prefixed with ``ulp_``.
+Main program needs to initialize this variable before ULP program is started. Build system makes this possible by generating a ``${ULP_APP_NAME}.h`` and ``${ULP_APP_NAME}.ld`` files which define global symbols present in the ULP program. This files include each global symbol defined in the ULP program, prefixed with ``ulp_``.
 
 The header file contains declaration of the symbol::
-    
+
     extern uint32_t ulp_measurement_count;
 
 Note that all symbols (variables, arrays, functions) are declared as ``uint32_t``. For functions and arrays, take address of the symbol and cast to the appropriate type.
@@ -138,7 +135,7 @@ Once the program is loaded into RTC memory, application can start it, passing th
 
 .. doxygenfunction:: ulp_run
 
-Declaration of the entry point symbol comes from the above mentioned generated header file, ``$(ULP_APP_NAME).h``. In assembly source of the ULP application, this symbol must be marked as ``.global``::
+Declaration of the entry point symbol comes from the above mentioned generated header file, ``${ULP_APP_NAME}.h``. In assembly source of the ULP application, this symbol must be marked as ``.global``::
 
 
             .global entry

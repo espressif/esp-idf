@@ -16,11 +16,9 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "sys/lock.h"
-#include "soc/sdmmc_reg.h"
-#include "soc/sdmmc_periph.h"
 #include "driver/sdmmc_types.h"
 #include "driver/sdmmc_defs.h"
-#include "driver/sdmmc_host.h"
+#include "driver/sdmmc_types.h"
 #include "sdspi_private.h"
 #include "sdspi_crc.h"
 

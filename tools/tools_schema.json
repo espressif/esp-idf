@@ -1,0 +1,234 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/espressif/esp-idf/blob/master/tools/tools-schema.json",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "integer",
+      "description": "Metadata file version"
+    },
+    "tools": {
+      "type": "array",
+      "description": "List of tools",
+      "items": {
+        "$ref": "#/definitions/toolInfo"
+      }
+    }
+  },
+  "required": [
+    "version",
+    "tools"
+  ],
+  "definitions": {
+    "toolInfo": {
+      "type": "object",
+      "description": "Information about one tool",
+      "properties": {
+        "name" : {
+          "description": "Tool name (used as a directory name)",
+          "type": "string"
+        },
+        "description" : {
+          "description": "A short (one sentence) description of the tool.",
+          "type": "string"
+        },
+        "export_paths": {
+          "$ref": "#/definitions/exportPaths"
+        },
+        "export_vars": {
+          "$ref": "#/definitions/envVars",
+          "description": "Some variable expansions are done on the values. 1) ${TOOL_PATH} is replaced with the directory where the tool is installed."
+        },
+        "info_url": {
+          "description": "URL of the page with information about the tool",
+          "type": "string"
+        },
+        "install": {
+          "$ref": "#/definitions/installRequirementInfo",
+          "description": "If 'always', the tool will be installed by default. If 'on_request', tool will be installed when specifically requested. If 'never', tool will not be considered for installation."
+        },
+        "license": {
+          "description": "License name. Use SPDX license identifier if it exists, short name of the license otherwise.",
+          "type": "string"
+        },
+        "version_cmd": {
+          "$ref": "#/definitions/arrayOfStrings",
+          "description": "Command to be executed (along with any extra arguments). The executable be present in one of the export_paths."
+        },
+        "version_regex": {
+          "description": "Regex which is to be applied to version_cmd output to extract the version. By default, the version will be the first capture group of the expression. If version_regex_replace is specified, version will be obtained by doing a substitution using version_regex_replace instead.",
+          "$ref": "#/definitions/regex"
+        },
+        "version_regex_replace": {
+          "description": "If given, this will be used as substitute expression for the regex defined in version_regex, to obtain the version string. Not specifying this is equivalent to setting it to '\\1' (i.e. return the first capture group).",
+          "type": "string"
+        },
+        "strip_container_dirs": {
+          "type": "integer",
+          "description": "If specified, this number of top directory levels will removed when extracting. E.g. if strip_container_dirs=2, archive path a/b/c/d.txt will be extracted as c/d.txt"
+        },
+        "versions": {
+          "type": "array",
+          "description": "List of versions",
+          "items": {
+            "$ref": "#/definitions/versionInfo"
+          }
+        },
+        "platform_overrides": {
+          "type": "array",
+          "description": "List of platform-specific overrides",
+          "items": {
+            "$ref": "#/definitions/platformOverrideInfo"
+          }
+        }
+      },
+      "required": [
+        "description",
+        "export_paths",
+        "version_cmd",
+        "version_regex",
+        "versions",
+        "install",
+        "info_url",
+        "license"
+      ]
+    },
+    "arrayOfStrings": {
+      "description": "Array of strings. Used to represent paths (split into components) and command lines (split into arguments)",
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exportPaths": {
+      "description": "Array of paths to be exported (added to PATH). Each item in the array is relative to the directory where the tool will be installed.",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/arrayOfStrings"
+      }
+    },
+    "envVars": {
+      "description": "Collection of environment variables. Keys and values are the environment variable names and values, respectively.",
+      "type": "object",
+      "patternProperties": {
+        "^([A-Z_0-9]+)+$": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "regex": {
+      "description": "A regular expression",
+      "type": "string"
+    },
+    "versionInfo": {
+      "type": "object",
+      "properties": {
+        "name" : {
+          "description": "Version name (used as a directory name)",
+          "type": "string"
+        },
+        "status": {
+            "description": "Determines whether the version is recommended/supported/deprecated",
+            "type": "string",
+            "enum": ["recommended", "supported", "deprecated"]
+        },
+        "linux-i686": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "linux-amd64": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "linux-armel": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "linux-arm64": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "macos": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "win32": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "win64": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        },
+        "any": {
+          "$ref": "#/definitions/platformDownloadInfo"
+        }
+      }
+    },
+    "platformDownloadInfo": {
+      "description": "Information about download artifact for one platform",
+      "type": "object",
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "description": "SHA256 sum of the file"
+        },
+        "size": {
+          "type": "integer",
+          "description": "Size of the file, in bytes"
+        },
+        "url": {
+          "type": "string",
+          "description": "Download URL"
+        }
+      },
+      "required": [
+        "sha256",
+        "url",
+        "size"
+      ]
+    },
+    "installRequirementInfo": {
+      "description": "If 'always', the tool will be installed by default. If 'on_request', tool will be installed when specifically requested. If 'never', tool will not be considered for installation.",
+      "type": "string",
+      "enum": ["always", "on_request", "never"]
+    },
+    "platformOverrideInfo": {
+      "description": "Platform-specific values which override the defaults",
+      "type": "object",
+      "properties": {
+        "platforms": {
+          "description": "List of platforms to which this override applies",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["linux-i686", "linux-amd64", "linux-armel", "linux-arm64", "macos", "win32", "win64"]
+          }
+        },
+        "export_paths": {
+          "description": "Platform-specific replacement for toolInfo/export_paths",
+          "$ref": "#/definitions/exportPaths"
+        },
+        "export_vars": {
+          "description": "Platform-specific replacement for toolInfo/export_vars",
+          "$ref": "#/definitions/envVars"
+        },
+        "install": {
+          "description": "Platform-specific replacement for toolInfo/install",
+          "$ref": "#/definitions/installRequirementInfo"
+        },
+        "version_cmd": {
+          "description": "Platform-specific replacement for toolInfo/version_cmd",
+          "$ref": "#/definitions/arrayOfStrings"
+        },
+        "version_regex": {
+          "description": "Platform-specific replacement for toolInfo/version_regex",
+          "$ref": "#/definitions/regex"
+        },
+        "version_regex_replace": {
+          "description": "Platform-specific replacement for toolInfo/version_regex_replace",
+          "type": "string"
+        },
+        "strip_container_dirs": {
+          "type": "string",
+          "description": "Platform-specific replacement for toolInfo/strip_container_dirs"
+        }
+      },
+      "required": ["platforms"]
+    }
+  }
+}

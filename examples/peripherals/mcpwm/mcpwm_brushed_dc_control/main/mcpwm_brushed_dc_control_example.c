@@ -20,13 +20,12 @@
 #include "esp_attr.h"
 
 #include "driver/mcpwm.h"
-#include "soc/mcpwm_reg.h"
-#include "soc/mcpwm_struct.h"
+#include "soc/mcpwm_periph.h"
 
 #define GPIO_PWM0A_OUT 15   //Set GPIO 15 as PWM0A
 #define GPIO_PWM0B_OUT 16   //Set GPIO 16 as PWM0B
 
-static void mcpwm_example_gpio_initialize()
+static void mcpwm_example_gpio_initialize(void)
 {
     printf("initializing mcpwm gpio...\n");
     mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, GPIO_PWM0A_OUT);
@@ -89,7 +88,7 @@ static void mcpwm_example_brushed_motor_control(void *arg)
     }
 }
 
-void app_main()
+void app_main(void)
 {
     printf("Testing brushed motor...\n");
     xTaskCreate(mcpwm_example_brushed_motor_control, "mcpwm_examlpe_brushed_motor_control", 4096, NULL, 5, NULL);

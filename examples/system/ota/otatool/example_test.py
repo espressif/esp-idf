@@ -5,6 +5,7 @@ import subprocess
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -18,7 +19,7 @@ except ImportError:
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_otatool_example(env, extra_data):
-    dut = env.get_dut('otatool', 'examples/system/ota/otatool')
+    dut = env.get_dut('otatool', 'examples/system/ota/otatool', dut_class=ESP32DUT)
 
     # Verify factory firmware
     dut.start_app()

@@ -48,9 +48,6 @@ die() {
 
 echo "build_examples running in ${PWD}"
 
-# only 0 or 1 arguments
-[ $# -le 1 ] || die "Have to run as $(basename $0) [<JOB_NAME>]"
-
 export BATCH_BUILD=1
 export V=0 # only build verbose if there's an error
 
@@ -65,26 +62,17 @@ SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 
 EXAMPLE_PATHS=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort )
 
-if [ $# -eq 0 ]
+if [ -z "${CI_NODE_TOTAL:-}" ]
 then
     START_NUM=0
+    if [ "${1:-}" ]; then
+        START_NUM=$1
+    fi
     END_NUM=999
 else
-    JOB_NAME=$1
-
-    # parse text prefix at the beginning of string 'some_your_text_NUM'
-    # (will be 'some_your_text' without last '_')
-    JOB_PATTERN=$( echo ${JOB_NAME} | sed -n -r 's/^(.*)_[0-9]+$/\1/p' )
-    [ -z ${JOB_PATTERN} ] && die "JOB_PATTERN is bad"
-
-    # parse number 'NUM' at the end of string 'some_your_text_NUM'
-    # NOTE: Getting rid of the leading zero to get the decimal
-    JOB_NUM=$( echo ${JOB_NAME} | sed -n -r 's/^.*_0*([0-9]+)$/\1/p' )
-    [ -z ${JOB_NUM} ] && die "JOB_NUM is bad"
-
+    JOB_NUM=${CI_NODE_INDEX}
     # count number of the jobs
-    NUM_OF_JOBS=$( grep -c -E "^${JOB_PATTERN}_[0-9]+:$" "${IDF_PATH}/.gitlab-ci.yml" )
-    [ -z ${NUM_OF_JOBS} ] && die "NUM_OF_JOBS is bad"
+    NUM_OF_JOBS=${CI_NODE_TOTAL}
 
     # count number of examples
     NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
@@ -96,10 +84,10 @@ else
     [ -z ${NUM_OF_EX_PER_JOB} ] && die "NUM_OF_EX_PER_JOB is bad"
 
     # ex.: [0; 12); [12; 24); [24; 36); [36; 48); [48; 60)
-    START_NUM=$(( ${JOB_NUM} * ${NUM_OF_EX_PER_JOB} ))
+    START_NUM=$(( (${JOB_NUM} - 1) * ${NUM_OF_EX_PER_JOB} ))
     [ -z ${START_NUM} ] && die "START_NUM is bad"
 
-    END_NUM=$(( (${JOB_NUM} + 1) * ${NUM_OF_EX_PER_JOB} ))
+    END_NUM=$(( ${JOB_NUM} * ${NUM_OF_EX_PER_JOB} ))
     [ -z ${END_NUM} ] && die "END_NUM is bad"
 fi
 
@@ -111,7 +99,7 @@ build_example () {
 
     local EXAMPLE_DIR=$(dirname "${MAKE_FILE}")
     local EXAMPLE_NAME=$(basename "${EXAMPLE_DIR}")
-    
+
     # Check if the example needs a different base directory.
     # Path of the Makefile relative to $IDF_PATH
     local MAKE_FILE_REL=${MAKE_FILE#"${IDF_PATH}/"}
@@ -131,7 +119,7 @@ build_example () {
     pushd "example_builds/${ID}/${EXAMPLE_DIR_REL}"
         # be stricter in the CI build than the default IDF settings
         export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-        export EXTRA_CXXFLAGS=${EXTRA_CFLAGS}
+        export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
 
         # sdkconfig files are normally not checked into git, but may be present when
         # a developer runs this script locally
@@ -168,6 +156,8 @@ build_example () {
 
 EXAMPLE_NUM=0
 
+echo "Current job will build example ${START_NUM} - ${END_NUM}"
+
 for EXAMPLE_PATH in ${EXAMPLE_PATHS}
 do
     if [[ $EXAMPLE_NUM -lt $START_NUM || $EXAMPLE_NUM -ge $END_NUM ]]
@@ -192,7 +182,8 @@ echo -e "\nFound issues:"
 IGNORE_WARNS="\
 library/error\.o\
 \|\ -Werror\
-\|error\.d\
+\|.*error.*\.o\
+\|.*error.*\.d\
 \|reassigning to symbol\
 \|changes choice state\
 \|Compiler version is not supported\

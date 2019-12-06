@@ -448,7 +448,7 @@ void test_spiffs_concurrent(const char* filename_prefix)
 }
 
 
-static void test_setup()
+static void test_setup(void)
 {
     esp_vfs_spiffs_conf_t conf = {
       .base_path = "/spiffs",
@@ -460,7 +460,7 @@ static void test_setup()
     TEST_ESP_OK(esp_vfs_spiffs_register(&conf));
 }
 
-static void test_teardown()
+static void test_teardown(void)
 {
     TEST_ESP_OK(esp_vfs_spiffs_unregister(spiffs_test_partition_label));
 }

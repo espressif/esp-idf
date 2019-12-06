@@ -145,15 +145,15 @@ The format of Ack Frame（8 bit）：
 
    * The data frame supports to be encrypted and verified.
    
- **1.1 Control Frame (0x0b’00)**  
+ **1.1 Control Frame (0x0 b’00)**  
 
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | Control Frame / 0x0b’00 | Implication                                                  | Explanation                                                   | Note                                                          |
+  | Control Frame (Binary)  | Implication                                                  | Explanation                                                   | Note                                                          |
   +=========================+==============================================================+===============================================================+===============================================================+
-  | 0x0b’000000             | Ack                                                          | The data field of the Ack frame uses the same                 | The data field consumes a byte and its value is               |
+  | 0x0 (b’000000)          | Ack                                                          | The data field of the Ack frame uses the same                 | The data field consumes a byte and its value is               |
   |                         |                                                              | sequence value of the frame to reply to.                      | the same as the sequence field of the frame to reply to.      |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x1b’000001             | Set ESP32 to the security mode.                              | To inform ESP32 of the security mode to use                   | The data field consumes a byte.                               |
+  | 0x1 (b’000001)          | Set ESP32 to the security mode.                              | To inform ESP32 of the security mode to use                   | The data field consumes a byte.                               |
   |                         |                                                              | when sending data, which is allowed to be reset               | The higher 4 bits are for the security mode setting           |
   |                         |                                                              | multiple times during the process.                            | of the control frame, and the lower 4 bits are for            |
   |                         |                                                              | Each setting affects the subsequent security mode used.       | the security mode setting of the data frame.                  |
@@ -166,7 +166,7 @@ The format of Ack Frame（8 bit）：
   +                         +                                                              +                                                               +---------------------------------------------------------------+
   |                         |                                                              |                                                               | b’0011: with both checksum and encryption.                    |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x2b’000010             | Set the opmode of Wi-Fi.                                     | The frame contains opmode settings for                        | data[0] is for opmode settings, including:                    |
+  | 0x2 (b’000010)          | Set the opmode of Wi-Fi.                                     | The frame contains opmode settings for                        | data[0] is for opmode settings, including:                    |
   +                         +                                                              + configuring for the Wi-Fi mode of ESP32.                      +---------------------------------------------------------------+
   |                         |                                                              |                                                               | 0x00: NULL；                                                  |
   +                         +                                                              +                                                               +---------------------------------------------------------------+
@@ -179,12 +179,12 @@ The format of Ack Frame（8 bit）：
   |                         |                                                              |                                                               | Please set the SSID/Password/Max Connection Number of         |
   |                         |                                                              |                                                               | the AP mode in the first place if an AP gets involved.        |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x3b’000011             | Connect ESP32 to the AP.                                     | To notify ESP32 that the essential information has been sent  | No data field is contained.                                   |
+  | 0x3 (b’000011)          | Connect ESP32 to the AP.                                     | To notify ESP32 that the essential information has been sent  | No data field is contained.                                   |
   |                         |                                                              | and it is allowed to connect to the AP.                       |                                                               |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x4b’000100             | Disconnect ESP32 from the AP.                                |                                                               | No data field is contained.                                   |
+  | 0x4 (b’000100)          | Disconnect ESP32 from the AP.                                |                                                               | No data field is contained.                                   |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x5b’000101             | To get the information of ESP32’s Wi-Fi mode and its status. |                                                               | No data field is contained.                                   |
+  | 0x5 (b’000101)          | To get the information of ESP32’s Wi-Fi mode and its status. |                                                               | No data field is contained.                                   |
   |                         |                                                              |                                                               | When receiving this control frame, ESP32 will send back       |
   |                         |                                                              |                                                               | a follow-up  frame of Wi-Fi connection state report to        |
   |                         |                                                              |                                                               | the mobile phone with the information of the current opmode,  |
@@ -192,142 +192,142 @@ The format of Ack Frame（8 bit）：
   |                         |                                                              |                                                               | The types of information sent to the mobile phone is          |
   |                         |                                                              |                                                               | defined by the application installed on the phone.            |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x6b’000110             | Disconnect the STA device from the SoftAP (in SoftAP mode).  |                                                               | Date[0~5] is taken as the MAC address for the STA device.     |
+  | 0x6 (b’000110)          | Disconnect the STA device from the SoftAP (in SoftAP mode).  |                                                               | Date[0~5] is taken as the MAC address for the STA device.     |
   |                         |                                                              |                                                               | If there is a second STA device, then it uses data[6-11]      |
   |                         |                                                              |                                                               | and the rest can be done in the same manner.                  |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x7b'000111             | Get the version information.                                 |                                                               |                                                               |
+  | 0x7 (b'000111)          | Get the version information.                                 |                                                               |                                                               |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x8b’001000             | Disconnect the BLE GATT link.                                |                                                               | ESP32 will disconnect the BLE GATT link                       |
+  | 0x8 (b’001000)          | Disconnect the BLE GATT link.                                |                                                               | ESP32 will disconnect the BLE GATT link                       |
   |                         |                                                              |                                                               | after receives this command.                                  |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
-  | 0x9b’001001             | Get the Wi-Fi list.                                          | To get ESP32 to scan the Wi-Fi access points around.          | No data field is contained.                                   |
+  | 0x9 (b’001001)          | Get the Wi-Fi list.                                          | To get ESP32 to scan the Wi-Fi access points around.          | No data field is contained.                                   |
   |                         |                                                              |                                                               | When receiving this control frame,                            |
   |                         |                                                              |                                                               | ESP32 will send back a follow-up frame of Wi-Fi list          |
   |                         |                                                              |                                                               | report to the mobile phone.                                   |
   +-------------------------+--------------------------------------------------------------+---------------------------------------------------------------+---------------------------------------------------------------+
 
- **1.2 Data Frame (0x1b’01)**
+ **1.2 Data Frame (0x1 b’01)**
 
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | Data Frame   | Implication                                        | Explanation                                                   | Note                                                                  |
-  +==============+====================================================+===============================================================+=======================================================================+
-  | 0x0b’000000  | Send the negotiation data.                         | The negotiation data will be sent to the callback             | The length of the data depends on the length field.                   |
-  |              |                                                    | function registered in the application layer.                 |                                                                       |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x1b’000001  | Send the BSSID for STA mode.                       | To send the BSSID of the AP for the STA device to             | The length of the data depends on the length field.                   |
-  |              |                                                    | connect under the condition that  the SSID is hidden.         | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x2b’000010  | Send the SSID for STA mode.                        | To send the SSID of the AP for the STA device to connect.     | The length of the data depends on the length field.                   |
-  |              |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x3b’000011  | Send the password for STA mode.                    | To send the password of the AP for the STA device to connect. | The length of the data depends on the length field.                   |
-  |              |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x4b’000100  | Send the SSID for SoftAP mode.                     |                                                               | The length of the data depends on the length field.                   |
-  |              |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x5b’000101  | Send the password for SoftAPmode.                  |                                                               | The length of the data depends on the length field.                   |
-  |              |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x6b’000110  | Set the maximum connection number for SoftAP mode. |                                                               | data[0] represents the value of the connection number,                |
-  |              |                                                    |                                                               | ranging from 1 to 4. When the transmission direction is ESP32         |
-  |              |                                                    |                                                               | to the mobile phone, it means to provide the mobile phone with        |
-  |              |                                                    |                                                               | the needed information.                                               |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x7b’000111  | Set the authentication mode for the SoftAP.        |                                                               | data[0]：                                                             |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x00: OPEN                                                            |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x01: WEP                                                             |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x02: WPA_PSK                                                         |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x03: WPA2_PSK                                                        |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x04: WPA_WPA2_PSK                                                    |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x8b’001000  | Set the channel amount for SoftAP mode.            |                                                               | data[0] represents the quantity of the supported channels,            |
-  |              |                                                    |                                                               | ranging from 1 to 14.                                                 |
-  |              |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
-  |              |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x9b’001001  | Username                                           | It provides the username of the GATT client when using        | The length of the data depends on the length field.                   |
-  |              |                                                    | encryption of enterprise level.                               |                                                                       |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0xab’001010  | CA Certification                                   | It provides the CA Certification when using encryption        | The length of the data depends on the length field.                   |
-  |              |                                                    | of enterprise level.                                          | The frame supports to be fragmented if the data length is not enough. |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0xbb’001011  | Client Certification                               | It provides the client certification when                     | The length of the data depends on the length field.                   |
-  |              |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
-  |              |                                                    | Whether the private key is contained or not                   |                                                                       |
-  |              |                                                    | depends on the content of the certification.                  |                                                                       |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0xcb’001100  | Server Certification                               | It provides the sever certification when using                | The length of the data depends on the length field.                   |
-  |              |                                                    | encryption of enterprise level. Whether the private key is    | The frame supports to be fragmented if the data length is not enough. |
-  |              |                                                    | contained or not depends on the content of the certification. |                                                                       |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0xdb’001101  | ClientPrivate Key                                  | It provides the private key of the client when                | The length of the data depends on the length field.                   |
-  |              |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0xeb’001110  | ServerPrivate Key                                  | It provides the private key of the sever when                 | The length of the data depends on the length field.                   |
-  |              |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0xfb’001111  | Wi-Fi Connection State Report                      | To notify the phone of the ESP32's Wi-Fi status,              | data[0] represents opmode, including:                                 |
-  +              +                                                    + including STA status and SoftAP status.                       +-----------------------------------------------------------------------+
-  |              |                                                    | It is for the STA device to connect to the                    | 0x00: NULL                                                            |
-  +              +                                                    + mobile phone or the SoftAP.                                   +-----------------------------------------------------------------------+
-  |              |                                                    | However, when the mobile phone receives the Wi-Fi status,     | 0x01: STA                                                             |
-  +              +                                                    + it can reply to other frames in addition to this frame.       +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x02: SoftAP                                                          |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x03: SoftAP&STA                                                      |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | data[1]：the connection state of the STA device,                      |
-  |              |                                                    |                                                               | 0x0 indicates a connection state,                                     |
-  |              |                                                    |                                                               | and others represent a disconnected state;                            |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | data[2]：the connection state of the SoftAP,                          |
-  |              |                                                    |                                                               | that is, how many STA devices have been connected.                    |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | data[3] and the subsequent is in accordance with the                  |
-  |              |                                                    |                                                               | format of SSID/BSSID information.                                     |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x10b’010000 | Version                                            |                                                               | data[0]= great versiondata[1]= sub version                            |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x11B’010001 | Wi-Fi List                                         | To send the Wi-Fi list to ESP32.                              | The format of the data frame is length + RSSI + SSID                  |
-  |              |                                                    |                                                               | and it supports to be sent into fragments                             |
-  |              |                                                    |                                                               | if the data length is too long.                                       |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x12B’010010 | Report Error                                       | To notify the mobile phone that there is an error with BluFi. | 0x00: sequence error                                                  |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x01: checksum error                                                  |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x02: decrypt error                                                   |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x03: encrypt error                                                   |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x04: init security error                                             |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x05: dh malloc error                                                 |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x06: dh param error                                                  |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x07: read param  error                                               |
-  +              +                                                    +                                                               +-----------------------------------------------------------------------+
-  |              |                                                    |                                                               | 0x08: make public error                                               |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
-  | 0x13B’010011 | Custom Data                                        | To send or receive custom data.                               | The data frame supports to be sent into                               |
-  |              |                                                    |                                                               | fragments if the data length is too long.                             |
-  +--------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |Data Frame(Binary)| Implication                                        | Explanation                                                   | Note                                                                  |
+  +==================+====================================================+===============================================================+=======================================================================+
+  |  0x0 (b’000000)  | Send the negotiation data.                         | The negotiation data will be sent to the callback             | The length of the data depends on the length field.                   |
+  |                  |                                                    | function registered in the application layer.                 |                                                                       |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x1 (b’000001)  | Send the BSSID for STA mode.                       | To send the BSSID of the AP for the STA device to             | The length of the data depends on the length field.                   |
+  |                  |                                                    | connect under the condition that  the SSID is hidden.         | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x2 (b’000010)  | Send the SSID for STA mode.                        | To send the SSID of the AP for the STA device to connect.     | The length of the data depends on the length field.                   |
+  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x3 (b’000011)  | Send the password for STA mode.                    | To send the password of the AP for the STA device to connect. | The length of the data depends on the length field.                   |
+  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x4 (b’000100)  | Send the SSID for SoftAP mode.                     |                                                               | The length of the data depends on the length field.                   |
+  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x5 (b’000101)  | Send the password for SoftAPmode.                  |                                                               | The length of the data depends on the length field.                   |
+  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x6 (b’000110)  | Set the maximum connection number for SoftAP mode. |                                                               | data[0] represents the value of the connection number,                |
+  |                  |                                                    |                                                               | ranging from 1 to 4. When the transmission direction is ESP32         |
+  |                  |                                                    |                                                               | to the mobile phone, it means to provide the mobile phone with        |
+  |                  |                                                    |                                                               | the needed information.                                               |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x7 (b’000111)  | Set the authentication mode for the SoftAP.        |                                                               | data[0]：                                                             |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x00: OPEN                                                            |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x01: WEP                                                             |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x02: WPA_PSK                                                         |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x03: WPA2_PSK                                                        |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x04: WPA_WPA2_PSK                                                    |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x8 (b’001000)  | Set the channel amount for SoftAP mode.            |                                                               | data[0] represents the quantity of the supported channels,            |
+  |                  |                                                    |                                                               | ranging from 1 to 14.                                                 |
+  |                  |                                                    |                                                               | When the transmission direction is ESP32 to the mobile phone,         |
+  |                  |                                                    |                                                               | it means to provide the mobile phone with the needed information.     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x9 (b’001001)  | Username                                           | It provides the username of the GATT client when using        | The length of the data depends on the length field.                   |
+  |                  |                                                    | encryption of enterprise level.                               |                                                                       |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0xa (b’001010)  | CA Certification                                   | It provides the CA Certification when using encryption        | The length of the data depends on the length field.                   |
+  |                  |                                                    | of enterprise level.                                          | The frame supports to be fragmented if the data length is not enough. |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0xb (b’001011)  | Client Certification                               | It provides the client certification when                     | The length of the data depends on the length field.                   |
+  |                  |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
+  |                  |                                                    | Whether the private key is contained or not                   |                                                                       |
+  |                  |                                                    | depends on the content of the certification.                  |                                                                       |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0xc (b’001100)  | Server Certification                               | It provides the sever certification when using                | The length of the data depends on the length field.                   |
+  |                  |                                                    | encryption of enterprise level. Whether the private key is    | The frame supports to be fragmented if the data length is not enough. |
+  |                  |                                                    | contained or not depends on the content of the certification. |                                                                       |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0xd (b’001101)  | ClientPrivate Key                                  | It provides the private key of the client when                | The length of the data depends on the length field.                   |
+  |                  |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0xe (b’001110)  | ServerPrivate Key                                  | It provides the private key of the sever when                 | The length of the data depends on the length field.                   |
+  |                  |                                                    | using encryption of enterprise level.                         | The frame supports to be fragmented if the data length is not enough. |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0xf (b’001111)  | Wi-Fi Connection State Report                      | To notify the phone of the ESP32's Wi-Fi status,              | data[0] represents opmode, including:                                 |
+  +                  +                                                    + including STA status and SoftAP status.                       +-----------------------------------------------------------------------+
+  |                  |                                                    | It is for the STA device to connect to the                    | 0x00: NULL                                                            |
+  +                  +                                                    + mobile phone or the SoftAP.                                   +-----------------------------------------------------------------------+
+  |                  |                                                    | However, when the mobile phone receives the Wi-Fi status,     | 0x01: STA                                                             |
+  +                  +                                                    + it can reply to other frames in addition to this frame.       +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x02: SoftAP                                                          |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x03: SoftAP&STA                                                      |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | data[1]：the connection state of the STA device,                      |
+  |                  |                                                    |                                                               | 0x0 indicates a connection state,                                     |
+  |                  |                                                    |                                                               | and others represent a disconnected state;                            |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | data[2]：the connection state of the SoftAP,                          |
+  |                  |                                                    |                                                               | that is, how many STA devices have been connected.                    |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | data[3] and the subsequent is in accordance with the                  |
+  |                  |                                                    |                                                               | format of SSID/BSSID information.                                     |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x10 (b’010000) | Version                                            |                                                               | data[0]= great versiondata[1]= sub version                            |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x11 (b’010001) | Wi-Fi List                                         | To send the Wi-Fi list to ESP32.                              | The format of the data frame is length + RSSI + SSID                  |
+  |                  |                                                    |                                                               | and it supports to be sent into fragments                             |
+  |                  |                                                    |                                                               | if the data length is too long.                                       |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x12 (b’010010) | Report Error                                       | To notify the mobile phone that there is an error with BluFi. | 0x00: sequence error                                                  |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x01: checksum error                                                  |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x02: decrypt error                                                   |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x03: encrypt error                                                   |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x04: init security error                                             |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x05: dh malloc error                                                 |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x06: dh param error                                                  |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x07: read param  error                                               |
+  +                  +                                                    +                                                               +-----------------------------------------------------------------------+
+  |                  |                                                    |                                                               | 0x08: make public error                                               |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
+  |  0x13 (b’010011) | Custom Data                                        | To send or receive custom data.                               | The data frame supports to be sent into                               |
+  |                  |                                                    |                                                               | fragments if the data length is too long.                             |
+  +------------------+----------------------------------------------------+---------------------------------------------------------------+-----------------------------------------------------------------------+
 
 2. Frame Control
 
@@ -453,9 +453,3 @@ BluFi Service UUID: 0xFFFF，16 bit
 BluFi (the mobile -> ESP32): 0xFF01, writable
 
 Blufi (ESP32 -> the mobile phone): 0xFF02, readable and callable
-
-.. note::
-
-	1. The Ack mechanism is already defined in the profile, but there is no implementation based on the code for the time being.
-
-	2. Other parts have been implemented.

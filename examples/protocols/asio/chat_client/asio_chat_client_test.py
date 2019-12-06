@@ -7,6 +7,7 @@ import time
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -69,7 +70,7 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
     global g_client_response
     global g_msg_to_client
     test_msg = "ABC"
-    dut1 = env.get_dut("chat_client", "examples/protocols/asio/chat_client")
+    dut1 = env.get_dut("chat_client", "examples/protocols/asio/chat_client", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "asio_chat_client.bin")
     bin_size = os.path.getsize(binary_file)
@@ -81,7 +82,7 @@ def test_examples_protocol_asio_chat_client(env, extra_data):
     thread1.start()
     # 2. start the dut test and wait till client gets IP address
     dut1.start_app()
-    dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+    dut1.expect(re.compile(r" IPv4 address: ([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"), timeout=30)
     # 3. send host's IP to the client i.e. the `dut1`
     dut1.write(host_ip)
     # 4. client `dut1` should receive a message

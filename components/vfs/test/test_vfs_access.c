@@ -27,11 +27,19 @@ static wl_handle_t test_wl_handle;
 
 TEST_CASE("Can use access() for UART", "[vfs]")
 {
-    const char *uarts[] = {"/dev/uart/0", "/dev/uart/1", "/dev/uart/2"};
+    const char *uarts[] = {
+        "/dev/uart/0",
+        "/dev/uart/1",
+#if SOC_UART_NUM > 2
+        "/dev/uart/2"
+#endif
+        };
 
     uart_driver_install(UART_NUM_0, 256, 0, 0, NULL, 0);
     uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0);
+#if SOC_UART_NUM > 2
     uart_driver_install(UART_NUM_2, 256, 0, 0, NULL, 0);
+#endif
 
     for (int i = 0; i < sizeof(uarts)/sizeof(uarts[0]); ++i) {
         TEST_ASSERT_EQUAL_MESSAGE(access(uarts[i], F_OK), 0, uarts[i]);
@@ -55,10 +63,12 @@ TEST_CASE("Can use access() for UART", "[vfs]")
 
     uart_driver_delete(UART_NUM_0);
     uart_driver_delete(UART_NUM_1);
+#if SOC_UART_NUM > 2
     uart_driver_delete(UART_NUM_2);
+#endif
 }
 
-static inline void test_spi_flash_setup()
+static inline void test_spi_flash_setup(void)
 {
     esp_vfs_fat_sdmmc_mount_config_t mount_config = {
         .format_if_mount_failed = true,
@@ -68,7 +78,7 @@ static inline void test_spi_flash_setup()
     TEST_ESP_OK(esp_vfs_fat_spiflash_mount("/spiflash", NULL, &mount_config, &test_wl_handle));
 }
 
-static inline void test_spi_flash_teardown()
+static inline void test_spi_flash_teardown(void)
 {
     TEST_ESP_OK(esp_vfs_fat_spiflash_unmount("/spiflash", test_wl_handle));
 }

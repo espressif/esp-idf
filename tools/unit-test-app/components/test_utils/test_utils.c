@@ -15,14 +15,12 @@
 #include <string.h>
 #include "unity.h"
 #include "test_utils.h"
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "lwip/sockets.h"
 
-const esp_partition_t *get_test_data_partition()
+const esp_partition_t *get_test_data_partition(void)
 {
     /* This finds "flash_test" partition defined in partition_table_unit_test_app.csv */
     const esp_partition_t *result = esp_partition_find_first(ESP_PARTITION_TYPE_DATA,
@@ -31,10 +29,10 @@ const esp_partition_t *get_test_data_partition()
     return result;
 }
 
-void test_case_uses_tcpip()
+void test_case_uses_tcpip(void)
 {
     // Can be called more than once, does nothing on subsequent calls
-    tcpip_adapter_init();
+    esp_netif_init();
 
     // Allocate all sockets then free them
     // (First time each socket is allocated some one-time allocations happen.)
@@ -51,7 +49,7 @@ void test_case_uses_tcpip()
     // Allow LWIP tasks to finish initialising themselves
     vTaskDelay(25 / portTICK_RATE_MS);
 
-    printf("Note: tcpip_adapter_init() has been called. Until next reset, TCP/IP task will periodicially allocate memory and consume CPU time.\n");
+    printf("Note: esp_netif_init() has been called. Until next reset, TCP/IP task will periodicially allocate memory and consume CPU time.\n");
 
     // Reset the leak checker as LWIP allocates a lot of memory on first run
     unity_reset_leak_checks();

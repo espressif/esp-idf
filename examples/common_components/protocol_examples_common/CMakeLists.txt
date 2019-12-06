@@ -1,5 +1,4 @@
-set(COMPONENT_SRCS "connect.c"
-                   "stdin_out.c")
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-
-register_component()
+idf_component_register(SRCS "connect.c" "stdin_out.c"
+                    INCLUDE_DIRS "include"
+                    PRIV_REQUIRES esp_netif
+                    )

@@ -26,8 +26,8 @@ extern "C"
 /*
  Definitions for the tickhook and idlehook callbacks
 */
-typedef bool (*esp_freertos_idle_cb_t)();
-typedef void (*esp_freertos_tick_cb_t)();
+typedef bool (*esp_freertos_idle_cb_t)(void);
+typedef void (*esp_freertos_tick_cb_t)(void);
 
 /**
   * @brief  Register a callback to be called from the specified core's idle hook.

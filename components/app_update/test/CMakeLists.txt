@@ -1,6 +1,5 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-set(COMPONENT_REQUIRES unity test_utils app_update bootloader_support nvs_flash)
-
-register_component()
+if(IDF_TARGET STREQUAL "esp32")
+    idf_component_register(SRC_DIRS "."
+                        INCLUDE_DIRS "."
+                        REQUIRES unity test_utils app_update bootloader_support nvs_flash)
+endif()

@@ -1,8 +1,7 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(srcdirs ".")
 
-set(COMPONENT_REQUIRES unity test_utils vfs fatfs spiffs)
-
-set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
-
-register_component()
+idf_component_register(SRC_DIRS ${srcdirs}
+                       INCLUDE_DIRS .
+                       REQUIRES unity test_utils vfs fatfs spiffs
+                       LDFRAGMENTS linker.lf
+                      )

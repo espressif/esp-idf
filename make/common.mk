@@ -2,7 +2,7 @@
 # and component makefiles (component_wrapper.mk)
 #
 
-PYTHON=$(call dequote,$(CONFIG_PYTHON))
+PYTHON=$(call dequote,$(CONFIG_SDK_PYTHON))
 
 # Include project config makefile, if it exists.
 #
@@ -34,9 +34,12 @@ details := @true
 MAKEFLAGS += --silent
 endif  # $(V)==1
 
-ifdef CONFIG_MAKE_WARN_UNDEFINED_VARIABLES
+ifdef CONFIG_SDK_MAKE_WARN_UNDEFINED_VARIABLES
 MAKEFLAGS += --warn-undefined-variables
 endif
+
+# Get version variables
+include $(IDF_PATH)/make/version.mk
 
 # General make utilities
 

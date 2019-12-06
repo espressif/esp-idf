@@ -37,7 +37,7 @@ static void unity_task(void *pvParameters)
     unity_run_menu(); /* Doesn't return */
 }
 
-void test_main()
+void test_main(void)
 {
     // Note: if unpinning this task, change the way run times are calculated in
     // unity_port_esp32.c
@@ -70,7 +70,15 @@ void setUp(void)
 #endif
 
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
+
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+    /* TODO: add sufficient startup code in case of building an ELF file, so that
+     * flash cache is initialized and can work in such mode.
+     * For now this is disabled to allow running unit tests which don't require
+     * flash cache related operations.
+     */
     get_test_data_partition();  /* allocate persistent partition table structures */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
     unity_reset_leak_checks();
     test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, TYPE_LEAK_CRITICAL, COMP_LEAK_GENERAL);
@@ -95,7 +103,7 @@ static void check_leak(size_t before_free, size_t after_free, const char *type)
     TEST_ASSERT_MESSAGE(leaked <= critical_leak_threshold, "The test leaked too much memory");
 }
 
-static bool leak_check_required()
+static bool leak_check_required(void)
 {
     warn_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_WARNING, COMP_LEAK_ALL);
     critical_leak_threshold = test_utils_get_leak_level(TYPE_LEAK_CRITICAL, COMP_LEAK_ALL);

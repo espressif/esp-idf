@@ -20,17 +20,17 @@
 #include "esp_pm.h"
 #include "nvs_flash.h"
 
-/*set the ssid and password via "make menuconfig"*/
-#define DEFAULT_SSID CONFIG_WIFI_SSID
-#define DEFAULT_PWD CONFIG_WIFI_PASSWORD
+/*set the ssid and password via "idf.py menuconfig"*/
+#define DEFAULT_SSID CONFIG_EXAMPLE_WIFI_SSID
+#define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 
-#define DEFAULT_LISTEN_INTERVAL CONFIG_WIFI_LISTEN_INTERVAL
+#define DEFAULT_LISTEN_INTERVAL CONFIG_EXAMPLE_WIFI_LISTEN_INTERVAL
 
-#if CONFIG_POWER_SAVE_MIN_MODEM
+#if CONFIG_EXAMPLE_POWER_SAVE_MIN_MODEM
 #define DEFAULT_PS_MODE WIFI_PS_MIN_MODEM
-#elif CONFIG_POWER_SAVE_MAX_MODEM
+#elif CONFIG_EXAMPLE_POWER_SAVE_MAX_MODEM
 #define DEFAULT_PS_MODE WIFI_PS_MAX_MODEM
-#elif CONFIG_POWER_SAVE_NONE
+#elif CONFIG_EXAMPLE_POWER_SAVE_NONE
 #define DEFAULT_PS_MODE WIFI_PS_NONE
 #else
 #define DEFAULT_PS_MODE WIFI_PS_NONE
@@ -48,15 +48,17 @@ static void event_handler(void* arg, esp_event_base_t event_base,
         esp_wifi_connect();
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "got ip: %s", ip4addr_ntoa(&event->ip_info.ip));
+        ESP_LOGI(TAG, "got ip: " IPSTR, IP2STR(&event->ip_info.ip));
     }
 }
 
 /*init wifi as sta and set power save mode*/
 static void wifi_power_save(void)
 {
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
@@ -79,7 +81,7 @@ static void wifi_power_save(void)
     esp_wifi_set_ps(DEFAULT_PS_MODE);
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();

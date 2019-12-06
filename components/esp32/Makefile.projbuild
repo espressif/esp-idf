@@ -1,49 +1,16 @@
-ifdef CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
-
-PHY_INIT_DATA_OBJ = $(BUILD_DIR_BASE)/phy_init_data.o
-PHY_INIT_DATA_BIN = $(BUILD_DIR_BASE)/phy_init_data.bin
-
-# Command to flash PHY init data partition
-PHY_INIT_DATA_FLASH_CMD = $(ESPTOOLPY_SERIAL) write_flash $(PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
-ESPTOOL_ALL_FLASH_ARGS += $(PHY_DATA_OFFSET) $(PHY_INIT_DATA_BIN)
-
-ESP32_COMPONENT_PATH := $(COMPONENT_PATH)
-
-$(PHY_INIT_DATA_OBJ): $(ESP32_COMPONENT_PATH)/phy_init_data.h $(BUILD_DIR_BASE)/include/sdkconfig.h
-	$(summary) CC $(notdir $@)
-	printf "#include \"phy_init_data.h\"\n" | $(CC) -I $(BUILD_DIR_BASE)/include -I $(ESP32_COMPONENT_PATH) -I $(ESP32_COMPONENT_PATH)/include -c -o $@ -xc -
-
-$(PHY_INIT_DATA_BIN): $(PHY_INIT_DATA_OBJ)
-	$(summary) BIN $(notdir $@)
-	$(OBJCOPY) -O binary $< $@
-
-phy_init_data: $(PHY_INIT_DATA_BIN)
-
-phy_init_data-flash: $(BUILD_DIR_BASE)/phy_init_data.bin
-	@echo "Flashing PHY init data..."
-	$(PHY_INIT_DATA_FLASH_CMD)
-
-phy_init_data-clean:
-	rm -f $(PHY_INIT_DATA_BIN) $(PHY_INIT_DATA_OBJ)
-
-all: phy_init_data
-flash: phy_init_data
-
-endif # CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION
-
-
 # Enable psram cache bug workaround in compiler if selected
 ifdef CONFIG_SPIRAM_CACHE_WORKAROUND
 CFLAGS+=-mfix-esp32-psram-cache-issue
 CXXFLAGS+=-mfix-esp32-psram-cache-issue
+LDFLAGS+=-mfix-esp32-psram-cache-issue
 endif
 
-# Enable dynamic esp_timer overflow value if building unit tests 
+# Enable dynamic esp_timer overflow value if building unit tests
 ifneq ("$(filter esp32,$(TEST_COMPONENTS_LIST))","")
 CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
 endif
 ESP32_LINKER_SCRIPT_TEMPLATE := $(COMPONENT_PATH)/ld/esp32.project.ld.in
-ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(abspath $(BUILD_DIR_BASE)/esp32)
+ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(realpath $(BUILD_DIR_BASE)/esp32)
 
 # Target to generate linker script generator from fragments presented by each of
 # the components

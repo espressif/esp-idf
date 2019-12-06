@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000002
+#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000004
 #define ESP_WIFI_OS_ADAPTER_MAGIC    0xDEADBEAF
 
 #define OSI_FUNCS_TIME_BLOCKING      0xffffffff
@@ -44,6 +44,7 @@ typedef struct {
     void (*_semphr_delete)(void *semphr);
     int32_t (*_semphr_take)(void *semphr, uint32_t block_time_tick);
     int32_t (*_semphr_give)(void *semphr);
+    void *(*_wifi_thread_semphr_get)(void);
     void *(*_mutex_create)(void);
     void *(*_recursive_mutex_create)(void);
     void (*_mutex_delete)(void *mutex);
@@ -71,6 +72,7 @@ typedef struct {
     int32_t (* _task_get_max_priority)(void);
     void *(* _malloc)(uint32_t size);
     void (* _free)(void *p);
+    int32_t (* _event_post)(const char* event_base, int32_t event_id, void* event_data, size_t event_data_size, uint32_t ticks_to_wait);
     uint32_t (* _get_free_heap_size)(void);
     uint32_t (* _rand)(void);
     void (* _dport_access_stall_other_cpu_start_wrap)(void);
@@ -101,6 +103,9 @@ typedef struct {
     int32_t (* _get_random)(uint8_t *buf, size_t len);
     int32_t (* _get_time)(void *t);
     unsigned long (* _random)(void);
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t (* _slowclk_cal_get)(void);
+#endif
     void (* _log_write)(uint32_t level, const char* tag, const char* format, ...);
     uint32_t (* _log_timestamp)(void);
     void * (* _malloc_internal)(size_t size);
@@ -117,9 +122,8 @@ typedef struct {
     int32_t (* _modem_sleep_exit)(uint32_t module);
     int32_t (* _modem_sleep_register)(uint32_t module);
     int32_t (* _modem_sleep_deregister)(uint32_t module);
-    void (* _sc_ack_send)(void *param);
-    void (* _sc_ack_send_stop)(void);
     uint32_t (* _coex_status_get)(void);
+    void (* _coex_condition_set)(uint32_t type, bool dissatisfy);
     int32_t (* _coex_wifi_request)(uint32_t event, uint32_t latency, uint32_t duration);
     int32_t (* _coex_wifi_release)(uint32_t event);
     int32_t _magic;

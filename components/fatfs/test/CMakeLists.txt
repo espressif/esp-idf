@@ -1,8 +1,10 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(srcdirs ".")
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND srcdirs "esp32")
+endif()
 
-set(COMPONENT_REQUIRES unity test_utils vfs fatfs)
-
-set(COMPONENT_EMBED_TXTFILES fatfs.img)
-
-register_component()
+idf_component_register(SRC_DIRS ${srcdirs}
+                       INCLUDE_DIRS .
+                       REQUIRES unity test_utils vfs fatfs
+                       EMBED_TXTFILES fatfs.img
+                      )

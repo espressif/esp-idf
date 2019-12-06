@@ -82,7 +82,7 @@ typedef struct _core_dump_task_header_t
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
 
 //  Core dump flash init function
-void esp_core_dump_flash_init();
+void esp_core_dump_flash_init(void);
 
 #endif
 

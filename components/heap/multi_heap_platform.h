@@ -16,7 +16,12 @@
 #ifdef ESP_PLATFORM
 
 #include <freertos/FreeRTOS.h>
-#include <esp32/rom/ets_sys.h>
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include <assert.h>
 
 /* Because malloc/free can happen inside an ISR context,
@@ -48,9 +53,9 @@ inline static void multi_heap_assert(bool condition, const char *format, int lin
     */
 #ifndef NDEBUG
     if(!condition) {
-#ifndef CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+#ifndef CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
         ets_printf(format, line, address);
-#endif  // CONFIG_OPTIMIZATION_ASSERTIONS_SILENT
+#endif  // CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
         abort();
     }
 #else // NDEBUG

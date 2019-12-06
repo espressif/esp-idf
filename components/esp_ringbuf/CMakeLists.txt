@@ -1,7 +1,3 @@
-set(COMPONENT_ADD_INCLUDEDIRS "include")
-set(COMPONENT_SRCS "ringbuf.c")
-set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
-
-set(COMPONENT_REQUIRES)
-
-register_component()
+idf_component_register(SRCS "ringbuf.c"
+                    INCLUDE_DIRS "include"
+                    LDFRAGMENTS linker.lf)

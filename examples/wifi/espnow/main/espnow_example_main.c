@@ -21,13 +21,12 @@
 #include "freertos/timers.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp_system.h"
 #include "esp_now.h"
-#include "esp32/rom/ets_sys.h"
-#include "esp32/rom/crc.h"
+#include "esp_crc.h"
 #include "espnow_example.h"
 
 static const char *TAG = "espnow_example";
@@ -42,7 +41,7 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param);
 /* WiFi should start before using ESPNOW */
 static void example_wifi_init(void)
 {
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
@@ -50,13 +49,7 @@ static void example_wifi_init(void)
     ESP_ERROR_CHECK( esp_wifi_set_mode(ESPNOW_WIFI_MODE) );
     ESP_ERROR_CHECK( esp_wifi_start());
 
-    /* In order to simplify example, channel is set after WiFi started.
-     * This is not necessary in real application if the two devices have
-     * been already on the same channel.
-     */
-    ESP_ERROR_CHECK( esp_wifi_set_channel(CONFIG_ESPNOW_CHANNEL, 0) );
-
-#if CONFIG_ENABLE_LONG_RANGE
+#if CONFIG_ESPNOW_ENABLE_LONG_RANGE
     ESP_ERROR_CHECK( esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR) );
 #endif
 }
@@ -123,7 +116,7 @@ int example_espnow_data_parse(uint8_t *data, uint16_t data_len, uint8_t *state, 
     *magic = buf->magic;
     crc = buf->crc;
     buf->crc = 0;
-    crc_cal = crc16_le(UINT16_MAX, (uint8_t const *)buf, data_len);
+    crc_cal = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, data_len);
 
     if (crc_cal == crc) {
         return buf->type;
@@ -146,7 +139,7 @@ void example_espnow_data_prepare(example_espnow_send_param_t *send_param)
     buf->magic = send_param->magic;
     /* Fill all remaining bytes after the data with random values */
     esp_fill_random(buf->payload, send_param->len - sizeof(example_espnow_data_t));
-    buf->crc = crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
+    buf->crc = esp_crc16_le(UINT16_MAX, (uint8_t const *)buf, send_param->len);
 }
 
 static void example_espnow_task(void *pvParameter)
@@ -361,7 +354,7 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param)
     esp_now_deinit();
 }
 
-void app_main()
+void app_main(void)
 {
     // Initialize NVS
     esp_err_t ret = nvs_flash_init();

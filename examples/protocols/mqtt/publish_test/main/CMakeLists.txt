@@ -1,4 +1,2 @@
-set(COMPONENT_SRCS "publish_test.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-
-register_component()
+idf_component_register(SRCS "publish_test.c"
+                    INCLUDE_DIRS ".")

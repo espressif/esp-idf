@@ -30,7 +30,7 @@ static IRAM_ATTR void cache_test_task(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash]")
+TEST_CASE("spi_flash_cache_enabled() works on both CPUs", "[spi_flash][esp_flash]")
 {
     result_queue = xQueueCreate(1, sizeof(bool));
 
@@ -73,8 +73,12 @@ TEST_CASE("invalid access to cache raises panic (PRO CPU)", "[spi_flash][ignore]
     vTaskDelay(1000/portTICK_PERIOD_MS);
 }
 
+#ifndef CONFIG_FREERTOS_UNICORE
+
 TEST_CASE("invalid access to cache raises panic (APP CPU)", "[spi_flash][ignore]")
 {
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 1);
     vTaskDelay(1000/portTICK_PERIOD_MS);
 }
+
+#endif

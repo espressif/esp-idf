@@ -41,7 +41,7 @@ DRAM
 
 At startup, the DRAM heap contains all data memory which is not statically allocated by the app. Reducing statically allocated buffers will increase the amount of available free heap.
 
-To find the amount of statically allocated memory, use the :ref:`make size <make-size>` or :ref:`idf.py size <idf.py-size>` (for CMake) command.
+To find the amount of statically allocated memory, use the :ref:`idf.py size <idf.py-size>` command.
 
 .. note:: Due to a technical limitation, the maximum statically allocated DRAM usage is 160KB. The remaining 160KB (for a total of 320KB of DRAM) can only be allocated at runtime as heap.
 
@@ -52,7 +52,7 @@ IRAM
 
 At startup, the IRAM heap contains all instruction memory which is not used by the app executable code.
 
-The :ref:`make size <make-size>` and :ref:`idf.py size <idf.py-size>` commands can be used to find the amount of IRAM used by the app.
+The :ref:`idf.py size <idf.py-size>` command can be used to find the amount of IRAM used by the app.
 
 D/IRAM
 ^^^^^^
@@ -112,6 +112,13 @@ API Reference - Heap Allocation
 -------------------------------
 
 .. include:: /_build/inc/esp_heap_caps.inc
+
+Thread Safety
+^^^^^^^^^^^^^
+
+Heap functions are thread safe, meaning they can be called from different tasks simultaneously without any limitations.
+
+It is technically possible to call ``malloc``, ``free``, and related functions from interrupt handler (ISR) context. However this is not recommended, as heap function calls may delay other interrupts. It is strongly recommended to refactor applications so that any buffers used by an ISR are pre-allocated outside of the ISR. Support for calling heap functions from ISRs may be removed in a future update.
 
 Heap Tracing & Debugging
 ------------------------

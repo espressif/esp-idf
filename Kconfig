@@ -4,15 +4,15 @@
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
+    # Hidden option to support checking for this specific target in C code and Kconfig files
+    config IDF_TARGET_ESP32
+        bool
+        default "y" if IDF_TARGET="esp32"
+        default "n"
+
     config IDF_CMAKE
         bool
         option env="IDF_CMAKE"
-
-
-    config IDF_TARGET_ENV
-        # A proxy to get environment variable $IDF_TARGET
-        string
-        option env="IDF_TARGET"
 
     config IDF_TARGET
         # This option records the IDF target when sdkconfig is generated the first time.
@@ -20,19 +20,36 @@ mainmenu "Espressif IoT Development Framework Configuration"
         # the build system is responsible for detecting the mismatch between
         # CONFIG_IDF_TARGET and $IDF_TARGET.
         string
-        default "IDF_TARGET_NOT_SET" if IDF_TARGET_ENV=""
-        default IDF_TARGET_ENV
+        default "$(IDF_TARGET)"
 
+    config IDF_TARGET_ESP32
+        bool
+        default "y" if IDF_TARGET="esp32"
+        default "n"
+
+    config IDF_TARGET_ESP32S2BETA
+        bool
+        default "y" if IDF_TARGET="esp32s2beta"
+        default "n"
+        select FREERTOS_UNICORE
+
+    config IDF_FIRMWARE_CHIP_ID
+        hex
+        default 0x0000 if IDF_TARGET_ESP32
+        # note: S2 beta uses Chip ID 0 still, S2 will use 0x0002
+        default 0x0000 if IDF_TARGET_ESP32S2BETA
+        default 0xFFFF
 
     menu "SDK tool configuration"
-        config TOOLPREFIX
+        config SDK_TOOLPREFIX
             string "Compiler toolchain path/prefix"
-            default "xtensa-esp32-elf-"
+            default "xtensa-esp32-elf-" if IDF_TARGET_ESP32
+            default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2BETA
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.
 
-        config PYTHON
+        config SDK_PYTHON
             string "Python 2 interpreter"
             depends on !IDF_CMAKE
             default "python"
@@ -40,11 +57,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 The executable name/path that is used to run python. On some systems Python 2.x
                 may need to be invoked as python2.
 
-                (Note: This option is used with the GNU Make build system only, not idf.py
-                or CMake-based builds.)
+                (Note: This option is used with the legacy GNU Make build system only.)
 
-        config MAKE_WARN_UNDEFINED_VARIABLES
+        config SDK_MAKE_WARN_UNDEFINED_VARIABLES
             bool "'make' warns on undefined variables"
+            depends on !IDF_CMAKE
             default "y"
             help
                 Adds --warn-undefined-variables to MAKEFLAGS. This causes make to
@@ -54,37 +71,127 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 or otherwise missing, but it can be unwanted if you have Makefiles which
                 depend on undefined variables expanding to an empty string.
 
+                (Note: this option is used with the legacy GNU Make build system only.)
+
     endmenu  # SDK tool configuration
 
-    source "$COMPONENT_KCONFIGS_PROJBUILD"
+    menu "Build type"
+
+        choice APP_BUILD_TYPE
+            prompt "Application build type"
+            default APP_BUILD_TYPE_APP_2NDBOOT
+            help
+                Select the way the application is built.
+
+                By default, the application is built as a binary file in a format compatible with
+                the ESP32 bootloader. In addition to this application, 2nd stage bootloader is
+                also built. Application and bootloader binaries can be written into flash and
+                loaded/executed from there.
+
+                Another option, useful for only very small and limited applications, is to only link
+                the .elf file of the application, such that it can be loaded directly into RAM over
+                JTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to
+                build any complex application this way. However for kinds of testing and debugging,
+                this option may provide faster iterations, since the application does not need to be
+                written into flash.
+                Note that at the moment, ESP-IDF does not contain all the startup code required to
+                initialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute
+                a bit of ROM code prior to executing the application. A gdbinit file may look as follows:
+
+                    # Connect to a running instance of OpenOCD
+                    target remote :3333
+                    # Reset and halt the target
+                    mon reset halt
+                    # Run to a specific point in ROM code,
+                    #  where most of initialization is complete.
+                    thb *0x40007901
+                    c
+                    # Load the application into RAM
+                    load
+                    # Run till app_main
+                    tb app_main
+                    c
+
+                Execute this gdbinit file as follows:
+
+                    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit
+
+                Recommended sdkconfig.defaults for building loadable ELF files is as follows.
+                CONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application
+                memory footprint.
+
+                    CONFIG_APP_BUILD_TYPE_ELF_RAM=y
+                    CONFIG_VFS_SUPPORT_TERMIOS=
+                    CONFIG_NEWLIB_NANO_FORMAT=y
+                    CONFIG_ESP32_PANIC_PRINT_HALT=y
+                    CONFIG_ESP32_DEBUG_STUBS_ENABLE=
+                    CONFIG_ESP_ERR_TO_NAME_LOOKUP=
+
+
+            config APP_BUILD_TYPE_APP_2NDBOOT
+                bool
+                prompt "Default (binary application + 2nd stage bootloader)"
+                select APP_BUILD_GENERATE_BINARIES
+                select APP_BUILD_BOOTLOADER
+                select APP_BUILD_USE_FLASH_SECTIONS
+
+            config APP_BUILD_TYPE_ELF_RAM
+                bool
+                prompt "ELF file, loadable into RAM (EXPERIMENTAL))"
+        endchoice # APP_BUILD_TYPE
+
+        # Hidden options, set according to the choice above
+        config APP_BUILD_GENERATE_BINARIES
+            bool # Whether to generate .bin files or not
+
+        config APP_BUILD_BOOTLOADER
+            bool # Whether to build the bootloader
+
+        config APP_BUILD_USE_FLASH_SECTIONS
+            bool # Whether to place code/data into memory-mapped flash sections
+
+    endmenu # Build type
+
+    source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
 
     menu "Compiler options"
 
-        choice OPTIMIZATION_COMPILER
+        choice COMPILER_OPTIMIZATION
             prompt "Optimization Level"
-            default OPTIMIZATION_LEVEL_DEBUG
+            default COMPILER_OPTIMIZATION_DEFAULT
             help
                 This option sets compiler optimization level (gcc -O argument).
 
-                - for "Release" setting, -Os flag is added to CFLAGS.
-                - for "Debug" setting, -Og flag is added to CFLAGS.
+                - The "Default" setting will add the -0g flag to CFLAGS.
+                - The "Size" setting will add the -0s flag to CFLAGS.
+                - The "Performance" setting will add the -O2 flag to CFLAGS.
+                - The "None" setting will add the -O0 flag to CFLAGS.
 
-                "Release" with -Os produces smaller & faster compiled code but it
-                may be harder to correlated code addresses to source files when debugging.
+                The "Size" setting cause the compiled code to be smaller and faster, but
+                may lead to difficulties of correlating code addresses to source file
+                lines when debugging.
 
-                To add custom optimization settings, set CFLAGS and/or CPPFLAGS
-                in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
-                custom optimization levels may be unsupported.
+                The "Performance" setting causes the compiled code to be larger and faster,
+                but will be easier to correlated code addresses to source file lines.
 
-            config OPTIMIZATION_LEVEL_DEBUG
+                "None" with -O0 produces compiled code without optimization.
+
+                Note that custom optimization levels may be unsupported.
+
+            config COMPILER_OPTIMIZATION_DEFAULT
                 bool "Debug (-Og)"
-            config OPTIMIZATION_LEVEL_RELEASE
-                bool "Release (-Os)"
+            config COMPILER_OPTIMIZATION_SIZE
+                bool "Optimize for size (-Os)"
+            config COMPILER_OPTIMIZATION_PERF
+                bool "Optimize for performance (-O2)"
+            config COMPILER_OPTIMIZATION_NONE
+                bool "Debug without optimization (-O0)"
+
         endchoice
 
-        choice OPTIMIZATION_ASSERTION_LEVEL
+        choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
             prompt "Assertion level"
-            default OPTIMIZATION_ASSERTIONS_ENABLED
+            default COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
             help
                 Assertions can be:
 
@@ -96,20 +203,20 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 - Disabled entirely (not recommended for most configurations.) -DNDEBUG is added
                   to CPPFLAGS in this case.
 
-            config OPTIMIZATION_ASSERTIONS_ENABLED
+            config COMPILER_OPTIMIZATION_ASSERTIONS_ENABLE
                 prompt "Enabled"
                 bool
                 help
                     Enable assertions. Assertion content and line number will be printed on failure.
 
-            config OPTIMIZATION_ASSERTIONS_SILENT
+            config COMPILER_OPTIMIZATION_ASSERTIONS_SILENT
                 prompt "Silent (saves code size)"
                 bool
                 help
                     Enable silent assertions. Failed assertions will abort(), user needs to
                     use the aborting address to find the line number with the failed assertion.
 
-            config OPTIMIZATION_ASSERTIONS_DISABLED
+            config COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE
                 prompt "Disabled (sets -DNDEBUG)"
                 bool
                 help
@@ -117,7 +224,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
         endchoice # assertions
 
-        menuconfig CXX_EXCEPTIONS
+        menuconfig COMPILER_CXX_EXCEPTIONS
             bool "Enable C++ exceptions"
             default n
             help
@@ -129,17 +236,25 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 Enabling this option currently adds an additional ~500 bytes of heap overhead
                 when an exception is thrown in user code for the first time.
 
-        config CXX_EXCEPTIONS_EMG_POOL_SIZE
+        config COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE
             int "Emergency Pool Size"
             default 0
-            depends on CXX_EXCEPTIONS
+            depends on COMPILER_CXX_EXCEPTIONS
             help
                 Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
                 memory for thrown exceptions when there is not enough memory on the heap.
 
-        choice STACK_CHECK_MODE
+        config COMPILER_CXX_RTTI
+            bool "Enable C++ run-time type info (RTTI)"
+            default n
+            help
+                Enabling this option compiles all C++ files with RTTI support enabled.
+                This increases binary size (typically by tens of kB) but allows using
+                dynamic_cast conversion and typeid operator.
+
+        choice COMPILER_STACK_CHECK_MODE
             prompt "Stack smashing protection mode"
-            default STACK_CHECK_NONE
+            default COMPILER_STACK_CHECK_MODE_NONE
             help
                 Stack smashing protection mode. Emit extra code to check for buffer overflows, such as stack
                 smashing attacks. This is done by adding a guard variable to functions with vulnerable objects.
@@ -162,23 +277,23 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 - coverage: NORMAL < STRONG < OVERALL
 
 
-            config STACK_CHECK_NONE
+            config COMPILER_STACK_CHECK_MODE_NONE
                 bool "None"
-            config STACK_CHECK_NORM
+            config COMPILER_STACK_CHECK_MODE_NORM
                 bool "Normal"
-            config STACK_CHECK_STRONG
+            config COMPILER_STACK_CHECK_MODE_STRONG
                 bool "Strong"
-            config STACK_CHECK_ALL
+            config COMPILER_STACK_CHECK_MODE_ALL
                 bool "Overall"
         endchoice
 
-        config STACK_CHECK
+        config COMPILER_STACK_CHECK
             bool
-            default !STACK_CHECK_NONE
+            default !COMPILER_STACK_CHECK_MODE_NONE
             help
                 Stack smashing protection.
 
-        config WARN_WRITE_STRINGS
+        config COMPILER_WARN_WRITE_STRINGS
             bool "Enable -Wwrite-strings warning flag"
             default "n"
             help
@@ -192,7 +307,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 For C++, this warns about the deprecated conversion from string
                 literals to ``char *``.
 
-        config DISABLE_GCC8_WARNINGS
+        config COMPILER_DISABLE_GCC8_WARNINGS
             bool "Disable new warnings introduced in GCC 6 - 8"
             default "n"
             help
@@ -203,7 +318,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     endmenu # Compiler Options
 
     menu "Component config"
-        source "$COMPONENT_KCONFIGS"
+        source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
 
     menu "Compatibility options"

@@ -13,7 +13,7 @@ extern "C" {
 #endif
 
 // Register NVS functions
-void register_nvs();
+void register_nvs(void);
 
 #ifdef __cplusplus
 }

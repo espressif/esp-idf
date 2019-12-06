@@ -225,7 +225,7 @@ static void can_control_task(void *arg)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     //Add short delay to allow master it to initialize first
     for (int i = 3; i > 0; i--) {

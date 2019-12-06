@@ -16,10 +16,10 @@
 
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "soc/dport_reg.h"
-#include "soc/efuse_reg.h"
-#include "soc/gpio_reg.h"
+#include "soc/efuse_periph.h"
+#include "soc/gpio_periph.h"
 
 
 void rtc_init(rtc_config_t cfg)
@@ -97,7 +97,7 @@ void rtc_init(rtc_config_t cfg)
     }
 }
 
-rtc_vddsdio_config_t rtc_vddsdio_get_config()
+rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
 {
     rtc_vddsdio_config_t result;
     uint32_t sdio_conf_reg = REG_READ(RTC_CNTL_SDIO_CONF_REG);

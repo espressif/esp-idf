@@ -18,7 +18,7 @@
  * See readme.md in soc/include/hal/readme.md
  ******************************************************************************/
 
-// The HAL layer for SPI (common part)
+// The HAL layer for SPI master (common part)
 
 // SPI HAL usages:
 // 1. initialize the bus
@@ -34,7 +34,7 @@
 // field comments.
 
 #pragma once
-#include "spi_ll.h"
+#include "hal/spi_ll.h"
 #include <esp_err.h>
 #include "soc/lldesc.h"
 
@@ -53,7 +53,9 @@ typedef struct {
  * Context that should be maintained by both the driver and the HAL.
  */
 typedef struct {
-    /* configured by driver at initialization */
+    /* configured by driver at initialization, don't touch */
+    spi_dev_t *hw;        ///< Beginning address of the peripheral registers.
+    /* should be configured by driver at initialization */
     lldesc_t *dmadesc_tx; /**< Array of DMA descriptor used by the TX DMA.
                            *   The amount should be larger than dmadesc_n. The driver should ensure that
                            *   the data to be sent is shorter than the descriptors can hold.
@@ -83,7 +85,9 @@ typedef struct {
         uint32_t rx_lsbfirst : 1;   ///< Whether LSB is received first for RX data, device specific
         uint32_t dma_enabled : 1;   ///< Whether the DMA is enabled, do not update after initialization
         uint32_t no_compensate : 1; ///< No need to add dummy to compensate the timing, device specific
-        uint32_t as_cs  : 1;        ///< Whether the AS_CS feature is enabled, device specific
+#ifdef SOC_SPI_SUPPORT_AS_CS
+        uint32_t as_cs  : 1;        ///< Whether to toggle the CS while the clock toggles, device specific
+#endif
         uint32_t positive_cs : 1;   ///< Whether the postive CS feature is abled, device specific
     };//boolean configurations
 
@@ -102,8 +106,6 @@ typedef struct {
     uint8_t *rcv_buffer;    ///< Buffer to hold the receive data.
     spi_ll_io_mode_t io_mode;   ///< IO mode of the master
 
-    /* auto generated at initialization, don't touch */
-    spi_dev_t *hw;          ///< Beginning address of the peripheral registers.
 } spi_hal_context_t;
 
 /**

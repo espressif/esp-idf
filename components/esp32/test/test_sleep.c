@@ -4,20 +4,20 @@
 #include "esp_sleep.h"
 #include "esp32/clk.h"
 #include "driver/rtc_io.h"
-#include "soc/gpio_reg.h"
-#include "soc/rtc.h"
-#include "soc/uart_reg.h"
 #include "esp32/rom/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "soc/gpio_periph.h"
+#include "soc/uart_periph.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
-#include "soc/rtc_cntl_reg.h"   // for read rtc registers directly (cause)
+#include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros
 #include "esp32/rom/rtc.h"
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+
 
 #define ESP_EXT0_WAKEUP_LEVEL_LOW 0
 #define ESP_EXT0_WAKEUP_LEVEL_HIGH 1
@@ -30,7 +30,7 @@ static void deep_sleep_task(void *arg)
     esp_deep_sleep_start();
 }
 
-static void do_deep_sleep_from_app_cpu()
+static void do_deep_sleep_from_app_cpu(void)
 {
     xTaskCreatePinnedToCore(&deep_sleep_task, "ds", 2048, NULL, 5, NULL, 1);
 
@@ -125,7 +125,7 @@ TEST_CASE("light sleep stress test with periodic esp_timer", "[deepsleep]")
 }
 
 
-#ifdef CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL
+#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
 #define MAX_SLEEP_TIME_ERROR_US 200
 #else
 #define MAX_SLEEP_TIME_ERROR_US 100
@@ -176,8 +176,8 @@ TEST_CASE("light sleep and frequency switching", "[deepsleep]")
 {
 #ifndef CONFIG_PM_ENABLE
     const int uart_clk_freq = REF_CLK_FREQ;
-    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
-    uart_div_modify(CONFIG_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_CONSOLE_UART_BAUDRATE);
+    CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
+    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
     rtc_cpu_freq_config_t config_xtal, config_default;
@@ -205,20 +205,20 @@ TEST_CASE("enter deep sleep on APP CPU and wake up using timer", "[deepsleep][re
 }
 #endif
 
-static void do_deep_sleep()
+static void do_deep_sleep(void)
 {
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_sleep_reset_and_sleep()
+static void check_sleep_reset_and_sleep(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_sleep_reset()
+static void check_sleep_reset(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
 }
@@ -229,12 +229,12 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep more than once", "[deepsleep][reset=
         check_sleep_reset_and_sleep,
         check_sleep_reset);
 
-static void do_abort()
+static void do_abort(void)
 {
     abort();
 }
 
-static void check_abort_reset_and_sleep()
+static void check_abort_reset_and_sleep(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_PANIC, esp_reset_reason());
     esp_sleep_enable_timer_wakeup(100000);
@@ -248,20 +248,20 @@ TEST_CASE_MULTIPLE_STAGES("enter deep sleep after abort", "[deepsleep][reset=abo
 
 static RTC_DATA_ATTR uint32_t s_wake_stub_var;
 
-static RTC_IRAM_ATTR void wake_stub()
+static RTC_IRAM_ATTR void wake_stub(void)
 {
     esp_default_wake_deep_sleep();
     s_wake_stub_var = (uint32_t) &wake_stub;
 }
 
-static void prepare_wake_stub()
+static void prepare_wake_stub(void)
 {
     esp_set_deep_sleep_wake_stub(&wake_stub);
     esp_sleep_enable_timer_wakeup(100000);
     esp_deep_sleep_start();
 }
 
-static void check_wake_stub()
+static void check_wake_stub(void)
 {
     TEST_ASSERT_EQUAL(ESP_RST_DEEPSLEEP, esp_reset_reason());
     TEST_ASSERT_EQUAL_HEX32((uint32_t) &wake_stub, s_wake_stub_var);
@@ -331,33 +331,33 @@ TEST_CASE("wake up using ext1 when RTC_PERIPH is on (13 low)", "[deepsleep][igno
 static float get_time_ms(void)
 {
     gettimeofday(&tv_stop, NULL);
-    
+
     float dt = (tv_stop.tv_sec - tv_start.tv_sec) * 1e3f +
                 (tv_stop.tv_usec - tv_start.tv_usec) * 1e-3f;
     return fabs(dt);
 }
 
-static uint32_t get_cause()
+static uint32_t get_cause(void)
 {
     uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, \
                                             RTC_CNTL_WAKEUP_CAUSE);
     return wakeup_cause;
 }
 
-// This test case verifies deactivation of trigger for wake up sources 
+// This test case verifies deactivation of trigger for wake up sources
 TEST_CASE("disable source trigger behavior", "[deepsleep]")
 {
     float dt = 0;
 
     printf("Setup timer and ext0 to wake up immediately from GPIO_13 \n");
-    
+
     // Setup ext0 configuration to wake up almost immediately
     // The wakeup time is proportional to input capacitance * pullup resistance
     ESP_ERROR_CHECK(rtc_gpio_init(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pullup_en(GPIO_NUM_13));
     ESP_ERROR_CHECK(gpio_pulldown_dis(GPIO_NUM_13));
     ESP_ERROR_CHECK(esp_sleep_enable_ext0_wakeup(GPIO_NUM_13, ESP_EXT0_WAKEUP_LEVEL_HIGH));
-            
+
     // Setup timer to wakeup with timeout
      esp_sleep_enable_timer_wakeup(2000000);
 
@@ -368,22 +368,22 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
     dt = get_time_ms();
     printf("Ext0 sleep time = %d \n", (int) dt);
 
-    // Check wakeup from Ext0 using time measurement because wakeup cause is 
+    // Check wakeup from Ext0 using time measurement because wakeup cause is
     // not available in light sleep mode
     TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
-    
+
     TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
-    
+
     // Disable Ext0 source. Timer source should be triggered
     ESP_ERROR_CHECK(esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_EXT0));
     printf("Disable ext0 trigger and leave timer active.\n");
-            
+
     gettimeofday(&tv_start, NULL);
     esp_light_sleep_start();
 
     dt = get_time_ms();
     printf("Timer sleep time = %d \n", (int) dt);
-    
+
     TEST_ASSERT_INT32_WITHIN(500, 2000, (int) dt);
 
     // Additionally check wakeup cause
@@ -408,8 +408,8 @@ TEST_CASE("disable source trigger behavior", "[deepsleep]")
 
     TEST_ASSERT_INT32_WITHIN(100, 100, (int) dt);
     TEST_ASSERT((get_cause() & RTC_EXT0_TRIG_EN) != 0);
-    
-    // Check error message when source is already disabled 
+
+    // Check error message when source is already disabled
     esp_err_t err_code = esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TIMER);
     TEST_ASSERT(err_code == ESP_ERR_INVALID_STATE);
 }
@@ -430,7 +430,7 @@ static void trigger_deepsleep(void)
     // Save start time. Deep sleep.
     gettimeofday(&start, NULL);
     esp_sleep_enable_timer_wakeup(1000);
-    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc() 
+    // In function esp_deep_sleep_start() uses function esp_sync_counters_rtc_and_frc()
     // to prevent a negative time after wake up.
     esp_deep_sleep_start();
 }

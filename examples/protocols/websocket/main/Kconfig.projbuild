@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config WEBSOCKET_URI
+        string "Websocket endpoint URI"
+        default "ws://echo.websocket.org"
+        help
+            URL of websocket endpoint this example connects to and sends echo
+
+endmenu

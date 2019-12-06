@@ -10,8 +10,17 @@ endif
 COMPONENT_SRCDIRS := src
 
 ifndef IS_BOOTLOADER_BUILD
+COMPONENT_SRCDIRS += src/idf  # idf sub-directory contains platform agnostic IDF versions
+else
+COMPONENT_SRCDIRS += src/$(IDF_TARGET)  # one sub-dir per chip
+endif
+
+ifndef IS_BOOTLOADER_BUILD
 COMPONENT_OBJEXCLUDE := src/bootloader_init.o
 endif
+
+COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2beta.o \
+			src/bootloader_efuse_esp32s2beta.o
 
 #
 # Secure boot signing key support
@@ -40,10 +49,10 @@ $(ORIG_SECURE_BOOT_VERIFICATION_KEY):
 $(SECURE_BOOT_VERIFICATION_KEY): $(ORIG_SECURE_BOOT_VERIFICATION_KEY) $(SDKCONFIG_MAKEFILE)
 	$(summary) CP $< $@
 	cp $< $@
-endif
+endif #CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES
 
 COMPONENT_EXTRA_CLEAN += $(SECURE_BOOT_VERIFICATION_KEY)
 
 COMPONENT_EMBED_FILES := $(SECURE_BOOT_VERIFICATION_KEY)
 
-endif
+endif #CONFIG_SECURE_SIGNED_APPS

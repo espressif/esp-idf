@@ -1,16 +1,16 @@
 menu "Example Configuration"
 
-    config SDIO_EXAMPLE_OVER_SPI
+    config EXAMPLE_SDIO_OVER_SPI
         bool "Host use SPI bus to communicate with slave"
         default n
         help
             If this is set, the host tries using SPI bus to communicate with slave.
             Otherwise, the standarad SD bus is used.
 
-    config SDIO_EXAMPLE_4BIT
+    config EXAMPLE_SDIO_4BIT
         bool "Host tries using 4-bit mode to communicate with slave"
         default n
-        depends on !SDIO_EXAMPLE_OVER_SPI
+        depends on !EXAMPLE_SDIO_OVER_SPI
         help
             If this is set, the host tries using 4-bit mode to communicate with
             slave. If failed, the communication falls back to 1-bit mode.
@@ -21,7 +21,7 @@ menu "Example Configuration"
             Note that 4-bit mode is not compatible (by default) if the slave is
             using 3.3V flash which requires a pull-down on the MTDI pin.
 
-    config SDIO_EXAMPLE_HIGHSPEED
+    config EXAMPLE_SDIO_HIGHSPEED
         bool "Host tries using HS mode to communicate with slave"
         default y
         help

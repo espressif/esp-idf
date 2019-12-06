@@ -25,14 +25,14 @@
 #include <esp_spi_flash.h>
 #include <esp32/rom/spi_flash.h>
 #include "../cache_utils.h"
-#include "soc/timer_group_struct.h"
-#include "soc/timer_group_reg.h"
+#include "soc/timer_periph.h"
 #include "esp_heap_caps.h"
 
+#define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
 static size_t start;
 
-static void setup_tests()
+static void setup_tests(void)
 {
     if (start == 0) {
         const esp_partition_t *part = get_test_data_partition();
@@ -80,7 +80,7 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
     spi_flash_disable_interrupts_caches_and_other_cpu();
     esp_rom_spiflash_result_t rc = esp_rom_spiflash_write(start, src_buf, sizeof(src_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    TEST_ASSERT_EQUAL_INT(rc, ESP_ROM_SPIFLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_HEX(rc, ESP_ROM_SPIFLASH_RESULT_OK);
     memset(dst_buf, 0x55, sizeof(dst_buf));
     memset(dst_gold, 0x55, sizeof(dst_gold));
     fill(dst_gold + dst_off, src_off, len);
@@ -88,7 +88,7 @@ static void IRAM_ATTR test_read(int src_off, int dst_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_read", "[spi_flash]")
+TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
@@ -159,14 +159,16 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
         fill(dst_gold + dst_off, src_off, len);
     }
     ESP_ERROR_CHECK(spi_flash_write(start + dst_off, src_buf + src_off, len));
+
     spi_flash_disable_interrupts_caches_and_other_cpu();
     esp_rom_spiflash_result_t rc = esp_rom_spiflash_read(start, dst_buf, sizeof(dst_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
-    TEST_ASSERT_EQUAL_INT(rc, ESP_ROM_SPIFLASH_RESULT_OK);
+    TEST_ASSERT_EQUAL_HEX(rc, ESP_ROM_SPIFLASH_RESULT_OK);
+
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE("Test spi_flash_write", "[spi_flash]")
+TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
@@ -213,13 +215,32 @@ TEST_CASE("Test spi_flash_write", "[spi_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
+#define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
+#define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)
+#define TEST_SOC_CACHE_RAM_BANK2_ADDR   (SOC_IRAM_LOW + 0x4000)
+#define TEST_SOC_CACHE_RAM_BANK3_ADDR   (SOC_IRAM_LOW + 0x6000)
+#define TEST_SOC_IRAM_ADDR              (SOC_IRAM_LOW + 0x8000)
+#define TEST_SOC_RTC_IRAM_ADDR          (SOC_RTC_IRAM_LOW)
+#define TEST_SOC_RTC_DRAM_ADDR          (SOC_RTC_DRAM_LOW)
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_IROM_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_IRAM_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK0_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK1_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK2_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_CACHE_RAM_BANK3_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_RTC_IRAM_ADDR, 16));
+    ESP_ERROR_CHECK(spi_flash_write(start, (char *) TEST_SOC_RTC_DRAM_ADDR, 16));
+#else
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40000000, 16));
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40070000, 16));
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40078000, 16));
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
+#endif
 }
 
-#ifdef CONFIG_SPIRAM_SUPPORT
+#ifdef CONFIG_SPIRAM
 
 TEST_CASE("spi_flash_read can read into buffer in external RAM", "[spi_flash]")
 {
@@ -265,4 +286,37 @@ TEST_CASE("spi_flash_write can write from external RAM buffer", "[spi_flash]")
     free(buf_int);
 }
 
-#endif // CONFIG_SPIRAM_SUPPORT
+TEST_CASE("spi_flash_read less than 16 bytes into buffer in external RAM", "[spi_flash]")
+{
+    uint8_t *buf_ext_8 = (uint8_t *) heap_caps_malloc(MIN_BLOCK_SIZE, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(buf_ext_8);
+
+    uint8_t *buf_int_8 = (uint8_t *) heap_caps_malloc(MIN_BLOCK_SIZE, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(buf_int_8);
+
+    uint8_t data_8[MIN_BLOCK_SIZE];
+    for (int i = 0; i < MIN_BLOCK_SIZE; i++) {
+        data_8[i] = i;
+    }
+
+    const esp_partition_t *part = get_test_data_partition();
+    TEST_ESP_OK(spi_flash_erase_range(part->address, SPI_FLASH_SEC_SIZE));
+    TEST_ESP_OK(spi_flash_write(part->address, data_8, MIN_BLOCK_SIZE));
+    TEST_ESP_OK(spi_flash_read(part->address, buf_ext_8, MIN_BLOCK_SIZE));
+    TEST_ESP_OK(spi_flash_read(part->address, buf_int_8, MIN_BLOCK_SIZE));
+
+    TEST_ASSERT_EQUAL(0, memcmp(buf_ext_8, data_8, MIN_BLOCK_SIZE));
+    TEST_ASSERT_EQUAL(0, memcmp(buf_int_8, data_8, MIN_BLOCK_SIZE));
+
+    if (buf_ext_8) {
+        free(buf_ext_8);
+        buf_ext_8 = NULL;
+    }
+    if (buf_int_8) {
+        free(buf_int_8);
+        buf_int_8 = NULL;
+    }
+}
+
+#endif // CONFIG_SPIRAM
+

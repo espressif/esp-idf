@@ -16,7 +16,6 @@
 #include "driver/uart.h"
 #include "freertos/queue.h"
 #include "esp_log.h"
-#include "soc/uart_struct.h"
 
 /**
  * This is a example example which echos any data it receives on UART back to the sender.
@@ -48,12 +47,12 @@
 #define PACKET_READ_TICS        (100 / portTICK_RATE_MS)
 #define ECHO_TASK_STACK_SIZE    (2048)
 #define ECHO_TASK_PRIO          (10)
-#define ECHO_UART_PORT          (UART_NUM_2)
+#define ECHO_UART_PORT          (UART_NUM_MAX - 1)
 
 static const char *TAG = "RS485_ECHO_APP";
 
 // An example of echo test with hardware flow control on UART
-static void echo_task()
+static void echo_task(void *arg)
 {
     const int uart_num = ECHO_UART_PORT;
     uart_config_t uart_config = {
@@ -119,7 +118,7 @@ static void echo_task()
     }
 }
 
-void app_main()
+void app_main(void)
 {
     //A uart read/write example without event queue;
     xTaskCreate(echo_task, "uart_echo_task", ECHO_TASK_STACK_SIZE, NULL, ECHO_TASK_PRIO, NULL);

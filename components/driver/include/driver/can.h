@@ -45,7 +45,13 @@ extern "C" {
  * The following initializer macros offer commonly found bit rates.
  *
  * @note These timing values are based on the assumption APB clock is at 80MHz
+ * @note The 20K, 16K and 12.5K bit rates are only available from ESP32 Revision 2 onwards
  */
+#if (CONFIG_ESP32_REV_MIN >= 2)
+#define CAN_TIMING_CONFIG_12_5KBITS()   {.brp = 256, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
+#define CAN_TIMING_CONFIG_16KBITS()     {.brp = 200, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
+#define CAN_TIMING_CONFIG_20KBITS()     {.brp = 200, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
+#endif
 #define CAN_TIMING_CONFIG_25KBITS()     {.brp = 128, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_50KBITS()     {.brp = 80, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
 #define CAN_TIMING_CONFIG_100KBITS()    {.brp = 40, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
@@ -153,7 +159,8 @@ typedef struct {
  * @note    Macro initializers are available for this structure
  */
 typedef struct {
-    uint8_t brp;                    /**< Baudrate prescaler (APB clock divider, even number from 2 to 128) */
+    uint32_t brp;                   /**< Baudrate prescaler (i.e., APB clock divider) can be any even number from 2 to 128.
+                                         For ESP32 Rev 2 or later, multiples of 4 from 132 to 256 are also supported */
     uint8_t tseg_1;                 /**< Timing segment 1 (Number of time quanta, between 1 to 16) */
     uint8_t tseg_2;                 /**< Timing segment 2 (Number of time quanta, 1 to 8) */
     uint8_t sjw;                    /**< Synchronization Jump Width (Max time quanta jump for synchronize from 1 to 4) */
@@ -238,7 +245,7 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
  *      - ESP_OK: Successfully uninstalled CAN driver
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped/bus-off state, or is not installed
  */
-esp_err_t can_driver_uninstall();
+esp_err_t can_driver_uninstall(void);
 
 /**
  * @brief   Start the CAN driver
@@ -253,7 +260,7 @@ esp_err_t can_driver_uninstall();
  *      - ESP_OK: CAN driver is now running
  *      - ESP_ERR_INVALID_STATE: Driver is not in stopped state, or is not installed
  */
-esp_err_t can_start();
+esp_err_t can_start(void);
 
 /**
  * @brief   Stop the CAN driver
@@ -272,7 +279,7 @@ esp_err_t can_start();
  *      - ESP_OK: CAN driver is now Stopped
  *      - ESP_ERR_INVALID_STATE: Driver is not in running state, or is not installed
  */
-esp_err_t can_stop();
+esp_err_t can_stop(void);
 
 /**
  * @brief   Transmit a CAN message
@@ -379,7 +386,7 @@ esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_aler
  *      - ESP_OK: Bus recovery started
  *      - ESP_ERR_INVALID_STATE: CAN driver is not in the bus-off state, or is not installed
  */
-esp_err_t can_initiate_recovery();
+esp_err_t can_initiate_recovery(void);
 
 /**
  * @brief   Get current status information of the CAN driver
@@ -405,7 +412,7 @@ esp_err_t can_get_status_info(can_status_info_t *status_info);
  *      - ESP_OK: Transmit queue cleared
  *      - ESP_ERR_INVALID_STATE: CAN driver is not installed or TX queue is disabled
  */
-esp_err_t can_clear_transmit_queue();
+esp_err_t can_clear_transmit_queue(void);
 
 /**
  * @brief   Clear the receive queue
@@ -419,7 +426,7 @@ esp_err_t can_clear_transmit_queue();
  *      - ESP_OK: Transmit queue cleared
  *      - ESP_ERR_INVALID_STATE: CAN driver is not installed
  */
-esp_err_t can_clear_receive_queue();
+esp_err_t can_clear_receive_queue(void);
 
 #ifdef __cplusplus
 }

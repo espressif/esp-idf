@@ -13,6 +13,7 @@ import random
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -71,22 +72,21 @@ def test_single_config(dut, transport, qos, repeat, published):
     global expected_data
     global message_log
     sample_string = ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase + string.digits) for _ in range(16))
-    print("PUBLISH TEST: transport:{}, qos:{}, sequence:{}, sample msg:{}".format(transport, qos, published, sample_string))
     event_client_connected.clear()
     expected_count = 0
     message_log = ""
     expected_data = sample_string * repeat
+    print("PUBLISH TEST: transport:{}, qos:{}, sequence:{}, sample msg:'{}'".format(transport, qos, published, expected_data))
     client = None
     try:
         if transport in ["ws", "wss"]:
             client = mqtt.Client(transport="websockets")
-            client.ws_set_options(path="/ws", headers=None)
         else:
             client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message
         if transport in ["ssl", "wss"]:
-            client.tls_set(None, None, None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
+            client.tls_set(None, None, None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
             client.tls_insecure_set(True)
         print("Connecting...")
         client.connect(broker_host[transport], broker_port[transport], 60)
@@ -138,7 +138,7 @@ def test_weekend_mqtt_publish(env, extra_data):
       3. Test evaluates python client received correct qos0 message
       4. Test ESP32 client received correct qos0 message
     """
-    dut1 = env.get_dut("mqtt_publish", "examples/protocols/mqtt/publish_test")
+    dut1 = env.get_dut("mqtt_publish", "examples/protocols/mqtt/publish_test", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_publish.bin")
     bin_size = os.path.getsize(binary_file)
@@ -148,12 +148,12 @@ def test_weekend_mqtt_publish(env, extra_data):
     # Look for host:port in sdkconfig
     try:
         # python client subscribes to the topic to which esp client publishes and vice versa
-        publish_topic = dut1.app.get_sdkconfig()["CONFIG_SUBSCIBE_TOPIC"].replace('"','')
-        subscribe_topic = dut1.app.get_sdkconfig()["CONFIG_PUBLISH_TOPIC"].replace('"','')
-        broker_host["ssl"], broker_port["ssl"] = get_host_port_from_dut(dut1, "CONFIG_BROKER_SSL_URI")
-        broker_host["tcp"], broker_port["tcp"] = get_host_port_from_dut(dut1, "CONFIG_BROKER_TCP_URI")
-        broker_host["ws"], broker_port["ws"] = get_host_port_from_dut(dut1, "CONFIG_BROKER_WS_URI")
-        broker_host["wss"], broker_port["wss"] = get_host_port_from_dut(dut1, "CONFIG_BROKER_WSS_URI")
+        publish_topic = dut1.app.get_sdkconfig()["CONFIG_EXAMPLE_SUBSCIBE_TOPIC"].replace('"','')
+        subscribe_topic = dut1.app.get_sdkconfig()["CONFIG_EXAMPLE_PUBLISH_TOPIC"].replace('"','')
+        broker_host["ssl"], broker_port["ssl"] = get_host_port_from_dut(dut1, "CONFIG_EXAMPLE_BROKER_SSL_URI")
+        broker_host["tcp"], broker_port["tcp"] = get_host_port_from_dut(dut1, "CONFIG_EXAMPLE_BROKER_TCP_URI")
+        broker_host["ws"], broker_port["ws"] = get_host_port_from_dut(dut1, "CONFIG_EXAMPLE_BROKER_WS_URI")
+        broker_host["wss"], broker_port["wss"] = get_host_port_from_dut(dut1, "CONFIG_EXAMPLE_BROKER_WSS_URI")
     except Exception:
         print('ENV_TEST_FAILURE: Cannot find broker url in sdkconfig')
         raise
@@ -166,8 +166,10 @@ def test_weekend_mqtt_publish(env, extra_data):
         raise
     for qos in [0, 1, 2]:
         for transport in ["tcp", "ssl", "ws", "wss"]:
+            # simple test with empty message
+            test_single_config(dut1, transport, qos, 0, 5)
             # decide on broker what level of test will pass (local broker works the best)
-            if broker_host[transport].startswith("192.168"):
+            if broker_host[transport].startswith("192.168") and qos < 1:
                 # medium size, medium repeated
                 test_single_config(dut1, transport, qos, 5, 50)
                 # long data

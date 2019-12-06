@@ -31,20 +31,17 @@
  */
 
 #include "test_utils.h"
-#include "soc/rmt_struct.h"
-#include "soc/pcnt_struct.h"
-#include "soc/pcnt_reg.h"
-#include "soc/gpio_sig_map.h"
+#include "soc/rmt_periph.h"
+#include "soc/pcnt_periph.h"
+#include "soc/gpio_periph.h"
 #include "soc/dport_reg.h"
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/ets_sys.h"
-#include "driver/gpio.h"
 #include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "driver/periph_ctrl.h"
+#include "esp32/rom/gpio.h"
+#include "sdkconfig.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
-#define REF_CLOCK_RMT_CHANNEL   7
 #define REF_CLOCK_PCNT_UNIT     0
 #define REF_CLOCK_GPIO          21
 
@@ -55,6 +52,24 @@ static void IRAM_ATTR pcnt_isr(void* arg);
 static intr_handle_t s_intr_handle;
 static portMUX_TYPE s_lock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t s_milliseconds;
+
+#if CONFIG_IDF_TARGET_ESP32
+#define REF_CLOCK_RMT_CHANNEL   7
+
+static int get_pcnt_sig(void)
+{
+    return (REF_CLOCK_PCNT_UNIT < 5) ?
+            PCNT_SIG_CH0_IN0_IDX + 4 * REF_CLOCK_PCNT_UNIT :
+            PCNT_SIG_CH0_IN5_IDX + 4 * (REF_CLOCK_PCNT_UNIT - 5);
+}
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#define REF_CLOCK_RMT_CHANNEL   3
+
+static int get_pcnt_sig(void)
+{
+    return PCNT_SIG_CH0_IN0_IDX + 4 * REF_CLOCK_PCNT_UNIT;
+}
+#endif
 
 void ref_clock_init()
 {
@@ -90,9 +105,7 @@ void ref_clock_init()
     RMT.conf_ch[REF_CLOCK_RMT_CHANNEL].conf1.tx_start = 1;
 
     // Route signal to PCNT
-    int pcnt_sig_idx = (REF_CLOCK_PCNT_UNIT < 5) ?
-            PCNT_SIG_CH0_IN0_IDX + 4 * REF_CLOCK_PCNT_UNIT :
-            PCNT_SIG_CH0_IN5_IDX + 4 * (REF_CLOCK_PCNT_UNIT - 5);
+    int pcnt_sig_idx = get_pcnt_sig();
     gpio_matrix_in(REF_CLOCK_GPIO, pcnt_sig_idx, false);
     if (REF_CLOCK_GPIO != 20) {
         PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[REF_CLOCK_GPIO]);
@@ -130,10 +143,10 @@ void ref_clock_init()
 
 static void IRAM_ATTR pcnt_isr(void* arg)
 {
-    portENTER_CRITICAL(&s_lock);
+    portENTER_CRITICAL_ISR(&s_lock);
     PCNT.int_clr.val = BIT(REF_CLOCK_PCNT_UNIT);
     s_milliseconds += REF_CLOCK_PRESCALER_MS;
-    portEXIT_CRITICAL(&s_lock);
+    portEXIT_CRITICAL_ISR(&s_lock);
 }
 
 void ref_clock_deinit()

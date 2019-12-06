@@ -47,12 +47,10 @@ without description where were CPUs when it happened.
 @endcode
  */
 
-#ifndef _SOC_RTC_WDT_H
-#define _SOC_RTC_WDT_H
-
+#pragma once
 #include <stdint.h>
 #include <stdbool.h>
-#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_periph.h"
 #include "esp_err.h"
 
 #ifdef __cplusplus
@@ -101,22 +99,22 @@ typedef enum {
  * @return
  *         - True if the protect of RTC_WDT is set
  */
-bool rtc_wdt_get_protect_status();
+bool rtc_wdt_get_protect_status(void);
 
 /**
  * @brief Set protect of rtc_wdt.
  */
-void rtc_wdt_protect_on();
+void rtc_wdt_protect_on(void);
 
 /**
  * @brief Reset protect of rtc_wdt.
  */
-void rtc_wdt_protect_off();
+void rtc_wdt_protect_off(void);
 
 /**
  * @brief Enable rtc_wdt.
  */
-void rtc_wdt_enable();
+void rtc_wdt_enable(void);
 
 /**
  * @brief Enable the flash boot protection procedure for WDT.
@@ -125,19 +123,19 @@ void rtc_wdt_enable();
  * This function was added to be compatibility with the old bootloaders.
  * This mode is disabled in bootloader or using rtc_wdt_disable() function.
  */
-void rtc_wdt_flashboot_mode_enable();
+void rtc_wdt_flashboot_mode_enable(void);
 
 /**
  * @brief Disable rtc_wdt.
  */
-void rtc_wdt_disable();
+void rtc_wdt_disable(void);
 
 /**
  * @brief Reset counter rtc_wdt.
  *
  * It returns to stage 0 and its expiry counter restarts from 0.
  */
-void rtc_wdt_feed();
+void rtc_wdt_feed(void);
 
 /**
  * @brief Set time for required stage.
@@ -193,10 +191,8 @@ esp_err_t rtc_wdt_set_length_of_reset_signal(rtc_wdt_reset_sig_t reset_src, rtc_
  * @return
  *         - True rtc_wdt is enabled
  */
-bool rtc_wdt_is_on();
+bool rtc_wdt_is_on(void);
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _SOC_RTC_WDT_H

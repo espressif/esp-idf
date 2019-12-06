@@ -1,6 +1,11 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(srcdirs .)
 
-set(COMPONENT_REQUIRES unity test_utils)
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND srcdirs esp32)
+endif()
 
-register_component()
+
+idf_component_register(SRC_DIRS ${src_dirs}
+                       INCLUDE_DIRS .
+                       REQUIRES unity test_utils
+                      )

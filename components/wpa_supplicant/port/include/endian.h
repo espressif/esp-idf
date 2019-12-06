@@ -98,10 +98,6 @@ typedef	__uint64_t	uint64_t;
 #define	le32toh(x)	((uint32_t)(x))
 #define	le64toh(x)	((uint64_t)(x))
 
-#ifndef htons
-#define htons htobe16
-#endif //htons
-
 #else /* _BYTE_ORDER != _LITTLE_ENDIAN */
 #define	htobe16(x)	((uint16_t)(x))
 #define	htobe32(x)	((uint32_t)(x))

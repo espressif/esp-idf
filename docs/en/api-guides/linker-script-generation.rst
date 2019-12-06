@@ -59,13 +59,17 @@ fragment file. The path can either be an absolute path or a relative path from t
 CMake
 """""
 
-In the component's ``CMakeLists.txt`` file, set the variable ``COMPONENT_ADD_LDFRAGMENTS`` to the path of the created linker
-fragment file before the ``register_component`` call. The path can either be an absolute path or a relative path from the component directory.
+In the component's ``CMakeLists.txt`` file, specify argument ``LDFRAGMENTS`` in the ``idf_component_register`` call.
+The value of ``LDFRAGMENTS`` can either be an absolute path or a relative path from the component directory to the
+created linker fragment file.
 
 .. code-block:: cmake
 
-    set(COMPONENT_ADD_LDFRAGMENTS "my_linker_fragment_file.lf")
-    register_component()
+    # file paths relative to CMakeLists.txt  
+    idf_component_register(...
+                           LDFRAGMENTS "path/to/linker_fragment_file.lf" "path/to/another_linker_fragment_file.lf"
+                           ...
+                           )
 
 
 Specifying placements

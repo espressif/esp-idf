@@ -129,7 +129,7 @@ static void no_colors_theme(void)
 	mkattrn(FUNCTION_TEXT, A_REVERSE);
 }
 
-void set_colors()
+void set_colors(void)
 {
 	start_color();
 	use_default_colors();

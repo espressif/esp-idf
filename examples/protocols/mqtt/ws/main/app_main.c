@@ -14,7 +14,7 @@
 #include "esp_system.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "protocol_examples_common.h"
 
 #include "freertos/FreeRTOS.h"
@@ -32,7 +32,7 @@
 static const char *TAG = "MQTTWS_EXAMPLE";
 
 
-static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
+static esp_err_t mqtt_event_handler_cb(esp_mqtt_event_handle_t event)
 {
     esp_mqtt_client_handle_t client = event->client;
     int msg_id;
@@ -79,20 +79,23 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     return ESP_OK;
 }
 
+static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+    ESP_LOGD(TAG, "Event dispatched from event loop base=%s, event_id=%d", base, event_id);
+    mqtt_event_handler_cb(event_data);
+}
 
 static void mqtt_app_start(void)
 {
     const esp_mqtt_client_config_t mqtt_cfg = {
         .uri = CONFIG_BROKER_URI,
-        .event_handle = mqtt_event_handler,
-        // .user_context = (void *)your_context
     };
 
     esp_mqtt_client_handle_t client = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(client, ESP_EVENT_ANY_ID, mqtt_event_handler, client);
     esp_mqtt_client_start(client);
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_LOGI(TAG, "[APP] Startup..");
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
@@ -100,6 +103,7 @@ void app_main()
 
     esp_log_level_set("*", ESP_LOG_INFO);
     esp_log_level_set("MQTT_CLIENT", ESP_LOG_VERBOSE);
+    esp_log_level_set("MQTT_EXAMPLE", ESP_LOG_VERBOSE);
     esp_log_level_set("TRANSPORT_TCP", ESP_LOG_VERBOSE);
     esp_log_level_set("TRANSPORT_SSL", ESP_LOG_VERBOSE);
     esp_log_level_set("TRANSPORT_WS", ESP_LOG_VERBOSE);
@@ -107,7 +111,7 @@ void app_main()
     esp_log_level_set("OUTBOX", ESP_LOG_VERBOSE);
 
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

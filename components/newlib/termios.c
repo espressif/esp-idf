@@ -14,7 +14,7 @@
 
 #include "sdkconfig.h"
 
-#ifdef CONFIG_SUPPORT_TERMIOS
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
 
 #include <sys/termios.h>
 #include <sys/errno.h>
@@ -51,4 +51,4 @@ int cfsetospeed(struct termios *p, speed_t sp)
     }
 }
 
-#endif // CONFIG_SUPPORT_TERMIOS
+#endif // CONFIG_VFS_SUPPORT_TERMIOS

@@ -15,8 +15,10 @@
 # limitations under the License.
 #
 
-import unittest
+import os
 import sys
+import tempfile
+import unittest
 
 try:
     from generation import PlacementRule
@@ -41,6 +43,18 @@ class GenerationModelTest(unittest.TestCase):
         self.model = GenerationModel()
         self.sections_info = None
         self.script_model = None
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.kconfigs_source_file = os.path.join(tempfile.gettempdir(), f.name)
+            self.addCleanup(os.remove, self.kconfigs_source_file)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.kconfig_projbuilds_source_file = os.path.join(tempfile.gettempdir(), f.name)
+            self.addCleanup(os.remove, self.kconfig_projbuilds_source_file)
+
+        os.environ['COMPONENT_KCONFIGS_SOURCE_FILE'] = self.kconfigs_source_file
+        os.environ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'] = self.kconfig_projbuilds_source_file
+        os.environ['COMPONENT_KCONFIGS'] = ''
+        os.environ['COMPONENT_KCONFIGS_PROJBUILD'] = ''
 
         self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
 
@@ -1108,6 +1122,20 @@ entries:
 
             self.compare_rules(expected, actual)
 
+    def test_rule_generation_empty_entries(self):
+        normal = u"""
+[mapping:test]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL >= 1: # is false, generate no special rules
+        obj.a (noflash)
+"""
+
+        self.add_fragments(normal)
+        actual = self.model.generate_rules(self.sections_info)
+        expected = self.generate_default_rules()  # only default rules
+        self.compare_rules(expected, actual)
+
     def test_conditional_sections_1(self):
         generation_with_condition = u"""
 [sections:cond_text_data]
@@ -1212,6 +1240,109 @@ entries:
 
             self.model.mappings = {}
             self.add_fragments(generation_with_condition)
+
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self.compare_rules(expected, actual)
+
+    def test_rule_generation_multiple_deprecated_mapping_definitions(self):
+        multiple_deprecated_definitions = u"""
+[mapping]
+archive: lib.a
+entries:
+    : PERFORMANCE_LEVEL = 0
+    : PERFORMANCE_LEVEL = 1
+    obj1 (noflash)
+    : PERFORMANCE_LEVEL = 2
+    obj1 (noflash)
+    : PERFORMANCE_LEVEL = 3
+    obj1 (noflash)
+
+[mapping]
+archive: lib.a
+entries:
+    : PERFORMANCE_LEVEL = 1
+    obj1 (noflash) # ignore duplicate definition
+    : PERFORMANCE_LEVEL = 2
+    obj2 (noflash)
+    : PERFORMANCE_LEVEL = 3
+    obj2 (noflash)
+    obj3 (noflash)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            self.model.mappings = {}
+            self.add_fragments(multiple_deprecated_definitions)
+
+            actual = self.model.generate_rules(self.sections_info)
+            expected = self.generate_default_rules()
+
+            if perf_level < 4:
+                for append_no in range(1, perf_level + 1):
+                    flash_text_default = self.get_default("flash_text", expected)
+                    flash_rodata_default = self.get_default("flash_rodata", expected)
+
+                    iram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["text"].entries, "iram0_text")
+                    dram_rule = PlacementRule("lib.a", "obj" + str(append_no), None, self.model.sections["rodata"].entries, "dram0_data")
+
+                    flash_text_default.add_exclusion(iram_rule)
+                    flash_rodata_default.add_exclusion(dram_rule)
+
+                    expected["iram0_text"].append(iram_rule)
+                    expected["dram0_data"].append(dram_rule)
+
+            self.compare_rules(expected, actual)
+
+    def test_rule_generation_multiple_mapping_definitions(self):
+        multiple_deprecated_definitions = u"""
+[mapping:base]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL = 1:
+        obj1 (noflash)
+    elif PERFORMANCE_LEVEL = 2:
+        obj1 (noflash)
+    elif PERFORMANCE_LEVEL = 3:
+        obj1 (noflash)
+    else:
+        * (default)
+
+[mapping:extra]
+archive: lib.a
+entries:
+    if PERFORMANCE_LEVEL = 1:
+        obj1 (noflash) # ignore duplicate definition
+    elif PERFORMANCE_LEVEL = 2:
+        obj2 (noflash)
+    elif PERFORMANCE_LEVEL = 3:
+        obj2 (noflash)
+        obj3 (noflash)
+    else:
+        * (default)
+"""
+
+        for perf_level in range(0, 4):
+            self.sdkconfig.config.syms["PERFORMANCE_LEVEL"].set_value(str(perf_level))
+
+            self.model.mappings = {}
+            self.add_fragments(multiple_deprecated_definitions)
 
             actual = self.model.generate_rules(self.sections_info)
             expected = self.generate_default_rules()

@@ -47,10 +47,10 @@ void IRAM_ATTR esp_reent_init(struct _reent* r)
 }
 
 /* only declared in private stdio header file, local.h */
-extern void __sfp_lock_acquire();
-extern void __sfp_lock_release();
+extern void __sfp_lock_acquire(void);
+extern void __sfp_lock_release(void);
 
-void esp_reent_cleanup()
+void esp_reent_cleanup(void)
 {
     struct _reent* r = __getreent();
     /* Clean up storage used by mprec functions */

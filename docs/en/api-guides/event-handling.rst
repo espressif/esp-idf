@@ -28,7 +28,7 @@ This event loop implementation is started using :cpp:func:`esp_event_loop_init` 
 
 Both the pointer to event handler function, and an arbitrary context pointer are passed to :cpp:func:`esp_event_loop_init`. 
 
-When Wi-Fi, Ethernet, or IP stack generate an event, this event is sent to a high-priority ``event`` task via a queue. Application-provided event handler function is called in the context of this task. Event task stack size and event queue size can be adjusted using :ref:`CONFIG_SYSTEM_EVENT_TASK_STACK_SIZE` and :ref:`CONFIG_SYSTEM_EVENT_QUEUE_SIZE` options, respectively.
+When Wi-Fi, Ethernet, or IP stack generate an event, this event is sent to a high-priority ``event`` task via a queue. Application-provided event handler function is called in the context of this task. Event task stack size and event queue size can be adjusted using :ref:`CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE` and :ref:`CONFIG_ESP_SYSTEM_EVENT_QUEUE_SIZE` options, respectively.
 
 Event handler receives a pointer to the event structure (:cpp:type:`system_event_t`) which describes current event. This structure follows a *tagged union* pattern: ``event_id`` member indicates the type of event, and ``event_info`` member is a union of description structures. Application event handler will typically use ``switch(event->event_id)`` to handle different kinds of events.
 

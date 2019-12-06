@@ -18,21 +18,9 @@ Check another example *storage/nvs_rw_blob*, which shows how to read and write v
 
 This example does not require any special hardware, and can be run on any common development board.
 
-### Configure the project
-
-If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
-
-If using CMake based build system, no configuration is required.
-
 ### Build and flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-make -j4 flash monitor
-```
-
-Or, for CMake based build system (replace PORT with serial port name):
 
 ```
 idf.py -p PORT flash monitor
@@ -90,5 +78,5 @@ Restarting now.
 
 Restart counter will increment on each run.
 
-To reset the counter, erase the contents of flash memory using `make erase_flash` (or `idf.py erase_flash`, if using CMake build system), then upload the program again as described above.
+To reset the counter, erase the contents of flash memory using `idf.py erase_flash`, then upload the program again as described above.
 

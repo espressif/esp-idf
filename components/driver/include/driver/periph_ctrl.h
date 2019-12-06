@@ -15,9 +15,6 @@
 #ifndef _DRIVER_PERIPH_CTRL_H_
 #define _DRIVER_PERIPH_CTRL_H_
 
-#include "esp_err.h"
-#include "soc/soc.h"
-#include "soc/dport_reg.h"
 #include "soc/periph_defs.h"
 
 #ifdef __cplusplus

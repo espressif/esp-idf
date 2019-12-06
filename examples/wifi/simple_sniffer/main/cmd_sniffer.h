@@ -34,7 +34,7 @@ typedef enum {
     SNIFFER_WLAN_FILTER_MAX
 } sniffer_wlan_filter_t;
 
-void register_sniffer();
+void register_sniffer(void);
 
 #ifdef __cplusplus
 }

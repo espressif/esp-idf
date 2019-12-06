@@ -14,7 +14,7 @@
 
 #include "sdmmc_cmd.h"
 #include "driver/sdmmc_defs.h"
-#include "soc/host_reg.h"
+#include "soc/sdio_slave_periph.h"
 
 /*
  * NOTE: This component is for example purpose only. Assertion fails if any of

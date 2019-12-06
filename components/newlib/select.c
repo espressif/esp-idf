@@ -16,12 +16,12 @@
 #include "esp_vfs.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_USE_ONLY_LWIP_SELECT
+#ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT
 #include "lwip/sockets.h"
 
-#ifdef CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#ifdef CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
 #define LOG_LOCAL_LEVEL ESP_LOG_NONE
-#endif //CONFIG_SUPPRESS_SELECT_DEBUG_OUTPUT
+#endif //CONFIG_VFS_SUPPRESS_SELECT_DEBUG_OUTPUT
 #include "esp_log.h"
 
 static const char *TAG = "newlib_select";
@@ -37,11 +37,11 @@ static void log_fd_set(const char *fds_name, const fd_set *fds)
         }
     }
 }
-#endif //CONFIG_USE_ONLY_LWIP_SELECT
+#endif //CONFIG_LWIP_USE_ONLY_LWIP_SELECT
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
 {
-#ifdef CONFIG_USE_ONLY_LWIP_SELECT
+#ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT
     ESP_LOGD(TAG, "lwip_select starts with nfds = %d", nfds);
     if (timeout) {
         ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);

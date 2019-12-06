@@ -54,20 +54,20 @@ menu "Serial flasher config"
             decompress it on the fly before flashing it. For most payloads, this should result in a
             speed increase.
 
-    choice FLASHMODE
+    choice ESPTOOLPY_FLASHMODE
         prompt "Flash SPI mode"
-        default FLASHMODE_DIO
+        default ESPTOOLPY_FLASHMODE_DIO
         help
             Mode the flash chip is flashed in, as well as the default mode for the
             binary to run in.
 
-        config FLASHMODE_QIO
+        config ESPTOOLPY_FLASHMODE_QIO
             bool "QIO"
-        config FLASHMODE_QOUT
+        config ESPTOOLPY_FLASHMODE_QOUT
             bool "QOUT"
-        config FLASHMODE_DIO
+        config ESPTOOLPY_FLASHMODE_DIO
             bool "DIO"
-        config FLASHMODE_DOUT
+        config ESPTOOLPY_FLASHMODE_DOUT
             bool "DOUT"
     endchoice
 
@@ -76,10 +76,10 @@ menu "Serial flasher config"
     # itself to quad mode during initialisation
     config ESPTOOLPY_FLASHMODE
         string
-        default "dio" if FLASHMODE_QIO
-        default "dio" if FLASHMODE_QOUT
-        default "dio" if FLASHMODE_DIO
-        default "dout" if FLASHMODE_DOUT
+        default "dio" if ESPTOOLPY_FLASHMODE_QIO
+        default "dio" if ESPTOOLPY_FLASHMODE_QOUT
+        default "dio" if ESPTOOLPY_FLASHMODE_DIO
+        default "dout" if ESPTOOLPY_FLASHMODE_DOUT
 
     choice ESPTOOLPY_FLASHFREQ
         prompt "Flash SPI speed"
@@ -135,8 +135,9 @@ menu "Serial flasher config"
         bool "Detect flash size when flashing bootloader"
         default y
         help
-            If this option is set, 'make flash' targets will automatically detect
-            the flash size and update the bootloader image when flashing.
+            If this option is set, flashing the project will automatically detect
+            the flash size of the target chip and update the bootloader image
+            before it is flashed.
 
     choice ESPTOOLPY_BEFORE
         prompt "Before flashing"
@@ -180,44 +181,44 @@ menu "Serial flasher config"
         default "hard_reset" if ESPTOOLPY_AFTER_RESET
         default "no_reset" if ESPTOOLPY_AFTER_NORESET
 
-    choice MONITOR_BAUD
-        prompt "'make monitor' baud rate"
-        default MONITOR_BAUD_115200B
+    choice ESPTOOLPY_MONITOR_BAUD
+        prompt "'idf.py monitor' baud rate"
+        default ESPTOOLPY_MONITOR_BAUD_115200B
         help
-            Baud rate to use when running 'make monitor' to view serial output
-            from a running chip.
+            Baud rate to use when running 'idf.py monitor' or 'make monitor'
+            to view serial output from a running chip.
 
             Can override by setting the MONITORBAUD environment variable.
 
-        config MONITOR_BAUD_9600B
+        config ESPTOOLPY_MONITOR_BAUD_9600B
             bool "9600 bps"
-        config MONITOR_BAUD_57600B
+        config ESPTOOLPY_MONITOR_BAUD_57600B
             bool "57600 bps"
-        config MONITOR_BAUD_115200B
+        config ESPTOOLPY_MONITOR_BAUD_115200B
             bool "115200 bps"
-        config MONITOR_BAUD_230400B
+        config ESPTOOLPY_MONITOR_BAUD_230400B
             bool "230400 bps"
-        config MONITOR_BAUD_921600B
+        config ESPTOOLPY_MONITOR_BAUD_921600B
             bool "921600 bps"
-        config MONITOR_BAUD_2MB
+        config ESPTOOLPY_MONITOR_BAUD_2MB
             bool "2 Mbps"
-        config MONITOR_BAUD_OTHER
+        config ESPTOOLPY_MONITOR_BAUD_OTHER
             bool "Custom baud rate"
 
     endchoice
 
-    config MONITOR_BAUD_OTHER_VAL
-        int "Custom baud rate value" if MONITOR_BAUD_OTHER
+    config ESPTOOLPY_MONITOR_BAUD_OTHER_VAL
+        int "Custom baud rate value" if ESPTOOLPY_MONITOR_BAUD_OTHER
         default 115200
 
-    config MONITOR_BAUD
+    config ESPTOOLPY_MONITOR_BAUD
         int
-        default 9600 if MONITOR_BAUD_9600B
-        default 57600 if MONITOR_BAUD_57600B
-        default 115200 if MONITOR_BAUD_115200B
-        default 230400 if MONITOR_BAUD_230400B
-        default 921600 if MONITOR_BAUD_921600B
-        default 2000000 if MONITOR_BAUD_2MB
-        default MONITOR_BAUD_OTHER_VAL if MONITOR_BAUD_OTHER
+        default 9600 if ESPTOOLPY_MONITOR_BAUD_9600B
+        default 57600 if ESPTOOLPY_MONITOR_BAUD_57600B
+        default 115200 if ESPTOOLPY_MONITOR_BAUD_115200B
+        default 230400 if ESPTOOLPY_MONITOR_BAUD_230400B
+        default 921600 if ESPTOOLPY_MONITOR_BAUD_921600B
+        default 2000000 if ESPTOOLPY_MONITOR_BAUD_2MB
+        default ESPTOOLPY_MONITOR_BAUD_OTHER_VAL if ESPTOOLPY_MONITOR_BAUD_OTHER
 
 endmenu

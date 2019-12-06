@@ -1,9 +1,13 @@
-set(COMPONENT_SRCS "decode_image.c"
-                   "pretty_effect.c"
-                   "spi_master_example_main.c")
-set(COMPONENT_ADD_INCLUDEDIRS ".")
+set(srcs "pretty_effect.c"
+    "spi_master_example_main.c"
+    )
 
+# Only ESP32 has enough memory to do jpeg decoding
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND srcs "decode_image.c")
+endif()
 
-set(COMPONENT_EMBED_FILES image.jpg)
+idf_component_register(SRCS ${srcs}
+                    INCLUDE_DIRS "."
+                    EMBED_FILES image.jpg)
 
-register_component()

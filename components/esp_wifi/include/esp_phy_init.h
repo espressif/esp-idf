@@ -103,7 +103,7 @@ typedef enum{
  *
  * @return pointer to PHY init data structure
  */
-const esp_phy_init_data_t* esp_phy_get_init_data();
+const esp_phy_init_data_t* esp_phy_get_init_data(void);
 
 /**
  * @brief Release PHY init data

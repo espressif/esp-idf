@@ -40,3 +40,7 @@ a:hover {
 .logo {
   width: 240px !important;
 }
+
+a.internal::after{
+  content: ' ';
+}

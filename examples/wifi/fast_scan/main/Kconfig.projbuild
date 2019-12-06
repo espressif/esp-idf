@@ -1,0 +1,68 @@
+menu "Example Configuration"
+
+    config EXAMPLE_WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config EXAMPLE_WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    choice EXAMPLE_SCAN_METHOD
+        prompt "scan method"
+        default EXAMPLE_WIFI_FAST_SCAN
+        help
+            scan method for the esp32 to use
+
+        config EXAMPLE_WIFI_FAST_SCAN
+            bool "fast"
+        config EXAMPLE_WIFI_ALL_CHANNEL_SCAN
+            bool "all"
+    endchoice
+
+    choice EXAMPLE_SORT_METHOD
+        prompt "sort method"
+        default EXAMPLE_WIFI_CONNECT_AP_BY_SIGNAL
+        help
+            sort method for the esp32 to use
+
+        config EXAMPLE_WIFI_CONNECT_AP_BY_SIGNAL
+            bool "rssi"
+        config EXAMPLE_WIFI_CONNECT_AP_BY_SECURITY
+            bool "authmode"
+    endchoice
+
+    config EXAMPLE_FAST_SCAN_THRESHOLD
+        bool "fast scan threshold"
+        default y
+        help
+            wifi fast scan threshold
+
+    config EXAMPLE_FAST_SCAN_MINIMUM_SIGNAL
+        int "fast scan minimum rssi"
+        depends on EXAMPLE_FAST_SCAN_THRESHOLD
+        range -127 0
+        default -127
+        help
+            rssi is use to measure the signal
+
+    choice EXAMPLE_FAST_SCAN_WEAKEST_AUTHMODE
+        prompt "fast scan weakest authmode"
+        depends on EXAMPLE_FAST_SCAN_THRESHOLD
+        default EXAMPLE_FAST_SCAN_WEAKEST_AUTHMODE_OPEN
+
+        config EXAMPLE_FAST_SCAN_WEAKEST_AUTHMODE_OPEN
+            bool "open"
+        config EXAMPLE_FAST_SCAN_WEAKEST_AUTHMODE_WEP
+            bool "wep"
+        config EXAMPLE_FAST_SCAN_WEAKEST_AUTHMODE_WPA
+            bool "wpa"
+        config EXAMPLE_FAST_SCAN_WEAKEST_AUTHMODE_WPA2
+            bool "wpa2"
+    endchoice
+
+endmenu

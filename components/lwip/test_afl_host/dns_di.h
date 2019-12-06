@@ -35,7 +35,7 @@ static void dns_recv(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr
 void (*dns_test_static_dns_recv)(void *s, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) = NULL;
 err_t (*dns_test_static_dns_enqueue)(const char *name, size_t hostnamelen, dns_found_callback found, void *callback_arg, u8_t dns_addrtype) = NULL;
 
-void dns_test_init_di()
+void dns_test_init_di(void)
 {
     dns_test_static_dns_recv = dns_recv;
     dns_test_static_dns_enqueue = dns_enqueue;

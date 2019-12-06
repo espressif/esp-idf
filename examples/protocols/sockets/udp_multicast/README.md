@@ -12,7 +12,7 @@ The behaviour of the example is:
 
 ## Configuration
 
-Run `make menuconfig` (or `idf.py menuconfig` if using CMake build system).
+Open the project configuration menu (`idf.py menuconfig`).
 
 Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../../README.md) for more details.
 

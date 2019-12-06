@@ -16,8 +16,10 @@
 #include "esp_log.h"
 #include "esp_event_legacy.h"
 #include "esp_wifi_types.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
+#endif
 
 /**
  * The purpose of this file is to provide an "esp_event_send_to_default_loop"
@@ -36,8 +38,7 @@
  * default_event_loop.c is linked, this file is #include-ed into default_event_loop.c.
  */
 
-//#if LOG_LOCAL_LEVEL >= 4 /* ESP_LOG_DEBUG */
-#if 1
+#if LOG_LOCAL_LEVEL >= 4 /* ESP_LOG_DEBUG */
 #define WITH_EVENT_DEBUG
 #endif
 
@@ -80,6 +81,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT(WIFI, STA_WPS_ER_TIMEOUT);
         HANDLE_SYS_EVENT_ARG(WIFI, STA_WPS_ER_FAILED, sta_er_fail_reason);
         HANDLE_SYS_EVENT_ARG(WIFI, STA_WPS_ER_PIN, sta_er_pin);
+        HANDLE_SYS_EVENT(WIFI, STA_WPS_ER_PBC_OVERLAP);
 
         /* AP events */
         HANDLE_SYS_EVENT(WIFI, AP_START);
@@ -87,7 +89,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT_ARG(WIFI, AP_STACONNECTED, sta_connected);
         HANDLE_SYS_EVENT_ARG(WIFI, AP_STADISCONNECTED, sta_disconnected);
         HANDLE_SYS_EVENT_ARG(WIFI, AP_PROBEREQRECVED, ap_probereqrecved);
-
+#if CONFIG_ETH_ENABLED
         /* Ethernet events */
         /* Some extra defines to fit the old naming scheme... */
 #define ETH_EVENT_ETH_START ETHERNET_EVENT_START
@@ -99,7 +101,7 @@ esp_err_t esp_event_send_to_default_loop(system_event_t *event)
         HANDLE_SYS_EVENT(ETH, ETH_STOP);
         HANDLE_SYS_EVENT(ETH, ETH_CONNECTED);
         HANDLE_SYS_EVENT(ETH, ETH_DISCONNECTED);
-
+#endif
         /* IP events */
         HANDLE_SYS_EVENT_ARG(IP, STA_GOT_IP, got_ip);
         HANDLE_SYS_EVENT_ARG(IP, ETH_GOT_IP, got_ip);
@@ -119,9 +121,9 @@ typedef struct {
     int err;
     const char *reason;
 } wifi_reason_t;
-  
+
 static const wifi_reason_t wifi_reason[] =
-{   
+{
     {0,                                    "other reason"},
     {WIFI_REASON_UNSPECIFIED,              "unspecified"},
     {WIFI_REASON_AUTH_EXPIRE,              "auth expire"},
@@ -150,9 +152,9 @@ static const wifi_reason_t wifi_reason[] =
     {WIFI_REASON_UNSUPP_RSN_IE_VERSION,    "unsupported RSN IE version"},
     {WIFI_REASON_INVALID_RSN_IE_CAP,       "invalid RSN IE capability"},
     {WIFI_REASON_802_1X_AUTH_FAILED,       "802.1x auth failed"},
-    {WIFI_REASON_CIPHER_SUITE_REJECTED,    "cipher suite rejected"}                                                                                                              
+    {WIFI_REASON_CIPHER_SUITE_REJECTED,    "cipher suite rejected"}
 };
-  
+
 static const char* wifi_disconnect_reason_to_str(int err)
 {
     for (int i=0; i< sizeof(wifi_reason)/sizeof(wifi_reason[0]); i++){
@@ -233,6 +235,10 @@ static void esp_system_event_debug(const system_event_t* event)
             ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PIN");
             break;
         }
+        case SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP: {
+            ESP_LOGD(TAG, "SYSTEM_EVENT_STA_WPS_ER_PBC_OVERLAP");
+            break;
+        }
         case SYSTEM_EVENT_AP_START: {
             ESP_LOGD(TAG, "SYSTEM_EVENT_AP_START");
             break;
@@ -265,18 +271,11 @@ static void esp_system_event_debug(const system_event_t* event)
             break;
         }
         case SYSTEM_EVENT_GOT_IP6: {
-            const ip6_addr_t *addr = &event->event_info.got_ip6.ip6_info.ip;
-            ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STA_GOT_IP6 address %04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x",
-                     IP6_ADDR_BLOCK1(addr),
-                     IP6_ADDR_BLOCK2(addr),
-                     IP6_ADDR_BLOCK3(addr),
-                     IP6_ADDR_BLOCK4(addr),
-                     IP6_ADDR_BLOCK5(addr),
-                     IP6_ADDR_BLOCK6(addr),
-                     IP6_ADDR_BLOCK7(addr),
-                     IP6_ADDR_BLOCK8(addr));
+            const esp_ip6_addr_t *addr = &event->event_info.got_ip6.ip6_info.ip;
+            ESP_LOGD(TAG, "SYSTEM_EVENT_AP_STA_GOT_IP6 address " IPV6STR, IPV62STR(*addr));
             break;
         }
+#if CONFIG_IDF_TARGET_ESP32
         case SYSTEM_EVENT_ETH_START: {
             ESP_LOGD(TAG, "SYSTEM_EVENT_ETH_START");
             break;
@@ -301,6 +300,7 @@ static void esp_system_event_debug(const system_event_t* event)
                 IP2STR(&got_ip->ip_info.gw));
             break;
         }
+#endif
         default: {
             ESP_LOGW(TAG, "unexpected system event %d!", event->event_id);
             break;

@@ -12,22 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _SOC_SPI_PERIPH_H_
-#define _SOC_SPI_PERIPH_H_
-
+#pragma once
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/periph_defs.h"
+
 //include soc related (generated) definitions
-#include "soc/spi_pins.h"
+#include "soc/spi_caps.h"
 #include "soc/spi_reg.h"
 #include "soc/spi_struct.h"
 #include "soc/gpio_sig_map.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#include "soc/spi_mem_struct.h"
+#endif
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define SPI_FREAD_DIO 0
+#define SPI_FREAD_QIO 0
+#define SPI_FWRITE_DIO 0
+#define SPI_FWRITE_QIO 0
+#endif
+
+
 
 /*
  Stores a bunch of per-spi-peripheral data.
@@ -45,6 +57,10 @@ typedef struct {
     const uint8_t spihd_in;
     const uint8_t spics_out[3];     // /CS GPIO output mux signals
     const uint8_t spics_in;
+    const uint8_t spidqs_out;
+    const uint8_t spidqs_in;
+    const uint8_t spicd_out;
+    const uint8_t spicd_in;
     const uint8_t spiclk_iomux_pin;    //IO pins of IO_MUX muxed signals
     const uint8_t spid_iomux_pin;
     const uint8_t spiq_iomux_pin;
@@ -54,13 +70,12 @@ typedef struct {
     const uint8_t irq;              //irq source for interrupt mux
     const uint8_t irq_dma;          //dma irq source for interrupt mux
     const periph_module_t module;   //peripheral module, for enabling clock etc
+    const int func;             //function number for IOMUX
     spi_dev_t *hw;              //Pointer to the hardware registers
 } spi_signal_conn_t;
 
-extern const spi_signal_conn_t spi_periph_signal[3];
+extern const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM];
 
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* _SOC_SPI_PERIPH_H_ */

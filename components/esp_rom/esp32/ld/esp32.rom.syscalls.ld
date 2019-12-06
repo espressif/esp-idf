@@ -1,26 +1,3 @@
-/* These ROM functions call respective entries in syscall table.
-   IDF implementations of these function carry different names
-   (usually esp_vfs_*) so we still export these functions,
-   in case some newlib function needs to call them.
-
-   I.e.:
-
-   open (in ROM) -> _open_r (in ROM) -> syscall table entry _open_r -> esp_vfs_open (in IDF)
-
- */
-
-PROVIDE ( _close_r = 0x4000bd3c );
-PROVIDE ( _exit_r = 0x4000bd28 );
-PROVIDE ( _fstat_r = 0x4000bccc );
-PROVIDE ( _link_r = 0x4000bc9c );
-PROVIDE ( _lseek_r = 0x4000bd8c );
-PROVIDE ( _open_r = 0x4000bd54 );
-PROVIDE ( _read_r = 0x4000bda8 );
-PROVIDE ( _rename_r = 0x4000bc28 );
-PROVIDE ( _unlink_r = 0x4000bc84 );
-PROVIDE ( _write_r = 0x4000bd70 );
-
-
 /* These ROM functions call respective entries in the syscall table.
    They are called by other ROM functions (mostly from newlib).
    We don't link to them directly, since in IDF there are actual
@@ -61,6 +38,16 @@ PROVIDE ( _realloc_r = 0x4000bbe0 );
 PROVIDE ( _sbrk_r = 0x4000bce4 );
 PROVIDE ( _system_r = 0x4000bc10 );
 PROVIDE ( _times_r = 0x4000bc40 );
+PROVIDE ( _close_r = 0x4000bd3c );
+PROVIDE ( _exit_r = 0x4000bd28 );
+PROVIDE ( _fstat_r = 0x4000bccc );
+PROVIDE ( _link_r = 0x4000bc9c );
+PROVIDE ( _lseek_r = 0x4000bd8c );
+PROVIDE ( _open_r = 0x4000bd54 );
+PROVIDE ( _read_r = 0x4000bda8 );
+PROVIDE ( _rename_r = 0x4000bc28 );
+PROVIDE ( _unlink_r = 0x4000bc84 );
+PROVIDE ( _write_r = 0x4000bd70 );
 
     ---> end commented out block
 */

@@ -1,0 +1,11 @@
+menu "Example CoAP Server Configuration"
+
+    config EXAMPLE_COAP_PSK_KEY
+        string "Preshared Key (PSK) to used in the connection from the CoAP client"
+        depends on COAP_MBEDTLS_PSK
+        default "secret-key"
+        help
+            The Preshared Key to use to encrypt the communicatons. The same key must be
+            used at both ends of the CoAP connection, and the CoaP client must request
+            an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
+endmenu

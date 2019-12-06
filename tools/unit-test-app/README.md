@@ -4,7 +4,17 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 
 # Building Unit Test App
 
-## GNU Make
+## CMake
+
+* Follow the setup instructions in the top-level esp-idf README.
+* Set IDF_PATH environment variable to point to the path to the esp-idf top-level directory.
+* Change into `tools/unit-test-app` directory
+* `idf.py menuconfig` to configure the Unit Test App.
+* `idf.py -T <component> -T <component> ... build` with `component` set to names of the components to be included in the test app. Or `idf.py -T all build` to build the test app with all the tests for components having `test` subdirectory.
+* Follow the printed instructions to flash, or run `idf.py -p PORT flash`.
+* Unit test have a few preset sdkconfigs. It provides command `idf.py ut-clean-config_name` and `idf.py ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `idf.py -T all ut-build-default` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
+
+## Legacy GNU Make
 
 * Follow the setup instructions in the top-level esp-idf README.
 * Set IDF_PATH environment variable to point to the path to the esp-idf top-level directory.
@@ -14,21 +24,11 @@ ESP-IDF unit tests are run using Unit Test App. The app can be built with the un
 * Follow the printed instructions to flash, or run `make flash`.
 * Unit test have a few preset sdkconfigs. It provides command `make ut-clean-config_name` and `make ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `make ut-build-default TESTS_ALL=1` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
 
-## CMake
-
-* Follow the setup instructions in the top-level esp-idf README.
-* Set IDF_PATH environment variable to point to the path to the esp-idf top-level directory.
-* Change into `tools/unit-test-app` directory
-* `idf.py menuconfig` to configure the Unit Test App.
-* `idf.py build -T <component> <component> ...` with `component` set to names of the components to be included in the test app. Or `idf.py build -T all` to build the test app with all the tests for components having `test` subdirectory.
-* Follow the printed instructions to flash, or run `idf.py flash -p PORT`.
-* Unit test have a few preset sdkconfigs. It provides command `idf.py ut-clean-config_name` and `idf.py ut-build-config_name` (where `config_name` is the file name under `unit-test-app/configs` folder) to build with preset configs. For example, you can use `idf.py ut-build-default -T all` to build with config file `unit-test-app/configs/default`. Built binary for this config will be copied to `unit-test-app/output/config_name` folder.
-
 # Flash Size
 
-The unit test partition table assumes a 4MB flash size. When testing `TESTS_ALL=1` (Make) or `-T all` (CMake), this additional factory app partition size is required.
+The unit test partition table assumes a 4MB flash size. When testing `-T all` or `TESTS_ALL=1` (Legacy GNU Make) or, this additional factory app partition size is required.
 
-If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `TEST_COMPONENTS=` (Make) or `-T <component> <component> ...` (CMake) instead of `TESTS_ALL` or `-T all` if tests don't fit in a smaller factory app partition (exact size will depend on configured options).
+If building unit tests to run on a smaller flash size, edit `partition_table_unit_tests_app.csv` and use `-T <component> <component> ...` or `TEST_COMPONENTS=` (Legacy GNU Make) or instead of `-T all` or `TESTS_ALL` if tests don't fit in a smaller factory app partition (exact size will depend on configured options).
 
 # Running Unit Tests
 
@@ -68,7 +68,7 @@ Tests marked as `[leaks]` or `[leaks=xxx]` reset the device after completion (or
 
 `TagDefinition.yml` defines how we should parse the description. In `TagDefinition.yml`, we declare the tags we are interested in, their default value and omitted value. Parser will parse the properities of test cases according to this file, and add them as test case attributes.
 
-We will build unit-test-app with different sdkconfigs. Some config items requires specific board to run. For example, if `CONFIG_SPIRAM_SUPPORT` is enabled, then unit test app must run on board supports PSRAM. `ConfigDependency.yml` is used to define the mapping between sdkconfig items and tags. The tags will be saved as case attributes, used to select jobs and runners. In the previous example, `psram` tag is generated, will only select jobs and runners also contains `psram` tag.
+We will build unit-test-app with different sdkconfigs. Some config items requires specific board to run. For example, if `CONFIG_ESP32_SPIRAM_SUPPORT` is enabled, then unit test app must run on board supports PSRAM. `ConfigDependency.yml` is used to define the mapping between sdkconfig items and tags. The tags will be saved as case attributes, used to select jobs and runners. In the previous example, `psram` tag is generated, will only select jobs and runners also contains `psram` tag.
 
 ### Assign Test Stage:
 

@@ -16,12 +16,7 @@
 #ifndef __ESP_WIFI_TYPES_H__
 #define __ESP_WIFI_TYPES_H__
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "sys/queue.h"
-#include "esp_err.h"
-#include "esp_interface.h"
-#include "esp_event_base.h"
+#include "esp_private/esp_wifi_types_private.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,7 +45,7 @@ typedef struct {
     char                  cc[3];   /**< country code string */
     uint8_t               schan;   /**< start channel */
     uint8_t               nchan;   /**< total channel number */
-    int8_t                max_tx_power;   /**< maximum tx power */
+    int8_t                max_tx_power;   /**< This field is used for getting WiFi maximum transmitting power, call esp_wifi_set_max_tx_power to set the maximum transmitting power. */
     wifi_country_policy_t policy;  /**< country policy */
 } wifi_country_t;
 
@@ -186,17 +181,13 @@ typedef enum {
 typedef struct {
     int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode */
     wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode */
-}wifi_fast_scan_threshold_t;
-
-typedef wifi_fast_scan_threshold_t wifi_scan_threshold_t;    /**< wifi_fast_scan_threshold_t only used in fast scan mode once, now it enabled in all channel scan, the wifi_fast_scan_threshold_t will be remove in version 4.0 */
+}wifi_scan_threshold_t;
 
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
     WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
     WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
 } wifi_ps_type_t;
-
-#define WIFI_PS_MODEM WIFI_PS_MIN_MODEM /**< @deprecated Use WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM instead */
 
 #define WIFI_PROTOCOL_11B         1
 #define WIFI_PROTOCOL_11G         2
@@ -230,7 +221,7 @@ typedef struct {
     uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
     uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
     wifi_sort_method_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
-    wifi_scan_threshold_t  threshold;     /**< When scan_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+    wifi_scan_threshold_t  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
 } wifi_sta_config_t;
 
 /** @brief Configuration data for ESP32 AP or STA.
@@ -323,7 +314,11 @@ typedef struct {
     unsigned stbc:2;              /**< Space Time Block Code(STBC). 0: non STBC packet; 1: STBC packet */
     unsigned fec_coding:1;        /**< Flag is set for 11n packets which are LDPC */
     unsigned sgi:1;               /**< Short Guide Interval(SGI). 0: Long GI; 1: Short GI */
+#if CONFIG_IDF_TARGET_ESP32
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    unsigned :8;
+#endif
     unsigned ampdu_cnt:8;         /**< ampdu cnt */
     unsigned channel:4;           /**< primary channel on which this packet is received */
     unsigned secondary_channel:4; /**< secondary channel on which this packet is received. 0: none; 1: above; 2: below */
@@ -332,6 +327,10 @@ typedef struct {
     unsigned :32;                 /**< reserve */
     unsigned :31;                 /**< reserve */
     unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
+    unsigned :24;
+#endif
     unsigned sig_len:12;          /**< length of packet including Frame Check Sequence(FCS) */
     unsigned :12;                 /**< reserve */
     unsigned rx_state:8;          /**< state of the packet. 0: no error; others: error numbers which are not public */
@@ -508,13 +507,15 @@ typedef enum {
     WIFI_EVENT_STA_WPS_ER_FAILED,        /**< ESP32 station wps fails in enrollee mode */
     WIFI_EVENT_STA_WPS_ER_TIMEOUT,       /**< ESP32 station wps timeout in enrollee mode */
     WIFI_EVENT_STA_WPS_ER_PIN,           /**< ESP32 station wps pin code in enrollee mode */
+    WIFI_EVENT_STA_WPS_ER_PBC_OVERLAP,   /**< ESP32 station wps overlap in enrollee mode */
 
     WIFI_EVENT_AP_START,                 /**< ESP32 soft-AP start */
     WIFI_EVENT_AP_STOP,                  /**< ESP32 soft-AP stop */
     WIFI_EVENT_AP_STACONNECTED,          /**< a station connected to ESP32 soft-AP */
     WIFI_EVENT_AP_STADISCONNECTED,       /**< a station disconnected from ESP32 soft-AP */
-
     WIFI_EVENT_AP_PROBEREQRECVED,        /**< Receive probe request packet in soft-AP interface */
+
+    WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
 /** @cond **/
@@ -581,8 +582,6 @@ typedef struct {
     int rssi;                 /**< Received probe request signal strength */
     uint8_t mac[6];           /**< MAC address of the station which send probe request */
 } wifi_event_ap_probe_req_rx_t;
-
-
 
 #ifdef __cplusplus
 }

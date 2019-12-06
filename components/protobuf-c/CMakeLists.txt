@@ -1,4 +1,2 @@
-set(COMPONENT_ADD_INCLUDEDIRS protobuf-c)
-set(COMPONENT_SRCS "protobuf-c/protobuf-c/protobuf-c.c")
-
-register_component()
+idf_component_register(SRCS "protobuf-c/protobuf-c/protobuf-c.c"
+                    INCLUDE_DIRS protobuf-c)

@@ -25,14 +25,15 @@
 #include "esp32/rom/uart.h"
 #include "esp32/rom/rtc.h"
 #include "soc/soc.h"
+#include "soc/dport_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_wdt.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/i2s_reg.h"
+#include "soc/rtc_periph.h"
+#include "soc/i2s_periph.h"
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
 #include "bootloader_clock.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -74,7 +75,7 @@ void esp_clk_init(void)
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
 
-#ifdef CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+#if (CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS || CONFIG_ESP32_APP_INIT_CLK)
     /* Check the bootloader set the XTAL frequency.
 
        Bootloaders pre-v2.1 don't do this.
@@ -85,7 +86,7 @@ void esp_clk_init(void)
         bootloader_clock_configure();
     }
 #else
-    /* If this assertion fails, either upgrade the bootloader or enable CONFIG_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
+    /* If this assertion fails, either upgrade the bootloader or enable CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS */
     assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
 #endif
 
@@ -103,11 +104,11 @@ void esp_clk_init(void)
     rtc_wdt_protect_on();
 #endif
 
-#if defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_CRYSTAL)
+#if defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
-#elif defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_EXTERNAL_OSC)
+#elif defined(CONFIG_ESP32_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
-#elif defined(CONFIG_ESP32_RTC_CLOCK_SOURCE_INTERNAL_8MD256)
+#elif defined(CONFIG_ESP32_RTC_CLK_SRC_INT_8MD256)
     select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
@@ -131,12 +132,12 @@ void esp_clk_init(void)
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
     rtc_clk_cpu_freq_set_config(&new_config);
 
     // Re calculate the ccount to make time calculation correct.
-    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
+    XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
 }
 
 int IRAM_ATTR esp_clk_cpu_freq(void)
@@ -209,7 +210,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     esp_clk_slowclk_cal_set(cal_val);
 }
 
-void rtc_clk_select_rtc_slow_clk()
+void rtc_clk_select_rtc_slow_clk(void)
 {
     select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
 }
@@ -273,13 +274,13 @@ void esp_perip_clk_init(void)
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
     common_perip_clk |= DPORT_I2S0_CLK_EN |
-#if CONFIG_CONSOLE_UART_NUM != 0
+#if CONFIG_ESP_CONSOLE_UART_NUM != 0
                         DPORT_UART_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 1
+#if CONFIG_ESP_CONSOLE_UART_NUM != 1
                         DPORT_UART1_CLK_EN |
 #endif
-#if CONFIG_CONSOLE_UART_NUM != 2
+#if CONFIG_ESP_CONSOLE_UART_NUM != 2
                         DPORT_UART2_CLK_EN |
 #endif
                         DPORT_SPI2_CLK_EN |
@@ -291,6 +292,8 @@ void esp_perip_clk_init(void)
                         DPORT_I2C_EXT1_CLK_EN |
                         DPORT_I2S1_CLK_EN |
                         DPORT_SPI_DMA_CLK_EN;
+
+    common_perip_clk &= ~DPORT_SPI01_CLK_EN;
 
 #if CONFIG_SPIRAM_SPEED_80M
 //80MHz SPIRAM uses SPI2/SPI3 as well; it's initialized before this is called. Because it is used in

@@ -33,9 +33,12 @@ esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested
 #       sphinx==1.8.4
 #       breathe==4.11.1
 #
-ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
-ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
-ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
+ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
+ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
+ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
+ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
 #
 # Issue present only when building on msys2 / mingw32 START >>>
@@ -77,6 +80,8 @@ If type alias or template alias:
 #
 spi_master.inc:line: WARNING: Duplicate declaration, struct spi_transaction_t spi_transaction_t
 spi_slave.inc:line: WARNING: Duplicate declaration, struct spi_slave_transaction_t spi_slave_transaction_t
+esp_flash.inc:line: WARNING: Duplicate declaration, struct esp_flash_t esp_flash_t
+spi_flash_types.inc:line: WARNING: Duplicate declaration, struct spi_flash_host_driver_t spi_flash_host_driver_t
 wear-levelling.rst:line: WARNING: Duplicate declaration, bool esp_vfs_fat_mount_config_t::format_if_mount_failed
 wear-levelling.rst:line: WARNING: Duplicate declaration, int esp_vfs_fat_mount_config_t::max_files
 wear-levelling.rst:line: WARNING: Duplicate declaration, size_t esp_vfs_fat_mount_config_t::allocation_unit_size

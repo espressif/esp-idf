@@ -1,6 +1,6 @@
 #include "unity.h"
 
-#if CONFIG_STACK_CHECK
+#if CONFIG_COMPILER_STACK_CHECK
 
 static void recur_and_smash_cxx()
 {

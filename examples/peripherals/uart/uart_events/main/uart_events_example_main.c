@@ -117,7 +117,7 @@ static void uart_event_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     esp_log_level_set(TAG, ESP_LOG_INFO);
 
@@ -140,7 +140,7 @@ void app_main()
     uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
 
     //Set uart pattern detect function.
-    uart_enable_pattern_det_intr(EX_UART_NUM, '+', PATTERN_CHR_NUM, 10000, 10, 10);
+    uart_enable_pattern_det_baud_intr(EX_UART_NUM, '+', PATTERN_CHR_NUM, 9, 0, 0);
     //Reset the pattern queue length to record at most 20 pattern positions.
     uart_pattern_queue_reset(EX_UART_NUM, 20);
 

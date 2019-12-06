@@ -14,6 +14,14 @@
 #include <nvs_flash.h>
 #include <nvs.h>
 #include <esp_bt.h>
+#include <esp_event.h>
+
+#ifdef CONFIG_BT_NIMBLE_ENABLED
+#include "esp_nimble_hci.h"
+#include "nimble/nimble_port.h"
+#include "nimble/nimble_port_freertos.h"
+#include "host/ble_hs.h"
+#endif
 
 #include <protocomm.h>
 #include <protocomm_ble.h>
@@ -25,6 +33,9 @@
 
 static const char *TAG = "app_prov";
 static const char *ssid_prefix = "PROV_";
+
+/* Handler for catching WiFi events */
+static void app_prov_event_handler(void* handler_arg, esp_event_base_t base, int id, void* data);
 
 /* Handlers for wifi_config provisioning endpoint */
 extern wifi_prov_config_handlers_t wifi_prov_handlers;
@@ -59,9 +70,9 @@ static esp_err_t app_prov_start_service(void)
 
     /* Endpoint UUIDs */
     protocomm_ble_name_uuid_t nu_lookup_table[] = {
-        {"prov-session", 0xFF51},
-        {"prov-config",  0xFF52},
-        {"proto-ver",    0xFF53},
+        {"prov-session", 0x0001},
+        {"prov-config",  0x0002},
+        {"proto-ver",    0x0003},
     };
 
     /* Config for protocomm_ble_start() */
@@ -69,12 +80,33 @@ static esp_err_t app_prov_start_service(void)
         .service_uuid = {
             /* LSB <---------------------------------------
              * ---------------------------------------> MSB */
-            0xfb, 0x34, 0x9b, 0x5f, 0x80, 0x00, 0x00, 0x80,
-            0x00, 0x10, 0x00, 0x00, 0xFF, 0xFF, 0x00, 0x00,
+            0xb4, 0xdf, 0x5a, 0x1c, 0x3f, 0x6b, 0xf4, 0xbf,
+            0xea, 0x4a, 0x82, 0x03, 0x04, 0x90, 0x1a, 0x02,
         },
         .nu_lookup_count = sizeof(nu_lookup_table)/sizeof(nu_lookup_table[0]),
         .nu_lookup = nu_lookup_table
     };
+
+    /* With the above selection of 128bit primary service UUID and
+     * 16bit endpoint UUIDs, the 128bit characteristic UUIDs will be
+     * formed by replacing the 12th and 13th bytes of the service UUID
+     * with the 16bit endpoint UUID, i.e. :
+     *    service UUID : 021a9004-0382-4aea-bff4-6b3f1c5adfb4
+     *     masked base : 021a____-0382-4aea-bff4-6b3f1c5adfb4
+     * ------------------------------------------------------
+     * resulting characteristic UUIDs :
+     * 1) prov-session : 021a0001-0382-4aea-bff4-6b3f1c5adfb4
+     * 2)  prov-config : 021a0002-0382-4aea-bff4-6b3f1c5adfb4
+     * 3)    proto-ver : 021a0003-0382-4aea-bff4-6b3f1c5adfb4
+     *
+     * Also, note that each endpoint (characteristic) will have
+     * an associated "Characteristic User Description" descriptor
+     * with 16bit UUID 0x2901, each containing the corresponding
+     * endpoint name. These descriptors can be used by a client
+     * side application to figure out which characteristic is
+     * mapped to which endpoint, without having to hardcode the
+     * UUIDs */
+
     uint8_t eth_mac[6];
     esp_wifi_get_mac(WIFI_IF_STA, eth_mac);
     snprintf(config.device_name, sizeof(config.device_name), "%s%02X%02X%02X",
@@ -131,6 +163,10 @@ static void app_prov_stop_service(void)
     /* Delete protocomm instance */
     protocomm_delete(g_prov->pc);
 
+    /* Remove event handler */
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler);
+    esp_event_handler_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, app_prov_event_handler);
+
     /* Release memory used by BT stack */
     esp_bt_mem_release(ESP_BT_MODE_BTDM);
 }
@@ -160,33 +196,24 @@ static void _stop_prov_cb(void * arg)
     xTaskCreate(&stop_prov_task, "stop_prov", 2048, NULL, tskIDLE_PRIORITY, NULL);
 }
 
-/* Event handler for starting/stopping provisioning.
- * To be called from within the context of the main
- * event handler.
- */
-esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
+/* Event handler for starting/stopping provisioning */
+static void app_prov_event_handler(void* handler_arg, esp_event_base_t event_base,
+                                   int event_id, void* event_data)
 {
-    /* For accessing reason codes in case of disconnection */
-    system_event_info_t *info = &event->event_info;
-
     /* If pointer to provisioning application data is NULL
-     * then provisioning is not running, therefore return without
-     * error */
+     * then provisioning is not running */
     if (!g_prov) {
-        return ESP_OK;
+        return;
     }
 
-    switch(event->event_id) {
-    case SYSTEM_EVENT_STA_START:
+    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         ESP_LOGI(TAG, "STA Start");
         /* Once configuration is received through protocomm,
          * device is started as station. Once station starts,
          * wait for connection to establish with configured
          * host SSID and password */
         g_prov->wifi_state = WIFI_PROV_STA_CONNECTING;
-        break;
-
-    case SYSTEM_EVENT_STA_GOT_IP:
+    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ESP_LOGI(TAG, "STA Got IP");
         /* Station got IP. That means configuration is successful.
          * Schedule timer to stop provisioning app after 30 seconds. */
@@ -194,16 +221,16 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
         if (g_prov && g_prov->timer) {
             esp_timer_start_once(g_prov->timer, 30000*1000U);
         }
-        break;
-
-    case SYSTEM_EVENT_STA_DISCONNECTED:
+    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         ESP_LOGE(TAG, "STA Disconnected");
         /* Station couldn't connect to configured host SSID */
         g_prov->wifi_state = WIFI_PROV_STA_DISCONNECTED;
-        ESP_LOGE(TAG, "Disconnect reason : %d", info->disconnected.reason);
+
+        wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
+        ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
 
         /* Set code corresponding to the reason for disconnection */
-        switch (info->disconnected.reason) {
+        switch (disconnected->reason) {
         case WIFI_REASON_AUTH_EXPIRE:
         case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
         case WIFI_REASON_BEACON_TIMEOUT:
@@ -223,12 +250,7 @@ esp_err_t app_prov_event_handler(void *ctx, system_event_t *event)
             g_prov->wifi_state = WIFI_PROV_STA_CONNECTING;
             esp_wifi_connect();
         }
-        break;
-
-    default:
-        break;
     }
-    return ESP_OK;
 }
 
 esp_err_t app_prov_get_wifi_state(wifi_prov_sta_state_t* state)
@@ -259,20 +281,9 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
 {
     *provisioned = false;
 
-#ifdef CONFIG_RESET_PROVISIONED
+#ifdef CONFIG_EXAMPLE_RESET_PROVISIONED
     nvs_flash_erase();
 #endif
-
-    if (nvs_flash_init() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init NVS");
-        return ESP_FAIL;
-    }
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init wifi");
-        return ESP_FAIL;
-    }
 
     /* Get WiFi Station configuration */
     wifi_config_t wifi_cfg;
@@ -290,12 +301,6 @@ esp_err_t app_prov_is_provisioned(bool *provisioned)
 
 esp_err_t app_prov_configure_sta(wifi_config_t *wifi_cfg)
 {
-    /* Initialize WiFi with default config */
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    if (esp_wifi_init(&cfg) != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to init WiFi");
-        return ESP_FAIL;
-    }
     /* Configure WiFi as station */
     if (esp_wifi_set_mode(WIFI_MODE_STA) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set WiFi mode");
@@ -355,6 +360,18 @@ esp_err_t app_prov_start_ble_provisioning(int security, const protocomm_security
     esp_err_t err = esp_timer_create(&timer_conf, &g_prov->timer);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to create timer");
+        return err;
+    }
+
+    err = esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, app_prov_event_handler, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register WiFi event handler");
+        return err;
+    }
+
+    err = esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, app_prov_event_handler, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to register IP event handler");
         return err;
     }
 

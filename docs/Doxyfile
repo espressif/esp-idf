@@ -39,32 +39,47 @@ INPUT = \
     ../../components/bt/include/esp_bt.h \
     ## Bluetooth COMMON
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_bt_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_bt_main.h \
-    ../../components/bt/bluedroid/api/include/api/esp_bt_device.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_main.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_bt_device.h \
     ## Bluetooth LE
-    ../../components/bt/bluedroid/api/include/api/esp_gap_ble_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gap_ble_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_gatt_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_gatts_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_gattc_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_blufi_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gatt_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gatts_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gattc_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_blufi_api.h \
     ## Bluetooth Classic
-    ../../components/bt/bluedroid/api/include/api/esp_gap_bt_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_gap_bt_api.h \
     ## Issue with __attribute__
-    ../../components/bt/bluedroid/api/include/api/esp_a2dp_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_avrc_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_spp_api.h \
-    ../../components/bt/bluedroid/api/include/api/esp_hf_defs.h \
-    ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_a2dp_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_avrc_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
+    ## NimBLE related Bluetooth APIs
+    ../../components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
+    ## ESP BLE Mesh APIs
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_networking_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_provisioning_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_proxy_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_config_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_generic_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_health_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_lighting_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
     ##
     ## Ethernet - API Reference
     ##
-    ../../components/ethernet/include/esp_eth.h \
-    ../../components/ethernet/include/eth_phy/phy.h \
-    ../../components/ethernet/include/eth_phy/phy_tlk110.h \
-    ../../components/ethernet/include/eth_phy/phy_lan8720.h \
-    ../../components/ethernet/include/eth_phy/phy_ip101.h \
+    ../../components/esp_eth/include/esp_eth.h \
+    ../../components/esp_eth/include/esp_eth_com.h \
+    ../../components/esp_eth/include/esp_eth_mac.h \
+    ../../components/esp_eth/include/esp_eth_phy.h \
     ##
     ## Peripherals - API Reference
     ##
@@ -83,17 +98,19 @@ INPUT = \
     ../../components/driver/include/driver/spi_common.h \
     ../../components/driver/include/driver/spi_master.h \
     ../../components/driver/include/driver/spi_slave.h \
+    ../../components/driver/esp32s2beta/include/temp_sensor.h \
     ../../components/driver/include/driver/timer.h \
     ../../components/driver/include/driver/touch_pad.h \
     ../../components/driver/include/driver/uart.h \
     ../../components/esp_adc_cal/include/esp_adc_cal.h \
+    ../../components/soc/include/hal/spi_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
     ../../components/soc/esp32/include/soc/touch_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
     ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
-    ## tcpip_adapter - API Reference
-    ../../components/tcpip_adapter/include/tcpip_adapter.h \
+    ## esp_netif - API Reference
+    ../../components/esp_netif/include/esp_netif.h \
     ##
     ## Protocols - API Reference
     ##
@@ -101,11 +118,17 @@ INPUT = \
     ../../components/esp-tls/esp_tls.h \
     ## MQTT
     ../../components/mqtt/esp-mqtt/include/mqtt_client.h \
+    ## ICMP-ECHO
+    ../../components/lwip/include/apps/ping/ping_sock.h \
     ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
+    ../../components/esp_websocket_client/include/esp_websocket_client.h \
+    ## HTTP / HTTPS Server
     ../../components/esp_http_server/include/esp_http_server.h \
     ../../components/esp_https_server/include/esp_https_server.h \
+    ## ESP Local Ctrl
+    ../../components/esp_local_ctrl/include/esp_local_ctrl.h \
     ##
     ## Provisioning - API Reference
     ##
@@ -118,14 +141,21 @@ INPUT = \
     ../../components/protocomm/include/transports/protocomm_console.h \
     ../../components/protocomm/include/transports/protocomm_httpd.h \
     ## WiFi Provisioning
+    ../../components/wifi_provisioning/include/wifi_provisioning/manager.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_ble.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/scheme_console.h \
     ../../components/wifi_provisioning/include/wifi_provisioning/wifi_config.h \
+    ../../components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     ##
     ## Storage - API Reference
     ##
     ## SPI Flash and Partition APIs
-    ../../components/spi_flash/include/esp_spi_flash.h \
+    ../../components/spi_flash/include/esp_flash_spi_init.h \
+    ../../components/spi_flash/include/esp_flash.h \
     ../../components/spi_flash/include/esp_partition.h \
     ../../components/bootloader_support/include/esp_flash_encrypt.h \
+    ../../components/soc/include/hal/spi_flash_types.h \
     ## SPIFFS
     ../../components/spiffs/include/esp_spiffs.h \
     ## SD/MMC Card Host
@@ -144,8 +174,11 @@ INPUT = \
     ../../components/vfs/include/esp_vfs_semihost.h \
     ## FAT Filesystem
     ## NOTE: for two lines below header_file.inc is not used
-    ../../components/fatfs/src/esp_vfs_fat.h \
-    ../../components/fatfs/src/diskio.h \
+    ../../components/fatfs/vfs/esp_vfs_fat.h \
+    ../../components/fatfs/diskio/diskio_impl.h \
+    ../../components/fatfs/diskio/diskio_sdmmc.h \
+    ../../components/fatfs/diskio/diskio_wl.h \
+    ../../components/fatfs/diskio/diskio_rawflash.h \
     ## Wear Levelling
     ../../components/wear_levelling/include/wear_levelling.h \
     ##
@@ -179,11 +212,14 @@ INPUT = \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
     ../../components/esp_common/include/esp_system.h \
+    ## IDF version
+    ../../components/esp_common/include/esp_idf_version.h \
     ##
     ## ULP Coprocessor - API Guides
     ##
     ## NOTE: for line below header_file.inc is not used
     ../../components/ulp/include/esp32/ulp.h \
+    ../../components/ulp/include/ulp_common.h \
     ##
     ## Application Level Tracing - API Reference
     ##
@@ -199,6 +235,8 @@ INPUT = \
     ../../components/esp_event/include/esp_event_base.h \
     ### eFuse Manager
     ../../components/efuse/include/esp_efuse.h \
+    ### App Image Format
+    ../../components/bootloader_support/include/esp_app_format.h \
     ### ESP Pthread parameters
     ../../components/pthread/include/esp_pthread.h \
     ###
@@ -216,7 +254,14 @@ INPUT = \
     ### System APIs
     ../../components/esp_common/include/esp_system.h \
     ### Modbus controller component header file
-    ../../components/freemodbus/modbus_controller/mbcontroller.h
+    ../../components/freemodbus/common/include/esp_modbus_common.h \
+    ../../components/freemodbus/common/include/esp_modbus_slave.h \
+    ../../components/freemodbus/common/include/esp_modbus_master.h \
+     ### Performance Monitor component header file
+     ../../components/perfmon/include/xtensa_perfmon_access.h \
+     ../../components/perfmon/include/xtensa_perfmon_apis.h \
+     ../../components/perfmon/include/xtensa_perfmon_masks.h
+
 
 ## Get warnings for functions that have no documentation for their parameters or return value
 ##
@@ -229,6 +274,7 @@ MACRO_EXPANSION        = YES
 EXPAND_ONLY_PREDEF     = YES
 PREDEFINED             = \
     __attribute__(x)= \
+    IDF_DEPRECATED(X)= \
     IRAM_ATTR= \
     configSUPPORT_DYNAMIC_ALLOCATION=1 \
     configSUPPORT_STATIC_ALLOCATION=1 \

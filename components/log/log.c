@@ -53,6 +53,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
+#include <time.h>
+#include <sys/time.h>
 
 #include "esp_log.h"
 
@@ -104,7 +106,7 @@ static inline void add_to_cache(const char* tag, esp_log_level_t level);
 static void heap_bubble_down(int index);
 static inline void heap_swap(int i, int j);
 static inline bool should_output(esp_log_level_t level_for_message, esp_log_level_t level_for_tag);
-static inline void clear_log_level_list();
+static inline void clear_log_level_list(void);
 
 vprintf_like_t esp_log_set_vprintf(vprintf_like_t func)
 {
@@ -172,10 +174,12 @@ void esp_log_level_set(const char* tag, esp_log_level_t level)
     xSemaphoreGive(s_log_mutex);
 }
 
-void clear_log_level_list()
+void clear_log_level_list(void)
 {
-    while( !SLIST_EMPTY(&s_log_tags)) {
+    uncached_tag_entry_t *it;
+    while((it = SLIST_FIRST(&s_log_tags)) != NULL) {
         SLIST_REMOVE_HEAD(&s_log_tags, entries );
+        free(it);
     }
     s_log_cache_entry_count = 0;
     s_log_cache_max_generation = 0;
@@ -323,14 +327,54 @@ static inline void heap_swap(int i, int j)
 //as a workaround before the interface for this variable
 extern uint32_t g_ticks_per_us_pro;
 
-uint32_t ATTR esp_log_early_timestamp()
+uint32_t ATTR esp_log_early_timestamp(void)
 {
     return xthal_get_ccount() / (g_ticks_per_us_pro * 1000);
 }
 
 #ifndef BOOTLOADER_BUILD
 
-uint32_t IRAM_ATTR esp_log_timestamp()
+char* IRAM_ATTR esp_log_system_timestamp(void)
+{
+    static char buffer[18] = {0};
+    static _lock_t bufferLock = 0;
+
+    if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
+        uint32_t timestamp = esp_log_early_timestamp();
+        for (uint8_t i = 0; i < sizeof(buffer); i++) {
+            if ((timestamp > 0) || (i == 0)) {
+                for (uint8_t j = sizeof(buffer) - 1; j > 0; j--) {
+                    buffer[j] = buffer[j - 1];
+                }
+                buffer[0] = (char) (timestamp % 10) + '0';
+                timestamp /= 10;
+            } else {
+                buffer[i] = 0;
+                break;
+            }
+        }
+        return buffer;
+    } else {
+        struct timeval tv;
+        struct tm timeinfo;
+
+        gettimeofday(&tv, NULL);
+        localtime_r(&tv.tv_sec, &timeinfo);
+
+        _lock_acquire(&bufferLock);
+        snprintf(buffer, sizeof(buffer),
+                 "%02d:%02d:%02d.%03ld",
+                 timeinfo.tm_hour,
+                 timeinfo.tm_min,
+                 timeinfo.tm_sec,
+                 tv.tv_usec / 1000);
+        _lock_release(&bufferLock);
+
+        return buffer;
+    }
+}
+
+uint32_t IRAM_ATTR esp_log_timestamp(void)
 {
     if (xTaskGetSchedulerState() == taskSCHEDULER_NOT_STARTED) {
         return esp_log_early_timestamp();
@@ -344,7 +388,7 @@ uint32_t IRAM_ATTR esp_log_timestamp()
 
 #else
 
-uint32_t esp_log_timestamp() __attribute__((alias("esp_log_early_timestamp")));
+uint32_t esp_log_timestamp(void) __attribute__((alias("esp_log_early_timestamp")));
 
 #endif //BOOTLOADER_BUILD
 

@@ -1,9 +1,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <dirent.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include "esp_partition.h"
 #include "spiffs.h"
@@ -12,7 +16,7 @@
 
 #include "catch.hpp"
 
-extern "C" void init_spi_flash(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
+extern "C" void _spi_flash_init(const char* chip_size, size_t block_size, size_t sector_size, size_t page_size, const char* partition_bin);
 
 static void init_spiffs(spiffs *fs, uint32_t max_files)
 {
@@ -96,7 +100,18 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
 
     while ((entry = readdir(dir)) != NULL) {
         char *name = entry->d_name;
-        if (entry->d_type == DT_DIR) {
+
+        char path[PATH_MAX] = { 0 };
+
+        // Read the file from host FS
+        strcpy(path, cur_path);
+        strcat(path, "/");
+        strcat(path, name);
+
+        struct stat sb;
+        stat(path, &sb);
+
+        if (S_ISDIR(sb.st_mode)) {
             if (!strcmp(name, ".") || !strcmp(name, ".."))
                 continue;
             cur_path[len] = '/';
@@ -104,13 +119,6 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
             check_spiffs_files(fs, base_path, cur_path);
             cur_path[len] = '\0';
         } else {
-            char path[PATH_MAX];
-
-            // Read the file from host FS
-            strcpy(path, cur_path);
-            strcat(path, "/");
-            strcat(path, name);
-
             FILE* f = fopen(path , "r");
             REQUIRE(f);
             fseek(f, 0, SEEK_END);
@@ -126,6 +134,7 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
             // Read the file from SPIFFS
             char *spiffs_path = path + strlen(base_path);
             spiffs_res = SPIFFS_open(fs, spiffs_path, SPIFFS_RDONLY, 0);
+
             REQUIRE(spiffs_res > SPIFFS_OK);
 
             spiffs_file fd = spiffs_res;
@@ -152,7 +161,7 @@ static void check_spiffs_files(spiffs *fs, const char *base_path, char* cur_path
 
 TEST_CASE("format disk, open file, write and read file", "[spiffs]")
 {
-    init_spi_flash(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
+    _spi_flash_init(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
 
     spiffs fs;
     s32_t spiffs_res;
@@ -204,7 +213,7 @@ TEST_CASE("format disk, open file, write and read file", "[spiffs]")
 
 TEST_CASE("can read spiffs image", "[spiffs]")
 {
-    init_spi_flash(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
+    _spi_flash_init(CONFIG_ESPTOOLPY_FLASHSIZE, CONFIG_WL_SECTOR_SIZE * 16, CONFIG_WL_SECTOR_SIZE, CONFIG_WL_SECTOR_SIZE, "partition_table.bin");
 
     spiffs fs;
     s32_t spiffs_res;

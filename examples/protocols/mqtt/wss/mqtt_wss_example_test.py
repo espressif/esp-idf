@@ -11,6 +11,7 @@ from threading import Thread, Event
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -63,7 +64,7 @@ def test_examples_protocol_mqtt_wss(env, extra_data):
       3. Test evaluates it received correct qos0 message
       4. Test ESP32 client received correct qos0 message
     """
-    dut1 = env.get_dut("mqtt_websocket_secure", "examples/protocols/mqtt/wss")
+    dut1 = env.get_dut("mqtt_websocket_secure", "examples/protocols/mqtt/wss", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_websocket_secure.bin")
     bin_size = os.path.getsize(binary_file)
@@ -85,7 +86,7 @@ def test_examples_protocol_mqtt_wss(env, extra_data):
         client.on_message = on_message
         client.tls_set(None,
                        None,
-                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
+                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
         print("Connecting...")
         client.connect(broker_url, broker_port, 60)
     except Exception:

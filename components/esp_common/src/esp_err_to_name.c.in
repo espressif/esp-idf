@@ -1,6 +1,7 @@
 @COMMENT@
 
 #include <string.h>
+#include "esp_err.h"
 #if __has_include("soc/soc.h")
 #include "soc/soc.h"
 #endif

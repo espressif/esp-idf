@@ -6,7 +6,7 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/lldesc.h"
 #include "esp32/rom/gpio.h"
-
+#include "driver/periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -14,12 +14,9 @@
 #include "freertos/xtensa_api.h"
 #include "unity.h"
 
-#include "soc/uart_reg.h"
 #include "soc/dport_reg.h"
-#include "soc/io_mux_reg.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/gpio_reg.h"
-#include "soc/i2s_reg.h"
+#include "soc/gpio_periph.h"
+#include "soc/i2s_periph.h"
 
 
 #define DPORT_I2S0_CLK_EN   (BIT(4))
@@ -32,8 +29,7 @@ static volatile lldesc_t dmaDesc[2];
 static void dmaMemcpy(void *in, void *out, int len)
 {
     volatile int i;
-    DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_I2S0_CLK_EN);
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_I2S0_RST);
+    periph_module_enable(PERIPH_I2S0_MODULE);
 
     //Init pins to i2s functions
     SET_PERI_REG_MASK(GPIO_ENABLE_W1TS_REG, (1 << 11) | (1 << 3) | (1 << 0) | (1 << 2) | (1 << 5) | (1 << 16) | (1 << 17) | (1 << 18) | (1 << 19) | (1 << 20)); //ENABLE GPIO oe_enable

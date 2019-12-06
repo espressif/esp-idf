@@ -403,13 +403,13 @@ app,app, factory, 32K, 1M
 
 class PartToolTests(Py23TestCase):
 
-    def _run_parttool(self, csvcontents, args, info):
+    def _run_parttool(self, csvcontents, args):
         csvpath = tempfile.mktemp()
         with open(csvpath, "w") as f:
             f.write(csvcontents)
         try:
-            output = subprocess.check_output([sys.executable, "../parttool.py"] + args.split(" ")
-                                             + ["--partition-table-file", csvpath, "get_partition_info", "--info", info],
+            output = subprocess.check_output([sys.executable, "../parttool.py", "-q", "--partition-table-file",
+                                              csvpath, "get_partition_info"] + args,
                                              stderr=subprocess.STDOUT)
             self.assertNotIn(b"WARNING", output)
             m = re.search(b"0x[0-9a-fA-F]+", output)
@@ -425,17 +425,17 @@ phy_init, data, phy,     0xf000,  0x1000
 factory,  app, factory, 0x10000,  1M
         """
 
-        def rpt(args, info):
-            return self._run_parttool(csv, args, info)
+        def rpt(args):
+            return self._run_parttool(csv, args)
 
         self.assertEqual(
-            rpt("--partition-type=data --partition-subtype=nvs -q", "offset"), b"0x9000")
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs", "--info", "offset"]), b"0x9000")
         self.assertEqual(
-            rpt("--partition-type=data --partition-subtype=nvs -q", "size"), b"0x4000")
+            rpt(["--partition-type", "data", "--partition-subtype", "nvs", "--info", "size"]), b"0x4000")
         self.assertEqual(
-            rpt("--partition-name=otadata -q", "offset"), b"0xd000")
+            rpt(["--partition-name", "otadata", "--info", "offset"]), b"0xd000")
         self.assertEqual(
-            rpt("--partition-boot-default -q", "offset"), b"0x10000")
+            rpt(["--partition-boot-default", "--info", "offset"]), b"0x10000")
 
     def test_fallback(self):
         csv = """
@@ -446,16 +446,16 @@ ota_0,  app,    ota_0,   0x30000,  1M
 ota_1,  app,    ota_1,          ,  1M
         """
 
-        def rpt(args, info):
-            return self._run_parttool(csv, args, info)
+        def rpt(args):
+            return self._run_parttool(csv, args)
 
         self.assertEqual(
-            rpt("--partition-type=app --partition-subtype=ota_1 -q", "offset"), b"0x130000")
+            rpt(["--partition-type", "app", "--partition-subtype", "ota_1", "--info", "offset"]), b"0x130000")
         self.assertEqual(
-            rpt("--partition-boot-default -q", "offset"), b"0x30000")  # ota_0
+            rpt(["--partition-boot-default", "--info", "offset"]), b"0x30000")  # ota_0
         csv_mod = csv.replace("ota_0", "ota_2")
         self.assertEqual(
-            self._run_parttool(csv_mod, "--partition-boot-default -q", "offset"),
+            self._run_parttool(csv_mod, ["--partition-boot-default", "--info", "offset"]),
             b"0x130000")  # now default is ota_1
 
 

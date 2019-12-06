@@ -33,4 +33,4 @@ I (677) example: Example end
 ```
 ---
 
-There is a discussion on importing third-party CMake libraries in the programming guide under `API Guides` -> `Build System (CMake)` -> `Using Third-Party CMake Projects with Components`
+There is a discussion on importing third-party CMake libraries in the programming guide under `API Guides` -> `Build System` -> `Using Third-Party CMake Projects with Components`

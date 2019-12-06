@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,11 +15,12 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/xtensa_api.h"
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
+#include "hal/timer_ll.h"
+#include "soc/rtc.h"
 
 static const char* TIMER_TAG = "timer_group";
 #define TIMER_CHECK(a, str, ret_val) \
@@ -36,22 +37,26 @@ static const char* TIMER_TAG = "timer_group";
 #define TIMER_SCALE_ERROR       "HW TIMER SCALE ERROR"
 #define TIMER_ALARM_ERROR       "HW TIMER ALARM ERROR"
 #define DIVIDER_RANGE_ERROR     "HW TIMER divider outside of [2, 65536] range error"
-static timg_dev_t *TG[2] = {&TIMERG0, &TIMERG1};
+DRAM_ATTR static timg_dev_t *TG[2] = {&TIMERG0, &TIMERG1};
 static portMUX_TYPE timer_spinlock[TIMER_GROUP_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
 
-#define TIMER_ENTER_CRITICAL(mux)      portENTER_CRITICAL(mux);
-#define TIMER_EXIT_CRITICAL(mux)       portEXIT_CRITICAL(mux);
+#define TIMER_ENTER_CRITICAL(mux)      portENTER_CRITICAL_SAFE(mux);
+#define TIMER_EXIT_CRITICAL(mux)       portEXIT_CRITICAL_SAFE(mux);
 
 esp_err_t timer_get_counter_value(timer_group_t group_num, timer_idx_t timer_num, uint64_t* timer_val)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_val != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&timer_spinlock[group_num]);
+    portENTER_CRITICAL_SAFE(&timer_spinlock[group_num]);
+#ifdef CONFIG_IDF_TARGET_ESP32
     TG[group_num]->hw_timer[timer_num].update = 1;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->hw_timer[timer_num].update.update = 1;
+#endif
     *timer_val = ((uint64_t) TG[group_num]->hw_timer[timer_num].cnt_high << 32)
         | (TG[group_num]->hw_timer[timer_num].cnt_low);
-    portEXIT_CRITICAL(&timer_spinlock[group_num]);
+    portEXIT_CRITICAL_SAFE(&timer_spinlock[group_num]);
     return ESP_OK;
 }
 
@@ -65,7 +70,15 @@ esp_err_t timer_get_counter_time_sec(timer_group_t group_num, timer_idx_t timer_
     esp_err_t err = timer_get_counter_value(group_num, timer_num, &timer_val);
     if (err == ESP_OK) {
         uint16_t div = TG[group_num]->hw_timer[timer_num].config.divider;
+#ifdef CONFIG_IDF_TARGET_ESP32
         *time = (double)timer_val * div / TIMER_BASE_CLK;
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+        if(TG[group_num]->hw_timer[timer_num].config.use_xtal) {
+            *time = (double)timer_val * div / ((int)rtc_clk_xtal_freq_get() * 1000000);
+        } else {
+            *time = (double)timer_val * div / rtc_clk_apb_freq_get();
+        }
+#endif
     }
     return err;
 }
@@ -154,10 +167,10 @@ esp_err_t timer_get_alarm_value(timer_group_t group_num, timer_idx_t timer_num, 
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(alarm_value != NULL, TIMER_PARAM_ADDR_ERROR, ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&timer_spinlock[group_num]);
+    portENTER_CRITICAL_SAFE(&timer_spinlock[group_num]);
     *alarm_value = ((uint64_t) TG[group_num]->hw_timer[timer_num].alarm_high << 32)
                 | (TG[group_num]->hw_timer[timer_num].alarm_low);
-    portEXIT_CRITICAL(&timer_spinlock[group_num]);
+    portEXIT_CRITICAL_SAFE(&timer_spinlock[group_num]);
     return ESP_OK;
 }
 
@@ -172,7 +185,7 @@ esp_err_t timer_set_alarm(timer_group_t group_num, timer_idx_t timer_num, timer_
     return ESP_OK;
 }
 
-esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num, 
+esp_err_t timer_isr_register(timer_group_t group_num, timer_idx_t timer_num,
     void (*fn)(void*), void * arg, int intr_alloc_flags, timer_isr_handle_t *handle)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
@@ -223,7 +236,11 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     //but software reset does not clear interrupt status. This is not safe for application when enable the interrupt of timer_group.
     //we need to disable the interrupt and clear the interrupt status here.
     TG[group_num]->int_ena.val &= (~BIT(timer_num));
+#ifdef CONFIG_IDF_TARGET_ESP32
     TG[group_num]->int_clr_timers.val = BIT(timer_num);
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->int_clr.val = BIT(timer_num);
+#endif
     TG[group_num]->hw_timer[timer_num].config.autoreload = config->auto_reload;
     TG[group_num]->hw_timer[timer_num].config.divider = (uint16_t) config->divider;
     TG[group_num]->hw_timer[timer_num].config.enable = config->counter_en;
@@ -231,6 +248,9 @@ esp_err_t timer_init(timer_group_t group_num, timer_idx_t timer_num, const timer
     TG[group_num]->hw_timer[timer_num].config.alarm_en = config->alarm_en;
     TG[group_num]->hw_timer[timer_num].config.level_int_en = (config->intr_type == TIMER_INTR_LEVEL ? 1 : 0);
     TG[group_num]->hw_timer[timer_num].config.edge_int_en = (config->intr_type == TIMER_INTR_LEVEL ? 0 : 1);
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    TG[group_num]->hw_timer[timer_num].config.use_xtal = config->clk_sel;
+#endif
     TIMER_EXIT_CRITICAL(&timer_spinlock[group_num]);
     return ESP_OK;
 }
@@ -254,7 +274,7 @@ esp_err_t timer_get_config(timer_group_t group_num, timer_idx_t timer_num, timer
     return ESP_OK;
 }
 
-esp_err_t timer_group_intr_enable(timer_group_t group_num, uint32_t en_mask)
+esp_err_t timer_group_intr_enable(timer_group_t group_num, timer_intr_t en_mask)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&timer_spinlock[group_num]);
@@ -263,7 +283,7 @@ esp_err_t timer_group_intr_enable(timer_group_t group_num, uint32_t en_mask)
     return ESP_OK;
 }
 
-esp_err_t timer_group_intr_disable(timer_group_t group_num, uint32_t disable_mask)
+esp_err_t timer_group_intr_disable(timer_group_t group_num, timer_intr_t disable_mask)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&timer_spinlock[group_num]);
@@ -276,14 +296,55 @@ esp_err_t timer_enable_intr(timer_group_t group_num, timer_idx_t timer_num)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
-    return timer_group_intr_enable(group_num, BIT(timer_num));
+    return timer_group_intr_enable(group_num, TIMER_LL_GET_INTR(timer_num));
 }
 
 esp_err_t timer_disable_intr(timer_group_t group_num, timer_idx_t timer_num)
 {
     TIMER_CHECK(group_num < TIMER_GROUP_MAX, TIMER_GROUP_NUM_ERROR, ESP_ERR_INVALID_ARG);
     TIMER_CHECK(timer_num < TIMER_MAX, TIMER_NUM_ERROR, ESP_ERR_INVALID_ARG);
-    return timer_group_intr_disable(group_num, BIT(timer_num));
+    return timer_group_intr_disable(group_num, TIMER_LL_GET_INTR(timer_num));
 }
 
+timer_intr_t IRAM_ATTR timer_group_intr_get_in_isr(timer_group_t group_num)
+{
+    return timer_ll_intr_status_get(TG[group_num]);
+}
+
+void IRAM_ATTR timer_group_intr_clr_in_isr(timer_group_t group_num, timer_idx_t timer_num)
+{
+    timer_ll_intr_status_clear(TG[group_num], TIMER_LL_GET_INTR(timer_num));
+}
+
+void IRAM_ATTR timer_group_enable_alarm_in_isr(timer_group_t group_num, timer_idx_t timer_num)
+{
+    timer_ll_set_alarm_enable(TG[group_num], timer_num, true);
+}
+
+uint64_t IRAM_ATTR timer_group_get_counter_value_in_isr(timer_group_t group_num, timer_idx_t timer_num)
+{
+    uint64_t val;
+    timer_ll_get_counter_value(TG[group_num], timer_num, &val);
+    return val;
+}
+
+void IRAM_ATTR timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t timer_num, uint64_t alarm_val)
+{
+    timer_ll_set_alarm_value(TG[group_num], timer_num, alarm_val);
+}
+
+void IRAM_ATTR timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en)
+{
+    timer_ll_set_counter_enable(TG[group_num], timer_num, counter_en);
+}
+
+void IRAM_ATTR timer_group_clr_intr_sta_in_isr(timer_group_t group_num, timer_intr_t intr_mask)
+{
+    timer_ll_intr_status_clear(TG[group_num], intr_mask);
+}
+
+bool IRAM_ATTR timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer_idx_t timer_num)
+{
+    return timer_ll_get_auto_reload(TG[group_num], timer_num);
+}
 

@@ -22,6 +22,7 @@ import time
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     test_fw_path = os.getenv("TEST_FW_PATH")
     if test_fw_path and test_fw_path not in sys.path:
@@ -51,7 +52,7 @@ esp_prov.config_throw_except = True
 @IDF.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_softap(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("softap_prov", "examples/provisioning/softap_prov")
+    dut1 = env.get_dut("softap_prov", "examples/provisioning/softap_prov", dut_class=ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "softap_prov.bin")
@@ -64,7 +65,6 @@ def test_examples_provisioning_softap(env, extra_data):
 
     # Parse IP address of STA
     dut1.expect("Starting WiFi SoftAP provisioning", timeout=60)
-    dut1.expect("SoftAP started", timeout=30)
     [ssid, password] = dut1.expect(re.compile(r"SoftAP Provisioning started with SSID '(\S+)', Password '(\S+)'"), timeout=30)
 
     iface = wifi_tools.get_wiface_name()
@@ -98,7 +98,7 @@ def test_examples_provisioning_softap(env, extra_data):
         raise RuntimeError("Failed to get security")
 
     print("Getting transport")
-    transport = esp_prov.get_transport(provmode, softap_endpoint, None)
+    transport = esp_prov.get_transport(provmode, softap_endpoint)
     if transport is None:
         raise RuntimeError("Failed to get transport")
 

@@ -84,7 +84,7 @@ void unity_testcase_register(test_desc_t* desc);
 
 #define TEST_CASE(name_, desc_) \
     static void UNITY_TEST_UID(test_func_) (void); \
-    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
+    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) (void) \
     { \
         static test_func test_fn_[] = {&UNITY_TEST_UID(test_func_)}; \
         static test_desc_t UNITY_TEST_UID(test_desc_) = { \
@@ -115,7 +115,7 @@ void unity_testcase_register(test_desc_t* desc);
 
 #define TEST_CASE_MULTIPLE_STAGES(name_, desc_, ...) \
     UNITY_TEST_FN_SET(__VA_ARGS__); \
-    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
+    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) (void) \
     { \
         static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
@@ -130,6 +130,8 @@ void unity_testcase_register(test_desc_t* desc);
         unity_testcase_register( & UNITY_TEST_UID(test_desc_) ); \
     }
 
+
+
 /*
  * First argument is a free-form description,
  * second argument is (by convention) a list of identifiers, each one in square brackets.
@@ -140,7 +142,7 @@ void unity_testcase_register(test_desc_t* desc);
 
 #define TEST_CASE_MULTIPLE_DEVICES(name_, desc_, ...) \
     UNITY_TEST_FN_SET(__VA_ARGS__); \
-    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) () \
+    static void __attribute__((constructor)) UNITY_TEST_UID(test_reg_helper_) (void) \
     { \
         static test_desc_t UNITY_TEST_UID(test_desc_) = { \
             .name = name_, \
@@ -168,7 +170,18 @@ void unity_run_test_by_name(const char *name);
 
 void unity_run_tests_by_tag(const char *tag, bool invert);
 
-void unity_run_all_tests();
+void unity_run_all_tests(void);
 
-void unity_run_menu();
+void unity_run_menu(void);
 
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#define TEST_CASE_ESP32(...) TEST_CASE(__VA_ARGS__)
+#define TEST_CASE_MULTIPLE_STAGES_ESP32(...) TEST_CASE_MULTIPLE_STAGES(__VA_ARGS__)
+#define TEST_CASE_MULTIPLE_DEVICES_ESP32(...) TEST_CASE_MULTIPLE_DEVICES(__VA_ARGS__)
+#else
+#define TEST_CASE_ESP32(...) __attribute__((unused)) static void UNITY_TEST_UID(test_func_) (void)
+#define TEST_CASE_MULTIPLE_STAGES_ESP32(_, __, ...) __attribute__((unused)) static test_func UNITY_TEST_UID(test_functions)[] = {__VA_ARGS__};
+#define TEST_CASE_MULTIPLE_DEVICES_ESP32(_, __, ...) __attribute__((unused)) static test_func UNITY_TEST_UID(test_functions)[] = {__VA_ARGS__};
+
+#endif

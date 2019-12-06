@@ -1,1 +1,0 @@
-.. include:: ../../en/get-started/get-started-wrover-kit-v3.rst

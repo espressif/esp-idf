@@ -18,18 +18,11 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "esp_event_base.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef enum {
-    SC_STATUS_WAIT = 0,             /**< Waiting to start connect */
-    SC_STATUS_FIND_CHANNEL,         /**< Finding target channel */
-    SC_STATUS_GETTING_SSID_PSWD,    /**< Getting SSID and password of target AP */
-    SC_STATUS_LINK,                 /**< Connecting to target AP */
-    SC_STATUS_LINK_OVER,            /**< Connected to AP successfully */
-} smartconfig_status_t;
 
 typedef enum {
     SC_TYPE_ESPTOUCH = 0,       /**< protocol: ESPTouch */
@@ -37,18 +30,36 @@ typedef enum {
     SC_TYPE_ESPTOUCH_AIRKISS,   /**< protocol: ESPTouch and AirKiss */
 } smartconfig_type_t;
 
-/**
-  * @brief  The callback of SmartConfig, executed when smart-config status changed.
-  *
-  * @param  status  Status of SmartConfig:
-  *    - SC_STATUS_GETTING_SSID_PSWD : pdata is a pointer of smartconfig_type_t, means config type.
-  *    - SC_STATUS_LINK : pdata is a pointer to wifi_config_t.
-  *    - SC_STATUS_LINK_OVER : pdata is a pointer of phone's IP address(4 bytes) if pdata unequal NULL.
-  *    - otherwise : parameter void *pdata is NULL.
-  * @param  pdata  According to the different status have different values.
-  *
-  */
-typedef void (*sc_callback_t)(smartconfig_status_t status, void *pdata);
+/** Smartconfig event declarations */
+typedef enum {
+    SC_EVENT_SCAN_DONE,                /*!< ESP32 station smartconfig has finished to scan for APs */
+    SC_EVENT_FOUND_CHANNEL,            /*!< ESP32 station smartconfig has found the channel of the target AP */
+    SC_EVENT_GOT_SSID_PSWD,            /*!< ESP32 station smartconfig got the SSID and password */
+    SC_EVENT_SEND_ACK_DONE,            /*!< ESP32 station smartconfig has sent ACK to cellphone */
+} smartconfig_event_t;
+
+/** @brief smartconfig event base declaration */
+ESP_EVENT_DECLARE_BASE(SC_EVENT);
+
+/** Argument structure for SC_EVENT_GOT_SSID_PSWD event */
+typedef struct {
+    uint8_t ssid[32];           /**< SSID of the AP. Null terminated string. */
+    uint8_t password[64];       /**< Password of the AP. Null terminated string. */
+    bool bssid_set;             /**< whether set MAC address of target AP or not. */
+    uint8_t bssid[6];           /**< MAC address of target AP. */
+    smartconfig_type_t type;    /**< Type of smartconfig(ESPTouch or AirKiss). */
+    uint8_t token;              /**< Token from cellphone which is used to send ACK to cellphone. */
+    uint8_t cellphone_ip[4];    /**< IP address of cellphone. */
+} smartconfig_event_got_ssid_pswd_t;
+
+/** Configure structure for esp_smartconfig_start */
+typedef struct {
+    bool enable_log;            /**< Enable smartconfig logs. */
+} smartconfig_start_config_t;
+
+#define SMARTCONFIG_START_CONFIG_DEFAULT() { \
+    .enable_log = false \
+};
 
 /**
   * @brief  Get the version of SmartConfig.
@@ -66,14 +77,13 @@ const char *esp_smartconfig_get_version(void);
   * @attention 2. Can not call esp_smartconfig_start twice before it finish, please call
   *               esp_smartconfig_stop first.
   *
-  * @param     cb  SmartConfig callback function.
-  * @param     ... log  1: UART output logs; 0: UART only outputs the result.
+  * @param     config pointer to smartconfig start configure structure
   *
   * @return
   *     - ESP_OK: succeed
   *     - others: fail
   */
-esp_err_t esp_smartconfig_start(sc_callback_t cb, ...);
+esp_err_t esp_smartconfig_start(const smartconfig_start_config_t *config);
 
 /**
   * @brief     Stop SmartConfig, free the buffer taken by esp_smartconfig_start.

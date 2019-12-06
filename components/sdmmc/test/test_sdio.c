@@ -23,7 +23,6 @@
 #include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
-#include "soc/gpio_reg.h"
 #include "unity.h"
 
 /* Second ESP32 board attached as follows:
@@ -41,7 +40,6 @@
 
 /* TODO: add SDIO slave header files, remove these definitions */
 
-#define DR_REG_SLC_BASE 0x3ff58000
 #define DR_REG_SLC_MASK 0xfffffc00
 
 #define SLCCONF1 (DR_REG_SLC_BASE + 0x60)
@@ -53,7 +51,6 @@
 #define SLC_SLC0_TXLINK_RESTART (BIT(30))
 #define SLC_SLC0_TXLINK_START (BIT(29))
 
-#define DR_REG_SLCHOST_BASE 0x3ff55000
 #define DR_REG_SLCHOST_MASK 0xfffffc00
 #define SLCHOST_STATE_W0 (DR_REG_SLCHOST_BASE + 0x64)
 #define SLCHOST_CONF_W0 (DR_REG_SLCHOST_BASE + 0x6C)
@@ -127,7 +124,7 @@ static esp_err_t slave_slc_reg_write(sdmmc_card_t* card, uint32_t addr, uint32_t
 }
 
 /** Reset and put slave into download mode */
-static void reset_slave()
+static void reset_slave(void)
 {
     const int pin_en = 18;
     const int pin_io0 = 19;

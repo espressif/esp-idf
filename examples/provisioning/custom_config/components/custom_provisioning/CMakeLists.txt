@@ -1,8 +1,5 @@
-set(COMPONENT_ADD_INCLUDEDIRS include)
-set(COMPONENT_PRIV_INCLUDEDIRS proto-c)
-set(COMPONENT_SRCS  "src/custom_config.c"
-                    "proto-c/custom_config.pb-c.c")
-
-set(COMPONENT_PRIV_REQUIRES protobuf-c)
-
-register_component()
+idf_component_register(SRCS "src/custom_config.c"
+                            "proto-c/custom_config.pb-c.c"
+                    INCLUDE_DIRS include
+                    PRIV_INCLUDE_DIRS proto-c
+                    PRIV_REQUIRES protobuf-c)

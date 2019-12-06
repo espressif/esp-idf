@@ -23,7 +23,7 @@ import argparse
 from io import open
 
 # regular expression for matching Kconfig files
-RE_KCONFIG = r'^Kconfig(?:\.projbuild)?$'
+RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
 
 # ouput file with suggestions will get this suffix
 OUTPUT_SUFFIX = '.new'
@@ -34,15 +34,16 @@ OUTPUT_SUFFIX = '.new'
 IGNORE_DIRS = (
     # Kconfigs from submodules need to be ignored:
     os.path.join('components', 'mqtt', 'esp-mqtt'),
+    # Test Kconfigs are also ignored
+    os.path.join('tools', 'ldgen', 'test', 'data'),
+    os.path.join('tools', 'kconfig_new', 'test'),
 )
 
 SPACES_PER_INDENT = 4
 
-# TODO decrease the value (after the names have been refactored)
-CONFIG_NAME_MAX_LENGTH = 60
+CONFIG_NAME_MAX_LENGTH = 40
 
-# TODO increase prefix length (after the names have been refactored)
-CONFIG_NAME_MIN_PREFIX_LENGTH = 0
+CONFIG_NAME_MIN_PREFIX_LENGTH = 3
 
 # The checker will not fail if it encounters this string (it can be used for temporarily resolve conflicts)
 RE_NOERROR = re.compile(r'\s+#\s+NOERROR\s+$')
@@ -81,6 +82,24 @@ class BaseChecker(object):
 
     def __exit__(self, type, value, traceback):
         pass
+
+
+class SourceChecker(BaseChecker):
+    # allow to source only files which will be also checked by the script
+    # Note: The rules are complex and the LineRuleChecker cannot be used
+    def process_line(self, line, line_number):
+        m = re.search(r'^\s*source(\s*)"([^"]+)"', line)
+        if m:
+            if len(m.group(1)) == 0:
+                raise InputError(self.path_in_idf, line_number, '"source" has to been followed by space',
+                                 line.replace('source', 'source '))
+            path = m.group(2)
+            filename = os.path.basename(path)
+            if path in ['$COMPONENT_KCONFIGS_SOURCE_FILE', '$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE']:
+                pass
+            elif not filename.startswith('Kconfig.'):
+                raise InputError(self.path_in_idf, line_number, "only filenames starting with Kconfig.* can be sourced",
+                                 line.replace(path, os.path.join(os.path.dirname(path), 'Kconfig.' + filename)))
 
 
 class LineRuleChecker(BaseChecker):
@@ -133,6 +152,7 @@ class IndentAndNameChecker(BaseChecker):
                                               |(menuconfig)
                                               |(help)
                                               |(if)
+                                              |(source)
                                           )
                                        ''', re.X)
 
@@ -192,7 +212,7 @@ class IndentAndNameChecker(BaseChecker):
             print('level+', new_item, ': ', self.level_stack, end=' -> ')
         # "config" and "menuconfig" don't have a closing pair. So if new_item is an item which need to be indented
         # outside the last "config" or "menuconfig" then we need to find to a parent where it belongs
-        if new_item in ['config', 'menuconfig', 'menu', 'choice', 'if']:
+        if new_item in ['config', 'menuconfig', 'menu', 'choice', 'if', 'source']:
             # item is not belonging to a previous "config" or "menuconfig" so need to indent to parent
             for i, item in enumerate(reversed(self.level_stack)):
                 if item in ['menu', 'mainmenu', 'choice', 'if']:
@@ -262,8 +282,9 @@ class IndentAndNameChecker(BaseChecker):
         common_prefix_len = len(common_prefix)
         if common_prefix_len < self.min_prefix_length:
             raise InputError(self.path_in_idf, line_number,
-                             'Common prefix "{}" length is {} and should be at least {} characters long'
-                             ''.format(common_prefix, common_prefix_len, self.min_prefix_length),
+                             'The common prefix for the config names of the menu ending at this line is "{}". '
+                             'All config names in this menu should start with the same prefix of {} characters '
+                             'or more.'.format(common_prefix, self.min_prefix_length),
                              line)   # no suggested correction for this
         if len(self.prefix_stack) > 0:
             parent_prefix = self.prefix_stack[-1]
@@ -326,7 +347,7 @@ class IndentAndNameChecker(BaseChecker):
                 new_item = m.group(1)
                 current_level = self.update_level_for_dec_pattern(new_item)
                 if new_item not in ['endif']:
-                    # endif doesn't require to check the prefix because the items in inside if/endif belong to the
+                    # endif doesn't require to check the prefix because the items inside if/endif belong to the
                     # same prefix level
                     self.check_common_prefix(line, line_number)
 
@@ -382,11 +403,12 @@ def main():
                 with open(full_path, 'r', encoding='utf-8') as f, \
                         open(suggestions_full_path, 'w', encoding='utf-8', newline='\n') as f_o, \
                         LineRuleChecker(path_in_idf) as line_checker, \
+                        SourceChecker(path_in_idf) as source_checker, \
                         IndentAndNameChecker(path_in_idf, debug=args.verbose) as indent_and_name_checker:
                     try:
                         for line_number, line in enumerate(f, start=1):
                             try:
-                                for checker in [line_checker, indent_and_name_checker]:
+                                for checker in [line_checker, indent_and_name_checker, source_checker]:
                                     checker.process_line(line, line_number)
                                 # The line is correct therefore we echo it to the output file
                                 f_o.write(line)

@@ -46,7 +46,7 @@ void time_sync_notification_cb(struct timeval *tv)
     ESP_LOGI(TAG, "Notification of a time synchronization event");
 }
 
-void app_main()
+void app_main(void)
 {
     ++boot_count;
     ESP_LOGI(TAG, "Boot count: %d", boot_count);
@@ -119,7 +119,7 @@ void app_main()
 static void obtain_time(void)
 {
     ESP_ERROR_CHECK( nvs_flash_init() );
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

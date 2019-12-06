@@ -1,5 +1,6 @@
 Fatal Errors
 ============
+:link_to_translation:`zh_CN:[中文]`
 
 Overview
 --------
@@ -11,7 +12,7 @@ In certain situations, execution of the program can not be continued in a well d
 - System level checks and safeguards:
 
   - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
-  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_TASK_WDT_PANIC` is set)
+  - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
   - Cache access error
   - Brownout detection event
   - Stack overflow
@@ -61,30 +62,37 @@ Behavior of panic handler is affected by two other configuration options.
 
 - If :doc:`Core Dump <core_dump>` feature is enabled (``CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH`` or ``CONFIG_ESP32_ENABLE_COREDUMP_TO_UART`` options), then system state (task stacks and registers) will be dumped either to Flash or UART, for later analysis.
 
+- If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
+  
+  If this option is enabled, the panic handler code is placed in IRAM. This allows the panic handler to run without needing to re-enable cache first. This may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash).
+
 The following diagram illustrates panic handler behavior:
 
 .. blockdiag::
-    :caption: Panic Handler Flowchart
+    :scale: 100%
+    :caption: Panic Handler Flowchart (click to enlarge)
     :align: center
     
     blockdiag panic-handler {
         orientation = portrait;
         edge_layout = flowchart;
         default_group_color = white;
+        node_width = 160;
+        node_height = 60;
 
         cpu_exception [label = "CPU Exception", shape=roundedbox];
         sys_check [label = "Cache error,\nInterrupt WDT,\nabort()", shape=roundedbox];
-        check_ocd [label = "JTAG debugger\nconnected?", shape=diamond, width=160, height=80];
+        check_ocd [label = "JTAG debugger\nconnected?", shape=diamond, height=80];
         print_error_cause [label = "Print error/\nexception cause"];
         use_jtag [label = "Send signal to\nJTAG debugger", shape=roundedbox];
         dump_registers [label = "Print registers\nand backtrace"];
-        check_coredump [label = "Core dump\nenabled?", shape=flowchart.condition];
+        check_coredump [label = "Core dump\nenabled?", shape=diamond, height=80];
         do_coredump [label = "Core dump\nto UART or Flash"];
-        check_gdbstub [label = "GDB Stub\nenabled?", shape=flowchart.condition];
+        check_gdbstub [label = "GDB Stub\nenabled?", shape=diamond, height=80];
         do_gdbstub [label = "Start GDB Stub", shape=roundedbox];
         halt [label = "Halt", shape=roundedbox];
         reboot [label = "Reboot", shape=roundedbox];
-        check_halt [label = "Halt?", shape=flowchart.condition];
+        check_halt [label = "Halt?", shape=diamond, height=80];
 
         group {cpu_exception, sys_check};
 
@@ -257,7 +265,7 @@ Other Fatal Errors
 Brownout
 ^^^^^^^^
 
-ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_BROWNOUT_DET` and :ref:`CONFIG_BROWNOUT_DET_LVL_SEL` options.
+ESP32 has a built-in brownout detector, which is enabled by default. Brownout detector can trigger system reset if supply voltage goes below safe level. Brownout detector can be configured using :ref:`CONFIG_ESP32_BROWNOUT_DET` and :ref:`CONFIG_ESP32_BROWNOUT_DET_LVL_SEL` options.
 When brownout detector triggers, the following message is printed::
 
     Brownout detector was triggered
@@ -280,7 +288,7 @@ Consult :doc:`Heap Memory Debugging <../api-reference/system/heap_debug>` docume
 Stack Smashing
 ^^^^^^^^^^^^^^
 
-Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
+Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
 
     Stack smashing protect failure!
 

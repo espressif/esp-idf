@@ -15,9 +15,12 @@
 
 #include <stdbool.h>
 #include <esp_err.h>
-#include "soc/efuse_reg.h"
+#include "soc/efuse_periph.h"
 
 #include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/efuse.h"
+#endif
 
 #ifdef CONFIG_SECURE_BOOT_ENABLED
 #if !defined(CONFIG_SECURE_SIGNED_ON_BOOT) || !defined(CONFIG_SECURE_SIGNED_ON_UPDATE) || !defined(CONFIG_SECURE_SIGNED_APPS)
@@ -36,14 +39,18 @@ extern "C" {
 
 /** @brief Is secure boot currently enabled in hardware?
  *
- * Secure boot is enabled if the ABS_DONE_0 efuse is blown. This means
- * that the ROM bootloader code will only boot a verified secure
- * bootloader digest from now on.
+ * This means that the ROM bootloader code will only boot
+ * a verified secure bootloader from now on.
  *
  * @return true if secure boot is enabled.
  */
-static inline bool esp_secure_boot_enabled(void) {
+static inline bool esp_secure_boot_enabled(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
     return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    return ets_efuse_secure_boot_enabled();
+#endif
 }
 
 /** @brief Generate secure digest from bootloader image
@@ -130,7 +137,6 @@ typedef struct {
     uint8_t iv[128];
     uint8_t digest[64];
 } esp_secure_boot_iv_digest_t;
-
 
 #ifdef __cplusplus
 }

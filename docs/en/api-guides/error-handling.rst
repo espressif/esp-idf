@@ -114,9 +114,9 @@ Error handling patterns
 C++ Exceptions
 --------------
 
-Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using :ref:`CONFIG_CXX_EXCEPTIONS` option.
+Support for C++ Exceptions in ESP-IDF is disabled by default, but can be enabled using :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS` option.
 
-Enabling exception handling normally increases application binary size by a few kB. Additionally it may be necessary to reserve some amount of RAM for exception emergency pool. Memory from this pool will be used if it is not possible to allocate exception object from the heap. Amount of memory in the emergency pool can be set using :ref:`CONFIG_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
+Enabling exception handling normally increases application binary size by a few kB. Additionally it may be necessary to reserve some amount of RAM for exception emergency pool. Memory from this pool will be used if it is not possible to allocate exception object from the heap. Amount of memory in the emergency pool can be set using :ref:`CONFIG_COMPILER_CXX_EXCEPTIONS_EMG_POOL_SIZE` variable.
 
 If an exception is thrown, but there is no ``catch`` block, the program will be terminated by ``abort`` function, and backtrace will be printed. See :doc:`Fatal Errors <fatal-errors>` for more information about backtraces.
 

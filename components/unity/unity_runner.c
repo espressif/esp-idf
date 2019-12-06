@@ -178,7 +178,7 @@ void unity_run_test_by_name(const char *name)
     }
 }
 
-void unity_run_all_tests()
+void unity_run_all_tests(void)
 {
     for (const test_desc_t *test = s_unity_tests_first; test != NULL; test = test->next) {
         unity_run_single_test(test);
@@ -265,7 +265,7 @@ static int get_test_count(void)
     return test_counter;
 }
 
-void unity_run_menu()
+void unity_run_menu(void)
 {
     UNITY_PRINT_EOL();
     UNITY_PRINT_EOL();

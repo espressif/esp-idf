@@ -13,7 +13,7 @@ static void handle_dhcp(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip
 
 void (*dhcp_test_static_handle_hdcp)(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) = NULL;
 
-void dhcp_test_init_di()
+void dhcp_test_init_di(void)
 {
     dhcp_test_static_handle_hdcp = handle_dhcp;
 }

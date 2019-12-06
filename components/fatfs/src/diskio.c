@@ -1,6 +1,5 @@
 /*-----------------------------------------------------------------------*/
 /* Low level disk I/O module skeleton for FatFs     (C)ChaN, 2016        */
-/* ESP-IDF port Copyright 2016 Espressif Systems (Shanghai) PTE LTD      */
 /*-----------------------------------------------------------------------*/
 /* If a working storage control module is available, it should be        */
 /* attached to the FatFs via a glue function rather than modifying it.   */
@@ -8,85 +7,223 @@
 /* storage control modules to the FatFs module with a defined API.       */
 /*-----------------------------------------------------------------------*/
 
-#include <string.h>
-#include <time.h>
-#include <sys/time.h>
-#include "diskio.h"		/* FatFs lower layer API */
-#include "ffconf.h"
-#include "ff.h"
+#include "ff.h"			/* Obtains integer types */
+#include "diskio.h"		/* Declarations of disk functions */
 
-static ff_diskio_impl_t * s_impls[FF_VOLUMES] = { NULL };
+/* Definitions of physical drive number for each drive */
+#define DEV_RAM		0	/* Example: Map Ramdisk to physical drive 0 */
+#define DEV_MMC		1	/* Example: Map MMC/SD card to physical drive 1 */
+#define DEV_USB		2	/* Example: Map USB MSD to physical drive 2 */
 
-#if FF_MULTI_PARTITION		/* Multiple partition configuration */
-PARTITION VolToPart[] = {
-    {0, 0},    /* Logical drive 0 ==> Physical drive 0, auto detection */
-    {1, 0}     /* Logical drive 1 ==> Physical drive 1, auto detection */
-};
+
+/*-----------------------------------------------------------------------*/
+/* Get Drive Status                                                      */
+/*-----------------------------------------------------------------------*/
+
+DSTATUS disk_status (
+	BYTE pdrv		/* Physical drive nmuber to identify the drive */
+)
+{
+	DSTATUS stat;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+		result = RAM_disk_status();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_MMC :
+		result = MMC_disk_status();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_USB :
+		result = USB_disk_status();
+
+		// translate the reslut code here
+
+		return stat;
+	}
+	return STA_NOINIT;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Inidialize a Drive                                                    */
+/*-----------------------------------------------------------------------*/
+
+DSTATUS disk_initialize (
+	BYTE pdrv				/* Physical drive nmuber to identify the drive */
+)
+{
+	DSTATUS stat;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+		result = RAM_disk_initialize();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_MMC :
+		result = MMC_disk_initialize();
+
+		// translate the reslut code here
+
+		return stat;
+
+	case DEV_USB :
+		result = USB_disk_initialize();
+
+		// translate the reslut code here
+
+		return stat;
+	}
+	return STA_NOINIT;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Read Sector(s)                                                        */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_read (
+	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+	BYTE *buff,		/* Data buffer to store read data */
+	DWORD sector,	/* Start sector in LBA */
+	UINT count		/* Number of sectors to read */
+)
+{
+	DRESULT res;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+		// translate the arguments here
+
+		result = RAM_disk_read(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_MMC :
+		// translate the arguments here
+
+		result = MMC_disk_read(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_USB :
+		// translate the arguments here
+
+		result = USB_disk_read(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+	}
+
+	return RES_PARERR;
+}
+
+
+
+/*-----------------------------------------------------------------------*/
+/* Write Sector(s)                                                       */
+/*-----------------------------------------------------------------------*/
+
+#if FF_FS_READONLY == 0
+
+DRESULT disk_write (
+	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
+	const BYTE *buff,	/* Data to be written */
+	DWORD sector,		/* Start sector in LBA */
+	UINT count			/* Number of sectors to write */
+)
+{
+	DRESULT res;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+		// translate the arguments here
+
+		result = RAM_disk_write(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_MMC :
+		// translate the arguments here
+
+		result = MMC_disk_write(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+
+	case DEV_USB :
+		// translate the arguments here
+
+		result = USB_disk_write(buff, sector, count);
+
+		// translate the reslut code here
+
+		return res;
+	}
+
+	return RES_PARERR;
+}
+
 #endif
 
-esp_err_t ff_diskio_get_drive(BYTE* out_pdrv)
+
+/*-----------------------------------------------------------------------*/
+/* Miscellaneous Functions                                               */
+/*-----------------------------------------------------------------------*/
+
+DRESULT disk_ioctl (
+	BYTE pdrv,		/* Physical drive nmuber (0..) */
+	BYTE cmd,		/* Control code */
+	void *buff		/* Buffer to send/receive control data */
+)
 {
-    BYTE i;
-    for(i=0; i<FF_VOLUMES; i++) {
-        if (!s_impls[i]) {
-            *out_pdrv = i;
-            return ESP_OK;
-        }
-    }
-    return ESP_ERR_NOT_FOUND;
+	DRESULT res;
+	int result;
+
+	switch (pdrv) {
+	case DEV_RAM :
+
+		// Process of the command for the RAM drive
+
+		return res;
+
+	case DEV_MMC :
+
+		// Process of the command for the MMC/SD card
+
+		return res;
+
+	case DEV_USB :
+
+		// Process of the command the USB drive
+
+		return res;
+	}
+
+	return RES_PARERR;
 }
 
-void ff_diskio_register(BYTE pdrv, const ff_diskio_impl_t* discio_impl)
-{
-    assert(pdrv < FF_VOLUMES);
-
-    if (s_impls[pdrv]) {
-        ff_diskio_impl_t* im = s_impls[pdrv];
-        s_impls[pdrv] = NULL;
-        free(im);
-    }
-
-    if (!discio_impl) {
-        return;
-    }
-
-    ff_diskio_impl_t * impl = (ff_diskio_impl_t *)malloc(sizeof(ff_diskio_impl_t));
-    assert(impl != NULL);
-    memcpy(impl, discio_impl, sizeof(ff_diskio_impl_t));
-    s_impls[pdrv] = impl;
-}
-
-DSTATUS ff_disk_initialize (BYTE pdrv)
-{
-    return s_impls[pdrv]->init(pdrv);
-}
-DSTATUS ff_disk_status (BYTE pdrv)
-{
-    return s_impls[pdrv]->status(pdrv);
-}
-DRESULT ff_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
-{
-    return s_impls[pdrv]->read(pdrv, buff, sector, count);
-}
-DRESULT ff_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
-{
-    return s_impls[pdrv]->write(pdrv, buff, sector, count);
-}
-DRESULT ff_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff)
-{
-    return s_impls[pdrv]->ioctl(pdrv, cmd, buff);
-}
-
-DWORD get_fattime(void)
-{
-    time_t t = time(NULL);
-    struct tm tmr;
-    localtime_r(&t, &tmr);
-    int year = tmr.tm_year < 80 ? 0 : tmr.tm_year - 80;
-    return    ((DWORD)(year) << 25)
-            | ((DWORD)(tmr.tm_mon + 1) << 21)
-            | ((DWORD)tmr.tm_mday << 16)
-            | (WORD)(tmr.tm_hour << 11)
-            | (WORD)(tmr.tm_min << 5)
-            | (WORD)(tmr.tm_sec >> 1);
-}

@@ -16,7 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_event.h"
 #include "iperf.h"
 
@@ -48,12 +48,14 @@ static wifi_scan_arg_t scan_args;
 static wifi_args_t ap_args;
 static bool reconnect = true;
 static const char *TAG="cmd_wifi";
+static esp_netif_t *netif_ap = NULL;
+static esp_netif_t *netif_sta = NULL;
 
 static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 const int DISCONNECTED_BIT = BIT1;
 
-static void scan_done_handler(void* arg, esp_event_base_t event_base, 
+static void scan_done_handler(void* arg, esp_event_base_t event_base,
                               int32_t event_id, void* event_data)
 {
     uint16_t sta_number = 0;
@@ -76,14 +78,14 @@ static void scan_done_handler(void* arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "sta scan done");
 }
 
-static void got_ip_handler(void* arg, esp_event_base_t event_base, 
+static void got_ip_handler(void* arg, esp_event_base_t event_base,
                            int32_t event_id, void* event_data)
 {
     xEventGroupClearBits(wifi_event_group, DISCONNECTED_BIT);
     xEventGroupSetBits(wifi_event_group, CONNECTED_BIT);
 }
 
-static void disconnect_handler(void* arg, esp_event_base_t event_base, 
+static void disconnect_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data)
 {
     if (reconnect) {
@@ -106,9 +108,13 @@ void initialise_wifi(void)
         return;
     }
 
-    tcpip_adapter_init();
+    esp_netif_init();
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK( esp_event_loop_create_default() );
+    netif_ap = esp_netif_create_default_wifi_ap();
+    assert(netif_ap);
+    netif_sta = esp_netif_create_default_wifi_sta();
+    assert(netif_sta);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_SCAN_DONE, &scan_done_handler, NULL) );
@@ -128,7 +134,7 @@ static bool wifi_cmd_sta_join(const char* ssid, const char* pass)
 
     strlcpy((char*) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strncpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strlcpy((char*) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     if (bits & CONNECTED_BIT) {
@@ -205,14 +211,14 @@ static bool wifi_cmd_ap_set(const char* ssid, const char* pass)
     };
 
     reconnect = false;
-    strncpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
+    strlcpy((char*) wifi_config.ap.ssid, ssid, sizeof(wifi_config.ap.ssid));
     if (pass) {
         if (strlen(pass) != 0 && strlen(pass) < 8) {
             reconnect = true;
             ESP_LOGE(TAG, "password less than 8");
             return false;
         }
-        strncpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
+        strlcpy((char*) wifi_config.ap.password, pass, sizeof(wifi_config.ap.password));
     }
 
     if (strlen(pass) == 0) {
@@ -266,22 +272,22 @@ static int wifi_cmd_query(int argc, char** argv)
 static uint32_t wifi_get_local_ip(void)
 {
     int bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
-    tcpip_adapter_if_t ifx = TCPIP_ADAPTER_IF_AP;
-    tcpip_adapter_ip_info_t ip_info;
+    esp_netif_t * netif = netif_ap;
+    esp_netif_ip_info_t ip_info;
     wifi_mode_t mode;
 
     esp_wifi_get_mode(&mode);
     if (WIFI_MODE_STA == mode) {
         bits = xEventGroupWaitBits(wifi_event_group, CONNECTED_BIT, 0, 1, 0);
         if (bits & CONNECTED_BIT) {
-            ifx = TCPIP_ADAPTER_IF_STA;
+            netif = netif_sta;
         } else {
             ESP_LOGE(TAG, "sta has no IP");
             return 0;
         }
      }
 
-     tcpip_adapter_get_ip_info(ifx, &ip_info);
+     esp_netif_get_ip_info(netif, &ip_info);
      return ip_info.ip.addr;
 }
 
@@ -311,7 +317,7 @@ static int wifi_cmd_iperf(int argc, char** argv)
     if (iperf_args.ip->count == 0) {
         cfg.flag |= IPERF_FLAG_SERVER;
     } else {
-        cfg.dip = ipaddr_addr(iperf_args.ip->sval[0]);
+        cfg.dip = esp_ip4addr_aton(iperf_args.ip->sval[0]);
         cfg.flag |= IPERF_FLAG_CLIENT;
     }
 
@@ -369,7 +375,7 @@ static int wifi_cmd_iperf(int argc, char** argv)
     return 0;
 }
 
-void register_wifi()
+void register_wifi(void)
 {
     sta_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");
     sta_args.password = arg_str0(NULL, NULL, "<pass>", "password of AP");

@@ -1,5 +1,5 @@
 Unit Testing in ESP32
-=====================
+=============================
 :link_to_translation:`zh_CN:[中文]`
 
 ESP-IDF comes with a unit test app based on Unity - unit test framework. Unit tests are integrated in the ESP-IDF repository and are placed in ``test`` subdirectory of each component respectively.
@@ -26,9 +26,18 @@ Identifiers are used to group related test, or tests with specific properties.
 There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_END()`` in each test case.
 ``unity_platform.c`` will run ``UNITY_BEGIN()``, run the tests cases, and then call ``​UNITY_END()``.
 
-Each `test` subdirectory needs to include component.mk file with at least the following line of code::
+The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves,
+components. ESP-IDF uses the test framework ``unity`` and should be specified as a requirement for the component. Normally, components 
+:ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the 
+use of ``SRC_DIRS`` argument to ``idf_component_register`` is advised.
 
-    COMPONENT_ADD_LDFLAGS = -Wl,--whole-archive -l$(COMPONENT_NAME) -Wl,--no-whole-archive
+Overall, the minimal ``test`` subdirectory CMakeLists.txt file may look like as follows:
+
+.. code:: cmake
+
+    idf_component_register(SRC_DIRS "."
+                           INCLUDE_DIRS "."
+                           REQUIRES unity)
 
 See http://www.throwtheswitch.org/unity for more information about writing tests in Unity.
 
@@ -76,27 +85,13 @@ As the secnario in the above example, slave should get GPIO level after master s
 DUT1 (master) console::
 
     Waiting for signal: [output high level]!
-    Please press "Enter" key once any board send this signal.
+    Please press "Enter" key to once any board send this signal.
 
 DUT2 (slave) console::
 
     Send signal: [output high level]!
 
-Once the signal is sent from DUT2, you need to press "Enter" on DUT1, then DUT1 unblocks from ``unity_wait_for_signal`` and starts to change GPIO level.
-
-Signals can also be used to pass parameters between multiple devices. For example, DUT1 want to know the MAC address of DUT2, so it can connect to DUT2.
-In this case, ``unity_wait_for_signal_param`` and ``unity_send_signal_param`` can be used:
-
-DUT1 console::
-
-    Waiting for signal: [dut2 mac address]!
-    Please input parameter value from any board send this signal and press "Enter" key.
-
-DUT2 console:: 
-
-    Send signal: [dut2 mac address][10:20:30:40:50:60]!
-
-Once the signal is sent from DUT2, you need to input ``10:20:30:40:50:60`` on DUT1 and press "Enter". Then DUT1 will get the MAC address string of DUT2 and unblocks from ``unity_wait_for_signal_param``, start to connect to DUT2.
+Once the signal is set from DUT2, you need to press "Enter" on DUT1, then DUT1 unblocks from ``unity_wait_for_signal`` and starts to change GPIO level.
 
 
 Add multiple stages test cases
@@ -131,15 +126,15 @@ Make sure that IDF_PATH environment variable is set to point to the path of esp-
 
 Change into tools/unit-test-app directory to configure and build it:
 
-* `make menuconfig` - configure unit test app.
+* `idf.py menuconfig` - configure unit test app.
 
-* `make TESTS_ALL=1` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* `make TEST_COMPONENTS='xxx'` - build unit test app with tests for specific components. 
-* `make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='xxx'` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `make TESTS_ALL=1 TEST_EXCLUDE_COMPONENTS='ulp mbedtls'` - build all unit tests exludes ulp and mbedtls components).
+* `idf.py -T all build` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
+* `idf.py -T xxx build` - build unit test app with tests for specific components. 
+* `idf.py -T all -E xxxbuild` - build unit test app with all unit tests, except for unit tests of some components. (For instance: `idf.py -T all -E ulp mbedtls build` - build all unit tests exludes ulp and mbedtls components).
 
-When the build finishes, it will print instructions for flashing the chip. You can simply run ``make flash`` to flash all build output.
+When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
-You can also run ``make flash TESTS_ALL=1`` or ``make TEST_COMPONENTS='xxx'`` to build and flash. Everything needed will be rebuilt automatically before flashing. 
+You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing. 
 
 Use menuconfig to set the serial port for flashing.
 
@@ -180,13 +175,13 @@ Normal case will print the case name and description. Master slave cases will al
 
 Test cases can be run by inputting one of the following:
 
-- Test case name in quotation marks (for example, ``"esp_ota_begin() verifies arguments"``) to run a single test case.
+- Test case name in quotation marks to run a single test case 
 
-- Test case index (for example, ``1``) to run a single test case.
+- Test case index to run a single test case
 
-- Module name in square brackets (for example, ``[cxx]``) to run all test cases for a specific module.
+- Module name in square brackets to run all test cases for a specific module
 
-- An asterisk (``*``) to run all test cases
+- An asterisk to run all test cases
 
 ``[multi_device]`` and ``[multi_stage]`` tags tell the test runner whether a test case is a multiple devices or multiple stages test case.
 These tags are automatically added by ```TEST_CASE_MULTIPLE_STAGES`` and ``TEST_CASE_MULTIPLE_DEVICES`` macros.

@@ -37,7 +37,7 @@ This example can be run on any commonly available ESP32 development board.
 ## Configure the project
 
 ```
-make menuconfig
+idf.py menuconfig
 ```
 
 Set following parameter under Serial Flasher Options:
@@ -57,7 +57,7 @@ Configure Wi-Fi or Ethernet under "Example Connection Configuration" menu. See "
 Build the project and flash it to the board, then run monitor tool to view serial output:
 
 ```
-make -j4 flash monitor
+idf.py -p PORT flash monitor
 ```
 
 (To exit the serial monitor, type ``Ctrl-]``.)

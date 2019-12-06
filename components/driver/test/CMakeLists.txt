@@ -1,6 +1,9 @@
-set(COMPONENT_SRCDIRS ". param_test")
-set(COMPONENT_ADD_INCLUDEDIRS "include param_test/include")
+set(srcdirs . param_test)
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND srcdirs "esp32")
+endif()
 
-set(COMPONENT_REQUIRES unity test_utils driver nvs_flash)
-
-register_component()
+idf_component_register(SRC_DIRS ${srcdirs}
+                       INCLUDE_DIRS include param_test/include
+                       REQUIRES unity test_utils driver nvs_flash
+                       )

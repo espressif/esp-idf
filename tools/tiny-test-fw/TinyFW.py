@@ -17,6 +17,8 @@ import os
 import time
 import traceback
 import functools
+import socket
+from datetime import datetime
 
 import junit_xml
 
@@ -72,11 +74,13 @@ MANDATORY_INFO = {
 
 class JunitReport(object):
     # wrapper for junit test report
-    # TODO: Don't support by multi-thread (although not likely to be used this way).
+    # TODO: JunitReport methods are not thread safe (although not likely to be used this way).
 
     JUNIT_FILE_NAME = "XUNIT_RESULT.xml"
     JUNIT_DEFAULT_TEST_SUITE = "test-suite"
-    JUNIT_TEST_SUITE = junit_xml.TestSuite(JUNIT_DEFAULT_TEST_SUITE)
+    JUNIT_TEST_SUITE = junit_xml.TestSuite(JUNIT_DEFAULT_TEST_SUITE,
+                                           hostname=socket.gethostname(),
+                                           timestamp=datetime.utcnow().isoformat())
     JUNIT_CURRENT_TEST_CASE = None
     _TEST_CASE_CREATED_TS = 0
 
@@ -124,6 +128,18 @@ class JunitReport(object):
         cls._TEST_CASE_CREATED_TS = time.time()
         return test_case
 
+    @classmethod
+    def update_performance(cls, performance_items):
+        """
+        Update performance results to ``stdout`` of current test case.
+
+        :param performance_items: a list of performance items. each performance item is a key-value pair.
+        """
+        assert cls.JUNIT_CURRENT_TEST_CASE
+
+        for item in performance_items:
+            cls.JUNIT_CURRENT_TEST_CASE.stdout += "[{}]: {}\n".format(item[0], item[1])
+
 
 def test_method(**kwargs):
     """
@@ -169,7 +185,7 @@ def test_method(**kwargs):
 
             # prepare for xunit test results
             junit_file_path = env_inst.app_cls.get_log_folder(env_config["test_suite_name"])
-            junit_test_case = JunitReport.create_test_case(case_info["name"])
+            junit_test_case = JunitReport.create_test_case(case_info["ID"])
             result = False
 
             try:

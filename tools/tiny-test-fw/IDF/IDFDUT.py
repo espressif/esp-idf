@@ -65,12 +65,14 @@ class IDFRecvThread(DUT.RecvThread):
     def __init__(self, read, dut):
         super(IDFRecvThread, self).__init__(read, dut)
         self.exceptions = _queue.Queue()
+        self.performance_items = _queue.Queue()
 
     def collect_performance(self, comp_data):
         matches = self.PERFORMANCE_PATTERN.findall(comp_data)
         for match in matches:
             Utility.console_log("[Performance][{}]: {}".format(match[0], match[1]),
                                 color="orange")
+            self.performance_items.put((match[0], match[1]))
 
     def detect_exception(self, comp_data):
         for pattern in self.EXCEPTION_PATTERNS:
@@ -120,9 +122,10 @@ def _uses_esptool(func):
         settings = self.port_inst.get_settings()
 
         try:
-            rom = esptool.ESP32ROM(self.port_inst)
-            rom.connect('hard_reset')
-            esp = rom.run_stub()
+            if not self._rom_inst:
+                self._rom_inst = esptool.ESPLoader.detect_chip(self.port_inst)
+            self._rom_inst.connect('hard_reset')
+            esp = self._rom_inst.run_stub()
 
             ret = func(self, esp, *args, **kwargs)
             # do hard reset after use esptool
@@ -155,6 +158,12 @@ class IDFDUT(DUT.SerialDUT):
         super(IDFDUT, self).__init__(name, port, log_file, app, **kwargs)
         self.allow_dut_exception = allow_dut_exception
         self.exceptions = _queue.Queue()
+        self.performance_items = _queue.Queue()
+        self._rom_inst = None
+
+    @classmethod
+    def _get_rom(cls):
+        raise NotImplementedError("This is an abstraction class, method not defined.")
 
     @classmethod
     def get_mac(cls, app, port):
@@ -166,7 +175,7 @@ class IDFDUT(DUT.SerialDUT):
         :return: MAC address or None
         """
         try:
-            esp = esptool.ESP32ROM(port)
+            esp = cls._get_rom()(port)
             esp.connect()
             return esp.read_mac()
         except RuntimeError:
@@ -178,7 +187,24 @@ class IDFDUT(DUT.SerialDUT):
 
     @classmethod
     def confirm_dut(cls, port, app, **kwargs):
-        return cls.get_mac(app, port) is not None
+        inst = None
+        try:
+            expected_rom_class = cls._get_rom()
+        except NotImplementedError:
+            expected_rom_class = None
+
+        try:
+            # TODO: check whether 8266 works with this logic
+            # Otherwise overwrite it in ESP8266DUT
+            inst = esptool.ESPLoader.detect_chip(port)
+            if expected_rom_class and type(inst) != expected_rom_class:
+                raise RuntimeError("Target not expected")
+            return inst.read_mac() is not None
+        except(esptool.FatalError, RuntimeError):
+            return False
+        finally:
+            if inst is not None:
+                inst._port.close()
 
     @_uses_esptool
     def _try_flash(self, esp, erase_nvs, baud_rate):
@@ -214,7 +240,7 @@ class IDFDUT(DUT.SerialDUT):
                 'no_stub': False,
                 'compress': True,
                 'verify': False,
-                'encrypt': False,
+                'encrypt': self.app.flash_settings.get("encrypt", False),
                 'erase_all': False,
             })
 
@@ -338,33 +364,69 @@ class IDFDUT(DUT.SerialDUT):
             pass
         return ret
 
+    @staticmethod
+    def _queue_read_all(source_queue):
+        output = []
+        while True:
+            try:
+                output.append(source_queue.get(timeout=0))
+            except _queue.Empty:
+                break
+        return output
+
+    def _queue_copy(self, source_queue, dest_queue):
+        data = self._queue_read_all(source_queue)
+        for d in data:
+            dest_queue.put(d)
+
+    def _get_from_queue(self, queue_name):
+        self_queue = getattr(self, queue_name)
+        if self.receive_thread:
+            recv_thread_queue = getattr(self.receive_thread, queue_name)
+            self._queue_copy(recv_thread_queue, self_queue)
+        return self._queue_read_all(self_queue)
+
     def stop_receive(self):
         if self.receive_thread:
-            while True:
-                try:
-                    self.exceptions.put(self.receive_thread.exceptions.get(timeout=0))
-                except _queue.Empty:
-                    break
+            for name in ["performance_items", "exceptions"]:
+                source_queue = getattr(self.receive_thread, name)
+                dest_queue = getattr(self, name)
+                self._queue_copy(source_queue, dest_queue)
         super(IDFDUT, self).stop_receive()
 
     def get_exceptions(self):
         """ Get exceptions detected by DUT receive thread. """
-        if self.receive_thread:
-            while True:
-                try:
-                    self.exceptions.put(self.receive_thread.exceptions.get(timeout=0))
-                except _queue.Empty:
-                    break
-        exceptions = []
-        while True:
-            try:
-                exceptions.append(self.exceptions.get(timeout=0))
-            except _queue.Empty:
-                break
-        return exceptions
+        return self._get_from_queue("exceptions")
+
+    def get_performance_items(self):
+        """
+        DUT receive thread will automatic collect performance results with pattern ``[Performance][name]: value\n``.
+        This method is used to get all performance results.
+
+        :return: a list of performance items.
+        """
+        return self._get_from_queue("performance_items")
 
     def close(self):
         super(IDFDUT, self).close()
         if not self.allow_dut_exception and self.get_exceptions():
             Utility.console_log("DUT exception detected on {}".format(self), color="red")
             raise IDFDUTException()
+
+
+class ESP32DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32ROM
+
+
+class ESP32S2DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32S2ROM
+
+
+class ESP8266DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP8266ROM

@@ -59,15 +59,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "sys/queue.h"
-#include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_wifi_types.h"
-#include "esp_wifi_crypto_types.h"
 #include "esp_event.h"
-#include "esp_private/wifi_os_adapter.h"
+#include "esp_private/esp_wifi_private.h"
+#include "esp_wifi_default.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -88,6 +84,10 @@ extern "C" {
 #define ESP_ERR_WIFI_WAKE_FAIL   (ESP_ERR_WIFI_BASE + 13)  /*!< WiFi is in sleep state(RF closed) and wakeup fail */
 #define ESP_ERR_WIFI_WOULD_BLOCK (ESP_ERR_WIFI_BASE + 14)  /*!< The caller would block */
 #define ESP_ERR_WIFI_NOT_CONNECT (ESP_ERR_WIFI_BASE + 15)  /*!< Station still in disconnect status */
+
+#define ESP_ERR_WIFI_POST        (ESP_ERR_WIFI_BASE + 18)  /*!< Failed to post the event to WiFi task */
+#define ESP_ERR_WIFI_INIT_STATE  (ESP_ERR_WIFI_BASE + 19)  /*!< Invalod WiFi state when init/deinit is called */
+#define ESP_ERR_WIFI_STOP_STATE  (ESP_ERR_WIFI_BASE + 20)  /*!< Returned when WiFi is stopping */
 
 /**
  * @brief WiFi stack configuration parameters passed to esp_wifi_init call.
@@ -191,7 +191,7 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #endif
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
-    .event_handler = &esp_event_send, \
+    .event_handler = &esp_event_send_internal, \
     .osi_funcs = &g_wifi_osi_funcs, \
     .wpa_crypto_funcs = g_wifi_default_wpa_crypto_funcs, \
     .static_rx_buf_num = CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM,\
@@ -331,7 +331,7 @@ esp_err_t esp_wifi_restore(void);
   * @return 
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_WIFI_CONN: WiFi internal error, station or soft-AP control block wrong
   *    - ESP_ERR_WIFI_SSID: SSID of AP which station connects is invalid
   */
@@ -544,7 +544,7 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
   * @brief     Set primary/secondary channel of ESP32
   *
   * @attention 1. This is a special API for sniffer
-  * @attention 2. This API should be called after esp_wifi_start() or esp_wifi_set_promiscuous()
+  * @attention 2. This API should be called after esp_wifi_start() and esp_wifi_set_promiscuous()
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel
@@ -581,7 +581,7 @@ esp_err_t esp_wifi_get_channel(uint8_t *primary, wifi_second_chan_t *second);
   *               and the country info of the AP to which the station is connected is {.cc="JP", .schan=1, .nchan=14}
   *               then the country info that will be used is {.cc="JP", .schan=1, .nchan=14}. If the station disconnected
   *               from the AP the country info is set back back to the country info of the station automatically,
-  *               {.cc="USA", .schan=1, .nchan=11} in the example.
+  *               {.cc="US", .schan=1, .nchan=11} in the example.
   * @attention 3. When the country policy is WIFI_COUNTRY_POLICY_MANUAL, always use the configured country info.
   * @attention 4. When the country info is changed because of configuration or because the station connects to a different
   *               external AP, the country IE in probe response/beacon of the soft-AP is changed also.
@@ -815,30 +815,14 @@ esp_err_t esp_wifi_ap_get_sta_list(wifi_sta_list_t *sta);
 esp_err_t esp_wifi_set_storage(wifi_storage_t storage);
 
 /**
-  * @brief     Set auto connect
-  *            The default value is true
-  *
-  * @param     en : true - enable auto connect / false - disable auto connect
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_WIFI_MODE: WiFi internal error, the station/soft-AP control block is invalid
-  *    - others: refer to error code in esp_err.h
+  * @brief     Function signature for received Vendor-Specific Information Element callback.
+  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
+  * @param     type Information element type, based on frame type received.
+  * @param     sa Source 802.11 address.
+  * @param     vnd_ie Pointer to the vendor specific element data received.
+  * @param     rssi Received signal strength indication.
   */
-esp_err_t esp_wifi_set_auto_connect(bool en) __attribute__ ((deprecated));
-
-/**
-  * @brief     Get the auto connect flag
-  *
-  * @param[out] en  store current auto connect configuration
-  *
-  * @return
-  *    - ESP_OK: succeed
-  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
-  *    - ESP_ERR_INVALID_ARG: invalid argument
-  */
-esp_err_t esp_wifi_get_auto_connect(bool *en) __attribute__ ((deprecated));
+typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
 
 /**
   * @brief     Set 802.11 Vendor-Specific Information Element
@@ -859,16 +843,6 @@ esp_err_t esp_wifi_get_auto_connect(bool *en) __attribute__ ((deprecated));
 esp_err_t esp_wifi_set_vendor_ie(bool enable, wifi_vendor_ie_type_t type, wifi_vendor_ie_id_t idx, const void *vnd_ie);
 
 /**
-  * @brief     Function signature for received Vendor-Specific Information Element callback.
-  * @param     ctx Context argument, as passed to esp_wifi_set_vendor_ie_cb() when registering callback.
-  * @param     type Information element type, based on frame type received.
-  * @param     sa Source 802.11 address.
-  * @param     vnd_ie Pointer to the vendor specific element data received.
-  * @param     rssi Received signal strength indication.
-  */
-typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const uint8_t sa[6], const vendor_ie_data_t *vnd_ie, int rssi);
-
-/**
   * @brief     Register Vendor-Specific Information Element monitoring callback.
   *
   * @param     cb   Callback function
@@ -881,60 +855,22 @@ typedef void (*esp_vendor_ie_cb_t) (void *ctx, wifi_vendor_ie_type_t type, const
 esp_err_t esp_wifi_set_vendor_ie_cb(esp_vendor_ie_cb_t cb, void *ctx);
 
 /**
-  * @brief     Set maximum WiFi transmiting power
+  * @brief     Set maximum WiFi transmitting power
   *
-  * @attention WiFi transmiting power is divided to six levels in phy init data.
-  *            Level0 represents highest transmiting power and level5 represents lowest
-  *            transmiting power. Packets of different rates are transmitted in
-  *            different powers according to the configuration in phy init data.
-  *            This API only sets maximum WiFi transmiting power. If this API is called,
-  *            the transmiting power of every packet will be less than or equal to the
-  *            value set by this API. If this API is not called, the value of maximum
-  *            transmitting power set in phy_init_data.bin or menuconfig (depend on
-  *            whether to use phy init data in partition or not) will be used. Default
-  *            value is level0. Values passed in power are mapped to transmit power
-  *            levels as follows:
-  *            - [78, 127]: level0
-  *            - [76, 77]: level1
-  *            - [74, 75]: level2
-  *            - [68, 73]: level3
-  *            - [60, 67]: level4
-  *            - [52, 59]: level5
-  *            - [44, 51]: level5 - 2dBm
-  *            - [34, 43]: level5 - 4.5dBm
-  *            - [28, 33]: level5 - 6dBm
-  *            - [20, 27]: level5 - 8dBm
-  *            - [8, 19]: level5 - 11dBm
-  *            - [-128, 7]: level5 - 14dBm
-  *
-  * @param     power  Maximum WiFi transmiting power.
+  * @param     power  Maximum WiFi transmitting power, unit is 0.25dBm, range is [40, 82] corresponding to 10dBm - 20.5dBm here.
   *
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
   *    - ESP_ERR_WIFI_NOT_START: WiFi is not started by esp_wifi_start
+  *    - ESP_ERR_WIFI_NOT_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_max_tx_power(int8_t power);
 
 /**
   * @brief     Get maximum WiFi transmiting power
   *
-  * @attention This API gets maximum WiFi transmiting power. Values got
-  *            from power are mapped to transmit power levels as follows:
-  *            - 78: 19.5dBm
-  *            - 76: 19dBm
-  *            - 74: 18.5dBm
-  *            - 68: 17dBm
-  *            - 60: 15dBm
-  *            - 52: 13dBm
-  *            - 44: 11dBm
-  *            - 34: 8.5dBm
-  *            - 28: 7dBm
-  *            - 20: 5dBm
-  *            - 8:  2dBm
-  *            - -4: -1dBm
-  *
-  * @param     power  Maximum WiFi transmiting power.
+  * @param     power  Maximum WiFi transmitting power, unit is 0.25dBm.
   *
   * @return
   *    - ESP_OK: succeed

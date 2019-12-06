@@ -14,9 +14,14 @@
 #include <string.h>
 #include "unity.h"
 #include "sdkconfig.h"
+#include "soc/cpu.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/rom/uart.h"
-#include "soc/cpu.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/clk.h"
+#include "esp32s2beta/rom/uart.h"
+#endif
 
 static uint32_t s_test_start, s_test_stop;
 
@@ -31,9 +36,9 @@ void unity_putc(int c)
     }
 }
 
-void unity_flush()
+void unity_flush(void)
 {
-    uart_tx_wait_idle(CONFIG_CONSOLE_UART_NUM);
+    uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 }
 
 /* To start a unit test from a GDB session without console input,

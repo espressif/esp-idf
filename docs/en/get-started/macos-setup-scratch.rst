@@ -1,11 +1,20 @@
-***************************************
+***********************************************
 Setup Toolchain for Mac OS from Scratch
-***************************************
+***********************************************
+
 :link_to_translation:`zh_CN:[中文]`
 
-.. note::
-    
-    Standard process for installing the toolchain is described :doc:`here <macos-setup>`. See :ref:`Customized Setup of Toolchain <get-started-customized-setup>` section for some of the reasons why installing the toolchain from scratch may be necessary.
+Package Manager
+===============
+
+To set up the toolchain from scratch, rather than :doc:`downloading a pre-compiled toolchain<macos-setup>`, you will need to install either the MacPorts_ or homebrew_ package manager.
+
+MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
+
+    .. _homebrew: https://brew.sh/
+    .. _MacPorts: https://www.macports.org/install.php
+
+See :ref:`Customized Setup of Toolchain <get-started-customized-setup>` section for some of the reasons why installing the toolchain from scratch may be necessary.
 
 Install Prerequisites
 =====================
@@ -14,27 +23,32 @@ Install Prerequisites
 
     sudo easy_install pip
 
-.. note::
+- install pyserial::
 
-    ``pip`` will be used later for installing :ref:`the required Python packages <get-started-get-packages>`.
+    pip install --user pyserial
+
+- install CMake & Ninja build:
+
+  - If you have HomeBrew, you can run::
+
+      brew install cmake ninja
+
+  - If you have MacPorts, you can run::
+
+      sudo port install cmake ninja
 
 Compile the Toolchain from Source
 =================================
 
 - Install dependencies:
 
-  - Install either MacPorts_ or homebrew_ package manager. MacPorts needs a full XCode installation, while homebrew only needs XCode command line tools.
-    
-    .. _homebrew: https://brew.sh/
-    .. _MacPorts: https://www.macports.org/install.php
-
   - with MacPorts::
 
-        sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake
+        sudo port install gsed gawk binutils gperf grep gettext wget libtool autoconf automake make
 
   - with homebrew::
 
-        brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake
+        brew install gnu-sed gawk binutils gperftools gettext wget help2man libtool autoconf automake make
 
 Create a case-sensitive filesystem image::
 
@@ -63,10 +77,10 @@ Build the toolchain::
     ./ct-ng build
     chmod -R u+w builds/xtensa-esp32-elf
 
-Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. Follow :ref:`instructions for standard setup <setup-macos-toolchain-add-it-to-path>` to add the toolchain to your ``PATH``.
+Toolchain will be built in ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf``. To use it, you need to add ``~/esp/ctng-volume/crosstool-NG/builds/xtensa-esp32-elf/bin`` to ``PATH`` environment variable.
 
 
 Next Steps
 ==========
 
-To carry on with development environment setup, proceed to section :ref:`get-started-get-esp-idf`.
+To carry on with development environment setup, proceed to :ref:`get-started-get-esp-idf`.

@@ -16,7 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
 #include "esp_wifi.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_event.h"
 #include "cmd_wifi.h"
 
@@ -26,7 +26,7 @@ static EventGroupHandle_t wifi_event_group;
 const int CONNECTED_BIT = BIT0;
 
 
-static void event_handler(void* arg, esp_event_base_t event_base, 
+static void event_handler(void* arg, esp_event_base_t event_base,
                                 int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
@@ -44,9 +44,13 @@ static void initialise_wifi(void)
     if (initialized) {
         return;
     }
-    tcpip_adapter_init();
+    esp_netif_init();
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_t *ap_netif = esp_netif_create_default_wifi_ap();
+    assert(ap_netif);
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &event_handler, NULL) );
@@ -61,9 +65,9 @@ static bool wifi_join(const char *ssid, const char *pass, int timeout_ms)
 {
     initialise_wifi();
     wifi_config_t wifi_config = { 0 };
-    strncpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
+    strlcpy((char *) wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid));
     if (pass) {
-        strncpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
+        strlcpy((char *) wifi_config.sta.password, pass, sizeof(wifi_config.sta.password));
     }
 
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
@@ -109,7 +113,7 @@ static int connect(int argc, char **argv)
     return 0;
 }
 
-void register_wifi()
+void register_wifi(void)
 {
     join_args.timeout = arg_int0(NULL, "timeout", "<t>", "Connection timeout, ms");
     join_args.ssid = arg_str1(NULL, NULL, "<ssid>", "SSID of AP");

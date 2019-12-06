@@ -58,13 +58,13 @@ OBJ_FILES := $(addprefix $(BUILD_DIR)/, $(filter %.o, $(notdir $(SOURCE_FILES:.c
 
 define COMPILE_C
 $(call CTARGET, ${1}, $(BUILD_DIR)) : ${1} $(SDKCONFIG)
-	mkdir -p $(BUILD_DIR) 
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $(call CTARGET, ${1}, $(BUILD_DIR)) ${1}
 endef
 
 define COMPILE_CPP
 $(call CPPTARGET, ${1}, $(BUILD_DIR)) : ${1} $(SDKCONFIG)
-	mkdir -p $(BUILD_DIR) 
+	mkdir -p $(BUILD_DIR)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $(call CPPTARGET, ${1}, $(BUILD_DIR)) ${1}
 endef
 
@@ -81,12 +81,11 @@ $(foreach cxxfile, $(CPPFILES), $(eval $(call COMPILE_CPP, $(cxxfile))))
 TEST_SOURCE_FILES = \
 	test_fatfs.cpp \
 	main.cpp \
-	test_utils.c
 
 TEST_OBJ_FILES = $(filter %.o, $(TEST_SOURCE_FILES:.cpp=.o) $(TEST_SOURCE_FILES:.c=.o))
 
 $(TEST_PROGRAM): lib $(TEST_OBJ_FILES) $(WEAR_LEVELLING_BUILD_DIR)/$(WEAR_LEVELLING_LIB) $(SPI_FLASH_SIM_BUILD_DIR)/$(SPI_FLASH_SIM_LIB) $(STUBS_LIB_BUILD_DIR)/$(STUBS_LIB) partition_table.bin $(SDKCONFIG)
-	g++ $(LDFLAGS) $(CXXFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(BUILD_DIR) -l:$(COMPONENT_LIB) -L$(WEAR_LEVELLING_BUILD_DIR) -l:$(WEAR_LEVELLING_LIB) -L$(SPI_FLASH_SIM_BUILD_DIR) -l:$(SPI_FLASH_SIM_LIB) -L$(STUBS_LIB_BUILD_DIR) -l:$(STUBS_LIB) 
+	g++ $(LDFLAGS) $(CXXFLAGS) -o $@  $(TEST_OBJ_FILES) -L$(BUILD_DIR) -l:$(COMPONENT_LIB) -L$(WEAR_LEVELLING_BUILD_DIR) -l:$(WEAR_LEVELLING_LIB) -L$(SPI_FLASH_SIM_BUILD_DIR) -l:$(SPI_FLASH_SIM_LIB) -L$(STUBS_LIB_BUILD_DIR) -l:$(STUBS_LIB)
 
 test: $(TEST_PROGRAM)
 	./$(TEST_PROGRAM)

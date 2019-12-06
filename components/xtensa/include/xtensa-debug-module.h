@@ -1,6 +1,6 @@
 #ifndef XTENSA_DEBUG_MODULE_H
 #define XTENSA_DEBUG_MODULE_H
-
+#include "soc/cpu.h"
 /*
 ERI registers / OCD offsets and field definitions
 */
@@ -70,6 +70,46 @@ ERI registers / OCD offsets and field definitions
 #define PCMATCHCTRL_PCML_MASK   0x1F 
 #define PCMATCHCTRL_PCMS        (1<<31) //PC Match Sense, 0 - match when procs PC is in-range, 1 - match when
                                         //out-of-range
+
+// Global control/status for all performance counters
+#define ERI_PERFMON_PGM             (ERI_PERFMON_OFFSET+0x0000)
+//PC at the cycle of the event that caused PerfMonInt assertion
+#define ERI_PERFMON_INTPC           (ERI_PERFMON_OFFSET+0x0010)
+
+// Maximum amount of counter (depends on chip)
+#define ERI_PERFMON_MAX     XCHAL_NUM_PERF_COUNTERS
+
+// Performance counter value
+#define ERI_PERFMON_PM0             (ERI_PERFMON_OFFSET+0x0080)
+// Performance counter control register
+#define ERI_PERFMON_PMCTRL0         (ERI_PERFMON_OFFSET+0x0100)
+// Performance counter status register
+#define ERI_PERFMON_PMSTAT0         (ERI_PERFMON_OFFSET+0x0180)
+
+
+#define PMCTRL_INTEN                (1<<0)      // Enables assertion of PerfMonInt output when overflow happens
+#define PMCTRL_KRNLCNT              (1<<3)      // Enables counting when CINTLEVEL* >
+// TRACELEVEL (i.e. If this bit is set, this counter
+// counts only when CINTLEVEL >TRACELEVEL;
+// if this bit is cleared, this counter counts only when
+// CINTLEVEL ≤ TRACELEVEL)
+#define PMCTRL_KRNLCNT_SHIFT        3
+#define PMCTRL_TRACELEVEL_SHIFT     4           // Compares this value to CINTLEVEL* when deciding whether to count
+#define PMCTRL_TRACELEVEL_MASK      0xf
+#define PMCTRL_SELECT_SHIFT         8           // Selects input to be counted by the counter
+#define PMCTRL_SELECT_MASK          0x1f
+#define PMCTRL_MASK_SHIFT           16          // Selects input subsets to be counted (counter will
+// increment only once even if more than one condition
+// corresponding to a mask bit occurs)
+#define PMCTRL_MASK_MASK            0xffff
+
+
+#define PMSTAT_OVFL                 (1<<0)      // Counter Overflow. Sticky bit set when a counter rolls over
+// from 0xffffffff to 0x0.
+#define PMSTAT_INTSTART             (1<<4)      // This counter’s overflow caused PerfMonInt to be asserted.
+
+
+#define PGM_PMEN                    (1<<0)      // Overall enable for all performance counting
 
 
 #endif

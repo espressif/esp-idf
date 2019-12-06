@@ -15,7 +15,7 @@ void esp_log_write(esp_log_level_t level,
     va_end(arg);
 }
 
-uint32_t esp_log_timestamp()
+uint32_t esp_log_timestamp(void)
 {
     return 0;
 }

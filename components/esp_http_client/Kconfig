@@ -7,4 +7,11 @@ menu "ESP HTTP client"
         help
             This option will enable https protocol by linking mbedtls library and initializing SSL transport
 
+    config ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
+        bool "Enable HTTP Basic Authentication"
+        default n
+        help
+            This option will enable HTTP Basic Authentication. It is disabled by default as Basic
+            auth uses unencrypted encoding, so it introduces a vulnerability when not using TLS
+
 endmenu

@@ -4,42 +4,44 @@
 ESP32 Modules and Boards
 ************************
 
-Espressif designed and manufactured several development modules and boards to help users evaluate functionality of the ESP32 family of chips. Development boards, depending on intended functionality, have exposed GPIO pins headers, provide USB programming interface, JTAG interface as well as peripherals like touch pads, LCD screen, SD card slot, camera module header, etc.
+:link_to_translation:`zh_CN:[中文]`
 
-For details please refer to documentation below, provided together with description of particular boards.
+Espressif designs and manufactures different modules and development boards to help users evaluate the potential of the ESP32 family of chips.
+
+This document provides description of modules and development boards currently available from Espressif.
 
 .. note::
 
-    This section describes the latest versions of boards. Previous versions of boards, including these not produced anymore, are described in section :ref:`esp-modules-and-boards-previous`.
+    For description of previous versions of modules and development boards as well as for description of discontinued ones, please go to Section :ref:`esp-modules-and-boards-previous`.
 
 .. _esp-wroom-solo-wrover-modules:
 
-WROOM, SOLO and WROVER Modules
-==============================
+Modules
+=======
 
-A family of small modules that contain ESP32 chip on board together with some key components including a crystal oscillator and an antenna matching circuit. This makes it easier to provide an ESP32 based solution ready to integrate into final products. Such modules can be also used for evaluation after adding a few extra components like a programming interface, bootstrapping resistors and break out headers. The key characteristics of these modules are summarized in the following table. Some additional details are covered in the following chapters.
+This is a family of ESP32-based modules with some integrated key components, including a crystal oscillator and an antenna matching circuit. The modules constitute ready-made solutions for integration into final products. If combined with a few extra components, such as a programming interface, bootstrapping resistors, and pin headers, these modules can also be used for evaluation of ESP32's functionality.
 
-===============  ============  =====  ======  ====
---               Key Components                   
----------------  ---------------------------------
-Module           Chip          Flash  PSRAM   Ant.
-===============  ============  =====  ======  ====
-ESP32-WROOM-32   ESP32-D0WDQ6  4MB    --      MIFA
-ESP32-WROOM-32D  ESP32-D0WD    4MB    --      MIFA
-ESP32-WROOM-32U  ESP32-D0WD    4MB    --      U.FL
-ESP32-SOLO-1     ESP32-S0WD    4MB    --      MIFA
-ESP32-WROVER     ESP32-D0WDQ6  4MB    8MB     MIFA
-ESP32-WROVER-I   ESP32-D0WDQ6  4MB    8MB     U.FL
-ESP32-WROVER-B   ESP32-D0WD    4MB    8MB     MIFA
-ESP32-WROVER-IB  ESP32-D0WD    4MB    8MB     U.FL
-===============  ============  =====  ======  ====
+The key characteristics of these modules are summarized in the table below. Some additional details are covered in the following sections.
 
-* ESP32-**D**.. denotes dual core, ESP32-**S**.. denotes single core chip
-* MIFA - Meandered Inverted-F Antenna 
+===================  ============  ===========  =========  ====  ===============
+Module               Chip          Flash, MB    PSRAM, MB  Ant.  Dimensions, mm 
+===================  ============  ===========  =========  ====  ===============
+ESP32-WROOM-32       ESP32-D0WDQ6  4            --         MIFA  18 × 25.5 × 3.1
+ESP32-WROOM-32D      ESP32-D0WD    4, 8, or 16  --         MIFA  18 × 25.5 × 3.1
+ESP32-WROOM-32U      ESP32-D0WD    4, 8, or 16  --         U.FL  18 × 19.2 × 3.1
+ESP32-SOLO-1         ESP32-S0WD    4            --         MIFA  18 × 25.5 × 3.1
+ESP32-WROVER (PCB)   ESP32-D0WDQ6  4            8          MIFA  18 × 31.4 × 3.3
+ESP32-WROVER (IPEX)  ESP32-D0WDQ6  4            8          U.FL  18 × 31.4 × 3.3
+ESP32-WROVER-B       ESP32-D0WD    4, 8, or 16  8          MIFA  18 × 31.4 × 3.3
+ESP32-WROVER-IB      ESP32-D0WD    4, 8, or 16  8          U.FL  18 × 31.4 × 3.3
+===================  ============  ===========  =========  ====  ===============
+
+* ESP32-**D**.. identifies a dual-core chip, ESP32-**S**.. identifies a single-core chip
+* MIFA - Meandered Inverted-F Antenna
 * U.FL - U.FL / IPEX antenna connector
-* ESP32-WROOM-x and ESP32-WROVER-x modules are also available with custom flash sizes of 8MB or 16MB, see `Espressif Products Ordering Information`_ (PDF)
+* ESP32-WROOM-32x, ESP32-WROVER-B and ESP32-WROVER-IB modules come with 4 MB flash by default but also available with custom flash sizes of 8 MB and 16 MB, see `Espressif Products Ordering Information`_ (PDF)
 * `ESP32 Chip Datasheet <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`__ (PDF)
-* Initial release of ESP32-WROVER module had 4MB of PSRAM
+* Initial release of the ESP32-WROVER module had 4 MB of PSRAM
 * *ESP32-WROOM-32* was previously called *ESP-WROOM-32*
 
 
@@ -48,7 +50,10 @@ ESP32-WROVER-IB  ESP32-D0WD    4MB    8MB     U.FL
 ESP32-WROOM-32
 --------------
 
-A basic and commonly adopted ESP32 module with ESP32-D0WDQ6 chip on board. The first one of the WROOM / WROVER family released to the market. By default the module has 4MB flash and may be also ordered with custom flash size of 8 or 16MB, see `Espressif Products Ordering Information`_.
+This is a basic and commonly adopted ESP32 module with the ESP32-D0WDQ6 chip on board. It was the first module of the WROOM / WROVER family released to the market.
+
+For key characteristics, see the table in Section :ref:`esp-wroom-solo-wrover-modules`, `Espressif Products Ordering Information`_.
+
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-wroom-32-front-back.jpg
     :align: center
@@ -61,7 +66,7 @@ Documentation
 ^^^^^^^^^^^^^
 
 * `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`__ (PDF)
-* `ESP32-WROOM-32 Reference Design <https://www.espressif.com/en/support/download/documents?keys=+ESP32-WROOM-32+Reference>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32-WROOM-32 Reference Design <https://www.espressif.com/en/support/download/documents?keys=+ESP32-WROOM-32+Reference>`_ containing OrCAD schematic, PCB layout, gerber and BOM files
 
 
 .. _esp-modules-and-boards-esp32-wroom-32d-and-u:
@@ -69,7 +74,11 @@ Documentation
 ESP32-WROOM-32D / ESP32-WROOM-32U
 ---------------------------------
 
-Both modules have ESP32-D0WD chip on board of a smaller footprint than ESP32-D0WDQ6 installed in :ref:`esp-modules-and-boards-esp32-wroom-32`. By default the module has 4MB flash and may be also ordered with custom flash size of 8 or 16MB, see `Espressif Products Ordering Information`_. Version "D" has a MIFA antenna. Version "U" has just an U.FL / IPEX antenna connector. That makes it 6.3 mm shorter comparing to "D", and also the smallest representative of the whole WROOM / WROVER family of modules.
+Both modules integrate the ESP32-D0WD chip which has a smaller footprint than the chip ESP32-D0WDQ6 installed in :ref:`esp-modules-and-boards-esp32-wroom-32`.
+
+For key characteristics, see the table in Section :ref:`esp-wroom-solo-wrover-modules` and `Espressif Products Ordering Information`_.
+
+ESP32-WROOM-32U is the smallest representative of the whole WROOM / WROVER family of modules.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-wroom-32d-front-back.jpg
     :align: center
@@ -96,7 +105,9 @@ Documentation
 ESP32-SOLO-1
 ------------
 
-Simplified version of ESP32-WROOM-32D module. It contains a single core ESP32 chip that supports clock frequency of up to 160 MHz.
+This is a simplified version of the ESP32-WROOM-32D module. It contains a single-core ESP32 chip that supports a clock frequency of up to 160 MHz.
+
+For key characteristics, see the table in Section :ref:`esp-wroom-solo-wrover-modules` and `Espressif Products Ordering Information`_.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-solo-1-front-back.jpg
     :align: center
@@ -114,19 +125,17 @@ Documentation
 
 .. _esp-modules-and-boards-esp32-wrover:
 
-ESP32-WROVER
-------------
+ESP32-WROVER series
+-------------------
 
-A step upgrade of ESP32-WROOM-32x modules with an additional 8MB SPI PSRAM (Pseudo static RAM). 
+This series consists of a few modifications of ESP32-WROOM-32x modules, which among other upgrades include additional 8 MB SPI PSRAM (pseudo static RAM).
 
-The module comes in couple of versions listed in section :ref:`esp-wroom-solo-wrover-modules`:
+For details, see the table in Section :ref:`esp-wroom-solo-wrover-modules` and `Espressif Products Ordering Information`_.
 
-* **ESP32-WROVER** and **ESP32-WROVER-I** have PSRAM that operates at 1.8V and can support up to 144 MHz clock rate.
-* **ESP32-WROVER-B** and **ESP32-WROVER-IB** have PSRAM that operates at 3.3V and can support up to 133 MHz clock rate.
+* **ESP32-WROVER (PCB)** and **ESP32-WROVER (IPEX)** have PSRAM that operates at 1.8 V and supports up to 144 MHz clock rate.
+* **ESP32-WROVER-B** and **ESP32-WROVER-IB** have PSRAM that operates at 3.3 V and supports up to 133 MHz clock rate.
 
-By default the module has 4MB flash and may be also ordered with custom flash size of 8 or 16MB, see `Espressif Products Ordering Information`_. 
-
-Depending on version the module has PCB antenna (shown below) or an U.FL / IPEX antenna connector. Because of additional components inside, this module is 5.9 mm longer than :ref:`esp-modules-and-boards-esp32-wroom-32`.
+The picture below shows an ESP32-WROVER module with a PCB antenna.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-wrover.jpg
     :align: center
@@ -139,16 +148,47 @@ Documentation
 ^^^^^^^^^^^^^
 
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`__ (PDF)
+* `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`__ (PDF)
 * `ESP-PSRAM64 & ESP-PSRAM64H Datasheet <https://www.espressif.com/sites/default/files/documentation/esp-psram64_esp-psram64h_datasheet_en.pdf>`__ (PDF)
-* `ESP32-WROVER Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-WROVER+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32-WROVER Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-WROVER+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerber and BOM files
 
+
+ESP32-PICO-D4
+-------------
+
+ESP32-PICO-D4 is a System-in-Package (SiP) module, integrating all peripheral components seamlessly, including the following:
+
+- 4 MB flash memory
+- crystal oscillator
+- filter capacitors
+- RF matching circuit
+
+For key characteristics, see `Espressif Products Ordering Information`_.
+
+
+Documentation
+^^^^^^^^^^^^^
+
+* `ESP32-PICO-D4 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`__ (PDF)
+
+
+Development Boards
+==================
+
+Depending on the intended functionality, different development boards feature:
+
+- Access to different ESP32 GPIO pins.
+- Different interfaces: USB, JTAG.
+- Different peripherals: touchpads, LCD screens, SD card slots, female headers for camera modules, etc.
 
 .. _esp-modules-and-boards-esp32-pico-kit:
 
 ESP32-PICO-KIT V4.1
-===================
+-------------------
 
-The smallest ESP32 development board with all the components required to connect it directly to a PC USB port, and pin headers to plug into a mini breadboard. It is equipped with ESP32-PICO-D4 module that integrates 4 MB flash memory, a crystal oscillator, filter capacitors and RF matching circuit in one single package. As result, the fully functional development board requires only a few external components that can easy fit on a 20 x 52 mm PCB including antenna, LDO, USB-UART bridge and two buttons to reset it and put into download mode. 
+This is the smallest available ESP32-based development board. It features all the components for direct connection to a computer's USB port as well as pin headers for plugging into a mini breadboard.
+
+The board is equipped with the `ESP32-PICO-D4`_ module. With such a module, the creation of a fully functional development board required only a few external components that fit on a PCB as small as 20 x 52 mm. The external components include antenna, LDO, USB-UART bridge, and two buttons for reset and activation of Firmware Download mode.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-pico-kit-v4.1.jpg
     :align: center
@@ -157,18 +197,18 @@ The smallest ESP32 development board with all the components required to connect
 
     ESP32-PICO-KIT V4.1 board
 
-Comparing to ESP32-PICO-KIT V4, this version contains a more capable CP2102N USB-UART bridge that provides up to 3 Mbps transfers rates.
+Comparing to ESP32-PICO-KIT V4, this version features the CP2102N USB-UART bridge that provides faster transfer rates of up to 3 Mbps.
 
 Documentation
--------------
+^^^^^^^^^^^^^
 
-* :doc:`../get-started/get-started-pico-kit`
+* :doc:`../hw-reference/get-started-pico-kit`
 * `ESP32-PICO-KIT V4.1 Schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
-* `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerber and BOM files
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
 
 Previous Versions
------------------
+^^^^^^^^^^^^^^^^^
 
 * :ref:`esp-modules-and-boards-esp32-pico-kit-v4`
 * :ref:`esp-modules-and-boards-esp32-pico-kit-v3`
@@ -177,9 +217,17 @@ Previous Versions
 .. _esp-modules-and-boards-esp32-devkitc:
    
 ESP32 DevKitC V4
-================
+----------------
 
-Small and convenient development board with :ref:`esp-modules-and-boards-esp32-wroom-32` module installed, break out pin headers and minimum additional components. Includes USB to serial programming interface, that also provides power supply for the board. Has pushbuttons to reset the board and put it in upload mode. Comparing to the previous :ref:`esp-modules-and-boards-esp32-devkitc-v2`, instead of ESP32-WROOM-32 it can accommodate :ref:`esp-modules-and-boards-esp32-wrover` module and has CP2102N chip that supports faster baud rates.
+This is a small and convenient development board that features:
+
+- :ref:`esp-modules-and-boards-esp32-wroom-32` module
+- USB-to-serial programming interface that also provides power supply for the board
+- pin headers
+- pushbuttons for reset and activation of Firmware Download mode
+- a few other components
+
+Comparing to the previous :ref:`esp-modules-and-boards-esp32-devkitc-v2`, this version can integrate :ref:`esp-modules-and-boards-esp32-wrover` module instead of ESP32-WROOM-32 and has the CP2102N chip that supports faster baud rates.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp32-devkitc-v4-front.jpg
     :align: center
@@ -189,15 +237,15 @@ Small and convenient development board with :ref:`esp-modules-and-boards-esp32-w
     ESP32 DevKitC V4 board
 
 Documentation
--------------
+^^^^^^^^^^^^^
 
-* :doc:`../get-started/get-started-devkitc`
+* :doc:`../hw-reference/get-started-devkitc`
 * `ESP32-DevKitC schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ (PDF)
-* `ESP32-DevKitC Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-DevKitC-V4+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
+* `ESP32-DevKitC Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-DevKitC-V4+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerber and BOM files
 * `CP210x USB to UART Bridge VCP Drivers <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
 
 Previous Versions
------------------
+^^^^^^^^^^^^^^^^^
 
 * :ref:`esp-modules-and-boards-esp32-devkitc-v2`
 
@@ -205,18 +253,28 @@ Previous Versions
 .. _esp-modules-and-boards-esp-wrover-kit:
 
 ESP-WROVER-KIT V4.1
-===================
+-------------------
 
-The ESP-WROVER-KIT V4.1 development board has dual port USB to serial converter for programming and JTAG interface for debugging. Power supply is provided by USB interface or from standard 5 mm power supply jack. Power supply selection is done with a jumper and may be put on/off with a separate switch. This board has MicroSD card slot, 3.2” SPI LCD screen and dedicated header to connect a camera. It provides RGB diode for diagnostics. Includes 32.768 kHz XTAL for internal RTC to operate it in low power modes.
+This board features:
 
-This version of ESP-WROVER-KIT board has ESP-WROVER-B module installed that integrates 64-MBit PSRAM for flexible extended storage and data processing capabilities. The board can accommodate other versions of ESP modules described under :ref:`esp-wroom-solo-wrover-modules`.
+- Dual port USB-to-serial converter for programming
+- JTAG interface for debugging
+- MicroSD card slot
+- 3.2” SPI LCD screen
+- Female headers for a camera module
+- RGB LED for diagnostics
+- 32.768 kHz XTAL for internal RTC to operate it in low power modes
+
+Power can be supplied either via USB or via a standard 5 mm power supply jack. A power source can be selected with a jumper and can be turned on/off with a separate switch. 
+
+This version of the ESP-WROVER-KIT board integrates the ESP-WROVER-B module that has 8 MB PSRAM for flexible extended storage and data processing capabilities. The board can accommodate other versions of ESP modules described in :ref:`esp-wroom-solo-wrover-modules`.
 
 Comparing to :ref:`esp-modules-and-boards-esp-wrover-kit-v3`, this board has the following design changes:
 
-  * JP8, JP11 and JP13 have been combined into a single JP2
-  * USB connector has been changed to DIP type and moved to the lower right corner of the board
-  * R61 has been changed to 0R
-  * Some other components, e.g. EN and Boot buttons, have been replaced with functional equivalents basing on test results and sourcing options
+- JP8, JP11, and JP13 have been combined into a single JP2.
+- USB connector has been changed to DIP type and moved to the lower right corner of the board.
+- R61 has been changed to a Zero-ohm resistor.
+- Some components have been replaced with functional equivalents based on test results and sourcing options, e.g., the EN and Boot buttons.
 
 .. figure:: https://dl.espressif.com/dl/schematics/pictures/esp-wrover-kit-v4.1-front.jpg
    :align: center
@@ -225,18 +283,18 @@ Comparing to :ref:`esp-modules-and-boards-esp-wrover-kit-v3`, this board has the
 
    ESP-WROVER-KIT V4.1 board
 
-The board on picture above has ESP32-WROVER-B module is installed.
+The board in the picture above integrates the ESP32-WROVER-B module.
 
 Documentation
--------------
+^^^^^^^^^^^^^
 
-* :doc:`../get-started/get-started-wrover-kit`
+* :doc:`../hw-reference/get-started-wrover-kit`
 * `ESP-WROVER-KIT V4.1 Schematic <https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf>`__ (PDF)
 * :doc:`../api-guides/jtag-debugging/index`
 * `FTDI Virtual COM Port Drivers`_
 
 Previous Versions
------------------
+^^^^^^^^^^^^^^^^^
 
 * :ref:`esp-modules-and-boards-esp-wrover-kit-v3`
 * :ref:`esp-modules-and-boards-esp-wrover-kit-v2`

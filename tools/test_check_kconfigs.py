@@ -16,6 +16,7 @@
 
 import unittest
 from check_kconfigs import LineRuleChecker
+from check_kconfigs import SourceChecker
 from check_kconfigs import InputError
 from check_kconfigs import IndentAndNameChecker
 from check_kconfigs import CONFIG_NAME_MAX_LENGTH
@@ -69,6 +70,23 @@ class TestLineRuleChecker(unittest.TestCase, ApplyLine):
 
     def test_backslashes(self):
         self.expect_error('test \\', expect=None)
+
+
+class TestSourceChecker(unittest.TestCase, ApplyLine):
+    def setUp(self):
+        self.checker = SourceChecker('Kconfig')
+
+    def tearDown(self):
+        pass
+
+    def test_source_file_name(self):
+        self.expect_error('source "notKconfig.test"', expect='source "Kconfig.notKconfig.test"')
+        self.expect_error('source "Kconfig"', expect='source "Kconfig.Kconfig"')
+        self.expt_success('source "Kconfig.in"')
+        self.expt_success('source "/tmp/Kconfig.test"')
+        self.expt_success('source "/tmp/Kconfig.in"')
+        self.expect_error('source"Kconfig.in"', expect='source "Kconfig.in"')
+        self.expt_success('source "/tmp/Kconfig.in"  # comment')
 
 
 class TestIndentAndNameChecker(unittest.TestCase, ApplyLine):
@@ -155,6 +173,21 @@ class TestIndent(TestIndentAndNameChecker):
         self.expt_success('        text')
         self.expt_success('config')
         self.expt_success('    help')
+
+    def test_source_after_config(self):
+        self.expt_success('menuconfig')
+        self.expt_success('    help')
+        self.expt_success('        text')
+        self.expect_error('    source', expect='source')
+        self.expt_success('source "Kconfig.in"')
+
+    def test_comment_after_config(self):
+        self.expt_success('menuconfig')
+        self.expt_success('    # comment')
+        self.expt_success('    help')
+        self.expt_success('        text')
+        self.expect_error('# comment', expect='        # comment')
+        self.expt_success('        # second not realcomment"')
 
 
 class TestName(TestIndentAndNameChecker):

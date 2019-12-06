@@ -6,7 +6,7 @@ Overview
 
 The ESP-IDF has support for two types of watchdogs: The Interrupt Watchdog Timer
 and the Task Watchdog Timer (TWDT). The Interrupt Watchdog Timer and the TWDT
-can both be enabled using ``make menuconfig``, however the TWDT can also be
+can both be enabled using :ref:`project-configuration-menu`, however the TWDT can also be
 enabled during runtime. The Interrupt Watchdog is responsible for detecting
 instances where FreeRTOS task switching is blocked for a prolonged period of
 time. The TWDT is responsible for detecting instances of tasks running without
@@ -63,10 +63,10 @@ longer call :cpp:func:`esp_task_wdt_reset`. Once all tasks have unsubscribed
 form the TWDT, the TWDT can be deinitialized by calling 
 :cpp:func:`esp_task_wdt_deinit()`.
 
-By default :ref:`CONFIG_TASK_WDT` in ``make menuconfig`` will be enabled causing
+By default :ref:`CONFIG_ESP_TASK_WDT` in :ref:`project-configuration-menu` be enabled causing
 the TWDT to be initialized automatically during startup. Likewise
-:ref:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0` and 
-:ref:`CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1` are also enabled by default causing
+:ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0` and 
+:ref:`CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1` are also enabled by default causing
 the two Idle Tasks to be subscribed to the TWDT during startup.
 
 JTAG and watchdogs

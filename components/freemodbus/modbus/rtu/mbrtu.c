@@ -147,14 +147,9 @@ eMBRTUStop( void )
     EXIT_CRITICAL_SECTION(  );
 }
 
-// The lines below are required to suppress GCC warnings about unused but set variable 'xFrameReceived'
-// This warning is treated as error during compilation.
-#pragma GCC diagnostic push // required for GCC
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 eMBErrorCode
 eMBRTUReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
 {
-    BOOL            xFrameReceived = FALSE;
     eMBErrorCode    eStatus = MB_ENOERR;
 
     ENTER_CRITICAL_SECTION(  );
@@ -176,7 +171,6 @@ eMBRTUReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
 
         /* Return the start of the Modbus PDU to the caller. */
         *pucFrame = ( UCHAR * ) & ucRTUBuf[MB_SER_PDU_PDU_OFF];
-        xFrameReceived = TRUE;
     }
     else
     {
@@ -186,7 +180,6 @@ eMBRTUReceive( UCHAR * pucRcvAddress, UCHAR ** pucFrame, USHORT * pusLength )
     EXIT_CRITICAL_SECTION(  );
     return eStatus;
 }
-#pragma GCC diagnostic pop   // require GCC
 
 eMBErrorCode
 eMBRTUSend( UCHAR ucSlaveAddress, const UCHAR * pucFrame, USHORT usLength )
@@ -256,7 +249,7 @@ xMBRTUReceiveFSM( void )
 
         /* In the idle state we wait for a new character. If a character
          * is received the t1.5 and t3.5 timers are started and the
-         * receiver is in the state STATE_RX_RECEIVCE.
+         * receiver is in the state STATE_RX_RCV.
          */
     case STATE_RX_IDLE:
         usRcvBufferPos = 0;
@@ -299,8 +292,6 @@ xMBRTUTransmitFSM( void )
         /* We should not get a transmitter event if the transmitter is in
          * idle state.  */
     case STATE_TX_IDLE:
-        /* enable receiver/disable transmitter. */
-        vMBPortSerialEnable( TRUE, FALSE );
         break;
 
     case STATE_TX_XMIT:
@@ -313,11 +304,10 @@ xMBRTUTransmitFSM( void )
         }
         else
         {
-            xNeedPoll = xMBPortEventPost( EV_FRAME_SENT );
-            /* Disable transmitter. This prevents another transmit buffer
-             * empty interrupt. */
-            vMBPortSerialEnable( TRUE, FALSE );
+            xMBPortEventPost( EV_FRAME_SENT );
+            xNeedPoll = TRUE;
             eSndState = STATE_TX_IDLE;
+            vMBPortTimersEnable(  );
         }
         break;
     }
@@ -325,7 +315,7 @@ xMBRTUTransmitFSM( void )
     return xNeedPoll;
 }
 
-BOOL
+BOOL MB_PORT_ISR_ATTR
 xMBRTUTimerT35Expired( void )
 {
     BOOL            xNeedPoll = FALSE;
@@ -349,8 +339,7 @@ xMBRTUTimerT35Expired( void )
 
         /* Function called in an illegal state. */
     default:
-        assert( ( eRcvState == STATE_RX_INIT ) ||
-                ( eRcvState == STATE_RX_RCV ) || ( eRcvState == STATE_RX_ERROR ) );
+        assert( ( eRcvState == STATE_RX_IDLE ) || ( eRcvState == STATE_RX_ERROR ) );
     }
 
     vMBPortTimersDisable(  );

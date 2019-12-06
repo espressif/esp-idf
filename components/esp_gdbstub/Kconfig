@@ -1,0 +1,25 @@
+menu "GDB Stub"
+
+    # Hidden option which is selected from the "Panic handler behavior"
+    # menu in the target component.
+    config ESP_GDBSTUB_ENABLED
+        bool
+
+    config ESP_GDBSTUB_SUPPORT_TASKS
+        bool "Enable listing FreeRTOS tasks through GDB Stub"
+        depends on ESP_GDBSTUB_ENABLED
+        default y
+        help
+            If enabled, GDBStub can supply the list of FreeRTOS tasks to GDB.
+            Thread list can be queried from GDB using 'info threads' command.
+            Note that if GDB task lists were corrupted, this feature may not work.
+            If GDBStub fails, try disabling this feature.
+
+    config ESP_GDBSTUB_MAX_TASKS
+        int "Maximum number of tasks supported by GDB Stub"
+        default 32
+        depends on ESP_GDBSTUB_SUPPORT_TASKS
+        help
+            Set the number of tasks which GDB Stub will support.
+
+endmenu

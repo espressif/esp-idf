@@ -15,17 +15,12 @@
 #include <esp_types.h>
 #include <stdlib.h>
 #include <ctype.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp_log.h"
-#include "soc/rtc_io_reg.h"
-#include "soc/rtc_io_struct.h"
-#include "soc/sens_reg.h"
-#include "soc/sens_struct.h"
-#include "soc/rtc_cntl_reg.h"
-#include "soc/rtc_cntl_struct.h"
-#include "soc/syscon_reg.h"
-#include "soc/syscon_struct.h"
+#include "soc/rtc_periph.h"
+#include "soc/sens_periph.h"
+#include "soc/syscon_periph.h"
 #include "soc/rtc.h"
+#include "soc/periph_defs.h"
 #include "rtc_io.h"
 #include "touch_pad.h"
 #include "adc.h"
@@ -39,6 +34,12 @@
 #include "driver/rtc_cntl.h"
 #include "driver/gpio.h"
 #include "adc1_i2s_private.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 #ifndef NDEBUG
 // Enable built-in checks in queue.h in debug builds
@@ -85,17 +86,19 @@ static const char *RTC_MODULE_TAG = "RTC_MODULE";
 } }while (0)
 
 portMUX_TYPE rtc_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#if CONFIG_IDF_TARGET_ESP32
 static SemaphoreHandle_t rtc_touch_mux = NULL;
+#endif
 /*
 In ADC2, there're two locks used for different cases:
-1. lock shared with app and WIFI: 
-   when wifi using the ADC2, we assume it will never stop, 
+1. lock shared with app and WIFI:
+   when wifi using the ADC2, we assume it will never stop,
    so app checks the lock and returns immediately if failed.
 
-2. lock shared between tasks: 
-   when several tasks sharing the ADC2, we want to guarantee 
+2. lock shared between tasks:
+   when several tasks sharing the ADC2, we want to guarantee
    all the requests will be handled.
-   Since conversions are short (about 31us), app returns the lock very soon, 
+   Since conversions are short (about 31us), app returns the lock very soon,
    we use a spinlock to stand there waiting to do conversions one by one.
 
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
@@ -108,6 +111,7 @@ portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
 //prevent ADC1 being used by I2S dma and other tasks at the same time.
 static _lock_t adc1_i2s_lock;
 
+#if CONFIG_IDF_TARGET_ESP32
 typedef struct {
     TimerHandle_t timer;
     uint16_t filtered_val[TOUCH_PAD_MAX];
@@ -120,6 +124,7 @@ static touch_pad_filter_t *s_touch_pad_filter = NULL;
 // check if touch pad be inited.
 static uint16_t s_touch_pad_init_bit = 0x0000;
 static filter_cb_t s_filter_cb = NULL;
+#endif
 
 typedef enum {
     ADC_CTRL_RTC = 0,
@@ -141,10 +146,15 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 {
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     // 0: GPIO connected to digital GPIO module. 1: GPIO connected to analog RTC module.
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, (rtc_gpio_desc[gpio_num].mux));
     //0:RTC FUNCIOTN 1,2,3:Reserved
     SET_PERI_REG_BITS(rtc_gpio_desc[gpio_num].reg, RTC_IO_TOUCH_PAD1_FUN_SEL_V, 0x0, rtc_gpio_desc[gpio_num].func);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->mux_sel = 0x1;
+    rtc_gpio_reg[gpio_num]->fun_sel = 0x0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -155,7 +165,11 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
     //Select Gpio as Digital Gpio
+#if CONFIG_IDF_TARGET_ESP32
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, (rtc_gpio_desc[gpio_num].mux));
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->mux_sel = 0x0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -163,21 +177,27 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
 
 static esp_err_t rtc_gpio_output_enable(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_num != -1, "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
-    CLEAR_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << ( gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
+#endif
     return ESP_OK;
 }
 
 static esp_err_t rtc_gpio_output_disable(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_num != -1, "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
-    CLEAR_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TS_REG, (1 << (rtc_gpio_num + RTC_GPIO_ENABLE_W1TS_S)));
     SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << ( rtc_gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    SET_PERI_REG_MASK(RTC_GPIO_ENABLE_W1TC_REG, (1 << ( gpio_num + RTC_GPIO_ENABLE_W1TC_S)));
+#endif
     return ESP_OK;
 }
 
@@ -185,7 +205,11 @@ static esp_err_t rtc_gpio_input_enable(gpio_num_t gpio_num)
 {
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].ie);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->fun_ie = 1;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
@@ -195,14 +219,44 @@ static esp_err_t rtc_gpio_input_disable(gpio_num_t gpio_num)
 {
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].ie);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->fun_ie = 0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t rtc_gpio_sleep_output_enable(gpio_num_t gpio_num, bool output)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    rtc_gpio_reg[gpio_num]->slp_sel = 1;
+    rtc_gpio_reg[gpio_num]->slp_oe = output;
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_sleep_input_enable(gpio_num_t gpio_num, bool input)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    rtc_gpio_reg[gpio_num]->slp_sel = 1;
+    rtc_gpio_reg[gpio_num]->slp_ie = input;
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_sleep_mode_disable(gpio_num_t gpio_num)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    rtc_gpio_reg[gpio_num]->slp_sel = 0;
+    return ESP_OK;
+}
+#endif
+
 esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;;
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
@@ -211,13 +265,21 @@ esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level)
     } else {
         WRITE_PERI_REG(RTC_GPIO_OUT_W1TC_REG, (1 << (rtc_gpio_num + RTC_GPIO_OUT_DATA_W1TC_S)));
     }
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    if (level) {
+        WRITE_PERI_REG(RTC_GPIO_OUT_W1TS_REG, (1 << (gpio_num + RTC_GPIO_OUT_DATA_W1TS_S)));
+    } else {
+        WRITE_PERI_REG(RTC_GPIO_OUT_W1TC_REG, (1 << (gpio_num + RTC_GPIO_OUT_DATA_W1TC_S)));
+    }
+#endif
     return ESP_OK;
 }
 
 uint32_t rtc_gpio_get_level(gpio_num_t gpio_num)
 {
     uint32_t level = 0;
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_gpio_num = rtc_gpio_desc[gpio_num].rtc_num;
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
 
@@ -225,6 +287,13 @@ uint32_t rtc_gpio_get_level(gpio_num_t gpio_num)
     level = READ_PERI_REG(RTC_GPIO_IN_REG);
     portEXIT_CRITICAL(&rtc_spinlock);
     return ((level >> (RTC_GPIO_IN_NEXT_S + rtc_gpio_num)) & 0x01);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    level = RTCIO.in_val.in;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ((level >> gpio_num) & 0x1);
+#endif
 }
 
 esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t strength)
@@ -234,7 +303,11 @@ esp_err_t rtc_gpio_set_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t st
     RTC_MODULE_CHECK(strength < GPIO_DRIVE_CAP_MAX, "GPIO drive capability error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_BITS(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].drv_v, strength, rtc_gpio_desc[gpio_num].drv_s);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->drv = strength;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -244,8 +317,11 @@ esp_err_t rtc_gpio_get_drive_capability(gpio_num_t gpio_num, gpio_drive_cap_t* s
     RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "Output pad only", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(strength != NULL, "GPIO drive pointer error", ESP_ERR_INVALID_ARG);
-
+#if CONFIG_IDF_TARGET_ESP32
     *strength = GET_PERI_REG_BITS2(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].drv_v, rtc_gpio_desc[gpio_num].drv_s);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    *strength = rtc_gpio_reg[gpio_num]->drv;
+#endif
     return ESP_OK;
 }
 
@@ -277,21 +353,45 @@ esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode)
 
 esp_err_t rtc_gpio_pullup_en(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if (rtc_gpio_desc[gpio_num].pullup == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-
+#endif
     //this is a rtc pad
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pullup);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    rtc_gpio_reg[gpio_num]->rue = 0x1;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 
     return ESP_OK;
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t rtc_gpio_set_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t mode)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCIO.pin[gpio_num].pad_driver = mode;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+
+esp_err_t rtc_gpio_get_output_mode(gpio_num_t gpio_num, rtc_io_out_mode_t *mode)
+{
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    *mode = RTCIO.pin[gpio_num].pad_driver;
+    return ESP_OK;
+}
+#endif
+
 esp_err_t rtc_gpio_pulldown_en(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if (rtc_gpio_desc[gpio_num].pulldown == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -301,12 +401,17 @@ esp_err_t rtc_gpio_pulldown_en(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pulldown);
     portEXIT_CRITICAL(&rtc_spinlock);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    rtc_gpio_reg[gpio_num]->rde = 0x1;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if ( rtc_gpio_desc[gpio_num].pullup == 0 ) {
         return ESP_ERR_INVALID_ARG;
@@ -316,12 +421,17 @@ esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pullup);
     portEXIT_CRITICAL(&rtc_spinlock);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    rtc_gpio_reg[gpio_num]->rue = 0x0;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //this is a digital pad
     if (rtc_gpio_desc[gpio_num].pulldown == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -331,12 +441,17 @@ esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].pulldown);
     portEXIT_CRITICAL(&rtc_spinlock);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    rtc_gpio_reg[gpio_num]->rde = 0x0;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     // check if an RTC IO
     if (rtc_gpio_desc[gpio_num].pullup == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -344,11 +459,18 @@ esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].hold);
     portEXIT_CRITICAL(&rtc_spinlock);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.pad_hold.val |= BIT(gpio_num);
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     // check if an RTC IO
     if (rtc_gpio_desc[gpio_num].pullup == 0) {
         return ESP_ERR_INVALID_ARG;
@@ -356,15 +478,24 @@ esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num)
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(rtc_gpio_desc[gpio_num].reg, rtc_gpio_desc[gpio_num].hold);
     portEXIT_CRITICAL(&rtc_spinlock);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.pad_hold.val &= ~(BIT(gpio_num));
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     if (rtc_gpio_desc[gpio_num].reg == 0) {
         return ESP_ERR_INVALID_ARG;
     }
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+#endif
     rtc_gpio_pullup_dis(gpio_num);
     rtc_gpio_pulldown_dis(gpio_num);
     rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
@@ -373,18 +504,25 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
     return ESP_OK;
 }
 
-void rtc_gpio_force_hold_dis_all()
+void rtc_gpio_force_hold_dis_all(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
         const rtc_gpio_desc_t* desc = &rtc_gpio_desc[gpio];
         if (desc->hold_force != 0) {
             REG_CLR_BIT(RTC_CNTL_HOLD_FORCE_REG, desc->hold_force);
         }
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.rtc_pwc.rtc_pad_force_hold = 0;
+    portEXIT_CRITICAL(&rtc_spinlock);
+#endif
 }
 
 esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_num = rtc_gpio_desc[gpio_num].rtc_num;
     if (rtc_num < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -397,11 +535,21 @@ esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
     /* each pin has its own register, spinlock not needed */
     REG_SET_BIT(reg, RTC_GPIO_PIN0_WAKEUP_ENABLE);
     REG_SET_FIELD(reg, RTC_GPIO_PIN0_INT_TYPE, intr_type);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    if (( intr_type != GPIO_INTR_LOW_LEVEL ) && ( intr_type != GPIO_INTR_HIGH_LEVEL )) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* each pin has its own register, spinlock not needed */
+    RTCIO.pin[gpio_num].wakeup_enable = 1;
+    RTCIO.pin[gpio_num].int_type = intr_type;
+#endif
     return ESP_OK;
 }
 
 esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int rtc_num = rtc_gpio_desc[gpio_num].rtc_num;
     if (rtc_num < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -411,10 +559,25 @@ esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num)
     /* each pin has its own register, spinlock not needed */
     REG_CLR_BIT(reg, RTC_GPIO_PIN0_WAKEUP_ENABLE);
     REG_SET_FIELD(reg, RTC_GPIO_PIN0_INT_TYPE, 0);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    RTC_MODULE_CHECK(rtc_gpio_is_valid_gpio(gpio_num), "RTC_GPIO number error", ESP_ERR_INVALID_ARG);
+    /* each pin has its own register, spinlock not needed */
+    RTCIO.pin[gpio_num].wakeup_enable = 0;
+    RTCIO.pin[gpio_num].int_type = 0;
+#endif
     return ESP_OK;
 }
 
-
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+esp_err_t rtc_gpio_force_hold_all()
+{
+    portENTER_CRITICAL(&rtc_spinlock);
+    RTCCNTL.rtc_pwc.rtc_pad_force_hold = 1;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    return ESP_OK;
+}
+#endif
+#if CONFIG_IDF_TARGET_ESP32
 /*---------------------------------------------------------------
                     Touch Pad
 ---------------------------------------------------------------*/
@@ -437,13 +600,21 @@ inline static touch_pad_t touch_pad_num_wrap(touch_pad_t touch_num)
 esp_err_t touch_pad_isr_handler_register(void (*fn)(void *), void *arg, int no_use, intr_handle_t *handle_no_use)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+#else
+    return ESP_FAIL;
+#endif
 }
 
 esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg)
 {
     RTC_MODULE_CHECK(fn, "Touch_Pad ISR null", ESP_ERR_INVALID_ARG);
+#if CONFIG_IDF_TARGET_ESP32
     return rtc_isr_register(fn, arg, RTC_CNTL_TOUCH_INT_ST_M);
+#else
+    return ESP_FAIL;
+#endif
 }
 
 esp_err_t touch_pad_isr_deregister(intr_handler_t fn, void *arg)
@@ -571,7 +742,7 @@ esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, t
             ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(((atten < TOUCH_HVOLT_ATTEN_MAX) && (refh >= (int )TOUCH_HVOLT_ATTEN_KEEP)), "touch atten error",
             ESP_ERR_INVALID_ARG);
-
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL(&rtc_spinlock);
     if (refh > TOUCH_HVOLT_KEEP) {
         RTCIO.touch_cfg.drefh = refh;
@@ -583,11 +754,13 @@ esp_err_t touch_pad_set_voltage(touch_high_volt_t refh, touch_low_volt_t refl, t
         RTCIO.touch_cfg.drange = atten;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
 esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl, touch_volt_atten_t *atten)
 {
+#if CONFIG_IDF_TARGET_ESP32
     portENTER_CRITICAL(&rtc_spinlock);
     if (refh) {
         *refh = RTCIO.touch_cfg.drefh;
@@ -599,6 +772,7 @@ esp_err_t touch_pad_get_voltage(touch_high_volt_t *refh, touch_low_volt_t *refl,
         *atten = RTCIO.touch_cfg.drange;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
+#endif
     return ESP_OK;
 }
 
@@ -606,7 +780,7 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 {
     RTC_MODULE_CHECK((slope < TOUCH_PAD_SLOPE_MAX), "touch slope error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK((opt < TOUCH_PAD_TIE_OPT_MAX), "touch opt error", ESP_ERR_INVALID_ARG);
-    
+
     touch_pad_t touch_pad_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
     RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
@@ -618,7 +792,7 @@ esp_err_t touch_pad_set_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t slope,
 esp_err_t touch_pad_get_cnt_mode(touch_pad_t touch_num, touch_cnt_slope_t *slope, touch_tie_opt_t *opt)
 {
     RTC_MODULE_CHECK((touch_num < TOUCH_PAD_MAX), "touch IO error", ESP_ERR_INVALID_ARG);
-    
+
     touch_pad_t touch_pad_wrap = touch_pad_num_wrap(touch_num);
     portENTER_CRITICAL(&rtc_spinlock);
     if(opt) {
@@ -662,7 +836,7 @@ esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_sw_start()
+esp_err_t touch_pad_sw_start(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_touch_ctrl2.touch_start_en = 0;
@@ -777,21 +951,19 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
     return ESP_OK;
 }
 
-uint32_t IRAM_ATTR touch_pad_get_status()
+uint32_t IRAM_ATTR touch_pad_get_status(void)
 {
     uint32_t status = SENS.sar_touch_ctrl2.touch_meas_en;
     return TOUCH_BITS_SWAP(status);
 }
 
-esp_err_t IRAM_ATTR touch_pad_clear_status()
+esp_err_t IRAM_ATTR touch_pad_clear_status(void)
 {
-    portENTER_CRITICAL(&rtc_spinlock);
     SENS.sar_touch_ctrl2.touch_meas_en_clr = 1;
-    portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
-esp_err_t touch_pad_intr_enable()
+esp_err_t touch_pad_intr_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     RTCCNTL.int_ena.rtc_touch = 1;
@@ -799,7 +971,7 @@ esp_err_t touch_pad_intr_enable()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_intr_disable()
+esp_err_t touch_pad_intr_disable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     RTCCNTL.int_ena.rtc_touch = 0;
@@ -839,7 +1011,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
     return ESP_OK;
 }
 
-esp_err_t touch_pad_init()
+esp_err_t touch_pad_init(void)
 {
     if (rtc_touch_mux == NULL) {
         rtc_touch_mux = xSemaphoreCreateMutex();
@@ -857,7 +1029,7 @@ esp_err_t touch_pad_init()
     return ESP_OK;
 }
 
-esp_err_t touch_pad_deinit()
+esp_err_t touch_pad_deinit(void)
 {
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_FAIL);
     if (s_touch_pad_filter != NULL) {
@@ -985,28 +1157,33 @@ esp_err_t touch_pad_filter_start(uint32_t filter_period_ms)
     RTC_MODULE_CHECK(filter_period_ms >= portTICK_PERIOD_MS, "Touch pad filter period error", ESP_ERR_INVALID_ARG);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
 
-    esp_err_t ret = ESP_OK;
     xSemaphoreTake(rtc_touch_mux, portMAX_DELAY);
     if (s_touch_pad_filter == NULL) {
         s_touch_pad_filter = (touch_pad_filter_t *) calloc(1, sizeof(touch_pad_filter_t));
         if (s_touch_pad_filter == NULL) {
-            ret = ESP_ERR_NO_MEM;
+            goto err_no_mem;
         }
     }
     if (s_touch_pad_filter->timer == NULL) {
         s_touch_pad_filter->timer = xTimerCreate("filter_tmr", filter_period_ms / portTICK_PERIOD_MS, pdFALSE,
         NULL, touch_pad_filter_cb);
         if (s_touch_pad_filter->timer == NULL) {
-            ret = ESP_ERR_NO_MEM;
+            free(s_touch_pad_filter);
+            s_touch_pad_filter = NULL;
+            goto err_no_mem;
         }
         s_touch_pad_filter->period = filter_period_ms;
     }
     xSemaphoreGive(rtc_touch_mux);
     touch_pad_filter_cb(NULL);
-    return ret;
+    return ESP_OK;
+
+err_no_mem:
+    xSemaphoreGive(rtc_touch_mux);
+    return ESP_ERR_NO_MEM;
 }
 
-esp_err_t touch_pad_filter_stop()
+esp_err_t touch_pad_filter_stop(void)
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
@@ -1022,7 +1199,7 @@ esp_err_t touch_pad_filter_stop()
     return ret;
 }
 
-esp_err_t touch_pad_filter_delete()
+esp_err_t touch_pad_filter_delete(void)
 {
     RTC_MODULE_CHECK(s_touch_pad_filter != NULL, "Touch pad filter not initialized", ESP_ERR_INVALID_STATE);
     RTC_MODULE_CHECK(rtc_touch_mux != NULL, "Touch pad not initialized", ESP_ERR_INVALID_STATE);
@@ -1049,13 +1226,28 @@ esp_err_t touch_pad_get_wakeup_status(touch_pad_t *pad_num)
     *pad_num = touch_pad_num_wrap((touch_pad_t)(__builtin_ffs(touch_mask) - 1));
     return ESP_OK;
 }
-
+#endif
 /*---------------------------------------------------------------
                     ADC Common
 ---------------------------------------------------------------*/
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#define SENS_FORCE_XPD_AMP_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_AMP_PD  2 // Force power down
+#define SENS_FORCE_XPD_AMP_PU  3 // Force power up
+
+#define SENS_SAR1_ATTEN_VAL_MASK   0x3
+#define SENS_SAR2_ATTEN_VAL_MASK   0x3
+
+#define SENS_FORCE_XPD_SAR_SW_M (BIT(1))
+#define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_SAR_PD  2 // Force power down
+#define SENS_FORCE_XPD_SAR_PU  3 // Force power up
+#endif
+
 static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait, int sample_cycle)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     // Internal FSM reset wait time
     if (rst_wait >= 0) {
         SYSCON.saradc_fsm.rstb_wait = rst_wait;
@@ -1068,6 +1260,20 @@ static esp_err_t adc_set_fsm_time(int rst_wait, int start_wait, int standby_wait
     if (standby_wait >= 0) {
         SYSCON.saradc_fsm.standby_wait = standby_wait;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    // Internal FSM reset wait time
+    if (rst_wait >= 0) {
+        SYSCON.saradc_fsm_wait.rstb_wait = rst_wait;
+    }
+    // Internal FSM start wait time
+    if (start_wait >= 0) {
+        SYSCON.saradc_fsm_wait.xpd_wait = start_wait;
+    }
+    // Internal FSM standby wait time
+    if (standby_wait >= 0) {
+        SYSCON.saradc_fsm_wait.standby_wait = standby_wait;
+    }
+#endif
     // Internal FSM standby sample cycle
     if (sample_cycle >= 0) {
         SYSCON.saradc_fsm.sample_cycle = sample_cycle;
@@ -1143,21 +1349,26 @@ static esp_err_t adc_set_atten(adc_unit_t adc_unit, adc_channel_t channel, adc_a
     return ESP_OK;
 }
 
-void adc_power_always_on()
+void adc_power_always_on(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
-void adc_power_on()
+void adc_power_on(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     //The power FSM controlled mode saves more power, while the ADC noise may get increased.
 #ifndef CONFIG_ADC_FORCE_XPD_FSM
     //Set the power always on to increase precision.
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
-#else    
+#else
     //Use the FSM to turn off the power while not used to save power.
     if (SENS.sar_meas_wait2.force_xpd_sar & SENS_FORCE_XPD_SAR_SW_M) {
         SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
@@ -1165,15 +1376,34 @@ void adc_power_on()
         SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
     }
 #endif
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //The power FSM controlled mode saves more power, while the ADC noise may get increased.
+#ifndef CONFIG_ADC_FORCE_XPD_FSM
+    //Set the power always on to increase precision.
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+#else    
+    //Use the FSM to turn off the power while not used to save power.
+    if (SENS.sar_power_xpd_sar.force_xpd_sar & SENS_FORCE_XPD_SAR_SW_M) {
+        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+    } else {
+        SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
+    }
+#endif
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
-void adc_power_off()
+void adc_power_off(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     //Bit1  0:Fsm  1: SW mode
     //Bit0  0:SW mode power down  1: SW mode power on
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
+#endif
+
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
@@ -1214,6 +1444,7 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     if (adc_unit & ADC_UNIT_1) {
         // Enable ADC data invert
         SENS.sar_read_ctrl.sar1_data_inv = inv_en;
@@ -1222,6 +1453,16 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
         // Enable ADC data invert
         SENS.sar_read_ctrl2.sar2_data_inv = inv_en;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (adc_unit & ADC_UNIT_1) {
+        // Enable ADC data invert
+        SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        // Enable ADC data invert
+        SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;
+    }
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -1231,6 +1472,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
     ADC_CHECK_UNIT(adc_unit);
     RTC_MODULE_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     if (adc_unit & ADC_UNIT_1) {
         SENS.sar_start_force.sar1_bit_width = bits;
         SENS.sar_read_ctrl.sar1_sample_bit = bits;
@@ -1239,6 +1481,16 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
         SENS.sar_start_force.sar2_bit_width = bits;
         SENS.sar_read_ctrl2.sar2_sample_bit = bits;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (adc_unit & ADC_UNIT_1) {
+        SENS.sar_meas1_ctrl1.sar1_bit_width = bits;
+        SENS.sar_reader1_ctrl.sar1_sample_bit = bits;
+    }
+    if (adc_unit & ADC_UNIT_2) {
+        SENS.sar_meas2_ctrl1.sar2_bit_width = bits;
+        SENS.sar_reader2_ctrl.sar2_sample_bit = bits;
+    }
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
@@ -1246,6 +1498,7 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
 // this function should be called in the critical section
 static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
 {
+#if CONFIG_IDF_TARGET_ESP32
     if ( unit == ADC_UNIT_1 ) {
         switch( ctrl ) {
             case ADC_CTRL_RTC:
@@ -1271,12 +1524,12 @@ static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
                 break;
             default:
                 ESP_LOGE(TAG, "adc1 selects invalid controller");
-                break;            
+                break;
         }
     } else if ( unit == ADC_UNIT_2) {
         switch( ctrl ) {
             case ADC_CTRL_RTC:
-                SENS.sar_meas_start2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor 
+                SENS.sar_meas_start2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor
                 SENS.sar_meas_start2.sar2_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
                 SENS.sar_read_ctrl2.sar2_dig_force = false;     //RTC controller controls the ADC, not digital controller
                 SENS.sar_read_ctrl2.sar2_pwdet_force = false;   //RTC controller controls the ADC, not PWDET
@@ -1312,12 +1565,69 @@ static void adc_set_controller(adc_unit_t unit, adc_controller_t ctrl )
       ESP_LOGE(TAG, "invalid adc unit");
       assert(0);
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if ( unit == ADC_UNIT_1 ) {
+        switch( ctrl ) {
+            case ADC_CTRL_RTC:
+                SENS.sar_meas1_mux.sar1_dig_force = false;      //RTC controller controls the ADC, not digital controller
+                SENS.sar_meas1_ctrl2.meas1_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor
+                SENS.sar_meas1_ctrl2.sar1_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
+                SENS.sar_hall_ctrl.xpd_hall_force = true;     // RTC controller controls the hall sensor power,not ulp coprocessor
+                SENS.sar_hall_ctrl.hall_phase_force = true;   // RTC controller controls the hall sensor phase,not ulp coprocessor
+                break;
+            case ADC_CTRL_ULP:
+                SENS.sar_meas1_mux.sar1_dig_force = false;
+                SENS.sar_meas1_ctrl2.meas1_start_force = false;
+                SENS.sar_meas1_ctrl2.sar1_en_pad_force = false;
+                SENS.sar_hall_ctrl.xpd_hall_force = false;
+                SENS.sar_hall_ctrl.hall_phase_force = false;
+                break;
+            case ADC_CTRL_DIG:
+                SENS.sar_meas1_mux.sar1_dig_force = true;
+                SENS.sar_meas1_ctrl2.meas1_start_force = true;
+                SENS.sar_meas1_ctrl2.sar1_en_pad_force = true;
+                SENS.sar_hall_ctrl.xpd_hall_force = true;
+                SENS.sar_hall_ctrl.hall_phase_force = true;
+                break;
+            default:
+                ESP_LOGE(TAG, "adc1 selects invalid controller");
+                break;            
+        }
+    } else if ( unit == ADC_UNIT_2) {
+        switch( ctrl ) {
+            case ADC_CTRL_RTC:
+                SENS.sar_meas2_ctrl2.meas2_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor 
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
+                break;
+            case ADC_CTRL_ULP:
+                SENS.sar_meas2_ctrl2.meas2_start_force = false;
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = false;
+                break;
+            case ADC_CTRL_DIG:
+                SENS.sar_meas2_ctrl2.meas2_start_force = true;
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;
+                break;
+            case ADC2_CTRL_PWDET:
+                //currently only used by Wi-Fi
+                SENS.sar_meas2_ctrl2.meas2_start_force = true;
+                SENS.sar_meas2_ctrl2.sar2_en_pad_force = true;
+                break;
+            default:
+                ESP_LOGE(TAG, "adc2 selects invalid controller");
+                break;            
+        }
+    } else {
+      ESP_LOGE(TAG, "invalid adc unit");
+      assert(0);
+    }
+#endif
 }
 
 // this function should be called in the critical section
 static int adc_convert( adc_unit_t unit, int channel)
 {
-    uint16_t adc_value;
+    uint16_t adc_value = 0;
+#if CONFIG_IDF_TARGET_ESP32
     if ( unit == ADC_UNIT_1 ) {
         SENS.sar_meas_start1.sar1_en_pad = (1 << channel); //only one channel is selected.
         while (SENS.sar_slave_addr1.meas_status != 0);
@@ -1326,16 +1636,36 @@ static int adc_convert( adc_unit_t unit, int channel)
         while (SENS.sar_meas_start1.meas1_done_sar == 0);
         adc_value = SENS.sar_meas_start1.meas1_data_sar;
     } else if ( unit == ADC_UNIT_2 ) {
-        SENS.sar_meas_start2.sar2_en_pad = (1 << channel); //only one channel is selected.    
-        
+        SENS.sar_meas_start2.sar2_en_pad = (1 << channel); //only one channel is selected.
+
         SENS.sar_meas_start2.meas2_start_sar = 0; //start force 0
         SENS.sar_meas_start2.meas2_start_sar = 1; //start force 1
         while (SENS.sar_meas_start2.meas2_done_sar == 0) {}; //read done
-        adc_value = SENS.sar_meas_start2.meas2_data_sar;    
+        adc_value = SENS.sar_meas_start2.meas2_data_sar;
     } else {
         ESP_LOGE(TAG, "invalid adc unit");
         return ESP_ERR_INVALID_ARG;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+     if ( unit == ADC_UNIT_1 ) {
+        SENS.sar_meas1_ctrl2.sar1_en_pad = (1 << channel); //only one channel is selected.
+        while (SENS.sar_slave_addr1.meas_status != 0);
+        SENS.sar_meas1_ctrl2.meas1_start_sar = 0;
+        SENS.sar_meas1_ctrl2.meas1_start_sar = 1;
+        while (SENS.sar_meas1_ctrl2.meas1_done_sar == 0);
+        adc_value = SENS.sar_meas1_ctrl2.meas1_data_sar;
+    } else if ( unit == ADC_UNIT_2 ) {
+        SENS.sar_meas2_ctrl2.sar2_en_pad = (1 << channel); //only one channel is selected.    
+        
+        SENS.sar_meas2_ctrl2.meas2_start_sar = 0; //start force 0
+        SENS.sar_meas2_ctrl2.meas2_start_sar = 1; //start force 1
+        while (SENS.sar_meas2_ctrl2.meas2_done_sar == 0) {}; //read done
+        adc_value = SENS.sar_meas2_ctrl2.meas2_data_sar;    
+    } else {
+        ESP_LOGE(TAG, "invalid adc unit");
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
     return adc_value;
 }
 
@@ -1474,8 +1804,9 @@ esp_err_t adc1_config_width(adc_bits_width_t width_bit)
     return ESP_OK;
 }
 
-static inline void adc1_fsm_disable()
+static inline void adc1_fsm_disable(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     //channel is set in the  convert function
     SENS.sar_meas_wait2.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
     //disable FSM, it's only used by the LNA.
@@ -1485,39 +1816,61 @@ static inline void adc1_fsm_disable()
     SENS.sar_meas_wait1.sar_amp_wait1 = 1;
     SENS.sar_meas_wait1.sar_amp_wait2 = 1;
     SENS.sar_meas_wait2.sar_amp_wait3 = 1;    
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //channel is set in the  convert function
+    SENS.sar_meas1_ctrl1.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
+    //disable FSM, it's only used by the LNA.
+    SENS.sar_amp_ctrl3.amp_rst_fb_fsm = 0;
+    SENS.sar_amp_ctrl3.amp_short_ref_fsm = 0;
+    SENS.sar_amp_ctrl3.amp_short_ref_gnd_fsm = 0;
+    SENS.sar_amp_ctrl1.sar_amp_wait1 = 1;
+    SENS.sar_amp_ctrl1.sar_amp_wait2 = 1;
+    SENS.sar_amp_ctrl2.sar_amp_wait3 = 1;
+#endif
 }
 
-esp_err_t adc1_i2s_mode_acquire()
+esp_err_t adc1_i2s_mode_acquire(void)
 {
     //lazy initialization
     //for i2s, block until acquire the lock
     _lock_acquire( &adc1_i2s_lock );
     ESP_LOGD( RTC_MODULE_TAG, "i2s mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     SENS.sar_meas_wait2.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
     //switch SARADC into DIG channel
     SENS.sar_read_ctrl.sar1_dig_force = 1;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
+    //switch SARADC into DIG channel
+    SENS.sar_meas1_mux.sar1_dig_force = 1;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
-esp_err_t adc1_adc_mode_acquire()
+esp_err_t adc1_adc_mode_acquire(void)
 {
     //lazy initialization
     //for adc1, block until acquire the lock
     _lock_acquire( &adc1_i2s_lock );
+    ESP_LOGD( RTC_MODULE_TAG, "adc mode takes adc1 lock." );
     portENTER_CRITICAL(&rtc_spinlock);
     // for now the WiFi would use ADC2 and set xpd_sar force on.
     // so we can not reset xpd_sar to fsm mode directly.
     // We should handle this after the synchronization mechanism is established.
 
     //switch SARADC into RTC channel
+#if CONFIG_IDF_TARGET_ESP32
     SENS.sar_read_ctrl.sar1_dig_force = 0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SENS.sar_meas1_mux.sar1_dig_force = 0;
+#endif
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
 }
 
-esp_err_t adc1_lock_release()
+esp_err_t adc1_lock_release(void)
 {
     RTC_MODULE_CHECK((uint32_t*)adc1_i2s_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
     // for now the WiFi would use ADC2 and set xpd_sar force on.
@@ -1535,7 +1888,7 @@ int adc1_get_raw(adc1_channel_t channel)
     adc1_adc_mode_acquire();
     adc_power_on();
 
-    portENTER_CRITICAL(&rtc_spinlock);    
+    portENTER_CRITICAL(&rtc_spinlock);
     //disable other peripherals
     adc1_hall_enable(false);
     adc1_fsm_disable(); //currently the LNA is not open, close it by default
@@ -1546,11 +1899,6 @@ int adc1_get_raw(adc1_channel_t channel)
     portEXIT_CRITICAL(&rtc_spinlock);
     adc1_lock_release();
     return adc_value;
-}
-
-int adc1_get_voltage(adc1_channel_t channel)    //Deprecated. Use adc1_get_raw() instead
-{
-    return adc1_get_raw(channel);
 }
 
 void adc1_ulp_enable(void)
@@ -1611,7 +1959,7 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
     return ESP_OK;
 }
 
-esp_err_t adc2_wifi_acquire()
+esp_err_t adc2_wifi_acquire(void)
 {
     //lazy initialization
     //for wifi, block until acquire the lock
@@ -1620,7 +1968,7 @@ esp_err_t adc2_wifi_acquire()
     return ESP_OK;
 }
 
-esp_err_t adc2_wifi_release()
+esp_err_t adc2_wifi_release(void)
 {
     RTC_MODULE_CHECK((uint32_t*)adc2_wifi_lock != NULL, "wifi release called before acquire", ESP_ERR_INVALID_STATE );
 
@@ -1657,7 +2005,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     }
     SENS.sar_atten2 = ( SENS.sar_atten2 & ~(3<<(channel*2)) ) | ((atten&3) << (channel*2));
     _lock_release( &adc2_wifi_lock );
-    
+
     portEXIT_CRITICAL( &adc2_spinlock );
     return ESP_OK;
 }
@@ -1665,6 +2013,7 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
 static inline void adc2_config_width(adc_bits_width_t width_bit)
 {
     portENTER_CRITICAL(&rtc_spinlock);
+#if CONFIG_IDF_TARGET_ESP32
     //sar_start_force shared with ADC1
     SENS.sar_start_force.sar2_bit_width = width_bit;
     //cct set to the same value with PHY
@@ -1675,19 +2024,38 @@ static inline void adc2_config_width(adc_bits_width_t width_bit)
     SENS.sar_read_ctrl2.sar2_data_inv = 1;
     //Set The adc sample width,invert adc value,must digital sar2_bit_width[1:0]=3
     SENS.sar_read_ctrl2.sar2_sample_bit = width_bit;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    //sar_start_force shared with ADC1
+    SENS.sar_meas2_ctrl1.sar2_bit_width = width_bit;
+    //cct set to the same value with PHY
+    SENS.sar_meas2_mux.sar2_pwdet_cct = 4;
+    portEXIT_CRITICAL(&rtc_spinlock);
+    //Invert the adc value,the Output value is invert
+    SENS.sar_reader2_ctrl.sar2_data_inv = 1;
+    //Set The adc sample width,invert adc value,must digital sar2_bit_width[1:0]=3
+    SENS.sar_reader2_ctrl.sar2_sample_bit = width_bit;
+#endif
 }
 
 static inline void adc2_dac_disable( adc2_channel_t channel)
 {
+#if CONFIG_IDF_TARGET_ESP32
     if ( channel == ADC2_CHANNEL_8 ) { // the same as DAC channel 1
         dac_output_set_enable( DAC_CHANNEL_1, false );
     } else if ( channel == ADC2_CHANNEL_9 ) {
         dac_output_set_enable( DAC_CHANNEL_2, false );
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if ( channel == ADC2_CHANNEL_6 ) { // the same as DAC channel 1
+        dac_output_set_enable( DAC_CHANNEL_1, false );
+    } else if ( channel == ADC2_CHANNEL_7 ) {
+        dac_output_set_enable( DAC_CHANNEL_2, false );
+    }
+#endif
 }
 
 //registers in critical section with adc1:
-//SENS_SAR_START_FORCE_REG, 
+//SENS_SAR_START_FORCE_REG,
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* raw_out)
 {
     uint16_t adc_value = 0;
@@ -1697,7 +2065,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     adc_power_on();
 
     //avoid collision with other tasks
-    portENTER_CRITICAL(&adc2_spinlock); 
+    portENTER_CRITICAL(&adc2_spinlock);
     //lazy initialization
     //try the lock, return if failed (wifi using).
     if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
@@ -1706,7 +2074,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
     }
 
     //disable other peripherals
-#ifdef CONFIG_ADC2_DISABLE_DAC
+#ifdef CONFIG_ADC_DISABLE_DAC
     adc2_dac_disable( channel );
 #endif
     // set controller
@@ -1725,6 +2093,7 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int* 
 
 esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
 {
+#if CONFIG_IDF_TARGET_ESP32
     int channel;
     if(gpio == GPIO_NUM_25){
         channel = 8;    //Channel 8 bit
@@ -1756,7 +2125,7 @@ esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
     SENS.sar_meas_start2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
     //set en_pad for channels 7,8,9 (bits 0x380)
     SENS.sar_meas_start2.sar2_en_pad = 1<<channel;
-
+#endif
     return ESP_OK;
 }
 
@@ -1849,36 +2218,7 @@ esp_err_t dac_output_voltage(dac_channel_t channel, uint8_t dac_value)
     return ESP_OK;
 }
 
-esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value)
-{
-    RTC_MODULE_CHECK((channel >= DAC_CHANNEL_1) && (channel < DAC_CHANNEL_MAX), DAC_ERR_STR_CHANNEL_ERROR, ESP_ERR_INVALID_ARG);
-    portENTER_CRITICAL(&rtc_spinlock);
-    //Disable Tone
-    CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_SW_TONE_EN);
-
-    //Disable Channel Tone
-    if (channel == DAC_CHANNEL_1) {
-        CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN1_M);
-    } else if (channel == DAC_CHANNEL_2) {
-        CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL2_REG, SENS_DAC_CW_EN2_M);
-    }
-
-    //Set the Dac value
-    if (channel == DAC_CHANNEL_1) {
-        SET_PERI_REG_BITS(RTC_IO_PAD_DAC1_REG, RTC_IO_PDAC1_DAC, dac_value, RTC_IO_PDAC1_DAC_S);   //dac_output
-    } else if (channel == DAC_CHANNEL_2) {
-        SET_PERI_REG_BITS(RTC_IO_PAD_DAC2_REG, RTC_IO_PDAC2_DAC, dac_value, RTC_IO_PDAC2_DAC_S);   //dac_output
-    }
-
-    portEXIT_CRITICAL(&rtc_spinlock);
-    //dac pad init
-    dac_rtc_pad_init(channel);
-    dac_output_enable(channel);
-
-    return ESP_OK;
-}
-
-esp_err_t dac_i2s_enable()
+esp_err_t dac_i2s_enable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     SET_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
@@ -1886,7 +2226,7 @@ esp_err_t dac_i2s_enable()
     return ESP_OK;
 }
 
-esp_err_t dac_i2s_disable()
+esp_err_t dac_i2s_disable(void)
 {
     portENTER_CRITICAL(&rtc_spinlock);
     CLEAR_PERI_REG_MASK(SENS_SAR_DAC_CTRL1_REG, SENS_DAC_DIG_FORCE_M | SENS_DAC_CLK_INV_M);
@@ -1900,23 +2240,26 @@ esp_err_t dac_i2s_disable()
 
 static inline void adc1_hall_enable(bool enable)
 {
-    RTCIO.hall_sens.xpd_hall = enable;        
+#if CONFIG_IDF_TARGET_ESP32
+    RTCIO.hall_sens.xpd_hall = enable;
+#endif
 }
 
-static int hall_sensor_get_value()    //hall sensor without LNA
+static int hall_sensor_get_value(void)    //hall sensor without LNA
 {
+    int hall_value = 0;
+
+    adc_power_on();
+
+#if CONFIG_IDF_TARGET_ESP32
     int Sens_Vp0;
     int Sens_Vn0;
     int Sens_Vp1;
     int Sens_Vn1;
-    int hall_value;
-    
-    adc_power_on();
-
     portENTER_CRITICAL(&rtc_spinlock);
     //disable other peripherals
-    adc1_fsm_disable();//currently the LNA is not open, close it by default    
-    adc1_hall_enable(true);   
+    adc1_fsm_disable();//currently the LNA is not open, close it by default
+    adc1_hall_enable(true);
     // set controller
     adc_set_controller( ADC_UNIT_1, ADC_CTRL_RTC );
     // convert for 4 times with different phase and outputs
@@ -1928,11 +2271,11 @@ static int hall_sensor_get_value()    //hall sensor without LNA
     Sens_Vn1 = adc_convert( ADC_UNIT_1, ADC1_CHANNEL_3 );
     portEXIT_CRITICAL(&rtc_spinlock);
     hall_value = (Sens_Vp1 - Sens_Vp0) - (Sens_Vn1 - Sens_Vn0);
-
+#endif
     return hall_value;
 }
 
-int hall_sensor_read()
+int hall_sensor_read(void)
 {
     adc_gpio_init(ADC_UNIT_1, ADC1_CHANNEL_0);
     adc_gpio_init(ADC_UNIT_1, ADC1_CHANNEL_3);
@@ -1962,19 +2305,19 @@ static void rtc_isr(void* arg)
 {
     uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
     rtc_isr_handler_t* it;
-    portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+    portENTER_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
     SLIST_FOREACH(it, &s_rtc_isr_handler_list, next) {
         if (it->mask & status) {
-            portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+            portEXIT_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
             (*it->handler)(it->handler_arg);
-            portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);
+            portENTER_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
         }
     }
-    portEXIT_CRITICAL(&s_rtc_isr_handler_list_lock);
+    portEXIT_CRITICAL_ISR(&s_rtc_isr_handler_list_lock);
     REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
 }
 
-static esp_err_t rtc_isr_ensure_installed()
+static esp_err_t rtc_isr_ensure_installed(void)
 {
     esp_err_t err = ESP_OK;
     portENTER_CRITICAL(&s_rtc_isr_handler_list_lock);

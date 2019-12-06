@@ -25,21 +25,9 @@ bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -c '
 ```
 This command also configures OpenOCD to expose example project `data` subdirectory to the target's semihosting VFS driver.
 
-### Configure the project
-
-If using Make based build system, run `make menuconfig` and set serial port under Serial Flasher Options.
-
-If using CMake based build system, no configuration is required.
-
 ### Build and flash
 
-Build the project and flash it to the board, then run monitor tool to view serial output:
-
-```
-make -j4 flash monitor
-```
-
-Or, for CMake based build system (replace PORT with serial port name):
+Replace PORT with serial port name:
 
 ```
 idf.py -p PORT flash monitor

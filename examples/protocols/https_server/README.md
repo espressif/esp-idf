@@ -4,7 +4,7 @@ This example creates a SSL server that returns a simple HTML page when you visit
 
 See the `esp_https_server` component documentation for details.
 
-Before using the example, run `make menuconfig` (or `idf.py menuconfig` if using CMake build system) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
+Before using the example, open the project configuration menu (`idf.py menuconfig`) to configure Wi-Fi or Ethernet. See "Establishing Wi-Fi or Ethernet Connection" section in [examples/protocols/README.md](../README.md) for more details.
 
 ## Certificates
 

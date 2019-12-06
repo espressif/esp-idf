@@ -35,13 +35,6 @@ def escape_backslash(path):
         return path
 
 
-def is_virtualenv():
-    """Detects if current python is inside virtualenv, pyvenv (python 3.4-3.5) or venv"""
-
-    return (hasattr(sys, 'real_prefix') or
-            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
-
-
 if __name__ == "__main__":
     idf_path = os.getenv("IDF_PATH")
 
@@ -55,6 +48,10 @@ if __name__ == "__main__":
     with open(args.requirements) as f:
         for line in f:
             line = line.strip()
+            # pkg_resources.require() cannot handle the full requirements file syntax so we need to make
+            # adjustments for options which we use.
+            if line.startswith('file://'):
+                line = os.path.basename(line)
             try:
                 pkg_resources.require(line)
             except Exception:
@@ -64,7 +61,15 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        if sys.platform == "win32" and os.environ.get("MSYSTEM", None) == "MINGW32" and "/mingw32/bin/python" in sys.executable:
+        if os.environ.get('IDF_PYTHON_ENV_PATH'):
+            # We are running inside a private virtual environment under IDF_TOOLS_PATH,
+            # ask the user to run install.bat again.
+            if sys.platform == "win32" and not os.environ.get("MSYSTEM"):
+                install_script = 'install.bat'
+            else:
+                install_script = 'install.sh'
+            print('To install the missing packages, please run "%s"' % os.path.join(idf_path, install_script))
+        elif sys.platform == "win32" and os.environ.get("MSYSTEM", None) == "MINGW32" and "/mingw32/bin/python" in sys.executable:
             print("The recommended way to install a packages is via \"pacman\". Please run \"pacman -Ss <package_name>\" for"
                   " searching the package database and if found then "
                   "\"pacman -S mingw-w64-i686-python{}-<package_name>\" for installing it.".format(sys.version_info[0],))
@@ -85,12 +90,8 @@ if __name__ == "__main__":
                     print("pacman -S mingw-w64-i686-python{}-setuptools".format(sys.version_info[0],))
                     continue
         else:
-            print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required'
-                  ' packages.')
-        print('Alternatively, you can run "{} -m pip install {}-r {}" for resolving the issue.'
-              ''.format(escape_backslash(sys.executable),
-                        '' if is_virtualenv() else '--user ',
-                        escape_backslash(args.requirements)))
+            print('Please follow the instructions found in the "Set up the tools" section of '
+                  'ESP-IDF Getting Started Guide')
         sys.exit(1)
 
     print('Python requirements from {} are satisfied.'.format(args.requirements))

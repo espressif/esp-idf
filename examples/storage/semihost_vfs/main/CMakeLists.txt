@@ -1,4 +1,5 @@
-set(COMPONENT_SRCS "semihost_vfs_example_main.c")
+set(COMPONENT_SRCS )
 set(COMPONENT_ADD_INCLUDEDIRS ".")
 
-register_component()
+idf_component_register(SRCS "semihost_vfs_example_main.c"
+                    INCLUDE_DIRS ".")
