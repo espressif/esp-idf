@@ -363,7 +363,7 @@ static int unseg_app_sdu_unpack(struct bt_mesh_friend *frnd,
     meta->is_dev_key = (app_idx == BLE_MESH_KEY_DEV);
     bt_mesh_net_header_parse(&buf->b, &meta->net);
     err = bt_mesh_app_key_get(meta->subnet, app_idx, &meta->key,
-                              &meta->aid, NODE, meta->net.ctx.addr);
+                              &meta->aid, 0x0, meta->net.ctx.addr);
     if (err) {
         return err;
     }
@@ -774,7 +774,7 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
         .send_ttl = BLE_MESH_TTL_MAX,
     };
     struct bt_mesh_net_tx tx = {
-        .sub  = &bt_mesh.sub[0],
+        .sub  = bt_mesh_subnet_get(frnd->net_idx),
         .ctx  = &ctx,
         .src  = bt_mesh_primary_addr(),
         .xmit = bt_mesh_net_transmit_get(),
