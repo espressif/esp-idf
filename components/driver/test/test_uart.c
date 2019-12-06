@@ -38,7 +38,7 @@ static void uart_config(uint32_t baud_rate, bool use_ref_tick)
     uart_config.source_clk = use_ref_tick ? UART_SCLK_REF_TICK : UART_SCLK_APB;
     uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
     uart_param_config(UART_NUM1, &uart_config);
-    uart_set_pin(UART_NUM1, UART1_TX_PIN, UART1_RX_PIN, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    TEST_ESP_OK(uart_set_loop_back(UART_NUM1, true));
 }
 
 static volatile bool exit_flag;
@@ -125,4 +125,199 @@ TEST_CASE("test uart tx data with break", "[uart]")
     printf("Send data with break test passed\n");
     free(psend);
     uart_driver_delete(UART_NUM1);
+}
+
+static void uart_word_len_set_get_test(int uart_num)
+{
+    printf("uart word len set and get test\n");
+    uart_word_length_t word_length_set = 0;
+    uart_word_length_t word_length_get = 0;
+    for (int i = 0; i < UART_DATA_BITS_MAX; i++) {
+        word_length_set = UART_DATA_5_BITS + i;
+        TEST_ESP_OK(uart_set_word_length(uart_num, word_length_set));
+        TEST_ESP_OK(uart_get_word_length(uart_num, &word_length_get));
+        TEST_ASSERT(word_length_set == word_length_get);
+    }
+}
+
+static void uart_stop_bit_set_get_test(int uart_num)
+{
+    printf("uart stop bit set and get test\n");
+    uart_stop_bits_t stop_bit_set = 0;
+    uart_stop_bits_t stop_bit_get = 0;
+    for (int i = UART_STOP_BITS_1; i < UART_STOP_BITS_MAX; i++) {
+        stop_bit_set = i;
+        TEST_ESP_OK(uart_set_stop_bits(uart_num, stop_bit_set));
+        TEST_ESP_OK(uart_get_stop_bits(uart_num, &stop_bit_get));
+        TEST_ASSERT(stop_bit_set == stop_bit_get);
+    }
+}
+
+static void uart_parity_set_get_test(int uart_num)
+{
+    printf("uart parity set and get test\n");
+    uart_parity_t parity_set[3] = {
+        UART_PARITY_DISABLE,
+        UART_PARITY_EVEN,
+        UART_PARITY_ODD,
+    };
+    uart_parity_t parity_get = 0;
+    for (int i = 0; i < 3; i++) {
+        TEST_ESP_OK(uart_set_parity(uart_num, parity_set[i]));
+        TEST_ESP_OK(uart_get_parity(uart_num, &parity_get));
+        TEST_ASSERT(parity_set[i] == parity_get);
+    }
+}
+
+static void uart_hw_flow_set_get_test(int uart_num)
+{
+    printf("uart hw flow control set and get test\n");
+    uart_hw_flowcontrol_t flowcontro_set = 0;
+    uart_hw_flowcontrol_t flowcontro_get = 0;
+    for (int i = 0; i < UART_HW_FLOWCTRL_DISABLE; i++) {
+        TEST_ESP_OK(uart_set_hw_flow_ctrl(uart_num, flowcontro_set, 20));
+        TEST_ESP_OK(uart_get_hw_flow_ctrl(uart_num, &flowcontro_get));
+        TEST_ASSERT(flowcontro_set == flowcontro_get);
+    }
+}
+
+static void uart_wakeup_set_get_test(int uart_num)
+{
+    printf("uart wake up set and get test\n");
+    int wake_up_set = 0;
+    int wake_up_get = 0;
+    for (int i = 3; i < 0x3ff; i++) {
+        wake_up_set = i;
+        TEST_ESP_OK(uart_set_wakeup_threshold(uart_num, wake_up_set));
+        TEST_ESP_OK(uart_get_wakeup_threshold(uart_num, &wake_up_get));
+        TEST_ASSERT(wake_up_set == wake_up_get);
+    }
+}
+
+TEST_CASE("uart general API test", "[uart]")
+{
+    const int uart_num = UART_NUM1;
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+    uart_param_config(uart_num, &uart_config);
+    uart_word_len_set_get_test(uart_num);
+    uart_stop_bit_set_get_test(uart_num);
+    uart_parity_set_get_test(uart_num);
+    uart_hw_flow_set_get_test(uart_num);
+    uart_wakeup_set_get_test(uart_num);
+}
+
+static void uart_write_task(void *param)
+{
+    int uart_num = (int)param;
+    uint8_t *tx_buf = (uint8_t *)malloc(1024);
+    if(tx_buf == NULL) {
+        printf("tx buffer malloc fail\n");
+        TEST_ASSERT(0);
+    }
+    for(int i = 1; i < 1023; i++) {
+        tx_buf[i] = (i & 0xff);
+    }
+    for(int i = 0; i < 1024; i++) {
+        //d[0] and d[1023] are header
+        tx_buf[0] = (i & 0xff);
+        tx_buf[1023] = ((~i) & 0xff);
+        uart_write_bytes(uart_num, (const char*)tx_buf, 1024);
+        uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+    }
+    free(tx_buf);
+    vTaskDelete(NULL);
+}
+
+static void uart_read_write_test(void)
+{
+    const int uart_num = UART_NUM1;
+    uint8_t *rd_data = (uint8_t *)malloc(1024);
+    if(rd_data == NULL) {
+        printf("rx buffer malloc fail\n");
+        TEST_ASSERT(0);
+    }
+    uart_config_t uart_config = {
+        .baud_rate = 2000000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    TEST_ESP_OK(uart_set_loop_back(uart_num, true));
+    xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, 5, NULL);
+    int len_tmp = 0;
+    int rd_len = 1024;
+    for (int i = 0; i < 1024; i++) {
+        rd_len = 1024;
+        memset(rd_data, 0, 1024);
+        while (rd_len) {
+            len_tmp = uart_read_bytes(uart_num, rd_data + 1024 - rd_len, rd_len, (TickType_t)1000);
+            if (len_tmp < 0) {
+                printf("read timeout, uart read write test fail\n");
+                TEST_ASSERT(0);
+            }
+            rd_len -= len_tmp;
+        }
+        if (rd_data[0] != (i & 0xff) || rd_data[1023] != ((~i) & 0xff)) {
+            printf("uart data header check error\n");
+            TEST_ASSERT(0);
+        }
+        for (int j = 1; j < 1023; j++) {
+            if (rd_data[j] != (j & 0xff)) {
+                printf("uart data check error\n");
+                TEST_ASSERT(0);
+            }
+        }
+    }
+    uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+    uart_driver_delete(uart_num);
+    free(rd_data);
+}
+
+TEST_CASE("uart read write test", "[uart]")
+{
+    uart_read_write_test();
+}
+
+TEST_CASE("uart tx with ringbuffer test", "[uart]")
+{
+    const int uart_num = UART_NUM1;
+    uint8_t *rd_data = (uint8_t *)malloc(1024);
+    uint8_t *wr_data = (uint8_t *)malloc(1024);
+    if(rd_data == NULL || wr_data == NULL) {
+        printf("buffer malloc fail\n");
+        TEST_ASSERT(0);
+    }
+    uart_config_t uart_config = {
+        .baud_rate = 2000000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
+    };
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    TEST_ESP_OK(uart_driver_install(uart_num, 1024 * 2, 1024 *2, 20, NULL, 0));
+    TEST_ESP_OK(uart_set_loop_back(uart_num, true));
+    for (int i = 0; i < 1024; i++) {
+        wr_data[i] = i;
+        rd_data[i] = 0;
+    }
+    uart_write_bytes(uart_num, (const char*)wr_data, 1024);
+    uart_wait_tx_done(uart_num, (TickType_t)portMAX_DELAY);
+    uart_read_bytes(uart_num, rd_data, 1024, (TickType_t)1000);
+    TEST_ASSERT(memcmp(wr_data, rd_data, 1024) == 0);
+    TEST_ESP_OK(uart_driver_delete(uart_num));
+    free(rd_data);
+    free(wr_data);
 }

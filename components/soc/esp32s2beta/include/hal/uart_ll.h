@@ -429,12 +429,12 @@ static inline void uart_ll_get_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcontrol_
 static inline void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl_t *flow_ctrl, bool sw_flow_ctrl_en)
 {
     if(sw_flow_ctrl_en) {
+        hw->flow_conf.xonoff_del = 1;
+        hw->flow_conf.sw_flow_con_en = 1;
         hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
         hw->swfc_conf0.xoff_threshold = flow_ctrl->xoff_thrd;
         hw->swfc_conf1.xon_char = flow_ctrl->xon_char;
         hw->swfc_conf0.xoff_char = flow_ctrl->xoff_char;
-        hw->flow_conf.sw_flow_con_en = 1;
-        hw->flow_conf.xonoff_del = 1;
     } else {
         hw->flow_conf.sw_flow_con_en = 0;
         hw->flow_conf.xonoff_del = 0;
@@ -668,7 +668,7 @@ static inline void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, ui
  */
 static inline uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
 {
-    return hw->sleep_conf.active_threshold;
+    return hw->sleep_conf.active_threshold + SOC_UART_MIN_WAKEUP_THRESH;
 }
 
 /**
@@ -745,13 +745,13 @@ static inline void uart_ll_set_loop_back(uart_dev_t *hw, bool loop_back_en)
 static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
     typeof(hw->conf0) conf0_reg = hw->conf0;
-    conf0_reg.irda_tx_inv |= (inv_mask & UART_SIGNAL_IRDA_TX_INV);
-    conf0_reg.irda_rx_inv |= (inv_mask & UART_SIGNAL_IRDA_RX_INV);
-    conf0_reg.rxd_inv |= (inv_mask & UART_SIGNAL_RXD_INV);
-    conf0_reg.cts_inv |= (inv_mask & UART_SIGNAL_CTS_INV);
-    conf0_reg.dsr_inv |= (inv_mask & UART_SIGNAL_DSR_INV);
-    conf0_reg.txd_inv |= (inv_mask & UART_SIGNAL_TXD_INV);
-    conf0_reg.rts_inv |= (inv_mask & UART_SIGNAL_RTS_INV);
-    conf0_reg.dtr_inv |= (inv_mask & UART_SIGNAL_DTR_INV);
+    conf0_reg.irda_tx_inv |= (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
+    conf0_reg.irda_rx_inv |= (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
+    conf0_reg.rxd_inv |= (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
+    conf0_reg.cts_inv |= (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
+    conf0_reg.dsr_inv |= (inv_mask & UART_SIGNAL_DSR_INV) ? 1 : 0;
+    conf0_reg.txd_inv |= (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
+    conf0_reg.rts_inv |= (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
+    conf0_reg.dtr_inv |= (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
     hw->conf0.val = conf0_reg.val;
 }
