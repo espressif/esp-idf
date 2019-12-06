@@ -300,8 +300,10 @@ esp_err_t esp_http_client_set_username(esp_http_client_handle_t client, const ch
         ESP_LOGE(TAG, "client must not be NULL");
         return ESP_ERR_INVALID_ARG;
     }
-    if (username == NULL && client->connection_info.username != NULL) {
+    if (client->connection_info.username != NULL) {
         free(client->connection_info.username);
+    }
+    if (username == NULL) {
         client->connection_info.username = NULL;
     } else if (username != NULL) {
         client->connection_info.username = strdup(username);
@@ -325,9 +327,11 @@ esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *pa
         ESP_LOGE(TAG, "client must not be NULL");
         return ESP_ERR_INVALID_ARG;
     }
-    if (password == NULL && client->connection_info.password != NULL) {
+    if (client->connection_info.password != NULL) {
         memset(client->connection_info.password, 0, strlen(client->connection_info.password));
         free(client->connection_info.password);
+    }
+    if (password == NULL) {
         client->connection_info.password = NULL;
     } else if (password != NULL) {
         client->connection_info.password = strdup(password);
