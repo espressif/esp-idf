@@ -33,7 +33,7 @@ variables:
   # tell build system do not check submodule update as we download archive instead of clone
   IDF_SKIP_CHECK_SUBMODULES: 1
 
-  UNIT_TEST_BUILD_SYSTEM: make
+  UNIT_TEST_BUILD_SYSTEM: cmake
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
