@@ -469,6 +469,11 @@ endmacro()
 # files used for linking, targets which should execute before creating the specified executable,
 # generating additional binary files, generating files related to flashing, etc.)
 function(idf_build_executable elf)
+    # Set additional link flags for the executable
+    idf_build_get_property(link_options LINK_OPTIONS)
+    # Using LINK_LIBRARIES here instead of LINK_OPTIONS, as the latter is not in CMake 3.5.
+    set_property(TARGET ${elf} APPEND PROPERTY LINK_LIBRARIES "${link_options}")
+
     # Propagate link dependencies from component library targets to the executable
     idf_build_get_property(link_depends __LINK_DEPENDS)
     set_property(TARGET ${elf} APPEND PROPERTY LINK_DEPENDS "${link_depends}")
