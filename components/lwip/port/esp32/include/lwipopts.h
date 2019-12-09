@@ -796,6 +796,7 @@
 #define ESP_IPV6                        1
 #define ESP_SOCKET                      1
 #define ESP_LWIP_SELECT                 1
+#define ESP_LWIP_LOCK                   1
 
 #ifdef ESP_IRAM_ATTR
 #undef ESP_IRAM_ATTR
