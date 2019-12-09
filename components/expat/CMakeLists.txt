@@ -1,6 +1,5 @@
 set(COMPONENT_ADD_INCLUDEDIRS expat/expat/lib port/include)
-set(COMPONENT_SRCS "expat/expat/lib/loadlibrary.c"
-                   "expat/expat/lib/xmlparse.c"
+set(COMPONENT_SRCS "expat/expat/lib/xmlparse.c"
                    "expat/expat/lib/xmlrole.c"
                    "expat/expat/lib/xmltok.c"
                    "expat/expat/lib/xmltok_impl.c"
