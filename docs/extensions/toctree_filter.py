@@ -24,12 +24,13 @@ class TocTreeFilt(TocTree):
     when it scan the src/ directory, so it's also necessary to make sure that the files
     are covered by the exclude_patterns list in conf.py
     """
-    RE_PATTERN = re.compile(r'^\s*:(.+):\s*(.+)$')
+    RE_PATTERN = re.compile(r'^\s*:(.+?):\s*(.+)$')
 
     def run(self):
         # Remove all TOC entries that should not be on display
         env = self.state.document.settings.env
         self.content = [self.filter_entry(env, e) for e in self.content if e is not None]
+
         return super(TocTreeFilt, self).run()
 
     def filter_entry(self, env, entry):
