@@ -589,7 +589,7 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
             *p++ = info->softap_max_conn_num;
         }
         if (info->softap_channel_set) {
-            *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_MAX_CONN_NUM;
+            *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_CHANNEL;
             *p++ = 1;
             *p++ = info->softap_channel;
         }
