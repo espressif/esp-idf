@@ -423,6 +423,7 @@ void start_cpu0_default(void)
 
 #if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
+    coex_pre_init();
 #endif
 
     bootloader_flash_update_id();
