@@ -4249,6 +4249,11 @@ void mdns_free()
     if (!_mdns_server) {
         return;
     }
+
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+
     mdns_service_remove_all(_mdns_server);
     _mdns_service_task_stop();
     for (i=0; i<TCPIP_ADAPTER_IF_MAX; i++) {
@@ -4279,9 +4284,6 @@ void mdns_free()
         free(h);
     }
     vSemaphoreDelete(_mdns_server->lock);
-    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
-    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
-    esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
     free(_mdns_server);
     _mdns_server = NULL;
 }
