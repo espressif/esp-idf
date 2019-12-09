@@ -22,12 +22,10 @@
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/rom/spi_flash.h"
 #include "esp32s2beta/rom/efuse.h"
+#include "soc/spi_mem_struct.h"
 #endif
 #include "soc/spi_struct.h"
 #include "soc/spi_reg.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#include "soc/spi_mem_struct.h"
-#endif
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"

@@ -46,11 +46,8 @@
 
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk);
 
-// g_ticks_us defined in ROMs for PRO and APP CPU
+// g_ticks_us defined in ROMs for PRO CPU
 extern uint32_t g_ticks_per_us_pro;
-#if !CONFIG_FREERTOS_UNICORE
-extern uint32_t g_ticks_per_us_app;
-#endif //!CONFIG_FREERTOS_UNICORE
 
 static const char* TAG = "clk";
 
@@ -135,9 +132,6 @@ void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
 {
     /* Update scale factors used by ets_delay_us */
     g_ticks_per_us_pro = ticks_per_us;
-#if !CONFIG_FREERTOS_UNICORE
-    g_ticks_per_us_app = ticks_per_us;
-#endif //!CONFIG_FREERTOS_UNICORE
 }
 
 static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
@@ -206,25 +200,14 @@ void esp_perip_clk_init(void)
     uint32_t common_perip_clk, hwcrypto_perip_clk, wifi_bt_sdio_clk = 0;
     uint32_t common_perip_clk1 = 0;
 
-#if CONFIG_FREERTOS_UNICORE
     RESET_REASON rst_reas[1];
-#else
-    RESET_REASON rst_reas[2];
-#endif
 
     rst_reas[0] = rtc_get_reset_reason(0);
-
-#if !CONFIG_FREERTOS_UNICORE
-    rst_reas[1] = rtc_get_reset_reason(1);
-#endif
 
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
     if ((rst_reas[0] >= TG0WDT_CPU_RESET && rst_reas[0] <= TG0WDT_CPU_RESET && rst_reas[0] != RTCWDT_BROWN_OUT_RESET)
-#if !CONFIG_FREERTOS_UNICORE
-        || (rst_reas[1] >= TGWDT_CPU_RESET && rst_reas[1] <= RTCWDT_CPU_RESET)
-#endif
     ) {
         common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
         hwcrypto_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERI_CLK_EN_REG);

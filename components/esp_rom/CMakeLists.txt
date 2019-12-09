@@ -1,29 +1,25 @@
 idf_build_get_property(target IDF_TARGET)
 
+idf_component_register(INCLUDE_DIRS include)
+
 if(BOOTLOADER_BUILD)
-    # For bootloader, all we need is headers
-    idf_component_register(INCLUDE_DIRS include)
     set(scripts
         "${target}/ld/${target}.rom.ld"
         "${target}/ld/${target}.rom.newlib-funcs.ld"
         "${target}/ld/${target}.rom.libgcc.ld"
         )
-    if (target STREQUAL "esp32s2beta")
+    if(target STREQUAL "esp32s2beta")
         list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
     endif()
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
-else()
-    # Regular app build
-    idf_component_register(SRCS "esp_rom.c"
-                        INCLUDE_DIRS include)
-
+else() # Regular app build
     set(scripts
         "${target}/ld/${target}.rom.ld"
         "${target}/ld/${target}.rom.libgcc.ld"
         "${target}/ld/${target}.rom.newlib-data.ld")
 
-    if (target STREQUAL "esp32")
+    if(target STREQUAL "esp32")
         list(APPEND scripts "${target}/ld/${target}.rom.syscalls.ld")
 
         if(NOT CONFIG_SPIRAM_CACHE_WORKAROUND)

@@ -38,9 +38,7 @@
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/clk.h"
-#endif
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"

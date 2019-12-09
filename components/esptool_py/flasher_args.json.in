@@ -15,6 +15,8 @@
     >,
     "extra_esptool_args" : {
         "after"  : "${ESPTOOLPY_AFTER}",
-        "before" : "${ESPTOOLPY_BEFORE}"
+        "before" : "${ESPTOOLPY_BEFORE}",
+        "stub"   : "${ESPTOOLPY_WITH_STUB}",
+        "chip"   : "${ESPTOOLPY_CHIP}"
     }
 }

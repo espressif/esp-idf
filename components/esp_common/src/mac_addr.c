@@ -6,6 +6,8 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/efuse.h"
 #endif
 
 /* esp_system.h APIs relating to MAC addresses */

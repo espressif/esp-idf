@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+#include "sdkconfig.h"
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
 #include "esp_efuse_table.h"
-#include "stdlib.h"
 #include "esp_types.h"
-#include "esp32/rom/efuse.h"
 #include "assert.h"
 #include "esp_err.h"
 #include "esp_log.h"
@@ -25,6 +25,12 @@
 #include "bootloader_random.h"
 #include "soc/apb_ctrl_reg.h"
 #include "sys/param.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/efuse.h"
+#endif
 
 // Permanently update values written to the efuse write registers
 void esp_efuse_burn_new_values(void)
