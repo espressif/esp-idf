@@ -418,7 +418,12 @@ bool config_save(const config_t *config, const char *filename)
             OSI_TRACE_DEBUG("(key, val): (%s, %s)\n", entry->key, entry->value);
             w_cnt = snprintf(line, 1024, "%s = %s\n", entry->key, entry->value);
             OSI_TRACE_DEBUG("%s, w_cnt + w_cnt_total = %d", __func__, w_cnt + w_cnt_total);
-            memcpy(buf + w_cnt_total, line, w_cnt);
+            if(w_cnt_total + w_cnt < config_size + 100 ) {
+                memcpy(buf + w_cnt_total, line, w_cnt);
+            } else {
+                OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size.", __func__, w_cnt + w_cnt_total);
+            }
+            
             w_cnt_total += w_cnt;
         }
 

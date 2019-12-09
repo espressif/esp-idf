@@ -1760,13 +1760,13 @@ void smp_match_dhkey_checks(tSMP_CB *p_cb, tSMP_INT_DATA *p_data)
     SMP_TRACE_DEBUG("%s\n", __func__);
 
     if (memcmp(p_data->key.p_data, p_cb->remote_dhkey_check, BT_OCTET16_LEN)) {
-        SMP_TRACE_WARNING ("dhkey chcks do no match\n");
+        SMP_TRACE_WARNING ("dhkey checks do no match\n");
         p_cb->failure = reason;
         smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &reason);
         return;
     }
 
-    SMP_TRACE_EVENT ("dhkey chcks match\n");
+    SMP_TRACE_EVENT ("dhkey checks match\n");
 
     /* compare the max encryption key size, and save the smaller one for the link */
     if (p_cb->peer_enc_size < p_cb->loc_enc_size) {
