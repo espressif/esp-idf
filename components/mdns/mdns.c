@@ -4301,6 +4301,14 @@ void mdns_free(void)
     if (!_mdns_server) {
         return;
     }
+
+    // Unregister handlers before destoying the mdns internals to avoid receiving asyc events while deinit
+    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#if CONFIG_ETH_ENABLED
+    esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
+#endif
+
     mdns_service_remove_all();
     _mdns_service_task_stop();
     for (i=0; i<MDNS_IF_MAX; i++) {
@@ -4331,11 +4339,6 @@ void mdns_free(void)
         free(h);
     }
     vSemaphoreDelete(_mdns_server->lock);
-    esp_event_handler_unregister(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler);
-    esp_event_handler_unregister(IP_EVENT, ESP_EVENT_ANY_ID, &event_handler);
-#if CONFIG_ETH_ENABLED
-    esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, &event_handler);
-#endif
     free(_mdns_server);
     _mdns_server = NULL;
 }
