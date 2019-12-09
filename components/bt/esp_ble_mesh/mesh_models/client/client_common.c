@@ -17,8 +17,14 @@
 
 #include "mesh.h"
 #include "mesh_main.h"
+#include "transport.h"
+#include "foundation.h"
 #include "client_common.h"
 #include "mesh_common.h"
+
+#define UNSEG_ACCESS_MSG_MAX_LEN    11  /* 11 octets (Opcode + Payload), 4 octets TransMIC */
+#define SEG_ACCESS_MSG_SEG_LEN      12  /* 12 * 32 = 384 octets (Opcode + Payload + TransMIC) */
+#define HCI_TIME_FOR_START_ADV      K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
 static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t tx_dst)
 {
@@ -156,6 +162,79 @@ static u32_t bt_mesh_client_get_status_op(const bt_mesh_client_op_pair_t *op_pai
     return 0;
 }
 
+static s32_t bt_mesh_get_adv_duration(void)
+{
+    u16_t duration, adv_int;
+    u8_t xmit;
+
+    xmit = bt_mesh_net_transmit_get();  /* Network transmit */
+    adv_int = BLE_MESH_TRANSMIT_INT(xmit);
+    duration = (BLE_MESH_TRANSMIT_COUNT(xmit) + 1) * (adv_int + 10);
+
+    return (s32_t)duration;
+}
+
+static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
+                                         struct net_buf_simple *msg,
+                                         u32_t opcode, s32_t timeout)
+{
+    s32_t seg_retrans_to, duration, time;
+    u8_t seg_count, seg_retrans_num;
+    u8_t mic_size;
+    bool need_seg;
+
+    if (msg->len > UNSEG_ACCESS_MSG_MAX_LEN || ctx->send_rel) {
+        need_seg = true;    /* Needs segmentation */
+    }
+
+    mic_size = (need_seg && net_buf_simple_tailroom(msg) >= 8U) ? 8U : 4U;
+
+    if (need_seg) {
+        /* Based on the message length, calculate how many segments are needed.
+         * All the messages sent from here are access messages.
+         */
+        seg_retrans_num = bt_mesh_get_seg_retrans_num();
+        seg_retrans_to = bt_mesh_get_seg_retrans_timeout(ctx->send_ttl);
+        seg_count = (msg->len + mic_size - 1) / 12U + 1U;
+
+        duration = bt_mesh_get_adv_duration();
+
+        /* Currenlty only consider the time consumption of the same segmented
+         * messages, but if there are other messages between any two retrans-
+         * missions of the same segmented messages, then the whole time will
+         * be longer.
+         */
+        if (duration + HCI_TIME_FOR_START_ADV < seg_retrans_to) {
+            s32_t seg_duration = seg_count * (duration + HCI_TIME_FOR_START_ADV);
+            time = (seg_duration + seg_retrans_to) * (seg_retrans_num - 1) + seg_duration;
+        } else {
+            /* If the duration is bigger than the segment retransmit timeout
+             * value. In this situation, the segment retransmit timeout value
+             * may need to be optimized based on the "Network Transmit" value.
+             */
+            time = seg_count * (duration + HCI_TIME_FOR_START_ADV) * seg_retrans_num;
+        }
+
+        BT_INFO("Original timeout %dms, calculated timeout %dms", timeout, time);
+
+        if (time < timeout) {
+            /* If the calculated time is smaller than the input timeout value,
+             * then use the original timeout value.
+             */
+            time = timeout;
+        }
+    } else {
+        /* For unsegmented access messages, directly use the timeout
+         * value from the application layer.
+         */
+        time = timeout;
+    }
+
+    BT_INFO("Client message 0x%08x with timeout %dms", opcode, time);
+
+    return time;
+}
+
 int bt_mesh_client_send_msg(struct bt_mesh_model *model,
                             u32_t opcode,
                             struct bt_mesh_msg_ctx *ctx,
@@ -203,6 +282,9 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
             bt_mesh_free(node);
             return -EINVAL;
         }
+
+        s32_t time = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
+
         if ((err = bt_mesh_model_send(model, ctx, msg, cb, cb_data)) != 0) {
             bt_mesh_free(node);
         } else {
@@ -210,7 +292,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
             sys_slist_append(&internal->queue, &node->client_node);
             bt_mesh_list_unlock();
             k_delayed_work_init(&node->timer, timer_handler);
-            k_delayed_work_submit(&node->timer, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
+            k_delayed_work_submit(&node->timer, time);
         }
     }
 
