@@ -136,11 +136,10 @@ esp_err_t esp_wifi_register_if_rxcb(wifi_netif_driver_t ifx, esp_netif_receive_t
         return ESP_ERR_NOT_SUPPORTED;
     }
 
+    s_wifi_netifs[wifi_interface] = ifx->base.netif;
     if ((ret = esp_wifi_internal_reg_rxcb(wifi_interface,  rxcb)) != ESP_OK) {
         ESP_LOGE(TAG, "esp_wifi_internal_reg_rxcb for if=%d failed with %d", wifi_interface, ret);
         return ESP_ERR_INVALID_STATE;
     }
-
-    s_wifi_netifs[wifi_interface] = ifx->base.netif;
     return ESP_OK;
 }
