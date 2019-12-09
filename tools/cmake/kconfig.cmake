@@ -256,6 +256,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         set(MENUCONFIG_CMD ${mconf})
     else()
         set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
+        set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
     endif()
 
     # Generate the menuconfig target
@@ -267,6 +268,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --env "IDF_TARGET=${idf_target}"
         --dont-write-deprecated
         --output config ${sdkconfig}
+        COMMAND ${TERM_CHECK_CMD}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
         "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
