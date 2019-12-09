@@ -1,6 +1,7 @@
 /**
  * I2S test environment UT_T1_I2S:
- * connect GPIO18 and GPIO19, GPIO25 and GPIO26, GPIO21 and GPIO22
+ * We use internal signals instead of external wiring, but please keep the following IO connections, or connect nothing to prevent the signal from being disturbed.
+ * connect GPIO18 and GPIO19, GPIO25(ESP32)/GPIO17(ESP32-S2) and GPIO26, GPIO21 and GPIO22(ESP32)/GPIO20(ESP32-S2)
  */
 
 #include <stdio.h>
@@ -28,6 +29,63 @@
 
 #define PERCENT_DIFF 0.0001
 
+// mode: 0, master rx, slave tx. mode: 1, master tx, slave rx. mode: 2, master tx rx loopback
+// Since ESP32-S2 has only one I2S, only loop back test can be tested.
+static void i2s_test_io_config(int mode)
+{
+    // Connect internal signals using IO matrix.
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[MASTER_BCK_IO], PIN_FUNC_GPIO);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[MASTER_WS_IO], PIN_FUNC_GPIO);
+    PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[DATA_OUT_IO], PIN_FUNC_GPIO);
+
+    gpio_set_direction(MASTER_BCK_IO, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_direction(MASTER_WS_IO, GPIO_MODE_INPUT_OUTPUT);
+    gpio_set_direction(DATA_OUT_IO, GPIO_MODE_INPUT_OUTPUT);
+
+#if CONFIG_IDF_TARGET_ESP32
+    switch (mode) {
+        case 0: {
+            gpio_matrix_out(MASTER_BCK_IO, I2S0I_BCK_OUT_IDX, 0, 0);
+            gpio_matrix_in(MASTER_BCK_IO, I2S1O_BCK_IN_IDX, 0);
+
+            gpio_matrix_out(MASTER_WS_IO, I2S0I_WS_OUT_IDX, 0, 0);
+            gpio_matrix_in(MASTER_WS_IO, I2S1O_WS_IN_IDX, 0);
+
+            gpio_matrix_out(DATA_OUT_IO, I2S1O_DATA_OUT23_IDX, 0, 0);
+            gpio_matrix_in(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0);  
+        }
+        break;
+
+        case 1: {
+            gpio_matrix_out(MASTER_BCK_IO, I2S0O_BCK_OUT_IDX, 0, 0);
+            gpio_matrix_in(MASTER_BCK_IO, I2S1I_BCK_IN_IDX, 0);
+
+            gpio_matrix_out(MASTER_WS_IO, I2S0O_WS_OUT_IDX, 0, 0);
+            gpio_matrix_in(MASTER_WS_IO, I2S1I_WS_IN_IDX, 0);
+
+            gpio_matrix_out(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
+            gpio_matrix_in(DATA_OUT_IO, I2S1I_DATA_IN15_IDX, 0);  
+        }
+        break;
+
+        case 2: {
+            gpio_matrix_out(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
+            gpio_matrix_in(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0); 
+        }
+        break;
+    }
+#else 
+    switch (mode) {
+        case 2: {
+            gpio_matrix_out(DATA_OUT_IO, I2S0O_DATA_OUT23_IDX, 0, 0);
+            gpio_matrix_in(DATA_OUT_IO, I2S0I_DATA_IN15_IDX, 0); 
+        }
+        break;
+    }
+#endif
+}
+
+
 /**
  * i2s initialize test
  * 1. i2s_driver_install
@@ -52,6 +110,7 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
     //for internal DAC, this will enable both of the internal channels
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, NULL));
+    i2s_test_io_config(1);
     //stop & destroy i2s driver
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 
@@ -64,6 +123,7 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     };
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
+    i2s_test_io_config(1);
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 
     //error param test
@@ -76,9 +136,72 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
 
-#if !DISABLED_FOR_TARGETS(ESP32S2)
-/* ESP32S2 has only single I2S port and hence following test cases are not applicable */
+TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s][test_env=UT_T1_I2S]")
+{
+    // master driver installed and send data
+    i2s_config_t master_i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX,
+        .sample_rate = SAMPLE_RATE,
+        .bits_per_sample = SAMPLE_BITS,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
+        .dma_buf_count = 6,
+        .dma_buf_len = 100,
+        .use_apll = 0,
+        .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
+    };
+    i2s_pin_config_t master_pin_config = {
+        .bck_io_num = MASTER_BCK_IO,
+        .ws_io_num = MASTER_WS_IO,
+        .data_out_num = DATA_OUT_IO,
+        .data_in_num = DATA_IN_IO
+    };
+    TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
+    TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+    i2s_test_io_config(2);
+    printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
+    uint8_t* data_wr = (uint8_t*)malloc(sizeof(uint8_t)*400);
+    size_t i2s_bytes_write = 0;
+    size_t bytes_read = 0;
+    int length = 0;
+    uint8_t *i2s_read_buff = (uint8_t*)malloc(sizeof(uint8_t)*10000);
+
+    for(int i=0; i<100; i++) {
+        data_wr[i] = i+1;
+    }
+    int flag=0; // break loop flag
+    int end_position = 0;
+    // write data to slave
+    i2s_write(I2S_NUM_0, data_wr, sizeof(uint8_t)*400, &i2s_bytes_write, 1000 / portTICK_PERIOD_MS);
+    while(!flag){
+        if (length >= 10000 - 500) {
+            break;
+        }
+        i2s_read(I2S_NUM_0, i2s_read_buff + length, sizeof(uint8_t)*500, &bytes_read, 1000/portMAX_DELAY);
+        if(bytes_read>0) {
+            printf("read data size: %d\n", bytes_read);
+            for(int i=length; i<length + bytes_read; i++) {
+                if(i2s_read_buff[i] == 100) {
+                    flag=1;
+                    end_position = i;
+                    break;
+                }
+            }
+        }
+        length = length + bytes_read;
+    }
+    // test the readed data right or not
+    for(int i=end_position-99; i<=end_position; i++) {
+        TEST_ASSERT(*(i2s_read_buff + i) == (i-end_position+100));
+    }
+    free(data_wr);
+    free(i2s_read_buff);
+    i2s_driver_uninstall(I2S_NUM_0);
+}
+
+#if !DISABLED_FOR_TARGETS(ESP32S2)
+/* ESP32S2BETA has only single I2S port and hence following test cases are not applicable */
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_T1_I2S]")
 {
     // master driver installed and send data
@@ -101,6 +224,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_
     };
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+    i2s_test_io_config(1);
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
     i2s_config_t slave_i2s_config = {
@@ -123,6 +247,7 @@ TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_
     // slave driver installed and receive data
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_1, &slave_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_1, &slave_pin_config));
+    i2s_test_io_config(1);
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
     uint8_t* data_wr = (uint8_t*)malloc(sizeof(uint8_t)*400);
@@ -173,7 +298,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s][test_env=UT_
         .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 100,
-        .use_apll = 0,
+        .use_apll = 1,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
     };
     i2s_pin_config_t master_pin_config = {
@@ -184,6 +309,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s][test_env=UT_
     };
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+    i2s_test_io_config(0);
     printf("\r\nheap size: %d\n", esp_get_free_heap_size());
 
     i2s_config_t slave_i2s_config = {
@@ -194,7 +320,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s][test_env=UT_
         .communication_format = I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB,
         .dma_buf_count = 6,
         .dma_buf_len = 100,
-        .use_apll = 0,
+        .use_apll = 1,
         .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1 ,
     };
     i2s_pin_config_t slave_pin_config = {
@@ -206,6 +332,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s][test_env=UT_
     // slave driver installed and receive data
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_1, &slave_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_1, &slave_pin_config));
+    i2s_test_io_config(0);
 
     uint8_t* data_wr = (uint8_t*)malloc(sizeof(uint8_t)*400);
     size_t i2s_bytes_write = 0;
@@ -244,7 +371,7 @@ TEST_CASE("I2S write and read test(master rx and slave tx)", "[i2s][test_env=UT_
     i2s_driver_uninstall(I2S_NUM_0);
     i2s_driver_uninstall(I2S_NUM_1);
 }
-#endif /* CONFIG_IDF_TARGET_ESP32 */
+#endif
 
 TEST_CASE("I2S memory leaking test", "[i2s]")
 {
@@ -268,12 +395,14 @@ TEST_CASE("I2S memory leaking test", "[i2s]")
 
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+    i2s_test_io_config(1);
     i2s_driver_uninstall(I2S_NUM_0);
     int initial_size = esp_get_free_heap_size();
 
     for(int i=0; i<100; i++) {
         TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &master_i2s_config, 0, NULL));
         TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &master_pin_config));
+        i2s_test_io_config(1);
         i2s_driver_uninstall(I2S_NUM_0);
         TEST_ASSERT(initial_size == esp_get_free_heap_size());
     }
@@ -309,6 +438,7 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
 
     TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
     TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
+    i2s_test_io_config(1);
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
     int initial_size = esp_get_free_heap_size();
 
@@ -322,6 +452,7 @@ TEST_CASE("I2S APLL clock variation test", "[i2s]")
 
             TEST_ESP_OK(i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL));
             TEST_ESP_OK(i2s_set_pin(I2S_NUM_0, &pin_config));
+            i2s_test_io_config(1);
             TEST_ASSERT((fabs((i2s_get_clk(I2S_NUM_0) - sample_rate_arr[i]))/(sample_rate_arr[i]))*100 < PERCENT_DIFF);
             TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
             TEST_ASSERT(initial_size == esp_get_free_heap_size());

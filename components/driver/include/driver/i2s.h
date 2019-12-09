@@ -54,7 +54,7 @@ typedef intr_handle_t i2s_isr_handle_t;
  */
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
 
-#if SOC_I2S_SUPPORT_PDM
+#if I2S_SUPPORTS_PDM
 /**
  * @brief Set PDM mode down-sample rate
  *        In PDM RX mode, there would be 2 rounds of downsample process in hardware.

@@ -9,7 +9,9 @@
 #include "driver/i2s.h"
 #include "driver/adc.h"
 #include "audio_example_file.h"
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp_adc_cal.h"
+#endif
 
 static const char* TAG = "ad/da";
 #define V_REF   1100
@@ -63,10 +65,10 @@ void example_i2s_init(void)
         .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN,
         .sample_rate =  EXAMPLE_I2S_SAMPLE_RATE,
         .bits_per_sample = EXAMPLE_I2S_SAMPLE_BITS,
-	    .communication_format = I2S_COMM_FORMAT_I2S_MSB,
+	    .communication_format = I2S_COMM_FORMAT_PCM,
 	    .channel_format = EXAMPLE_I2S_FORMAT,
 	    .intr_alloc_flags = 0,
-	    .dma_buf_count = 2,
+	    .dma_buf_count = 4,
 	    .dma_buf_len = 1024,
 	    .use_apll = 1,
 	 };
@@ -270,11 +272,17 @@ void adc_read_task(void* arg)
 {
     adc1_config_width(ADC_WIDTH_12Bit);
     adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
+#ifdef CONFIG_IDF_TARGET_ESP32
     esp_adc_cal_characteristics_t characteristics;
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, &characteristics);
+#endif
     while(1) {
         uint32_t voltage;
+#ifdef CONFIG_IDF_TARGET_ESP32
         esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
+#else
+        voltage = adc1_get_raw(ADC1_TEST_CHANNEL) * (3300.0 / 4095); // At 11 dB attenuation the maximum voltage is limited by VDD_A(3300 mV), not the full scale voltage.
+#endif
         ESP_LOGI(TAG, "%d mV", voltage);
         vTaskDelay(200 / portTICK_RATE_MS);
     }

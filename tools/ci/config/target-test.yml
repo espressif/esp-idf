@@ -460,6 +460,12 @@ UT_026:
     - UT_T1_I2S
     - psram
 
+UT_027:
+  extends: .unit_test_template
+  tags:
+    - ESP32S2BETA_IDF
+    - UT_T1_I2S
+
 UT_028:
   extends: .unit_test_template
   tags:

@@ -110,7 +110,7 @@ static esp_err_t i2s_reset_fifo(i2s_port_t i2s_num)
     return ESP_OK;
 }
 
-inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv)
+static inline void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_inv)
 {
     //if pin = -1, do not need to configure
     if (gpio != -1) {
@@ -120,7 +120,7 @@ inline static void gpio_matrix_out_check(uint32_t gpio, uint32_t signal_idx, boo
     }
 }
 
-inline static void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool inv)
+static inline void gpio_matrix_in_check(uint32_t gpio, uint32_t signal_idx, bool inv)
 {
     if (gpio != -1) {
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[gpio], PIN_FUNC_GPIO);
@@ -403,14 +403,14 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         //Rate as given to this function is the intended sample rate;
         //According to the TRM, WS clk equals to the sample rate, and bclk is double the speed of WS
         uint32_t b_clk = rate * I2S_AD_BCK_FACTOR;
-        fi2s_clk /= I2S_AD_BCK_FACTOR;
+        fi2s_clk /= 2;
         int factor2 = 60;
         mclk = b_clk * factor2;
         clkmdiv = ((double) I2S_BASE_CLK) / mclk;
         clkmInteger = clkmdiv;
         clkmDecimals = (clkmdiv - clkmInteger) / denom;
         bck = mclk / b_clk;
-#if SOC_I2S_SUPPORT_PDM
+#if I2S_SUPPORTS_PDM
     } else if (p_i2s_obj[i2s_num]->mode & I2S_MODE_PDM) {
         uint32_t b_clk = 0;
         if (p_i2s_obj[i2s_num]->mode & I2S_MODE_TX) {
@@ -697,11 +697,11 @@ esp_err_t i2s_set_dac_mode(i2s_dac_mode_t dac_mode)
     }
 
     if (dac_mode & I2S_DAC_CHANNEL_RIGHT_EN) {
-        //DAC1, right channel, GPIO25
+        //DAC1, right channel
         dac_output_enable(DAC_CHANNEL_1);
     }
     if (dac_mode & I2S_DAC_CHANNEL_LEFT_EN) {
-        //DAC2, left channel, GPIO26
+        //DAC2, left channel
         dac_output_enable(DAC_CHANNEL_2);
     }
     return ESP_OK;
@@ -803,7 +803,7 @@ esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate)
     return i2s_set_clk(i2s_num, rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
 }
 
-#if SOC_I2S_SUPPORT_PDM
+#if I2S_SUPPORTS_PDM
 esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t dsr)
 {
     I2S_CHECK((i2s_num < I2S_NUM_MAX), "i2s_num error", ESP_ERR_INVALID_ARG);
@@ -818,7 +818,8 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S_CHECK((i2s_config), "param null", ESP_ERR_INVALID_ARG);
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_ADC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S ADC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S DAC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
-#if SOC_I2S_SUPPORT_PDM
+    I2S_CHECK(((i2s_config->communication_format & I2S_COMM_FORMAT_I2S) || (i2s_config->communication_format & I2S_COMM_FORMAT_PCM)), "I2S communication format invalid.", ESP_ERR_INVALID_ARG);
+#if I2S_SUPPORTS_PDM
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
 #endif
     periph_module_enable(i2s_periph_signal[i2s_num].module);

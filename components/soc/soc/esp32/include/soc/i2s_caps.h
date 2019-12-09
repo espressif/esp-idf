@@ -26,12 +26,9 @@ extern "C" {
 #define I2S_BASE_CLK                      (2*APB_CLK_FREQ)
 
 // ESP32 have 2 I2S
-#define I2S_NUM_0             (0) /*!< I2S port 0 */
-#define I2S_NUM_1             (1) /*!< I2S port 1 */
-#define I2S_NUM_MAX           (2) /*!< I2S port max */
-#define SOC_I2S_NUM           (I2S_NUM_MAX)
+#define SOC_I2S_NUM           (2)
 
-#define SOC_I2S_SUPPORT_PDM     (1) //ESP32 support PDM
+#define I2S_SUPPORTS_PDM      (1) //ESP32 support PDM
 
 #ifdef __cplusplus
 }
