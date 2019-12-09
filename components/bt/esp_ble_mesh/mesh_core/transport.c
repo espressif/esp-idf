@@ -125,6 +125,19 @@ static void bt_mesh_tx_seg_unlock(void)
     bt_mesh_mutex_unlock(&tx_seg_lock);
 }
 
+u8_t bt_mesh_get_seg_retrans_num(void)
+{
+    return SEG_RETRANSMIT_ATTEMPTS;
+}
+
+s32_t bt_mesh_get_seg_retrans_timeout(u8_t ttl)
+{
+    struct seg_tx tx = {
+        .ttl = ttl,
+    };
+    return SEG_RETRANSMIT_TIMEOUT(&tx);
+}
+
 void bt_mesh_set_hb_sub_dst(u16_t addr)
 {
     hb_sub_dst = addr;

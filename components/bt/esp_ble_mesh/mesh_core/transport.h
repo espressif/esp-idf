@@ -80,6 +80,10 @@ struct bt_mesh_ctl_friend_sub_confirm {
     u8_t xact;
 } __packed;
 
+u8_t bt_mesh_get_seg_retrans_num(void);
+
+s32_t bt_mesh_get_seg_retrans_timeout(u8_t ttl);
+
 void bt_mesh_set_hb_sub_dst(u16_t addr);
 
 struct bt_mesh_app_key *bt_mesh_app_key_find(u16_t app_idx);
