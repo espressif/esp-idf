@@ -1,0 +1,3960 @@
+{
+    "events": [
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 10,
+            "in_irq": true,
+            "params": {},
+            "ts": 0
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 10,
+            "in_irq": true,
+            "params": {},
+            "ts": 0
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 24,
+            "in_irq": true,
+            "params": {
+                "cpu_freq": 160000000,
+                "id_shift": 0,
+                "ram_base": 1061158912,
+                "sys_freq": 40000000
+            },
+            "ts": 1.095e-05
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 24,
+            "in_irq": true,
+            "params": {
+                "cpu_freq": 160000000,
+                "id_shift": 0,
+                "ram_base": 1061158912,
+                "sys_freq": 40000000
+            },
+            "ts": 1.095e-05
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "N=FreeRTOS Application,D=ESP32,C=Xtensa,O=FreeRTOS"
+            },
+            "ts": 2.48e-05
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "N=FreeRTOS Application,D=ESP32,C=Xtensa,O=FreeRTOS"
+            },
+            "ts": 2.48e-05
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#5=SysTick"
+            },
+            "ts": 5.165e-05
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#5=SysTick"
+            },
+            "ts": 5.165e-05
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#6=WIFI_MAC"
+            },
+            "ts": 0.00010415
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#6=WIFI_MAC"
+            },
+            "ts": 0.00010415
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#7=WIFI_NMI"
+            },
+            "ts": 0.0001211
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#7=WIFI_NMI"
+            },
+            "ts": 0.0001211
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#8=WIFI_BB"
+            },
+            "ts": 0.000138125
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#8=WIFI_BB"
+            },
+            "ts": 0.000138125
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#9=BT_MAC"
+            },
+            "ts": 0.000154825
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#9=BT_MAC"
+            },
+            "ts": 0.000154825
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#10=BT_BB"
+            },
+            "ts": 0.00019335
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#10=BT_BB"
+            },
+            "ts": 0.00019335
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#11=BT_BB_NMI"
+            },
+            "ts": 0.000212875
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#11=BT_BB_NMI"
+            },
+            "ts": 0.000212875
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#12=RWBT"
+            },
+            "ts": 0.000231625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#12=RWBT"
+            },
+            "ts": 0.000231625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#13=RWBLE"
+            },
+            "ts": 0.00025025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#13=RWBLE"
+            },
+            "ts": 0.00025025
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#14=RWBT_NMI"
+            },
+            "ts": 0.00026945
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#14=RWBT_NMI"
+            },
+            "ts": 0.00026945
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#15=RWBLE_NMI"
+            },
+            "ts": 0.000288925
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#15=RWBLE_NMI"
+            },
+            "ts": 0.000288925
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#16=SLC0"
+            },
+            "ts": 0.000310575
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#16=SLC0"
+            },
+            "ts": 0.000310575
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#17=SLC1"
+            },
+            "ts": 0.00032915
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#17=SLC1"
+            },
+            "ts": 0.00032915
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#18=UHCI0"
+            },
+            "ts": 0.000347675
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#18=UHCI0"
+            },
+            "ts": 0.000347675
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#19=UHCI1"
+            },
+            "ts": 0.000366225
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#19=UHCI1"
+            },
+            "ts": 0.000366225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#20=TG0_T0_LEVEL"
+            },
+            "ts": 0.00038635
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#20=TG0_T0_LEVEL"
+            },
+            "ts": 0.00038635
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#21=TG0_T1_LEVEL"
+            },
+            "ts": 0.000406575
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#21=TG0_T1_LEVEL"
+            },
+            "ts": 0.000406575
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#22=TG0_WDT_LEVEL"
+            },
+            "ts": 0.0004273
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#22=TG0_WDT_LEVEL"
+            },
+            "ts": 0.0004273
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#23=TG0_LACT_LEVEL"
+            },
+            "ts": 0.000448
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#23=TG0_LACT_LEVEL"
+            },
+            "ts": 0.000448
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#24=TG1_T0_LEVEL"
+            },
+            "ts": 0.00046825
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#24=TG1_T0_LEVEL"
+            },
+            "ts": 0.00046825
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#25=TG1_T1_LEVEL"
+            },
+            "ts": 0.0004885
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#25=TG1_T1_LEVEL"
+            },
+            "ts": 0.0004885
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#26=TG1_WDT_LEVEL"
+            },
+            "ts": 0.000508975
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#26=TG1_WDT_LEVEL"
+            },
+            "ts": 0.000508975
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#27=TG1_LACT_LEVEL"
+            },
+            "ts": 0.00052985
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#27=TG1_LACT_LEVEL"
+            },
+            "ts": 0.00052985
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#28=GPIO"
+            },
+            "ts": 0.000548375
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#28=GPIO"
+            },
+            "ts": 0.000548375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#29=GPIO_NMI"
+            },
+            "ts": 0.000570825
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#29=GPIO_NMI"
+            },
+            "ts": 0.000570825
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#30=FROM_CPU0"
+            },
+            "ts": 0.000590425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#30=FROM_CPU0"
+            },
+            "ts": 0.000590425
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#31=FROM_CPU1"
+            },
+            "ts": 0.00061
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#31=FROM_CPU1"
+            },
+            "ts": 0.00061
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#32=FROM_CPU2"
+            },
+            "ts": 0.000629625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#32=FROM_CPU2"
+            },
+            "ts": 0.000629625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#33=FROM_CPU3"
+            },
+            "ts": 0.000649425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#33=FROM_CPU3"
+            },
+            "ts": 0.000649425
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#34=SPI0"
+            },
+            "ts": 0.000667975
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#34=SPI0"
+            },
+            "ts": 0.000667975
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#35=SPI1"
+            },
+            "ts": 0.0006865
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#35=SPI1"
+            },
+            "ts": 0.0006865
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#36=SPI2"
+            },
+            "ts": 0.000704825
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#36=SPI2"
+            },
+            "ts": 0.000704825
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#37=SPI3"
+            },
+            "ts": 0.0007231
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#37=SPI3"
+            },
+            "ts": 0.0007231
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#38=I2S0"
+            },
+            "ts": 0.00074155
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#38=I2S0"
+            },
+            "ts": 0.00074155
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#39=I2S1"
+            },
+            "ts": 0.00076
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#39=I2S1"
+            },
+            "ts": 0.00076
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#40=UART0"
+            },
+            "ts": 0.000778475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#40=UART0"
+            },
+            "ts": 0.000778475
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#41=UART1"
+            },
+            "ts": 0.00079705
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#41=UART1"
+            },
+            "ts": 0.00079705
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#42=UART2"
+            },
+            "ts": 0.000815625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#42=UART2"
+            },
+            "ts": 0.000815625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#43=SDIO_HOST"
+            },
+            "ts": 0.000835
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#43=SDIO_HOST"
+            },
+            "ts": 0.000835
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#44=ETH_MAC"
+            },
+            "ts": 0.000854075
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#44=ETH_MAC"
+            },
+            "ts": 0.000854075
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#45=PWM0"
+            },
+            "ts": 0.0008756
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#45=PWM0"
+            },
+            "ts": 0.0008756
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#46=PWM1"
+            },
+            "ts": 0.00089385
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#46=PWM1"
+            },
+            "ts": 0.00089385
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#47=PWM2"
+            },
+            "ts": 0.000912375
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#47=PWM2"
+            },
+            "ts": 0.000912375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#48=PWM3"
+            },
+            "ts": 0.00093095
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#48=PWM3"
+            },
+            "ts": 0.00093095
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#49=LEDC"
+            },
+            "ts": 0.000949375
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#49=LEDC"
+            },
+            "ts": 0.000949375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#50=EFUSE"
+            },
+            "ts": 0.000968075
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#50=EFUSE"
+            },
+            "ts": 0.000968075
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#51=CAN"
+            },
+            "ts": 0.000986275
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#51=CAN"
+            },
+            "ts": 0.000986275
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#52=RTC_CORE"
+            },
+            "ts": 0.001005625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#52=RTC_CORE"
+            },
+            "ts": 0.001005625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#53=RMT"
+            },
+            "ts": 0.0010237
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#53=RMT"
+            },
+            "ts": 0.0010237
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#54=PCNT"
+            },
+            "ts": 0.00104205
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#54=PCNT"
+            },
+            "ts": 0.00104205
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#55=I2C_EXT0"
+            },
+            "ts": 0.0010615
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#55=I2C_EXT0"
+            },
+            "ts": 0.0010615
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#56=I2C_EXT1"
+            },
+            "ts": 0.0010811
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#56=I2C_EXT1"
+            },
+            "ts": 0.0010811
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#57=RSA"
+            },
+            "ts": 0.001099425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#57=RSA"
+            },
+            "ts": 0.001099425
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#58=SPI1_DMA"
+            },
+            "ts": 0.001118625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#58=SPI1_DMA"
+            },
+            "ts": 0.001118625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#59=SPI2_DMA"
+            },
+            "ts": 0.001137775
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#59=SPI2_DMA"
+            },
+            "ts": 0.001137775
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#60=SPI3_DMA"
+            },
+            "ts": 0.00115695
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#60=SPI3_DMA"
+            },
+            "ts": 0.00115695
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#61=WDT"
+            },
+            "ts": 0.001175175
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#61=WDT"
+            },
+            "ts": 0.001175175
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#62=TIMER1"
+            },
+            "ts": 0.0011973
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#62=TIMER1"
+            },
+            "ts": 0.0011973
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#63=TIMER2"
+            },
+            "ts": 0.00121625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#63=TIMER2"
+            },
+            "ts": 0.00121625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#64=TG0_T0_EDGE"
+            },
+            "ts": 0.001236175
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#64=TG0_T0_EDGE"
+            },
+            "ts": 0.001236175
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#65=TG0_T1_EDGE"
+            },
+            "ts": 0.001256275
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#65=TG0_T1_EDGE"
+            },
+            "ts": 0.001256275
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#66=TG0_WDT_EDGE"
+            },
+            "ts": 0.001276675
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#66=TG0_WDT_EDGE"
+            },
+            "ts": 0.001276675
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#67=TG0_LACT_EDGE"
+            },
+            "ts": 0.001297375
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#67=TG0_LACT_EDGE"
+            },
+            "ts": 0.001297375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#68=TG1_T0_EDGE"
+            },
+            "ts": 0.001317425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#68=TG1_T0_EDGE"
+            },
+            "ts": 0.001317425
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#69=TG1_T1_EDGE"
+            },
+            "ts": 0.00133765
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#69=TG1_T1_EDGE"
+            },
+            "ts": 0.00133765
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#70=TG1_WDT_EDGE"
+            },
+            "ts": 0.00135795
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#70=TG1_WDT_EDGE"
+            },
+            "ts": 0.00135795
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#71=TG1_LACT_EDGE"
+            },
+            "ts": 0.001378625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#71=TG1_LACT_EDGE"
+            },
+            "ts": 0.001378625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#72=MMU_IA"
+            },
+            "ts": 0.0013975
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#72=MMU_IA"
+            },
+            "ts": 0.0013975
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#73=MPU_IA"
+            },
+            "ts": 0.001416425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#73=MPU_IA"
+            },
+            "ts": 0.001416425
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#74=CACHE_IA"
+            },
+            "ts": 0.00143555
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 14,
+            "in_irq": true,
+            "params": {
+                "desc": "I#74=CACHE_IA"
+            },
+            "ts": 0.00143555
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 13,
+            "in_irq": true,
+            "params": {
+                "time": 10000
+            },
+            "ts": 0.00144195
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 13,
+            "in_irq": true,
+            "params": {
+                "time": 10000
+            },
+            "ts": 0.00144195
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "esp_timer",
+                "prio": 22,
+                "tid": 12253880
+            },
+            "ts": 0.0016474
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "esp_timer",
+                "prio": 22,
+                "tid": 12253880
+            },
+            "ts": 0.0016474
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073408692,
+                "sz": 3436,
+                "tid": 12253880,
+                "unused": 0
+            },
+            "ts": 0.001652
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073408692,
+                "sz": 3436,
+                "tid": 12253880,
+                "unused": 0
+            },
+            "ts": 0.001652
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "ipc0",
+                "prio": 24,
+                "tid": 12254636
+            },
+            "ts": 0.00173855
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "ipc0",
+                "prio": 24,
+                "tid": 12254636
+            },
+            "ts": 0.00173855
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073430180,
+                "sz": 1388,
+                "tid": 12254636,
+                "unused": 0
+            },
+            "ts": 0.00174275
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073430180,
+                "sz": 1388,
+                "tid": 12254636,
+                "unused": 0
+            },
+            "ts": 0.00174275
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "ipc1",
+                "prio": 24,
+                "tid": 12275372
+            },
+            "ts": 0.001828975
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "ipc1",
+                "prio": 24,
+                "tid": 12275372
+            },
+            "ts": 0.001828975
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073432232,
+                "sz": 1384,
+                "tid": 12275372,
+                "unused": 0
+            },
+            "ts": 0.001833225
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073432232,
+                "sz": 1384,
+                "tid": 12275372,
+                "unused": 0
+            },
+            "ts": 0.001833225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "blink_task",
+                "prio": 5,
+                "tid": 12291908
+            },
+            "ts": 0.001871225
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "blink_task",
+                "prio": 5,
+                "tid": 12291908
+            },
+            "ts": 0.001871225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073448452,
+                "sz": 524,
+                "tid": 12291908,
+                "unused": 0
+            },
+            "ts": 0.00187565
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073448452,
+                "sz": 524,
+                "tid": 12291908,
+                "unused": 0
+            },
+            "ts": 0.00187565
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "main",
+                "prio": 1,
+                "tid": 12282660
+            },
+            "ts": 0.0020708
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "main",
+                "prio": 1,
+                "tid": 12282660
+            },
+            "ts": 0.0020708
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073437472,
+                "sz": 3296,
+                "tid": 12282660,
+                "unused": 0
+            },
+            "ts": 0.0020752
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073437472,
+                "sz": 3296,
+                "tid": 12282660,
+                "unused": 0
+            },
+            "ts": 0.0020752
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "IDLE0",
+                "prio": 0,
+                "tid": 12284560
+            },
+            "ts": 0.002153375
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "IDLE0",
+                "prio": 0,
+                "tid": 12284560
+            },
+            "ts": 0.002153375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073441932,
+                "sz": 1236,
+                "tid": 12284560,
+                "unused": 0
+            },
+            "ts": 0.00215785
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073441932,
+                "sz": 1236,
+                "tid": 12284560,
+                "unused": 0
+            },
+            "ts": 0.00215785
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "IDLE1",
+                "prio": 0,
+                "tid": 12286460
+            },
+            "ts": 0.00222895
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "IDLE1",
+                "prio": 0,
+                "tid": 12286460
+            },
+            "ts": 0.00222895
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073443832,
+                "sz": 1112,
+                "tid": 12286460,
+                "unused": 0
+            },
+            "ts": 0.00223325
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073443832,
+                "sz": 1112,
+                "tid": 12286460,
+                "unused": 0
+            },
+            "ts": 0.00223325
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "Tmr Svc",
+                "prio": 1,
+                "tid": 12289116
+            },
+            "ts": 0.002319675
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "Tmr Svc",
+                "prio": 1,
+                "tid": 12289116
+            },
+            "ts": 0.002319675
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073445976,
+                "sz": 1384,
+                "tid": 12289116,
+                "unused": 0
+            },
+            "ts": 0.0023241
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073445976,
+                "sz": 1384,
+                "tid": 12289116,
+                "unused": 0
+            },
+            "ts": 0.0023241
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "blink_task2",
+                "prio": 5,
+                "tid": 12294320
+            },
+            "ts": 0.0024312
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 9,
+            "in_irq": true,
+            "params": {
+                "name": "blink_task2",
+                "prio": 5,
+                "tid": 12294320
+            },
+            "ts": 0.0024312
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073451180,
+                "sz": 1748,
+                "tid": 12294320,
+                "unused": 0
+            },
+            "ts": 0.00243875
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 21,
+            "in_irq": true,
+            "params": {
+                "base": 1073451180,
+                "sz": 1748,
+                "tid": 12294320,
+                "unused": 0
+            },
+            "ts": 0.00243875
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IRQ_oncore1",
+            "id": 27,
+            "in_irq": true,
+            "params": {
+                "mod_cnt": 0
+            },
+            "ts": 0.00244615
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IRQ_oncore1",
+            "id": 27,
+            "in_irq": true,
+            "params": {
+                "mod_cnt": 0
+            },
+            "ts": 0.00244615
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.002484225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 4,
+                "tid": 12291908
+            },
+            "ts": 0.002496125
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.002508025
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "FROM_CPU0",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 30
+            },
+            "ts": 0.00251635
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.002524325
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00253235
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.0025412
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "main",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12282660
+            },
+            "ts": 0.002548475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.002556375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "main",
+            "id": 33,
+            "in_irq": false,
+            "params": {
+                "xTaskToDelete": 12282660
+            },
+            "ts": 0.00256445
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0025777
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "FROM_CPU0",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 30
+            },
+            "ts": 0.002585225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "main",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00259295
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "main",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00260595
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "SysTick",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 5
+            },
+            "ts": 0.00881955
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "SysTick",
+            "id": 6,
+            "in_irq": true,
+            "params": {
+                "tid": 12291908
+            },
+            "ts": 0.008828075
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12291908
+            },
+            "ts": 0.008828075
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "main",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.008837475
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12291908
+            },
+            "ts": 0.00885045
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 22,
+            "in_irq": false,
+            "params": {
+                "desc": "ESP32 SystemView Heap Tracing Module",
+                "evt_off": 512,
+                "mod_id": 0
+            },
+            "ts": 0.00887265
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 22,
+            "in_irq": false,
+            "params": {
+                "desc": "ESP32 SystemView Heap Tracing Module",
+                "evt_off": 512,
+                "mod_id": 0
+            },
+            "ts": 0.00887265
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.008886175
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.008886175
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.008897425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00890615
+        },
+        {
+            "addr": "0x3ffb8e08",
+            "callers": [
+                "0x400d1e63",
+                "0x40087834"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 512,
+            "in_irq": false,
+            "size": 64,
+            "ts": 0.0089199
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.00892825
+        },
+        {
+            "addr": "0x3ffb8e4c",
+            "callers": [
+                "0x40087f1e",
+                "0x40088183"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 512,
+            "in_irq": false,
+            "size": 80,
+            "ts": 0.00895795
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 47,
+            "in_irq": false,
+            "params": {
+                "ucQueueType": 4,
+                "uxItemSize": 0,
+                "uxQueueLength": 1
+            },
+            "ts": 0.00896725
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0089773
+        },
+        {
+            "addr": "0x3ffb8ea0",
+            "callers": [
+                "0x400d1da6",
+                "0x40087834"
+            ],
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 512,
+            "in_irq": false,
+            "size": 65,
+            "ts": 0.008984625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.008995725
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "SysTick",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 5
+            },
+            "ts": 0.009010075
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009018025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.0090319
+        },
+        {
+            "addr": "0x3ffb5014",
+            "callers": [
+                "0x40087f1e",
+                "0x40088183"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 512,
+            "in_irq": false,
+            "size": 80,
+            "ts": 0.0090896
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.009098175
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 47,
+            "in_irq": false,
+            "params": {
+                "ucQueueType": 4,
+                "uxItemSize": 0,
+                "uxQueueLength": 1
+            },
+            "ts": 0.0091063
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.009113825
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0091216
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009129
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0091379
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009145425
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0091696
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.009185225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009195125
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009195125
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.009207
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009215575
+        },
+        {
+            "addr": "0x3ffb5068",
+            "callers": [
+                "0x400d1e73",
+                "0x40087834"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 512,
+            "in_irq": false,
+            "size": 96,
+            "ts": 0.009223275
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.00923105
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.009241875
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.009257225
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.0092692
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.009278275
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009286275
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00930345
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.00931095
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.009329625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009339525
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009339525
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.009351425
+        },
+        {
+            "addr": "0x3ffb8e08",
+            "callers": [
+                "0x400d1e80",
+                "0x40087834"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 513,
+            "in_irq": false,
+            "size": 0,
+            "ts": 0.00935945
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0093678
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.00937895
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.00938745
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.009402575
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.0094149
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.009423125
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00943025
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.009445425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009453075
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.009469225
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009479025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009479025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.00949095
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009499475
+        },
+        {
+            "addr": "0x3ffb8e08",
+            "callers": [
+                "0x400d1e8f",
+                "0x40087834"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 512,
+            "in_irq": false,
+            "size": 10,
+            "ts": 0.0095076
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.0095153
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0095261
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.00954155
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.00955385
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0095611
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0095684
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009585075
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.009593375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.00960915
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009621875
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009621875
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.009633775
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0096423
+        },
+        {
+            "addr": "0x3ffb8e18",
+            "callers": [
+                "0x400d1e9c",
+                "0x40087834"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 512,
+            "in_irq": false,
+            "size": 23,
+            "ts": 0.009649475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.009657875
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.009666025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.0096815
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.009693375
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0097028
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.00971055
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.009726725
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.010504825
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.01052065
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.01053055
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.01053055
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.0105424
+        },
+        {
+            "addr": "0x3ffb8e18",
+            "callers": [
+                "0x400d1eab",
+                "0x40087834"
+            ],
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 513,
+            "in_irq": false,
+            "size": 0,
+            "ts": 0.010550025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.01055745
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0105697
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.0105777
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.010592825
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.01060595
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.010613575
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0106209
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.01063705
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.01224095
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.012256775
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.01226665
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.01226665
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.01228135
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12291908
+            },
+            "ts": 0.012289475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.01229745
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "FROM_CPU0",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 30
+            },
+            "ts": 0.01230635
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.012312875
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0123207
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.01232895
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0123381
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.012640475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.01493185
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.014963325
+        },
+        {
+            "addr": "0x3ffb50cc",
+            "callers": [
+                "0x400d1db7",
+                "0x40087834"
+            ],
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 512,
+            "in_irq": false,
+            "size": 97,
+            "ts": 0.01498415
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0149974
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.01503105
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0176228
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.017638675
+        },
+        {
+            "addr": "0x3ffb8ea0",
+            "callers": [
+                "0x400d1dc4",
+                "0x40087834"
+            ],
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 513,
+            "in_irq": false,
+            "size": 0,
+            "ts": 0.017656375
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.017674025
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0177017
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "SysTick",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 5
+            },
+            "ts": 0.01881955
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.018829625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.01884475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "SysTick",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 5
+            },
+            "ts": 0.019010075
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.01901795
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12294320
+            },
+            "ts": 0.0190332
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.019358925
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0193746
+        },
+        {
+            "addr": "0x3ffb8e18",
+            "callers": [
+                "0x400d1dd3",
+                "0x40087834"
+            ],
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 512,
+            "in_irq": false,
+            "size": 11,
+            "ts": 0.019395425
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0194126
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.01944625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0220499
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.022065775
+        },
+        {
+            "addr": "0x3ffb8e28",
+            "callers": [
+                "0x400d1de0",
+                "0x40087834"
+            ],
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 512,
+            "in_irq": false,
+            "size": 24,
+            "ts": 0.022086625
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.022103925
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.02213755
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.02474085
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.024756725
+        },
+        {
+            "addr": "0x3ffb8e28",
+            "callers": [
+                "0x400d1def",
+                "0x40087834"
+            ],
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 513,
+            "in_irq": false,
+            "size": 0,
+            "ts": 0.024770475
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.02479175
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 49,
+            "in_irq": false,
+            "params": {
+                "pvBuffer": 3233808384,
+                "xJustPeek": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 4294967295
+            },
+            "ts": 0.0248195
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12275732,
+                "xTicksToWait": 0
+            },
+            "ts": 0.02647695
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 53,
+            "in_irq": false,
+            "params": {
+                "pvItemToQueue": 0,
+                "xCopyPosition": 0,
+                "xQueue": 12291660,
+                "xTicksToWait": 0
+            },
+            "ts": 0.0264957
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12291908
+            },
+            "ts": 0.026506975
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "blink_task2",
+            "id": 6,
+            "in_irq": false,
+            "params": {
+                "tid": 12291908
+            },
+            "ts": 0.026506975
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 27,
+                "tid": 12294320
+            },
+            "ts": 0.026518525
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "FROM_CPU0",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 30
+            },
+            "ts": 0.026526625
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.026535575
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "FROM_CPU1",
+            "id": 2,
+            "in_irq": true,
+            "params": {
+                "irq_num": 31
+            },
+            "ts": 0.026544075
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 4,
+            "in_irq": false,
+            "params": {
+                "tid": 12291908
+            },
+            "ts": 0.02655165
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 18,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.0265595
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 17,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.148816725
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "blink_task",
+            "id": 34,
+            "in_irq": false,
+            "params": {
+                "xTicksToDelay": 1
+            },
+            "ts": 0.14882575
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 7,
+            "in_irq": false,
+            "params": {
+                "cause": 4,
+                "tid": 12291908
+            },
+            "ts": 0.1488332
+        },
+        {
+            "core_id": 0,
+            "ctx_name": "IDLE0",
+            "id": 11,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.14883925
+        },
+        {
+            "core_id": 1,
+            "ctx_name": "IDLE1",
+            "id": 11,
+            "in_irq": false,
+            "params": {},
+            "ts": 0.14883925
+        }
+    ],
+    "streams": {
+        "heap": {
+            "alloc": 512,
+            "free": 513
+        },
+        "log": {
+            "print": 26
+        },
+        "os": {
+            "eTaskConfirmSleepModeStatus": 157,
+            "eTaskGetState": 130,
+            "esp_sysview_heap_trace_alloc": 512,
+            "esp_sysview_heap_trace_free": 513,
+            "pcTaskGetTaskName": 137,
+            "pcTimerGetTimerName": 165,
+            "pvTaskGetThreadLocalStoragePointer": 142,
+            "pvTimerGetTimerID": 159,
+            "ulTaskNotifyTake": 37,
+            "uxEventGroupGetNumber": 200,
+            "uxListRemove": 193,
+            "uxQueueMessagesWaiting": 168,
+            "uxQueueMessagesWaitingFromISR": 170,
+            "uxQueueSpacesAvailable": 169,
+            "uxTaskGetNumberOfTasks": 136,
+            "uxTaskGetStackHighWaterMark": 138,
+            "uxTaskGetSystemState": 145,
+            "uxTaskGetTaskNumber": 155,
+            "uxTaskPriorityGet": 129,
+            "uxTaskPriorityGetFromISR": 56,
+            "vEventGroupDelete": 199,
+            "vListInitialise": 189,
+            "vListInitialiseItem": 190,
+            "vListInsert": 191,
+            "vListInsertEnd": 192,
+            "vQueueAddToRegistry": 52,
+            "vQueueDelete": 48,
+            "vQueueUnregisterQueue": 182,
+            "vTaskAllocateMPURegions": 128,
+            "vTaskDelay": 34,
+            "vTaskDelayUntil": 35,
+            "vTaskDelete": 33,
+            "vTaskEndScheduler": 132,
+            "vTaskGetRunTimeStats": 147,
+            "vTaskList": 146,
+            "vTaskMissedYield": 152,
+            "vTaskNotifyGiveFromISR": 38,
+            "vTaskPriorityInherit": 39,
+            "vTaskPrioritySet": 55,
+            "vTaskResume": 40,
+            "vTaskSetApplicationTaskTag": 139,
+            "vTaskSetTaskNumber": 156,
+            "vTaskSetThreadLocalStoragePointer": 141,
+            "vTaskSetTimeOutState": 150,
+            "vTaskStartScheduler": 131,
+            "vTaskStepTick": 41,
+            "vTaskSuspend": 36,
+            "vTaskSuspendAll": 133,
+            "vTimerSetTimerID": 160,
+            "xEventGroupClearBits": 196,
+            "xEventGroupClearBitsFromISR": 58,
+            "xEventGroupCreate": 194,
+            "xEventGroupGetBitsFromISR": 60,
+            "xEventGroupSetBits": 197,
+            "xEventGroupSetBitsFromISR": 59,
+            "xEventGroupSync": 198,
+            "xEventGroupWaitBits": 195,
+            "xQueueAddToSet": 184,
+            "xQueueAltGenericReceive": 172,
+            "xQueueAltGenericSend": 171,
+            "xQueueCRReceive": 176,
+            "xQueueCRReceiveFromISR": 174,
+            "xQueueCRSend": 175,
+            "xQueueCRSendFromISR": 173,
+            "xQueueCreateCountingSemaphore": 178,
+            "xQueueCreateMutex": 177,
+            "xQueueCreateSet": 183,
+            "xQueueGenericCreate": 47,
+            "xQueueGenericReceive": 49,
+            "xQueueGenericReset": 188,
+            "xQueueGenericSend": 53,
+            "xQueueGenericSendFromISR": 54,
+            "xQueueGetMutexHolder": 179,
+            "xQueueGiveFromISR": 61,
+            "xQueueGiveMutexRecursive": 181,
+            "xQueueIsQueueEmptyFromISR": 62,
+            "xQueueIsQueueFullFromISR": 63,
+            "xQueuePeekFromISR": 50,
+            "xQueueReceiveFromISR": 51,
+            "xQueueRemoveFromSet": 185,
+            "xQueueSelectFromSet": 186,
+            "xQueueSelectFromSetFromISR": 187,
+            "xQueueTakeMutexRecursive": 180,
+            "xTaskCallApplicationTaskHook": 143,
+            "xTaskCheckForTimeOut": 151,
+            "xTaskGenericCreate": 154,
+            "xTaskGenericNotify": 44,
+            "xTaskGenericNotifyFromISR": 45,
+            "xTaskGetApplicationTaskTag": 140,
+            "xTaskGetCurrentTaskHandle": 149,
+            "xTaskGetIdleTaskHandle": 144,
+            "xTaskGetSchedulerState": 153,
+            "xTaskGetTickCount": 135,
+            "xTaskGetTickCountFromISR": 57,
+            "xTaskNotifyStateClear": 148,
+            "xTaskNotifyWait": 46,
+            "xTaskPriorityDisinherit": 42,
+            "xTaskResumeAll": 134,
+            "xTaskResumeFromISR": 43,
+            "xTimerCreate": 158,
+            "xTimerCreateTimerTask": 166,
+            "xTimerGenericCommand": 167,
+            "xTimerGetTimerDaemonTaskHandle": 162,
+            "xTimerIsTimerActive": 161,
+            "xTimerPendFunctionCall": 164,
+            "xTimerPendFunctionCallFromISR": 163
+        },
+        "system": {
+            "SYS_IDLE": 17,
+            "SYS_INIT": 24,
+            "SYS_ISR_ENTER": 2,
+            "SYS_ISR_EXIT": 3,
+            "SYS_ISR_TO_SCHEDULER": 18,
+            "SYS_MODULEDESC": 24,
+            "SYS_NAME_RESOURCE": 25,
+            "SYS_NOP": 0,
+            "SYS_NUMMODULES": 27,
+            "SYS_OVERFLOW": 1,
+            "SYS_PRINT_FORMATTED": 26,
+            "SYS_STACK_INFO": 21,
+            "SYS_SYSDESC": 14,
+            "SYS_SYSTIME_CYCLES": 12,
+            "SYS_SYSTIME_US": 13,
+            "SYS_TASK_CREATE": 8,
+            "SYS_TASK_INFO": 9,
+            "SYS_TASK_START_EXEC": 4,
+            "SYS_TASK_START_READY": 6,
+            "SYS_TASK_STOP_EXEC": 5,
+            "SYS_TASK_STOP_READY": 7,
+            "SYS_TIMER_ENTER": 19,
+            "SYS_TIMER_EXIT": 20,
+            "SYS_TRACE_START": 10,
+            "SYS_TRACE_STOP": 11,
+            "SYS_USER_START": 15,
+            "SYS_USER_STOP": 16
+        }
+    },
+    "version": "1.0"
+}

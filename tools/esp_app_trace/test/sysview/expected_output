@@ -1,8 +1,3 @@
-Parse trace from 'cpu0.svdat'...
-Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
-Parse trace from 'cpu1.svdat'...
-Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
-Process events from '['cpu0.svdat', 'cpu1.svdat']'...
 EVENT[0]: 0.000000000 - core[0].svTraceStart(10), plen 0: []
 EVENT[1]: 0.000000000 - core[1].svTraceStart(10), plen 0: []
 EVENT[2]: 0.000010950 - core[0].svInit(24), plen 14: [sys_freq: 40000000, cpu_freq: 160000000, ram_base: 1061158912, id_shift: 0]
@@ -417,7 +412,6 @@ EVENT[354]: 0.148825750 - core[0].vTaskDelay(34), plen 1: [xTicksToDelay: 1]
 EVENT[355]: 0.148833200 - core[0].svTaskStopReady(7), plen 0: [tid: 12291908, cause: 4]
 EVENT[356]: 0.148839250 - core[0].svTraceStop(11), plen 0: []
 EVENT[357]: 0.148839250 - core[1].svTraceStop(11), plen 0: []
-Processing completed.
 Processed 358 events
 =============== LOG TRACE REPORT ===============
 Processed 0 log messages.
