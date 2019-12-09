@@ -280,7 +280,7 @@ To gather and analyse heap trace do the following on the host:
 
 Using this file GDB will connect to the target, reset it, and start tracing when program hits breakpoint at :cpp:func:`heap_trace_start`. Trace data will be saved to ``/tmp/heap_log.svdat``. Tracing will be stopped when program hits breakpoint at :cpp:func:`heap_trace_stop`.
 
-4. Run GDB using the following command ``xtensa-esp32-elf-gdb -x gdbinit </path/to/program/elf>``
+4. Run GDB using the following command ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -x gdbinit </path/to/program/elf>``
 
 5. Quit GDB when program stops at :cpp:func:`heap_trace_stop`. Trace data are saved in ``/tmp/heap.svdat``
 

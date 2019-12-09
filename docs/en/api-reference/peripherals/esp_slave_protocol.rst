@@ -6,7 +6,7 @@ Communication with ESP SDIO Slave
 ESP SDIO slave initialization
 ------------------------------
 
-The host should initialize the ESP32 SDIO slave according to the standard
+The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard
 SDIO initialization process (Sector 3.1.2 of `SDIO Simplified
 Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification
 and below, the SDIO slave is also called an (SD)IO card. All the

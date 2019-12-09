@@ -9,15 +9,15 @@ Support for external RAM
 Introduction
 ============
 
-ESP32 has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so ESP32 has the ability to also use up to 4 MB of external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
+{IDF_TARGET_NAME} has a few hundred kilobytes of internal RAM, residing on the same die as the rest of the chip components. It can be insufficient for some purposes, so {IDF_TARGET_NAME} has the ability to also use up to 4 MB of external SPI RAM memory. The external memory is incorporated in the memory map and, with certain restrictions, is usable in the same way as internal data RAM.
 
 
 Hardware
 ========
 
-ESP32 supports SPI PSRAM connected in parallel with the SPI flash chip. While ESP32 is capable of supporting several types of RAM chips, the ESP32 SDK only supports the ESP-PSRAM32 chip at the moment.
+{IDF_TARGET_NAME} supports SPI PSRAM connected in parallel with the SPI flash chip. While {IDF_TARGET_NAME} is capable of supporting several types of RAM chips, ESP-IDF only supports the ESP-PSRAM32 chip at the moment.
 
-The ESP-PSRAM32 chip is a 1.8 V device which can only be used in parallel with a 1.8 V flash component. Make sure to either set the MTDI pin to a high signal level on bootup, or program ESP32 eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
+The ESP-PSRAM32 chip is a 1.8 V device which can only be used in parallel with a 1.8 V flash component. Make sure to either set the MTDI pin to a high signal level on bootup, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
 
 To connect the ESP-PSRAM32 chip to ESP32D0W*, connect the following signals:
 
@@ -50,10 +50,10 @@ ESP-IDF fully supports the use of external memory in applications. Once the exte
 .. _external_ram_config_memory_map:
 
 
-Integrate RAM into the ESP32 memory map
----------------------------------------
+Integrate RAM into the {IDF_TARGET_NAME} memory map
+---------------------------------------------------
 
-Select this option by choosing "Integrate RAM into ESP32 memory map" from :ref:`CONFIG_SPIRAM_USE`.
+Select this option by choosing "Integrate RAM into memory map" from :ref:`CONFIG_SPIRAM_USE`.
 
 This is the most basic option for external SPI RAM integration. Most likely, you will need another, more advanced option.
 

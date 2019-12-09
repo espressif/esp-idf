@@ -12,8 +12,8 @@ mDNS is installed by default on most operating systems or is available as separa
 mDNS Properties
 ^^^^^^^^^^^^^^^
 
-    * ``hostname``: the hostname that the device will respond to. If not set, the ``hostname`` will be read from the interface. Example: ``my-esp32`` will resolve to ``my-esp32.local``
-    * ``default_instance``: friendly name for your device, like ``Jhon's ESP32 Thing``. If not set, ``hostname`` will be used.
+    * ``hostname``: the hostname that the device will respond to. If not set, the ``hostname`` will be read from the interface. Example: ``my-{IDF_TARGET_PATH_NAME}`` will resolve to ``my-{IDF_TARGET_PATH_NAME}.local``
+    * ``default_instance``: friendly name for your device, like ``Jhon's {IDF_TARGET_NAME} Thing``. If not set, ``hostname`` will be used.
 
 Example method to start mDNS for the STA interface and set ``hostname`` and ``default_instance``:
 
@@ -29,11 +29,11 @@ Example method to start mDNS for the STA interface and set ``hostname`` and ``de
             printf("MDNS Init failed: %d\n", err);
             return;
         }
-    
+
         //set hostname
-        mdns_hostname_set("my-esp32");
+        mdns_hostname_set("my-{IDF_TARGET_PATH_NAME}");
         //set default instance
-        mdns_instance_name_set("Jhon's ESP32 Thing");
+        mdns_instance_name_set("Jhon's {IDF_TARGET_NAME} Thing");
     }
 
 mDNS Services
@@ -41,9 +41,9 @@ mDNS Services
 
 mDNS can advertise information about network services that your device offers. Each service is defined by a few properties.
 
-    * ``instance_name``: friendly name for your service, like ``Jhon's ESP32 Web Server``. If not defined, ``default_instance`` will be used.
+    * ``instance_name``: friendly name for your service, like ``Jhon's E{IDF_TARGET_NAME} Web Server``. If not defined, ``default_instance`` will be used.
     * ``service_type``: (required) service type, prepended with underscore. Some common types can be found `here <http://www.dns-sd.org/serviceTypes.html>`_.
-    * ``proto``: (required) protocol that the service runs on, prepended with underscore. Example: ``_tcp`` or ``_udp`` 
+    * ``proto``: (required) protocol that the service runs on, prepended with underscore. Example: ``_tcp`` or ``_udp``
     * ``port``: (required) network port that the service runs on
     * ``txt``: ``{var, val}`` array of strings, used to define properties for your service
 
@@ -55,19 +55,19 @@ Example method to add a few services and different properties::
         mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
         mdns_service_add(NULL, "_arduino", "_tcp", 3232, NULL, 0);
         mdns_service_add(NULL, "_myservice", "_udp", 1234, NULL, 0);
-        
+
         //NOTE: services must be added before their properties can be set
         //use custom instance for the web server
-        mdns_service_instance_name_set("_http", "_tcp", "Jhon's ESP32 Web Server");
+        mdns_service_instance_name_set("_http", "_tcp", "Jhon's {IDF_TARGET_NAME} Web Server");
 
         mdns_txt_item_t serviceTxtData[3] = {
-            {"board","esp32"},
+            {"board","{{IDF_TARGET_PATH_NAME}}"},
             {"u","user"},
             {"p","password"}
         };
         //set txt data for service (will free and replace current data)
         mdns_service_txt_set("_http", "_tcp", serviceTxtData, 3);
-        
+
         //change service port
         mdns_service_port_set("_myservice", "_udp", 4321);
     }
@@ -161,9 +161,9 @@ Example method to resolve local services::
 Example of using the methods above::
 
     void my_app_some_method(){
-        //search for esp32-mdns.local
-        resolve_mdns_host("esp32-mdns");
-        
+        //search for {IDF_TARGET_PATH_NAME}-mdns.local
+        resolve_mdns_host("{IDF_TARGET_PATH_NAME}-mdns");
+
         //search for HTTP servers
         find_mdns_service("_http", "_tcp");
         //or file servers

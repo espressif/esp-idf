@@ -4,7 +4,13 @@ Digital To Analog Converter
 Overview
 --------
 
-ESP32 has two 8-bit DAC (digital to analog converter) channels, connected to GPIO25 (Channel 1) and GPIO26 (Channel 2).
+.. only:: esp32
+
+  {IDF_TARGET_NAME} has two 8-bit DAC (digital to analog converter) channels, connected to GPIO25 (Channel 1) and GPIO26 (Channel 2).
+
+.. only:: esp32s2beta
+
+  {IDF_TARGET_NAME} has two 8-bit DAC (digital to analog converter) channels, connected to GPIO17 (Channel 1) and GPIO18 (Channel 2).
 
 The DAC driver allows these channels to be set to arbitrary voltages.
 

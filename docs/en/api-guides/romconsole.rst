@@ -1,9 +1,9 @@
-*****************
-ESP32 ROM console
-*****************
+*****************************
+{IDF_TARGET_NAME} ROM console
+*****************************
 
-When an ESP32 is unable to boot from flash ROM (and the fuse disabling it hasn't been blown), it boots into a rom console. The console
-is based on TinyBasic, and statements entered should be in the form of BASIC statements. As is common in the BASIC language, without a 
+When an {IDF_TARGET_NAME} is unable to boot from flash ROM (and the fuse disabling it hasn't been blown), it boots into a rom console. The console
+is based on TinyBasic, and statements entered should be in the form of BASIC statements. As is common in the BASIC language, without a
 preceeding line number, commands entered are executed immediately; lines with a prefixed line number are stored as part of a program.
 
 Full list of supported statements and functions
@@ -12,7 +12,7 @@ Full list of supported statements and functions
 System
 ------
 
-- BYE		- *exits Basic, reboots ESP32, retries booting from flash*
+- BYE		- *exits Basic, reboots and retries booting from flash*
 - END 		- *stops execution from the program, also "STOP"*
 - MEM		- *displays memory usage statistics*
 - NEW		- *clears the current program*

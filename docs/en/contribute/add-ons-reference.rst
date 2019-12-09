@@ -119,7 +119,6 @@ Other Extensions
 :idf_file:`docs/idf_extensions/include_build_file.py`
     The ``include-build-file`` directive is like the built-in ``include-file`` directive, but file path is evaluated relative to ``build_dir``.
 
-
 :idf_file:`docs/idf_extensions/kconfig_reference.py`
     Subscribes to ``idf-info`` event and uses confgen to generate ``kconfig.inc`` from the components included in the default project build. This file is then included into :doc:`/api-reference/kconfig`.
 
@@ -146,6 +145,12 @@ Other Extensions
 
 :idf_file:`docs/idf_extensions/util.py`
     A collection of utility functions useful primarily when building documentation locally (see :ref:`setup-for-building-documentation`) to reduce the time to generate documentation on a second and subsequent builds.
+
+:idf_file:`docs/idf_extensions/format_idf_target.py`
+    An extension for replacing generic target related names with the idf_target passed to the Sphinx command line.
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will, if the backspaces are removed, render as This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+
+    This cannot be used inside tables.
 
 Related Documents
 -----------------

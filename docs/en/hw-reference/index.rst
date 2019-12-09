@@ -1,16 +1,30 @@
-************************
-ESP32 Hardware Reference
-************************
+************************************
+{IDF_TARGET_NAME} Hardware Reference
+************************************
 :link_to_translation:`zh_CN:[中文]`
 
-.. toctree::
-   :maxdepth: 3
+.. only:: esp32
 
-    Technical Reference Manual (PDF) <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
-    Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
-    Hardware Design Guidelines (PDF) <https://espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf>
-    Silicon Errata (PDF) <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
-    Modules and Boards <modules-and-boards>
-    Previous Versions of Modules and Boards <modules-and-boards-previous>
-    Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>
-    Regulatory Certificates <https://www.espressif.com/en/certificates>
+    .. toctree::
+    :maxdepth: 3
+
+        Technical Reference Manual (PDF) <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
+        Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>
+        Hardware Design Guidelines (PDF) <https://espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_en.pdf>
+        Silicon Errata (PDF) <https://espressif.com/sites/default/files/documentation/eco_and_workarounds_for_bugs_in_esp32_en.pdf>
+        Modules and Boards <modules-and-boards>
+        Previous Versions of Modules and Boards <modules-and-boards-previous>
+        Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>
+        Regulatory Certificates <https://www.espressif.com/en/certificates>
+
+.. only:: esp32s2beta
+
+    .. toctree::
+    :maxdepth: 3
+
+        Technical Reference Manual (PDF) <https://espressif.com/sites/default/files/documentation/esp32s2_technical_reference_manual_en.pdf>
+        Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32s2_datasheet_en.pdf>
+        Modules and Boards <modules-and-boards>
+        Previous Versions of Modules and Boards <modules-and-boards-previous>
+        Espressif Products Ordering Information (PDF) <http://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>
+        Regulatory Certificates <https://www.espressif.com/en/certificates>

@@ -31,13 +31,8 @@ Dynamic frequency scaling (DFS) and automatic light sleep can be enabled in an a
 - ``min_freq_mhz``: Minimum CPU frequency in MHz, i.e., the frequency used when only the ``ESP_PM_APB_FREQ_MAX`` lock is acquired. This field can be set to the XTAL frequency value, or the XTAL frequency divided by an integer. Note that 10 MHz is the lowest frequency at which the default REF_TICK clock of 1 MHz can be generated.
 - ``light_sleep_enable``: Whether the system should automatically enter light sleep when no locks are acquired (``true``/``false``).
 
-.. only:: esp32
 
-    Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
-
-.. only:: esp32s2beta
-
-    Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
+  Alternatively, if you enable the option :ref:`CONFIG_PM_DFS_INIT_AUTO` in menuconfig, the maximum CPU frequency will be determined by the :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ` setting, and the minimum CPU frequency will be locked to the XTAL frequency.
 
 .. note::
 
@@ -55,14 +50,14 @@ Applications have the ability to acquire/release locks in order to control the p
 
 Power management locks have acquire/release counters. If the lock has been acquired a number of times, it needs to be released the same number of times to remove associated restrictions.
 
-ESP32 supports three types of locks described in the table below.
+{IDF_TARGET_NAME} supports three types of locks described in the table below.
 
 ============================  ======================================================
 Lock                          Description
 ============================  ======================================================
-``ESP_PM_CPU_FREQ_MAX``       Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For ESP32, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
+``ESP_PM_CPU_FREQ_MAX``       Requests CPU frequency to be at the maximum value set with :cpp:func:`esp_pm_configure`. For {IDF_TARGET_NAME}, this value can be set to 80 MHz, 160 MHz, or 240 MHz.
 
-``ESP_PM_APB_FREQ_MAX``       Requests the APB frequency to be at the maximum supported value. For ESP32, this is 80 MHz.
+``ESP_PM_APB_FREQ_MAX``       Requests the APB frequency to be at the maximum supported value. For {IDF_TARGET_NAME}, this is 80 MHz.
 
 ``ESP_PM_NO_LIGHT_SLEEP``     Disables automatic switching to light sleep.
 ============================  ======================================================

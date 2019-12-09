@@ -18,7 +18,7 @@ This process is explained in detail in the following sections.
 First stage bootloader
 ^^^^^^^^^^^^^^^^^^^^^^
 
-After SoC reset, PRO CPU will start running immediately, executing reset vector code, while APP CPU will be held in reset. During startup process, PRO CPU does all the initialization. APP CPU reset is de-asserted in the ``call_start_cpu0`` function of application startup code. Reset vector code is located at address 0x40000400 in the mask ROM of the ESP32 chip and can not be modified.
+After SoC reset, PRO CPU will start running immediately, executing reset vector code, while APP CPU will be held in reset. During startup process, PRO CPU does all the initialization. APP CPU reset is de-asserted in the ``call_start_cpu0`` function of application startup code. Reset vector code is located at address 0x40000400 in the mask ROM of the {IDF_TARGET_NAME} chip and can not be modified.
 
 Startup code called from the reset vector determines the boot mode by checking ``GPIO_STRAP_REG`` register for bootstrap pin states. Depending on the reset reason, the following takes place:
 
@@ -28,18 +28,18 @@ Startup code called from the reset vector determines the boot mode by checking `
 
 3. For software CPU reset and watchdog CPU reset: configure SPI flash based on EFUSE values, and attempt to load the code from flash. This step is described in more detail in the next paragraphs. If loading code from flash fails, unpack BASIC interpreter into the RAM and start it. Note that RTC watchdog is still enabled when this happens, so unless any input is received by the interpreter, watchdog will reset the SOC in a few hundred milliseconds, repeating the whole process. If the interpreter receives any input from the UART, it disables the watchdog.
 
-Application binary image is loaded from flash starting at address 0x1000. First 4kB sector of flash is used to store secure boot IV and signature of the application image. Please check secure boot documentation for details about this. 
+Application binary image is loaded from flash starting at address 0x1000. First 4kB sector of flash is used to store secure boot IV and signature of the application image. Please check secure boot documentation for details about this.
 
 .. TODO: describe application binary image format, describe optional flash configuration commands.
 
 Second stage bootloader
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In ESP-IDF, the binary image which resides at offset 0x1000 in flash is the second stage bootloader. Second stage bootloader source code is available in components/bootloader directory of ESP-IDF. Note that this arrangement is not the only one possible with the ESP32 chip. It is possible to write a fully featured application which would work when flashed to offset 0x1000, but this is out of scope of this document. Second stage bootloader is used in ESP-IDF to add flexibility to flash layout (using partition tables), and allow for various flows associated with flash encryption, secure boot, and over-the-air updates (OTA) to take place.
+In ESP-IDF, the binary image which resides at offset 0x1000 in flash is the second stage bootloader. Second stage bootloader source code is available in components/bootloader directory of ESP-IDF. Note that this arrangement is not the only one possible with the {IDF_TARGET_NAME} chip. It is possible to write a fully featured application which would work when flashed to offset 0x1000, but this is out of scope of this document. Second stage bootloader is used in ESP-IDF to add flexibility to flash layout (using partition tables), and allow for various flows associated with flash encryption, secure boot, and over-the-air updates (OTA) to take place.
 
 When the first stage bootloader is finished checking and loading the second stage bootloader, it jumps to the second stage bootloader entry point found in the binary image header.
 
-Second stage bootloader reads the partition table found at offset 0x8000. See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA partitions, and decides which one to boot based on data found in *OTA info* partition. 
+Second stage bootloader reads the partition table found at offset 0x8000. See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA partitions, and decides which one to boot based on data found in *OTA info* partition.
 
 For the selected partition, second stage bootloader copies data and code sections which are mapped into IRAM and DRAM to their load addresses. For sections which have load addresses in DROM and IROM regions, flash MMU is configured to provide the correct mapping. Note that the second stage bootloader configures flash MMU for both PRO and APP CPUs, but it only enables flash MMU for PRO CPU. Reason for this is that second stage bootloader code is loaded into the memory region used by APP CPU cache. The duty of enabling cache for APP CPU is passed on to the application. Once code is loaded and flash MMU is set up, second stage bootloader jumps to the application entry point found in the binary image header.
 
@@ -48,9 +48,9 @@ Currently it is not possible to add application-defined hooks to the bootloader 
 Application startup
 ^^^^^^^^^^^^^^^^^^^
 
-ESP-IDF application entry point is ``call_start_cpu0`` function found in ``components/esp32/cpu_start.c``. Two main things this function does are to enable heap allocator and to make APP CPU jump to its entry point, ``call_start_cpu1``. The code on PRO CPU sets the entry point for APP CPU, de-asserts APP CPU reset, and waits for a global flag to be set by the code running on APP CPU, indicating that it has started. Once this is done, PRO CPU jumps to ``start_cpu0`` function, and APP CPU jumps to ``start_cpu1`` function.
+ESP-IDF application entry point is ``call_start_cpu0`` function found in ``components/{IDF_TARGET_PATH_NAME}/cpu_start.c``. Two main things this function does are to enable heap allocator and to make APP CPU jump to its entry point, ``call_start_cpu1``. The code on PRO CPU sets the entry point for APP CPU, de-asserts APP CPU reset, and waits for a global flag to be set by the code running on APP CPU, indicating that it has started. Once this is done, PRO CPU jumps to ``start_cpu0`` function, and APP CPU jumps to ``start_cpu1`` function.
 
-Both ``start_cpu0`` and ``start_cpu1`` are weak functions, meaning that they can be overridden in the application, if some application-specific change to initialization sequence is needed. Default implementation of ``start_cpu0`` enables or initializes components depending on choices made in ``menuconfig``. Please see source code of this function in ``components/esp32/cpu_start.c`` for an up to date list of steps performed. Note that any C++ global constructors present in the application will be called at this stage. Once all essential components are initialized, *main task* is created and FreeRTOS scheduler is started. 
+Both ``start_cpu0`` and ``start_cpu1`` are weak functions, meaning that they can be overridden in the application, if some application-specific change to initialization sequence is needed. Default implementation of ``start_cpu0`` enables or initializes components depending on choices made in ``menuconfig``. Please see source code of this function in ``components/{IDF_TARGET_PATH_NAME}/cpu_start.c`` for an up to date list of steps performed. Note that any C++ global constructors present in the application will be called at this stage. Once all essential components are initialized, *main task* is created and FreeRTOS scheduler is started.
 
 While PRO CPU does initialization in ``start_cpu0`` function, APP CPU spins in ``start_cpu1`` function, waiting for the scheduler to be started on the PRO CPU. Once the scheduler is started on the PRO CPU, code on the APP CPU starts the scheduler as well.
 
@@ -61,7 +61,7 @@ Main task is the task which runs ``app_main`` function. Main task stack size and
 Application memory layout
 -------------------------
 
-ESP32 chip has flexible memory mapping features. This section describes how ESP-IDF uses these features by default.
+{IDF_TARGET_NAME} chip has flexible memory mapping features. This section describes how ESP-IDF uses these features by default.
 
 Application code in ESP-IDF can be placed into one of the following memory regions.
 
@@ -75,17 +75,17 @@ A few components of ESP-IDF and parts of WiFi stack are placed into this region 
 If some application code needs to be placed into IRAM, it can be done using ``IRAM_ATTR`` define::
 
 	#include "esp_attr.h"
-	
+
 	void IRAM_ATTR gpio_isr_handler(void* arg)
 	{
-		// ...		
+		// ...
 	}
 
 Here are the cases when parts of application may or should be placed into IRAM.
 
 - Interrupt handlers must be placed into IRAM if ``ESP_INTR_FLAG_IRAM`` is used when registering the interrupt handler. In this case, ISR may only call functions placed into IRAM or functions present in ROM. *Note 1:* all FreeRTOS APIs are currently placed into IRAM, so are safe to call from interrupt handlers. If the ISR is placed into IRAM, all constant data used by the ISR and functions called from ISR (including, but not limited to, ``const char`` arrays), must be placed into DRAM using ``DRAM_ATTR``.
 
-- Some timing critical code may be placed into IRAM to reduce the penalty associated with loading the code from flash. ESP32 reads code and data from flash via a 32 kB cache. In some cases, placing a function into IRAM may reduce delays caused by a cache miss.
+- Some timing critical code may be placed into IRAM to reduce the penalty associated with loading the code from flash. {IDF_TARGET_NAME} reads code and data from flash via a 32 kB cache. In some cases, placing a function into IRAM may reduce delays caused by a cache miss.
 
 IROM (code executed from Flash)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -140,7 +140,7 @@ DMA Capable Requirement
 Most DMA controllers (e.g. SPI, sdmmc, etc.) have requirements that sending/receiving buffers should be placed in DRAM
 and word-aligned. We suggest to place DMA buffers in static variables rather than in the stack. Use macro ``DMA_ATTR``
 to declare global/local static variables like::
-    
+
     DMA_ATTR uint8_t buffer[]="I want to send something";
 
     void app_main()

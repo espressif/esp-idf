@@ -647,8 +647,8 @@ You can find meaning of errors or warnings when they appear at the bottom of ESP
 
     The examples use :cpp:func:`ESP_LOG_BUFFER_HEX` to print the message context while the ESP-BLE-MESH protocol stack uses :cpp:func:`bt_hex`.
 
-7.2 Which API can be used to restart ESP32?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7.2 Which API can be used to restart {IDF_TARGET_NAME}?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The API :cpp:func:`esp_restart`.
 

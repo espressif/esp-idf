@@ -6,10 +6,10 @@ Controller Area Network (CAN)
 Overview
 --------
 
-The ESP32's peripherals contains a CAN Controller that supports Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID) of the CAN2.0B specification.
+The {IDF_TARGET_NAME}'s peripherals contains a CAN Controller that supports Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID) of the CAN2.0B specification.
 
 .. warning::
-    The ESP32 CAN controller is not compatible with CAN FD frames and will interpret such frames as errors.
+    The {IDF_TARGET_NAME} CAN controller is not compatible with CAN FD frames and will interpret such frames as errors.
 
 This programming guide is split into the following sections:
 
@@ -199,9 +199,11 @@ Bit timing **macro initializers** are also available for commonly used CAN bus b
     - ``CAN_TIMING_CONFIG_800KBITS()``
     - ``CAN_TIMING_CONFIG_1MBITS()``
 
-.. note::
-    The macro initializers for 12.5K, 16K, and 20K bit rates are only available
-    for ESP32 revision 2 or later.
+.. only::esp32
+
+    .. note::
+        The macro initializers for 12.5K, 16K, and 20K bit rates are only available
+        for ESP32 revision 2 or later.
 
 Acceptance Filter
 ^^^^^^^^^^^^^^^^^
@@ -477,7 +479,7 @@ The following example shows how the calculate the acceptance mask given multiple
 Application Examples
 ^^^^^^^^^^^^^^^^^^^^
 
-**Network Example:** The CAN Network example demonstrates communication between two ESP32s using the CAN driver API. One CAN node acts as a network master initiate and ceasing the transfer of a data from another CAN node acting as a network slave. The example can be found via :example:`peripherals/can/can_network`.
+**Network Example:** The CAN Network example demonstrates communication between two {IDF_TARGET_NAME}s using the CAN driver API. One CAN node acts as a network master initiate and ceasing the transfer of a data from another CAN node acting as a network slave. The example can be found via :example:`peripherals/can/can_network`.
 
 **Alert and Recovery Example:** This example demonstrates how to use the CAN driver's alert and bus recovery API. The example purposely introduces errors on the CAN bus to put the CAN controller into the Bus-Off state. An alert is used to detect the Bus-Off state and trigger the bus recovery process. The example can be found via :example:`peripherals/can/can_alert_and_recovery`.
 

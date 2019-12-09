@@ -4,14 +4,23 @@ Flash Encryption
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document provides introduction to Flash encryption concept on ESP32 and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `ESP32 Technical reference manual`_.
+.. only:: esp32
 
-.. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+    This document provides introduction to Flash encryption concept on {IDF_TARGET_NAME} and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `ESP32 Technical reference manual`_.
+
+    .. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
+
+.. only:: esp32s2beta
+
+    This document provides introduction to Flash encryption concept on {IDF_TARGET_NAME} and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `ESP32-S2 Technical reference manual`_.
+
+    .. _ESP32-S2 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32s2_technical_reference_manual_en.pdf
+
 
 Introduction
 ------------
 
-Flash encryption is a feature for encrypting the contents of the ESP32's attached SPI flash. When flash encryption is enabled, physical readout of the SPI flash is not sufficient to recover most flash contents. Encryption is applied by flashing the ESP32 with plaintext data, and (if encryption is enabled) the bootloader encrypts the data in place on first boot.
+Flash encryption is a feature for encrypting the contents of the {IDF_TARGET_NAME}'s attached SPI flash. When flash encryption is enabled, physical readout of the SPI flash is not sufficient to recover most flash contents. Encryption is applied by flashing the {IDF_TARGET_NAME} with plaintext data, and (if encryption is enabled) the bootloader encrypts the data in place on first boot.
 
 With flash encryption enabled, following kinds of flash data are encrypted by default:
 
@@ -30,13 +39,13 @@ Flash encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, 
    For production use, flash encryption should be enabled in the "Release" mode only.
 
 .. important::
-  Enabling flash encryption limits the options for further updates of the ESP32. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.
+  Enabling flash encryption limits the options for further updates of the {IDF_TARGET_NAME}. Make sure to read this document (including :ref:`flash-encryption-limitations`) and understand the implications of enabling flash encryption.
 
 .. _flash-encryption-efuse:
 
 eFuse Used During Flash Encryption Process
 -------------------------------------------
-The flash encryption operation is controlled by various eFuses available on ESP32. Below is the list of eFuse and their description:
+The flash encryption operation is controlled by various eFuses available on {IDF_TARGET_NAME}. Below is the list of eFuse and their description:
 
  ::
 
@@ -79,7 +88,7 @@ The flash encryption operation is controlled by various eFuses available on ESP3
                               not encrypt flash at boot time
 
 
-Read and write access to above bits is controlled by appropriate bits in ``efuse_wr_disable`` and ``efuse_rd_disable`` registers. More information about ESP32 eFuse can be found at :doc:`eFuse manager <../api-reference/system/efuse>`.
+Read and write access to above bits is controlled by appropriate bits in ``efuse_wr_disable`` and ``efuse_rd_disable`` registers. More information about {IDF_TARGET_NAME} eFuse can be found at :doc:`eFuse manager <../api-reference/system/efuse>`.
 
 
 Flash Encryption Process
@@ -96,7 +105,7 @@ Assuming the eFuse values are in default state and second stage bootloader is co
 - For :ref:`flash_enc_development_mode` second stage bootloader will program only ``download_dis_decrypt`` & ``download_dis_cache`` eFuse bits to allow UART bootloader reflashing of encrypted binaries. Also ``FLASH_CRYPT_CNT`` eFuse bits will NOT be write protected.
 - The second stage bootloader then reboots the device to start executing encrypted image. It will transparently decrypt the flash contents and load into IRAM.
 
-During development stage there is a frequent need to program different plaintext flash images and test the flash encryption process. This requires UART download mode to be able to load new plaintext images as many number of times as required. However during manufacturing or production UART download mode should not be allowed to access flash contents due to security reason. Hence this requires two different ESP32 configurations: one for development and other for production. Following section describes :ref:`flash_enc_development_mode` and :ref:`flash_enc_release_mode` for flash encryption and a step by step process to use them.
+During development stage there is a frequent need to program different plaintext flash images and test the flash encryption process. This requires UART download mode to be able to load new plaintext images as many number of times as required. However during manufacturing or production UART download mode should not be allowed to access flash contents due to security reason. Hence this requires two different {IDF_TARGET_NAME} configurations: one for development and other for production. Following section describes :ref:`flash_enc_development_mode` and :ref:`flash_enc_release_mode` for flash encryption and a step by step process to use them.
 
 .. important::
   Development mode as the name suggests should be used ONLY DURING DEVELOPMENT as it does not prevent modification and possible read back of encrypted flash contents.
@@ -110,16 +119,16 @@ Steps to Setup Flash Encryption
 Development Mode
 ^^^^^^^^^^^^^^^^
 
-It is possible to run flash encryption process for development using either ESP32 internally generated key or external host generated keys.
+It is possible to run flash encryption process for development using either {IDF_TARGET_NAME} internally generated key or external host generated keys.
 
-Using ESP32 Generated Flash Encryption Key
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Using {IDF_TARGET_NAME} Generated Flash Encryption Key
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 As mentioned above :ref:`flash_enc_development_mode` allows user to download as many plaintext images using UART download mode. Following steps needs to be done to test flash encryption process:
 
-- Ensure you have a ESP32 device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
+- Ensure you have a {IDF_TARGET_NAME} device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
 
-- Navigate to flash encryption sample application in ``$IDF_PATH/examples/security/flash_encryption`` folder. This sample application will print the status of flash encryption: enabled or disabled. It will print the ``FLASH_CRYPT_CNT`` eFuse value.   
+- Navigate to flash encryption sample application in ``$IDF_PATH/examples/security/flash_encryption`` folder. This sample application will print the status of flash encryption: enabled or disabled. It will print the ``FLASH_CRYPT_CNT`` eFuse value.
 
 - Enable flash encryption support in second stage bootloader. In :ref:`project-configuration-menu`, navigate to "Security Features".
 
@@ -130,7 +139,7 @@ As mentioned above :ref:`flash_enc_development_mode` allows user to download as 
 - Select appropriate Bootloader log verbosity under Bootloader config.
 
 - Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
-	
+
 - Save the configuration and exit.
 
 Build and flash the complete image including: bootloader, partition table and app. These partitions are initially written to the flash unencrypted.
@@ -139,7 +148,7 @@ Build and flash the complete image including: bootloader, partition table and ap
 
 	idf.py flash monitor
 
-Once the flashing is complete device will reset and on next boot second stage bootloader will encrypt the flash app partition and then reset. Now the sample application would get decrypted at runtime and executed. Below is a sample output when ESP32 boots after flash encryption is enabled for the first time.
+Once the flashing is complete device will reset and on next boot second stage bootloader will encrypt the flash app partition and then reset. Now the sample application would get decrypted at runtime and executed. Below is a sample output when {IDF_TARGET_NAME} boots after flash encryption is enabled for the first time.
 
  ::
 
@@ -190,20 +199,20 @@ Once the flashing is complete device will reset and on next boot second stage bo
     I (201) flash_encrypt: Disable UART bootloader MMU cache...
     I (208) flash_encrypt: Disable JTAG...
     I (212) flash_encrypt: Disable ROM BASIC interpreter fallback...
-    I (219) esp_image: segment 0: paddr=0x00001020 vaddr=0x3fff0018 size=0x00004 (     4) 
-    I (227) esp_image: segment 1: paddr=0x0000102c vaddr=0x3fff001c size=0x02104 (  8452) 
-    I (239) esp_image: segment 2: paddr=0x00003138 vaddr=0x40078000 size=0x03528 ( 13608) 
-    I (249) esp_image: segment 3: paddr=0x00006668 vaddr=0x40080400 size=0x01a08 (  6664) 
+    I (219) esp_image: segment 0: paddr=0x00001020 vaddr=0x3fff0018 size=0x00004 (     4)
+    I (227) esp_image: segment 1: paddr=0x0000102c vaddr=0x3fff001c size=0x02104 (  8452)
+    I (239) esp_image: segment 2: paddr=0x00003138 vaddr=0x40078000 size=0x03528 ( 13608)
+    I (249) esp_image: segment 3: paddr=0x00006668 vaddr=0x40080400 size=0x01a08 (  6664)
     I (657) esp_image: segment 0: paddr=0x00020020 vaddr=0x3f400020 size=0x0808c ( 32908) map
-    I (669) esp_image: segment 1: paddr=0x000280b4 vaddr=0x3ffb0000 size=0x01ea4 (  7844) 
-    I (672) esp_image: segment 2: paddr=0x00029f60 vaddr=0x40080000 size=0x00400 (  1024) 
+    I (669) esp_image: segment 1: paddr=0x000280b4 vaddr=0x3ffb0000 size=0x01ea4 (  7844)
+    I (672) esp_image: segment 2: paddr=0x00029f60 vaddr=0x40080000 size=0x00400 (  1024)
     0x40080000: _WindowOverflow4 at esp-idf/esp-idf/components/freertos/xtensa_vectors.S:1778
 
-    I (676) esp_image: segment 3: paddr=0x0002a368 vaddr=0x40080400 size=0x05ca8 ( 23720) 
+    I (676) esp_image: segment 3: paddr=0x0002a368 vaddr=0x40080400 size=0x05ca8 ( 23720)
     I (692) esp_image: segment 4: paddr=0x00030018 vaddr=0x400d0018 size=0x126a8 ( 75432) map
     0x400d0018: _flash_cache_start at ??:?
 
-    I (719) esp_image: segment 5: paddr=0x000426c8 vaddr=0x400860a8 size=0x01f4c (  8012) 
+    I (719) esp_image: segment 5: paddr=0x000426c8 vaddr=0x400860a8 size=0x01f4c (  8012)
     0x400860a8: prvAddNewTaskToReadyList at esp-idf/esp-idf/components/freertos/tasks.c:4561
 
     I (722) flash_encrypt: Encrypting partition 2 at offset 0x20000...
@@ -261,7 +270,7 @@ Once the flashing is complete device will reset and on next boot second stage bo
   I (211) cpu_start: ELF file SHA256:  8770c886bdf561a7...
   I (217) cpu_start: ESP-IDF:          v4.0-dev-850-gc4447462d-dirty
   I (224) cpu_start: Starting app cpu, entry point is 0x40080e4c
-  0x40080e4c: call_start_cpu1 at esp-idf/esp-idf/components/esp32/cpu_start.c:265
+  0x40080e4c: call_start_cpu1 at esp-idf/esp-idf/components/{IDF_TARGET_PATH_NAME}/cpu_start.c:265
 
   I (0) cpu_start: App cpu up.
   I (235) heap_init: Initializing. RAM available for dynamic allocation:
@@ -275,7 +284,7 @@ Once the flashing is complete device will reset and on next boot second stage bo
   I (0) cpu_start: Starting scheduler on APP CPU.
 
   Sample program to check Flash Encryption
-  This is ESP32 chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 4MB external flash
+  This is {IDF_TARGET_NAME} chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 4MB external flash
   Flash encryption feature is enabled
   Flash encryption mode is DEVELOPMENT
   Flash in encrypted mode with flash_crypt_cnt = 1
@@ -303,17 +312,17 @@ If all partitions needs to be updated in encrypted format, it can be done as
 
 Using Host Generated Flash Encryption Key
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-It is possible to pregenerate the flash encryption key on the host computer and burn it into the ESP32's eFuse key block. This allows data to be pre-encrypted on the host and flashed to the ESP32 without needing a plaintext flash update. This feature allows encrypted flashing in both :ref:`flash_enc_development_mode` and :ref:`flash_enc_release_mode` modes.
+It is possible to pregenerate the flash encryption key on the host computer and burn it into the {IDF_TARGET_NAME}'s eFuse key block. This allows data to be pre-encrypted on the host and flashed to the {IDF_TARGET_NAME} without needing a plaintext flash update. This feature allows encrypted flashing in both :ref:`flash_enc_development_mode` and :ref:`flash_enc_release_mode` modes.
 
 .. note:: This option is not recommended for production unless a separate key is generated for each individual device.
 
-- Ensure you have a ESP32 device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
+- Ensure you have a {IDF_TARGET_NAME} device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
 
 - Generate a random key with espsecure.py::
 
       espsecure.py generate_flash_encryption_key my_flash_encryption_key.bin
 
-- Burn the key to the device (one time only). **This must be done before first encrypted boot**, otherwise the ESP32 will generate a random key that software can't access or modify::
+- Burn the key to the device (one time only). **This must be done before first encrypted boot**, otherwise the {IDF_TARGET_NAME} will generate a random key that software can't access or modify::
 
       espefuse.py --port PORT burn_key flash_encryption my_flash_encryption_key.bin
 
@@ -353,7 +362,7 @@ Release Mode
 
 In Release mode UART bootloader can not perform flash encryption operations and new plaintext images can be downloaded ONLY using OTA scheme which will encrypt the plaintext image before writing to flash.
 
-- Ensure you have a ESP32 device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
+- Ensure you have a {IDF_TARGET_NAME} device with default flash encryption eFuse settings as shown in :ref:`flash-encryption-efuse`.
 
 - Enable flash encryption support in second stage bootloader. In :ref:`project-configuration-menu`, navigate to "Security Features".
 
@@ -382,7 +391,7 @@ For subsequent plaintext update in field :ref:`OTA scheme <updating-encrypted-fl
 
 Possible Failures
 ^^^^^^^^^^^^^^^^^
-Once flash encryption is enabled and if the ``FLASH_CRYPT_CNT`` eFuse value has an odd number of bits set then all the partitions (which are marked with encryption flag) are expected to contain encrypted ciphertext. Below are three typical failure cases if the ESP32 is loaded with plaintext data:
+Once flash encryption is enabled and if the ``FLASH_CRYPT_CNT`` eFuse value has an odd number of bits set then all the partitions (which are marked with encryption flag) are expected to contain encrypted ciphertext. Below are three typical failure cases if the {IDF_TARGET_NAME} is loaded with plaintext data:
 
 1. In case the bootloader partition is re-updated with plaintext bootloader image the ROM loader will fail to load the bootloader and following type of failure will be displayed:
 
@@ -390,27 +399,27 @@ Once flash encryption is enabled and if the ``FLASH_CRYPT_CNT`` eFuse value has 
 
     rst:0x3 (SW_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
     rst:0x7 (TG0WDT_SYS_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
     flash read err, 1000
-    ets_main.c 371 
+    ets_main.c 371
     ets Jun  8 2016 00:22:57
 
 .. note:: This error also appears in the flash contents is erased or corrupted.
@@ -477,7 +486,7 @@ Key Points About Flash Encryption
 
 - The `flash encryption algorithm` is AES-256, where the key is "tweaked" with the offset address of each 32 byte block of flash. This means every 32 byte block (two consecutive 16 byte AES blocks) is encrypted with a unique key derived from the flash encryption key.
 
-- Flash access is transparent via the flash cache mapping feature of ESP32 - any flash regions which are mapped to the address space will be transparently decrypted when read.
+- Flash access is transparent via the flash cache mapping feature of {IDF_TARGET_NAME} - any flash regions which are mapped to the address space will be transparently decrypted when read.
 
 	It may be desirable for some data partitions to remain unencrypted for ease of access, or to use flash-friendly update algorithms that are ineffective if the data is encrypted. NVS partitions for non-volatile storage cannot be encrypted since NVS library is not directly compatible with flash encryption. Refer to :ref:`NVS Encryption <nvs_encryption>` for more details.
 
@@ -489,7 +498,7 @@ Key Points About Flash Encryption
 .. note:: The bootloader app binary ``bootloader.bin`` may become too large when both secure boot and flash encryption are enabled. See :ref:`secure-boot-bootloader-size`.
 
 .. important::
-   Do not interrupt power to the ESP32 while the first boot encryption pass is running. If power is interrupted, the flash contents will be corrupted and require flashing with unencrypted data again. A reflash like this will not count towards the flashing limit.
+   Do not interrupt power to the {IDF_TARGET_NAME} while the first boot encryption pass is running. If power is interrupted, the flash contents will be corrupted and require flashing with unencrypted data again. A reflash like this will not count towards the flashing limit.
 
 
 .. _using-encrypted-flash:
@@ -497,7 +506,7 @@ Key Points About Flash Encryption
 Using Encrypted Flash
 ---------------------
 
-ESP32 app code can check if flash encryption is currently enabled by calling :cpp:func:`esp_flash_encryption_enabled`. Also, device can identify the flash encryption mode by calling :cpp:func:`esp_get_flash_encryption_mode`.
+{IDF_TARGET_NAME} app code can check if flash encryption is currently enabled by calling :cpp:func:`esp_flash_encryption_enabled`. Also, device can identify the flash encryption mode by calling :cpp:func:`esp_get_flash_encryption_mode`.
 
 Once flash encryption is enabled, some care needs to be taken when accessing flash contents from code.
 
@@ -558,7 +567,7 @@ Please refer to :doc:`OTA <../api-reference/system/ota>` for general information
 Disabling Flash Encryption
 --------------------------
 
-If you've accidentally enabled flash encryption for some reason, the next flash of plaintext data will soft-brick the ESP32 (the device will reboot continuously, printing the error ``flash read err, 1000``).
+If you've accidentally enabled flash encryption for some reason, the next flash of plaintext data will soft-brick the {IDF_TARGET_NAME} (the device will reboot continuously, printing the error ``flash read err, 1000``).
 
 If flash encryption is enabled in Development mode, you can disable flash encryption again by writing ``FLASH_CRYPT_CNT`` eFuse. This can only be done three times per chip.
 
@@ -569,7 +578,7 @@ If flash encryption is enabled in Development mode, you can disable flash encryp
 - Run ``espefuse.py`` (in ``components/esptool_py/esptool``) to disable the FLASH_CRYPT_CNT::
     espefuse.py burn_efuse FLASH_CRYPT_CNT
 
-Reset the ESP32 and flash encryption should be disabled, the bootloader will boot as normal.
+Reset the {IDF_TARGET_NAME} and flash encryption should be disabled, the bootloader will boot as normal.
 
 .. _flash-encryption-limitations:
 
@@ -596,7 +605,7 @@ Flash Encryption and Secure Boot
 It is recommended to use flash encryption and secure boot together. However, if Secure Boot is enabled then additional restrictions apply to reflashing the device:
 
 - :ref:`updating-encrypted-flash-ota` are not restricted (provided the new app is signed correctly with the Secure Boot signing key).
-- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the ESP32 (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
+- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the {IDF_TARGET_NAME} (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
 - :ref:`Reflashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
 
 .. _flash-encryption-advanced-features:
