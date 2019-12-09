@@ -19,33 +19,12 @@ Test script for unit test case.
 """
 
 import re
-import os
-import sys
 import time
 import argparse
 import threading
 
-try:
-    import TinyFW
-except ImportError:
-    # if we want to run test case outside `tiny-test-fw` folder,
-    # we need to insert tiny-test-fw path into sys path
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    else:
-        # or try the copy in IDF
-        idf_path = os.getenv("IDF_PATH")
-        tiny_test_path = idf_path + "/tools/tiny-test-fw"
-        if os.path.exists(tiny_test_path):
-            sys.path.insert(0, tiny_test_path)
-    import TinyFW
-
-import IDF
-import Utility
-import Env
-from DUT import ExpectTimeout
-from IDF.IDFApp import UT
+from tiny_test_fw import TinyFW, Utility, Env, DUT
+import ttfw_idf
 
 
 UT_APP_BOOT_UP_DONE = "Press ENTER to see the list of tests."
@@ -180,7 +159,7 @@ def reset_dut(dut):
         try:
             dut.expect("0 Tests 0 Failures 0 Ignored", timeout=TEST_HISTORY_CHECK_TIMEOUT)
             break
-        except ExpectTimeout:
+        except DUT.ExpectTimeout:
             pass
     else:
         raise AssertionError("Reset {} ({}) failed!".format(dut.name, dut.port))
@@ -255,14 +234,14 @@ def run_one_normal_case(dut, one_case, junit_test_case):
                            (FINISH_PATTERN, handle_test_finish),
                            (UT_APP_BOOT_UP_DONE, handle_reset_finish),
                            timeout=one_case["timeout"])
-        except ExpectTimeout:
+        except DUT.ExpectTimeout:
             Utility.console_log("Timeout in expect", color="orange")
             junit_test_case.add_failure_info("timeout")
             one_case_finish(False)
             break
 
 
-@IDF.idf_unit_test(env_tag="UT_T1_1", junit_report_by_case=True)
+@ttfw_idf.idf_unit_test(env_tag="UT_T1_1", junit_report_by_case=True)
 def run_unit_test_cases(env, extra_data):
     """
     extra_data can be three types of value
@@ -401,7 +380,7 @@ class Handler(threading.Thread):
             time.sleep(1)
             self.dut.write("\"{}\"".format(self.parent_case_name))
             self.dut.expect("Running " + self.parent_case_name + "...")
-        except ExpectTimeout:
+        except DUT.ExpectTimeout:
             Utility.console_log("No case detected!", color="orange")
         while not self.finish and not self.force_stop.isSet():
             try:
@@ -411,7 +390,7 @@ class Handler(threading.Thread):
                                     (self.SEND_SIGNAL_PATTERN, device_send_action),  # send signal pattern
                                     (self.FINISH_PATTERN, handle_device_test_finish),  # test finish pattern
                                     timeout=self.timeout)
-            except ExpectTimeout:
+            except DUT.ExpectTimeout:
                 Utility.console_log("Timeout in expect", color="orange")
                 one_device_case_finish(False)
                 break
@@ -471,7 +450,7 @@ def run_one_multiple_devices_case(duts, ut_config, env, one_case, app_bin, junit
     return result
 
 
-@IDF.idf_unit_test(env_tag="UT_T2_1", junit_report_by_case=True)
+@ttfw_idf.idf_unit_test(env_tag="UT_T2_1", junit_report_by_case=True)
 def run_multiple_devices_cases(env, extra_data):
     """
      extra_data can be two types of value
@@ -618,7 +597,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
                                (FINISH_PATTERN, handle_test_finish),
                                (UT_APP_BOOT_UP_DONE, handle_next_stage),
                                timeout=one_case["timeout"])
-            except ExpectTimeout:
+            except DUT.ExpectTimeout:
                 Utility.console_log("Timeout in expect", color="orange")
                 one_case_finish(False)
                 break
@@ -627,7 +606,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
             break
 
 
-@IDF.idf_unit_test(env_tag="UT_T1_1", junit_report_by_case=True)
+@ttfw_idf.idf_unit_test(env_tag="UT_T1_1", junit_report_by_case=True)
 def run_multiple_stage_cases(env, extra_data):
     """
     extra_data can be 2 types of value
@@ -734,7 +713,7 @@ def detect_update_unit_test_info(env, extra_data, app_bin):
             for _dic in extra_data:
                 if 'type' not in _dic:
                     raise ValueError("Unit test \"{}\" doesn't exist in the flashed device!".format(_dic.get('name')))
-        except ExpectTimeout:
+        except DUT.ExpectTimeout:
             Utility.console_log("Timeout during getting the test list", color="red")
         finally:
             dut.close()
@@ -789,8 +768,8 @@ if __name__ == '__main__':
     TinyFW.set_default_config(env_config_file=args.env_config_file)
 
     env_config = TinyFW.get_default_config()
-    env_config['app'] = UT
-    env_config['dut'] = IDF.IDFDUT
+    env_config['app'] = ttfw_idf.UT
+    env_config['dut'] = ttfw_idf.IDFDUT
     env_config['test_suite_name'] = 'unit_test_parsing'
     test_env = Env.Env(**env_config)
     detect_update_unit_test_info(test_env, extra_data=list_of_dicts, app_bin=args.app_bin)

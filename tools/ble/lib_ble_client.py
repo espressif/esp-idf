@@ -29,7 +29,7 @@ try:
     from gi.repository import GLib
 except ImportError as e:
     if 'linux' not in sys.platform:
-        sys.exit("Error: Only supported on Linux platform")
+        raise e
     print(e)
     print("Install packages `libgirepository1.0-dev gir1.2-gtk-3.0 libcairo2-dev libdbus-1-dev libdbus-glib-1-dev` for resolving the issue")
     print("Run `pip install -r $IDF_PATH/tools/ble/requirements.txt` for resolving the issue")

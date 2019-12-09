@@ -1,20 +1,11 @@
 from __future__ import print_function
-import os
-import sys
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 
-@IDF.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_system_cpp_exceptions(env, extra_data):
-    dut = env.get_dut('cpp_exceptions_example', 'examples/system/cpp_exceptions', dut_class=ESP32DUT)
+    dut = env.get_dut('cpp_exceptions_example', 'examples/system/cpp_exceptions', dut_class=ttfw_idf.ESP32DUT)
     # start test
     dut.start_app()
     lines = ['app_main starting',

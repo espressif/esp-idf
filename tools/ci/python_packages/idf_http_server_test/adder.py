@@ -20,7 +20,8 @@ from builtins import str
 from builtins import range
 import http.client
 import argparse
-import Utility
+
+from tiny_test_fw import Utility
 
 
 def start_session(ip, port):

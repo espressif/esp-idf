@@ -3,8 +3,6 @@ Command line tool to assign unit tests to CI test jobs.
 """
 
 import re
-import os
-import sys
 import argparse
 
 import yaml
@@ -14,13 +12,7 @@ try:
 except ImportError:
     from yaml import Loader as Loader
 
-try:
-    from Utility import CIAssignTest
-except ImportError:
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path:
-        sys.path.insert(0, test_fw_path)
-    from Utility import CIAssignTest
+from tiny_test_fw.Utility import CIAssignTest
 
 
 class Group(CIAssignTest.Group):
@@ -119,7 +111,7 @@ class Group(CIAssignTest.Group):
         if target:
             overwrite = {
                 "dut": {
-                    "path": "IDF/IDFDUT.py",
+                    "package": "ttfw_idf",
                     "class": self.DUT_CLS_NAME[target],
                 }
             }

@@ -144,7 +144,7 @@ EXTRA_COMPONENT_DIRS ?=
 COMPONENT_DIRS := $(PROJECT_PATH)/components $(EXTRA_COMPONENT_DIRS) $(IDF_PATH)/components $(PROJECT_PATH)/main
 endif
 # Make sure that every directory in the list is an absolute path without trailing slash.
-# This is necessary to split COMPONENT_DIRS into SINGLE_COMPONENT_DIRS and MULTI_COMPONENT_DIRS below. 
+# This is necessary to split COMPONENT_DIRS into SINGLE_COMPONENT_DIRS and MULTI_COMPONENT_DIRS below.
 COMPONENT_DIRS := $(foreach cd,$(COMPONENT_DIRS),$(abspath $(cd)))
 export COMPONENT_DIRS
 
@@ -153,11 +153,11 @@ $(warning SRCDIRS variable is deprecated. These paths can be added to EXTRA_COMP
 COMPONENT_DIRS += $(abspath $(SRCDIRS))
 endif
 
-# List of component directories, i.e. directories which contain a component.mk file 
+# List of component directories, i.e. directories which contain a component.mk file
 SINGLE_COMPONENT_DIRS := $(abspath $(dir $(dir $(foreach cd,$(COMPONENT_DIRS),\
                              $(wildcard $(cd)/component.mk)))))
 
-# List of components directories, i.e. directories which may contain components 
+# List of components directories, i.e. directories which may contain components
 MULTI_COMPONENT_DIRS := $(filter-out $(SINGLE_COMPONENT_DIRS),$(COMPONENT_DIRS))
 
 # The project Makefile can define a list of components, but if it does not do this
@@ -635,6 +635,11 @@ clean: app-clean bootloader-clean config-clean ldgen-clean
 #
 # This only works for components inside IDF_PATH
 check-submodules:
+# for internal use:
+# skip submodule check if running on Gitlab CI and job is configured as not clone submodules
+ifeq ($(IDF_SKIP_CHECK_SUBMODULES),1)
+	@echo "skip submodule check on internal CI"
+else
 # Check if .gitmodules exists, otherwise skip submodule check, assuming flattened structure
 ifneq ("$(wildcard ${IDF_PATH}/.gitmodules)","")
 
@@ -662,7 +667,7 @@ endef
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
 endif # End check for .gitmodules existence
-
+endif
 
 # PHONY target to list components in the build and their paths
 list-components:

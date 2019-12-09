@@ -1,20 +1,7 @@
 from __future__ import print_function
 import re
-import os
-import sys
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # this is a test case write with tiny-test-fw.
-    # to run test cases outside tiny-test-fw,
-    # we need to set environment variable `TEST_FW_PATH`,
-    # then get and insert `TEST_FW_PATH` to sys path before import FW module
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 STARTING_TIMERS_REGEX = re.compile(r'Started timers, time since boot: (\d+) us')
 
@@ -38,9 +25,9 @@ LIGHT_SLEEP_TIME = 500000
 ONE_SHOT_TIMER_PERIOD = 5000000
 
 
-@IDF.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_system_esp_timer(env, extra_data):
-    dut = env.get_dut('esp_timer_example', 'examples/system/esp_timer', dut_class=ESP32DUT)
+    dut = env.get_dut('esp_timer_example', 'examples/system/esp_timer', dut_class=ttfw_idf.ESP32DUT)
     # start test
     dut.start_app()
     groups = dut.expect(STARTING_TIMERS_REGEX, timeout=30)

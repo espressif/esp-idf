@@ -1,17 +1,8 @@
 from __future__ import print_function
 import re
-import os
-import sys
 import time
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 ENTERING_SLEEP_STR = 'Entering light sleep'
 EXIT_SLEEP_REGEX = re.compile(r'Returned from light sleep, reason: (\w+), t=(\d+) ms, slept for (\d+) ms')
@@ -20,9 +11,9 @@ WAITING_FOR_GPIO_STR = 'Waiting for GPIO0 to go high...'
 WAKEUP_INTERVAL_MS = 2000
 
 
-@IDF.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_system_light_sleep(env, extra_data):
-    dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep', dut_class=ESP32DUT)
+    dut = env.get_dut('light_sleep_example', 'examples/system/light_sleep', dut_class=ttfw_idf.ESP32DUT)
     dut.start_app()
 
     # Ensure DTR and RTS are de-asserted for proper control of GPIO0

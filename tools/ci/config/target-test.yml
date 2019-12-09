@@ -21,7 +21,6 @@
       - $BOT_LABEL_EXAMPLE_TEST
   dependencies:
     - assign_test
-    - build_examples_cmake_esp32
   artifacts:
     when: always
     paths:
@@ -30,12 +29,11 @@
     reports:
         junit: $LOG_PATH/*/XUNIT_RESULT.xml
   variables:
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
-    GIT_SUBMODULE_STRATEGY: none
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
   script:
     - *define_config_file_name
     # first test if config file exists, if not exist, exit 0
@@ -43,10 +41,7 @@
     # clone test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    # Get esptool
-    - git submodule sync
-    - git submodule update --init components/esptool_py/esptool
-    - cd $TEST_FW_PATH
+    - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
@@ -65,8 +60,6 @@
       - $BOT_LABEL_EXAMPLE_TEST
   dependencies:
     - assign_test
-    - build_examples_make
-    - build_examples_cmake_esp32
   artifacts:
     when: always
     paths:
@@ -75,7 +68,6 @@
     reports:
         junit: $LOG_PATH/*/XUNIT_RESULT.xml
   variables:
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/examples"
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/examples/test_configs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
@@ -87,7 +79,7 @@
     # clone test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    - cd $TEST_FW_PATH
+    - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
@@ -139,7 +131,7 @@
       - $LOG_PATH
     expire_in: 1 week
   variables:
-    GIT_SUBMODULE_STRATEGY: none
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     LOCAL_ENV_CONFIG_PATH: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/ESP32_IDF"
     LOG_PATH: "${CI_PROJECT_DIR}/${CI_COMMIT_SHA}"
     TEST_CASE_FILE_PATH: "$CI_PROJECT_DIR/components/idf_test/integration_test"
@@ -170,7 +162,6 @@ test_weekend_mqtt:
       - $BOT_LABEL_WEEKEND_TEST
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/components/mqtt/weekend_test/env.yml"
     CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/mqtt/weekend_test"
@@ -187,7 +178,6 @@ test_weekend_network:
       - $BOT_LABEL_WEEKEND_TEST
   variables:
     TEST_CASE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
     CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
@@ -202,8 +192,6 @@ example_test_001:
 example_test_002:
   extends: .example_test_template
   image: $CI_DOCKER_REGISTRY/ubuntu-test-env$BOT_DOCKER_IMAGE_TAG
-  variables:
-    GIT_SUBMODULE_STRATEGY: normal
   tags:
     - ESP32
     - Example_ShieldBox_Basic
@@ -214,7 +202,7 @@ example_test_002:
     # clone test env configs
     - git clone $TEST_ENV_CONFIG_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT ci-test-runner-configs ci-test-runner-configs
-    - cd $TEST_FW_PATH
+    - cd tools/ci/python_packages/tiny_test_fw/bin
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
@@ -286,7 +274,6 @@ example_test_010:
 
 example_test_011:
   extends: .example_debug_template
-  parallel: 4
   tags:
     - ESP32
     - Example_T2_RS485
@@ -316,7 +303,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 11
+  parallel: 10
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -466,7 +453,7 @@ UT_034:
 
 UT_035:
   extends: .unit_test_template
-  parallel: 20
+  parallel: 19
   tags:
     - ESP32S2BETA_IDF
     - UT_T1_1
@@ -500,7 +487,6 @@ UT_043:
 
 UT_044:
   extends: .unit_test_template
-  parallel: 4
   tags:
     - ESP32_IDF
     - UT_SDIO

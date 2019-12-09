@@ -2,20 +2,11 @@
 from __future__ import print_function
 
 import os
-import sys
 import re
 import logging
 from threading import Thread
 
-try:
-    import IDF
-except ImportError:
-    # The test cause is dependent on the Tiny Test Framework. Ensure the
-    # `TEST_FW_PATH` environment variable is set to `$IDF_PATH/tools/tiny-test-fw`
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 LOG_LEVEL = logging.DEBUG
 LOGGER_NAME = "modbus_test"
@@ -174,13 +165,13 @@ def test_check_mode(dut=None, mode_str=None, value=None):
     return False
 
 
-@IDF.idf_example_test(env_tag='Example_T2_RS485')
+@ttfw_idf.idf_example_test(env_tag='Example_T2_RS485')
 def test_modbus_communication(env, comm_mode):
     global logger
 
     # Get device under test. "dut1 - master", "dut2 - slave" must be properly connected through RS485 interface driver
-    dut_master = env.get_dut("modbus_master", "examples/protocols/modbus/serial/mb_master")
-    dut_slave = env.get_dut("modbus_slave", "examples/protocols/modbus/serial/mb_slave")
+    dut_master = env.get_dut("modbus_master", "examples/protocols/modbus/serial/mb_master", dut_class=ttfw_idf.ESP32DUT)
+    dut_slave = env.get_dut("modbus_slave", "examples/protocols/modbus/serial/mb_slave", dut_class=ttfw_idf.ESP32DUT)
 
     try:
         logger.debug("Environment vars: %s\r\n" % os.environ)
