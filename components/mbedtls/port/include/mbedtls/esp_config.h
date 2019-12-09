@@ -2227,7 +2227,7 @@
  * This module is supports loading of certificates with extensions that
  * may not be supported by mbedtls.
  */
-#ifdef CONFIG_MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
+#ifdef CONFIG_MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
 #define MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
 #else
 #undef MBEDTLS_X509_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION

@@ -486,7 +486,7 @@ menu "mbedTLS"
             help
                 Support for parsing X.509 Certifificate Signing Requests
 
-        config MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXTENSION
+        config MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
             bool "X.509 CRT parsing with unsupported critical extensions"
             default n
             help
