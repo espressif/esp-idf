@@ -293,18 +293,16 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     }
 
     //The pointer to memory may be aliased, we need to 
-    //recover it before to manage a new allocation:
+    //recover the corresponding address before to manage a new allocation:
     if(esp_ptr_in_diram_iram((void *)ptr)) {
         uint32_t *dram_addr = (uint32_t *)ptr;
         dram_ptr  = (void *)dram_addr[-1];
         
-        //printf("[HEAP_CAPS_MALLOC]: obtained pointer that was aliased: %p \n", (void *)ptr);
-        
         heap = find_containing_heap(dram_ptr);
         assert(heap != NULL && "realloc() pointer is outside heap areas");
         
-        //with pointers that reside on diram space, we avoid to 
-        //to use realloc implementation due to address translation issues,
+        //with pointers that reside on diram space, we avoid using 
+        //the realloc implementation due to address translation issues,
         //instead force a malloc/copy/free
         ptr_in_diram_case = true;
     
