@@ -7,7 +7,7 @@ Overview
 The {IDF_TARGET_NAME} integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 18 measurement channels (analog enabled pins).
 
 
-..only:: esp32
+.. only:: esp32
 
     The ADC driver API supports ADC1 (8 channels, attached to GPIOs 32 - 39), and ADC2 (10 channels, attached to GPIOs 0, 2, 4, 12 - 15 and 25 - 27). However, the usage of ADC2 has some restrictions for the application:
 

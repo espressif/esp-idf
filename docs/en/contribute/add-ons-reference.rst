@@ -148,7 +148,7 @@ Other Extensions
 
 :idf_file:`docs/idf_extensions/format_idf_target.py`
     An extension for replacing generic target related names with the idf_target passed to the Sphinx command line.
-    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will, if the backspaces are removed, render as This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will, if the backspaces are removed, render as This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
     This cannot be used inside tables.
 

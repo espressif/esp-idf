@@ -103,7 +103,7 @@ What is the meaning of debugger's startup commands?
 
 On startup, debugger is issuing sequence of commands to reset the chip and halt it at specific line of code. This sequence (shown below) is user defined to pick up at most convenient / appropriate line and start debugging.
 
-* ``set remote hardware-watchpoint-limit 2`` — Restrict GDB to using two hardware watchpoints supported by the chip, 2 for ESP32. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
+* ``set remote hardware-watchpoint-limit 2`` — Restrict GDB to using two hardware watchpoints supported by the chip, 2 for {IDF_TARGET_NAME}. For more information see https://sourceware.org/gdb/onlinedocs/gdb/Remote-Configuration.html.
 * ``mon reset halt`` — reset the chip and keep the CPUs halted
 * ``flushregs`` — monitor (``mon``) command can not inform GDB that the target state has changed. GDB will assume that whatever stack the target had before ``mon reset halt`` will still be valid. In fact, after reset the target state will change, and executing ``flushregs`` is a way to force GDB to get new state from the target.
 * ``thb app_main`` — insert a temporary hardware breakpoint at ``app_main``, put here another function name if required
@@ -117,7 +117,7 @@ Configuration of OpenOCD for specific target
 
 OpenOCD needs to be told what JTAG adapter to use and processor the JTAG adapter is connected to. To do so, use existing **board** configuration files located in OpenOCD's ``share/openocd/scripts/board`` folder.
 
-For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed (see section :ref:`esp-modules-and-boards-esp-wrover-kit-v1`), use the following configuration files:
+For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed, use the following configuration files:
 
 * ``board/esp32-wrover-kit-3.3v.cfg``
 
@@ -135,15 +135,16 @@ Adapter's clock speed
 
 See :ref:`jtag-debugging-tip-optimize-jtag-speed` for guidance how to set this value.
 
+.. only:: esp32
 
-Single core debugging
-"""""""""""""""""""""
+    Single core debugging
+    """""""""""""""""""""
 
-::
+    ::
 
-    set ESP32_ONLYCPU 1
+        set ESP32_ONLYCPU 1
 
-Comment out this line for dual core debugging.
+    Comment out this line for dual core debugging.
 
 
 Disable RTOS support

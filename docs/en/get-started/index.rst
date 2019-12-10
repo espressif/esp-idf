@@ -13,7 +13,7 @@ After that, a simple example will show you how to use ESP-IDF (Espressif IoT Dev
 Introduction
 ============
 
-..only:: esp32
+.. only:: esp32
 
     {IDF_TARGET_NAME} is a system on a chip that integrates the following features:
 

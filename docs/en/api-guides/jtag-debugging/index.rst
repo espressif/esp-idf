@@ -150,7 +150,7 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
 
 .. note::
 
-    The files provided after ``-f`` above are specific for ESP-WROVER-KIT with :ref:`esp-modules-and-boards-esp32-wroom-32` module. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
+    The files provided after ``-f`` above are specific for ESP-WROVER-KIT with esp32-wroom-32 module. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
 .. highlight:: none
 

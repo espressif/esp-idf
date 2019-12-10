@@ -105,7 +105,7 @@ External SPI Memory
 
 When :doc:`external RAM </api-guides/external-ram>` is enabled, external SPI RAM under 4MiB in size can be allocated using standard ``malloc`` calls, or via ``heap_caps_malloc(MALLOC_CAP_SPIRAM)``, depending on configuration. See :ref:`external_ram_config` for more details.
 
-..only:: esp32
+.. only:: esp32
 
     To use the region above the 4MiB limit, you can use the :doc:`himem API</api-reference/system/himem>`.
 

@@ -64,7 +64,7 @@ to ESP-IDF.
   not done so already. Furthermore, ``float`` cannot be used in interrupt service
   routines.
 
-:ref:`task-deletion`: Task deletion behavior has been backported from FreeRTOS
+`Task Deletion`_: Task deletion behavior has been backported from FreeRTOS
 v9.0.0 and modified to be SMP compatible. Task memory will be freed immediately
 when :cpp:func:`vTaskDelete` is called to delete a task that is not currently running
 and not pinned to the other core. Otherwise, freeing of task memory will still
@@ -461,7 +461,7 @@ occur.
 ESP-IDF FreeRTOS provides the added feature of Deletion Callbacks. Deletion
 Callbacks are called automatically during task deletion to free memory pointed
 to by TLSP. Each TLSP can have its own Deletion Callback. Note that due to the
-to :ref:`task-deletion` behavior, there can be instances where Deletion
+to `Task Deletion`_ behavior, there can be instances where Deletion
 Callbacks are called in the context of the Idle Tasks. Therefore Deletion
 Callbacks **should never attempt to block** and critical sections should be kept
 as short as possible to minimize priority inversion.

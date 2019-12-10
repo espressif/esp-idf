@@ -19,20 +19,22 @@ Hardware
 
 The ESP-PSRAM32 chip is a 1.8 V device which can only be used in parallel with a 1.8 V flash component. Make sure to either set the MTDI pin to a high signal level on bootup, or program {IDF_TARGET_NAME} eFuses to always use the VDD_SIO level of 1.8 V. Not doing this can damage the PSRAM and/or flash chip.
 
-To connect the ESP-PSRAM32 chip to ESP32D0W*, connect the following signals:
+.. only:: esp32
 
- * PSRAM /CE (pin 1) > ESP32 GPIO 16
- * PSRAM SO (pin 2) > flash DO
- * PSRAM SIO[2] (pin 3) > flash WP
- * PSRAM SI (pin 5) > flash DI
- * PSRAM SCLK (pin 6) > ESP32 GPIO 17
- * PSRAM SIO[3] (pin 7) > flash HOLD
- * PSRAM Vcc (pin 8) > ESP32 VCC_SDIO
+    To connect the ESP-PSRAM32 chip to ESP32D0W*, connect the following signals:
 
-Connections for ESP32D2W* chips are TBD.
+    * PSRAM /CE (pin 1) > ESP32 GPIO 16
+    * PSRAM SO (pin 2) > flash DO
+    * PSRAM SIO[2] (pin 3) > flash WP
+    * PSRAM SI (pin 5) > flash DI
+    * PSRAM SCLK (pin 6) > ESP32 GPIO 17
+    * PSRAM SIO[3] (pin 7) > flash HOLD
+    * PSRAM Vcc (pin 8) > ESP32 VCC_SDIO
 
-.. NOTE::
-   Espressif produces the line of ESP32-WROVER modules which contain ESP32, 1.8 V flash, and ESP-PSRAM32. These modules are ready to be mounted on an end product PCB.
+    Connections for ESP32D2W* chips are TBD.
+
+    .. NOTE::
+    Espressif produces the line of ESP32-WROVER modules which contain ESP32, 1.8 V flash, and ESP-PSRAM32. These modules are ready to be mounted on an end product PCB.
 
 .. _external_ram_config:
 

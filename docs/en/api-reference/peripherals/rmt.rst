@@ -242,7 +242,7 @@ The RMT controller triggers interrupts on four specific events describes below. 
 
 Setting or clearing an interrupt enable mask for specific channels and events may be also done by calling :cpp:func:`rmt_set_intr_enable_mask` or :cpp:func:`rmt_clr_intr_enable_mask`.
 
-When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDT_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, 7] and the ``event_name`` is one of four events described above.
+When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, 7] and the ``event_name`` is one of four events described above.
 
 If you do not need an ISR anymore, you can deregister it by calling a function :cpp:func:`rmt_isr_deregister`.
 

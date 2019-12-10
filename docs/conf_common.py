@@ -133,8 +133,8 @@ def update_exclude_patterns(tags):
                   'api-guides/ulp-legacy.rst',
                   'api-guides/unit-tests-legacy.rst',
                   'api-guides/jtag-debugging/configure-wrover.rst',
-                  'api-reference/bluetooth/**',
                   'api-reference/system/himem.rst',
+                  'api-reference/bluetooth/**',
                   'api-reference/system/ipc.rst',
                   'hw-reference/get-started-devkitc-v2.rst',
                   'hw-reference/get-started-devkitc.rst',
@@ -148,7 +148,6 @@ def update_exclude_patterns(tags):
                   'get-started-legacy/**',
                   'gnu-make-legacy.rst']:
             exclude_patterns.append(e)
-
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
