@@ -51,6 +51,15 @@ const char *esp_coex_version_get(void);
  */
 esp_err_t esp_coex_preference_set(esp_coex_prefer_t prefer);
 
+/**
+ * @brief Set coexist wifi_percent
+ *  Default is 50%. The range is 10% <= wifi_percent <= 90%.
+ *
+ *  @param prefer : percent without %. Eg: 70 means 70%
+ *  @return : ESP_OK - success, other - failed
+ */
+esp_err_t esp_coex_wifi_percent_set(int wifi_percent);
+
 #ifdef __cplusplus
 }
 #endif

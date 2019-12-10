@@ -28,6 +28,7 @@
 #include "osi/allocator.h"
 #include <string.h>
 
+#include "esp_coexist_internal.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -453,3 +454,67 @@ BOOLEAN bta_dm_search_sm_execute(BT_HDR *p_msg)
     return TRUE;
 }
 
+void BTA_DmCoexEventTrigger(uint32_t event)
+{
+    uint8_t bt_status = 0;
+
+    switch(event) {
+    case BTA_COEX_EVT_SCAN_STARTED:
+        bta_dm_cb.coex_scan_st = true;
+        break;
+    case BTA_COEX_EVT_SCAN_STOPPED:
+        bta_dm_cb.coex_scan_st = false;
+        break;
+    case BTA_COEX_EVT_ACL_CONNECTED:
+        bta_dm_cb.coex_acl_st = true;
+        // clear streaming state and sniff state;
+        bta_dm_cb.coex_streaming_st = false;
+        bta_dm_cb.coex_sniff_st = false;
+        break;
+    case BTA_COEX_EVT_ACL_DISCONNECTED:
+        bta_dm_cb.coex_acl_st = false;
+        // clear streaming state and sniff state;
+        bta_dm_cb.coex_streaming_st = false;
+        bta_dm_cb.coex_sniff_st = false;
+        break;
+    case BTA_COEX_EVT_STREAMING_STARTED:
+        bta_dm_cb.coex_streaming_st = true;
+        break;
+    case BTA_COEX_EVT_STREAMING_STOPPED:
+        bta_dm_cb.coex_streaming_st = false;
+        break;
+    case BTA_COEX_EVT_SNIFF_ENTER:
+        bta_dm_cb.coex_sniff_st = true;
+        break;
+    case BTA_COEX_EVT_SNIFF_EXIT:
+        bta_dm_cb.coex_sniff_st = false;
+        break;
+    default:
+        break;
+    }
+
+    if (bta_dm_cb.coex_scan_st) {
+        bt_status = coex_schm_status_get(COEX_SCHM_ST_TYPE_BT) | COEX_SCHM_BT_ST_ISCAN;
+    } else {
+        bt_status = coex_schm_status_get(COEX_SCHM_ST_TYPE_BT) & (~COEX_SCHM_BT_ST_ISCAN);
+    }
+
+    // acl st may overwrite the wifi_percent set by coex_scan_st
+    if (bta_dm_cb.coex_acl_st) {
+        bt_status = bt_status | COEX_SCHM_BT_ST_ACL_CONNECTED;
+
+        if (bta_dm_cb.coex_streaming_st) {
+            bt_status = bt_status | COEX_SCHM_BT_ST_A2DP_STREAMING;
+        } else if (bta_dm_cb.coex_sniff_st) {
+            bt_status = (bt_status & (~COEX_SCHM_BT_ST_A2DP_STREAMING)) | COEX_SCHM_BT_ST_SNIFF;
+        } else {
+            // not streaming, not sniff, acl connected
+            bt_status = bt_status & (~(COEX_SCHM_BT_ST_A2DP_STREAMING | COEX_SCHM_BT_ST_SNIFF));
+        }
+    } else {
+        bt_status = (bt_status & ~(COEX_SCHM_BT_ST_A2DP_STREAMING | COEX_SCHM_BT_ST_ACL_CONNECTED | COEX_SCHM_BT_ST_SNIFF));
+    }
+
+    coex_schm_status_set(COEX_SCHM_ST_TYPE_BT, bt_status);
+    APPL_TRACE_EVENT("bt_status %02x", bt_status);
+}

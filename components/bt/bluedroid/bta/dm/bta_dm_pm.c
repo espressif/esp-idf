@@ -910,6 +910,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
                 bta_dm_pm_stop_timer_by_mode(p_data->pm_status.bd_addr, p_dev->pm_mode_attempted);
                 bta_dm_pm_set_mode(p_data->pm_status.bd_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
             }
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_SNIFF_EXIT);
         } else {
 #if (BTM_SSR_INCLUDED == TRUE)
             if (p_dev->prev_low) {
@@ -921,6 +922,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
             /* link to active mode, need to restart the timer for next low power mode if needed */
             bta_dm_pm_stop_timer(p_data->pm_status.bd_addr);
             bta_dm_pm_set_mode(p_data->pm_status.bd_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_SNIFF_EXIT);
         }
         break;
 
@@ -951,6 +953,7 @@ void bta_dm_pm_btm_status(tBTA_DM_MSG *p_data)
              * PM timer sole purpose is to put the link
              * in sniff mode from host side.
              */
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_SNIFF_ENTER);
             bta_dm_pm_stop_timer(p_data->pm_status.bd_addr);
         } else {
             p_dev->info &= ~(BTA_DM_DI_SET_SNIFF | BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF);

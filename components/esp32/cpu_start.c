@@ -422,6 +422,10 @@ void start_cpu0_default(void)
 #if CONFIG_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
+
+    coex_preference_set(CONFIG_SW_COEXIST_PREFERENCE_VALUE);
+    extern esp_err_t coex_schm_init(void);
+    coex_schm_init();
 #endif
 
     bootloader_flash_update_id();

@@ -31,6 +31,27 @@ typedef enum {
 
 typedef void (* coex_func_cb_t)(uint32_t event, int sched_cnt);
 
+typedef enum {
+    COEX_SCHM_ST_TYPE_WIFI = 0,
+    COEX_SCHM_ST_TYPE_BLE,
+    COEX_SCHM_ST_TYPE_BT,
+} coex_schm_st_type_t;
+
+#define COEX_SCHM_BLE_ST_IDLE               0x0
+#define COEX_SCHM_BLE_ST_ADV                0x01
+#define COEX_SCHM_BLE_ST_SCAN               0x02
+#define COEX_SCHM_BLE_ST_CONNECTED          0x04
+#define COEX_SCHM_BLE_ST_MESH_CONFIG        0x08
+#define COEX_SCHM_BLE_ST_MESH_TRAFFIC       0x10
+#define COEX_SCHM_BLE_ST_MESH_STANDBY       0x20
+
+#define COEX_SCHM_BT_ST_IDLE                0x0
+#define COEX_SCHM_BT_ST_ISCAN               0x01
+#define COEX_SCHM_BT_ST_INQ                 0x02
+#define COEX_SCHM_BT_ST_ACL_CONNECTED       0x04
+#define COEX_SCHM_BT_ST_SNIFF               0x08
+#define COEX_SCHM_BT_ST_A2DP_STREAMING      0x10
+
 /**
  * @brief Pre-Init software coexist
  *        extern function for internal use.
@@ -65,8 +86,7 @@ void coex_pause(void);
  */
 void coex_resume(void);
 
-/**
- * @brief Get software coexist version string
+/** * @brief Get software coexist version string
  *        extern function for internal use.
  * @return : version string
  */
@@ -82,10 +102,34 @@ const char *coex_version_get(void);
 esp_err_t coex_preference_set(coex_prefer_t prefer);
 
 /**
+ * @brief Set coexist wifi_percent for internal
+ *  Default is 50%. The range is 10% <= wifi_percent <= 90%.
+ *
+ *  @param prefer : percent without %. Eg: 70 means 70%
+ *  @return : ESP_OK - success, other - failed
+ */
+esp_err_t coex_wifi_percent_set(int wifi_percent);
+
+/**
  * @brief Get software coexist status.
  * @return : software coexist status
  */
 uint32_t coex_status_get(void);
+
+/**
+ * @brief Set coex schm status
+ * @param type : WIFI/BLE/BT
+ * @param status : WIFI/BLE/BT STATUS
+ * @return : ESP_OK - success, other - failed
+ */
+esp_err_t coex_schm_status_set(coex_schm_st_type_t type, uint32_t status);
+
+/**
+ * @brief Get coex schm status
+ * @param type : WIFI/BLE/BT
+ * @return : status
+ */
+uint32_t coex_schm_status_get(coex_schm_st_type_t type);
 
 /**
  * @brief Set software coexist condition.
