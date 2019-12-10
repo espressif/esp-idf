@@ -15,7 +15,7 @@ class Gitlab(object):
         config_data_from_env = os.getenv("PYTHON_GITLAB_CONFIG")
         if config_data_from_env:
             # prefer to load config from env variable
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+            with tempfile.NamedTemporaryFile("w", delete=False) as temp_file:
                 temp_file.write(config_data_from_env)
             config_files = [temp_file.name]
         else:
