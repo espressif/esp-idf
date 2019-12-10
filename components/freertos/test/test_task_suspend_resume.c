@@ -124,7 +124,6 @@ void IRAM_ATTR timer_group0_isr(void *vp_arg)
 {
     // Clear interrupt
     timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_1);
 
     timer_isr_fired = true;
     TaskHandle_t handle = vp_arg;
@@ -170,6 +169,7 @@ static void test_resume_task_from_isr(int target_core)
 
     vTaskDelay(1);
 
+    timer_deinit(TIMER_GROUP_0, TIMER_0);
     TEST_ASSERT_TRUE(timer_isr_fired);
     TEST_ASSERT_TRUE(resumed);
 }
