@@ -76,6 +76,9 @@ static UCHAR ucUartNumber = UART_NUM_MAX - 1;
 static BOOL bRxStateEnabled = FALSE; // Receiver enabled flag
 static BOOL bTxStateEnabled = FALSE; // Transmitter enabled flag
 
+static UCHAR ucBuffer[MB_SERIAL_BUF_SIZE]; // Temporary buffer to transfer received data to modbus stack
+static USHORT uiRxBufferPos = 0;    // position in the receiver buffer
+
 void vMBMasterPortSerialEnable(BOOL bRxEnable, BOOL bTxEnable)
 {
     // This function can be called from xMBRTUTransmitFSM() of different task
@@ -99,12 +102,14 @@ static void vMBMasterPortSerialRxPoll(size_t xEventSize)
     USHORT usCnt = 0;
 
     if (bRxStateEnabled) {
-        if (xEventSize > 0) {
+        if (xEventSize > MB_SERIAL_RESP_LEN_MIN) {
             xEventSize = (xEventSize > MB_SERIAL_BUF_SIZE) ?  MB_SERIAL_BUF_SIZE : xEventSize;
             // Get received packet into Rx buffer
-            for(usCnt = 0; xReadStatus && (usCnt < xEventSize); usCnt++ ) {
+            USHORT usLength = uart_read_bytes(ucUartNumber, &ucBuffer[0], xEventSize, portMAX_DELAY);
+            uiRxBufferPos = 0;
+            for(usCnt = 0; xReadStatus && (usCnt < usLength); usCnt++ ) {
                 // Call the Modbus stack callback function and let it fill the stack buffers.
-                xReadStatus = pxMBMasterFrameCBByteReceived(); // calls callback xMBRTUReceiveFSM()
+                xReadStatus = pxMBMasterFrameCBByteReceived(); // callback to receive FSM state machine
             }
             // The buffer is transferred into Modbus stack and is not needed here any more
             uart_flush_input(ucUartNumber);
@@ -124,7 +129,7 @@ BOOL xMBMasterPortSerialTxPoll(void)
         // Continue while all response bytes put in buffer or out of buffer
         while((bNeedPoll) && (usCount++ < MB_SERIAL_BUF_SIZE)) {
             // Calls the modbus stack callback function to let it fill the UART transmit buffer.
-            bNeedPoll = pxMBMasterFrameCBTransmitterEmpty( ); // calls callback xMBRTUTransmitFSM();
+            bNeedPoll = pxMBMasterFrameCBTransmitterEmpty( ); // callback to transmit FSM state machine
         }
         ESP_LOGD(TAG, "MB_TX_buffer sent: (%d) bytes.", (uint16_t)(usCount - 1));
         // Waits while UART sending the packet
@@ -254,6 +259,7 @@ BOOL xMBMasterPortSerialInit( UCHAR ucPORT, ULONG ulBaudRate, UCHAR ucDataBits, 
     } else {
         vTaskSuspend(xMbTaskHandle); // Suspend serial task while stack is not started
     }
+    uiRxBufferPos = 0;
     ESP_LOGD(MB_PORT_TAG,"%s Init serial.", __func__);
     return TRUE;
 }
@@ -276,6 +282,9 @@ BOOL xMBMasterPortSerialPutByte(CHAR ucByte)
 BOOL xMBMasterPortSerialGetByte(CHAR* pucByte)
 {
     assert(pucByte != NULL);
-    USHORT usLength = uart_read_bytes(ucUartNumber, (uint8_t*)pucByte, 1, MB_SERIAL_RX_TOUT_TICKS);
-    return (usLength == 1);
+    MB_PORT_CHECK((uiRxBufferPos < MB_SERIAL_BUF_SIZE),
+            FALSE, "mb stack serial get byte failure.");
+    *pucByte = ucBuffer[uiRxBufferPos];
+    uiRxBufferPos++;
+    return TRUE;
 }

@@ -109,7 +109,7 @@ static void vMBPortSerialRxPoll(size_t xEventSize)
     USHORT usCnt = 0;
 
     if (bRxStateEnabled) {
-        if (xEventSize > 0) {
+        if (xEventSize > MB_SERIAL_RESP_LEN_MIN) {
             xEventSize = (xEventSize > MB_SERIAL_BUF_SIZE) ?  MB_SERIAL_BUF_SIZE : xEventSize;
             // Get received packet into Rx buffer
             for(usCnt = 0; xReadStatus && (usCnt < xEventSize); usCnt++ ) {

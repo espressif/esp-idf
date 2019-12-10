@@ -145,7 +145,6 @@ static BOOL xMBMasterPortTimersEnable(USHORT usTimerTics50us)
     MB_PORT_CHECK((xErr == ESP_OK), FALSE,
                             "timer start failure, timer_start() returned (0x%x).",
                             (uint32_t)xErr);
-    ESP_LOGD(MB_PORT_TAG,"%s Init timer.", __func__);
     return TRUE;
 }
 
