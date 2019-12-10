@@ -118,7 +118,7 @@ print('Version: {0}  Release: {1}'.format(version, release))
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['**/inc/**']
+exclude_patterns = ['**/inc/**', '_static']
 
 
 # Add target-specific excludes based on tags (for the IDF_TARGET). Haven't found any better way to do this yet
