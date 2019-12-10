@@ -223,7 +223,7 @@ def run_one_normal_case(dut, one_case, junit_test_case):
             err_msg = "Reset Check Failed: \r\n\tExpected: {}\r\n\tGet: {}".format(one_case["reset"],
                                                                                    exception_reset_list)
             Utility.console_log(err_msg, color="orange")
-            junit_test_case.add_error_info(err_msg)
+            junit_test_case.add_failure_info(err_msg)
         one_case_finish(result)
 
     while not test_finish:
