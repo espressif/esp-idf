@@ -35,7 +35,7 @@
 
         GDB 硬件调试的配置 - Main 选项卡
 
-6.  点击 “Debugger” 选项卡，在 “GDB Command” 栏中输入 ``xtensa-esp32-elf-gdb`` 来调用调试器。
+6.  点击 “Debugger” 选项卡，在 “GDB Command” 栏中输入 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb`` 来调用调试器。
 
 7.  更改 “Remote host” 的默认配置，在 “Port number” 下面输入 ``3333``。
 
@@ -82,9 +82,9 @@
 
     上面的启动序列看起来有些复杂，如果你对其中的初始化命令不太熟悉，请查阅 :ref:`jtag-debugging-tip-debugger-startup-commands` 章节获取更多说明。
 
-12. 如果你前面已经完成 :ref:`jtag-debugging-configuring-esp32-target` 中介绍的步骤，那么目标正在运行并准备与调试器进行对话。按下 “Debug” 按钮就可以直接调试。否则请按下 “Apply” 按钮保存配置，返回 :ref:`jtag-debugging-configuring-esp32-target` 章节进行配置，最后再回到这里开始调试。
+12. 如果你前面已经完成 :ref:`jtag-debugging-configuring-target` 中介绍的步骤，那么目标正在运行并准备与调试器进行对话。按下 “Debug” 按钮就可以直接调试。否则请按下 “Apply” 按钮保存配置，返回 :ref:`jtag-debugging-configuring-target` 章节进行配置，最后再回到这里开始调试。
 
-一旦所有 1 - 12 的配置步骤都已经完成，Eclipse 就会打开 “Debug” 视图，如下图所示。 
+一旦所有 1 - 12 的配置步骤都已经完成，Eclipse 就会打开 “Debug” 视图，如下图所示。
 
 .. figure:: ../../../_static/debug-perspective.jpg
     :align: center
@@ -101,7 +101,7 @@
 在命令行中使用 GDB
 ^^^^^^^^^^^^^^^^^^
 
-1.  为了能够启动调试会话，需要先启动并运行目标，如果还没有完成，请按照 :ref:`jtag-debugging-configuring-esp32-target` 中的介绍进行操作。
+1.  为了能够启动调试会话，需要先启动并运行目标，如果还没有完成，请按照 :ref:`jtag-debugging-configuring-target` 中的介绍进行操作。
 
 .. highlight:: bash
 
@@ -124,7 +124,7 @@
         thb app_main
         c
 
-    将此文件保存在当前目录中。 
+    将此文件保存在当前目录中。
 
     有关 ``gdbinit`` 文件内部的更多详细信息，请参阅 :ref:`jtag-debugging-tip-debugger-startup-commands` 章节。
 
@@ -134,7 +134,7 @@
 
     ::
 
-        xtensa-esp32-elf-gdb -x gdbinit build/blink.elf
+        xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -x gdbinit build/blink.elf
 
 .. highlight:: none
 
@@ -142,14 +142,14 @@
 
     ::
 
-        user-name@computer-name:~/esp/blink$ xtensa-esp32-elf-gdb -x gdbinit build/blink.elf
+        user-name@computer-name:~/esp/blink$ xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -x gdbinit build/blink.elf
         GNU gdb (crosstool-NG crosstool-ng-1.22.0-61-gab8375a) 7.10
         Copyright (C) 2015 Free Software Foundation, Inc.
         License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
         This is free software: you are free to change and redistribute it.
         There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
         and "show warranty" for details.
-        This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target=xtensa-esp32-elf".
+        This GDB was configured as "--host=x86_64-build_pc-linux-gnu --target=xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf".
         Type "show configuration" for configuration details.
         For bug reporting instructions, please see:
         <http://www.gnu.org/software/gdb/bugs/>.
@@ -158,20 +158,20 @@
         For help, type "help".
         Type "apropos word" to search for commands related to "word"...
         Reading symbols from build/blink.elf...done.
-        0x400d10d8 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/esp32/./freertos_hooks.c:52
+        0x400d10d8 in esp_vApplicationIdleHook () at /home/user-name/esp/esp-idf/components/{IDF_TARGET_TOOLCHAIN_NAME}/./freertos_hooks.c:52
         52          asm("waiti 0");
-        JTAG tap: esp32.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-        JTAG tap: esp32.slave tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
-        esp32: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
-        esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
-        Target halted. PRO_CPU: PC=0x5000004B (active)    APP_CPU: PC=0x00000000 
-        esp32: target state: halted
-        esp32: Core was reset (pwrstat=0x1F, after clear 0x0F).
-        Target halted. PRO_CPU: PC=0x40000400 (active)    APP_CPU: PC=0x40000400 
-        esp32: target state: halted
+        JTAG tap: {IDF_TARGET_PATH_NAME}.cpu0 tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+        JTAG tap: {IDF_TARGET_PATH_NAME}.slave tap/device found: 0x120034e5 (mfg: 0x272 (Tensilica), part: 0x2003, ver: 0x1)
+        {IDF_TARGET_PATH_NAME}: Debug controller was reset (pwrstat=0x5F, after clear 0x0F).
+        {IDF_TARGET_PATH_NAME}: Core was reset (pwrstat=0x5F, after clear 0x0F).
+        {IDF_TARGET_PATH_NAME} halted. PRO_CPU: PC=0x5000004B (active)    APP_CPU: PC=0x00000000
+        {IDF_TARGET_PATH_NAME}: target state: halted
+        {IDF_TARGET_PATH_NAME}: Core was reset (pwrstat=0x1F, after clear 0x0F).
+        Target halted. PRO_CPU: PC=0x40000400 (active)    APP_CPU: PC=0x40000400
+        {IDF_TARGET_PATH_NAME}: target state: halted
         Hardware assisted breakpoint 1 at 0x400db717: file /home/user-name/esp/blink/main/./blink.c, line 43.
         0x0:    0x00000000
-        Target halted. PRO_CPU: PC=0x400DB717 (active)    APP_CPU: PC=0x400D10D8 
+        Target halted. PRO_CPU: PC=0x400DB717 (active)    APP_CPU: PC=0x400D10D8
         [New Thread 1073428656]
         [New Thread 1073413708]
         [New Thread 1073431316]
@@ -183,7 +183,7 @@
 
         Temporary breakpoint 1, app_main () at /home/user-name/esp/blink/main/./blink.c:43
         43      xTaskCreate(&blink_task, "blink_task", 512, NULL, 5, NULL);
-        (gdb) 
+        (gdb)
 
 注意上面日志的倒数第三行显示了调试器已经在 ``app_main()`` 函数的断点处停止，该断点在 ``gdbinit`` 文件中设定。由于处理器已经暂停运行，LED 也不会闪烁。如果这也是你看到的现象，你可以开始调试了。
 

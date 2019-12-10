@@ -5,12 +5,12 @@ ESP-IDF 编程注意事项
 应用程序的启动流程
 ------------------
 
-本文将会介绍 ESP32 从上电到运行 ``app_main``
+本文将会介绍 {IDF_TARGET_NAME} 从上电到运行 ``app_main``
 函数中间所经历的步骤（即启动流程）。
 
 宏观上，该启动流程可以分为如下 3 个步骤：
 
-1. 一级引导程序被固化在了 ESP32 内部的 ROM 中，它会从 Flash 的
+1. 一级引导程序被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 Flash 的
    ``0x1000`` 偏移地址处加载二级引导程序至 RAM(IRAM & DRAM) 中。
 
 2. 二级引导程序从 Flash 中加载分区表和主程序镜像至内存中，主程序中包含了
@@ -26,10 +26,10 @@ ESP-IDF 编程注意事项
 SoC 复位后，PRO CPU 会立即开始运行，执行复位向量代码，而 APP CPU
 仍然保持复位状态。在启动过程中，PRO CPU 会执行所有的初始化操作。APP CPU
 的复位状态会在应用程序启动代码的 ``call_start_cpu0``
-函数中失效。复位向量代码位于 ESP32 芯片掩膜 ROM 的 ``0x40000400``
+函数中失效。复位向量代码位于 {IDF_TARGET_NAME} 芯片掩膜 ROM 的 ``0x40000400``
 地址处，该地址不能被修改。
 
-复位向量调用的启动代码会根据 ``GPIO_STRAP_REG`` 寄存器的值来确定 ESP32
+复位向量调用的启动代码会根据 ``GPIO_STRAP_REG`` 寄存器的值来确定 {IDF_TARGET_NAME}
 的工作模式，该寄存器保存着复位后 bootstrap
 引脚的电平状态。根据不同的复位原因，程序会执行不同的操作：
 
@@ -67,7 +67,7 @@ SoC 复位后，PRO CPU 会立即开始运行，执行复位向量代码，而 A
 
 在 ESP-IDF 中，存放在 Flash 的 ``0x1000``
 偏移地址处的二进制镜像就是二级引导程序。二级引导程序的源码可以在 ESP-IDF
-的 components/bootloader 目录下找到。请注意，对于 ESP32
+的 components/bootloader 目录下找到。请注意，对于 {IDF_TARGET_NAME}
 芯片来说，这并不是唯一的安排程序镜像的方式。事实上用户完全可以把一个功能齐全的应用程序烧写到
 Flash 的 ``0x1000`` 偏移地址处运行，但这超出本文档的范围。ESP-IDF
 使用二级引导程序可以增加 Flash 分区的灵活性（使用分区表），并且方便实现
@@ -99,7 +99,7 @@ ESP-IDF 中。目前，可以通过将 bootloader
 应用程序启动阶段
 ~~~~~~~~~~~~~~~~
 
-ESP-IDF 应用程序的入口是 ``components/esp32/cpu_start.c`` 文件中的
+ESP-IDF 应用程序的入口是 ``components/{IDF_TARGET_PATH_NAME}/cpu_start.c`` 文件中的
 ``call_start_cpu0``
 函数，该函数主要完成了两件事，一是启用堆分配器，二是使 APP CPU
 跳转到其入口点—— ``call_start_cpu1`` 函数。PRO CPU 上的代码会给 APP
@@ -110,7 +110,7 @@ CPU 跳转到 ``start_cpu0`` 函数，APP CPU 跳转到 ``start_cpu1`` 函数。
 ``start_cpu0`` 和 ``start_cpu1``
 这两个函数都是弱类型的，这意味着如果某些特定的应用程序需要修改初始化顺序，就可以通过重写这两个函数来实现。 ``start_cpu0``
 默认的实现方式是初始化用户在 ``menuconfig``
-中选择的组件，具体实现步骤可以阅读 ``components/esp32/cpu_start.c``
+中选择的组件，具体实现步骤可以阅读 ``components/{IDF_TARGET_PATH_NAME}/cpu_start.c``
 文件中的源码。请注意，此阶段会调用应用程序中存在的 C++
 全局构造函数。一旦所有必要的组件都初始化好，就会创建 *main
 task* ，并启动 FreeRTOS 的调度器。
@@ -129,7 +129,7 @@ task* ，并启动 FreeRTOS 的调度器。
 应用程序的内存布局
 ------------------
 
-ESP32 芯片具有灵活的内存映射功能，本小节将介绍 ESP-IDF
+{IDF_TARGET_NAME} 芯片具有灵活的内存映射功能，本小节将介绍 ESP-IDF
 默认使用这些功能的方式。
 
 ESP-IDF 应用程序的代码可以放在以下内存区域之一。
@@ -154,7 +154,7 @@ RAM。除了开始的 64kB 用作 PRO CPU 和 APP CPU
 
    void IRAM_ATTR gpio_isr_handler(void* arg)
    {
-       // ...      
+       // ...
    }
 
 下面列举了应用程序中可能或者应该放入 IRAM 中运行例子。
@@ -169,7 +169,7 @@ RAM。除了开始的 64kB 用作 PRO CPU 和 APP CPU
    DRAM 中。
 
 -  可以将一些时间关键的代码放在 IRAM 中，这样可以缩减从 Flash
-   加载代码所消耗的时间。ESP32 是通过 32kB 的高速缓存来从外部 Flash
+   加载代码所消耗的时间。{IDF_TARGET_NAME} 是通过 32kB 的高速缓存来从外部 Flash
    中读取代码和数据的，将函数放在 IRAM
    中运行可以减少由高速缓存未命中引起的时间延迟。
 

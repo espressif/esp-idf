@@ -30,7 +30,7 @@ Linux 平台工具链的标准设置
 权限问题 /dev/ttyUSB0
 ------------------------------------------------------------
 
-使用某些 Linux 版本向 ESP32 烧写固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时，可以将当前用户增加至 :ref:` Linux Dialout 组 <linux-dialout-group>`。
+使用某些 Linux 版本向 {IDF_TARGET_NAME} 烧写固件时，可能会出现 ``Failed to open port /dev/ttyUSB0`` 错误消息。此时，可以将当前用户增加至 :ref:` Linux Dialout 组 <linux-dialout-group>`。
 
 后续步骤
 ==========

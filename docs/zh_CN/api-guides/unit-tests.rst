@@ -1,5 +1,5 @@
-ESP32 中的单元测试
-==========================
+{IDF_TARGET_NAME} 中的单元测试
+============================
 :link_to_translation:`en:[English]`
 
 ESP-IDF
@@ -32,7 +32,7 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
     没有必要在每个测试用例中使用 ``UNITY_BEGIN()`` 和 ``UNITY_END()``
     来声明主函数的区域， ``unity_platform.c`` 会自动调用 ``UNITY_BEGIN()``\ ， 然后运行测试用例，最后调用 ``UNITY_END()``。
 
-``test`` 子目录应包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了 
+``test`` 子目录应包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了
 ``unity`` 测试框架，需要将其指定为组件的依赖项。通常，组件
 ：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。 
 
@@ -133,7 +133,7 @@ DUT2（slave）终端：
        TEST_ASSERT(reason == DEEPSLEEP_RESET);
    }
 
-   TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[esp32]", trigger_deepsleep, check_deepsleep_reset_reason);
+   TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[{IDF_TARGET_PATH_NAME}]", trigger_deepsleep, check_deepsleep_reset_reason);
 
 多阶段测试用例向用户呈现了一组测试函数，它需要用户进行交互（选择用例并选择不同的阶段）来运行。
 
@@ -171,7 +171,7 @@ DUT2（slave）终端：
 运行单元测试
 ------------
 
-烧写完成后重启 ESP32， 它将启动单元测试程序。
+烧写完成后重启 {IDF_TARGET_NAME}， 它将启动单元测试程序。
 
 当单元测试应用程序空闲时，输入回车键，它会打印出测试菜单，其中包含所有的测试项目。
 
@@ -199,7 +199,7 @@ DUT2（slave）终端：
    (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
    (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
    (19)    "SPI Master DMA test: length, start, not aligned" [spi]
-   (20)    "reset reason check for deepsleep" [esp32][test_env=UT_T2_1][multi_stage]
+   (20)    "reset reason check for deepsleep" [{IDF_TARGET_PATH_NAME}][test_env=UT_T2_1][multi_stage]
            (1)     "trigger_deepsleep"
            (2)     "check_deepsleep_reset_reason"
 

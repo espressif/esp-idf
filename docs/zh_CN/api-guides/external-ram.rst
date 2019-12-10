@@ -47,7 +47,7 @@ ESP-IDF 完全支持将外部存储器集成到您的应用程序中。您可以
 .. _external_ram_config_memory_map:
 
 集成片外 RAM 到 {IDF_TARGET_NAME} 内存映射
------------------------------------
+---------------------------------------
 
 在 :ref:`CONFIG_SPIRAM_USE` 中选择 "Integrate RAM into {IDF_TARGET_NAME} memory map（集成片外 RAM 到 {IDF_TARGET_NAME} 内存映射）" 选项。
 

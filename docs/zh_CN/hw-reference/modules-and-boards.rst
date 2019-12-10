@@ -80,7 +80,7 @@ ESP32-WROOM-32D/ESP32-WROOM-32U 模组
 
 两款模组均集成了 ESP32-D0WD 芯片，与 :ref:`esp-modules-and-boards-esp32-wroom-32` 集成的 ESP32-D0WDQ6 相比，ESP32-D0WD 芯片的封装更小，在 PCB 上占用的面积更小。
 
-有关这两款模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 中的表格和 `乐鑫产品订购信息`_。 
+有关这两款模组的详细信息，请查看 :ref:`esp-wroom-solo-wrover-modules` 中的表格和 `乐鑫产品订购信息`_。
 
 ESP32-WROOM-32U 是整个 WROOM/WROVER 模组系列中最小的模组。
 
@@ -214,7 +214,7 @@ ESP32-PICO-KIT V4.1 开发板集成了 `ESP32-PICO-D4 模组`_，只需在 PCB (
 
 
 .. _esp-modules-and-boards-esp32-devkitc:
-   
+
 ESP32 DevKitC V4 开发板
 ------------------------------
 

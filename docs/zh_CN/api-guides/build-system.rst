@@ -13,7 +13,7 @@
 
 一个 ESP-IDF 项目可以看作是多个不同组件的集合，例如一个显示当前湿度的网页服务器会包含以下组件：
 
-- ESP32 基础库，包括 libc、ROM bindings 等
+- {IDF_TARGET_NAME} 基础库，包括 libc、ROM bindings 等
 - Wi-Fi 驱动
 - TCP/IP 协议栈
 - FreeRTOS 操作系统
@@ -30,7 +30,7 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 - ``项目配置`` 保存在项目根目录下名为 ``sdkconfig`` 的文件中，可以通过 ``idf.py menuconfig`` 进行修改，且一个项目只能包含一个项目配置。
 - ``应用程序`` 是由 ESP-IDF 构建得到的可执行文件。一个项目通常会构建两个应用程序：项目应用程序（可执行的主文件，即用户自定义的固件）和引导程序（启动并初始化项目应用程序）。
 - ``组件`` 是模块化且独立的代码，会被编译成静态库（.a 文件）并链接到应用程序。部分组件由 ESP-IDF 官方提供，其他组件则来源于其它开源项目。
-- ``目标`` 特指运行构建后应用程序的硬件设备。ESP-IDF 当前仅支持 ``ESP32`` 这一个硬件目标。
+- ``目标`` 特指运行构建后应用程序的硬件设备。ESP-IDF 当前仅支持 ``{IDF_TARGET_NAME}`` 这一个硬件目标。
 
 请注意，以下内容并不属于项目的组成部分：
 
@@ -49,7 +49,7 @@ idf.py
 
 - CMake_，配置待构建的系统
 - 命令行构建工具（Ninja_ 或 `GNU Make`）
-- `esptool.py`_，烧录 ESP32
+- `esptool.py`_，烧录 {IDF_TARGET_NAME}
 
 :ref:`入门指南 <get-started-configure>` 简要介绍了如何设置 ``idf.py`` 用于配置、构建并烧录项目。
 
@@ -68,10 +68,10 @@ idf.py
 
 - ``idf.py clean`` 会把构建输出的文件从构建目录中删除，从而清理整个项目。下次构建时会强制“重新完整构建”这个项目。清理时，不会删除 CMake 配置输出及其他文件。
 - ``idf.py fullclean`` 会将整个 ``build`` 目录下的内容全部删除，包括所有 CMake 的配置输出文件。下次构建项目时，CMake 会从头开始配置项目。请注意，该命令会递归删除构建目录下的 *所有文件*，请谨慎使用。项目配置文件不会被删除。
-- ``idf.py flash`` 会在必要时自动构建项目，并将生成的二进制程序烧录进 ESP32 设备中。``-p`` 和 ``-b`` 选项可分别设置串口的设备名和烧录时的波特率。
-- ``idf.py monitor`` 用于显示 ESP32 设备的串口输出。``-p`` 选项可用于设置主机端串口的设备名，按下 ``Ctrl-]`` 可退出监视器。更多有关监视器的详情，请参阅 :doc:`tools/idf-monitor`。
+- ``idf.py flash`` 会在必要时自动构建项目，并将生成的二进制程序烧录进 {IDF_TARGET_NAME} 设备中。``-p`` 和 ``-b`` 选项可分别设置串口的设备名和烧录时的波特率。
+- ``idf.py monitor`` 用于显示 {IDF_TARGET_NAME} 设备的串口输出。``-p`` 选项可用于设置主机端串口的设备名，按下 ``Ctrl-]`` 可退出监视器。更多有关监视器的详情，请参阅 :doc:`tools/idf-monitor`。
 
-多个 ``idf.py`` 命令可合并成一个，例如，``idf.py -p COM4 clean flash monitor`` 会依次清理源码树，构建项目，烧录进 ESP32 设备，最后运行串口监视器。
+多个 ``idf.py`` 命令可合并成一个，例如，``idf.py -p COM4 clean flash monitor`` 会依次清理源码树，构建项目，烧录进 {IDF_TARGET_NAME} 设备，最后运行串口监视器。
 
 .. Note:: 环境变量 ``ESPPORT`` 和 ``ESPBAUD`` 可分别用作 ``-p`` 和 ``-b`` 选项的默认值。在命令行中，重新为这两个选项赋值，会覆盖其默认值。
 
@@ -81,8 +81,8 @@ idf.py
 ^^^^^^^^
 
 - ``idf.py app``，``idf.py bootloader``，``idf.py partition_table`` 仅可用于从适用的项目中构建应用程序、引导程序或分区表。
-- ``idf.py app-flash`` 等匹配命令，仅将项目的特定部分烧录至 ESP32。
-- ``idf.py -p PORT erase_flash`` 会使用 esptool.py 擦除 ESP32 的整个 Flash。
+- ``idf.py app-flash`` 等匹配命令，仅将项目的特定部分烧录至 {IDF_TARGET_NAME}。
+- ``idf.py -p PORT erase_flash`` 会使用 esptool.py 擦除 {IDF_TARGET_NAME} 的整个 Flash。
 - ``idf.py size`` 会打印应用程序相关的大小信息，``idf.py size-components`` 和 ``idf.py size-files`` 这两个命令相似，分别用于打印每个组件或源文件的详细信息。
 - ``idf.py reconfigure`` 命令会重新运行 CMake_ （即便无需重新运行）。正常使用时，并不需要运行此命令，但当源码树中添加/删除文件后或更改 CMake cache 变量时，此命令会非常有用，例如，``idf.py -DNAME='VALUE' reconfigure`` 会将 CMake cache 中的变量 ``NAME`` 的值设置为 ``VALUE``。
 
@@ -776,7 +776,7 @@ Flash 参数
 
 您可以参照如下命令将任意烧录参数文件传递给 ``esptool.py``::
 
-    python esptool.py --chip esp32 write_flash @build/flash_project_args
+    python esptool.py --chip {IDF_TARGET_PATH_NAME} write_flash @build/flash_project_args
 
 也可以手动复制参数文件中的数据到命令行中执行。
 
