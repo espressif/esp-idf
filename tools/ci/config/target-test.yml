@@ -276,7 +276,7 @@ example_test_011:
   extends: .example_debug_template
   tags:
     - ESP32
-    - Example_T2_RS485
+    - UT_T2_RS485
   artifacts:
       when: always
       expire_in: 1 week

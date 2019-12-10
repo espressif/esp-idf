@@ -376,7 +376,8 @@ eMBPoll( void )
             if ( !ucMBFrame ) {
                 return MB_EILLSTATE;
             }
-            ESP_LOGD(MB_PORT_TAG, "%s:EV_EXECUTE", __func__);            ucFunctionCode = ucMBFrame[MB_PDU_FUNC_OFF];
+            ESP_LOGD(MB_PORT_TAG, "%s:EV_EXECUTE", __func__);
+            ucFunctionCode = ucMBFrame[MB_PDU_FUNC_OFF];
             eException = MB_EX_ILLEGAL_FUNCTION;
             for( i = 0; i < MB_FUNC_HANDLERS_MAX; i++ )
             {
@@ -385,7 +386,7 @@ eMBPoll( void )
                 {
                     break;
                 }
-                else if( xFuncHandlers[i].ucFunctionCode == ucFunctionCode )
+                if( xFuncHandlers[i].ucFunctionCode == ucFunctionCode )
                 {
                     eException = xFuncHandlers[i].pxHandler( ucMBFrame, &usLength );
                     break;
@@ -418,7 +419,7 @@ eMBPoll( void )
         case EV_FRAME_SENT:
             ESP_LOGD(MB_PORT_TAG, "%s:EV_FRAME_SENT", __func__);
             break;
-            
+
         default:
             break;
         }
