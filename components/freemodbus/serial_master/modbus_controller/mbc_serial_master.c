@@ -262,7 +262,7 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
             break;
 
         case MB_MRE_MASTER_BUSY:
-            error = ESP_ERR_INVALID_STATE; // Master is busy (previous request is pending
+            error = ESP_ERR_INVALID_STATE; // Master is busy (previous request is pending)
             break;
 
         default:
