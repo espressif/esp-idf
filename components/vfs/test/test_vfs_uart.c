@@ -202,6 +202,17 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
     vSemaphoreDelete(write_arg.done);
 }
 
+TEST_CASE("fcntl supported in UART VFS", "[vfs]")
+{
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    TEST_ASSERT_NOT_EQUAL(-1, flags);
+    int res = fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    TEST_ASSERT_NOT_EQUAL(-1, res);
+    /* revert */
+    res = fcntl(STDIN_FILENO, F_SETFL, flags);
+    TEST_ASSERT_NOT_EQUAL(-1, res);
+}
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
