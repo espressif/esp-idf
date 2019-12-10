@@ -27,6 +27,7 @@ class SubModule(object):
 
     def _get_commit_id(self, path):
         output = subprocess.check_output(["git", "ls-tree", "HEAD", path])
+        output = output.decode()
         # example output: 160000 commit d88a262fbdf35e5abb372280eb08008749c3faa0	components/esp_wifi/lib
         match = self.GIT_LS_TREE_OUTPUT_PATTERN.search(output)
         return match.group(1)
