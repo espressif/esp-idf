@@ -412,7 +412,7 @@ Below is a "big scenario" which describes some small scenarios in AP mode:
 
 
 {IDF_TARGET_NAME} Wi-Fi Scan
-------------------------
+----------------------------
 
 Currently, the esp_wifi_scan_start() API is supported only in Station or Station+AP mode.
 
