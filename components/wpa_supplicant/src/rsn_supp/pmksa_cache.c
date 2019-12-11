@@ -279,8 +279,9 @@ void pmksa_cache_deinit(struct rsn_pmksa_cache *pmksa)
         os_free(prev);
     }
     pmksa_cache_set_expiration(pmksa);
-    os_free(pmksa);
     esp_timer_stop(pmksa->cache_timeout_timer);
+    esp_timer_delete(pmksa->cache_timeout_timer);
+    os_free(pmksa);
 }
 
 
