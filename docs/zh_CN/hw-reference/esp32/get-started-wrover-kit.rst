@@ -2,7 +2,7 @@ ESP-WROVER-KIT V4.1 入门指南
 =========================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP-WROVER-KIT V4.1 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
 
 
 准备工作
@@ -40,7 +40,7 @@ ESP-WROVER-KIT 开发板已集成了如下组件：
 
 ESP-WROVER-KIT 开发板的主要组件和连接方式如下图所示。
 
-.. figure:: ../../_static/esp-wrover-kit-block-diagram.png
+.. figure:: ../../../_static/esp-wrover-kit-block-diagram.png
     :align: center
     :alt: ESP-WROVER-KIT 功能框图
     :figclass: align-center
@@ -55,7 +55,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-esp-wrover-kit-v4.1-board-front:
 
-.. figure:: ../../_static/esp-wrover-kit-v4.1-layout-front.png
+.. figure:: ../../../_static/esp-wrover-kit-v4.1-layout-front.png
     :align: center
     :alt: ESP-WROVER-KIT 开发板布局 -- 俯视图
     :figclass: align-center
@@ -64,7 +64,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-esp-wrover-kit-v4.1-board-back:
 
-.. figure:: ../../_static/esp-wrover-kit-v4.1-layout-back.png
+.. figure:: ../../../_static/esp-wrover-kit-v4.1-layout-back.png
     :align: center
     :alt: ESP-WROVER-KIT 开发板布局 -- 仰视图
     :figclass: align-center
@@ -74,7 +74,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 下表将从图片右上角开始，以顺时针顺序介绍图 1 中的主要组件，然后按同样顺序介绍图 2 中的主要组件。
 
-.. list-table:: 
+.. list-table::
     :widths: 25 75
     :header-rows: 1
 
@@ -90,9 +90,9 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
       - 这款 ESP32 模组内置 64-Mbit PSRAM，可提供灵活的额外存储空间和数据处理能力。
     * - 诊断 LED 信号灯
       - 本开发板 FT2232 芯片的 GPIO 管脚连接了 4 个红色 LED 信号灯，以备后用。
-    * - UART 
+    * - UART
       - 串口。FT2232 和 ESP32 的串行 TX/RX 信号已引出至 JP2 的两端。默认情况下，这两路信号由跳线帽连接。如果仅需使用 ESP32 模组串口，则可移除相关跳线帽，将模组连接至其他外部串口设备。
-    * - SPI 
+    * - SPI
       - 默认情况下，ESP32 使用 SPI 接口访问内置 flash 和 PSRAM。使用这些引脚连接 ESP32 和其他 SPI 设备。这种情况下，需增加额外的片选 (CS) 信号。注意，本接口的工作电压为 3.3 V。
     * - CTS/RTS
       - 串口流控信号。管脚默认不连接至电路。为了使能该功能，必须用跳线帽断路掉 JP14 的相应管脚。
@@ -119,7 +119,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     * - RGB LED
       - 红绿蓝发光二极管，可由 PMW 控制。
     * - I/O 连接器
-      - 板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。 
+      - 板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
     * - Micro SD 卡槽
       - 适用于需要扩充数据存储空间或进行备份的应用开发场景。
     * - LCD 显示器
@@ -134,7 +134,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 用户可通过 3 组排针，设置开发板功能，其中常见功能见下表：
 
-.. list-table:: 
+.. list-table::
     :widths: 25 35 40
     :header-rows: 1
 
@@ -145,15 +145,15 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
       - |jp7-ext_5v|
       - 使用外部电源为 ESP-WROVER-KIT 开发板供电
     * - JP7
-      - |jp7-usb_5v|      
+      - |jp7-usb_5v|
       - 使用 USB 端口为 ESP-WROVER-KIT 开发板供电
-    * - JP2      
-      - |jp2-jtag|        
+    * - JP2
+      - |jp2-jtag|
       - 使能 JTAG 功能
-    * - JP2      
+    * - JP2
       - |jp2-tx-rx|
       - 使能 UART 通信
-    * - JP14     
+    * - JP14
       - |jp14|
       - 使能 RTS/CTS 串口流控
 
@@ -163,7 +163,7 @@ ESP32 管脚分配
 
 ESP32 模组的部分管脚/终端已被板上组件占用或用于外部硬件设备。如果某管脚对应的特定硬件未连接，则该管脚可用作他用。比如，摄像头/JP4 排针未连接相应硬件，则这些 GPIO 可用于其他用途。
 
-部分管脚具备多个功能，可供板上组件或外部硬件设备同时使用，比如 GPIO0 和 GPIO2。由于管脚限制，一些外围设备不可同时使用，比如，由于 JTAG 和 SD 卡槽需共用部分管脚，因此一些使用 SD 卡功能的应用无法同时进行 JTAG 调试。 
+部分管脚具备多个功能，可供板上组件或外部硬件设备同时使用，比如 GPIO0 和 GPIO2。由于管脚限制，一些外围设备不可同时使用，比如，由于 JTAG 和 SD 卡槽需共用部分管脚，因此一些使用 SD 卡功能的应用无法同时进行 JTAG 调试。
 
 其他情况下，不同外设可同时使用。比如，LCD 屏幕和 SD 卡仅共用一个 GPIO21 管脚，可以同时使用。该管脚可为 LCD 屏幕提供 D/C（数据/控制）信号，并用于读取来自 SD 卡槽的 CD 信号（卡检测信号）。如无需使用卡检测功能，开发人员还可以通过移除 R167 来禁用该功能。此时，LCD 和 SD 卡槽可同时使用。
 
@@ -176,7 +176,7 @@ ESP32 模组的部分管脚/终端已被板上组件占用或用于外部硬件�
 JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 列的介绍。两侧的“共用”列则介绍了这些管脚在板上的其他用途。
 
 
-.. list-table:: 
+.. list-table::
     :widths: 30 20 20 30
     :header-rows: 1
 
@@ -209,7 +209,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
       - IO35
       - IO34
       - 摄像头
-    * - 摄像头 
+    * - 摄像头
       - IO39
       - IO36
       - 摄像头
@@ -236,11 +236,11 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
     * - 摄像头，LED，Boot
       - IO0
       - IO2
-      - LED，MicroSD 
+      - LED，MicroSD
     * - JTAG，MicroSD
       - IO15
       - 5V
-      - 
+      -
 
 说明：
 
@@ -420,7 +420,7 @@ USB 供电                   使能 UART 通信
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 相关文档
@@ -429,14 +429,14 @@ USB 供电                   使能 UART 通信
 * `ESP-WROVER-KIT V4.1 原理图`_ (PDF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
-* :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/index`
+* :doc:`../../api-guides/jtag-debugging/index`
+* :doc:`../../hw-reference/index`
 
-.. |jp7-ext_5v| image:: ../../_static/esp-wrover-kit-v4.1-jp7-ext_5v.jpg
-.. |jp7-usb_5v| image:: ../../_static/esp-wrover-kit-v4.1-jp7-usb_5v.jpg
-.. |jp2-jtag| image:: ../../_static/esp-wrover-kit-v4.1-jp2-jtag.jpg
-.. |jp2-tx-rx| image:: ../../_static/esp-wrover-kit-v4.1-jp2-tx-rx.jpg
-.. |jp14| image:: ../../_static/esp-wrover-kit-v4.1-jp14.jpg
+.. |jp7-ext_5v| image:: ../../../_static/esp-wrover-kit-v4.1-jp7-ext_5v.jpg
+.. |jp7-usb_5v| image:: ../../../_static/esp-wrover-kit-v4.1-jp7-usb_5v.jpg
+.. |jp2-jtag| image:: ../../../_static/esp-wrover-kit-v4.1-jp2-jtag.jpg
+.. |jp2-tx-rx| image:: ../../../_static/esp-wrover-kit-v4.1-jp2-tx-rx.jpg
+.. |jp14| image:: ../../../_static/esp-wrover-kit-v4.1-jp14.jpg
 
 .. _ESP-WROVER-KIT V4.1 原理图: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_V4_1.pdf
 

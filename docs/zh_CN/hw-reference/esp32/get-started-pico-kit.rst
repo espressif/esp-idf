@@ -2,7 +2,7 @@ ESP32-PICO-KIT V4/V4.1 入门指南
 =======================================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP32-PICO-KIT V4 / V4.1 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-PICO-KIT V4 / V4.1 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
 
 本指南仅适用于 ESP32-PICO-KIT V4 和 V4.1。ESP32-PICO-KIT V4.1 与 V4 的最大差别在于桥接器，其中 V4 搭载的 CP2102 USB-to-UART 桥接器最高速率为 1 Mbps，V4.1 搭载的 CP2102N 桥接器最高传输速率 3 Mbps。
 
@@ -43,7 +43,7 @@ ESP32-PICO-KIT 集成了 USB 转 UART 桥接电路，允许开发人员直接通
 
 ESP32-PICO-KIT 开发板的主要组件和连接方式见下。
 
-.. figure:: ../../_static/esp32-pico-kit-v4-functional-block-diagram.png
+.. figure:: ../../../_static/esp32-pico-kit-v4-functional-block-diagram.png
     :align: center
     :alt: ESP32-PICO-KIT 功能框图
     :figclass: align-center
@@ -58,7 +58,7 @@ ESP32-PICO-KIT 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-pico-kit-v4-board-front:
 
-.. figure:: ../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
+.. figure:: ../../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
     :alt: ESP32-PICO-KIT 开发板布局
     :figclass: align-center
@@ -67,7 +67,7 @@ ESP32-PICO-KIT 开发板的主要组件、接口及控制方式见下。
 
 ESP32-PICO-KIT 开发板的主要组件描述见下表（从左上角起顺时针顺序）。
 
-.. list-table:: 
+.. list-table::
     :widths: 25 75
     :header-rows: 1
 
@@ -79,7 +79,7 @@ ESP32-PICO-KIT 开发板的主要组件描述见下表（从左上角起顺时�
       - 5V-to-3.3V 低压差稳压器
     * - USB-to-UART 桥接器
       - 单芯片 USB-to-UART 桥接器。V4 版本搭载的 CP2102 可提供高达 1 Mbps 的传输速率，V4.1 版本搭载的 CP2102N 可提供高达 3 Mbps 的传输速率。
-    * - Micro USB 端口       
+    * - Micro USB 端口
       - USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
     * - 5V Power On LED
       - 开发板通电后，该红色指示灯将亮起。更多信息，请见 `相关文档`_ 中的原理图。
@@ -119,7 +119,7 @@ Header J2
 ======  =================  ======  ======================================================
 1       FLASH_SD1 (FSD1)   I/O     | GPIO8, SD_DATA1, SPID, HS1_DATA1 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U2CTS
 2       FLASH_SD3 (FSD3)   I/O     | GPIO7, SD_DATA0, SPIQ, HS1_DATA0 :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U2RTS
-3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U1CTS 
+3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`（见说明 1） <get-started-pico-kit-v4-pin-notes>` , U1CTS
 4       IO21               I/O     | GPIO21, VSPIHD, EMAC_TX_EN
 5       IO22               I/O     | GPIO22, VSPIWP, U0RTS, EMAC_TXD1
 6       IO19               I/O     | GPIO19, VSPIQ, U0CTS, EMAC_TXD0
@@ -192,7 +192,7 @@ No.     Name               Type    Function
 
 ESP32-PICO-KIT 上电前，请首先确认开发板完好无损。
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 开发板尺寸
@@ -200,14 +200,14 @@ ESP32-PICO-KIT 上电前，请首先确认开发板完好无损。
 
 ESP32-PICO-KIT 的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")。
 
-.. figure:: ../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
+.. figure:: ../../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
     :align: center
     :alt: ESP32-PICO-KIT 尺寸图 -- 背面
     :figclass: align-center
 
     ESP32-PICO-KIT 尺寸图 -- 背面
 
-.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-side.jpg
+.. figure:: ../../../_static/esp32-pico-kit-v4-dimensions-side.jpg
     :align: center
     :alt: ESP32-PICO-KIT V4 尺寸图 -- 侧面
     :figclass: align-center
@@ -224,7 +224,7 @@ ESP32-PICO-KIT 的尺寸为 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4")。
 * `ESP32-PICO-KIT V4.1 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT 参考设计 <https://www.espressif.com/zh-hans/support/download/documents/development-board?keys=esp32-pico-kit+参考设计>`_ ，内含 OrCAD 原理图、PCB 布局、Gerbers 和 BOM 表。
 * `《ESP32-PICO-D4 技术规格书》 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
-* :doc:`../hw-reference/index`
+* :doc:`../../hw-reference/index`
 
 
 .. toctree::

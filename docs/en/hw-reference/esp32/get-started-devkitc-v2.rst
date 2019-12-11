@@ -29,7 +29,7 @@ The following figure and the table below describe the key components, interfaces
 
 .. _get-started-esp32-devkitc-v2-board-front-make:
 
-.. figure:: ../../_static/esp32-devkitc-v2-functional-overview.png
+.. figure:: ../../../_static/esp32-devkitc-v2-functional-overview.png
     :align: center
     :alt: ESP32-DevKitC V2 board layout
     :figclass: align-center
@@ -71,7 +71,7 @@ Start Application Development
 
 Before powering up your ESP32-DevKitC V2, please make sure that the board is in good condition with no obvious signs of damage.
 
-After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+After that, proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents

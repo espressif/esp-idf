@@ -2,7 +2,7 @@ ESP32-PICO-KIT V3 Getting Started Guide
 =======================================
 :link_to_translation:`zh_CN:[中文]`
 
-This guide shows how to get started with the ESP32-PICO-KIT V3 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../hw-reference/index`.
+This guide shows how to get started with the ESP32-PICO-KIT V3 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../../hw-reference/index`.
 
 
 What You Need
@@ -30,7 +30,7 @@ Functional Description
 
 The following figure and the table below describe the key components, interfaces, and controls of the ESP32-PICO-KIT V3 board.
 
-.. figure:: ../../_static/esp32-pico-kit-v3-layout.jpg
+.. figure:: ../../../_static/esp32-pico-kit-v3-layout.jpg
     :align: center
     :alt: ESP32-PICO-KIT V3 board layout
     :figclass: align-center
@@ -65,7 +65,7 @@ Start Application Development
 
 Before powering up your ESP32-PICO-KIT V3, please make sure that the board is in good condition with no obvious signs of damage.
 
-After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+After that, proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents
@@ -73,5 +73,5 @@ Related Documents
 
 * `ESP32-PICO-KIT V3 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
-* :doc:`../hw-reference/index`
+* :doc:`../../hw-reference/index`
 

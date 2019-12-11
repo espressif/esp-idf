@@ -29,7 +29,7 @@ ESP32-DevKitC V2 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-esp32-devkitc-v2-board-front:
 
-.. figure:: ../../_static/esp32-devkitc-v2-functional-overview.png
+.. figure:: ../../../_static/esp32-devkitc-v2-functional-overview.png
     :align: center
     :alt: ESP32-DevKitC V2 开发板
     :figclass: align-center
@@ -38,7 +38,7 @@ ESP32-DevKitC V2 开发板的主要组件、接口及控制方式见下。
 
 ESP32-DevKitC V2 开发板
 
-.. list-table:: 
+.. list-table::
     :widths: 25 75
     :header-rows: 1
 
@@ -74,7 +74,7 @@ ESP32-DevKitC V2 开发板
 
 ESP32-DevKitC V2 上电前，请首先确认开发板完好无损。
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 相关文档

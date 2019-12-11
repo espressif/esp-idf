@@ -25,7 +25,7 @@ It consists of two development boards, the Ethernet board A and the PoE board B,
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
-.. figure:: ../../_static/esp32-ethernet-kit-v1.0.png
+.. figure:: ../../../_static/esp32-ethernet-kit-v1.0.png
     :align: center
     :alt: ESP32-Ethernet-Kit V1.0
     :figclass: align-center
@@ -40,7 +40,7 @@ Functionality Overview
 
 The block diagram below shows the main components of ESP32-Ethernet-Kit and their interconnections.
 
-.. figure:: ../../_static/esp32-ethernet-kit-block-diagram.png
+.. figure:: ../../../_static/esp32-ethernet-kit-block-diagram.png
     :align: center
     :scale: 50%
     :alt: ESP32-Ethernet-Kit block diagram (click to enlarge)
@@ -60,7 +60,7 @@ The following two figures and tables describe the key components, interfaces, an
 Ethernet Board (A)
 ^^^^^^^^^^^^^^^^^^
 
-.. figure:: ../../_static/esp32-ethernet-kit-a-v1.0-layout.png
+.. figure:: ../../../_static/esp32-ethernet-kit-a-v1.0-layout.png
     :align: center
     :scale: 80%
     :alt: ESP32-Ethernet-Kit - Ethernet board (A) layout
@@ -121,7 +121,7 @@ GPIO Header 1       This header provides six unpopulated through-hole solder pad
 PoE Board (B)
 ^^^^^^^^^^^^^
 
-This board coverts power delivered over the Ethernet cable (PoE) to provide a power supply for the Ethernet board (A). The main components of the PoE board (B) are shown on the block diagram under `Functionality Overview`_. 
+This board coverts power delivered over the Ethernet cable (PoE) to provide a power supply for the Ethernet board (A). The main components of the PoE board (B) are shown on the block diagram under `Functionality Overview`_.
 
 The PoE board (B) has the following features:
 
@@ -130,7 +130,7 @@ The PoE board (B) has the following features:
 
 To take advantage of the PoE functionality the **RJ45 Port** of the Ethernet board (A) should be connected with an Ethernet cable to a switch that supports PoE. When the Ethernet board (A) detects 5 V power output from the PoE board (B), the USB power will be automatically cut off.
 
-.. figure:: ../../_static/esp32-ethernet-kit-b-v1.0-layout.png
+.. figure:: ../../../_static/esp32-ethernet-kit-b-v1.0-layout.png
     :align: center
     :scale: 80%
     :alt: ESP32-Ethernet-Kit - PoE board (B)
@@ -171,7 +171,7 @@ DIP SW   GPIO Pin          Pin Functionality if DIP SW is ON
  5       GPIO4             Connected to FT2232H to provide JTAG functionality
  6       GPIO2             Connected to on-board 25 MHz oscillator
  7       GPIO5             Connected to RESET_N input of IP101GRI
- 8       n/a               
+ 8       n/a
 =======  ================  ================================================================
 
 You can make a certain GPIO pin available for other purposes by putting its DIP SW to the Off position.
@@ -195,7 +195,7 @@ This is a 2 x 2 jumper pin header intended for the UART flow control.
 GPIO Allocation
 ---------------
 
-This section describes allocation of ESP32 GPIOs to specific interfaces or functions of the ESP32-Ethernet-Kit. 
+This section describes allocation of ESP32 GPIOs to specific interfaces or functions of the ESP32-Ethernet-Kit.
 
 
 IP101GRI (PHY) Interface
@@ -234,7 +234,7 @@ The allocation of the ESP32 (MAC) pins to IP101GRI (PHY) is shown in the table b
 GPIO Header 1
 ^^^^^^^^^^^^^
 
-This header exposes some GPIOs that are not used elsewhere on the ESP32-Ethernet-Kit. 
+This header exposes some GPIOs that are not used elsewhere on the ESP32-Ethernet-Kit.
 
 ====  ================
 .     ESP32 Pin
@@ -258,7 +258,7 @@ This header contains the GPIOs with specific MII functionality (except GPIO2), a
 ====  ==========  =================  ==================
  1    GPIO17      EMAC_CLK_180       See note 1
  2    GPIO16      EMAC_CLK_OUT       See note 1
- 3    GPIO4       EMAC_TX_ER         
+ 3    GPIO4       EMAC_TX_ER
  4    GPIO2       n/a                See note 2
  5    GPIO5       EMAC_RX_CLK        See note 2
 ====  ==========  =================  ==================
@@ -346,7 +346,7 @@ Initial Setup
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Proceed to :doc:`../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+Proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 Move on to the next section only if you have successfully completed all the above steps.
 
@@ -354,7 +354,7 @@ Move on to the next section only if you have successfully completed all the abov
 Configure and Load the Ethernet Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After setting up the development environment and testing the board, you can configure and flash the :example:`ethernet/ethernet` example. This example has been created for testing Ethernet functionality. It supports different PHY, including **IP101GRI** installed on :ref:`ESP32-Ethernet-Kit V1.0 board <get-started-esp32-ethernet-kit-b-v1.0>`. 
+After setting up the development environment and testing the board, you can configure and flash the :example:`ethernet/ethernet` example. This example has been created for testing Ethernet functionality. It supports different PHY, including **IP101GRI** installed on :ref:`ESP32-Ethernet-Kit V1.0 board <get-started-esp32-ethernet-kit-b-v1.0>`.
 
 
 Related Documents
@@ -364,8 +364,8 @@ Related Documents
 * `ESP32-Ethernet-Kit V1.0 PoE board (B) schematic`_ (PDF)
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER-B Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
-* :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/index`
+* :doc:`../../api-guides/jtag-debugging/index`
+* :doc:`../../hw-reference/index`
 
 .. _ESP32-Ethernet-Kit V1.0 Ethernet board (A) schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
 .. _ESP32-Ethernet-Kit V1.0 PoE board (B) schematic: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf

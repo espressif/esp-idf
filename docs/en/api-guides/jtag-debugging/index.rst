@@ -279,20 +279,10 @@ Tips and Quirks
 
 This section provides collection of links to all tips and quirks referred to from various parts of this guide.
 
-* :ref:`jtag-debugging-tip-breakpoints`
-* :ref:`jtag-debugging-tip-where-breakpoints`
-* :ref:`jtag-debugging-tip-flash-mappings`
-* :ref:`jtag-debugging-tip-why-next-works-as-step`
-* :ref:`jtag-debugging-tip-code-options`
-* :ref:`jtag-debugging-tip-freertos-support`
-* :ref:`jtag-debugging-tip-code-flash-voltage`
-* :ref:`jtag-debugging-tip-optimize-jtag-speed`
-* :ref:`jtag-debugging-tip-debugger-startup-commands`
-* :ref:`jtag-debugging-tip-openocd-configure-target`
-* :ref:`jtag-debugging-tip-reset-by-debugger`
-* :ref:`jtag-debugging-tip-jtag-pins-reconfigured`
-* :ref:`jtag-debugging-tip-at-firmware-issue`
-* :ref:`jtag-debugging-tip-reporting-issues`
+.. toctree::
+    :maxdepth: 2
+
+    tips-and-quirks
 
 
 Related Documents

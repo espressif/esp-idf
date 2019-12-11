@@ -116,7 +116,7 @@ OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRT
 
 OpenOCD 需要知道当前使用的 JTAG 适配器的类型，以及其连接的目标板和处理器的类型。为此，请使用位于 OpenOCD 安装目录下 ``share/openocd/scripts/interface`` 和 ``share/openocd/scripts/board`` 文件夹中现有的配置文件。
 
-例如，如果使用板载 ESP-WROOM-32 模组的 ESP-WROVER-KIT 开发板（详见 :ref:`esp-modules-and-boards-esp-wrover-kit-v1`），请使用以下配置文件：
+例如，如果使用板载 ESP-WROOM-32 模组的 ESP-WROVER-KIT 开发板，请使用以下配置文件：
 
 * ``board/esp32-wrover-kit-3.3v.cfg``
 

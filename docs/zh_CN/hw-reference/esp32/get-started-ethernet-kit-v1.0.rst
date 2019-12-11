@@ -24,7 +24,7 @@ ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发�
 
 .. _get-started-esp32-ethernet-kit-b-v1.0:
 
-.. figure:: ../../_static/esp32-ethernet-kit-v1.0.png
+.. figure:: ../../../_static/esp32-ethernet-kit-v1.0.png
     :align: center
     :alt: ESP32-Ethernet-Kit V1.0
     :figclass: align-center
@@ -39,7 +39,7 @@ ESP32-Ethernet-Kit 是一款来自 `乐鑫 <https://espressif.com>`_ 的开发�
 
 ESP32-Ethernet-Kit 开发板的主要组件和连接方式见下。
 
-.. figure:: ../../_static/esp32-ethernet-kit-block-diagram.png
+.. figure:: ../../../_static/esp32-ethernet-kit-block-diagram.png
     :align: center
     :scale: 50%
     :alt: ESP32-Ethernet-Kit 功能框图（点击放大）
@@ -59,7 +59,7 @@ ESP32-Ethernet-Kit 开发板的主要组件、接口及控制方式见下。
 以太网子板（A 板）
 ^^^^^^^^^^^^^^^^^^
 
-.. figure:: ../../_static/esp32-ethernet-kit-a-v1.0-layout.png
+.. figure:: ../../../_static/esp32-ethernet-kit-a-v1.0-layout.png
     :align: center
     :scale: 80%
     :alt: ESP32-Ethernet-Kit - 以太网子板（A 板）布局
@@ -87,7 +87,7 @@ GPIO Header 3            可连接至 ESP32 的部分 GPIO，根据 `功能选�
 FT2232H                    FT2232H 多协议 USB 转串口桥接器。开发人员可通过 USB 接口对 FT2232H 芯片进行控制和编程，与 ESP32 建立连接。FT2232H 芯片可在通道 A 提供 USB-to-JTAG 接口功能，并在通道 B 提供 USB-to-Serial 接口功能，便利开发人员的应用开发与调试。见 `ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图`_。
 
 USB 端口                  USB 接口。可用作开发板的供电电源，或连接 PC 和开发板的通信接口。
- 
+
 电源开关                  电源开关。拨向 **Boot** 按键一侧，开发板上电；拨离 **Boot** 按键一侧，开发板掉电。
 
 5V Input                 5V 电源接口建议仅在开发板自动运行（未连接 PC）时使用。仅用于全负荷工作下的后备电源。
@@ -127,7 +127,7 @@ PoE 子板（B 板）具有以下特性：
 
 如需使用 PoE 功能，请用以太网线缆将以太网子板（A 板）上的 **RJ45 端口** 连接至 PoE 的交换机。太网子板（A 板）检测到来自 PoE 子板（B 板）的 5 V 供电后，将从 USB 供电自动切换至 PoE 供电。
 
-.. figure:: ../../_static/esp32-ethernet-kit-b-v1.0-layout.png
+.. figure:: ../../../_static/esp32-ethernet-kit-b-v1.0-layout.png
     :align: center
     :scale: 80%
     :alt: ESP32-Ethernet-Kit -  PoE 子板（B 板）
@@ -136,7 +136,7 @@ PoE 子板（B 板）具有以下特性：
     ESP32-Ethernet-Kit -  PoE 子板（B 板）布局（点击放大）
 
 ==========================  =================================================================================================================================
-主要组件                      基本介绍   
+主要组件                      基本介绍
 ==========================  =================================================================================================================================
 A 板连接器                    1 个 4 针排母，用于将 B 板连接至 :ref:`以太网子板（A 板）<get-started-esp32-ethernet-kit-a-v1.0-layout>`。
 外部电源终端                   PoE 子板（B 板）备用电源。
@@ -340,7 +340,7 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 如需使用较早 GNU Make 编译系统，则请参考 :ref:`get-started-step-by-step` 章节。
 
@@ -360,8 +360,8 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 * `ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图`_ (PDF)
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER-B 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_cn.pdf>`_ (PDF)
-* :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/index`
+* :doc:`../../api-guides/jtag-debugging/index`
+* :doc:`../../hw-reference/index`
 
 .. _ESP32-Ethernet-Kit V1.0 以太网子板（A 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_A_V1.0_20190517.pdf
 .. _ESP32-Ethernet-Kit V1.0 PoE 子板（B 板）原理图: https://dl.espressif.com/dl/schematics/SCH_ESP32-ETHERNET-KIT_B_V1.0_20190517.pdf

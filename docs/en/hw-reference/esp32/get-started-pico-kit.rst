@@ -2,7 +2,7 @@ ESP32-PICO-KIT V4 / V4.1 Getting Started Guide
 ==============================================
 :link_to_translation:`zh_CN:[中文]`
 
-This guide shows how to get started with the ESP32-PICO-KIT V4 / V4.1 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../hw-reference/index`.
+This guide shows how to get started with the ESP32-PICO-KIT V4 / V4.1 mini development board. For the description of other ESP32-PICO-KIT versions, please check :doc:`../../hw-reference/index`.
 
 This particular description covers ESP32-PICO-KIT V4 and V4.1. The difference is the upgraded USB-UART bridge from CP2102 in V4 with up to 1 Mbps transfer rates to CP2102N in V4.1 with up to 3 Mbps transfer rates.
 
@@ -33,7 +33,7 @@ This setup reduces the costs of additional external components as well as the co
 
 The development board features a USB-UART Bridge circuit which allows developers to connect the board to a computer's USB port for flashing and debugging.
 
-All the IO signals and system power on ESP32-PICO-D4 are led out to two rows of 20 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, 2 x 17 header pads are populated with two rows of male pin headers. The remaining 2 x 3 header pads beside the antenna are not populated. These pads may be populated later by the user if required. 
+All the IO signals and system power on ESP32-PICO-D4 are led out to two rows of 20 x 0.1" header pads on both sides of the development board for easy access. For compatibility with Dupont wires, 2 x 17 header pads are populated with two rows of male pin headers. The remaining 2 x 3 header pads beside the antenna are not populated. These pads may be populated later by the user if required.
 
 .. note::
 
@@ -45,7 +45,7 @@ Functionality Overview
 
 The block diagram below shows the main components of ESP32-PICO-KIT and their interconnections.
 
-.. figure:: ../../_static/esp32-pico-kit-v4-functional-block-diagram.png
+.. figure:: ../../../_static/esp32-pico-kit-v4-functional-block-diagram.png
     :align: center
     :alt: ESP32-PICO-KIT functional block diagram
     :figclass: align-center
@@ -60,7 +60,7 @@ The following figure and the table below describe the key components, interfaces
 
 .. _get-started-pico-kit-v4-board-front:
 
-.. figure:: ../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
+.. figure:: ../../../_static/esp32-pico-kit-v4.1-f-layout.jpeg
     :align: center
     :alt: ESP32-PICO-KIT board layout
     :figclass: align-center
@@ -118,7 +118,7 @@ No.     Name               Type    Function
 ======  =================  ======  ======================================================
 1       FLASH_SD1 (FSD1)   I/O     | GPIO8, SD_DATA1, SPID, HS1_DATA1 :ref:`(See 1) <get-started-pico-kit-v4-pin-notes>` , U2CTS
 2       FLASH_SD3 (FSD3)   I/O     | GPIO7, SD_DATA0, SPIQ, HS1_DATA0 :ref:`(See 1) <get-started-pico-kit-v4-pin-notes>` , U2RTS
-3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`(See 1) <get-started-pico-kit-v4-pin-notes>` , U1CTS 
+3       FLASH_CLK (FCLK)   I/O     | GPIO6, SD_CLK, SPICLK, HS1_CLK :ref:`(See 1) <get-started-pico-kit-v4-pin-notes>` , U1CTS
 4       IO21               I/O     | GPIO21, VSPIHD, EMAC_TX_EN
 5       IO22               I/O     | GPIO22, VSPIWP, U0RTS, EMAC_TXD1
 6       IO19               I/O     | GPIO19, VSPIQ, U0CTS, EMAC_TXD0
@@ -193,7 +193,7 @@ Start Application Development
 
 Before powering up your ESP32-PICO-KIT, please make sure that the board is in good condition with no obvious signs of damage.
 
-After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+After that, proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Board Dimensions
@@ -201,14 +201,14 @@ Board Dimensions
 
 The dimensions are 52 x 20.3 x 10 mm (2.1" x 0.8" x 0.4").
 
-.. figure:: ../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
+.. figure:: ../../../_static/esp32-pico-kit-v4.1-dimensions-back.jpg
     :align: center
     :alt: ESP32-PICO-KIT dimensions - back
     :figclass: align-center
 
     ESP32-PICO-KIT dimensions - back
 
-.. figure:: ../../_static/esp32-pico-kit-v4-dimensions-side.jpg
+.. figure:: ../../../_static/esp32-pico-kit-v4-dimensions-side.jpg
     :align: center
     :alt: ESP32-PICO-KIT V4 dimensions - side
     :figclass: align-center
@@ -225,7 +225,7 @@ Related Documents
 * `ESP32-PICO-KIT V4.1 schematic <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v4.1_schematic.pdf>`_ (PDF)
 * `ESP32-PICO-KIT Reference Design <https://www.espressif.com/en/support/download/documents?keys=ESP32-PICO-KIT+Reference+Design>`_ containing OrCAD schematic, PCB layout, gerbers and BOM
 * `ESP32-PICO-D4 Datasheet <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_en.pdf>`_ (PDF)
-* :doc:`../hw-reference/index`
+* :doc:`../../hw-reference/index`
 
 
 .. toctree::

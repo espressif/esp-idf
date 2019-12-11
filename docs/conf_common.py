@@ -136,18 +136,17 @@ def update_exclude_patterns(tags):
                   'api-reference/system/himem.rst',
                   'api-reference/bluetooth/**',
                   'api-reference/system/ipc.rst',
-                  'hw-reference/get-started-devkitc-v2.rst',
-                  'hw-reference/get-started-devkitc.rst',
-                  'hw-reference/get-started-ethernet-kit-v1.0.rst',
-                  'hw-reference/get-started-ethernet-kit.rst',
-                  'hw-reference/get-started-pico-kit-v3.rst',
-                  'hw-reference/get-started-pico-kit.rst',
-                  'hw-reference/get-started-wrover-kit-v2.rst',
-                  'hw-reference/get-started-wrover-kit-v3.rst',
-                  'hw-reference/get-started-wrover-kit.rst',
                   'get-started-legacy/**',
-                  'gnu-make-legacy.rst']:
+                  'gnu-make-legacy.rst',
+                  'hw-reference/esp32/**']:
             exclude_patterns.append(e)
+
+    if "esp32s2" not in tags:
+        # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
+        # note: in toctrees, these also need to be marked with a :esp32: filter
+        for e in ['hw-reference/esp32s2/**']:
+            exclude_patterns.append(e)
+
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
@@ -347,7 +346,6 @@ texinfo_documents = [
 
 # If true, do not generate a @detailmenu in the "Top" node's menu.
 # texinfo_no_detailmenu = False
-
 
 
 # Override RTD CSS theme to introduce the theme corrections

@@ -2,7 +2,7 @@ ESP-WROVER-KIT V2 Getting Started Guide
 =======================================
 :link_to_translation:`zh_CN:[中文]`
 
-This guide shows how to get started with the ESP-WROVER-KIT V2 development board and also provides information about its functionality and configuration options. For the description of other ESP-WROVER-KIT versions, please check :doc:`../hw-reference/index`.
+This guide shows how to get started with the ESP-WROVER-KIT V2 development board and also provides information about its functionality and configuration options. For the description of other ESP-WROVER-KIT versions, please check :doc:`../../hw-reference/index`.
 
 
 What You Need
@@ -39,7 +39,7 @@ Functionality Overview
 
 The block diagram below shows the main components of ESP-WROVER-KIT and their interconnections.
 
-.. figure:: ../../_static/esp-wrover-kit-block-diagram.png
+.. figure:: ../../../_static/esp-wrover-kit-block-diagram.png
     :align: center
     :alt: ESP-WROVER-KIT block diagram
     :figclass: align-center
@@ -54,7 +54,7 @@ The following two figures and the table below describe the key components, inter
 
 .. _get-started-esp-wrover-kit-v2-board-front:
 
-.. figure:: ../../_static/esp-wrover-kit-v2-layout-front.png
+.. figure:: ../../../_static/esp-wrover-kit-v2-layout-front.png
     :align: center
     :alt: ESP-WROVER-KIT board layout - front
     :figclass: align-center
@@ -63,7 +63,7 @@ The following two figures and the table below describe the key components, inter
 
 .. _get-started-esp-wrover-kit-v2-board-back:
 
-.. figure:: ../../_static/esp-wrover-kit-v2-layout-back.png
+.. figure:: ../../../_static/esp-wrover-kit-v2-layout-back.png
     :align: center
     :alt: ESP-WROVER-KIT board layout - back
     :figclass: align-center
@@ -170,7 +170,7 @@ Turn the **Power Switch** to ON, the **5V Power On LED** should light up.
 Now to Development
 ^^^^^^^^^^^^^^^^^^
 
-Please proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+Please proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Related Documents
@@ -180,16 +180,16 @@ Related Documents
 * `ESP32 Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROOM-32 Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_en.pdf>`_ (PDF)
-* :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/index`
+* :doc:`../../api-guides/jtag-debugging/index`
+* :doc:`../../hw-reference/index`
 
 
-.. |jp1-sd_io2| image:: ../../_static/wrover-jp1-sd_io2.png
-.. |jp1-both| image:: ../../_static/wrover-jp1-both.png
-.. |jp7-ext_5v| image:: ../../_static/wrover-jp7-ext_5v.png
-.. |jp7-usb_5v| image:: ../../_static/wrover-jp7-usb_5v.png
-.. |jp8| image:: ../../_static/wrover-jp8.png
-.. |jp11-tx-rx| image:: ../../_static/wrover-jp11-tx-rx.png
-.. |jp14| image:: ../../_static/wrover-jp14.png
+.. |jp1-sd_io2| image:: ../../../_static/wrover-jp1-sd_io2.png
+.. |jp1-both| image:: ../../../_static/wrover-jp1-both.png
+.. |jp7-ext_5v| image:: ../../../_static/wrover-jp7-ext_5v.png
+.. |jp7-usb_5v| image:: ../../../_static/wrover-jp7-usb_5v.png
+.. |jp8| image:: ../../../_static/wrover-jp8.png
+.. |jp11-tx-rx| image:: ../../../_static/wrover-jp11-tx-rx.png
+.. |jp14| image:: ../../../_static/wrover-jp14.png
 
 .. _ESP-WROVER-KIT V2 schematic: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf

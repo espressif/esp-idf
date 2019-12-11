@@ -70,10 +70,10 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
     .. toctree::
         :maxdepth: 1
 
-        ESP32-DevKitC <../hw-reference/get-started-devkitc>
-        ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
-        ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
-        ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
+        ESP32-DevKitC <../hw-reference/esp32/get-started-devkitc>
+        ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
+        ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
+        ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
 
 
 .. _get-started-step-by-step:

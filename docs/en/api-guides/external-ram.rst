@@ -33,8 +33,9 @@ The ESP-PSRAM32 chip is a 1.8 V device which can only be used in parallel with a
 
     Connections for ESP32D2W* chips are TBD.
 
-    .. NOTE::
-    Espressif produces the line of ESP32-WROVER modules which contain ESP32, 1.8 V flash, and ESP-PSRAM32. These modules are ready to be mounted on an end product PCB.
+    .. note::
+
+        Espressif produces the line of ESP32-WROVER modules which contain ESP32, 1.8 V flash, and ESP-PSRAM32. These modules are ready to be mounted on an end product PCB.
 
 .. _external_ram_config:
 

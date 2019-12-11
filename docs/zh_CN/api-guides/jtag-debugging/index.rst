@@ -127,7 +127,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 .. toctree::
     :maxdepth: 1
 
-    configure-wrover
+    :esp32: configure-wrover
     configure-other-jtag
 
 
@@ -146,7 +146,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 .. note::
 
-    上述命令中 ``-f`` 选项后跟的配置文件专用于板载 :ref:`ESP-WROOM-32 <esp-modules-and-boards-esp32-wroom-32>` 模组的 ESP-WROVER-KIT 开发板。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
+    上述命令中 ``-f`` 选项后跟的配置文件专用于板载 esp32-wroom-32 模组的 ESP-WROVER-KIT 开发板。您可能需要根据具体使用的硬件而选择或修改不同的配置文件，相关指导请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`。
 
 .. highlight:: none
 

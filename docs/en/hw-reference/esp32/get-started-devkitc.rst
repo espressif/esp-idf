@@ -3,7 +3,7 @@ ESP32-DevKitC V4 Getting Started Guide
 
 :link_to_translation:`zh_CN:[中文]`
 
-This guide shows how to start using the ESP32-DevKitC V4 development board. For description of other versions of ESP32-DevKitC check :doc:`../hw-reference/index`.
+This guide shows how to start using the ESP32-DevKitC V4 development board. For description of other versions of ESP32-DevKitC check :doc:`../../hw-reference/index`.
 
 
 What You Need
@@ -21,7 +21,7 @@ You can skip the introduction sections and go directly to Section `Start Applica
 Overview
 --------
 
-ESP32-DevKitC V4 is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-DevKitC V4 on a breadboard. 
+ESP32-DevKitC V4 is a small-sized ESP32-based development board produced by `Espressif <https://espressif.com>`_. Most of the I/O pins are broken out to the pin headers on both sides for easy interfacing. Developers can either connect peripherals with jumper wires or mount ESP32-DevKitC V4 on a breadboard.
 
 To cover a wide range of user requirements, the following versions of ESP32-DevKitC V4 are available:
 
@@ -48,7 +48,7 @@ The following figure and the table below describe the key components, interfaces
 
 .. _get-started-esp32-devkitc-board-front:
 
-.. figure:: ../../_static/esp32-devkitc-functional-overview.jpg
+.. figure:: ../../../_static/esp32-devkitc-functional-overview.jpg
     :align: center
     :alt: ESP32-DevKitC V4 with ESP-WROOM-32 module soldered
     :figclass: align-center
@@ -76,7 +76,7 @@ The following figure and the table below describe the key components, interfaces
 
     .. note::
 
-        The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM. 
+        The pins D0, D1, D2, D3, CMD and CLK are used internally for communication between ESP32 and SPI flash memory. They are grouped on both sides near the USB connector. Avoid using these pins, as it may disrupt access to the SPI flash memory / SPI RAM.
 
     .. note::
 
@@ -108,7 +108,7 @@ The component C15 may cause the following issues on earlier ESP32-DevKitC V4 boa
 In case these issues occur, please remove the component. The figure below shows C15 highlighted in yellow.
 
 
-.. figure:: ../../_static/esp32-devkitc-c15-location.png
+.. figure:: ../../../_static/esp32-devkitc-c15-location.png
     :align: center
     :alt: Location of C15 (colored yellow) on ESP32-DevKitC V4 board
     :figclass: align-center
@@ -122,13 +122,13 @@ Start Application Development
 
 Before powering up your ESP32-DevKitC V4, please make sure that the board is in good condition with no obvious signs of damage.
 
-After that, proceed to :doc:`index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
+After that, proceed to :doc:`../../get-started/index`, where Section :ref:`get-started-step-by-step` will quickly help you set up the development environment and then flash an example project onto your board.
 
 
 Board Dimensions
 ----------------
 
-.. figure:: ../../_static/esp32-devkitc-dimensions-back.jpg
+.. figure:: ../../../_static/esp32-devkitc-dimensions-back.jpg
     :align: center
     :alt: ESP32 DevKitC board dimensions - back
     :figclass: align-center
@@ -145,7 +145,7 @@ Related Documents
 * `ESP32-WROOM-32D & ESP32-WROOM-32U Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wroom-32d_esp32-wroom-32u_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER Datasheet <https://espressif.com/sites/default/files/documentation/esp32-wrover_datasheet_en.pdf>`_ (PDF)
 * `ESP32-WROVER-B Datasheet <https://www.espressif.com/sites/default/files/documentation/esp32-wrover-b_datasheet_en.pdf>`_ (PDF)
-* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF) 
+* `Espressif Product Ordering Information <https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf>`_ (PDF)
 
 .. toctree::
     :hidden:

@@ -2,7 +2,7 @@ ESP32-PICO-KIT V3 入门指南
 =======================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP32-PICO-KIT V3 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP32-PICO-KIT V3 迷你开发板。有关 ESP32-PICO-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
 
 
 准备工作
@@ -30,7 +30,7 @@ ESP32-PICO-KIT 集成了 USB 转 UART 桥接电路，允许开发人员直接通
 
 ESP32-PICO-KIT V3 开发板的主要组件、接口及控制方式见下。
 
-.. figure:: ../../_static/esp32-pico-kit-v3-layout.jpg
+.. figure:: ../../../_static/esp32-pico-kit-v3-layout.jpg
     :align: center
     :alt: ESP32-PICO-KIT V3 开发板布局
     :figclass: align-center
@@ -39,10 +39,10 @@ ESP32-PICO-KIT V3 开发板的主要组件、接口及控制方式见下。
 
 ESP32-PICO-KIT 开发板的主要组件描述见下表。
 
-.. list-table:: 
+.. list-table::
     :widths: 25 75
     :header-rows: 1
-    
+
     * - 主要组件
       - 基本介绍
     * - ESP32-PICO-D4
@@ -68,7 +68,7 @@ ESP32-PICO-KIT 开发板的主要组件描述见下表。
 
 ESP32-PICO-KIT V3 上电前，请首先确认开发板完好无损。
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 相关文档
@@ -76,6 +76,6 @@ ESP32-PICO-KIT V3 上电前，请首先确认开发板完好无损。
 
 * `ESP32-PICO-KIT V3 原理图 <https://dl.espressif.com/dl/schematics/esp32-pico-kit-v3_schematic.pdf>`_ (PDF)
 * `《ESP32-PICO-D4 技术规格书》 <http://espressif.com/sites/default/files/documentation/esp32-pico-d4_datasheet_cn.pdf>`_ (PDF)
-* :doc:`../hw-reference/index`
+* :doc:`../../hw-reference/index`
 
 

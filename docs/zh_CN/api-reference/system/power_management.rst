@@ -67,7 +67,7 @@ ESP32 支持下表中所述的三种电源管理锁。
 
 .. only:: esp32
 
-   .. include:: ../../en/inc/power_management_esp32.rst
+   .. include:: ../../../en/api-reference/system/inc/power_management_esp32.rst
 
 动态调频和外设驱动
 ------------------------------------------------

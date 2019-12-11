@@ -2,7 +2,7 @@ ESP-WROVER-KIT V2 入门指南
 ===========================================
 :link_to_translation:`en:[English]`
 
-本指南介绍了如何开始使用 ESP-WROVER-KIT V2 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../hw-reference/index`。
+本指南介绍了如何开始使用 ESP-WROVER-KIT V2 开发板及其功能和相关配置。有关 ESP-WROVER-KIT 其他版本的介绍，请见：:doc:`../../hw-reference/index`。
 
 
 准备工作
@@ -39,7 +39,7 @@ ESP-WROVER-KIT 可选贴以下 ESP32 模组：
 
 ESP-WROVER-KIT 开发板的主要组件和连接方式如下图所示。
 
-.. figure:: ../../_static/esp-wrover-kit-block-diagram.png
+.. figure:: ../../../_static/esp-wrover-kit-block-diagram.png
     :align: center
     :alt: ESP-WROVER-KIT 功能框图
     :figclass: align-center
@@ -54,7 +54,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-esp-wrover-kit-v2-board-front:
 
-.. figure:: ../../_static/esp-wrover-kit-v2-layout-front.png
+.. figure:: ../../../_static/esp-wrover-kit-v2-layout-front.png
     :align: center
     :alt: ESP-WROVER-KIT 开发板布局 -- 俯视图
     :figclass: align-center
@@ -63,7 +63,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 .. _get-started-esp-wrover-kit-v2-board-back:
 
-.. figure:: ../../_static/esp-wrover-kit-v2-layout-back.png
+.. figure:: ../../../_static/esp-wrover-kit-v2-layout-back.png
     :align: center
     :alt: ESP-WROVER-KIT 开发板布局 -- 仰视图
     :figclass: align-center
@@ -73,7 +73,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
 
 下表从图片右上角开始，以顺时针顺序介绍了图 1 中的主要组件，然后以同样的顺序介绍了图 2 中的主要组件。
 
-.. list-table:: 
+.. list-table::
     :widths: 25 75
     :header-rows: 1
 
@@ -112,7 +112,7 @@ ESP-WROVER-KIT 开发板的主要组件、接口及控制方式见下。
     * - RGB LED
       - 红绿蓝发光二极管，可由 PWM（脉冲宽度调制）控制。
     * - I/O
-      - 板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。 
+      - 板上模组的所有管脚均已引出至开发板的排针。用户可以对 ESP32 进行编程，实现 PWM、ADC、DAC、I2C、I2S、SPI 等多种功能。
     * - MicroSD 卡槽
       - MicroSD 卡槽，可扩充存储空间：当 ESP32 进入下载模式时，GPIO2 不可处于高电平。然而，为了使能 MicroSD 卡功能，需为 GPIO2 增加一个上拉电阻。默认情况下，GPIO2 和上拉电阻 R153 处于断开状态。为了使能 MicroSD 卡，请按照 `设置选项`_ 章节的要求，连接 JP1 连接器。
     * - LCD 显示屏
@@ -169,7 +169,7 @@ USB 供电                   使能 UART 通信
 正式开始开发
 ^^^^^^^^^^^^^^^^^^
 
-现在，请前往 :doc:`index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
+现在，请前往 :doc:`../../get-started/index` 中的 :ref:`get-started-step-by-step` 章节，查看如何设置开发环境，并尝试将示例项目烧录至您的开发板。
 
 
 相关文档
@@ -179,16 +179,16 @@ USB 供电                   使能 UART 通信
 * `《ESP32 技术规格书》 <https://www.espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROVER 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32_wrover_datasheet_cn.pdf>`_ (PDF)
 * `《ESP32-WROOM-32 技术规格书》 <https://espressif.com/sites/default/files/documentation/esp32-wroom-32_datasheet_cn.pdf>`_ (PDF)
-* :doc:`../api-guides/jtag-debugging/index`
-* :doc:`../hw-reference/index`
+* :doc:`../../api-guides/jtag-debugging/index`
+* :doc:`../../hw-reference/index`
 
 
-.. |jp1-sd_io2| image:: ../../_static/wrover-jp1-sd_io2.png
-.. |jp1-both| image:: ../../_static/wrover-jp1-both.png
-.. |jp7-ext_5v| image:: ../../_static/wrover-jp7-ext_5v.png
-.. |jp7-usb_5v| image:: ../../_static/wrover-jp7-usb_5v.png
-.. |jp8| image:: ../../_static/wrover-jp8.png
-.. |jp11-tx-rx| image:: ../../_static/wrover-jp11-tx-rx.png
-.. |jp14| image:: ../../_static/wrover-jp14.png
+.. |jp1-sd_io2| image:: ../../../_static/wrover-jp1-sd_io2.png
+.. |jp1-both| image:: ../../../_static/wrover-jp1-both.png
+.. |jp7-ext_5v| image:: ../../../_static/wrover-jp7-ext_5v.png
+.. |jp7-usb_5v| image:: ../../../_static/wrover-jp7-usb_5v.png
+.. |jp8| image:: ../../../_static/wrover-jp8.png
+.. |jp11-tx-rx| image:: ../../../_static/wrover-jp11-tx-rx.png
+.. |jp14| image:: ../../../_static/wrover-jp14.png
 
 .. _ESP-WROVER-KIT V2 原理图: https://dl.espressif.com/dl/schematics/ESP-WROVER-KIT_SCH-2.pdf
