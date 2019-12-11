@@ -1287,7 +1287,7 @@ static void _mdns_create_answer_from_parsed_packet(mdns_parsed_packet_t * parsed
                 }
             } else if (q->type == MDNS_TYPE_SDPTR) {
                 shared = true;
-                if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_PTR, service->service, false, false)) {
+                if (!_mdns_alloc_answer(&packet->answers, MDNS_TYPE_SDPTR, service->service, false, false)) {
                     _mdns_free_tx_packet(packet);
                     return;
                 }
