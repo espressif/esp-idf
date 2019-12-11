@@ -21,7 +21,7 @@ static const ptest_func_t local_test_func = {
 
 #define TEST_SPI_LOCAL(name, param_set) \
     PARAM_GROUP_DECLARE(name, param_set) \
-    TEST_LOCAL(name, param_set, "[spi][timeout=120]", &local_test_func)
+    TEST_SINGLE_BOARD(SPI_##name, param_set, "[spi][timeout=120]", &local_test_func)
 
 static void local_test_init(void** arg)
 {
