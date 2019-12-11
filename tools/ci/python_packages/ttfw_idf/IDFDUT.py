@@ -213,6 +213,7 @@ class IDFDUT(DUT.SerialDUT):
 
         Structured this way so @_uses_esptool will reconnect each time
         """
+        flash_files = []
         try:
             # note: opening here prevents us from having to seek back to 0 each time
             flash_files = [(offs, open(path, "rb")) for (offs, path) in self.app.flash_files]
