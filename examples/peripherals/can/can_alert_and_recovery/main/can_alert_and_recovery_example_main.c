@@ -41,7 +41,7 @@
 static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 static const can_timing_config_t t_config = CAN_TIMING_CONFIG_25KBITS();
 static const can_general_config_t g_config = CAN_GENERAL_CONFIG_DEFAULT(TX_GPIO_NUM, RX_GPIO_NUM, CAN_MODE_NO_ACK);
-static const can_message_t tx_msg = {.identifier = 0, .data_length_code = 0, .flags = CAN_MSG_FLAG_NONE};
+static const can_message_t tx_msg = {.identifier = 0, .data_length_code = 0};
 
 static SemaphoreHandle_t tx_task_sem;
 static SemaphoreHandle_t ctrl_task_sem;

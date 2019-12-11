@@ -14,9 +14,24 @@
 
 #pragma once
 
-#include "sdkconfig.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "soc/can_struct.h"
-#include "soc/can_caps.h"
+#if (CONFIG_ESP32_REV_MIN >= 2)
+#define CAN_BRP_DIV_SUPPORTED       1
+#define CAN_BRP_DIV_THRESH          128
+//Any even number from 2 to 128, or multiples of 4 from 132 to 256
+#define CAN_BRP_IS_VALID(brp)       (((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0) || ((brp) >= 132 && (brp) <= 256 && ((brp) & 0x3) == 0))
+#else
+//Any even number from 2 to 128
+#define CAN_BRP_IS_VALID(brp)       ((brp) >= 2 && (brp) <= 128 && ((brp) & 0x1) == 0)
+#endif
+
+//Todo: Add FIFO overrun errata workaround
+//Todo: Add ECC decode capabilities
+//Todo: Add ALC decode capability
+
+#ifdef __cplusplus
+}
 #endif

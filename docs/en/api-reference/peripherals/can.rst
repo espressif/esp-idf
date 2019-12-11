@@ -273,7 +273,7 @@ Driver States
 Message Flags
 ^^^^^^^^^^^^^
 
-The CAN driver distinguishes different types of CAN messages by using the message flags in the ``flags`` field of :cpp:type:`can_message_t`. These flags help distinguish whether a message is in standard or extended format, an RTR, and the type of transmission to use when transmitting such a message. The CAN driver supports the following flags:
+The CAN driver distinguishes different types of CAN messages by using the various bit field members of the :cpp:type:`can_message_t` structure. These bit field members help distinguish whether a message is in standard or extended format, an RTR, and the type of transmission to use when transmitting such a message. These bit field members can also be toggled using the the `flags` member of :cpp:type:`can_message_t` and the following message flags:
 
 +-------------------------------+----------------------------------------------+
 | Flag                          |  Description                                 |
@@ -286,19 +286,19 @@ The CAN driver distinguishes different types of CAN messages by using the messag
 | ``CAN_MSG_FLAG_SS``           | Transmit message using Single Shot           |
 |                               | Transmission (Message will not be            |
 |                               | retransmitted upon error or loss of          |
-|                               | arbitration)                                 |
+|                               | arbitration). Unused for received message.   |
 +-------------------------------+----------------------------------------------+
 | ``CAN_MSG_FLAG_SELF``         | Transmit message using Self Reception        |
 |                               | Request (Transmitted message will also       |
-|                               | received by the same node)                   |
+|                               | received by the same node). Unused for       |
+|                               | received message.                            |
 +-------------------------------+----------------------------------------------+
 | ``CAN_MSG_FLAG_DLC_NON_COMP`` | Message's Data length code is larger than 8. |
 |                               | This will break compliance with CAN2.0B      |
 +-------------------------------+----------------------------------------------+
-
-.. note::
-    The ``CAN_MSG_FLAG_NONE`` flag can be used for Standard Frame Format messages
-
+| ``CAN_MSG_FLAG_NONE``         | Clears all bit fields. Equivalent to a       |
+|                               | Standard Frame Format (11bit ID) Data Frame. |
++-------------------------------+----------------------------------------------+
 
 .. -------------------------------- Examples -----------------------------------
 
@@ -360,7 +360,7 @@ The following code snippet demonstrates how to transmit a message via the usage 
     //Configure message to transmit
     can_message_t message;
     message.identifier = 0xAAAA;
-    message.flags = CAN_MSG_FLAG_EXTD;
+    message.extd = 1;
     message.data_length_code = 4;
     for (int i = 0; i < 4; i++) {
         message.data[i] = 0;
@@ -394,13 +394,13 @@ The following code snippet demonstrates how to receive a message via the usage o
     }
 
     //Process received message
-    if (message.flags & CAN_MSG_FLAG_EXTD) {
+    if (message.extd) {
         printf("Message is in Extended Format\n");
     } else {
         printf("Message is in Standard Format\n");
     }
     printf("ID is %d\n", message.identifier);
-    if (!(message.flags & CAN_MSG_FLAG_RTR)) {
+    if (!(message.rtr)) {
         for (int i = 0; i < message.data_length_code; i++) {
             printf("Data byte %d = %d\n", i, message.data[i]);
         }
@@ -485,4 +485,5 @@ Application Examples
 API Reference
 -------------
 
+.. include:: /_build/inc/can_types.inc
 .. include:: /_build/inc/can.inc

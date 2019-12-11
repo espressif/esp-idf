@@ -12,11 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _DRIVER_CAN_H_
-#define _DRIVER_CAN_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#include "soc/soc_caps.h"
+#ifndef SOC_CAN_SUPPORTED
+#error CAN is not supported in this chip target
 #endif
 
 #include "freertos/FreeRTOS.h"
@@ -24,6 +28,8 @@ extern "C" {
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "gpio.h"
+#include "soc/can_caps.h"
+#include "hal/can_types.h"
 
 /* -------------------- Default initializers and flags ---------------------- */
 /** @cond */    //Doxy command to hide preprocessor definitions from docs
@@ -38,33 +44,6 @@ extern "C" {
                                                                    .clkout_io = CAN_IO_UNUSED, .bus_off_io = CAN_IO_UNUSED,       \
                                                                    .tx_queue_len = 5, .rx_queue_len = 5,                          \
                                                                    .alerts_enabled = CAN_ALERT_NONE,  .clkout_divider = 0,        }
-
-/**
- * @brief Initializer macros for timing configuration structure
- *
- * The following initializer macros offer commonly found bit rates.
- *
- * @note These timing values are based on the assumption APB clock is at 80MHz
- * @note The 20K, 16K and 12.5K bit rates are only available from ESP32 Revision 2 onwards
- */
-#if (CONFIG_ESP32_REV_MIN >= 2)
-#define CAN_TIMING_CONFIG_12_5KBITS()   {.brp = 256, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_16KBITS()     {.brp = 200, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_20KBITS()     {.brp = 200, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-#endif
-#define CAN_TIMING_CONFIG_25KBITS()     {.brp = 128, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_50KBITS()     {.brp = 80, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_100KBITS()    {.brp = 40, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_125KBITS()    {.brp = 32, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_250KBITS()    {.brp = 16, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_500KBITS()    {.brp = 8, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_800KBITS()    {.brp = 4, .tseg_1 = 16, .tseg_2 = 8, .sjw = 3, .triple_sampling = false}
-#define CAN_TIMING_CONFIG_1MBITS()      {.brp = 4, .tseg_1 = 15, .tseg_2 = 4, .sjw = 3, .triple_sampling = false}
-
-/**
- * @brief   Initializer macro for filter configuration to accept all IDs
- */
-#define CAN_FILTER_CONFIG_ACCEPT_ALL()  {.acceptance_code = 0, .acceptance_mask = 0xFFFFFFFF, .single_filter = true}
 
 /**
  * @brief   Alert flags
@@ -93,38 +72,11 @@ extern "C" {
 #define CAN_ALERT_NONE                  0x0000      /**< Bit mask to disable all alerts during configuration */
 #define CAN_ALERT_AND_LOG               0x2000      /**< Bit mask to enable alerts to also be logged when they occur */
 
-/**
- * @brief   Message flags
- *
- * The message flags are used to indicate the type of message transmitted/received.
- * Some flags also specify the type of transmission.
- */
-#define CAN_MSG_FLAG_NONE               0x00        /**< No message flags (Standard Frame Format) */
-#define CAN_MSG_FLAG_EXTD               0x01        /**< Extended Frame Format (29bit ID)  */
-#define CAN_MSG_FLAG_RTR                0x02        /**< Message is a Remote Transmit Request */
-#define CAN_MSG_FLAG_SS                 0x04        /**< Transmit as a Single Shot Transmission */
-#define CAN_MSG_FLAG_SELF               0x08        /**< Transmit as a Self Reception Request */
-#define CAN_MSG_FLAG_DLC_NON_COMP       0x10        /**< Message's Data length code is larger than 8. This will break compliance with CAN2.0B */
-
-/**
- * @brief Miscellaneous macros
- */
-#define CAN_EXTD_ID_MASK                0x1FFFFFFF  /**< Bit mask for 29 bit Extended Frame Format ID */
-#define CAN_STD_ID_MASK                 0x7FF       /**< Bit mask for 11 bit Standard Frame Format ID */
-#define CAN_MAX_DATA_LEN                8           /**< Maximum number of data bytes in a CAN2.0B frame */
-#define CAN_IO_UNUSED                   ((gpio_num_t) -1)   /**< Marks GPIO as unused in CAN configuration */
 /** @endcond */
 
-/* ----------------------- Enum and Struct Definitions ---------------------- */
+#define CAN_IO_UNUSED                   ((gpio_num_t) -1)   /**< Marks GPIO as unused in CAN configuration */
 
-/**
- * @brief   CAN driver operating modes
- */
-typedef enum {
-    CAN_MODE_NORMAL,                /**< Normal operating mode where CAN controller can send/receive/acknowledge messages */
-    CAN_MODE_NO_ACK,                /**< Transmission does not require acknowledgment. Use this mode for self testing */
-    CAN_MODE_LISTEN_ONLY,           /**< The CAN controller will not influence the bus (No transmissions or acknowledgments) but can receive messages */
-} can_mode_t;
+/* ----------------------- Enum and Struct Definitions ---------------------- */
 
 /**
  * @brief   CAN driver states
@@ -154,31 +106,6 @@ typedef struct {
 } can_general_config_t;
 
 /**
- * @brief   Structure for bit timing configuration of the CAN driver
- *
- * @note    Macro initializers are available for this structure
- */
-typedef struct {
-    uint32_t brp;                   /**< Baudrate prescaler (i.e., APB clock divider) can be any even number from 2 to 128.
-                                         For ESP32 Rev 2 or later, multiples of 4 from 132 to 256 are also supported */
-    uint8_t tseg_1;                 /**< Timing segment 1 (Number of time quanta, between 1 to 16) */
-    uint8_t tseg_2;                 /**< Timing segment 2 (Number of time quanta, 1 to 8) */
-    uint8_t sjw;                    /**< Synchronization Jump Width (Max time quanta jump for synchronize from 1 to 4) */
-    bool triple_sampling;           /**< Enables triple sampling when the CAN controller samples a bit */
-} can_timing_config_t;
-
-/**
- * @brief   Structure for acceptance filter configuration of the CAN driver (see documentation)
- *
- * @note    Macro initializers are available for this structure
- */
-typedef struct {
-    uint32_t acceptance_code;       /**< 32-bit acceptance code */
-    uint32_t acceptance_mask;       /**< 32-bit acceptance mask */
-    bool single_filter;             /**< Use Single Filter Mode (see documentation) */
-} can_filter_config_t;
-
-/**
  * @brief   Structure to store status information of CAN driver
  */
 typedef struct {
@@ -192,19 +119,6 @@ typedef struct {
     uint32_t arb_lost_count;        /**< Number of instances arbitration was lost */
     uint32_t bus_error_count;       /**< Number of instances a bus error has occurred */
 } can_status_info_t;
-
-/**
- * @brief   Structure to store a CAN message
- *
- * @note    The flags member is used to control the message type, and transmission
- *          type (see documentation for message flags)
- */
-typedef struct {
-    uint32_t flags;                 /**< Bit field of message flags indicates frame/transmission type (see documentation) */
-    uint32_t identifier;            /**< 11 or 29 bit identifier */
-    uint8_t data_length_code;       /**< Data length code */
-    uint8_t data[CAN_MAX_DATA_LEN]; /**< Data bytes (not relevant in RTR frame) */
-} can_message_t;
 
 /* ----------------------------- Public API -------------------------------- */
 
@@ -431,6 +345,3 @@ esp_err_t can_clear_receive_queue(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif /*_DRIVER_CAN_H_*/
-
