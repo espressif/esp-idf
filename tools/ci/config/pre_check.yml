@@ -76,6 +76,18 @@ check_cmake_style:
   script:
     tools/cmake/run_cmake_lint.sh
 
+check_wifi_lib_md5:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    SUBMODULES_TO_FETCH: "components/esp_wifi/lib"
+  dependencies: []
+  script:
+    - IDF_TARGET=esp32 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32s2beta $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+
 .build_with_make_and_cmake: &build_with_make_and_cmake |
   echo -e "section_end:"`date +%s`":build_script\r\e[0Ksection_start:"`date +%s`":build_make\r\e[0KBuild with Make"
   make defconfig
