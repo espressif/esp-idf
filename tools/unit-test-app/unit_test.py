@@ -763,7 +763,7 @@ if __name__ == '__main__':
         for test_item in test_args:
             if len(test_item) == 0:
                 continue
-            pair = test_item.split(r':')
+            pair = test_item.split(r':', 1)
             if len(pair) == 1 or pair[0] is 'name':
                 test_dict['name'] = pair[0]
             elif len(pair) == 2:
