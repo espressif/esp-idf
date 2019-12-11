@@ -383,7 +383,7 @@ class UT(IDFApp):
         path = os.path.join(self.idf_path, app_path)
         default_build_path = os.path.join(path, "build")
         if os.path.exists(default_build_path):
-            return path
+            return default_build_path
 
         # first try to get from build folder of unit-test-app
         path = os.path.join(self.idf_path, "tools", "unit-test-app", "build")
