@@ -28,10 +28,8 @@ idf_component_register(SRCS "${srcs}"
                     LDFRAGMENTS "${ldfragments}")  
 
 # Toolchain libraries require code defined in this component
-add_library(extra INTERFACE)
 idf_component_get_property(newlib newlib COMPONENT_LIB)
-target_link_libraries(extra INTERFACE ${LIBC} ${LIBM} gcc "$<TARGET_FILE:${newlib}>")
-target_link_libraries(${COMPONENT_LIB} PUBLIC extra)
+target_link_libraries(${COMPONENT_LIB} INTERFACE ${LIBC} ${LIBM} gcc "$<TARGET_FILE:${newlib}>")
 
 set_source_files_properties(heap.c PROPERTIES COMPILE_FLAGS -fno-builtin)
 
