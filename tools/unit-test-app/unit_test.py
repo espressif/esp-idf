@@ -168,6 +168,11 @@ def reset_dut(dut):
         raise AssertionError("Reset {} ({}) failed!".format(dut.name, dut.port))
 
 
+def log_test_case(description, test_case, ut_config):
+            Utility.console_log("Running {} '{}' (config {})".format(description, test_case["name"], ut_config), color="orange")
+            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in test_case.items() if k != "name" and v is not None), color="orange")
+
+
 def run_one_normal_case(dut, one_case, junit_test_case):
 
     reset_dut(dut)
@@ -279,8 +284,7 @@ def run_unit_test_cases(env, extra_data):
         Utility.console_log("Download finished, start running test cases", "O")
 
         for one_case in case_config[ut_config]:
-            Utility.console_log("Running test %s (config %s)" % (one_case["name"], ut_config))
-            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in one_case.items() if k != "name"))
+            log_test_case("test case", one_case, ut_config)
             performance_items = []
             # create junit report test case
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
@@ -484,8 +488,7 @@ def run_multiple_devices_cases(env, extra_data):
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
         for one_case in case_config[ut_config]:
-            Utility.console_log("Running multi-device test '%s' (config %s)" % (one_case["name"], ut_config))
-            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in one_case.items() if k != "name"))
+            log_test_case("multi-device test", one_case, ut_config, )
             result = False
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
@@ -643,8 +646,7 @@ def run_multiple_stage_cases(env, extra_data):
         dut.start_app()
 
         for one_case in case_config[ut_config]:
-            Utility.console_log("Running multi-stage test %s (config %s)" % (one_case["name"], ut_config))
-            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in one_case.items() if k != "name"))
+            log_test_case("multi-stage test", one_case, ut_config)
             performance_items = []
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
