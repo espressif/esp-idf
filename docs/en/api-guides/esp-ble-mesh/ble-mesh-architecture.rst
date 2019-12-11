@@ -308,6 +308,14 @@ Mesh Models are used to implement the specific functions of model in nodes. Serv
     - Send ESP-BLE-MESH Sensor Client messages and receive corresponding response messages
   * - :component_file:`time_scene_client.c <bt/esp_ble_mesh/mesh_models/client/time_scene_client.c>`
     - Send ESP-BLE-MESH Time Scene Client messages and receive corresponding response messages
+  * - :component_file:`generic_server.c <bt/esp_ble_mesh/mesh_models/server/generic_server.c>`
+    - Receive ESP-BLE-MESH Generic Client messages and send corresponding response messages
+  * - :component_file:`lighting_server.c <bt/esp_ble_mesh/mesh_models/server/lighting_server.c>`
+    - Receive ESP-BLE-MESH Lighting Client messages and send corresponding response messages
+  * - :component_file:`sensor_server.c <bt/esp_ble_mesh/mesh_models/server/sensor_server.c>`
+    - Receive ESP-BLE-MESH Sensor Client messages and send corresponding response messages
+  * - :component_file:`time_scene_server.c <bt/esp_ble_mesh/mesh_models/server/time_scene_server.c>`
+    - Receive ESP-BLE-MESH Time Scene Client messages and send corresponding response messages
 
 2.2 Mesh Bearers Implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
