@@ -231,14 +231,15 @@ def run_one_normal_case(dut, one_case, junit_test_case):
 
     while not test_finish:
         try:
+            timeout_value = one_case["timeout"]
             dut.expect_any((RESET_PATTERN, handle_exception_reset),
                            (EXCEPTION_PATTERN, handle_exception_reset),
                            (ABORT_PATTERN, handle_exception_reset),
                            (FINISH_PATTERN, handle_test_finish),
                            (UT_APP_BOOT_UP_DONE, handle_reset_finish),
-                           timeout=one_case["timeout"])
+                           timeout=timeout_value)
         except DUT.ExpectTimeout:
-            Utility.console_log("Timeout in expect", color="orange")
+            Utility.console_log("Timeout in expect (%s seconds)" % timeout_value, color="orange")
             junit_test_case.add_failure_info("timeout")
             one_case_finish(False)
             break
@@ -394,7 +395,7 @@ class Handler(threading.Thread):
                                     (self.FINISH_PATTERN, handle_device_test_finish),  # test finish pattern
                                     timeout=self.timeout)
             except DUT.ExpectTimeout:
-                Utility.console_log("Timeout in expect", color="orange")
+                Utility.console_log("Timeout in expect (%s seconds)" % self.timeout, color="orange")
                 one_device_case_finish(False)
                 break
 
@@ -594,14 +595,15 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
 
         while not stage_finish:
             try:
+                timeout_value = one_case["timeout"]
                 dut.expect_any((RESET_PATTERN, handle_exception_reset),
                                (EXCEPTION_PATTERN, handle_exception_reset),
                                (ABORT_PATTERN, handle_exception_reset),
                                (FINISH_PATTERN, handle_test_finish),
                                (UT_APP_BOOT_UP_DONE, handle_next_stage),
-                               timeout=one_case["timeout"])
+                               timeout=timeout_value)
             except DUT.ExpectTimeout:
-                Utility.console_log("Timeout in expect", color="orange")
+                Utility.console_log("Timeout in expect (%s seconds)" % timeout_value, color="orange")
                 one_case_finish(False)
                 break
         if stage_finish[0] == "break":
