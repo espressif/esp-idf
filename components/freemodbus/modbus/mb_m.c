@@ -391,6 +391,7 @@ eMBMasterPoll( void )
     } else {
         // xMBMasterPortEventGet has unbloked the task but the event bits are not set
         ESP_LOGD(MB_PORT_TAG, "%s: task event wait failure.", __func__);
+        return MB_ETIMEDOUT;
     }
     return MB_ENOERR;
 }

@@ -66,13 +66,19 @@ static void modbus_master_task(void *pvParameters)
                                                 portMAX_DELAY);
         // Check if stack started then poll for data
         if (status & MB_EVENT_STACK_STARTED) {
-            (void)eMBMasterPoll(); // Allow stack to process data
+            if(eMBMasterPoll() != MB_ENOERR){
+                ESP_LOGE(MB_MASTER_TAG, "%s: Timeout wait notification ",__FUNCTION__);
+            }else
+            {
+            // Allow stack to process data
             // Send response buffer if ready to be sent
             BOOL xSentState = xMBMasterPortSerialTxPoll();
             if (xSentState) {
                 // Let state machine know that response was transmitted out
                 (void)xMBMasterPortEventPost(EV_MASTER_FRAME_TRANSMITTED);
+                }
             }
+
         }
     }
 }

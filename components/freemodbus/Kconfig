@@ -3,7 +3,7 @@ menu "Modbus configuration"
     config FMB_MASTER_TIMEOUT_MS_RESPOND
         int "Slave respond timeout (Milliseconds)"
         default 150
-        range 50 400
+        range 50 1500
 
         help
                 If master sends a frame which is not broadcast, it has to wait sometime for slave response.
