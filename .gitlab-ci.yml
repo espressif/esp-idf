@@ -183,7 +183,7 @@ build_ssc:
     paths:
       - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
-    expire_in: 2 days
+    expire_in: 4 days
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -237,7 +237,7 @@ build_examples_make:
       - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
-    expire_in: 2 days
+    expire_in: 4 days
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
   only:
@@ -271,7 +271,7 @@ build_examples_cmake:
       - build_examples_cmake/*/*/*/build/flasher_args.json
       - build_examples_cmake/*/*/*/build/bootloader/*.bin
       - $LOG_PATH
-    expire_in: 2 days
+    expire_in: 4 days
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
   only:
@@ -310,7 +310,7 @@ build_docs:
       - docs/zh_CN/sphinx-warning-log.txt
       - docs/zh_CN/sphinx-warning-log-sanitized.txt
       - docs/zh_CN/_build/html
-    expire_in: 1 day
+    expire_in: 4 days
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
