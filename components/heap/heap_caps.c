@@ -39,12 +39,16 @@ possible. This should optimize the amount of RAM accessible to the code without 
 IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 {
     uintptr_t dstart = (uintptr_t)addr; //First word
-    uintptr_t dend = dstart + len - 4; //Last word
+    uintptr_t dend = dstart + len; //Last word + 4
     assert(esp_ptr_in_diram_dram((void *)dstart));
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t istart = SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - dend);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    uint32_t istart = SOC_DIRAM_IRAM_LOW + (dstart - SOC_DIRAM_DRAM_LOW);
+#endif
     uint32_t *iptr = (uint32_t *)istart;
     *iptr = dstart;
     return iptr + 1;
@@ -329,6 +333,18 @@ IRAM_ATTR void *heap_caps_calloc( size_t n, size_t size, uint32_t caps)
     return result;
 }
 
+size_t heap_caps_get_total_size(uint32_t caps)
+{
+    size_t total_size = 0;
+    heap_t *heap;
+    SLIST_FOREACH(heap, &registered_heaps, next) {
+        if (heap_caps_match(heap, caps)) {
+            total_size += (heap->end - heap->start);
+        }
+    }
+    return total_size;
+}
+
 size_t heap_caps_get_free_size( uint32_t caps )
 {
     size_t ret = 0;
@@ -449,4 +465,11 @@ void heap_caps_dump(uint32_t caps)
 void heap_caps_dump_all(void)
 {
     heap_caps_dump(MALLOC_CAP_INVALID);
+}
+
+size_t heap_caps_get_allocated_size( void *ptr )
+{
+    heap_t *heap = find_containing_heap(ptr);
+    size_t size = multi_heap_get_allocated_size(heap->heap, ptr);
+    return size;
 }

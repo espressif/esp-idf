@@ -21,7 +21,6 @@
 #include "freertos/semphr.h"
 
 #include "btc/btc_task.h"
-#include "esp_bt_defs.h"
 
 #include "mesh_access.h"
 #include "mesh_buf.h"
@@ -56,12 +55,21 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
+    BTC_BLE_MESH_ACT_LPN_ENABLE,
+    BTC_BLE_MESH_ACT_LPN_DISABLE,
+    BTC_BLE_MESH_ACT_LPN_POLL,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_CONNECT,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_DISCONNECT,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_SET_FILTER_TYPE,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR,
+    BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR,
 } btc_ble_mesh_prov_act_t;
 
 typedef enum {
     BTC_BLE_MESH_ACT_MODEL_PUBLISH,
     BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
-    BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND
+    BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
+    BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE,
 } btc_ble_mesh_model_act_t;
 
 typedef union {
@@ -157,6 +165,40 @@ typedef union {
     struct ble_mesh_set_fast_prov_action_args {
         uint8_t action;
     } set_fast_prov_action;
+    struct ble_mesh_lpn_enable_args {
+        /* RFU */
+    } lpn_enable;
+    struct ble_mesh_lpn_disable_args {
+        bool force;
+    } lpn_disable;
+    struct ble_mesh_lpn_poll_args {
+        /* RFU */
+    } lpn_poll;
+    struct ble_mesh_proxy_client_connect_args {
+        uint8_t  addr[6];
+        uint8_t  addr_type;
+        uint16_t net_idx;
+    } proxy_client_connect;
+    struct ble_mesh_proxy_client_disconnect_args {
+        uint8_t conn_handle;
+    } proxy_client_disconnect;
+    struct ble_mesh_proxy_client_set_filter_type_args {
+        uint8_t  conn_handle;
+        uint16_t net_idx;
+        uint8_t  filter_type;
+    } proxy_client_set_filter_type;
+    struct ble_mesh_proxy_client_add_filter_addr_args {
+        uint8_t   conn_handle;
+        uint16_t  net_idx;
+        uint16_t  addr_num;
+        uint16_t *addr;
+    } proxy_client_add_filter_addr;
+    struct ble_mesh_proxy_client_remove_filter_addr_args {
+        uint8_t   conn_handle;
+        uint16_t  net_idx;
+        uint16_t  addr_num;
+        uint16_t *addr;
+    } proxy_client_remove_filter_addr;
 } btc_ble_mesh_prov_args_t;
 
 typedef union {
@@ -174,13 +216,18 @@ typedef union {
         uint8_t device_role;
         int32_t msg_timeout;
     } model_send;
+    struct ble_mesh_server_model_update_state_args {
+        esp_ble_mesh_model_t *model;
+        esp_ble_mesh_server_state_type_t type;
+        esp_ble_mesh_server_state_value_t *value;
+    } model_update_state;
 } btc_ble_mesh_model_args_t;
-
-void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg);
 
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
-int btc_ble_mesh_client_init(esp_ble_mesh_model_t *model);
+void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
 
 int32_t btc_ble_mesh_model_pub_period_get(esp_ble_mesh_model_t *mod);
 
@@ -200,11 +247,10 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem,
 
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
 
-void btc_mesh_model_call_handler(btc_msg_t *msg);
-void btc_mesh_model_cb_handler(btc_msg_t *msg);
+void btc_ble_mesh_model_call_handler(btc_msg_t *msg);
+void btc_ble_mesh_model_cb_handler(btc_msg_t *msg);
 
-void btc_mesh_prov_call_handler(btc_msg_t *msg);
-
-void btc_mesh_prov_cb_handler(btc_msg_t *msg);
+void btc_ble_mesh_prov_call_handler(btc_msg_t *msg);
+void btc_ble_mesh_prov_cb_handler(btc_msg_t *msg);
 
 #endif /* _BTC_BLE_MESH_PROV_H_ */

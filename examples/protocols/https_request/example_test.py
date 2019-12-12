@@ -4,6 +4,7 @@ import sys
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -23,7 +24,7 @@ def test_examples_protocol_https_request(env, extra_data):
       2. connect to www.howsmyssl.com:443
       3. send http request
     """
-    dut1 = env.get_dut("https_request", "examples/protocols/https_request")
+    dut1 = env.get_dut("https_request", "examples/protocols/https_request", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "https_request.bin")
     bin_size = os.path.getsize(binary_file)

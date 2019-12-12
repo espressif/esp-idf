@@ -504,13 +504,13 @@ int pthread_once(pthread_once_t *once_control, void (*init_routine)(void))
     }
 
     uint32_t res = 1;
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if defined(CONFIG_SPIRAM)
     if (esp_ptr_external_ram(once_control)) {
         uxPortCompareSetExtram((uint32_t *) &once_control->init_executed, 0, &res);
     } else {
 #endif
         uxPortCompareSet((uint32_t *) &once_control->init_executed, 0, &res);
-#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)
+#if defined(CONFIG_SPIRAM)
     }
 #endif
     // Check if compare and set was successful

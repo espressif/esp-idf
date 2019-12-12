@@ -136,11 +136,15 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 /* "mux" data structure (spinlock) */
 typedef struct {
 	/* owner field values:
-	 * 0                - Uninitialized (invalid)
+	 * 0				- Uninitialized (invalid)
 	 * portMUX_FREE_VAL - Mux is free, can be locked by either CPU
-	 * CORE_ID_PRO / CORE_ID_APP - Mux is locked to the particular core
+	 * CORE_ID_REGVAL_PRO / CORE_ID_REGVAL_APP - Mux is locked to the particular core
 	 *
-	 * Any value other than portMUX_FREE_VAL, CORE_ID_PRO, CORE_ID_APP indicates corruption
+	 * Note that for performance reasons we use the full Xtensa CORE ID values
+	 * (CORE_ID_REGVAL_PRO, CORE_ID_REGVAL_APP) and not the 0,1 values which are used in most
+	 * other FreeRTOS code.
+	 *
+	 * Any value other than portMUX_FREE_VAL, CORE_ID_REGVAL_PRO, CORE_ID_REGVAL_APP indicates corruption
 	 */
 	uint32_t owner;
 	/* count field:
@@ -349,12 +353,30 @@ static inline unsigned portENTER_CRITICAL_NESTED(void) {
  * ESP32 (portMUX assertions would fail).
  */
 static inline void uxPortCompareSet(volatile uint32_t *addr, uint32_t compare, uint32_t *set) {
+#if XCHAL_HAVE_S32C1I
     __asm__ __volatile__ (
         "WSR 	    %2,SCOMPARE1 \n"
         "S32C1I     %0, %1, 0	 \n"
         :"=r"(*set)
         :"r"(addr), "r"(compare), "0"(*set)
         );
+#else
+    // No S32C1I, so do this by disabling and re-enabling interrupts (slower)
+    uint32_t intlevel, old_value;
+    __asm__ __volatile__ ("rsil %0, " XTSTR(XCHAL_EXCM_LEVEL) "\n"
+                          : "=r"(intlevel));
+
+    old_value = *addr;
+    if (old_value == compare) {
+        *addr = *set;
+    }
+
+    __asm__ __volatile__ ("memw \n"
+                          "wsr %0, ps\n"
+                          :: "r"(intlevel));
+
+    *set = old_value;
+#endif
 }
 
 

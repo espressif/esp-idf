@@ -14,7 +14,7 @@
 #include "freertos/event_groups.h"
 #include "esp_system.h"
 #include "esp_wifi.h"
-#include "esp_event_loop.h"
+#include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
@@ -28,7 +28,7 @@
 #include "mbedtls/aes.h"
 #include "mbedtls/dhm.h"
 #include "mbedtls/md5.h"
-#include "esp32/rom/crc.h"
+#include "esp_crc.h"
 
 /*
    The SEC_TYPE_xxx is for self-defined packet data type in the procedure of "BLUFI negotiate key"
@@ -124,7 +124,7 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         mbedtls_md5(blufi_sec->share_key, blufi_sec->share_len, blufi_sec->psk);
 
         mbedtls_aes_setkey_enc(&blufi_sec->aes, blufi_sec->psk, 128);
-        
+
         /* alloc output data */
         *output_data = &blufi_sec->self_public_key[0];
         *output_len = blufi_sec->dhm.len;
@@ -178,7 +178,7 @@ int blufi_aes_decrypt(uint8_t iv8, uint8_t *crypt_data, int crypt_len)
 uint16_t blufi_crc_checksum(uint8_t iv8, uint8_t *data, int len)
 {
     /* This iv8 ignore, not used */
-    return crc16_be(0, data, len);
+    return esp_crc16_be(0, data, len);
 }
 
 esp_err_t blufi_security_init(void)

@@ -717,6 +717,20 @@ esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_pa
     return ESP_ERR_NOT_FOUND;
 }
 
+esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels)
+{
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
 
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_AFH_CHANNELS;
 
+    memcpy(&arg.set_channels.channels, channels, ESP_GAP_BLE_CHANNELS_LEN);
+    arg.set_channels.channels[ESP_GAP_BLE_CHANNELS_LEN -1] &= 0x1F;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}

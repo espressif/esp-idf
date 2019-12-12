@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _ESP_EFUSE_MANAGER_H_
-#define _ESP_EFUSE_MANAGER_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,31 +21,18 @@ extern "C" {
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/esp_efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/esp_efuse.h"
+#endif
 
 #define ESP_ERR_EFUSE                              0x1600                     /*!< Base error code for efuse api. */
 #define ESP_OK_EFUSE_CNT                          (ESP_ERR_EFUSE + 0x01)      /*!< OK the required number of bits is set. */
 #define ESP_ERR_EFUSE_CNT_IS_FULL                 (ESP_ERR_EFUSE + 0x02)      /*!< Error field is full. */
 #define ESP_ERR_EFUSE_REPEATED_PROG               (ESP_ERR_EFUSE + 0x03)      /*!< Error repeated programming of programmed bits is strictly forbidden. */
 #define ESP_ERR_CODING                            (ESP_ERR_EFUSE + 0x04)      /*!< Error while a encoding operation. */
-
-/**
- * @brief Type of eFuse blocks
- */
-typedef enum {
-    EFUSE_BLK0 = 0,     /**< Number of eFuse block. Reserved. */
-    EFUSE_BLK1 = 1,     /**< Number of eFuse block. Used for Flash Encryption. If not using that Flash Encryption feature, they can be used for another purpose. */
-    EFUSE_BLK2 = 2,     /**< Number of eFuse block. Used for Secure Boot. If not using that Secure Boot feature, they can be used for another purpose. */
-    EFUSE_BLK3 = 3      /**< Number of eFuse block. Uses for the purpose of the user. */
-} esp_efuse_block_t;
-
-/**
- * @brief Type of coding scheme
- */
-typedef enum {
-    EFUSE_CODING_SCHEME_NONE    = 0,    /**< None */
-    EFUSE_CODING_SCHEME_3_4     = 1,    /**< 3/4 coding */
-    EFUSE_CODING_SCHEME_REPEAT  = 2,    /**< Repeat coding */
-} esp_efuse_coding_scheme_t;
 
 /**
 * @brief Structure eFuse field
@@ -287,20 +273,6 @@ void esp_efuse_reset(void);
  */
 void esp_efuse_disable_basic_rom_console(void);
 
-/* @brief Encode one or more sets of 6 byte sequences into
- * 8 bytes suitable for 3/4 Coding Scheme.
- *
- * This function is only useful if the CODING_SCHEME efuse
- * is set to value 1 for 3/4 Coding Scheme.
- *
- * @param[in] in_bytes Pointer to a sequence of bytes to encode for 3/4 Coding Scheme. Must have length in_bytes_len. After being written to hardware, these bytes will read back as little-endian words.
- * @param[out] out_words Pointer to array of words suitable for writing to efuse write registers. Array must contain 2 words (8 bytes) for every 6 bytes in in_bytes_len. Can be a pointer to efuse write registers.
- * @param in_bytes_len. Length of array pointed to by in_bytes, in bytes. Must be a multiple of 6.
- *
- * @return ESP_ERR_INVALID_ARG if either pointer is null or in_bytes_len is not a multiple of 6. ESP_OK otherwise.
- */
-esp_err_t esp_efuse_apply_34_encoding(const uint8_t *in_bytes, uint32_t *out_words, size_t in_bytes_len);
-
 /* @brief Write random data to efuse key block write registers
  *
  * @note Caller is responsible for ensuring efuse
@@ -355,8 +327,59 @@ esp_err_t esp_efuse_update_secure_version(uint32_t secure_version);
  */
 void esp_efuse_init(uint32_t offset, uint32_t size);
 
+/* @brief Set the batch mode of writing fields.
+ *
+ * This mode allows you to write the fields in the batch mode.
+ * If this mode is enabled, esp_efuse_batch_write_commit() must be called
+ * to actually burn any written efuses.
+ * In this mode, reading efuse is not possible.
+ * This mode should be used when burning several efuses at one time.
+ *
+ * \code{c}
+ * // Example of using the batch writing mode.
+ *
+ * // set the batch writing mode
+ * esp_efuse_batch_write_begin();
+ *
+ * // use any writing functions as usual
+ * esp_efuse_write_field_blob(ESP_EFUSE_...);
+ * esp_efuse_write_field_cnt(ESP_EFUSE_...);
+ * esp_efuse_set_write_protect(EFUSE_BLKx);
+ * esp_efuse_write_reg(EFUSE_BLKx, ...);
+ * esp_efuse_write_block(EFUSE_BLKx, ...);
+ * ...
+ *
+ * // Write all of these fields to the efuse registers
+ * esp_efuse_batch_write_commit();
+ *
+ * \endcode
+ *
+ * @return
+ *          - ESP_OK: Successful.
+ */
+esp_err_t esp_efuse_batch_write_begin(void);
+
+/* @brief Reset the batch mode of writing fields.
+ *
+ * It will reset the batch writing mode and any written changes.
+ *
+ * @return
+ *          - ESP_OK: Successful.
+ *          - ESP_ERR_INVALID_STATE: Tha batch mode was not set.
+ */
+esp_err_t esp_efuse_batch_write_cancel(void);
+
+/* @brief Writes all prepared data for the batch mode.
+ *
+ * Must be called to ensure changes are written to the efuse registers.
+ * After this the batch writing mode will be reset.
+ *
+ * @return
+ *          - ESP_OK: Successful.
+ *          - ESP_ERR_INVALID_STATE: The deferred writing mode was not set.
+ */
+esp_err_t esp_efuse_batch_write_commit(void);
+
 #ifdef __cplusplus
 }
 #endif
-
-#endif // _ESP_EFUSE_MANAGER_H_

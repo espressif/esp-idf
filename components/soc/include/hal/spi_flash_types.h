@@ -61,7 +61,7 @@ typedef enum {
     SPI_FLASH_QIO,    ///< Both address & data transferred using quad I/O
 
     SPI_FLASH_READ_MODE_MAX,    ///< The fastest io mode supported by the host is ``ESP_FLASH_READ_MODE_MAX-1``.
-} esp_flash_read_mode_t;
+} esp_flash_io_mode_t;
 
 ///Slowest io mode supported by ESP32, currently SlowRd
 #define SPI_FLASH_READ_MODE_MIN SPI_FLASH_SLOWRD
@@ -130,9 +130,11 @@ struct spi_flash_host_driver_t {
      */
     bool (*host_idle)(spi_flash_host_driver_t *driver);
     /**
-     * Configure the host to work at different read mode.
+     * Configure the host to work at different read mode. Responsible to compensate the timing and set IO mode.
      */
-    esp_err_t (*configure_host_read_mode)(spi_flash_host_driver_t *driver, esp_flash_read_mode_t read_mode, uint32_t addr_bitlen, uint32_t dummy_bitlen_base, uint32_t read_command);
+    esp_err_t (*configure_host_io_mode)(spi_flash_host_driver_t *driver, uint32_t command,
+                                        uint32_t addr_bitlen, int dummy_bitlen_base,
+                                        esp_flash_io_mode_t io_mode);
     /**
      *  Internal use, poll the HW until the last operation is done.
      */
@@ -142,11 +144,6 @@ struct spi_flash_host_driver_t {
      * modified, the cache needs to be flushed. Left NULL if not supported.
      */
     esp_err_t (*flush_cache)(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
-    /**
-     * Check if the given region is protected (e.g. is the bootloader). Left
-     * NULL if current host doesn't need protection.
-     */
-    bool (*region_protected)(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size);
 };
 
 #ifdef __cplusplus

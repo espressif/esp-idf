@@ -21,6 +21,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 #include "bt_common.h"
 #include "common/bt_target.h"
 
@@ -68,63 +69,5 @@ typedef struct {
 #ifndef CPU_LITTLE_ENDIAN
 #define CPU_LITTLE_ENDIAN
 #endif
-
-inline uint16_t swap_byte_16(uint16_t x)
-{
-    return (((x & 0x00ffU) << 8) |
-            ((x & 0xff00U) >> 8));
-}
-
-inline uint32_t swap_byte_32(uint32_t x)
-{
-    return (((x & 0x000000ffUL) << 24) |
-            ((x & 0x0000ff00UL) << 8) |
-            ((x & 0x00ff0000UL) >> 8) |
-            ((x & 0xff000000UL) >> 24));
-}
-
-#ifndef ntohs
-inline uint16_t ntohs(uint16_t x)
-{
-#ifdef CPU_LITTLE_ENDIAN
-    return swap_byte_16(x);
-#else
-    return x;
-#endif
-}
-#endif /* #ifndef ntohs */
-
-#ifndef htons
-inline uint16_t htons(uint16_t x)
-{
-#ifdef CPU_LITTLE_ENDIAN
-    return swap_byte_16(x);
-#else
-    return x;
-#endif
-}
-#endif /* #ifndef htons */
-
-#ifndef ntohl
-inline uint32_t ntohl(uint32_t x)
-{
-#ifdef CPU_LITTLE_ENDIAN
-    return swap_byte_32(x);
-#else
-    return x;
-#endif
-}
-#endif /* #ifndef ntohl*/
-
-#ifndef htonl
-inline uint32_t htonl(uint32_t x)
-{
-#ifdef CPU_LITTLE_ENDIAN
-    return swap_byte_32(x);
-#else
-    return x;
-#endif
-}
-#endif /* #ifndef htonl*/
 
 #endif /* _BT_DEFS_H_ */

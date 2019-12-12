@@ -32,6 +32,8 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         idf_build_get_property(sdkconfig_header SDKCONFIG_HEADER)
         idf_build_get_property(idf_path IDF_PATH)
         idf_build_get_property(python PYTHON)
+        idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
+
         externalproject_add(${app_name}
             SOURCE_DIR ${idf_path}/components/ulp/cmake
             BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
@@ -45,6 +47,8 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
                         -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                         -DIDF_PATH=${idf_path}
                         -DSDKCONFIG=${SDKCONFIG_HEADER}
+                        -DPYTHON=${python}
+                        ${extra_cmake_args}
             BUILD_COMMAND ${CMAKE_COMMAND} --build ${CMAKE_CURRENT_BINARY_DIR}/${app_name} --target build
             BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
                             ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}

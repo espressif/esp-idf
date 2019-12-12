@@ -9,18 +9,15 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/event_groups.h"
 #include "esp_system.h"
-#include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "protocol_examples_common.h"
 #include "mdns.h"
 #include "driver/gpio.h"
-#include <sys/socket.h>
-#include <netdb.h>
+#include "netdb.h"
 
 
 #define EXAMPLE_MDNS_INSTANCE CONFIG_MDNS_INSTANCE
@@ -28,6 +25,11 @@
 
 static const char *TAG = "mdns-test";
 static char* generate_hostname(void);
+
+#if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
+static void  query_mdns_host_with_gethostbyname(char * host);
+static void  query_mdns_host_with_getaddrinfo(char * host);
+#endif
 
 static void initialise_mdns(void)
 {
@@ -83,7 +85,7 @@ static void mdns_print_results(mdns_result_t * results){
         }
         a = r->addr;
         while(a){
-            if(a->addr.type == IPADDR_TYPE_V6){
+            if(a->addr.type == ESP_IPADDR_TYPE_V6){
                 printf("  AAAA: " IPV6STR "\n", IPV62STR(a->addr.u_addr.ip6));
             } else {
                 printf("  A   : " IPSTR "\n", IP2STR(&(a->addr.u_addr.ip4)));
@@ -118,7 +120,7 @@ static void query_mdns_host(const char * host_name)
 {
     ESP_LOGI(TAG, "Query A: %s.local", host_name);
 
-    struct ip4_addr addr;
+    struct esp_ip4_addr addr;
     addr.addr = 0;
 
     esp_err_t err = mdns_query_a(host_name, 2000,  &addr);
@@ -168,6 +170,8 @@ static void mdns_example_task(void *pvParameters)
 #if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
     /* Send initial queries that are started by CI tester */
     query_mdns_host("tinytester");
+    query_mdns_host_with_gethostbyname("tinytester-lwip.local");
+    query_mdns_host_with_getaddrinfo("tinytester-lwip.local");
 #endif
 
     while(1) {
@@ -179,7 +183,7 @@ static void mdns_example_task(void *pvParameters)
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     initialise_mdns();
@@ -211,3 +215,45 @@ static char* generate_hostname(void)
     return hostname;
 #endif
 }
+
+#if CONFIG_MDNS_RESOLVE_TEST_SERVICES == 1
+/**
+ *  @brief Executes gethostbyname and displays list of resolved addresses.
+ *  Note: This function is used only to test advertised mdns hostnames resolution
+ */
+static void  query_mdns_host_with_gethostbyname(char * host)
+{
+    struct hostent *res = gethostbyname(host);
+    if (res) {
+        unsigned int i = 0;
+        while (res->h_addr_list[i] != NULL) {
+            ESP_LOGI(TAG, "gethostbyname: %s resolved to: %s", host, inet_ntoa(*(struct in_addr *) (res->h_addr_list[i])));
+            i++;
+        }
+    }
+}
+
+/**
+ *  @brief Executes getaddrinfo and displays list of resolved addresses.
+ *  Note: This function is used only to test advertised mdns hostnames resolution
+ */
+static void  query_mdns_host_with_getaddrinfo(char * host)
+{
+    struct addrinfo hints;
+    struct addrinfo * res;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = AF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (!getaddrinfo(host, NULL, &hints, &res)) {
+        while (res) {
+            ESP_LOGI(TAG, "getaddrinfo: %s resolved to: %s", host,
+                     res->ai_family == AF_INET?
+                     inet_ntoa(((struct sockaddr_in *) res->ai_addr)->sin_addr):
+                     inet_ntoa(((struct sockaddr_in6 *) res->ai_addr)->sin6_addr));
+            res = res->ai_next;
+        }
+    }
+}
+#endif

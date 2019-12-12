@@ -30,10 +30,11 @@
 #include "driver/timer.h"
 #include "driver/periph_ctrl.h"
 #include "esp_int_wdt.h"
+#include "hal/timer_ll.h"
 
 #if CONFIG_ESP_INT_WDT
 
-
+#define TG1_WDT_TICK_US 500
 #define WDT_INT_NUM 24
 
 
@@ -48,11 +49,15 @@ static void IRAM_ATTR tick_hook(void) {
     } else {
         //Only feed wdt if app cpu also ticked.
         if (int_wdt_app_cpu_ticked) {
-            TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-            TIMERG1.wdt_config2=CONFIG_ESP_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
-            TIMERG1.wdt_config3=CONFIG_ESP_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
-            TIMERG1.wdt_feed=1;
-            TIMERG1.wdt_wprotect=0;
+            timer_ll_wdt_set_protect(&TIMERG1, false);
+            //Set timeout before interrupt
+            timer_ll_wdt_set_timeout(&TIMERG1, 0,
+                CONFIG_ESP_INT_WDT_TIMEOUT_MS*1000/TG1_WDT_TICK_US);
+            //Set timeout before reset
+            timer_ll_wdt_set_timeout(&TIMERG1, 1,
+                2*CONFIG_ESP_INT_WDT_TIMEOUT_MS*1000/TG1_WDT_TICK_US);
+            timer_ll_wdt_feed(&TIMERG1);
+            timer_ll_wdt_set_protect(&TIMERG1, true);
             int_wdt_app_cpu_ticked=false;
         }
     }
@@ -60,33 +65,36 @@ static void IRAM_ATTR tick_hook(void) {
 #else
 static void IRAM_ATTR tick_hook(void) {
     if (xPortGetCoreID()!=0) return;
-    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config2=CONFIG_ESP_INT_WDT_TIMEOUT_MS*2;        //Set timeout before interrupt
-    TIMERG1.wdt_config3=CONFIG_ESP_INT_WDT_TIMEOUT_MS*4;        //Set timeout before reset
-    TIMERG1.wdt_feed=1;
-    TIMERG1.wdt_wprotect=0;
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    //Set timeout before interrupt
+    timer_ll_wdt_set_timeout(&TIMERG1, 0, CONFIG_ESP_INT_WDT_TIMEOUT_MS*1000/TG1_WDT_TICK_US);
+    //Set timeout before reset
+    timer_ll_wdt_set_timeout(&TIMERG1, 1, 2*CONFIG_ESP_INT_WDT_TIMEOUT_MS*1000/TG1_WDT_TICK_US);
+    timer_ll_wdt_feed(&TIMERG1);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
 }
 #endif
 
 
 void esp_int_wdt_init(void) {
     periph_module_enable(PERIPH_TIMG1_MODULE);
-    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-    TIMERG1.wdt_config0.sys_reset_length=7;                 //3.2uS
-    TIMERG1.wdt_config0.cpu_reset_length=7;                 //3.2uS
-    TIMERG1.wdt_config0.level_int_en=1;
-    TIMERG1.wdt_config0.stg0=TIMG_WDT_STG_SEL_INT;          //1st stage timeout: interrupt
-    TIMERG1.wdt_config0.stg1=TIMG_WDT_STG_SEL_RESET_SYSTEM; //2nd stage timeout: reset system
-    TIMERG1.wdt_config1.clk_prescale=80*500;                //Prescaler: wdt counts in ticks of 0.5mS
     //The timer configs initially are set to 5 seconds, to make sure the CPU can start up. The tick hook sets
     //it to their actual value.
-    TIMERG1.wdt_config2=10000;
-    TIMERG1.wdt_config3=10000;
-    TIMERG1.wdt_config0.en=1;
-    TIMERG1.wdt_feed=1;
-    TIMERG1.wdt_wprotect=0;
-    TIMERG1.int_clr_timers.wdt=1;
-    timer_group_intr_enable(TIMER_GROUP_1, TIMG_WDT_INT_ENA_M);
+    timer_ll_wdt_set_protect(&TIMERG1, false);
+    timer_ll_wdt_init(&TIMERG1);
+    timer_ll_wdt_set_tick(&TIMERG1, TG1_WDT_TICK_US); //Prescaler: wdt counts in ticks of TG1_WDT_TICK_US
+    //1st stage timeout: interrupt
+    timer_ll_wdt_set_timeout_behavior(&TIMERG1, 0, TIMER_WDT_INT);
+    timer_ll_wdt_set_timeout(&TIMERG1, 0, 5*1000*1000/TG1_WDT_TICK_US);
+    //2nd stage timeout: reset system
+    timer_ll_wdt_set_timeout_behavior(&TIMERG1, 1, TIMER_WDT_RESET_SYSTEM);
+    timer_ll_wdt_set_timeout(&TIMERG1, 1, 5*1000*1000/TG1_WDT_TICK_US);
+    timer_ll_wdt_set_enable(&TIMERG1, true);
+    timer_ll_wdt_feed(&TIMERG1);
+    timer_ll_wdt_set_protect(&TIMERG1, true);
+
+    timer_ll_intr_status_clear(&TIMERG1, TIMER_INTR_WDT);
+    timer_group_intr_enable(TIMER_GROUP_1, TIMER_INTR_WDT);
 }
 
 void esp_int_wdt_cpu_init(void)

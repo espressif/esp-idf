@@ -22,6 +22,7 @@
 typedef enum {
     BTC_BLE_MESH_ACT_SENSOR_CLIENT_GET_STATE,
     BTC_BLE_MESH_ACT_SENSOR_CLIENT_SET_STATE,
+    BTC_BLE_MESH_ACT_SENSOR_CLIENT_MAX,
 } btc_ble_mesh_sensor_client_act_t;
 
 typedef union {
@@ -35,19 +36,43 @@ typedef union {
     } sensor_client_set_state;
 } btc_ble_mesh_sensor_client_args_t;
 
-void btc_mesh_sensor_client_call_handler(btc_msg_t *msg);
+typedef enum {
+    BTC_BLE_MESH_EVT_SENSOR_CLIENT_GET_STATE,
+    BTC_BLE_MESH_EVT_SENSOR_CLIENT_SET_STATE,
+    BTC_BLE_MESH_EVT_SENSOR_CLIENT_PUBLISH,
+    BTC_BLE_MESH_EVT_SENSOR_CLIENT_TIMEOUT,
+    BTC_BLE_MESH_EVT_SENSOR_CLIENT_MAX,
+} btc_ble_mesh_sensor_client_evt_t;
 
-void btc_mesh_sensor_client_cb_handler(btc_msg_t *msg);
+void btc_ble_mesh_sensor_client_call_handler(btc_msg_t *msg);
+
+void btc_ble_mesh_sensor_client_cb_handler(btc_msg_t *msg);
 
 void btc_ble_mesh_sensor_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
-void btc_mesh_sensor_client_publish_callback(u32_t opcode, struct bt_mesh_model *model,
-        struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
+void btc_ble_mesh_sensor_client_publish_callback(u32_t opcode,
+        struct bt_mesh_model *model,
+        struct bt_mesh_msg_ctx *ctx,
+        struct net_buf_simple *buf);
 
-void bt_mesh_callback_sensor_status_to_btc(u32_t opcode, u8_t evt_type,
+void bt_mesh_sensor_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
         struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
         const u8_t *val, size_t len);
+
+typedef enum {
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_STATE_CHANGE,
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_RECV_GET_MSG,
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_RECV_SET_MSG,
+    BTC_BLE_MESH_EVT_SENSOR_SERVER_MAX,
+} btc_ble_mesh_sensor_server_evt_t;
+
+void bt_mesh_sensor_server_cb_evt_to_btc(u8_t evt_type,
+        struct bt_mesh_model *model,
+        struct bt_mesh_msg_ctx *ctx,
+        const u8_t *val, size_t len);
+
+void btc_ble_mesh_sensor_server_cb_handler(btc_msg_t *msg);
 
 #endif /* _BTC_BLE_MESH_SENSOR_MODEL_H_ */
 

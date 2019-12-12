@@ -54,7 +54,8 @@ class TestUsage(unittest.TestCase):
 
         mirror_prefix_map = None
         if os.path.exists(old_tools_dir):
-            mirror_prefix_map = 'https://dl.espressif.com/dl,file://' + os.path.join(old_tools_dir, 'dist')
+            mirror_prefix_map = 'https://dl.espressif.com/dl/toolchains/preview,file://' + os.path.join(old_tools_dir, 'dist')
+            mirror_prefix_map += ';https://dl.espressif.com/dl,file://' + os.path.join(old_tools_dir, 'dist')
             mirror_prefix_map += ';https://github.com/espressif/.*/releases/download/.*/,file://' + os.path.join(old_tools_dir, 'dist', '')
         if mirror_prefix_map:
             print('Using IDF_MIRROR_PREFIX_MAP={}'.format(mirror_prefix_map))
@@ -71,7 +72,7 @@ class TestUsage(unittest.TestCase):
             idf_tools.main(['list'])
         output = output_stream.getvalue()
 
-        xtensa_esp32_elf_version = 'esp32-2019r1-8.2.0'
+        xtensa_esp32_elf_version = 'esp-2019r2-8.2.0'
         esp32ulp_version = '2.28.51.20170517'
 
         self.assertIn('* xtensa-esp32-elf:', output)

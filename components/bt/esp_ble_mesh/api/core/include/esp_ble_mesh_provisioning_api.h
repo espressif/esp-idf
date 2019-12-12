@@ -72,7 +72,7 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers);
  * @return       ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_node_set_oob_pub_key(uint8_t pub_key_x[32], uint8_t pub_key_y[32],
-                uint8_t private_key[32]);
+        uint8_t private_key[32]);
 
 /**
  * @brief        Provide provisioning input OOB number.
@@ -124,7 +124,7 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name);
  * @return       ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_provisioner_read_oob_pub_key(uint8_t link_idx, uint8_t pub_key_x[32],
-            uint8_t pub_key_y[32]);
+        uint8_t pub_key_y[32]);
 
 /**
  * @brief        Provide provisioning input OOB string.
@@ -259,7 +259,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_dev(esp_ble_mesh_device_delete_t *del_
  * @param[in]    bearer: Adv packet received from PB-GATT or PB-ADV bearer.
  *
  */
-typedef void (*esp_ble_mesh_prov_adv_cb_t)(const esp_bd_addr_t addr, const esp_ble_addr_type_t addr_type,
+typedef void (*esp_ble_mesh_prov_adv_cb_t)(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type,
         const uint8_t adv_type, const uint8_t *dev_uuid,
         uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
 

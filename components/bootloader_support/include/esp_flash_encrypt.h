@@ -20,6 +20,7 @@
 #include "esp_spi_flash.h"
 #endif
 #include "soc/efuse_periph.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,11 +47,17 @@ typedef enum {
  *
  * @return true if flash encryption is enabled.
  */
-static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void) {
-    uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+static inline /** @cond */ IRAM_ATTR /** @endcond */ bool esp_flash_encryption_enabled(void)
+{
+    uint32_t flash_crypt_cnt;
+#if CONFIG_IDF_TARGET_ESP32
+    flash_crypt_cnt = REG_GET_FIELD(EFUSE_BLK0_RDATA0_REG, EFUSE_RD_FLASH_CRYPT_CNT);
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+#endif
     /* __builtin_parity is in flash, so we calculate parity inline */
     bool enabled = false;
-    while(flash_crypt_cnt) {
+    while (flash_crypt_cnt) {
         if (flash_crypt_cnt & 1) {
             enabled = !enabled;
         }
@@ -132,6 +139,21 @@ void esp_flash_write_protect_crypt_cnt(void);
  * @return
  */
 esp_flash_enc_mode_t esp_get_flash_encryption_mode(void);
+
+
+/** @brief Check the flash encryption mode during startup
+ *
+ * @note This function is called automatically during app startup,
+ * it doesn't need to be called from the app.
+ *
+ * Verifies the flash encryption config during startup:
+ *
+ * - Correct any insecure flash encryption settings if hardware
+ *   Secure Boot is enabled.
+ * - Log warnings if the efuse config doesn't match the project
+ *  config in any way
+ */
+void esp_flash_encryption_init_checks(void);
 
 #ifdef __cplusplus
 }

@@ -66,7 +66,7 @@ esp_err_t spi_flash_chip_generic_reset(esp_flash_t *chip);
 esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size);
 
 /**
- * @brief Erase chip by using the generic erase chip (C7h) command.
+ * @brief Erase chip by using the generic erase chip command.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
  *
@@ -77,7 +77,7 @@ esp_err_t spi_flash_chip_generic_detect_size(esp_flash_t *chip, uint32_t *size);
 esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip);
 
 /**
- * @brief Erase sector by using the generic sector erase (20h) command.
+ * @brief Erase sector by using the generic sector erase command.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
  * @param start_address Start address of the sector to erase
@@ -89,7 +89,7 @@ esp_err_t spi_flash_chip_generic_erase_chip(esp_flash_t *chip);
 esp_err_t spi_flash_chip_generic_erase_sector(esp_flash_t *chip, uint32_t start_address);
 
 /**
- * @brief Erase block by using the generic 64KB block erase (D8h) command
+ * @brief Erase block by the generic 64KB block erase command
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
  * @param start_address Start address of the block to erase
@@ -114,7 +114,7 @@ esp_err_t spi_flash_chip_generic_erase_block(esp_flash_t *chip, uint32_t start_a
 esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length);
 
 /**
- * @brief Perform a page program using the page program (02h) command.
+ * @brief Perform a page program using the page program command.
  *
  * @note Length of each call should not excced the limitation in
  * ``chip->host->max_write_bytes``. This function is called in
@@ -163,7 +163,7 @@ esp_err_t
 spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *buffer, uint32_t address, uint32_t length);
 
 /**
- * @brief Send the write enable (06h) command and verify the expected bit (1) in
+ * @brief Send the write enable or write disable command and verify the expected bit (1) in
  * the status register is set.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
@@ -171,13 +171,26 @@ spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *buffer, ui
  *
  * @return
  *      - ESP_OK if success
- *      - or other error passed from the ``wait_idle``, ``read_status`` or ``set_write_protect`` function of host driver
+ *      - or other error passed from the ``wait_idle``, ``read_status`` or
+ *        ``set_write_protect`` function of host driver
  */
-esp_err_t spi_flash_chip_generic_write_enable(esp_flash_t *chip, bool write_protect);
+esp_err_t spi_flash_chip_generic_set_write_protect(esp_flash_t *chip, bool write_protect);
 
 /**
- * @brief Read flash status via the RDSR command (05h) and wait for bit 0 (write
- * in progress bit) to be cleared.
+ * @brief Check whether WEL (write enable latch) bit is set in the Status Register read from RDSR.
+ *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param out_write_protect Output of whether the write protect is set.
+ *
+ * @return
+ *      - ESP_OK if success
+ *      - or other error passed from the ``read_status`` function of host driver
+ */
+esp_err_t spi_flash_chip_generic_get_write_protect(esp_flash_t *chip, bool *out_write_protect);
+
+/**
+ * @brief Read flash status via the RDSR command and wait for bit 0 (write in
+ * progress bit) to be cleared.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
  * @param timeout_ms Time to wait before timeout, in ms.
@@ -200,7 +213,21 @@ esp_err_t spi_flash_chip_generic_wait_idle(esp_flash_t *chip, uint32_t timeout_m
 *      - ESP_ERR_TIMEOUT if not idle before timeout
  *      - or other error passed from the ``set_write_protect`` or ``common_command`` function of host driver
  */
-esp_err_t spi_flash_chip_generic_set_read_mode(esp_flash_t *chip);
+esp_err_t spi_flash_chip_generic_set_io_mode(esp_flash_t *chip);
+
+/**
+  * Get whether the Quad Enable (QE) is set.
+  *
+ * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
+ * @param out_quad_mode Pointer to store the output mode.
+ *          - SPI_FLASH_QOUT: QE is enabled
+ *          - otherwise: QE is disabled
+ *
+ * @return
+ *      - ESP_OK if success
+ *      - or other error passed from the ``common_command`` function of host driver
+  */
+esp_err_t spi_flash_chip_generic_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_quad_mode);
 
 /**
  * Generic SPI flash chip_drv, uses all the above functions for its operations.
@@ -231,26 +258,107 @@ extern const spi_flash_chip_t esp_flash_chip_generic;
  */
 esp_err_t spi_flash_generic_wait_host_idle(esp_flash_t *chip, uint32_t *timeout_ms);
 
+/// Function pointer type for reading status register with QE bit.
+typedef esp_err_t (*esp_flash_rdsr_func_t)(esp_flash_t* chip, uint32_t* out_sr);
+
 /**
- * @brief Utility function for set_read_mode chip_drv function
+ * Use RDSR2 (35H) to read bit 15-8 of the SR, and RDSR (05H) to read bit 7-0.
  *
- * Most setting of read mode follows a common pattern, except for how to enable Quad I/O modes (QIO/QOUT).
- * These use different commands to read/write the status register, and a different bit is set/cleared.
+ * @param chip Pointer to SPI flash chip to use.
+ * @param out_sr Pointer to buffer to hold the status register, 16 bits.
  *
- * This is a generic utility function to implement set_read_mode() for this pattern. Also configures host
- * registers via spi_flash_common_configure_host_read_mode().
+ * @return ESP_OK if success, otherwise error code passed from the
+ *         `common_command` function of the host driver.
+ */
+esp_err_t spi_flash_common_read_status_16b_rdsr_rdsr2(esp_flash_t* chip, uint32_t* out_sr);
+
+/**
+ * Use RDSR2 (35H) to read bit 15-8 of the SR.
  *
- * @param qe_rdsr_command SPI flash command to read status register
- * @param qe_wrsr_command SPI flash command to write status register
- * @param qe_sr_bitwidth Width of the status register these commands operate on, in bits.
- * @param qe_sr_bit Bit mask for enabling Quad Enable functions on this chip.
+ * @param chip Pointer to SPI flash chip to use.
+ * @param out_sr Pointer to buffer to hold the status register, 8 bits.
+ *
+ * @return ESP_OK if success, otherwise error code passed from the
+ *         `common_command` function of the host driver.
+ */
+esp_err_t spi_flash_common_read_status_8b_rdsr2(esp_flash_t* chip, uint32_t* out_sr);
+
+/**
+ * Use RDSR (05H) to read bit 7-0 of the SR.
+ *
+ * @param chip Pointer to SPI flash chip to use.
+ * @param out_sr Pointer to buffer to hold the status register, 8 bits.
+ *
+ * @return ESP_OK if success, otherwise error code passed from the
+ *         `common_command` function of the host driver.
+ */
+esp_err_t spi_flash_common_read_status_8b_rdsr(esp_flash_t* chip, uint32_t* out_sr);
+
+/// Function pointer type for writing status register with QE bit.
+typedef esp_err_t (*esp_flash_wrsr_func_t)(esp_flash_t* chip, uint32_t sr);
+
+/**
+ * Use WRSR (01H) to write bit 7-0 of the SR.
+ *
+ * @param chip Pointer to SPI flash chip to use.
+ * @param sr Value of the status register to write, 8 bits.
+ *
+ * @return ESP_OK if success, otherwise error code passed from the
+ *         `common_command` function of the host driver.
+ */
+esp_err_t spi_flash_common_write_status_8b_wrsr(esp_flash_t* chip, uint32_t sr);
+
+/**
+ * Use WRSR (01H) to write bit 15-0 of the SR.
+ *
+ * @param chip Pointer to SPI flash chip to use.
+ * @param sr Value of the status register to write, 16 bits.
+ *
+ * @return ESP_OK if success, otherwise error code passed from the
+ *         `common_command` function of the host driver.
+ */
+esp_err_t spi_flash_common_write_status_16b_wrsr(esp_flash_t* chip, uint32_t sr);
+
+/**
+ * Use WRSR2 (31H) to write bit 15-8 of the SR.
+ *
+ * @param chip Pointer to SPI flash chip to use.
+ * @param sr Value of the status register to write, 8 bits.
+ *
+ * @return ESP_OK if success, otherwise error code passed from the
+ *         `common_command` function of the host driver.
+ */
+esp_err_t spi_flash_common_write_status_8b_wrsr2(esp_flash_t* chip, uint32_t sr);
+
+/**
+ * @brief Utility function for set_read_mode chip_drv function. If required,
+ * set and check the QE bit in the flash chip to enable the QIO/QOUT mode.
+ *
+ * Most chip QE enable follows a common pattern, though commands to read/write
+ * the status register may be different, as well as the position of QE bit.
+ *
+ * Registers to actually do Quad transtions and command to be sent in reading
+ * should also be configured via
+ * spi_flash_chip_generic_config_host_io_mode().
+ *
+ * Note that the bit length and qe position of wrsr_func, rdsr_func and
+ * qe_sr_bit should be consistent.
+ *
+ * @param chip Pointer to SPI flash chip to use.
+ * @param wrsr_func Function pointer for writing the status register
+ * @param rdsr_func Function pointer for reading the status register
+ * @param qe_sr_bit status with the qe bit only.
  *
  * @return always ESP_OK (currently).
  */
-esp_err_t spi_flash_common_set_read_mode(esp_flash_t *chip, uint8_t qe_rdsr_command, uint8_t qe_wrsr_command, uint8_t qe_sr_bitwidth, unsigned qe_sr_bit);
+esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t wrsr_func, esp_flash_rdsr_func_t rdsr_func, uint32_t qe_sr_bit);
 
 /**
- * @brief Configure the host to use the specified read mode set in the ``chip->read_mode``.
+ * @brief Configure the host registers to use the specified read mode set in
+ *        the ``chip->read_mode``.
+ *
+ * Usually called in chip_drv read() functions before actual reading
+ * transactions. Also prepare the command to be sent in read functions.
  *
  * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
  *
@@ -259,17 +367,4 @@ esp_err_t spi_flash_common_set_read_mode(esp_flash_t *chip, uint8_t qe_rdsr_comm
  *      - ESP_ERR_FLASH_NOT_INITIALISED if chip not initialized properly
  *      - or other error passed from the ``configure_host_mode`` function of host driver
  */
-esp_err_t spi_flash_chip_generic_config_host_read_mode(esp_flash_t *chip);
-
-/**
- * @brief Returns true if chip is configured for Quad I/O or Quad Fast Read.
- *
- * @param chip Pointer to SPI flash chip to use. If NULL, esp_flash_default_chip is substituted.
- *
- * @return true if flash works in quad mode, otherwise false
- */
-static inline bool spi_flash_is_quad_mode(const esp_flash_t *chip)
-{
-    return (chip->read_mode == SPI_FLASH_QIO) || (chip->read_mode == SPI_FLASH_QOUT);
-}
-
+esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip);

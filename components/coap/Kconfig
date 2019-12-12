@@ -1,0 +1,74 @@
+menu "CoAP Configuration"
+
+    choice COAP_MBEDTLS_ENCRYPTION_MODE
+        prompt "CoAP Encryption method"
+        default COAP_MBEDTLS_PSK
+        help
+            If the CoAP information is to be encrypted, the encryption environment
+            can be set up in one of two ways (default being Pre-Shared key mode)
+
+            - Encrypt using defined Pre-Shared Keys (PSK if uri includes coaps://)
+            - Encrypt using defined Public Key Infrastructure (PKI if uri includes coaps://)
+
+        config COAP_MBEDTLS_PSK
+            select MBEDTLS_SSL_PROTO_DTLS
+            select MBEDTLS_PSK_MODES
+            select MBEDTLS_KEY_EXCHANGE_PSK
+            bool "Pre-Shared Keys"
+
+        config COAP_MBEDTLS_PKI
+            select MBEDTLS_SSL_PROTO_DTLS
+            select MBEDTLS_PSK_MODES
+            select MBEDTLS_KEY_EXCHANGE_PSK
+            bool "PKI Certificates"
+
+    endchoice #COAP_MBEDTLS_ENCRYPTION_MODE
+
+    config COAP_MBEDTLS_DEBUG
+        bool "Enable CoAP debugging"
+        default n
+        help
+            Enable CoAP debugging functions at compile time for the example code.
+
+            If this option is enabled, call coap_set_log_level()
+            at runtime in order to enable CoAP debug output via the ESP
+            log mechanism.
+
+    choice COAP_MBEDTLS_DEBUG_LEVEL
+        bool "Set CoAP debugging level"
+        depends on COAP_MBEDTLS_DEBUG
+        default COAP_LOG_WARNING
+        help
+            Set CoAP debugging level
+
+        config COAP_LOG_EMERG
+            bool "Emergency"
+        config COAP_LOG_ALERT
+            bool "Alert"
+        config COAP_LOG_CRIT
+            bool "Critical"
+        config COAP_LOG_ERROR
+            bool "Error"
+        config COAP_LOG_WARNING
+            bool "Warning"
+        config COAP_LOG_NOTICE
+            bool "Notice"
+        config COAP_LOG_INFO
+            bool "Info"
+        config COAP_LOG_DEBUG
+            bool "Debug"
+    endchoice
+
+    config COAP_LOG_DEFAULT_LEVEL
+        int
+        default 0 if !COAP_MBEDTLS_DEBUG
+        default 0 if COAP_LOG_EMERG
+        default 1 if COAP_LOG_ALERT
+        default 2 if COAP_LOG_CRIT
+        default 3 if COAP_LOG_ERROR
+        default 4 if COAP_LOG_WARNING
+        default 5 if COAP_LOG_NOTICE
+        default 6 if COAP_LOG_INFO
+        default 7 if COAP_LOG_DEBUG
+
+endmenu

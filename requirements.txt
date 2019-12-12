@@ -1,9 +1,9 @@
 # This is a list of python packages needed for ESP-IDF. This file is used with pip.
 # Please see the Get Started section of the ESP-IDF Programming Guide for further information.
 #
-setuptools
+setuptools>=21
 # The setuptools package is required to install source distributions and on some systems is not installed by default.
-# Please keep it as the first item of this list.
+# Please keep it as the first item of this list. Version 21 is required to handle PEP 508 environment markers.
 #
 click>=5.0
 pyserial>=3.0
@@ -11,3 +11,8 @@ future>=0.15.2
 cryptography>=2.1.4
 pyparsing>=2.0.3,<2.4.0
 pyelftools>=0.22
+# windows-curses are required in Windows command line but cannot be installed in MSYS2. A requirement like
+# "windows-curses; sys_platform == 'win32'" would want to install the package on both of them. There is no environment
+# marker for detecting MSYS2. So instead, a dummy custom package is used with "windows-curses" dependency for Windows
+# command line.
+file://${IDF_PATH}/tools/kconfig_new/esp-windows-curses; sys_platform == 'win32'

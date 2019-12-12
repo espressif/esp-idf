@@ -114,8 +114,7 @@ function(__build_set_default_build_specifications)
     list(APPEND c_compile_options   "-std=gnu99"
                                     "-Wno-old-style-declaration")
 
-    list(APPEND cxx_compile_options "-std=gnu++11"
-                                    "-fno-rtti")
+    list(APPEND cxx_compile_options "-std=gnu++11")
 
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
@@ -129,7 +128,7 @@ endfunction()
 #
 function(__build_init idf_path)
     # Create the build target, to which the ESP-IDF build properties, dependencies are attached to
-    add_custom_target(__idf_build_target)
+    add_library(__idf_build_target STATIC IMPORTED)
 
     set_default(python "python")
 
@@ -181,7 +180,8 @@ endfunction()
 #
 function(__build_resolve_and_add_req var component_target req type)
     __component_get_target(_component_target ${req})
-    if(NOT _component_target)
+    __component_get_property(_component_registered ${component_target} __COMPONENT_REGISTERED)
+    if(NOT _component_target OR NOT _component_registered)
         message(FATAL_ERROR "Failed to resolve component '${req}'.")
     endif()
     __component_set_property(${component_target} ${type} ${_component_target} APPEND)
@@ -220,6 +220,24 @@ function(__build_expand_requirements component_target)
     idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
     if(NOT component_target IN_LIST build_component_targets)
         idf_build_set_property(__BUILD_COMPONENT_TARGETS ${component_target} APPEND)
+
+        __component_get_property(component_lib ${component_target} COMPONENT_LIB)
+        idf_build_set_property(__BUILD_COMPONENTS ${component_lib} APPEND)
+
+        idf_build_get_property(prefix __PREFIX)
+        __component_get_property(component_prefix ${component_target} __PREFIX)
+
+        __component_get_property(component_alias ${component_target} COMPONENT_ALIAS)
+
+        idf_build_set_property(BUILD_COMPONENT_ALIASES ${component_alias} APPEND)
+
+        # Only put in the prefix in the name if it is not the default one
+        if(component_prefix STREQUAL prefix)
+            __component_get_property(component_name ${component_target} COMPONENT_NAME)
+            idf_build_set_property(BUILD_COMPONENTS ${component_name} APPEND)
+        else()
+            idf_build_set_property(BUILD_COMPONENTS ${component_alias} APPEND)
+        endif()
     endif()
 endfunction()
 
@@ -295,7 +313,7 @@ endmacro()
 #
 macro(__build_set_default var default)
     set(_var __${var})
-    if(${_var})
+    if(NOT "${_var}" STREQUAL "")
         idf_build_set_property(${var} "${${_var}}")
     else()
         idf_build_set_property(${var} "${default}")
@@ -330,7 +348,7 @@ endfunction()
 # @param[in, optional] PROJECT_DIR (single value) directory of the main project the buildsystem
 #                      is processed for; defaults to CMAKE_SOURCE_DIR
 # @param[in, optional] PROJECT_VER (single value) version string of the main project; defaults
-#                      to 0.0.0
+#                      to 1
 # @param[in, optional] PROJECT_NAME (single value) main project name, defaults to CMAKE_PROJECT_NAME
 # @param[in, optional] SDKCONFIG (single value) sdkconfig output path, defaults to PROJECT_DIR/sdkconfig
 #                       if PROJECT_DIR is set and CMAKE_SOURCE_DIR/sdkconfig if not
@@ -349,8 +367,8 @@ endfunction()
 #                       are processed.
 macro(idf_build_process target)
     set(options)
-    set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG SDKCONFIG_DEFAULTS)
-    set(multi_value COMPONENTS)
+    set(single_value PROJECT_DIR PROJECT_VER PROJECT_NAME BUILD_DIR SDKCONFIG)
+    set(multi_value COMPONENTS SDKCONFIG_DEFAULTS)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
     idf_build_set_property(BOOTLOADER_BUILD "${BOOTLOADER_BUILD}")
@@ -366,7 +384,7 @@ macro(idf_build_process target)
 
     __build_set_default(PROJECT_DIR ${CMAKE_SOURCE_DIR})
     __build_set_default(PROJECT_NAME ${CMAKE_PROJECT_NAME})
-    __build_set_default(PROJECT_VER "0.0.0")
+    __build_set_default(PROJECT_VER 1)
     __build_set_default(BUILD_DIR ${CMAKE_BINARY_DIR})
 
     idf_build_get_property(project_dir PROJECT_DIR)

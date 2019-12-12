@@ -1,0 +1,5 @@
+TEST_EXCLUDE_COMPONENTS=libsodium bt app_update freertos esp32s2beta driver heap pthread soc spi_flash vfs
+CONFIG_MEMMAP_SMP=n
+CONFIG_FREERTOS_UNICORE=y
+CONFIG_ESP32_RTCDATA_IN_FAST_MEM=y
+CONFIG_IDF_TARGET="esp32s2beta"

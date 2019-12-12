@@ -122,7 +122,7 @@ The ESP32 Wi-Fi programming model is depicted as follows:
 
 The Wi-Fi driver can be considered a black box that knows nothing about high-layer code, such as the TCP/IP stack, application task, event task, etc. The application task (code) generally calls :doc:`Wi-Fi driver APIs <../api-reference/network/esp_wifi>` to initialize Wi-Fi and handles Wi-Fi events when necessary. Wi-Fi driver receives API calls, handles them, and post events to the application.
 
-Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`tcpip_adapter component <../api-reference/network/tcpip_adapter>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, tcpip_adapter will automatically start the DHCP client.
+Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`esp_netif component <../api-reference/network/esp_netif>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, esp_netif will automatically start the DHCP client (by default).
 
 ESP32 Wi-Fi Event Description
 ------------------------------------
@@ -300,15 +300,17 @@ Below is a "big scenario" which describes some small scenarios in Station mode:
 
 1. Wi-Fi/LwIP Init Phase
 ++++++++++++++++++++++++++++++
- - s1.1: The main task calls tcpip_adapter_init() to create an LwIP core task and initialize LwIP-related work.
+ - s1.1: The main task calls esp_netif_init() to create an LwIP core task and initialize LwIP-related work.
 
  - s1.2: The main task calls esp_event_loop_init() to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task. 
 
- - s1.3: The main task calls esp_wifi_init() to create the Wi-Fi driver task and initialize the Wi-Fi driver.
+ - s1.3: The main task calls esp_netif_create_default_wifi_ap() or esp_netif_create_default_wifi_sta() to create default network interface instance binding station or AP with TCP/IP stack.
 
- - s1.4: The main task calls OS API to create the application task.
+ - s1.4: The main task calls esp_wifi_init() to create the Wi-Fi driver task and initialize the Wi-Fi driver.
 
-Step 1.1~1.4 is a recommended sequence that initializes a Wi-Fi-/LwIP-based application. However, it is **NOT** a must-follow sequence, which means that you can create the application task in step 1.1 and put all other initializations in the application task. Moreover, you may not want to create the application task in the initialization phase if the application task depends on the sockets. Rather, you can defer the task creation until the IP is obtained.
+ - s1.5: The main task calls OS API to create the application task.
+
+Step 1.1~1.5 is a recommended sequence that initializes a Wi-Fi-/LwIP-based application. However, it is **NOT** a must-follow sequence, which means that you can create the application task in step 1.1 and put all other initializations in the application task. Moreover, you may not want to create the application task in the initialization phase if the application task depends on the sockets. Rather, you can defer the task creation until the IP is obtained.
 
 2. Wi-Fi Configuration Phase
 +++++++++++++++++++++++++++++++
@@ -1385,7 +1387,7 @@ Following table depicts which country info is used in different WiFi Mode and di
 Home Channel
 *************************
 
-In AP mode, the home channel is defined as that of the AP channel. In Station mode, the home channel is defined as the channel of the AP to which the station is connected. In Station+AP mode, the home channel of AP and station must be the same. If the home channels of Station and AP are different, the station's home channel is always in priority. Take the following as an example: at the beginning, the AP is on channel 6, then the station connects to an AP whose channel is 9. Since the station's home channel has a higher priority, the AP needs to switch its channel from 6 to 9 to make sure that both station and AP have the same home channel.
+In AP mode, the home channel is defined as that of the AP channel. In Station mode, the home channel is defined as the channel of the AP to which the station is connected. In Station+AP mode, the home channel of AP and station must be the same. If the home channels of Station and AP are different, the station's home channel is always in priority. Take the following as an example: at the beginning, the AP is on channel 6, then the station connects to an AP whose channel is 9. Since the station's home channel has a higher priority, the AP needs to switch its channel from 6 to 9 to make sure that both station and AP have the same home channel. While switching channel, the ESP32 in SoftAP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Stations that support channel switching will transition smoothly whereas stations who do not will disconnect and reconnect to the SoftAP.
 
 
 Wi-Fi Vendor IE Configuration
@@ -1751,6 +1753,8 @@ WPS Enrolle
 
 ESP32 supports WPS enrollee feature in Wi-Fi mode WIFI_MODE_STA or WIFI_MODE_APSTA. Currently ESP32 supports WPS enrollee type PBC and PIN.
 
+.. _wifi-buffer-usage:
+
 Wi-Fi Buffer Usage
 --------------------------
 
@@ -1772,26 +1776,9 @@ Due to these reasons, there is not a good-for-all application configuration. Rat
 Dynamic vs. Static Buffer
 ++++++++++++++++++++++++++++++
 
-The default type of buffer in LwIP and Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in LwIP/Wi-Fi.
+The default type of buffer in Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in Wi-Fi.
 
-
-Peak LwIP Dynamic Buffer
-++++++++++++++++++++++++++++++
-
-The default type of LwIP buffer is "dynamic", and this section considers the dynamic buffer only.
-The peak heap memory that LwIP consumes is the **theoretically-maximum memory** that the LwIP driver consumes. Generally, the peak heap memory that the LwIP consumes depends on:
-
- - the memory required to create a UDP connection: lwip_udp_conn
- - the memory required to create a TCP connection: lwip_tcp_conn
- - the number of UDP connections that the application has: lwip_udp_con_num
- - the number of TCP connections that the application has: lwip_tcp_con_num
- - the TCP TX window size: lwip_tcp_tx_win_size
- - the TCP RX window size: lwip_tcp_rx_win_size
-
-**So, the peak heap memory that the LwIP consumes can be calculated with the following formula:**
-  lwip_dynamic_peek_memory =  (lwip_udp_con_num * lwip_udp_conn)  + (lwip_tcp_con_num * (lwip_tcp_tx_win_size + lwip_tcp_rx_win_size + lwip_tcp_conn))
-
-Some TCP-based applications need only one TCP connection. However, they may choose to close this TCP connection and create a new one when an error (such as a sending failure) occurs. This may result in multiple TCP connections existing in the system simultaneously, because it may take a long time for a TCP connection to close, according to the TCP state machine (refer to RFC793).
+lwIP also allocates buffers at the TCP/IP layer, and this buffer allocation is also dynamic. See :ref:`lwIP documentation section about memory use and performance<lwip-ram-usage>`.
 
 Peak Wi-Fi Dynamic Buffer
 ++++++++++++++++++++++++++++++

@@ -48,7 +48,7 @@ extern "C" {
 //    After completing read operations, use DPORT_STALL_OTHER_CPU_END().
 //    This method uses stall other CPU while reading DPORT registers.
 //    Useful for compatibility, as well as for large consecutive readings.
-//    This method is slower, but must be used if ROM functions or 
+//    This method is slower, but must be used if ROM functions or
 //    other code is called which accesses DPORT without any other workaround.
 // *) The pre-readable APB register before reading the DPORT register
 //    helps synchronize the operation of the two CPUs,
@@ -73,7 +73,7 @@ extern "C" {
  */
 static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
 #else
     return esp_dport_access_reg_read(reg);
@@ -106,7 +106,7 @@ static inline uint32_t IRAM_ATTR DPORT_REG_READ(uint32_t reg)
  */
 static inline uint32_t IRAM_ATTR DPORT_SEQUENCE_REG_READ(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
 #else
     return esp_dport_access_sequence_reg_read(reg);
@@ -166,7 +166,7 @@ static inline uint32_t IRAM_ATTR DPORT_SEQUENCE_REG_READ(uint32_t reg)
  */
 static inline uint32_t IRAM_ATTR DPORT_READ_PERI_REG(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
 #else
     return esp_dport_access_reg_read(reg);

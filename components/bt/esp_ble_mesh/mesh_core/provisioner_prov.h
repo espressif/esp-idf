@@ -76,13 +76,6 @@ struct bt_mesh_prov_data_info {
 void provisioner_pbg_count_dec(void);
 
 /**
- * @brief This function increments the current PB-GATT count.
- *
- * @return None
- */
-void provisioner_pbg_count_inc(void);
-
-/**
  * @brief This function clears the part of the link info of the proper device.
  *
  * @param[in] addr: Remote device address
@@ -165,37 +158,7 @@ int provisioner_prov_init(const struct bt_mesh_prov *prov_info);
  */
 void provisioner_unprov_beacon_recv(struct net_buf_simple *buf);
 
-/**
- * @brief This function parses the flags part of the
- *        received connectable mesh provisioning advertising packets.
- *
- * @param[in] buf: Pointer to the buffer containing advertising flags part
- *
- * @return True - success, False - fail
- */
-bool provisioner_flags_match(struct net_buf_simple *buf);
-
-/**
- * @brief This function parses the service UUID part of the
- *        received connectable mesh provisioning advertising packets.
- *
- * @param[in] buf: Pointer to the buffer containing service UUID part
- *
- * @return Zero - fail, otherwise - Service UUID(0x1827 or 0x1828)
- */
-u16_t provisioner_srv_uuid_recv(struct net_buf_simple *buf);
-
-/**
- * @brief This function parses the service data part of the
- *        received connectable mesh provisioning advertising packets.
- *
- * @param[in] buf:  Pointer to the buffer containing the remianing service data part
- * @param[in] addr: Pointer to the received device address
- * @param[in] uuid: Service UUID contained in the service UUID part
- *
- * @return None
- */
-void provisioner_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid);
+void provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
 
 /**
  * @brief This function gets the bt_mesh_prov pointer.
@@ -313,9 +276,7 @@ int bt_mesh_prov_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_fl
  *
  * @return Zero - success, otherwise - fail
  */
-#if 0
-int bt_mesh_prov_set_oob_output_data(const u8_t idx, u8_t *num, u8_t size, bool num_flag);
-#endif
+int bt_mesh_prov_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag);
 
 /**
  * @brief This function is called to read unprovisioned device's oob public key.

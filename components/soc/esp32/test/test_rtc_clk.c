@@ -218,10 +218,7 @@ static void start_freq(rtc_slow_freq_t required_src_freq, uint32_t start_delay_m
     printf("Test passed successfully\n");
 }
 
-#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
-// PSRAM tests run on ESP-WROVER-KIT boards, which have the 32k XTAL installed.
-// Other tests may run on DevKitC boards, which don't have a 32k XTAL.
-TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
+TEST_CASE("Test starting external RTC quartz", "[rtc_clk][test_env=UT_T1_32kXTAL]")
 {
     int i = 0, fail = 0;
     uint32_t start_time;
@@ -262,15 +259,13 @@ TEST_CASE("Test starting external RTC quartz", "[rtc_clk]")
     printf("Test passed successfully\n");
 }
 
-TEST_CASE("Test starting 'External 32kHz XTAL' on the board with it.", "[rtc_clk]")
+TEST_CASE("Test starting 'External 32kHz XTAL' on the board with it.", "[rtc_clk][test_env=UT_T1_32kXTAL]")
 {
     start_freq(RTC_SLOW_FREQ_32K_XTAL, 200);
     start_freq(RTC_SLOW_FREQ_32K_XTAL, 0);
 }
 
-#else
-
-TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_clk][ignore]")
+TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_clk][test_env=UT_T1_no32kXTAL]")
 {
     printf("Tries to start the 'External 32kHz XTAL' on the board without it. "
             "Clock switching to 'Internal 150 kHz RC oscillator'.\n");
@@ -283,5 +278,3 @@ TEST_CASE("Test starting 'External 32kHz XTAL' on the board without it.", "[rtc_
     start_freq(RTC_SLOW_FREQ_RTC, 200);
     start_freq(RTC_SLOW_FREQ_RTC, 0);
 }
-
-#endif // CONFIG_ESP32_SPIRAM_SUPPORT

@@ -1,9 +1,27 @@
-menu "Example Configuration"
+menu "Example CoAP Client Configuration"
 
-    config TARGET_DOMAIN_URI
+    config EXAMPLE_TARGET_DOMAIN_URI
         string "Target Uri"
-        default "coap://californium.eclipse.org"
+        default "coaps://californium.eclipse.org"
         help
-            Target uri for the example to use.
+            Target uri for the example to use. Use coaps:// prefix for encrypted traffic
+            using Pre-Shared Key (PSK) or Public Key Infrastructure (PKI).
+
+    config EXAMPLE_COAP_PSK_KEY
+        string "Preshared Key (PSK) to used in the connection to the CoAP server"
+        depends on COAP_MBEDTLS_PSK
+        default "sesame"
+        help
+            The Preshared Key to use to encrypt the communicatons. The same key must be
+            used at both ends of the CoAP connection, and the CoaP client must request
+            an URI prefixed with coaps:// instead of coap:// for DTLS to be used.
+
+    config EXAMPLE_COAP_PSK_IDENTITY
+        string "PSK Client identity (username)"
+        depends on COAP_MBEDTLS_PSK
+        default "password"
+        help
+            The identity (or username) to use to identify to the CoAP server which
+            PSK key to use.
 
 endmenu

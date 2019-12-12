@@ -15,8 +15,10 @@
 # limitations under the License.
 #
 
-import unittest
+import os
 import sys
+import tempfile
+import unittest
 
 try:
     from generation import PlacementRule
@@ -41,6 +43,18 @@ class GenerationModelTest(unittest.TestCase):
         self.model = GenerationModel()
         self.sections_info = None
         self.script_model = None
+
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.kconfigs_source_file = os.path.join(tempfile.gettempdir(), f.name)
+            self.addCleanup(os.remove, self.kconfigs_source_file)
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            self.kconfig_projbuilds_source_file = os.path.join(tempfile.gettempdir(), f.name)
+            self.addCleanup(os.remove, self.kconfig_projbuilds_source_file)
+
+        os.environ['COMPONENT_KCONFIGS_SOURCE_FILE'] = self.kconfigs_source_file
+        os.environ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'] = self.kconfig_projbuilds_source_file
+        os.environ['COMPONENT_KCONFIGS'] = ''
+        os.environ['COMPONENT_KCONFIGS_PROJBUILD'] = ''
 
         self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
 

@@ -4224,10 +4224,10 @@ test cases:
   - - SSC SSC1 reboot
     - - P SSC1 C !!!ready!!!
       - P SSC2 C MESH_EVENT_DISCONNECTE
-  - - SSC SSC1 meshset -O -o 0 -n 1 -t 1
-    - - P SSC1 C +MESHSET:SELF_ORG,OK
-  - - SSC SSC1 meshset -T -o 1
-    - - P SSC1 C MESHGET:TYPE,OK,0
+  - - SSC SSC2 meshset -O -o 0 -n 1 -t 1
+    - - P SSC2 C +MESHSET:SELF_ORG,OK
+  - - SSC SSC2 meshset -T -o 1
+    - - P SSC2 C MESHGET:TYPE,OK,0
   expected result: |-
     1. succeed
     2. succeed
@@ -4235,7 +4235,7 @@ test cases:
   steps: |-
     1. dut1 set AP, dut2 start mesh and connected with dut1
     2. reboot dut1, dut2 disconnected with dut1
-    3. set self_organized(1,1) and check dut2 IDLE
+    3. set dut2 self_organized(1,1) and check it IDLE
   initial condition: MESH_DEINIT_STA
   test environment: SSC_T2_MESH1
   summary: set self_organized (1,1) to give up root state

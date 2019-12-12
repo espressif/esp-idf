@@ -99,4 +99,6 @@ void bt_mesh_trans_init(void);
 
 void bt_mesh_rpl_clear(void);
 
+void bt_mesh_heartbeat_send(void);
+
 #endif /* _TRANSPORT_H_ */

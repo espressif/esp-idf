@@ -16,14 +16,28 @@
 #include "flash_qio_mode.h"
 #include "esp_log.h"
 #include "esp_err.h"
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/efuse.h"
-#include "soc/spi_periph.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/efuse.h"
+#endif
+#include "soc/spi_struct.h"
+#include "soc/spi_reg.h"
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#include "soc/spi_mem_struct.h"
+#endif
 #include "soc/efuse_periph.h"
+#include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
 /* SPI flash controller */
+#if CONFIG_IDF_TARGET_ESP32
 #define SPIFLASH SPI1
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#define SPIFLASH SPIMEM1
+#endif
 
 /* SPI commands (actual on-wire commands not SPI controller bitmasks)
    Suitable for use with the execute_flash_command static function.
@@ -42,7 +56,8 @@ static const char *TAG = "qio_mode";
 typedef unsigned (*read_status_fn_t)(void);
 typedef void (*write_status_fn_t)(unsigned);
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
     const char *manufacturer;
     uint8_t mfg_id; /* 8-bit JEDEC manufacturer ID */
     uint16_t flash_id; /* 16-bit JEDEC flash chip ID */
@@ -90,7 +105,7 @@ static void write_status_8b_xmc25qu64a(unsigned new_status);
    Searching of this table stops when the first match is found.
  */
 const static qio_info_t chip_data[] = {
-/*   Manufacturer,   mfg_id, flash_id, id mask, Read Status,                Write Status,               QIE Bit */
+    /*   Manufacturer,   mfg_id, flash_id, id mask, Read Status,                Write Status,               QIE Bit */
     { "MXIC",        0xC2,   0x2000, 0xFF00,    read_status_8b_rdsr,        write_status_8b_wrsr,       6 },
     { "ISSI",        0x9D,   0x4000, 0xCF00,    read_status_8b_rdsr,        write_status_8b_wrsr,       6 }, /* IDs 0x40xx, 0x70xx */
     { "WinBond",     0xEF,   0x4000, 0xFF00,    read_status_16b_rdsr_rdsr2, write_status_16b_wrsr,      9 },
@@ -109,8 +124,8 @@ const static qio_info_t chip_data[] = {
 #define NUM_CHIPS (sizeof(chip_data) / sizeof(qio_info_t))
 
 static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
-                            write_status_fn_t write_status_fn,
-                            uint8_t status_qio_bit);
+                                 write_status_fn_t write_status_fn,
+                                 uint8_t status_qio_bit);
 
 /* Generic function to use the "user command" SPI controller functionality
    to send commands to the SPI flash and read the respopnse.
@@ -127,6 +142,46 @@ uint32_t bootloader_read_flash_id(void)
     id = ((id & 0xff) << 16) | ((id >> 16) & 0xff) | (id & 0xff00);
     return id;
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+#define FLASH_WRAP_CMD   0x77
+typedef enum {
+    FLASH_WRAP_MODE_8B  = 0,
+    FLASH_WRAP_MODE_16B = 2,
+    FLASH_WRAP_MODE_32B = 4,
+    FLASH_WRAP_MODE_64B = 6,
+    FLASH_WRAP_MODE_DISABLE = 1
+} spi_flash_wrap_mode_t;
+static esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
+{
+    uint32_t reg_bkp_ctrl = SPIFLASH.ctrl.val;
+    uint32_t reg_bkp_usr  = SPIFLASH.user.val;
+    SPIFLASH.user.fwrite_dio = 0;
+    SPIFLASH.user.fwrite_dual = 0;
+    SPIFLASH.user.fwrite_qio = 1;
+    SPIFLASH.user.fwrite_quad = 0;
+    SPIFLASH.ctrl.fcmd_dual = 0;
+    SPIFLASH.ctrl.fcmd_quad = 0;
+    SPIFLASH.user.usr_dummy = 0;
+    SPIFLASH.user.usr_addr = 1;
+    SPIFLASH.user.usr_command = 1;
+    SPIFLASH.user2.usr_command_bitlen = 7;
+    SPIFLASH.user2.usr_command_value = FLASH_WRAP_CMD;
+    SPIFLASH.user1.usr_addr_bitlen = 23;
+    SPIFLASH.addr = 0;
+    SPIFLASH.user.usr_miso = 0;
+    SPIFLASH.user.usr_mosi = 1;
+    SPIFLASH.mosi_dlen.usr_mosi_bit_len = 7;
+    SPIFLASH.data_buf[0] = (uint32_t) mode << 4;;
+    SPIFLASH.cmd.usr = 1;
+    while (SPIFLASH.cmd.usr != 0) {
+    }
+
+    SPIFLASH.ctrl.val = reg_bkp_ctrl;
+    SPIFLASH.user.val = reg_bkp_usr;
+    return ESP_OK;
+}
+#endif
 
 void bootloader_enable_qio_mode(void)
 {
@@ -145,7 +200,7 @@ void bootloader_enable_qio_mode(void)
     flash_id = raw_flash_id & 0xFFFF;
     ESP_LOGD(TAG, "Manufacturer ID 0x%02x chip ID 0x%04x", mfg_id, flash_id);
 
-    for (i = 0; i < NUM_CHIPS-1; i++) {
+    for (i = 0; i < NUM_CHIPS - 1; i++) {
         const qio_info_t *chip = &chip_data[i];
         if (mfg_id == chip->mfg_id && (flash_id & chip->id_mask) == (chip->flash_id & chip->id_mask)) {
             ESP_LOGI(TAG, "Enabling QIO for flash chip %s", chip_data[i].manufacturer);
@@ -156,19 +211,22 @@ void bootloader_enable_qio_mode(void)
     if (i == NUM_CHIPS - 1) {
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
-
     enable_qio_mode(chip_data[i].read_status_fn,
                     chip_data[i].write_status_fn,
                     chip_data[i].status_qio_bit);
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
+#endif
 }
 
 static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
-                            write_status_fn_t write_status_fn,
-                            uint8_t status_qio_bit)
+                                 write_status_fn_t write_status_fn,
+                                 uint8_t status_qio_bit)
 {
     uint32_t status;
     const uint32_t spiconfig = ets_efuse_get_spiconfig();
 
+#if CONFIG_IDF_TARGET_ESP32
     if (spiconfig != EFUSE_SPICONFIG_SPI_DEFAULTS && spiconfig != EFUSE_SPICONFIG_HSPI_DEFAULTS) {
         // spiconfig specifies a custom efuse pin configuration. This config defines all pins -except- WP,
         // which is compiled into the bootloader instead.
@@ -178,27 +236,28 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
         //assignment from that chip's WP pin.
         uint32_t pkg_ver = REG_GET_FIELD(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_PKG);
         if (CONFIG_BOOTLOADER_SPI_WP_PIN != ESP32_D2WD_WP_GPIO  &&
-            (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
-             pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
-             pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
+                (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32D2WDQ5 ||
+                 pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD2 ||
+                 pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4)) {
             ESP_LOGW(TAG, "Chip is ESP32-D2WD/ESP32-PICOD4 but flash WP pin is different value to internal flash");
         }
     }
+#endif
 
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
     status = read_status_fn();
     ESP_LOGD(TAG, "Initial flash chip status 0x%x", status);
 
-    if ((status & (1<<status_qio_bit)) == 0) {
+    if ((status & (1 << status_qio_bit)) == 0) {
         execute_flash_command(CMD_WREN, 0, 0, 0);
-        write_status_fn(status | (1<<status_qio_bit));
+        write_status_fn(status | (1 << status_qio_bit));
 
         esp_rom_spiflash_wait_idle(&g_rom_flashchip);
 
         status = read_status_fn();
         ESP_LOGD(TAG, "Updated flash chip status 0x%x", status);
-        if ((status & (1<<status_qio_bit)) == 0) {
+        if ((status & (1 << status_qio_bit)) == 0) {
             ESP_LOGE(TAG, "Failed to set QIE bit, not enabling QIO mode");
             return ESP_FAIL;
         }
@@ -218,8 +277,15 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 
     esp_rom_spiflash_config_readmode(mode);
 
+#if CONFIG_IDF_TARGET_ESP32
     esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (ets_efuse_get_wp_pad() <= MAX_PAD_GPIO_NUM) {
+        esp_rom_spiflash_select_qio_pins(ets_efuse_get_wp_pad(), spiconfig);
+    } else {
+        esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
+    }
+#endif
     return ESP_OK;
 }
 
@@ -274,7 +340,11 @@ static void write_status_8b_xmc25qu64a(unsigned new_status)
 static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len)
 {
     uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
+#if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SPIFLASH.ctrl.val = SPI_MEM_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
+#endif
     SPIFLASH.user.usr_dummy = 0;
     SPIFLASH.user.usr_addr = 0;
     SPIFLASH.user.usr_command = 1;
@@ -282,9 +352,17 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
 
     SPIFLASH.user2.usr_command_value = command;
     SPIFLASH.user.usr_miso = miso_len > 0;
+#if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.miso_dlen.usr_miso_dbitlen = miso_len ? (miso_len - 1) : 0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SPIFLASH.miso_dlen.usr_miso_bit_len = miso_len ? (miso_len - 1) : 0;
+#endif
     SPIFLASH.user.usr_mosi = mosi_len > 0;
+#if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.mosi_dlen.usr_mosi_dbitlen = mosi_len ? (mosi_len - 1) : 0;
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    SPIFLASH.mosi_dlen.usr_mosi_bit_len = mosi_len ? (mosi_len - 1) : 0;
+#endif
     SPIFLASH.data_buf[0] = mosi_data;
 
     if (g_rom_spiflash_dummy_len_plus[1]) {
@@ -299,8 +377,8 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
     }
 
     SPIFLASH.cmd.usr = 1;
-    while(SPIFLASH.cmd.usr != 0)
-    { }
+    while (SPIFLASH.cmd.usr != 0) {
+    }
 
     SPIFLASH.ctrl.val = old_ctrl_reg;
     return SPIFLASH.data_buf[0];

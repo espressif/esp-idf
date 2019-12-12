@@ -36,6 +36,7 @@ static const char *MESH_TAG = "mesh_main";
 static const uint8_t MESH_ID[6] = { 0x77, 0x77, 0x77, 0x77, 0x77, 0x77};
 static mesh_addr_t mesh_parent_addr;
 static int mesh_layer = -1;
+static esp_netif_t *netif_sta = NULL;
 
 /*******************************************************
  *                Function Declarations
@@ -228,7 +229,7 @@ void mesh_event_handler(void *arg, esp_event_base_t event_base,
         last_layer = mesh_layer;
         mesh_connected_indicator(mesh_layer);
         if (esp_mesh_is_root()) {
-            tcpip_adapter_dhcpc_start(TCPIP_ADAPTER_IF_STA);
+            esp_netif_dhcpc_start(netif_sta);
         }
     }
     break;
@@ -292,7 +293,7 @@ void ip_event_handler(void *arg, esp_event_base_t event_base,
                       int32_t event_id, void *event_data)
 {
     ip_event_got_ip_t *event = (ip_event_got_ip_t *) event_data;
-    ESP_LOGI(MESH_TAG, "<IP_EVENT_STA_GOT_IP>IP:%s", ip4addr_ntoa(&event->ip_info.ip));
+    ESP_LOGI(MESH_TAG, "<IP_EVENT_STA_GOT_IP>IP:" IPSTR, IP2STR(&event->ip_info.ip));
 }
 
 void app_main(void)
@@ -300,15 +301,11 @@ void app_main(void)
     ESP_ERROR_CHECK(mesh_light_init());
     ESP_ERROR_CHECK(nvs_flash_init());
     /*  tcpip initialization */
-    tcpip_adapter_init();
-    /* for mesh
-     * stop DHCP server on softAP interface by default
-     * stop DHCP client on station interface by default
-     * */
-    ESP_ERROR_CHECK(tcpip_adapter_dhcps_stop(TCPIP_ADAPTER_IF_AP));
-    ESP_ERROR_CHECK(tcpip_adapter_dhcpc_stop(TCPIP_ADAPTER_IF_STA));
+    esp_netif_init();
     /*  event initialization */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    /*  crete network interfaces for mesh (only station instance saved for further manipulation, soft AP instance ignored */
+    ESP_ERROR_CHECK(esp_netif_create_default_wifi_mesh_netifs(&netif_sta, NULL));
     /*  wifi initialization */
     wifi_init_config_t config = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&config));

@@ -30,8 +30,8 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/sha256.h"
-#include "crypto/crypto.h"
+#include "sha256.h"
+#include "crypto.h"
 
 
 /**

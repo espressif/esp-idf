@@ -21,8 +21,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import print_function
+import os
 import re
-import kconfiglib
+import sys
+
+try:
+    from . import kconfiglib
+except Exception:
+    sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
+    import kconfiglib
 
 # Indentation to be used in the generated file
 INDENT = '    '
@@ -40,7 +47,8 @@ def write_docs(config, filename):
     of any items. ie the --config option can be ignored.
     (However at time of writing it still needs to be set to something...) """
     with open(filename, "w") as f:
-        config.walk_menu(lambda node: write_menu_item(f, node))
+        for node in config.node_iter():
+            write_menu_item(f, node)
 
 
 def node_is_menu(node):
@@ -143,6 +151,7 @@ def write_menu_item(f, node):
             # each line are stripped by kconfiglib. We need to re-indent the text
             # to produce valid ReST.
             f.write(format_rest_text(node.help, INDENT))
+            f.write('\n')
     except AttributeError:
         pass  # No help
 

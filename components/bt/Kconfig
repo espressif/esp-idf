@@ -1,7 +1,8 @@
-menu Bluetooth
+menu "Bluetooth"
 
     config BT_ENABLED
         bool "Bluetooth"
+        depends on IDF_TARGET_ESP32
         help
             Select this option to enable Bluetooth and show the submenu with Bluetooth configuration choices.
 
@@ -358,6 +359,21 @@ menu Bluetooth
                 If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
                 may cause adv packets lost more.
 
+        menuconfig BTDM_COEX_BT_OPTIONS
+            bool "Coexistence Bluetooth Side Options"
+            depends on ESP32_WIFI_SW_COEXIST_ENABLE
+            default n
+            help
+                Options of Bluetooth Side of WiFi and bluetooth coexistence.
+
+        config BTDM_COEX_BLE_ADV_HIGH_PRIORITY
+            bool "Improve BLE ADV priority for WiFi & BLE coexistence"
+            depends on BTDM_COEX_BT_OPTIONS
+            default n
+            help
+                Improve BLE ADV coexistence priority to make it better performance.
+                For example, BLE mesh need to enable this option to improve BLE adv performance.
+
     endmenu
 
     choice BT_HOST
@@ -395,7 +411,6 @@ endmenu
 
 menuconfig BLE_MESH
     bool "ESP BLE Mesh Support"
-    depends on BT_BLUEDROID_ENABLED
     help
         This option enables ESP BLE Mesh support. The specific features that are
         available may depend on other features that have been enabled in the

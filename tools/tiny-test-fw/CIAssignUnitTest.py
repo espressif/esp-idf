@@ -10,6 +10,11 @@ import argparse
 import yaml
 
 try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
+try:
     from Utility import CIAssignTest
 except ImportError:
     test_fw_path = os.getenv("TEST_FW_PATH")
@@ -19,13 +24,12 @@ except ImportError:
 
 
 class Group(CIAssignTest.Group):
-    SORT_KEYS = ["config", "SDK", "test environment", "multi_device", "multi_stage", "tags"]
+    SORT_KEYS = ["config", "test environment", "multi_device", "multi_stage", "tags", "chip_target"]
     MAX_CASE = 30
     ATTR_CONVERT_TABLE = {
         "execution_time": "execution time"
     }
-    # when IDF support multiple chips, SDK will be moved into tags, we can remove it
-    CI_JOB_MATCH_KEYS = ["test environment", "SDK"]
+    CI_JOB_MATCH_KEYS = ["test environment"]
 
     def __init__(self, case):
         super(Group, self).__init__(case)
@@ -84,6 +88,7 @@ class Group(CIAssignTest.Group):
         :return: {"Filter": case filter, "CaseConfig": list of case configs for cases in this group}
         """
         test_function = self._map_test_function()
+
         output_data = {
             # we don't need filter for test function, as UT uses a few test functions for all cases
             "CaseConfig": [
@@ -91,8 +96,26 @@ class Group(CIAssignTest.Group):
                     "name": test_function,
                     "extra_data": self._create_extra_data(test_function),
                 }
-            ]
+            ],
         }
+
+        target = self._get_case_attr(self.case_list[0], "chip_target")
+        if target is not None:
+            target_dut = {
+                "esp32": "ESP32DUT",
+                "esp32s2beta": "ESP32S2DUT",
+                "esp8266": "ESP8266DUT",
+            }[target]
+            output_data.update({
+                "Filter": {
+                    "overwrite": {
+                        "dut": {
+                            "path": "IDF/IDFDUT.py",
+                            "class": target_dut,
+                        }
+                    }
+                }
+            })
         return output_data
 
 
@@ -110,7 +133,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
 
         try:
             with open(test_case_path, "r") as f:
-                raw_data = yaml.load(f)
+                raw_data = yaml.load(f, Loader=Loader)
             test_cases = raw_data["test cases"]
         except IOError:
             print("Test case path is invalid. Should only happen when use @bot to skip unit test.")

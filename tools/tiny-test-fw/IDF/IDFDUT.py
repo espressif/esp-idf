@@ -122,9 +122,10 @@ def _uses_esptool(func):
         settings = self.port_inst.get_settings()
 
         try:
-            rom = esptool.ESP32ROM(self.port_inst)
-            rom.connect('hard_reset')
-            esp = rom.run_stub()
+            if not self._rom_inst:
+                self._rom_inst = esptool.ESPLoader.detect_chip(self.port_inst)
+            self._rom_inst.connect('hard_reset')
+            esp = self._rom_inst.run_stub()
 
             ret = func(self, esp, *args, **kwargs)
             # do hard reset after use esptool
@@ -158,6 +159,11 @@ class IDFDUT(DUT.SerialDUT):
         self.allow_dut_exception = allow_dut_exception
         self.exceptions = _queue.Queue()
         self.performance_items = _queue.Queue()
+        self._rom_inst = None
+
+    @classmethod
+    def _get_rom(cls):
+        raise NotImplementedError("This is an abstraction class, method not defined.")
 
     @classmethod
     def get_mac(cls, app, port):
@@ -169,7 +175,7 @@ class IDFDUT(DUT.SerialDUT):
         :return: MAC address or None
         """
         try:
-            esp = esptool.ESP32ROM(port)
+            esp = cls._get_rom()(port)
             esp.connect()
             return esp.read_mac()
         except RuntimeError:
@@ -181,7 +187,24 @@ class IDFDUT(DUT.SerialDUT):
 
     @classmethod
     def confirm_dut(cls, port, app, **kwargs):
-        return cls.get_mac(app, port) is not None
+        inst = None
+        try:
+            expected_rom_class = cls._get_rom()
+        except NotImplementedError:
+            expected_rom_class = None
+
+        try:
+            # TODO: check whether 8266 works with this logic
+            # Otherwise overwrite it in ESP8266DUT
+            inst = esptool.ESPLoader.detect_chip(port)
+            if expected_rom_class and type(inst) != expected_rom_class:
+                raise RuntimeError("Target not expected")
+            return inst.read_mac() is not None
+        except(esptool.FatalError, RuntimeError):
+            return False
+        finally:
+            if inst is not None:
+                inst._port.close()
 
     @_uses_esptool
     def _try_flash(self, esp, erase_nvs, baud_rate):
@@ -217,7 +240,7 @@ class IDFDUT(DUT.SerialDUT):
                 'no_stub': False,
                 'compress': True,
                 'verify': False,
-                'encrypt': False,
+                'encrypt': self.app.flash_settings.get("encrypt", False),
                 'erase_all': False,
             })
 
@@ -389,3 +412,21 @@ class IDFDUT(DUT.SerialDUT):
         if not self.allow_dut_exception and self.get_exceptions():
             Utility.console_log("DUT exception detected on {}".format(self), color="red")
             raise IDFDUTException()
+
+
+class ESP32DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32ROM
+
+
+class ESP32S2DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP32S2ROM
+
+
+class ESP8266DUT(IDFDUT):
+    @classmethod
+    def _get_rom(cls):
+        return esptool.ESP8266ROM

@@ -49,6 +49,11 @@ import TestCase
 
 from Utility import load_source
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
 
 def _convert_to_lower_case_bytes(item):
     """
@@ -154,7 +159,7 @@ class Parser(object):
         configs = cls.DEFAULT_CONFIG.copy()
         if config_file:
             with open(config_file, "r") as f:
-                configs.update(yaml.load(f))
+                configs.update(yaml.load(f), Loader=Loader)
         return configs
 
     @classmethod

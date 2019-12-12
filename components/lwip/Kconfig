@@ -6,6 +6,14 @@ menu "LWIP"
         help
             The name this device will report to other devices on the network
 
+    config LWIP_DNS_SUPPORT_MDNS_QUERIES
+        bool "Enable mDNS queries in resolving host name"
+        default y
+        help
+            If this feature is enabled, standard API such as gethostbyname
+            support .local addresses by sending one shot multicast mDNS
+            query
+
     config LWIP_L2_TO_L3_COPY
         bool "Enable copy between Layer2 and Layer3 packets"
         default n
@@ -89,6 +97,13 @@ menu "LWIP"
         default n
         help
             Enabling this option allows checking for available data on a netconn.
+
+    config LWIP_NETBUF_RECVINFO
+        bool "Enable IP_PKTINFO option"
+        default n
+        help
+            Enabling this option allows checking for the destination address
+            of a received IPv4 Packet.
 
     config LWIP_IP_FRAG
         bool "Enable fragment outgoing IP packets"
@@ -310,6 +325,15 @@ menu "LWIP"
                 Can be set lower to save RAM, the default value 1460(ipv4)/1440(ipv6) will give best throughput.
                 IPv4 TCP_MSS Range: 576 <= TCP_MSS <= 1460
                 IPv6 TCP_MSS Range: 1220<= TCP_mSS <= 1440
+
+        config LWIP_TCP_TMR_INTERVAL
+            int "TCP timer interval(ms)"
+            default 250
+            help
+                Set TCP timer interval in milliseconds.
+
+                Can be used to speed connections on bad networks.
+                A lower value will redeliver unacked packets faster.
 
         config LWIP_TCP_MSL
             int "Maximum segment lifetime (MSL)"

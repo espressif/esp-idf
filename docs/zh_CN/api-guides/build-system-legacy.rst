@@ -289,7 +289,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理定义：
 ~~~~~~~~~~~~~~~~~~
 
 - ``make app``，``make bootloader``，``make partition table`` 可以根据需要为项目单独构建生成应用程序文件、启动引导文件和分区表文件。
-- ``make erase_flash`` 和 ``make erase_ota`` 会调用 esptool.py 脚本分别擦除整块闪存芯片或者其中 OTA 分区的内容。
+- ``make erase_flash`` 和 ``make erase_otadata`` 会调用 esptool.py 脚本分别擦除整块闪存芯片或者其中 OTA 分区的内容。
 - ``make size`` 会打印应用程序的大小信息。``make size-components`` 和 ``make size-files`` 两者功能相似，分别打印每个组件或者每个源文件大小的详细信息。
 
 调试 Make 的过程

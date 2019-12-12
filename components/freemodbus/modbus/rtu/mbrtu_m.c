@@ -69,12 +69,15 @@ typedef enum
     STATE_M_TX_XFWR,              /*!< Transmitter is in transfer finish and wait receive state. */
 } eMBMasterSndState;
 
+/*------------------------ Shared variables ---------------------------------*/
+
+volatile UCHAR  ucMasterRTUSndBuf[MB_PDU_SIZE_MAX];
+volatile UCHAR  ucMasterRTURcvBuf[MB_SER_PDU_SIZE_MAX];
+
 /* ----------------------- Static variables ---------------------------------*/
 static volatile eMBMasterSndState eSndState;
 static volatile eMBMasterRcvState eRcvState;
 
-static volatile UCHAR  ucMasterRTUSndBuf[MB_PDU_SIZE_MAX];
-static volatile UCHAR  ucMasterRTURcvBuf[MB_SER_PDU_SIZE_MAX];
 static volatile USHORT usMasterSendPDULength;
 
 static volatile UCHAR *pucMasterSndBufferCur;
@@ -260,7 +263,7 @@ xMBMasterRTUReceiveFSM( void )
 
         /* In the idle state we wait for a new character. If a character
          * is received the t1.5 and t3.5 timers are started and the
-         * receiver is in the state STATE_RX_RECEIVCE and disable early
+         * receiver is in the state STATE_M_RX_RCV and disable early
          * the timer of respond timeout .
          */
     case STATE_M_RX_IDLE:
@@ -310,11 +313,10 @@ xMBMasterRTUTransmitFSM( void )
         /* We should not get a transmitter event if the transmitter is in
          * idle state.  */
     case STATE_M_TX_XFWR:
+        xNeedPoll = TRUE;
         break;
 
     case STATE_M_TX_IDLE:
-        /* enable receiver/disable transmitter. */
-        vMBMasterPortSerialEnable( TRUE, FALSE );
         break;
 
     case STATE_M_TX_XMIT:
@@ -328,9 +330,6 @@ xMBMasterRTUTransmitFSM( void )
         else
         {
             xFrameIsBroadcast = ( ucMasterRTUSndBuf[MB_SER_PDU_ADDR_OFF] == MB_ADDRESS_BROADCAST ) ? TRUE : FALSE;
-            /* Disable transmitter. This prevents another transmit buffer
-             * empty interrupt. */
-            vMBMasterPortSerialEnable( TRUE, FALSE );
             eSndState = STATE_M_TX_XFWR;
             /* If the frame is broadcast ,master will enable timer of convert delay,
              * else master will enable timer of respond timeout. */
@@ -342,7 +341,6 @@ xMBMasterRTUTransmitFSM( void )
             {
             	vMBMasterPortTimersRespondTimeoutEnable( );
             }
-            xNeedPoll = TRUE;
         }
         break;
     }
@@ -350,8 +348,7 @@ xMBMasterRTUTransmitFSM( void )
     return xNeedPoll;
 }
 
-BOOL
-xMBMasterRTUTimerExpired(void)
+BOOL MB_PORT_ISR_ATTR xMBMasterRTUTimerExpired(void)
 {
 	BOOL xNeedPoll = FALSE;
 
@@ -395,8 +392,7 @@ xMBMasterRTUTimerExpired(void)
 		break;
 		/* Function called in an illegal state. */
 	default:
-		assert(
-				( eSndState == STATE_M_TX_XFWR ) || ( eSndState == STATE_M_TX_IDLE ));
+		assert(( eSndState == STATE_M_TX_XFWR ) || ( eSndState == STATE_M_TX_IDLE ));
 		break;
 	}
 	eSndState = STATE_M_TX_IDLE;

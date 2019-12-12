@@ -17,7 +17,7 @@
 #include "esp_gdbstub_common.h"
 #include "sdkconfig.h"
 
-#define UART_NUM CONFIG_CONSOLE_UART_NUM
+#define UART_NUM CONFIG_ESP_CONSOLE_UART_NUM
 
 void esp_gdbstub_target_init(void)
 {

@@ -14,26 +14,37 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         option env="IDF_CMAKE"
 
-
-    config IDF_TARGET_ENV
-        # A proxy to get environment variable $IDF_TARGET
-        string
-        option env="IDF_TARGET"
-
     config IDF_TARGET
         # This option records the IDF target when sdkconfig is generated the first time.
         # It is not updated if environment variable $IDF_TARGET changes later, and
         # the build system is responsible for detecting the mismatch between
         # CONFIG_IDF_TARGET and $IDF_TARGET.
         string
-        default "IDF_TARGET_NOT_SET" if IDF_TARGET_ENV=""
-        default IDF_TARGET_ENV
+        default "$(IDF_TARGET)"
 
+    config IDF_TARGET_ESP32
+        bool
+        default "y" if IDF_TARGET="esp32"
+        default "n"
+
+    config IDF_TARGET_ESP32S2BETA
+        bool
+        default "y" if IDF_TARGET="esp32s2beta"
+        default "n"
+        select FREERTOS_UNICORE
+
+    config IDF_FIRMWARE_CHIP_ID
+        hex
+        default 0x0000 if IDF_TARGET_ESP32
+        # note: S2 beta uses Chip ID 0 still, S2 will use 0x0002
+        default 0x0000 if IDF_TARGET_ESP32S2BETA
+        default 0xFFFF
 
     menu "SDK tool configuration"
         config SDK_TOOLPREFIX
             string "Compiler toolchain path/prefix"
-            default "xtensa-esp32-elf-"
+            default "xtensa-esp32-elf-" if IDF_TARGET_ESP32
+            default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2BETA
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.
@@ -64,30 +75,118 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     endmenu  # SDK tool configuration
 
-    source "$COMPONENT_KCONFIGS_PROJBUILD"
+    menu "Build type"
+
+        choice APP_BUILD_TYPE
+            prompt "Application build type"
+            default APP_BUILD_TYPE_APP_2NDBOOT
+            help
+                Select the way the application is built.
+
+                By default, the application is built as a binary file in a format compatible with
+                the ESP32 bootloader. In addition to this application, 2nd stage bootloader is
+                also built. Application and bootloader binaries can be written into flash and
+                loaded/executed from there.
+
+                Another option, useful for only very small and limited applications, is to only link
+                the .elf file of the application, such that it can be loaded directly into RAM over
+                JTAG. Note that since IRAM and DRAM sizes are very limited, it is not possible to
+                build any complex application this way. However for kinds of testing and debugging,
+                this option may provide faster iterations, since the application does not need to be
+                written into flash.
+                Note that at the moment, ESP-IDF does not contain all the startup code required to
+                initialize the CPUs and ROM memory (data/bss). Therefore it is necessary to execute
+                a bit of ROM code prior to executing the application. A gdbinit file may look as follows:
+
+                    # Connect to a running instance of OpenOCD
+                    target remote :3333
+                    # Reset and halt the target
+                    mon reset halt
+                    # Run to a specific point in ROM code,
+                    #  where most of initialization is complete.
+                    thb *0x40007901
+                    c
+                    # Load the application into RAM
+                    load
+                    # Run till app_main
+                    tb app_main
+                    c
+
+                Execute this gdbinit file as follows:
+
+                    xtensa-esp32-elf-gdb build/app-name.elf -x gdbinit
+
+                Recommended sdkconfig.defaults for building loadable ELF files is as follows.
+                CONFIG_APP_BUILD_TYPE_ELF_RAM is required, other options help reduce application
+                memory footprint.
+
+                    CONFIG_APP_BUILD_TYPE_ELF_RAM=y
+                    CONFIG_VFS_SUPPORT_TERMIOS=
+                    CONFIG_NEWLIB_NANO_FORMAT=y
+                    CONFIG_ESP32_PANIC_PRINT_HALT=y
+                    CONFIG_ESP32_DEBUG_STUBS_ENABLE=
+                    CONFIG_ESP_ERR_TO_NAME_LOOKUP=
+
+
+            config APP_BUILD_TYPE_APP_2NDBOOT
+                bool
+                prompt "Default (binary application + 2nd stage bootloader)"
+                select APP_BUILD_GENERATE_BINARIES
+                select APP_BUILD_BOOTLOADER
+                select APP_BUILD_USE_FLASH_SECTIONS
+
+            config APP_BUILD_TYPE_ELF_RAM
+                bool
+                prompt "ELF file, loadable into RAM (EXPERIMENTAL))"
+        endchoice # APP_BUILD_TYPE
+
+        # Hidden options, set according to the choice above
+        config APP_BUILD_GENERATE_BINARIES
+            bool # Whether to generate .bin files or not
+
+        config APP_BUILD_BOOTLOADER
+            bool # Whether to build the bootloader
+
+        config APP_BUILD_USE_FLASH_SECTIONS
+            bool # Whether to place code/data into memory-mapped flash sections
+
+    endmenu # Build type
+
+    source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
 
     menu "Compiler options"
 
         choice COMPILER_OPTIMIZATION
             prompt "Optimization Level"
-            default COMPILER_OPTIMIZATION_LEVEL_DEBUG
+            default COMPILER_OPTIMIZATION_DEFAULT
             help
                 This option sets compiler optimization level (gcc -O argument).
 
-                - for "Release" setting, -Os flag is added to CFLAGS.
-                - for "Debug" setting, -Og flag is added to CFLAGS.
+                - The "Default" setting will add the -0g flag to CFLAGS.
+                - The "Size" setting will add the -0s flag to CFLAGS.
+                - The "Performance" setting will add the -O2 flag to CFLAGS.
+                - The "None" setting will add the -O0 flag to CFLAGS.
 
-                "Release" with -Os produces smaller & faster compiled code but it
-                may be harder to correlated code addresses to source files when debugging.
+                The "Size" setting cause the compiled code to be smaller and faster, but
+                may lead to difficulties of correlating code addresses to source file
+                lines when debugging.
 
-                To add custom optimization settings, set CFLAGS and/or CPPFLAGS
-                in project makefile, before including $(IDF_PATH)/make/project.mk. Note that
-                custom optimization levels may be unsupported.
+                The "Performance" setting causes the compiled code to be larger and faster,
+                but will be easier to correlated code addresses to source file lines.
 
-            config COMPILER_OPTIMIZATION_LEVEL_DEBUG
+                "None" with -O0 produces compiled code without optimization.
+
+                Note that custom optimization levels may be unsupported.
+
+            config COMPILER_OPTIMIZATION_DEFAULT
                 bool "Debug (-Og)"
-            config COMPILER_OPTIMIZATION_LEVEL_RELEASE
-                bool "Release (-Os)"
+            config COMPILER_OPTIMIZATION_SIZE
+                bool "Optimize for size (-Os)"
+            config COMPILER_OPTIMIZATION_PERF
+                bool "Optimize for performance (-O2)"
+            config COMPILER_OPTIMIZATION_NONE
+                bool "Debug without optimization (-O0)"
+
         endchoice
 
         choice COMPILER_OPTIMIZATION_ASSERTION_LEVEL
@@ -144,6 +243,14 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 Size (in bytes) of the emergency memory pool for C++ exceptions. This pool will be used to allocate
                 memory for thrown exceptions when there is not enough memory on the heap.
+
+        config COMPILER_CXX_RTTI
+            bool "Enable C++ run-time type info (RTTI)"
+            default n
+            help
+                Enabling this option compiles all C++ files with RTTI support enabled.
+                This increases binary size (typically by tens of kB) but allows using
+                dynamic_cast conversion and typeid operator.
 
         choice COMPILER_STACK_CHECK_MODE
             prompt "Stack smashing protection mode"
@@ -211,7 +318,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     endmenu # Compiler Options
 
     menu "Component config"
-        source "$COMPONENT_KCONFIGS"
+        source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
 
     menu "Compatibility options"

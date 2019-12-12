@@ -1,30 +1,22 @@
-# _Himem API example_
+# Himem API Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example uses the Himem API to run a memory test of the upper 4MiB of an 8MiB PSRAM chip.
+This example uses the [Himem API](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/system/himem.html) to run a memory test of the upper 4 MiB of an 8 MiB PSRAM chip.
 
-The ESP32 has the ability to access external SPI RAM in the same way as internal memory can be accessed, that is, if 
-enabled in menuconfig, you can allocate memory in external RAM using standard C allocation APIs like `malloc()`, `calloc()`, etc.
+The ESP32 has the ability to access external SPI RAM in the same way internal memory can be accessed. In other words, if enabled in project configuration, you can allocate memory in external RAM using standard C allocation APIs like `malloc()`, `calloc()`, etc.
 
-However, because of hardware limitations, this only works for up to 4MiB of external memory. If you have, for instance,
-an ESP32-WROVER module with 8MiB of PSRAM, you cannot use the upper 4MiB of PSRAM this way. However, this memory is not wasted,
-using the Himem API (which essentially is a bank switching scheme for the upper memory regions), it is still usable. 
+However, because of hardware limitations, this only works for up to 4 MiB of external memory. If you have, for instance, an ESP32-WROVER module with 8 MiB of PSRAM, you cannot use the upper 4 MiB of PSRAM this way. However, this memory is not wasted, using the Himem API (which essentially is a bank switching scheme for the upper memory regions), the upper 4 MiB is still usable. 
 
-The Himem subsystem does this by reserving some amount of address space, then allowing applications to swap in and out normally
-unreachable ranges of physical SPI RAM. While this does not allow transparent access in the way memory allocated with `malloc()` does,
-it does provide an usable way to store data for e.g. large audio or video buffers in the upper 4MiB.
+The Himem subsystem does this by reserving some amount of address space, then allowing applications to swap in and out normally unreachable ranges of physical SPI RAM. While this does not allow transparent access in the way memory allocated with `malloc()` does, it does provide an usable way to store data for e.g., large audio or video buffers in the upper 4 MiB.
 
-This example uses the Himem API to run a simple memory test of the entire range of upper memory. It illustrates how to allocate
-address space to bankswitch the physical memory in, allocate the physical memory, and switch it in or out of the allocated address space.
+This example uses the Himem API to run a simple memory test of the entire range of upper memory. It illustrates how to allocate address space to bankswitch the physical memory in, allocate the physical memory, and switch it in or out of the allocated address space.
 
 ## How to use example
 
 ### Hardware Required
 
-This example requires an ESP32 with external SPI RAM connected, for instance an ESP32-WROVER module. The example is intended to run on
-an ESP32 with 8MiB external RAM connected. It will still run on an ESP32 with 4MiB external RAM, but in practice using Himem with such
-a setup does not make much sense.
+This example requires an ESP32 with external SPI RAM connected, for instance an ESP32-WROVER module. The example is intended to run on an ESP32 with 8 MiB external RAM connected. It will still run on an ESP32 with 4 MiB external RAM, but in practice using Himem with such a setup does not make much sense.
 
 ### Configure the project
 
@@ -34,9 +26,7 @@ idf.py menuconfig
 
 * Set serial port under Serial Flasher Options.
 
-* Make sure that SPI RAM bank switching is enabled. (Compiling the example with default values will automatically enable this.) It can be found under
-  Component config -> ESP32-specific -> Support for external, SPI-connected RAM  -> SPI RAM config .
-
+* Make sure that SPI RAM bank switching is enabled. (Compiling the example with default values will automatically enable this.) It can be found under `Component config > ESP32-specific > Support for external, SPI-connected RAM  > SPI RAM config`.
 
 ### Build and Flash
 
@@ -107,7 +97,6 @@ I (121) esp_himem: Initialized. Using last 62 32KB address blocks for bank switc
 I (122) cpu_start: Starting scheduler on PRO CPU.
 I (0) cpu_start: Starting scheduler on APP CPU.
 I (132) spiram: Reserving pool of 32K of internal memory for DMA/internal allocations
-Himem has 6080KiB of memory, 6080KiB of which is free. Testing the free memory...
+Himem has 6080 KiB of memory, 6080 KiB of which is free. Testing the free memory...
 Done!
 ```
-

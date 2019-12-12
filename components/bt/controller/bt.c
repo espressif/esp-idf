@@ -37,13 +37,14 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_pm.h"
-#include "esp_ipc.h"
 #include "driver/periph_ctrl.h"
 #include "soc/rtc.h"
 #include "soc/soc_memory_layout.h"
 #include "esp32/clk.h"
 #include "esp_coexist_internal.h"
-
+#if !CONFIG_FREERTOS_UNICORE
+#include "esp_ipc.h"
+#endif
 
 #if CONFIG_BT_ENABLED
 
@@ -225,6 +226,7 @@ extern int coex_bt_release_wrapper(uint32_t event);
 extern int coex_register_bt_cb_wrapper(coex_func_cb_t cb);
 extern uint32_t coex_bb_reset_lock_wrapper(void);
 extern void coex_bb_reset_unlock_wrapper(uint32_t restore);
+extern void coex_ble_adv_priority_high_set(bool high);
 
 extern char _bss_start_btdm;
 extern char _bss_end_btdm;
@@ -741,7 +743,7 @@ static void task_delete_wrapper(void *task_handle)
 
 static bool IRAM_ATTR is_in_isr_wrapper(void)
 {
-    return (bool)xPortInIsrContext();
+    return !xPortCanYield();
 }
 
 static void IRAM_ATTR cause_sw_intr(void *arg)
@@ -755,18 +757,21 @@ static int IRAM_ATTR cause_sw_intr_to_core_wrapper(int core_id, int intr_no)
 {
     esp_err_t err = ESP_OK;
 
+#if CONFIG_FREERTOS_UNICORE
+    cause_sw_intr((void *)intr_no);
+#else /* CONFIG_FREERTOS_UNICORE */
     if (xPortGetCoreID() == core_id) {
         cause_sw_intr((void *)intr_no);
     } else {
         err = esp_ipc_call(core_id, cause_sw_intr, (void *)intr_no);
     }
-
+#endif /* !CONFIG_FREERTOS_UNICORE */
     return err;
 }
 
 static void *malloc_internal_wrapper(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
 }
 
 static int32_t IRAM_ATTR read_mac_wrapper(uint8_t mac[6])
@@ -1190,6 +1195,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         err = ESP_ERR_NO_MEM;
         goto error;
     }
+
+    #ifdef CONFIG_BTDM_COEX_BLE_ADV_HIGH_PRIORITY
+        coex_ble_adv_priority_high_set(true);
+    #else
+        coex_ble_adv_priority_high_set(false);
+    #endif
 
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 

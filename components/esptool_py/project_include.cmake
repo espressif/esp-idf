@@ -2,7 +2,7 @@
 #
 # Many of these are read when generating flash_app_args & flash_project_args
 idf_build_get_property(python PYTHON)
-set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip esp32)
+set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${IDF_TARGET})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
@@ -52,6 +52,10 @@ if(CONFIG_SECURE_BOOT_ENABLED AND
     set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --secure-pad)
 endif()
 
+if(CONFIG_ESP32_REV_MIN)
+    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --min-rev ${CONFIG_ESP32_REV_MIN})
+endif()
+
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
     # as elf2image can't have 'detect' as an option...
@@ -74,24 +78,28 @@ set(PROJECT_BIN "${elf_name}.bin")
 #
 # Add 'app.bin' target - generates with elf2image
 #
-add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-    COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
-        -o "${build_dir}/${unsigned_project_binary}" "${elf}"
-    COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
-    COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
-    DEPENDS ${elf}
-    VERBATIM
-    WORKING_DIRECTORY ${build_dir}
-    COMMENT "Generating binary image from built executable"
-    )
-add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
+if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
+        COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
+            -o "${build_dir}/${unsigned_project_binary}" "${elf}"
+        COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
+        COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
+        DEPENDS ${elf}
+        VERBATIM
+        WORKING_DIRECTORY ${build_dir}
+        COMMENT "Generating binary image from built executable"
+        )
+    add_custom_target(gen_project_binary DEPENDS "${build_dir}/.bin_timestamp")
+endif()
 
 set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
     APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     "${build_dir}/${unsigned_project_binary}"
     )
 
-add_custom_target(app ALL DEPENDS gen_project_binary)
+if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+    add_custom_target(app ALL DEPENDS gen_project_binary)
+endif()
 
 if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
@@ -134,12 +142,33 @@ function(esptool_py_custom_target target_name flasher_filename dependencies)
         -D IDF_PATH="${idf_path}"
         -D ESPTOOLPY="${ESPTOOLPY}"
         -D ESPTOOL_ARGS="write_flash;@flash_${flasher_filename}_args"
-        -D ESPTOOL_WORKING_DIR="${build_dir}"
+        -D WORKING_DIRECTORY="${build_dir}"
         -P run_esptool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         USES_TERMINAL
         )
 endfunction()
+
+add_custom_target(erase_flash
+    COMMAND ${CMAKE_COMMAND}
+    -D IDF_PATH="${idf_path}"
+    -D ESPTOOLPY="${ESPTOOLPY}"
+    -D ESPTOOL_ARGS="erase_flash"
+    -P run_esptool.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    )
+
+add_custom_target(monitor
+    COMMAND ${CMAKE_COMMAND}
+    -D IDF_PATH="${idf_path}"
+    -D IDF_MONITOR="${idf_path}/tools/idf_monitor.py"
+    -D ELF_FILE="${elf}"
+    -D WORKING_DIRECTORY="${build_dir}"
+    -P run_idf_monitor.cmake
+    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+    USES_TERMINAL
+    )
 
 esptool_py_custom_target(flash project "app;partition_table;bootloader")
 esptool_py_custom_target(app-flash app "app")

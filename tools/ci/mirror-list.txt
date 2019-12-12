@@ -1,0 +1,21 @@
+components/esp_wifi/lib_esp32                               @GENERAL_MIRROR_SERVER@/idf/esp32-wifi-lib.git
+components/esp_wifi/lib_esp32s2beta                         @GENERAL_MIRROR_SERVER@/idf/esp32-wifi-lib.git
+components/bt/lib                                           @GENERAL_MIRROR_SERVER@/idf/esp32-bt-lib.git
+components/esptool_py/esptool                               @GENERAL_MIRROR_SERVER@/idf/esptool.git
+components/coap/libcoap                                     @GENERAL_MIRROR_SERVER@/idf/libcoap.git                         ALLOW_TO_SYNC_FROM_PUBLIC
+ext/tinydtls                                                @GENERAL_MIRROR_SERVER@/idf/org.eclipse.tinydtls.git            ALLOW_TO_SYNC_FROM_PUBLIC
+components/json/cJSON                                       @GENERAL_MIRROR_SERVER@/idf/cJSON.git                           ALLOW_TO_SYNC_FROM_PUBLIC
+components/libsodium/libsodium                              @GENERAL_MIRROR_SERVER@/idf/libsodium.git                       ALLOW_TO_SYNC_FROM_PUBLIC
+components/mbedtls/mbedtls                                  @GENERAL_MIRROR_SERVER@/idf/mbedtls.git                         ALLOW_TO_SYNC_FROM_PUBLIC
+components/expat/expat                                      @GENERAL_MIRROR_SERVER@/idf/libexpat.git                        ALLOW_TO_SYNC_FROM_PUBLIC
+components/bootloader/subproject/components/micro-ecc/micro-ecc                              @GENERAL_MIRROR_SERVER@/idf/micro-ecc.git                       ALLOW_TO_SYNC_FROM_PUBLIC
+components/nghttp/nghttp2                                   @GENERAL_MIRROR_SERVER@/idf/nghttp2.git                         ALLOW_TO_SYNC_FROM_PUBLIC
+components/spiffs/spiffs                                    @GENERAL_MIRROR_SERVER@/idf/spiffs.git                          ALLOW_TO_SYNC_FROM_PUBLIC
+components/asio/asio                                        @GENERAL_MIRROR_SERVER@/idf/asio.git
+components/lwip/lwip                                        @GENERAL_MIRROR_SERVER@/idf/esp-lwip.git
+third-party/mruby                                           @GENERAL_MIRROR_SERVER@/idf/mruby.git                           ALLOW_TO_SYNC_FROM_PUBLIC
+third-party/neverbleed                                      @GENERAL_MIRROR_SERVER@/idf/neverbleed.git                      ALLOW_TO_SYNC_FROM_PUBLIC
+components/mqtt/esp-mqtt                                    @GENERAL_MIRROR_SERVER@/idf/esp-mqtt.git                        ALLOW_TO_SYNC_FROM_PUBLIC
+components/protobuf-c/protobuf-c                            @GENERAL_MIRROR_SERVER@/idf/protobuf-c.git                      ALLOW_TO_SYNC_FROM_PUBLIC
+components/unity/unity                                      @GENERAL_MIRROR_SERVER@/idf/Unity.git                           ALLOW_TO_SYNC_FROM_PUBLIC
+examples/build_system/cmake/import_lib/main/lib/tinyxml2    @GENERAL_MIRROR_SERVER@/idf/tinyxml2.git                        ALLOW_TO_SYNC_FROM_PUBLIC

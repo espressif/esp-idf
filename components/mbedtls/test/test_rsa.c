@@ -11,11 +11,13 @@
 #include "mbedtls/rsa.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/x509_crt.h"
+#include "mbedtls/entropy_poll.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "sdkconfig.h"
+#include "test_utils.h"
 
 /* Taken from openssl s_client -connect api.gigafive.com:443 -showcerts
  */
@@ -238,3 +240,56 @@ static void test_cert(const char *cert, const uint8_t *expected_output, size_t o
 
     mbedtls_x509_crt_free(&crt);
 }
+
+#ifdef CONFIG_MBEDTLS_HARDWARE_MPI
+
+static int myrand(void *rng_state, unsigned char *output, size_t len)
+{
+    size_t olen;
+    return mbedtls_hardware_poll(rng_state, output, len, &olen);
+}
+
+TEST_CASE("test performance RSA key operations", "[bignum][ignore]")
+{
+    mbedtls_rsa_context rsa;
+    unsigned char orig_buf[4096 / 8];
+    unsigned char encrypted_buf[4096 / 8];
+    unsigned char decrypted_buf[4096 / 8];
+    int64_t start;
+    int public_perf, private_perf;
+
+    printf("First, orig_buf is encrypted by the public key, and then decrypted by the private key\n");
+
+    for (int keysize = 2048; keysize <= 4096; keysize += 2048) {
+        memset(orig_buf, 0xAA, sizeof(orig_buf));
+        orig_buf[0] = 0; // Ensure that orig_buf is smaller than rsa.N
+
+        mbedtls_rsa_init(&rsa, MBEDTLS_RSA_PRIVATE, 0);
+        TEST_ASSERT_EQUAL(0, mbedtls_rsa_gen_key(&rsa, myrand, NULL, keysize, 65537));
+
+        TEST_ASSERT_EQUAL(keysize, (int)rsa.len * 8);
+        TEST_ASSERT_EQUAL(keysize, (int)rsa.D.n * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
+
+        start = esp_timer_get_time();
+        TEST_ASSERT_EQUAL(0, mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf));
+        public_perf = esp_timer_get_time() - start;
+
+        start = esp_timer_get_time();
+        TEST_ASSERT_EQUAL(0, mbedtls_rsa_private(&rsa, NULL, NULL, encrypted_buf, decrypted_buf));
+        private_perf = esp_timer_get_time() - start;
+
+        if (keysize == 2048) {
+            TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "public operations %d us", public_perf);
+            TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PRIVATE_OP, "private operations %d us", private_perf);
+        } else {
+            TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PUBLIC_OP, "public operations %d us", public_perf);
+            TEST_PERFORMANCE_LESS_THAN(RSA_4096KEY_PRIVATE_OP, "private operations %d us", private_perf);
+        }
+
+        TEST_ASSERT_EQUAL_MEMORY_MESSAGE(orig_buf, decrypted_buf, keysize / 8, "RSA operation");
+
+        mbedtls_rsa_free(&rsa);
+    }
+}
+
+#endif // CONFIG_MBEDTLS_HARDWARE_MPI

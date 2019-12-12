@@ -1,0 +1,4 @@
+TEST_EXCLUDE_COMPONENTS=libsodium bt app_update driver esp32s2beta spi_flash
+CONFIG_ESP32S2_SPIRAM_SUPPORT=y
+CONFIG_IDF_TARGET="esp32s2beta"
+CONFIG_SPIRAM_OCCUPY_NO_HOST=y

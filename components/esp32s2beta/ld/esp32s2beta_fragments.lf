@@ -1,0 +1,98 @@
+[sections:text]
+entries:
+    .text+
+    .literal+
+
+[sections:data]
+entries:
+    .data+
+
+[sections:bss]
+entries:
+    .bss+
+
+[sections:common]
+entries:
+    COMMON
+
+[sections:rodata]
+entries:
+    .rodata+
+
+[sections:rtc_text]
+entries:
+    .rtc.text+
+    .rtc.literal
+
+[sections:rtc_data]
+entries:
+    .rtc.data+
+
+[sections:rtc_rodata]
+entries:
+    .rtc.rodata+
+
+[sections:rtc_bss]
+entries:
+    .rtc.bss
+
+[sections:iram]
+entries:
+    .iram1+
+
+[sections:dram]
+entries:
+    .dram1+
+
+[sections:wifi_iram]
+entries:
+    .wifi0iram+
+
+[sections:wifi_rx_iram]
+entries:
+    .wifirxiram+
+
+[scheme:default]
+entries:
+    text -> flash_text
+    rodata -> flash_rodata
+    data -> dram0_data
+    bss -> dram0_bss
+    common -> dram0_bss
+    iram -> iram0_text
+    dram -> dram0_data
+    rtc_text -> rtc_text
+    rtc_data -> rtc_data
+    rtc_rodata -> rtc_data
+    rtc_bss -> rtc_bss
+    wifi_iram -> flash_text
+    wifi_rx_iram -> flash_text
+
+[scheme:rtc]
+entries:
+    text -> rtc_text
+    data -> rtc_data
+    rodata -> rtc_data
+    bss -> rtc_bss
+    common -> rtc_bss
+
+[scheme:noflash]
+entries:
+    text -> iram0_text
+    rodata -> dram0_data
+
+[scheme:noflash_data]
+entries:
+    rodata -> dram0_data
+
+[scheme:noflash_text]
+entries:
+    text -> iram0_text
+
+[scheme:wifi_iram]
+entries:
+    wifi_iram -> iram0_text
+
+[scheme:wifi_rx_iram]
+entries:
+    wifi_rx_iram -> iram0_text

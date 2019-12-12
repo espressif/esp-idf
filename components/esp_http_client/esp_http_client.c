@@ -294,6 +294,21 @@ esp_err_t esp_http_client_get_username(esp_http_client_handle_t client, char **v
     return ESP_OK;
 }
 
+esp_err_t esp_http_client_set_username(esp_http_client_handle_t client, const char *username)
+{
+    if (client == NULL) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (username == NULL && client->connection_info.username != NULL) {
+        free(client->connection_info.username);
+        client->connection_info.username = NULL;
+    } else if (username != NULL) {
+        client->connection_info.username = strdup(username);
+    }
+    return ESP_OK;
+}
+
 esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **value)
 {
     if (client == NULL || value == NULL) {
@@ -301,6 +316,22 @@ esp_err_t esp_http_client_get_password(esp_http_client_handle_t client, char **v
         return ESP_ERR_INVALID_ARG;
     }
     *value = client->connection_info.password;
+    return ESP_OK;
+}
+
+esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *password)
+{
+    if (client == NULL) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (password == NULL && client->connection_info.password != NULL) {
+        memset(client->connection_info.password, 0, strlen(client->connection_info.password));
+        free(client->connection_info.password);
+        client->connection_info.password = NULL;
+    } else if (password != NULL) {
+        client->connection_info.password = strdup(password);
+    }
     return ESP_OK;
 }
 
@@ -660,10 +691,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
     }
     old_port = client->connection_info.port;
 
-    // Whether the passed url is absolute or is just a path
-    bool is_absolute_url = (bool) purl.field_data[UF_HOST].len;
-
-    if (is_absolute_url) {
+    if (purl.field_data[UF_HOST].len) {
         http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
         HTTP_MEM_CHECK(TAG, client->connection_info.host, return ESP_ERR_NO_MEM);
     }
@@ -720,14 +748,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         } else {
             return ESP_ERR_NO_MEM;
         }
-    } else if (is_absolute_url) {
-        // Only reset authentication info if the passed URL is full
-        free(client->connection_info.username);
-        free(client->connection_info.password);
-        client->connection_info.username = NULL;
-        client->connection_info.password = NULL;
-    }
-
+    } 
 
     //Reset path and query if there are no information
     if (purl.field_data[UF_PATH].len) {
@@ -828,7 +849,16 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
 
         if (rlen <= 0) {
             if (errno != 0) {
-                ESP_LOGW(TAG, "esp_transport_read returned : %d and errno : %d ", rlen, errno);
+                esp_log_level_t sev = ESP_LOG_WARN;
+                /* On connection close from server, recv should ideally return 0 but we have error conversion
+                 * in `tcp_transport` SSL layer which translates it `-1` and hence below additional checks */
+                if (rlen == -1 && errno == ENOTCONN && client->response->is_chunked) {
+                    /* Explicit call to parser for invoking `message_complete` callback */
+                    http_parser_execute(client->parser, client->parser_settings, res_buffer->data, 0);
+                    /* ...and lowering the message severity, as closed connection from server side is expected in chunked transport */
+                    sev = ESP_LOG_DEBUG;
+                }
+                ESP_LOG_LEVEL(sev, TAG, "esp_transport_read returned:%d and errno:%d ", rlen, errno);
             }
             return ridx;
         }

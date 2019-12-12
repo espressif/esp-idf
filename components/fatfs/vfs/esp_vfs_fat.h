@@ -17,7 +17,6 @@
 #include "esp_err.h"
 #include "driver/gpio.h"
 #include "driver/sdmmc_types.h"
-#include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "ff.h"
 #include "wear_levelling.h"
@@ -50,20 +49,6 @@ extern "C" {
  */
 esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive,
         size_t max_files, FATFS** out_fs);
-
-/**
- * @brief Un-register FATFS from VFS
- *
- * @note FATFS structure returned by esp_vfs_fat_register is destroyed after
- *       this call. Make sure to call f_mount function to unmount it before
- *       calling esp_vfs_fat_unregister.
- *       This function is left for compatibility and will be changed in
- *       future versions to accept base_path and replace the method below
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_STATE if FATFS is not registered in VFS
- */
-esp_err_t esp_vfs_fat_unregister(void) __attribute__((deprecated));
 
 /**
  * @brief Un-register FATFS from VFS

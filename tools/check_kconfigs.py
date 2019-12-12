@@ -94,11 +94,12 @@ class SourceChecker(BaseChecker):
                 raise InputError(self.path_in_idf, line_number, '"source" has to been followed by space',
                                  line.replace('source', 'source '))
             path = m.group(2)
-            if path in ['$COMPONENT_KCONFIGS_PROJBUILD', '$COMPONENT_KCONFIGS']:
+            filename = os.path.basename(path)
+            if path in ['$COMPONENT_KCONFIGS_SOURCE_FILE', '$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE']:
                 pass
-            elif not path.endswith('/Kconfig.in') and path != 'Kconfig.in':
-                raise InputError(self.path_in_idf, line_number, "only Kconfig.in can be sourced",
-                                 line.replace(path, os.path.join(os.path.dirname(path), 'Kconfig.in')))
+            elif not filename.startswith('Kconfig.'):
+                raise InputError(self.path_in_idf, line_number, "only filenames starting with Kconfig.* can be sourced",
+                                 line.replace(path, os.path.join(os.path.dirname(path), 'Kconfig.' + filename)))
 
 
 class LineRuleChecker(BaseChecker):

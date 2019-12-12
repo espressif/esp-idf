@@ -45,6 +45,10 @@ typedef enum {
     ESP_BT_INIT_COD                = 0x0a,          /*!< overwrite major, minor, and service class */
 } esp_bt_cod_mode_t;
 
+#define ESP_BT_GAP_AFH_CHANNELS_LEN     10
+typedef uint8_t esp_bt_gap_afh_channels[ESP_BT_GAP_AFH_CHANNELS_LEN];
+
+
 /// Discoverability and Connectability mode
 typedef enum {
     ESP_BT_NON_CONNECTABLE,             /*!< Non-connectable */
@@ -202,6 +206,8 @@ typedef enum {
     ESP_BT_GAP_KEY_REQ_EVT,                         /*!< Simple Pairing Passkey request */
     ESP_BT_GAP_READ_RSSI_DELTA_EVT,                 /*!< read rssi event */
     ESP_BT_GAP_CONFIG_EIR_DATA_EVT,                 /*!< config EIR data event */
+    ESP_BT_GAP_SET_AFH_CHANNELS_EVT,                /*!< set AFH channels event */
+    ESP_BT_GAP_READ_REMOTE_NAME_EVT,                /*!< read Remote Name event */
     ESP_BT_GAP_EVT_MAX,
 } esp_bt_gap_cb_event_t;
 
@@ -312,6 +318,22 @@ typedef union {
     struct key_req_param {
         esp_bd_addr_t bda;                     /*!< remote bluetooth device address*/
     } key_req;                                 /*!< passkey request parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_SET_AFH_CHANNELS_EVT
+     */
+    struct set_afh_channels_param {
+        esp_bt_status_t stat;                  /*!< set AFH channel status */
+    } set_afh_channels;                        /*!< set AFH channel parameter struct */
+
+    /**
+     * @brief ESP_BT_GAP_READ_REMOTE_NAME_EVT
+     */
+    struct read_rmt_name_param {
+        esp_bt_status_t stat;                  /*!< read Remote Name status */
+        uint8_t rmt_name[ESP_BT_GAP_MAX_BDNAME_LEN + 1]; /*!< Remote device name */
+    } read_rmt_name;                        /*!< read Remote Name parameter struct */
+
 } esp_bt_gap_cb_param_t;
 
 /**
@@ -326,7 +348,7 @@ typedef void (* esp_bt_gap_cb_t)(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_para
  * @param[in]       cod: Class of Device
  * @return          major service bits
  */
-inline uint32_t esp_bt_gap_get_cod_srvc(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_srvc(uint32_t cod)
 {
     return (cod & ESP_BT_COD_SRVC_BIT_MASK) >> ESP_BT_COD_SRVC_BIT_OFFSET;
 }
@@ -336,7 +358,7 @@ inline uint32_t esp_bt_gap_get_cod_srvc(uint32_t cod)
  * @param[in]       cod: Class of Device
  * @return          major device bits
  */
-inline uint32_t esp_bt_gap_get_cod_major_dev(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_major_dev(uint32_t cod)
 {
     return (cod & ESP_BT_COD_MAJOR_DEV_BIT_MASK) >> ESP_BT_COD_MAJOR_DEV_BIT_OFFSET;
 }
@@ -346,7 +368,7 @@ inline uint32_t esp_bt_gap_get_cod_major_dev(uint32_t cod)
  * @param[in]       cod: Class of Device
  * @return          minor service bits
  */
-inline uint32_t esp_bt_gap_get_cod_minor_dev(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_minor_dev(uint32_t cod)
 {
     return (cod & ESP_BT_COD_MINOR_DEV_BIT_MASK) >> ESP_BT_COD_MINOR_DEV_BIT_OFFSET;
 }
@@ -356,7 +378,7 @@ inline uint32_t esp_bt_gap_get_cod_minor_dev(uint32_t cod)
  * @param[in]       cod: Class of Device
  * @return          format type
  */
-inline uint32_t esp_bt_gap_get_cod_format_type(uint32_t cod)
+static inline uint32_t esp_bt_gap_get_cod_format_type(uint32_t cod)
 {
     return (cod & ESP_BT_COD_FORMAT_TYPE_BIT_MASK);
 }
@@ -368,7 +390,7 @@ inline uint32_t esp_bt_gap_get_cod_format_type(uint32_t cod)
  *                  - true if cod is valid
  *                  - false otherise
  */
-inline bool esp_bt_gap_is_valid_cod(uint32_t cod)
+static inline bool esp_bt_gap_is_valid_cod(uint32_t cod)
 {
     if (esp_bt_gap_get_cod_format_type(cod) == ESP_BT_COD_FORMAT_TYPE_1 &&
             esp_bt_gap_get_cod_srvc(cod) != ESP_BT_COD_SRVC_NONE) {
@@ -636,6 +658,34 @@ esp_err_t esp_bt_gap_ssp_passkey_reply(esp_bd_addr_t bd_addr, bool accept, uint3
 esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept);
 
 #endif /*(BT_SSP_INCLUDED == TRUE)*/
+
+/**
+* @brief            Set the AFH channels
+*
+* @param[in]        channels :  The n th such field (in the range 0 to 78) contains the value for channel n :
+*                               0 means channel n is bad.
+*                               1 means channel n is unknown.
+*                               The most significant bit is reserved and shall be set to 0.
+*                               At least 20 channels shall be marked as unknown.
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels);
+
+/**
+* @brief            Read the remote device name
+*
+* @param[in]        remote_bda: The remote device's address
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda);
 
 #ifdef __cplusplus
 }

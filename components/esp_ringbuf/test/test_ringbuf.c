@@ -356,8 +356,8 @@ static int iterations;
 static void ringbuffer_isr(void *arg)
 {
     //Clear timer interrupt
-    TIMERG0.int_clr_timers.t0 = 1;
-    TIMERG0.hw_timer[xPortGetCoreID()].config.alarm_en = 1;
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_enable_alarm_in_isr(TIMER_GROUP_0, xPortGetCoreID());
 
     //Test sending to buffer from ISR from ISR
     if (buf_type < NO_OF_RB_TYPES) {

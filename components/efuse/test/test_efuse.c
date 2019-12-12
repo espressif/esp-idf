@@ -8,10 +8,14 @@
 #include <string.h>
 #include "esp_efuse.h"
 #include "esp_efuse_table.h"
-#include "../src/esp_efuse_utility.h"
+#include "esp_efuse_utility.h"
 #include "esp_efuse_test_table.h"
 #include "esp32/rom/efuse.h"
 #include "bootloader_random.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "test_utils.h"
 #include "sdkconfig.h"
 
 static const char* TAG = "efuse_test";
@@ -29,10 +33,12 @@ static void test_read_blob(void)
     TEST_ASSERT_EQUAL_INT(sizeof(mac) * 8, esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY));
     ESP_LOGI(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
+#if CONFIG_IDF_TARGET_ESP32
     ESP_LOGI(TAG, "2. Check CRC by MAC");
     uint8_t crc;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &crc, 8));
     TEST_ASSERT_EQUAL_HEX8(crc, esp_crc8(mac, sizeof(mac)));
+#endif // CONFIG_IDF_TARGET_ESP32
 
     ESP_LOGI(TAG, "3. Test check args");
     uint32_t test_var;
@@ -85,6 +91,7 @@ TEST_CASE("efuse test read_field_cnt", "[efuse]")
 #ifdef CONFIG_EFUSE_VIRTUAL
 static void test_write_blob(void)
 {
+    esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(EFUSE_BLK1);
     esp_efuse_utility_erase_virt_blocks();
     esp_efuse_utility_debug_dump_blocks();
 
@@ -103,12 +110,25 @@ static void test_write_blob(void)
     TEST_ASSERT_EQUAL_HEX16(test1_len_8&((1 << 7) - 1), val_read1);
 
     uint16_t test1_len_8_hi = test1_len_8 & ~((1 << 7) - 1);
-    TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_TEST1_LEN_8, &test1_len_8_hi, 8));
+    if (scheme == EFUSE_CODING_SCHEME_NONE) {
+        TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_TEST1_LEN_8, &test1_len_8_hi, 8));
+    } else {
+        TEST_ESP_ERR(ESP_ERR_CODING, esp_efuse_write_field_blob(ESP_EFUSE_TEST1_LEN_8, &test1_len_8_hi, 8));
+    }
+
     TEST_ESP_ERR(ESP_ERR_EFUSE_REPEATED_PROG, esp_efuse_write_field_blob(ESP_EFUSE_TEST1_LEN_8, &test1_len_8, 8));
     val_read1 = 0;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST1_LEN_8, &val_read1, 16));
-    TEST_ASSERT_EQUAL_HEX16(test1_len_8&0x00FF, val_read1);
+    if (scheme == EFUSE_CODING_SCHEME_NONE) {
+        TEST_ASSERT_EQUAL_HEX16(test1_len_8&0x00FF, val_read1);
+    } else {
+        TEST_ASSERT_EQUAL_HEX16(test1_len_8&0x007F, val_read1);
+    }
 
+    if (scheme != EFUSE_CODING_SCHEME_NONE) {
+        esp_efuse_utility_erase_virt_blocks();
+        ESP_LOGI(TAG, "erase virt blocks");
+    }
     uint16_t test2_len_16 = 0xAA55;
     uint32_t val_32 = test2_len_16;
     TEST_ESP_OK(esp_efuse_write_field_blob(ESP_EFUSE_TEST2_LEN_16, &val_32, 17));
@@ -145,6 +165,7 @@ TEST_CASE("efuse test write_field_blob", "[efuse]")
 
 static void test_write_cnt(void)
 {
+    esp_efuse_coding_scheme_t scheme = esp_efuse_get_coding_scheme(EFUSE_BLK1);
     esp_efuse_utility_erase_virt_blocks();
     esp_efuse_utility_debug_dump_blocks();
 
@@ -162,11 +183,23 @@ static void test_write_cnt(void)
     TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST3_LEN_6, &test3_len_6));
     TEST_ASSERT_EQUAL_INT(1, test3_len_6);
 
-    TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, 1));
+    if (scheme == EFUSE_CODING_SCHEME_NONE) {
+        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, 1));
+    } else {
+        esp_efuse_utility_erase_virt_blocks();
+        ESP_LOGI(TAG, "erase virt blocks");
+        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, 2));
+    }
     TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST3_LEN_6, &test3_len_6));
     TEST_ASSERT_EQUAL_INT(2, test3_len_6);
 
-    TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, 3));
+    if (scheme == EFUSE_CODING_SCHEME_NONE) {
+        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, 3));
+    } else {
+        esp_efuse_utility_erase_virt_blocks();
+        ESP_LOGI(TAG, "erase virt blocks");
+        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, 5));
+    }
     TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST3_LEN_6, &test3_len_6));
     TEST_ASSERT_EQUAL_INT(5, test3_len_6);
 
@@ -178,7 +211,12 @@ static void test_write_cnt(void)
     esp_efuse_utility_debug_dump_blocks();
     for (int i = 0; i < max_bits / 26; ++i) {
         ESP_LOGD(TAG, "# %d", i);
-        TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST4_LEN_182, 26));
+        if (scheme == EFUSE_CODING_SCHEME_NONE) {
+            TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST4_LEN_182, 26));
+        } else {
+            esp_efuse_utility_erase_virt_blocks();
+            TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST4_LEN_182, (i + 1) * 26));
+        }
         TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST4_LEN_182, &test4_len_182));
         esp_efuse_utility_debug_dump_blocks();
         TEST_ASSERT_EQUAL_INT((i + 1) * 26, test4_len_182);
@@ -195,6 +233,11 @@ static void test_write_cnt(void)
     TEST_ASSERT_EQUAL_HEX8(0, test5_len_1);
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_TEST5_LEN_1, &test5_len_1, 1));
     TEST_ASSERT_EQUAL_HEX8(0, test5_len_1);
+
+    if (scheme != EFUSE_CODING_SCHEME_NONE) {
+        esp_efuse_utility_erase_virt_blocks();
+        ESP_LOGI(TAG, "erase virt blocks");
+    }
 
     test5_len_1 = 1;
     TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST5_LEN_1, test5_len_1));
@@ -441,7 +484,12 @@ void check_efuse_table_test(int cycle)
 
 TEST_CASE("efuse esp_efuse_table_test", "[efuse]")
 {
-    check_efuse_table_test(2);
+    esp_efuse_coding_scheme_t coding_scheme = esp_efuse_get_coding_scheme(EFUSE_BLK2);
+    if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
+        check_efuse_table_test(2);
+    } else {
+        ESP_LOGI(TAG, "This test is applicable only to the EFUSE_CODING_SCHEME_NONE. Skip this test.");
+    }
 }
 
 
@@ -452,13 +500,21 @@ TEST_CASE("Test esp_efuse_read_block esp_efuse_write_block functions", "[efuse]"
     if (coding_scheme == EFUSE_CODING_SCHEME_NONE) {
         printf("EFUSE_CODING_SCHEME_NONE\n");
         count_useful_reg = 8;
-    } else if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
+    }
+#if CONFIG_IDF_TARGET_ESP32
+    if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
         printf("EFUSE_CODING_SCHEME_3_4\n");
         count_useful_reg = 6;
     } else if (coding_scheme == EFUSE_CODING_SCHEME_REPEAT) {
         printf("EFUSE_CODING_SCHEME_REPEAT\n");
         count_useful_reg = 4;
     }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
+        printf("EFUSE_CODING_SCHEME_RS\n");
+        count_useful_reg = 8;
+    }
+#endif
 
     esp_efuse_utility_reset();
     esp_efuse_utility_erase_virt_blocks();
@@ -507,13 +563,25 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
             printf("EFUSE_CODING_SCHEME_NONE. The test is not applicable.\n");
             count_useful_reg = 8;
             return;
-        } else if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
+        }
+#if CONFIG_IDF_TARGET_ESP32
+        if (coding_scheme == EFUSE_CODING_SCHEME_3_4) {
             printf("EFUSE_CODING_SCHEME_3_4\n");
             count_useful_reg = 6;
         } else if (coding_scheme == EFUSE_CODING_SCHEME_REPEAT) {
             printf("EFUSE_CODING_SCHEME_REPEAT\n");
             count_useful_reg = 4;
         }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+        if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
+            printf("EFUSE_CODING_SCHEME_RS\n");
+            if (num_block == EFUSE_BLK1) {
+                count_useful_reg = 6;
+            } else {
+                count_useful_reg = 8;
+            }
+        }
+#endif
         TEST_ESP_OK(esp_efuse_read_block(num_block, r_buff, 0, count_useful_reg * 32));
         for (int i = 0; i < count_useful_reg * 4; ++i) {
             if (r_buff[i] != 0) {
@@ -544,51 +612,82 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
     }
 }
 
-TEST_CASE("Test a write/read protection", "[efuse]")
+
+#ifndef CONFIG_FREERTOS_UNICORE
+static const int delay_ms = 2000;
+static xSemaphoreHandle sema;
+
+static void task1(void* arg)
 {
+    TEST_ESP_OK(esp_efuse_batch_write_begin());
+    ESP_LOGI(TAG, "Start work in batch mode");
+    xSemaphoreGive(sema);
+    vTaskDelay((delay_ms + 100) / portTICK_PERIOD_MS);
+    ESP_LOGI(TAG, "Finish work in batch mode");
+    TEST_ESP_OK(esp_efuse_batch_write_cancel());
+
+    vTaskDelete(NULL);
+}
+
+static void task2(void* arg)
+{
+    xSemaphoreTake(sema, portMAX_DELAY);
+    uint8_t mac[6];
+    int64_t t1 = esp_timer_get_time();
+    TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY, &mac, sizeof(mac) * 8));
+    int64_t t2 = esp_timer_get_time();
+    int diff_ms = (t2 - t1) / 1000;
+    TEST_ASSERT_GREATER_THAN(delay_ms, diff_ms);
+    ESP_LOGI(TAG, "read MAC address: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    xSemaphoreGive(sema);
+
+    vTaskDelete(NULL);
+}
+
+static void task3(void* arg)
+{
+    xSemaphoreTake(sema, portMAX_DELAY);
+    size_t test3_len_6 = 2;
+    int64_t t1 = esp_timer_get_time();
+    TEST_ESP_OK(esp_efuse_write_field_cnt(ESP_EFUSE_TEST3_LEN_6, test3_len_6));
+    TEST_ESP_OK(esp_efuse_read_field_cnt(ESP_EFUSE_TEST3_LEN_6, &test3_len_6));
+    int64_t t2 = esp_timer_get_time();
+    ESP_LOGI(TAG, "write&read test3_len_6: %d", test3_len_6);
+    int diff_ms = (t2 - t1) / 1000;
+    TEST_ASSERT_GREATER_THAN(delay_ms, diff_ms);
+    TEST_ASSERT_EQUAL_INT(2, test3_len_6);
+    xSemaphoreGive(sema);
+
+    vTaskDelete(NULL);
+}
+
+TEST_CASE("Batch mode is thread-safe", "[efuse]")
+{
+    // Batch mode blocks work with efuse on other tasks.
+    esp_efuse_utility_update_virt_blocks();
+    esp_efuse_utility_debug_dump_blocks();
+    sema = xSemaphoreCreateBinary();
+
+    printf("\n");
+    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task2, "task2", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    xSemaphoreTake(sema, portMAX_DELAY);
+
     esp_efuse_utility_reset();
     esp_efuse_utility_erase_virt_blocks();
 
-    esp_efuse_utility_debug_dump_blocks();
+    printf("\n");
+    xTaskCreatePinnedToCore(task1, "task1", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 0);
+    xTaskCreatePinnedToCore(task3, "task3", 2048, NULL, UNITY_FREERTOS_PRIORITY - 1, NULL, 1);
+    vTaskDelay(3000 / portTICK_PERIOD_MS);
+    xSemaphoreTake(sema, portMAX_DELAY);
 
-    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_set_write_protect(EFUSE_BLK0));
-    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, esp_efuse_set_read_protect(EFUSE_BLK0));
-
-    size_t out_cnt;
-    esp_efuse_read_field_cnt(ESP_EFUSE_WR_DIS_BLK1, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(0, out_cnt);
-    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK1));
-    esp_efuse_read_field_cnt(ESP_EFUSE_WR_DIS_BLK1, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(1, out_cnt);
-    TEST_ESP_ERR(ESP_ERR_EFUSE_CNT_IS_FULL, esp_efuse_set_write_protect(EFUSE_BLK1));
-
-    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK2));
-    esp_efuse_read_field_cnt(ESP_EFUSE_WR_DIS_BLK2, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(1, out_cnt);
-
-    TEST_ESP_OK(esp_efuse_set_write_protect(EFUSE_BLK3));
-    esp_efuse_read_field_cnt(ESP_EFUSE_WR_DIS_BLK3, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(1, out_cnt);
-
-    esp_efuse_utility_debug_dump_blocks();
-
-    esp_efuse_read_field_cnt(ESP_EFUSE_RD_DIS_BLK1, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(0, out_cnt);
-    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK1));
-    esp_efuse_read_field_cnt(ESP_EFUSE_RD_DIS_BLK1, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(1, out_cnt);
-    TEST_ESP_ERR(ESP_ERR_EFUSE_CNT_IS_FULL, esp_efuse_set_read_protect(EFUSE_BLK1));
-
-    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK2));
-    esp_efuse_read_field_cnt(ESP_EFUSE_RD_DIS_BLK2, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(1, out_cnt);
-
-    TEST_ESP_OK(esp_efuse_set_read_protect(EFUSE_BLK3));
-    esp_efuse_read_field_cnt(ESP_EFUSE_RD_DIS_BLK3, &out_cnt);
-    TEST_ASSERT_EQUAL_INT(1, out_cnt);
-
-    esp_efuse_utility_debug_dump_blocks();
+    printf("\n");
+    vSemaphoreDelete(sema);
     esp_efuse_utility_reset();
     esp_efuse_utility_erase_virt_blocks();
 }
+#endif // #ifndef CONFIG_FREERTOS_UNICORE
+
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL

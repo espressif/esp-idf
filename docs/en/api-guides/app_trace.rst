@@ -12,6 +12,7 @@ Developers can use this library to send application specific state of execution 
 1. Collecting application specific data, see :ref:`app_trace-application-specific-tracing`
 2. Lightweight logging to the host, see :ref:`app_trace-logging-to-host`
 3. System behavior analysis, see :ref:`app_trace-system-behaviour-analysis-with-segger-systemview`
+4. Source code coverage, see :ref:`app_trace-gcov-source-code-coverage`
 
 Tracing components when working over JTAG interface are shown in the figure below.
 
@@ -434,3 +435,169 @@ After installing Impulse and ensuring that it can successfully load trace files 
 .. note::
 
     If you have problems with visualization (no data are shown or strange behavior of zoom action is observed) you can try to delete current signal hierarchy and double click on the necessary file or port. Eclipse will ask you to create new signal hierarchy.
+
+
+.. _app_trace-gcov-source-code-coverage:
+
+Gcov (Source Code Coverage)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Basics of Gcov and Lcov
+"""""""""""""""""""""""
+
+Source code coverage is data indicating the count and frequency of every program execution path that has been taken within a program's runtime. `Gcov <https://en.wikipedia.org/wiki/Gcov>`_ is a GCC tool that, when used in concert with the compiler, can generate log files indicating the execution count of each line of a source file. The Lcov tool is similar to Gcov but is a graphical front end for Gcov, and generates code coverage reports in HTML format.
+
+Generally, using Gcov to compile and run programs on the Host will undergo these steps:
+
+1. Compile the source code using GCC with the ``--coverage`` option enabled. This will cause the compiler to generate a ``.gcno`` notes files during compilation. The notes files contain information to reconstruct execution path block graphs and map each block to source code line numbers. Each source file compiled with the ``--coverage`` option should have their own ``.gcno`` file of the same name (e.g., a ``main.c`` will generate a ``main.gcno`` when compiled).
+2. Execute the program. During execution, the program should generate ``.gcda`` data files. These data files contain the counts of the number of times an execution path was taken. The program will generate a ``.gcda`` file for each source file compiled with the ``--coverage`` option (e.g., ``main.c`` will generate a ``main.gcda``.
+3. Gcov or Lcov can be used generate a code coverage based on the ``.gcno``, ``.gcda``, and source files. Gcov will generate a text based coverage report for each source file in the form of a ``.gcov`` file, whilst Lcov will generate a coverage report in HTML format.
+
+Gcov and Lcov in ESP-IDF
+""""""""""""""""""""""""
+
+Using Gcov in ESP-IDF is complicated by the fact that the program is running remotely from the Host (i.e., on the target). The code coverage data (i.e., the ``.gcda`` files) is initially stored on the target itself. OpenOCD is then used to dump the code coverage data from the target to the host via JTAG during runtime. Using Gcov in ESP-IDF can be split into the following steps.
+
+1. :ref:`app_trace-gcov-setup-project`
+2. :ref:`app_trace-gcov-dumping-data`
+3. :ref:`app_trace-gcov-generate-report`
+
+.. _app_trace-gcov-setup-project:
+
+Setting Up a Project for Gcov
+"""""""""""""""""""""""""""""
+
+Compiler Option
+~~~~~~~~~~~~~~~
+
+In order to obtain code coverage data in a project, one or more source files within the project must be compiled with the ``--coverage`` option. In ESP-IDF, this can be achieved at the component level or the individual source file level:
+
+To cause all source files in a component to be compiled with the ``--coverage`` option.
+    - Add ``target_compile_options(${COMPONENT_LIB} PRIVATE --coverage)`` to the ``CMakeLists.txt`` file of the component if using CMake.
+    - Add ``CFLAGS += --coverage`` to the ``component.mk`` file of the component if using Make.
+
+To cause a select number of source files (e.g. ``sourec1.c`` and ``source2.c``) in the same component to be compiled with the ``--coverage`` option.
+    - Add ``set_source_files_properties(source1.c source2.c PROPERTIES COMPILE_FLAGS --coverage)`` to the ``CMakeLists.txt`` file of the component if using CMake.
+    - Add ``source1.o: CFLAGS += --coverage`` and ``source2.o: CFLAGS += --coverage`` to the ``component.mk`` file of the component if using Make.
+
+When a source file is compiled with the ``--coverage`` option (e.g. ``gcov_example.c``), the compiler will generate the ``gcov_example.gcno`` file in the project's build directory.
+
+Project Configuration
+~~~~~~~~~~~~~~~~~~~~~
+
+Before building a project with source code coverage, ensure that the following project configuration options are enabled by running ``idf.py menuconfig`` (or ``make menuconfig`` if using the legacy Make build system).
+
+- Enable the application tracing module by choosing *Trace Memory* for the  :ref:`CONFIG_ESP32_APPTRACE_DESTINATION` option.
+- Enable Gcov to host via the :ref:`CONFIG_ESP32_GCOV_ENABLE`
+
+.. _app_trace-gcov-dumping-data:
+
+Dumping Code Coverage Data
+""""""""""""""""""""""""""
+
+Once a project has been complied with the ``--coverage`` option and flashed onto the target, code coverage data will be stored internally on the target (i.e., in trace memory) whilst the application runs. The process of transferring code coverage data from the target to the Host is know as dumping.
+
+The dumping of coverage data is done via OpenOCD (see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` on how to setup and run OpenOCD). A dump is triggered by issuing commands to OpenOCD, therefore a telnet session to OpenOCD must be opened to issue such commands (run ``telnet localhost 4444``). Note that GDB could be used instead of telnet to issue commands to OpenOCD, however all commands issued from GDB will need to be prefixed as ``mon <oocd_command>``.
+
+When the target dumps code coverage data, the ``.gcda`` files are stored in the project's build directory. For example, if ``gcov_example_main.c`` of the ``main`` component was compiled with the ``--coverage`` option, then dumping the code coverage data would generate a ``gcov_example_main.gcda`` in ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` (or ``build/main/gcov_example_main.gcda`` if using the legacy Make build system). Note that the ``.gcno`` files produced during compilation are also placed in the same directory.
+
+The dumping of code coverage data can be done multiple times throughout an application's life time. Each dump will simply update the ``.gcda`` file with the newest code coverage information. Code coverage data is accumulative, thus the newest data will contain the total execution count of each code path over the application's entire lifetime. 
+
+ESP-IDF supports two methods of dumping code coverage data form the target to the host:
+
+* Instant Run-Time Dump
+* Hard-coded Dump
+
+Instant Run-Time Dump
+~~~~~~~~~~~~~~~~~~~~~
+
+An Instant Run-Time Dump is triggered by calling the ``esp32 gcov`` OpenOCD command (via a telnet session). Once called, OpenOCD will immediately preempt the ESP32's current state and execute a builtin IDF Gcov debug stub function. The debug stub function will handle the dumping of data to the Host. Upon completion, the ESP32 will resume it's current state.
+
+.. note::
+    Due to the use of the debug stub function, the OpenOCD Debug Stub option must be enabled in project configuration. The option can be found under ``Component config -> ESP32-specific -> OpenOCD debug stubs``.
+
+Hard-coded Dump
+~~~~~~~~~~~~~~~
+
+A Hard-coded Dump is triggered by the application itself by calling :cpp:func:`esp_gcov_dump` from somewhere within the application. When called, the application will halt and wait for OpenOCD to connect and retrieve the code coverage data. Once :cpp:func:`esp_gcov_dump` is called, the Host must execute the ``esp32 gcov dump`` OpenOCD command (via a telnet session). The ``esp32 gcov dump`` command will cause OpenOCD to connect to the ESP32, retrieve the code coverage data, then disconnect from the ESP32 thus allowing the application to resume. Hard-coded Dumps can also be triggered multiple times throughout an application's lifetime.
+
+Hard-coded dumps are useful if code coverage data is required at certain points of an application's lifetime by placing :cpp:func:`esp_gcov_dump` where necessary (e.g., after application initialization, during each iteration of an application's main loop).
+
+GDB can be used to set a breakpoint on :cpp:func:`esp_gcov_dump`, then call ``mon esp32 gcov dump`` automatically via the use a ``gdbinit`` script (see  Using GDB from :ref:`jtag-debugging-using-debugger-command-line`).
+
+The following GDB script is will add a breakpoint at :cpp:func:`esp_gcov_dump`, then call the ``mon esp32 gcov dump`` OpenOCD command.
+
+.. code-block:: none
+
+    b esp_gcov_dump
+    commands
+    mon esp32 gcov dump
+    end
+
+
+.. note::
+    Note that all OpenOCD commands should be invoked in GDB as: ``mon <oocd_command>``.
+
+.. _app_trace-gcov-generate-report:
+
+Generating Coverage Report
+""""""""""""""""""""""""""
+
+Once the code coverage data has been dumped, the ``.gcno``, ``.gcda`` and the source files can be used to generate a code coverage report. A code coverage report is simply a report indicating the number of times each line in a source file has been executed.
+
+Both Gcov and Lcov (along with genhtml) can be used to generate code coverage reports. Gcov is provided along with the Xtensa toolchian, whilst Lcov may need to be installed separately. For details on how to use Gcov or Lcov, refer to `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ and `Lcov documentation <https://linux.die.net/man/1/lcov>`_.
+
+.. note::
+    There is currently no support for Lcov for the CMake build system on Windows.
+
+Adding Lcov Build Target to Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To make report generation more convenient, users can define additional build targets in their projects such report generation can be done with a single build command.
+
+CMake Build System
+******************
+
+For the CMake build systems, add the following lines to the ``CMakeLists.txt`` file of your project.
+
+.. code-block:: none
+
+    include($ENV{IDF_PATH}/tools/cmake/gcov.cmake)
+    idf_create_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+    idf_clean_coverage_report(${CMAKE_CURRENT_BINARY_DIR}/coverage_report)
+
+The following commands can now be used:
+
+    * ``cmake --build build/ --target lcov-report`` will generate an HTML coverga report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
+    * ``cmake --build build/ --target cov-data-clean`` will remove all coverage data files and report.
+
+
+
+Make Build System
+*****************
+
+For the Make build systems, add the following lines to the ``Makefile`` of your project.
+
+.. code-block:: none
+
+    GCOV := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcov
+    REPORT_DIR := $(BUILD_DIR_BASE)/coverage_report
+
+    lcov-report:
+        echo "Generating coverage report in: $(REPORT_DIR)"
+        echo "Using gcov: $(GCOV)"
+        mkdir -p $(REPORT_DIR)/html
+        lcov --gcov-tool $(GCOV) -c -d $(BUILD_DIR_BASE) -o $(REPORT_DIR)/$(PROJECT_NAME).info
+        genhtml -o $(REPORT_DIR)/html $(REPORT_DIR)/$(PROJECT_NAME).info
+
+    cov-data-clean:
+        echo "Remove coverage data files..."
+        find $(BUILD_DIR_BASE) -name "*.gcda" -exec rm {} +
+        rm -rf $(REPORT_DIR)
+
+    .PHONY: lcov-report cov-data-clean
+
+The following commands can now be used:
+
+    * ``make lcov-report`` will generate an HTML coverga report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
+    * ``make cov-data-clean`` will remove all coverage data files and report.

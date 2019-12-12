@@ -9,7 +9,11 @@
 #ifndef WPS_H
 #define WPS_H
 
+#if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include "wps_defs.h"
 #include "esp_wifi_types.h"
 
@@ -1060,7 +1064,7 @@ struct wps_sm *wps_sm_get(void);
 int wps_ssid_save(u8 *ssid, u8 ssid_len);
 int wps_key_save(char *key, u8 key_len);
 int wps_station_wps_register_cb(wps_st_cb_t cb);
-int wps_station_wps_unregister_cb(void); 
+int wps_station_wps_unregister_cb(void);
 int wps_start_pending(void);
 int wps_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 

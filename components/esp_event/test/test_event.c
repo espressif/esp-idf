@@ -5,7 +5,6 @@
 #include "sdkconfig.h"
 
 #include "freertos/FreeRTOS.h"
-#include "esp_event_loop.h"
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
 #include "esp_log.h"
@@ -30,14 +29,14 @@ static const char* TAG = "test_event";
 
 #define TEST_CONFIG_WAIT_MULTIPLIER          5
 
-// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed 
-// during teardown. 
+// The initial logging "initializing test" is to ensure mutex allocation is not counted against memory not being freed
+// during teardown.
 #define TEST_SETUP() \
         ESP_LOGI(TAG, "initializing test"); \
         size_t free_mem_before = heap_caps_get_free_size(MALLOC_CAP_DEFAULT); \
         test_setup(); \
         s_test_core_id = xPortGetCoreID(); \
-        s_test_priority = uxTaskPriorityGet(NULL); 
+        s_test_priority = uxTaskPriorityGet(NULL);
 
 #define TEST_TEARDOWN() \
         test_teardown(); \
@@ -254,6 +253,17 @@ static void test_handler_post_wo_task(void* event_handler_arg, esp_event_base_t 
     }
 }
 
+static void test_handler_unregister_itself(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    esp_event_loop_handle_t* loop = (esp_event_loop_handle_t*) event_data;
+    int* unregistered = (int*) event_handler_arg;
+
+    (*unregistered) += (event_base == s_test_base1 ? 0 : 10) + event_id + 1;
+
+    // Unregister this handler for this event
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_unregister_with(*loop, event_base, event_id, test_handler_unregister_itself));
+}
+
 static void test_post_from_handler_loop_task(void* args)
 {
     esp_event_loop_handle_t event_loop = (esp_event_loop_handle_t) args;
@@ -287,22 +297,16 @@ static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t
     TEST_ASSERT_EQUAL(*data, (int) (*sem));
     xSemaphoreGive(*sem);
 }
-#endif
 
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
 void IRAM_ATTR test_event_on_timer_alarm(void* para)
 {
     /* Retrieve the interrupt status and the counter value
        from the timer that reported the interrupt */
-    TIMERG0.hw_timer[TIMER_0].update = 1;
     uint64_t timer_counter_value =
-        ((uint64_t) TIMERG0.hw_timer[TIMER_0].cnt_high) << 32
-        | TIMERG0.hw_timer[TIMER_0].cnt_low;
-
-    TIMERG0.int_clr_timers.t0 = 1;
+        timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_intr_clr_in_isr(TIMER_GROUP_0, TIMER_0);
     timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    TIMERG0.hw_timer[TIMER_0].alarm_high = (uint32_t) (timer_counter_value >> 32);
-    TIMERG0.hw_timer[TIMER_0].alarm_low = (uint32_t) timer_counter_value;
+    timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
 
     int data = (int) para;
     // Posting events with data more than 4 bytes should fail.
@@ -468,6 +472,61 @@ TEST_CASE("can unregister handler", "[event]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
 
     vSemaphoreDelete(arg.mutex);
+
+    TEST_TEARDOWN();
+}
+
+TEST_CASE("handler can unregister itself", "[event]")
+{
+    /* this test aims to verify that handlers can unregister themselves */
+
+    TEST_SETUP();
+
+    esp_event_loop_handle_t loop;
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+
+    loop_args.task_name = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create(&loop_args, &loop));
+
+    int unregistered = 0;
+
+    /*
+     * s_test_base1, ev1 = 1
+     * s_test_base1, ev2 = 2 
+     * s_test_base2, ev1 = 11 
+     * s_test_base2, ev2 = 12
+     */
+    int expected_unregistered = 0;
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_handler_unregister_itself, &unregistered));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV2, test_handler_unregister_itself, &unregistered));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV1, test_handler_unregister_itself, &unregistered));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV2, test_handler_unregister_itself, &unregistered));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    expected_unregistered =  2;  // base1, ev2
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    expected_unregistered +=  1 + 11; // base1, ev1 +  base2, ev1
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    expected_unregistered += 12; //  base2, ev2
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered); // all handlers unregistered
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
 
     TEST_TEARDOWN();
 }
@@ -863,11 +922,11 @@ static void performance_test(bool dedicated_task)
     // Enabling profiling will slow down event dispatch, so the set threshold
     // is not valid when it is enabled.
 #else
-#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH, "%d", average);
 #else
     TEST_PERFORMANCE_GREATER_THAN(EVENT_DISPATCH_PSRAM, "%d", average);
-#endif // CONFIG_ESP32_SPIRAM_SUPPORT
+#endif // CONFIG_SPIRAM
 #endif // CONFIG_ESP_EVENT_LOOP_PROFILING
 }
 
@@ -1223,58 +1282,4 @@ TEST_CASE("can post events from interrupt handler", "[event]")
 
     TEST_TEARDOWN();
 }
-#endif
-
-#ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-TEST_CASE("can dump event loop profile", "[event]")
-{
-    /* this test aims to verify that dumping event loop statistics succeed */
-
-    TEST_SETUP();
-
-    esp_event_loop_handle_t loop;
-
-    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
-
-    loop_args.task_name = NULL;
-    loop_args.queue_size = 5;
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create(&loop_args, &loop));
-
-    int count = 0;
-
-    simple_arg_t arg = {
-        .data = &count,
-        .mutex = xSemaphoreCreateMutex()
-    };
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, test_event_simple_handler, &arg));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, ESP_EVENT_ANY_ID, test_event_simple_handler, &arg));
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_event_simple_handler, &arg));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV2, test_event_simple_handler, &arg));
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE1_EV1, test_event_simple_handler, &arg));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE1_EV2, test_event_simple_handler, &arg));
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, 1));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE1_EV1, NULL, 0, 1));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, NULL, 0, 1));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE1_EV2, NULL, 0, 1));
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, 1));
-    TEST_ASSERT_EQUAL(ESP_ERR_TIMEOUT, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE1_EV1, NULL, 0, 1));
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
-
-    // 5 invocations of loop-levlel handlers + 3 invocation of base-level handlers (s_test_base1) +
-    // 5 invocations of respective event-level handlers
-    TEST_ASSERT_EQUAL(13, count);
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_dump(stdout));
-
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
-
-    vSemaphoreDelete(arg.mutex);
-
-    TEST_TEARDOWN();
-}
-#endif
+#endif // CONFIG_ESP_EVENT_POST_FROM_ISR

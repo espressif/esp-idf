@@ -164,11 +164,12 @@ struct bt_mesh_prov {
      *  assigned the specified NetKeyIndex and primary element address.
      *
      *  @param net_idx  NetKeyIndex given during provisioning.
+     *  @param net_key  NetKey given during provisioning.
      *  @param addr     Primary element address.
      *  @param flags    Key Refresh & IV Update flags
      *  @param iv_index IV Index.
      */
-    void        (*complete)(u16_t net_idx, u16_t addr, u8_t flags, u32_t iv_index);
+    void        (*complete)(u16_t net_idx, const u8_t net_key[16], u16_t addr, u8_t flags, u32_t iv_index);
 
     /** @brief Node has been reset.
      *
@@ -279,7 +280,6 @@ struct bt_mesh_prov {
      *
      *  @param bearer Provisioning bearer.
      *  @param reason Provisioning link close reason(disconnect reason)
-     *                0xFF: disconnect due to provisioner_pb_gatt_disable()
      */
     void (*prov_link_close)(bt_mesh_prov_bearer_t bearer, u8_t reason);
 
@@ -554,10 +554,13 @@ bool bt_mesh_iv_update(void);
  *  from a battery power source.
  *
  *  @param enable  true to enable LPN functionality, false to disable it.
+ *  @param force   when disable LPN functionality, use this flag to indicate
+ *                 whether directly clear corresponding information or sending
+ *                 friend clear to disable it.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_lpn_set(bool enable);
+int bt_mesh_lpn_set(bool enable, bool force);
 
 /** @brief Send out a Friend Poll message.
  *
@@ -576,6 +579,15 @@ int bt_mesh_lpn_poll(void);
  *  @param cb Function to call when the Friendship status changes.
  */
 void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established));
+
+/** @brief Register a callback for Friendship changes of friend node.
+ *
+ *  Registers a callback that will be called whenever Friendship gets
+ *  established or is terminated.
+ *
+ *  @param cb Function to call when the Friendship status of friend node changes.
+ */
+void bt_mesh_friend_set_cb(void (*cb)(bool establish, u16_t lpn_addr, u8_t reason));
 
 /**
  * @}

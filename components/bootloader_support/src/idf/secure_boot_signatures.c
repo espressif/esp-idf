@@ -56,6 +56,10 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 
 esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
 {
+#if !(defined(CONFIG_MBEDTLS_ECDSA_C) && defined(CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED))
+    ESP_LOGE(TAG, "Signature verification requires ECDSA & SECP256R1 curve enabled");
+    return ESP_ERR_NOT_SUPPORTED;
+#else
     ptrdiff_t keylen;
 
     keylen = signature_verification_key_end - signature_verification_key_start;
@@ -117,4 +121,5 @@ cleanup:
     mbedtls_mpi_free(&s);
     mbedtls_ecdsa_free(&ecdsa_context);
     return ret == 0 ? ESP_OK : ESP_ERR_IMAGE_INVALID;
+#endif // CONFIG_MBEDTLS_ECDSA_C && CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED
 }

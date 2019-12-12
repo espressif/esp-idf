@@ -143,31 +143,36 @@ typedef enum {
     ESP_GAP_BLE_SCAN_RESULT_EVT,                            /*!< When one scan result ready, the event comes each time */
     ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT,              /*!< When raw advertising data set complete, the event comes */
     ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT,         /*!< When raw advertising data set complete, the event comes */
-    ESP_GAP_BLE_ADV_START_COMPLETE_EVT,                     /*!< When start advertising complete, the event comes */
-    ESP_GAP_BLE_SCAN_START_COMPLETE_EVT,                    /*!< When start scan complete, the event comes */
-    ESP_GAP_BLE_AUTH_CMPL_EVT,                              /* Authentication complete indication. */
-    ESP_GAP_BLE_KEY_EVT,                                    /* BLE  key event for peer device keys */
-    ESP_GAP_BLE_SEC_REQ_EVT,                                /* BLE  security request */
-    ESP_GAP_BLE_PASSKEY_NOTIF_EVT,                          /* passkey notification event */
-    ESP_GAP_BLE_PASSKEY_REQ_EVT,                            /* passkey request event */
-    ESP_GAP_BLE_OOB_REQ_EVT,                                /* OOB request event */
-    ESP_GAP_BLE_LOCAL_IR_EVT,                               /* BLE local IR event */
-    ESP_GAP_BLE_LOCAL_ER_EVT,                               /* BLE local ER event */
-    ESP_GAP_BLE_NC_REQ_EVT,                                 /* Numeric Comparison request event */
-    ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stop adv complete, the event comes */
-    ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stop scan complete, the event comes */
-    ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When set the static rand address complete, the event comes */
-    ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When update connection parameters complete, the event comes */
-    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When set pkt length complete, the event comes */
-    ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When  Enable/disable privacy on the local device complete, the event comes */
-    ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT,               /*!< When remove the bond device complete, the event comes */
-    ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clear the bond device clear complete, the event comes */
-    ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When get the bond device list complete, the event comes */
-    ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT,                     /*!< When read the rssi complete, the event comes */
-    ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT,              /*!< When add or remove whitelist complete, the event comes */
-    ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT,  /*!< When update duplicate exceptional list complete, the event comes */
+    ESP_GAP_BLE_ADV_START_COMPLETE_EVT,                     /*!< When starting advertising complete, the event comes */
+    ESP_GAP_BLE_SCAN_START_COMPLETE_EVT,                    /*!< When starting scan complete, the event comes */
+    ESP_GAP_BLE_AUTH_CMPL_EVT,                              /*!< Authentication complete indication. */
+    ESP_GAP_BLE_KEY_EVT,                                    /*!< BLE  key event for peer device keys */
+    ESP_GAP_BLE_SEC_REQ_EVT,                                /*!< BLE  security request */
+    ESP_GAP_BLE_PASSKEY_NOTIF_EVT,                          /*!< passkey notification event */
+    ESP_GAP_BLE_PASSKEY_REQ_EVT,                            /*!< passkey request event */
+    ESP_GAP_BLE_OOB_REQ_EVT,                                /*!< OOB request event */
+    ESP_GAP_BLE_LOCAL_IR_EVT,                               /*!< BLE local IR event */
+    ESP_GAP_BLE_LOCAL_ER_EVT,                               /*!< BLE local ER event */
+    ESP_GAP_BLE_NC_REQ_EVT,                                 /*!< Numeric Comparison request event */
+    ESP_GAP_BLE_ADV_STOP_COMPLETE_EVT,                      /*!< When stopping adv complete, the event comes */
+    ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT,                     /*!< When stopping scan complete, the event comes */
+    ESP_GAP_BLE_SET_STATIC_RAND_ADDR_EVT,                   /*!< When setting the static rand address complete, the event comes */
+    ESP_GAP_BLE_UPDATE_CONN_PARAMS_EVT,                     /*!< When updating connection parameters complete, the event comes */
+    ESP_GAP_BLE_SET_PKT_LENGTH_COMPLETE_EVT,                /*!< When setting pkt length complete, the event comes */
+    ESP_GAP_BLE_SET_LOCAL_PRIVACY_COMPLETE_EVT,             /*!< When enabling/disabling privacy on the local device complete, the event comes */
+    ESP_GAP_BLE_REMOVE_BOND_DEV_COMPLETE_EVT,               /*!< When removing the bond device complete, the event comes */
+    ESP_GAP_BLE_CLEAR_BOND_DEV_COMPLETE_EVT,                /*!< When clearing the bond device clear complete, the event comes */
+    ESP_GAP_BLE_GET_BOND_DEV_COMPLETE_EVT,                  /*!< When getting the bond device list complete, the event comes */
+    ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT,                     /*!< When reading the rssi complete, the event comes */
+    ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT,              /*!< When adding or removing whitelist complete, the event comes */
+    ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT,  /*!< When updating duplicate exceptional list complete, the event comes */
+    ESP_GAP_BLE_SET_CHANNELS_EVT,                           /*!< When setting BLE channels complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,
 } esp_gap_ble_cb_event_t;
+
+#define ESP_GAP_BLE_CHANNELS_LEN     5
+typedef uint8_t esp_gap_ble_channels[ESP_GAP_BLE_CHANNELS_LEN];
+
 /// This is the old name, just for backwards compatibility
 #define ESP_GAP_BLE_ADD_WHITELIST_COMPLETE_EVT ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT
 
@@ -267,14 +272,25 @@ typedef enum {
 
 typedef enum {
     ESP_BLE_SM_PASSKEY = 0,
+    /* Authentication requirements of local device */
     ESP_BLE_SM_AUTHEN_REQ_MODE,
+    /* The IO capability of local device */
     ESP_BLE_SM_IOCAP_MODE,
+    /* Initiator Key Distribution/Generation */
     ESP_BLE_SM_SET_INIT_KEY,
+    /* Responder Key Distribution/Generation */
     ESP_BLE_SM_SET_RSP_KEY,
+    /* Maximum Encryption key size to support */
     ESP_BLE_SM_MAX_KEY_SIZE,
+    /* Minimum Encryption key size requirement from Peer */
+    ESP_BLE_SM_MIN_KEY_SIZE,
+    /* Set static Passkey */
     ESP_BLE_SM_SET_STATIC_PASSKEY,
+    /* Reset static Passkey */
     ESP_BLE_SM_CLEAR_STATIC_PASSKEY,
+    /* Accept only specified SMP Authentication requirement */
     ESP_BLE_SM_ONLY_ACCEPT_SPECIFIED_SEC_AUTH,
+    /* Enable/Disable OOB support */
     ESP_BLE_SM_OOB_SUPPORT,
     ESP_BLE_SM_MAX_PARAM,
 } esp_ble_sm_param_t;
@@ -377,7 +393,7 @@ typedef struct {
                                                         advertising reports for each packet received */
 } esp_ble_scan_params_t;
 
-/// connection parameters information 
+/// connection parameters information
 typedef struct {
     uint16_t             interval;                  /*!< connection interval */
     uint16_t             latency;                   /*!< Slave latency for the connection in number of connection events. Range: 0x0000 to 0x01F3 */
@@ -598,7 +614,7 @@ typedef enum {
 typedef enum {
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_ADV_ADDR       = 0,  /*!< BLE advertising address , device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_ADDR_LIST */
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_LINK_ID,        /*!< BLE mesh link ID, it is for BLE mesh, device info will be added into ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_MESH_LINK_ID_LIST */
-    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_BEACON_TYPE,    /*!< BLE mesh beacon AD type, the format is | Len | 0x2B | Beacon Type | Beacon Data | */     
+    ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_BEACON_TYPE,    /*!< BLE mesh beacon AD type, the format is | Len | 0x2B | Beacon Type | Beacon Data | */
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROV_SRV_ADV,   /*!< BLE mesh provisioning service uuid, the format is | 0x02 | 0x01 | flags | 0x03 | 0x03 | 0x1827 | .... |` */
     ESP_BLE_DUPLICATE_SCAN_EXCEPTIONAL_INFO_MESH_PROXY_SRV_ADV,  /*!< BLE mesh adv with proxy service uuid, the format is | 0x02 | 0x01 | flags | 0x03 | 0x03 | 0x1828 | .... |` */
 } esp_ble_duplicate_exceptional_info_type_t;
@@ -769,6 +785,12 @@ typedef union {
         uint16_t         length;                     /*!< The length of device_info */
         esp_duplicate_info_t device_info;           /*!< device information, when subcode is ESP_BLE_DUPLICATE_EXCEPTIONAL_LIST_CLEAN, the value is invalid */
     } update_duplicate_exceptional_list_cmpl;       /*!< Event parameter of ESP_GAP_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_CHANNELS_EVT
+     */
+    struct ble_set_channels_evt_param {
+        esp_bt_status_t stat;                       /*!< BLE set channel status */
+    } ble_set_channels;                             /*!< Event parameter of ESP_GAP_BLE_SET_CHANNELS_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -1254,6 +1276,22 @@ esp_err_t esp_ble_gap_disconnect(esp_bd_addr_t remote_device);
 *
 */
 esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_params_t *conn_params);
+
+/**
+* @brief            BLE set channels
+*
+* @param[in]        channels :   The n th such field (in the range 0 to 36) contains the value for the link layer channel index n.
+*                                0 means channel n is bad.
+*                                1 means channel n is unknown.
+*                                The most significant bits are reserved and shall be set to 0.
+*                                At least one channel shall be marked as unknown.
+*
+* @return           - ESP_OK : success
+*                   - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+*                   - other  : failed
+*
+*/
+esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels);
 
 #ifdef __cplusplus
 }

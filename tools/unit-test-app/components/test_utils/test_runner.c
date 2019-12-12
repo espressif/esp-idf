@@ -70,7 +70,15 @@ void setUp(void)
 #endif
 
     printf("%s", ""); /* sneakily lazy-allocate the reent structure for this test task */
+
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+    /* TODO: add sufficient startup code in case of building an ELF file, so that
+     * flash cache is initialized and can work in such mode.
+     * For now this is disabled to allow running unit tests which don't require
+     * flash cache related operations.
+     */
     get_test_data_partition();  /* allocate persistent partition table structures */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
     unity_reset_leak_checks();
     test_utils_set_leak_level(CONFIG_UNITY_CRITICAL_LEAK_LEVEL_GENERAL, TYPE_LEAK_CRITICAL, COMP_LEAK_GENERAL);

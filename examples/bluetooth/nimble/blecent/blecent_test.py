@@ -27,6 +27,7 @@ try:
     if test_fw_path and test_fw_path not in sys.path:
         sys.path.insert(0, test_fw_path)
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError as e:
     print(e)
     print("\nCheck your IDF_PATH\nOR")
@@ -64,8 +65,10 @@ def test_example_app_ble_central(env, extra_data):
     adv_type = 'peripheral'
     adv_uuid = '1811'
 
+    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
+    subprocess.check_output(['hciconfig','hci0','reset'])
     # Acquire DUT
-    dut = env.get_dut("blecent", "examples/bluetooth/nimble/blecent")
+    dut = env.get_dut("blecent", "examples/bluetooth/nimble/blecent", dut_class=ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, "blecent.bin")
@@ -75,8 +78,8 @@ def test_example_app_ble_central(env, extra_data):
     # Upload binary and start testing
     Utility.console_log("Starting blecent example test app")
     dut.start_app()
+    dut.reset()
 
-    subprocess.check_output(['rm','-rf','/var/lib/bluetooth/*'])
     device_addr = ':'.join(re.findall('..', '%012x' % uuid.getnode()))
 
     # Get BLE client module

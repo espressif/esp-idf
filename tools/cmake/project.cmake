@@ -18,6 +18,17 @@ if(PYTHON_DEPS_CHECKED)
     idf_build_set_property(__CHECK_PYTHON 0)
 endif()
 
+# Store CMake arguments that need to be passed into all CMake sub-projects as well
+# (bootloader, ULP, etc)
+#
+# It's not possible to tell if CMake was called with --warn-uninitialized, so to also
+# have these warnings in sub-projects we set a cache variable as well and then check that.
+if(WARN_UNINITIALIZED)
+    idf_build_set_property(EXTRA_CMAKE_ARGS --warn-uninitialized)
+else()
+    idf_build_set_property(EXTRA_CMAKE_ARGS "")
+endif()
+
 # Initialize build target for this build using the environment variable or
 # value passed externally.
 __target_init()
@@ -38,9 +49,9 @@ function(__project_get_revision var)
             if(PROJECT_VER_GIT)
                 set(PROJECT_VER ${PROJECT_VER_GIT})
             else()
-                message(STATUS "Project is not inside a git repository, \
-                        will not use 'git describe' to determine PROJECT_VER.")
-                set(PROJECT_VER "1")
+                message(STATUS "Project is not inside a git repository, or git repository has no commits;"
+                        " will not use 'git describe' to determine PROJECT_VER.")
+                set(PROJECT_VER 1)
             endif()
         endif()
     endif()
@@ -247,7 +258,7 @@ macro(project project_name)
     if(CCACHE_ENABLE)
         find_program(CCACHE_FOUND ccache)
         if(CCACHE_FOUND)
-            message(STATUS "ccache will be used for faster builds")
+            message(STATUS "ccache will be used for faster recompilation")
             set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
         else()
             message(WARNING "enabled ccache in build but ccache program not found")
@@ -302,25 +313,30 @@ macro(project project_name)
     # PROJECT_NAME is taken from the passed name from project() call
     # PROJECT_DIR is set to the current directory
     # PROJECT_VER is from the version text or git revision of the current repo
-    if(SDKCONFIG_DEFAULTS)
-        get_filename_component(sdkconfig_defaults "${SDKCONFIG_DEFAULTS}" ABSOLUTE)
-        if(NOT EXISTS "${sdkconfig_defaults}")
-            message(FATAL_ERROR "SDKCONFIG_DEFAULTS '${sdkconfig_defaults}' does not exist.")
-        endif()
-    else()
+    set(_sdkconfig_defaults "$ENV{SDKCONFIG_DEFAULTS}")
+
+    if(NOT _sdkconfig_defaults)
         if(EXISTS "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
-            set(sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
+            set(_sdkconfig_defaults "${CMAKE_SOURCE_DIR}/sdkconfig.defaults")
         else()
-            set(sdkconfig_defaults "")
+            set(_sdkconfig_defaults "")
         endif()
     endif()
 
+    if(SDKCONFIG_DEFAULTS)
+        set(_sdkconfig_defaults "${SDKCONFIG_DEFAULTS}")
+    endif()
+
+    foreach(sdkconfig_default ${_sdkconfig_defaults})
+        get_filename_component(sdkconfig_default "${sdkconfig_default}" ABSOLUTE)
+        if(NOT EXISTS "${sdkconfig_default}")
+            message(FATAL_ERROR "SDKCONFIG_DEFAULTS '${sdkconfig_default}' does not exist.")
+        endif()
+        list(APPEND sdkconfig_defaults ${sdkconfig_default})
+    endforeach()
+
     if(SDKCONFIG)
         get_filename_component(sdkconfig "${SDKCONFIG}" ABSOLUTE)
-        if(NOT EXISTS "${sdkconfig}")
-            message(FATAL_ERROR "SDKCONFIG '${sdkconfig}' does not exist.")
-        endif()
-        set(sdkconfig ${SDKCONFIG})
     else()
         set(sdkconfig "${CMAKE_CURRENT_LIST_DIR}/sdkconfig")
     endif()
@@ -353,13 +369,16 @@ macro(project project_name)
     # so that it treats components equally.
     #
     # This behavior should only be when user did not set REQUIRES/PRIV_REQUIRES manually.
-    idf_build_get_property(build_components BUILD_COMPONENTS)
+    idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
     if(idf::main IN_LIST build_components)
         __component_get_target(main_target idf::main)
         __component_get_property(reqs ${main_target} REQUIRES)
         __component_get_property(priv_reqs ${main_target} PRIV_REQUIRES)
         idf_build_get_property(common_reqs __COMPONENT_REQUIRES_COMMON)
         if(reqs STREQUAL common_reqs AND NOT priv_reqs) #if user has not set any requirements
+            if(test_components)
+                list(REMOVE_ITEM build_components ${test_components})
+            endif()
             list(REMOVE_ITEM build_components idf::main)
             __component_get_property(lib ${main_target} COMPONENT_LIB)
             set_property(TARGET ${lib} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${build_components}")
@@ -392,7 +411,7 @@ macro(project project_name)
         target_link_libraries(${project_elf} "-Wl,--no-whole-archive")
     endif()
 
-    idf_build_get_property(build_components BUILD_COMPONENTS)
+    idf_build_get_property(build_components BUILD_COMPONENT_ALIASES)
     if(test_components)
         list(REMOVE_ITEM build_components ${test_components})
     endif()

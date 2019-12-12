@@ -20,7 +20,7 @@
 #include "netif/ppp/pppapi.h"
 #include "netif/ppp/pppos.h"
 #include "lwip/dns.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_modem.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -28,9 +28,9 @@
 #define ESP_MODEM_LINE_BUFFER_SIZE (CONFIG_EXAMPLE_UART_RX_BUFFER_SIZE / 2)
 #define ESP_MODEM_EVENT_QUEUE_SIZE (16)
 
-#define MIN_PATTERN_INTERVAL (10000)
-#define MIN_POST_IDLE (10)
-#define MIN_PRE_IDLE (10)
+#define MIN_PATTERN_INTERVAL (9)
+#define MIN_POST_IDLE (0)
+#define MIN_PRE_IDLE (0)
 
 /**
  * @brief Macro defined for error checking
@@ -264,12 +264,12 @@ static esp_err_t esp_modem_dte_send_wait(modem_dte_t *dte, const char *data, uin
     MODEM_CHECK(res >= len, "wait prompt [%s] timeout", err, prompt);
     MODEM_CHECK(!strncmp(prompt, (const char *)buffer, len), "get wrong prompt: %s", err, buffer);
     free(buffer);
-    uart_enable_pattern_det_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
+    uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
     return ESP_OK;
 err:
     free(buffer);
 err_write:
-    uart_enable_pattern_det_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
+    uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
 err_param:
     return ESP_FAIL;
 }
@@ -298,7 +298,7 @@ static esp_err_t esp_modem_dte_change_mode(modem_dte_t *dte, modem_mode_t new_mo
     case MODEM_COMMAND_MODE:
         uart_disable_rx_intr(esp_dte->uart_port);
         uart_flush(esp_dte->uart_port);
-        uart_enable_pattern_det_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
+        uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
         uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_EXAMPLE_UART_PATTERN_QUEUE_SIZE);
         MODEM_CHECK(dce->set_working_mode(dce, new_mode) == ESP_OK, "set new working mode:%d failed", err, new_mode);
         break;
@@ -392,7 +392,7 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
                               CONFIG_EXAMPLE_UART_EVENT_QUEUE_SIZE, &(esp_dte->event_queue), 0);
     MODEM_CHECK(res == ESP_OK, "install uart driver failed", err_uart_config);
     /* Set pattern interrupt, used to detect the end of a line. */
-    res = uart_enable_pattern_det_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
+    res = uart_enable_pattern_det_baud_intr(esp_dte->uart_port, '\n', 1, MIN_PATTERN_INTERVAL, MIN_POST_IDLE, MIN_PRE_IDLE);
     /* Set pattern queue size */
     res |= uart_pattern_queue_reset(esp_dte->uart_port, CONFIG_EXAMPLE_UART_PATTERN_QUEUE_SIZE);
     MODEM_CHECK(res == ESP_OK, "config uart pattern failed", err_uart_pattern);

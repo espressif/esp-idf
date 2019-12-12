@@ -9,14 +9,14 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "mqtt_client.h"
 #include "esp_modem.h"
 #include "esp_log.h"
 #include "sim800.h"
 #include "bg96.h"
 
-#define BROKER_URL "mqtt://iot.eclipse.org"
+#define BROKER_URL "mqtt://mqtt.eclipse.org"
 
 static const char *TAG = "pppos_example";
 static EventGroupHandle_t event_group = NULL;
@@ -181,7 +181,7 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
 
 void app_main(void)
 {
-    tcpip_adapter_init();
+    esp_netif_init();
     event_group = xEventGroupCreate();
     /* create dte object */
     esp_modem_dte_config_t config = ESP_MODEM_DTE_DEFAULT_CONFIG();

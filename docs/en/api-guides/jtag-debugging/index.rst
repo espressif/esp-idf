@@ -12,7 +12,7 @@ GDB. The document is structured as follows:
 :ref:`jtag-debugging-selecting-jtag-adapter`
     What are the criteria and options to select JTAG adapter hardware.
 :ref:`jtag-debugging-setup-openocd`
-    Procedure to install OpenOCD using prebuilt software packages for :doc:`Windows <setup-openocd-windows>`, :doc:`Linux <setup-openocd-linux>` and :doc:`MacOS <setup-openocd-macos>` operating systems.
+    Procedure to install OpenOCD and verify that it is installed.
 :ref:`jtag-debugging-configuring-esp32-target`
     Configuration of OpenOCD software and set up JTAG adapter hardware that will make together a debugging target.
 :ref:`jtag-debugging-launching-debugger`
@@ -84,45 +84,28 @@ The minimal signalling to get a working JTAG connection are TDI, TDO, TCK, TMS a
 Setup of OpenOCD
 ----------------
 
-This step covers installation of OpenOCD binaries. If you like to build OpenOCS from sources then refer to section :ref:`jtag-debugging-building-openocd`. All OpenOCD files will be placed in ``~/esp/openocd-esp32`` directory. You may choose any other directory, but need to adjust respective paths used in examples. 
+.. highlight:: bash
 
-.. toctree::
-    :hidden:
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then OpenOCD is already installed. After :ref:`setting up the environment <get-started-set-up-env>` in your terminal, you should be able to run OpenOCD. Check this by executing the following command::
 
-    Windows <setup-openocd-windows>
-    Linux <setup-openocd-linux> 
-    MacOS <setup-openocd-macos> 
+    openocd --version
 
-Pick up your OS below and follow provided instructions to setup OpenOCD.
+.. highlight:: none
 
-+-------------------+-------------------+-------------------+
-| |windows-logo|    | |linux-logo|      | |macos-logo|      |
-+-------------------+-------------------+-------------------+
-| `Windows`_        | `Linux`_          | `Mac OS`_         |
-+-------------------+-------------------+-------------------+
+The output should be as follows (although the version may be more recent than listed here)::
 
-.. |windows-logo| image:: ../../../_static/windows-logo.png
-    :target: ../jtag-debugging/setup-openocd-windows.html
+    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
+    Licensed under GNU GPL v2
+    For bug reports, read
+        http://openocd.org/doc/doxygen/bugs.html
 
-.. |linux-logo| image:: ../../../_static/linux-logo.png
-    :target: ../jtag-debugging/setup-openocd-linux.html
+You may also verify that OpenOCD knows where its configuration scripts are located by printing the value of ``OPENOCD_SCRIPTS`` environment variable, by typing ``echo $OPENOCD_SCRIPTS`` (for Linux and macOS) or ``echo %OPENOCD_SCRIPTS%`` (for Windows). If a valid path is printed, then OpenOCD is set up correctly.
 
-.. |macos-logo| image:: ../../../_static/macos-logo.png
-    :target: ../jtag-debugging/setup-openocd-macos.html
-
-.. _Windows: ../jtag-debugging/setup-openocd-windows.html
-.. _Linux: ../jtag-debugging/setup-openocd-linux.html
-.. _Mac OS: ../jtag-debugging/setup-openocd-macos.html
-
-After installation is complete, get familiar with two key directories inside ``openocd-esp32`` installation folder:
-
-* ``bin`` containing OpenOCD executable 
-* ``share\openocd\scripts`` containing configuration files invoked together with OpenOCD as command line parameters
+If any of these steps do not work, please go back to the :ref:`setting up the tools <get-started-set-up-tools>` section of the Getting Started Guide.
 
 .. note::
 
-    Directory names and structure above are specific to binary distribution of OpenOCD. They are used in examples of invoking OpenOCD throughout this guide. Directories for OpenOCD build from sources are different, so the way to invoke OpenOCD. For details see :ref:`jtag-debugging-building-openocd`.
-
+    It is also possible to build OpenOCD from source. Please refer to :ref:`jtag-debugging-building-openocd` section for details.
 
 .. _jtag-debugging-configuring-esp32-target:
 
@@ -157,23 +140,20 @@ Once target is configured and connected to computer, you are ready to launch Ope
 
 .. highlight:: bash
 
-Open terminal, go to directory where OpenOCD is installed and start it up::
+Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS)::
 
-    cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
 
 .. note::
 
-    The files provided after ``-f`` above, are specific for ESP-WROVER-KIT with :ref:`esp-modules-and-boards-esp32-wroom-32` module. You may need to provide different files depending on used hardware, For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
-
-.. include:: ./windows-openocd-note.rst
+    The files provided after ``-f`` above are specific for ESP-WROVER-KIT with :ref:`esp-modules-and-boards-esp32-wroom-32` module. You may need to provide different files depending on used hardware. For guidance see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
 .. highlight:: none
 
 You should now see similar output (this log is for ESP-WROVER-KIT)::
 
-    user-name@computer-name:~/esp/openocd-esp32$ bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
-    Open On-Chip Debugger 0.10.0-dev-ged7b1a9 (2017-07-10-07:16)
+    user-name@computer-name:~/esp/esp-idf$ openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
             http://openocd.org/doc/doxygen/bugs.html
@@ -201,10 +181,7 @@ Build and upload your application to ESP32 as usual, see :ref:`get-started-build
 
 Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
 
-    cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
-
-.. include:: ./windows-openocd-note.rst
+    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
 
 OpenOCD flashing command ``program_esp32`` has the following format:
 
@@ -268,13 +245,27 @@ Please refer to separate documents listed below, that describe build process.
     Linux <building-openocd-linux>
     MacOS <building-openocd-macos>
 
-.. note::
+The examples of invoking OpenOCD in this document assume using pre-built binary distribution described in section :ref:`jtag-debugging-setup-openocd`.
 
-    Examples of invoking OpenOCD in this document assume using pre-built binary distribution described in section :ref:`jtag-debugging-setup-openocd`. To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and the path to configuration files to ``-s tcl``.
+.. highlight:: bash
 
-    Example of invoking OpenOCD build locally from sources::
+To use binaries build locally from sources, change the path to OpenOCD executable to ``src/openocd`` and set the ``OPENOCD_SCRIPTS`` environment variable so that OpenOCD can find the configuration files. For Linux and macOS::
 
-        src/openocd -s tcl -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    cd ~/esp/openocd-esp32
+    export OPENOCD_SCRIPTS=$PWD/tcl
+
+For Windows::
+
+    cd %USERPROFILE%\esp\openocd-esp32
+    set "OPENOCD_SCRIPTS=%CD%\tcl"
+
+Example of invoking OpenOCD build locally from sources, for Linux and macOS::
+
+    src/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+
+and Windows::
+
+    src\openocd -f interface\ftdi\esp32_devkitj_v1.cfg -f board\esp-wroom-32.cfg
 
 
 .. _jtag-debugging-tips-and-quirks:

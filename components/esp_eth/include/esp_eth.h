@@ -85,6 +85,7 @@ typedef struct {
     *       - ESP_FAIL: error occurred when processing extra lowlevel deinitialization
     */
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
+
 } esp_eth_config_t;
 
 /**
@@ -116,6 +117,21 @@ typedef struct {
 esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_t *out_hdl);
 
 /**
+* @brief Start ethernet driver **ONLY** in standalone mode, i.e. without TCP/IP stack
+*
+* Note that ethernet driver is typically started as soon as it is attached to esp-netif.
+* This API should only be called if ethernet is used separately without esp-netif, for example
+* when esp_eth_config_t.stack_input is not NULL.
+*
+* @param[in] eth_handle handle of Ethernet driver
+*
+* @return
+*       - ESP_OK: starts ethernet driver
+*       - ESP_ERR_INVALID_STATE: if event loop hasn't been initialized
+*/
+esp_err_t esp_eth_driver_start(esp_eth_handle_t eth_handle);
+
+/**
 * @brief Uninstall Ethernet driver
 *
 * @param[in] hdl: handle of Ethernet driver
@@ -139,7 +155,7 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
 *       - ESP_ERR_INVALID_ARG: transmit frame buffer failed because of some invalid argument
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
-esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length);
+esp_err_t esp_eth_transmit(void* hdl, void *buf, uint32_t length);
 
 /**
 * @brief General Receive
@@ -148,9 +164,14 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length);
 * @param[out] buf: buffer to preserve the received packet
 * @param[out] length: length of the received packet
 *
+* @note Before this function got invoked, the value of "length" should set by user, equals the size of buffer.
+*       After the function returned, the value of "length" means the real length of received data.
+*
 * @return
 *       - ESP_OK: receive frame buffer successfully
 *       - ESP_ERR_INVALID_ARG: receive frame buffer failed because of some invalid argument
+*       - ESP_ERR_INVALID_SIZE: input buffer size is not enough to hold the incoming data.
+*                               in this case, value of returned "length" indicates the real size of incoming data.
 *       - ESP_FAIL: receive frame buffer failed because some other error occurred
 */
 esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);
@@ -168,6 +189,22 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);
 *       - ESP_FAIL: process io command failed because some other error occurred
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
+
+/**
+ * @brief Register default ethernet handlers
+ *
+ * @param[in] esp_netif esp network interface handle created for this driver
+ * (note: appropriate ethernet handle not yet properly initialized when setting up
+ * default handlers)
+ */
+esp_err_t esp_eth_set_default_handlers(void* esp_netif);
+
+/**
+ * @brief Unregister default ethernet handlers
+ *
+ * @param[in] esp_netif esp network interface handle created for this driver
+ */
+esp_err_t esp_eth_clear_default_handlers(void* esp_netif);
 
 #ifdef __cplusplus
 }

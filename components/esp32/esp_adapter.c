@@ -38,11 +38,6 @@
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
-#include "crypto/md5.h"
-#include "crypto/sha1.h"
-#include "crypto/crypto.h"
-#include "crypto/aes.h"
-#include "crypto/dh_group5.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"
@@ -414,22 +409,22 @@ static int get_time_wrapper(void *t)
 
 static void * IRAM_ATTR malloc_internal_wrapper(size_t size)
 {
-    return heap_caps_malloc(size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_malloc(size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR realloc_internal_wrapper(void *ptr, size_t size)
 {
-    return heap_caps_realloc(ptr, size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_realloc(ptr, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR calloc_internal_wrapper(size_t n, size_t size)
 {
-    return heap_caps_calloc(n, size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    return heap_caps_calloc(n, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
 }
 
 static void * IRAM_ATTR zalloc_internal_wrapper(size_t size)
 {
-    void *ptr = heap_caps_calloc(1, size, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL);
+    void *ptr = heap_caps_calloc(1, size, MALLOC_CAP_8BIT|MALLOC_CAP_DMA|MALLOC_CAP_INTERNAL);
     if (ptr) {
         memset(ptr, 0, size);
     }
@@ -442,6 +437,13 @@ static uint32_t coex_status_get_wrapper(void)
     return coex_status_get();
 #else
     return 0;
+#endif
+}
+
+static void coex_condition_set_wrapper(uint32_t type, bool dissatisfy)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    coex_condition_set(type, dissatisfy);
 #endif
 }
 
@@ -504,6 +506,11 @@ void IRAM_ATTR coex_bb_reset_unlock_wrapper(uint32_t restore)
 #if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     coex_bb_reset_unlock(restore);
 #endif
+}
+
+int32_t IRAM_ATTR coex_is_in_isr_wrapper(void)
+{
+    return !xPortCanYield();
 }
 
 wifi_osi_funcs_t g_wifi_osi_funcs = {
@@ -596,6 +603,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._modem_sleep_register = esp_modem_sleep_register,
     ._modem_sleep_deregister = esp_modem_sleep_deregister,
     ._coex_status_get = coex_status_get_wrapper,
+    ._coex_condition_set = coex_condition_set_wrapper,
     ._coex_wifi_request = coex_wifi_request_wrapper,
     ._coex_wifi_release = coex_wifi_release_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
@@ -614,7 +622,7 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._semphr_give_from_isr = semphr_give_from_isr_wrapper,
     ._semphr_take = semphr_take_wrapper,
     ._semphr_give = semphr_give_wrapper,
-    ._is_in_isr = xPortInIsrContext,
+    ._is_in_isr = coex_is_in_isr_wrapper,
     ._malloc_internal =  malloc_internal_wrapper,
     ._free = free,
     ._timer_disarm = timer_disarm_wrapper,

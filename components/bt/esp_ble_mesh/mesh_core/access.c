@@ -27,13 +27,18 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-
 #include "mesh_common.h"
+#include "provisioner_main.h"
+
 #include "generic_client.h"
 #include "sensor_client.h"
 #include "time_scene_client.h"
 #include "lighting_client.h"
-#include "provisioner_main.h"
+
+#include "generic_server.h"
+#include "sensor_server.h"
+#include "time_scene_server.h"
+#include "lighting_server.h"
 
 #define BLE_MESH_SDU_MAX_LEN    384
 
@@ -103,6 +108,41 @@ static const struct {
 #if defined(CONFIG_BLE_MESH_LIGHT_LC_CLI)
     { BLE_MESH_MODEL_ID_LIGHT_LC_CLI, bt_mesh_light_lc_cli_init },
 #endif
+    { BLE_MESH_MODEL_ID_GEN_ONOFF_SRV,             bt_mesh_gen_onoff_srv_init             },
+    { BLE_MESH_MODEL_ID_GEN_LEVEL_SRV,             bt_mesh_gen_level_srv_init             },
+    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV,    bt_mesh_gen_def_trans_time_srv_init    },
+    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV,       bt_mesh_gen_power_onoff_srv_init       },
+    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV, bt_mesh_gen_power_onoff_setup_srv_init },
+    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV,       bt_mesh_gen_power_level_srv_init       },
+    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV, bt_mesh_gen_power_level_setup_srv_init },
+    { BLE_MESH_MODEL_ID_GEN_BATTERY_SRV,           bt_mesh_gen_battery_srv_init           },
+    { BLE_MESH_MODEL_ID_GEN_LOCATION_SRV,          bt_mesh_gen_location_srv_init          },
+    { BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV,    bt_mesh_gen_location_setup_srv_init    },
+    { BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV,         bt_mesh_gen_user_prop_srv_init         },
+    { BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV,        bt_mesh_gen_admin_prop_srv_init        },
+    { BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV, bt_mesh_gen_manu_prop_srv_init         },
+    { BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV,       bt_mesh_gen_client_prop_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV,       bt_mesh_light_lightness_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, bt_mesh_light_lightness_setup_srv_init },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_SRV,             bt_mesh_light_ctl_srv_init             },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV,       bt_mesh_light_ctl_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV,        bt_mesh_light_ctl_temp_srv_init        },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_SRV,             bt_mesh_light_hsl_srv_init             },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV,         bt_mesh_light_hsl_hue_srv_init         },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV,         bt_mesh_light_hsl_sat_srv_init         },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV,       bt_mesh_light_hsl_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_XYL_SRV,             bt_mesh_light_xyl_srv_init             },
+    { BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV,       bt_mesh_light_xyl_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_LC_SRV,              bt_mesh_light_lc_srv_init              },
+    { BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV,        bt_mesh_light_lc_setup_srv_init        },
+    { BLE_MESH_MODEL_ID_TIME_SRV,                  bt_mesh_time_srv_init                  },
+    { BLE_MESH_MODEL_ID_TIME_SETUP_SRV,            bt_mesh_time_setup_srv_init            },
+    { BLE_MESH_MODEL_ID_SCENE_SRV,                 bt_mesh_scene_srv_init                 },
+    { BLE_MESH_MODEL_ID_SCENE_SETUP_SRV,           bt_mesh_scene_setup_srv_init           },
+    { BLE_MESH_MODEL_ID_SCHEDULER_SRV,             bt_mesh_scheduler_srv_init             },
+    { BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV,       bt_mesh_scheduler_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_SENSOR_SRV,                bt_mesh_sensor_srv_init                },
+    { BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV,          bt_mesh_sensor_setup_srv_init          },
 };
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
@@ -220,7 +260,24 @@ static void publish_sent(int err, void *user_data)
     }
 }
 
+static void publish_start(u16_t duration, int err, void *user_data)
+{
+    struct bt_mesh_model *mod = user_data;
+    struct bt_mesh_model_pub *pub = mod->pub;
+
+    if (err) {
+        BT_ERR("Failed to publish: err %d", err);
+        return;
+    }
+
+    /* Initialize the timestamp for the beginning of a new period */
+    if (pub->count == BLE_MESH_PUB_TRANSMIT_COUNT(pub->retransmit)) {
+        pub->period_start = k_uptime_get_32();
+    }
+}
+
 static const struct bt_mesh_send_cb pub_sent_cb = {
+    .start = publish_start,
     .end = publish_sent,
 };
 
@@ -310,8 +367,6 @@ static void mod_publish(struct k_work *work)
 
     __ASSERT_NO_MSG(pub->update != NULL);
 
-    pub->period_start = k_uptime_get_32();
-
     /* Callback the model publish update event to the application layer.
      * In the event, users can update the context of the publish message
      * which will be published in the next period.
@@ -325,11 +380,6 @@ static void mod_publish(struct k_work *work)
     err = bt_mesh_model_publish(pub->mod);
     if (err) {
         BT_ERR("%s, Publishing failed (err %d)", __func__, err);
-    }
-
-    if (pub->count) {
-        /* Retransmissions also control the timer */
-        k_delayed_work_cancel(&pub->timer);
     }
 }
 
@@ -495,17 +545,21 @@ static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
 
 struct bt_mesh_elem *bt_mesh_elem_find(u16_t addr)
 {
-    int i;
+    u16_t index;
 
-    for (i = 0; i < dev_comp->elem_count; i++) {
-        struct bt_mesh_elem *elem = &dev_comp->elem[i];
+    if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
+        index = (addr - dev_comp->elem[0].addr);
+        if (index < dev_comp->elem_count) {
+            return &dev_comp->elem[index];
+        } else {
+            return NULL;
+        }
+    }
 
-        if (BLE_MESH_ADDR_IS_GROUP(addr) ||
-                BLE_MESH_ADDR_IS_VIRTUAL(addr)) {
-            if (bt_mesh_elem_find_group(elem, addr)) {
-                return elem;
-            }
-        } else if (elem->addr == addr) {
+    for (index = 0; index < dev_comp->elem_count; index++) {
+        struct bt_mesh_elem *elem = &dev_comp->elem[index];
+
+        if (bt_mesh_elem_find_group(elem, addr)) {
             return elem;
         }
     }
@@ -616,8 +670,6 @@ bool bt_mesh_fixed_group_match(u16_t addr)
     }
 }
 
-u32_t mesh_opcode;
-
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
     struct bt_mesh_model *models, *model;
@@ -636,8 +688,6 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     }
 
     BT_DBG("OpCode 0x%08x", opcode);
-
-    mesh_opcode = opcode;
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
@@ -673,7 +723,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
             if (buf->len < op->min_len) {
                 BT_ERR("%s, Too short message for OpCode 0x%08x",
-                      __func__, opcode);
+                       __func__, opcode);
                 continue;
             }
 
@@ -728,67 +778,72 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
     net_buf_simple_add_le16(msg, opcode & 0xffff);
 }
 
-static int model_send(struct bt_mesh_model *model,
-                      struct bt_mesh_net_tx *tx, bool implicit_bind,
-                      struct net_buf_simple *msg,
-                      const struct bt_mesh_send_cb *cb, void *cb_data)
+static bool ready_to_send(u8_t role, u16_t dst)
 {
-    bool check = false;
-    u8_t role;
-
-    BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->ctx->net_idx,
-           tx->ctx->app_idx, tx->ctx->addr);
-    BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
-
-    role = bt_mesh_get_model_role(model, tx->ctx->srv_send);
-    if (role == ROLE_NVAL) {
-        BT_ERR("%s, Failed to get model role", __func__);
-        return -EINVAL;
-    }
-
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (role == NODE) {
         if (!bt_mesh_is_provisioned()) {
             BT_ERR("%s, Local node is not yet provisioned", __func__);
-            return -EAGAIN;
+            return false;
         }
         if (!bt_mesh_is_provisioner_en()) {
-            check = true;
+            return true;
         }
     }
 #endif
 
 #if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
     if (role == PROVISIONER) {
-        if (!provisioner_check_msg_dst_addr(tx->ctx->addr)) {
-            BT_ERR("%s, Failed to check DST", __func__);
-            return -EINVAL;
+        if (!provisioner_check_msg_dst_addr(dst)) {
+            BT_ERR("%s, Failed to find DST 0x%04x", __func__, dst);
+            return false;
         }
         if (bt_mesh_is_provisioner_en()) {
-            check = true;
+            return true;
         }
     }
 #endif
 
 #if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
     if (role == PROVISIONER) {
-        if (!provisioner_check_msg_dst_addr(tx->ctx->addr)) {
+        if (!provisioner_check_msg_dst_addr(dst)) {
             BT_ERR("%s, Failed to check DST", __func__);
-            return -EINVAL;
+            return false;
         }
         if (bt_mesh_is_provisioner_en()) {
-            check = true;
+            return true;
         }
     } else {
         if (!bt_mesh_is_provisioned()) {
             BT_ERR("%s, Local node is not yet provisioned", __func__);
-            return -EAGAIN;
+            return false;
         }
-        check = true;
+
+        return true;
     }
 #endif
 
-    if (!check) {
+    return false;
+}
+
+static int model_send(struct bt_mesh_model *model,
+                      struct bt_mesh_net_tx *tx, bool implicit_bind,
+                      struct net_buf_simple *msg,
+                      const struct bt_mesh_send_cb *cb, void *cb_data)
+{
+    u8_t role;
+
+    role = bt_mesh_get_device_role(model, tx->ctx->srv_send);
+    if (role == ROLE_NVAL) {
+        BT_ERR("%s, Failed to get model role", __func__);
+        return -EINVAL;
+    }
+
+    BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->ctx->net_idx,
+           tx->ctx->app_idx, tx->ctx->addr);
+    BT_DBG("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
+
+    if (!ready_to_send(role, tx->ctx->addr)) {
         BT_ERR("%s, fail", __func__);
         return -EINVAL;
     }
@@ -819,42 +874,13 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
     struct bt_mesh_subnet *sub = NULL;
     u8_t role;
 
-    role = bt_mesh_get_model_role(model, ctx->srv_send);
+    role = bt_mesh_get_device_role(model, ctx->srv_send);
     if (role == ROLE_NVAL) {
         BT_ERR("%s, Failed to get model role", __func__);
         return -EINVAL;
     }
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-    if (role == NODE) {
-        if (!bt_mesh_is_provisioner_en()) {
-            sub = bt_mesh_subnet_get(ctx->net_idx);
-        }
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (role == PROVISIONER) {
-        if (bt_mesh_is_provisioner_en()) {
-            sub = provisioner_subnet_get(ctx->net_idx);
-        }
-    }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (role == NODE) {
-        sub = bt_mesh_subnet_get(ctx->net_idx);
-    } else if (role == PROVISIONER) {
-        if (bt_mesh_is_provisioner_en()) {
-            sub = provisioner_subnet_get(ctx->net_idx);
-        }
-    } else if (role == FAST_PROV) {
-#if CONFIG_BLE_MESH_FAST_PROV
-        sub = get_fast_prov_subnet(ctx->net_idx);
-#endif
-    }
-#endif
-
+    sub = bt_mesh_tx_netkey_get(role, ctx->net_idx);
     if (!sub) {
         BT_ERR("%s, Failed to get subnet", __func__);
         return -EINVAL;
@@ -889,7 +915,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     BT_DBG("%s", __func__);
 
-    if (!pub) {
+    if (!pub || !pub->msg) {
         BT_ERR("%s, Model has no publication support", __func__);
         return -ENOTSUP;
     }
@@ -899,34 +925,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         return -EADDRNOTAVAIL;
     }
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-    if (pub->dev_role == NODE) {
-        if (bt_mesh_is_provisioned()) {
-            key = bt_mesh_app_key_find(pub->key);
-        }
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (pub->dev_role == PROVISIONER) {
-        if (bt_mesh_is_provisioner_en()) {
-            key = provisioner_app_key_find(pub->key);
-        }
-    }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (pub->dev_role == NODE) {
-        if (bt_mesh_is_provisioned()) {
-            key = bt_mesh_app_key_find(pub->key);
-        }
-    } else if (pub->dev_role == PROVISIONER) {
-        if (bt_mesh_is_provisioner_en()) {
-            key = provisioner_app_key_find(pub->key);
-        }
-    }
-#endif
-
+    key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key, BLE_MESH_KEY_ANY);
     if (!key) {
         BT_ERR("%s, Failed to get AppKey", __func__);
         return -EADDRNOTAVAIL;
@@ -950,34 +949,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
     tx.friend_cred = pub->cred;
 
-#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
-    if (pub->dev_role == NODE) {
-        if (bt_mesh_is_provisioned()) {
-            tx.sub = bt_mesh_subnet_get(ctx.net_idx);
-        }
-    }
-#endif
-
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (pub->dev_role == PROVISIONER) {
-        if (bt_mesh_is_provisioner_en()) {
-            tx.sub = provisioner_subnet_get(ctx.net_idx);
-        }
-    }
-#endif
-
-#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (pub->dev_role == NODE) {
-        if (bt_mesh_is_provisioned()) {
-            tx.sub = bt_mesh_subnet_get(ctx.net_idx);
-        }
-    } else if (pub->dev_role == PROVISIONER) {
-        if (bt_mesh_is_provisioner_en()) {
-            tx.sub = provisioner_subnet_get(ctx.net_idx);
-        }
-    }
-#endif
-
+    tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, ctx.net_idx);
     if (!tx.sub) {
         BT_ERR("%s, Failed to get subnet", __func__);
         return -EADDRNOTAVAIL;
@@ -1040,4 +1012,282 @@ struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem,
 const struct bt_mesh_comp *bt_mesh_comp_get(void)
 {
     return dev_comp;
+}
+
+/* APIs used by messages encryption in upper transport layer & network layer */
+struct bt_mesh_subnet *bt_mesh_tx_netkey_get(u8_t role, u16_t net_idx)
+{
+    struct bt_mesh_subnet *sub = NULL;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (role == NODE) {
+        if (bt_mesh_is_provisioned()) {
+            sub = bt_mesh_subnet_get(net_idx);
+        }
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (role == PROVISIONER) {
+        if (bt_mesh_is_provisioner_en()) {
+            sub = provisioner_subnet_get(net_idx);
+        }
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (role == NODE) {
+        if (bt_mesh_is_provisioned()) {
+            sub = bt_mesh_subnet_get(net_idx);
+        }
+    } else if (role == PROVISIONER) {
+        if (bt_mesh_is_provisioner_en()) {
+            sub = provisioner_subnet_get(net_idx);
+        }
+    } else if (role == FAST_PROV) {
+#if CONFIG_BLE_MESH_FAST_PROV
+        sub = fast_prov_subnet_get(net_idx);
+#endif
+    }
+#endif
+
+    return sub;
+}
+
+const u8_t *bt_mesh_tx_devkey_get(u8_t role, u16_t dst)
+{
+    const u8_t *key = NULL;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (role == NODE) {
+        if (bt_mesh_is_provisioned()) {
+            key = bt_mesh.dev_key;
+        }
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (role == PROVISIONER) {
+        if (bt_mesh_is_provisioner_en()) {
+            key = provisioner_dev_key_get(dst);
+        }
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (role == NODE) {
+        if (bt_mesh_is_provisioned()) {
+            key = bt_mesh.dev_key;
+        }
+    } else if (role == PROVISIONER) {
+        if (bt_mesh_is_provisioner_en()) {
+            key = provisioner_dev_key_get(dst);
+        }
+    } else if (role == FAST_PROV) {
+#if CONFIG_BLE_MESH_FAST_PROV
+        key = fast_prov_dev_key_get(dst);
+#endif
+    }
+#endif
+
+    return key;
+}
+
+struct bt_mesh_app_key *bt_mesh_tx_appkey_get(u8_t role, u16_t app_idx, u16_t net_idx)
+{
+    struct bt_mesh_app_key *key = NULL;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (role == NODE) {
+        if (bt_mesh_is_provisioned()) {
+            key = bt_mesh_app_key_find(app_idx);
+        }
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (role == PROVISIONER) {
+        if (bt_mesh_is_provisioner_en()) {
+            key = provisioner_app_key_find(app_idx);
+        }
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (role == NODE) {
+        if (bt_mesh_is_provisioned()) {
+            key = bt_mesh_app_key_find(app_idx);
+        }
+    } else if (role == PROVISIONER) {
+        if (bt_mesh_is_provisioner_en()) {
+            key = provisioner_app_key_find(app_idx);
+        }
+    } else if (role == FAST_PROV) {
+#if CONFIG_BLE_MESH_FAST_PROV
+        key = fast_prov_app_key_find(net_idx, app_idx);
+#endif
+    }
+#endif
+
+    return key;
+}
+
+/* APIs used by messages decryption in network layer & upper transport layer */
+size_t bt_mesh_rx_netkey_size(void)
+{
+    size_t size = 0;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioned()) {
+        size = ARRAY_SIZE(bt_mesh.sub);
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioner_en()) {
+        size = ARRAY_SIZE(bt_mesh.p_sub);
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    size = ARRAY_SIZE(bt_mesh.sub);
+    if (bt_mesh_is_provisioner_en()) {
+        size += ARRAY_SIZE(bt_mesh.p_sub);
+    }
+#endif
+
+    return size;
+}
+
+struct bt_mesh_subnet *bt_mesh_rx_netkey_get(size_t index)
+{
+    struct bt_mesh_subnet *sub = NULL;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioned()) {
+        sub = &bt_mesh.sub[index];
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioner_en()) {
+        sub = bt_mesh.p_sub[index];
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (index < ARRAY_SIZE(bt_mesh.sub)) {
+        sub = &bt_mesh.sub[index];
+    } else {
+        sub = bt_mesh.p_sub[index - ARRAY_SIZE(bt_mesh.sub)];
+    }
+#endif
+
+    return sub;
+}
+
+size_t bt_mesh_rx_devkey_size(void)
+{
+    size_t size = 0;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (!bt_mesh_is_provisioner_en()) {
+        size = 1;
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioner_en()) {
+        size = 1;
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    size = 1;
+    if (bt_mesh_is_provisioner_en()) {
+        size += 1;
+    }
+#endif
+
+    return size;
+}
+
+const u8_t *bt_mesh_rx_devkey_get(size_t index, u16_t src)
+{
+    const u8_t *key = NULL;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioned()) {
+        key = bt_mesh.dev_key;
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioner_en()) {
+        key = provisioner_dev_key_get(src);
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (index < 1) {
+        key = bt_mesh.dev_key;
+    } else {
+        key = provisioner_dev_key_get(src);
+    }
+#endif
+
+    return key;
+}
+
+size_t bt_mesh_rx_appkey_size(void)
+{
+    size_t size = 0;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioned()) {
+        size = ARRAY_SIZE(bt_mesh.app_keys);
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioner_en()) {
+        size = ARRAY_SIZE(bt_mesh.p_app_keys);
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    size = ARRAY_SIZE(bt_mesh.app_keys);
+    if (bt_mesh_is_provisioner_en()) {
+        size += ARRAY_SIZE(bt_mesh.p_app_keys);
+    }
+#endif
+
+    return size;
+}
+
+struct bt_mesh_app_key *bt_mesh_rx_appkey_get(size_t index)
+{
+    struct bt_mesh_app_key *key = NULL;
+
+#if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioned()) {
+        key = &bt_mesh.app_keys[index];
+    }
+#endif
+
+#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (bt_mesh_is_provisioner_en()) {
+        key = bt_mesh.p_app_keys[index];
+    }
+#endif
+
+#if CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
+    if (index < ARRAY_SIZE(bt_mesh.app_keys)) {
+        key = &bt_mesh.app_keys[index];
+    } else {
+        key = bt_mesh.p_app_keys[index - ARRAY_SIZE(bt_mesh.app_keys)];
+    }
+#endif
+
+    return key;
 }

@@ -20,6 +20,8 @@ extern "C" {
 
 #include "esp_system.h"
 
+#define TG0_WDT_TICK_US 500
+
 /**
  * @brief  Internal function to restart PRO and APP CPUs.
  *

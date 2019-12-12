@@ -232,7 +232,11 @@ const tBTA_HF_CLIENT_ST_TBL bta_hf_client_st_tbl[] = {
     bta_hf_client_st_closing
 };
 
+#if BTM_WBS_INCLUDED
 const char *bta_hf_client_version = "1.6";
+#else
+const char *bta_hf_client_version = "1.5";
+#endif
 
 /* HF Client control block */
 #if BTA_DYNAMIC_MEMORY == FALSE

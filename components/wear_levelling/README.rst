@@ -1,6 +1,8 @@
 Wear Levelling API
 ==================
 
+:link_to_translation:`zh_CN:[中文]`
+
 Overview
 --------
 Most of flash memory and especially SPI flash that is used in ESP32 has a sector-based organization and also has a limited number of erase/modification cycles per memory sector. The wear levelling component helps to distribute wear and tear among sectors more evenly without requiring any attention from the user.

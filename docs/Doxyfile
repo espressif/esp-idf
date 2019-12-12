@@ -98,6 +98,7 @@ INPUT = \
     ../../components/driver/include/driver/spi_common.h \
     ../../components/driver/include/driver/spi_master.h \
     ../../components/driver/include/driver/spi_slave.h \
+    ../../components/driver/esp32s2beta/include/temp_sensor.h \
     ../../components/driver/include/driver/timer.h \
     ../../components/driver/include/driver/touch_pad.h \
     ../../components/driver/include/driver/uart.h \
@@ -108,8 +109,8 @@ INPUT = \
     ../../components/soc/esp32/include/soc/touch_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
     ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
-    ## tcpip_adapter - API Reference
-    ../../components/tcpip_adapter/include/tcpip_adapter.h \
+    ## esp_netif - API Reference
+    ../../components/esp_netif/include/esp_netif.h \
     ##
     ## Protocols - API Reference
     ##
@@ -117,6 +118,8 @@ INPUT = \
     ../../components/esp-tls/esp_tls.h \
     ## MQTT
     ../../components/mqtt/esp-mqtt/include/mqtt_client.h \
+    ## ICMP-ECHO
+    ../../components/lwip/include/apps/ping/ping_sock.h \
     ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \
@@ -216,6 +219,7 @@ INPUT = \
     ##
     ## NOTE: for line below header_file.inc is not used
     ../../components/ulp/include/esp32/ulp.h \
+    ../../components/ulp/include/ulp_common.h \
     ##
     ## Application Level Tracing - API Reference
     ##
@@ -252,7 +256,11 @@ INPUT = \
     ### Modbus controller component header file
     ../../components/freemodbus/common/include/esp_modbus_common.h \
     ../../components/freemodbus/common/include/esp_modbus_slave.h \
-    ../../components/freemodbus/common/include/esp_modbus_master.h
+    ../../components/freemodbus/common/include/esp_modbus_master.h \
+     ### Performance Monitor component header file
+     ../../components/perfmon/include/xtensa_perfmon_access.h \
+     ../../components/perfmon/include/xtensa_perfmon_apis.h \
+     ../../components/perfmon/include/xtensa_perfmon_masks.h
 
 
 ## Get warnings for functions that have no documentation for their parameters or return value

@@ -23,6 +23,7 @@
 #include "driver/sdmmc_host.h"
 #include "driver/periph_ctrl.h"
 #include "sdmmc_private.h"
+#include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "soc/sdmmc_periph.h"
 
@@ -222,6 +223,7 @@ esp_err_t sdmmc_host_init(void)
         return ESP_ERR_INVALID_STATE;
     }
 
+    periph_module_reset(PERIPH_SDMMC_MODULE);
     periph_module_enable(PERIPH_SDMMC_MODULE);
 
     // Enable clock to peripheral. Use smallest divider first.
@@ -635,3 +637,4 @@ esp_err_t sdmmc_host_pullup_en(int slot, int width)
     }
     return ESP_OK;
 }
+

@@ -55,6 +55,7 @@ push_to_github:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
+    - feature/esp32s2beta
   when: on_success
   dependencies: []
   extends: .before_script_lesser

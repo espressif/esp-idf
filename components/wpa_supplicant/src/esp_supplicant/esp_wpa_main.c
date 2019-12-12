@@ -29,7 +29,6 @@
 #include "crypto/crypto.h"
 #include "crypto/sha1.h"
 #include "crypto/aes_wrap.h"
-#include "crypto/wepkey.h"
 
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
@@ -84,13 +83,14 @@ void  wpa_config_profile(void)
 
 int wpa_config_bss(uint8_t *bssid)
 {
+    int ret = 0;
     struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
     u8 mac[6];
 
     esp_wifi_get_macaddr_internal(0, mac);
-    wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
+    ret = wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
                 (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
-    return ESP_OK;
+    return ret;
 }
 
 void  wpa_config_assoc_ie(u8 proto, u8 *assoc_buf, u32 assoc_wpa_ie_len)
@@ -107,18 +107,15 @@ void  wpa_neg_complete(void)
     esp_wifi_auth_done_internal();
 }
 
-void  wpa_attach(void)
+bool  wpa_attach(void)
 {
-#ifndef IOT_SIP_MODE
-    wpa_register(NULL, wpa_sendto_wrapper,
+    bool ret = true; 
+    ret = wpa_sm_init(NULL, wpa_sendto_wrapper,
                  wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
-#else
-    u8 *payload = (u8 *)os_malloc(WPA_TX_MSG_BUFF_MAXLEN);
-    wpa_register(payload, wpa_sendto_wrapper,
-                 wpa_config_assoc_ie, wpa_install_key, wpa_get_key, wpa_deauthenticate, wpa_neg_complete);
-#endif
-
-    esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID);
+    if(ret) {   
+        ret = (esp_wifi_register_tx_cb_internal(eapol_txcb, WIFI_TXCB_EAPOL_ID) == ESP_OK);
+    }
+    return ret;
 }
 
 uint8_t  *wpa_ap_get_wpa_ie(uint8_t *ie_len)
@@ -149,13 +146,16 @@ bool  wpa_ap_rx_eapol(void *hapd_data, void *sm_data, u8 *data, size_t data_len)
 
 bool  wpa_deattach(void)
 {
+    wpa_sm_deinit();
     return true;
 }
 
 void  wpa_sta_connect(uint8_t *bssid)
 {
+    int ret = 0;
     wpa_config_profile();
-    wpa_config_bss(bssid);
+    ret = wpa_config_bss(bssid);
+    WPA_ASSERT(ret == 0);
 }
 
 int cipher_type_map(int wpa_cipher)
@@ -225,7 +225,7 @@ int esp_supplicant_init(void)
 
     wpa_cb->wpa_config_parse_string  = wpa_config_parse_string;
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
-    wpa_cb->wpa_config_bss = wpa_config_bss;
+    wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
@@ -233,7 +233,7 @@ int esp_supplicant_init(void)
     return ESP_OK;
 }
 
-bool  wpa_hook_deinit(void)
+int esp_supplicant_deinit(void)
 {
     return esp_wifi_unregister_wpa_cb_internal();
 }

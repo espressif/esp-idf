@@ -15,6 +15,7 @@
 
 #include "bootloader_config.h"
 #include "esp_image_format.h"
+#include "bootloader_config.h"
 
 /**
  * @brief Load partition table.
@@ -54,6 +55,16 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
  */
 __attribute__((noreturn)) void bootloader_utility_load_boot_image(const bootloader_state_t *bs, int start_index);
 
+#ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+/**
+ * @brief Load that application which was worked before we go to the deep sleep.
+ *
+ * Checks the reboot reason if it is the deep sleep and has a valid partition in the RTC memory
+ * then try to load the application which was worked before we go to the deep sleep.
+ *
+ */
+void bootloader_utility_load_boot_image_from_deep_sleep(void);
+#endif
 
 /**
  * @brief Software reset the ESP32
@@ -86,3 +97,14 @@ __attribute__((noreturn)) void bootloader_reset(void);
  *           ESP_ERR_INVALID_ARG: Error in the passed arguments
  */
 esp_err_t bootloader_sha256_hex_to_str(char *out_str, const uint8_t *in_array_hex, size_t len);
+
+/**
+ * @brief Debug log contents of a buffer as hexadecimal
+ *
+ * @note Only works if component log level is DEBUG or higher.
+ *
+ * @param buffer Buffer to log
+ * @param length Length of buffer in bytes. Maximum length 128 bytes.
+ * @param label Label to print at beginning of log line.
+ */
+void bootloader_debug_buffer(const void *buffer, size_t length, const char *label);

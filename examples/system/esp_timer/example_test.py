@@ -5,6 +5,7 @@ import sys
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -39,7 +40,7 @@ ONE_SHOT_TIMER_PERIOD = 5000000
 
 @IDF.idf_example_test(env_tag='Example_WIFI')
 def test_examples_system_esp_timer(env, extra_data):
-    dut = env.get_dut('esp_timer_example', 'examples/system/esp_timer')
+    dut = env.get_dut('esp_timer_example', 'examples/system/esp_timer', dut_class=ESP32DUT)
     # start test
     dut.start_app()
     groups = dut.expect(STARTING_TIMERS_REGEX, timeout=30)

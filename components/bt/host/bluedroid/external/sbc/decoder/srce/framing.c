@@ -110,7 +110,7 @@ const OI_UINT32 dequant_long_unscaled[17] = {
 #endif
 
 #ifdef USE_WIDE_CRC
-INLINE OI_CHAR crc_iterate(OI_UINT8 oldcrc, OI_UINT8 next)
+static INLINE OI_CHAR crc_iterate(OI_UINT8 oldcrc, OI_UINT8 next)
 {
     OI_UINT crc;
     OI_UINT idx;
@@ -125,7 +125,7 @@ INLINE OI_CHAR crc_iterate(OI_UINT8 oldcrc, OI_UINT8 next)
     return crc;
 }
 
-INLINE OI_CHAR crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
+static INLINE OI_CHAR crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
 {
     OI_UINT crc;
     OI_UINT idx;
@@ -142,13 +142,13 @@ INLINE OI_CHAR crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
 
 #else // USE_WIDE_CRC
 
-INLINE OI_UINT8 crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
+static INLINE OI_UINT8 crc_iterate_top4(OI_UINT8 oldcrc, OI_UINT8 next)
 {
     return (oldcrc << 4) ^ crc8_narrow[(oldcrc ^ next) >> 4];
 }
 
 #ifdef USE_NIBBLEWISE_CRC
-INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
+static INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
 {
     crc = (crc << 4) ^ crc8_narrow[(crc ^ next) >> 4];
     crc = (crc << 4) ^ crc8_narrow[((crc >> 4)^next) & 0xf];
@@ -157,7 +157,7 @@ INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
 }
 
 #else   // USE_NIBBLEWISE_CRC
-INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
+static INLINE OI_UINT8 crc_iterate(OI_UINT8 crc, OI_UINT8 next)
 {
     return crc8_narrow[crc ^ next];
 }

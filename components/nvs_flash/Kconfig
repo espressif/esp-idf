@@ -1,4 +1,4 @@
-menu NVS
+menu "NVS"
 
     config NVS_ENCRYPTION
         bool "Enable NVS encryption"

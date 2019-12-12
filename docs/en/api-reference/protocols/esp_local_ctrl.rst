@@ -81,7 +81,7 @@ Similarly for HTTPS transport:
 
 
 Creating a property
-===================
+-------------------
 
 Now that we know how to start the **esp_local_ctrl** service, let's add a property to it. Each property must have a unique `name` (string), a `type` (e.g. enum), `flags` (bit fields) and `size`.
 
@@ -171,7 +171,7 @@ Here is an example of `set_prop_values()` handler. Notice how we restrict from w
 For complete example see :example:`protocols/esp_local_ctrl`
 
 Client Side Implementation
-==========================
+--------------------------
 
 The client side implementation will have establish a protocomm session with the device first, over the supported mode of transport, and then send and receive protobuf messages understood by the **esp_local_ctrl** service. The service will translate these messages into requests and then call the appropriate handlers (set / get). Then, the generated response for each handler is again packed into a protobuf message and transmitted back to the client.
 

@@ -49,6 +49,17 @@ menu "Example Connection Configuration"
                 select ETH_USE_SPI_ETHERNET
                 help
                     Select external SPI-Ethernet module.
+
+            config EXAMPLE_USE_OPENETH
+                bool "OpenCores Ethernet MAC (EXPERIMENTAL)"
+                select ETH_USE_OPENETH
+                help
+                    When this option is enabled, the example is built with support for
+                    OpenCores Ethernet MAC, which allows testing the example in QEMU.
+                    Note that this option is used for internal testing purposes, and
+                    not officially supported. Examples built with this option enabled
+                    will not run on a real ESP32 chip.
+
         endchoice
 
         if EXAMPLE_USE_INTERNAL_ETHERNET
@@ -131,6 +142,8 @@ menu "Example Connection Configuration"
 
     config EXAMPLE_CONNECT_IPV6
         bool "Obtain IPv6 link-local address"
+        depends on IDF_TARGET_ESP32
+        # ToDo: remove once IPV6 is supported on esp32s2
         default y
         help
             By default, examples will wait until IPv4 and IPv6 addresses are obtained.

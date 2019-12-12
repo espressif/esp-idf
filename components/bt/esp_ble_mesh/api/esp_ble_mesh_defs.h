@@ -17,19 +17,27 @@
 
 #include <stdint.h>
 
-#include "esp_bt_defs.h"
-
 #include "mesh_proxy.h"
 #include "mesh_access.h"
 #include "mesh_main.h"
 
 #include "mesh.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "foundation.h"
 #include "provisioner_main.h"
 
 #include "model_opcode.h"
 #include "mesh_common.h"
+
+#ifdef CONFIG_BT_BLUEDROID_ENABLED
+#include "esp_bt_defs.h"
+#include "esp_bt_main.h"
+#define ESP_BLE_HOST_STATUS_ENABLED ESP_BLUEDROID_STATUS_ENABLED
+#define ESP_BLE_HOST_STATUS_CHECK(status) ESP_BLUEDROID_STATUS_CHECK(status)
+#else
+#define ESP_BLE_HOST_STATUS_ENABLED 0
+#define ESP_BLE_HOST_STATUS_CHECK(status)  do {} while (0)
+#endif
 
 /*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN            384
@@ -100,499 +108,6 @@ typedef uint8_t esp_ble_mesh_octet8_t[ESP_BLE_MESH_OCTET8_LEN];
 #define ESP_BLE_MESH_ADDR_IS_RFU(addr)            BLE_MESH_ADDR_IS_RFU(addr)
 
 #define ESP_BLE_MESH_INVALID_NODE_INDEX          (-1)
-
-/*!< Foundation Models */
-#define ESP_BLE_MESH_MODEL_ID_CONFIG_SRV                      BLE_MESH_MODEL_ID_CFG_SRV
-#define ESP_BLE_MESH_MODEL_ID_CONFIG_CLI                      BLE_MESH_MODEL_ID_CFG_CLI
-#define ESP_BLE_MESH_MODEL_ID_HEALTH_SRV                      BLE_MESH_MODEL_ID_HEALTH_SRV
-#define ESP_BLE_MESH_MODEL_ID_HEALTH_CLI                      BLE_MESH_MODEL_ID_HEALTH_CLI
-
-/*!< Models from the Mesh Model Specification */
-#define ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV                   BLE_MESH_MODEL_ID_GEN_ONOFF_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI                   BLE_MESH_MODEL_ID_GEN_ONOFF_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_LEVEL_SRV                   BLE_MESH_MODEL_ID_GEN_LEVEL_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_LEVEL_CLI                   BLE_MESH_MODEL_ID_GEN_LEVEL_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV          BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI          BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV             BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV       BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI             BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV             BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV       BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI             BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_BATTERY_SRV                 BLE_MESH_MODEL_ID_GEN_BATTERY_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_BATTERY_CLI                 BLE_MESH_MODEL_ID_GEN_BATTERY_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_LOCATION_SRV                BLE_MESH_MODEL_ID_GEN_LOCATION_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV          BLE_MESH_MODEL_ID_GEN_LOCATION_SETUPSRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_LOCATION_CLI                BLE_MESH_MODEL_ID_GEN_LOCATION_CLI
-#define ESP_BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV              BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV       BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV               BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV             BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV
-#define ESP_BLE_MESH_MODEL_ID_GEN_PROP_CLI                    BLE_MESH_MODEL_ID_GEN_PROP_CLI
-#define ESP_BLE_MESH_MODEL_ID_SENSOR_SRV                      BLE_MESH_MODEL_ID_SENSOR_SRV
-#define ESP_BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV                BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_SENSOR_CLI                      BLE_MESH_MODEL_ID_SENSOR_CLI
-#define ESP_BLE_MESH_MODEL_ID_TIME_SRV                        BLE_MESH_MODEL_ID_TIME_SRV
-#define ESP_BLE_MESH_MODEL_ID_TIME_SETUP_SRV                  BLE_MESH_MODEL_ID_TIME_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_TIME_CLI                        BLE_MESH_MODEL_ID_TIME_CLI
-#define ESP_BLE_MESH_MODEL_ID_SCENE_SRV                       BLE_MESH_MODEL_ID_SCENE_SRV
-#define ESP_BLE_MESH_MODEL_ID_SCENE_SETUP_SRV                 BLE_MESH_MODEL_ID_SCENE_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_SCENE_CLI                       BLE_MESH_MODEL_ID_SCENE_CLI
-#define ESP_BLE_MESH_MODEL_ID_SCHEDULER_SRV                   BLE_MESH_MODEL_ID_SCHEDULER_SRV
-#define ESP_BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV             BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_SCHEDULER_CLI                   BLE_MESH_MODEL_ID_SCHEDULER_CLI
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV             BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV       BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI             BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SRV                   BLE_MESH_MODEL_ID_LIGHT_CTL_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV             BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_CLI                   BLE_MESH_MODEL_ID_LIGHT_CTL_CLI
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV              BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SRV                   BLE_MESH_MODEL_ID_LIGHT_HSL_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV             BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_CLI                   BLE_MESH_MODEL_ID_LIGHT_HSL_CLI
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV               BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV               BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_XYL_SRV                   BLE_MESH_MODEL_ID_LIGHT_XYL_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV             BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_XYL_CLI                   BLE_MESH_MODEL_ID_LIGHT_XYL_CLI
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_LC_SRV                    BLE_MESH_MODEL_ID_LIGHT_LC_SRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV              BLE_MESH_MODEL_ID_LIGHT_LC_SETUPSRV
-#define ESP_BLE_MESH_MODEL_ID_LIGHT_LC_CLI                    BLE_MESH_MODEL_ID_LIGHT_LC_CLI
-
-/*!< The following opcodes will only be used in the esp_ble_mesh_config_client_get_state function. */
-typedef uint32_t esp_ble_mesh_opcode_config_client_get_t;                               /*!< esp_ble_mesh_opcode_config_client_get_t belongs to esp_ble_mesh_opcode_t,
-                                                                                          this typedef is only used to locate the opcodes used by esp_ble_mesh_config_client_get_state */
-#define ESP_BLE_MESH_MODEL_OP_BEACON_GET                        OP_BEACON_GET           /*!< To determine the Secure Network Beacon state of a Configuration Server */
-#define ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET              OP_DEV_COMP_DATA_GET    /*!< To determine the Composition Data state of a Configuration Server, a Configuration 
-                                                                                          Client shall send a Config Composition Data Get message with the Page field value set
-                                                                                          to 0xFF. The response is a Config Composition Data Status message that contains the last
-                                                                                          page of the Composition Data state. If the Page field of the Config Composition Data Status
-                                                                                          message contains a non-zero value, then the Configuration Client shall send another Composition
-                                                                                          Data Get message with the Page field value set to one less than the Page field value of the
-                                                                                          Config Composition Data Status message. */
-#define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_GET                   OP_DEFAULT_TTL_GET      /*!< To determine the Default TTL state of a Configuration Server */
-#define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_GET                    OP_GATT_PROXY_GET       /*!< To determine the GATT Proxy state of a Configuration Server */
-#define ESP_BLE_MESH_MODEL_OP_RELAY_GET                         OP_RELAY_GET            /*!< To determine the Relay and Relay Retransmit states of a Configuration Server */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_GET                     OP_MOD_PUB_GET          /*!< To determine the Publish Address, Publish AppKey Index, CredentialFlag,
-                                                                                          Publish Period, Publish Retransmit Count, Publish Retransmit Interval Steps,
-                                                                                          and Publish TTL states of a particular Model within the element */
-#define ESP_BLE_MESH_MODEL_OP_FRIEND_GET                        OP_FRIEND_GET           /*!< To determine the Friend state of a Configuration Server */
-#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_GET                 OP_HEARTBEAT_PUB_GET    /*!< To determine the Heartbeat Subscription Source, Heartbeat Subscription Destination,
-                                                                                          Heartbeat Subscription Count Log, Heartbeat Subscription Period Log, Heartbeat
-                                                                                          Subscription Min Hops, and Heartbeat Subscription Max Hops states of a node */
-#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_GET                 OP_HEARTBEAT_SUB_GET    /*!< To determine the Heartbeat Subscription Source, Heartbeat Subscription Destination,
-                                                                                          Heartbeat Subscription Count Log, Heartbeat Subscription Period Log, Heartbeat
-                                                                                          Subscription Min Hops, and Heartbeat Subscription Max Hops states of a node */
-#define ESP_BLE_MESH_MODEL_OP_NET_KEY_GET                       OP_NET_KEY_GET          /*!< To determine all NetKeys known to the node */
-#define ESP_BLE_MESH_MODEL_OP_APP_KEY_GET                       OP_APP_KEY_GET          /*!< To determine all AppKeys bound to the NetKey */
-#define ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_GET                 OP_NODE_IDENTITY_GET    /*!< To get the current Node Identity state for a subnet */
-#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_SUB_GET                 OP_MOD_SUB_GET          /*!< To get the list of subscription addresses of a model within the element */
-#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_SUB_GET              OP_MOD_SUB_GET_VND      /*!< To get the list of subscription addresses of a model within the element */
-#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_APP_GET                 OP_SIG_MOD_APP_GET      /*!< To request report of all AppKeys bound to the SIG Model */
-#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_APP_GET              OP_VND_MOD_APP_GET      /*!< To request report of all AppKeys bound to the Vendor Model */
-#define ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_GET             OP_KRP_GET              /*!< To get the current Key Refresh Phase state of the identified network key */
-#define ESP_BLE_MESH_MODEL_OP_LPN_POLLTIMEOUT_GET               OP_LPN_TIMEOUT_GET      /*!< To get the current value of PollTimeout timer of the Low Power node within a Friend node */
-#define ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_GET              OP_NET_TRANSMIT_GET     /*!< To get the current Network Transmit state of a node */
-
-/*!< The following opcodes will only be used in the esp_ble_mesh_config_client_set_state function. */
-typedef uint32_t esp_ble_mesh_opcode_config_client_set_t;                               /*!< esp_ble_mesh_opcode_config_client_set_t belongs to esp_ble_mesh_opcode_t,
-                                                                                          this typedef is only used to locate the opcodes used by esp_ble_mesh_config_client_set_state */
-#define ESP_BLE_MESH_MODEL_OP_BEACON_SET                        OP_BEACON_SET           /*!< Set the Secure Network Beacon state of a Configuration Server with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_SET                   OP_DEFAULT_TTL_SET      /*!< Set the Default TTL state of a Configuration Server with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_SET                    OP_GATT_PROXY_SET       /*!< Determine the GATT Proxy state of a Configuration Server */
-#define ESP_BLE_MESH_MODEL_OP_RELAY_SET                         OP_RELAY_SET            /*!< Set the Relay and Relay Retransmit states of a Configuration Server with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_SET                     OP_MOD_PUB_SET          /*!< Set the Publish Address, Publish AppKey Index, CredentialFlag, Publish
-                                                                                          Period, Publish Retransmit Count, Publish Retransmit Interval Steps, and
-                                                                                          Publish TTL states of a particular model within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD                     OP_MOD_SUB_ADD          /*!< Add the address to the Subscription List state of a particular model
-                                                                                          within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_ADD        OP_MOD_SUB_VA_ADD       /*!< Add the Label UUID to the Subscription List state of a particular model
-                                                                                          within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_DELETE                  OP_MOD_SUB_DEL          /*!< Delete the address from the Subscription List state of a particular
-                                                                                          model within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_DELETE     OP_MOD_SUB_VA_DEL       /*!< Delete the Label UUID from the Subscription List state of a particular
-                                                                                          model within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_OVERWRITE               OP_MOD_SUB_OVERWRITE    /*!< Clear the Subscription List and add the address to the Subscription List
-                                                                                          state of a particular Model within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_OVERWRITE  OP_MOD_SUB_VA_OVERWRITE /*!< Clear the Subscription List and add the Label UUID to the Subscription
-                                                                                          List state of a particular model within the element with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_NET_KEY_ADD                       OP_NET_KEY_ADD          /*!< Add the NetKey identified by NetKeyIndex to the NetKey List state with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD                       OP_APP_KEY_ADD          /*!< Add the AppKey to the AppKey List and bind it to the NetKey identified
-                                                                                          by the NetKeyIndex of a Configuration Server with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND                    OP_MOD_APP_BIND         /*!< Bind the AppKey to a model of a particular element of a Configuration Server with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_NODE_RESET                        OP_NODE_RESET           /*!< Reset a node (other than a Provisioner) and remove it from the network */
-#define ESP_BLE_MESH_MODEL_OP_FRIEND_SET                        OP_FRIEND_SET           /*!< Set the Friend state of a Configuration Server with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_SET                 OP_HEARTBEAT_PUB_SET    /*!< Set the Heartbeat Publication Destination, Heartbeat Publication Count,
-                                                                                          Heartbeat Publication Period, Heartbeat Publication TTL, Publication Features,
-                                                                                          and Publication NetKey Index of a node with acknowledgment */
-#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_SET                 OP_HEARTBEAT_SUB_SET    /*!< Determine the Heartbeat Subscription Source, Heartbeat Subscription Destination,
-                                                                                          Heartbeat Subscription Count Log, Heartbeat Subscription Period Log, Heartbeat
-                                                                                          Subscription Min Hops, and Heartbeat Subscription Max Hops states of a node */
-#define ESP_BLE_MESH_MODEL_OP_NET_KEY_UPDATE                    OP_NET_KEY_UPDATE       /*!< To update a NetKey on a node */
-#define ESP_BLE_MESH_MODEL_OP_NET_KEY_DELETE                    OP_NET_KEY_DEL          /*!< To delete a NetKey on a NetKey List from a node */
-#define ESP_BLE_MESH_MODEL_OP_APP_KEY_UPDATE                    OP_APP_KEY_UPDATE       /*!< To update an AppKey value on the AppKey List on a node */
-#define ESP_BLE_MESH_MODEL_OP_APP_KEY_DELETE                    OP_APP_KEY_DEL          /*!< To delete an AppKey from the AppKey List on a node */
-#define ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_SET                 OP_NODE_IDENTITY_SET    /*!< To set the current Node Identity state for a subnet */
-#define ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_SET             OP_KRP_SET              /*!< To set the Key Refresh Phase state of the identified network key */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_VIRTUAL_ADDR_SET        OP_MOD_PUB_VA_SET       /*!< To set the model Publication state of an outgoing message that originates from a model */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_DELETE_ALL              OP_MOD_SUB_DEL_ALL      /*!< To discard the Subscription List of a model */
-#define ESP_BLE_MESH_MODEL_OP_MODEL_APP_UNBIND                  OP_MOD_APP_UNBIND       /*!< To remove the binding between an AppKey and a model */
-#define ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_SET              OP_NET_TRANSMIT_SET     /*!< To set the Network Transmit state of a node */
-
-/*!< The following opcodes are used by the BLE Mesh Config Server Model internally to respond to the Config Client Model's request messages */
-typedef uint32_t esp_ble_mesh_config_model_status_t;    /*!< esp_ble_mesh_config_model_status_t belongs to esp_ble_mesh_opcode_t, this typedef
-                                                          is only used to locate the opcodes used by the Config Model messages */
-#define ESP_BLE_MESH_MODEL_OP_BEACON_STATUS                     OP_BEACON_STATUS
-#define ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_STATUS           OP_DEV_COMP_DATA_STATUS
-#define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_STATUS                OP_DEFAULT_TTL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_STATUS                 OP_GATT_PROXY_STATUS
-#define ESP_BLE_MESH_MODEL_OP_RELAY_STATUS                      OP_RELAY_STATUS
-#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_STATUS                  OP_MOD_PUB_STATUS
-#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_STATUS                  OP_MOD_SUB_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_SUB_LIST                OP_MOD_SUB_LIST
-#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_SUB_LIST             OP_MOD_SUB_LIST_VND
-#define ESP_BLE_MESH_MODEL_OP_NET_KEY_STATUS                    OP_NET_KEY_STATUS
-#define ESP_BLE_MESH_MODEL_OP_NET_KEY_LIST                      OP_NET_KEY_LIST
-#define ESP_BLE_MESH_MODEL_OP_APP_KEY_STATUS                    OP_APP_KEY_STATUS
-#define ESP_BLE_MESH_MODEL_OP_APP_KEY_LIST                      OP_APP_KEY_LIST
-#define ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_STATUS              OP_NODE_IDENTITY_STATUS
-#define ESP_BLE_MESH_MODEL_OP_MODEL_APP_STATUS                  OP_MOD_APP_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_APP_LIST                OP_SIG_MOD_APP_LIST
-#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_APP_LIST             OP_VND_MOD_APP_LIST
-#define ESP_BLE_MESH_MODEL_OP_NODE_RESET_STATUS                 OP_NODE_RESET_STATUS
-#define ESP_BLE_MESH_MODEL_OP_FRIEND_STATUS                     OP_FRIEND_STATUS
-#define ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_STATUS          OP_KRP_STATUS
-#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_STATUS              OP_HEARTBEAT_PUB_STATUS
-#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_STATUS              OP_HEARTBEAT_SUB_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LPN_POLLTIMEOUT_STATUS            OP_LPN_TIMEOUT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_STATUS           OP_NET_TRANSMIT_STATUS
-
-/*!< The following opcodes will only be used in the esp_ble_mesh_health_client_get_state function. */
-typedef uint32_t esp_ble_mesh_opcode_health_client_get_t;                                   /*!< esp_ble_mesh_opcode_health_client_get_t belongs to esp_ble_mesh_opcode_t,
-                                                                                              this typedef is only used to locate the opcodes used by esp_ble_mesh_health_client_get_state */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET                  OP_HEALTH_FAULT_GET         /*!< Get the current Registered Fault state */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_GET                 OP_HEALTH_PERIOD_GET        /*!< Get the current Health Period state */
-#define ESP_BLE_MESH_MODEL_OP_ATTENTION_GET                     OP_ATTENTION_GET            /*!< Get the current Attention Timer state */
-
-/*!< The following opcodes will only be used in the esp_ble_mesh_health_client_set_state function. */
-typedef uint32_t esp_ble_mesh_opcode_health_client_set_t;                                   /*!< esp_ble_mesh_opcode_health_client_set_t belongs to esp_ble_mesh_opcode_t,
-                                                                                              this typedef is only used to locate the opcodes used by esp_ble_mesh_health_client_set_state */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR                OP_HEALTH_FAULT_CLEAR       /*!< Clear Health Fault acknowledged */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR_UNACK          OP_HEALTH_FAULT_CLEAR_UNREL /*!< Clear Health Fault Unacknowledged */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_TEST                 OP_HEALTH_FAULT_TEST        /*!< Invoke Health Fault Test acknowledged */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_TEST_UNACK           OP_HEALTH_FAULT_TEST_UNREL  /*!< Invoke Health Fault Test unacknowledged */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_SET                 OP_HEALTH_PERIOD_SET        /*!< Set Health Period acknowledged */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_SET_UNACK           OP_HEALTH_PERIOD_SET_UNREL  /*!< Set Health Period unacknowledged */
-#define ESP_BLE_MESH_MODEL_OP_ATTENTION_SET                     OP_ATTENTION_SET            /*!< Set Health Attention acknowledged of the Health Server */
-#define ESP_BLE_MESH_MODEL_OP_ATTENTION_SET_UNACK               OP_ATTENTION_SET_UNREL      /*!< Set Health Attention Unacknowledged of the Health Server */
-
-/*!< The following opcodes are used by the BLE Mesh Health Server Model internally to respond to the Health Client Model's request messages */
-typedef uint32_t esp_ble_mesh_health_model_status_t;    /*!< esp_ble_mesh_health_model_status_t belongs to esp_ble_mesh_opcode_t, this typedef
-                                                          is only used to locate the opcodes used by the Health Model messages */
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_CURRENT_STATUS             OP_HEALTH_CURRENT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_STATUS               OP_HEALTH_FAULT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_STATUS              OP_HEALTH_PERIOD_STATUS
-#define ESP_BLE_MESH_MODEL_OP_ATTENTION_STATUS                  OP_ATTENTION_STATUS
-
-typedef uint32_t esp_ble_mesh_generic_message_opcode_t;     /*!< esp_ble_mesh_generic_message_opcode_t belongs to esp_ble_mesh_opcode_t,
-                                                              this typedef is only used to locate the opcodes used by functions
-                                                              esp_ble_mesh_generic_client_get_state & esp_ble_mesh_generic_client_set_state  */
-/*!< Generic OnOff Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET                   BLE_MESH_MODEL_OP_GEN_ONOFF_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET                   BLE_MESH_MODEL_OP_GEN_ONOFF_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK             BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS                BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS
-
-/*!< Generic Level Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_GET                   BLE_MESH_MODEL_OP_GEN_LEVEL_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_SET                   BLE_MESH_MODEL_OP_GEN_LEVEL_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK             BLE_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_STATUS                BLE_MESH_MODEL_OP_GEN_LEVEL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_DELTA_SET                   BLE_MESH_MODEL_OP_GEN_DELTA_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_DELTA_SET_UNACK             BLE_MESH_MODEL_OP_GEN_DELTA_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_MOVE_SET                    BLE_MESH_MODEL_OP_GEN_MOVE_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_MOVE_SET_UNACK              BLE_MESH_MODEL_OP_GEN_MOVE_SET_UNACK
-
-/*!< Generic Default Transition Time Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_GET          BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET          BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET_UNACK    BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_STATUS       BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_STATUS
-
-/*!< Generic Power OnOff Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_GET               BLE_MESH_MODEL_OP_GEN_ONPOWERUP_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_STATUS            BLE_MESH_MODEL_OP_GEN_ONPOWERUP_STATUS
-
-/*!< Generic Power OnOff Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET               BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET_UNACK         BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET_UNACK
-
-/*!< Generic Power Level Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_GET             BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET             BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET_UNACK       BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS          BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LAST_GET              BLE_MESH_MODEL_OP_GEN_POWER_LAST_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LAST_STATUS           BLE_MESH_MODEL_OP_GEN_POWER_LAST_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_GET           BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_STATUS        BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_GET             BLE_MESH_MODEL_OP_GEN_POWER_RANGE_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_STATUS          BLE_MESH_MODEL_OP_GEN_POWER_RANGE_STATUS
-
-/*!< Generic Power Level Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET           BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET_UNACK     BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET             BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET_UNACK       BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET_UNACK
-
-/*!< Generic Battery Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_BATTERY_GET                 BLE_MESH_MODEL_OP_GEN_BATTERY_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_BATTERY_STATUS              BLE_MESH_MODEL_OP_GEN_BATTERY_STATUS
-
-/*!< Generic Location Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_GET              BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_STATUS           BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_GET               BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_STATUS            BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_STATUS
-
-/*!< Generic Location Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET              BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET_UNACK        BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET               BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET_UNACK         BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET_UNACK
-
-/*!< Generic Manufacturer Property Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTIES_GET       BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTIES_STATUS    BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_GET         BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_SET         BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_SET_UNACK   BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_STATUS      BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_STATUS
-
-/*!< Generic Admin Property Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_GET        BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_STATUS     BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET          BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET          BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET_UNACK    BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS       BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS
-
-/*!< Generic User Property Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_GET         BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS      BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS
-#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_GET           BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET           BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET
-#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK     BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_STATUS        BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_STATUS
-
-/*!< Generic Client Property Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET       BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET
-#define ESP_BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_STATUS    BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_STATUS
-
-typedef uint32_t esp_ble_mesh_sensor_message_opcode_t;      /*!< esp_ble_mesh_sensor_message_opcode_t belongs to esp_ble_mesh_opcode_t,
-                                                              this typedef is only used to locate the opcodes used by functions
-                                                              esp_ble_mesh_sensor_client_get_state & esp_ble_mesh_sensor_client_set_state */
-/*!< Sensor Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET           BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS        BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_GET                      BLE_MESH_MODEL_OP_SENSOR_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_STATUS                   BLE_MESH_MODEL_OP_SENSOR_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET               BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_STATUS            BLE_MESH_MODEL_OP_SENSOR_COLUMN_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET               BLE_MESH_MODEL_OP_SENSOR_SERIES_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_STATUS            BLE_MESH_MODEL_OP_SENSOR_SERIES_STATUS
-
-/*!< Sensor Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_GET              BLE_MESH_MODEL_OP_SENSOR_CADENCE_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET              BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK        BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_STATUS           BLE_MESH_MODEL_OP_SENSOR_CADENCE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET             BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_STATUS          BLE_MESH_MODEL_OP_SENSOR_SETTINGS_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_GET              BLE_MESH_MODEL_OP_SENSOR_SETTING_GET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_SET              BLE_MESH_MODEL_OP_SENSOR_SETTING_SET
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_SET_UNACK        BLE_MESH_MODEL_OP_SENSOR_SETTING_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_STATUS           BLE_MESH_MODEL_OP_SENSOR_SETTING_STATUS
-
-typedef uint32_t esp_ble_mesh_time_scene_message_opcode_t;  /*!< esp_ble_mesh_time_scene_message_opcode_t belongs to esp_ble_mesh_opcode_t,
-                                                              this typedef is only used to locate the opcodes used by functions
-                                                              esp_ble_mesh_time_scene_client_get_state & esp_ble_mesh_time_scene_client_set_state  */
-/*!< Time Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_TIME_GET                        BLE_MESH_MODEL_OP_TIME_GET
-#define ESP_BLE_MESH_MODEL_OP_TIME_SET                        BLE_MESH_MODEL_OP_TIME_SET
-#define ESP_BLE_MESH_MODEL_OP_TIME_STATUS                     BLE_MESH_MODEL_OP_TIME_STATUS
-#define ESP_BLE_MESH_MODEL_OP_TIME_ROLE_GET                   BLE_MESH_MODEL_OP_TIME_ROLE_GET
-#define ESP_BLE_MESH_MODEL_OP_TIME_ROLE_SET                   BLE_MESH_MODEL_OP_TIME_ROLE_SET
-#define ESP_BLE_MESH_MODEL_OP_TIME_ROLE_STATUS                BLE_MESH_MODEL_OP_TIME_ROLE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_TIME_ZONE_GET                   BLE_MESH_MODEL_OP_TIME_ZONE_GET
-#define ESP_BLE_MESH_MODEL_OP_TIME_ZONE_SET                   BLE_MESH_MODEL_OP_TIME_ZONE_SET
-#define ESP_BLE_MESH_MODEL_OP_TIME_ZONE_STATUS                BLE_MESH_MODEL_OP_TIME_ZONE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_TAI_UTC_DELTA_GET               BLE_MESH_MODEL_OP_TAI_UTC_DELTA_GET
-#define ESP_BLE_MESH_MODEL_OP_TAI_UTC_DELTA_SET               BLE_MESH_MODEL_OP_TAI_UTC_DELTA_SET
-#define ESP_BLE_MESH_MODEL_OP_TAI_UTC_DELTA_STATUS            BLE_MESH_MODEL_OP_TAI_UTC_DELTA_STATUS
-
-/*!< Scene Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_SCENE_GET                       BLE_MESH_MODEL_OP_SCENE_GET
-#define ESP_BLE_MESH_MODEL_OP_SCENE_RECALL                    BLE_MESH_MODEL_OP_SCENE_RECALL
-#define ESP_BLE_MESH_MODEL_OP_SCENE_RECALL_UNACK              BLE_MESH_MODEL_OP_SCENE_RECALL_UNACK
-#define ESP_BLE_MESH_MODEL_OP_SCENE_STATUS                    BLE_MESH_MODEL_OP_SCENE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SCENE_REGISTER_GET              BLE_MESH_MODEL_OP_SCENE_REGISTER_GET
-#define ESP_BLE_MESH_MODEL_OP_SCENE_REGISTER_STATUS           BLE_MESH_MODEL_OP_SCENE_REGISTER_STATUS
-
-/*!< Scene Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_SCENE_STORE                     BLE_MESH_MODEL_OP_SCENE_STORE
-#define ESP_BLE_MESH_MODEL_OP_SCENE_STORE_UNACK               BLE_MESH_MODEL_OP_SCENE_STORE_UNACK
-#define ESP_BLE_MESH_MODEL_OP_SCENE_DELETE                    BLE_MESH_MODEL_OP_SCENE_DELETE
-#define ESP_BLE_MESH_MODEL_OP_SCENE_DELETE_UNACK              BLE_MESH_MODEL_OP_SCENE_DELETE_UNACK
-
-/*!< Scheduler Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET               BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET
-#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS            BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_GET                   BLE_MESH_MODEL_OP_SCHEDULER_GET
-#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_STATUS                BLE_MESH_MODEL_OP_SCHEDULER_STATUS
-
-/*!< Scheduler Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET               BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET
-#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET_UNACK         BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET_UNACK
-
-typedef uint32_t esp_ble_mesh_light_message_opcode_t;      /*!< esp_ble_mesh_light_message_opcode_t belongs to esp_ble_mesh_opcode_t,
-                                                              this typedef is only used to locate the opcodes used by functions
-                                                              esp_ble_mesh_light_client_get_state & esp_ble_mesh_light_client_set_state  */
-/*!< Light Lightness Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_GET                BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET                BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET_UNACK          BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS             BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_GET         BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET         BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET_UNACK   BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS      BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_GET           BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_STATUS        BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_GET        BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_STATUS     BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_GET          BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_STATUS       BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_STATUS
-
-/*!< Light Lightness Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET        BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET_UNACK  BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET          BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET_UNACK    BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET_UNACK
-
-/*!< Light CTL Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_GET                      BLE_MESH_MODEL_OP_LIGHT_CTL_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_SET                      BLE_MESH_MODEL_OP_LIGHT_CTL_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_SET_UNACK                BLE_MESH_MODEL_OP_LIGHT_CTL_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS                   BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_GET          BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_GET    BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_STATUS BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET          BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET_UNACK    BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS       BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_GET              BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_STATUS           BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_STATUS
-
-/*!< Light CTL Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET                 BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET       BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACK BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACK
-
-/*!< Light HSL Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_GET                         BLE_MESH_MODEL_OP_LIGHT_HSL_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_GET                     BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET                     BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET_UNACK               BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS                  BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_GET              BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET              BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET_UNACK        BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS           BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SET                         BLE_MESH_MODEL_OP_LIGHT_HSL_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SET_UNACK                   BLE_MESH_MODEL_OP_LIGHT_HSL_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS                      BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_GET                  BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_STATUS               BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_GET                 BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_STATUS              BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_GET                   BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS                BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS
-
-/*!< Light HSL Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET                 BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET                   BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET_UNACK             BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET_UNACK               /* Model spec is wrong */
-
-/*!< Light xyL Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_GET                         BLE_MESH_MODEL_OP_LIGHT_XYL_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_SET                         BLE_MESH_MODEL_OP_LIGHT_XYL_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_SET_UNACK                   BLE_MESH_MODEL_OP_LIGHT_XYL_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS                      BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_GET                  BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_STATUS               BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_GET                 BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_STATUS              BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_GET                   BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_STATUS                BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_STATUS
-
-/*!< Light xyL Setup Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET                 BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET                   BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET_UNACK             BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET_UNACK
-
-/*!< Light Control Message Opcode */
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_GET                     BLE_MESH_MODEL_OP_LIGHT_LC_MODE_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET                     BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET_UNACK               BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_STATUS                  BLE_MESH_MODEL_OP_LIGHT_LC_MODE_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_GET                       BLE_MESH_MODEL_OP_LIGHT_LC_OM_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET                       BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET_UNACK                 BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_STATUS                    BLE_MESH_MODEL_OP_LIGHT_LC_OM_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_GET              BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET              BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET_UNACK        BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS           BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_GET                 BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_GET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET                 BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK
-#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS              BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS
-
-typedef uint32_t esp_ble_mesh_opcode_t;
-/*!< End of defines of esp_ble_mesh_opcode_t */
-
-#define ESP_BLE_MESH_CFG_STATUS_SUCCESS                           STATUS_SUCCESS
-#define ESP_BLE_MESH_CFG_STATUS_INVALID_ADDRESS                   STATUS_INVALID_ADDRESS
-#define ESP_BLE_MESH_CFG_STATUS_INVALID_MODEL                     STATUS_INVALID_MODEL
-#define ESP_BLE_MESH_CFG_STATUS_INVALID_APPKEY                    STATUS_INVALID_APPKEY
-#define ESP_BLE_MESH_CFG_STATUS_INVALID_NETKEY                    STATUS_INVALID_NETKEY
-#define ESP_BLE_MESH_CFG_STATUS_INSUFFICIENT_RESOURCES            STATUS_INSUFF_RESOURCES
-#define ESP_BLE_MESH_CFG_STATUS_KEY_INDEX_ALREADY_STORED          STATUS_IDX_ALREADY_STORED
-#define ESP_BLE_MESH_CFG_STATUS_INVALID_PUBLISH_PARAMETERS        STATUS_NVAL_PUB_PARAM
-#define ESP_BLE_MESH_CFG_STATUS_NOT_A_SUBSCRIBE_MODEL             STATUS_NOT_SUB_MOD
-#define ESP_BLE_MESH_CFG_STATUS_STORAGE_FAILURE                   STATUS_STORAGE_FAIL
-#define ESP_BLE_MESH_CFG_STATUS_FEATURE_NOT_SUPPORTED             STATUS_FEAT_NOT_SUPP
-#define ESP_BLE_MESH_CFG_STATUS_CANNOT_UPDATE                     STATUS_CANNOT_UPDATE
-#define ESP_BLE_MESH_CFG_STATUS_CANNOT_REMOVE                     STATUS_CANNOT_REMOVE
-#define ESP_BLE_MESH_CFG_STATUS_CANNOT_BIND                       STATUS_CANNOT_BIND
-#define ESP_BLE_MESH_CFG_STATUS_TEMP_UNABLE_TO_CHANGE_STATE       STATUS_TEMP_STATE_CHG_FAIL
-#define ESP_BLE_MESH_CFG_STATUS_CANNOT_SET                        STATUS_CANNOT_SET
-#define ESP_BLE_MESH_CFG_STATUS_UNSPECIFIED_ERROR                 STATUS_UNSPECIFIED
-#define ESP_BLE_MESH_CFG_STATUS_INVALID_BINDING                   STATUS_INVALID_BINDING
-typedef uint8_t esp_ble_mesh_cfg_status_t;      /*!< This typedef is only used to indicate the status code
-                                                  contained in some of the Config Server Model status message */
-
-#define ESP_BLE_MESH_MODEL_STATUS_SUCCESS               0x00
-#define ESP_BLE_MESH_MODEL_STATUS_CANNOT_SET_RANGE_MIN  0x01
-#define ESP_BLE_MESH_MODEL_STATUS_CANNOT_SET_RANGE_MAX  0x02
-typedef uint8_t esp_ble_mesh_model_status_t;    /*!< This typedef is only used to indicate the status code contained in
-                                                  some of the server model (e.g. Generic Server Model) status message */
 
 /** @def    ESP_BLE_MESH_TRANSMIT
  *
@@ -789,6 +304,30 @@ typedef enum {
     .input_size     = in_size,      \
     .input_action   = in_act,       \
 }
+
+typedef uint8_t UINT8;
+typedef uint16_t UINT16;
+typedef uint32_t UINT32;
+typedef uint64_t UINT64;
+
+#define BT_OCTET32_LEN    32
+typedef UINT8 BT_OCTET32[BT_OCTET32_LEN];   /* octet array: size 32 */
+
+
+#ifndef BD_ADDR_LEN
+#define BD_ADDR_LEN     6
+typedef uint8_t BD_ADDR[BD_ADDR_LEN];
+#endif
+
+typedef uint8_t esp_ble_mesh_bd_addr_t[BD_ADDR_LEN];
+
+/// BLE device address type
+typedef enum {
+    ESP_BLE_MESH_ADDR_TYPE_PUBLIC        = 0x00,
+    ESP_BLE_MESH_ADDR_TYPE_RANDOM        = 0x01,
+    ESP_BLE_MESH_ADDR_TYPE_RPA_PUBLIC    = 0x02,
+    ESP_BLE_MESH_ADDR_TYPE_RPA_RANDOM    = 0x03,
+} esp_ble_mesh_addr_type_t;
 
 typedef struct esp_ble_mesh_model esp_ble_mesh_model_t;
 
@@ -1092,16 +631,6 @@ typedef enum {
     ROLE_FAST_PROV,
 } esp_ble_mesh_dev_role_t;
 
-/** Common parameters of the messages sent by Client Model. */
-typedef struct {
-    esp_ble_mesh_opcode_t opcode;   /*!< Message opcode */
-    esp_ble_mesh_model_t *model;    /*!< Pointer to the client model structure */
-    esp_ble_mesh_msg_ctx_t ctx;     /*!< The context used to send message */
-    int32_t msg_timeout;            /*!< Timeout value (ms) to get response to the sent message */
-                                    /*!< Note: if using default timeout value in menuconfig, make sure to set this value to 0 */
-    uint8_t msg_role;               /*!< Role of the device - Node/Provisioner */
-} esp_ble_mesh_client_common_param_t;
-
 /*!< Flag which will be set when device is going to be added. */
 typedef uint8_t esp_ble_mesh_dev_add_flag_t;
 #define ADD_DEV_RM_AFTER_PROV_FLAG  BIT(0)  /*!< Device will be removed from queue after provisioned successfully */
@@ -1110,8 +639,8 @@ typedef uint8_t esp_ble_mesh_dev_add_flag_t;
 
 /** Information of the device which is going to be added for provisioning. */
 typedef struct {
-    esp_bd_addr_t addr;                 /*!< Device address */
-    esp_ble_addr_type_t addr_type;      /*!< Device address type */
+    esp_ble_mesh_bd_addr_t addr;                 /*!< Device address */
+    esp_ble_mesh_addr_type_t addr_type;      /*!< Device address type */
     uint8_t  uuid[16];                  /*!< Device UUID */
     uint16_t oob_info;                  /*!< Device OOB Info */
     /*!< ADD_DEV_START_PROV_NOW_FLAG shall not be set if the bearer has both PB-ADV and PB-GATT enabled */
@@ -1124,8 +653,8 @@ typedef struct {
 typedef struct {
     union {
         struct {
-            esp_bd_addr_t addr;             /*!< Device address */
-            esp_ble_addr_type_t addr_type;  /*!< Device address type */
+            esp_ble_mesh_bd_addr_t addr;             /*!< Device address */
+            esp_ble_mesh_addr_type_t addr_type;  /*!< Device address type */
         };
         uint8_t uuid[16];                   /*!< Device UUID */
     };
@@ -1165,6 +694,12 @@ typedef enum {
     FAST_PROV_ACT_EXIT,
     FAST_PROV_ACT_MAX,
 } esp_ble_mesh_fast_prov_action_t;
+
+/*!< This enum value is the type of proxy filter */
+typedef enum {
+    PROXY_FILTER_WHITELIST,
+    PROXY_FILTER_BLACKLIST,
+} esp_ble_mesh_proxy_filter_type_t;
 
 /*!< This enum value is the event of node/provisioner/fast provisioning */
 typedef enum {
@@ -1208,19 +743,25 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT,        /*!< Provisioner add local network key completion event */
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
+    ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
+    ESP_BLE_MESH_LPN_ENABLE_COMP_EVT,                           /*!< Enable Low Power Node completion event */
+    ESP_BLE_MESH_LPN_DISABLE_COMP_EVT,                          /*!< Disable Low Power Node completion event */
+    ESP_BLE_MESH_LPN_POLL_COMP_EVT,                             /*!< Low Power Node send Friend Poll completion event */
+    ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT,                  /*!< Low Power Node establishes friendship event */
+    ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT,                  /*!< Low Power Node terminates friendship event */
+    ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT,               /*!< Friend Node establishes friendship event */
+    ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT,               /*!< Friend Node terminates friendship event */
+    ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT,                 /*!< Proxy Client receives Network ID advertising packet event */
+    ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT,                    /*!< Proxy Client establishes connection successfully event */
+    ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT,                 /*!< Proxy Client terminates connection successfully event */
+    ESP_BLE_MESH_PROXY_CLIENT_RECV_FILTER_STATUS_EVT,           /*!< Proxy Client receives Proxy Filter Status event */
+    ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT,                 /*!< Proxy Client connect completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_DISCONNECT_COMP_EVT,              /*!< Proxy Client disconnect completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
+    ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
-
-/*!< This enum value is the event of undefined SIG Models and Vendor Models */
-typedef enum {
-    ESP_BLE_MESH_MODEL_OPERATION_EVT,               /*!< User-defined models receive messages from peer devices (e.g. get, set, status, etc) event */
-    ESP_BLE_MESH_MODEL_SEND_COMP_EVT,               /*!< User-defined models send messages completion event */
-    ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT,            /*!< User-defined models publish messages completion event */
-    ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT, /*!< User-defined client models receive publish messages event */
-    ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT,     /*!< Timeout event for the user-defined client models that failed to receive response from peer server models */
-    ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT,          /*!< When a model is configured to publish messages periodically, this event will occur during every publish period */
-    ESP_BLE_MESH_MODEL_EVT_MAX,
-} esp_ble_mesh_model_cb_event_t;
 
 /**
  * @brief BLE Mesh Node/Provisioner callback parameters union
@@ -1287,6 +828,7 @@ typedef union {
      */
     struct ble_mesh_provision_complete_evt_param {
         uint16_t net_idx;                       /*!< NetKey Index */
+        uint8_t  net_key[16];                   /*!< NetKey */
         uint16_t addr;                          /*!< Primary address */
         uint8_t  flags;                         /*!< Flags */
         uint32_t iv_index;                      /*!< IV Index */
@@ -1338,8 +880,8 @@ typedef union {
      */
     struct ble_mesh_provisioner_recv_unprov_adv_pkt_param {
         uint8_t  dev_uuid[16];                  /*!< Device UUID of the unprovisoned device */
-        uint8_t  addr[6];                       /*!< Device address of the unprovisoned device */
-        esp_ble_addr_type_t addr_type;          /*!< Device address type */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the unprovisoned device */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint16_t oob_info;                      /*!< OOB Info of the unprovisoned device */
         uint8_t  adv_type;                      /*!< Avertising type of the unprovisoned device */
         esp_ble_mesh_prov_bearer_t bearer;      /*!< Bearer of the unprovisoned device */
@@ -1490,7 +1032,838 @@ typedef union {
     struct ble_mesh_set_fast_prov_action_comp_param {
         uint8_t status_action;                  /*!< Indicate the result of setting action of fast provisioning */
     } set_fast_prov_action_comp;                /*!< Event parameter of ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT
+     */
+    struct ble_mesh_heartbeat_msg_recv_param {
+        uint8_t  hops;                          /*!< Heartbeat hops (InitTTL - RxTTL + 1) */
+        uint16_t feature;                       /*!< Bit field of currently active features of the node */
+    } heartbeat_msg_recv;                       /*!< Event parameter of ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_ENABLE_COMP_EVT
+     */
+    struct ble_mesh_lpn_enable_comp_param {
+        int err_code;                           /*!< Indicate the result of enabling LPN functionality */
+    } lpn_enable_comp;                          /*!< Event parameter of ESP_BLE_MESH_LPN_ENABLE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_DISABLE_COMP_EVT
+     */
+    struct ble_mesh_lpn_disable_comp_param {
+        int err_code;                           /*!< Indicate the result of disabling LPN functionality */
+    } lpn_disable_comp;                         /*!< Event parameter of ESP_BLE_MESH_LPN_DISABLE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_POLL_COMP_EVT
+     */
+    struct ble_mesh_lpn_poll_comp_param {
+        int err_code;                           /*!< Indicate the result of sending Friend Poll */
+    } lpn_poll_comp;                            /*!< Event parameter of ESP_BLE_MESH_LPN_POLL_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT
+     */
+    struct ble_mesh_lpn_friendship_establish_param {
+        uint16_t friend_addr;                   /*!< Friend Node unicast address */
+    } lpn_friendship_establish;                 /*!< Event parameter of ESP_BLE_MESH_LPN_FRIENDSHIP_ESTABLISH_EVT */
+    /**
+     * @brief ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT
+     */
+    struct ble_mesh_lpn_friendship_terminate_param {
+        uint16_t friend_addr;                   /*!< Friend Node unicast address */
+    } lpn_friendship_terminate;                 /*!< Event parameter of ESP_BLE_MESH_LPN_FRIENDSHIP_TERMINATE_EVT */
+    /**
+     * @brief ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT
+     */
+    struct ble_mesh_friend_friendship_establish_param {
+        uint16_t lpn_addr;                      /*!< Low Power Node unciast address */
+    } frnd_friendship_establish;                /*!< Event parameter of ESP_BLE_MESH_FRIEND_FRIENDSHIP_ESTABLISH_EVT */
+    /**
+     * @brief ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT
+     */
+    struct ble_mesh_friend_friendship_terminate_param {
+        uint16_t lpn_addr;                      /*!< Low Power Node unicast address */
+        /** This enum value is the reason of friendship termination on the friend node side */
+        enum {
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_ESTABLISH_FAIL,  /*!< Friend Offer has been sent, but Friend Offer is not received within 1 second, friendship fails to be established */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_POLL_TIMEOUT,    /*!< Friendship is established, PollTimeout timer expires and no Friend Poll/Sub Add/Sub Remove is received */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_RECV_FRND_REQ,   /*!< Receive Friend Request from existing Low Power Node */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_RECV_FRND_CLEAR, /*!< Receive Friend Clear from other friend node */
+            ESP_BLE_MESH_FRND_FRIENDSHIP_TERMINATE_DISABLE,         /*!< Friend feature disabled or corresponding NetKey is deleted */
+        } reason;                               /*!< Friendship terminated reason */
+    } frnd_friendship_terminate;                /*!< Event parameter of ESP_BLE_MESH_FRIEND_FRIENDSHIP_TERMINATE_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT
+     */
+    struct ble_mesh_proxy_client_recv_adv_pkt_param {
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
+        uint16_t net_idx;                       /*!< Network ID related NetKey Index */
+        uint8_t  net_id[8];                     /*!< Network ID contained in the advertising packet */
+    } proxy_client_recv_adv_pkt;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT
+     */
+    struct ble_mesh_proxy_client_connected_param {
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the Proxy Server */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_connected;                   /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT
+     */
+    struct ble_mesh_proxy_client_disconnected_param {
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the Proxy Server */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+        uint8_t reason;                         /*!< Proxy disconnect reason */
+    } proxy_client_disconnected;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_DISCONNECTED_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_RECV_FILTER_STATUS_EVT
+     */
+    struct ble_mesh_proxy_client_recv_filter_status_param {
+        uint8_t  conn_handle;                   /*!< Proxy connection handle */
+        uint16_t server_addr;                   /*!< Proxy Server primary element address */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+        uint8_t  filter_type;                   /*!< Proxy Server filter type(whitelist or blacklist) */
+        uint16_t list_size;                     /*!< Number of addresses in the Proxy Server filter list */
+    } proxy_client_recv_filter_status;          /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_RECV_FILTER_STATUS_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_connect_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client connect */
+        esp_ble_mesh_bd_addr_t addr;            /*!< Device address of the Proxy Server */
+        esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_connect_comp;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_CONNECT_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_DISCONNECT_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_disconnect_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client disconnect */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+    } proxy_client_disconnect_comp;             /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_DISCONNECT_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_set_filter_type_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client set filter type */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_set_filter_type_comp;        /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_add_filter_addr_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client add filter address */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_add_filter_addr_comp;        /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT
+     */
+    struct ble_mesh_proxy_client_remove_filter_addr_comp_param {
+        int err_code;                           /*!< Indicate the result of Proxy Client remove filter address */
+        uint8_t conn_handle;                    /*!< Proxy connection handle */
+        uint16_t net_idx;                       /*!< Corresponding NetKey Index */
+    } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
 } esp_ble_mesh_prov_cb_param_t;
+
+/**
+ * @brief BLE Mesh models related Model ID and Opcode definitions
+ */
+
+/*!< Foundation Models */
+#define ESP_BLE_MESH_MODEL_ID_CONFIG_SRV                            BLE_MESH_MODEL_ID_CFG_SRV
+#define ESP_BLE_MESH_MODEL_ID_CONFIG_CLI                            BLE_MESH_MODEL_ID_CFG_CLI
+#define ESP_BLE_MESH_MODEL_ID_HEALTH_SRV                            BLE_MESH_MODEL_ID_HEALTH_SRV
+#define ESP_BLE_MESH_MODEL_ID_HEALTH_CLI                            BLE_MESH_MODEL_ID_HEALTH_CLI
+
+/*!< Models from the Mesh Model Specification */
+#define ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV                         BLE_MESH_MODEL_ID_GEN_ONOFF_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI                         BLE_MESH_MODEL_ID_GEN_ONOFF_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_LEVEL_SRV                         BLE_MESH_MODEL_ID_GEN_LEVEL_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_LEVEL_CLI                         BLE_MESH_MODEL_ID_GEN_LEVEL_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV                BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI                BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV                   BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV             BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI                   BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV                   BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV             BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI                   BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_BATTERY_SRV                       BLE_MESH_MODEL_ID_GEN_BATTERY_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_BATTERY_CLI                       BLE_MESH_MODEL_ID_GEN_BATTERY_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_LOCATION_SRV                      BLE_MESH_MODEL_ID_GEN_LOCATION_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV                BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_LOCATION_CLI                      BLE_MESH_MODEL_ID_GEN_LOCATION_CLI
+#define ESP_BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV                    BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV             BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV                     BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV                   BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV
+#define ESP_BLE_MESH_MODEL_ID_GEN_PROP_CLI                          BLE_MESH_MODEL_ID_GEN_PROP_CLI
+#define ESP_BLE_MESH_MODEL_ID_SENSOR_SRV                            BLE_MESH_MODEL_ID_SENSOR_SRV
+#define ESP_BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV                      BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_SENSOR_CLI                            BLE_MESH_MODEL_ID_SENSOR_CLI
+#define ESP_BLE_MESH_MODEL_ID_TIME_SRV                              BLE_MESH_MODEL_ID_TIME_SRV
+#define ESP_BLE_MESH_MODEL_ID_TIME_SETUP_SRV                        BLE_MESH_MODEL_ID_TIME_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_TIME_CLI                              BLE_MESH_MODEL_ID_TIME_CLI
+#define ESP_BLE_MESH_MODEL_ID_SCENE_SRV                             BLE_MESH_MODEL_ID_SCENE_SRV
+#define ESP_BLE_MESH_MODEL_ID_SCENE_SETUP_SRV                       BLE_MESH_MODEL_ID_SCENE_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_SCENE_CLI                             BLE_MESH_MODEL_ID_SCENE_CLI
+#define ESP_BLE_MESH_MODEL_ID_SCHEDULER_SRV                         BLE_MESH_MODEL_ID_SCHEDULER_SRV
+#define ESP_BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV                   BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_SCHEDULER_CLI                         BLE_MESH_MODEL_ID_SCHEDULER_CLI
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV                   BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV             BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI                   BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SRV                         BLE_MESH_MODEL_ID_LIGHT_CTL_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV                   BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_CLI                         BLE_MESH_MODEL_ID_LIGHT_CTL_CLI
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV                    BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SRV                         BLE_MESH_MODEL_ID_LIGHT_HSL_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV                   BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_CLI                         BLE_MESH_MODEL_ID_LIGHT_HSL_CLI
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV                     BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV                     BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_XYL_SRV                         BLE_MESH_MODEL_ID_LIGHT_XYL_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV                   BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_XYL_CLI                         BLE_MESH_MODEL_ID_LIGHT_XYL_CLI
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_LC_SRV                          BLE_MESH_MODEL_ID_LIGHT_LC_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV                    BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV
+#define ESP_BLE_MESH_MODEL_ID_LIGHT_LC_CLI                          BLE_MESH_MODEL_ID_LIGHT_LC_CLI
+
+/**
+ * esp_ble_mesh_opcode_config_client_get_t belongs to esp_ble_mesh_opcode_t, this typedef is only
+ * used to locate the opcodes used by esp_ble_mesh_config_client_get_state.
+ * The following opcodes will only be used in the esp_ble_mesh_config_client_get_state function.
+ */
+typedef uint32_t esp_ble_mesh_opcode_config_client_get_t;
+
+#define ESP_BLE_MESH_MODEL_OP_BEACON_GET                            OP_BEACON_GET           /*!< Config Beacon Get */
+#define ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET                  OP_DEV_COMP_DATA_GET    /*!< Config Composition Data Get */
+#define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_GET                       OP_DEFAULT_TTL_GET      /*!< Config Default TTL Get */
+#define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_GET                        OP_GATT_PROXY_GET       /*!< Config GATT Proxy Get */
+#define ESP_BLE_MESH_MODEL_OP_RELAY_GET                             OP_RELAY_GET            /*!< Config Relay Get */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_GET                         OP_MOD_PUB_GET          /*!< Config Model Publication Get */
+#define ESP_BLE_MESH_MODEL_OP_FRIEND_GET                            OP_FRIEND_GET           /*!< Config Friend Get */
+#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_GET                     OP_HEARTBEAT_PUB_GET    /*!< Config Heartbeat Publication Get */
+#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_GET                     OP_HEARTBEAT_SUB_GET    /*!< Config Heartbeat Subscription Get */
+#define ESP_BLE_MESH_MODEL_OP_NET_KEY_GET                           OP_NET_KEY_GET          /*!< Config NetKey Get */
+#define ESP_BLE_MESH_MODEL_OP_APP_KEY_GET                           OP_APP_KEY_GET          /*!< Config AppKey Get */
+#define ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_GET                     OP_NODE_IDENTITY_GET    /*!< Config Node Identity Get */
+#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_SUB_GET                     OP_MOD_SUB_GET          /*!< Config SIG Model Subscription Get */
+#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_SUB_GET                  OP_MOD_SUB_GET_VND      /*!< Config Vendor Model Subscription Get */
+#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_APP_GET                     OP_SIG_MOD_APP_GET      /*!< Config SIG Model App Get */
+#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_APP_GET                  OP_VND_MOD_APP_GET      /*!< Config Vendor Model App Get */
+#define ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_GET                 OP_KRP_GET              /*!< Config Key Refresh Phase Get */
+#define ESP_BLE_MESH_MODEL_OP_LPN_POLLTIMEOUT_GET                   OP_LPN_TIMEOUT_GET      /*!< Config Low Power Node PollTimeout Get */
+#define ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_GET                  OP_NET_TRANSMIT_GET     /*!< Config Network Transmit Get */
+
+/**
+ * esp_ble_mesh_opcode_config_client_set_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by esp_ble_mesh_config_client_set_state.
+ * The following opcodes will only be used in the esp_ble_mesh_config_client_set_state function.
+ */
+typedef uint32_t esp_ble_mesh_opcode_config_client_set_t;
+
+#define ESP_BLE_MESH_MODEL_OP_BEACON_SET                            OP_BEACON_SET           /*!< Config Beacon Set */
+#define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_SET                       OP_DEFAULT_TTL_SET      /*!< Config Default TTL Set */
+#define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_SET                        OP_GATT_PROXY_SET       /*!< Config GATT Proxy Set */
+#define ESP_BLE_MESH_MODEL_OP_RELAY_SET                             OP_RELAY_SET            /*!< Config Relay Set */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_SET                         OP_MOD_PUB_SET          /*!< Config Model Publication Set */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_ADD                         OP_MOD_SUB_ADD          /*!< Config Model Subscription Add */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_ADD            OP_MOD_SUB_VA_ADD       /*!< Config Model Subscription Vritual Address Add */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_DELETE                      OP_MOD_SUB_DEL          /*!< Config Model Subscription Delete */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_DELETE         OP_MOD_SUB_VA_DEL       /*!< Config Model Subscription Virtual Address Delete */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_OVERWRITE                   OP_MOD_SUB_OVERWRITE    /*!< Config Model Subscription Overwrite */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_VIRTUAL_ADDR_OVERWRITE      OP_MOD_SUB_VA_OVERWRITE /*!< Config Model Subscription Virtual Address Overwrite */
+#define ESP_BLE_MESH_MODEL_OP_NET_KEY_ADD                           OP_NET_KEY_ADD          /*!< Config NetKey Add */
+#define ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD                           OP_APP_KEY_ADD          /*!< Config AppKey Add */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND                        OP_MOD_APP_BIND         /*!< Config Model App Bind */
+#define ESP_BLE_MESH_MODEL_OP_NODE_RESET                            OP_NODE_RESET           /*!< Config Node Reset */
+#define ESP_BLE_MESH_MODEL_OP_FRIEND_SET                            OP_FRIEND_SET           /*!< Config Friend Set */
+#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_SET                     OP_HEARTBEAT_PUB_SET    /*!< Config Heartbeat Publication Set */
+#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_SET                     OP_HEARTBEAT_SUB_SET    /*!< Config Heartbeat Subscription Set */
+#define ESP_BLE_MESH_MODEL_OP_NET_KEY_UPDATE                        OP_NET_KEY_UPDATE       /*!< Config NetKey Update */
+#define ESP_BLE_MESH_MODEL_OP_NET_KEY_DELETE                        OP_NET_KEY_DEL          /*!< Config NetKey Delete */
+#define ESP_BLE_MESH_MODEL_OP_APP_KEY_UPDATE                        OP_APP_KEY_UPDATE       /*!< Config AppKey Update */
+#define ESP_BLE_MESH_MODEL_OP_APP_KEY_DELETE                        OP_APP_KEY_DEL          /*!< Config AppKey Delete */
+#define ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_SET                     OP_NODE_IDENTITY_SET    /*!< Config Node Identity Set */
+#define ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_SET                 OP_KRP_SET              /*!< Config Key Refresh Phase Set */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_VIRTUAL_ADDR_SET            OP_MOD_PUB_VA_SET       /*!< Config Model Publication Virtual Address Set */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_DELETE_ALL                  OP_MOD_SUB_DEL_ALL      /*!< Config Model Subscription Delete All */
+#define ESP_BLE_MESH_MODEL_OP_MODEL_APP_UNBIND                      OP_MOD_APP_UNBIND       /*!< Config Model App Unbind */
+#define ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_SET                  OP_NET_TRANSMIT_SET     /*!< Config Network Transmit Set */
+
+/**
+ * esp_ble_mesh_opcode_config_status_t belongs to esp_ble_mesh_opcode_t, this typedef is only
+ * used to locate the opcodes used by the Config Model messages
+ * The following opcodes are used by the BLE Mesh Config Server Model internally to respond
+ * to the Config Client Model's request messages.
+ */
+typedef uint32_t esp_ble_mesh_opcode_config_status_t;
+
+#define ESP_BLE_MESH_MODEL_OP_BEACON_STATUS                         OP_BEACON_STATUS
+#define ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_STATUS               OP_DEV_COMP_DATA_STATUS
+#define ESP_BLE_MESH_MODEL_OP_DEFAULT_TTL_STATUS                    OP_DEFAULT_TTL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GATT_PROXY_STATUS                     OP_GATT_PROXY_STATUS
+#define ESP_BLE_MESH_MODEL_OP_RELAY_STATUS                          OP_RELAY_STATUS
+#define ESP_BLE_MESH_MODEL_OP_MODEL_PUB_STATUS                      OP_MOD_PUB_STATUS
+#define ESP_BLE_MESH_MODEL_OP_MODEL_SUB_STATUS                      OP_MOD_SUB_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_SUB_LIST                    OP_MOD_SUB_LIST
+#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_SUB_LIST                 OP_MOD_SUB_LIST_VND
+#define ESP_BLE_MESH_MODEL_OP_NET_KEY_STATUS                        OP_NET_KEY_STATUS
+#define ESP_BLE_MESH_MODEL_OP_NET_KEY_LIST                          OP_NET_KEY_LIST
+#define ESP_BLE_MESH_MODEL_OP_APP_KEY_STATUS                        OP_APP_KEY_STATUS
+#define ESP_BLE_MESH_MODEL_OP_APP_KEY_LIST                          OP_APP_KEY_LIST
+#define ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_STATUS                  OP_NODE_IDENTITY_STATUS
+#define ESP_BLE_MESH_MODEL_OP_MODEL_APP_STATUS                      OP_MOD_APP_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SIG_MODEL_APP_LIST                    OP_SIG_MOD_APP_LIST
+#define ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_APP_LIST                 OP_VND_MOD_APP_LIST
+#define ESP_BLE_MESH_MODEL_OP_NODE_RESET_STATUS                     OP_NODE_RESET_STATUS
+#define ESP_BLE_MESH_MODEL_OP_FRIEND_STATUS                         OP_FRIEND_STATUS
+#define ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_STATUS              OP_KRP_STATUS
+#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_PUB_STATUS                  OP_HEARTBEAT_PUB_STATUS
+#define ESP_BLE_MESH_MODEL_OP_HEARTBEAT_SUB_STATUS                  OP_HEARTBEAT_SUB_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LPN_POLLTIMEOUT_STATUS                OP_LPN_TIMEOUT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_NETWORK_TRANSMIT_STATUS               OP_NET_TRANSMIT_STATUS
+
+/**
+ * This typedef is only used to indicate the status code contained in some of
+ * the Configuration Server Model status message.
+ */
+typedef uint8_t esp_ble_mesh_cfg_status_t;
+
+#define ESP_BLE_MESH_CFG_STATUS_SUCCESS                             0x00
+#define ESP_BLE_MESH_CFG_STATUS_INVALID_ADDRESS                     0x01
+#define ESP_BLE_MESH_CFG_STATUS_INVALID_MODEL                       0x02
+#define ESP_BLE_MESH_CFG_STATUS_INVALID_APPKEY                      0x03
+#define ESP_BLE_MESH_CFG_STATUS_INVALID_NETKEY                      0x04
+#define ESP_BLE_MESH_CFG_STATUS_INSUFFICIENT_RESOURCES              0x05
+#define ESP_BLE_MESH_CFG_STATUS_KEY_INDEX_ALREADY_STORED            0x06
+#define ESP_BLE_MESH_CFG_STATUS_INVALID_PUBLISH_PARAMETERS          0x07
+#define ESP_BLE_MESH_CFG_STATUS_NOT_A_SUBSCRIBE_MODEL               0x08
+#define ESP_BLE_MESH_CFG_STATUS_STORAGE_FAILURE                     0x09
+#define ESP_BLE_MESH_CFG_STATUS_FEATURE_NOT_SUPPORTED               0x0A
+#define ESP_BLE_MESH_CFG_STATUS_CANNOT_UPDATE                       0x0B
+#define ESP_BLE_MESH_CFG_STATUS_CANNOT_REMOVE                       0x0C
+#define ESP_BLE_MESH_CFG_STATUS_CANNOT_BIND                         0x0D
+#define ESP_BLE_MESH_CFG_STATUS_TEMP_UNABLE_TO_CHANGE_STATE         0x0E
+#define ESP_BLE_MESH_CFG_STATUS_CANNOT_SET                          0x0F
+#define ESP_BLE_MESH_CFG_STATUS_UNSPECIFIED_ERROR                   0x10
+#define ESP_BLE_MESH_CFG_STATUS_INVALID_BINDING                     0x11
+
+/**
+ * esp_ble_mesh_opcode_health_client_get_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by esp_ble_mesh_health_client_get_state.
+ * The following opcodes will only be used in the esp_ble_mesh_health_client_get_state function.
+ */
+typedef uint32_t esp_ble_mesh_opcode_health_client_get_t;
+
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_GET                      OP_HEALTH_FAULT_GET         /*!< Health Fault Get */
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_GET                     OP_HEALTH_PERIOD_GET        /*!< Health Period Get */
+#define ESP_BLE_MESH_MODEL_OP_ATTENTION_GET                         OP_ATTENTION_GET            /*!< Health Attention Get */
+
+/**
+ * esp_ble_mesh_opcode_health_client_set_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by esp_ble_mesh_health_client_set_state.
+ * The following opcodes will only be used in the esp_ble_mesh_health_client_set_state function.
+ */
+typedef uint32_t esp_ble_mesh_opcode_health_client_set_t;
+
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR                    OP_HEALTH_FAULT_CLEAR       /*!< Health Fault Clear */
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_CLEAR_UNACK              OP_HEALTH_FAULT_CLEAR_UNREL /*!< Health Fault Clear Unacknowledged */
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_TEST                     OP_HEALTH_FAULT_TEST        /*!< Health Fault Test */
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_TEST_UNACK               OP_HEALTH_FAULT_TEST_UNREL  /*!< Health Fault Test Unacknowledged */
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_SET                     OP_HEALTH_PERIOD_SET        /*!< Health Period Set */
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_SET_UNACK               OP_HEALTH_PERIOD_SET_UNREL  /*!< Health Period Set Unacknowledged */
+#define ESP_BLE_MESH_MODEL_OP_ATTENTION_SET                         OP_ATTENTION_SET            /*!< Health Attention Set */
+#define ESP_BLE_MESH_MODEL_OP_ATTENTION_SET_UNACK                   OP_ATTENTION_SET_UNREL      /*!< Health Attention Set Unacknowledged */
+
+/**
+ * esp_ble_mesh_health_model_status_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by the Health Model messages.
+ * The following opcodes are used by the BLE Mesh Health Server Model internally to
+ * respond to the Health Client Model's request messages.
+ */
+typedef uint32_t esp_ble_mesh_health_model_status_t;
+
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_CURRENT_STATUS                 OP_HEALTH_CURRENT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_FAULT_STATUS                   OP_HEALTH_FAULT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_HEALTH_PERIOD_STATUS                  OP_HEALTH_PERIOD_STATUS
+#define ESP_BLE_MESH_MODEL_OP_ATTENTION_STATUS                      OP_ATTENTION_STATUS
+
+/**
+ * esp_ble_mesh_generic_message_opcode_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by functions esp_ble_mesh_generic_client_get_state
+ * & esp_ble_mesh_generic_client_set_state.
+ */
+typedef uint32_t esp_ble_mesh_generic_message_opcode_t;
+
+/*!< Generic OnOff Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET                         BLE_MESH_MODEL_OP_GEN_ONOFF_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET                         BLE_MESH_MODEL_OP_GEN_ONOFF_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK                   BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS                      BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS
+
+/*!< Generic Level Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_GET                         BLE_MESH_MODEL_OP_GEN_LEVEL_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_SET                         BLE_MESH_MODEL_OP_GEN_LEVEL_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK                   BLE_MESH_MODEL_OP_GEN_LEVEL_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_LEVEL_STATUS                      BLE_MESH_MODEL_OP_GEN_LEVEL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_DELTA_SET                         BLE_MESH_MODEL_OP_GEN_DELTA_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_DELTA_SET_UNACK                   BLE_MESH_MODEL_OP_GEN_DELTA_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_MOVE_SET                          BLE_MESH_MODEL_OP_GEN_MOVE_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_MOVE_SET_UNACK                    BLE_MESH_MODEL_OP_GEN_MOVE_SET_UNACK
+
+/*!< Generic Default Transition Time Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_GET                BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET                BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET_UNACK          BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_STATUS             BLE_MESH_MODEL_OP_GEN_DEF_TRANS_TIME_STATUS
+
+/*!< Generic Power OnOff Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_GET                     BLE_MESH_MODEL_OP_GEN_ONPOWERUP_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_STATUS                  BLE_MESH_MODEL_OP_GEN_ONPOWERUP_STATUS
+
+/*!< Generic Power OnOff Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET                     BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET_UNACK               BLE_MESH_MODEL_OP_GEN_ONPOWERUP_SET_UNACK
+
+/*!< Generic Power Level Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_GET                   BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET                   BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET_UNACK             BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS                BLE_MESH_MODEL_OP_GEN_POWER_LEVEL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LAST_GET                    BLE_MESH_MODEL_OP_GEN_POWER_LAST_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_LAST_STATUS                 BLE_MESH_MODEL_OP_GEN_POWER_LAST_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_GET                 BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_STATUS              BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_GET                   BLE_MESH_MODEL_OP_GEN_POWER_RANGE_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_STATUS                BLE_MESH_MODEL_OP_GEN_POWER_RANGE_STATUS
+
+/*!< Generic Power Level Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET                 BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_GEN_POWER_DEFAULT_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET                   BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET_UNACK             BLE_MESH_MODEL_OP_GEN_POWER_RANGE_SET_UNACK
+
+/*!< Generic Battery Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_BATTERY_GET                       BLE_MESH_MODEL_OP_GEN_BATTERY_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_BATTERY_STATUS                    BLE_MESH_MODEL_OP_GEN_BATTERY_STATUS
+
+/*!< Generic Location Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_GET                    BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_STATUS                 BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_GET                     BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_STATUS                  BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_STATUS
+
+/*!< Generic Location Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET                    BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET_UNACK              BLE_MESH_MODEL_OP_GEN_LOC_GLOBAL_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET                     BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET_UNACK               BLE_MESH_MODEL_OP_GEN_LOC_LOCAL_SET_UNACK
+
+/*!< Generic Manufacturer Property Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTIES_GET       BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTIES_STATUS    BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_GET         BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_SET         BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_SET_UNACK   BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_STATUS      BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_STATUS
+
+/*!< Generic Admin Property Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_GET              BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_STATUS           BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET                BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET                BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET_UNACK          BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS             BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_STATUS
+
+/*!< Generic User Property Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_GET               BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS            BLE_MESH_MODEL_OP_GEN_USER_PROPERTIES_STATUS
+#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_GET                 BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET                 BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET
+#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK           BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_STATUS              BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_STATUS
+
+/*!< Generic Client Property Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET             BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET
+#define ESP_BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_STATUS          BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_STATUS
+
+/**
+ * esp_ble_mesh_sensor_message_opcode_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by functions esp_ble_mesh_sensor_client_get_state
+ * & esp_ble_mesh_sensor_client_set_state.
+ */
+typedef uint32_t esp_ble_mesh_sensor_message_opcode_t;
+
+/*!< Sensor Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET                 BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS              BLE_MESH_MODEL_OP_SENSOR_DESCRIPTOR_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_GET                            BLE_MESH_MODEL_OP_SENSOR_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_STATUS                         BLE_MESH_MODEL_OP_SENSOR_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET                     BLE_MESH_MODEL_OP_SENSOR_COLUMN_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_COLUMN_STATUS                  BLE_MESH_MODEL_OP_SENSOR_COLUMN_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_GET                     BLE_MESH_MODEL_OP_SENSOR_SERIES_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SERIES_STATUS                  BLE_MESH_MODEL_OP_SENSOR_SERIES_STATUS
+
+/*!< Sensor Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_GET                    BLE_MESH_MODEL_OP_SENSOR_CADENCE_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET                    BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK              BLE_MESH_MODEL_OP_SENSOR_CADENCE_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_CADENCE_STATUS                 BLE_MESH_MODEL_OP_SENSOR_CADENCE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET                   BLE_MESH_MODEL_OP_SENSOR_SETTINGS_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTINGS_STATUS                BLE_MESH_MODEL_OP_SENSOR_SETTINGS_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_GET                    BLE_MESH_MODEL_OP_SENSOR_SETTING_GET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_SET                    BLE_MESH_MODEL_OP_SENSOR_SETTING_SET
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_SET_UNACK              BLE_MESH_MODEL_OP_SENSOR_SETTING_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_SENSOR_SETTING_STATUS                 BLE_MESH_MODEL_OP_SENSOR_SETTING_STATUS
+
+/**
+ * esp_ble_mesh_time_scene_message_opcode_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by functions esp_ble_mesh_time_scene_client_get_state
+ * & esp_ble_mesh_time_scene_client_set_state.
+ */
+typedef uint32_t esp_ble_mesh_time_scene_message_opcode_t;
+
+/*!< Time Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_TIME_GET                              BLE_MESH_MODEL_OP_TIME_GET
+#define ESP_BLE_MESH_MODEL_OP_TIME_SET                              BLE_MESH_MODEL_OP_TIME_SET
+#define ESP_BLE_MESH_MODEL_OP_TIME_STATUS                           BLE_MESH_MODEL_OP_TIME_STATUS
+#define ESP_BLE_MESH_MODEL_OP_TIME_ROLE_GET                         BLE_MESH_MODEL_OP_TIME_ROLE_GET
+#define ESP_BLE_MESH_MODEL_OP_TIME_ROLE_SET                         BLE_MESH_MODEL_OP_TIME_ROLE_SET
+#define ESP_BLE_MESH_MODEL_OP_TIME_ROLE_STATUS                      BLE_MESH_MODEL_OP_TIME_ROLE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_TIME_ZONE_GET                         BLE_MESH_MODEL_OP_TIME_ZONE_GET
+#define ESP_BLE_MESH_MODEL_OP_TIME_ZONE_SET                         BLE_MESH_MODEL_OP_TIME_ZONE_SET
+#define ESP_BLE_MESH_MODEL_OP_TIME_ZONE_STATUS                      BLE_MESH_MODEL_OP_TIME_ZONE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_TAI_UTC_DELTA_GET                     BLE_MESH_MODEL_OP_TAI_UTC_DELTA_GET
+#define ESP_BLE_MESH_MODEL_OP_TAI_UTC_DELTA_SET                     BLE_MESH_MODEL_OP_TAI_UTC_DELTA_SET
+#define ESP_BLE_MESH_MODEL_OP_TAI_UTC_DELTA_STATUS                  BLE_MESH_MODEL_OP_TAI_UTC_DELTA_STATUS
+
+/*!< Scene Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_SCENE_GET                             BLE_MESH_MODEL_OP_SCENE_GET
+#define ESP_BLE_MESH_MODEL_OP_SCENE_RECALL                          BLE_MESH_MODEL_OP_SCENE_RECALL
+#define ESP_BLE_MESH_MODEL_OP_SCENE_RECALL_UNACK                    BLE_MESH_MODEL_OP_SCENE_RECALL_UNACK
+#define ESP_BLE_MESH_MODEL_OP_SCENE_STATUS                          BLE_MESH_MODEL_OP_SCENE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SCENE_REGISTER_GET                    BLE_MESH_MODEL_OP_SCENE_REGISTER_GET
+#define ESP_BLE_MESH_MODEL_OP_SCENE_REGISTER_STATUS                 BLE_MESH_MODEL_OP_SCENE_REGISTER_STATUS
+
+/*!< Scene Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_SCENE_STORE                           BLE_MESH_MODEL_OP_SCENE_STORE
+#define ESP_BLE_MESH_MODEL_OP_SCENE_STORE_UNACK                     BLE_MESH_MODEL_OP_SCENE_STORE_UNACK
+#define ESP_BLE_MESH_MODEL_OP_SCENE_DELETE                          BLE_MESH_MODEL_OP_SCENE_DELETE
+#define ESP_BLE_MESH_MODEL_OP_SCENE_DELETE_UNACK                    BLE_MESH_MODEL_OP_SCENE_DELETE_UNACK
+
+/*!< Scheduler Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET                     BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET
+#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS                  BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_GET                         BLE_MESH_MODEL_OP_SCHEDULER_GET
+#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_STATUS                      BLE_MESH_MODEL_OP_SCHEDULER_STATUS
+
+/*!< Scheduler Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET                     BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET
+#define ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET_UNACK               BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET_UNACK
+
+/**
+ * esp_ble_mesh_light_message_opcode_t belongs to esp_ble_mesh_opcode_t, this typedef is
+ * only used to locate the opcodes used by functions esp_ble_mesh_light_client_get_state
+ * & esp_ble_mesh_light_client_set_state.
+ */
+typedef uint32_t esp_ble_mesh_light_message_opcode_t;
+
+/*!< Light Lightness Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_GET                   BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET                   BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET_UNACK             BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS                BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_GET            BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET            BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET_UNACK      BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS         BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LINEAR_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_GET              BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_STATUS           BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_LAST_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_GET           BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_STATUS        BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_GET             BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_STATUS          BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_STATUS
+
+/*!< Light Lightness Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET           BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET_UNACK     BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_DEFAULT_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET             BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET_UNACK       BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_RANGE_SET_UNACK
+
+/*!< Light CTL Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_GET                         BLE_MESH_MODEL_OP_LIGHT_CTL_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_SET                         BLE_MESH_MODEL_OP_LIGHT_CTL_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_SET_UNACK                   BLE_MESH_MODEL_OP_LIGHT_CTL_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS                      BLE_MESH_MODEL_OP_LIGHT_CTL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_GET             BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_GET       BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_STATUS    BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET             BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET_UNACK       BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS          BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_GET                 BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_STATUS              BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_STATUS
+
+/*!< Light CTL Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET                 BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_CTL_DEFAULT_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET       BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACK BLE_MESH_MODEL_OP_LIGHT_CTL_TEMPERATURE_RANGE_SET_UNACK
+
+/*!< Light HSL Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_GET                         BLE_MESH_MODEL_OP_LIGHT_HSL_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_GET                     BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET                     BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET_UNACK               BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS                  BLE_MESH_MODEL_OP_LIGHT_HSL_HUE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_GET              BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET              BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET_UNACK        BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS           BLE_MESH_MODEL_OP_LIGHT_HSL_SATURATION_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SET                         BLE_MESH_MODEL_OP_LIGHT_HSL_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_SET_UNACK                   BLE_MESH_MODEL_OP_LIGHT_HSL_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS                      BLE_MESH_MODEL_OP_LIGHT_HSL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_GET                  BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_STATUS               BLE_MESH_MODEL_OP_LIGHT_HSL_TARGET_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_GET                 BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_STATUS              BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_GET                   BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS                BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_STATUS
+
+/*!< Light HSL Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET                 BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_HSL_DEFAULT_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET                   BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET_UNACK             BLE_MESH_MODEL_OP_LIGHT_HSL_RANGE_SET_UNACK               /* Model spec is wrong */
+
+/*!< Light xyL Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_GET                         BLE_MESH_MODEL_OP_LIGHT_XYL_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_SET                         BLE_MESH_MODEL_OP_LIGHT_XYL_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_SET_UNACK                   BLE_MESH_MODEL_OP_LIGHT_XYL_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS                      BLE_MESH_MODEL_OP_LIGHT_XYL_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_GET                  BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_STATUS               BLE_MESH_MODEL_OP_LIGHT_XYL_TARGET_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_GET                 BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_STATUS              BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_GET                   BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_STATUS                BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_STATUS
+
+/*!< Light xyL Setup Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET                 BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_XYL_DEFAULT_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET                   BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET_UNACK             BLE_MESH_MODEL_OP_LIGHT_XYL_RANGE_SET_UNACK
+
+/*!< Light Control Message Opcode */
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_GET                     BLE_MESH_MODEL_OP_LIGHT_LC_MODE_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET                     BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET_UNACK               BLE_MESH_MODEL_OP_LIGHT_LC_MODE_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_MODE_STATUS                  BLE_MESH_MODEL_OP_LIGHT_LC_MODE_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_GET                       BLE_MESH_MODEL_OP_LIGHT_LC_OM_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET                       BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET_UNACK                 BLE_MESH_MODEL_OP_LIGHT_LC_OM_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_OM_STATUS                    BLE_MESH_MODEL_OP_LIGHT_LC_OM_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_GET              BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET              BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET_UNACK        BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS           BLE_MESH_MODEL_OP_LIGHT_LC_LIGHT_ONOFF_STATUS
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_GET                 BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_GET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET                 BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK           BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK
+#define ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS              BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS
+
+typedef uint32_t esp_ble_mesh_opcode_t;
+/*!< End of defines of esp_ble_mesh_opcode_t */
+
+/**
+ * This typedef is only used to indicate the status code contained in some of the
+ * server models (e.g. Generic Server Model) status message.
+ */
+typedef uint8_t esp_ble_mesh_model_status_t;
+
+#define ESP_BLE_MESH_MODEL_STATUS_SUCCESS                           0x00
+#define ESP_BLE_MESH_MODEL_STATUS_CANNOT_SET_RANGE_MIN              0x01
+#define ESP_BLE_MESH_MODEL_STATUS_CANNOT_SET_RANGE_MAX              0x02
+
+/**
+ * @brief BLE Mesh client models related definitions
+ */
+
+/** Client model Get/Set message opcode and corresponding Status message opcode */
+typedef struct {
+    uint32_t cli_op;        /*!< The client message opcode */
+    uint32_t status_op;     /*!< The server status opcode corresponding to the client message opcode */
+} esp_ble_mesh_client_op_pair_t;
+
+/** Client Model user data context. */
+typedef struct {
+    esp_ble_mesh_model_t *model;                    /*!< Pointer to the client model. Initialized by the stack. */
+    int op_pair_size;                               /*!< Size of the op_pair */
+    const esp_ble_mesh_client_op_pair_t *op_pair;   /*!< Table containing get/set message opcode and corresponding status message opcode */
+    uint32_t publish_status;                        /*!< Callback used to handle the received unsoliciated message. Initialized by the stack. */
+    void *internal_data;                            /*!< Pointer to the internal data of client model */
+    uint8_t msg_role;                               /*!< Role of the device (Node/Provisioner) that is going to send messages */
+} esp_ble_mesh_client_t;
+
+/** Common parameters of the messages sent by Client Model. */
+typedef struct {
+    esp_ble_mesh_opcode_t opcode;   /*!< Message opcode */
+    esp_ble_mesh_model_t *model;    /*!< Pointer to the client model structure */
+    esp_ble_mesh_msg_ctx_t ctx;     /*!< The context used to send message */
+    int32_t msg_timeout;            /*!< Timeout value (ms) to get response to the sent message */
+    /*!< Note: if using default timeout value in menuconfig, make sure to set this value to 0 */
+    uint8_t msg_role;               /*!< Role of the device - Node/Provisioner */
+} esp_ble_mesh_client_common_param_t;
+
+/**
+ * @brief BLE Mesh server models related definitions
+ */
+
+/** This enum value is the flag of transition timer operation */
+enum {
+    ESP_BLE_MESH_SERVER_TRANS_TIMER_START,  /* Proper transition timer has been started */
+    ESP_BLE_MESH_SERVER_FLAG_MAX,
+};
+
+/** Parameters of the server model state transition */
+typedef struct {
+    bool just_started;          /*!< Indicate if the state transition has just started */
+
+    uint8_t  trans_time;        /*!< State transition time */
+    uint8_t  remain_time;       /*!< Remaining time of state transition */
+    uint8_t  delay;             /*!< Delay before starting state transition */
+    uint32_t quo_tt;            /*!< Duration of each divided transition step */
+    uint32_t counter;           /*!< Number of steps which the transition duration is divided */
+    uint32_t total_duration;    /*!< State transition total duration */
+    int64_t  start_timestamp;   /*!< Time when the state transition is started */
+
+    /**
+     * Flag used to indicate if the transition timer has been started internally.
+     *
+     * If the model which contains esp_ble_mesh_state_transition_t sets "set_auto_rsp"
+     * to ESP_BLE_MESH_SERVER_RSP_BY_APP, the handler of the timer shall be initialized
+     * by the users.
+     *
+     * And users can use this flag to indicate whether the timer is started or not.
+     */
+    BLE_MESH_ATOMIC_DEFINE(flag, ESP_BLE_MESH_SERVER_FLAG_MAX);
+    struct k_delayed_work timer;    /*!< Timer used for state transition */
+} esp_ble_mesh_state_transition_t;
+
+/** Parameters of the server model received last same set message. */
+typedef struct {
+    uint8_t  tid;       /*!< Transaction number of the last message */
+    uint16_t src;       /*!< Source address of the last message */
+    uint16_t dst;       /*!< Destination address of the last messgae */
+    int64_t  timestamp; /*!< Time when the last message is received */
+} esp_ble_mesh_last_msg_info_t;
+
+#define ESP_BLE_MESH_SERVER_RSP_BY_APP  0   /*!< Response will be sent internally */
+#define ESP_BLE_MESH_SERVER_AUTO_RSP    1   /*!< Response need to be sent in the application */
+
+/** Parameters of the Server Model response control */
+typedef struct {
+    /**
+     * @brief BLE Mesh Server Response Option
+     *        1. If get_auto_rsp is set to ESP_BLE_MESH_SERVER_RSP_BY_APP, then the
+     *           response of Client Get messages need to be replied by the application;
+     *        2. If get_auto_rsp is set to ESP_BLE_MESH_SERVER_AUTO_RSP, then the
+     *           response of Client Get messages will be replied by the server models;
+     *        3. If set_auto_rsp is set to ESP_BLE_MESH_SERVER_RSP_BY_APP, then the
+     *           response of Client Set messages need to be replied by the application;
+     *        4. If set_auto_rsp is set to ESP_BLE_MESH_SERVER_AUTO_RSP, then the
+     *           response of Client Set messages will be replied by the server models;
+     *        5. If status_auto_rsp is set to ESP_BLE_MESH_SERVER_RSP_BY_APP, then the
+     *           response of Server Status messages need to be replied by the application;
+     *        6. If status_auto_rsp is set to ESP_BLE_MESH_SERVER_AUTO_RSP, then the
+     *           response of Server Status messages will be replied by the server models;
+     */
+    uint8_t get_auto_rsp : 1,       /*!< Response control for Client Get messages */
+            set_auto_rsp : 1,       /*!< Response control for Client Set messages */
+            status_auto_rsp : 1;    /*!< Response control for Server Status messages */
+} esp_ble_mesh_server_rsp_ctrl_t;
+
+/**
+ * @brief Server model state value union
+ */
+typedef union {
+    struct {
+        uint8_t onoff;          /*!< The value of the Generic OnOff state */
+    } gen_onoff;                /*!< The Generic OnOff state */
+    struct {
+        int16_t level;          /*!< The value of the Generic Level state */
+    } gen_level;                /*!< The Generic Level state */
+    struct {
+        uint8_t onpowerup;      /*!< The value of the Generic OnPowerUp state */
+    } gen_onpowerup;            /*!< The Generic OnPowerUp state */
+    struct {
+        uint16_t power;         /*!< The value of the Generic Power Actual state */
+    } gen_power_actual;         /*!< The Generic Power Actual state */
+    struct {
+        uint16_t lightness;     /*!< The value of the Light Lightness Actual state */
+    } light_lightness_actual;   /*!< The Light Lightness Actual state */
+    struct {
+        uint16_t lightness;     /*!< The value of the Light Lightness Linear state */
+    } light_lightness_linear;   /*!< The Light Lightness Linear state */
+    struct {
+        uint16_t lightness;     /*!< The value of the Light CTL Lightness state */
+    } light_ctl_lightness;      /*!< The Light CTL Lightness state */
+    struct {
+        uint16_t temperature;   /*!< The value of the Light CTL Temperature state */
+        int16_t  delta_uv;      /*!< The value of the Light CTL Delta UV state */
+    } light_ctl_temp_delta_uv;  /*!< The Light CTL Temperature & Delta UV states */
+    struct {
+        uint16_t lightness;     /*!< The value of the Light HSL Lightness state */
+    } light_hsl_lightness;      /*!< The Light HSL Lightness state */
+    struct {
+        uint16_t hue;           /*!< The value of the Light HSL Hue state */
+    } light_hsl_hue;            /*!< The Light HSL Hue state */
+    struct {
+        uint16_t saturation;    /*!< The value of the Light HSL Saturation state */
+    } light_hsl_saturation;     /*!< The Light HSL Saturation state */
+    struct {
+        uint16_t lightness;     /*!< The value of the Light xyL Lightness state */
+    } light_xyl_lightness;      /*!< The Light xyL Lightness state */
+    struct {
+        uint8_t onoff;          /*!< The value of the Light LC Light OnOff state */
+    } light_lc_light_onoff;     /*!< The Light LC Light OnOff state */
+} esp_ble_mesh_server_state_value_t;
+
+/** This enum value is the type of server model states */
+typedef enum {
+    ESP_BLE_MESH_GENERIC_ONOFF_STATE,
+    ESP_BLE_MESH_GENERIC_LEVEL_STATE,
+    ESP_BLE_MESH_GENERIC_ONPOWERUP_STATE,
+    ESP_BLE_MESH_GENERIC_POWER_ACTUAL_STATE,
+    ESP_BLE_MESH_LIGHT_LIGHTNESS_ACTUAL_STATE,
+    ESP_BLE_MESH_LIGHT_LIGHTNESS_LINEAR_STATE,
+    ESP_BLE_MESH_LIGHT_CTL_LIGHTNESS_STATE,
+    ESP_BLE_MESH_LIGHT_CTL_TEMP_DELTA_UV_STATE,
+    ESP_BLE_MESH_LIGHT_HSL_LIGHTNESS_STATE,
+    ESP_BLE_MESH_LIGHT_HSL_HUE_STATE,
+    ESP_BLE_MESH_LIGHT_HSL_SATURATION_STATE,
+    ESP_BLE_MESH_LIGHT_XYL_LIGHTNESS_STATE,
+    ESP_BLE_MESH_LIGHT_LC_LIGHT_ONOFF_STATE,
+    ESP_BLE_MESH_SERVER_MODEL_STATE_MAX,
+} esp_ble_mesh_server_state_type_t;
+
+/*!< This enum value is the event of undefined SIG models and vendor models */
+typedef enum {
+    ESP_BLE_MESH_MODEL_OPERATION_EVT,                   /*!< User-defined models receive messages from peer devices (e.g. get, set, status, etc) event */
+    ESP_BLE_MESH_MODEL_SEND_COMP_EVT,                   /*!< User-defined models send messages completion event */
+    ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT,                /*!< User-defined models publish messages completion event */
+    ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT,     /*!< User-defined client models receive publish messages event */
+    ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT,         /*!< Timeout event for the user-defined client models that failed to receive response from peer server models */
+    ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT,              /*!< When a model is configured to publish messages periodically, this event will occur during every publish period */
+    ESP_BLE_MESH_SERVER_MODEL_UPDATE_STATE_COMP_EVT,    /*!< Server models update state value completion event */
+    ESP_BLE_MESH_MODEL_EVT_MAX,
+} esp_ble_mesh_model_cb_event_t;
 
 /**
  * @brief BLE Mesh model callback parameters union
@@ -1546,22 +1919,14 @@ typedef union {
     struct ble_mesh_model_publish_update_evt_param {
         esp_ble_mesh_model_t *model;    /*!< Pointer to the model which is going to update its publish message */
     } model_publish_update;             /*!< Event parameter of ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT */
+    /**
+     * @brief ESP_BLE_MESH_SERVER_MODEL_UPDATE_STATE_COMP_EVT
+     */
+    struct ble_mesh_server_model_update_state_comp_param {
+        int err_code;                           /*!< Indicate the result of updating server model state */
+        esp_ble_mesh_model_t *model;            /*!< Pointer to the server model which state value is updated */
+        esp_ble_mesh_server_state_type_t type;  /*!< Type of the updated server state */
+    } server_model_update_state;                /*!< Event parameter of ESP_BLE_MESH_SERVER_MODEL_UPDATE_STATE_COMP_EVT */
 } esp_ble_mesh_model_cb_param_t;
-
-/** Client Model Get/Set message opcode and corresponding Status message opcode */
-typedef struct {
-    uint32_t cli_op;        /*!< The client message opcode */
-    uint32_t status_op;     /*!< The server status opcode corresponding to the client message opcode */
-} esp_ble_mesh_client_op_pair_t;
-
-/** Client Model user data context. */
-typedef struct {
-    esp_ble_mesh_model_t *model;                    /*!< Pointer to the client model. Initialized by the stack. */
-    int op_pair_size;                               /*!< Size of the op_pair */
-    const esp_ble_mesh_client_op_pair_t *op_pair;   /*!< Table containing get/set message opcode and corresponding status message opcode */
-    uint32_t publish_status;                        /*!< Callback used to handle the received unsoliciated message. Initialized by the stack. */
-    void *internal_data;                            /*!< Pointer to the internal data of client model */
-    uint8_t msg_role;                               /*!< Role of the device (Node/Provisioner) that is going to send messages */
-} esp_ble_mesh_client_t;
 
 #endif /* _ESP_BLE_MESH_DEFS_H_ */

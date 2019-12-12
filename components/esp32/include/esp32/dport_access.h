@@ -33,7 +33,7 @@ uint32_t esp_dport_access_sequence_reg_read(uint32_t reg);
 //only call in case of panic().
 void esp_dport_access_int_abort(void);
 
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
 #define DPORT_STALL_OTHER_CPU_START()
 #define DPORT_STALL_OTHER_CPU_END()
 #define DPORT_INTERRUPT_DISABLE()

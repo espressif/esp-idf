@@ -704,6 +704,27 @@ static void btc_set_pkt_length_callback(UINT8 status, tBTM_LE_SET_PKT_DATA_LENGT
     }
 }
 
+static void btc_gap_ble_set_channels_cmpl_callback(void *p_data)
+{
+    tBTA_BLE_SET_CHANNELS_RESULTS *result = (tBTA_BLE_SET_CHANNELS_RESULTS *)p_data;
+    esp_ble_gap_cb_param_t param;
+    bt_status_t ret;
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_SET_CHANNELS_EVT;
+
+    param.ble_set_channels.stat = btc_btm_status_to_esp_status(result->status);
+
+    ret = btc_transfer_context(&msg, &param,
+                               sizeof(esp_ble_gap_cb_param_t), NULL);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
+
 static void btc_add_whitelist_complete_callback(UINT8 status, tBTM_WL_OPERATION wl_opration)
 {
     esp_ble_gap_cb_param_t param;
@@ -896,6 +917,12 @@ static void btc_ble_disconnect(BD_ADDR bd_addr)
 {
     BTA_DmBleDisconnect(bd_addr);
 }
+
+static void btc_gap_ble_set_channels(esp_gap_ble_channels channels)
+{
+    BTA_DmBleSetChannels(channels, btc_gap_ble_set_channels_cmpl_callback);
+}
+
 
 void btc_gap_ble_cb_handler(btc_msg_t *msg)
 {
@@ -1196,6 +1223,12 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                 bta_dm_co_ble_set_max_key_size(key_size);
                 break;
             }
+            case ESP_BLE_SM_MIN_KEY_SIZE: {
+                uint8_t key_size = 0;
+                STREAM_TO_UINT8(key_size, value);
+                bta_dm_co_ble_set_min_key_size(key_size);
+                break;
+            }
             case ESP_BLE_SM_SET_STATIC_PASSKEY: {
                 uint32_t passkey = 0;
                 for(uint8_t i = 0; i < arg->set_security_param.len; i++)
@@ -1257,6 +1290,9 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
 #endif  ///SMP_INCLUDED == TRUE
     case BTC_GAP_BLE_DISCONNECT_EVT:
         btc_ble_disconnect(arg->disconnect.remote_device);
+        break;
+    case BTC_GAP_BLE_SET_AFH_CHANNELS:
+        btc_gap_ble_set_channels(arg->set_channels.channels);
         break;
     default:
         break;

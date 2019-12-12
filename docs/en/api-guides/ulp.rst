@@ -17,10 +17,9 @@ Installing the toolchain
 
 ULP coprocessor code is written in assembly and compiled using the `binutils-esp32ulp toolchain`_.
 
-1. Download pre-built binaries of the latest toolchain release from:
-https://github.com/espressif/binutils-esp32ulp/releases.
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then the ULP toolchain is already installed.
 
-2. Extract the toolchain into a directory, and add the path to the ``bin/`` directory of the toolchain to the ``PATH`` environment variable.
+If you are using ESP-IDF with the legacy GNU Make based build system, refer to the instructions on this page: :doc:`ulp-legacy`.
 
 Compiling ULP code
 ------------------
@@ -29,12 +28,12 @@ To compile ULP code as part of a component, the following steps must be taken:
 
 1. ULP code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside component directory, for instance `ulp/`.
 
-.. note: This directory should not be added to the ``COMPONENT_SRCDIRS`` environment variable. The logic behind this is that the ESP-IDF build system will compile files found in ``COMPONENT_SRCDIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``COMPONENT_SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
+.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 
     ...
-    register_component()
+    idf_component_register()
 
     set(ulp_app_name ulp_${COMPONENT_NAME})
     set(ulp_s_sources ulp/ulp_assembly_source_file.S)

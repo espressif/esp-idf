@@ -33,7 +33,7 @@
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
 #include "bootloader_clock.h"
-#include "driver/spi_common.h"
+#include "driver/spi_common_internal.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -75,7 +75,7 @@ void esp_clk_init(void)
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
 
-#ifdef CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS
+#if (CONFIG_ESP32_COMPATIBLE_PRE_V2_1_BOOTLOADERS || CONFIG_ESP32_APP_INIT_CLK)
     /* Check the bootloader set the XTAL frequency.
 
        Bootloaders pre-v2.1 don't do this.
@@ -292,6 +292,8 @@ void esp_perip_clk_init(void)
                         DPORT_I2C_EXT1_CLK_EN |
                         DPORT_I2S1_CLK_EN |
                         DPORT_SPI_DMA_CLK_EN;
+
+    common_perip_clk &= ~DPORT_SPI01_CLK_EN;
 
 #if CONFIG_SPIRAM_SPEED_80M
 //80MHz SPIRAM uses SPI2/SPI3 as well; it's initialized before this is called. Because it is used in

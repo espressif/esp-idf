@@ -28,6 +28,10 @@
  before the transaction is sent, the callback will set this line to the correct state.
 */
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define LCD_HOST    HSPI_HOST
+#define DMA_CHAN    2
+
 #define PIN_NUM_MISO 25
 #define PIN_NUM_MOSI 23
 #define PIN_NUM_CLK  19
@@ -36,6 +40,19 @@
 #define PIN_NUM_DC   21
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define LCD_HOST    SPI2_HOST
+#define DMA_CHAN    LCD_HOST
+
+#define PIN_NUM_MISO 37
+#define PIN_NUM_MOSI 35
+#define PIN_NUM_CLK  36
+#define PIN_NUM_CS   34
+
+#define PIN_NUM_DC   4
+#define PIN_NUM_RST  5
+#define PIN_NUM_BCKL 6
+#endif
 
 //To speed up transfers, every SPI transfer sends a bunch of lines. This define specifies how many. More means more memory use,
 //but less overhead for setting up / finishing transfers. Make sure 240 is dividable by this.
@@ -410,10 +427,10 @@ void app_main(void)
         .pre_cb=lcd_spi_pre_transfer_callback,  //Specify pre-transfer callback to handle D/C line
     };
     //Initialize the SPI bus
-    ret=spi_bus_initialize(HSPI_HOST, &buscfg, 1);
+    ret=spi_bus_initialize(LCD_HOST, &buscfg, DMA_CHAN);
     ESP_ERROR_CHECK(ret);
     //Attach the LCD to the SPI bus
-    ret=spi_bus_add_device(HSPI_HOST, &devcfg, &spi);
+    ret=spi_bus_add_device(LCD_HOST, &devcfg, &spi);
     ESP_ERROR_CHECK(ret);
     //Initialize the LCD
     lcd_init(spi);

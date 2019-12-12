@@ -70,13 +70,12 @@
 /* Standard includes. */
 #include <stdlib.h>
 #include <string.h>
+#include "sdkconfig.h"
 
 /* Defining MPU_WRAPPERS_INCLUDED_FROM_API_FILE prevents task.h from redefining
 all the API functions to use the MPU wrappers.  That should only be done when
 task.h is included from an application file. */
 #define MPU_WRAPPERS_INCLUDED_FROM_API_FILE
-
-#include "esp32/rom/ets_sys.h"
 #include "esp_newlib.h"
 
 /* FreeRTOS includes. */
@@ -1302,7 +1301,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			//No mux; no harm done if this misfires. The deleted task won't get scheduled anyway.
 			if( pxTCB == pxCurrentTCB[ core ] )	//If task was currently running on this core
 			{
-				configASSERT( uxSchedulerSuspended[ core ] == 0 );
+				configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED )
 
 				/* The pre-delete hook is primarily for the Windows simulator,
 				in which Windows specific clean up operations are performed,
@@ -1337,7 +1336,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 
 		configASSERT( pxPreviousWakeTime );
 		configASSERT( ( xTimeIncrement > 0U ) );
-		configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
+		configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 
 		taskENTER_CRITICAL(&xTaskQueueMutex);
 //		vTaskSuspendAll();
@@ -1435,7 +1434,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 		/* A delay time of zero just forces a reschedule. */
 		if( xTicksToDelay > ( TickType_t ) 0U )
 		{
-			configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
+			configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 			taskENTER_CRITICAL(&xTaskQueueMutex);
 //			vTaskSuspendAll();
 			{
@@ -1818,7 +1817,7 @@ static void prvAddNewTaskToReadyList( TCB_t *pxNewTCB, TaskFunction_t pxTaskCode
 			if( xSchedulerRunning != pdFALSE )
 			{
 				/* The current task has just been suspended. */
-				configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] == 0 );
+				configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_SUSPENDED );
 				portYIELD_WITHIN_API();
 			}
 			else
@@ -2212,9 +2211,9 @@ BaseType_t xTaskResumeAll( void )
 TCB_t *pxTCB;
 BaseType_t xAlreadyYielded = pdFALSE;
 
-	/* If uxSchedulerSuspended[ xPortGetCoreID() ] is zero then this function does not match a
+	/* If scheduler state is `taskSCHEDULER_RUNNING` then this function does not match a
 	previous call to vTaskSuspendAll(). */
-	configASSERT( uxSchedulerSuspended[ xPortGetCoreID() ] );
+	configASSERT( xTaskGetSchedulerState() != taskSCHEDULER_RUNNING );
 	/* It is possible that an ISR caused a task to be removed from an event
 	list while the scheduler was suspended.  If this was the case then the
 	removed task will have been added to the xPendingReadyList.  Once the

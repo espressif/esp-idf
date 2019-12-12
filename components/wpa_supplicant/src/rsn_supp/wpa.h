@@ -15,7 +15,13 @@
 #ifndef WPA_H
 #define WPA_H
 
+#include "sdkconfig.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#else
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include "utils/common.h"
 #include "common/defs.h"
 #include "common/wpa_common.h"
@@ -28,6 +34,7 @@
 struct wpa_sm;
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
+bool wpa_sta_is_cur_pmksa_set(void);
 bool wpa_sta_in_4way_handshake(void);
 
 #define WPA_ASSERT  assert

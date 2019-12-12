@@ -15,7 +15,7 @@
 #pragma once
 
 #include <esp_http_client.h>
-#include <esp_ota_ops.h>
+#include <bootloader_common.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -109,6 +109,19 @@ esp_err_t esp_https_ota_begin(esp_https_ota_config_t *ota_config, esp_https_ota_
  *    - For other return codes, refer OTA documentation in esp-idf's app_update component.
  */
 esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle);
+
+/**
+ * @brief   Checks if complete data was received or not
+ *
+ * @note    This API can be called just before esp_https_ota_finish() to validate if the complete image was indeed received.
+ *
+ * @param[in]   https_ota_handle pointer to esp_https_ota_handle_t structure
+ *
+ * @return
+ *    - false
+ *    - true
+ */
+bool esp_https_ota_is_complete_data_received(esp_https_ota_handle_t https_ota_handle);
 
 /**
  * @brief    Clean-up HTTPS OTA Firmware upgrade and close HTTPS connection

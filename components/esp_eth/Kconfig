@@ -1,9 +1,15 @@
 menu "Ethernet"
 
+    # Invisible item that is enabled if any Ethernet
+    # selection is made
+    config ETH_ENABLED
+        bool
+
     menuconfig ETH_USE_ESP32_EMAC
         depends on IDF_TARGET_ESP32
         bool "Support ESP32 internal EMAC controller"
         default y
+        select ETH_ENABLED
         help
             ESP32 integrates a 10/100M Ethernet MAC controller.
 
@@ -114,7 +120,7 @@ menu "Ethernet"
 
         config ETH_DMA_RX_BUFFER_NUM
             int "Amount of Ethernet DMA Rx buffers"
-            range 3 20
+            range 3 30
             default 10
             help
                 Number of DMA receive buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
@@ -122,7 +128,7 @@ menu "Ethernet"
 
         config ETH_DMA_TX_BUFFER_NUM
             int "Amount of Ethernet DMA Tx buffers"
-            range 3 20
+            range 3 30
             default 10
             help
                 Number of DMA transmit buffers. Each buffer's size is ETH_DMA_BUFFER_SIZE.
@@ -132,8 +138,9 @@ menu "Ethernet"
     menuconfig ETH_USE_SPI_ETHERNET
         bool "Support SPI to Ethernet Module"
         default y
+        select ETH_ENABLED
         help
-            ESP-IDF can also support some SPI-Ethernet module.
+            ESP-IDF can also support some SPI-Ethernet modules.
 
     if ETH_USE_SPI_ETHERNET
         menuconfig ETH_SPI_ETHERNET_DM9051
@@ -152,5 +159,29 @@ menu "Ethernet"
                 help
                     Set the GPIO number used by DM9051's Interrupt pin.
         endif
+    endif
+
+    menuconfig ETH_USE_OPENETH
+        bool "Support OpenCores Ethernet MAC (for use with QEMU)"
+        default n
+        help
+            OpenCores Ethernet MAC driver can be used when an ESP-IDF application
+            is executed in QEMU. This driver is not supported when running on a
+            real chip.
+
+    if ETH_USE_OPENETH
+        config ETH_OPENETH_DMA_RX_BUFFER_NUM
+            int "Number of Ethernet DMA Rx buffers"
+            range 1 64
+            default 4
+            help
+                Number of DMA receive buffers, each buffer is 1600 bytes.
+
+        config ETH_OPENETH_DMA_TX_BUFFER_NUM
+            int "Number of Ethernet DMA Tx buffers"
+            range 1 64
+            default 1
+            help
+                Number of DMA transmit buffers, each buffer is 1600 bytes.
     endif
 endmenu

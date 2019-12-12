@@ -59,16 +59,16 @@ static void* sense_modbus_get_param_data(const mb_parameter_descriptor_t* param_
        switch(param_descriptor->mb_param_type)
        {
            case MB_PARAM_HOLDING:
-               instance_ptr = (void*)(&holding_reg_params + param_descriptor->param_offset - 1);
+               instance_ptr = (void*)((uint32_t)&holding_reg_params + param_descriptor->param_offset - 1);
                break;
            case MB_PARAM_INPUT:
-               instance_ptr = (void*)(&input_reg_params + param_descriptor->param_offset - 1);
+               instance_ptr = (void*)((uint32_t)&input_reg_params + param_descriptor->param_offset - 1);
                break;
            case MB_PARAM_COIL:
-               instance_ptr = (void*)(&coil_reg_params + param_descriptor->param_offset - 1);
+               instance_ptr = (void*)((uint32_t)&coil_reg_params + param_descriptor->param_offset - 1);
                break;
            case MB_PARAM_DISCRETE:
-               instance_ptr = (void*)(&discrete_reg_params + param_descriptor->param_offset - 1);
+               instance_ptr = (void*)((uint32_t)&discrete_reg_params + param_descriptor->param_offset - 1);
                break;
            default:
                instance_ptr = NULL;

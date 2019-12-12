@@ -79,7 +79,7 @@ xMBMasterPortEventInit( void )
     return TRUE;
 }
 
-BOOL
+BOOL MB_PORT_ISR_ATTR
 xMBMasterPortEventPost( eMBMasterEventType eEvent )
 {
     BOOL bStatus = FALSE;
@@ -140,10 +140,7 @@ xMBMasterPortEventGet( eMBMasterEventType * eEvent)
 void vMBMasterOsResInit( void )
 {
     xSemaphorMasterHdl = xSemaphoreCreateBinary();
-    if (xSemaphorMasterHdl == NULL)
-    {
-        ESP_LOGE(MB_PORT_TAG,"%s: OS semaphore create error.", __func__);
-    }
+    MB_PORT_CHECK((xSemaphorMasterHdl != NULL), ; , "%s: OS semaphore create error.", __func__);
 }
 
 /**
@@ -156,15 +153,13 @@ void vMBMasterOsResInit( void )
  */
 BOOL xMBMasterRunResTake( LONG lTimeOut )
 {
-    BOOL xResult = FALSE;
     BaseType_t xStatus = pdTRUE;
 
     // If waiting time is -1. It will wait forever
     xStatus = xSemaphoreTake(xSemaphorMasterHdl, lTimeOut );
-    if (xStatus == pdTRUE) {
-        xResult = TRUE;
-    }
-    return xResult;
+    MB_PORT_CHECK((xStatus == pdTRUE), FALSE , "%s:Take resource failure.", __func__);
+    ESP_LOGV(MB_PORT_TAG,"%s:Take resource (%lu ticks).", __func__, lTimeOut);
+    return TRUE;
 }
 
 /**
@@ -173,11 +168,9 @@ BOOL xMBMasterRunResTake( LONG lTimeOut )
  */
 void vMBMasterRunResRelease( void )
 {
-    BaseType_t xStatus = pdTRUE;
+    BaseType_t xStatus = pdFALSE;
     xStatus = xSemaphoreGive(xSemaphorMasterHdl);
-    if (xStatus != pdTRUE) {
-        ESP_LOGE(MB_PORT_TAG,"%s: resource release failure.", __func__);
-    }
+    MB_PORT_CHECK((xStatus == pdTRUE), ; , "%s: resource release failure.", __func__);
 }
 
 /**
@@ -192,9 +185,7 @@ void vMBMasterRunResRelease( void )
 void vMBMasterErrorCBRespondTimeout(UCHAR ucDestAddress, const UCHAR* pucPDUData, USHORT ucPDULength) 
 {
     BOOL ret = xMBMasterPortEventPost(EV_MASTER_ERROR_RESPOND_TIMEOUT);
-    if(ret != TRUE) {
-        ESP_LOGE(MB_PORT_TAG, "Post event 'EV_MASTER_ERROR_RESPOND_TIMEOUT' failed!!!");
-    }
+    MB_PORT_CHECK((ret == TRUE), ; , "%s: Post event 'EV_MASTER_ERROR_RESPOND_TIMEOUT' failed!", __func__);
     ESP_LOGD(MB_PORT_TAG,"%s:Callback respond timeout.", __func__);
 }
 
@@ -209,9 +200,7 @@ void vMBMasterErrorCBRespondTimeout(UCHAR ucDestAddress, const UCHAR* pucPDUData
 void vMBMasterErrorCBReceiveData(UCHAR ucDestAddress, const UCHAR* pucPDUData, USHORT ucPDULength) 
 {
     BOOL ret = xMBMasterPortEventPost(EV_MASTER_ERROR_RECEIVE_DATA);
-    if(ret != TRUE) {
-        ESP_LOGE(MB_PORT_TAG,"xMBMasterPortEventPost event 'EV_MASTER_ERROR_RECEIVE_DATA' failed!!!");
-    }
+    MB_PORT_CHECK((ret == TRUE), ; , "%s: Post event 'EV_MASTER_ERROR_RECEIVE_DATA' failed!", __func__);
     ESP_LOGD(MB_PORT_TAG,"%s:Callback receive data timeout failure.", __func__);
 }
 
@@ -228,9 +217,8 @@ void vMBMasterErrorCBReceiveData(UCHAR ucDestAddress, const UCHAR* pucPDUData, U
 void vMBMasterErrorCBExecuteFunction(UCHAR ucDestAddress, const UCHAR* pucPDUData, USHORT ucPDULength) 
 {
     BOOL ret = xMBMasterPortEventPost(EV_MASTER_ERROR_EXECUTE_FUNCTION);
-    if(ret != TRUE) {
-        ESP_LOGE(MB_PORT_TAG,"xMBMasterPortEventPost event 'EV_MASTER_ERROR_EXECUTE_FUNCTION' failed!!!");
-    }
+    MB_PORT_CHECK((ret == TRUE), ; , "%s: Post event 'EV_MASTER_ERROR_EXECUTE_FUNCTION' failed!", __func__);
+    ESP_LOGD(MB_PORT_TAG,"%s:Callback execute data timeout failure.", __func__);
 }
 
 /**
@@ -244,9 +232,8 @@ void vMBMasterCBRequestSuccess( void ) {
      * If you don't use OS, you can change it.
      */
     BOOL ret = xMBMasterPortEventPost(EV_MASTER_PROCESS_SUCCESS);
-    if (ret != TRUE) {
-        ESP_LOGE(MB_PORT_TAG,"xMBMasterPortEventPost event 'EV_MASTER_PROCESS_SUCCESS' failed!!!");
-    }
+    MB_PORT_CHECK((ret == TRUE), ; , "%s: Post event 'EV_MASTER_PROCESS_SUCCESS' failed!", __func__);
+    ESP_LOGD(MB_PORT_TAG,"%s: Callback request success.", __func__);
 }
 
 /**
@@ -284,7 +271,7 @@ eMBMasterReqErrCode eMBMasterWaitRequestFinish( void ) {
             eErrStatus = MB_MRE_EXE_FUN;
         }
     } else {
-        ESP_LOGE(MB_PORT_TAG,"%s: Incorrect event or timeout xRecvedEvent = 0x%x", __func__, xRecvedEvent);
+        ESP_LOGE(MB_PORT_TAG,"%s: Incorrect event or timeout xRecvedEvent = 0x%x", __func__, uxBits);
         assert(0);
     }
     return eErrStatus;

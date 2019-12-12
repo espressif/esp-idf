@@ -24,8 +24,8 @@ extern "C" {
 #include "soc/dac_periph.h"
 
 typedef enum {
-    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 */
-    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO26 */
+    DAC_CHANNEL_1 = 1,  /*!< DAC channel 1 is GPIO25 (ESP32), GPIO17 (ESP32-S2) */
+    DAC_CHANNEL_2,      /*!< DAC channel 2 is GPIO26 (ESP32), GPIO18 (ESP32-S2) */
     DAC_CHANNEL_MAX,
 } dac_channel_t;
 
@@ -41,25 +41,6 @@ typedef enum {
  *   - ESP_ERR_INVALID_ARG if channal not valid 
  */
 esp_err_t dac_pad_get_io_num(dac_channel_t channel, gpio_num_t *gpio_num);
-
-/** @cond */
-/**
-  * @brief  Set DAC output voltage.
-  *
-  * @note Function has been deprecated, please use dac_output_voltage instead.
-  *       This name will be removed in a future release.
-  *       The difference is that before calling dac_output_voltage, we need to initialize the dac pad by dac_output_enable
-  *
-  *
-  * @param channel DAC channel
-  * @param dac_value DAC output value
-  *
-  * @return
-  *     - ESP_OK success
-  *     - ESP_ERR_INVALID_ARG Parameter error
-  */
-esp_err_t dac_out_voltage(dac_channel_t channel, uint8_t dac_value) __attribute__ ((deprecated));
-/** @endcond */
 
 /**
  * @brief Set DAC output voltage.

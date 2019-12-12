@@ -57,7 +57,7 @@ menu "mbedTLS"
 
     config MBEDTLS_ASYMMETRIC_CONTENT_LEN
         bool "Asymmetric in/out fragment length"
-        default n
+        default y
         help
             If enabled, this option allows customizing TLS in/out fragment length
             in asymmetric way. Please note that enabling this with default values
@@ -116,8 +116,23 @@ menu "mbedTLS"
         default 3 if MBEDTLS_DEBUG_LEVEL_DEBUG
         default 4 if MBEDTLS_DEBUG_LEVEL_VERBOSE
 
+    config MBEDTLS_ECP_RESTARTABLE
+        bool "Enable mbedTLS ecp restartable"
+        default n
+        help
+            Enable "non-blocking" ECC operations that can return early and be resumed.
+
+    config MBEDTLS_CMAC_C
+        bool "Enable CMAC mode for block ciphers"
+        default n
+        help
+            Enable the CMAC (Cipher-based Message Authentication Code) mode for
+            block ciphers.
+
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
+        depends on IDF_TARGET_ESP32
+        # ToDo: remove once hardware AES acceleration is supported on esp32s2
         default y
         help
             Enable hardware accelerated AES encryption & decryption.
@@ -127,7 +142,7 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
-        default n
+        default y
         help
             Enable hardware accelerated multiple precision integer operations.
 
@@ -136,19 +151,9 @@ menu "mbedTLS"
 
             These operations are used by RSA.
 
-    config MBEDTLS_MPI_USE_INTERRUPT
-        bool "Use interrupt for MPI operations"
-        depends on MBEDTLS_HARDWARE_MPI
-        default n
-        help
-            Use an interrupt to coordinate MPI operations.
-
-            This allows other code to run on the CPU while an MPI operation is pending.
-            Otherwise the CPU busy-waits.
-
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
-        default n
+        default y
         help
             Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
 
@@ -241,7 +246,7 @@ menu "mbedTLS"
 
         config MBEDTLS_KEY_EXCHANGE_ECDHE_PSK
             bool "Enable ECDHE-PSK based ciphersuite modes"
-            depends on MBEDTLS_PSK_MODES
+            depends on MBEDTLS_PSK_MODES && MBEDTLS_ECDH_C
             default y
             help
                 Enable to support Elliptic-Curve-Diffie-Hellman PSK (pre-shared-key) TLS authentication modes.

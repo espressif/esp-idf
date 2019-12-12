@@ -40,7 +40,6 @@ static const char *TAG = "emac_esp32";
         }                                                                         \
     } while (0)
 
-#define RX_QUEUE_WAIT_MS (20)
 #define PHY_OPERATION_TIMEOUT_US (1000)
 
 typedef struct {
@@ -48,7 +47,6 @@ typedef struct {
     esp_eth_mediator_t *eth;
     emac_hal_context_t hal;
     intr_handle_t intr_hdl;
-    SemaphoreHandle_t rx_counting_sem;
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
     uint32_t frames_remain;
@@ -225,7 +223,16 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
-    *length = emac_hal_receive_frame(&emac->hal, buf, &emac->frames_remain);
+    uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, *length, &emac->frames_remain);
+    /* we need to check the return value in case the buffer size is not enough */
+    if (*length < receive_len) {
+        ESP_LOGE(TAG, "buffer size too small");
+        /* tell upper layer the size we need */
+        *length = receive_len;
+        ret = ESP_ERR_INVALID_SIZE;
+        goto err;
+    }
+    *length = receive_len;
     return ESP_OK;
 err:
     return ret;
@@ -237,19 +244,22 @@ static void emac_esp32_rx_task(void *arg)
     uint8_t *buffer = NULL;
     uint32_t length = 0;
     while (1) {
-        if (xSemaphoreTake(emac->rx_counting_sem, pdMS_TO_TICKS(RX_QUEUE_WAIT_MS)) == pdTRUE) {
-            buffer = (uint8_t *)malloc(ETH_MAX_PACKET_SIZE);
+        // block indefinitely until some task notifies me
+        ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
+        do {
+            length = ETH_MAX_PACKET_SIZE;
+            buffer = (uint8_t *)malloc(length);
             if (emac_esp32_receive(&emac->parent, buffer, &length) == ESP_OK) {
                 /* pass the buffer to stack (e.g. TCP/IP layer) */
-                emac->eth->stack_input(emac->eth, buffer, length);
+                if (length) {
+                    emac->eth->stack_input(emac->eth, buffer, length);
+                } else {
+                    free(buffer);
+                }
             } else {
                 free(buffer);
             }
-        }
-        /* there might be some frames left in DMA buffer */
-        else if (emac->frames_remain) {
-            xSemaphoreGive(emac->rx_counting_sem);
-        }
+        } while (emac->frames_remain);
     }
     vTaskDelete(NULL);
 }
@@ -331,7 +341,6 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     esp_intr_free(emac->intr_hdl);
     vTaskDelete(emac->rx_task_hdl);
-    vSemaphoreDelete(emac->rx_counting_sem);
     int i = 0;
     for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
         free(emac->hal.rx_buf[i]);
@@ -358,42 +367,29 @@ void emac_esp32_isr_handler(void *args)
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
 {
     esp_eth_mac_t *ret = NULL;
+    void *descriptors = NULL;
+    emac_esp32_t *emac = NULL;
     MAC_CHECK(config, "can't set mac config to null", err, NULL);
-    emac_esp32_t *emac = calloc(1, sizeof(emac_esp32_t));
+    emac = calloc(1, sizeof(emac_esp32_t));
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
                          CONFIG_ETH_DMA_TX_BUFFER_NUM * sizeof(eth_dma_tx_descriptor_t);
-    void *descriptors = heap_caps_calloc(1, desc_size, MALLOC_CAP_DMA);
-    MAC_CHECK(descriptors, "calloc descriptors failed", err_desc, NULL);
+    descriptors = heap_caps_calloc(1, desc_size, MALLOC_CAP_DMA);
+    MAC_CHECK(descriptors, "calloc descriptors failed", err, NULL);
     int i = 0;
     /* alloc memory for ethernet dma buffer */
     for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
         emac->rx_buf[i] = heap_caps_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, MALLOC_CAP_DMA);
         if (!(emac->rx_buf[i])) {
-            break;
+            goto err;
         }
-    }
-    if (i != CONFIG_ETH_DMA_RX_BUFFER_NUM) {
-        for (--i; i >= 0; i--) {
-            free(emac->rx_buf[i]);
-        }
-        goto err_buffer;
     }
     for (i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
         emac->tx_buf[i] = heap_caps_calloc(1, CONFIG_ETH_DMA_BUFFER_SIZE, MALLOC_CAP_DMA);
         if (!(emac->tx_buf[i])) {
-            break;
+            goto err;
         }
-    }
-    if (i != CONFIG_ETH_DMA_TX_BUFFER_NUM) {
-        for (--i; i >= 0; i--) {
-            free(emac->tx_buf[i]);
-        }
-        for (i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
-            free(emac->rx_buf[i]);
-        }
-        goto err_buffer;
     }
     /* initialize hal layer driver */
     emac_hal_init(&emac->hal, descriptors, emac->rx_buf, emac->tx_buf);
@@ -415,31 +411,32 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     /* Interrupt configuration */
     MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_esp32_isr_handler,
                              &emac->hal, &(emac->intr_hdl)) == ESP_OK,
-              "alloc emac interrupt failed", err_intr, NULL);
-    /* create counting semaphore */
-    emac->rx_counting_sem = xSemaphoreCreateCounting(config->queue_len, 0);
-    MAC_CHECK(emac->rx_counting_sem, "create semaphore failed", err_sem, NULL);
+              "alloc emac interrupt failed", err, NULL);
     /* create rx task */
     BaseType_t xReturned = xTaskCreate(emac_esp32_rx_task, "emac_rx", config->rx_task_stack_size, emac,
                                        config->rx_task_prio, &emac->rx_task_hdl);
-    MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", err_task, NULL);
+    MAC_CHECK(xReturned == pdPASS, "create emac_rx task failed", err, NULL);
     return &(emac->parent);
-err_task:
-    vSemaphoreDelete(emac->rx_counting_sem);
-err_sem:
-    esp_intr_free(emac->intr_hdl);
-err_intr:
-    for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
-        free(emac->tx_buf[i]);
-    }
-    for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
-        free(emac->rx_buf[i]);
-    }
-err_buffer:
-    free(descriptors);
-err_desc:
-    free(emac);
+
 err:
+    if (emac) {
+        if (emac->rx_task_hdl) {
+            vTaskDelete(emac->rx_task_hdl);
+        }
+        if (emac->intr_hdl) {
+            esp_intr_free(emac->intr_hdl);
+        }
+        for (int i = 0; i < CONFIG_ETH_DMA_TX_BUFFER_NUM; i++) {
+            free(emac->tx_buf[i]);
+        }
+        for (int i = 0; i < CONFIG_ETH_DMA_RX_BUFFER_NUM; i++) {
+            free(emac->rx_buf[i]);
+        }
+        free(emac);
+    }
+    if (descriptors) {
+        free(descriptors);
+    }
     return ret;
 }
 
@@ -448,8 +445,8 @@ void emac_hal_rx_complete_cb(void *arg)
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
     BaseType_t high_task_wakeup;
-    /* send message to rx thread */
-    xSemaphoreGiveFromISR(emac->rx_counting_sem, &high_task_wakeup);
+    /* notify receive task */
+    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
     if (high_task_wakeup == pdTRUE) {
         emac->isr_need_yield = true;
     }
@@ -460,8 +457,8 @@ void emac_hal_rx_unavail_cb(void *arg)
     emac_hal_context_t *hal = (emac_hal_context_t *)arg;
     emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
     BaseType_t high_task_wakeup;
-    /* send message to rx thread */
-    xSemaphoreGiveFromISR(emac->rx_counting_sem, &high_task_wakeup);
+    /* notify receive task */
+    vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
     if (high_task_wakeup == pdTRUE) {
         emac->isr_need_yield = true;
     }

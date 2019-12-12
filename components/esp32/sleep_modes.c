@@ -302,7 +302,7 @@ esp_err_t esp_light_sleep_start(void)
     const uint32_t flash_enable_time_us = VDD_SDIO_POWERUP_TO_FLASH_READ_US
                                           + CONFIG_ESP32_DEEP_SLEEP_WAKEUP_DELAY;
 
-#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
     const uint32_t vddsdio_pd_sleep_duration = MAX(FLASH_PD_MIN_SLEEP_TIME_US,
             flash_enable_time_us + LIGHT_SLEEP_TIME_OVERHEAD_US + LIGHT_SLEEP_MIN_TIME_US);
 
@@ -310,7 +310,7 @@ esp_err_t esp_light_sleep_start(void)
         pd_flags |= RTC_SLEEP_PD_VDDSDIO;
         s_config.sleep_time_adjustment += flash_enable_time_us;
     }
-#endif //CONFIG_ESP32_SPIRAM_SUPPORT
+#endif //CONFIG_SPIRAM
 
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
@@ -359,8 +359,6 @@ esp_err_t esp_light_sleep_start(void)
     portEXIT_CRITICAL(&light_sleep_lock);
     return err;
 }
-
-void system_deep_sleep(uint64_t) __attribute__((alias("esp_deep_sleep")));
 
 esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 {

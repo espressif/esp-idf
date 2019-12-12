@@ -40,9 +40,10 @@ menu "Common ESP-related"
 
     config ESP_IPC_TASK_STACK_SIZE
         int "Inter-Processor Call (IPC) task stack size"
-        default 1024
         range 512 65536 if !ESP32_APPTRACE_ENABLE
         range 2048 65536 if ESP32_APPTRACE_ENABLE
+        default 2048 if ESP32_APPTRACE_ENABLE
+        default 1024
         help
             Configure the IPC tasks stack size. One IPC task runs on each core
             (in dual core mode), and allows for cross-core function calls.
@@ -52,6 +53,15 @@ menu "Common ESP-related"
             The default stack size should be enough for most common use cases.
             It can be shrunk if you are sure that you do not use any custom
             IPC functionality.
+
+    config ESP_IPC_USES_CALLERS_PRIORITY
+        bool "IPC runs at caller's priority"
+        default y
+        depends on !FREERTOS_UNICORE
+        help
+            If this option is not enabled then the IPC task will keep behavior
+            same as prior to that of ESP-IDF v4.0, and hence IPC task will run
+            at (configMAX_PRIORITIES - 1) priority.
 
     config ESP_TIMER_TASK_STACK_SIZE
         int "High-resolution timer task stack size"
@@ -197,5 +207,20 @@ menu "Common ESP-related"
         help
             If this option is enabled, the Task Wtachdog Timer will wach the CPU1
             Idle Task.
+
+    config ESP_PANIC_HANDLER_IRAM
+        bool "Place panic handler code in IRAM"
+        default n
+        depends on IDF_TARGET_ESP32  # pending ESP32-S2 Beta support
+        help
+            If this option is disabled (default), the panic handler code is placed in flash not IRAM.
+            This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will
+            automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor
+            risk, if the flash cache status is also corrupted during the crash.
+
+            If this option is enabled, the panic handler code is placed in IRAM. This allows the panic
+            handler to run without needing to re-enable cache first. This may be necessary to debug some
+            complex issues with crashes while flash cache is disabled (for example, when writing to
+            SPI flash.)
 
 endmenu # Common ESP-related

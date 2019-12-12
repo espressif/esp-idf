@@ -17,6 +17,7 @@
 #include "esp_bt_main.h"
 #include "esp_gap_bt_api.h"
 #include "common/bt_trace.h"
+#include "bta/bta_api.h"
 #include "btc/btc_manage.h"
 #include "btc_gap_bt.h"
 #include "btc/btc_storage.h"
@@ -379,5 +380,40 @@ esp_err_t esp_bt_gap_ssp_confirm_reply(esp_bd_addr_t bd_addr, bool accept)
 }
 
 #endif /*(BT_SSP_INCLUDED == TRUE)*/
+
+esp_err_t esp_bt_gap_set_afh_channels(esp_bt_gap_afh_channels channels)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_SET_AFH_CHANNELS;
+
+    memcpy(&arg.set_afh_channels.channels, channels, ESP_BT_GAP_AFH_CHANNELS_LEN);
+    arg.set_afh_channels.channels[ESP_BT_GAP_AFH_CHANNELS_LEN -1] &= 0x7F;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_read_remote_name(esp_bd_addr_t remote_bda)
+{
+    btc_msg_t msg;
+    btc_gap_bt_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BT;
+    msg.act = BTC_GAP_BT_ACT_READ_REMOTE_NAME;
+
+    memcpy(&arg.rmt_name_bda, remote_bda, sizeof(bt_bdaddr_t));
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_gap_bt_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
 
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */

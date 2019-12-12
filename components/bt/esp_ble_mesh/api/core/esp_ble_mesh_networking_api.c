@@ -19,21 +19,19 @@
 #include "btc/btc_manage.h"
 
 #include "esp_err.h"
-#include "esp_bt_defs.h"
-#include "esp_bt_main.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "esp_ble_mesh_networking_api.h"
 
 #define ESP_BLE_MESH_TX_SDU_MAX ((CONFIG_BLE_MESH_ADV_BUF_COUNT - 3) * 12)
 
-static esp_err_t ble_mesh_send_msg(esp_ble_mesh_model_t *model,
-                                   esp_ble_mesh_msg_ctx_t *ctx,
-                                   uint32_t opcode,
-                                   btc_ble_mesh_model_act_t act,
-                                   uint16_t length, uint8_t *data,
-                                   int32_t msg_timeout, bool need_rsp,
-                                   esp_ble_mesh_dev_role_t device_role)
+static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
+        esp_ble_mesh_msg_ctx_t *ctx,
+        uint32_t opcode,
+        btc_ble_mesh_model_act_t act,
+        uint16_t length, uint8_t *data,
+        int32_t msg_timeout, bool need_rsp,
+        esp_ble_mesh_dev_role_t device_role)
 {
     btc_ble_mesh_model_args_t arg = {0};
     uint8_t op_len = 0, mic_len = 0;
@@ -41,9 +39,15 @@ static esp_err_t ble_mesh_send_msg(esp_ble_mesh_model_t *model,
     btc_msg_t msg = {0};
     esp_err_t status;
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    if (ctx && ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
+        LOG_ERROR("%s, Invalid destination address 0x0000", __func__);
+        return ESP_ERR_INVALID_ARG;
+    }
 
     if (device_role > ROLE_FAST_PROV) {
+        LOG_ERROR("%s, Invalid device role 0x%02x", __func__, device_role);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -108,7 +112,7 @@ static esp_err_t ble_mesh_send_msg(esp_ble_mesh_model_t *model,
         arg.model_send.msg_timeout = msg_timeout;
     }
 
-    status = (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_prov_arg_deep_copy)
+    status = (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_model_arg_deep_copy)
               == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
     osi_free(msg_data);
@@ -118,7 +122,7 @@ static esp_err_t ble_mesh_send_msg(esp_ble_mesh_model_t *model,
 
 esp_err_t esp_ble_mesh_register_custom_model_callback(esp_ble_mesh_model_cb_t callback)
 {
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     return (btc_profile_cb_set(BTC_PID_MODEL, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
@@ -157,7 +161,7 @@ esp_err_t esp_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
     if (model == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
-    return btc_ble_mesh_client_init(model);
+    return btc_ble_mesh_client_model_init(model);
 }
 
 esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
@@ -167,8 +171,8 @@ esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
     if (!model || !ctx) {
         return ESP_ERR_INVALID_ARG;
     }
-    return ble_mesh_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
-                             length, data, 0, false, ROLE_NODE);
+    return ble_mesh_model_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_SERVER_MODEL_SEND,
+                                   length, data, 0, false, ROLE_NODE);
 }
 
 esp_err_t esp_ble_mesh_client_model_send_msg(esp_ble_mesh_model_t *model,
@@ -179,8 +183,8 @@ esp_err_t esp_ble_mesh_client_model_send_msg(esp_ble_mesh_model_t *model,
     if (!model || !ctx) {
         return ESP_ERR_INVALID_ARG;
     }
-    return ble_mesh_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
-                             length, data, msg_timeout, need_rsp, device_role);
+    return ble_mesh_model_send_msg(model, ctx, opcode, BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND,
+                                   length, data, msg_timeout, need_rsp, device_role);
 }
 
 esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcode,
@@ -190,15 +194,40 @@ esp_err_t esp_ble_mesh_model_publish(esp_ble_mesh_model_t *model, uint32_t opcod
     if (!model || !model->pub || !model->pub->msg) {
         return ESP_ERR_INVALID_ARG;
     }
-    return ble_mesh_send_msg(model, NULL, opcode, BTC_BLE_MESH_ACT_MODEL_PUBLISH,
-                             length, data, 0, false, device_role);
+    return ble_mesh_model_send_msg(model, NULL, opcode, BTC_BLE_MESH_ACT_MODEL_PUBLISH,
+                                   length, data, 0, false, device_role);
+}
+
+esp_err_t esp_ble_mesh_server_model_update_state(esp_ble_mesh_model_t *model,
+        esp_ble_mesh_server_state_type_t type,
+        esp_ble_mesh_server_state_value_t *value)
+{
+    btc_ble_mesh_model_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!model || !value || type >= ESP_BLE_MESH_SERVER_MODEL_STATE_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    arg.model_update_state.model = model;
+    arg.model_update_state.type = type;
+    arg.model_update_state.value = value;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_MODEL;
+    msg.act = BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_model_arg_deep_copy)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_ble_mesh_node_local_reset(void)
 {
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -218,7 +247,7 @@ esp_err_t esp_ble_mesh_provisioner_set_node_name(int index, const char *name)
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -251,7 +280,7 @@ esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -283,7 +312,7 @@ esp_err_t esp_ble_mesh_provisioner_bind_app_key_to_local_model(uint16_t element_
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
@@ -306,7 +335,7 @@ esp_err_t esp_ble_mesh_provisioner_add_local_net_key(const uint8_t net_key[16], 
         return ESP_ERR_INVALID_ARG;
     }
 
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;

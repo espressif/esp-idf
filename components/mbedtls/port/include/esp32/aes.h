@@ -41,16 +41,12 @@ extern "C" {
 /**
  * \brief          AES context structure
  *
- * \note           buf is able to hold 32 extra bytes, which can be used:
- *                 - for alignment purposes if VIA padlock is used, and/or
- *                 - to simplify key expansion in the 256-bit case by
- *                 generating an extra round key
  */
 typedef struct {
     uint8_t key_bytes;
+    volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
     uint8_t key[32];
 } esp_aes_context;
-
 
 /**
  * \brief The AES XTS context-type definition.
@@ -336,9 +332,6 @@ int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
  */
 int esp_internal_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
 
-/** Deprecated, see esp_aes_internal_encrypt */
-void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
-
 /**
  * \brief           Internal AES block decryption function
  *                  (Only exposed to allow overriding it,
@@ -349,9 +342,6 @@ void esp_aes_encrypt( esp_aes_context *ctx, const unsigned char input[16], unsig
  * \param output    Output (plaintext) block
  */
 int esp_internal_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] );
-
-/** Deprecated, see esp_aes_internal_decrypt */
-void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
 
 /** AES-XTS buffer encryption/decryption */
 int esp_aes_crypt_xts( esp_aes_xts_context *ctx, int mode, size_t length, const unsigned char data_unit[16], const unsigned char *input, unsigned char *output );

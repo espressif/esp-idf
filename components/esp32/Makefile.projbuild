@@ -10,7 +10,7 @@ ifneq ("$(filter esp32,$(TEST_COMPONENTS_LIST))","")
 CPPFLAGS += -DESP_TIMER_DYNAMIC_OVERFLOW_VAL
 endif
 ESP32_LINKER_SCRIPT_TEMPLATE := $(COMPONENT_PATH)/ld/esp32.project.ld.in
-ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(abspath $(BUILD_DIR_BASE)/esp32)
+ESP32_LINKER_SCRIPT_OUTPUT_DIR := $(realpath $(BUILD_DIR_BASE)/esp32)
 
 # Target to generate linker script generator from fragments presented by each of
 # the components

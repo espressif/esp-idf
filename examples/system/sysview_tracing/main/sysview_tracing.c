@@ -107,32 +107,6 @@ static void example_timer_init(int timer_group, int timer_idx, uint32_t period)
     timer_enable_intr(timer_group, timer_idx);
 }
 
-static void example_timer_rearm(int timer_group, int timer_idx)
-{
-    if (timer_group == 0) {
-        if (timer_idx == 0) {
-            TIMERG0.int_clr_timers.t0 = 1;
-            TIMERG0.hw_timer[0].update = 1;
-            TIMERG0.hw_timer[0].config.alarm_en = 1;
-        } else {
-            TIMERG0.int_clr_timers.t1 = 1;
-            TIMERG0.hw_timer[1].update = 1;
-            TIMERG0.hw_timer[1].config.alarm_en = 1;
-        }
-    }
-    if (timer_group == 1) {
-        if (timer_idx == 0) {
-            TIMERG1.int_clr_timers.t0 = 1;
-            TIMERG1.hw_timer[0].update = 1;
-            TIMERG1.hw_timer[0].config.alarm_en = 1;
-        } else {
-            TIMERG1.int_clr_timers.t1 = 1;
-            TIMERG1.hw_timer[1].update = 1;
-            TIMERG1.hw_timer[1].config.alarm_en = 1;
-        }
-    }
-}
-
 static void example_timer_isr(void *arg)
 {
     example_event_data_t *tim_arg = (example_event_data_t *)arg;
@@ -152,7 +126,8 @@ static void example_timer_isr(void *arg)
         }
     }
     // re-start timer
-    example_timer_rearm(tim_arg->group, tim_arg->timer);
+    timer_group_intr_clr_in_isr(tim_arg->group, tim_arg->timer);
+    timer_group_enable_alarm_in_isr(tim_arg->group, tim_arg->timer);
 }
 
 static void example_task(void *p)

@@ -14,18 +14,24 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
-
 #include "esp_log.h"
-#include "esp32/rom/gpio.h"
-#include "esp32/rom/spi_flash.h"
 #include "bootloader_config.h"
 #include "bootloader_init.h"
 #include "bootloader_utility.h"
 #include "bootloader_common.h"
 #include "sdkconfig.h"
 #include "esp_image_format.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/gpio.h"
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/spi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/gpio.h"
+#include "esp32s2beta/rom/rtc.h"
+#include "esp32s2beta/rom/spi_flash.h"
+#endif
 
-static const char* TAG = "boot";
+static const char *TAG = "boot";
 
 static int select_partition_number (bootloader_state_t *bs);
 static int selected_boot_partition(const bootloader_state_t *bs);
@@ -40,6 +46,14 @@ void __attribute__((noreturn)) call_start_cpu0(void)
     if (bootloader_init() != ESP_OK) {
         bootloader_reset();
     }
+
+#ifdef CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
+    // If this boot is a wake up from the deep sleep then go to the short way,
+    // try to load the application which worked before deep sleep.
+    // It skips a lot of checks due to it was done before (while first boot).
+    bootloader_utility_load_boot_image_from_deep_sleep();
+    // If it is not successful try to load an application as usual.
+#endif
 
     // 2. Select the number of boot partition
     bootloader_state_t bs = { 0 };
@@ -74,7 +88,8 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     int boot_index = bootloader_utility_get_selected_boot_partition(bs);
     if (boot_index == INVALID_INDEX) {
         return boot_index; // Unrecoverable failure (not due to corrupt ota data or bad partition contents)
-    } else {
+    }
+    if (rtc_get_reset_reason(0) != DEEPSLEEP_RESET) {
         // Factory firmware.
 #ifdef CONFIG_BOOTLOADER_FACTORY_RESET
         if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_FACTORY_RESET, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
@@ -91,7 +106,7 @@ static int selected_boot_partition(const bootloader_state_t *bs)
             return bootloader_utility_get_selected_boot_partition(bs);
         }
 #endif
-       // TEST firmware.
+        // TEST firmware.
 #ifdef CONFIG_BOOTLOADER_APP_TEST
         if (bootloader_common_check_long_hold_gpio(CONFIG_BOOTLOADER_NUM_PIN_APP_TEST, CONFIG_BOOTLOADER_HOLD_TIME_GPIO) == 1) {
             ESP_LOGI(TAG, "Detect a boot condition of the test firmware");

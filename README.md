@@ -1,5 +1,7 @@
 # Espressif IoT Development Framework
 
+* [中文版](./README_CN.md)
+
 [![Documentation Status](https://readthedocs.com/projects/espressif-esp-idf/badge/?version=latest)](https://docs.espressif.com/projects/esp-idf/en/latest/?badge=latest)
 
 ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip.
@@ -39,7 +41,7 @@ See the Getting Started guide links above for a detailed setup guide. This is a 
 
 * Install host build dependencies mentioned in Getting Started guide.
 * Add `tools/` directory to the PATH
-* Run `python -m pip install requirements.txt` to install Python dependencies
+* Run `python -m pip install -r requirements.txt` to install Python dependencies
 
 ## Configuring the Project
 

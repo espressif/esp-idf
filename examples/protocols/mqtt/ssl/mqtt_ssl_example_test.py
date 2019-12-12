@@ -11,6 +11,7 @@ from threading import Thread, Event
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -27,6 +28,7 @@ import DUT
 event_client_connected = Event()
 event_stop_client = Event()
 event_client_received_correct = Event()
+event_client_received_binary = Event()
 message_log = ""
 
 
@@ -45,9 +47,27 @@ def mqtt_client_task(client):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     global message_log
+    global event_client_received_correct
+    global event_client_received_binary
+    if msg.topic == "/topic/binary":
+        binary = userdata
+        size = os.path.getsize(binary)
+        print("Receiving binary from esp and comparing with {}, size {}...".format(binary, size))
+        with open(binary, "rb") as f:
+            bin = f.read()
+            if bin == msg.payload[:size]:
+                print("...matches!")
+                event_client_received_binary.set()
+                return
+            else:
+                recv_binary = binary + ".received"
+                with open(recv_binary, "w") as fw:
+                    fw.write(msg.payload)
+                raise ValueError('Received binary (saved as: {}) does not match the original file: {}'.format(recv_binary, binary))
     payload = msg.payload.decode()
     if not event_client_received_correct.is_set() and payload == "data":
-        client.publish("/topic/qos0", "data_to_esp32")
+        client.subscribe("/topic/binary")
+        client.publish("/topic/qos0", "send binary please")
         if msg.topic == "/topic/qos0" and payload == "data":
             event_client_received_correct.set()
     message_log += "Received data:" + msg.topic + " " + payload + "\n"
@@ -63,8 +83,9 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
       2. Test connects a client to the same broker
       3. Test evaluates python client received correct qos0 message
       4. Test ESP32 client received correct qos0 message
+      5. Test python client receives binary data from running partition and compares it with the binary
     """
-    dut1 = env.get_dut("mqtt_ssl", "examples/protocols/mqtt/ssl")
+    dut1 = env.get_dut("mqtt_ssl", "examples/protocols/mqtt/ssl", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_ssl.bin")
     bin_size = os.path.getsize(binary_file)
@@ -85,9 +106,10 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
         client = mqtt.Client()
         client.on_connect = on_connect
         client.on_message = on_message
+        client.user_data_set(binary_file)
         client.tls_set(None,
                        None,
-                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1, ciphers=None)
+                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
         client.tls_insecure_set(True)
         print("Connecting...")
         client.connect(broker_url, broker_port, 60)
@@ -112,7 +134,10 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
         if not event_client_received_correct.wait(timeout=30):
             raise ValueError('Wrong data received, msg log: {}'.format(message_log))
         print("Checking esp-client received msg published from py-client...")
-        dut1.expect(re.compile(r"DATA=data_to_esp32"), timeout=30)
+        dut1.expect(re.compile(r"DATA=send binary please"), timeout=30)
+        print("Receiving binary data from running partition...")
+        if not event_client_received_binary.wait(timeout=30):
+            raise ValueError('Binary not received within timeout')
     finally:
         event_stop_client.set()
         thread1.join()

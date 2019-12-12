@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 
-// md5_digest_table 544d434da010ce22f7db1b14d38e1d66
+// md5_digest_table 2e23344575b3d07f01ecb695294e9770
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -52,6 +52,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_PKG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_CPU_FREQ_LOW[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_CPU_FREQ_RATED[];
 extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_REV1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_CHIP_VER_REV2[];
 extern const esp_efuse_desc_t* ESP_EFUSE_XPD_SDIO_REG[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SDIO_TIEH[];
 extern const esp_efuse_desc_t* ESP_EFUSE_SDIO_FORCE[];

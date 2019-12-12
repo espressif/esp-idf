@@ -69,7 +69,7 @@ SDKCONFIG_DEFAULTS_CI=sdkconfig.ci
 EXAMPLE_PATHS=$( get_supported_examples.sh $IDF_TARGET | sed "s#^#${IDF_PATH}\/examples\/#g" | awk '{print $0"/CmakeLists.txt"}' )
 NUM_OF_EXAMPLES=$( echo "${EXAMPLE_PATHS}" | wc -l )
 # just a plausibility check
-[ ${NUM_OF_EXAMPLES} -lt 100 ] && die "NUM_OF_EXAMPLES is bad"
+[ ${NUM_OF_EXAMPLES} -lt 50 ] && die "NUM_OF_EXAMPLES is bad"
 
 echo "All examples found for target $IDF_TARGET:"
 echo $EXAMPLE_PATHS
@@ -145,7 +145,7 @@ build_example () {
         cat ${BUILDLOG}
     popd
 
-    grep -i "error\|warning" "${BUILDLOG}" 2>&1 | grep -v "error.c.obj" >> "${LOG_SUSPECTED}" || :
+    grep -i "error\|warning" "${BUILDLOG}" 2>&1 >> "${LOG_SUSPECTED}" || :
 }
 
 EXAMPLE_NUM=0
@@ -175,6 +175,7 @@ echo -e "\nFound issues:"
 # 'Compiler and toochain versions is not supported' from crosstool_version_check.cmake
 IGNORE_WARNS="\
 library/error\.o\
+\|.*error.*\.c\.obj\
 \|\ -Werror\
 \|error\.d\
 \|reassigning to symbol\

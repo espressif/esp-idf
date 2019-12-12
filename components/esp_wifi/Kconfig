@@ -1,5 +1,5 @@
 
-menu Wi-Fi
+menu "Wi-Fi"
 
     config ESP32_WIFI_SW_COEXIST_ENABLE
         bool "Software controls WiFi/Bluetooth coexistence"
@@ -240,7 +240,7 @@ menu Wi-Fi
     choice ESP32_WIFI_DEBUG_LOG_LEVEL
         depends on ESP32_WIFI_DEBUG_LOG_ENABLE
         prompt "WiFi debug log level"
-        default ESP32_WIFI_LOG_DEBUG
+        default ESP32_WIFI_DEBUG_LOG_DEBUG
         help
             The WiFi log is divided into the following levels: ERROR,WARNING,INFO,DEBUG,VERBOSE.
             The ERROR,WARNING,INFO levels are enabled by default, and the DEBUG,VERBOSE levels can be enabled here.
@@ -310,17 +310,29 @@ menu Wi-Fi
 
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
             Select this option to place frequently called Wi-Fi library functions in IRAM.
             When this option is disabled, more than 10Kbytes of IRAM memory will be saved
             but Wi-Fi throughput will be reduced.
 
+    config ESP32_WIFI_RX_IRAM_OPT
+        bool "WiFi RX IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default y
+        help
+            Select this option to place frequently called Wi-Fi library RX functions in IRAM.
+            When this option is disabled, more than 17Kbytes of IRAM memory will be saved
+            but Wi-Fi performance will be reduced.
+
 endmenu  # Wi-Fi
 
-menu PHY
+menu "PHY"
 
     config ESP32_PHY_CALIBRATION_AND_DATA_STORAGE
+        # ToDo: remove once NVS and PHY partial calibration are supported
+        depends on IDF_TARGET_ESP32
         bool "Store phy calibration data in NVS"
         default y
         help

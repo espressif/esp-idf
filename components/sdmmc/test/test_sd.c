@@ -28,7 +28,7 @@
 #include <unistd.h>
 
 // Can't test eMMC (slot 0) and PSRAM together
-#ifndef CONFIG_ESP32_SPIRAM_SUPPORT
+#ifndef CONFIG_SPIRAM
 #define WITH_EMMC_TEST
 #endif
 

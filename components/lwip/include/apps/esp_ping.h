@@ -24,7 +24,7 @@ extern "C" {
 // gen_esp_err_to_name.py: include this as "esp_ping.h" because "components/lwip/include/apps/" is in the compiler path
 // and not "components/lwip/include"
 
-#define ESP_ERR_PING_BASE               0x6000
+#define ESP_ERR_PING_BASE               0xa000
 
 #define ESP_ERR_PING_INVALID_PARAMS     ESP_ERR_PING_BASE + 0x01
 #define ESP_ERR_PING_NO_MEM             ESP_ERR_PING_BASE + 0x02
@@ -59,7 +59,7 @@ typedef enum {
 
 typedef enum {
     PING_RES_TIMEOUT = 0,
-    PING_RES_OK      = 1, 
+    PING_RES_OK      = 1,
     PING_RES_FINISH  = 2,
 } ping_res_t;
 

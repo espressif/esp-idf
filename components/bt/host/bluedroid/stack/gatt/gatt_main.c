@@ -47,7 +47,7 @@ static void gatt_le_connect_cback (UINT16 chan, BD_ADDR bd_addr, BOOLEAN connect
                                    UINT16 reason, tBT_TRANSPORT transport);
 static void gatt_le_data_ind (UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf);
 static void gatt_le_cong_cback(BD_ADDR remote_bda, BOOLEAN congest);
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (CLASSIC_BT_GATT_INCLUDED == TRUE)
 static void gatt_l2cif_connect_ind_cback (BD_ADDR  bd_addr, UINT16 l2cap_cid,
         UINT16 psm, UINT8 l2cap_id);
 static void gatt_l2cif_connect_cfm_cback (UINT16 l2cap_cid, UINT16 result);
@@ -56,9 +56,9 @@ static void gatt_l2cif_config_cfm_cback (UINT16 l2cap_cid, tL2CAP_CFG_INFO *p_cf
 static void gatt_l2cif_disconnect_ind_cback (UINT16 l2cap_cid, BOOLEAN ack_needed);
 static void gatt_l2cif_disconnect_cfm_cback (UINT16 l2cap_cid, UINT16 result);
 static void gatt_l2cif_data_ind_cback (UINT16 l2cap_cid, BT_HDR *p_msg);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
 static void gatt_send_conn_cback (tGATT_TCB *p_tcb);
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (CLASSIC_BT_GATT_INCLUDED == TRUE)
 static void gatt_l2cif_congest_cback (UINT16 cid, BOOLEAN congested);
 static const tL2CAP_APPL_INFO dyn_info = {
     gatt_l2cif_connect_ind_cback,
@@ -73,7 +73,7 @@ static const tL2CAP_APPL_INFO dyn_info = {
     gatt_l2cif_congest_cback,
     NULL
 } ;
-#endif  ///SMP_INCLUDED == TRUE
+#endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
 
 #if GATT_DYNAMIC_MEMORY == FALSE
 tGATT_CB  gatt_cb;
@@ -125,12 +125,13 @@ void gatt_init (void)
     fixed_reg.default_idle_tout  = 0xffff;                  /* 0xffff default idle timeout */
 
     L2CA_RegisterFixedChannel (L2CAP_ATT_CID, &fixed_reg);
-#if (CLASSIC_BT_INCLUDED == TRUE)
+
+#if (CLASSIC_BT_GATT_INCLUDED == TRUE)
     /* Now, register with L2CAP for ATT PSM over BR/EDR */
     if (!L2CA_Register (BT_PSM_ATT, (tL2CAP_APPL_INFO *) &dyn_info)) {
         GATT_TRACE_ERROR ("ATT Dynamic Registration failed");
     }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
     BTM_SetSecurityLevel(TRUE, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT, 0, 0);
     BTM_SetSecurityLevel(FALSE, "", BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT, 0, 0);
 
@@ -221,12 +222,12 @@ BOOLEAN gatt_connect (BD_ADDR rem_bda, tBLE_ADDR_TYPE bd_addr_type, tGATT_TCB *p
     if (transport == BT_TRANSPORT_LE) {
         p_tcb->att_lcid = L2CAP_ATT_CID;
         gatt_ret = L2CA_ConnectFixedChnl (L2CAP_ATT_CID, rem_bda, bd_addr_type);
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (CLASSIC_BT_GATT_INCLUDED == TRUE)
     } else {
         if ((p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda)) != 0) {
             gatt_ret = TRUE;
         }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
 
     }
 
@@ -262,10 +263,10 @@ BOOLEAN gatt_disconnect (tGATT_TCB *p_tcb)
                     gatt_set_ch_state(p_tcb, GATT_CH_CLOSING);
                     ret = L2CA_CancelBleConnectReq (p_tcb->peer_bda);
                 }
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (CLASSIC_BT_GATT_INCLUDED == TRUE)
             } else {
                 ret = L2CA_DisconnectReq(p_tcb->att_lcid);
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
             }
         } else {
             GATT_TRACE_DEBUG ("gatt_disconnect already in closing state");
@@ -581,7 +582,7 @@ static void gatt_le_data_ind (UINT16 chan, BD_ADDR bd_addr, BT_HDR *p_buf)
 ** Returns          void
 **
 *******************************************************************************/
-#if (CLASSIC_BT_INCLUDED == TRUE)
+#if (CLASSIC_BT_GATT_INCLUDED == TRUE)
 static void gatt_l2cif_connect_ind_cback (BD_ADDR  bd_addr, UINT16 lcid, UINT16 psm, UINT8 id)
 {
     /* do we already have a control channel for this peer? */
@@ -887,7 +888,7 @@ static void gatt_l2cif_congest_cback (UINT16 lcid, BOOLEAN congested)
     }
 
 }
-#endif  ///CLASSIC_BT_INCLUDED == TRUE
+#endif  ///CLASSIC_BT_GATT_INCLUDED == TRUE
 
 /*******************************************************************************
 **

@@ -11,7 +11,6 @@
 #define EVENT_SOURCE_H_
 
 #include "esp_event.h"
-#include "esp_event_loop.h"
 #include "esp_timer.h"
 
 #ifdef __cplusplus

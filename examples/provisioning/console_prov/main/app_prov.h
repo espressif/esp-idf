@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include <esp_event_loop.h>
-
 #include <protocomm_security.h>
 #include <wifi_provisioning/wifi_config.h>
 

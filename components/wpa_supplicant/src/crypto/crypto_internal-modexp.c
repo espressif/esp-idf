@@ -35,7 +35,7 @@
 #else /* USE_MBEDTLS_CRYPTO */
 #include "bignum.h"
 #endif /* USE_MBEDTLS_CRYPTO */
-#include "crypto/crypto.h"
+#include "crypto.h"
 
 #ifdef USE_MBEDTLS_CRYPTO
 int

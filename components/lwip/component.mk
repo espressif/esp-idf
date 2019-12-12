@@ -16,6 +16,7 @@ COMPONENT_SRCDIRS := \
 	apps/sntp \
 	lwip/src/api \
 	lwip/src/apps/sntp \
+	lwip/src/apps/netbiosns \
 	lwip/src/core \
 	lwip/src/core/ipv4 \
 	lwip/src/core/ipv6 \
@@ -24,6 +25,10 @@ COMPONENT_SRCDIRS := \
 	port/esp32/freertos \
 	port/esp32/netif \
 	port/esp32/debug
+
+ifndef CONFIG_IDF_TARGET_ESP32
+    COMPONENT_OBJEXCLUDE := port/esp32/netif/ethernetif.o
+endif
 
 ifdef CONFIG_LWIP_PPP_SUPPORT
     COMPONENT_SRCDIRS += lwip/src/netif/ppp lwip/src/netif/ppp/polarssl

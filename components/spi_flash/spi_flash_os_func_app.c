@@ -13,10 +13,17 @@
 // limitations under the License.
 
 #include <stdarg.h>
-#include "esp32/rom/ets_sys.h"
 #include "esp_attr.h"
 #include "esp_spi_flash.h"   //for ``g_flash_guard_default_ops``
 #include "esp_flash.h"
+#include "esp_flash_partitions.h"
+
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#else
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 /*
  * OS functions providing delay service and arbitration among chips, and with the cache.
@@ -28,6 +35,11 @@
 typedef struct {
     int host_id;
 } app_func_arg_t;
+
+typedef struct {
+    int host_id;
+    bool no_protect;    //to decide whether to check protected region (for the main chip) or not.
+} spi1_app_func_arg_t;
 
 // in the future we will have arbitration among devices, including flash on the same flash bus
 static IRAM_ATTR esp_err_t spi_bus_acquire(int host_id)
@@ -45,7 +57,7 @@ static IRAM_ATTR esp_err_t spi1_start(void *arg)
 {
     g_flash_guard_default_ops.start();
 
-    spi_bus_acquire(((app_func_arg_t *)arg)->host_id);
+    spi_bus_acquire(((spi1_app_func_arg_t *)arg)->host_id);
 
     return ESP_OK;
 }
@@ -53,7 +65,7 @@ static IRAM_ATTR esp_err_t spi1_end(void *arg)
 {
     g_flash_guard_default_ops.end();
 
-    spi_bus_release(((app_func_arg_t *)arg)->host_id);
+    spi_bus_release(((spi1_app_func_arg_t *)arg)->host_id);
 
     return ESP_OK;
 }
@@ -76,8 +88,24 @@ static IRAM_ATTR esp_err_t delay_ms(void *arg, unsigned ms)
     return ESP_OK;
 }
 
-static DRAM_ATTR app_func_arg_t spi1_arg = {
+static IRAM_ATTR esp_err_t main_flash_region_protected(void* arg, size_t start_addr, size_t size)
+{
+    if (((spi1_app_func_arg_t*)arg)->no_protect || esp_partition_main_flash_region_safe(start_addr, size)) {
+        //ESP_OK = 0, also means protected==0
+        return ESP_OK;
+    } else {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+}
+
+static DRAM_ATTR spi1_app_func_arg_t spi1_arg = {
     .host_id = 0,   //for SPI1,
+    .no_protect = true,
+};
+
+static DRAM_ATTR spi1_app_func_arg_t main_flash_arg = {
+    .host_id = 0,   //for SPI1,
+    .no_protect = false,
 };
 
 static app_func_arg_t spi2_arg = {
@@ -93,6 +121,7 @@ const DRAM_ATTR esp_flash_os_functions_t esp_flash_spi1_default_os_functions = {
     .start = spi1_start,
     .end = spi1_end,
     .delay_ms = delay_ms,
+    .region_protected = main_flash_region_protected,
 };
 
 const esp_flash_os_functions_t esp_flash_spi23_default_os_functions = {
@@ -114,6 +143,13 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
     } else {
         return ESP_ERR_INVALID_ARG;
     }
+    return ESP_OK;
+}
+
+esp_err_t esp_flash_app_init_os_functions(esp_flash_t* chip)
+{
+    chip->os_func = &esp_flash_spi1_default_os_functions;
+    chip->os_func_data = &main_flash_arg;
     return ESP_OK;
 }
 

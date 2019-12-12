@@ -18,7 +18,11 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include "sdkconfig.h"
-#include <esp32/rom/ets_sys.h>
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -85,6 +89,21 @@ vprintf_like_t esp_log_set_vprintf(vprintf_like_t func);
  * @return timestamp, in milliseconds
  */
 uint32_t esp_log_timestamp(void);
+
+/**
+ * @brief Function which returns system timestamp to be used in log output
+ *
+ * This function is used in expansion of ESP_LOGx macros to print
+ * the system time as "HH:MM:SS.sss". The system time is initialized to
+ * 0 on startup, this can be set to the correct time with an SNTP sync,
+ * or manually with standard POSIX time functions.
+ *
+ * Currently this will not get used in logging from binary blobs
+ * (i.e WiFi & Bluetooth libraries), these will still print the RTOS tick time.
+ *
+ * @return timestamp, in "HH:MM:SS.sss"
+ */
+char* esp_log_system_timestamp(void);
 
 /**
  * @brief Function which returns timestamp to be used in log output
@@ -154,15 +173,15 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 
 /**
  * @brief Dump a buffer to the log at specified level.
- * 
+ *
  * The dump log shows just like the one below:
- * 
+ *
  *      W (195) log_example: 0x3ffb4280   45 53 50 33 32 20 69 73  20 67 72 65 61 74 2c 20  |ESP32 is great, |
  *      W (195) log_example: 0x3ffb4290   77 6f 72 6b 69 6e 67 20  61 6c 6f 6e 67 20 77 69  |working along wi|
  *      W (205) log_example: 0x3ffb42a0   74 68 20 74 68 65 20 49  44 46 2e 00              |th the IDF..|
- *      
+ *
  * It is highly recommend to use terminals with over 102 text width.
- * 
+ *
  * @param tag description tag
  * @param buffer Pointer to the buffer array
  * @param buff_len length of buffer in bytes
@@ -242,6 +261,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif //CONFIG_LOG_COLORS
 
 #define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%d) %s: " format LOG_RESET_COLOR "\n"
+#define LOG_SYSTEM_TIME_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%s) %s: " format LOG_RESET_COLOR "\n"
 
 /** @endcond */
 
@@ -287,7 +307,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
 #endif  // BOOTLOADER_BUILD
 
 /** runtime macro to output logs at a specified level.
- * 
+ *
  * @param tag tag of the log, which can be used to change the log level by ``esp_log_level_set`` at runtime.
  * @param level level of the output log.
  * @param format format of the output log. see ``printf``
@@ -295,6 +315,7 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
  *
  * @see ``printf``
  */
+#if CONFIG_LOG_TIMESTAMP_SOURCE_RTOS
 #define ESP_LOG_LEVEL(level, tag, format, ...) do {                     \
         if (level==ESP_LOG_ERROR )          { esp_log_write(ESP_LOG_ERROR,      tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); } \
         else if (level==ESP_LOG_WARN )      { esp_log_write(ESP_LOG_WARN,       tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__); } \
@@ -302,6 +323,15 @@ void esp_log_write(esp_log_level_t level, const char* tag, const char* format, .
         else if (level==ESP_LOG_VERBOSE )   { esp_log_write(ESP_LOG_VERBOSE,    tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); } \
         else                                { esp_log_write(ESP_LOG_INFO,       tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); } \
     } while(0)
+#elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM
+#define ESP_LOG_LEVEL(level, tag, format, ...) do {                     \
+        if (level==ESP_LOG_ERROR )          { esp_log_write(ESP_LOG_ERROR,      tag, LOG_SYSTEM_TIME_FORMAT(E, format), esp_log_system_timestamp(), tag, ##__VA_ARGS__); } \
+        else if (level==ESP_LOG_WARN )      { esp_log_write(ESP_LOG_WARN,       tag, LOG_SYSTEM_TIME_FORMAT(W, format), esp_log_system_timestamp(), tag, ##__VA_ARGS__); } \
+        else if (level==ESP_LOG_DEBUG )     { esp_log_write(ESP_LOG_DEBUG,      tag, LOG_SYSTEM_TIME_FORMAT(D, format), esp_log_system_timestamp(), tag, ##__VA_ARGS__); } \
+        else if (level==ESP_LOG_VERBOSE )   { esp_log_write(ESP_LOG_VERBOSE,    tag, LOG_SYSTEM_TIME_FORMAT(V, format), esp_log_system_timestamp(), tag, ##__VA_ARGS__); } \
+        else                                { esp_log_write(ESP_LOG_INFO,       tag, LOG_SYSTEM_TIME_FORMAT(I, format), esp_log_system_timestamp(), tag, ##__VA_ARGS__); } \
+    } while(0)
+#endif //CONFIG_LOG_TIMESTAMP_SOURCE_xxx
 
 /** runtime macro to output logs at a specified level. Also check the level with ``LOG_LOCAL_LEVEL``.
  *

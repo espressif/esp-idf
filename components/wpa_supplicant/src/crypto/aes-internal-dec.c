@@ -24,8 +24,8 @@
 #include "utils/includes.h"
 
 #include "utils/common.h"
-#include "crypto/crypto.h"
-#include "crypto/aes_i.h"
+#include "crypto.h"
+#include "aes_i.h"
 
 
 

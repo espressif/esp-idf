@@ -3,7 +3,7 @@
 
 /*
  * MDNS Server Networking -- private include
- * 
+ *
  */
 #include "mdns.h"
 #include "mdns_private.h"
@@ -21,7 +21,9 @@
 #include "esp_system.h"
 #include "esp_timer.h"
 #include "esp_event.h"
+#if CONFIG_ETH_ENABLED
 #include "esp_eth.h"
+#endif
 
 
 /**
@@ -32,12 +34,12 @@ esp_err_t _mdns_send_rx_action(mdns_rx_packet_t * packet);
 /**
  * @brief  Start PCB
  */
-esp_err_t _mdns_pcb_init(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
+esp_err_t _mdns_pcb_init(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
 
 /**
  * @brief  Stop PCB
  */
-esp_err_t _mdns_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
+esp_err_t _mdns_pcb_deinit(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol);
 
 /**
  * @brief  send packet over UDP
@@ -48,6 +50,6 @@ esp_err_t _mdns_pcb_deinit(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_pr
  *
  * @return length of sent packet or 0 on error
  */
-size_t _mdns_udp_pcb_write(tcpip_adapter_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, const ip_addr_t *ip, uint16_t port, uint8_t * data, size_t len);
+size_t _mdns_udp_pcb_write(mdns_if_t tcpip_if, mdns_ip_protocol_t ip_protocol, const esp_ip_addr_t *ip, uint16_t port, uint8_t * data, size_t len);
 
 #endif /* ESP_MDNS_NETWORKING_H_ */

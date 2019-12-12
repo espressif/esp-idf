@@ -4,7 +4,7 @@ ESP32 Hardware Reference
 :link_to_translation:`zh_CN:[中文]`
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
     Technical Reference Manual (PDF) <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>
     Datasheet (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_en.pdf>

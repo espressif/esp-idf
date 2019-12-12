@@ -1003,4 +1003,148 @@ void btm_report_device_status (tBTM_DEV_STATUS status)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_SetAfhChannels
+**
+** Description      This function is called to set AFH channels
+**
+** Returns          status of the operation
+**
+*******************************************************************************/
+tBTM_STATUS BTM_SetAfhChannels (AFH_CHANNELS channels, tBTM_CMPL_CB *p_afh_channels_cmpl_cback)
+{
+    if (!controller_get_interface()->get_is_ready()) {
+        return (BTM_DEV_RESET);
+    }
 
+    /* Check if set afh already in progress */
+    if (btm_cb.devcb.p_afh_channels_cmpl_cb) {
+        return (BTM_NO_RESOURCES);
+    }
+
+    /* Save callback */
+    btm_cb.devcb.p_afh_channels_cmpl_cb = p_afh_channels_cmpl_cback;
+
+    if (!btsnd_hcic_set_afh_channels (channels)) {
+        return (BTM_NO_RESOURCES);
+    }
+
+    btu_start_timer (&btm_cb.devcb.afh_channels_timer, BTU_TTYPE_BTM_ACL, BTM_DEV_REPLY_TIMEOUT);
+
+    return BTM_CMD_STARTED;
+}
+
+/*******************************************************************************
+**
+** Function         btm_set_afh_channels_complete
+**
+** Description      This function is called when setting AFH channels complete.
+**                  message is received from the HCI.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_set_afh_channels_complete (UINT8 *p)
+{
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_afh_channels_cmpl_cb;
+    tBTM_SET_AFH_CHANNELS_RESULTS results;
+
+    btu_free_timer (&btm_cb.devcb.afh_channels_timer);
+
+    /* If there is a callback address for setting AFH channels, call it */
+    btm_cb.devcb.p_afh_channels_cmpl_cb = NULL;
+
+    if (p_cb) {
+        STREAM_TO_UINT8 (results.hci_status, p);
+
+        switch (results.hci_status){
+            case HCI_SUCCESS:
+                results.status = BTM_SUCCESS;
+                break;
+            case HCI_ERR_UNSUPPORTED_VALUE:
+            case HCI_ERR_ILLEGAL_PARAMETER_FMT:
+                results.status = BTM_ILLEGAL_VALUE;
+                break;
+            default:
+                results.status = BTM_ERR_PROCESSING;
+                break;
+        }
+        (*p_cb)(&results);
+    }
+}
+#endif /// CLASSIC_BT_INCLUDED == TRUE
+
+#if (BLE_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         BTM_BleSetChannels
+**
+** Description      This function is called to set BLE channels
+**
+** Returns          status of the operation
+**
+*******************************************************************************/
+tBTM_STATUS BTM_BleSetChannels (BLE_CHANNELS channels, tBTM_CMPL_CB *p_ble_channels_cmpl_cback)
+{
+    if (!controller_get_interface()->get_is_ready()) {
+        return (BTM_DEV_RESET);
+    }
+
+    /* Check if set afh already in progress */
+    if (btm_cb.devcb.p_ble_channels_cmpl_cb) {
+        return (BTM_NO_RESOURCES);
+    }
+
+    /* Save callback */
+    btm_cb.devcb.p_ble_channels_cmpl_cb = p_ble_channels_cmpl_cback;
+
+    if (!btsnd_hcic_ble_set_channels (channels)) {
+        return (BTM_NO_RESOURCES);
+    }
+
+    btu_start_timer (&btm_cb.devcb.ble_channels_timer, BTU_TTYPE_BTM_ACL, BTM_DEV_REPLY_TIMEOUT);
+
+    return BTM_CMD_STARTED;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_set_channels_complete
+**
+** Description      This function is called when setting AFH channels complete.
+**                  message is received from the HCI.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_ble_set_channels_complete (UINT8 *p)
+{
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_ble_channels_cmpl_cb;
+    tBTM_BLE_SET_CHANNELS_RESULTS results;
+
+    btu_free_timer (&btm_cb.devcb.ble_channels_timer);
+
+    /* If there is a callback address for setting AFH channels, call it */
+    btm_cb.devcb.p_ble_channels_cmpl_cb = NULL;
+
+    if (p_cb) {
+        STREAM_TO_UINT8 (results.hci_status, p);
+
+        switch (results.hci_status){
+            case HCI_SUCCESS:
+                results.status = BTM_SUCCESS;
+                break;
+            case HCI_ERR_UNSUPPORTED_VALUE:
+            case HCI_ERR_ILLEGAL_PARAMETER_FMT:
+                results.status = BTM_ILLEGAL_VALUE;
+                break;
+            default:
+                results.status = BTM_ERR_PROCESSING;
+                break;
+        }
+        (*p_cb)(&results);
+    }
+}
+#endif /// BLE_INCLUDED == TRUE

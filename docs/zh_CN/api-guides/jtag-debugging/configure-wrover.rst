@@ -121,19 +121,13 @@ MacOS
 
     sudo kextunload -b com.apple.driver.AppleUSBFTDI
 
-4. 运行 OpenOCD（以下路径为 Github 上可供下载的预编译后的 OpenOCD）::
+4. 运行 OpenOCD::
 
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
-
-   如果 OpenOCD 是从源码编译得到的，那么路径需要做相应修改::
-
-    src/openocd -s tcl -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
 
 5. 在另一个终端窗口，再一次加载 FTDI 串口驱动::
 
     sudo kextload -b com.FTDI.driver.FTDIUSBSerialDriver
-
-.. include:: ./windows-openocd-note.rst
 
 .. note::
 

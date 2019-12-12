@@ -31,6 +31,10 @@ endif
 
 ESPTOOL_ELF2IMAGE_OPTIONS :=
 
+ifdef CONFIG_ESP32_REV_MIN
+ESPTOOL_ELF2IMAGE_OPTIONS += --min-rev $(CONFIG_ESP32_REV_MIN)
+endif
+
 ifdef CONFIG_SECURE_BOOT_ENABLED
 ifndef CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
 ifndef IS_BOOTLOADER_BUILD
@@ -64,7 +68,11 @@ endif
 APP_BIN_UNSIGNED ?= $(APP_BIN)
 
 $(APP_BIN_UNSIGNED): $(APP_ELF) $(ESPTOOLPY_SRC) | check_python_dependencies
+ifeq ("$(CONFIG_APP_BUILD_GENERATE_BINARIES)","y")
 	$(ESPTOOLPY) elf2image $(ESPTOOL_FLASH_OPTIONS) $(ESPTOOL_ELF2IMAGE_OPTIONS) -o $@ $<
+else
+	@echo "Skipping the BIN generation"
+endif
 
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 encrypted-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies

@@ -1,12 +1,12 @@
 ************************************************
-在 Mac OS 上安装 ESP32 工具链  (传统 GNU Make)
+Mac OS 平台工具链的标准设置（传统 GNU Make）
 ************************************************
 :link_to_translation:`en:[English]`
 
 .. include:: ../gnu-make-legacy.rst
 
 安装准备
-================
+========
 
 - 安装 pip::
 
@@ -14,10 +14,10 @@
 
 .. note::
 
-    ``pip`` 稍后将用于安装 :ref:`必要的 Python 软件包 <get-started-get-packages-legacy>`。
+    ``pip`` 稍后将用于安装 :ref:`所需 Python 包 <get-started-get-packages-legacy>`。
 
-安装工具链
-===============
+工具链设置
+==========
 
 .. include:: /_build/inc/download-links.inc
 
@@ -33,25 +33,25 @@ Mac OS 版本的 ESP32 工具链可以从以下地址下载：
 
 工具链将被解压到 ``~/esp/xtensa-esp32-elf/`` 路径下。
 
-在 ``~/.profile`` 文件中更新 ``PATH`` 环境变量以使用工具链。为了使 ``xtensa-esp32-elf`` 在各种终端会话中都可用，在 ``~/.profile`` 文件中加上以下指令::
+为了正常使用工具链，您必须更新 ``~/.profile`` 文件中的 ``PATH`` 环境变量。此外，您还可以在 ``~/.profile`` 文件中增加以下代码，这样一来，所有终端窗口均可以使用 ``xtensa-esp32-elf``::
 
-     export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH
+    export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH
 
-或者，您可以为上述命令创建一个别名。这样只有执行以下指令时工具链才能被使用。将下面的指令添加到您的 ``〜/ .profile`` 文件中::
+或者，您可以为上述命令创建一个别名。这样，您只有在需要时才可以使用工具链。如需设置别名，请将以下代码增加至您的 ``〜/ .profile`` 文件中::
 
     alias get_esp32="export PATH=$HOME/esp/xtensa-esp32-elf/bin:$PATH"
 
-当需要使用工具链时，在命令行里输入 ``get_esp32``，就可以将工具链添加到 ``PATH`` 中。
+这样，您可以在终端输入 ``get_esp32`` 命令将工具链添加至您的 ``PATH``，从而使用工具链。
 
 
-下一步
-==========
+后续步骤
+========
 
-前往 :ref:`get-started-get-esp-idf-legacy` 继续配置开发环境。
+继续设置开发环境，请前往 :ref:`get-started-get-esp-idf-legacy` 章节。
 
 
 相关文档
-=================
+========
 
 .. toctree::
     :maxdepth: 1

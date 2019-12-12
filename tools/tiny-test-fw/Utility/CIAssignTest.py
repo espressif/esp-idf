@@ -47,6 +47,11 @@ import yaml
 
 from Utility import (CaseConfig, SearchCases, GitlabCIJob, console_log)
 
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader as Loader
+
 
 class Group(object):
 
@@ -150,7 +155,7 @@ class AssignTest(object):
     def _parse_gitlab_ci_config(self, ci_config_file):
 
         with open(ci_config_file, "r") as f:
-            ci_config = yaml.load(f)
+            ci_config = yaml.load(f, Loader=Loader)
 
         job_list = list()
         for job_name in ci_config:
@@ -233,7 +238,7 @@ class AssignTest(object):
             else:
                 failed_to_assign.append(group)
         if failed_to_assign:
-            console_log("Too many test cases vs jobs to run. Please add the following jobs to .gitlab-ci.yml with specific tags:", "R")
+            console_log("Too many test cases vs jobs to run. Please add the following jobs to tools/ci/config/target-test.yml with specific tags:", "R")
             for group in failed_to_assign:
                 console_log("* Add job with: " + ",".join(group.ci_job_match_keys), "R")
             raise RuntimeError("Failed to assign test case to CI jobs")

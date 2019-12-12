@@ -22,6 +22,17 @@
       - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_REGULAR_TEST
 
+
+.build_with_make_and_cmake: &build_with_make_and_cmake |
+  echo -e "section_end:"`date +%s`":build_script\r\e[0Ksection_start:"`date +%s`":build_make\r\e[0KBuild with Make"
+  make defconfig
+  make all
+  make clean
+  echo -e "section_end:"`date +%s`":build_make\r\e[0Ksection_start:"`date +%s`":build_cmake\r\e[0KBuild with CMake"
+  rm -rf build sdkconfig
+  idf.py build
+  echo -e "section_end:"`date +%s`":build_cmake\r\e[0Ksection_start:"`date +%s`":build_script\r\e[0K"
+
 build_template_app:
   stage: build
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
@@ -45,25 +56,37 @@ build_template_app:
     - export PATH="$IDF_PATH/tools:$PATH"
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-    - make defconfig
-    # Test debug build (default)
-    - make all V=1
-    # Now test release build
-    - make clean
-    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
-    - make all V=1
+
+    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
+    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
+    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
+    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
+    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > sdkconfig.defaults
+    - *build_with_make_and_cmake
+
+    # Same as above, but also disable assertions.
+    - echo "CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y" >> sdkconfig.defaults
+    # Don't error out on -Wunused, when assertions are disabled
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
+    - *build_with_make_and_cmake
+    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
+    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+
     # Check if there are any stray printf/ets_printf references in WiFi libs
-    - pushd ../components/esp_wifi/lib_esp32
-    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
-    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
+    - pushd ../components/esp_wifi/lib
+    - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
+    - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
     - popd
-    # Repeat the build using CMake
-    - rm -rf build sdkconfig
-    # Debug build
-    - idf.py build
-    # Release build
-    - sed -i.bak -e's/CONFIG_OPTIMIZATION_LEVEL_DEBUG\=y/CONFIG_OPTIMIZATION_LEVEL_RELEASE=y/' sdkconfig
-    - idf.py build
 
 build_ssc:
   extends: .build_template
@@ -91,6 +114,7 @@ build_esp_idf_tests_make:
   script:
     - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
     - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
+    - export IDF_TARGET=esp32
     - cd $CI_PROJECT_DIR/tools/unit-test-app
     - MAKEFLAGS= make help # make sure kconfig tools are built in single process
     - make ut-clean-all-configs
@@ -131,6 +155,7 @@ build_examples_make:
       - build_examples/*/*/*/build/*.map
       - build_examples/*/*/*/build/download.config
       - build_examples/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
     expire_in: 3 days
   variables:
@@ -160,6 +185,10 @@ build_examples_make:
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples.sh
+    # Check if the tests demand Make built binaries. If not, delete them
+    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == "make" ]; then exit 0; fi
+    - cd ..
+    - rm -rf build_examples
 
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
@@ -168,12 +197,13 @@ build_examples_make:
   artifacts:
     when: always
     paths:
-      - build_examples_cmake/*/*/*/*/build/*.bin
-      - build_examples_cmake/*/*/*/*/sdkconfig
-      - build_examples_cmake/*/*/*/*/build/*.elf
-      - build_examples_cmake/*/*/*/*/build/*.map
-      - build_examples_cmake/*/*/*/*/build/flasher_args.json
-      - build_examples_cmake/*/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/*/build/*.bin
+      - build_examples/*/*/*/*/sdkconfig
+      - build_examples/*/*/*/*/build/*.elf
+      - build_examples/*/*/*/*/build/*.map
+      - build_examples/*/*/*/*/build/flasher_args.json
+      - build_examples/*/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
     expire_in: 3 days
   variables:
@@ -188,17 +218,26 @@ build_examples_make:
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
-    - rm -rf build_examples_cmake
-    - mkdir build_examples_cmake
-    - cd build_examples_cmake
+    - rm -rf build_examples
+    - mkdir build_examples
+    - cd build_examples
     # build some of examples
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
+    # Check if the tests demand CMake built binaries. If not, delete them
+    - if [ "$EXAMPLE_TEST_BUILD_SYSTEM" == "cmake" ]; then exit 0; fi
+    - cd ..
+    - rm -rf build_examples
 
 build_examples_cmake_esp32:
   extends: .build_examples_cmake
   variables:
     IDF_TARGET: esp32
+
+build_examples_cmake_esp32s2:
+  extends: .build_examples_cmake
+  variables:
+    IDF_TARGET: esp32s2beta
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
@@ -262,6 +301,27 @@ test_build_system:
 
 test_build_system_cmake:
   extends: .build_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+
+test_build_system_cmake_macos:
+  extends: .macos_build_template
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+      - triggers
+      - pipelines
+      - web
+    variables:
+      - $CI_PIPELINE_SOURCE != "push" && $BOT_LABEL_MACOS_TEST != null
+      - $CI_PIPELINE_SOURCE == "push"
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
@@ -354,19 +414,5 @@ build_installer:
     - build_cmdlinerunner
   before_script: []
   script:
-    - mkdir idf_tools_tmp
-    - export IDF_TOOLS_PATH=$PWD/idf_tools_tmp
-    - tools/idf_tools.py --non-interactive download --platform Windows-x86_64 all
-    - tools/idf_tools.py --tools-json tools/windows/tool_setup/tools_fallback.json --non-interactive download --platform Windows-x86_64 all
-    - mkdir tools/windows/tool_setup/dist
-    - mv idf_tools_tmp/dist/* tools/windows/tool_setup/dist/
-
     - cd tools/windows/tool_setup/
-    - mkdir unzip
-    - cd unzip
-    - wget --no-verbose https://www.7-zip.org/a/7z1900-extra.7z
-    - 7zr e -y 7z1900-extra.7z
-    - cd ..
-
-    - wget --no-verbose https://dl.espressif.com/dl/esp-idf/idf_versions.txt
-    - iscc idf_tool_setup.iss
+    - ./build_installer.sh

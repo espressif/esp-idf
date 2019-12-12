@@ -5,5 +5,6 @@ cmake_minimum_required(VERSION 3.5)
 set(EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/examples/system/console/components
                          $ENV{IDF_PATH}/examples/wifi/iperf/components)
 
+set(SUPPORTED_TARGETS esp32)
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 project(ethernet_iperf)

@@ -205,7 +205,7 @@ esp_err_t nvs_set_u32 (nvs_handle_t handle, const char* key, uint32_t value);
 esp_err_t nvs_set_i64 (nvs_handle_t handle, const char* key, int64_t value);
 esp_err_t nvs_set_u64 (nvs_handle_t handle, const char* key, uint64_t value);
 esp_err_t nvs_set_str (nvs_handle_t handle, const char* key, const char* value);
-/**@}*/ 
+/**@}*/
 
 /**
  * @brief       set variable length binary value for given key
@@ -282,7 +282,7 @@ esp_err_t nvs_get_i32 (nvs_handle_t handle, const char* key, int32_t* out_value)
 esp_err_t nvs_get_u32 (nvs_handle_t handle, const char* key, uint32_t* out_value);
 esp_err_t nvs_get_i64 (nvs_handle_t handle, const char* key, int64_t* out_value);
 esp_err_t nvs_get_u64 (nvs_handle_t handle, const char* key, uint64_t* out_value);
-/**@}*/ 
+/**@}*/
 
 /**
  * @brief      get value for given key
@@ -527,35 +527,6 @@ esp_err_t nvs_get_used_entry_count(nvs_handle_t handle, size_t* used_entries);
  *          using nvs_release_iterator when not used any more.
  */
 nvs_iterator_t nvs_entry_find(const char *part_name, const char *namespace_name, nvs_type_t type);
-
-/**
- * @brief       Returns next item matching the iterator criteria, NULL if no such item exists.
- *
- * Note that any copies of the iterator will be invalid after this call.
- *
- * @param[in]   iterator     Iterator obtained from nvs_entry_find function. Must be non-NULL.
- *
- * @return
- *          NULL if no entry was found, valid nvs_iterator_t otherwise.
- */
-nvs_iterator_t nvs_entry_next(nvs_iterator_t iterator);
-
-/**
- * @brief       Fills nvs_entry_info_t structure with information about entry pointed to by the iterator.
- *
- * @param[in]   iterator     Iterator obtained from nvs_entry_find or nvs_entry_next function. Must be non-NULL.
- *
- * @param[out]  out_info     Structure to which entry information is copied.
- */
-void nvs_entry_info(nvs_iterator_t iterator, nvs_entry_info_t *out_info);
-
-/**
- * @brief       Release iterator
- *
- * @param[in]   iterator    Release iterator obtained from nvs_entry_find function. NULL argument is allowed.
- *
- */
-void nvs_release_iterator(nvs_iterator_t iterator);
 
 /**
  * @brief       Returns next item matching the iterator criteria, NULL if no such item exists.

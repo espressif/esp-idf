@@ -9,6 +9,7 @@ import time
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # this is a test case write with tiny-test-fw.
     # to run test cases outside tiny-test-fw,
@@ -75,7 +76,7 @@ def test_examples_protocol_mqtt_qos1(env, extra_data):
       3. Test evaluates that qos1 message is queued and removed from queued after ACK received
       4. Test the broker received the same message id evaluated in step 3
     """
-    dut1 = env.get_dut("mqtt_tcp", "examples/protocols/mqtt/tcp")
+    dut1 = env.get_dut("mqtt_tcp", "examples/protocols/mqtt/tcp", dut_class=ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_tcp.bin")
     bin_size = os.path.getsize(binary_file)

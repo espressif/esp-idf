@@ -14,8 +14,6 @@
 
 #pragma once
 
-#include <esp_event_loop.h>
-
 #include <protocomm.h>
 #include <protocomm_security.h>
 

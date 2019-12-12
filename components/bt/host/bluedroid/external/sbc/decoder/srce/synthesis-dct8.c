@@ -62,7 +62,7 @@
  * @return  A signed 32-bit value corresponding to the 32 most significant bits
  * of the 64-bit product of u and v.
  */
-INLINE OI_INT32 default_mul_32s_32s_hi(OI_INT32 u, OI_INT32 v)
+static INLINE OI_INT32 default_mul_32s_32s_hi(OI_INT32 u, OI_INT32 v)
 {
     OI_UINT32 u0, v0;
     OI_INT32 u1, v1, w1, w2, t;

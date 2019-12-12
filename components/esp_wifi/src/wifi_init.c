@@ -19,6 +19,8 @@
 #include "esp_pm.h"
 #include "soc/rtc.h"
 #include "esp_wpa.h"
+#include "esp_netif.h"
+#include "tcpip_adapter_compatible/tcpip_adapter_compat.h"
 
 #if (CONFIG_ESP32_WIFI_RX_BA_WIN > CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM)
 #error "WiFi configuration check: WARNING, WIFI_RX_BA_WIN should not be larger than WIFI_DYNAMIC_RX_BUFFER_NUM!"
@@ -34,8 +36,10 @@ ESP_EVENT_DEFINE_BASE(WIFI_EVENT);
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
 /* Callback function to update WiFi MAC time */
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
+#endif
 
 static const char* TAG = "wifi_init";
 
@@ -96,6 +100,23 @@ static void esp_wifi_set_debug_log(void)
 
 }
 
+esp_err_t esp_wifi_deinit(void)
+{
+    esp_err_t err = ESP_OK;
+
+    esp_supplicant_deinit();
+    err = esp_wifi_deinit_internal();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
+    }
+
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
+    tcpip_adapter_clear_default_wifi_handlers();
+#endif
+
+    return err;
+}
+
 esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 {
 #ifdef CONFIG_PM_ENABLE
@@ -107,14 +128,18 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         }
     }
 #endif
+#if CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
     esp_err_t err = tcpip_adapter_set_default_wifi_handlers();
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "Failed to set default Wi-Fi event handlers (0x%x)", err);
     }
+#endif
     esp_err_t result = esp_wifi_init_internal(config);
     if (result == ESP_OK) {
         esp_wifi_set_debug_log();
+#if CONFIG_IDF_TARGET_ESP32
         s_wifi_mac_time_update_cb = esp_wifi_internal_update_mac_time;
+#endif
 
         result = esp_supplicant_init();
         if (result != ESP_OK) {

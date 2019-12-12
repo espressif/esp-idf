@@ -26,7 +26,8 @@ variables:
   # If the "recursive" strategy is used we have a problem with using relative URLs for sub-submodules.
   GIT_SUBMODULE_STRATEGY: normal
 
-  UNIT_TEST_BUILD_SYSTEM: make
+  UNIT_TEST_BUILD_SYSTEM: cmake
+  EXAMPLE_TEST_BUILD_SYSTEM: cmake
 # IDF environment
 
   IDF_PATH: "$CI_PROJECT_DIR"
@@ -66,7 +67,7 @@ variables:
   rm -rf "$CUSTOM_TOOLCHAIN_PATH"
 
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
-  if [ "$CI_JOB_STAGE" != "target_test" ]; then
+  if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 
@@ -133,6 +134,17 @@ after_script:
     - host_test
   dependencies: []
   extends: .before_script_lesser_nofilter
+
+.macos_build_template:
+  stage: build
+  tags:
+    - macos_shell
+  dependencies: []
+  before_script:
+    - *apply_bot_filter
+    - *setup_tools_unless_target_test
+    - *setup_custom_toolchain
+    - source tools/ci/configure_ci_environment.sh
 
 include:
   - '/tools/ci/config/build.yml'

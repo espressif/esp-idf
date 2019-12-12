@@ -56,7 +56,8 @@ def main():
     git clone https://github.com/espressif/crosstool-NG.git
     cd crosstool-NG
     git checkout {}
-    ./bootstrap && ./configure --enable-local && make install
+    git submodule update --init
+    ./bootstrap && ./configure --enable-local && make
 """
 
     platform_info = [

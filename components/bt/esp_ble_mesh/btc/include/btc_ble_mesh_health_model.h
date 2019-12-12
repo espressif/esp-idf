@@ -25,11 +25,6 @@ typedef enum {
     BTC_BLE_MESH_ACT_HEALTH_CLIENT_MAX,
 } btc_ble_mesh_health_client_act_t;
 
-typedef enum {
-    BTC_BLE_MESH_ACT_HEALTH_SERVER_FAULT_UPDATE,
-    BTC_BLE_MESH_ACT_HEALTH_SERVER_MAX,
-} btc_ble_mesh_health_server_act_t;
-
 typedef union {
     struct ble_mesh_health_client_get_state_reg_args {
         esp_ble_mesh_client_common_param_t *params;
@@ -41,38 +36,53 @@ typedef union {
     } health_client_set_state;
 } btc_ble_mesh_health_client_args_t;
 
-typedef union {
-    struct ble_mesh_health_server_fault_update_args {
-        esp_ble_mesh_elem_t *element;
-    } fault_update;
-} btc_ble_mesh_health_server_args_t;
-
-void btc_mesh_health_client_call_handler(btc_msg_t *msg);
-
-void btc_mesh_health_client_cb_handler(btc_msg_t *msg);
-
-void btc_mesh_health_server_call_handler(btc_msg_t *msg);
-
-void btc_mesh_health_server_cb_handler(btc_msg_t *msg);
+typedef enum {
+    BTC_BLE_MESH_EVT_HEALTH_CLIENT_GET_STATE,
+    BTC_BLE_MESH_EVT_HEALTH_CLIENT_SET_STATE,
+    BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH,
+    BTC_BLE_MESH_EVT_HEALTH_CLIENT_TIMEOUT,
+    BTC_BLE_MESH_EVT_HEALTH_CLIENT_MAX,
+} btc_ble_mesh_health_client_evt_t;
 
 void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
-void btc_ble_mesh_health_server_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg);
 
-int btc_ble_mesh_health_client_get_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_health_client_get_state_t *get_state,
-        esp_ble_mesh_health_client_cb_param_t *client_cb);
+void btc_ble_mesh_health_client_cb_handler(btc_msg_t *msg);
 
-int btc_ble_mesh_health_client_set_state(esp_ble_mesh_client_common_param_t *params,
-        esp_ble_mesh_health_client_set_state_t *set_state,
-        esp_ble_mesh_health_client_cb_param_t *client_cb);
+void btc_ble_mesh_health_publish_callback(u32_t opcode,
+        struct bt_mesh_model *model,
+        struct bt_mesh_msg_ctx *ctx,
+        struct net_buf_simple *buf);
 
-void btc_mesh_health_publish_callback(u32_t opcode, struct bt_mesh_model *model,
-                                      struct bt_mesh_msg_ctx *ctx, struct net_buf_simple *buf);
-
-void bt_mesh_callback_health_status_to_btc(u32_t opcode, u8_t evt_type,
+void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
         struct bt_mesh_model *model,
         struct bt_mesh_msg_ctx *ctx,
         const u8_t *val, u16_t len);
+
+typedef enum {
+    BTC_BLE_MESH_ACT_HEALTH_SERVER_FAULT_UPDATE,
+    BTC_BLE_MESH_ACT_HEALTH_SERVER_MAX,
+} btc_ble_mesh_health_server_act_t;
+
+typedef union {
+    struct ble_mesh_health_server_fault_update_args {
+        esp_ble_mesh_elem_t *element;
+    } health_fault_update;
+} btc_ble_mesh_health_server_args_t;
+
+void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg);
+
+void btc_ble_mesh_health_server_cb_handler(btc_msg_t *msg);
+
+void btc_ble_mesh_health_server_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+void btc_ble_mesh_health_server_fault_clear(struct bt_mesh_model *model, u16_t company_id);
+
+void btc_ble_mesh_health_server_fault_test(struct bt_mesh_model *model, u8_t test_id, u16_t company_id);
+
+void btc_ble_mesh_health_server_attention_on(struct bt_mesh_model *model, u8_t time);
+
+void btc_ble_mesh_health_server_attention_off(struct bt_mesh_model *model);
 
 #endif /* _BTC_BLE_MESH_HEALTH_MODEL_H_ */

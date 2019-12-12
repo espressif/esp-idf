@@ -9,7 +9,7 @@ if(EXISTS "${COMPONENT_DIR}/${soc_name}")
 endif()
 
 list(APPEND include_dirs include)
-list(APPEND srcs 
+list(APPEND srcs
     "src/memory_layout_utils.c"
     "src/lldesc.c"
     "src/hal/spi_hal.c"
@@ -17,10 +17,16 @@ list(APPEND srcs
     "src/hal/spi_slave_hal.c"
     "src/hal/spi_slave_hal_iram.c"
     "src/soc_include_legacy_warn.c"
-    "src/hal/spi_flash_hal.c"
-    "src/hal/spi_flash_hal_iram.c"
     )
 
+# TODO: SPI Flash HAL for ESP32S2Beta also
+if(IDF_TARGET STREQUAL "esp32")
+    list(APPEND srcs "src/hal/spi_flash_hal.c"
+                     "src/hal/spi_flash_hal_iram.c"
+                     )
+endif()
+
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS "${include_dirs}"
-                    LDFRAGMENTS linker.lf)
+                       INCLUDE_DIRS "${include_dirs}"
+                       PRIV_REQUIRES ${soc_name}
+                       LDFRAGMENTS linker.lf)

@@ -34,12 +34,11 @@ esp_err_t memspi_host_init_pointers(spi_flash_host_driver_t *host, memspi_host_d
     //some functions are not required if not SPI1
     if (data->spi != &SPI1) {
         host->flush_cache = NULL;
-        host->region_protected = NULL;
     }
     return ESP_OK;
 }
 
-esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *chip_drv, uint32_t *id)
+esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *host, uint32_t *id)
 {
     //NOTE: we do have a read id function, however it doesn't work in high freq
     spi_flash_trans_t t = {
@@ -48,7 +47,7 @@ esp_err_t memspi_host_read_id_hs(spi_flash_host_driver_t *chip_drv, uint32_t *id
         .mosi_len = 0,
         .miso_len = 24
     };
-    chip_drv->common_command(chip_drv, &t);
+    host->common_command(host, &t);
     uint32_t raw_flash_id = t.miso_data[0];
     ESP_EARLY_LOGV(TAG, "raw_chip_id: %X\n", raw_flash_id);
     if (raw_flash_id == 0xFFFFFF || raw_flash_id == 0) {
@@ -87,15 +86,4 @@ esp_err_t memspi_host_flush_cache(spi_flash_host_driver_t* driver, uint32_t addr
         spi_flash_check_and_flush_cache(addr, size);
     }
     return ESP_OK;
-}
-
-bool memspi_region_protected(spi_flash_host_driver_t* driver, uint32_t addr, uint32_t size)
-{
-    if (((memspi_host_data_t*)(driver->driver_data))->spi != &SPI1) {
-        return false;
-    }
-    if (!esp_partition_main_flash_region_safe(addr, size)) {
-        return true;
-    }
-    return false;
 }

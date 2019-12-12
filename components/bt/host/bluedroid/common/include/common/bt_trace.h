@@ -25,7 +25,7 @@
 #include "stack/bt_types.h"
 #include "bt_common.h"
 
-inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
+static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 {
     uint16_t i;
 

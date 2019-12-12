@@ -23,6 +23,7 @@ import sys
 
 try:
     import IDF
+    from IDF.IDFDUT import ESP32DUT
 except ImportError:
     # This environment variable is expected on the host machine
     test_fw_path = os.getenv("TEST_FW_PATH")
@@ -52,7 +53,7 @@ client = Utility.load_source("client", expath + "/scripts/test.py")
 @IDF.idf_example_test(env_tag="Example_WIFI")
 def test_examples_protocol_http_server_advanced(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("http_server", "examples/protocols/http_server/advanced_tests")
+    dut1 = env.get_dut("http_server", "examples/protocols/http_server/advanced_tests", dut_class=ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "tests.bin")
@@ -132,6 +133,8 @@ def test_examples_protocol_http_server_advanced(env, extra_data):
     if not client.get_hello_status(got_ip, got_port):
         failed = True
     if not client.get_false_uri(got_ip, got_port):
+        failed = True
+    if not client.get_test_headers(got_ip, got_port):
         failed = True
 
     Utility.console_log("Error code tests...")

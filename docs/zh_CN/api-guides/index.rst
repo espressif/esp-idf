@@ -18,7 +18,7 @@ API 指南
    Thread Local Storage <thread-local-storage>
    High Level Interrupts <hlinterrupts>
    JTAG 调试 <jtag-debugging/index>
-   Bootloader <bootloader>
+   引导加载程序 <bootloader>
    分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP 协处理器 <ulp>
@@ -30,8 +30,10 @@ API 指南
    ROM debug console <romconsole>
    RF Calibration <RF_calibration>
    WiFi Driver <wifi>
-   ESP-MESH <mesh>
+   ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+   ESP-MESH (Wi-Fi) <mesh>
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>
+   LwIP <lwip>
    Tools <tools/index>

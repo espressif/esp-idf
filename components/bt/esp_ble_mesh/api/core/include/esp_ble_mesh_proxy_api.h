@@ -49,5 +49,70 @@ esp_err_t esp_ble_mesh_proxy_gatt_enable(void);
  */
 esp_err_t esp_ble_mesh_proxy_gatt_disable(void);
 
+/**
+ * @brief        Proxy Client creates a connection with the Proxy Server.
+ *
+ * @param[in]    addr:      Device address of the Proxy Server.
+ * @param[in]    addr_type: Device address type(public or static random).
+ * @param[in]    net_idx:   NetKey Index related with Network ID in the Mesh Proxy
+ *                          advertising packet.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_connect(esp_ble_mesh_bd_addr_t addr,
+        esp_ble_mesh_addr_type_t addr_type, uint16_t net_idx);
+
+/**
+ * @brief        Proxy Client terminates a connection with the Proxy Server.
+ *
+ * @param[in]    conn_handle: Proxy connection handle.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_disconnect(uint8_t conn_handle);
+
+/**
+ * @brief        Proxy Client sets the filter type of the Proxy Server.
+ *
+ * @param[in]    conn_handle: Proxy connection handle.
+ * @param[in]    net_idx:     Corresponding NetKey Index.
+ * @param[in]    filter_type: whitelist or blacklist.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_set_filter_type(uint8_t conn_handle,
+        uint16_t net_idx, esp_ble_mesh_proxy_filter_type_t filter_type);
+
+/**
+ * @brief        Proxy Client adds address to the Proxy Server filter list.
+ *
+ * @param[in]    conn_handle: Proxy connection handle.
+ * @param[in]    net_idx:     Corresponding NetKey Index.
+ * @param[in]    addr:        Pointer to the filter address.
+ * @param[in]    addr_num:    Number of the filter address.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_add_filter_addr(uint8_t conn_handle,
+        uint16_t net_idx, uint16_t *addr, uint16_t addr_num);
+
+/**
+ * @brief        Proxy Client removes address from the Proxy Server filter list.
+ *
+ * @param[in]    conn_handle: Proxy connection handle.
+ * @param[in]    net_idx:     Corresponding NetKey Index.
+ * @param[in]    addr:        Pointer to the filter address.
+ * @param[in]    addr_num:    Number of the filter address.
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_proxy_client_remove_filter_addr(uint8_t conn_handle,
+        uint16_t net_idx, uint16_t *addr, uint16_t addr_num);
+
 #endif /* _ESP_BLE_MESH_PROXY_API_H_ */
 

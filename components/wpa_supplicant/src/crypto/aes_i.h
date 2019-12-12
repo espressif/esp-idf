@@ -15,7 +15,7 @@
 #ifndef AES_I_H
 #define AES_I_H
 
-#include "crypto/aes.h"
+#include "aes.h"
 
 /* #define FULL_UNROLL */
 #define AES_SMALL_TABLES

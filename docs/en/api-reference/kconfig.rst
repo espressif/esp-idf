@@ -4,7 +4,12 @@ Project Configuration
 Introduction
 ============
 
-ESP-IDF uses Kconfig_ system to provide a compile-time project configuration mechanism. Kconfig is based around options of several types: integer, string, boolean. Kconfig files specify dependencies between options, default values of the options, the way the options are grouped together, etc.
+ESP-IDF uses kconfiglib_ which is a Python-based extension to the Kconfig_ system which provides a compile-time
+project configuration mechanism. Kconfig is based around options of several types: integer, string, boolean. Kconfig
+files specify dependencies between options, default values of the options, the way the options are grouped together,
+etc.
+
+For the complete list of available features please see Kconfig_ and `kconfiglib extentions`_.
 
 .. _project-configuration-menu:
 
@@ -94,3 +99,5 @@ Because IDF builds by default with :ref:`warn-undefined-variables`, when the Kco
 When generating header files for C & C++, the behaviour is not customised - so ``#ifdef`` can be used to test if a boolean config item is set or not.
 
 .. _Kconfig: https://www.kernel.org/doc/Documentation/kbuild/kconfig-language.txt
+.. _kconfiglib: https://github.com/ulfalizer/Kconfiglib
+.. _kconfiglib extentions: https://pypi.org/project/kconfiglib/#kconfig-extensions

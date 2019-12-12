@@ -16,7 +16,7 @@
  * DPORT access is used for do protection when dual core access DPORT internal register and APB register via DPORT simultaneously
  * This function will be initialize after FreeRTOS startup.
  * When cpu0 want to access DPORT register, it should notify cpu1 enter in high-priority interrupt for be mute. When cpu1 already in high-priority interrupt,
- * cpu0 can access DPORT register. Currently, cpu1 will wait for cpu0 finish access and exit high-priority interrupt. 
+ * cpu0 can access DPORT register. Currently, cpu1 will wait for cpu0 finish access and exit high-priority interrupt.
  */
 
 #include <stdint.h>
@@ -116,7 +116,7 @@ void IRAM_ATTR esp_dport_access_stall_other_cpu_end(void)
 {
 #ifndef CONFIG_FREERTOS_UNICORE
     int cpu_id = xPortGetCoreID();
-    
+
     if (dport_core_state[0] == DPORT_CORE_STATE_IDLE
             || dport_core_state[1] == DPORT_CORE_STATE_IDLE) {
         return;
@@ -249,7 +249,7 @@ void IRAM_ATTR esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address
  */
 uint32_t IRAM_ATTR esp_dport_access_reg_read(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
 #else
     uint32_t apb;
@@ -295,7 +295,7 @@ uint32_t IRAM_ATTR esp_dport_access_reg_read(uint32_t reg)
  */
 uint32_t IRAM_ATTR esp_dport_access_sequence_reg_read(uint32_t reg)
 {
-#if defined(BOOTLOADER_BUILD) || defined(CONFIG_FREERTOS_UNICORE) || !defined(ESP_PLATFORM)
+#if defined(BOOTLOADER_BUILD) || !defined(CONFIG_ESP32_DPORT_WORKAROUND) || !defined(ESP_PLATFORM)
     return _DPORT_REG_READ(reg);
 #else
     uint32_t apb;

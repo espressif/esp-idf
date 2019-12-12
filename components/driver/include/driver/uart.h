@@ -522,8 +522,8 @@ esp_err_t uart_intr_config(uart_port_t uart_num, const uart_intr_config_t *intr_
  * @param uart_queue UART event queue handle (out param). On success, a new queue handle is written here to provide
  *        access to UART events. If set to NULL, driver will not use an event queue.
  * @param intr_alloc_flags Flags used to allocate the interrupt. One or multiple (ORred)
- *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. Do not set ESP_INTR_FLAG_IRAM here
- *        (the driver's ISR handler is not located in IRAM)
+ *        ESP_INTR_FLAG_* values. See esp_intr_alloc.h for more info. No need to set ESP_INTR_FLAG_IRAM here, as this flag
+ *        will be enabled based on CONFIG_UART_ISR_IN_IRAM (i.e. if the handler located in IRAM or not)
  *
  * @return
  *     - ESP_OK   Success
@@ -675,26 +675,51 @@ esp_err_t uart_get_buffered_data_len(uart_port_t uart_num, size_t* size);
  */
 esp_err_t uart_disable_pattern_det_intr(uart_port_t uart_num);
 
+#if CONFIG_IDF_TARGET_ESP32
+/**
+ * @brief UART enable pattern detect function.
+ *        Designed for applications like 'AT commands'.
+ *        When the hardware detect a series of one same character, the interrupt will be triggered.
+ * @note  This function only works for esp32. And this function is deprecated, please use
+ *        uart_enable_pattern_det_baud_intr instead.
+ *
+ * @param uart_num UART port number.
+ * @param pattern_chr character of the pattern.
+ * @param chr_num number of the character, 8bit value.
+ * @param chr_tout timeout of the interval between each pattern characters, 24bit value, unit is APB (80Mhz) clock cycle.
+ *        When the duration is less than this value, it will not take this data as at_cmd char.
+ * @param post_idle idle time after the last pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
+ *        When the duration is less than this value, it will not take the previous data as the last at_cmd char
+ * @param pre_idle idle time before the first pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
+ *        When the duration is less than this value, it will not take this data as the first at_cmd char.
+ *
+ * @return
+ *     - ESP_OK Success
+ *     - ESP_FAIL Parameter error
+ */
+esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle) __attribute__((deprecated));
+#endif
+
 /**
  * @brief UART enable pattern detect function.
  *        Designed for applications like 'AT commands'.
  *        When the hardware detect a series of one same character, the interrupt will be triggered.
  *
  * @param uart_num UART port number.
- * @param pattern_chr character of the pattern
+ * @param pattern_chr character of the pattern.
  * @param chr_num number of the character, 8bit value.
- * @param chr_tout timeout of the interval between each pattern characters, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take this data as at_cmd char
- * @param post_idle idle time after the last pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
+ * @param chr_tout timeout of the interval between each pattern characters, 16bit value, unit is the baud-rate cycle you configured.
+ *        When the duration is more than this value, it will not take this data as at_cmd char.
+ * @param post_idle idle time after the last pattern character, 16bit value, unit is the baud-rate cycle you configured.
  *        When the duration is less than this value, it will not take the previous data as the last at_cmd char
- * @param pre_idle idle time before the first pattern character, 24bit value, unit is APB (80Mhz) clock cycle.
- *        When the duration is less than this value, it will not take this data as the first at_cmd char
+ * @param pre_idle idle time before the first pattern character, 16bit value, unit is the baud-rate cycle you configured.
+ *        When the duration is less than this value, it will not take this data as the first at_cmd char.
  *
  * @return
  *     - ESP_OK Success
  *     - ESP_FAIL Parameter error
  */
-esp_err_t uart_enable_pattern_det_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
+esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_chr, uint8_t chr_num, int chr_tout, int post_idle, int pre_idle);
 
 /**
  * @brief Return the nearest detected pattern position in buffer.
@@ -840,6 +865,14 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold);
  *      - ESP_ERR_INVALID_ARG if out_wakeup_threshold is NULL
  */
 esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int* out_wakeup_threshold);
+
+/**
+  * @brief Wait until UART tx memory empty and the last char send ok (polling mode).
+  *
+  * @param uart_num UART number
+  *
+  */
+void uart_wait_tx_idle_polling(uart_port_t uart_num);
 
 #ifdef __cplusplus
 }

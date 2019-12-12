@@ -1,7 +1,7 @@
 menu "FreeRTOS"
 
-    # This is actually also handled in the ESP32 startup code, not only in FreeRTOS.
     config FREERTOS_UNICORE
+        # This config variable is also checked in the ESP32 startup code, not only in FreeRTOS.
         bool "Run FreeRTOS only on first core"
         default n
         help
@@ -13,13 +13,14 @@ menu "FreeRTOS"
             # This invisible config value sets the value of tskNO_AFFINITY in task.h.
             # Intended to be used as a constant from other Kconfig files.
             # Value is (32-bit) INT_MAX.
+
     config FREERTOS_NO_AFFINITY
         hex
         default 0x7FFFFFFF
 
     choice FREERTOS_CORETIMER
         prompt "Xtensa timer to use as the FreeRTOS tick source"
-        default CONFIG_FREERTOS_CORETIMER_0
+        default FREERTOS_CORETIMER_0
         help
             FreeRTOS needs a timer with an associated interrupt to use as
             the main tick source to increase counters, run timers and do
@@ -410,7 +411,7 @@ menu "FreeRTOS"
 
     config FREERTOS_TASK_FUNCTION_WRAPPER
         bool "Enclose all task functions in a wrapper function"
-        depends on COMPILER_OPTIMIZATION_LEVEL_DEBUG
+        depends on COMPILER_OPTIMIZATION_DEFAULT
         default y
         help
             If enabled, all FreeRTOS task functions will be enclosed in a wrapper function.
@@ -433,5 +434,10 @@ menu "FreeRTOS"
             If enabled, context of port*_CRITICAL calls (ISR or Non-ISR)
             would be checked to be in compliance with Vanilla FreeRTOS.
             e.g Calling port*_CRITICAL from ISR context would cause assert failure
+
+    config FREERTOS_DEBUG_OCDAWARE
+        bool
+        help
+            Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
 
 endmenu

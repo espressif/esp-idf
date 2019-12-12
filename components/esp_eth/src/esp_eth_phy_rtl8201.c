@@ -63,7 +63,6 @@ typedef union {
 typedef struct {
     esp_eth_phy_t parent;
     esp_eth_mediator_t *eth;
-    const char *name;
     uint32_t addr;
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
@@ -82,9 +81,50 @@ err:
     return ESP_FAIL;
 }
 
+static esp_err_t rtl8201_update_link_duplex_speed(phy_rtl8201_t *rtl8201)
+{
+    esp_eth_mediator_t *eth = rtl8201->eth;
+    eth_speed_t speed = ETH_SPEED_10M;
+    eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    bmcr_reg_t bmcr;
+    bmsr_reg_t bmsr;
+    PHY_CHECK(rtl8201_page_select(rtl8201, 0) == ESP_OK, "select page 0 failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
+              "read BMSR failed", err);
+    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    /* check if link status changed */
+    if (rtl8201->link_status != link) {
+        /* when link up, read negotiation result */
+        if (link == ETH_LINK_UP) {
+            PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                      "read BMCR failed", err);
+            if (bmcr.speed_select) {
+                speed = ETH_SPEED_100M;
+            } else {
+                speed = ETH_SPEED_10M;
+            }
+            if (bmcr.duplex_mode) {
+                duplex = ETH_DUPLEX_FULL;
+            } else {
+                duplex = ETH_DUPLEX_HALF;
+            }
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed) == ESP_OK,
+                      "change speed failed", err);
+            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK,
+                      "change duplex failed", err);
+        }
+        PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK,
+                  "change link failed", err);
+        rtl8201->link_status = link;
+    }
+    return ESP_OK;
+err:
+    return ESP_FAIL;
+}
+
 static esp_err_t rtl8201_set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
-    PHY_CHECK(eth, "can't set mediator for rtl8201 to null", err);
+    PHY_CHECK(eth, "can't set mediator to null", err);
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     rtl8201->eth = eth;
     return ESP_OK;
@@ -95,19 +135,8 @@ err:
 static esp_err_t rtl8201_get_link(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
-    esp_eth_mediator_t *eth = rtl8201->eth;
-    bmsr_reg_t bmsr;
-
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK, "read BMSR failed", err);
-    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
-    if (rtl8201->link_status != link) {
-        if (link == ETH_LINK_UP) {
-            phy->negotiate(phy);
-        } else {
-            PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK, "send link event failed", err);
-            rtl8201->link_status = link;
-        }
-    }
+    /* Updata information about link, speed, duplex */
+    PHY_CHECK(rtl8201_update_link_duplex_speed(rtl8201) == ESP_OK, "update link duplex speed failed", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
@@ -118,17 +147,19 @@ static esp_err_t rtl8201_reset(esp_eth_phy_t *phy)
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
     bmcr_reg_t bmcr = {.reset = 1};
-    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK, "write BMCR failed", err);
+    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
+              "write BMCR failed", err);
     /* Wait for reset complete */
     uint32_t to = 0;
     for (to = 0; to < rtl8201->reset_timeout_ms / 10; to++) {
         vTaskDelay(pdMS_TO_TICKS(10));
-        PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK, "read BMCR failed", err);
+        PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+                  "read BMCR failed", err);
         if (!bmcr.reset) {
             break;
         }
     }
-    PHY_CHECK(to < rtl8201->reset_timeout_ms / 10, "PHY reset timeout", err);
+    PHY_CHECK(to < rtl8201->reset_timeout_ms / 10, "reset timeout", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
@@ -138,51 +169,32 @@ static esp_err_t rtl8201_negotiate(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
-    /* Start auto negotiation */
+    /* Restart auto negotiation */
     bmcr_reg_t bmcr = {
         .speed_select = 1,     /* 100Mbps */
         .duplex_mode = 1,      /* Full Duplex */
         .en_auto_nego = 1,     /* Auto Negotiation */
         .restart_auto_nego = 1 /* Restart Auto Negotiation */
     };
-    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK, "write BMCR failed", err);
+    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
+              "write BMCR failed", err);
     /* Wait for auto negotiation complete */
     bmsr_reg_t bmsr;
     uint32_t to = 0;
     for (to = 0; to < rtl8201->autonego_timeout_ms / 10; to++) {
         vTaskDelay(pdMS_TO_TICKS(10));
-        PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK, "read BMSR failed", err);
+        PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
+                  "read BMSR failed", err);
         if (bmsr.auto_nego_complete) {
             break;
         }
     }
     /* Auto negotiation failed, maybe no network cable plugged in, so output a warning */
     if (to >= rtl8201->autonego_timeout_ms / 10) {
-        ESP_LOGW(TAG, "Ethernet PHY auto negotiation timeout");
+        ESP_LOGW(TAG, "auto negotiation timeout");
     }
-    PHY_CHECK(rtl8201_page_select(rtl8201, 0) == ESP_OK, "select page failed", err);
     /* Updata information about link, speed, duplex */
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK, "read BMCR failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK, "read BMSR failed", err);
-    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
-    eth_speed_t speed = ETH_SPEED_10M;
-    eth_duplex_t duplex = ETH_DUPLEX_HALF;
-    if (bmcr.speed_select) {
-        speed = ETH_SPEED_100M;
-    } else {
-        speed = ETH_SPEED_10M;
-    }
-    if (bmcr.duplex_mode) {
-        duplex = ETH_DUPLEX_FULL;
-    } else {
-        duplex = ETH_DUPLEX_HALF;
-    }
-    PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed) == ESP_OK, "send speed event failed", err);
-    PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex) == ESP_OK, "send duplex event failed", err);
-    if (rtl8201->link_status != link) {
-        PHY_CHECK(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link) == ESP_OK, "send link event failed", err);
-        rtl8201->link_status = link;
-    }
+    PHY_CHECK(rtl8201_update_link_duplex_speed(rtl8201) == ESP_OK, "update link duplex speed failed", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
@@ -193,7 +205,8 @@ static esp_err_t rtl8201_pwrctl(esp_eth_phy_t *phy, bool enable)
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
     bmcr_reg_t bmcr;
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK, "read BMCR failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+              "read BMCR failed", err);
     if (!enable) {
         /* Enable IEEE Power Down Mode */
         bmcr.power_down = 1;
@@ -201,8 +214,10 @@ static esp_err_t rtl8201_pwrctl(esp_eth_phy_t *phy, bool enable)
         /* Disable IEEE Power Down Mode */
         bmcr.power_down = 0;
     }
-    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK, "write BMCR failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK, "read BMCR failed", err);
+    PHY_CHECK(eth->phy_reg_write(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
+              "write BMCR failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)) == ESP_OK,
+              "read BMCR failed", err);
     if (!enable) {
         PHY_CHECK(bmcr.power_down == 1, "power down failed", err);
     } else {
@@ -222,7 +237,7 @@ static esp_err_t rtl8201_set_addr(esp_eth_phy_t *phy, uint32_t addr)
 
 static esp_err_t rtl8201_get_addr(esp_eth_phy_t *phy, uint32_t *addr)
 {
-    PHY_CHECK(addr, "get phy address failed", err);
+    PHY_CHECK(addr, "addr can't be null", err);
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     *addr = rtl8201->addr;
     return ESP_OK;
@@ -242,15 +257,18 @@ static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
     /* Power on Ethernet PHY */
-    PHY_CHECK(rtl8201_pwrctl(phy, true) == ESP_OK, "power on Ethernet PHY failed", err);
+    PHY_CHECK(rtl8201_pwrctl(phy, true) == ESP_OK, "power control failed", err);
     /* Reset Ethernet PHY */
-    PHY_CHECK(rtl8201_reset(phy) == ESP_OK, "reset Ethernet PHY failed", err);
+    PHY_CHECK(rtl8201_reset(phy) == ESP_OK, "reset failed", err);
     /* Check PHY ID */
     phyidr1_reg_t id1;
     phyidr2_reg_t id2;
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)) == ESP_OK, "read ID1 failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)) == ESP_OK, "read ID2 failed", err);
-    PHY_CHECK(id1.oui_msb == 0x1C && id2.oui_lsb == 0x32 && id2.vendor_model == 0x1, "wrong PHY chip ID", err);
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_IDR1_REG_ADDR, &(id1.val)) == ESP_OK,
+              "read ID1 failed", err);
+    PHY_CHECK(eth->phy_reg_read(eth, rtl8201->addr, ETH_PHY_IDR2_REG_ADDR, &(id2.val)) == ESP_OK,
+              "read ID2 failed", err);
+    PHY_CHECK(id1.oui_msb == 0x1C && id2.oui_lsb == 0x32 && id2.vendor_model == 0x1,
+              "wrong chip ID", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
@@ -259,7 +277,7 @@ err:
 static esp_err_t rtl8201_deinit(esp_eth_phy_t *phy)
 {
     /* Power off Ethernet PHY */
-    PHY_CHECK(rtl8201_pwrctl(phy, false) == ESP_OK, "power off Ethernet PHY failed", err);
+    PHY_CHECK(rtl8201_pwrctl(phy, false) == ESP_OK, "power control failed", err);
     return ESP_OK;
 err:
     return ESP_FAIL;
@@ -269,8 +287,7 @@ esp_eth_phy_t *esp_eth_phy_new_rtl8201(const eth_phy_config_t *config)
 {
     PHY_CHECK(config, "can't set phy config to null", err);
     phy_rtl8201_t *rtl8201 = calloc(1, sizeof(phy_rtl8201_t));
-    PHY_CHECK(rtl8201, "calloc rtl8201 object failed", err);
-    rtl8201->name = "rtl8201";
+    PHY_CHECK(rtl8201, "calloc rtl8201 failed", err);
     rtl8201->addr = config->phy_addr;
     rtl8201->reset_timeout_ms = config->reset_timeout_ms;
     rtl8201->link_status = ETH_LINK_DOWN;

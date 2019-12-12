@@ -104,7 +104,7 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
     if (!is_initialized()) {
         return ESP_ERR_INVALID_STATE;
     }
-    if (args->callback == NULL) {
+    if (args == NULL || args->callback == NULL || out_handle == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
     esp_timer_handle_t result = (esp_timer_handle_t) calloc(1, sizeof(*result));
@@ -123,33 +123,48 @@ esp_err_t esp_timer_create(const esp_timer_create_args_t* args,
 
 esp_err_t IRAM_ATTR esp_timer_start_once(esp_timer_handle_t timer, uint64_t timeout_us)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!is_initialized() || timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
+    timer_list_lock();
     timer->alarm = esp_timer_get_time() + timeout_us;
     timer->period = 0;
 #if WITH_PROFILING
     timer->times_armed++;
 #endif
-    return timer_insert(timer);
+    esp_err_t err = timer_insert(timer);
+    timer_list_unlock();
+    return err;
 }
 
 esp_err_t IRAM_ATTR esp_timer_start_periodic(esp_timer_handle_t timer, uint64_t period_us)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!is_initialized() || timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
+    timer_list_lock();
     period_us = MAX(period_us, esp_timer_impl_get_min_period_us());
     timer->alarm = esp_timer_get_time() + period_us;
     timer->period = period_us;
 #if WITH_PROFILING
     timer->times_armed++;
 #endif
-    return timer_insert(timer);
+    esp_err_t err = timer_insert(timer);
+    timer_list_unlock();
+    return err;
 }
 
 esp_err_t IRAM_ATTR esp_timer_stop(esp_timer_handle_t timer)
 {
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (!is_initialized() || !timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
@@ -164,16 +179,17 @@ esp_err_t esp_timer_delete(esp_timer_handle_t timer)
     if (timer_armed(timer)) {
         return ESP_ERR_INVALID_STATE;
     }
+    timer_list_lock();
     timer->event_id = EVENT_ID_DELETE_TIMER;
-    timer->alarm = esp_timer_get_time() + 50;
+    timer->alarm = esp_timer_get_time();
     timer->period = 0;
     timer_insert(timer);
+    timer_list_unlock();
     return ESP_OK;
 }
 
 static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer)
 {
-    timer_list_lock();
 #if WITH_PROFILING
     timer_remove_inactive(timer);
 #endif
@@ -196,7 +212,6 @@ static IRAM_ATTR esp_err_t timer_insert(esp_timer_handle_t timer)
     if (timer == LIST_FIRST(&s_timers)) {
         esp_timer_impl_set_alarm(timer->alarm);
     }
-    timer_list_unlock();
     return ESP_OK;
 }
 

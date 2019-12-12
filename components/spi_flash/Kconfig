@@ -77,6 +77,15 @@ menu "SPI Flash driver"
             bool "Allowed"
     endchoice
 
+    # Force the Legacy implementation to be used on ESP32S2Beta
+    #
+    # TODO esp32s2beta: Remove once SPI Flash HAL available on S2 Beta
+    config SPI_FLASH_FORCE_LEGACY_ESP32S2BETA
+        bool
+        default y
+        depends on IDF_TARGET_ESP32S2BETA
+        select SPI_FLASH_USE_LEGACY_IMPL
+
     config SPI_FLASH_USE_LEGACY_IMPL
         bool "Use the legacy implementation before IDF v4.0"
         default n
@@ -90,8 +99,23 @@ menu "SPI Flash driver"
             bool "ISSI"
             default y
             help
-                Enable this to support auto detection of ISSI chips if chip vendor not specified.
-                This adds support for variant chips, however will extend detecting time.
+                Enable this to support auto detection of ISSI chips if chip vendor not directly
+                given by ``chip_drv`` member of the chip struct. This adds support for variant
+                chips, however will extend detecting time.
+
+        config SPI_FLASH_SUPPORT_GD_CHIP
+            bool "GigaDevice"
+            default y
+            help
+                Enable this to support auto detection of GD (GigaDevice) chips if chip vendor not
+                directly given by ``chip_drv`` member of the chip struct. If you are using Wrover
+                modules, please don't disable this, otherwise your flash may not work in 4-bit
+                mode.
+
+                This adds support for variant chips, however will extend detecting time and image
+                size. Note that the default chip driver supports the GD chips with product ID
+                60H.
+
     endmenu #auto detect flash chips
 
 endmenu

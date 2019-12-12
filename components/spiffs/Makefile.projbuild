@@ -2,15 +2,21 @@ SPIFFSGEN_PY:=$(COMPONENT_PATH)/spiffsgen.py
 SPIFFSGEN_FLASH_IN_PROJECT=
 
 ifdef CONFIG_SPIFFS_USE_MAGIC
-USE_MAGIC = "--use-magic"
+USE_MAGIC := "--use-magic"
 else
-USE_MAGIC = ""
+USE_MAGIC :=
 endif
 
 ifdef CONFIG_SPIFFS_USE_MAGIC_LENGTH
-USE_MAGIC_LEN = "--use-magic-len" 
+USE_MAGIC_LEN := "--use-magic-len" 
 else
-USE_MAGIC_LEN = ""
+USE_MAGIC_LEN :=
+endif
+
+ifdef CONFIG_SPIFFS_FOLLOW_SYMLINKS
+FOLLOW_SYMLINKS := "--follow-symlinks"
+else
+FOLLOW_SYMLINKS :=
 endif
 
 # spiffs_create_partition_image
@@ -27,6 +33,7 @@ $(1)_bin: $(PARTITION_TABLE_BIN) $(SPIFFS_IMAGE_DEPENDS) | check_python_dependen
 	--page-size=$(CONFIG_SPIFFS_PAGE_SIZE) \
 	--obj-name-len=$(CONFIG_SPIFFS_OBJ_NAME_LEN) \
 	--meta-len=$(CONFIG_SPIFFS_META_LENGTH) \
+	$(FOLLOW_SYMLINKS) \
 	$(USE_MAGIC) \
 	$(USE_MAGIC_LEN) 
 

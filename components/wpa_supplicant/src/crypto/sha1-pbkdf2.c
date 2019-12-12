@@ -14,14 +14,67 @@
 
 #include "utils/includes.h"
 #include "utils/common.h"
-#include "crypto/sha1.h"
-#include "crypto/md5.h"
-#include "crypto/crypto.h"
+#include "sha1.h"
+#include "md5.h"
+#include "crypto.h"
+
+#ifdef USE_MBEDTLS_CRYPTO
+#include "mbedtls/pkcs5.h"
+
+/**
+ * pbkdf2_sha1 - SHA1-based key derivation function (PBKDF2) for IEEE 802.11i
+ * @passphrase: ASCII passphrase
+ * @ssid: SSID
+ * @ssid_len: SSID length in bytes
+ * @iterations: Number of iterations to run
+ * @buf: Buffer for the generated key
+ * @buflen: Length of the buffer in bytes
+ * Returns: 0 on success, -1 of failure
+ *
+ * This function is used to derive PSK for WPA-PSK. For this protocol,
+ * iterations is set to 4096 and buflen to 32. This function is described in
+ * IEEE Std 802.11-2004, Clause H.4. The main construction is from PKCS#5 v2.0.
+ */
+int
+pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
+		int iterations, u8 *buf, size_t buflen)
+{
+
+    mbedtls_md_context_t sha1_ctx;
+    const mbedtls_md_info_t *info_sha1;
+    int ret;
+
+    mbedtls_md_init( &sha1_ctx );
+
+    info_sha1 = mbedtls_md_info_from_type( MBEDTLS_MD_SHA1 );
+    if (info_sha1 == NULL) {
+        ret = -1;
+        goto exit;
+    }
+
+    if ((ret = mbedtls_md_setup( &sha1_ctx, info_sha1, 1 ) ) != 0) {
+        ret = -1;
+        goto exit;
+    }
+
+    ret = mbedtls_pkcs5_pbkdf2_hmac( &sha1_ctx, (const unsigned char*) passphrase, os_strlen(passphrase) , (const unsigned char*) ssid,
+            ssid_len, iterations, 32, buf );
+    if (ret != 0) {
+        ret = -1;
+        goto exit;
+    }
+
+exit:
+    mbedtls_md_free( &sha1_ctx );
+
+    return ret;
+}
+#else
 
 static int 
 pbkdf2_sha1_f(const char *passphrase, const char *ssid,
-			 size_t ssid_len, int iterations, unsigned int count,
-			 u8 *digest)
+        size_t ssid_len, int iterations, unsigned int count,
+        u8 *digest)
 {
 	unsigned char tmp[SHA1_MAC_LEN], tmp2[SHA1_MAC_LEN];
 	int i, j;
@@ -99,3 +152,4 @@ pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 
 	return 0;
 }
+#endif

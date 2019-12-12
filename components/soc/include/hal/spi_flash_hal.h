@@ -88,14 +88,15 @@ esp_err_t spi_flash_hal_device_config(spi_flash_host_driver_t *driver);
 esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *driver, spi_flash_trans_t *trans);
 
 /**
- * Erase whole flash chip.
+ * Erase whole flash chip by using the erase chip (C7h) command.
  *
  * @param driver The driver context.
  */
 void spi_flash_hal_erase_chip(spi_flash_host_driver_t *driver);
 
 /**
- * Erase a specific sector by its start address.
+ * Erase a specific sector by its start address through the sector erase (20h)
+ * command.
  *
  * @param driver The driver context.
  * @param start_address Start address of the sector to erase.
@@ -103,7 +104,8 @@ void spi_flash_hal_erase_chip(spi_flash_host_driver_t *driver);
 void spi_flash_hal_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_address);
 
 /**
- * Erase a specific block by its start address.
+ * Erase a specific 64KB block by its start address through the 64KB block
+ * erase (D8h) command.
  *
  * @param driver The driver context.
  * @param start_address Start address of the block to erase.
@@ -111,7 +113,7 @@ void spi_flash_hal_erase_sector(spi_flash_host_driver_t *driver, uint32_t start_
 void spi_flash_hal_erase_block(spi_flash_host_driver_t *driver, uint32_t start_address);
 
 /**
- * Program a page of the flash.
+ * Program a page of the flash using the page program (02h) command.
  *
  * @param driver The driver context.
  * @param address Address of the page to program
@@ -121,7 +123,8 @@ void spi_flash_hal_erase_block(spi_flash_host_driver_t *driver, uint32_t start_a
 void spi_flash_hal_program_page(spi_flash_host_driver_t *driver, const void *buffer, uint32_t address, uint32_t length);
 
 /**
- * Read from the flash. The read command should be set by ``spi_flash_hal_configure_host_read_mode`` before.
+ * Read from the flash. Call ``spi_flash_hal_configure_host_read_mode`` to
+ * configure the read command before calling this function.
  *
  * @param driver The driver context.
  * @param buffer Buffer to store the read data
@@ -133,7 +136,7 @@ void spi_flash_hal_program_page(spi_flash_host_driver_t *driver, const void *buf
 esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *driver, void *buffer, uint32_t address, uint32_t read_len);
 
 /**
- * Enable or disable the write protection of the flash chip.
+ * @brief Send the write enable (06h) or write disable (04h) command to the flash chip.
  *
  * @param driver The driver context.
  * @param wp true to enable the write protection, otherwise false.
@@ -152,23 +155,38 @@ esp_err_t spi_flash_hal_set_write_protect(spi_flash_host_driver_t *chip_drv, boo
 bool spi_flash_hal_host_idle(spi_flash_host_driver_t *driver);
 
 /**
- *  Configure the SPI host hardware registers for the specified read mode.
+ * @brief Configure the SPI host hardware registers for the specified io mode.
  *
  *  Note that calling this configures SPI host registers, so if running any
- *  other commands as part of set_read_mode() then these must be run before
+ *  other commands as part of set_io_mode() then these must be run before
  *  calling this function.
  *
+ *  The command value, address length and dummy cycles are configured according
+ *  to the format of read commands:
+ *
+ *  - command: 8 bits, value set.
+ *  - address: 24 bits
+ *  - dummy: cycles to compensate the input delay
+ *  - out & in data: 0 bits.
+ *
+ *  The following commands still need to:
+ *
+ *  - Read data: set address value and data (length and contents), no need
+ *    to touch command and dummy phases.
+ *  - Common read: set command value, address value (or length to 0 if not used)
+ *  - Common write: set command value, address value (or length to 0 if not
+ *    used), disable dummy phase, and set output data.
+ *
  * @param driver The driver context
- * @param read_mode The HW read mode to use
+ * @param io_mode The HW read mode to use
  * @param addr_bitlen Length of the address phase, in bits
  * @param dummy_cyclelen_base Base cycles of the dummy phase, some extra dummy cycles may be appended to compensate the timing.
- * @param read_command  Actual reading command to send to flash chip on the bus.
+ * @param command  Actual reading command to send to flash chip on the bus.
  *
  * @return always return ESP_OK.
  */
-esp_err_t spi_flash_hal_configure_host_read_mode(spi_flash_host_driver_t *driver, esp_flash_read_mode_t read_mode,
-        uint32_t addr_bitlen, uint32_t dummy_cyclelen_base,
-        uint32_t read_command);
+esp_err_t spi_flash_hal_configure_host_io_mode(spi_flash_host_driver_t *driver, uint32_t command, uint32_t addr_bitlen,
+                                               int dummy_cyclelen_base, esp_flash_io_mode_t io_mode);
 
 /**
  * Poll until the last operation is done.

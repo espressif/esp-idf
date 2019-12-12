@@ -1,5 +1,5 @@
 ULP 协处理器编程
-===================================
+================
 
 :link_to_translation:`en:[English]`
 
@@ -13,16 +13,17 @@ ULP 协处理器编程
 ULP（Ultra Low Power 超低功耗）协处理器是一种简单的有限状态机 (FSM)，可以在主处理器处于深度睡眠模式时，使用 ADC、温度传感器和外部 I2C 传感器执行测量操作。ULP 协处理器可以访问 RTC_SLOW_MEM 内存区域及 RTC_CNTL、RTC_IO、SARADC 等外设寄存器。ULP 协处理器使用 32 位固定宽度的指令，32 位内存寻址，配备 4 个 16 位通用寄存器。
 
 安装工具链
-------------------------
+----------
 
 ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp 工具链`_ 进行编译。
 
-1. 从提供的网址中下载最新工具链的预编译二进制文件：https://github.com/espressif/binutils-esp32ulp/releases.
+如果你已经按照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了你的开发环境中。
 
-2. 将工具链解压缩到一个目录中，并将工具链的 ``bin/`` 目录路径添加到 ``PATH`` 环境变量中。
+如果你的 ESP-IDF 仍在使用旧版本的基于 GNU Make 的构建系统，请参考 :doc:`ulp-legacy` 一文中的说明，完成工具链的安装。
+
 
 编译 ULP 代码
-------------------
+-------------
 
 若需要将 ULP 代码编译为某组件的一部分，则必须执行以下步骤：
 
@@ -73,7 +74,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
     8. **将生成的二进制文件添加到要嵌入应用程序的二进制文件列表中。**
 
 访问 ULP 程序变量
--------------------------------
+-----------------
 
 在 ULP 程序中定义的全局符号也可以在主程序中使用。
 
@@ -114,7 +115,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
     printf("Last measurement value: %d\n", ulp_last_measurement & UINT16_MAX);
 
 启动 ULP 程序
-------------------------
+-------------
 
 要运行 ULP 程序，主应用程序需要调用 ``ulp_load_binary`` 函数将 ULP 程序加载到 RTC 内存中，然后调用 ``ulp_run`` 函数，启动 ULP 程序。
 
@@ -149,7 +150,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 
 ULP 程序流
-----------------
+----------
 
 ULP 协处理器由定时器启动，而调用 ``ulp_run`` 则可启动此定时器。定时器为 RTC_SLOW_CLK 的 Tick 事件计数（默认情况下，Tick 由内部 150 KHz 晶振器生成）。使用 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器 (x = 0..4) 设置 Tick 数值。第一次启动 ULP 时，使用 ``SENS_ULP_CP_SLEEP_CYC0_REG`` 设置定时器 Tick 数值，之后，ULP 程序可以使用 ``sleep`` 指令来另外选择 ``SENS_ULP_CP_SLEEP_CYCx_REG`` 寄存器。
 
