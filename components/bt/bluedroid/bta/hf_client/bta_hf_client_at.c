@@ -75,12 +75,12 @@ typedef struct {
 /* CIND: storage room for indicators value range and their statuses */
 static const tBTA_HF_CLIENT_INDICATOR bta_hf_client_indicators[BTA_HF_CLIENT_AT_SUPPORTED_INDICATOR_COUNT] = {
     /* name                                | min | max | name length - used by parser */
-    {BTA_HF_CLIENT_INDICATOR_BATTERYCHG,     0,   5,    sizeof(BTA_HF_CLIENT_INDICATOR_BATTERYCHG)},
-    {BTA_HF_CLIENT_INDICATOR_SIGNAL,         0,   5,    sizeof(BTA_HF_CLIENT_INDICATOR_SIGNAL)},
-    {BTA_HF_CLIENT_INDICATOR_SERVICE,        0,   1,    sizeof(BTA_HF_CLIENT_INDICATOR_SERVICE)},
     {BTA_HF_CLIENT_INDICATOR_CALL,           0,   1,    sizeof(BTA_HF_CLIENT_INDICATOR_CALL)},
-    {BTA_HF_CLIENT_INDICATOR_ROAM,           0,   1,    sizeof(BTA_HF_CLIENT_INDICATOR_ROAM)},
     {BTA_HF_CLIENT_INDICATOR_CALLSETUP,      0,   3,    sizeof(BTA_HF_CLIENT_INDICATOR_CALLSETUP)},
+    {BTA_HF_CLIENT_INDICATOR_SERVICE,        0,   1,    sizeof(BTA_HF_CLIENT_INDICATOR_SERVICE)},
+    {BTA_HF_CLIENT_INDICATOR_SIGNAL,         0,   5,    sizeof(BTA_HF_CLIENT_INDICATOR_SIGNAL)},
+    {BTA_HF_CLIENT_INDICATOR_ROAM,           0,   1,    sizeof(BTA_HF_CLIENT_INDICATOR_ROAM)},
+    {BTA_HF_CLIENT_INDICATOR_BATTERYCHG,     0,   5,    sizeof(BTA_HF_CLIENT_INDICATOR_BATTERYCHG)},
     {BTA_HF_CLIENT_INDICATOR_CALLHELD,       0,   2,    sizeof(BTA_HF_CLIENT_INDICATOR_CALLHELD)}
 };
 
@@ -94,7 +94,7 @@ UINT32 service_index = 0;
 BOOLEAN service_availability = TRUE;
 /* helper functions for handling AT commands queueing */
 
-static void bta_hf_client_handle_ok();
+static void bta_hf_client_handle_ok(void);
 
 static void bta_hf_client_clear_queued_at(void)
 {
@@ -268,7 +268,7 @@ static void bta_hf_client_start_at_hold_timer(void)
 **   No buffer parsing is being done here.
 *******************************************************************************/
 
-static void bta_hf_client_handle_ok()
+static void bta_hf_client_handle_ok(void)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
 
@@ -342,7 +342,7 @@ static void bta_hf_client_handle_error(tBTA_HF_CLIENT_AT_RESULT_TYPE type, UINT1
     bta_hf_client_send_queued_at();
 }
 
-static void bta_hf_client_handle_ring()
+static void bta_hf_client_handle_ring(void)
 {
     APPL_TRACE_DEBUG("%s", __FUNCTION__);
     bta_hf_client_evt_val(BTA_HF_CLIENT_RING_INDICATION, 0);
@@ -427,7 +427,7 @@ static void bta_hf_client_handle_ciev(UINT32 index, UINT32 value)
 
     APPL_TRACE_DEBUG("%s index: %u value: %u", __FUNCTION__, index, value);
 
-    if (index == 0 || index > BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
+    if (index >= BTA_HF_CLIENT_AT_INDICATOR_COUNT) {
         return;
     }
 
@@ -435,7 +435,7 @@ static void bta_hf_client_handle_ciev(UINT32 index, UINT32 value)
         service_availability = value == 0 ? FALSE : TRUE;
     }
 
-    realind = bta_hf_client_cb.scb.at_cb.indicator_lookup[index - 1];
+    realind = bta_hf_client_cb.scb.at_cb.indicator_lookup[index];
 
     if (realind >= 0 && realind < BTA_HF_CLIENT_AT_SUPPORTED_INDICATOR_COUNT) {
         /* get the real in-array index from lookup table by index it comes at */
@@ -576,15 +576,17 @@ static void bta_hf_client_handle_btrh( UINT16 code)
 
 /* Check if prefix match and skip spaces if any */
 #define AT_CHECK_EVENT(buf, event) \
-    if (strncmp("\r\n"event, buf,sizeof("\r\n"event) - 1) != 0) return buf; \
-    buf += sizeof("\r\n"event) - 1; \
-    while (*buf == ' ') buf++;
+if (strncmp("\r\n"event,buf,sizeof("\r\n"event) - 1) != 0) \
+    return buf; \
+buf += sizeof("\r\n"event) - 1; \
+while (*buf == ' ') buf++;
 
 /* check for <cr><lf> and forward buffer if match */
 #define AT_CHECK_RN(buf) \
     if (strncmp("\r\n", buf, sizeof("\r\n") - 1) != 0) { \
-        APPL_TRACE_DEBUG("%s missing end <cr><lf>", __FUNCTION__); \
-        return NULL;} \
+        APPL_TRACE_ERROR("%s missing end <cr><lf>", __FUNCTION__); \
+        return NULL;\
+    } \
     buf += sizeof("\r\n") - 1;
 
 /* skip rest of AT string up to <cr> */
@@ -1022,20 +1024,20 @@ static char *bta_hf_client_parse_clcc(char *buffer)
 static char *bta_hf_client_parse_cnum(char *buffer)
 {
     char numstr[33];     /* spec forces 32 chars, plus one for \0*/
-    UINT16 type;
-    UINT16 service = 0; /* 0 in case this optional parameter is not being sent */
+    int type;
+    int service = 0; /* 0 in case this optional parameter is not being sent */
     int res;
     int offset;
 
     AT_CHECK_EVENT(buffer, "+CNUM:");
 
-    res = sscanf(buffer, ",\"%32[^\"]\",%hu,,%hu%n", numstr, &type, &service, &offset);
+    res = sscanf(buffer, ",\"%32[^\"]\",%d%n,,%d%n", numstr, &type, &offset, &service, &offset);
     if (res < 0) {
         return NULL;
     }
 
     if (res == 0) {
-        res = sscanf(buffer, ",\"\",%hu,,%hu%n", &type, &service, &offset);
+        res = sscanf(buffer, ",\"\",%d%n,,%d%n", &type, &offset, &service, &offset);
         if (res < 0) {
             return NULL;
         }
@@ -1045,7 +1047,7 @@ static char *bta_hf_client_parse_cnum(char *buffer)
         numstr[0] = '\0';
     }
 
-    if (res < 3) {
+    if (res < 2) {
         return NULL;
     }
 
@@ -1257,7 +1259,7 @@ static void bta_hf_client_at_parse_start(void)
         for (i = 0; i < bta_hf_client_psraser_cb_count; i++) {
             tmp = bta_hf_client_parser_cb[i](buf);
             if (tmp == NULL) {
-                APPL_TRACE_ERROR("HFPCient: AT event/reply parsing failed, skipping");
+                APPL_TRACE_ERROR("HFPCient: AT event/reply parsing failed, skipping %d", i);
                 tmp = bta_hf_client_skip_unknown(buf);
                 break;
             }
