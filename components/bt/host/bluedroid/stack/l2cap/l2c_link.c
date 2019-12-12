@@ -250,7 +250,7 @@ BOOLEAN l2c_link_hci_conn_comp (UINT8 status, UINT16 handle, BD_ADDR p_bda)
             l2cu_release_lcb (p_lcb);
         } else {                          /* there are any CCBs remaining */
             if (ci.status == HCI_ERR_CONNECTION_EXISTS) {
-                /* we are in collision situation, wait for connecttion request from controller */
+                /* we are in collision situation, wait for connection request from controller */
                 p_lcb->link_state = LST_CONNECTING;
             } else {
                 l2cu_create_conn(p_lcb, BT_TRANSPORT_BR_EDR);
