@@ -151,7 +151,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_CLOSE_EVT             5   /* GATTC  close request status event */
 #define BTA_GATTC_SEARCH_CMPL_EVT       6   /* GATT discovery complete event */
 #define BTA_GATTC_SEARCH_RES_EVT        7   /* GATT discovery result event */
-#define BTA_GATTC_READ_DESCR_EVT        8   /* GATT read characterisitc descriptor event */
+#define BTA_GATTC_READ_DESCR_EVT        8   /* GATT read characteristic descriptor event */
 #define BTA_GATTC_WRITE_DESCR_EVT       9   /* GATT write characteristic descriptor event */
 #define BTA_GATTC_NOTIF_EVT             10  /* GATT attribute notification event */
 #define BTA_GATTC_PREP_WRITE_EVT        11  /* GATT prepare write  event */
@@ -752,7 +752,7 @@ extern void BTA_GATTC_Disable(void);
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTC module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_client_cb - pointer to the application callback function.
 **
 ** Returns          None
@@ -1227,7 +1227,7 @@ extern void BTA_GATTS_Disable(void);
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTS module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_cback - pointer to the application callback function.
 **
 ** Returns          None
@@ -1350,7 +1350,7 @@ extern void  BTA_GATTS_DeleteService(UINT16 service_id);
 ** Description      This function is called to start a service.
 **
 ** Parameters       service_id: the service ID to be started.
-**                  sup_transport: supported trasnport.
+**                  sup_transport: supported transport.
 **
 ** Returns          None.
 **
