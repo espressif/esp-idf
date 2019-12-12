@@ -51,13 +51,6 @@ static inline void cpu_write_itlb(unsigned vpn, unsigned attr)
     asm volatile ("witlb  %1, %0; isync\n" :: "r" (vpn), "r" (attr));
 }
 
-static inline void cpu_init_memctl(void)
-{
-#if XCHAL_ERRATUM_572
-#error "Shouldn't have this errata or need this call on esp32s2beta"
-#endif
-}
-
 /**
  * @brief Configure memory region protection
  *
