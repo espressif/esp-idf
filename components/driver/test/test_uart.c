@@ -250,6 +250,11 @@ TEST_CASE("uart read write test", "[uart]")
     TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
     TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
     TEST_ESP_OK(uart_set_loop_back(uart_num, true));
+
+    TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
+    vTaskDelay(1 / portTICK_PERIOD_MS); // make sure last byte has flushed from TX FIFO
+    TEST_ESP_OK(uart_flush_input(uart_num));
+
     xTaskCreate(uart_write_task, "uart_write_task", 2048 * 4, (void *)uart_num, 5, NULL);
     int len_tmp = 0;
     int rd_len = 1024;
