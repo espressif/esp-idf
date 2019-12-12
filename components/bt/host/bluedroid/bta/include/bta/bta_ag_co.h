@@ -46,7 +46,7 @@
 ** Returns          void
 **
 *******************************************************************************/
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
 void bta_ag_sco_audio_state(UINT16 handle, UINT8 app_id, UINT8 state, tBTA_AG_PEER_CODEC codec);
 #else
 void bta_ag_sco_audio_state(UINT16 handle, UINT8 app_id, UINT8 state);

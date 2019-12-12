@@ -58,7 +58,7 @@ enum
     BTA_AG_SCO_LISTEN_E,        /* listen request */
     BTA_AG_SCO_OPEN_E,          /* open request */
     BTA_AG_SCO_XFER_E,          /* transfer request */
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     BTA_AG_SCO_CN_DONE_E,       /* codec negotiation done */
     BTA_AG_SCO_REOPEN_E,        /* Retry with other codec when failed */
 #endif
@@ -69,7 +69,7 @@ enum
     BTA_AG_SCO_CI_DATA_E        /* SCO data ready */
 };
 
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
 #define BTA_AG_NUM_CODECS   3
 #define BTA_AG_ESCO_SETTING_IDX_CVSD    0   /* eSCO setting for CVSD */
 #define BTA_AG_ESCO_SETTING_IDX_T1      1   /* eSCO setting for mSBC T1 */
@@ -316,7 +316,7 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
 {
     if (status != BTM_SCO_DATA_CORRECT)
     {
-        APPL_TRACE_DEBUG("bta_ag_sco_read_cback: status(%d)", status);
+        ets_printf("bta_ag_sco_read_cback: status(%d)", status);
     }
 
     /* Callout function must free the data. */
@@ -721,7 +721,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB *p_scb)
         bta_ag_sco_codec_nego(p_scb, TRUE);
     }
 }
-#endif /* (BTM_WBS_INCLUDED == TRUE ) */
+#endif
 
 /*******************************************************************************
 **
@@ -1298,7 +1298,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
                       bta_ag_sco_evt_str(event));
     }
 
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     if (p_cn_scb)
     {
         bta_ag_codec_negotiate(p_cn_scb);

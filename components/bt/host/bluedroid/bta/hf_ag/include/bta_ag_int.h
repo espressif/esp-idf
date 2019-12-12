@@ -136,7 +136,7 @@ enum
 {
     BTA_AG_SCO_SHUTDOWN_ST,     /* no sco listening, all sco connections closed */
     BTA_AG_SCO_LISTEN_ST,       /* sco listening */
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     BTA_AG_SCO_CODEC_ST,        /* sco codec negotiation */
 #endif
     BTA_AG_SCO_OPENING_ST,      /* sco connection opening */
@@ -225,7 +225,7 @@ typedef union
     tBTA_AG_API_REGISTER    api_register;
     tBTA_AG_API_OPEN        api_open;
     tBTA_AG_API_RESULT      api_result;
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     tBTA_AG_API_SETCODEC    api_setcodec;
 #endif
     tBTA_AG_DISC_RESULT     disc_result;
@@ -421,6 +421,7 @@ extern void bta_ag_sco_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 #if (BTM_WBS_INCLUDED == TRUE)
 extern void bta_ag_sco_codec_nego(tBTA_AG_SCB *p_scb, BOOLEAN result);
 extern void bta_ag_codec_negotiate (tBTA_AG_SCB *p_scb);
+extern void bta_ag_send_bcs(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 #endif
 extern void bta_ag_sco_shutdown(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_sco_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
@@ -430,9 +431,6 @@ extern void bta_ag_post_sco_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_svc_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_result(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
-#if (BTM_WBS_INCLUDED == TRUE)
-extern void bta_ag_send_bcs(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
-#endif
 extern void bta_ag_send_ring(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_ci_sco_data(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data);
 extern void bta_ag_set_esco_param(BOOLEAN set_reset, tBTM_ESCO_PARAMS *param);
