@@ -251,7 +251,7 @@ typedef struct {
     tL2CAP_APPL_INFO        api;
 } tL2C_RCB;
 
-typedef void (tL2CAP_SEC_CBACK) (BD_ADDR bd_addr, tBT_TRANSPORT trasnport,
+typedef void (tL2CAP_SEC_CBACK) (BD_ADDR bd_addr, tBT_TRANSPORT transport,
                                 void *p_ref_data, tBTM_STATUS result);
 
 typedef struct
@@ -723,7 +723,7 @@ extern void     l2c_link_process_num_completed_blocks (UINT8 controller_id, UINT
 extern void     l2c_link_processs_num_bufs (UINT16 num_lm_acl_bufs);
 extern UINT8    l2c_link_pkts_rcvd (UINT16 *num_pkts, UINT16 *handles);
 extern void     l2c_link_role_changed (BD_ADDR bd_addr, UINT8 new_role, UINT8 hci_status);
-extern void     l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT trasnport, void *p_ref_data, UINT8 status);
+extern void     l2c_link_sec_comp (BD_ADDR p_bda, tBT_TRANSPORT transport, void *p_ref_data, UINT8 status);
 extern void     l2c_link_segments_xmitted (BT_HDR *p_msg);
 extern void     l2c_pin_code_request (BD_ADDR bd_addr);
 extern void     l2c_link_adjust_chnl_allocation (void);

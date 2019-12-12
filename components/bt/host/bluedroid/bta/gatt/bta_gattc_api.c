@@ -76,7 +76,7 @@ void BTA_GATTC_Disable(void)
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTC module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_client_cb - pointer to the application callback function.
 **
 ** Returns          None

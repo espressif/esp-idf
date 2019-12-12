@@ -604,10 +604,10 @@ typedef struct {
 
 typedef union {
     tBLE_BD_ADDR                            target_addr;
-    tBTA_DM_BLE_PF_LOCAL_NAME_COND             local_name; /* lcoal name filtering */
-    tBTA_DM_BLE_PF_MANU_COND                   manu_data;  /* manufactuer data filtering */
+    tBTA_DM_BLE_PF_LOCAL_NAME_COND             local_name; /* local name filtering */
+    tBTA_DM_BLE_PF_MANU_COND                   manu_data;  /* manufacturer data filtering */
     tBTA_DM_BLE_PF_UUID_COND                   srvc_uuid;  /* service UUID filtering */
-    tBTA_DM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicitated service UUID filtering */
+    tBTA_DM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicited service UUID filtering */
     tBTA_DM_BLE_PF_SRVC_PATTERN_COND           srvc_data;      /* service data pattern */
 } tBTA_DM_BLE_PF_COND_PARAM;
 
@@ -1226,7 +1226,7 @@ typedef UINT16 tBTA_DM_LP_MASK;
 #define BTA_DM_PM_ACTIVE       0x40       /* prefers active mode */
 #define BTA_DM_PM_RETRY        0x80       /* retry power mode based on current settings */
 #define BTA_DM_PM_SUSPEND      0x04       /* prefers suspend mode */
-#define BTA_DM_PM_NO_PREF      0x01       /* service has no prefernce on power mode setting. eg. connection to service got closed */
+#define BTA_DM_PM_NO_PREF      0x01       /* service has no preference on power mode setting. eg. connection to service got closed */
 
 typedef UINT8 tBTA_DM_PM_ACTION;
 
@@ -1804,7 +1804,7 @@ extern UINT16 BTA_DmGetConnectionState( BD_ADDR bd_addr );
 **
 ** Description      This function adds a DI record to the local SDP database.
 **
-** Returns          BTA_SUCCESS if record set sucessfully, otherwise error code.
+** Returns          BTA_SUCCESS if record set successfully, otherwise error code.
 **
 *******************************************************************************/
 extern tBTA_STATUS BTA_DmSetLocalDiRecord( tBTA_DI_RECORD *p_device_info,

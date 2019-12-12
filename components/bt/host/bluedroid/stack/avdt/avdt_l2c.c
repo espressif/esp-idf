@@ -127,7 +127,7 @@ static void avdt_sec_check_complete_term (BD_ADDR bd_addr, tBT_TRANSPORT transpo
 ** Returns          void
 **
 *******************************************************************************/
-static void avdt_sec_check_complete_orig (BD_ADDR bd_addr, tBT_TRANSPORT trasnport,
+static void avdt_sec_check_complete_orig (BD_ADDR bd_addr, tBT_TRANSPORT transport,
         void *p_ref_data, UINT8 res)
 {
     tAVDT_CCB       *p_ccb = NULL;
