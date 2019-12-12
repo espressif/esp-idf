@@ -501,7 +501,7 @@ const bt_mesh_addr_t *bt_mesh_pba_get_addr(void)
     return dev_addr;
 }
 
-#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
 static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
 {
@@ -604,7 +604,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
 static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
                             u8_t adv_type, struct net_buf_simple *buf)
 {
-#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     u16_t uuid;
 #endif
@@ -678,7 +678,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
             }
 #endif
             break;
-#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
         case BLE_MESH_DATA_FLAGS:
             if (!bt_mesh_is_adv_flags_valid(buf)) {
