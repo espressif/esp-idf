@@ -217,7 +217,7 @@ INPUT = \
     ## Himem
     $(IDF_PATH)/components/esp32/include/esp32/himem.h \
     ## Interrupt Allocation
-    $(IDF_PATH)/components/esp32/include/esp_intr_alloc.h \
+    $(IDF_PATH)/components/$(IDF_TARGET)/include/esp_intr_alloc.h \
     ## Watchdogs
     ## NOTE: for two lines below header_file.inc is not used
     $(IDF_PATH)/components/esp_common/include/esp_int_wdt.h \
@@ -233,7 +233,7 @@ INPUT = \
     ## ESP HTTPS OTA
     $(IDF_PATH)/components/esp_https_ota/include/esp_https_ota.h \
     ## Sleep
-    $(IDF_PATH)/components/esp32/include/esp_sleep.h \
+    $(IDF_PATH)/components/$(IDF_TARGET)/include/esp_sleep.h \
     ## Logging
     $(IDF_PATH)/components/log/include/esp_log.h \
     ## Base MAC address
@@ -245,7 +245,7 @@ INPUT = \
     ## ULP Coprocessor - API Guides
     ##
     ## NOTE: for line below header_file.inc is not used
-    $(IDF_PATH)/components/ulp/include/esp32/ulp.h \
+    $(IDF_PATH)/components/ulp/include/$(IDF_TARGET)/ulp.h \
     $(IDF_PATH)/components/ulp/include/ulp_common.h \
     ##
     ## Application Level Tracing - API Reference
@@ -254,7 +254,7 @@ INPUT = \
     $(IDF_PATH)/components/app_trace/include/esp_sysview_trace.h \
     ### Power management
     $(IDF_PATH)/components/esp_common/include/esp_pm.h \
-    $(IDF_PATH)/components/esp32/include/esp32/pm.h \
+    $(IDF_PATH)/components/$(IDF_TARGET)/include/$(IDF_TARGET)/pm.h \
     ### esp_timer, High Resolution Timer
     $(IDF_PATH)/components/esp_timer/include/esp_timer.h \
     ### esp_event, Event Loop Library

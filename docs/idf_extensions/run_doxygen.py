@@ -99,7 +99,7 @@ def convert_api_xml_to_inc(app, doxyfile):
     if not os.path.exists(inc_directory_path):
         os.makedirs(inc_directory_path)
 
-    header_paths = get_doxyfile_input_paths(doxyfile)
+    header_paths = get_doxyfile_input_paths(app, doxyfile)
     print("Generating 'api_name.inc' files with Doxygen directives")
     for header_file_path in header_paths:
         api_name = get_api_name(header_file_path)
@@ -116,7 +116,7 @@ def convert_api_xml_to_inc(app, doxyfile):
                 inc_file.write(rst_output)
 
 
-def get_doxyfile_input_paths(doxyfile_path):
+def get_doxyfile_input_paths(app, doxyfile_path):
     """Get contents of Doxyfile's INPUT statement.
 
     Returns:
@@ -148,6 +148,10 @@ def get_doxyfile_input_paths(doxyfile_path):
                 # extract header file path inside components folder
                 m = re.search("components/(.*\.h)", line)  # noqa: W605 - regular expression
                 header_file_path = m.group(1)
+
+                # Replace env variable used for multi target header
+                header_file_path = header_file_path.replace("$(IDF_TARGET)", app.config.idf_target)
+
                 doxyfile_INPUT.append(header_file_path)
 
             # proceed reading next line
