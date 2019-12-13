@@ -15,7 +15,7 @@ API Guides
     Error Handling <error-handling>
     :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
     ESP-MESH (Wi-Fi) <mesh>
-    {IDF_TARGET_NAME} Core Dump <core_dump>
+    Core Dump <core_dump>
     Event Handling <event-handling>
     External SPI-connected RAM <external-ram>
     Fatal Errors <fatal-errors>

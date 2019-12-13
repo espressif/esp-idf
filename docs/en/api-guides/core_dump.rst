@@ -1,5 +1,5 @@
-{IDF_TARGET_NAME} Core Dump
-===========================
+Core Dump
+=========
 
 Overview
 --------
