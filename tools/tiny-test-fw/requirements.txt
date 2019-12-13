@@ -1,5 +1,0 @@
-pyserial
-pyyaml
-junit_xml
-netifaces
-matplotlib

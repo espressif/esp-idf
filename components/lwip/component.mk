@@ -36,4 +36,6 @@ lwip/src/netif/ppp/ppp.o: CFLAGS += -Wno-uninitialized
 lwip/src/netif/ppp/pppos.o: CFLAGS += -Wno-implicit-fallthrough
 endif
 
+lwip/src/core/tcp.o: CFLAGS += -Wno-type-limits
+
 COMPONENT_ADD_LDFRAGMENTS += linker.lf

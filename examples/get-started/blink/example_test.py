@@ -5,20 +5,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 import re
 import os
-import sys
 import hashlib
 
-try:
-    import IDF
-except ImportError:
-    # This environment variable is expected on the host machine
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-
-    import IDF
-
-import Utility
+from tiny_test_fw import Utility
+import ttfw_idf
 
 
 def verify_elf_sha256_embedding(dut):
@@ -38,13 +28,13 @@ def verify_elf_sha256_embedding(dut):
         raise ValueError('ELF file SHA256 mismatch')
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
 def test_examples_blink(env, extra_data):
     dut = env.get_dut("blink", "examples/get-started/blink")
     binary_file = os.path.join(dut.app.binary_path, "blink.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("blink_bin_size", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("blink_bin_size", bin_size // 1024)
+    ttfw_idf.log_performance("blink_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("blink_bin_size", bin_size // 1024)
 
     dut.start_app()
 

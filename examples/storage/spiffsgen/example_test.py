@@ -1,18 +1,11 @@
 from __future__ import print_function
 import os
-import sys
 import hashlib
 
-try:
-    import IDF
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 
-@IDF.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_spiffsgen(env, extra_data):
     # Test with default build configurations
     dut = env.get_dut('spiffsgen', 'examples/storage/spiffsgen')
