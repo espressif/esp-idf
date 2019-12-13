@@ -752,7 +752,7 @@ ptest_func_t frhost_slave = {
 
 PARAM_GROUP_DECLARE_TYPE(IO_MODE, sdio_test_config_t, test_cfg_array);
 
-TEST_MASTER_SLAVE(FRHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &frhost_master, &frhost_slave);
+TEST_MASTER_SLAVE(SDIO_FRHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &frhost_master, &frhost_slave);
 
 ptest_func_t tohost_master = {
     .pre_test = null_pre,
@@ -766,4 +766,4 @@ ptest_func_t tohost_slave = {
     .post_test = null_post,
 };
 
-TEST_MASTER_SLAVE(TOHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &tohost_master, &tohost_slave);
+TEST_MASTER_SLAVE(SDIO_TOHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &tohost_master, &tohost_slave);

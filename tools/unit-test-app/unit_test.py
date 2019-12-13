@@ -168,6 +168,11 @@ def reset_dut(dut):
         raise AssertionError("Reset {} ({}) failed!".format(dut.name, dut.port))
 
 
+def log_test_case(description, test_case, ut_config):
+            Utility.console_log("Running {} '{}' (config {})".format(description, test_case["name"], ut_config), color="orange")
+            Utility.console_log("Tags: %s" % ", ".join("%s=%s" % (k,v) for (k,v) in test_case.items() if k != "name" and v is not None), color="orange")
+
+
 def run_one_normal_case(dut, one_case, junit_test_case):
 
     reset_dut(dut)
@@ -231,14 +236,15 @@ def run_one_normal_case(dut, one_case, junit_test_case):
 
     while not test_finish:
         try:
+            timeout_value = one_case["timeout"]
             dut.expect_any((RESET_PATTERN, handle_exception_reset),
                            (EXCEPTION_PATTERN, handle_exception_reset),
                            (ABORT_PATTERN, handle_exception_reset),
                            (FINISH_PATTERN, handle_test_finish),
                            (UT_APP_BOOT_UP_DONE, handle_reset_finish),
-                           timeout=one_case["timeout"])
+                           timeout=timeout_value)
         except DUT.ExpectTimeout:
-            Utility.console_log("Timeout in expect", color="orange")
+            Utility.console_log("Timeout in expect (%s seconds)" % timeout_value, color="orange")
             junit_test_case.add_failure_info("timeout")
             one_case_finish(False)
             break
@@ -278,6 +284,7 @@ def run_unit_test_cases(env, extra_data):
         Utility.console_log("Download finished, start running test cases", "O")
 
         for one_case in case_config[ut_config]:
+            log_test_case("test case", one_case, ut_config)
             performance_items = []
             # create junit report test case
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
@@ -394,7 +401,7 @@ class Handler(threading.Thread):
                                     (self.FINISH_PATTERN, handle_device_test_finish),  # test finish pattern
                                     timeout=self.timeout)
             except DUT.ExpectTimeout:
-                Utility.console_log("Timeout in expect", color="orange")
+                Utility.console_log("Timeout in expect (%s seconds)" % self.timeout, color="orange")
                 one_device_case_finish(False)
                 break
 
@@ -481,6 +488,7 @@ def run_multiple_devices_cases(env, extra_data):
     for ut_config in case_config:
         Utility.console_log("Running unit test for config: " + ut_config, "O")
         for one_case in case_config[ut_config]:
+            log_test_case("multi-device test", one_case, ut_config, )
             result = False
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
@@ -594,14 +602,15 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
 
         while not stage_finish:
             try:
+                timeout_value = one_case["timeout"]
                 dut.expect_any((RESET_PATTERN, handle_exception_reset),
                                (EXCEPTION_PATTERN, handle_exception_reset),
                                (ABORT_PATTERN, handle_exception_reset),
                                (FINISH_PATTERN, handle_test_finish),
                                (UT_APP_BOOT_UP_DONE, handle_next_stage),
-                               timeout=one_case["timeout"])
+                               timeout=timeout_value)
             except DUT.ExpectTimeout:
-                Utility.console_log("Timeout in expect", color="orange")
+                Utility.console_log("Timeout in expect (%s seconds)" % timeout_value, color="orange")
                 one_case_finish(False)
                 break
         if stage_finish[0] == "break":
@@ -637,6 +646,7 @@ def run_multiple_stage_cases(env, extra_data):
         dut.start_app()
 
         for one_case in case_config[ut_config]:
+            log_test_case("multi-stage test", one_case, ut_config)
             performance_items = []
             junit_test_case = TinyFW.JunitReport.create_test_case("[{}] {}".format(ut_config, one_case["name"]))
             try:
@@ -755,7 +765,7 @@ if __name__ == '__main__':
         for test_item in test_args:
             if len(test_item) == 0:
                 continue
-            pair = test_item.split(r':')
+            pair = test_item.split(r':', 1)
             if len(pair) == 1 or pair[0] is 'name':
                 test_dict['name'] = pair[0]
             elif len(pair) == 2:
