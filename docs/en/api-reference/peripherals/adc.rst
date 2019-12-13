@@ -1,13 +1,16 @@
 Analog to Digital Converter
 ===========================
 
+{IDF_TARGET_ADC1_CH0: default="GPIO 0", esp32="GPIO 36"}
+{IDF_TARGET_ADC2_CH7: default="GPIO 0", esp32="GPIO 27"}
+
+
 Overview
 --------
 
-The {IDF_TARGET_NAME} integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 18 measurement channels (analog enabled pins).
-
-
 .. only:: esp32
+
+    The {IDF_TARGET_NAME} integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 18 measurement channels (analog enabled pins).
 
     The ADC driver API supports ADC1 (8 channels, attached to GPIOs 32 - 39), and ADC2 (10 channels, attached to GPIOs 0, 2, 4, 12 - 15 and 25 - 27). However, the usage of ADC2 has some restrictions for the application:
 
@@ -16,6 +19,14 @@ The {IDF_TARGET_NAME} integrates two 12-bit SAR (`Successive Approximation Regis
 
     - :ref:`ESP32 DevKitC <esp-modules-and-boards-esp32-devkitc>`: GPIO 0 cannot be used due to external auto program circuits.
     - :ref:`ESP-WROVER-KIT <esp-modules-and-boards-esp-wrover-kit>`: GPIO 0, 2, 4 and 15 cannot be used due to external connections for different purposes.
+
+.. only:: esp32s2
+
+    The {IDF_TARGET_NAME} integrates two 12-bit SAR (`Successive Approximation Register <https://en.wikipedia.org/wiki/Successive_approximation_ADC>`_) ADCs supporting a total of 20 measurement channels (analog enabled pins).
+
+    The ADC driver API supports ADC1 (10 channels, attached to GPIOs 1 - 10), and ADC2 (10 channels, attached to GPIOs 11 - 20). However, the usage of ADC2 has some restrictions for the application:
+
+    1. ADC2 is used by the Wi-Fi driver. Therefore the application can only use ADC2 when the Wi-Fi driver has not started.
 
 Configuration and Reading ADC
 -----------------------------
@@ -31,7 +42,9 @@ Then it is possible to read ADC conversion result with :cpp:func:`adc1_get_raw` 
 
 .. note:: Since the ADC2 is shared with the WIFI module, which has higher priority, reading operation of :cpp:func:`adc2_get_raw` will fail between :cpp:func:`esp_wifi_start()` and :cpp:func:`esp_wifi_stop()`. Use the return code to see whether the reading is successful.
 
-It is also possible to read the internal hall effect sensor via ADC1 by calling dedicated function :cpp:func:`hall_sensor_read`. Note that even the hall sensor is internal to ESP32, reading from it uses channels 0 and 3 of ADC1 (GPIO 36 and 39). Do not connect anything else to these pins and do not change their configuration. Otherwise it may affect the measurement of low value signal from the sensor.
+.. only:: esp32
+
+    It is also possible to read the internal hall effect sensor via ADC1 by calling dedicated function :cpp:func:`hall_sensor_read`. Note that even the hall sensor is internal to ESP32, reading from it uses channels 0 and 3 of ADC1 (GPIO 36 and 39). Do not connect anything else to these pins and do not change their configuration. Otherwise it may affect the measurement of low value signal from the sensor.
 
 This API provides convenient way to configure ADC1 for reading from :doc:`ULP <../../api-guides/ulp>`. To do so, call function :cpp:func:`adc1_ulp_enable` and then set precision and attenuation as discussed above.
 
@@ -40,7 +53,7 @@ There is another specific function :cpp:func:`adc2_vref_to_gpio` used to route i
 Application Examples
 --------------------
 
-Reading voltage on ADC1 channel 0 (GPIO 36)::
+Reading voltage on ADC1 channel 0 ({IDF_TARGET_ADC1_CH0})::
 
     #include <driver/adc.h>
 
@@ -53,7 +66,7 @@ Reading voltage on ADC1 channel 0 (GPIO 36)::
 The input voltage in above example is from 0 to 1.1V (0 dB attenuation). The input range can be extended by setting higher attenuation, see :cpp:type:`adc_atten_t`.
 An example using the ADC driver including calibration (discussed below) is available in esp-idf: :example:`peripherals/adc`
 
-Reading voltage on ADC2 channel 7 (GPIO 27)::
+Reading voltage on ADC2 channel 7 ({IDF_TARGET_ADC2_CH7})::
 
     #include <driver/adc.h>
 
@@ -72,14 +85,16 @@ Reading voltage on ADC2 channel 7 (GPIO 27)::
 The reading may fail due to collision with Wi-Fi, should check it.
 An example using the ADC2 driver to read the output of DAC is available in esp-idf: :example:`peripherals/adc2`
 
-Reading the internal hall effect sensor::
+.. only: esp32
 
-    #include <driver/adc.h>
+    Reading the internal hall effect sensor::
 
-    ...
+        #include <driver/adc.h>
 
-        adc1_config_width(ADC_WIDTH_BIT_12);
-        int val = hall_sensor_read();
+        ...
+
+            adc1_config_width(ADC_WIDTH_BIT_12);
+            int val = hall_sensor_read();
 
 
 
@@ -132,32 +147,32 @@ Calibration values are used to generate characteristic curves that account for t
 
         ESP32 Chip Surface Marking
 
-If you would like to purchase chips or modules with calibration, double check with distributor or Espressif directly.
+    If you would like to purchase chips or modules with calibration, double check with distributor or Espressif directly.
 
-.. highlight:: none
+    .. highlight:: none
 
-If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
+    If you are unable to check the date code (i.e. the chip may be enclosed inside a canned module, etc.), you can still verify if **eFuse Vref** is present by running `espefuse.py <https://github.com/espressif/esptool/wiki/espefuse>`_  tool with ``adc_info`` parameter ::
 
-    $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
+        $IDF_PATH/components/esptool_py/esptool/espefuse.py --port /dev/ttyUSB0 adc_info
 
-Replace ``/dev/ttyUSB0`` with {IDF_TARGET_NAME} board's port name.
+    Replace ``/dev/ttyUSB0`` with {IDF_TARGET_NAME} board's port name.
 
-A chip that has specific **eFuse Vref** value programmed (in this case 1093mV) will be reported as follows::
+    A chip that has specific **eFuse Vref** value programmed (in this case 1093mV) will be reported as follows::
 
-    ADC VRef calibration: 1093mV
+        ADC VRef calibration: 1093mV
 
-In another example below the **eFuse Vref** is not programmed::
+    In another example below the **eFuse Vref** is not programmed::
 
-    ADC VRef calibration: None (1100mV nominal)
+        ADC VRef calibration: None (1100mV nominal)
 
-For a chip with two point calibration the message will look similar to::
+    For a chip with two point calibration the message will look similar to::
 
-    ADC VRef calibration: 1149mV
-    ADC readings stored in efuse BLK3:
-        ADC1 Low reading  (150mV): 306
-        ADC1 High reading (850mV): 3153
-        ADC2 Low reading  (150mV): 389
-        ADC2 High reading (850mV): 3206
+        ADC VRef calibration: 1149mV
+        ADC readings stored in efuse BLK3:
+            ADC1 Low reading  (150mV): 306
+            ADC1 High reading (850mV): 3153
+            ADC2 Low reading  (150mV): 389
+            ADC2 High reading (850mV): 3206
 
 Application Example
 ^^^^^^^^^^^^^^^^^^^

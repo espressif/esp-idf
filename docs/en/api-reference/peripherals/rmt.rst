@@ -91,7 +91,13 @@ There couple of typical steps to setup and operate the RMT and they are discusse
 3. `Change Operation Parameters`_
 4. `Use Interrupts`_
 
-The RMT has eight channels numbered from zero to seven. Each channel is able to independently transmit or receive data. They are referred to using indexes defined in structure :cpp:type:`rmt_channel_t`.
+.. only:: esp32
+
+    The RMT has eight channels numbered from zero to seven. Each channel is able to independently transmit or receive data. They are referred to using indexes defined in structure :cpp:type:`rmt_channel_t`.
+
+.. only:: esp32s2
+
+    The RMT has four channels numbered from zero to three. Each channel is able to independently transmit or receive data. They are referred to using indexes defined in structure :cpp:type:`rmt_channel_t`.
 
 
 Configure Driver
@@ -153,7 +159,7 @@ Now, depending on how the channel is configured, we are ready to either `Transmi
 Transmit Data
 -------------
 
-Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_caps.h`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
+Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
 
 .. packetdiag::
     :caption: Structure of RMT items (L - signal level)
@@ -186,7 +192,15 @@ Another way to provide data for transmission is by calling :cpp:func:`rmt_fill_t
 Receive Data
 ------------
 
-Before starting the receiver we need some storage for incoming items. The RMT controller has 512 x 32-bits of internal RAM shared between all eight channels. In typical scenarios it is not enough as an ultimate storage for all incoming (and outgoing) items. Therefore this API supports retrieval of incoming items on the fly to save them in a ring buffer of a size defined by the user. The size is provided when calling :cpp:func:`rmt_driver_install` discussed above. To get a handle to this buffer call :cpp:func:`rmt_get_ringbuf_handle`.
+.. only:: esp32
+
+    Before starting the receiver we need some storage for incoming items. The RMT controller has 512 x 32-bits of internal RAM shared between all eight channels.
+
+.. only:: esp32s2
+
+    Before starting the receiver we need some storage for incoming items. The RMT controller has 256 x 32-bits of internal RAM shared between all four channels.
+
+In typical scenarios it is not enough as an ultimate storage for all incoming (and outgoing) items. Therefore this API supports retrieval of incoming items on the fly to save them in a ring buffer of a size defined by the user. The size is provided when calling :cpp:func:`rmt_driver_install` discussed above. To get a handle to this buffer call :cpp:func:`rmt_get_ringbuf_handle`.
 
 With the above steps complete we can start the receiver by calling :cpp:func:`rmt_rx_start` and then move to checking what's inside the buffer. To do so, you can use common FreeRTOS functions that interact with the ring buffer. Please see an example how to do it in :example:`peripherals/rmt/ir_protocols`.
 
@@ -242,7 +256,7 @@ The RMT controller triggers interrupts on four specific events describes below. 
 
 Setting or clearing an interrupt enable mask for specific channels and events may be also done by calling :cpp:func:`rmt_set_intr_enable_mask` or :cpp:func:`rmt_clr_intr_enable_mask`.
 
-When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, 7] and the ``event_name`` is one of four events described above.
+When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 
 If you do not need an ISR anymore, you can deregister it by calling a function :cpp:func:`rmt_isr_deregister`.
 

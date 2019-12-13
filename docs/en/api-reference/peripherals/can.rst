@@ -6,22 +6,30 @@ Controller Area Network (CAN)
 Overview
 --------
 
-The {IDF_TARGET_NAME}'s peripherals contains a CAN Controller that supports Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID) of the CAN2.0B specification.
+.. only:: esp32s2
 
-.. warning::
-    The {IDF_TARGET_NAME} CAN controller is not compatible with CAN FD frames and will interpret such frames as errors.
+    .. note::
 
-This programming guide is split into the following sections:
+        The CAN driver is not updated for {IDF_TARGET_NAME} and is temporarily disabled.
 
-    1. :ref:`basic-can-concepts`
+.. only:: esp32
 
-    2. :ref:`signals-lines-and-transceiver`
+    The {IDF_TARGET_NAME}'s peripherals contains a CAN Controller that supports Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID) of the CAN2.0B specification.
 
-    3. :ref:`configuration`
+    .. warning::
+        The {IDF_TARGET_NAME} CAN controller is not compatible with CAN FD frames and will interpret such frames as errors.
 
-    4. :ref:`driver-operation`
+    This programming guide is split into the following sections:
 
-    5. :ref:`examples`
+        1. :ref:`basic-can-concepts`
+
+        2. :ref:`signals-lines-and-transceiver`
+
+        3. :ref:`configuration`
+
+        4. :ref:`driver-operation`
+
+        5. :ref:`examples`
 
 
 .. --------------------------- Basic CAN Concepts ------------------------------

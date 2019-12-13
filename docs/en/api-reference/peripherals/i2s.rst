@@ -6,7 +6,13 @@ Overview
 
 I2S (Inter-IC Sound) is a serial, synchronous communication protocol that is usually used for transmitting audio data between two digital audio devices.
 
-{IDF_TARGET_NAME} integrates two I2S controllers, referred to as I2S0 and I2S1, both of which can be used for streaming audio and video digital data.
+.. only:: esp32
+
+    {IDF_TARGET_NAME} contains two I2S peripherals. These peripherals can be configured to input and output sample data via the I2S driver.
+
+.. only:: esp32s2
+
+    {IDF_TARGET_NAME} contains one I2S peripheral. These peripherals can be configured to input and output sample data via the I2S driver.
 
 An I2S bus consists of the following lines:
 

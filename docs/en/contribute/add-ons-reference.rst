@@ -150,7 +150,11 @@ Other Extensions
     An extension for replacing generic target related names with the idf_target passed to the Sphinx command line.
     This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will, if the backspaces are removed, render as This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
 
-    This cannot be used inside tables.
+    Also supports markup for defining local (single .rst-file) substitions with the following syntax: {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2="IO5"}
+
+    This will define a replacement of the tag {\IDF_TARGET_TX_PIN} in the current rst-file.
+
+    These replacements cannot be used inside markup that rely on allignment of characters, e.g. tables.
 
 Related Documents
 -----------------

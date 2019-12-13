@@ -57,7 +57,6 @@ def main():
             build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
             build_docs(language, target, build_dir)
 
-
 def build_docs(language, target, build_dir):
     print("Building language:%s target:%s build_dir:%s" % (language, target, build_dir))
     try:

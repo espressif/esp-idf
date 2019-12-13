@@ -103,9 +103,10 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
     $(IDF_PATH)/components/driver/include/driver/spi_master.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
+    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/touch_sensor.h \
     $(IDF_PATH)/components/driver/esp32s2/include/temp_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
-    $(IDF_PATH)/components/driver/include/driver/touch_pad.h \
+    $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(IDF_PATH)/components/soc/include/hal/rmt_types.h \
