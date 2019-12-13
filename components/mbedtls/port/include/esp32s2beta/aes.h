@@ -48,8 +48,20 @@ extern "C" {
  */
 typedef struct {
     uint8_t key_bytes;
+    volatile uint8_t key_in_hardware; /* This variable is used for fault injection checks, so marked volatile to avoid optimisation */
     uint8_t key[32];
 } esp_aes_context;
+
+/**
+ * \brief The AES XTS context-type definition.
+ */
+typedef struct
+{
+    esp_aes_context crypt; /*!< The AES context to use for AES block
+                                        encryption or decryption. */
+    esp_aes_context tweak; /*!< The AES context used for tweak
+                                        computation. */
+} esp_aes_xts_context;
 
 /**
  * \brief Lock access to AES hardware unit
@@ -85,6 +97,33 @@ void esp_aes_init( esp_aes_context *ctx );
  * \param ctx      AES context to be cleared
  */
 void esp_aes_free( esp_aes_context *ctx );
+
+/*
+ * \brief          This function initializes the specified AES XTS context.
+ *
+ *                 It must be the first API called before using
+ *                 the context.
+ *
+ * \param ctx      The AES XTS context to initialize.
+ */
+void esp_aes_xts_init( esp_aes_xts_context *ctx );
+
+/**
+ * \brief          This function releases and clears the specified AES XTS context.
+ *
+ * \param ctx      The AES XTS context to clear.
+ */
+void esp_aes_xts_free( esp_aes_xts_context *ctx );
+
+/**
+ * \brief          AES set key schedule (encryption or decryption)
+ *
+ * \param ctx      AES context to be initialized
+ * \param key      encryption key
+ * \param keybits  must be 128, 192 or 256
+ *
+ * \return         0 if successful, or ERR_AES_INVALID_KEY_LENGTH
+ */
 
 /**
  * \brief          AES set key schedule (encryption or decryption)
@@ -233,6 +272,62 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
                        const unsigned char *input,
                        unsigned char *output );
 
+/**
+ * \brief       This function performs an AES-OFB (Output Feedback Mode)
+ *              encryption or decryption operation.
+ *
+ * \param ctx      The AES context to use for encryption or decryption.
+ *                 It must be initialized and bound to a key.
+ * \param length   The length of the input data.
+ * \param iv_off   The offset in IV (updated after use).
+ *                 It must point to a valid \c size_t.
+ * \param iv       The initialization vector (updated after use).
+ *                 It must be a readable and writeable buffer of \c 16 Bytes.
+ * \param input    The buffer holding the input data.
+ *                 It must be readable and of size \p length Bytes.
+ * \param output   The buffer holding the output data.
+ *                 It must be writeable and of size \p length Bytes.
+ *
+ * \return         \c 0 on success.
+ */
+int esp_aes_crypt_ofb( esp_aes_context *ctx,
+                       size_t length,
+                       size_t *iv_off,
+                       unsigned char iv[16],
+                       const unsigned char *input,
+                       unsigned char *output );
+
+/**
+ * \brief          This function prepares an XTS context for encryption and
+ *                 sets the encryption key.
+ *
+ * \param ctx      The AES XTS context to which the key should be bound.
+ * \param key      The encryption key. This is comprised of the XTS key1
+ *                 concatenated with the XTS key2.
+ * \param keybits  The size of \p key passed in bits. Valid options are:
+ *                 <ul><li>256 bits (each of key1 and key2 is a 128-bit key)</li>
+ *                 <li>512 bits (each of key1 and key2 is a 256-bit key)</li></ul>
+ *
+ * \return         \c 0 on success.
+ * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
+ */
+int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
+                                const unsigned char *key,
+                                unsigned int keybits );
+
+/**
+ * \brief           Internal AES block encryption function
+ *                  (Only exposed to allow overriding it,
+ *                  see AES_ENCRYPT_ALT)
+ *
+ * \param ctx       AES context
+ * \param input     Plaintext block
+ * \param output    Output (ciphertext) block
+ */
+int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
+                                const unsigned char *key,
+                                unsigned int keybits );
+
 
 /**
  * \brief           Internal AES block encryption function
@@ -261,6 +356,10 @@ int esp_internal_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16
 
 /** Deprecated, see esp_aes_internal_decrypt */
 void esp_aes_decrypt( esp_aes_context *ctx, const unsigned char input[16], unsigned char output[16] ) __attribute__((deprecated));
+
+/** AES-XTS buffer encryption/decryption */
+int esp_aes_crypt_xts( esp_aes_xts_context *ctx, int mode, size_t length, const unsigned char data_unit[16], const unsigned char *input, unsigned char *output );
+
 
 #ifdef __cplusplus
 }
