@@ -53,7 +53,7 @@ if(NOT MCONF)
     externalproject_add(mconf-idf
         SOURCE_DIR ${IDF_PATH}/tools/kconfig
         CONFIGURE_COMMAND ""
-        BINARY_DIR "kconfig_bin"
+        BINARY_DIR "${CMAKE_BINARY_DIR}/kconfig_bin"
         BUILD_COMMAND make -f ${IDF_PATH}/tools/kconfig/Makefile mconf-idf
         BUILD_BYPRODUCTS ${MCONF}
         INSTALL_COMMAND ""
