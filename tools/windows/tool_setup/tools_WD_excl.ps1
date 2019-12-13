@@ -88,13 +88,6 @@ Try
     }
   }
 
-  #check the Defender module availability
-  $wdModuleDir = Join-Path -Path $env:SystemRoot -ChildPath "System32\WindowsPowerShell\v1.0\Modules\Defender"
-  if( -not (Test-Path -Path $wdModuleDir) ) {
-    Write-Output "Windows Defender module not found, aborting"
-    [Environment]::Exit($retVal)
-  }
-
   Import-Module Defender
 
   #self-elevation support
@@ -119,7 +112,6 @@ Try
     if( $bOwnLogFile ) {
       $tempFileName = Get-Date -UFormat "%Y%m%d%H%M%s"
       $lf = Join-Path -Path $env:TEMP -ChildPath "WDEspLog$tempFileName.log"
-      Write-Output "Logfile: $lf"
     }
     else { $lf = $logFile }
 
@@ -164,37 +156,24 @@ Try
 
     #ADD exclusion paths
     if( $bAddPath ) {
-      #foreach ($wdPath in $AddExclPath) {
-      # $pathsToExclude.Add( $wdPath )
-      #}
       $pathsToExclude.Add( $AddExclPath )
     }
 
     #ADD exclusion files
     if( $bAddFile ) {
-      #foreach ($wdFile in $AddExclFile) {
-      # $filesToExclude.Add( $wdFile )
-      #}
       $filesToExclude.Add( $AddExclFile )
     }
 
     #REMOVE exclusion paths
     if( $bRmPath ) {
-      #foreach ($wdPath in $RmExclPath) {
-      # $pathsToInclude.Add( $wdPath )
-      #}
       $pathsToInclude.Add( $RmExclPath )
     }
 
     #ADD exclusion file
     if( $bAddFile ) {
-      #foreach ($wdFile in $RmExclFile) {
-      # $filesToRemove.Add( $wdFile )
-      #}
       $filesToRemove.Add( $RmExclFile )
     }
   }
-  #default: throw exception
   else {
     throw (New-Object -TypeName System.ArgumentException -ArgumentList "Mandatory parameter(s) missing")
   }

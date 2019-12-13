@@ -35,11 +35,6 @@ $retVal = 1
 
 Try
 { 
-  #check the Defender module availability
-  if (!(Get-Module "Defender")) {
-    Write-Output "Windows Defender module not available, aborting"
-    [Environment]::Exit(0)
-  }
 
   Import-Module Defender
 
@@ -59,7 +54,6 @@ Try
     if( [string]::IsNullOrEmpty($logFile) ) {
       $tempFileName = Get-Date -UFormat "%Y%m%d%H%M%s"
       $lf = Join-Path -Path $env:TEMP -ChildPath "WDEspLog$tempFileName.log"
-      #Write-Output "Logfile: $lf"
     }
 
     $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell"
@@ -77,7 +71,6 @@ Try
       Remove-Item $lf
     }
 
-    #Write-Output "Process finished with code " $proc.ExitCode  
     exit $proc.ExitCode
   }
 
