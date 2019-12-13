@@ -157,7 +157,7 @@
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32ulp-macos-2.28.51-esp-20190801.tar.gz"
           },
           "name": "2.28.51-esp-20190801",
-          "status": "recommended",
+          "status": "supported",
           "win32": {
             "sha256": "44626cc2348686e9c57587142ca49cdab26fec742468942b8679f22b6661a7ec",
             "size": 12232098,
@@ -167,6 +167,35 @@
             "sha256": "44626cc2348686e9c57587142ca49cdab26fec742468942b8679f22b6661a7ec",
             "size": 12232098,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32ulp-win32-2.28.51-esp-20190801.zip"
+          }
+        },
+        {
+          "linux-amd64": {
+            "sha256": "3016c4fc551181175bd9979869bc1d1f28fa8efa25a0e29ad7f833fca4bc03d7",
+            "size": 8248656,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-amd64-2.28.51-esp-20191205.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "88967c086a6e71834282d9ae05841ee74dae1815f27807b25cdd3f7775a47101",
+            "size": 8033639,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
+          "macos": {
+            "sha256": "a35d9e7a0445247c7fc9dccd3fbc35682f0fafc28beeb10c94b59466317190c4",
+            "size": 8872874,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-macos-2.28.51-esp-20191205.tar.gz"
+          },
+          "name": "2.28.51-esp-20191205",
+          "status": "recommended",
+          "win32": {
+            "sha256": "bade309353a9f0a4e5cc03bfe84845e33205f05502c4b199195e871ded271ab5",
+            "size": 12234162,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-win32-2.28.51-esp-20191205.zip"
+          },
+          "win64": {
+            "sha256": "bade309353a9f0a4e5cc03bfe84845e33205f05502c4b199195e871ded271ab5",
+            "size": 12234162,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-win32-2.28.51-esp-20191205.zip"
           }
         }
       ]
@@ -207,7 +236,7 @@
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32s2ulp-macos-2.28.51-esp-20190801.tar.gz"
           },
           "name": "2.28.51-esp-20190801",
-          "status": "recommended",
+          "status": "supported",
           "win32": {
             "sha256": "dbd0f050273a95a82b3e506aba999c8e4d4b22c69e5f3f3efc712c8eb59355e2",
             "size": 12238724,
@@ -217,6 +246,35 @@
             "sha256": "dbd0f050273a95a82b3e506aba999c8e4d4b22c69e5f3f3efc712c8eb59355e2",
             "size": 12238724,
             "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20190801/binutils-esp32s2ulp-win32-2.28.51-esp-20190801.zip"
+          }
+        },
+        {
+          "linux-amd64": {
+            "sha256": "df7b2ff6c7c718a7cbe3b4b6dbcd68180d835d164d1913bc4698fd3781b9a466",
+            "size": 8254018,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-amd64-2.28.51-esp-20191205.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "893b213c8f716d455a6efb2b08b6cf1bc34d08b78ee19c31e82ac44b1b45417e",
+            "size": 8034624,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
+          "macos": {
+            "sha256": "5a9bb678a5246638cbda303f523d9bb8121a9a24dc01ecb22c21c46c41184155",
+            "size": 8876194,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-macos-2.28.51-esp-20191205.tar.gz"
+          },
+          "name": "2.28.51-esp-20191205",
+          "status": "recommended",
+          "win32": {
+            "sha256": "587de59fbb469a39f96168ae3eaa9f06b2601e6e0543c87eaf1bd97f23e5c4ca",
+            "size": 12239199,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-win32-2.28.51-esp-20191205.zip"
+          },
+          "win64": {
+            "sha256": "587de59fbb469a39f96168ae3eaa9f06b2601e6e0543c87eaf1bd97f23e5c4ca",
+            "size": 12239199,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-win32-2.28.51-esp-20191205.zip"
           }
         }
       ]

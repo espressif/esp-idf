@@ -1,7 +1,7 @@
-ESP32 ULP coprocessor instruction set
-=====================================
+ESP32-S2 ULP coprocessor instruction set
+========================================
 
-This document provides details about the instructions used by ESP32 ULP coprocessor assembler.
+This document provides details about the instructions used by ESP32-S2 ULP coprocessor assembler.
 
 ULP coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (stage_cnt) which can be used to implement loops. Stage count regiter is accessed using special instructions.
 
@@ -11,9 +11,10 @@ All instructions are 32-bit. Jump instructions, ALU instructions, peripheral reg
 
 The instruction syntax is case insensitive. Upper and lower case letters can be used and intermixed arbitrarily. This is true both for register names and instruction names.
 
+
 Note about addressing
 ---------------------
-ESP32 ULP coprocessor's JUMP, ST, LD instructions which take register as an argument (jump address, store/load base address) expect the argument to be expressed in 32-bit words.
+ESP32-S2 ULP coprocessor's JUMP, ST, LD instructions which take register as an argument (jump address, store/load base address) expect the argument to be expressed in 32-bit words.
 
 Consider the following example program::
 
@@ -62,6 +63,7 @@ Similar considerations apply to ``LD`` and ``ST`` instructions. Consider the fol
           ST R2, R1, 0      // write value of R2 into the third array element,
                             // i.e. array[2]
 
+
 Note about instruction execution time
 -------------------------------------
 
@@ -73,7 +75,7 @@ ULP coprocessor is clocked from RTC_FAST_CLK, which is normally derived from the
     uint32_t rtc_8md256_period = rtc_clk_cal(RTC_CAL_8MD256, 100);
     uint32_t rtc_fast_freq_hz = 1000000ULL * (1 << RTC_CLK_CAL_FRACT) * 256 / rtc_8md256_period;
 
-ULP coprocessor needs certain number of clock cycles to fetch each instuction, plus certain number of cycles to execute it, depending on the instruction. See description of each instruction below for details on the execution time.
+ULP coprocessor needs certain number of clock cycles to fetch each instruction, plus certain number of cycles to execute it, depending on the instruction. See description of each instruction below for details on the execution time.
 
 Instruction fetch time is:
 
@@ -81,6 +83,15 @@ Instruction fetch time is:
 - 4 clock cycles — in other cases.
 
 Note that when accessing RTC memories and RTC registers, ULP coprocessor has lower priority than the main CPUs. This means that ULP coprocessor execution may be suspended while the main CPUs access same memory region as the ULP.
+
+
+Difference between ESP32 ULP and ESP32-S2 ULP Instruction sets
+--------------------------------------------------------------
+
+Compare to the ESP32 ULP coprocessor, the ESP-S2 ULP coprocessor has extended instruction set. The ESP32-S2 ULP is not binary compatible with ESP32 ULP, 
+but the assembled program that was written for the ESP32 ULP will also work on the ESP32-S2 ULP after rebuild.
+The list of the new instructions that was added to the ESP32-S2 ULP is: LDL, LDH, STO, ST32, STI32.
+The detailed description of these commands please see below.
 
 
 **NOP** - no operation
@@ -241,7 +252,6 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
     label: nop                     //definition of variable label
 
 
-
 **LSH** - Logical Shift Left
 ----------------------------
 
@@ -311,7 +321,6 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
     label:  nop                         //definition of variable label
 
 
-
 **MOVE** – Move to register
 ---------------------------
 
@@ -349,30 +358,34 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
     label:  nop                          //definition of label
 
 
-**ST** – Store data to the memory
----------------------------------
+**STL**/**ST** – Store data to the low 16 bits of 32-bits memory
+----------------------------------------------------------------
 
 **Syntax**
-  **ST**     *Rsrc, Rdst, offset*
+  **ST**     *Rsrc, Rdst, offset, Label*
+  **STL**    *Rsrc, Rdst, offset, Label*
 
 **Operands**
   - *Rsrc* – Register R[0..3], holds the 16-bit value to store
   - *Rdst* – Register R[0..3], address of the destination, in 32-bit words
-  - *Offset* – 10-bit signed value, offset in bytes
+  - *Offset* – 11-bit signed value, offset in bytes
+  - *Label* – 2-bit user defined unsigned value
 
 **Cycles**
   4 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-  The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst+offset. The upper half-word is written with the current program counter (PC), expressed in words, shifted left by 5 bits::
+  The instruction stores the 16-bit value of Rsrc to the lower half-word of memory with address Rdst+offset::
 
-    Mem[Rdst + offset / 4]{31:0} = {PC[10:0], 5'b0, Rsrc[15:0]}
+    Mem[Rdst + offset / 4]{15:0} = {Rsrc[15:0]}
+    Mem[Rdst + offset / 4]{15:0} = {Label[1:0],Rsrc[13:0]}
 
+  The ST command introduced to make compatibility with previous versions of UPL core.
   The application can use higher 16 bits to determine which instruction in the ULP program has written any particular word into memory.
 
 **Examples**::
 
-  1:        ST  R1, R2, 0x12        //MEM[R2+0x12] = R1
+  1:        STL  R1, R2, 0x12        //MEM[R2+0x12] = R1
   
   2:        .data                   //Data section definition
     Addr1:  .word     123           // Define label Addr1 16 bit
@@ -380,15 +393,204 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
             .text                   //Text section definition
             MOVE      R1, 1         // R1 = 1
             MOVE      R2, Addr1     // R2 = Addr1
-            ST        R1, R2, offs  // MEM[R2 +  0] = R1
-                                    // MEM[Addr1 + 0] will be 32'h600001
+            STL       R1, R2, offs  // MEM[R2 +  0] = R1
+                                    // MEM[Addr1 + 0] will be 32'hxxxx0001
+  3:
+            MOVE      R1, 1             // R1 = 1
+            STL       R1, R2, 0x12,1    // MEM[R2+0x12] 0xxxxx4001
 
 
-**LD** – Load data from the memory
-----------------------------------
+**STH** – Store data to the high 16 bits of 32-bits memory
+----------------------------------------------------------
+
+**Syntax**
+  **STH**     *Rsrc, Rdst, offset, Label*
+
+**Operands**
+  - *Rsrc* – Register R[0..3], holds the 16-bit value to store
+  - *Rdst* – Register R[0..3], address of the destination, in 32-bit words
+  - *Offset* – 11-bit signed value, offset in bytes
+  - *Label* – 2-bit user defined unsigned value
+
+**Cycles**
+  4 cycles to execute, 4 cycles to fetch next instruction
+
+**Description**
+  The instruction stores the 16-bit value of Rsrc to the high half-word of memory with address Rdst+offset::
+
+    Mem[Rdst + offset / 4]{31:16} = {Rsrc[15:0]}
+    Mem[Rdst + offset / 4]{31:16} = {Label[1:0],Rsrc[13:0]}
+
+**Examples**::
+
+  1:        STH  R1, R2, 0x12       //MEM[R2+0x12][31:16] = R1
+  
+  2:        .data                   //Data section definition
+    Addr1:  .word     123           // Define label Addr1 16 bit
+            .set      offs, 0x00    // Define constant offs
+            .text                   //Text section definition
+            MOVE      R1, 1         // R1 = 1
+            MOVE      R2, Addr1     // R2 = Addr1
+            STH       R1, R2, offs  // MEM[R2 +  0] = R1
+                                    // MEM[Addr1 + 0] will be 32'h0001xxxx
+  3:
+            MOVE      R1, 1              // R1 = 1
+            STH       R1, R2, 0x12, 1    //MEM[R2+0x12] 0x4001xxxx
+
+
+**STO** – Set offset value for auto increment operation
+-------------------------------------------------------
+
+**Syntax**
+  **STO**     *offset*
+
+**Operands**
+  - *Offset* – 11-bit signed value, offset in bytes
+
+**Cycles**
+  4 cycles to execute, 4 cycles to fetch next instruction
+
+**Description**
+  The instruction set 16-bit value to the offset register::
+
+    offset = value/ 4
+
+**Examples**::
+
+  1:        STO  0x12               // Offset = 0x12/4
+  
+  2:        .data                   //Data section definition
+    Addr1:  .word     123           // Define label Addr1 16 bit
+            .set      offs, 0x00    // Define constant offs
+            .text                   //Text section definition
+            STO       offs          // Offset = 0x00
+
+
+**STI** – Store data to the 32-bits memory with auto increment of predefined offset address
+-------------------------------------------------------------------------------------------
+
+**Syntax**
+  **STI**     *Rsrc, Rdst, Label*
+
+**Operands**
+  - *Rsrc* – Register R[0..3], holds the 16-bit value to store
+  - *Rdst* – Register R[0..3], address of the destination, in 32-bit words
+  - *Label* – 2-bit user defined unsigned value
+
+**Cycles**
+  4 cycles to execute, 4 cycles to fetch next instruction
+
+**Description**
+  The instruction stores the 16-bit value of Rsrc to the low and high half-word of memory with address Rdst+offset with 
+  auto increment of offset::
+
+    Mem[Rdst + offset / 4]{15:0/31:16} = {Rsrc[15:0]}
+    Mem[Rdst + offset / 4]{15:0/31:16} = {Label[1:0],Rsrc[13:0]}
+
+**Examples**::
+
+  1:        STO  0                  // Set offset to 0
+            STI  R1, R2, 0x12       //MEM[R2+0x12][15:0] = R1
+            STI  R1, R2, 0x12       //MEM[R2+0x12][31:16] = R1
+  
+  2:        .data                   //Data section definition
+    Addr1:  .word     123           // Define label Addr1 16 bit
+            .set      offs, 0x00    // Define constant offs
+            .text                   //Text section definition
+            STO       0             // Set offset to 0
+            MOVE      R1, 1         // R1 = 1
+            MOVE      R2, Addr1     // R2 = Addr1
+            STI       R1, R2        // MEM[R2 +  0] = R1
+                                    // MEM[Addr1 + 0] will be 32'hxxxx0001
+            STIx       R1, R2        // MEM[R2 +  0] = R1
+                                    // MEM[Addr1 + 0] will be 32'h00010001
+  3:
+            STO       0             // Set offset to 0
+            MOVE      R1, 1         // R1 = 1
+            STI       R1, R2, 1     //MEM[R2+0x12] 0xxxxx4001
+            STI       R1, R2, 1     //MEM[R2+0x12] 0x40014001
+
+
+**ST32** – Store 32-bits data to the 32-bits memory
+---------------------------------------------------
+
+**Syntax**
+  **ST32**     *Rsrc, Rdst, offset, Label*
+
+**Operands**
+  - *Rsrc* – Register R[0..3], holds the 16-bit value to store
+  - *Rdst* – Register R[0..3], address of the destination, in 32-bit words
+  - *Offset* – 11-bit signed value, offset in bytes
+  - *Label* – 2-bit user defined unsigned value
+
+**Cycles**
+  4 cycles to execute, 4 cycles to fetch next instruction
+
+**Description**
+  The instruction stores 11 bits of the PC value, label value and the 16-bit value of Rsrc to the 32-bits memory with address Rdst+offset::
+
+    Mem[Rdst + offset / 4]{31:0} = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+
+**Examples**::
+
+  1:        ST32  R1, R2, 0x12, 0   //MEM[R2+0x12][31:0] = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+  
+  2:        .data                   //Data section definition
+    Addr1:  .word     123           // Define label Addr1 16 bit
+            .set      offs, 0x00    // Define constant offs
+            .text                   //Text section definition
+            MOVE      R1, 1         // R1 = 1
+            MOVE      R2, Addr1     // R2 = Addr1
+            ST32      R1, R2, offs,1// MEM[R2 +  0] = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+                                    // MEM[Addr1 + 0] will be 32'h00010001
+
+
+**STI32** – Store 32-bits data to the 32-bits memory with auto increment of adress offset
+-----------------------------------------------------------------------------------------
+
+**Syntax**
+  **STI32**     *Rsrc, Rdst, Label*
+
+**Operands**
+  - *Rsrc* – Register R[0..3], holds the 16-bit value to store
+  - *Rdst* – Register R[0..3], address of the destination, in 32-bit words
+  - *Label* – 2-bit user defined unsigned value
+
+**Cycles**
+  4 cycles to execute, 4 cycles to fetch next instruction
+
+**Description**
+  The instruction stores 11 bits of the PC value, label value and the 16-bit value of Rsrc to the 32-bits memory with address Rdst+offset::
+
+    Mem[Rdst + offset / 4]{31:0} = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+
+  Where offset value set by STO instruction
+
+**Examples**::
+
+  1:        STO    0x12        
+            STI32  R1, R2, 0   //MEM[R2+0x12][31:0] = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+            STI32  R1, R2, 0   //MEM[R2+0x13][31:0] = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+  
+  2:        .data                   //Data section definition
+    Addr1:  .word     123           // Define label Addr1 16 bit
+            .set      offs, 0x00    // Define constant offs
+            .text                   //Text section definition
+            MOVE      R1, 1         // R1 = 1
+            MOVE      R2, Addr1     // R2 = Addr1
+            STO       offs
+            STI32     R1, R2, 1// MEM[R2 +  0] = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+                                    // MEM[Addr1 + 0] will be 32'h00010001
+            ST32      R1, R2, 1// MEM[R2 +  1] = {PC[10:0],0[2:0],Label[1:0],Rsrc[15:0]}
+                                    // MEM[Addr1 + 1] will be 32'h00010001
+
+
+**LDL**/**LD** – Load data from low part of the 32-bits memory
+--------------------------------------------------------------
 
 **Syntax**
    **LD**      *Rdst, Rsrc, offset*
+   **LDL**     *Rdst, Rsrc, offset*
 
 **Operands**
    *Rdst*  – Register R[0..3], destination
@@ -405,9 +607,11 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
      Rdst[15:0] = Mem[Rsrc + offset / 4][15:0]
 
+   The LD command do the same as LDL, and included for compatibility with previous versions of ULP core.
+
 **Examples**::
 
-  1:        LD  R1, R2, 0x12            //R1 = MEM[R2+0x12]
+  1:        LDL  R1, R2, 0x12            //R1 = MEM[R2+0x12]
 
   2:        .data                       //Data section definition
     Addr1:  .word     123               // Define label Addr1 16 bit
@@ -415,10 +619,45 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
             .text                       //Text section definition
             MOVE      R1, 1             // R1 = 1
             MOVE      R2, Addr1         // R2 = Addr1 / 4 (address of label is converted into words)
-            LD        R1, R2, offs      // R1 = MEM[R2 +  0]
+            LDL       R1, R2, offs      // R1 = MEM[R2 +  0]
                                         // R1 will be 123
 
 
+**LDH** – Load data from high part of the 32-bits memory
+--------------------------------------------------------
+
+**Syntax**
+   **LDH**     *Rdst, Rsrc, offset*
+
+**Operands**
+   *Rdst*  – Register R[0..3], destination
+   
+   *Rsrc* – Register R[0..3], holds address of destination, in 32-bit words
+   
+   *Offset* – 10-bit signed value, offset in bytes
+
+**Cycles**
+  4 cycles to execute, 4 cycles to fetch next instruction
+
+**Description**
+   The instruction loads higher 16-bit half-word from memory with address Rsrc+offset into the destination register Rdst::
+
+     Rdst[15:0] = Mem[Rsrc + offset / 4][15:0]
+
+   The LD command do the same as LDL, and included for compatibility with previous versions of ULP core.
+
+**Examples**::
+
+  1:        LDH  R1, R2, 0x12            //R1 = MEM[R2+0x12]
+
+  2:        .data                       //Data section definition
+    Addr1:  .word     0x12345678               // Define label Addr1 16 bit
+            .set      offs, 0x00        // Define constant offs
+            .text                       //Text section definition
+            MOVE      R1, 1             // R1 = 1
+            MOVE      R2, Addr1         // R2 = Addr1 / 4 (address of label is converted into words)
+            LDH       R1, R2, offs      // R1 = MEM[R2 +  0]
+                                        // R1 will be 0x1234
 
 
 **JUMP** – Jump to an absolute address
@@ -478,33 +717,26 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    - *Step*          – relative shift from current position, in bytes
    - *Threshold*     – threshold value for branch condition
    - *Condition*:
-      - *EQ* (equal) – jump if value in R0 == threshold
+      - *EQ* (equal) – jump if value in R0 == threshold 
       - *LT* (less than) – jump if value in R0 < threshold
       - *LE* (less or equal) – jump if value in R0 <= threshold
       - *GT* (greater than) – jump if value in R0 > threshold 
       - *GE* (greater or equal) – jump if value in R0 >= threshold 
 
-
 **Cycles**
-  Conditions *LT*, *GE*, *LE* and *GT*: 2 cycles to execute, 2 cycles to fetch next instruction
+  Conditions *EQ*, *GT* and *LT*: 2 cycles to execute, 2 cycles to fetch next instruction
 
-  Conditions *LE* and *GT* are implemented in the assembler using one **JUMPR** instructions::
-
-    // JUMPR target, threshold, GT is implemented as:
-
-             JUMPR target, threshold+1, GE
+  Conditions *LE* and *GE* are implemented in the assembler using two **JUMPR** instructions::
 
     // JUMPR target, threshold, LE is implemented as:
     
-             JUMPR target, threshold + 1, LT
+             JUMPR target, threshold, EQ
+             JUMPR target, threshold, LT
+ 
+    // JUMPR target, threshold, GE is implemented as:
 
-  Conditions *EQ* is implemented in the assembler using two **JUMPR** instructions::
-
-    // JUMPR target, threshold, EQ is implemented as:
-    
-             JUMPR next, threshold + 1, GE
-             JUMPR target, threshold, GE
-    next:
+             JUMPR target, threshold, EQ
+             JUMPR target, threshold, GT
 
   Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
 
@@ -540,9 +772,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
        - *GE* (greater or equal) — jump if value in stage_cnt >= threshold
 
 **Cycles**
-  Conditions *LE*, *LT*, *GE*: 2 cycles to execute, 2 cycles to fetch next instruction
-
-  Conditions *EQ*, *GT* are implemented in the assembler using two **JUMPS** instructions::
+  2 cycles to execute, 2 cycles to fetch next instruction::
 
     // JUMPS target, threshold, EQ is implemented as:
 
@@ -749,8 +979,6 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
             WAIT  wait_cnt      // wait for 10 cycles
 
 
-
-
 **TSENS** – do measurement with temperature sensor
 --------------------------------------------------
 
@@ -771,8 +999,6 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
   1:        TSENS     R1, 1000     // Measure temperature sensor for 1000 cycles,
                                    // and store result to R1
-
-
 
 
 **ADC** – do measurement with ADC
@@ -799,7 +1025,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    1:        ADC      R1, 0, 1      // Measure value using ADC1 pad 2 and store result into R1
 
 **I2C_RD** - read single byte from I2C slave
-----------------------------------------------
+--------------------------------------------
 
 **Syntax**
   - **I2C_RD**   *Sub_addr, High, Low, Slave_sel*
@@ -822,7 +1048,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 
 **I2C_WR** - write single byte to I2C slave
-----------------------------------------------
+-------------------------------------------
 
 **Syntax**
   - **I2C_WR**   *Sub_addr, Value, High, Low, Slave_sel*
@@ -898,6 +1124,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
    1:        REG_WR      0x120, 7, 0, 0x10   // set 8 bits: REG[0x120][7:0] = 0x10
 
+
 Convenience macros for peripheral registers access
 --------------------------------------------------
 
@@ -933,7 +1160,6 @@ WRITE_RTC_REG(rtc_reg, low_bit, bit_width, value)
     /* Set BIT(2) of RTC_GPIO_OUT_DATA_W1TS field in RTC_GPIO_OUT_W1TS_REG */
     WRITE_RTC_REG(RTC_GPIO_OUT_W1TS_REG, RTC_GPIO_OUT_DATA_W1TS_S + 2, 1, 1)
 
-
 WRITE_RTC_FIELD(rtc_reg, field, value)
   Write immediate value into a field in rtc_reg, up to 8 bits. For example::
 
@@ -942,9 +1168,3 @@ WRITE_RTC_FIELD(rtc_reg, field, value)
 
     /* Set RTC_CNTL_ULP_CP_SLP_TIMER_EN field of RTC_CNTL_STATE0_REG to 0 */
     WRITE_RTC_FIELD(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 0)
-
-
-
-
-
-

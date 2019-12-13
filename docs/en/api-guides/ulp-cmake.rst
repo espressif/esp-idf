@@ -1,5 +1,5 @@
-ULP Coprocessor programming
-=============================
+ULP coprocessor programming (CMake)
+===================================
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -13,28 +13,29 @@ ULP Coprocessor programming
 
 The ULP (Ultra Low Power) coprocessor is a simple FSM (Finite State Machine) which is designed to perform measurements using the ADC, temperature sensor, and external I2C sensors, while the main processors are in deep sleep mode. The ULP coprocessor can access the RTC_SLOW_MEM memory region, and registers in RTC_CNTL, RTC_IO, and SARADC peripherals. The ULP coprocessor uses fixed-width 32-bit instructions, 32-bit memory addressing, and has 4 general-purpose 16-bit registers.
 
-Installing the Toolchain
+Installing the toolchain
 ------------------------
 
-The ULP coprocessor code is written in assembly and compiled using the `binutils-esp32ulp toolchain`_.
+ULP coprocessor code is written in assembly and compiled using the `binutils-esp32ulp toolchain`_.
 
-If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then the ULP toolchain will already be installed.
+1. Download pre-built binaries of the latest toolchain release from:
+https://github.com/espressif/binutils-esp32ulp/releases.
 
-If you are using ESP-IDF with the legacy GNU Make based build system, refer to the instructions on this page: :doc:`ulp-legacy`.
+2. Extract the toolchain into a directory, and add the path to the ``bin/`` directory of the toolchain to the ``PATH`` environment variable.
 
-Compiling the ULP Code
------------------------
+Compiling ULP code
+------------------
 
-To compile the ULP code as part of the component, the following steps must be taken:
+To compile ULP code as part of a component, the following steps must be taken:
 
-1. The ULP code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside the component directory, for instance `ulp/`.
+1. ULP code, written in assembly, must be added to one or more files with `.S` extension. These files must be placed into a separate directory inside component directory, for instance `ulp/`. 
 
-.. note: When registering the component (via ``idf_component_register``), this directory should not be added to the ``SRC_DIRS`` argument. The logic behind this is that the ESP-IDF build system will compile files found in ``SRC_DIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
+.. note: This directory should not be added to the ``COMPONENT_SRCDIRS`` environment variable. The logic behind this is that the ESP-IDF build system will compile files found in ``COMPONENT_SRCDIRS`` based on their extensions. For ``.S`` files, ``xtensa-esp32-elf-as`` assembler is used. This is not desirable for ULP assembly files, so the easiest way to achieve the distinction is by placing ULP assembly files into a separate directory. The ULP assembly source files should also **not** be added to ``COMPONENT_SRCS`` for the same reason. See the step below for how to properly add ULP assembly source files.
 
 2. Call ``ulp_embed_binary`` from the component CMakeLists.txt after registration. For example::
 
     ...
-    idf_component_register()
+    register_component()
 
     set(ulp_app_name ulp_${COMPONENT_NAME})
     set(ulp_s_sources ulp/ulp_assembly_source_file.S)
@@ -42,11 +43,11 @@ To compile the ULP code as part of the component, the following steps must be ta
 
     ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
 
- The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts 
+ The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used other generated artifacts 
  such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP assembly source files. 
  Finally, the third argument specifies the list of component source files which include the header file to be generated. 
- This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. 
- See section below for the concept of generated header files for ULP applications. 
+ This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. 
+ See section below explaining the concept of generated header files for ULP applications. 
 
 3. Build the application as usual (e.g. `idf.py app`)
 
@@ -71,7 +72,7 @@ To compile the ULP code as part of the component, the following steps must be ta
 Accessing the ULP Program Variables
 -------------------------------------
 
-Global symbols defined in the ULP program may be used inside the main program.
+Global symbols defined in the ULP program may be used inside the main program. 
 
 For example, the ULP program may define a variable ``measurement_count`` which will define the number of ADC measurements the program needs to make before waking up the chip from deep sleep::
 
