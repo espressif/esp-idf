@@ -173,6 +173,7 @@ int k_delayed_work_free(struct k_delayed_work *work)
         return -EINVAL;
     }
 
+    osi_alarm_cancel(alarm);
     hash_map_erase(bm_alarm_hash_map, work);
     return 0;
 }
