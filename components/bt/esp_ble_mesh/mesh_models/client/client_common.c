@@ -28,19 +28,25 @@
 
 static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t tx_dst)
 {
+    bt_mesh_client_node_t *node = NULL;
+    sys_snode_t *cur = NULL;
+
+    bt_mesh_irq_lock();
     if (sys_slist_is_empty(list)) {
+        bt_mesh_irq_unlock();
         return NULL;
     }
 
-    sys_snode_t *cur = NULL; bt_mesh_client_node_t *node = NULL;
     for (cur = sys_slist_peek_head(list);
             cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
+            bt_mesh_irq_unlock();
             return node;
         }
     }
 
+    bt_mesh_irq_unlock();
     return NULL;
 }
 
@@ -116,19 +122,25 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
 
 static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, u16_t tx_dst)
 {
+    bt_mesh_client_node_t *node = NULL;
+    sys_snode_t *cur = NULL;
+
+    bt_mesh_irq_lock();
     if (sys_slist_is_empty(list)) {
+        bt_mesh_irq_unlock();
         return false;
     }
 
-    sys_snode_t *cur = NULL; bt_mesh_client_node_t *node = NULL;
     for (cur = sys_slist_peek_head(list);
             cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
+            bt_mesh_irq_unlock();
             return true;
         }
     }
 
+    bt_mesh_irq_unlock();
     return false;
 }
 
@@ -200,7 +212,9 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         if ((err = bt_mesh_model_send(model, ctx, msg, cb, cb_data)) != 0) {
             osi_free(node);
         } else {
+            bt_mesh_irq_lock();
             sys_slist_append(&internal->queue, &node->client_node);
+            bt_mesh_irq_unlock();
             k_delayed_work_init(&node->timer, timer_handler);
             k_delayed_work_submit(&node->timer, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
         }
@@ -293,7 +307,9 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     }
 
     // Release the client node from the queue
+    bt_mesh_irq_lock();
     sys_slist_find_and_remove(&internal->queue, &node->client_node);
+    bt_mesh_irq_unlock();
     // Free the node
     osi_free(node);
 
