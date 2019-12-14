@@ -103,6 +103,14 @@ bt_mesh_client_node_t *bt_mesh_is_client_recv_publish_msg(
         return NULL;
     }
 
+    if (k_delayed_work_remaining_get(&node->timer) == 0) {
+        BT_DBG("Unexpected status message 0x%x", ctx->recv_op);
+        if (cli->publish_status && need_pub) {
+            cli->publish_status(ctx->recv_op, model, ctx, buf);
+        }
+        return NULL;
+    }
+
     return node;
 }
 
