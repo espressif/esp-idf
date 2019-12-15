@@ -5,7 +5,7 @@
 #include <idp.iss>
 
 #define MyAppName "ESP-IDF Tools"
-#define MyAppVersion "2.1"
+#define MyAppVersion "2.2"
 #define MyAppPublisher "Espressif Systems (Shanghai) Co. Ltd."
 #define MyAppURL "https://github.com/espressif/esp-idf"
 
@@ -73,7 +73,7 @@ Type: filesandordirs; Name: "{app}\dist"
 Type: filesandordirs; Name: "{app}\releases"
 Type: filesandordirs; Name: "{app}\tools"
 Type: filesandordirs; Name: "{app}\python_env"
-Type: files; Name: "{autostartmenu}\Programs\ESP-IDF\{#IDFCmdExeShortcutFile}"
+Type: files; Name: "{group}\{#IDFCmdExeShortcutFile}"
 Type: files; Name: "{autodesktop}\{#IDFCmdExeShortcutFile}"
 
 [Tasks]
@@ -84,7 +84,7 @@ Name: wdexcl; Description: "Register the ESP-IDF Tools executables as Windows De
 [Run]
 Filename: "{app}\dist\{#PythonInstallerName}"; Parameters: "/passive PrependPath=1 InstallLauncherAllUsers=0 Include_dev=0 Include_tcltk=0 Include_launcher=0 Include_test=0 Include_doc=0"; Description: "Installing Python"; Check: PythonInstallRequired
 Filename: "{app}\dist\{#GitInstallerName}"; Parameters: "/silent /tasks="""" /norestart"; Description: "Installing Git"; Check: GitInstallRequired
-Filename: "{autostartmenu}\Programs\ESP-IDF\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Description: "Run ESP-IDF Command Prompt (cmd.exe)"; Check: InstallationSuccessful
+Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Description: "Run ESP-IDF Command Prompt (cmd.exe)"; Check: InstallationSuccessful
 
 [UninstallRun]
 Filename: "powershell.exe"; \
