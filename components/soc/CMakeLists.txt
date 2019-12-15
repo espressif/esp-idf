@@ -38,7 +38,9 @@ list(APPEND srcs
     )
 
 if(IDF_TARGET STREQUAL "esp32")
-    list(APPEND srcs "src/hal/mcpwm_hal.c")
+    list(APPEND srcs "src/hal/mcpwm_hal.c"
+                     "src/hal/sdio_slave_hal.c"
+    )
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2beta")
