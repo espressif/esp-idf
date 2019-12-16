@@ -138,7 +138,7 @@ static inline void ledc_ll_get_clock_divider(ledc_dev_t *hw, ledc_mode_t speed_m
  * @return None
  */
 static inline void ledc_ll_set_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t clk_src){
-    hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
+    hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel = (clk_src == LEDC_APB_CLK);
 }
 
 /**
@@ -152,7 +152,11 @@ static inline void ledc_ll_set_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mo
  * @return None
  */
 static inline void ledc_ll_get_clock_source(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_timer_t timer_sel, ledc_clk_src_t *clk_src){
-    *clk_src = hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel;
+    if (hw->timer_group[speed_mode].timer[timer_sel].conf.tick_sel) {
+        *clk_src = LEDC_APB_CLK;
+    } else {
+        *clk_src = LEDC_REF_TICK;
+    }
 }
 
 /**
