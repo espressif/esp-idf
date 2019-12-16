@@ -15,16 +15,29 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>
-#include <sys/reent.h>
+#include <reent.h>
+#include <sys/fcntl.h>
 
+
+int system(const char* str)
+{
+    errno = ENOSYS;
+    return -1;
+}
 
 int _system_r(struct _reent *r, const char *str)
 {
     __errno_r(r) = ENOSYS;
     return -1;
+}
+
+int raise(int sig)
+{
+    abort();
 }
 
 int _raise_r(struct _reent *r, int sig)
@@ -52,6 +65,17 @@ int _kill_r(struct _reent *r, int pid, int sig)
 void _exit(int __status)
 {
     abort();
+}
+
+/* Replaces newlib fcntl, which has been compiled without HAVE_FCNTL */
+int fcntl(int fd, int cmd, ...)
+{
+    va_list args;
+    va_start(args, cmd);
+    int arg = va_arg(args, int);
+    va_end(args);
+    struct _reent* r = __getreent();
+    return _fcntl_r(r, fd, cmd, arg);
 }
 
 /* No-op function, used to force linking this file,
