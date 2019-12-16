@@ -162,7 +162,7 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     portENTER_CRITICAL(&ledc_spinlock);
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.clock_divider = clock_divider;
-    LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = clk_src;
+    LEDC.timer_group[speed_mode].timer[timer_sel].conf.tick_sel = (clk_src == LEDC_APB_CLK);
     LEDC.timer_group[speed_mode].timer[timer_sel].conf.duty_resolution = duty_resolution;
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -481,7 +481,12 @@ esp_err_t ledc_set_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num, uint32_t
     esp_err_t ret = ESP_OK;
     uint32_t clock_divider = 0;
     uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
-    uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
+    ledc_clk_src_t timer_source_clk;
+    if (LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel) {
+      timer_source_clk = LEDC_APB_CLK;
+    } else {
+      timer_source_clk = LEDC_REF_TICK;
+    }
     uint32_t precision = (0x1 << duty_resolution);
     if (timer_source_clk == LEDC_APB_CLK) {
         clock_divider = ((uint64_t) LEDC_APB_CLK_HZ << 8) / freq_hz / precision;
@@ -503,7 +508,12 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     portENTER_CRITICAL(&ledc_spinlock);
     uint32_t freq = 0;
-    uint32_t timer_source_clk = LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel;
+    ledc_clk_src_t timer_source_clk;
+    if (LEDC.timer_group[speed_mode].timer[timer_num].conf.tick_sel) {
+      timer_source_clk = LEDC_APB_CLK;
+    } else {
+      timer_source_clk = LEDC_REF_TICK;
+    }
     uint32_t duty_resolution = LEDC.timer_group[speed_mode].timer[timer_num].conf.duty_resolution;
     uint32_t clock_divider = LEDC.timer_group[speed_mode].timer[timer_num].conf.clock_divider;
     uint32_t precision = (0x1 << duty_resolution);
