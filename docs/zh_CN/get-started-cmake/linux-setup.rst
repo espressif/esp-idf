@@ -17,7 +17,7 @@ Linux 平台工具链的标准设置 (CMake)
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing cmake ninja-build ccache
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing cmake ninja-build ccache libffi-dev libssl-dev
 
 - Arch::
 
