@@ -565,6 +565,9 @@ void IRAM_ATTR ledc_fade_isr(void* arg)
     uint32_t intr_status = 0;
 
     for (speed_mode = 0; speed_mode < LEDC_SPEED_MODE_MAX; speed_mode++) {
+        if (p_ledc_obj[speed_mode] == NULL) {
+            continue;
+        }
         ledc_hal_get_fade_end_intr_status(&(p_ledc_obj[speed_mode]->ledc_hal), &intr_status);
         while(intr_status) {
             ledc_calc_fade_end_channel(&intr_status, &channel);
