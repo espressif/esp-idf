@@ -701,6 +701,34 @@ esp_err_t uart_pattern_queue_reset(uart_port_t uart_num, int queue_length);
 esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode);
 
 /**
+ * @brief Set uart threshold value for RX fifo full
+ * @note If application is using higher baudrate and it is observed that bytes
+ *       in hardware RX fifo are overwritten then this threshold can be reduced
+ *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param threshold Threshold value above which RX fifo full interrupt is generated
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Driver is not installed
+ */
+esp_err_t uart_set_rx_full_threshold(uart_port_t uart_num, int threshold);
+
+/**
+ * @brief Set uart threshold values for TX fifo empty
+ *
+ * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2
+ * @param threshold Threshold value below which TX fifo empty interrupt is generated
+ *
+ * @return
+ *     - ESP_OK   Success
+ *     - ESP_ERR_INVALID_ARG Parameter error
+ *     - ESP_ERR_INVALID_STATE Driver is not installed
+ */
+esp_err_t uart_set_tx_empty_threshold(uart_port_t uart_num, int threshold);
+
+/**
  * @brief UART set threshold timeout for TOUT feature
  *
  * @param uart_num     Uart number to configure, the max port number is (UART_NUM_MAX -1).

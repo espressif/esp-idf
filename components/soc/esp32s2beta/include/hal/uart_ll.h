@@ -138,6 +138,18 @@ static inline void uart_ll_clr_intsts_mask(uart_dev_t *hw, uint32_t mask)
 }
 
 /**
+ * @brief  Get status of enabled interrupt.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return interrupt enable value
+ */
+static inline uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
+{
+    return hw->int_ena.val;
+}
+
+/**
  * @brief  Read the UART rxfifo.
  *
  * @param  hw Beginning address of the peripheral registers.

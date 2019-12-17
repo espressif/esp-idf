@@ -77,6 +77,15 @@ typedef struct {
 #define uart_hal_get_intsts_mask(hal)  uart_ll_get_intsts_mask((hal)->dev)
 
 /**
+ * @brief Get status of enabled interrupt
+ *
+ * @param  hal Context of the HAL layer
+ *
+ * @return UART Interrupt enabled value
+ */
+#define uart_hal_get_intr_ena_status(hal) uart_ll_get_intr_ena_status((hal)->dev)
+
+/**
  * @brief Get the UART pattern char configuration
  *
  * @param  hal Context of the HAL layer

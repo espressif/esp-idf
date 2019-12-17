@@ -60,6 +60,12 @@ static const char* UART_TAG = "uart";
 #define UART_PATTERN_DET_QLEN_DEFAULT (10)
 #define UART_MIN_WAKEUP_THRESH      (SOC_UART_MIN_WAKEUP_THRESH)
 
+#define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
+                            | (UART_INTR_RXFIFO_TOUT) \
+                            | (UART_INTR_RXFIFO_OVF) \
+                            | (UART_INTR_BRK_DET) \
+                            | (UART_INTR_PARITY_ERR))
+
 #define UART_ENTER_CRITICAL_ISR(mux)    portENTER_CRITICAL_ISR(mux)
 #define UART_EXIT_CRITICAL_ISR(mux)     portEXIT_CRITICAL_ISR(mux)
 #define UART_ENTER_CRITICAL(mux)    portENTER_CRITICAL(mux)
@@ -1330,12 +1336,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
     }
 
     uart_intr_config_t uart_intr = {
-        .intr_enable_mask = UART_INTR_RXFIFO_FULL
-                            | UART_INTR_RXFIFO_TOUT
-                            | UART_INTR_PARITY_ERR
-                            | UART_INTR_RXFIFO_OVF
-                            | UART_INTR_BRK_DET
-                            | UART_INTR_PARITY_ERR,
+        .intr_enable_mask = UART_INTR_CONFIG_FLAG,
         .rxfifo_full_thresh = UART_FULL_THRESH_DEFAULT,
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
         .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT
@@ -1444,6 +1445,40 @@ esp_err_t uart_set_mode(uart_port_t uart_num, uart_mode_t mode)
                                         | UART_INTR_RS485_PARITY_ERR);
     }
     p_uart_obj[uart_num]->uart_mode = mode;
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    return ESP_OK;
+}
+
+esp_err_t uart_set_rx_full_threshold(uart_port_t uart_num, int threshold)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((threshold < UART_RXFIFO_FULL_THRHD_V) && (threshold > 0),
+        "rx fifo full threshold value error", ESP_ERR_INVALID_ARG);
+    if (p_uart_obj[uart_num] == NULL) {
+        ESP_LOGE(UART_TAG, "call uart_driver_install API first");
+        return ESP_ERR_INVALID_STATE;
+    }
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    if (uart_hal_get_intr_ena_status(&(uart_context[uart_num].hal)) & UART_INTR_RXFIFO_FULL) {
+        uart_hal_set_rxfifo_full_thr(&(uart_context[uart_num].hal), threshold);
+    }
+    UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    return ESP_OK;
+}
+
+esp_err_t uart_set_tx_empty_threshold(uart_port_t uart_num, int threshold)
+{
+    UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
+    UART_CHECK((threshold < UART_TXFIFO_EMPTY_THRHD_V) && (threshold > 0),
+        "tx fifo empty threshold value error", ESP_ERR_INVALID_ARG);
+    if (p_uart_obj[uart_num] == NULL) {
+        ESP_LOGE(UART_TAG, "call uart_driver_install API first");
+        return ESP_ERR_INVALID_STATE;
+    }
+    UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
+    if (uart_hal_get_intr_ena_status(&(uart_context[uart_num].hal)) & UART_INTR_TXFIFO_EMPTY) {
+        uart_hal_set_txfifo_empty_thr(&(uart_context[uart_num].hal), threshold);
+    }
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     return ESP_OK;
 }
