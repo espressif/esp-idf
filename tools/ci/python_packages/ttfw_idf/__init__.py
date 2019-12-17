@@ -16,7 +16,7 @@ import re
 
 from tiny_test_fw import TinyFW, Utility
 from IDFApp import IDFApp, Example, LoadableElfExample, UT  # noqa: export all Apps for users
-from IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT  # noqa: export DUTs for users
+from IDFDUT import IDFDUT, ESP32DUT, ESP32S2DUT, ESP8266DUT, ESP32QEMUDUT  # noqa: export DUTs for users
 
 
 def format_case_id(chip, case_name):
