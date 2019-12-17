@@ -606,7 +606,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 {
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    u16_t uuid;
+    u16_t uuid = 0x0;
 #endif
 
     if (adv_type != BLE_MESH_ADV_NONCONN_IND && adv_type != BLE_MESH_ADV_IND) {
