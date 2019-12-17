@@ -154,8 +154,9 @@ low_level_output(struct netif *netif, struct pbuf *p)
  * @param netif the lwip network interface structure for this ethernetif
  */
 void ESP_IRAM_ATTR
-wlanif_input(struct netif *netif, void *buffer, size_t len, void* eb)
+wlanif_input(void *h, void *buffer, size_t len, void* eb)
 {
+  struct netif * netif = h;
   esp_netif_t *esp_netif = esp_netif_get_handle_from_netif_impl(netif);
   struct pbuf *p;
 

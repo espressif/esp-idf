@@ -26,10 +26,6 @@
 #include "esp_eth_netif_glue.h"
 #endif
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 //
 // Note: tcpip_adapter legacy API has to be included by default to provide full compatibility
 //  for applications that used tcpip_adapter API without explicit inclusion of tcpip_adapter.h
@@ -39,6 +35,10 @@ extern "C" {
 #include "tcpip_adapter.h"
 #undef _ESP_NETIF_SUPPRESS_LEGACY_WARNING_
 #endif // CONFIG_ESP_NETIF_TCPIP_ADAPTER_COMPATIBLE_LAYER
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @defgroup ESP_NETIF_INIT_API ESP-NETIF Initialization API
@@ -101,7 +101,7 @@ void esp_netif_destroy(esp_netif_t *esp_netif);
  *
  */
 esp_err_t esp_netif_set_driver_config(esp_netif_t *esp_netif,
-                              const esp_netif_driver_ifconfig_t *driver_config);
+                                      const esp_netif_driver_ifconfig_t *driver_config);
 
 /**
  * @brief   Attaches esp_netif instance to the io driver handle
@@ -411,7 +411,9 @@ int esp_netif_get_netif_impl_index(esp_netif_t *esp_netif);
  *         - ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED
  *         - ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED
  */
-esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+esp_err_t
+esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id,
+                       void *opt_val, uint32_t opt_len);
 
 /**
  * @brief  Set or Get DHCP client option
@@ -428,7 +430,9 @@ esp_err_t esp_netif_dhcps_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_m
  *         - ESP_ERR_ESP_NETIF_DHCP_ALREADY_STOPPED
  *         - ESP_ERR_ESP_NETIF_DHCP_ALREADY_STARTED
  */
-esp_err_t esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id, void *opt_val, uint32_t opt_len);
+esp_err_t
+esp_netif_dhcpc_option(esp_netif_t *esp_netif, esp_netif_dhcp_option_mode_t opt_op, esp_netif_dhcp_option_id_t opt_id,
+                       void *opt_val, uint32_t opt_len);
 
 /**
  * @brief Start DHCP client (only if enabled in interface object)
@@ -630,7 +634,7 @@ void esp_netif_set_ip4_addr(esp_ip4_addr_t *addr, uint8_t a, uint8_t b, uint8_t 
  * @return either pointer to buf which now holds the ASCII
  *         representation of addr or NULL if buf was too small
  */
-char * esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen);
+char *esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen);
 
 /**
  * @brief Ascii internet address interpretation routine
@@ -731,7 +735,7 @@ int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t
  *
  * @return First netif from the list if supplied parameter is NULL, next one otherwise
  */
-esp_netif_t* esp_netif_next(esp_netif_t* esp_netif);
+esp_netif_t *esp_netif_next(esp_netif_t *esp_netif);
 
 /**
  * @brief Returns number of registered esp_netif objects

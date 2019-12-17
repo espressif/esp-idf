@@ -151,8 +151,9 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
  * @param buffer ethernet buffer
  * @param len length of buffer
  */
-void ethernetif_input(struct netif *netif, void *buffer, size_t len, void *eb)
+void ethernetif_input(void *h, void *buffer, size_t len, void *eb)
 {
+    struct netif *netif = h;
     struct pbuf *p;
 
     if (buffer == NULL || !netif_is_up(netif)) {

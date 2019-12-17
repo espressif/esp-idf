@@ -17,10 +17,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "netif/ppp/pppapi.h"
-#include "netif/ppp/pppos.h"
-#include "lwip/dns.h"
-#include "esp_netif.h"
 #include "esp_modem.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
@@ -60,10 +56,20 @@ typedef struct {
     esp_event_loop_handle_t event_loop_hdl; /*!< Event loop handle */
     TaskHandle_t uart_event_task_hdl;       /*!< UART event task handle */
     SemaphoreHandle_t process_sem;          /*!< Semaphore used for indicating processing status */
-    struct netif pppif;                     /*!< PPP network interface */
-    ppp_pcb *ppp;                           /*!< PPP control block */
     modem_dte_t parent;                     /*!< DTE interface that should extend */
+    esp_modem_on_receive         receive_cb;      /*!< ptr to data reception */
+    void                            *receive_cb_ctx; /*!< ptr to rx fn context data */
 } esp_modem_dte_t;
+
+
+esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb, void *receive_cb_ctx)
+{
+    esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
+    esp_dte->receive_cb_ctx = receive_cb_ctx;
+    esp_dte->receive_cb = receive_cb;
+    return ESP_OK;
+}
+
 
 /**
  * @brief Handle one line in DTE
@@ -85,8 +91,8 @@ static esp_err_t esp_dte_handle_line(esp_modem_dte_t *esp_dte)
     }
     return ESP_OK;
 err_handle:
-    /* Send MODEM_EVENT_UNKNOWN signal to event loop */
-    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_UNKNOWN,
+    /* Send ESP_MODEM_EVENT_UNKNOWN signal to event loop */
+    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_UNKNOWN,
                       (void *)line, strlen(line) + 1, pdMS_TO_TICKS(100));
 err:
     return ESP_FAIL;
@@ -135,9 +141,9 @@ static void esp_handle_uart_data(esp_modem_dte_t *esp_dte)
     uart_get_buffered_data_len(esp_dte->uart_port, &length);
     length = MIN(ESP_MODEM_LINE_BUFFER_SIZE, length);
     length = uart_read_bytes(esp_dte->uart_port, esp_dte->buffer, length, portMAX_DELAY);
-    /* pass input data to the lwIP core thread */
+    /* pass the input data to configured callback */
     if (length) {
-        pppos_input_tcpip(esp_dte->ppp, esp_dte->buffer, length);
+        esp_dte->receive_cb(esp_dte->buffer, length, esp_dte->receive_cb_ctx);
     }
 }
 
@@ -235,6 +241,8 @@ static int esp_modem_dte_send_data(modem_dte_t *dte, const char *data, uint32_t 
 err:
     return -1;
 }
+
+
 
 /**
  * @brief Send data and wait for prompt from DCE
@@ -344,6 +352,8 @@ static esp_err_t esp_modem_dte_deinit(modem_dte_t *dte)
     return ESP_OK;
 }
 
+
+
 modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
 {
     esp_err_t res;
@@ -363,6 +373,7 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config)
     esp_dte->parent.change_mode = esp_modem_dte_change_mode;
     esp_dte->parent.process_cmd_done = esp_modem_dte_process_cmd_done;
     esp_dte->parent.deinit = esp_modem_dte_deinit;
+
     /* Config UART */
     uart_config_t uart_config = {
         .baud_rate = config->baud_rate,
@@ -434,10 +445,10 @@ err_dte_mem:
     return NULL;
 }
 
-esp_err_t esp_modem_add_event_handler(modem_dte_t *dte, esp_event_handler_t handler, void *handler_args)
+esp_err_t esp_modem_set_event_handler(modem_dte_t *dte, esp_event_handler_t handler, int32_t event_id, void *handler_args)
 {
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
-    return esp_event_handler_register_with(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_EVENT_ANY_ID, handler, handler_args);
+    return esp_event_handler_register_with(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, event_id, handler, handler_args);
 }
 
 esp_err_t esp_modem_remove_event_handler(modem_dte_t *dte, esp_event_handler_t handler)
@@ -446,137 +457,7 @@ esp_err_t esp_modem_remove_event_handler(modem_dte_t *dte, esp_event_handler_t h
     return esp_event_handler_unregister_with(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_EVENT_ANY_ID, handler);
 }
 
-/**
- * @brief PPP status callback which is called on PPP status change (up, down, …) by lwIP core thread
- *
- * @param pcb PPP control block
- * @param err_code Error code
- * @param ctx Context of callback
- */
-static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
-{
-    struct netif *pppif = ppp_netif(pcb);
-    const ip_addr_t *dest_ip = NULL;
-    modem_dte_t *dte = (modem_dte_t *)(ctx);
-    esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
-    ppp_client_ip_info_t ipinfo = {0};
-    switch (err_code) {
-    case PPPERR_NONE: /* Connected */
-        ipinfo.ip = pppif->ip_addr.u_addr.ip4;
-        ipinfo.gw = pppif->gw.u_addr.ip4;
-        ipinfo.netmask = pppif->netmask.u_addr.ip4;
-        dest_ip = dns_getserver(0);
-        if(dest_ip != NULL){
-          ipinfo.ns1 = (*dest_ip).u_addr.ip4;
-        }
-        dest_ip = dns_getserver(1);
-        if(dest_ip != NULL){
-          ipinfo.ns2 = (*dest_ip).u_addr.ip4;
-        }
-        esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_CONNECT, &ipinfo, sizeof(ipinfo), 0);
-        break;
-    case PPPERR_PARAM:
-        ESP_LOGE(MODEM_TAG, "Invalid parameter");
-        break;
-    case PPPERR_OPEN:
-        ESP_LOGE(MODEM_TAG, "Unable to open PPP session");
-        break;
-    case PPPERR_DEVICE:
-        ESP_LOGE(MODEM_TAG, "Invalid I/O device for PPP");
-        break;
-    case PPPERR_ALLOC:
-        ESP_LOGE(MODEM_TAG, "Unable to allocate resources");
-        break;
-    case PPPERR_USER: /* User interrupt */
-        esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_STOP, NULL, 0, 0);
-        /* Free the PPP control block */
-        pppapi_free(esp_dte->ppp);
-        break;
-    case PPPERR_CONNECT: /* Connection lost */
-        esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_DISCONNECT, NULL, 0, 0);
-        break;
-    case PPPERR_AUTHFAIL:
-        ESP_LOGE(MODEM_TAG, "Failed authentication challenge");
-        break;
-    case PPPERR_PROTOCOL:
-        ESP_LOGE(MODEM_TAG, "Failed to meet protocol");
-        break;
-    case PPPERR_PEERDEAD:
-        ESP_LOGE(MODEM_TAG, "Connection timeout");
-        break;
-    case PPPERR_IDLETIMEOUT:
-        ESP_LOGE(MODEM_TAG, "Idle Timeout");
-        break;
-    case PPPERR_CONNECTTIME:
-        ESP_LOGE(MODEM_TAG, "Max connect time reached");
-        break;
-    case PPPERR_LOOPBACK:
-        ESP_LOGE(MODEM_TAG, "Loopback detected");
-        break;
-    default:
-        ESP_LOGE(MODEM_TAG, "Unknown error code %d", err_code);
-        break;
-    }
-}
-
-#if PPP_NOTIFY_PHASE
-/**
- * @brief Notify phase callback which is called on each PPP internal state change
- *
- * @param pcb PPP control block
- * @param phase Phase ID
- * @param ctx Context of callback
- */
-static void on_ppp_notify_phase(ppp_pcb *pcb, u8_t phase, void *ctx)
-{
-    switch (phase) {
-    case PPP_PHASE_DEAD:
-        ESP_LOGD(MODEM_TAG, "Phase Dead");
-        break;
-    case PPP_PHASE_INITIALIZE:
-        ESP_LOGD(MODEM_TAG, "Phase Start");
-        break;
-    case PPP_PHASE_ESTABLISH:
-        ESP_LOGD(MODEM_TAG, "Phase Establish");
-        break;
-    case PPP_PHASE_AUTHENTICATE:
-        ESP_LOGD(MODEM_TAG, "Phase Authenticate");
-        break;
-    case PPP_PHASE_NETWORK:
-        ESP_LOGD(MODEM_TAG, "Phase Network");
-        break;
-    case PPP_PHASE_RUNNING:
-        ESP_LOGD(MODEM_TAG, "Phase Running");
-        break;
-    case PPP_PHASE_TERMINATE:
-        ESP_LOGD(MODEM_TAG, "Phase Terminate");
-        break;
-    case PPP_PHASE_DISCONNECT:
-        ESP_LOGD(MODEM_TAG, "Phase Disconnect");
-        break;
-    default:
-        ESP_LOGW(MODEM_TAG, "Phase Unknown: %d", phase);
-        break;
-    }
-}
-#endif
-
-/**
- * @brief PPPoS serial output callback
- *
- * @param pcb PPP control block
- * @param data Buffer to write to serial port
- * @param len Length of the data buffer
- * @param ctx Context of callback
- * @return uint32_t Length of data successfully sent
- */
-static uint32_t pppos_low_level_output(ppp_pcb *pcb, uint8_t *data, uint32_t len, void *ctx)
-{
-    modem_dte_t *dte = (modem_dte_t *)ctx;
-    return dte->send_data(dte, (const char *)data, len);
-}
-
-esp_err_t esp_modem_setup_ppp(modem_dte_t *dte)
+esp_err_t esp_modem_start_ppp(modem_dte_t *dte)
 {
     modem_dce_t *dce = dte->dce;
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
@@ -585,40 +466,18 @@ esp_err_t esp_modem_setup_ppp(modem_dte_t *dte)
     MODEM_CHECK(dce->define_pdp_context(dce, 1, "IP", CONFIG_EXAMPLE_MODEM_APN) == ESP_OK, "set MODEM APN failed", err);
     /* Enter PPP mode */
     MODEM_CHECK(dte->change_mode(dte, MODEM_PPP_MODE) == ESP_OK, "enter ppp mode failed", err);
-    /* Create PPPoS interface */
-    esp_dte->ppp = pppapi_pppos_create(&(esp_dte->pppif), pppos_low_level_output, on_ppp_status_changed, dte);
-    MODEM_CHECK(esp_dte->ppp, "create pppos interface failed", err);
-#if PPP_NOTIFY_PHASE
-    ppp_set_notify_phase_callback(esp_dte->ppp, on_ppp_notify_phase);
-#endif
-    /* Initiate PPP client connection */
-    /* Set default route */
-    MODEM_CHECK(pppapi_set_default(esp_dte->ppp) == ERR_OK, "set default route failed", err);
-    /* Ask the peer for up to 2 DNS server addresses */
-    ppp_set_usepeerdns(esp_dte->ppp, 1);
-    /* Auth configuration */
-#if PAP_SUPPORT
-    pppapi_set_auth(esp_dte->ppp, PPPAUTHTYPE_PAP, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
-#elif CHAP_SUPPORT
-    pppapi_set_auth(esp_dte->ppp, PPPAUTHTYPE_CHAP, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
-#else
-#error "Unsupported AUTH Negotiation"
-#endif
-    /* Initiate PPP negotiation, without waiting */
-    MODEM_CHECK(pppapi_connect(esp_dte->ppp, 0) == ERR_OK, "initiate ppp negotiation failed", err);
-    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_START, NULL, 0, 0);
+
+    /* post PPP mode started event */
+    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_PPP_START, NULL, 0, 0);
     return ESP_OK;
 err:
     return ESP_FAIL;
 }
 
-esp_err_t esp_modem_exit_ppp(modem_dte_t *dte)
+esp_err_t esp_modem_stop_ppp(modem_dte_t *dte)
 {
     modem_dce_t *dce = dte->dce;
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
-    esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
-    /* Shutdown of PPP protocols */
-    MODEM_CHECK(pppapi_close(esp_dte->ppp, 0) == ERR_OK, "close ppp connection failed", err);
     /* Enter command mode */
     MODEM_CHECK(dte->change_mode(dte, MODEM_COMMAND_MODE) == ESP_OK, "enter command mode failed", err);
     /* Hang up */

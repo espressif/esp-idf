@@ -67,3 +67,12 @@ const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = {
         .if_desc = "eth",
         .route_prio = 50
 };
+
+const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = {
+        .flags = ESP_NETIF_FLAG_IS_PPP,
+        .lost_ip_event = IP_EVENT_PPP_LOST_IP,
+        .get_ip_event = IP_EVENT_PPP_GOT_IP,
+        .if_key = "PPP_DEF",
+        .if_desc = "ppp",
+        .route_prio = 128
+};
