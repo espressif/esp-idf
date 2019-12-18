@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import sys
 
 try:
@@ -39,4 +40,4 @@ if __name__ == "__main__":
 
     # This used to crash with a division by zero error but now it just prints nan% due to
     # zero lengths
-    idf_size.print_summary({"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {})
+    print(idf_size.get_summary({"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {}), end="")
