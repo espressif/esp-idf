@@ -1,6 +1,8 @@
 ESP-BLE-MESH Architecture
 =========================
 
+:link_to_translation:`zh_CN:[中文]`
+
 This document introduces ESP-BLE-MESH architecture overview, ESP-BLE-MESH architecture implementation as well as ESP-BLE-MESH auxiliary routines.
 
 - ESP-BLE-MESH Architecture Overview
