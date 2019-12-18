@@ -32,9 +32,9 @@ TEST_CASE("various nvs tests", "[nvs]")
     }
     ESP_ERROR_CHECK( err );
 
-    TEST_ESP_ERR(nvs_open("test_namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, nvs_open("test_namespace1", NVS_READONLY, &handle_1));
 
-    TEST_ESP_ERR(nvs_set_i32(handle_1, "foo", 0x12345678), ESP_ERR_NVS_INVALID_HANDLE);
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_HANDLE, nvs_set_i32(handle_1, "foo", 0x12345678));
     nvs_close(handle_1);
 
     TEST_ESP_OK(nvs_open("test_namespace2", NVS_READWRITE, &handle_1));
@@ -74,10 +74,10 @@ TEST_CASE("various nvs tests", "[nvs]")
 
 TEST_CASE("calculate used and free space", "[nvs]")
 {
-    TEST_ESP_ERR(nvs_get_stats(NULL, NULL), ESP_ERR_INVALID_ARG);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, nvs_get_stats(NULL, NULL));
     nvs_stats_t stat1;
     nvs_stats_t stat2;
-    TEST_ESP_ERR(nvs_get_stats(NULL, &stat1), ESP_ERR_NVS_NOT_INITIALIZED);
+    TEST_ESP_ERR(ESP_ERR_NVS_NOT_INITIALIZED, nvs_get_stats(NULL, &stat1));
     TEST_ASSERT_TRUE(stat1.free_entries == 0);
     TEST_ASSERT_TRUE(stat1.namespace_count == 0);
     TEST_ASSERT_TRUE(stat1.total_entries == 0);
@@ -85,7 +85,7 @@ TEST_CASE("calculate used and free space", "[nvs]")
 
     nvs_handle_t handle = 0;
     size_t h_count_entries;
-    TEST_ESP_ERR(nvs_get_used_entry_count(handle, &h_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_HANDLE, nvs_get_used_entry_count(handle, &h_count_entries));
     TEST_ASSERT_TRUE(h_count_entries == 0);
 
     esp_err_t err = nvs_flash_init();
@@ -184,10 +184,10 @@ TEST_CASE("calculate used and free space", "[nvs]")
     nvs_close(handle_2);
 
     size_t temp = h2_count_entries;
-    TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, &h2_count_entries), ESP_ERR_NVS_INVALID_HANDLE);
+    TEST_ESP_ERR(ESP_ERR_NVS_INVALID_HANDLE, nvs_get_used_entry_count(handle_1, &h2_count_entries));
     TEST_ASSERT_TRUE(h2_count_entries == 0);
     h2_count_entries = temp;
-    TEST_ESP_ERR(nvs_get_used_entry_count(handle_1, NULL), ESP_ERR_INVALID_ARG);
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, nvs_get_used_entry_count(handle_1, NULL));
 
     nvs_handle_t handle_3;
     // create namespace test_k3
@@ -233,7 +233,7 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
         nvs_handle_t my_handle;
         uint8_t key[20] = {0};
 
-        TEST_ESP_OK( nvs_open("test_namespace1", NVS_READWRITE, &my_handle) );
+        TEST_ESP_OK( nvs_open("leak_check_ns", NVS_READWRITE, &my_handle) );
         TEST_ESP_OK( nvs_set_blob(my_handle, "key", key, sizeof(key)) );
         TEST_ESP_OK( nvs_commit(my_handle) );
         nvs_close(my_handle);
@@ -248,12 +248,12 @@ TEST_CASE("check for memory leaks in nvs_set_blob", "[nvs]")
 #ifdef CONFIG_NVS_ENCRYPTION
 TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]")
 {
-    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11, 
+    uint8_t eky_hex[2 * NVS_KEY_SIZE] = { 0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         0x11,0x11,0x11,0x11,0x11,0x11,0x11,0x11,
         /* Tweak key below*/
-        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22, 
+        0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
         0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
         0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,
         0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22 };
@@ -261,7 +261,7 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
     uint8_t ba_hex[16] = { 0x33,0x33,0x33,0x33,0x33,0x00,0x00,0x00,
         0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00 };
 
-    uint8_t ptxt_hex[32] = { 0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44, 
+    uint8_t ptxt_hex[32] = { 0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
         0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
         0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44,
         0x44,0x44,0x44,0x44,0x44,0x44,0x44,0x44 };
@@ -289,7 +289,7 @@ TEST_CASE("check underlying xts code for 32-byte size sector encryption", "[nvs]
 TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
 {
     nvs_sec_cfg_t cfg, cfg2;
-    
+
     const esp_partition_t* key_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
 
@@ -298,8 +298,8 @@ TEST_CASE("Check nvs key partition APIs (read and generate keys)", "[nvs]")
     }
 
     TEST_ESP_OK(esp_partition_erase_range(key_part, 0, key_part->size));
-    TEST_ESP_ERR(nvs_flash_read_security_cfg(key_part, &cfg), ESP_ERR_NVS_KEYS_NOT_INITIALIZED);
-    
+    TEST_ESP_ERR(ESP_ERR_NVS_KEYS_NOT_INITIALIZED, nvs_flash_read_security_cfg(key_part, &cfg));
+
     TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
 
     TEST_ESP_OK(nvs_flash_read_security_cfg(key_part, &cfg2));
@@ -315,7 +315,7 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
     }
     const esp_partition_t* key_part = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS_KEYS, NULL);
-    
+
     assert(key_part && "partition table must have an NVS Key partition");
 
     const esp_partition_t* nvs_partition = esp_partition_find_first(
@@ -336,7 +336,7 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
             uint8_t value[4096] = {[0 ... 4095] = 0xff};
             TEST_ESP_OK(esp_partition_write(key_part, 0, value, sizeof(value)));
 
-            TEST_ESP_ERR(nvs_flash_read_security_cfg(key_part, &cfg), ESP_ERR_NVS_KEYS_NOT_INITIALIZED);
+            TEST_ESP_ERR(ESP_ERR_NVS_KEYS_NOT_INITIALIZED, nvs_flash_read_security_cfg(key_part, &cfg));
 
             TEST_ESP_OK(nvs_flash_generate_keys(key_part, &cfg));
         } else {
@@ -348,7 +348,7 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
 
         nvs_handle_t handle_1;
 
-        TEST_ESP_ERR(nvs_open("namespace1", NVS_READONLY, &handle_1), ESP_ERR_NVS_NOT_FOUND);
+        TEST_ESP_ERR(ESP_ERR_NVS_NOT_FOUND, nvs_open("namespace1", NVS_READONLY, &handle_1));
 
 
         TEST_ESP_OK(nvs_open("namespace1", NVS_READWRITE, &handle_1));
