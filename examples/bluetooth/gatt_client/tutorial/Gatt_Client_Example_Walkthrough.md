@@ -551,7 +551,7 @@ case ESP_GATTC_SEARCH_CMPL_EVT:
         ESP_LOGE(GATTC_TAG, "search service failed, error status = %x", p_data->search_cmpl.status);
         break;
     }
-    conn_id = p_data->search_cmpl.conn_id;h
+    conn_id = p_data->search_cmpl.conn_id;
     if (get_server){
         uint16_t count = 0;
         esp_gatt_status_t status = esp_ble_gattc_get_attr_count( gattc_if,

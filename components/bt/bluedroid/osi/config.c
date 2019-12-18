@@ -409,6 +409,16 @@ bool config_save(const config_t *config, const char *filename)
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
         const section_t *section = (const section_t *)list_node(node);
         w_cnt = snprintf(line, 1024, "[%s]\n", section->name);
+        if(w_cnt < 0) {
+            OSI_TRACE_ERROR("snprintf error w_cnt %d.",w_cnt);
+            err_code |= 0x10;
+            goto error;
+        }
+        if(w_cnt_total + w_cnt > config_size + 100) {
+            OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size.", __func__, w_cnt + w_cnt_total);
+            err_code |= 0x20;
+            goto error;
+        }
         OSI_TRACE_DEBUG("section name: %s, w_cnt + w_cnt_total = %d\n", section->name, w_cnt + w_cnt_total);
         memcpy(buf + w_cnt_total, line, w_cnt);
         w_cnt_total += w_cnt;
@@ -417,6 +427,16 @@ bool config_save(const config_t *config, const char *filename)
             const entry_t *entry = (const entry_t *)list_node(enode);
             OSI_TRACE_DEBUG("(key, val): (%s, %s)\n", entry->key, entry->value);
             w_cnt = snprintf(line, 1024, "%s = %s\n", entry->key, entry->value);
+            if(w_cnt < 0) {
+                OSI_TRACE_ERROR("snprintf error w_cnt %d.",w_cnt);
+                err_code |= 0x10;
+                goto error;
+            }
+            if(w_cnt_total + w_cnt > config_size + 100) {
+                OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size.", __func__, w_cnt + w_cnt_total);
+                err_code |= 0x20;
+                goto error;
+            }
             OSI_TRACE_DEBUG("%s, w_cnt + w_cnt_total = %d", __func__, w_cnt + w_cnt_total);
             memcpy(buf + w_cnt_total, line, w_cnt);
             w_cnt_total += w_cnt;

@@ -392,7 +392,7 @@ tGATT_STATUS gatts_db_read_attr_value_by_type (tGATT_TCB   *p_tcb,
                         p_rsp->len += (len  + 2);
                         *p_len -= (len + 2);
                     } else {
-                        GATT_TRACE_ERROR("format mismatch");
+                        GATT_TRACE_WARNING("format mismatch");
                         status = GATT_NO_RESOURCES;
                         break;
                     }
