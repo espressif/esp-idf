@@ -1,2 +1,2 @@
-idf_component_register(SRCS "net_suite.c" "lwip_test_netif.c"
+idf_component_register(SRCS "net_suite.c" "stdinout.c"
                     INCLUDE_DIRS ".")
