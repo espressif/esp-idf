@@ -151,3 +151,19 @@ build_template_app:
     - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w printf | wc -l) -eq 0; done;
     - for dir in esp32 esp32s2beta; do test $(xtensa-esp32-elf-nm $dir/*.a | grep -w ets_printf | wc -l) -eq 0; done;
     - popd
+
+check_header_files_cpp_guards:
+  stage: pre_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  variables:
+    BATCH_BUILD: "1"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_REGULAR_TEST
+  script:
+    - tools/ci/check_cpp_guards.sh
+
