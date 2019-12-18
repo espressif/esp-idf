@@ -60,13 +60,13 @@ static UCHAR ucPortMode = 0;
 /* ----------------------- Start implementation -----------------------------*/
 
 UCHAR
-ucMBPortGetMode( void )
+ucMBMasterPortGetMode( void ) // TODO renamed based on EQ-703
 {
     return ucPortMode;
 }
 
 void
-vMBPortSetMode( UCHAR ucMode )
+vMBMasterPortSetMode( UCHAR ucMode ) // TODO renamed based on EQ-703
 {
     ENTER_CRITICAL_SECTION();
     ucPortMode = ucMode;
