@@ -25,6 +25,13 @@ else
 COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/ld/wifi_iram_noopt
 endif
 
+# Add a different linker search path depending on WiFi RX optimisations
+ifdef CONFIG_ESP32_WIFI_RX_IRAM_OPT
+COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/ld/wifi_rx_iram_opt
+else
+COMPONENT_ADD_LDFLAGS += -L $(COMPONENT_PATH)/ld/wifi_rx_iram_noopt
+endif
+
 #Force pure functions from libgcc.a to be linked from ROM
 LINKER_SCRIPTS += esp32.rom.libgcc.ld
 

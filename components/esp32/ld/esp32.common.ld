@@ -160,6 +160,7 @@ SECTIONS
     *libesp32.a:panic.*(.literal .text .literal.* .text.*)
     *libesp32.a:core_dump.*(.literal .text .literal.* .text.*)
     INCLUDE wifi_iram.ld
+    INCLUDE wifi_rx_iram.ld
     *libapp_trace.a:(.literal .text .literal.* .text.*)
     *libxtensa-debug-module.a:eri.*(.literal .text .literal.* .text.*)
     *librtc.a:(.literal .text .literal.* .text.*)
@@ -328,6 +329,7 @@ SECTIONS
     *(.literal .text .literal.* .text.* .stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)
     *(.irom0.text) /* catch stray ICACHE_RODATA_ATTR */
     *(.wifi0iram .wifi0iram.*) /* catch stray WIFI_IRAM_ATTR */
+    *(.wifirxiram .wifirxiram.*) /* catch stray WIFI_RX_IRAM_ATTR */
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)
