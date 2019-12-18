@@ -344,10 +344,9 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
 
     if (bits != p_i2s_obj[i2s_num]->bits_per_sample) {
         p_i2s_obj[i2s_num]->bits_per_sample = bits;
-        p_i2s_obj[i2s_num]->bytes_per_sample = p_i2s_obj[i2s_num]->bits_per_sample / 8;
 
         // Round bytes_per_sample up to next multiple of 16 bits
-        int halfwords_per_sample = (p_i2s_obj[i2s_num]->bits_per_sample + 15) / 16;
+        int halfwords_per_sample = (bits + 15) / 16;
         p_i2s_obj[i2s_num]->bytes_per_sample = halfwords_per_sample * 2;
 
         // Because limited of DMA buffer is 4092 bytes
