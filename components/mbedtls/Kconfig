@@ -189,6 +189,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
         default y
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
         help
             Enable hardware accelerated AES encryption & decryption.
 
@@ -220,6 +221,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
         default y
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
         help
             Enable hardware accelerated multiple precision integer operations.
 
@@ -231,6 +233,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
         default y
+        depends on !SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
         help
             Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
 

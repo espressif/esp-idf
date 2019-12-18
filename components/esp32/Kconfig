@@ -129,6 +129,40 @@ menu "ESP32-specific"
 
                 The workaround is not required for ESP32 revision 3 and above.
 
+        menu "SPIRAM cache workaround debugging"
+
+            choice SPIRAM_CACHE_WORKAROUND_STRATEGY
+                prompt "Workaround strategy"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
+                help
+                    Select the workaround strategy. Note that the strategy for precompiled
+                    libraries (libgcc, newlib, bt, wifi) is not affected by this selection.
+
+                    Unless you know you need a different strategy, it's suggested you stay
+                    with the default MEMW strategy. Note that DUPLDST can interfere with hardware
+                    encryption and this will be automatically disabled if this workaround is selected.
+                    'Insert nops' is the workaround that was used in older esp-idf versions. This workaround
+                    still can cause faulty data transfers from/to SPI RAM in some situation.
+
+                config SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
+                    bool "Insert memw after vulnerable instructions (default)"
+
+                config SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+                    bool "Duplicate LD/ST for 32-bit, memw for 8/16 bit"
+
+                config SPIRAM_CACHE_WORKAROUND_STRATEGY_NOPS
+                    bool "Insert nops between vulnerable loads/stores (old strategy, obsolete)"
+            endchoice
+
+            #This needs to be Y only for the dupldst workaround
+            config SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
+                bool
+                default "y" if SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+
+
+        endmenu
+
         config SPIRAM_BANKSWITCH_ENABLE
             bool "Enable bank switching for >4MiB external RAM"
             default y

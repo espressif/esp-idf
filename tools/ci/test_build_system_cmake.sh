@@ -459,6 +459,21 @@ function run_tests()
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
     rm -r build
+    #Test for various strategies
+    for strat in MEMW NOPS DUPLDST; do
+        rm -r build sdkconfig.defaults sdkconfig sdkconfig.defaults.esp32
+        stratlc=`echo $strat | tr A-Z a-z`
+        mkdir build && touch build/sdkconfig
+        echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > sdkconfig.defaults
+        echo "CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_$strat=y"  >> sdkconfig.defaults
+        echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
+        # note: we do 'reconfigure' here, as we just need to run cmake
+        idf.py reconfigure
+        grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
+        (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-strategy=$stratlc) && failure "All commands in compile_commands.json should use PSRAM cache workaround strategy $strat when selected"
+        echo ${PWD}
+        rm -r sdkconfig.defaults build
+    done
 
     print_status "Displays partition table when executing target partition_table"
     idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
