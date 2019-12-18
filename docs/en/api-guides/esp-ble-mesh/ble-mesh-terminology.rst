@@ -1,6 +1,8 @@
 ESP-BLE-MESH Terminology
 ========================
 
+:link_to_translation:`zh_CN:[中文]`
+
 .. _ble-mesh-terminology-role:
 
 .. list-table:: Table 1 ESP-BLE-MESH Terminology - Role
