@@ -15,9 +15,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <freertos/FreeRTOS.h>
 #include <soc/soc_memory_layout.h>
 #include "multi_heap.h"
+#include "multi_heap_platform.h"
 #include "sys/queue.h"
 
 #ifdef __cplusplus
@@ -35,7 +35,7 @@ typedef struct heap_t_ {
     uint32_t caps[SOC_MEMORY_TYPE_NO_PRIOS]; ///< Capabilities for the type of memory in this heap (as a prioritised set). Copied from soc_memory_types so it's in RAM not flash.
     intptr_t start;
     intptr_t end;
-    portMUX_TYPE heap_mux;
+    multi_heap_lock_t heap_mux;
     multi_heap_handle_t heap;
     SLIST_ENTRY(heap_t_) next;
 } heap_t;

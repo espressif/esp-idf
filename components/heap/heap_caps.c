@@ -44,9 +44,9 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_DIRAM_INVERTED
     uint32_t istart = SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - dend);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#else
     uint32_t istart = SOC_DIRAM_IRAM_LOW + (dstart - SOC_DIRAM_DRAM_LOW);
 #endif
     uint32_t *iptr = (uint32_t *)istart;

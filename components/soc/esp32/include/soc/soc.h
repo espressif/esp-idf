@@ -261,6 +261,8 @@
 #define SOC_DIRAM_IRAM_HIGH   0x400C0000
 #define SOC_DIRAM_DRAM_LOW    0x3FFE0000
 #define SOC_DIRAM_DRAM_HIGH   0x40000000
+// Byte order of D/IRAM regions is reversed between accessing as DRAM or IRAM
+#define SOC_DIRAM_INVERTED    1
 
 // Region of memory accessible via DMA. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FFAE000
