@@ -292,8 +292,11 @@ void btm_ble_add_resolving_list_entry_complete(UINT8 *p, UINT16 evt_len)
         }
     } else if (status == HCI_ERR_MEMORY_FULL) { /* BT_ERROR_CODE_MEMORY_CAPACITY_EXCEEDED  */
         btm_cb.ble_ctr_cb.resolving_list_avail_size = 0;
-        BTM_TRACE_DEBUG("%s Resolving list Full ", __func__);
+        BTM_TRACE_WARNING("%s Resolving list Full ", __func__);
+    } else {
+        BTM_TRACE_ERROR("%s Add resolving list error %d ", __func__, status);
     }
+
 }
 
 /*******************************************************************************
@@ -811,6 +814,8 @@ BOOLEAN btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC *p_dev_rec)
                 } else {
                     btm_ble_enable_resolving_list(BTM_BLE_RL_INIT);
                 }
+            } else {
+                BTM_TRACE_WARNING("%s Resolving list full ", __func__);
             }
         } else {
             BTM_TRACE_DEBUG("Device already in Resolving list\n");
