@@ -22,7 +22,7 @@
 #define I2S_MAX_BUFFER_SIZE               (4 * 1024 * 1024) //the maximum RAM can be allocated
 #define I2S_BASE_CLK                      (2*APB_CLK_FREQ)
 
-// ESP32-S2 have 2 I2S
+// ESP32-S2 have 1 I2S
 #define I2S_NUM_0             (0) /*!< I2S port 0 */
 #define I2S_NUM_MAX           (1) /*!< I2S port max */
 #define SOC_I2S_NUM           (I2S_NUM_MAX)
