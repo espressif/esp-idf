@@ -66,7 +66,7 @@ static void got_ip_event_handler(void *arg, esp_event_base_t event_base,
 void app_main(void)
 {
     // Initialize TCP/IP network interface (should be called only once in application)
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     // Create default event loop that running in background
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_config_t cfg = ESP_NETIF_DEFAULT_ETH();

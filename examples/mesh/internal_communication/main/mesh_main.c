@@ -377,7 +377,7 @@ void app_main(void)
     ESP_ERROR_CHECK(mesh_light_init());
     ESP_ERROR_CHECK(nvs_flash_init());
     /*  tcpip initialization */
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     /*  event initialization */
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     /*  crete network interfaces for mesh (only station instance saved for further manipulation, soft AP instance ignored */

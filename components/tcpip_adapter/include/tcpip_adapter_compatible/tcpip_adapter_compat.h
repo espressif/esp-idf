@@ -15,6 +15,10 @@
 #ifndef _TCPIP_ADAPTER_COMPAT_H_
 #define _TCPIP_ADAPTER_COMPAT_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief This function is called from ethernet driver init code to facilitate
  * autostart fo the driver in backward compatible tcpip_adapter way
@@ -53,5 +57,9 @@ esp_err_t tcpip_adapter_set_default_wifi_handlers(void);
  * @return ESP_OK on success
  */
 esp_err_t tcpip_adapter_clear_default_wifi_handlers(void);
+
+#ifdef __cplusplus
+} // extern "C"
+#endif
 
 #endif //_TCPIP_ADAPTER_COMPAT_H_

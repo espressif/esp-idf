@@ -97,7 +97,7 @@ static void got_ip_event_handler(void* arg, esp_event_base_t event_base,
 /*init wifi as sta and start wps*/
 static void start_wps(void)
 {
-    esp_netif_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);

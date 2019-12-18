@@ -531,7 +531,7 @@ esp_err_t esp_netif_set_mac(esp_netif_t *esp_netif, uint8_t mac[])
 
 static void esp_netif_dhcps_cb(u8_t client_ip[4])
 {
-    ESP_LOGI(TAG, "softAP assign IP to station,IP is: %d.%d.%d.%d",
+    ESP_LOGI(TAG, "DHCP server assigned IP to a station, IP is: %d.%d.%d.%d",
              client_ip[0], client_ip[1], client_ip[2], client_ip[3]);
     ip_event_ap_staipassigned_t evt;
 
