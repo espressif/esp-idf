@@ -133,6 +133,12 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 #include "sdkconfig.h"
 #include "esp_attr.h"
 
+#ifdef CONFIG_SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
+#define NEED_VOLATILE_MUX volatile
+#else
+#define NEED_VOLATILE_MUX
+#endif
+
 /* "mux" data structure (spinlock) */
 typedef struct {
 	/* owner field values:
@@ -142,12 +148,12 @@ typedef struct {
 	 *
 	 * Any value other than portMUX_FREE_VAL, CORE_ID_PRO, CORE_ID_APP indicates corruption
 	 */
-	uint32_t owner;
+	NEED_VOLATILE_MUX uint32_t owner;
 	/* count field:
 	 * If mux is unlocked, count should be zero.
 	 * If mux is locked, count is non-zero & represents the number of recursive locks on the mux.
 	 */
-	uint32_t count;
+	NEED_VOLATILE_MUX uint32_t count;
 #ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
 	const char *lastLockedFn;
 	int lastLockedLine;
