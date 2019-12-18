@@ -67,7 +67,7 @@ static void modbus_master_task(void *pvParameters)
         // Check if stack started then poll for data
         if (status & MB_EVENT_STACK_STARTED) {
             if(eMBMasterPoll() != MB_ENOERR){
-                ESP_LOGE(MB_MASTER_TAG, "%s: Timeout wait notification ",__FUNCTION__);
+                //ESP_LOGE(MB_MASTER_TAG, "%s: Timeout wait notification ",__FUNCTION__); TODO EQ-907
             }else
             {
             // Allow stack to process data
