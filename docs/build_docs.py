@@ -8,7 +8,10 @@
 #
 # Specific custom docs functionality should be added in conf_common.py or in a Sphinx extension, not here.
 #
+from __future__ import print_function
 import argparse
+import math
+import multiprocessing
 import os
 import os.path
 import subprocess
@@ -37,6 +40,10 @@ def main():
                         required=False)
     parser.add_argument("--target", "-t", choices=TARGETS, required=False)
     parser.add_argument("--build-dir", "-b", type=str, default="_build")
+    parser.add_argument("--sphinx-parallel-builds", "-p", choices=["auto"] + [str(x) for x in range(8)],
+                        help="Parallel Sphinx builds - number of independent Sphinx builds to run", default="auto")
+    parser.add_argument("--sphinx-parallel-jobs", "-j", choices=["auto"] + [str(x) for x in range(8)],
+                        help="Sphinx parallel jobs argument - number of threads for each Sphinx build to use", default="auto")
 
     args = parser.parse_args()
 
@@ -52,39 +59,94 @@ def main():
     else:
         targets = [args.target]
 
-    for language in languages:
-        for target in targets:
-            build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
-            build_docs(language, target, build_dir)
+    num_sphinx_builds = len(languages) * len(targets)
+    num_cpus = multiprocessing.cpu_count()
 
-def build_docs(language, target, build_dir):
-    print("Building language:%s target:%s build_dir:%s" % (language, target, build_dir))
+    if args.sphinx_parallel_builds == "auto":
+        # at most one sphinx build per CPU, up to the number of CPUs
+        args.sphinx_parallel_builds = min(num_sphinx_builds, num_cpus)
+    else:
+        args.sphinx_parallel_builds = int(args.sphinx_parallel_builds)
+
+    if args.sphinx_parallel_jobs == "auto":
+        # N CPUs per build job, rounded up - (maybe smarter to round down to avoid contention, idk)
+        args.sphinx_parallel_jobs = int(math.ceil(num_cpus / args.sphinx_parallel_builds))
+    else:
+        args.sphinx_parallel_jobs = int(args.sphinx_parallel_jobs)
+
+    print("Will use %d parallel builds and %d jobs per build" % (args.sphinx_parallel_builds, args.sphinx_parallel_jobs))
+    pool = multiprocessing.Pool(args.sphinx_parallel_builds)
+
+    # make a list of all combinations of build_docs() args as tuples
+    #
+    # there's probably a fancy way to do this with itertools but this way is actually readable
+    entries = []
+    for target in targets:
+        for language in languages:
+            build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
+            entries.append((language, target, build_dir, args.sphinx_parallel_jobs))
+
+    print(entries)
+    failures = pool.map(call_build_docs, entries)
+    if any(failures):
+        if len(entries) > 1:
+            print("The following language/target combinations failed to build:")
+            for f in failures:
+                if f is not None:
+                    print("language: %s target: %s" % (f[0], f[1]))
+        raise SystemExit(2)
+
+
+def call_build_docs(entry):
+    build_docs(*entry)
+
+
+def build_docs(language, target, build_dir, sphinx_parallel_jobs=1):
+    # Note: because this runs in a multiprocessing Process, everything which happens here should be isolated to a single process
+    # (ie it doesn't matter if Sphinx is using global variables, as they're it's own copy of the global variables)
+
+    # wrap stdout & stderr in a way that lets us see which build_docs instance they come from
+    #
+    # this doesn't apply to subprocesses, they write to OS stdout & stderr so no prefix appears
+    prefix = "%s/%s: " % (language, target)
+
+    print("Building in build_dir:%s" % (build_dir))
     try:
         os.makedirs(build_dir)
     except OSError:
         pass
-    try:
-        environ = {}
-        environ.update(os.environ)
-        environ['BUILDDIR'] = build_dir
 
-        args = [sys.executable, "-m", "sphinx",
-                "-j", "auto",  # use all the cores! (where possible)
-                "-b", "html",  # TODO: PDFs
-                "-d", os.path.join(build_dir, "doctrees"),
-                # TODO: support multiple sphinx-warning.log files, somehow
-                "-w", "sphinx-warning.log",
-                "-t", target,
-                "-D", "idf_target={}".format(target),
-                os.path.join(os.path.abspath(os.path.dirname(__file__)), language),  # srcdir for this language
-                os.path.join(build_dir, "html")                    # build directory
-                ]
-        cwd = build_dir  # also run sphinx in the build directory
-        print("Running '{}'".format(" ".join(args)))
-        subprocess.check_call(args, cwd=cwd, env=environ)
-    except subprocess.CalledProcessError:
-        print("Sphinx failed for language:%s target:%s" % (language, target))
-        raise SystemExit(1)  # rest of the details should be in stdout
+    environ = {}
+    environ.update(os.environ)
+    environ['BUILDDIR'] = build_dir
+
+    args = [sys.executable, "-u", "-m", "sphinx.cmd.build",
+            "-j", str(sphinx_parallel_jobs),
+            "-b", "html",  # TODO: PDFs
+            "-d", os.path.join(build_dir, "doctrees"),
+            # TODO: support multiple sphinx-warning.log files, somehow
+            "-w", "sphinx-warning.log",
+            "-t", target,
+            "-D", "idf_target={}".format(target),
+            os.path.join(os.path.abspath(os.path.dirname(__file__)), language),  # srcdir for this language
+            os.path.join(build_dir, "html")                    # build directory
+            ]
+    cwd = build_dir  # also run sphinx in the build directory
+
+    os.chdir(cwd)
+    print("Running '%s'" % (" ".join(args)))
+
+    try:
+        # Note: we can't call sphinx.cmd.build.main() here as multiprocessing doesn't est >1 layer deep
+        # and sphinx.cmd.build() also does a lot of work in the calling thread, especially for j ==1,
+        # so using a Pyhthon thread for this part is  a poor option (GIL)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for c in iter(lambda: p.stdout.readline(), ''):
+            sys.stdout.write(prefix)
+            sys.stdout.write(c)
+    except KeyboardInterrupt:  # this seems to be the only way to get Ctrl-C to kill everything?
+        p.kill()
+        return
 
 
 if __name__ == "__main__":

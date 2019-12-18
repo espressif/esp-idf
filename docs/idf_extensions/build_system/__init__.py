@@ -39,7 +39,6 @@ def setup(app):
     except KeyError:
         idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), '..'))
 
-
     app.add_config_value('docs_root', os.path.join(idf_path, "docs"), 'env')
     app.add_config_value('idf_path', idf_path, 'env')
     app.add_config_value('build_dir', build_dir, 'env')  # not actually an IDF thing
