@@ -232,7 +232,11 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
+int btc_ble_mesh_deinit(void);
+
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
+
+int btc_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model);
 
 int32_t btc_ble_mesh_model_pub_period_get(esp_ble_mesh_model_t *mod);
 

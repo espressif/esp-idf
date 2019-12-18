@@ -373,6 +373,14 @@ static void bt_mesh_pb_adv_mutex_new(void)
     }
 }
 
+static void bt_mesh_pb_adv_mutex_free(void)
+{
+    if (prov_ctx.pb_adv_lock) {
+        osi_mutex_free(&prov_ctx.pb_adv_lock);
+        prov_ctx.pb_adv_lock = NULL;
+    }
+}
+
 static void bt_mesh_pb_adv_lock(void)
 {
     if (prov_ctx.pb_adv_lock) {
@@ -392,6 +400,14 @@ static void bt_mesh_pb_buf_mutex_new(void)
     if (!prov_ctx.pb_buf_lock) {
         osi_mutex_new(&prov_ctx.pb_buf_lock);
         __ASSERT(prov_ctx.pb_buf_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_pb_buf_mutex_free(void)
+{
+    if (prov_ctx.pb_buf_lock) {
+        osi_mutex_free(&prov_ctx.pb_buf_lock);
+        prov_ctx.pb_buf_lock = NULL;
     }
 }
 
@@ -416,6 +432,14 @@ static void bt_mesh_pb_gatt_mutex_new(void)
     if (!prov_ctx.pb_gatt_lock) {
         osi_mutex_new(&prov_ctx.pb_gatt_lock);
         __ASSERT(prov_ctx.pb_gatt_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_pb_gatt_mutex_free(void)
+{
+    if (prov_ctx.pb_gatt_lock) {
+        osi_mutex_free(&prov_ctx.pb_gatt_lock);
+        prov_ctx.pb_gatt_lock = NULL;
     }
 }
 
@@ -3151,6 +3175,55 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     bt_mesh_pb_gatt_mutex_new();
 #endif
+
+    return 0;
+}
+
+int bt_mesh_provisioner_prov_deinit(void)
+{
+    size_t i;
+
+    if (prov == NULL) {
+        BT_ERR("%s, No provisioning context provided", __func__);
+        return -EINVAL;
+    }
+
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+    for (i = 0U; i < CONFIG_BLE_MESH_PBA_SAME_TIME; i++) {
+        prov_clear_tx(i);
+        k_delayed_work_free(&link[i].tx.retransmit);
+#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
+        /* Remove the link id from exceptional list */
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
+                                        BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link[i].link_id);
+#endif /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
+    }
+#endif /* CONFIG_BLE_MESH_PB_ADV */
+
+    for (i = 0U; i < BLE_MESH_PROV_SAME_TIME; i++) {
+        prov_memory_free(i);
+        k_delayed_work_free(&link[i].timeout);
+        memset(&link[i], 0, sizeof(link[i]));
+    }
+
+    if (prov_ctx.static_oob_val) {
+        osi_free(prov_ctx.static_oob_val);
+        prov_ctx.static_oob_val = NULL;
+    }
+    if (prov_ctx.match_value) {
+        osi_free(prov_ctx.match_value);
+        prov_ctx.match_value = NULL;
+    }
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+    bt_mesh_pb_adv_mutex_free();
+    bt_mesh_pb_buf_mutex_free();
+#endif
+#if defined(CONFIG_BLE_MESH_PB_GATT)
+    bt_mesh_pb_gatt_mutex_free();
+#endif
+    memset(&prov_ctx, 0, sizeof(prov_ctx));
+
+    prov = NULL;
 
     return 0;
 }

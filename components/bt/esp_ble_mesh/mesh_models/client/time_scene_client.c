@@ -84,6 +84,14 @@ static void bt_mesh_time_scene_client_mutex_new(void)
     }
 }
 
+static void bt_mesh_time_scene_client_mutex_free(void)
+{
+    if (time_scene_client_lock) {
+        osi_mutex_free(&time_scene_client_lock);
+        time_scene_client_lock = NULL;
+    }
+}
+
 static void bt_mesh_time_scene_client_lock(void)
 {
     if (time_scene_client_lock) {
@@ -704,4 +712,48 @@ int bt_mesh_scene_cli_init(struct bt_mesh_model *model, bool primary)
 int bt_mesh_scheduler_cli_init(struct bt_mesh_model *model, bool primary)
 {
     return time_scene_client_init(model, primary);
+}
+
+static int time_scene_client_deinit(struct bt_mesh_model *model, bool primary)
+{
+    bt_mesh_time_scene_client_t *client = NULL;
+
+    if (!model) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_time_scene_client_t *)model->user_data;
+    if (!client) {
+        BT_ERR("%s, Time Scene Client user_data is NULL", __func__);
+        return -EINVAL;
+    }
+
+    if (client->internal_data) {
+        /* Remove items from the list */
+        bt_mesh_client_clear_list(client->internal_data);
+
+        /* Free the allocated internal data */
+        osi_free(client->internal_data);
+        client->internal_data = NULL;
+    }
+
+    bt_mesh_time_scene_client_mutex_free();
+
+    return 0;
+}
+
+int bt_mesh_time_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return time_scene_client_deinit(model, primary);
+}
+
+int bt_mesh_scene_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return time_scene_client_deinit(model, primary);
+}
+
+int bt_mesh_scheduler_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return time_scene_client_deinit(model, primary);
 }

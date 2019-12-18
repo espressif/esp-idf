@@ -199,6 +199,15 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
     }
 }
 
+void bt_mesh_server_free_ctx(struct k_work *work)
+{
+    __ASSERT(work, "%s, Invalid parameter", __func__);
+    if (work->_reserved) {
+        osi_free(work->_reserved);
+        work->_reserved = NULL;
+    }
+}
+
 bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
                                      u8_t tid, u16_t src, u16_t dst, s64_t *now)
 {

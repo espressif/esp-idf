@@ -1434,4 +1434,33 @@ int bt_mesh_proxy_init(void)
     return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
+int bt_mesh_proxy_deinit(void)
+{
+    int i;
+
+    proxy_adv_enabled = false;
+    gatt_svc = MESH_GATT_NONE;
+
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
+    bt_mesh_gatts_service_deregister(&proxy_svc);
+#endif
+
+#if defined(CONFIG_BLE_MESH_PB_GATT)
+    bt_mesh_gatts_service_deregister(&prov_svc);
+#endif
+
+    for (i = 0; i < ARRAY_SIZE(clients); i++) {
+        struct bt_mesh_proxy_client *client = &clients[i];
+        k_delayed_work_free(&client->sar_timer);
+        memset(client, 0, sizeof(struct bt_mesh_proxy_client));
+    }
+
+    memset(client_buf_data, 0, sizeof(client_buf_data));
+    memset(device_name, 0, sizeof(device_name));
+
+    bt_mesh_gatts_conn_cb_deregister();
+
+    return 0;
+}
+
 #endif /* CONFIG_BLE_MESH_NODE */

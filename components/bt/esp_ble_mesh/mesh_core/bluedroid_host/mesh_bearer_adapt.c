@@ -105,6 +105,11 @@ esp_err_t bt_mesh_host_init(void)
     return ESP_OK;
 }
 
+esp_err_t bt_mesh_host_deinit(void)
+{
+    return ESP_OK;
+}
+
 void bt_mesh_hci_init(void)
 {
     const uint8_t *features = controller_get_interface()->get_features_ble()->as_array;
@@ -605,6 +610,11 @@ void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb)
     bt_mesh_gatts_conn_cb = cb;
 }
 
+void bt_mesh_gatts_conn_cb_deregister(void)
+{
+    bt_mesh_gatts_conn_cb = NULL;
+}
+
 static struct bt_mesh_gatt_attr *bt_mesh_gatts_find_attr_by_handle(u16_t handle)
 {
     struct bt_mesh_gatt_service *svc = NULL;
@@ -818,6 +828,16 @@ populate:
     return 0;
 }
 
+static int gatts_deregister(struct bt_mesh_gatt_service *svc)
+{
+    if (sys_slist_is_empty(&bt_mesh_gatts_db)) {
+        return 0;
+    }
+
+    sys_slist_find_and_remove(&bt_mesh_gatts_db, &svc->node);
+    return 0;
+}
+
 static tBTA_GATT_PERM bt_mesh_perm_to_bta_perm(u8_t perm)
 {
     tBTA_GATT_PERM bta_perm = 0;
@@ -938,6 +958,17 @@ int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc)
     return 0;
 }
 
+int bt_mesh_gatts_service_deregister(struct bt_mesh_gatt_service *svc)
+{
+    assert(svc != NULL);
+
+    gatts_deregister(svc);
+
+    BTA_GATTS_DeleteService(svc->attrs[0].handle);
+
+    return 0;
+}
+
 int bt_mesh_gatts_disconnect(struct bt_mesh_conn *conn, u8_t reason)
 {
     UNUSED(reason);
@@ -1025,6 +1056,11 @@ int bt_mesh_gatts_set_local_device_name(const char *name)
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb)
 {
     bt_mesh_gattc_conn_cb = cb;
+}
+
+void bt_mesh_gattc_conn_cb_deregister(void)
+{
+    bt_mesh_gattc_conn_cb = NULL;
 }
 
 u8_t bt_mesh_gattc_get_free_conn_count(void)
@@ -1665,6 +1701,18 @@ void bt_mesh_gatt_init(void)
     }
     memset(&app_uuid.uu.uuid128, BLE_MESH_GATTC_APP_UUID_BYTE, LEN_UUID_128);
     BTA_GATTC_AppRegister(&app_uuid, bt_mesh_bta_gattc_cb);
+#endif
+}
+
+void bt_mesh_gatt_deinit(void)
+{
+#if CONFIG_BLE_MESH_NODE
+    BTA_GATTS_AppDeregister(bt_mesh_gatts_if);
+#endif
+
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    BTA_GATTC_AppDeregister(bt_mesh_gattc_if);
 #endif
 }
 

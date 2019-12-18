@@ -49,6 +49,14 @@ static void bt_mesh_health_client_mutex_new(void)
     }
 }
 
+static void bt_mesh_health_client_mutex_free(void)
+{
+    if (health_client_lock) {
+        osi_mutex_free(&health_client_lock);
+        health_client_lock = NULL;
+    }
+}
+
 static void bt_mesh_health_client_lock(void)
 {
     if (health_client_lock) {
@@ -478,6 +486,39 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
     /* Set the default health client pointer */
     if (!health_cli) {
         health_cli = client;
+    }
+
+    return 0;
+}
+
+int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    bt_mesh_health_client_t *client = NULL;
+
+    if (!model) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_health_client_t *)model->user_data;
+    if (!client) {
+        BT_ERR("%s, No Health Client context provided", __func__);
+        return -EINVAL;
+    }
+
+    if (client->internal_data) {
+        /* Remove items from the list */
+        bt_mesh_client_clear_list(client->internal_data);
+
+        /* Free the allocated internal data */
+        osi_free(client->internal_data);
+        client->internal_data = NULL;
+    }
+
+    bt_mesh_health_client_mutex_free();
+
+    if (health_cli) {
+        health_cli = NULL;
     }
 
     return 0;

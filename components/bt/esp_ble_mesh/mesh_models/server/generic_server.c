@@ -39,6 +39,14 @@ static void bt_mesh_generic_server_mutex_new(void)
     }
 }
 
+static void bt_mesh_generic_server_mutex_free(void)
+{
+    if (generic_server_lock) {
+        osi_mutex_free(&generic_server_lock);
+        generic_server_lock = NULL;
+    }
+}
+
 void bt_mesh_generic_server_lock(void)
 {
     if (generic_server_lock) {
@@ -2634,4 +2642,175 @@ int bt_mesh_gen_client_prop_srv_init(struct bt_mesh_model *model, bool primary)
     }
 
     return generic_server_init(model);
+}
+
+static int generic_server_deinit(struct bt_mesh_model *model)
+{
+    if (model->user_data == NULL) {
+        BT_ERR("%s, No Generic Server context provided, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    switch (model->id) {
+    case BLE_MESH_MODEL_ID_GEN_ONOFF_SRV: {
+        struct bt_mesh_gen_onoff_srv *srv = model->user_data;
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_GEN_LEVEL_SRV: {
+        struct bt_mesh_gen_level_srv *srv = model->user_data;
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV: {
+        struct bt_mesh_gen_power_level_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Generic Power Level State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    default:
+        BT_WARN("%s, Unknown Generic Server Model, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    bt_mesh_generic_server_mutex_free();
+
+    return 0;
+}
+
+int bt_mesh_gen_onoff_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic OnOff Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_level_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Level Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_def_trans_time_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Default Trans Time Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_power_onoff_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Power OnOff Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_power_onoff_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_power_level_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Power Level Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_power_level_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_battery_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Battery Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_location_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Location Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_location_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_user_prop_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic User Property has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_admin_prop_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Admin Property has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_manu_prop_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Manufacturer Property has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
+}
+
+int bt_mesh_gen_client_prop_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Generic Client Property has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return generic_server_deinit(model);
 }

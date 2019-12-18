@@ -94,6 +94,8 @@ static QueueSetHandle_t xBleMeshQueueSet;
 static bool ignore_relay_packet(u32_t timestamp);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
+static TaskHandle_t adv_task_handle;
+
 static struct bt_mesh_adv *adv_alloc(int id)
 {
     return &adv_pool[id];
@@ -324,6 +326,24 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
     adv->xmit         = xmit;
 
     return buf;
+}
+
+void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool)
+{
+    size_t i;
+
+    if (pool == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    for (i = 0U; i < pool->buf_count; i++) {
+        struct net_buf *buf = &pool->__bufs[i];
+        if (buf->ref > 1U) {
+            buf->ref = 1U;
+            net_buf_unref(buf);
+        }
+    }
 }
 
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
@@ -733,8 +753,28 @@ void bt_mesh_adv_init(void)
     xQueueAddToSet(xBleMeshRelayQueue, xBleMeshQueueSet);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
     int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", 3072, NULL,
-                                      configMAX_PRIORITIES - 5, NULL, ADV_TASK_CORE);
+                                      configMAX_PRIORITIES - 5, &adv_task_handle, ADV_TASK_CORE);
     configASSERT(ret == pdTRUE);
+}
+
+void bt_mesh_adv_deinit(void)
+{
+    if (xBleMeshQueue == NULL) {
+        return;
+    }
+
+#if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
+    xQueueRemoveFromSet(xBleMeshQueue, xBleMeshQueueSet);
+    xQueueRemoveFromSet(xBleMeshRelayQueue, xBleMeshQueueSet);
+    vQueueDelete(xBleMeshRelayQueue);
+    bt_mesh_unref_buf_from_pool(&relay_adv_buf_pool);
+    memset(relay_adv_pool, 0, sizeof(relay_adv_pool));
+    vQueueDelete(xBleMeshQueueSet);
+#endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+    vQueueDelete(xBleMeshQueue);
+    bt_mesh_unref_buf_from_pool(&adv_buf_pool);
+    memset(adv_pool, 0, sizeof(adv_pool));
+    vTaskDelete(adv_task_handle);
 }
 
 int bt_mesh_scan_enable(void)

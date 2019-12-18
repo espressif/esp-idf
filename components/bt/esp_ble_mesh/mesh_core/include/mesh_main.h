@@ -470,6 +470,12 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers);
 int bt_mesh_init(const struct bt_mesh_prov *prov,
                  const struct bt_mesh_comp *comp);
 
+/** @brief De-initialize Mesh support
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_mesh_deinit(void);
+
 /** @brief Reset the state of the local Mesh node.
  *
  *  Resets the state of the node, which means that it needs to be

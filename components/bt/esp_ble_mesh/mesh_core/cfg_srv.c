@@ -3423,6 +3423,25 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
     return 0;
 }
 
+int bt_mesh_cfg_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    struct bt_mesh_cfg_srv *cfg = model->user_data;
+
+    if (!cfg) {
+        BT_ERR("%s, No Configuration Server context provided", __func__);
+        return -EINVAL;
+    }
+
+    bt_mesh_cfg_reset();
+
+    k_delayed_work_free(&cfg->hb_pub.timer);
+    cfg->hb_pub.dst = BLE_MESH_ADDR_UNASSIGNED;
+
+    conf = NULL;
+
+    return 0;
+}
+
 static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                       bool vnd, bool primary, void *user_data)
 {

@@ -41,6 +41,8 @@ struct settings_context {
     int (*settings_init)(void);
     int (*settings_load)(void);
     int (*settings_commit)(void);
+    int (*settings_deinit)(void);
+    int (*settings_erase)(void);
 };
 
 static struct settings_context settings_ctx[] = {
@@ -49,6 +51,7 @@ static struct settings_context settings_ctx[] = {
         .settings_init = settings_core_init,
         .settings_load = settings_core_load,
         .settings_commit = settings_core_commit,
+        .settings_deinit = settings_core_deinit,
     },
     [SETTINGS_SERVER] = {
         .nvs_name = "mesh_server",
@@ -87,6 +90,22 @@ void bt_mesh_settings_foreach(void)
             BT_ERR("%s, Commit settings failed, name %s", __func__, ctx->nvs_name);
             continue;
         }
+    }
+}
+
+void bt_mesh_settings_deforeach(void)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(settings_ctx); i++) {
+        struct settings_context *ctx = &settings_ctx[i];
+
+        if (ctx->settings_deinit && ctx->settings_deinit()) {
+            BT_ERR("%s, Deinit settings failed, name %s", __func__, ctx->nvs_name);
+            continue;
+        }
+
+        nvs_close(ctx->handle);
     }
 }
 

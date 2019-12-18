@@ -120,6 +120,14 @@ static void bt_mesh_tx_seg_mutex_new(void)
     }
 }
 
+static void bt_mesh_tx_seg_mutex_free(void)
+{
+    if (tx_seg_lock) {
+        osi_mutex_free(&tx_seg_lock);
+        tx_seg_lock = NULL;
+    }
+}
+
 static void bt_mesh_tx_seg_lock(void)
 {
     if (tx_seg_lock) {
@@ -1609,6 +1617,24 @@ void bt_mesh_trans_init(void)
     }
 
     bt_mesh_tx_seg_mutex_new();
+}
+
+void bt_mesh_trans_deinit(void)
+{
+    size_t i;
+
+    bt_mesh_rx_reset();
+    bt_mesh_tx_reset();
+
+    for (i = 0U; i < ARRAY_SIZE(seg_tx); i++) {
+        k_delayed_work_free(&seg_tx[i].retransmit);
+    }
+
+    for (i = 0U; i < ARRAY_SIZE(seg_rx); i++) {
+        k_delayed_work_free(&seg_rx[i].ack);
+    }
+
+    bt_mesh_tx_seg_mutex_free();
 }
 
 void bt_mesh_rpl_clear(void)

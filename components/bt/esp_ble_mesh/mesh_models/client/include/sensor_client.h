@@ -143,6 +143,16 @@ struct bt_mesh_sensor_series_get {
 int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary);
 
 /**
+ * @brief This function is called to de-initialize sensor client model user_data.
+ *
+ * @param[in] model:   Pointer to sensor client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_sensor_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
  * @brief This function is called to get sensor states.
  *
  * @param[in]  common: Message common information structure

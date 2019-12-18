@@ -98,5 +98,6 @@ bool bt_mesh_proxy_client_send(struct net_buf_simple *buf, u16_t dst);
 int bt_mesh_proxy_client_send_cfg(u8_t conn_handle, u16_t net_idx, struct bt_mesh_proxy_cfg_pdu *pdu);
 
 int bt_mesh_proxy_prov_client_init(void);
+int bt_mesh_proxy_prov_client_deinit(void);
 
 #endif /* _PROVISIONER_PROXY_H_ */

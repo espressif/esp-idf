@@ -919,6 +919,11 @@ static void btc_ble_mesh_proxy_client_filter_status_recv_cb(u8_t conn_handle,
 }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
+int btc_ble_mesh_deinit(void)
+{
+    return bt_mesh_deinit();
+}
+
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
 {
     __ASSERT(model && model->op, "%s, Invalid parameter", __func__);
@@ -928,6 +933,11 @@ int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
         op++;
     }
     return bt_mesh_client_init((struct bt_mesh_model *)model);
+}
+
+int btc_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
+{
+    return bt_mesh_client_deinit((struct bt_mesh_model *)model);
 }
 
 int32_t btc_ble_mesh_model_pub_period_get(esp_ble_mesh_model_t *mod)

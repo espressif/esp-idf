@@ -43,6 +43,14 @@ static void bt_mesh_time_scene_server_mutex_new(void)
     }
 }
 
+static void bt_mesh_time_scene_server_mutex_free(void)
+{
+    if (time_scene_server_lock) {
+        osi_mutex_free(&time_scene_server_lock);
+        time_scene_server_lock = NULL;
+    }
+}
+
 void bt_mesh_time_scene_server_lock(void)
 {
     if (time_scene_server_lock) {
@@ -1425,4 +1433,87 @@ int bt_mesh_scheduler_setup_srv_init(struct bt_mesh_model *model, bool primary)
         /* Just give a warning here, continue with the initialization */
     }
     return time_scene_server_init(model);
+}
+
+static int time_scene_server_deinit(struct bt_mesh_model *model)
+{
+    if (model->user_data == NULL) {
+        BT_ERR("%s, No Time Scene Server context provided, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    switch (model->id) {
+    case BLE_MESH_MODEL_ID_SCENE_SRV: {
+        struct bt_mesh_scene_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Scene State", __func__);
+            return -EINVAL;
+        }
+        if (check_scene_server_init(srv->state)) {
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    default:
+        BT_WARN("%s, Unknown Time Scene Server Model, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    bt_mesh_time_scene_server_mutex_free();
+
+    return 0;
+}
+
+int bt_mesh_time_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Time Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return time_scene_server_deinit(model);
+}
+
+int bt_mesh_time_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub) {
+        BT_ERR("%s, Time Setup Server shall not support publication", __func__);
+        return -EINVAL;
+    }
+
+    return time_scene_server_deinit(model);
+}
+
+int bt_mesh_scene_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Scene Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return time_scene_server_deinit(model);
+}
+
+int bt_mesh_scene_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return time_scene_server_deinit(model);
+}
+
+int bt_mesh_scheduler_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Scheduler Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return time_scene_server_deinit(model);
+}
+
+int bt_mesh_scheduler_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return time_scene_server_deinit(model);
 }

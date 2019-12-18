@@ -995,4 +995,22 @@ int bt_mesh_proxy_prov_client_init(void)
     return 0;
 }
 
+int bt_mesh_proxy_prov_client_deinit(void)
+{
+    size_t i;
+
+    /* Initialize the server receive buffers */
+    for (i = 0U; i < ARRAY_SIZE(servers); i++) {
+        struct bt_mesh_proxy_server *server = &servers[i];
+        k_delayed_work_free(&server->sar_timer);
+        memset(server, 0, sizeof(struct bt_mesh_proxy_server));
+    }
+
+    memset(server_buf_data, 0, sizeof(server_buf_data));
+
+    bt_mesh_gattc_conn_cb_deregister();
+
+    return 0;
+}
+
 #endif /* (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_CLIENT */

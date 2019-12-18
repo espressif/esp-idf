@@ -55,6 +55,7 @@ int bt_mesh_provisioner_remove_node(const u8_t uuid[16]);
 struct bt_mesh_node *bt_mesh_provisioner_get_prov_node_info(const u8_t uuid[16]);
 
 int bt_mesh_provisioner_init(void);
+int bt_mesh_provisioner_deinit(void);
 
 int bt_mesh_provisioner_net_create(void);
 

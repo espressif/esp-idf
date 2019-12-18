@@ -68,6 +68,14 @@ static void bt_mesh_sensor_client_mutex_new(void)
     }
 }
 
+static void bt_mesh_sensor_client_mutex_free(void)
+{
+    if (sensor_client_lock) {
+        osi_mutex_free(&sensor_client_lock);
+        sensor_client_lock = NULL;
+    }
+}
+
 static void bt_mesh_sensor_client_lock(void)
 {
     if (sensor_client_lock) {
@@ -624,6 +632,35 @@ int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary)
     }
 
     bt_mesh_sensor_client_mutex_new();
+
+    return 0;
+}
+
+int bt_mesh_sensor_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    bt_mesh_sensor_client_t *client = NULL;
+
+    if (!model) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_sensor_client_t *)model->user_data;
+    if (!client) {
+        BT_ERR("%s, Sensor Client user_data is NULL", __func__);
+        return -EINVAL;
+    }
+
+    if (client->internal_data) {
+        /* Remove items from the list */
+        bt_mesh_client_clear_list(client->internal_data);
+
+        /* Free the allocated internal data */
+        osi_free(client->internal_data);
+        client->internal_data = NULL;
+    }
+
+    bt_mesh_sensor_client_mutex_free();
 
     return 0;
 }

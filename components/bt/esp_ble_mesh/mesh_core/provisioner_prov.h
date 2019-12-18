@@ -148,6 +148,14 @@ int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_s
 int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
 
 /**
+ * @brief This function deinitializes provisioner's PB-GATT and PB-ADV
+ *        related information.
+ *
+ * @return Zero - success, otherwise - fail
+ */
+int bt_mesh_provisioner_prov_deinit(void);
+
+/**
  * @brief This function parses the received unprovisioned device
  *        beacon advertising packets, and if checked, starts to provision this device
  *        using PB-ADV bearer.

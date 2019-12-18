@@ -355,6 +355,97 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     return 0;
 }
 
+int bt_mesh_deinit(void)
+{
+    int err;
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV)) {
+            bt_mesh_beacon_disable();
+            bt_mesh_scan_disable();
+        }
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
+            bt_mesh_proxy_prov_disable(true);
+        }
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
+            bt_mesh_provisioner_pb_gatt_disable();
+        }
+
+        bt_mesh_scan_disable();
+        provisioner_en = false;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+            err = bt_mesh_prov_deinit();
+            if (err) {
+                return err;
+            }
+        }
+        if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+            err = bt_mesh_provisioner_prov_deinit();
+            if (err) {
+                return err;
+            }
+        }
+    }
+
+    bt_mesh_trans_deinit();
+    bt_mesh_net_deinit();
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+        bt_mesh_beacon_deinit();
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+            bt_mesh_proxy_deinit();
+        }
+    }
+
+    if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+        bt_mesh_proxy_prov_client_deinit();
+    }
+
+    bt_mesh_gatt_deinit();
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+        err = bt_mesh_provisioner_deinit();
+        if (err) {
+            return err;
+        }
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        bt_mesh_friend_deinit();
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
+        bt_mesh_lpn_deinit();
+    }
+
+    bt_mesh_adv_deinit();
+
+    err = bt_mesh_comp_deregister();
+    if (err) {
+        return err;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_settings_deinit();
+    }
+
+    bt_mesh_k_deinit();
+
+    return 0;
+}
+
 bool bt_mesh_is_provisioner_en(void)
 {
     return provisioner_en;

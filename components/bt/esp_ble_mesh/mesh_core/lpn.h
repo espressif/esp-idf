@@ -63,5 +63,6 @@ void bt_mesh_lpn_group_del(u16_t *groups, size_t group_count);
 void bt_mesh_lpn_disable(bool force);
 
 int bt_mesh_lpn_init(void);
+int bt_mesh_lpn_deinit(void);
 
 #endif /* _LPN_H_ */

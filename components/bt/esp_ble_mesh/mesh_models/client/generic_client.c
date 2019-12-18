@@ -130,6 +130,14 @@ static void bt_mesh_generic_client_mutex_new(void)
     }
 }
 
+static void bt_mesh_generic_client_mutex_free(void)
+{
+    if (generic_client_lock) {
+        osi_mutex_free(&generic_client_lock);
+        generic_client_lock = NULL;
+    }
+}
+
 static void bt_mesh_generic_client_lock(void)
 {
     if (generic_client_lock) {
@@ -1234,4 +1242,73 @@ int bt_mesh_gen_location_cli_init(struct bt_mesh_model *model, bool primary)
 int bt_mesh_gen_property_cli_init(struct bt_mesh_model *model, bool primary)
 {
     return generic_client_init(model, primary);
+}
+
+static int generic_client_deinit(struct bt_mesh_model *model, bool primary)
+{
+    bt_mesh_generic_client_t *client = NULL;
+
+    if (!model) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_generic_client_t *)model->user_data;
+    if (!client) {
+        BT_ERR("%s, Generic Client user_data is NULL", __func__);
+        return -EINVAL;
+    }
+
+    if (client->internal_data) {
+        /* Remove items from the list */
+        bt_mesh_client_clear_list(client->internal_data);
+
+        /* Free the allocated internal data */
+        osi_free(client->internal_data);
+        client->internal_data = NULL;
+    }
+
+    bt_mesh_generic_client_mutex_free();
+
+    return 0;
+}
+
+int bt_mesh_gen_onoff_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_level_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_def_trans_time_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_pwr_onoff_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_pwr_level_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_battery_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_location_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
+}
+
+int bt_mesh_gen_property_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return generic_client_deinit(model, primary);
 }

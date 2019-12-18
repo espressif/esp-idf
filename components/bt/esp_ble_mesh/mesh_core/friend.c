@@ -1272,6 +1272,27 @@ int bt_mesh_friend_init(void)
     return 0;
 }
 
+int bt_mesh_friend_deinit(void)
+{
+    size_t i;
+
+    bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
+
+    for (i = 0U; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
+        struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
+
+        frnd->net_idx = BLE_MESH_KEY_UNUSED;
+
+        k_delayed_work_free(&frnd->timer);
+        k_delayed_work_free(&frnd->clear.timer);
+    }
+
+    bt_mesh_unref_buf_from_pool(&friend_buf_pool);
+    memset(adv_pool, 0, sizeof(adv_pool));
+
+    return 0;
+}
+
 static bool is_segack(struct net_buf *buf, u64_t *seqauth, u16_t src)
 {
     struct net_buf_simple_state state;

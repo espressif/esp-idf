@@ -468,6 +468,56 @@ int bt_mesh_light_xyl_cli_init(struct bt_mesh_model *model, bool primary);
 int bt_mesh_light_lc_cli_init(struct bt_mesh_model *model, bool primary);
 
 /**
+ * @brief This function is called to de-initialize light lightness client model user_data.
+ *
+ * @param[in] model:   Pointer to light lightness client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_light_lightness_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize light ctl client model user_data.
+ *
+ * @param[in] model:   Pointer to light ctl client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_light_ctl_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize light hsl client model user_data.
+ *
+ * @param[in] model:   Pointer to light hsl client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_light_hsl_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize light xyl client model user_data.
+ *
+ * @param[in] model:   Pointer to light xyl client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_light_xyl_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize light lc client model user_data.
+ *
+ * @param[in] model:   Pointer to light lc client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_light_lc_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
  * @brief This function is called to get light states.
  *
  * @param[in]  common: Message common information structure

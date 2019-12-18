@@ -116,6 +116,7 @@ int bt_mesh_server_get_optional(struct bt_mesh_model *model,
                                 bool *optional);
 
 void bt_mesh_server_alloc_ctx(struct k_work *work);
+void bt_mesh_server_free_ctx(struct k_work *work);
 
 bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,
                                      u8_t tid, u16_t src, u16_t dst, s64_t *now);

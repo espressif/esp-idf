@@ -96,6 +96,14 @@ static void bt_mesh_cfg_client_mutex_new(void)
     }
 }
 
+static void bt_mesh_cfg_client_mutex_free(void)
+{
+    if (cfg_client_lock) {
+        osi_mutex_free(&cfg_client_lock);
+        cfg_client_lock = NULL;
+    }
+}
+
 static void bt_mesh_cfg_client_lock(void)
 {
     if (cfg_client_lock) {
@@ -1677,6 +1685,42 @@ int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
     model->keys[0] = BLE_MESH_KEY_DEV;
 
     bt_mesh_cfg_client_mutex_new();
+
+    return 0;
+}
+
+int bt_mesh_cfg_cli_deinit(struct bt_mesh_model *model, bool primary)
+{
+    bt_mesh_config_client_t *client = NULL;
+
+    if (!primary) {
+        BT_ERR("Configuration Client only allowed in primary element");
+        return -EINVAL;
+    }
+
+    if (!model) {
+        BT_ERR("Configuration Client model is NULL");
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_config_client_t *)model->user_data;
+    if (!client) {
+        BT_ERR("No Configuration Client context provided");
+        return -EINVAL;
+    }
+
+    if (client->internal_data) {
+        /* Remove items from the list */
+        bt_mesh_client_clear_list(client->internal_data);
+
+        /* Free the allocated internal data */
+        osi_free(client->internal_data);
+        cli->internal_data = NULL;
+    }
+
+    client = NULL;
+
+    bt_mesh_cfg_client_mutex_free();
 
     return 0;
 }

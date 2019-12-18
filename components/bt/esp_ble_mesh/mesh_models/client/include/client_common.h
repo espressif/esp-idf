@@ -84,6 +84,8 @@ void bt_mesh_client_model_unlock(void);
 
 int bt_mesh_client_init(struct bt_mesh_model *model);
 
+int bt_mesh_client_deinit(struct bt_mesh_model *model);
+
 /**
  * @brief Check if the msg received by client model is a publish msg or not
  *

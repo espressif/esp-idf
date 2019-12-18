@@ -36,6 +36,14 @@ static void bt_mesh_light_server_mutex_new(void)
     }
 }
 
+static void bt_mesh_light_server_mutex_free(void)
+{
+    if (light_server_lock) {
+        osi_mutex_free(&light_server_lock);
+        light_server_lock = NULL;
+    }
+}
+
 void bt_mesh_light_server_lock(void)
 {
     if (light_server_lock) {
@@ -3334,4 +3342,230 @@ int bt_mesh_light_lc_setup_srv_init(struct bt_mesh_model *model, bool primary)
         /* Just give a warning here, continue with the initialization */
     }
     return light_server_init(model);
+}
+
+static int light_server_deinit(struct bt_mesh_model *model)
+{
+    if (model->user_data == NULL) {
+        BT_ERR("%s, No Light Server context provided, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    switch (model->id) {
+    case BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV: {
+        struct bt_mesh_light_lightness_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light Lightness State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->actual_transition.timer.work);
+            bt_mesh_server_free_ctx(&srv->linear_transition.timer.work);
+            k_delayed_work_free(&srv->actual_transition.timer);
+            k_delayed_work_free(&srv->linear_transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_CTL_SRV: {
+        struct bt_mesh_light_ctl_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light CTL State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV: {
+        struct bt_mesh_light_ctl_temp_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light CTL State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_SRV: {
+        struct bt_mesh_light_hsl_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light HSL State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV: {
+        struct bt_mesh_light_hsl_hue_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light HSL State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV: {
+        struct bt_mesh_light_hsl_sat_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light HSL State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_XYL_SRV: {
+        struct bt_mesh_light_xyl_srv *srv = model->user_data;
+        if (srv->state == NULL) {
+            BT_ERR("%s, NULL Light xyL State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    case BLE_MESH_MODEL_ID_LIGHT_LC_SRV: {
+        struct bt_mesh_light_lc_srv *srv = model->user_data;
+        if (srv->lc == NULL) {
+            BT_ERR("%s, NULL Light LC State", __func__);
+            return -EINVAL;
+        }
+        if (srv->rsp_ctrl.set_auto_rsp == BLE_MESH_SERVER_AUTO_RSP) {
+            bt_mesh_server_free_ctx(&srv->transition.timer.work);
+            k_delayed_work_free(&srv->transition.timer);
+        }
+        break;
+    }
+    default:
+        BT_WARN("%s, Unknown Light Server Model, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    bt_mesh_light_server_mutex_free();
+
+    return 0;
+}
+
+int bt_mesh_light_lightness_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light Lightness Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_lightness_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_ctl_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light CTL Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_ctl_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_ctl_temp_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light CTL Temperature Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_hsl_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light HSL Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_hsl_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_hsl_hue_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light HSL Hue Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_hsl_sat_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light HSL Saturation Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_xyl_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light xyL Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_xyl_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_lc_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light LC Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
+}
+
+int bt_mesh_light_lc_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Light LC Setup Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return light_server_deinit(model);
 }

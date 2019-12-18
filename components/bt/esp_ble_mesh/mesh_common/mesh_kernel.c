@@ -45,6 +45,14 @@ static void bt_mesh_alarm_mutex_new(void)
     }
 }
 
+static void bt_mesh_alarm_mutex_free(void)
+{
+    if (bm_alarm_lock) {
+        osi_mutex_free(&bm_alarm_lock);
+        bm_alarm_lock = NULL;
+    }
+}
+
 static void bt_mesh_alarm_lock(void)
 {
     if (bm_alarm_lock) {
@@ -64,6 +72,14 @@ static void bt_mesh_list_mutex_new(void)
     if (!bm_list_lock) {
         osi_mutex_new(&bm_list_lock);
         __ASSERT(bm_list_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_list_mutex_free(void)
+{
+    if (bm_list_lock) {
+        osi_mutex_free(&bm_list_lock);
+        bm_list_lock = NULL;
     }
 }
 
@@ -89,6 +105,14 @@ static void bt_mesh_buf_mutex_new(void)
     }
 }
 
+static void bt_mesh_buf_mutex_free(void)
+{
+    if (bm_buf_lock) {
+        osi_mutex_free(&bm_buf_lock);
+        bm_buf_lock = NULL;
+    }
+}
+
 void bt_mesh_buf_lock(void)
 {
     if (bm_buf_lock) {
@@ -108,6 +132,14 @@ static void bt_mesh_atomic_mutex_new(void)
     if (!bm_atomic_lock) {
         osi_mutex_new(&bm_atomic_lock);
         __ASSERT(bm_atomic_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_atomic_mutex_free(void)
+{
+    if (bm_atomic_lock) {
+        osi_mutex_free(&bm_atomic_lock);
+        bm_atomic_lock = NULL;
     }
 }
 
@@ -157,6 +189,18 @@ void bt_mesh_k_init(void)
                                      hash_function_pointer, NULL,
                                      (data_free_fn)osi_alarm_free, NULL);
     assert(bm_alarm_hash_map != NULL);
+}
+
+void bt_mesh_k_deinit(void)
+{
+    bt_mesh_alarm_mutex_free();
+    bt_mesh_list_mutex_free();
+    bt_mesh_buf_mutex_free();
+    bt_mesh_atomic_mutex_free();
+    if (bm_alarm_hash_map) {
+        hash_map_free(bm_alarm_hash_map);
+        bm_alarm_hash_map = NULL;
+    }
 }
 
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)

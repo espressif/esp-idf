@@ -1086,3 +1086,33 @@ int bt_mesh_sensor_setup_srv_init(struct bt_mesh_model *model, bool primary)
 
     return sensor_server_init(model);
 }
+
+static int sensor_server_deinit(struct bt_mesh_model *model)
+{
+    if (model->user_data == NULL) {
+        BT_ERR("%s, No Sensor Server context provided, model_id 0x%04x", __func__, model->id);
+        return -EINVAL;
+    }
+
+    return 0;
+}
+
+int bt_mesh_sensor_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Sensor Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return sensor_server_deinit(model);
+}
+
+int bt_mesh_sensor_setup_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    if (model->pub == NULL) {
+        BT_ERR("%s, Sensor Setup Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    return sensor_server_deinit(model);
+}

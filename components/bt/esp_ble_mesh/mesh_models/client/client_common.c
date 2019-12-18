@@ -242,6 +242,14 @@ static void bt_mesh_client_model_mutex_new(void)
     }
 }
 
+static void bt_mesh_client_model_mutex_free(void)
+{
+    if (client_model_lock) {
+        osi_mutex_free(&client_model_lock);
+        client_model_lock = NULL;
+    }
+}
+
 void bt_mesh_client_model_lock(void)
 {
     if (client_model_lock) {
@@ -294,6 +302,35 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
     }
 
     bt_mesh_client_model_mutex_new();
+
+    return 0;
+}
+
+int bt_mesh_client_deinit(struct bt_mesh_model *model)
+{
+    bt_mesh_client_user_data_t *client = NULL;
+
+    if (!model) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    client = (bt_mesh_client_user_data_t *)model->user_data;
+    if (!client) {
+        BT_ERR("%s, Client user_data is NULL", __func__);
+        return -EINVAL;
+    }
+
+    if (client->internal_data) {
+        /* Remove items from the list */
+        bt_mesh_client_clear_list(client->internal_data);
+
+        /* Free the allocated internal data */
+        osi_free(client->internal_data);
+        client->internal_data = NULL;
+    }
+
+    bt_mesh_client_model_mutex_free();
 
     return 0;
 }

@@ -72,6 +72,8 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
         enum bt_mesh_adv_type type,
         u8_t xmit, s32_t timeout);
 
+void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
+
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
                       void *cb_data);
 
@@ -88,6 +90,7 @@ u16_t bt_mesh_get_stored_relay_count(void);
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
+void bt_mesh_adv_deinit(void);
 
 int bt_mesh_scan_enable(void);
 

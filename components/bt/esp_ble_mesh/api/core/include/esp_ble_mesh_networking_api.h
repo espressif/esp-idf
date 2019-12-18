@@ -76,6 +76,18 @@ esp_err_t esp_ble_mesh_model_msg_opcode_init(uint8_t *data, uint32_t opcode);
 esp_err_t esp_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
 
 /**
+ * @brief         De-initialize the user-defined client model.
+ *
+ * @note          This function shall be invoked before esp_ble_mesh_deinit() is called.
+ *
+ * @param[in]     model: Pointer of the Client model.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model);
+
+/**
  * @brief         Send server model messages(such as server model status messages).
  *
  * @param[in]     model: BLE Mesh Server Model to which the message belongs.

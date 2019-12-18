@@ -50,6 +50,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
                            struct net_buf_simple *buf);
 
 int bt_mesh_friend_init(void);
+int bt_mesh_friend_deinit(void);
 
 void bt_mesh_friend_remove_lpn(u16_t lpn_addr);
 

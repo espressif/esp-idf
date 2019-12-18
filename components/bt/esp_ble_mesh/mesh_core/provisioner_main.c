@@ -51,6 +51,14 @@ static void bt_mesh_provisioner_mutex_new(void)
     }
 }
 
+static void bt_mesh_provisioner_mutex_free(void)
+{
+    if (provisioner_lock) {
+        osi_mutex_free(&provisioner_lock);
+        provisioner_lock = NULL;
+    }
+}
+
 static void bt_mesh_provisioner_lock(void)
 {
     if (provisioner_lock) {
@@ -435,6 +443,49 @@ int bt_mesh_provisioner_net_create(void)
 done:
     BT_DBG("net_idx 0x%03x, netkey %s, nid 0x%02x",
         sub->net_idx, bt_hex(sub->keys[0].net, 16), sub->keys[0].nid);
+
+    return 0;
+}
+
+int bt_mesh_provisioner_deinit(void)
+{
+    size_t i;
+
+    for (i = 0U; i < CONFIG_BLE_MESH_PROVISIONER_SUBNET_COUNT; i++) {
+        if (bt_mesh.p_sub[i]) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+                bt_mesh_clear_p_subnet(bt_mesh.p_sub[i]);
+            }
+            osi_free(bt_mesh.p_sub[i]);
+            bt_mesh.p_sub[i] = NULL;
+        }
+    }
+
+    for (i = 0U; i < CONFIG_BLE_MESH_PROVISIONER_APP_KEY_COUNT; i++) {
+        if (bt_mesh.p_app_keys[i]) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+                bt_mesh_clear_p_app_key(bt_mesh.p_app_keys[i]);
+            }
+            osi_free(bt_mesh.p_app_keys[i]);
+            bt_mesh.p_app_keys[i] = NULL;
+        }
+    }
+
+    bt_mesh.p_net_idx_next = 0U;
+    bt_mesh.p_app_idx_next = 0U;
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_p_net_idx();
+        bt_mesh_clear_p_app_idx();
+    }
+
+    for (i = 0U; i < CONFIG_BLE_MESH_MAX_STORED_NODES; i++) {
+        provisioner_remove_node(i);
+    }
+
+    all_node_count = 0U;
+    prov_node_count = 0U;
+
+    bt_mesh_provisioner_mutex_free();
 
     return 0;
 }

@@ -97,6 +97,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 
 void bt_mesh_trans_init(void);
+void bt_mesh_trans_deinit(void);
 
 void bt_mesh_rpl_clear(void);
 

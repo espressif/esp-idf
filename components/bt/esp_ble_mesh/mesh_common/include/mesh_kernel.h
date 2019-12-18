@@ -278,6 +278,7 @@ void bt_mesh_atomic_lock(void);
 void bt_mesh_atomic_unlock(void);
 
 void bt_mesh_k_init(void);
+void bt_mesh_k_deinit(void);
 
 #endif /* _BLE_MESH_KERNEL_H_ */
 

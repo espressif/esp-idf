@@ -484,6 +484,42 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
     return 0;
 }
 
+int bt_mesh_health_srv_deinit(struct bt_mesh_model *model, bool primary)
+{
+    struct bt_mesh_health_srv *srv = model->user_data;
+
+    if (!srv) {
+        if (!primary) {
+            /* If Health Server is in the secondary element with NULL user_data. */
+            return 0;
+        }
+
+        BT_ERR("%s, No Health Server context provided", __func__);
+        return -EINVAL;
+    }
+
+    if (srv->test.id_count == 0 || !srv->test.test_ids) {
+        BT_ERR("%s, No Health Test ID provided", __func__);
+        return -EINVAL;
+    }
+
+    if (!model->pub) {
+        BT_ERR("%s, Health Server has no publication support", __func__);
+        return -EINVAL;
+    }
+
+    model->pub->addr = BLE_MESH_ADDR_UNASSIGNED;
+    model->pub->update = NULL;
+
+    k_delayed_work_free(&srv->attn_timer);
+
+    if (primary) {
+        health_srv = NULL;
+    }
+
+    return 0;
+}
+
 void bt_mesh_attention(struct bt_mesh_model *model, u8_t time)
 {
     struct bt_mesh_health_srv *srv;

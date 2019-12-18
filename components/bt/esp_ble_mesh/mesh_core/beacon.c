@@ -393,6 +393,11 @@ void bt_mesh_beacon_init(void)
     k_delayed_work_init(&beacon_timer, beacon_send);
 }
 
+void bt_mesh_beacon_deinit(void)
+{
+    k_delayed_work_free(&beacon_timer);
+}
+
 void bt_mesh_beacon_ivu_initiator(bool enable)
 {
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_INITIATOR, enable);

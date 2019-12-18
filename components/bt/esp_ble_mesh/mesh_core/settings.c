@@ -2247,12 +2247,22 @@ void bt_mesh_store_p_net_idx(void)
         (const u8_t *)&bt_mesh.p_net_idx_next, sizeof(bt_mesh.p_net_idx_next));
 }
 
+void bt_mesh_clear_p_net_idx(void)
+{
+    bt_mesh_save_core_settings("mesh/p_netidx", NULL, 0);
+}
+
 void bt_mesh_store_p_app_idx(void)
 {
     BT_DBG("p_app_idx_next 0x%03x", bt_mesh.p_app_idx_next);
 
     bt_mesh_save_core_settings("mesh/p_appidx",
         (const u8_t *)&bt_mesh.p_app_idx_next, sizeof(bt_mesh.p_app_idx_next));
+}
+
+void bt_mesh_clear_p_app_idx(void)
+{
+    bt_mesh_save_core_settings("mesh/p_appidx", NULL, 0);
 }
 
 void bt_mesh_store_p_subnet(struct bt_mesh_subnet *sub)
@@ -2396,6 +2406,20 @@ int bt_mesh_settings_init(void)
     BT_DBG("%s", __func__);
 
     bt_mesh_settings_foreach();
+
+    return 0;
+}
+
+int settings_core_deinit(void)
+{
+    k_delayed_work_free(&pending_store);
+
+    return 0;
+}
+
+int bt_mesh_settings_deinit(void)
+{
+    bt_mesh_settings_deforeach();
 
     return 0;
 }

@@ -221,6 +221,14 @@ static void bt_mesh_pb_buf_mutex_new(void)
     }
 }
 
+static void bt_mesh_pb_buf_mutex_free(void)
+{
+    if (pb_buf_lock) {
+        osi_mutex_free(&pb_buf_lock);
+        pb_buf_lock = NULL;
+    }
+}
+
 static void bt_mesh_pb_buf_lock(void)
 {
     if (pb_buf_lock) {
@@ -1776,6 +1784,36 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 #if defined(CONFIG_BLE_MESH_PB_ADV)
     bt_mesh_pb_buf_mutex_new();
 #endif
+
+    return 0;
+}
+
+int bt_mesh_prov_deinit(void)
+{
+    if (prov == NULL) {
+        BT_ERR("%s, No provisioning context provided", __func__);
+        return -EINVAL;
+    }
+
+    k_delayed_work_free(&link.prot_timer);
+
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+    prov_clear_tx();
+    k_delayed_work_free(&link.tx.retransmit);
+#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
+    /* Remove the link id from exceptional list */
+    bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
+                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+#endif /* CONFIG_BLE_MESH_USE_DUPLICATE_SCAN */
+#endif /* CONFIG_BLE_MESH_PB_ADV */
+
+    (void)memset(&link, 0, sizeof(link));
+
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+    bt_mesh_pb_buf_mutex_free();
+#endif
+
+    prov = NULL;
 
     return 0;
 }

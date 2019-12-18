@@ -164,6 +164,14 @@ esp_err_t esp_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
     return btc_ble_mesh_client_model_init(model);
 }
 
+esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
+{
+    if (model == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return btc_ble_mesh_client_model_deinit(model);
+}
+
 esp_err_t esp_ble_mesh_server_model_send_msg(esp_ble_mesh_model_t *model,
         esp_ble_mesh_msg_ctx_t *ctx, uint32_t opcode,
         uint16_t length, uint8_t *data)

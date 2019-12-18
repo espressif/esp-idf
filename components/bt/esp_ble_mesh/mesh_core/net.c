@@ -1527,3 +1527,29 @@ void bt_mesh_net_init(void)
 
     k_work_init(&bt_mesh.local_work, bt_mesh_net_local);
 }
+
+void bt_mesh_net_deinit(void)
+{
+    k_delayed_work_free(&bt_mesh.ivu_timer);
+
+    k_work_init(&bt_mesh.local_work, NULL);
+
+    /* Local queue uses a while loop, currently no need
+     * to handle this.
+     */
+
+#if FRIEND_CRED_COUNT > 0
+    memset(friend_cred, 0, sizeof(friend_cred));
+#endif
+
+    memset(msg_cache, 0, sizeof(msg_cache));
+    msg_cache_next = 0U;
+
+    memset(dup_cache, 0, sizeof(dup_cache));
+    dup_cache_next = 0U;
+
+    bt_mesh.iv_index = 0U;
+    bt_mesh.seq = 0U;
+
+    memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
+}

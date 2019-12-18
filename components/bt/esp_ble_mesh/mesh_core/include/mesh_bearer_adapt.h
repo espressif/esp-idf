@@ -641,6 +641,7 @@ struct bt_mesh_gatt_attr {
 }
 
 esp_err_t bt_mesh_host_init(void);
+esp_err_t bt_mesh_host_deinit(void);
 
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
@@ -653,10 +654,12 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
 int bt_le_scan_stop(void);
 
 void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb);
+void bt_mesh_gatts_conn_cb_deregister(void);
 
 int bt_mesh_gatts_disconnect(struct bt_mesh_conn *conn, u8_t reason);
 
 int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc);
+int bt_mesh_gatts_service_deregister(struct bt_mesh_gatt_service *svc);
 
 int bt_mesh_gatts_service_unregister(struct bt_mesh_gatt_service *svc);
 
@@ -688,6 +691,7 @@ int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_set_local_device_name(const char *name);
 
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb);
+void bt_mesh_gattc_conn_cb_deregister(void);
 
 u8_t bt_mesh_gattc_get_free_conn_count(void);
 
@@ -711,6 +715,7 @@ struct bt_mesh_conn *bt_mesh_conn_ref(struct bt_mesh_conn *conn);
 void bt_mesh_conn_unref(struct bt_mesh_conn *conn);
 
 void bt_mesh_gatt_init(void);
+void bt_mesh_gatt_deinit(void);
 
 void bt_mesh_adapt_init(void);
 

@@ -1094,4 +1094,15 @@ int bt_mesh_lpn_init(void)
     return 0;
 }
 
+int bt_mesh_lpn_deinit(void)
+{
+    struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
+    bt_mesh_lpn_disable(true);
+
+    k_delayed_work_free(&lpn->timer);
+
+    return 0;
+}
+
 #endif /* CONFIG_BLE_MESH_LOW_POWER */
