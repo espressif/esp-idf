@@ -201,6 +201,15 @@ typedef esp_err_t (*system_event_cb_t)(void *ctx, system_event_t *event);
 esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx);
 
 /**
+ * @brief Deinitializes the event loop library
+ *
+ * @return 
+ *  - ESP_OK: Success
+ *  - Others: Fail
+ */
+esp_err_t esp_event_loop_deinit();
+
+/**
  * @brief  Set application specified event callback function
  *
  * @note This API is part of the legacy event system. New code should use event library API in esp_event.h
