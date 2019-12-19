@@ -116,13 +116,15 @@ def convert_project(project_path):
 
     component_paths = project_vars["COMPONENT_PATHS"].split()
 
+    converted_components = 0
+
     # Convert components as needed
     for p in component_paths:
         if "MSYSTEM" in os.environ:
             cmd = ["cygpath", "-w", p]
             p = subprocess.check_output(cmd).strip()
 
-        convert_component(project_path, p)
+        converted_components += convert_component(project_path, p)
 
     project_name = project_vars["PROJECT_NAME"]
 
@@ -143,6 +145,13 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
     print("Converted project %s" % project_cmakelists)
 
+    if converted_components > 0:
+        print("Note: Newly created component CMakeLists.txt do not have any REQUIRES or PRIV_REQUIRES "
+              "lists to declare their component requirements. Builds may fail to include other "
+              "components' header files. If so requirements need to be added to the components' "
+              "CMakeLists.txt files. See the 'Component Requirements' section of the "
+              "Build System docs for more details.")
+
 
 def convert_component(project_path, component_path):
     if debug:
@@ -150,7 +159,7 @@ def convert_component(project_path, component_path):
     cmakelists_path = os.path.join(component_path, "CMakeLists.txt")
     if os.path.exists(cmakelists_path):
         print("Skipping already-converted component %s..." % cmakelists_path)
-        return
+        return 0
     v = get_component_variables(project_path, component_path)
 
     # Look up all the variables before we start writing the file, so it's not
@@ -173,6 +182,7 @@ def convert_component(project_path, component_path):
             f.write("target_compile_options(${COMPONENT_LIB} PRIVATE %s)\n" % cflags)
 
     print("Converted %s" % cmakelists_path)
+    return 1
 
 
 def main():
