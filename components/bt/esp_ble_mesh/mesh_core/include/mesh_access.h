@@ -335,15 +335,15 @@ struct bt_mesh_model_pub {
     struct bt_mesh_model *mod;
 
     u16_t addr;         /**< Publish Address. */
-    u16_t key;          /**< Publish AppKey Index. */
+    u16_t key:12,       /**< Publish AppKey Index. */
+          cred:1;       /**< Friendship Credentials Flag. */
 
     u8_t  ttl;          /**< Publish Time to Live. */
     u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
     u8_t  period;       /**< Publish Period. */
-    u16_t period_div: 4, /**< Divisor for the Period. */
-          cred: 1,      /**< Friendship Credentials Flag. */
-          fast_period: 1, /**< Use FastPeriodDivisor */
-          count: 3;     /**< Retransmissions left. */
+    u8_t  period_div:4, /**< Divisor for the Period. */
+          fast_period:1,/**< Use FastPeriodDivisor */
+          count:3;      /**< Retransmissions left. */
 
     u32_t period_start; /**< Start of the current period. */
 
