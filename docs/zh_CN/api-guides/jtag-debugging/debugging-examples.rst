@@ -155,14 +155,7 @@
 
 在 “Memory” 选项卡下，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。
 
-.. only:: esp32
-
-    关于该寄存器的更多详细信息，请参阅 `ESP32 技术参考手册 <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_ 中的 IO_MUX 和 GPIO Matrix 章节。
-
-.. only:: esp32s2beta
-
-    关于该寄存器的更多详细信息，请参阅 `ESP32-S2 技术参考手册 <https://espressif.com/sites/default/files/documentation/esp32s2_technical_reference_manual_cn.pdf>`_ 中的 IO_MUX 和 GPIO Matrix 章节。
-
+关于该寄存器的更多详细信息，请参阅 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_ 中的 IO_MUX 和 GPIO Matrix 章节。
 
 同样在 ``blink.c`` 项目文件中，在两个 ``gpio_set_level`` 语句的后面各设置一个断点，单击 “Memory” 选项卡，然后单击 “Add Memory Monitor” 按钮，在弹出的对话框中输入 ``0x3FF44004``。
 
@@ -521,7 +514,7 @@
 
 使用命令 ``x`` 可以显示内存的内容，配合其余参数还可以调整所显示内存位置的格式和数量。运行 ``help x`` 可以查看更多相关细节。与 ``x`` 命令配合使用的命令是 ``set``，它允许你将值写入内存。
 
-为了演示 ``x`` 和 ``set`` 的使用，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。关于该寄存器的更多详细信息，请参阅 `ESP32 技术参考手册 <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_ 中的 IO_MUX 和 GPIO Matrix章节。
+为了演示 ``x`` 和 ``set`` 的使用，我们将在内存地址 ``0x3FF44004`` 处读取和写入内容。该地址也是 ``GPIO_OUT_REG`` 寄存器的地址，可以用来控制（设置或者清除）某个 GPIO 的电平。关于该寄存器的更多详细信息，请参阅 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_ 中的 IO_MUX 和 GPIO Matrix章节。
 
 同样在 ``blink.c`` 项目文件中，在两个 ``gpio_set_level`` 语句的后面各设置一个断点。输入两次 ``c`` 命令后停止在断点处，然后输入 ``x /1wx 0x3FF44004`` 来显示 ``GPIO_OUT_REG`` 寄存器的值::
 

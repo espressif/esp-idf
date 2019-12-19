@@ -232,7 +232,7 @@ The UART controller supports a number of communication modes. A mode can be sele
 Using Interrupts
 ^^^^^^^^^^^^^^^^
 
-There are many interrupts that can be generated following specific UART states or detected errors. The full list of available interrupts is provided in the SoC Technical Reference Manual. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively. The mask of all interrupts is available as :c:macro:`UART_INTR_MASK`.
+There are many interrupts that can be generated following specific UART states or detected errors. The full list of available interrupts is provided  `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF).. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively. The mask of all interrupts is available as :c:macro:`UART_INTR_MASK`.
 
 By default, the :cpp:func:`uart_driver_install` function installs the driver's internal interrupt handler to manage the Tx and Rx ring buffers and provides high-level API functions like events (see below). It is also possible to register a lower level interrupt handler instead using :cpp:func:`uart_isr_register`, and to free it again using :cpp:func:`uart_isr_free`. Some UART driver functions which use the Tx and Rx ring buffers, events, etc. will not automatically work in this case - it is necessary to handle the interrupts directly in the ISR. Inside the custom handler implementation, clear the interrupt status bits using :cpp:func:`uart_clear_intr_status`.
 

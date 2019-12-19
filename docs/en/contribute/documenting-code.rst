@@ -3,7 +3,7 @@ Documenting Code
 
 :link_to_translation:`zh_CN:[中文]`
 
-The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation. 
+The purpose of this description is to provide quick summary on documentation style used in `espressif/esp-idf`_ repository and how to add new documentation.
 
 
 Introduction
@@ -22,14 +22,14 @@ Typical comment block, that contains documentation of a function, looks like bel
 .. image:: ../../_static/doc-code-documentation-inline.png
     :align: center
     :alt: Sample inline code documentation
- 
+
 Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data rich and very well organized `Doxygen Manual <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
 
 
 Why we need it?
 ---------------
 
-The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx <http://www.sphinx-doc.org/>`_ and `Breathe <https://breathe.readthedocs.io/>`_ to aid preparation and automatic updates of API documentation when the code changes. 
+The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx <http://www.sphinx-doc.org/>`_ and `Breathe <https://breathe.readthedocs.io/>`_ to aid preparation and automatic updates of API documentation when the code changes.
 
 With these tools the above piece of code renders like below:
 
@@ -58,7 +58,7 @@ When writing code for this repository, please follow guidelines below.
     .. image:: ../../_static/doc-code-void-function.png
         :align: center
         :alt: Sample void function documented inline and after rendering
- 
+
 5. When documenting a ``define`` as well as members of a ``struct`` or ``enum``, place specific comment like below after each member.
 
     .. image:: ../../_static/doc-code-member.png
@@ -75,7 +75,7 @@ When writing code for this repository, please follow guidelines below.
     *    - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
     *    - other error codes from the underlying storage driver
     *
- 
+
 7. Overview of functionality of documented header file, or group of files that make a library, should be placed in the same directory in a separate ``README.rst`` file. If directory contains header files for different APIs, then the file name should be ``apiname-readme.rst``.
 
 
@@ -118,7 +118,7 @@ There is couple of tips, how you can make your documentation even better and mor
      */
     void  first_similar_function (void);
     void second_similar_function (void);
-    /**@}*/ 
+    /**@}*/
 
    For practical example see :component_file:`nvs_flash/include/nvs.h`.
 
@@ -127,14 +127,14 @@ There is couple of tips, how you can make your documentation even better and mor
 5. Use markdown to make your documentation even more readable. You will add headers, links, tables and more. ::
 
     *
-    * [ESP32 Technical Reference Manual](https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf)
+    * [{IDF_TARGET_NAME} Technical Reference Manual]({IDF_TARGET_TRM_EN_URL})
     *
 
 .. note::
 
     Code snippets, notes, links, etc. will not make it to the documentation, if not enclosed in a comment block associated with one of documented objects.
 
-6. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory. 
+6. Prepare one or more complete code examples together with description. Place description in a separate file ``README.md`` in specific folder of :idf:`examples` directory.
 
 .. _link-custom-roles:
 
@@ -199,9 +199,9 @@ The following types of diagrams are supported:
 * `Activity diagram <http://blockdiag.com/en/actdiag/index.html>`_
 * `Logical network diagram <http://blockdiag.com/en/nwdiag/index.html>`_
 
-With this suite of tools it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents. 
+With this suite of tools it is possible to generate beautiful diagram images from simple text format (similar to graphviz’s DOT format). The diagram elements are laid out automatically. The diagram code is then converted into ".png" graphics and integrated "behind the scenes" into **Sphinx** documents.
 
-For the diagram preparation you can use an on-line `interactive shell`_ that instantly shows the rendered image. 
+For the diagram preparation you can use an on-line `interactive shell`_ that instantly shows the rendered image.
 
 Below are couple of diagram examples:
 
@@ -262,10 +262,10 @@ OK, but I am new to Sphinx!
 3. You will likely want to see how documentation builds and looks like before posting it on the GitHub. There are two options to do so:
 
     * Install `Sphinx <http://www.sphinx-doc.org/>`_, `Breathe <https://breathe.readthedocs.io/>`_, `Blockdiag <http://blockdiag.com/en/index.html>`_ and `Doxygen <https://www.stack.nl/~dimitri/doxygen/>`_ to build it locally, see chapter below.
-   
+
     * Set up an account on `Read the Docs <https://readthedocs.org/>`_ and build documentation in the cloud. Read the Docs provides document building and hosting for free and their service works really quick and great.
 
-4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin. 
+4. To preview documentation before building, use `Sublime Text <https://www.sublimetext.com/>`_ editor together with `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ plugin.
 
 
 .. _setup-for-building-documentation:
@@ -348,13 +348,13 @@ Now you should be ready to build documentation by invoking::
 
     make html
 
-This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/en/_build/html`` folder. To see it, open ``index.html`` in a web browser.  
+This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/en/_build/html`` folder. To see it, open ``index.html`` in a web browser.
 
 
 Wrap up
 -------
 
-We love good code that is doing cool things. 
+We love good code that is doing cool things.
 We love it even better, if it is well documented, so we can quickly make it run and also do the cool things.
 
 Go ahead, contribute your code and documentation!

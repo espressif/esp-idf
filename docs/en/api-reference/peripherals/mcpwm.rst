@@ -171,7 +171,7 @@ Examples of using MCPWM for motor control: :example:`peripherals/mcpwm`:
 * Brushed DC motor control - :example:`peripherals/mcpwm/mcpwm_brushed_dc_control`
 * Servo motor control - :example:`peripherals/mcpwm/mcpwm_servo_control`
 
-.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_URL}
+.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
 
 API Reference

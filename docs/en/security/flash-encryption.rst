@@ -4,17 +4,9 @@ Flash Encryption
 
 :link_to_translation:`zh_CN:[中文]`
 
-.. only:: esp32
+This document provides introduction to Flash encryption concept on {IDF_TARGET_NAME} and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `{IDF_TARGET_NAME} Technical reference manual`_.
 
-    This document provides introduction to Flash encryption concept on {IDF_TARGET_NAME} and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `ESP32 Technical reference manual`_.
-
-    .. _ESP32 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-
-.. only:: esp32s2beta
-
-    This document provides introduction to Flash encryption concept on {IDF_TARGET_NAME} and demonstrates how this feature can be used during development as well as production by the user using a sample example. The primary intention of the document is to act as a quick start guide to test and verify flash encryption operations. The details of the flash encryption block can be found in the `ESP32-S2 Technical reference manual`_.
-
-    .. _ESP32-S2 Technical Reference Manual: https://www.espressif.com/sites/default/files/documentation/esp32s2_technical_reference_manual_en.pdf
+.. _{IDF_TARGET_NAME} Technical Reference Manual: {IDF_TARGET_TRM_EN_URL}
 
 
 Introduction

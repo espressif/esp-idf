@@ -175,7 +175,7 @@ A code example showing how to use these functions can be found in :example:`peri
 Interrupt Handling
 ^^^^^^^^^^^^^^^^^^
 
-During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=292>`_ for the description of interrupts triggered by the I2C controller.
+During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to the `{IDF_TARGET_NAME} Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>`_ for the description of interrupts triggered by the I2C controller.
 
 To delete an interrupt handler, call :cpp:func:`i2c_isr_free`.
 

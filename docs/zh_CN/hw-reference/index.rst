@@ -6,8 +6,7 @@ ESP32 H/W 硬件参考
 .. toctree::
    :maxdepth: 2
 
-    :esp32: ESP32 技术参考手册 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>
-    :esp32s2beta: ESP32-S2 技术参考手册 (PDF) <https://espressif.com/sites/default/files/documentation/esp32s2_technical_reference_manual_cn.pdf>
+    {IDF_TARGET_NAME} 技术参考手册 (PDF) <{IDF_TARGET_TRM_CN_URL}>
     :esp32: ESP32 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_datasheet_cn.pdf>
     :esp32s2: ESP32-S2 技术规格书 (PDF) <https://espressif.com/sites/default/files/documentation/esp32s2_datasheet_cn.pdf>
     :esp32: ESP32 硬件设计指南 (PDF) <https://espressif.com/sites/default/files/documentation/esp32_hardware_design_guidelines_cn.pdf>

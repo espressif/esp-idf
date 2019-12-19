@@ -4,8 +4,12 @@ TARGET_NAMES = {'esp32': 'ESP32', 'esp32s2': 'ESP32-S2'}
 TOOLCHAIN_NAMES = {'esp32': 'esp', 'esp32s2': 'esp32s2'}
 CONFIG_PREFIX = {'esp32': 'ESP32', 'esp32s2': 'ESP32S2'}
 
-TRM_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf',
+TRM_EN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf',
            'esp32s2': 'https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_en.pdf'}
+
+TRM_CN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf',
+           'esp32s2': 'https://www.espressif.com/sites/default/files/documentation/esp32-s2_technical_reference_manual_cn.pdf'}
+
 
 class StringSubstituter:
     """ Allows for string substitution of target related strings
@@ -16,7 +20,8 @@ class StringSubstituter:
         {IDF_TARGET_PATH_NAME}, replaced with the path name, e.g. esp32s2
         {IDF_TARGET_TOOLCHAIN_NAME}, replaced with the toolchain name, e.g. esp32s2
         {IDF_TARGET_CFG_PREFIX}, replaced with the prefix used for config parameters, e.g. ESP32S2
-        {IDF_TARGET_TRM_URL}, replaced with the url to the technical reference manual
+        {IDF_TARGET_TRM_EN_URL}, replaced with the url to the English technical reference manual
+        {IDF_TARGET_TRM_CH_URL}, replaced with the url to the Chinese technical reference manual
 
         Also supports defines of local (single rst file) with the format:
         {IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2="IO5"}
@@ -40,7 +45,8 @@ class StringSubstituter:
         self.add_pair("{IDF_TARGET_PATH_NAME}", config.idf_target)
         self.add_pair("{IDF_TARGET_TOOLCHAIN_NAME}", TOOLCHAIN_NAMES[config.idf_target])
         self.add_pair("{IDF_TARGET_CFG_PREFIX}", CONFIG_PREFIX[config.idf_target])
-        self.add_pair("{IDF_TARGET_TRM_URL}", TRM_URL[config.idf_target])
+        self.add_pair("{IDF_TARGET_TRM_EN_URL}", TRM_EN_URL[config.idf_target])
+        self.add_pair("{IDF_TARGET_TRM_CN_URL}", TRM_CN_URL[config.idf_target])
 
     def add_local_subs(self, matches):
 
