@@ -78,14 +78,14 @@ def get_component_variables(project_path, component_path):
             return None
 
         srcs = []
-        for obj in make_vars["COMPONENT_OBJS"].split(" "):
+        for obj in make_vars["COMPONENT_OBJS"].split():
             src = find_src(obj)
             if src is not None:
                 srcs.append(src)
         make_vars["COMPONENT_SRCS"] = " ".join(srcs)
     else:
         component_srcs = list()
-        for component_srcdir in make_vars.get("COMPONENT_SRCDIRS", ".").split(" "):
+        for component_srcdir in make_vars.get("COMPONENT_SRCDIRS", ".").split():
             component_srcdir_path = os.path.abspath(os.path.join(component_path, component_srcdir))
 
             srcs = list()
@@ -114,7 +114,7 @@ def convert_project(project_path):
     if "PROJECT_NAME" not in project_vars:
         raise RuntimeError("PROJECT_NAME does not appear to be defined in IDF project Makefile at %s" % project_path)
 
-    component_paths = project_vars["COMPONENT_PATHS"].split(" ")
+    component_paths = project_vars["COMPONENT_PATHS"].split()
 
     # Convert components as needed
     for p in component_paths:
