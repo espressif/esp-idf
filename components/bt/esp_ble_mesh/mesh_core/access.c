@@ -227,7 +227,7 @@ static s32_t next_period(struct bt_mesh_model *mod)
 
     BT_DBG("Publishing took %ums", elapsed);
 
-    if (elapsed > period) {
+    if (elapsed >= period) {
         BT_WARN("Publication sending took longer than the period");
         /* Return smallest positive number since 0 means disabled */
         return K_MSEC(1);
