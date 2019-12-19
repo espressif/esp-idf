@@ -107,6 +107,10 @@ static esp_err_t esp_websocket_client_dispatch_event(esp_websocket_client_handle
 {
     esp_err_t err;
     esp_websocket_event_data_t event_data;
+
+    event_data.client = client;
+    event_data.user_context = client->config->user_context;
+
     event_data.data_ptr = data;
     event_data.data_len = data_len;
     event_data.op_code = client->last_opcode;
