@@ -164,6 +164,15 @@ def action_extensions(base_actions, project_path):
         print("ESP-IDF %s" % version)
         sys.exit(0)
 
+    def list_targets_callback(ctx, param, value):
+        if not value or ctx.resilient_parsing:
+            return
+
+        for target in SUPPORTED_TARGETS:
+            print(target)
+
+        sys.exit(0)
+
     root_options = {
         "global_options": [
             {
@@ -172,6 +181,13 @@ def action_extensions(base_actions, project_path):
                 "is_flag": True,
                 "expose_value": False,
                 "callback": idf_version_callback
+            },
+            {
+                "names": ["--list-targets"],
+                "help": "Print list of supported targets and exit.",
+                "is_flag": True,
+                "expose_value": False,
+                "callback": list_targets_callback
             },
             {
                 "names": ["-C", "--project-dir"],
@@ -263,7 +279,8 @@ def action_extensions(base_actions, project_path):
                             "The default value is \"aquatic\". It is possible to customize these themes further "
                             "as it is described in the Color schemes section of the kconfiglib documentation."),
                         "default": os.environ.get('MENUCONFIG_STYLE', 'aquatic'),
-                    }],
+                    }
+                ],
             },
             "confserver": {
                 "callback": build_target,
