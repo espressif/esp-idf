@@ -44,6 +44,10 @@ extern "C" {
  */
 extern esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu);
 
+#if (BLE_INCLUDED == TRUE)
+extern uint16_t L2CA_GetFreePkgBufferNum(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
