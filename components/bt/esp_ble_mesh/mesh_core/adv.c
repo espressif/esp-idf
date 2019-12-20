@@ -142,6 +142,8 @@ static inline int adv_send(struct net_buf *buf)
     param.interval_min = ADV_SCAN_UNIT(adv_int);
     param.interval_max = param.interval_min;
 
+    bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
+
     err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
     net_buf_unref(buf);
     adv_send_start(duration, err, cb, cb_data);
@@ -273,6 +275,7 @@ static void adv_thread(void *p)
             }
 #endif
         } else {
+            bt_mesh_adv_buf_ref_debug(__func__, *buf, 1U, BLE_MESH_BUF_REF_EQUAL);
             net_buf_unref(*buf);
         }
 
@@ -320,6 +323,30 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
                                         xmit, timeout);
 }
 
+void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
+                               u8_t ref_cmp, bt_mesh_buf_ref_flag_t flag)
+{
+    if (buf == NULL || func == NULL || flag >= BLE_MESH_BUF_REF_MAX) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    switch (flag) {
+    case BLE_MESH_BUF_REF_EQUAL:
+        if (buf->ref != ref_cmp) {
+            BT_ERR("Unexpected ref %d in %s, expect to equal to %d", buf->ref, func, ref_cmp);
+        }
+        break;
+    case BLE_MESH_BUF_REF_SMALL:
+        if (buf->ref >= ref_cmp) {
+            BT_ERR("Unexpected ref %d in %s, expect to smaller than %d", buf->ref, func, ref_cmp);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
 {
     struct net_buf *buf;
@@ -355,6 +382,8 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
     BLE_MESH_ADV(buf)->cb = cb;
     BLE_MESH_ADV(buf)->cb_data = cb_data;
     BLE_MESH_ADV(buf)->busy = 1U;
+
+    bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
 
     msg.arg = (void *)net_buf_ref(buf);
     bt_mesh_task_post(&msg, portMAX_DELAY);
@@ -472,7 +501,7 @@ const bt_mesh_addr_t *bt_mesh_pba_get_addr(void)
     return dev_addr;
 }
 
-#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
 static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
 {
@@ -575,7 +604,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
 static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
                             u8_t adv_type, struct net_buf_simple *buf)
 {
-#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     u16_t uuid;
 #endif
@@ -649,7 +678,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
             }
 #endif
             break;
-#if (CONFIG_BLE_MESH_PROVISIONER && COFNIG_BLE_MESH_PB_GATT) || \
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
         case BLE_MESH_DATA_FLAGS:
             if (!bt_mesh_is_adv_flags_valid(buf)) {

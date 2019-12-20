@@ -63,6 +63,15 @@ typedef struct bt_mesh_adv *(*bt_mesh_adv_alloc_t)(int id);
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
                                    s32_t timeout);
 
+typedef enum {
+    BLE_MESH_BUF_REF_EQUAL,
+    BLE_MESH_BUF_REF_SMALL,
+    BLE_MESH_BUF_REF_MAX,
+} bt_mesh_buf_ref_flag_t;
+
+void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
+                               u8_t ref_cmp, bt_mesh_buf_ref_flag_t flag);
+
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
         bt_mesh_adv_alloc_t get_id,
         enum bt_mesh_adv_type type,
