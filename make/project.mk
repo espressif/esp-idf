@@ -634,9 +634,13 @@ clean: app-clean bootloader-clean config-clean ldgen-clean
 # or out of date, and exit if so. Components can add paths to this variable.
 #
 # This only works for components inside IDF_PATH
+#
+# For internal use:
+# IDF_SKIP_CHECK_SUBMODULES may be set in the environment to skip the submodule check.
+# This can be used e.g. in CI when submodules are checked out by different means.
+IDF_SKIP_CHECK_SUBMODULES ?= 0
+
 check-submodules:
-# for internal use:
-# skip submodule check if running on Gitlab CI and job is configured as not clone submodules
 ifeq ($(IDF_SKIP_CHECK_SUBMODULES),1)
 	@echo "skip submodule check on internal CI"
 else
@@ -667,7 +671,7 @@ endef
 # so the argument is suitable for use with 'git submodule' commands
 $(foreach submodule,$(subst $(IDF_PATH)/,,$(filter $(IDF_PATH)/%,$(COMPONENT_SUBMODULES))),$(eval $(call GenerateSubmoduleCheckTarget,$(submodule))))
 endif # End check for .gitmodules existence
-endif
+endif # End check for IDF_SKIP_CHECK_SUBMODULES
 
 # PHONY target to list components in the build and their paths
 list-components:
