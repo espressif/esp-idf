@@ -968,11 +968,17 @@ example_test_002_01:
     - ESP32
     - Example_SDIO
 
-example_test_004_01:
+example_test_004A_01:
   <<: *example_test_template
   tags:
     - ESP32
-    - Example_CAN
+    - Example_CAN1
+
+example_test_004B_01:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_CAN2
 
 example_test_005_01:
   <<: *example_test_template
