@@ -123,7 +123,7 @@
       - $BOT_LABEL_INTEGRATION_TEST
   dependencies:
     - assign_test
-    - build_ssc
+    - build_ssc_esp32
   artifacts:
     when: always
     reports:
