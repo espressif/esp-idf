@@ -116,6 +116,7 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
         alarm = osi_alarm_new("bt_mesh", (osi_alarm_callback_t)handler, (void *)&work->work, 0);
         if (alarm == NULL) {
             BT_ERR("%s, Unable to create alarm", __func__);
+            osi_mutex_unlock(&bm_alarm_lock);
             return;
         }
         if (!hash_map_set(bm_alarm_hash_map, work, (void *)alarm)) {
