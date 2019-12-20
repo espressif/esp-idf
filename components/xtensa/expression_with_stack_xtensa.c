@@ -6,8 +6,7 @@ StackType_t * esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
 {
     int watchpoint_place = (((int)stack + 31) & ~31);
     StackType_t *top_of_stack =  (StackType_t *)&stack[0] +                  
-            (sizeof(stack_size * sizeof(StackType_t)) /  
-            sizeof(StackType_t));
+            ((stack_size * sizeof(StackType_t)) / sizeof(StackType_t));
 
     //Align stack to a 16byte boundary, as required by CPU specific:
     top_of_stack =  (StackType_t *)(((UBaseType_t)(top_of_stack - 31) -

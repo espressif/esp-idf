@@ -19,7 +19,7 @@ Usage
 a mutex object allocated by the caller, which is used to protect if 
 the same function shares its allocated stack, a pointer to the top 
 of stack used to that fuction, and the function itself, note the
-function is passed extactly in the same way as do when you call 
+function is passed exactly in the same way as do when you call 
 it on a regular way. 
 
 The usage may looks like the code below:
@@ -40,7 +40,8 @@ The usage may looks like the code below:
         ESP_EXECUTE_EXPRESSION_WITH_STACK(printf_lock, 
                                         shared_stack, 
                                         printf("Executing this from external stack! \n"));
-        free(shared_stack);    
+        vSemaphoreDelete(printf_lock);    
+        free(shared_stack); 
     }
 
 .. _esp-call-with-stack-basic_usage:
