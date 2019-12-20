@@ -71,8 +71,12 @@ test_multi_heap_host
 .idea/
 cmake-build-*/
 
-# Results for the checking of the Python coding style
+# Results for the checking of the Python coding style and static analysis
+.mypy_cache
 flake8_output.txt
 
 # ESP-IDF default build directory name
 build
+
+# lock files for examples and components
+dependencies.lock

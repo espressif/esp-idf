@@ -78,3 +78,4 @@
 [submodule "components/esp_wifi/lib"]
 	path = components/esp_wifi/lib
 	url = ../../espressif/esp32-wifi-lib.git
+
