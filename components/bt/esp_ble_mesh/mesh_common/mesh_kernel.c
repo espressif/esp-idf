@@ -24,7 +24,9 @@
 #include "provisioner_prov.h"
 
 static osi_mutex_t bm_alarm_lock;
-static osi_mutex_t bm_irq_lock;
+static osi_mutex_t bm_list_lock;
+static osi_mutex_t bm_buf_lock;
+static osi_mutex_t bm_atomic_lock;
 static hash_map_t *bm_alarm_hash_map;
 static const size_t BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE = 20 + CONFIG_BLE_MESH_PBA_SAME_TIME + \
         CONFIG_BLE_MESH_PBG_SAME_TIME;
@@ -37,14 +39,34 @@ typedef struct alarm_t {
     int64_t deadline_us;
 } osi_alarm_t;
 
-void bt_mesh_irq_lock(void)
+void bt_mesh_list_lock(void)
 {
-    osi_mutex_lock(&bm_irq_lock, OSI_MUTEX_MAX_TIMEOUT);
+    osi_mutex_lock(&bm_list_lock, OSI_MUTEX_MAX_TIMEOUT);
 }
 
-void bt_mesh_irq_unlock(void)
+void bt_mesh_list_unlock(void)
 {
-    osi_mutex_unlock(&bm_irq_lock);
+    osi_mutex_unlock(&bm_list_lock);
+}
+
+void bt_mesh_buf_lock(void)
+{
+    osi_mutex_lock(&bm_buf_lock, OSI_MUTEX_MAX_TIMEOUT);
+}
+
+void bt_mesh_buf_unlock(void)
+{
+    osi_mutex_unlock(&bm_buf_lock);
+}
+
+void bt_mesh_atomic_lock(void)
+{
+    osi_mutex_lock(&bm_atomic_lock, OSI_MUTEX_MAX_TIMEOUT);
+}
+
+void bt_mesh_atomic_unlock(void)
+{
+    osi_mutex_unlock(&bm_atomic_lock);
 }
 
 s64_t k_uptime_get(void)
@@ -72,7 +94,9 @@ void k_sleep(s32_t duration)
 void bt_mesh_k_init(void)
 {
     osi_mutex_new(&bm_alarm_lock);
-    osi_mutex_new(&bm_irq_lock);
+    osi_mutex_new(&bm_list_lock);
+    osi_mutex_new(&bm_buf_lock);
+    osi_mutex_new(&bm_atomic_lock);
     bm_alarm_hash_map = hash_map_new(BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE,
                                      hash_function_pointer, NULL,
                                      (data_free_fn)osi_alarm_free, NULL);
