@@ -555,6 +555,21 @@ IRAM_ATTR void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps)
     return NULL;
 }
 
+void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps)
+{    
+    size_t size_bytes;
+    if (__builtin_mul_overflow(n, size, &size_bytes)) {
+        return NULL;
+    }
+
+    void *ptr = heap_caps_aligned_alloc(alignment,size_bytes, caps);
+    if(ptr != NULL) {
+        memset(ptr, 0, size_bytes);
+    }
+
+    return ptr;
+}
+
 IRAM_ATTR void heap_caps_aligned_free(void *ptr)
 {
     if (ptr == NULL) {

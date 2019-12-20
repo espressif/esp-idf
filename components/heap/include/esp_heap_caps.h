@@ -100,6 +100,20 @@ void *heap_caps_realloc( void *ptr, size_t size, int caps);
 void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
 
 /**
+ * @brief Allocate a aligned chunk of memory which has the given capabilities. The initialized value in the memory is set to zero.
+ *
+ * @param alignment  How the pointer received needs to be aligned
+ *                   must be a power of two
+ * @param n    Number of continuing chunks of memory to allocate
+ * @param size Size, in bytes, of a chunk of memory to allocate
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory to be returned
+ *
+ * @return A pointer to the memory allocated on success, NULL on failure
+ */
+void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps);
+
+/**
  * @brief Used to deallocate memory previously allocated with heap_caps_aligned_alloc
  * 
  * @param ptr Pointer to the memory allocated
