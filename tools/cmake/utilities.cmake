@@ -260,6 +260,9 @@ function(add_c_compile_options)
 endfunction()
 
 
+# add_prebuild_library
+#
+# Add prebuilt library with support for adding dependencies on ESP-IDF components.
 function(add_prebuilt_library target_name lib_path)
     cmake_parse_arguments(_ "" "" "REQUIRES;PRIV_REQUIRES" ${ARGN})
 
