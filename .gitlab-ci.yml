@@ -975,11 +975,17 @@ example_test_002:
     - ESP32
     - Example_SDIO
 
-example_test_004:
+example_test_004A:
   <<: *example_test_template
   tags:
     - ESP32
-    - Example_CAN
+    - Example_CAN1
+
+example_test_004B:
+  <<: *example_test_template
+  tags:
+    - ESP32
+    - Example_CAN2
 
 example_test_005:
   <<: *example_test_template
