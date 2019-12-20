@@ -32,9 +32,11 @@ The usage may looks like the code below:
     {
         //Allocate a stack buffer, from heap or as a static form:
         portSTACK_TYPE *shared_stack = malloc(8192 * sizeof(portSTACK_TYPE));
+        assert(shared_stack != NULL);
 
         //Allocate a mutex to protect its usage:
         SemaphoreHandle_t printf_lock = xSemaphoreCreateMutex();
+        assert(printf_lock != NULL);
      
         //Call the desired function using the macro helper:
         ESP_EXECUTE_EXPRESSION_WITH_STACK(printf_lock, 
