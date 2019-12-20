@@ -55,6 +55,11 @@ if(NOT BOOTLOADER_BUILD)
                         --partition-table-offset ${PARTITION_TABLE_OFFSET}
                         erase_otadata)
 
-        esptool_py_flash_project_args(otadata ${otadata_offset} "${blank_otadata_file}" FLASH_IN_PROJECT)
+        idf_component_get_property(main_args esptool_py FLASH_ARGS)
+        idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+        esptool_py_flash_target(otadata-flash "${main_args}" "${sub_args}")
+        esptool_py_flash_target_image(otadata-flash otadata "${otadata_offset}" "${blank_otadata_file}")
+
+        esptool_py_flash_target_image(flash otadata "${otadata_offset}" "${blank_otadata_file}")
     endif()
 endif()

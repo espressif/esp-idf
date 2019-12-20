@@ -8,10 +8,10 @@
         "flash_freq": "${ESPFLASHFREQ}"
     },
     "flash_files" : {
-        $<JOIN:${FLASH_PROJECT_ARGS_JSON},,
+        $<JOIN:$<TARGET_PROPERTY:flash,FLASH_FILE>,,
         >
     },
-    $<JOIN:${FLASH_PROJECT_ARGS_ENTRY_JSON},,
+    $<JOIN:$<TARGET_PROPERTY:flash,FLASH_ENTRY>,,
     >,
     "extra_esptool_args" : {
         "after"  : "${ESPTOOLPY_AFTER}",
