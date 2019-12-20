@@ -1,3 +1,5 @@
+### General ignore list
+#
 components/xtensa/include/xtensa/*
 components/xtensa/include/*
 components/xtensa/esp32/include/xtensa/config/*
@@ -15,44 +17,28 @@ components/soc/include/soc/*
 
 components/esp_rom/include/esp32s2beta/rom/rsa_pss.h
 
-components/esp_common/include/esp_types.h
-components/esp_common/include/esp_assert.h
-components/esp_common/include/esp_bit_defs.h
-components/esp_common/include/esp_task.h
 components/esp_common/include/esp_private/*
 
-components/esp32/include/esp32/*
-components/esp32/include/rom/*
-components/esp32/include/esp_clk.h
-components/esp32/include/esp_intr.h
-components/esp32/include/esp_himem.h
-components/esp32/include/esp_spiram.h
-components/driver/include/driver/touch_pad.h
+components/esp32/include/esp32/brownout.h
+components/esp32/include/esp32/spiram.h
+components/esp32/include/esp32/cache_err_int.h
 
 components/driver/include/driver/sdmmc_defs.h
 components/driver/include/driver/sdmmc_types.h
-components/driver/include/driver/rtc_cntl.h
-components/driver/include/driver/sigmadelta.h
 
-components/esp_event/include/esp_event_loop.h
+components/lwip/include/apps/dhcpserver/dhcpserver_options.h
+components/lwip/include/apps/dhcpserver/dhcpserver.h
 
-components/lwip/include/apps/dhcpserver/*
-components/lwip/include/apps/esp_sntp.h
-components/lwip/lwip/src/include/compat/*
-components/lwip/lwip/src/include/lwip/*
-components/lwip/lwip/src/include/netif/*
-components/lwip/port/esp32/include/*
+components/lwip/lwip/src/include/lwip/priv/memp_std.h
+components/lwip/port/esp32/include/arch/cc.h
+components/lwip/port/esp32/include/debug/lwip_debug.h
+components/lwip/port/esp32/include/arch/cc.h
 
 components/vfs/include/sys/dirent.h
 
-components/esp_wifi/include/esp_private/*
 components/esp_wifi/include/esp_wifi_netif.h
 components/esp_wifi/include/esp_wifi_default.h
 components/esp_wifi/esp32/include/phy_init_data.h
-
-components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
-components/tcpip_adapter/include/tcpip_adapter.h
-components/tcpip_adapter/include/tcpip_adapter_types.h
 
 components/spi_flash/include/spi_flash_chip_issi.h
 components/spi_flash/include/spi_flash_chip_gd.h
@@ -60,7 +46,6 @@ components/spi_flash/include/memspi_host_driver.h
 components/spi_flash/include/spi_flash_chip_driver.h
 components/spi_flash/include/spi_flash_chip_generic.h
 
-components/bootloader_support/include/esp_flash_data_types.h
 components/bootloader_support/include/esp_app_format.h
 
 components/wpa_supplicant/include/*
@@ -71,16 +56,11 @@ components/mbedtls/mbedtls/include/mbedtls/*
 
 components/espcoredump/include/esp_core_dump.h
 
-components/perfmon/include/perfmon.h
-
-components/asio/*
 components/coap/*
 components/nghttp/*
 components/cbor/*
 
 components/esp-tls/private_include/*
-
-components/esp_http_server/include/http_server.h
 
 components/protobuf-c/*
 
@@ -95,7 +75,6 @@ components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
 
 components/freemodbus/common/include/esp_modbus_common.h
-components/freemodbus/common/include/mbcontroller.h
 components/freemodbus/common/include/esp_modbus_master.h
 components/freemodbus/common/include/esp_modbus_slave.h
 
@@ -105,14 +84,16 @@ components/json/cJSON/*
 
 components/libsodium/*
 
-components/mqtt/esp-mqtt/include/mqtt_supported_features.h
-components/mqtt/esp-mqtt/include/mqtt_config.h
-
-components/openssl/include/platform/ssl_opt.h
-
 components/spiffs/include/spiffs_config.h
 
 components/unity/unity/src/unity_internals.h
-components/unity/include/priv/setjmp.h
+components/unity/include/unity_config.h
+components/unity/include/unity_test_runner.h
 
+### Here are the files that do not compile for some reason
+#
+components/esp_rom/include/esp32s2beta/rom/spi_flash.h
+components/app_trace/include/esp_sysview_trace.h
+components/esp_gdbstub/include/esp_gdbstub.h
+components/openssl/include/platform/ssl_pm.h
 
