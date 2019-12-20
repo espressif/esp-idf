@@ -140,13 +140,14 @@ endif()
 #
 function(esptool_py_custom_target target_name flasher_filename dependencies)
     idf_build_get_property(idf_path IDF_PATH)
+    idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
     add_custom_target(${target_name} DEPENDS ${dependencies}
         COMMAND ${CMAKE_COMMAND}
         -D IDF_PATH="${idf_path}"
         -D ESPTOOLPY="${ESPTOOLPY}"
         -D ESPTOOL_ARGS="write_flash;@flash_${flasher_filename}_args"
         -D WORKING_DIRECTORY="${build_dir}"
-        -P run_esptool.cmake
+        -P ${esptool_py_dir}/run_esptool.cmake
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
         USES_TERMINAL
         )
