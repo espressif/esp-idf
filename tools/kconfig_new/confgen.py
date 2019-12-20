@@ -191,6 +191,10 @@ def main():
                         help='File with deprecated Kconfig options',
                         required=False)
 
+    parser.add_argument('--dont-write-deprecated',
+                        help='Do not write compatibility statements for deprecated values',
+                        action='store_true')
+
     parser.add_argument('--output', nargs=2, action='append',
                         help='Write output file (format and output filename)',
                         metavar=('FORMAT', 'FILENAME'),
@@ -263,6 +267,11 @@ def main():
                 os.remove(temp_file)
             except OSError:
                 pass
+
+    if args.dont_write_deprecated:
+        # The deprecated object was useful until now for replacements. Now it will be redefined with no configurations
+        # and as the consequence, it won't generate output with deprecated statements.
+        deprecated_options = DeprecatedOptions('', path_rename_files=[])
 
     # Output the files specified in the arguments
     for output_type, filename in args.output:

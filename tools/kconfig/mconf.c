@@ -1042,6 +1042,8 @@ int main(int ac, char **av)
 		return 1;
 	}
 
+	sym_set_change_count(0);
+
 	set_config_filename(conf_get_configname());
 	conf_set_message_callback(conf_message_callback);
 	do {
