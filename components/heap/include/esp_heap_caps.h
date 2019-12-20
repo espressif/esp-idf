@@ -96,6 +96,10 @@ void *heap_caps_realloc( void *ptr, size_t size, int caps);
  *                    of memory to be returned
  *
  * @return A pointer to the memory allocated on success, NULL on failure
+ * 
+ * @note Any memory allocated with heaps_caps_aligned_alloc() MUST 
+ * be freed with heap_caps_aligned_free() and CANNOT be passed to free()
+ * 
  */
 void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
 
@@ -110,6 +114,9 @@ void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
  *                    of memory to be returned
  *
  * @return A pointer to the memory allocated on success, NULL on failure
+ * 
+ * @note Any memory allocated with heap_caps_aligned_calloc() MUST 
+ * be freed with heap_caps_aligned_free() and CANNOT be passed to free()
  */
 void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps);
 

@@ -576,14 +576,6 @@ IRAM_ATTR void heap_caps_aligned_free(void *ptr)
         return;
     }
 
-    if (esp_ptr_in_diram_iram(ptr)) {
-        //Memory allocated here is actually allocated in the DRAM alias region and
-        //cannot be de-allocated as usual. dram_alloc_to_iram_addr stores a pointer to
-        //the equivalent DRAM address, though; free that.
-        uint32_t *dramAddrPtr = (uint32_t *)ptr;
-        ptr = (void *)dramAddrPtr[-1];
-    }
-
     heap_t *heap = find_containing_heap(ptr);
     assert(heap != NULL && "free() target pointer is outside heap areas");
     multi_heap_aligned_free(heap->heap, ptr);
