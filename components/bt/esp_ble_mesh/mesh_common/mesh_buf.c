@@ -241,9 +241,9 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
         tail->flags |= NET_BUF_FRAGS;
     }
 
-    bt_mesh_irq_lock();
+    bt_mesh_list_lock();
     sys_slist_append_list(list, &buf->node, &tail->node);
-    bt_mesh_irq_unlock();
+    bt_mesh_list_unlock();
 }
 
 struct net_buf *net_buf_slist_get(sys_slist_t *list)
@@ -252,9 +252,9 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 
     NET_BUF_ASSERT(list);
 
-    bt_mesh_irq_lock();
+    bt_mesh_list_lock();
     buf = (void *)sys_slist_get(list);
-    bt_mesh_irq_unlock();
+    bt_mesh_list_unlock();
 
     if (!buf) {
         return NULL;
@@ -262,9 +262,9 @@ struct net_buf *net_buf_slist_get(sys_slist_t *list)
 
     /* Get any fragments belonging to this buffer */
     for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
-        bt_mesh_irq_lock();
+        bt_mesh_list_lock();
         frag->frags = (void *)sys_slist_get(list);
-        bt_mesh_irq_unlock();
+        bt_mesh_list_unlock();
 
         NET_BUF_ASSERT(frag->frags);
 
@@ -381,7 +381,7 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
     /* We need to lock interrupts temporarily to prevent race conditions
      * when accessing pool->uninit_count.
      */
-    bt_mesh_irq_lock();
+    bt_mesh_buf_lock();
 
     /* If there are uninitialized buffers we're guaranteed to succeed
      * with the allocation one way or another.
@@ -391,13 +391,13 @@ struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
         for (i = pool->buf_count; i > 0; i--) {
             buf = pool_get_uninit(pool, i);
             if (!buf->ref) {
-                bt_mesh_irq_unlock();
+                bt_mesh_buf_unlock();
                 goto success;
             }
         }
     }
 
-    bt_mesh_irq_unlock();
+    bt_mesh_buf_unlock();
 
     NET_BUF_ERR("%s, Failed to get free buffer", __func__);
     return NULL;
