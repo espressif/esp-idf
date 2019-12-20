@@ -308,6 +308,7 @@ class IDFApp(App.BaseApp):
                         _size = int(_size[:-1]) * 1024 * 1024
                     else:
                         _size = int(_size)
+                    _offset = int(_offset, 0)
                 except ValueError:
                     continue
                 partition_table[_name] = {

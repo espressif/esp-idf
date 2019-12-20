@@ -226,7 +226,9 @@ class IDFDUT(DUT.SerialDUT):
                 nvs_file = tempfile.TemporaryFile()
                 nvs_file.write(b'\xff' * size)
                 nvs_file.seek(0)
-                flash_files.append((int(address, 0), nvs_file))
+                if not isinstance(address, int):
+                    address = int(address, 0)
+                flash_files.append((address, nvs_file))
 
             # fake flasher args object, this is a hack until
             # esptool Python API is improved
