@@ -203,18 +203,16 @@ static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t pat
  */
 static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_ll_pattern_table_t pattern)
 {
-    uint32_t tab;
-    uint8_t *arg;
+    const uint32_t patt_tab_idx = pattern_index / 4;
+    const uint32_t patt_shift   = (3 - (pattern_index % 4)) * 8;
+    const uint32_t patt_mask    = 0xFF << patt_shift;
+
     if (adc_n == ADC_NUM_1) {
-        tab = SYSCON.saradc_sar1_patt_tab[pattern_index / 4];
-        arg = (uint8_t *)&tab;
-        arg[pattern_index % 4] = pattern.val;
-        SYSCON.saradc_sar1_patt_tab[pattern_index / 4] = tab;
+        SYSCON.saradc_sar1_patt_tab[patt_tab_idx] &= ~patt_mask;
+        SYSCON.saradc_sar1_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;
     } else { // adc_n == ADC_NUM_2
-        tab = SYSCON.saradc_sar2_patt_tab[pattern_index / 4];
-        arg = (uint8_t *)&tab;
-        arg[pattern_index % 4] = pattern.val;
-        SYSCON.saradc_sar2_patt_tab[pattern_index / 4] = tab;
+        SYSCON.saradc_sar2_patt_tab[patt_tab_idx] &= ~patt_mask;
+        SYSCON.saradc_sar2_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;
     }
 }
 

@@ -2,6 +2,7 @@
  * I2S test environment UT_T1_I2S:
  * We use internal signals instead of external wiring, but please keep the following IO connections, or connect nothing to prevent the signal from being disturbed.
  * connect GPIO18 and GPIO19, GPIO25(ESP32)/GPIO17(ESP32-S2) and GPIO26, GPIO21 and GPIO22(ESP32)/GPIO20(ESP32-S2)
+ * Please do not connect GPIO32(ESP32)/GPIO5(ESP32-S2) any pull-up resistors externally, it will be used to test i2s adc function.
  */
 
 #include <stdio.h>
@@ -22,9 +23,11 @@
 #if CONFIG_IDF_TARGET_ESP32
 #define MASTER_WS_IO 25
 #define DATA_OUT_IO 22
+#define ADC1_CHANNEL_4_IO 32
 #elif CONFIG_IDF_TARGET_ESP32S2
 #define MASTER_WS_IO 28
 #define DATA_OUT_IO 20
+#define ADC1_CHANNEL_4_IO 5
 #endif
 
 #define PERCENT_DIFF 0.0001
@@ -201,6 +204,61 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s][test_env=UT_T1_I2S]")
 }
 
 #if !DISABLED_FOR_TARGETS(ESP32S2)
+TEST_CASE("I2S adc test", "[i2s][test_env=UT_T1_I2S]")
+{
+    // init I2S ADC
+    i2s_config_t i2s_config = {
+        .mode = I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN,
+        .sample_rate =  SAMPLE_RATE,
+        .bits_per_sample = SAMPLE_BITS,
+        .communication_format = I2S_COMM_FORMAT_PCM,
+        .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+        .intr_alloc_flags = 0,
+        .dma_buf_count = 2,
+        .dma_buf_len = 1024,
+        .use_apll = 0,
+     };
+    // install and start I2S driver
+    i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
+    // init ADC pad
+    i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_4);
+    // enable adc sampling, ADC_WIDTH_BIT_12, ADC_ATTEN_DB_11 hard-coded in adc_i2s_mode_init
+    i2s_adc_enable(I2S_NUM_0);
+    // init read buffer
+    uint16_t* i2sReadBuffer = (uint16_t*)calloc(1024, sizeof(uint16_t));
+    size_t bytesRead;
+
+    for (int loop = 0; loop < 10; loop++) {
+        for (int level = 0; level <= 1; level++) {
+            if (level == 0) {
+                gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLDOWN_ONLY);
+            } else {
+                gpio_set_pull_mode(ADC1_CHANNEL_4_IO, GPIO_PULLUP_ONLY);
+            }
+            vTaskDelay(200 / portTICK_RATE_MS);
+            // read data from adc, will block until buffer is full
+            i2s_read(I2S_NUM_0, (void*)i2sReadBuffer, 1024 * sizeof(uint16_t), &bytesRead, portMAX_DELAY);
+
+            // calc average
+            int64_t adcSumValue = 0;
+            for (size_t i = 0; i < 1024; i++) {
+                adcSumValue += i2sReadBuffer[i] & 0xfff;
+            }
+            int adcAvgValue = adcSumValue / 1024;
+            printf("adc average val: %d\n", adcAvgValue);
+
+            if (level == 0) {
+                TEST_ASSERT_LESS_THAN(100, adcAvgValue);
+            } else {
+                TEST_ASSERT_GREATER_THAN(4000, adcAvgValue);
+            }
+        }
+    }
+    i2s_adc_disable(I2S_NUM_0);
+    free(i2sReadBuffer);
+    i2s_driver_uninstall(I2S_NUM_0);
+}
+
 /* ESP32S2BETA has only single I2S port and hence following test cases are not applicable */
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_T1_I2S]")
 {

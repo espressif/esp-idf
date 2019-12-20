@@ -403,7 +403,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
         //Rate as given to this function is the intended sample rate;
         //According to the TRM, WS clk equals to the sample rate, and bclk is double the speed of WS
         uint32_t b_clk = rate * I2S_AD_BCK_FACTOR;
-        fi2s_clk /= 2;
+        fi2s_clk /= I2S_AD_BCK_FACTOR;
         int factor2 = 60;
         mclk = b_clk * factor2;
         clkmdiv = ((double) I2S_BASE_CLK) / mclk;
@@ -1043,6 +1043,8 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
 
     adc1_i2s_mode_acquire();
     _i2s_adc_mode_recover();
+    i2s_hal_start_rx(&(p_i2s_obj[i2s_num]->hal));
+    i2s_hal_reset(&(p_i2s_obj[i2s_num]->hal));
     return i2s_set_clk(i2s_num, p_i2s_obj[i2s_num]->sample_rate, p_i2s_obj[i2s_num]->bits_per_sample, p_i2s_obj[i2s_num]->channel_num);
 }
 
@@ -1052,6 +1054,7 @@ esp_err_t i2s_adc_disable(i2s_port_t i2s_num)
     I2S_CHECK((p_i2s_obj[i2s_num] != NULL), "Not initialized yet", ESP_ERR_INVALID_STATE);
     I2S_CHECK((p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN), "i2s built-in adc not enabled", ESP_ERR_INVALID_STATE);
 
+    i2s_hal_stop_rx(&(p_i2s_obj[i2s_num]->hal));
     adc1_lock_release();
     return ESP_OK;
 }

@@ -32,6 +32,9 @@ void i2s_hal_set_tx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_
         i2s_ll_set_tx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 2 : 3);
     }
     i2s_ll_set_tx_chan_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
+#if I2S_SUPPORTS_DMA_EQUAL
+    i2s_ll_set_tx_dma_equal(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
+#endif
 }
 
 void i2s_hal_set_rx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_sample_t bits)
@@ -42,6 +45,9 @@ void i2s_hal_set_rx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_
         i2s_ll_set_rx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 2 : 3);
     }
     i2s_ll_set_rx_chan_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
+#if I2S_SUPPORTS_DMA_EQUAL
+    i2s_ll_set_rx_dma_equal(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
+#endif
 }
 
 void i2s_hal_set_in_link(i2s_hal_context_t *hal, uint32_t bytes_num, uint32_t addr)

@@ -26,9 +26,10 @@ extern "C" {
 #define I2S_BASE_CLK                      (2*APB_CLK_FREQ)
 
 // ESP32 have 2 I2S
-#define SOC_I2S_NUM           (2)
+#define SOC_I2S_NUM            (2)
 
-#define I2S_SUPPORTS_PDM      (1) //ESP32 support PDM
+#define I2S_SUPPORTS_PDM       (1) // ESP32 support PDM
+#define I2S_SUPPORTS_DMA_EQUAL (0) // ESP32 don't support dma equal
 
 #ifdef __cplusplus
 }

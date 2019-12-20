@@ -354,6 +354,28 @@ static inline void i2s_ll_set_rx_chan_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
+ * @brief Set I2S tx dma equal
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set tx dma equal
+ */
+static inline void i2s_ll_set_tx_dma_equal(i2s_dev_t *hw, uint32_t val)
+{
+    hw->conf.tx_dma_equal = val;
+}
+
+/**
+ * @brief Set I2S rx dma equal
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set rx dma equal
+ */
+static inline void i2s_ll_set_rx_dma_equal(i2s_dev_t *hw, uint32_t val)
+{
+    hw->conf.rx_dma_equal = val;
+}
+
+/**
  * @brief Set I2S out link address
  *
  * @param hw Peripheral I2S hardware instance address.
