@@ -29,7 +29,7 @@
  */
 #define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, stack_size, expression)  \
 ({                                                                  \
-    if(lock && stack && stack_size) {                               \
+    if (lock && stack && stack_size) {                              \
         uint32_t backup;                                            \
         xSemaphoreTake(lock, portMAX_DELAY);                        \
         StackType_t *top_of_stack = esp_switch_stack_setup(stack, stack_size);\
