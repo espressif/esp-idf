@@ -57,7 +57,7 @@ void esp_clk_init(void)
     rtc_config_t cfg = RTC_CONFIG_DEFAULT();
     rtc_init(cfg);
 
-    assert(rtc_clk_xtal_freq_get() != RTC_XTAL_FREQ_AUTO);
+    assert(rtc_clk_xtal_freq_get() == RTC_XTAL_FREQ_40M);
 
     rtc_clk_fast_freq_set(RTC_FAST_FREQ_8M);
 

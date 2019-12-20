@@ -58,10 +58,7 @@ extern "C" {
  * Enum values should be equal to frequency in MHz.
  */
 typedef enum {
-    RTC_XTAL_FREQ_AUTO = 0,     //!< Automatic XTAL frequency detection
     RTC_XTAL_FREQ_40M = 40,     //!< 40 MHz XTAL
-    RTC_XTAL_FREQ_26M = 26,     //!< 26 MHz XTAL
-    RTC_XTAL_FREQ_24M = 24,     //!< 24 MHz XTAL
 } rtc_xtal_freq_t;
 
 /**
@@ -124,7 +121,7 @@ typedef struct {
  * Default initializer for rtc_clk_config_t
  */
 #define RTC_CLK_CONFIG_DEFAULT() { \
-    .xtal_freq = RTC_XTAL_FREQ_AUTO, \
+    .xtal_freq = RTC_XTAL_FREQ_40M, \
     .cpu_freq = RTC_CPU_FREQ_80M, \
     .fast_freq = RTC_FAST_FREQ_8M, \
     .slow_freq = RTC_SLOW_FREQ_RTC, \
@@ -141,15 +138,6 @@ void rtc_clk_8m_divider_set(uint32_t div);
 /**
  * Initialize clocks and set CPU frequency
  *
- * If cfg.xtal_freq is set to RTC_XTAL_FREQ_AUTO, this function will attempt
- * to auto detect XTAL frequency. Auto detection is performed by comparing
- * XTAL frequency with the frequency of internal 8MHz oscillator. Note that at
- * high temperatures the frequency of the internal 8MHz oscillator may drift
- * enough for auto detection to be unreliable.
- * Auto detection code will attempt to distinguish between 26MHz and 40MHz
- * crystals. 24 MHz crystals are not supported by auto detection code.
- * If XTAL frequency can not be auto detected, this 26MHz frequency will be used.
- *
  * @param cfg clock configuration as rtc_clk_config_t
  */
 void rtc_clk_init(rtc_clk_config_t cfg);
@@ -158,8 +146,7 @@ void rtc_clk_init(rtc_clk_config_t cfg);
  * @brief Get main XTAL frequency
  *
  * This is the value stored in RTC register RTC_XTAL_FREQ_REG by the bootloader. As passed to
- * rtc_clk_init function, or if the value was RTC_XTAL_FREQ_AUTO, the detected
- * XTAL frequency.
+ * rtc_clk_init function
  *
  * @return XTAL frequency, one of rtc_xtal_freq_t
  */
