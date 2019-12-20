@@ -96,6 +96,7 @@ class ParttoolTarget():
             partition_table = None
             with open(partition_table_file, "rb") as f:
                 input_is_binary = (f.read(2) == gen.PartitionDefinition.MAGIC_BYTES)
+                f.seek(0)
                 if input_is_binary:
                     partition_table = gen.PartitionTable.from_binary(f.read())
 
