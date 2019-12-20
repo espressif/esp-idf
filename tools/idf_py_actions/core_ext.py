@@ -8,17 +8,10 @@ import click
 from idf_py_actions.constants import GENERATORS, SUPPORTED_TARGETS
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_tool
+from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_target
 
 
 def action_extensions(base_actions, project_path):
-    def run_target(target_name, args):
-        generator_cmd = GENERATORS[args.generator]["command"]
-
-        if args.verbose:
-            generator_cmd += [GENERATORS[args.generator]["verbose_flag"]]
-
-        run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir)
 
     def build_target(target_name, ctx, args):
         """

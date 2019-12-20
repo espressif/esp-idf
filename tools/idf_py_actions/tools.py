@@ -63,7 +63,7 @@ def idf_version():
     return version
 
 
-def run_tool(tool_name, args, cwd):
+def run_tool(tool_name, args, cwd, env=dict()):
     def quote_arg(arg):
         " Quote 'arg' if necessary "
         if " " in arg and not (arg.startswith('"') or arg.startswith("'")):
@@ -73,11 +73,24 @@ def run_tool(tool_name, args, cwd):
     display_args = " ".join(quote_arg(arg) for arg in args)
     print("Running %s in directory %s" % (tool_name, quote_arg(cwd)))
     print('Executing "%s"...' % str(display_args))
+
+    env_copy = dict(os.environ)
+    env_copy.update(env)
+
     try:
         # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
-        subprocess.check_call(args, env=os.environ, cwd=cwd)
+        subprocess.check_call(args, env=env_copy, cwd=cwd)
     except subprocess.CalledProcessError as e:
         raise FatalError("%s failed with exit code %d" % (tool_name, e.returncode))
+
+
+def run_target(target_name, args, env=dict()):
+    generator_cmd = GENERATORS[args.generator]["command"]
+
+    if args.verbose:
+        generator_cmd += [GENERATORS[args.generator]["verbose_flag"]]
+
+    run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir, env)
 
 
 def _strip_quotes(value, regexp=re.compile(r"^\"(.*)\"$|^'(.*)'$|^(.*)$")):
