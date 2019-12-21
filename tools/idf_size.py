@@ -101,10 +101,10 @@ def load_sections(map_file):
     # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
     # cmake build system links some object files directly, not part of any archive, so make that part optional
     #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello-world.elf.dir/project_elf_src.c.obj
-    RE_SOURCE_LINE = re.compile(r"\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?", re.M)
+    RE_SOURCE_LINE = re.compile(r"\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?")
 
     # Fast check to see if line is a potential source line before running the slower full regex against it
-    RE_PRE_FILTER = re.compile(r".*\.(o|obj)\)?", re.M)
+    RE_PRE_FILTER = re.compile(r".*\.(o|obj)\)?")
 
     # Check for lines which only contain the sym name (and rest is on following lines)
     RE_SYMBOL_ONLY_LINE = re.compile(r"^ (?P<sym_name>\S*)$")
