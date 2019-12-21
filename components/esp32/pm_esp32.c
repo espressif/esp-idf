@@ -82,14 +82,15 @@ static uint32_t s_ccount_div;
 static uint32_t s_ccount_mul;
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+/* Optional user-provided callback function for wakeup from automatic light sleep */
+static esp_pm_light_sleep_wakeup_callback s_light_sleep_wakeup_cb = NULL;
+static void* s_light_sleep_wakeup_ctx = NULL;
+
 /* Indicates if light sleep entry was skipped in vApplicationSleep for given CPU.
  * This in turn gets used in IDLE hook to decide if `waiti` needs
  * to be invoked or not.
  */
 static bool s_skipped_light_sleep[portNUM_PROCESSORS];
-
-/* Optional user-provided callback function for wakeup from automatic light sleep */
-static esp_pm_light_sleep_wakeup_callback s_light_sleep_wakeup_cb = NULL;
 
 #if portNUM_PROCESSORS == 2
 /* When light sleep is finished on one CPU, it is possible that the other CPU
@@ -239,6 +240,14 @@ esp_err_t esp_pm_configure(const void* vconfig)
 
     return ESP_OK;
 }
+
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+void esp_pm_set_light_sleep_wakeup_cb(esp_pm_light_sleep_wakeup_callback cb, void* ctx)
+{
+    s_light_sleep_wakeup_cb = cb;
+    s_light_sleep_wakeup_ctx = ctx;
+}
+#endif // CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
 static pm_mode_t IRAM_ATTR get_lowest_allowed_mode(void)
 {
@@ -490,11 +499,6 @@ void esp_pm_impl_waiti(void)
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 
-void esp_pm_set_light_sleep_wakeup_cb(esp_pm_light_sleep_wakeup_callback cb)
-{
-    s_light_sleep_wakeup_cb = cb;
-}
-
 static inline bool IRAM_ATTR should_skip_light_sleep(int core_id)
 {
 #if portNUM_PROCESSORS == 2
@@ -566,7 +570,7 @@ void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
     }
     portEXIT_CRITICAL(&s_switch_lock);
     if (went_to_sleep && s_light_sleep_wakeup_cb != NULL) {
-        s_light_sleep_wakeup_cb();
+        s_light_sleep_wakeup_cb(s_light_sleep_wakeup_ctx);
     }
 }
 #endif //CONFIG_FREERTOS_USE_TICKLESS_IDLE
