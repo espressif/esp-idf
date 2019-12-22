@@ -1096,14 +1096,9 @@ static void free_segments(const u8_t idx)
         }
 
         link[idx].tx.buf[i] = NULL;
+        bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
         /* Mark as canceled */
-        BLE_MESH_ADV(buf)->busy = 0;
-        /** Change by Espressif. Add this to avoid buf->ref is 2 which will
-         *  cause lack of buf.
-         */
-        if (buf->ref > 1) {
-            buf->ref = 1;
-        }
+        BLE_MESH_ADV(buf)->busy = 0U;
         net_buf_unref(buf);
     }
 }
@@ -2550,7 +2545,7 @@ static void link_ack(const u8_t idx, struct prov_rx *rx, struct net_buf_simple *
     }
 
     if (link[idx].expect == PROV_CAPABILITIES) {
-        BT_WARN("%s, Link ACK is already received", __func__);
+        BT_INFO("%s, Link ACK is already received", __func__);
         return;
     }
 
@@ -2652,7 +2647,7 @@ static void gen_prov_cont(const u8_t idx, struct prov_rx *rx, struct net_buf_sim
     BT_DBG("len %u, seg_index %u", buf->len, seg);
 
     if (!link[idx].rx.seg && link[idx].rx.prev_id == rx->xact_id) {
-        BT_WARN("%s, Resending ack", __func__);
+        BT_INFO("%s, Resending ack", __func__);
         gen_prov_ack_send(idx, rx->xact_id);
         return;
     }
@@ -2683,7 +2678,7 @@ static void gen_prov_cont(const u8_t idx, struct prov_rx *rx, struct net_buf_sim
     }
 
     if (!(link[idx].rx.seg & BIT(seg))) {
-        BT_WARN("%s, Ignore already received segment", __func__);
+        BT_INFO("%s, Ignore already received segment", __func__);
         return;
     }
 
@@ -2736,12 +2731,12 @@ static void gen_prov_ack(const u8_t idx, struct prov_rx *rx, struct net_buf_simp
 static void gen_prov_start(const u8_t idx, struct prov_rx *rx, struct net_buf_simple *buf)
 {
     if (link[idx].rx.seg) {
-        BT_WARN("%s, Get Start while there are unreceived segments", __func__);
+        BT_INFO("%s, Get Start while there are unreceived segments", __func__);
         return;
     }
 
     if (link[idx].rx.prev_id == rx->xact_id) {
-        BT_WARN("%s, Resending ack", __func__);
+        BT_INFO("%s, Resending ack", __func__);
         gen_prov_ack_send(idx, rx->xact_id);
         return;
     }

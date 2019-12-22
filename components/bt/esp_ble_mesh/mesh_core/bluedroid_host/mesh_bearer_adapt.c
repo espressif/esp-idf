@@ -1894,7 +1894,7 @@ int bt_mesh_update_exceptional_list(u8_t sub_code, u8_t type, void *info)
             BT_ERR("%s, NULL Provisioning Link ID", __func__);
             return -EINVAL;
         }
-        memcpy(value, info, sizeof(u32_t));
+        sys_memcpy_swap(value, info, sizeof(u32_t));
     }
 
     BT_DBG("%s, %s type 0x%x", __func__, sub_code ? "Remove" : "Add", type);
