@@ -268,8 +268,14 @@ s64_t k_uptime_get(void);
  */
 void k_sleep(s32_t duration);
 
-unsigned int bt_mesh_irq_lock(void);
-void bt_mesh_irq_unlock(unsigned int key);
+void bt_mesh_list_lock(void);
+void bt_mesh_list_unlock(void);
+
+void bt_mesh_buf_lock(void);
+void bt_mesh_buf_unlock(void);
+
+void bt_mesh_atomic_lock(void);
+void bt_mesh_atomic_unlock(void);
 
 void bt_mesh_k_init(void);
 
