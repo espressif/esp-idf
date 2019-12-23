@@ -174,6 +174,7 @@ _xt_context_save:
     movi    a3, PS_INTLEVEL(1)          /* For some curious reason the level 1 interrupts */
     or      a2, a2, a3                  /* dont set the intlevel correctly on PS, we need to */     
     wsr     a2, PS                      /* do this manually */
+    rsync
 _not_l1:
     rsr     a2, PS                      /* finally umask the window exceptions */
     movi    a3, ~(PS_EXCM_MASK)
