@@ -1063,6 +1063,16 @@ esp_err_t esp_wifi_set_ant(const wifi_ant_config_t *config);
   */
 esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config);
 
+/**
+  * @brief     Improve WiFi transmitting contention ability.
+  *
+  * @param     enable If enable is true, improve WiFi transmitting contention ability.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_improve_contention_ability(bool enable);
+
 #ifdef __cplusplus
 }
 #endif
