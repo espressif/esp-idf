@@ -275,6 +275,8 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
+    ETH_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
     esp_eth_mac_t *mac = eth_driver->mac;
     return mac->transmit(mac, buf, length);
@@ -286,6 +288,8 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
+    ETH_CHECK(*length > 60, "length can't be less than 60", err, ESP_ERR_INVALID_ARG);
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
     esp_eth_mac_t *mac = eth_driver->mac;
     return mac->receive(mac, buf, length);
