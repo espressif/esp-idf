@@ -19,7 +19,7 @@
 #include "driver/gpio.h"
 #include "hal/sigmadelta_types.h"
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
