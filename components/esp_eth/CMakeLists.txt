@@ -6,7 +6,7 @@ set(priv_requires)
 
 # If Ethernet disabled in Kconfig, this is a config-only component
 if(CONFIG_ETH_ENABLED)
-    set(srcs "src/esp_eth.c")
+    set(srcs "src/esp_eth.c" "src/esp_eth_phy.c")
     set(include "include")
     set(priv_requires "driver" "log") # require "driver" for using some GPIO APIs
 
