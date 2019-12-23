@@ -242,6 +242,8 @@ typedef struct {
 #define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPSEGMENT 2 /*!< TCP/UDP/ICMP Checksum Insertion calculated over segment only */
 #define EMAC_DMATXDESC_CHECKSUM_TCPUDPICMPFULL 3    /*!< TCP/UDP/ICMP Checksum Insertion fully calculated */
 
+_Static_assert(sizeof(eth_dma_tx_descriptor_t) == 32, "eth_dma_tx_descriptor_t should occupy 32 bytes in memory");
+
 /**
 * @brief Ethernet DMA RX Descriptor
 *
@@ -328,6 +330,8 @@ typedef struct {
 #define EMAC_DMADESC_OWNER_CPU  (0)
 #define EMAC_DMADESC_OWNER_DMA  (1)
 
+_Static_assert(sizeof(eth_dma_rx_descriptor_t) == 32, "eth_dma_rx_descriptor_t should occupy 32 bytes in memory");
+
 typedef struct {
     emac_mac_dev_t *mac_regs;
     emac_dma_dev_t *dma_regs;
@@ -378,7 +382,7 @@ void emac_hal_stop(emac_hal_context_t *hal);
 
 uint32_t emac_hal_get_tx_desc_owner(emac_hal_context_t *hal);
 
-void emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
+uint32_t emac_hal_transmit_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t length);
 
 uint32_t emac_hal_receive_frame(emac_hal_context_t *hal, uint8_t *buf, uint32_t size, uint32_t *frames_remain);
 

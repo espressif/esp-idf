@@ -397,8 +397,10 @@ static void emac_dm9051_task(void *arg)
         if (status & ISR_PR) {
             do {
                 length = ETH_MAX_PACKET_SIZE;
-                buffer = (uint8_t *)heap_caps_malloc(length, MALLOC_CAP_DMA);
-                if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
+                buffer = heap_caps_malloc(length, MALLOC_CAP_DMA);
+                if (!buffer) {
+                    ESP_LOGE(TAG, "no mem for receive buffer");
+                } else if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
                     /* pass the buffer to stack (e.g. TCP/IP layer) */
                     if (length) {
                         emac->eth->stack_input(emac->eth, buffer, length);
@@ -597,8 +599,6 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    MAC_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
-    MAC_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
     /* Check if last transmit complete */
     uint8_t tcr = 0;
     MAC_CHECK(dm9051_register_read(emac, DM9051_TCR, &tcr) == ESP_OK, "read TCR failed", err, ESP_FAIL);
@@ -620,7 +620,6 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
     uint8_t rxbyte = 0;
     uint16_t rx_len = 0;
     __attribute__((aligned(4))) dm9051_rx_header_t header; // SPI driver needs the rx buffer 4 byte align
