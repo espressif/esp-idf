@@ -31,7 +31,7 @@ static void master_init_nodma( spi_device_handle_t* spi)
         .miso_io_num=PIN_NUM_MISO,
         .mosi_io_num=PIN_NUM_MOSI,
         .sclk_io_num=PIN_NUM_CLK,
-        .quadwp_io_num=-1,
+        .quadwp_io_num=UNCONNECTED_PIN,
         .quadhd_io_num=-1
     };
     spi_device_interface_config_t devcfg={

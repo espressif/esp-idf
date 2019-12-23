@@ -7,7 +7,12 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
+#include "sdkconfig.h"
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -22,7 +27,8 @@
 #include "test_utils.h"
 #include "test/test_common_spi.h"
 #include "soc/gpio_periph.h"
-#include "sdkconfig.h"
+
+#include "hal/spi_ll.h"
 
 
 /********************************************************************************
@@ -34,10 +40,9 @@ TEST_CASE("local test sio", "[spi]")
     WORD_ALIGNED_ATTR uint8_t master_rx_buffer[320];
     WORD_ALIGNED_ATTR uint8_t slave_rx_buffer[320];
 
-    for (int i = 0; i < 16; i++) {
-        SPI1.data_buf[0] = 0xcccccccc;
-        SPI2.data_buf[0] = 0xcccccccc;
-    }
+    uint32_t pre_set[16] = {[0 ... 15] = 0xcccccccc,};
+    spi_ll_write_buffer(SPI_LL_GET_HW(TEST_SPI_HOST),   (uint8_t*)pre_set, 16*32);
+    spi_ll_write_buffer(SPI_LL_GET_HW(TEST_SLAVE_HOST), (uint8_t*)pre_set, 16*32);
 
     /* This test use a strange connection to test the SIO mode:
      * master spid -> slave spid
@@ -51,7 +56,7 @@ TEST_CASE("local test sio", "[spi]")
 
     int miso_io_num = bus_cfg.miso_io_num;
     int mosi_io_num = bus_cfg.mosi_io_num;
-    bus_cfg.mosi_io_num = bus_cfg.miso_io_num;
+    bus_cfg.mosi_io_num = miso_io_num;
     bus_cfg.miso_io_num = -1;
     TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, 0));
 
@@ -102,6 +107,8 @@ TEST_CASE("local test sio", "[spi]")
     master_free_device_bus(spi);
 }
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+//These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test SIO Master & Slave
  ********************************************************************************/
@@ -217,4 +224,5 @@ void test_sio_slave(void)
     test_sio_slave_round(false);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
+TEST_CASE_MULTIPLE_DEVICES_ESP32("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
+#endif
