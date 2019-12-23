@@ -18,6 +18,7 @@
 #include "esp_log.h"
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
+#include "esp_spi_flash.h"
 #include "esp32/rom/sha.h"
 #include "uECC.h"
 
