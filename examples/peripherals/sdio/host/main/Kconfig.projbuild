@@ -32,6 +32,17 @@ menu "Example Configuration"
 
             If the example does not work, please try disabling the HS mode.
 
+    config EXAMPLE_NO_INTR_LINE
+        bool "The host is not connected to the interrupt line (DAT1) of slave"
+        default n
+        help
+            If this is set, the host example will not check the interrupt line but poll slave
+            registers to see whether the slave has interrupts for the host.
+
+            Working without the interrupt line may increase the CPU load of the host, and do harm
+            to the response speed to slave events, though can save 1 GPIO for other purposes in
+            non-4-bit mode.
+
     choice EXAMPLE_SLAVE
         prompt "GPIO to control slave EN in Espressif master-slave board."
         default EXAMPLE_SLAVE_NONE
