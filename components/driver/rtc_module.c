@@ -785,9 +785,9 @@ uint32_t IRAM_ATTR touch_pad_get_status()
 
 esp_err_t IRAM_ATTR touch_pad_clear_status()
 {
-    portENTER_CRITICAL(&rtc_spinlock);
+    portENTER_CRITICAL_SAFE(&rtc_spinlock);
     SENS.sar_touch_ctrl2.touch_meas_en_clr = 1;
-    portEXIT_CRITICAL(&rtc_spinlock);
+    portEXIT_CRITICAL_SAFE(&rtc_spinlock);
     return ESP_OK;
 }
 
