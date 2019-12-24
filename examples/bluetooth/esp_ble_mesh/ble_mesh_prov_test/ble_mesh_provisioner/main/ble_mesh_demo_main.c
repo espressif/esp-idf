@@ -55,7 +55,6 @@
 
 #define SD_STORE 0
 #define TEST_COUNT_MAX 100
-extern uint16_t addr_need_ack ;
 char file_path[] = "/sdcard/hello.txt";
 // This example can use SDMMC and SPI peripherals to communicate with SD card.
 // By default, SDMMC peripheral is used.
@@ -554,7 +553,6 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
 
     ESP_LOGI(TAG, "%s, error_code = 0x%02x, event = 0x%02x, addr: 0x%04x, opcode: 0x%04x",
              __func__, param->error_code, event, param->params->ctx.addr, opcode);
-    addr_need_ack = param->params->ctx.addr;
 
     node = example_ble_mesh_get_node_info(addr);
     if (!node) {

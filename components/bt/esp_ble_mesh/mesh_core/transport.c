@@ -1001,10 +1001,6 @@ static inline s32_t ack_timeout(struct seg_rx *rx)
     return MAX(to, K_MSEC(400));
 }
 
-#if CONFIG_BLE_MESH_PROV_TEST
-uint16_t addr_need_ack = 0xffff;
-#endif
-
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
                      size_t data_len, u64_t *seq_auth,
                      const struct bt_mesh_send_cb *cb, void *cb_data)
@@ -1039,18 +1035,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
         }
     }
 
-#if !CONFIG_BLE_MESH_PROV_TEST
     return bt_mesh_net_send(tx, buf, cb, cb_data);
-#else
-    if (addr_need_ack == tx->ctx->addr){
-        BT_DBG("src 0x%04x dst 0x%04x ttl 0x%02x ctl 0x%02x", tx->src,
-            tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
-        return bt_mesh_net_send(tx, buf, cb, cb_data);
-    }
-
-    net_buf_unref(buf);
-    return 0;
-#endif
 }
 
 static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,

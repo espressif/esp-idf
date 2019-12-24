@@ -31,10 +31,6 @@
 #define TRANS_CTL_OP_FRIEND_SUB_CFM    0x09
 #define TRANS_CTL_OP_HEARTBEAT         0x0a
 
-#if CONFIG_BLE_MESH_PROV_TEST
-extern uint16_t addr_need_ack;
-#endif
-
 struct bt_mesh_ctl_friend_poll {
     u8_t  fsn;
 } __packed;
