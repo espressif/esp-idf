@@ -903,6 +903,30 @@ void bta_av_rc_msg(tBTA_AV_CB *p_cb, tBTA_AV_DATA *p_data)
                     (p_vendor->company_id == AVRC_CO_METADATA)) {
                 av.meta_msg.p_msg = &p_data->rc_msg.msg;
                 evt = BTA_AV_META_MSG_EVT;
+
+                tAVRC_MSG_VENDOR *vendor_msg = &av.meta_msg.p_msg->vendor;
+                if (vendor_msg->hdr.ctype == AVRC_RSP_CHANGED) {
+                    if (vendor_msg->p_vendor_data[0] == AVRC_PDU_REGISTER_NOTIFICATION){
+                        uint8_t event_id = vendor_msg->p_vendor_data[4];
+                        if(event_id == 1){ //ESP_AVRC_RN_PLAY_STATUS_CHANGE
+                            uint8_t play_status = vendor_msg->p_vendor_data[5];
+                            switch(play_status) {
+                                case 0: //stopped
+                                case 2: //paused *
+                                    BTA_DmCoexEventTrigger(BTA_COEX_EVT_A2DP_PAUSED_ENTER);
+                                    break;
+                                case 1: //playing *
+                                    BTA_DmCoexEventTrigger(BTA_COEX_EVT_A2DP_PAUSED_EXIT);
+                                    break;
+                                case 3: //FWD_seek
+                                case 4: //REV_seek
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+                    }
+                }
             } else
 #endif
             {

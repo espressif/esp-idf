@@ -479,15 +479,23 @@ void BTA_DmCoexEventTrigger(uint32_t event)
         break;
     case BTA_COEX_EVT_STREAMING_STARTED:
         bta_dm_cb.coex_streaming_st = true;
+        bta_dm_cb.coex_a2dp_paused_st = false;
         break;
     case BTA_COEX_EVT_STREAMING_STOPPED:
         bta_dm_cb.coex_streaming_st = false;
+        bta_dm_cb.coex_a2dp_paused_st = false;
         break;
     case BTA_COEX_EVT_SNIFF_ENTER:
         bta_dm_cb.coex_sniff_st = true;
         break;
     case BTA_COEX_EVT_SNIFF_EXIT:
         bta_dm_cb.coex_sniff_st = false;
+        break;
+    case BTA_COEX_EVT_A2DP_PAUSED_ENTER:
+        bta_dm_cb.coex_a2dp_paused_st = true;
+        break;
+    case BTA_COEX_EVT_A2DP_PAUSED_EXIT:
+        bta_dm_cb.coex_a2dp_paused_st = false;
         break;
     default:
         break;
@@ -499,11 +507,15 @@ void BTA_DmCoexEventTrigger(uint32_t event)
         bt_status = coex_schm_status_get(COEX_SCHM_ST_TYPE_BT) & (~COEX_SCHM_BT_ST_ISCAN);
     }
 
+    bt_status = bt_status & (~COEX_SCHM_BT_ST_A2DP_PAUSED);
+
     // acl st may overwrite the wifi_percent set by coex_scan_st
     if (bta_dm_cb.coex_acl_st) {
         bt_status = bt_status | COEX_SCHM_BT_ST_ACL_CONNECTED;
 
-        if (bta_dm_cb.coex_streaming_st) {
+        if (bta_dm_cb.coex_a2dp_paused_st) {
+            bt_status = bt_status | COEX_SCHM_BT_ST_A2DP_PAUSED;
+        } else if (bta_dm_cb.coex_streaming_st) {
             bt_status = bt_status | COEX_SCHM_BT_ST_A2DP_STREAMING;
         } else if (bta_dm_cb.coex_sniff_st) {
             bt_status = (bt_status & (~COEX_SCHM_BT_ST_A2DP_STREAMING)) | COEX_SCHM_BT_ST_SNIFF;
@@ -517,4 +529,6 @@ void BTA_DmCoexEventTrigger(uint32_t event)
 
     coex_schm_status_set(COEX_SCHM_ST_TYPE_BT, bt_status);
     APPL_TRACE_EVENT("bt_status %02x", bt_status);
+    printf("bt_status %02x\n", bt_status);
 }
+

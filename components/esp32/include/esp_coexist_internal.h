@@ -51,6 +51,7 @@ typedef enum {
 #define COEX_SCHM_BT_ST_ACL_CONNECTED       0x04
 #define COEX_SCHM_BT_ST_SNIFF               0x08
 #define COEX_SCHM_BT_ST_A2DP_STREAMING      0x10
+#define COEX_SCHM_BT_ST_A2DP_PAUSED         0x20
 
 /**
  * @brief Pre-Init software coexist

@@ -1053,6 +1053,7 @@ typedef struct {
     bool coex_acl_st;
     bool coex_streaming_st;
     bool coex_sniff_st;
+    bool coex_a2dp_paused_st;
 } tBTA_DM_CB;
 
 #ifndef BTA_DM_SDP_DB_SIZE
