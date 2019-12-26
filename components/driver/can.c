@@ -958,15 +958,16 @@ esp_err_t can_read_alerts(uint32_t *alerts, TickType_t ticks_to_wait)
 esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_alerts)
 {
     CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
+
     CAN_ENTER_CRITICAL();
-    uint32_t cur_alerts;
-    can_read_alerts(&cur_alerts, 0);                    //Clear any unhandled alerts
+    //Clear any unhandled alerts
+    if (current_alerts != NULL) {
+        *current_alerts = p_can_obj->alerts_triggered;;
+    }
+    p_can_obj->alerts_triggered = 0;
     p_can_obj->alerts_enabled = alerts_enabled;         //Update enabled alerts
     CAN_EXIT_CRITICAL();
 
-    if (current_alerts != NULL) {
-        *current_alerts = cur_alerts;
-    }
     return ESP_OK;
 }
 
