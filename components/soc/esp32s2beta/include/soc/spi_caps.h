@@ -45,5 +45,4 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)  (!((void*)spi_dev == (void*)&GPSPI3 \
-                                                           || (void*)spi_dev == (void*)&GPSPI4))
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)  (!((void*)spi_dev == (void*)&GPSPI3))

@@ -1,4 +1,4 @@
-// Copyright 2015-2017 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -45,9 +45,9 @@
 #define RTC_MEM_POWERUP_CYCLES   OTHER_BLOCKS_POWERUP
 #define RTC_MEM_WAIT_CYCLES      OTHER_BLOCKS_WAIT
 
-#ifndef CONFIG_HARDWARE_IS_FPGA
 void rtc_init(rtc_config_t cfg)
 {
+#if !CONFIG_IDF_ENV_FPGA
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PVTMON_PU);
     rtc_clk_set_xtal_wait();
     REG_SET_FIELD(RTC_CNTL_TIMER1_REG, RTC_CNTL_PLL_BUF_WAIT, cfg.pll_wait);
@@ -76,7 +76,7 @@ void rtc_init(rtc_config_t cfg)
     REG_SET_FIELD(RTC_CNTL_TIMER5_REG, RTC_CNTL_RTCMEM_WAIT_TIMER, RTC_MEM_WAIT_CYCLES);
 
     SET_PERI_REG_MASK(RTC_CNTL_BIAS_CONF_REG,
-            RTC_CNTL_DEC_HEARTBEAT_WIDTH | RTC_CNTL_INC_HEARTBEAT_PERIOD);
+                      RTC_CNTL_DEC_HEARTBEAT_WIDTH | RTC_CNTL_INC_HEARTBEAT_PERIOD);
 
     /* Reset RTC bias to default value (needed if waking up from deep sleep) */
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_1V10);
@@ -161,10 +161,9 @@ void rtc_init(rtc_config_t cfg)
         // CLEAR_PERI_REG_MASK(RTC_CNTL_DIG_ISO_REG, RTC_CNTL_CPU_ROM_RAM_FORCE_NOISO);
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_FORCE_NOISO);
         //cancel digital PADS force no iso
-        if (cfg.cpu_waiti_clk_gate){
+        if (cfg.cpu_waiti_clk_gate) {
             CLEAR_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_CPU_WAIT_MODE_FORCE_ON);
-        }
-        else{
+        } else {
             SET_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_CPU_WAIT_MODE_FORCE_ON);
         }
         /*if DPORT_CPU_WAIT_MODE_FORCE_ON == 0 , the cpu clk will be closed when cpu enter WAITI mode*/
@@ -180,8 +179,8 @@ void rtc_init(rtc_config_t cfg)
         SET_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_DG_PAD_AUTOHOLD_EN);
 #endif
     }
-}
 #endif
+}
 
 rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
 {
@@ -199,6 +198,7 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
     } else {
         result.force = 0;
     }
+#if 0 // ToDo: re-enable the commented codes
     uint32_t efuse_reg = REG_READ(EFUSE_RD_REPEAT_DATA1_REG);
     if (efuse_reg & EFUSE_SDIO_FORCE) {
         // Get configuration from EFUSE
@@ -213,7 +213,7 @@ rtc_vddsdio_config_t rtc_vddsdio_get_config(void)
 
         return result;
     }
-
+#endif
     // Otherwise, VDD_SDIO is controlled by bootstrapping pin
     uint32_t strap_reg = REG_READ(GPIO_STRAP_REG);
     result.tieh = (strap_reg & BIT(5)) ? RTC_VDDSDIO_TIEH_1_8V : RTC_VDDSDIO_TIEH_3_3V;

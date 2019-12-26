@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -92,8 +92,9 @@ typedef volatile struct {
     } rtc_cali_cfg;
     union {
         struct {
-            uint32_t reserved0:      7;
-            uint32_t value:         25;
+            uint32_t cycling_data_vld:          1;
+            uint32_t reserved1:                 6;
+            uint32_t value:                    25;
         };
         uint32_t val;
     } rtc_cali_cfg1;

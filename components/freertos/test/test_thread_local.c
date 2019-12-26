@@ -24,7 +24,7 @@ static __thread struct test_tls_var {
     uint8_t farr[10];
 } tl_test_struct_var;
 
-static void task_test_tls(void *arg)
+static __attribute__((unused)) void task_test_tls(void *arg)
 {
     bool *running = (bool *)arg;
     uint32_t tp = (uint32_t)-1;

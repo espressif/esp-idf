@@ -37,6 +37,7 @@
 #include "soc/assist_debug_reg.h"
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
+#include "soc/extmem_reg.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 
@@ -97,7 +98,7 @@ static void bootloader_reset_mmu(void)
 
     /* normal ROM boot exits with DROM0 cache unmasked,
     but serial bootloader exits with it masked. */
-    DPORT_REG_CLR_BIT(DPORT_PRO_ICACHE_CTRL1_REG, DPORT_PRO_ICACHE_MASK_DROM0);
+    REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_DROM0);
 }
 
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)
@@ -235,7 +236,7 @@ static void bootloader_init_uart_console(void)
 #else // CONFIG_ESP_CONSOLE_UART_NONE
     const int uart_num = CONFIG_ESP_CONSOLE_UART_NUM;
 
-    uartAttach();
+    uartAttach(NULL);
     ets_install_uart_printf();
 
     // Wait for UART FIFO to be empty.

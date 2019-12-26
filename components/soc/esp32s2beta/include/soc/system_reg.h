@@ -28,12 +28,18 @@ extern "C" {
 #define DPORT_ROM_FO_S  0
 
 #define DPORT_ROM_CTRL_1_REG          (DR_REG_SYSTEM_BASE + 0x004)
-/* DPORT_ROM_PD : R/W ;bitpos:[1:0] ;default: 2'b0 ; */
+/* DPORT_ROM_FORCE_PU : R/W ;bitpos:[3:2] ;default: 2'b11 ; */
 /*description: */
-#define DPORT_ROM_PD  0x00000003
-#define DPORT_ROM_PD_M  ((DPORT_ROM_PD_V)<<(DPORT_ROM_PD_S))
-#define DPORT_ROM_PD_V  0x3
-#define DPORT_ROM_PD_S  0
+#define DPORT_ROM_FORCE_PU  0x00000003
+#define DPORT_ROM_FORCE_PU_M  ((DPORT_ROM_FORCE_PU_V)<<(DPORT_ROM_FORCE_PU_S))
+#define DPORT_ROM_FORCE_PU_V  0x3
+#define DPORT_ROM_FORCE_PU_S  2
+/* DPORT_ROM_FORCE_PD : R/W ;bitpos:[1:0] ;default: 2'b0 ; */
+/*description: */
+#define DPORT_ROM_FORCE_PD  0x00000003
+#define DPORT_ROM_FORCE_PD_M  ((DPORT_ROM_FORCE_PD_V)<<(DPORT_ROM_FORCE_PD_S))
+#define DPORT_ROM_FORCE_PD_V  0x3
+#define DPORT_ROM_FORCE_PD_S  0
 
 #define DPORT_SRAM_CTRL_0_REG          (DR_REG_SYSTEM_BASE + 0x008)
 /* DPORT_SRAM_FO : R/W ;bitpos:[21:0] ;default: ~22'b0 ; */
@@ -44,12 +50,12 @@ extern "C" {
 #define DPORT_SRAM_FO_S  0
 
 #define DPORT_SRAM_CTRL_1_REG          (DR_REG_SYSTEM_BASE + 0x00C)
-/* DPORT_SRAM_PD : R/W ;bitpos:[21:0] ;default: 22'b0 ; */
+/* DPORT_SRAM_FORCE_PD : R/W ;bitpos:[21:0] ;default: 22'b0 ; */
 /*description: */
-#define DPORT_SRAM_PD  0x003FFFFF
-#define DPORT_SRAM_PD_M  ((DPORT_SRAM_PD_V)<<(DPORT_SRAM_PD_S))
-#define DPORT_SRAM_PD_V  0x3FFFFF
-#define DPORT_SRAM_PD_S  0
+#define DPORT_SRAM_FORCE_PD  0x003FFFFF
+#define DPORT_SRAM_FORCE_PD_M  ((DPORT_SRAM_FORCE_PD_V)<<(DPORT_SRAM_FORCE_PD_S))
+#define DPORT_SRAM_FORCE_PD_V  0x3FFFFF
+#define DPORT_SRAM_FORCE_PD_S  0
 
 #define DPORT_PERI_CLK_EN_REG DPORT_CPU_PERI_CLK_EN_REG
 #define DPORT_CPU_PERI_CLK_EN_REG          (DR_REG_SYSTEM_BASE + 0x010)
@@ -65,50 +71,8 @@ extern "C" {
 #define DPORT_CLK_EN_ASSIST_DEBUG_M  (BIT(6))
 #define DPORT_CLK_EN_ASSIST_DEBUG_V  0x1
 #define DPORT_CLK_EN_ASSIST_DEBUG_S  6
-/* DPORT_CLK_EN_DIGITAL_SIGNATURE : R/W ;bitpos:[5] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_CLK_EN_DIGITAL_SIGNATURE  (BIT(5))
-#define DPORT_CLK_EN_DIGITAL_SIGNATURE_M  (BIT(5))
-#define DPORT_CLK_EN_DIGITAL_SIGNATURE_V  0x1
-#define DPORT_CLK_EN_DIGITAL_SIGNATURE_S  5
-/* DPORT_CLK_EN_HMAC : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_CLK_EN_HMAC  (BIT(4))
-#define DPORT_CLK_EN_HMAC_M  (BIT(4))
-#define DPORT_CLK_EN_HMAC_V  0x1
-#define DPORT_CLK_EN_HMAC_S  4
-/* DPORT_CLK_EN_SECURE_BOOT : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_CLK_EN_SECURE_BOOT  (BIT(3))
-#define DPORT_CLK_EN_SECURE_BOOT_M  (BIT(3))
-#define DPORT_CLK_EN_SECURE_BOOT_V  0x1
-#define DPORT_CLK_EN_SECURE_BOOT_S  3
-/* DPORT_CLK_EN_RSA : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_CLK_EN_RSA  (BIT(2))
-#define DPORT_CLK_EN_RSA_M  (BIT(2))
-#define DPORT_CLK_EN_RSA_V  0x1
-#define DPORT_CLK_EN_RSA_S  2
-/* DPORT_CLK_EN_SHA : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_CLK_EN_SHA  (BIT(1))
-#define DPORT_CLK_EN_SHA_M  (BIT(1))
-#define DPORT_CLK_EN_SHA_V  0x1
-#define DPORT_CLK_EN_SHA_S  1
-/* DPORT_CLK_EN_AES : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_CLK_EN_AES  (BIT(0))
-#define DPORT_CLK_EN_AES_M  (BIT(0))
-#define DPORT_CLK_EN_AES_V  0x1
-#define DPORT_CLK_EN_AES_S  0
 
-#define DPORT_PERI_EN_AES DPORT_CLK_EN_AES
-#define DPORT_PERI_EN_SHA DPORT_CLK_EN_SHA
-#define DPORT_PERI_EN_RSA DPORT_CLK_EN_RSA
-/* NB: Secure boot reset will hold SHA & AES in reset */
-#define DPORT_PERI_EN_SECUREBOOT DPORT_CLK_EN_SECURE_BOOT
 /* NB: Digital signature reset will hold AES & RSA in reset */
-#define DPORT_PERI_EN_DIGITAL_SIGNATURE DPORT_CLK_EN_DIGITAL_SIGNATURE
 #define DPORT_PERI_EN_ASSIST_DEBUG DPORT_CLK_EN_ASSIST_DEBUG
 
 #define DPORT_PERI_RST_EN_REG DPORT_CPU_PERI_RST_EN_REG
@@ -125,44 +89,14 @@ extern "C" {
 #define DPORT_RST_EN_ASSIST_DEBUG_M  (BIT(6))
 #define DPORT_RST_EN_ASSIST_DEBUG_V  0x1
 #define DPORT_RST_EN_ASSIST_DEBUG_S  6
-/* DPORT_RST_EN_DIGITAL_SIGNATURE : R/W ;bitpos:[5] ;default: 1'b1 ; */
-/*description: */
-#define DPORT_RST_EN_DIGITAL_SIGNATURE  (BIT(5))
-#define DPORT_RST_EN_DIGITAL_SIGNATURE_M  (BIT(5))
-#define DPORT_RST_EN_DIGITAL_SIGNATURE_V  0x1
-#define DPORT_RST_EN_DIGITAL_SIGNATURE_S  5
-/* DPORT_RST_EN_HMAC : R/W ;bitpos:[4] ;default: 1'b1 ; */
-/*description: */
-#define DPORT_RST_EN_HMAC  (BIT(4))
-#define DPORT_RST_EN_HMAC_M  (BIT(4))
-#define DPORT_RST_EN_HMAC_V  0x1
-#define DPORT_RST_EN_HMAC_S  4
-/* DPORT_RST_EN_SECURE_BOOT : R/W ;bitpos:[3] ;default: 1'b1 ; */
-/*description: */
-#define DPORT_RST_EN_SECURE_BOOT  (BIT(3))
-#define DPORT_RST_EN_SECURE_BOOT_M  (BIT(3))
-#define DPORT_RST_EN_SECURE_BOOT_V  0x1
-#define DPORT_RST_EN_SECURE_BOOT_S  3
-/* DPORT_RST_EN_RSA : R/W ;bitpos:[2] ;default: 1'b1 ; */
-/*description: */
-#define DPORT_RST_EN_RSA  (BIT(2))
-#define DPORT_RST_EN_RSA_M  (BIT(2))
-#define DPORT_RST_EN_RSA_V  0x1
-#define DPORT_RST_EN_RSA_S  2
-/* DPORT_RST_EN_SHA : R/W ;bitpos:[1] ;default: 1'b1 ; */
-/*description: */
-#define DPORT_RST_EN_SHA  (BIT(1))
-#define DPORT_RST_EN_SHA_M  (BIT(1))
-#define DPORT_RST_EN_SHA_V  0x1
-#define DPORT_RST_EN_SHA_S  1
-/* DPORT_RST_EN_AES : R/W ;bitpos:[0] ;default: 1'b1 ; */
-/*description: */
-#define DPORT_RST_EN_AES  (BIT(0))
-#define DPORT_RST_EN_AES_M  (BIT(0))
-#define DPORT_RST_EN_AES_V  0x1
-#define DPORT_RST_EN_AES_S  0
 
 #define DPORT_CPU_PER_CONF_REG          (DR_REG_SYSTEM_BASE + 0x018)
+/* DPORT_CPU_WAITI_DELAY_NUM : R/W ;bitpos:[7:4] ;default: 4'h0 ; */
+/*description: */
+#define DPORT_CPU_WAITI_DELAY_NUM  0x0000000F
+#define DPORT_CPU_WAITI_DELAY_NUM_M  ((DPORT_CPU_WAITI_DELAY_NUM_V)<<(DPORT_CPU_WAITI_DELAY_NUM_S))
+#define DPORT_CPU_WAITI_DELAY_NUM_V  0xF
+#define DPORT_CPU_WAITI_DELAY_NUM_S  4
 /* DPORT_CPU_WAIT_MODE_FORCE_ON : R/W ;bitpos:[3] ;default: 1'b1 ; */
 /*description: */
 #define DPORT_CPU_WAIT_MODE_FORCE_ON  (BIT(3))
@@ -449,13 +383,44 @@ extern "C" {
 #define DPORT_TIMERS_CLK_EN_V  0x1
 #define DPORT_TIMERS_CLK_EN_S  0
 
+#define DPORT_CPU_PERIP_CLK_EN1_REG	DPORT_PERIP_CLK_EN1_REG
 #define DPORT_PERIP_CLK_EN1_REG          (DR_REG_SYSTEM_BASE + 0x044)
-/* DPORT_SPI_SHARED_DMA_CLK_EN : R/W ;bitpos:[0] ;default: 1'b1 ; */
+/* DPORT_CRYPTO_DMA_CLK_EN : R/W ;bitpos:[6] ;default: 1'b0 ; */
 /*description: */
-#define DPORT_SPI_SHARED_DMA_CLK_EN  (BIT(0))
-#define DPORT_SPI_SHARED_DMA_CLK_EN_M  (BIT(0))
-#define DPORT_SPI_SHARED_DMA_CLK_EN_V  0x1
-#define DPORT_SPI_SHARED_DMA_CLK_EN_S  0
+#define DPORT_CRYPTO_DMA_CLK_EN  (BIT(6))
+#define DPORT_CRYPTO_DMA_CLK_EN_M  (BIT(6))
+#define DPORT_CRYPTO_DMA_CLK_EN_V  0x1
+#define DPORT_CRYPTO_DMA_CLK_EN_S  6
+/* DPORT_CRYPTO_HMAC_CLK_EN : R/W ;bitpos:[5] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_CRYPTO_HMAC_CLK_EN  (BIT(5))
+#define DPORT_CRYPTO_HMAC_CLK_EN_M  (BIT(5))
+#define DPORT_CRYPTO_HMAC_CLK_EN_V  0x1
+#define DPORT_CRYPTO_HMAC_CLK_EN_S  5
+/* DPORT_CRYPTO_DS_CLK_EN : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_CRYPTO_DS_CLK_EN  (BIT(4))
+#define DPORT_CRYPTO_DS_CLK_EN_M  (BIT(4))
+#define DPORT_CRYPTO_DS_CLK_EN_V  0x1
+#define DPORT_CRYPTO_DS_CLK_EN_S  4
+/* DPORT_CRYPTO_RSA_CLK_EN : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_CRYPTO_RSA_CLK_EN  (BIT(3))
+#define DPORT_CRYPTO_RSA_CLK_EN_M  (BIT(3))
+#define DPORT_CRYPTO_RSA_CLK_EN_V  0x1
+#define DPORT_CRYPTO_RSA_CLK_EN_S  3
+/* DPORT_CRYPTO_SHA_CLK_EN : R/W ;bitpos:[2] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_CRYPTO_SHA_CLK_EN  (BIT(2))
+#define DPORT_CRYPTO_SHA_CLK_EN_M  (BIT(2))
+#define DPORT_CRYPTO_SHA_CLK_EN_V  0x1
+#define DPORT_CRYPTO_SHA_CLK_EN_S  2
+/* DPORT_CRYPTO_AES_CLK_EN : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_CRYPTO_AES_CLK_EN  (BIT(1))
+#define DPORT_CRYPTO_AES_CLK_EN_M  (BIT(1))
+#define DPORT_CRYPTO_AES_CLK_EN_V  0x1
+#define DPORT_CRYPTO_AES_CLK_EN_S  1
 
 #define DPORT_PERIP_RST_EN_REG DPORT_PERIP_RST_EN0_REG
 #define DPORT_PERIP_RST_EN0_REG          (DR_REG_SYSTEM_BASE + 0x048)
@@ -652,13 +617,44 @@ extern "C" {
 #define DPORT_TIMERS_RST_V  0x1
 #define DPORT_TIMERS_RST_S  0
 
+#define DPORT_CPU_PERIP_RST_EN1_REG      DPORT_PERIP_RST_EN1_REG
 #define DPORT_PERIP_RST_EN1_REG          (DR_REG_SYSTEM_BASE + 0x04C)
-/* DPORT_SPI_SHARED_DMA_RST : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/* DPORT_CRYPTO_DMA_RST : R/W ;bitpos:[6] ;default: 1'b1 ; */
 /*description: */
-#define DPORT_SPI_SHARED_DMA_RST  (BIT(0))
-#define DPORT_SPI_SHARED_DMA_RST_M  (BIT(0))
-#define DPORT_SPI_SHARED_DMA_RST_V  0x1
-#define DPORT_SPI_SHARED_DMA_RST_S  0
+#define DPORT_CRYPTO_DMA_RST  (BIT(6))
+#define DPORT_CRYPTO_DMA_RST_M  (BIT(6))
+#define DPORT_CRYPTO_DMA_RST_V  0x1
+#define DPORT_CRYPTO_DMA_RST_S  6
+/* DPORT_CRYPTO_HMAC_RST : R/W ;bitpos:[5] ;default: 1'b1 ; */
+/*description: */
+#define DPORT_CRYPTO_HMAC_RST  (BIT(5))
+#define DPORT_CRYPTO_HMAC_RST_M  (BIT(5))
+#define DPORT_CRYPTO_HMAC_RST_V  0x1
+#define DPORT_CRYPTO_HMAC_RST_S  5
+/* DPORT_CRYPTO_DS_RST : R/W ;bitpos:[4] ;default: 1'b1 ; */
+/*description: */
+#define DPORT_CRYPTO_DS_RST  (BIT(4))
+#define DPORT_CRYPTO_DS_RST_M  (BIT(4))
+#define DPORT_CRYPTO_DS_RST_V  0x1
+#define DPORT_CRYPTO_DS_RST_S  4
+/* DPORT_CRYPTO_RSA_RST : R/W ;bitpos:[3] ;default: 1'b1 ; */
+/*description: */
+#define DPORT_CRYPTO_RSA_RST  (BIT(3))
+#define DPORT_CRYPTO_RSA_RST_M  (BIT(3))
+#define DPORT_CRYPTO_RSA_RST_V  0x1
+#define DPORT_CRYPTO_RSA_RST_S  3
+/* DPORT_CRYPTO_SHA_RST : R/W ;bitpos:[2] ;default: 1'b1 ; */
+/*description: */
+#define DPORT_CRYPTO_SHA_RST  (BIT(2))
+#define DPORT_CRYPTO_SHA_RST_M  (BIT(2))
+#define DPORT_CRYPTO_SHA_RST_V  0x1
+#define DPORT_CRYPTO_SHA_RST_S  2
+/* DPORT_CRYPTO_AES_RST : R/W ;bitpos:[1] ;default: 1'b1 ; */
+/*description: */
+#define DPORT_CRYPTO_AES_RST  (BIT(1))
+#define DPORT_CRYPTO_AES_RST_M  (BIT(1))
+#define DPORT_CRYPTO_AES_RST_V  0x1
+#define DPORT_CRYPTO_AES_RST_S  1
 
 #define DPORT_BT_LPCK_DIV_INT_REG          (DR_REG_SYSTEM_BASE + 0x050)
 /* DPORT_BT_LPCK_DIV_NUM : R/W ;bitpos:[11:0] ;default: 12'd255 ; */
@@ -745,6 +741,18 @@ extern "C" {
 #define DPORT_CPU_INTR_FROM_CPU_3_S  0
 
 #define DPORT_RSA_PD_CTRL_REG          (DR_REG_SYSTEM_BASE + 0x068)
+/* DPORT_RSA_MEM_FORCE_PD : R/W ;bitpos:[2] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_RSA_MEM_FORCE_PD  (BIT(2))
+#define DPORT_RSA_MEM_FORCE_PD_M  (BIT(2))
+#define DPORT_RSA_MEM_FORCE_PD_V  0x1
+#define DPORT_RSA_MEM_FORCE_PD_S  2
+/* DPORT_RSA_MEM_FORCE_PU : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: */
+#define DPORT_RSA_MEM_FORCE_PU  (BIT(1))
+#define DPORT_RSA_MEM_FORCE_PU_M  (BIT(1))
+#define DPORT_RSA_MEM_FORCE_PU_V  0x1
+#define DPORT_RSA_MEM_FORCE_PU_S  1
 /* DPORT_RSA_MEM_PD : R/W ;bitpos:[0] ;default: 1'b1 ; */
 /*description: */
 #define DPORT_RSA_MEM_PD  (BIT(0))
@@ -753,16 +761,7 @@ extern "C" {
 #define DPORT_RSA_MEM_PD_S  0
 #define DPORT_RSA_PD DPORT_RSA_MEM_PD
 
-#define DPORT_SPI_DMA_CHAN_SEL_REG DPORT_SPI_SHARED_DMA_SEL_REG
-#define DPORT_SPI_SHARED_DMA_SEL_REG          (DR_REG_SYSTEM_BASE + 0x06C)
-/* DPORT_SPI_SHARED_DMA_SEL : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_SPI_SHARED_DMA_SEL  (BIT(0))
-#define DPORT_SPI_SHARED_DMA_SEL_M  (BIT(0))
-#define DPORT_SPI_SHARED_DMA_SEL_V  0x1
-#define DPORT_SPI_SHARED_DMA_SEL_S  0
-
-#define DPORT_BUSTOEXTMEM_ENA_REG          (DR_REG_SYSTEM_BASE + 0x070)
+#define DPORT_BUSTOEXTMEM_ENA_REG          (DR_REG_SYSTEM_BASE + 0x06C)
 /* DPORT_BUSTOEXTMEM_ENA : R/W ;bitpos:[0] ;default: 1'b1 ; */
 /*description: */
 #define DPORT_BUSTOEXTMEM_ENA  (BIT(0))
@@ -770,7 +769,7 @@ extern "C" {
 #define DPORT_BUSTOEXTMEM_ENA_V  0x1
 #define DPORT_BUSTOEXTMEM_ENA_S  0
 
-#define DPORT_CACHE_CONTROL_REG          (DR_REG_SYSTEM_BASE + 0x074)
+#define DPORT_CACHE_CONTROL_REG          (DR_REG_SYSTEM_BASE + 0x070)
 /* DPORT_PRO_CACHE_RESET : R/W ;bitpos:[2] ;default: 1'b0 ; */
 /*description: */
 #define DPORT_PRO_CACHE_RESET  (BIT(2))
@@ -790,7 +789,7 @@ extern "C" {
 #define DPORT_PRO_ICACHE_CLK_ON_V  0x1
 #define DPORT_PRO_ICACHE_CLK_ON_S  0
 
-#define DPORT_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG          (DR_REG_SYSTEM_BASE + 0x078)
+#define DPORT_EXTERNAL_DEVICE_ENCRYPT_DECRYPT_CONTROL_REG          (DR_REG_SYSTEM_BASE + 0x074)
 /* DPORT_ENABLE_DOWNLOAD_MANUAL_ENCRYPT : R/W ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
 #define DPORT_ENABLE_DOWNLOAD_MANUAL_ENCRYPT  (BIT(3))
@@ -816,7 +815,7 @@ extern "C" {
 #define DPORT_ENABLE_SPI_MANUAL_ENCRYPT_V  0x1
 #define DPORT_ENABLE_SPI_MANUAL_ENCRYPT_S  0
 
-#define DPORT_RTC_FASTMEM_CONFIG_REG          (DR_REG_SYSTEM_BASE + 0x07C)
+#define DPORT_RTC_FASTMEM_CONFIG_REG          (DR_REG_SYSTEM_BASE + 0x078)
 /* DPORT_RTC_MEM_CRC_FINISH : RO ;bitpos:[31] ;default: 1'b0 ; */
 /*description: */
 #define DPORT_RTC_MEM_CRC_FINISH  (BIT(31))
@@ -842,7 +841,7 @@ extern "C" {
 #define DPORT_RTC_MEM_CRC_START_V  0x1
 #define DPORT_RTC_MEM_CRC_START_S  8
 
-#define DPORT_RTC_FASTMEM_CRC_REG          (DR_REG_SYSTEM_BASE + 0x080)
+#define DPORT_RTC_FASTMEM_CRC_REG          (DR_REG_SYSTEM_BASE + 0x07C)
 /* DPORT_RTC_MEM_CRC_RES : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: */
 #define DPORT_RTC_MEM_CRC_RES  0xFFFFFFFF
@@ -850,7 +849,7 @@ extern "C" {
 #define DPORT_RTC_MEM_CRC_RES_V  0xFFFFFFFF
 #define DPORT_RTC_MEM_CRC_RES_S  0
 
-#define DPORT_REDUNDANT_ECO_CTRL_REG          (DR_REG_SYSTEM_BASE + 0x084)
+#define DPORT_REDUNDANT_ECO_CTRL_REG          (DR_REG_SYSTEM_BASE + 0x080)
 /* DPORT_REDUNDANT_ECO_RESULT : RO ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
 #define DPORT_REDUNDANT_ECO_RESULT  (BIT(1))
@@ -864,7 +863,7 @@ extern "C" {
 #define DPORT_REDUNDANT_ECO_DRIVE_V  0x1
 #define DPORT_REDUNDANT_ECO_DRIVE_S  0
 
-#define SYSTEM_CLOCK_GATE_REG          (DR_REG_SYSTEM_BASE + 0x088)
+#define SYSTEM_CLOCK_GATE_REG          (DR_REG_SYSTEM_BASE + 0x084)
 /* SYSTEM_CLK_EN : R/W ;bitpos:[0] ;default: 1'b1 ; */
 /*description: */
 #define SYSTEM_CLK_EN  (BIT(0))
@@ -872,8 +871,42 @@ extern "C" {
 #define SYSTEM_CLK_EN_V  0x1
 #define SYSTEM_CLK_EN_S  0
 
+#define DPORT_SRAM_CTRL_2_REG          (DR_REG_SYSTEM_BASE + 0x088)
+/* DPORT_SRAM_FORCE_PU : R/W ;bitpos:[21:0] ;default: 22'h3fffff ; */
+/*description: */
+#define DPORT_SRAM_FORCE_PU  0x003FFFFF
+#define DPORT_SRAM_FORCE_PU_M  ((DPORT_SRAM_FORCE_PU_V)<<(DPORT_SRAM_FORCE_PU_S))
+#define DPORT_SRAM_FORCE_PU_V  0x3FFFFF
+#define DPORT_SRAM_FORCE_PU_S  0
+
+#define DPORT_SYSCLK_CONF_REG          (DR_REG_SYSTEM_BASE + 0x08C)
+/* DPORT_CLK_DIV_EN : RO ;bitpos:[19] ;default: 1'd0 ; */
+/*description: */
+#define DPORT_CLK_DIV_EN  (BIT(19))
+#define DPORT_CLK_DIV_EN_M  (BIT(19))
+#define DPORT_CLK_DIV_EN_V  0x1
+#define DPORT_CLK_DIV_EN_S  19
+/* DPORT_CLK_XTAL_FREQ : RO ;bitpos:[18:12] ;default: 7'd0 ; */
+/*description: */
+#define DPORT_CLK_XTAL_FREQ  0x0000007F
+#define DPORT_CLK_XTAL_FREQ_M  ((DPORT_CLK_XTAL_FREQ_V)<<(DPORT_CLK_XTAL_FREQ_S))
+#define DPORT_CLK_XTAL_FREQ_V  0x7F
+#define DPORT_CLK_XTAL_FREQ_S  12
+/* DPORT_SOC_CLK_SEL : R/W ;bitpos:[11:10] ;default: 2'd0 ; */
+/*description: */
+#define DPORT_SOC_CLK_SEL  0x00000003
+#define DPORT_SOC_CLK_SEL_M  ((DPORT_SOC_CLK_SEL_V)<<(DPORT_SOC_CLK_SEL_S))
+#define DPORT_SOC_CLK_SEL_V  0x3
+#define DPORT_SOC_CLK_SEL_S  10
+/* DPORT_PRE_DIV_CNT : R/W ;bitpos:[9:0] ;default: 10'h1 ; */
+/*description: */
+#define DPORT_PRE_DIV_CNT  0x000003FF
+#define DPORT_PRE_DIV_CNT_M  ((DPORT_PRE_DIV_CNT_V)<<(DPORT_PRE_DIV_CNT_S))
+#define DPORT_PRE_DIV_CNT_V  0x3FF
+#define DPORT_PRE_DIV_CNT_S  0
+
 #define SYSTEM_DATE_REG          (DR_REG_SYSTEM_BASE + 0xFFC)
-/* SYSTEM_DATE : R/W ;bitpos:[27:0] ;default: 28'h1810300 ; */
+/* SYSTEM_DATE : R/W ;bitpos:[27:0] ;default: 28'h1908020 ; */
 /*description: */
 #define SYSTEM_DATE  0x0FFFFFFF
 #define SYSTEM_DATE_M  ((SYSTEM_DATE_V)<<(SYSTEM_DATE_S))

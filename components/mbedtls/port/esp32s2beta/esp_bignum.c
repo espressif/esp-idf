@@ -56,15 +56,14 @@ void esp_mpi_acquire_hardware( void )
     /* newlib locks lazy initialize on ESP-IDF */
     _lock_acquire(&mpi_lock);
 
-    DPORT_REG_SET_BIT(DPORT_PERI_CLK_EN_REG, DPORT_CLK_EN_RSA);
-    /* also clear reset on digital signature & secure boot, otherwise RSA is held in reset */
-    DPORT_REG_CLR_BIT(DPORT_PERI_RST_EN_REG, DPORT_RST_EN_RSA
-                      | DPORT_RST_EN_DIGITAL_SIGNATURE
-                      | DPORT_RST_EN_SECURE_BOOT);
+    DPORT_REG_SET_BIT(DPORT_PERIP_CLK_EN1_REG, DPORT_CRYPTO_RSA_CLK_EN);
+    /* also clear reset on digital signature, otherwise RSA is held in reset */
+    DPORT_REG_CLR_BIT(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_RSA_RST
+                      | DPORT_CRYPTO_DS_RST);
 
     DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_MEM_PD);
 
-    while(DPORT_REG_READ(RSA_QUERY_CLEAN_REG) != 1) {
+    while (DPORT_REG_READ(RSA_QUERY_CLEAN_REG) != 1) {
     }
     // Note: from enabling RSA clock to here takes about 1.3us
 }
@@ -74,8 +73,8 @@ void esp_mpi_release_hardware( void )
     DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
 
     /* don't reset digital signature unit, as this resets AES also */
-    DPORT_REG_SET_BIT(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_RSA);
-    DPORT_REG_CLR_BIT(DPORT_PERI_CLK_EN_REG, DPORT_PERI_EN_RSA);
+    DPORT_REG_SET_BIT(DPORT_PERIP_RST_EN1_REG, DPORT_CRYPTO_RSA_RST);
+    DPORT_REG_CLR_BIT(DPORT_PERIP_CLK_EN1_REG, DPORT_CRYPTO_RSA_CLK_EN);
 
     _lock_release(&mpi_lock);
 }
@@ -141,12 +140,12 @@ static inline int mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_wo
     esp_dport_access_read_buffer(x->p, mem_base, num_words);
     /* Zero any remaining limbs in the bignum, if the buffer is bigger
        than num_words */
-    for(size_t i = num_words; i < x->n; i++) {
+    for (size_t i = num_words; i < x->n; i++) {
         x->p[i] = 0;
     }
 
     asm volatile ("memw");
- cleanup:
+cleanup:
     return ret;
 }
 
@@ -200,7 +199,7 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
     MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&RR, num_bits * 2, 1));
     MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(Rinv, &RR, M));
 
- cleanup:
+cleanup:
     mbedtls_mpi_free(&RR);
     return ret;
 }
@@ -213,6 +212,7 @@ static inline void start_op(uint32_t op_reg)
 {
     /* Clear interrupt status */
     DPORT_REG_WRITE(RSA_CLEAR_INTERRUPT_REG, 1);
+    DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
 
     /* Note: above REG_WRITE includes a memw, so we know any writes
        to the memory blocks are also complete. */
@@ -283,7 +283,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
 
     esp_mpi_release_hardware();
 
- cleanup:
+cleanup:
     mbedtls_mpi_free(&Rinv);
     return ret;
 }
@@ -298,7 +298,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
  * (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
  *
  */
-int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M, mbedtls_mpi* _Rinv )
+int mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
 {
     int ret = 0;
     size_t y_bits = mbedtls_mpi_bitlen(Y);
@@ -379,7 +379,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
         Z->s = 1;
     }
 
- cleanup:
+cleanup:
     if (_Rinv == NULL) {
         mbedtls_mpi_free(&Rinv_new);
     }
@@ -509,13 +509,13 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
     esp_mpi_acquire_hardware();
 
     /* M = 2^num_words - 1, so block is entirely FF */
-    for(int i = 0; i < num_words; i++) {
+    for (int i = 0; i < num_words; i++) {
         DPORT_REG_WRITE(RSA_MEM_M_BLOCK_BASE + i * 4, UINT32_MAX);
     }
 
     /* Mprime = 1 */
     DPORT_REG_WRITE(RSA_M_DASH_REG, 1);
-    DPORT_REG_WRITE(RSA_LENGTH_REG, num_words -1);
+    DPORT_REG_WRITE(RSA_LENGTH_REG, num_words - 1);
 
     /* Load X & Y */
     mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, num_words);
@@ -523,7 +523,7 @@ static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, 
 
     /* Rinv = 1 */
     DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE, 1);
-    for(int i = 1; i < num_words; i++) {
+    for (int i = 1; i < num_words; i++) {
         DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE + i * 4, 0);
     }
 
@@ -586,7 +586,7 @@ static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbe
     /* Z += Ztemp */
     MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi(Z, Z, &Ztemp) );
 
- cleanup:
+cleanup:
     mbedtls_mpi_free(&Ztemp);
 
     return ret;

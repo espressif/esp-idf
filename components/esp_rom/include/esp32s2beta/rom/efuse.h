@@ -50,7 +50,7 @@ typedef enum {
 
 typedef enum {
     ETS_EFUSE_BLOCK0 = 0,
-    ETS_EFUSE_MAC_SPI_8M_0 = 1,
+    ETS_EFUSE_MAC_SPI_SYS_0 = 1,
     ETS_EFUSE_BLOCK_SYS_DATA = 2,
     ETS_EFUSE_BLOCK_USR_DATA = 3,
     ETS_EFUSE_BLOCK_KEY0 = 4,
@@ -64,6 +64,15 @@ typedef enum {
 } ets_efuse_block_t;
 
 /**
+ * @brief set timing accroding the apb clock, so no read error or write error happens.
+ *
+ * @param clock: apb clock in HZ, only accept 20M, 40M, 80M.
+ *
+ * @return : 0 if success, others if clock not accepted
+ */
+int ets_efuse_set_timing(uint32_t clock);
+
+/**
  * @brief Enable efuse subsystem. Called after reset. Doesn't need to be called again.
  */
 void ets_efuse_start(void);
@@ -73,18 +82,18 @@ void ets_efuse_start(void);
   *
   * @param  null
   *
-  * @return null
+  * @return : 0 is success, others if apb clock is not accepted
   */
-void ets_efuse_read(void);
+int  ets_efuse_read(void);
 
 /**
   * @brief  Efuse write operation: Copies data from efuse write registers to efuse. Operates on a single block of efuses at a time.
   *
   * @note This function does not update read efuses, call ets_efuse_read() once all programming is complete.
   *
-  * @return null
+  * @return : 0 is success, others if apb clock is not accepted
   */
-void ets_efuse_program(ets_efuse_block_t block);
+int ets_efuse_program(ets_efuse_block_t block);
 
 /**
  * @brief Set all Efuse program registers to zero.
@@ -97,7 +106,7 @@ void ets_efuse_clear_program_registers(void);
  * @brief Program a block of key data to an efuse block
  *
  * @param key_block Block to read purpose for. Must be in range ETS_EFUSE_BLOCK_KEY0 to ETS_EFUSE_BLOCK_KEY6. Key block must be unused (@ref ets_efuse_key_block_unused).
- * @param purpose Purpose to set for this key.
+ * @param purpose Purpose to set for this key. Purpose must be already unset.
  * @param data Pointer to data to write.
  * @param data_len Length of data to write.
  *
@@ -168,25 +177,6 @@ unsigned ets_efuse_count_unused_key_blocks(void);
 void ets_efuse_rs_calculate(const void *data, void *rs_values);
 
 /**
-  * @brief  Read 8M Analog Clock value(12 bits) in efuse, the analog clock will not change with temperature.
-  *         It can be used to test the external xtal frequency, do not touch this efuse field.
-  *
-  * @param  null
-  *
-  * @return uint32_t: 1 for 10KHZ, range is 0 to 4095.
-  */
-uint32_t ets_efuse_get_8M_clock(void);
-
-/**
-  * @brief  Read xtal frequency value(6 bits) in efuse.
-  *
-  * @param  null
-  *
-  * @return uint32_t: 1 for 1MHz, range is 0 to 63, 0 means the xtal frequency not record in efuse.
-  */
-uint32_t ets_efuse_get_xtal_freq(void);
-
-/**
   * @brief  Read spi flash pads configuration from Efuse
   *
   * @return
@@ -206,6 +196,16 @@ uint32_t ets_efuse_get_spiconfig(void);
   * - 0~46 is valid.
   */
 uint32_t ets_efuse_get_wp_pad(void);
+
+/**
+ * @brief Read opi flash pads configuration from Efuse
+ *
+ * @return
+ * - 0 for default SPI pins.
+ * - Other values define a custom pin configuration mask. From the LSB, every 6 bits represent a GPIO number which stand for:
+ *   DQS, D4, D5, D6, D7 accordingly.
+ */
+uint32_t ets_efuse_get_opiconfig(void);
 
 /**
   * @brief  Read if download mode disabled from Efuse
@@ -246,7 +246,10 @@ uint32_t ets_efuse_get_uart_print_control(void);
 uint32_t ets_efuse_get_uart_print_channel(void);
 
 /**
-  * @brief  Read if usb dowload mode disabled from Efuse
+  * @brief  Read if usb download mode disabled from Efuse
+  *
+  * (Also returns true if security download mode is enabled, as this mode
+  * disables USB download.)
   *
   * @return
   * - true for efuse disable usb download mode.
@@ -282,14 +285,49 @@ bool ets_efuse_usb_module_disabled(void);
 bool ets_efuse_security_download_modes_enabled(void);
 
 /**
- * @brief Return true if secure boot enable in EFuse
+ * @brief Return true if secure boot is enabled in EFuse
  */
 bool ets_efuse_secure_boot_enabled(void);
 
-/**                                                                        
-  * @brief  return the time in us ROM boot need wait flash to power on from Efuse             
-  *                                                                        
-  * @return                                                                
+/**
+ * @brief Return true if secure boot aggressive revoke is enabled in EFuse
+ */
+bool ets_efuse_secure_boot_aggressive_revoke_enabled(void);
+
+/**
+ * @brief Return true if cache encryption (flash, PSRAM, etc) is enabled from boot via EFuse
+ */
+bool ets_efuse_cache_encryption_enabled(void);
+
+/**
+ * @brief Return true if EFuse indicates an external phy needs to be used for USB
+ */
+bool ets_efuse_usb_use_ext_phy(void);
+
+/**
+ * @brief Return true if EFuse indicates USB device persistence is disabled
+ */
+bool ets_efuse_usb_force_nopersist(void);
+
+/**
+ * @brief Return true if OPI pins GPIO33-37 are powered by VDDSPI, otherwise by VDD33CPU
+ */
+bool ets_efuse_flash_opi_5pads_power_sel_vddspi(void);
+
+/**
+ * @brief Return true if EFuse indicates an opi flash is attached.
+ */
+bool ets_efuse_flash_opi_mode(void);
+
+/**
+ * @brief Return true if EFuse indicates to send a flash resume command.
+ */
+bool ets_efuse_force_send_resume(void);
+
+/**
+  * @brief  return the time in us ROM boot need wait flash to power on from Efuse
+  *
+  * @return
   * - uint32_t the time in us.
   */
 uint32_t ets_efuse_get_flash_delay_us(void);

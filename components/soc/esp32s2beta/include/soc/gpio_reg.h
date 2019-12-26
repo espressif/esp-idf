@@ -83,7 +83,7 @@ extern "C" {
 /* GPIO_OUT1_DATA : R/W ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
 #define GPIO_OUT1_DATA  0x003FFFFF
-#define GPIO_OUT1_DATA_M  ((GPIO_OUT_DATA_V)<<(GPIO_OUT_DATA_S))
+#define GPIO_OUT1_DATA_M  ((GPIO_OUT1_DATA_V)<<(GPIO_OUT1_DATA_S))
 #define GPIO_OUT1_DATA_V  0x3FFFFF
 #define GPIO_OUT1_DATA_S  0
 
@@ -2664,7 +2664,7 @@ extern "C" {
 #define GPIO_STATUS_INTERRUPT_NEXT_S  0
 
 #define GPIO_STATUS_NEXT1_REG          (DR_REG_GPIO_BASE + 0x150)
-/* GPIO_STATUS_INTERRUPT_NEXT : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* GPIO_STATUS_INTERRUPT_NEXT1 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
 #define GPIO_STATUS_INTERRUPT_NEXT1  0x003FFFFF
 #define GPIO_STATUS_INTERRUPT_NEXT1_M  ((GPIO_STATUS_INTERRUPT_NEXT1_V)<<(GPIO_STATUS_INTERRUPT_NEXT1_S))
@@ -9204,7 +9204,7 @@ extern "C" {
 #define GPIO_CLK_EN_S  0
 
 #define GPIO_DATE_REG          (DR_REG_GPIO_BASE + 0x6FC)
-/* GPIO_DATE : R/W ;bitpos:[27:0] ;default: 28'h1809040 ; */
+/* GPIO_DATE : R/W ;bitpos:[27:0] ;default: 28'h1905061 ; */
 /*description: */
 #define GPIO_DATE  0x0FFFFFFF
 #define GPIO_DATE_M  ((GPIO_DATE_V)<<(GPIO_DATE_S))

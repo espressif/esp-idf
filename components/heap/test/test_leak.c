@@ -46,13 +46,13 @@ TEST_CASE_MULTIPLE_STAGES("Not check for leaks in MULTIPLE_STAGES mode", "[heap]
 
 TEST_CASE_MULTIPLE_STAGES("Check for leaks in MULTIPLE_STAGES mode (leak)", "[heap][ignore]", test_fn, test_fn, test_fn);
 
-static void test_fn2(void)
+static __attribute__((unused)) void test_fn2(void)
 {
     check_calloc(1000);
     esp_restart();
 }
 
-static void test_fn3(void)
+static __attribute__((unused)) void test_fn3(void)
 {
     check_calloc(1000);
 }

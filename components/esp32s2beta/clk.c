@@ -48,8 +48,7 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk);
 
 // g_ticks_us defined in ROMs for PRO CPU
 extern uint32_t g_ticks_per_us_pro;
-
-static const char* TAG = "clk";
+static const char *TAG = "clk";
 
 
 void esp_clk_init(void)
@@ -89,20 +88,20 @@ void esp_clk_init(void)
 
     uint32_t freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
     rtc_cpu_freq_t freq = RTC_CPU_FREQ_80M;
-    switch(freq_mhz) {
-        case 240:
-            freq = RTC_CPU_FREQ_240M;
-            break;
-        case 160:
-            freq = RTC_CPU_FREQ_160M;
-            break;
-        case 80:
-            freq = RTC_CPU_FREQ_80M;
-            break;
-        default:
-            freq_mhz = 80;
-            freq = RTC_CPU_FREQ_80M;
-            break;
+    switch (freq_mhz) {
+    case 240:
+        freq = RTC_CPU_FREQ_240M;
+        break;
+    case 160:
+        freq = RTC_CPU_FREQ_160M;
+        break;
+    case 80:
+        freq = RTC_CPU_FREQ_80M;
+        break;
+    default:
+        freq_mhz = 80;
+        freq = RTC_CPU_FREQ_80M;
+        break;
     }
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
@@ -152,14 +151,14 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
             rtc_clk_32k_enable(true);
             cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
-            if(cal_val == 0 || cal_val < 15000000L){
+            if (cal_val == 0 || cal_val < 15000000L) {
                 ESP_EARLY_LOGE(TAG, "RTC: Not found External 32 kHz XTAL. Switching to Internal 150 kHz RC chain");
                 slow_clk = RTC_SLOW_FREQ_RTC;
                 changing_clock_to_150k = true;
             }
         }
         rtc_clk_slow_freq_set(slow_clk);
-        if (changing_clock_to_150k == true && wait > 1){
+        if (changing_clock_to_150k == true && wait > 1) {
             // This helps when there are errors when switching the clock from External 32 kHz XTAL to Internal 150 kHz RC chain.
             rtc_clk_32k_enable(false);
             uint32_t min_bootstrap = 5; // Min bootstrapping for continue switching the clock.
@@ -207,51 +206,50 @@ void esp_perip_clk_init(void)
     /* For reason that only reset CPU, do not disable the clocks
      * that have been enabled before reset.
      */
-    if ((rst_reas[0] >= TG0WDT_CPU_RESET && rst_reas[0] <= TG0WDT_CPU_RESET && rst_reas[0] != RTCWDT_BROWN_OUT_RESET)
-    ) {
+    if (rst_reas[0] >= TG0WDT_CPU_RESET &&
+            rst_reas[0] <= TG0WDT_CPU_RESET &&
+            rst_reas[0] != RTCWDT_BROWN_OUT_RESET) {
         common_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERIP_CLK_EN_REG);
         hwcrypto_perip_clk = ~DPORT_READ_PERI_REG(DPORT_PERI_CLK_EN_REG);
         wifi_bt_sdio_clk = ~DPORT_READ_PERI_REG(DPORT_WIFI_CLK_EN_REG);
-    }
-    else {
+    } else {
         common_perip_clk = DPORT_WDG_CLK_EN |
-                              DPORT_I2S0_CLK_EN |
+                           DPORT_I2S0_CLK_EN |
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
-                              DPORT_UART_CLK_EN |
+                           DPORT_UART_CLK_EN |
 #endif
 #if CONFIG_ESP_CONSOLE_UART_NUM != 1
-                              DPORT_UART1_CLK_EN |
+                           DPORT_UART1_CLK_EN |
 #endif
-                              DPORT_USB_CLK_EN |
-                              DPORT_SPI2_CLK_EN |
-                              DPORT_I2C_EXT0_CLK_EN |
-                              DPORT_UHCI0_CLK_EN |
-                              DPORT_RMT_CLK_EN |
-                              DPORT_PCNT_CLK_EN |
-                              DPORT_LEDC_CLK_EN |
-                              DPORT_TIMERGROUP1_CLK_EN |
-                              DPORT_SPI3_CLK_EN |
-                              DPORT_SPI4_CLK_EN |
-                              DPORT_PWM0_CLK_EN |
-                              DPORT_CAN_CLK_EN |
-                              DPORT_PWM1_CLK_EN |
-                              DPORT_I2S1_CLK_EN |
-                              DPORT_SPI2_DMA_CLK_EN |
-                              DPORT_SPI3_DMA_CLK_EN |
-                              DPORT_PWM2_CLK_EN |
-                              DPORT_PWM3_CLK_EN;
-        common_perip_clk1 = DPORT_SPI_SHARED_DMA_CLK_EN;
-        hwcrypto_perip_clk = DPORT_PERI_EN_AES |
-                                DPORT_PERI_EN_SHA |
-                                DPORT_PERI_EN_RSA |
-                                DPORT_PERI_EN_SECUREBOOT;
+                           DPORT_USB_CLK_EN |
+                           DPORT_SPI2_CLK_EN |
+                           DPORT_I2C_EXT0_CLK_EN |
+                           DPORT_UHCI0_CLK_EN |
+                           DPORT_RMT_CLK_EN |
+                           DPORT_PCNT_CLK_EN |
+                           DPORT_LEDC_CLK_EN |
+                           DPORT_TIMERGROUP1_CLK_EN |
+                           DPORT_SPI3_CLK_EN |
+                           DPORT_SPI4_CLK_EN |
+                           DPORT_PWM0_CLK_EN |
+                           DPORT_CAN_CLK_EN |
+                           DPORT_PWM1_CLK_EN |
+                           DPORT_I2S1_CLK_EN |
+                           DPORT_SPI2_DMA_CLK_EN |
+                           DPORT_SPI3_DMA_CLK_EN |
+                           DPORT_PWM2_CLK_EN |
+                           DPORT_PWM3_CLK_EN;
+        common_perip_clk1 = 0;
+        hwcrypto_perip_clk = DPORT_CRYPTO_AES_CLK_EN |
+                             DPORT_CRYPTO_SHA_CLK_EN |
+                             DPORT_CRYPTO_RSA_CLK_EN;
         wifi_bt_sdio_clk = DPORT_WIFI_CLK_WIFI_EN |
-                              DPORT_WIFI_CLK_BT_EN_M |
-                              DPORT_WIFI_CLK_UNUSED_BIT5 |
-                              DPORT_WIFI_CLK_UNUSED_BIT12 |
-                              DPORT_WIFI_CLK_SDIOSLAVE_EN |
-                              DPORT_WIFI_CLK_SDIO_HOST_EN |
-                              DPORT_WIFI_CLK_EMAC_EN;
+                           DPORT_WIFI_CLK_BT_EN_M |
+                           DPORT_WIFI_CLK_UNUSED_BIT5 |
+                           DPORT_WIFI_CLK_UNUSED_BIT12 |
+                           DPORT_WIFI_CLK_SDIOSLAVE_EN |
+                           DPORT_WIFI_CLK_SDIO_HOST_EN |
+                           DPORT_WIFI_CLK_EMAC_EN;
     }
 
     //Reset the communication peripherals like I2C, SPI, UART, I2S and bring them to known state.
@@ -274,7 +272,7 @@ void esp_perip_clk_init(void)
                         DPORT_I2S1_CLK_EN |
                         DPORT_SPI2_DMA_CLK_EN |
                         DPORT_SPI3_DMA_CLK_EN;
-    common_perip_clk1 = DPORT_SPI_SHARED_DMA_CLK_EN;
+    common_perip_clk1 = 0;
 
     /* Change I2S clock to audio PLL first. Because if I2S uses 160MHz clock,
      * the current is not reduced when disable I2S clock.

@@ -27,10 +27,13 @@ menu "ESP32S2-specific"
 
     choice ESP32S2_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
-        default ESP32S2_DEFAULT_CPU_FREQ_160
+        default ESP32S2_DEFAULT_CPU_FREQ_160 if !IDF_ENV_FPGA
+        default ESP32S2_DEFAULT_CPU_FREQ_FPGA if IDF_ENV_FPGA
         help
             CPU frequency to be set on application startup.
 
+        config ESP32S2_DEFAULT_CPU_FREQ_FPGA
+            bool "FPGA"
         config ESP32S2_DEFAULT_CPU_FREQ_80
             bool "80 MHz"
         config ESP32S2_DEFAULT_CPU_FREQ_160
@@ -41,6 +44,7 @@ menu "ESP32S2-specific"
 
     config ESP32S2_DEFAULT_CPU_FREQ_MHZ
         int
+        default 40 if IDF_ENV_FPGA
         default 80 if ESP32S2_DEFAULT_CPU_FREQ_80
         default 160 if ESP32S2_DEFAULT_CPU_FREQ_160
         default 240 if ESP32S2_DEFAULT_CPU_FREQ_240

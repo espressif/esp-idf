@@ -18,10 +18,10 @@ extern "C" {
 #endif
 
 typedef volatile struct {
-    uint32_t bt_select;                             /**/
-    uint32_t out;                                   /**/
-    uint32_t out_w1ts;                              /**/
-    uint32_t out_w1tc;                              /**/
+    uint32_t bt_select;                               /**/
+    uint32_t out;                                     /**/
+    uint32_t out_w1ts;                                /**/
+    uint32_t out_w1tc;                                /**/
     union {
         struct {
             uint32_t data:      22;
@@ -50,9 +50,9 @@ typedef volatile struct {
         };
         uint32_t val;
     } sdio_select;
-    uint32_t enable;                                /**/
-    uint32_t enable_w1ts;                           /**/
-    uint32_t enable_w1tc;                           /**/
+    uint32_t enable;                                  /**/
+    uint32_t enable_w1ts;                             /**/
+    uint32_t enable_w1tc;                             /**/
     union {
         struct {
             uint32_t data:       22;
@@ -81,7 +81,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } strap;
-    uint32_t in;                                    /**/
+    uint32_t in;                                      /**/
     union {
         struct {
             uint32_t data:        22;
@@ -89,9 +89,9 @@ typedef volatile struct {
         };
         uint32_t val;
     } in1;
-    uint32_t status;                                /**/
-    uint32_t status_w1ts;                           /**/
-    uint32_t status_w1tc;                           /**/
+    uint32_t status;                                  /**/
+    uint32_t status_w1ts;                             /**/
+    uint32_t status_w1tc;                             /**/
     union {
         struct {
             uint32_t intr_st:         22;
@@ -113,9 +113,9 @@ typedef volatile struct {
         };
         uint32_t val;
     } status1_w1tc;
-    uint32_t pcpu_int;                              /**/
-    uint32_t pcpu_nmi_int;                          /**/
-    uint32_t cpusdio_int;                           /**/
+    uint32_t pcpu_int;                                /**/
+    uint32_t pcpu_nmi_int;                            /**/
+    uint32_t cpusdio_int;                             /**/
     union {
         struct {
             uint32_t intr:      22;

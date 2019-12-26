@@ -1,4 +1,4 @@
-// Copyright 2010-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2010-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,10 @@
 #include <stdlib.h>
 #include <stdint.h>
 
+#include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/soc_memory_layout.h"
 #include "esp_heap_caps.h"
-#include "sdkconfig.h"
 
 /* Memory layout for ESP32 SoC */
 
@@ -51,11 +51,6 @@ const soc_memory_type_desc_t soc_memory_types[] = {
     //Type 4: SPI SRAM data
     //TODO, in fact, part of them support EDMA, to be supported.
     { "SPIRAM", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
-    //Type 5: SPI SRAM data from AHB DBUS3, slower than normal
-    //TODO, add a bit to control the access of it
-#if CONFIG_USE_AHB_DBUS3_ACCESS_SPIRAM
-    { "SPIRAM(Slow)", { MALLOC_CAP_SPIRAM|MALLOC_CAP_DEFAULT, 0, MALLOC_CAP_8BIT|MALLOC_CAP_32BIT}, false, false},
-#endif
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types)/sizeof(soc_memory_type_desc_t);
@@ -69,9 +64,6 @@ from low to high start address.
 const soc_memory_region_t soc_memory_regions[] = {
 #ifdef CONFIG_SPIRAM
     { SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW, 4, 0}, //SPI SRAM, if available
-#if CONFIG_USE_AHB_DBUS3_ACCESS_SPIRAM
-    { SOC_SLOW_EXTRAM_DATA_LOW, SOC_SLOW_EXTRAM_DATA_HIGH - SOC_SLOW_EXTRAM_DATA_LOW, 5, 0}, //SPI SRAM, if available
-#endif
 #endif
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_8KB
 #if CONFIG_ESP32S2_DATA_CACHE_0KB
@@ -116,21 +108,18 @@ const soc_memory_region_t soc_memory_regions[] = {
 const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_memory_region_t);
 
 
-extern int _data_start_xtos;
+extern int _dram0_rtos_reserved_start;
 /* Reserved memory regions
 
    These are removed from the soc_memory_regions array when heaps are created.
  */
 //ROM data region
-SOC_RESERVE_MEMORY_REGION(0x3fffc000, (intptr_t)&_data_start_xtos, rom_data_region);
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_dram0_rtos_reserved_start, SOC_BYTE_ACCESSIBLE_HIGH, rom_data_region);
 
 // TODO: soc_memory_layout: handle trace memory regions - IDF-750
 
 #ifdef CONFIG_SPIRAM
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
-#if CONFIG_USE_AHB_DBUS3_ACCESS_SPIRAM
-SOC_RESERVE_MEMORY_REGION( SOC_SLOW_EXTRAM_DATA_LOW, SOC_SLOW_EXTRAM_DATA_HIGH, extram_slow_data_region); //SPI RAM(Slow) gets added later if needed, in spiram.c; reserve it for now
-#endif
 #endif
 
 

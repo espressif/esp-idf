@@ -15,6 +15,7 @@
 #pragma once
 #include "stdint.h"
 #include "soc/soc.h"
+#include "soc/periph_defs.h"
 
 #ifdef __cplusplus
 extern "C"

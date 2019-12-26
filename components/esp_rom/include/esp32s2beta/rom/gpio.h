@@ -242,18 +242,18 @@ void gpio_matrix_out(uint32_t gpio, uint32_t signal_idx, bool out_inv, bool oen_
   *
   * @return None
   */
-void gpio_pad_select_gpio(uint8_t gpio_num);
+void gpio_pad_select_gpio(uint32_t gpio_num);
 
 /**
   * @brief Set pad driver capability.
   *
   * @param uint32_t gpio_num : gpio number, 0~0x2f
   *
-  * @param uint8_t drv : 0-3
+  * @param uint32_t drv : 0-3
   *
   * @return None
   */
-void gpio_pad_set_drv(uint8_t gpio_num, uint8_t drv);
+void gpio_pad_set_drv(uint32_t gpio_num, uint32_t drv);
 
 /**
   * @brief Pull up the pad from gpio number.
@@ -262,7 +262,7 @@ void gpio_pad_set_drv(uint8_t gpio_num, uint8_t drv);
   *
   * @return None
   */
-void gpio_pad_pullup(uint8_t gpio_num);
+void gpio_pad_pullup(uint32_t gpio_num);
 
 /**
   * @brief Pull down the pad from gpio number.
@@ -271,7 +271,7 @@ void gpio_pad_pullup(uint8_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_pulldown(uint8_t gpio_num);
+void gpio_pad_pulldown(uint32_t gpio_num);
 
 /**
   * @brief Unhold the pad from gpio number.
@@ -280,7 +280,7 @@ void gpio_pad_pulldown(uint8_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_unhold(uint8_t gpio_num);
+void gpio_pad_unhold(uint32_t gpio_num);
 
 /**
   * @brief Hold the pad from gpio number.
@@ -289,7 +289,25 @@ void gpio_pad_unhold(uint8_t gpio_num);
   *
   * @return None
   */
-void gpio_pad_hold(uint8_t gpio_num);
+void gpio_pad_hold(uint32_t gpio_num);
+
+/**
+  * @brief enable gpio pad input.
+  *
+  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  *
+  * @return None
+  */
+void gpio_pad_input_enable(uint32_t gpio_num);
+
+/**
+  * @brief disable gpio pad input.
+  *
+  * @param uint32_t gpio_num : gpio number, 0~0x2f
+  *
+  * @return None
+  */
+void gpio_pad_input_disable(uint32_t gpio_num);
 
 /**
   * @}

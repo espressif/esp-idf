@@ -21,7 +21,7 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_commo
 
 #if CONFIG_ESP32_COREDUMP_DATA_FORMAT_BIN
 
-static inline uint32_t esp_core_dump_get_tcb_len()
+static inline uint32_t esp_core_dump_get_tcb_len(void)
 {
     if (COREDUMP_TCB_SIZE % sizeof(uint32_t)) {
         return ((COREDUMP_TCB_SIZE / sizeof(uint32_t) + 1) * sizeof(uint32_t));

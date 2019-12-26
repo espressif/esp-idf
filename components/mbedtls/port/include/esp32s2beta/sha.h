@@ -11,6 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 #ifndef _ESP_SHA_H_
 #define _ESP_SHA_H_
 
@@ -100,6 +101,31 @@ void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, uns
  * function but before accessing the SHA registers.
  */
 void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block);
+
+/* @brief Begin to execute SHA block operation using DMA
+ *
+ * @note This is a piece of a SHA algorithm, rather than an entire SHA
+ * algorithm.
+ *
+ * @note Call esp_sha_try_lock_engine() before calling this
+ * function. Do not call esp_sha_lock_memory_block() beforehand, this
+ * is done inside the function.
+ *
+ * @param sha_type SHA algorithm to use.
+ *
+ * @param data_block Pointer to block of data. Block size is
+ * determined by algorithm (SHA1/SHA2_256 = 64 bytes,
+ * SHA2_384/SHA2_512 = 128 bytes)
+ *
+ * @param ilen length of input data should be multiple of block length.
+ *
+ * @param is_first_block If this parameter is true, the SHA state will
+ * be initialised (with the initial state of the given SHA algorithm)
+ * before the block is calculated. If false, the existing state of the
+ * SHA engine will be used.
+ *
+ */
+int esp_sha_dma(esp_sha_type sha_type, const void *data_block, uint32_t ilen, bool is_first_block);
 
 /** @brief Read out the current state of the SHA digest loaded in the engine.
  *

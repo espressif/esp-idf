@@ -299,11 +299,17 @@ TEST_SPI_LOCAL(TIMING, timing_pgroup)
 #define FREQ_LIMIT_MODE SPI_MASTER_FREQ_16M
 static int test_freq_mode_local[]={
     1*1000*1000,
+#if APB_CLK_FREQ==80*1000*1000
     SPI_MASTER_FREQ_9M, //maximum freq MISO stable before next latch edge
+#endif
     SPI_MASTER_FREQ_13M,
+#if APB_CLK_FREQ==80*1000*1000
     SPI_MASTER_FREQ_16M,
+#endif
     SPI_MASTER_FREQ_20M,
+#if APB_CLK_FREQ==80*1000*1000
     SPI_MASTER_FREQ_26M,
+#endif
     SPI_MASTER_FREQ_40M,
     0,
 };
@@ -345,6 +351,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_iomux = LOCAL_MODE_TEST_SLAVE_IOMUX,
         .slave_tv_ns = TV_INT_CONNECT,
     },
+#if APB_CLK_FREQ==80*1000*1000
     {   .pset_name = "Mode 1",
         .freq_list = test_freq_mode_local,
         .freq_limit = SPI_MASTER_FREQ_26M,
@@ -355,6 +362,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_iomux = LOCAL_MODE_TEST_SLAVE_IOMUX,
         .slave_tv_ns = TV_INT_CONNECT,
     },
+#endif
     {   .pset_name = "Mode 2",
         .freq_list = test_freq_mode_local,
         .master_limit = SPI_MASTER_FREQ_13M,
@@ -364,6 +372,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_iomux = LOCAL_MODE_TEST_SLAVE_IOMUX,
         .slave_tv_ns = TV_INT_CONNECT,
     },
+#if APB_CLK_FREQ==80*1000*1000
     {   .pset_name = "Mode 3",
         .freq_list = test_freq_mode_local,
         .freq_limit = SPI_MASTER_FREQ_26M,
@@ -374,6 +383,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_iomux = LOCAL_MODE_TEST_SLAVE_IOMUX,
         .slave_tv_ns = TV_INT_CONNECT,
     },
+#endif
     {   .pset_name = "Mode 0, DMA",
         .freq_list = test_freq_mode_local,
         .master_limit = SPI_MASTER_FREQ_13M,
@@ -385,6 +395,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_tv_ns = TV_INT_CONNECT,
         .length_aligned = true,
     },
+#if APB_CLK_FREQ==80*1000*1000
     {   .pset_name = "Mode 1, DMA",
         .freq_list = test_freq_mode_local,
         .freq_limit = SPI_MASTER_FREQ_26M,
@@ -397,6 +408,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_tv_ns = TV_INT_CONNECT,
         .length_aligned = true,
     },
+#endif
     {   .pset_name = "Mode 2, DMA",
         .freq_list = test_freq_mode_local,
         .master_limit = SPI_MASTER_FREQ_13M,
@@ -408,6 +420,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_tv_ns = TV_INT_CONNECT,
         .length_aligned = true,
     },
+#if APB_CLK_FREQ==80*1000*1000
     {   .pset_name = "Mode 3, DMA",
         .freq_list = test_freq_mode_local,
         .freq_limit = SPI_MASTER_FREQ_26M,
@@ -420,6 +433,7 @@ static spitest_param_set_t mode_pgroup[] = {
         .slave_tv_ns = TV_INT_CONNECT,
         .length_aligned = true,
     },
+#endif
     /////////////////////////// MISO ////////////////////////////////////
     {   .pset_name = "MISO, Mode 0",
         .freq_list = test_freq_mode_local,

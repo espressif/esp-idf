@@ -109,7 +109,8 @@
 #define PSET_NAME_LEN   30  ///< length of each param set name
 
 //test low frequency, high frequency until freq limit for worst case (both GPIO)
-#define TEST_FREQ_DEFAULT(){\
+#if APB_CLK_FREQ==80*1000*1000
+#define TEST_FREQ_DEFAULT(){    \
         1*1000*1000,            \
         SPI_MASTER_FREQ_8M ,    \
         SPI_MASTER_FREQ_9M ,    \
@@ -123,6 +124,19 @@
         SPI_MASTER_FREQ_80M,    \
         0,\
     }
+#endif
+
+#if APB_CLK_FREQ==40*1000*1000
+#define TEST_FREQ_DEFAULT(){    \
+        1*1000*1000,            \
+        SPI_MASTER_FREQ_8M ,    \
+        SPI_MASTER_FREQ_10M,    \
+        SPI_MASTER_FREQ_13M,    \
+        SPI_MASTER_FREQ_20M,    \
+        SPI_MASTER_FREQ_40M,    \
+        0,\
+    }
+#endif
 
 //default bus config for tests
 #define SPI_BUS_TEST_DEFAULT_CONFIG() {\

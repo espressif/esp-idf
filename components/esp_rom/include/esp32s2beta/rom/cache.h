@@ -15,7 +15,6 @@
 #ifndef _ROM_CACHE_H_
 #define _ROM_CACHE_H_
 
-#include "esp_bit_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -32,17 +31,22 @@ extern "C" {
 #define MIN_CACHE_SIZE                  8192
 #define MAX_CACHE_SIZE                  16384
 #define MIN_CACHE_WAYS                  4
-#define MAX_CACHE_WAYS                  8
+#define MAX_CACHE_WAYS                  4
 #define MIN_CACHE_LINE_SIZE             16
-#define MAX_CACHE_LINE_SIZE             64
 //normally should be (MAX_CACHE_SIZE / MIN_CACHE_WAYS / MIN_CACHE_LINE_SIZE), however, the items not all in one tag memory block.
-#define MAX_TAG_BLOCK_ITEMS             (MAX_CACHE_SIZE / MAX_CACHE_WAYS / MIN_CACHE_LINE_SIZE)
+#define MAX_TAG_BLOCK_ITEMS             (MAX_CACHE_SIZE / 8 / MIN_CACHE_LINE_SIZE)
 #define TAG_SIZE                        4
 #define MAX_TAG_BLOCK_SIZE              (MAX_TAG_BLOCK_ITEMS * TAG_SIZE)
 
+#define INVALID_PHY_PAGE 0xffff
 #define ESP_CACHE_TEMP_ADDR DROM0_ADDRESS_LOW
 #define CACHE_MAX_OPERATION_SIZE BUS_ADDR_SIZE
 
+
+typedef enum {
+    CACHE_DCACHE = 0,
+    CACHE_ICACHE = 1,
+} cache_t;
 
 typedef enum {
     CACHE_MEMORY_INVALID = 0,
@@ -52,26 +56,21 @@ typedef enum {
     CACHE_MEMORY_DCACHE_HIGH = BIT(3),
 } cache_layout_t;
 
+#define CACHE_SIZE_8KB  CACHE_SIZE_HALF
+#define CACHE_SIZE_16KB CACHE_SIZE_FULL
 typedef enum {
-    CACHE_SIZE_8KB = 0,
-    CACHE_SIZE_16KB = 1,
+    CACHE_SIZE_HALF = 0,                /*!< 8KB for icache and dcache */
+    CACHE_SIZE_FULL = 1,                /*!< 16KB for icache and dcache */
 } cache_size_t;
 
 typedef enum {
-    CACHE_4WAYS_ASSOC = 0,
-    CACHE_8WAYS_ASSOC = 1,
+    CACHE_4WAYS_ASSOC = 0,              /*!< 4 way associated cache */
 } cache_ways_t;
 
 typedef enum {
-    CACHE_LINE_SIZE_16B = 0,
-    CACHE_LINE_SIZE_32B = 1,
-    CACHE_LINE_SIZE_64B = 2,
+    CACHE_LINE_SIZE_16B = 0,            /*!< 16 Byte cache line size */
+    CACHE_LINE_SIZE_32B = 1,            /*!< 32 Byte cache line size */
 } cache_line_size_t;
-
-typedef enum {
-    CACHE_AUTOLOAD_NORMAL_MODE = 0,     /*!< normal mode will autoload anytime if enabled */
-    CACHE_AUTOLOAD_REGION_MODE = 1,     /*!< region mode only autoload if access the memory in regions */
-} cache_autoload_mode_t;
 
 typedef enum {
     CACHE_AUTOLOAD_POSITIVE = 0,        /*!< cache autoload step is positive */
@@ -87,10 +86,10 @@ typedef enum {
 } cache_autoload_trigger_t;
 
 struct cache_mode {
-    uint32_t cache_size;
-    uint16_t cache_line_size;
-    uint8_t cache_ways;
-    uint8_t icache;
+    uint32_t cache_size;                /*!< cache size in byte */
+    uint16_t cache_line_size;           /*!< cache line size in byte */
+    uint8_t cache_ways;                 /*!< cache ways, always 4 */
+    uint8_t icache;                     /*!< the cache index, 0 for dcache, 1 for icache */
 };
 
 struct tag_item {
@@ -105,11 +104,10 @@ struct tag_item {
 };
 
 struct autoload_config {
-    uint8_t mode;                       /*!< autoload mode */
     uint8_t order;                      /*!< autoload step is positive or negative */
-    uint8_t step;                       /*!< autoload step */
     uint8_t trigger;                    /*!< autoload trigger */
-    uint32_t autoload_size;             /*!< autoload size */
+    uint8_t ena0;                       /*!< autoload region0 enable */
+    uint8_t ena1;                       /*!< autoload region1 enable */
     uint32_t addr0;                     /*!< autoload region0 start address */
     uint32_t size0;                     /*!< autoload region0 size */
     uint32_t addr1;                     /*!< autoload region1 start address */
@@ -118,6 +116,7 @@ struct autoload_config {
 
 struct tag_group_info {
     struct cache_mode mode;                         /*!< cache and cache mode */
+    uint32_t filter_addr;                           /*!< the address that used to generate the struct */
     uint32_t vaddr_offset;		            /*!< virtual address offset of the cache ways */
     uint32_t tag_addr[MAX_CACHE_WAYS];              /*!< tag memory address, only [0~mode.ways-1] is valid to use */
     uint32_t cache_memory_offset[MAX_CACHE_WAYS];   /*!< cache memory address, only [0~mode.ways-1] is valid to use */
@@ -129,9 +128,10 @@ struct lock_config {
     uint16_t group;                                 /*!< manual lock group, 0 or 1*/
 };
 
-#define MMU_SET_ADDR_ALIGNED_ERROR	1
-#define MMU_SET_PASE_SIZE_ERROR		3
-#define MMU_SET_VADDR_OUT_RANGE		5
+#define ESP_ROM_ERR_INVALID_ARG         1
+#define MMU_SET_ADDR_ALIGNED_ERROR      2
+#define MMU_SET_PASE_SIZE_ERROR         3
+#define MMU_SET_VADDR_OUT_RANGE         4
 
 /**
   * @brief Initialise cache mmu, mark all entries as invalid.
@@ -164,9 +164,9 @@ void Cache_MMU_Init(void);
   *
   * @return uint32_t: error status
   *                   0 : mmu set success
-  *                   1 : vaddr or paddr is not aligned
+  *                   2 : vaddr or paddr is not aligned
   *                   3 : psize error
-  *                   5 : vaddr is out of range
+  *                   4 : vaddr is out of range
   */
 int Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,  uint32_t psize, uint32_t num, uint32_t fixed);
 
@@ -191,31 +191,11 @@ int Cache_Ibus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr,  uint32
   *
   * @return uint32_t: error status
   *                   0 : mmu set success
-  *                   1 : vaddr or paddr is not aligned
+  *                   2 : vaddr or paddr is not aligned
   *                   3 : psize error
-  *                   5 : vaddr is out of range
+  *                   4 : vaddr is out of range
   */
 int Cache_Dbus_MMU_Set(uint32_t ext_ram, uint32_t vaddr, uint32_t paddr, uint32_t psize, uint32_t num, uint32_t fixed);
-
-/**
-  * @brief Copy DRom0 ICache MMU to DCache MMU.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void MMU_Drom0_I2D_Copy(void);
-
-/**
-  * @brief Unmap DRom0 ICache MMU.
-  *        Please do not call this function in your SDK application.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void MMU_Drom_ICache_Unmap(void);
 
 /**
   * @brief Count the pages in the bus room address which map to Flash.
@@ -252,11 +232,11 @@ uint32_t Cache_Flash_To_SPIRAM_Copy(uint32_t bus, uint32_t bus_start_addr, uint3
   *
   * @param cache_layout_t sram0_layout : the usage of first 8KB internal memory block, can be CACHE_MEMORY_INVALID, CACHE_MEMORY_ICACHE_LOW, CACHE_MEMORY_ICACHE_HIGH, CACHE_MEMORY_DCACHE_LOW and CACHE_MEMORY_DCACHE_HIGH
   *
-  * @param cache_layout_t sram1_layout : the usage of second 8KB internal memory block 
+  * @param cache_layout_t sram1_layout : the usage of second 8KB internal memory block
   *
-  * @param cache_layout_t sram2_layout : the usage of third 8KB internal memory block 
+  * @param cache_layout_t sram2_layout : the usage of third 8KB internal memory block
   *
-  * @param cache_layout_t sram3_layout : the usage of forth 8KB internal memory block 
+  * @param cache_layout_t sram3_layout : the usage of forth 8KB internal memory block
   *
   * return none
   */
@@ -266,7 +246,7 @@ void Cache_Allocate_SRAM(cache_layout_t sram0_layout, cache_layout_t sram1_layou
   * @brief Get cache mode of ICache or DCache.
   *        Please do not call this function in your SDK application.
   *
-  * @param struct cache_mode * mode : the pointer of cache mode struct
+  * @param struct cache_mode * mode : the pointer of cache mode struct, caller should set the icache field
   *
   * return none
   */
@@ -276,13 +256,11 @@ void Cache_Get_Mode(struct cache_mode * mode);
   * @brief set ICache modes: cache size, associate ways and cache line size.
   *        Please do not call this function in your SDK application.
   *
-  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_8KB and CACHE_SIZE_16KB
+  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_HALF and CACHE_SIZE_FULL
   *
-  * @param cache_ways_t ways : the associate ways of cache, cane be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC 
+  * @param cache_ways_t ways : the associate ways of cache, can only be CACHE_4WAYS_ASSOC
   *
-  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B and CACHE_LINE_SIZE_64B 
-  *
-  * @param cache_layout_t sram3_layout : the usage of forth 8KB internal memory block 
+  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B
   *
   * return none
   */
@@ -292,13 +270,11 @@ void Cache_Set_ICache_Mode(cache_size_t cache_size, cache_ways_t ways, cache_lin
   * @brief set DCache modes: cache size, associate ways and cache line size.
   *        Please do not call this function in your SDK application.
   *
-  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_8KB and CACHE_SIZE_16KB
+  * @param cache_size_t cache_size : the cache size, can be CACHE_SIZE_HALF and CACHE_SIZE_FULL
   *
-  * @param cache_ways_t ways : the associate ways of cache, cane be CACHE_4WAYS_ASSOC and CACHE_8WAYS_ASSOC 
+  * @param cache_ways_t ways : the associate ways of cache, can only be CACHE_4WAYS_ASSOC
   *
-  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B and CACHE_LINE_SIZE_64B 
-  *
-  * @param cache_layout_t sram3_layout : the usage of forth 8KB internal memory block 
+  * @param cache_line_size_t cache_line_size : the cache line size, can be CACHE_LINE_SIZE_16B, CACHE_LINE_SIZE_32B
   *
   * return none
   */
@@ -327,92 +303,100 @@ uint32_t Cache_Address_Through_DCache(uint32_t addr);
 /**
   * @brief Invalidate the cache items for ICache.
   *        Operation will be done CACHE_LINE_SIZE aligned.
-  *        If the addr is not in our addr room, we will Flush all Cache.
+  *        If the region is not in ICache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr: start address to invalidate
   *
-  * @param  uint32_t size: size to invalidate, should <= 4MB
+  * @param  uint32_t items: cache lines to invalidate, items * cache_line_size should not exceed the bus address size(4MB)
   *
   * @return None
   */
-void Cache_Invalidate_ICache_Items(uint32_t addr, uint32_t size);
+void Cache_Invalidate_ICache_Items(uint32_t addr, uint32_t items);
 
 /**
   * @brief Invalidate the cache items for DCache.
   *        Operation will be done CACHE_LINE_SIZE aligned.
-  *        If the addr is not in our addr room, we will Flush all Cache.
+  *        If the region is not in DCache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr: start address to invalidate
   *
-  * @param  uint32_t size: size to invalidate, should <= 4MB
+  * @param  uint32_t items: cache lines to invalidate, items * cache_line_size should not exceed the bus address size(4MB)
   *
   * @return None
   */
-void Cache_Invalidate_DCache_Items(uint32_t addr, uint32_t size);
+void Cache_Invalidate_DCache_Items(uint32_t addr, uint32_t items);
 
 /**
   * @brief Clean the dirty bit of cache Items of DCache.
   *        Operation will be done CACHE_LINE_SIZE aligned.
+  *        If the region is not in DCache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr: start address to Clean
   *
-  * @param  uint32_t size: size to Clean, should <= 4MB
+  * @param  uint32_t items: cache lines to invalidate, items * cache_line_size should not exceed the bus address size(4MB)
   *
   * @return None
   */
-void Cache_Clean_Items(uint32_t addr, uint32_t size);
+void Cache_Clean_Items(uint32_t addr, uint32_t items);
 
 /**
   * @brief Write back the cache items of DCache.
   *        Operation will be done CACHE_LINE_SIZE aligned.
+  *        If the region is not in DCache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr: start address to write back
   *
-  * @param  uint32_t size: size to write back, should <= 4MB
+  * @param  uint32_t items: cache lines to invalidate, items * cache_line_size should not exceed the bus address size(4MB)
   *
   * @return None
   */
-void Cache_WriteBack_Items(uint32_t addr, uint32_t size);
+void Cache_WriteBack_Items(uint32_t addr, uint32_t items);
 
 /**
   * @brief Invalidate the Cache items in the region from ICache or DCache.
+  *        If the region is not in Cache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr : invalidated region start address.
   *
   * @param  uint32_t size : invalidated region size.
   *
-  * @return None
+  * @return 0 for success
+  *         1 for invalid argument
   */
-void Cache_Invalidate_Addr(uint32_t addr, uint32_t size);
+int Cache_Invalidate_Addr(uint32_t addr, uint32_t size);
 
 /**
   * @brief Clean the dirty bit of Cache items in the region from DCache.
+  *        If the region is not in DCache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr : cleaned region start address.
   *
   * @param  uint32_t size : cleaned region size.
   *
-  * @return None
+  * @return 0 for success
+  *         1 for invalid argument
   */
-void Cache_Clean_Addr(uint32_t addr, uint32_t size);
+int Cache_Clean_Addr(uint32_t addr, uint32_t size);
 
 /**
   * @brief Writeback the Cache items(also clean the dirty bit) in the region from DCache.
+  *        If the region is not in DCache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
   * @param  uint32_t addr : writeback region start address.
   *
   * @param  uint32_t size : writeback region size.
   *
-  * @return None
+  * @return 0 for success
+  *         1 for invalid argument
   */
-void Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
+int Cache_WriteBack_Addr(uint32_t addr, uint32_t size);
 
 
 /**
@@ -466,7 +450,7 @@ void Cache_WriteBack_All(void);
 void Cache_Mask_All(void);
 
 /**
-  * @brief UnMask DRom0 bus through ICache or DCache.
+  * @brief UnMask DRom0 bus through ICache.
   *        Please do not call this function in your SDK application.
   *
   * @param  None
@@ -644,17 +628,18 @@ void Cache_Enable_DCache_Autoload(void);
 void Cache_Disable_DCache_Autoload(void);
 
 /**
-  * @brief Config a group of lock parameters of ICache.
+  * @brief Config a group of prelock parameters of ICache.
   *        Please do not call this function in your SDK application.
   *
   * @param struct lock_config * config : a group of lock parameters.
   *
   * @return None
   */
-void Cache_Enable_ICache_Lock(const struct lock_config *config);
+
+void Cache_Enable_ICache_PreLock(const struct lock_config *config);
 
 /**
-  * @brief Disable a group of lock parameters for ICache.
+  * @brief Disable a group of prelock parameters for ICache.
   *        However, the locked data will not be released.
   *        Please do not call this function in your SDK application.
   *
@@ -662,32 +647,48 @@ void Cache_Enable_ICache_Lock(const struct lock_config *config);
   *
   * @return None
   */
-void Cache_Disable_ICache_Lock(uint16_t group);
+void Cache_Disable_ICache_PreLock(uint16_t group);
 
 /**
-  * @brief Unlock the cache items in tag memory for ICache.
+  * @brief Lock the cache items for ICache.
+  *        Operation will be done CACHE_LINE_SIZE aligned.
+  *        If the region is not in ICache addr room, nothing will be done.
   *        Please do not call this function in your SDK application.
   *
-  * @param uint32_t addr : start address of unlock region.
+  * @param  uint32_t addr: start address to lock
   *
-  * @param uint32_t size : size of unlock region.
+  * @param  uint32_t items: cache lines to lock, items * cache_line_size should not exceed the bus address size(4MB)
   *
   * @return None
   */
-void Cache_Unlock_ICache(uint32_t addr, uint32_t size);
+void Cache_Lock_ICache_Items(uint32_t addr, uint32_t items);
 
 /**
-  * @brief Config a group of lock parameters of DCache.
+  * @brief Unlock the cache items for ICache.
+  *        Operation will be done CACHE_LINE_SIZE aligned.
+  *        If the region is not in ICache addr room, nothing will be done.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param  uint32_t addr: start address to unlock
+  *
+  * @param  uint32_t items: cache lines to unlock, items * cache_line_size should not exceed the bus address size(4MB)
+  *
+  * @return None
+  */
+void Cache_Unlock_ICache_Items(uint32_t addr, uint32_t items);
+
+/**
+  * @brief Config a group of prelock parameters of DCache.
   *        Please do not call this function in your SDK application.
   *
   * @param struct lock_config * config : a group of lock parameters.
   *
   * @return None
   */
-void Cache_Enable_DCache_Lock(const struct lock_config *config);
+void Cache_Enable_DCache_PreLock(const struct lock_config *config);
 
 /**
-  * @brief Disable a group of lock parameters for DCache.
+  * @brief Disable a group of prelock parameters for DCache.
   *        However, the locked data will not be released.
   *        Please do not call this function in your SDK application.
   *
@@ -695,19 +696,61 @@ void Cache_Enable_DCache_Lock(const struct lock_config *config);
   *
   * @return None
   */
-void Cache_Disable_DCache_Lock(uint16_t group);
+void Cache_Disable_DCache_PreLock(uint16_t group);
 
 /**
-  * @brief Unlock the cache items in tag memory for DCache.
+  * @brief Lock the cache items for DCache.
+  *        Operation will be done CACHE_LINE_SIZE aligned.
+  *        If the region is not in DCache addr room, nothing will be done.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param  uint32_t addr: start address to lock
+  *
+  * @param  uint32_t items: cache lines to lock, items * cache_line_size should not exceed the bus address size(4MB)
+  *
+  * @return None
+  */
+void Cache_Lock_DCache_Items(uint32_t addr, uint32_t items);
+
+/**
+  * @brief Unlock the cache items for DCache.
+  *        Operation will be done CACHE_LINE_SIZE aligned.
+  *        If the region is not in DCache addr room, nothing will be done.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param  uint32_t addr: start address to unlock
+  *
+  * @param  uint32_t items: cache lines to unlock, items * cache_line_size should not exceed the bus address size(4MB)
+  *
+  * @return None
+  */
+void Cache_Unlock_DCache_Items(uint32_t addr, uint32_t items);
+
+/**
+  * @brief Lock the cache items in tag memory for ICache or DCache.
+  *        Please do not call this function in your SDK application.
+  *
+  * @param uint32_t addr : start address of lock region.
+  *
+  * @param uint32_t size : size of lock region.
+  *
+  * @return 0 for success
+  *         1 for invalid argument
+  */
+int Cache_Lock_Addr(uint32_t addr, uint32_t size);
+
+/**
+  * @brief Unlock the cache items in tag memory for ICache or DCache.
   *        Please do not call this function in your SDK application.
   *
   * @param uint32_t addr : start address of unlock region.
   *
   * @param uint32_t size : size of unlock region.
   *
-  * @return None
+  * @return 0 for success
+  *         1 for invalid argument
   */
-void Cache_Unlock_DCache(uint32_t addr, uint32_t size);
+int Cache_Unlock_Addr(uint32_t addr, uint32_t size);
 
 /**
   * @brief Disable ICache access for the cpu.
@@ -729,7 +772,7 @@ uint32_t Cache_Disable_ICache(void);
 void Cache_Enable_ICache(uint32_t autoload);
 
 /**
-  * @brief Disable DCache access for the cpu. 
+  * @brief Disable DCache access for the cpu.
   *        This operation will make all DCache tag memory invalid, CPU can't access DCache, DCache will keep idle
   *        Please do not call this function in your SDK application.
   *
@@ -748,7 +791,7 @@ uint32_t Cache_Disable_DCache(void);
 void Cache_Enable_DCache(uint32_t autoload);
 
 /**
-  * @brief Suspend ICache access for the cpu. 
+  * @brief Suspend ICache access for the cpu.
   *        The ICache tag memory is still there, CPU can't access ICache, ICache will keep idle.
   *        Please do not change MMU, cache mode or tag memory(tag memory can be changed in some special case).
   *        Please do not call this function in your SDK application.
@@ -792,47 +835,11 @@ uint32_t Cache_Suspend_DCache(void);
 void Cache_Resume_DCache(uint32_t autoload);
 
 /**
-  * @brief Make Drom0 bus access from ICache.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void Cache_Drom0_Source_ICache(void);
-
-/**
-  * @brief Make Drom0 bus access from DCache.
-  *
-  * @param  None
-  *
-  * @return None
-  */
-void Cache_Drom0_Source_DCache(void);
-
-/**
-  * @brief Return if Drom0 bus access from ICache.
-  *
-  * @param  None
-  *
-  * @return uint32_t: 0 for no, other for yes
-  */
-uint32_t Cache_Drom0_Using_ICache(void);
-
-/**
-  * @brief Return if Drom0 bus access from DCache.
-  *
-  * @param  None
-  *
-  * @return uint32_t: 0 for no, other for yes
-  */
-uint32_t Cache_Drom0_Using_DCache(void);
-
-/**
   * @brief Get ICache cache line size
   *
   * @param  None
   *
-  * @return uint32_t: 16, 32, 64 Byte
+  * @return uint32_t: 16, 32 Byte
   */
 uint32_t Cache_Get_ICache_Line_Size(void);
 
@@ -841,18 +848,27 @@ uint32_t Cache_Get_ICache_Line_Size(void);
   *
   * @param  None
   *
-  * @return uint32_t: 16, 32, 64 Byte
+  * @return uint32_t: 16, 32 Byte
   */
 uint32_t Cache_Get_DCache_Line_Size(void);
 
 /**
-  * @brief Set default mode from boot.
+  * @brief Set default mode from boot, 8KB ICache, 16Byte cache line size.
   *
   * @param  None
   *
   * @return None
   */
 void Cache_Set_Default_Mode(void);
+
+/**
+  * @brief Set default mode from boot, 8KB DCache, 16Byte cache line size.
+  *
+  * @param None
+  *
+  * @return None
+  */
+void Cache_Enable_Defalut_DCache_Mode(void);
 
 /**
   * @brief Travel tag memory to run a call back function.

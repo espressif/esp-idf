@@ -39,6 +39,8 @@
 #include "esp32s2beta/rom/uart.h"
 #include "esp32s2beta/rom/gpio.h"
 #include "esp32s2beta/rom/secure_boot.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
 #else
 #error "Unsupported IDF_TARGET"
 #endif
@@ -376,7 +378,7 @@ int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs)
 #endif // CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
 
 #ifdef CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
-            if(otadata[active_otadata].ota_state == ESP_OTA_IMG_VALID) {
+            if (otadata[active_otadata].ota_state == ESP_OTA_IMG_VALID) {
                 update_anti_rollback(&bs->ota[boot_index]);
             }
 #endif // CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK
@@ -439,7 +441,7 @@ static void set_actual_ota_seq(const bootloader_state_t *bs, int index)
 void bootloader_utility_load_boot_image_from_deep_sleep(void)
 {
     if (rtc_get_reset_reason(0) == DEEPSLEEP_RESET) {
-        esp_partition_pos_t* partition = bootloader_common_get_rtc_retain_mem_partition();
+        esp_partition_pos_t *partition = bootloader_common_get_rtc_retain_mem_partition();
         if (partition != NULL) {
             esp_image_metadata_t image_data;
             if (bootloader_load_image_no_verify(partition, &image_data) == ESP_OK) {
@@ -687,10 +689,15 @@ static void set_cache_and_start_app(
     /* Clear the MMU entries that are already set up,
        so the new app only has the mappings it creates.
     */
+#if CONFIG_IDF_TARGET_ESP32
     for (int i = 0; i < DPORT_FLASH_MMU_TABLE_SIZE; i++) {
         DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
     }
-
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+    for (int i = 0; i < FLASH_MMU_TABLE_SIZE; i++) {
+        FLASH_MMU_TABLE[i] = MMU_TABLE_INVALID_VAL;
+    }
+#endif
     uint32_t drom_load_addr_aligned = drom_load_addr & MMU_FLASH_MASK;
     uint32_t drom_page_count = bootloader_cache_pages_to_map(drom_size, drom_load_addr);
     ESP_LOGV(TAG, "d mmu set paddr=%08x vaddr=%08x size=%d n=%d",
@@ -698,8 +705,7 @@ static void set_cache_and_start_app(
 #if CONFIG_IDF_TARGET_ESP32
     rc = cache_flash_mmu_set(0, 0, drom_load_addr_aligned, drom_addr & MMU_FLASH_MASK, 64, drom_page_count);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-    rc = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000,
-                                64, drom_page_count, 0);
+    rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
 #if CONFIG_IDF_TARGET_ESP32
@@ -712,27 +718,17 @@ static void set_cache_and_start_app(
              irom_addr & MMU_FLASH_MASK, irom_load_addr_aligned, irom_size, irom_page_count);
 #if CONFIG_IDF_TARGET_ESP32
     rc = cache_flash_mmu_set(0, 0, irom_load_addr_aligned, irom_addr & MMU_FLASH_MASK, 64, irom_page_count);
-    ESP_LOGV(TAG, "rc=%d", rc);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-    uint32_t iram1_used = 0, irom0_used = 0;
+    uint32_t iram1_used = 0;
     if (irom_load_addr + irom_size > IRAM1_ADDRESS_LOW) {
         iram1_used = 1;
     }
-    if (irom_load_addr + irom_size > IROM0_ADDRESS_LOW) {
-        irom0_used = 1;
+    if (iram1_used) {
+        rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, IRAM0_ADDRESS_LOW, 0, 64, 64, 1);
+        rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, IRAM1_ADDRESS_LOW, 0, 64, 64, 1);
+        REG_CLR_BIT(EXTMEM_PRO_ICACHE_CTRL1_REG, EXTMEM_PRO_ICACHE_MASK_IRAM1);
     }
-    if (iram1_used || irom0_used) {
-        rc = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, IRAM0_ADDRESS_LOW, 0, 64, 64, 1);
-        rc = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, IRAM1_ADDRESS_LOW, 0, 64, 64, 1);
-        REG_SET_BIT(DPORT_CACHE_SOURCE_1_REG, DPORT_PRO_CACHE_I_SOURCE_PRO_IRAM1);
-        REG_CLR_BIT(DPORT_PRO_ICACHE_CTRL1_REG, DPORT_PRO_ICACHE_MASK_IRAM1);
-        if (irom0_used) {
-            rc = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, IROM0_ADDRESS_LOW, 0, 64, 64, 1);
-            REG_SET_BIT(DPORT_CACHE_SOURCE_1_REG, DPORT_PRO_CACHE_I_SOURCE_PRO_IROM0);
-            REG_CLR_BIT(DPORT_PRO_ICACHE_CTRL1_REG, DPORT_PRO_ICACHE_MASK_IROM0);
-        }
-    }
-    rc = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
+    rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, irom_load_addr & 0xffff0000, irom_addr & 0xffff0000, 64, irom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
 #if CONFIG_IDF_TARGET_ESP32
@@ -747,7 +743,7 @@ static void set_cache_and_start_app(
                        (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 |
                        DPORT_APP_CACHE_MASK_DRAM1 );
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-    DPORT_REG_CLR_BIT( DPORT_PRO_ICACHE_CTRL1_REG, (DPORT_PRO_ICACHE_MASK_IRAM0) | (DPORT_PRO_ICACHE_MASK_IRAM1 & 0) | (DPORT_PRO_ICACHE_MASK_IROM0 & 0) | DPORT_PRO_ICACHE_MASK_DROM0 );
+    REG_CLR_BIT( EXTMEM_PRO_ICACHE_CTRL1_REG, (EXTMEM_PRO_ICACHE_MASK_IRAM0) | (EXTMEM_PRO_ICACHE_MASK_IRAM1 & 0) | EXTMEM_PRO_ICACHE_MASK_DROM0 );
 #endif
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);

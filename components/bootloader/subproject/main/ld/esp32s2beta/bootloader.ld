@@ -1,22 +1,13 @@
-/*
-Linker file used to link the bootloader.
-*/
+/* Simplified memory map for the bootloader.
+ * Make sure the bootloader can load into main memory without overwriting itself.
+ */
 
-
-/* Simplified memory map for the bootloader
-
-   The main purpose is to make sure the bootloader can load into main memory
-   without overwriting itself.
-*/
 
 MEMORY
 {
-  /* I/O */
-  dport0_seg (RW) :                 org = 0x3FF00000, len = 0x10
-  iram_loader_seg (RWX) :           org = 0x40062000, len = 0x4000  /* 16KB, IRAM */
-  iram_seg (RWX) :                  org = 0x40066000, len = 0x4000  /* 16KB, IRAM */
-  /* 8k at the end of DRAM, before ROM data & stack */
-  dram_seg (RW) :                   org = 0x3FFFA000, len = 0x2000
+  iram_loader_seg (RWX) :           org = 0x40060000, len = 0x4000  /* 16KB, SRAM Block_18 */
+  iram_seg (RWX) :                  org = 0x40064000, len = 0x4000  /* 16KB, SRAM Block_19 */
+  dram_seg (RW) :                   org = 0x3FFF8000, len = 0x4000  /* 16KB, SRAM Block_20 */
 }
 
 /*  Default entry point:  */

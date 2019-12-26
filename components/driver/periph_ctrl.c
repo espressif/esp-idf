@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <esp_types.h>
+#include "esp_types.h"
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
 #include "driver/periph_ctrl.h"
-#include "sdkconfig.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -116,8 +116,6 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
             return DPORT_SPI2_DMA_CLK_EN;
         case PERIPH_SPI3_DMA_MODULE:
             return DPORT_SPI3_DMA_CLK_EN;
-        case PERIPH_SPI_SHARED_DMA_MODULE:
-            return DPORT_SPI_SHARED_DMA_CLK_EN;
 #endif
         case PERIPH_SDMMC_MODULE:
             return DPORT_WIFI_CLK_SDIO_HOST_EN;
@@ -220,8 +218,6 @@ static uint32_t get_rst_en_mask(periph_module_t periph, bool enable)
             return DPORT_SPI2_DMA_RST;
         case PERIPH_SPI3_DMA_MODULE:
             return DPORT_SPI3_DMA_RST;
-        case PERIPH_SPI_SHARED_DMA_MODULE:
-            return DPORT_SPI_SHARED_DMA_RST;
 #endif
         case PERIPH_SDMMC_MODULE:
             return DPORT_SDIO_HOST_RST;

@@ -264,7 +264,7 @@ typedef struct {
     bool done;
 } finalise_sha_param_t;
 
-static void tskFinaliseSha(void *v_param)
+static __attribute__((unused)) void tskFinaliseSha(void *v_param)
 {
     finalise_sha_param_t *param = (finalise_sha_param_t *)v_param;
 
