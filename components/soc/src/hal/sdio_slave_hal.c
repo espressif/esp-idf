@@ -29,7 +29,7 @@
     return ret_val;\
 } }while (0)
 
-const char TAG[] = "SDIO_HAL";
+static const char TAG[] = "SDIO_HAL";
 
 static esp_err_t init_send_queue(sdio_slave_context_t *hal);
 
