@@ -4,7 +4,7 @@ import os
 import ttfw_idf
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI", ignore=True)
+@ttfw_idf.idf_example_test(env_tag="Example_EthKitV1")
 def test_examples_protocol_esp_http_client(env, extra_data):
     """
     steps: |

@@ -183,12 +183,18 @@ test_weekend_network:
     ENV_FILE: "$CI_PROJECT_DIR/components/lwip/weekend_test/env.yml"
     CONFIG_FILE_PATH: "$CI_PROJECT_DIR/components/lwip/weekend_test"
 
-example_test_001:
+example_test_001A:
   extends: .example_test_template
   parallel: 3
   tags:
     - ESP32
     - Example_WIFI
+
+example_test_001B:
+  extends: .example_test_template
+  tags:
+    - ESP32
+    - Example_EthKitV1
 
 example_test_002:
   extends: .example_test_template

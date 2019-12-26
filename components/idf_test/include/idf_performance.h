@@ -1,7 +1,7 @@
 #pragma once
 
 /* declare the performance here */
-#define IDF_PERFORMANCE_MAX_HTTPS_REQUEST_BIN_SIZE                              800
+#define IDF_PERFORMANCE_MAX_HTTPS_REQUEST_BIN_SIZE                              900
 #define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP                     200
 #define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_PSRAM               300
 #define IDF_PERFORMANCE_MAX_FREERTOS_SPINLOCK_CYCLES_PER_OP_UNICORE             130
