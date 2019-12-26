@@ -3290,6 +3290,7 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data)
             p_msg->transport = p_data->conn.transport;
             p_msg->handle = p_data->conn.handle;
 #endif
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_ACL_CONNECTED);
             break;
         case BTM_BL_DISCN_EVT:
             bdcpy(p_msg->bd_addr, p_data->discn.p_bda);
@@ -3297,6 +3298,7 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data)
             p_msg->transport = p_data->discn.transport;
             p_msg->handle = p_data->discn.handle;
 #endif
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_ACL_DISCONNECTED);
             break;
         case BTM_BL_UPDATE_EVT:
             p_msg->busy_level = p_data->update.busy_level;

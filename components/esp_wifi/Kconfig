@@ -12,37 +12,6 @@ menu "Wi-Fi"
             If only Bluetooth is used, it is recommended to disable this option to reduce binary file
             size.
 
-    choice ESP32_WIFI_SW_COEXIST_PREFERENCE
-        prompt "WiFi/Bluetooth coexistence performance preference"
-        depends on ESP32_WIFI_SW_COEXIST_ENABLE
-        default ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
-        help
-            Choose Bluetooth/WiFi/Balance for different preference.
-            If choose WiFi, it will make WiFi performance better. Such, keep WiFi Audio more fluent.
-            If choose Bluetooth, it will make Bluetooth performance better. Such, keep Bluetooth(A2DP) Audio more
-            fluent.
-            If choose Balance, the performance of WiFi and bluetooth will be balance. It's default. Normally, just
-            choose balance, the A2DP audio can play fluently, too.
-            Except config preference in menuconfig, you can also call esp_coex_preference_set() dynamically.
-
-        config ESP32_WIFI_SW_COEXIST_PREFERENCE_WIFI
-            bool "WiFi"
-
-        config ESP32_WIFI_SW_COEXIST_PREFERENCE_BT
-            bool "Bluetooth(include BR/EDR and BLE)"
-
-        config ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
-            bool "Balance"
-
-    endchoice
-
-    config ESP32_WIFI_SW_COEXIST_PREFERENCE_VALUE
-        int
-        depends on ESP32_WIFI_SW_COEXIST_ENABLE
-        default 0 if ESP32_WIFI_SW_COEXIST_PREFERENCE_WIFI
-        default 1 if ESP32_WIFI_SW_COEXIST_PREFERENCE_BT
-        default 2 if ESP32_WIFI_SW_COEXIST_PREFERENCE_BALANCE
-
     config ESP32_WIFI_STATIC_RX_BUFFER_NUM
         int "Max number of WiFi static RX buffers"
         range 2 25 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP

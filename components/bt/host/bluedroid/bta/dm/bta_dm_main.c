@@ -28,6 +28,7 @@
 #include "osi/allocator.h"
 #include <string.h>
 
+#include "esp_coexist.h"
 
 /*****************************************************************************
 ** Constants and types
@@ -405,6 +406,37 @@ BOOLEAN bta_dm_sm_execute(BT_HDR *p_msg)
     }
 
     return TRUE;
+}
+
+void BTA_DmCoexEventTrigger(uint32_t event)
+{
+    switch(event) {
+    case BTA_COEX_EVT_SCAN_STARTED:
+    case BTA_COEX_EVT_SCAN_STOPPED:
+    case BTA_COEX_EVT_SNIFF_ENTER:
+    case BTA_COEX_EVT_SNIFF_EXIT:
+    case BTA_COEX_EVT_A2DP_PAUSED_ENTER:
+    case BTA_COEX_EVT_A2DP_PAUSED_EXIT:
+        break;
+    case BTA_COEX_EVT_ACL_CONNECTED:
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+        break;
+    case BTA_COEX_EVT_ACL_DISCONNECTED:
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+        break;
+    case BTA_COEX_EVT_STREAMING_STARTED:
+        esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+        break;
+    case BTA_COEX_EVT_STREAMING_STOPPED:
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
+        break;
+    default:
+        break;
+    }
 }
 
 /*******************************************************************************
