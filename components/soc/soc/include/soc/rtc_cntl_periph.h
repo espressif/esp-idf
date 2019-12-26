@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,5 @@
 
 #pragma once
 
-#include "soc/soc.h"
-
-//APB Frequency
-#define WDT_SOURCE_CLK_FREQ_MHZ     (APB_CLK_FREQ / 1000000)
+#include "soc/rtc_cntl_reg.h"
+#include "soc/rtc_cntl_struct.h"

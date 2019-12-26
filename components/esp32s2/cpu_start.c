@@ -34,7 +34,7 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 #include "soc/periph_defs.h"
-#include "soc/rtc_wdt.h"
+#include "hal/wdt_hal.h"
 #include "driver/rtc_io.h"
 
 #include "freertos/FreeRTOS.h"
@@ -122,7 +122,10 @@ void IRAM_ATTR call_start_cpu0(void)
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas == RTCWDT_SYS_RESET || rst_reas == TG0WDT_SYS_RESET) {
 #ifndef CONFIG_BOOTLOADER_WDT_ENABLE
-        rtc_wdt_disable();
+        wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
     }
 
@@ -397,7 +400,10 @@ static void main_task(void *args)
 
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
-    rtc_wdt_disable();
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
 #ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE

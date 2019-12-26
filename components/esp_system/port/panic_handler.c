@@ -30,7 +30,9 @@
 
 #include "hal/soc_hal.h"
 #include "hal/cpu_hal.h"
-#include "hal/timer_hal.h"
+#include "hal/wdt_types.h"
+#include "hal/wdt_hal.h"
+
 
 #include "sdkconfig.h"
 
@@ -49,6 +51,8 @@
 #include "panic_internal.h"
 
 extern void esp_panic_handler(panic_info_t*);
+
+static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 
 static XtExcFrame* xt_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
 
@@ -480,7 +484,9 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
     if (esp_cpu_in_ocd_debug_mode()) {
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
             frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-            timer_ll_wdt_clear_intr_status(&TIMERG1);
+            wdt_hal_write_protect_disable(&wdt0_context);
+            wdt_hal_handle_intr(&wdt0_context);
+            wdt_hal_write_protect_enable(&wdt0_context);
         }
     }
 

@@ -30,10 +30,12 @@
 
 #include "esp_core_dump.h"
 
-#include "soc/rtc_wdt.h"
 #include "soc/cpu.h"
+#include "soc/rtc.h"
 #include "hal/timer_hal.h"
 #include "hal/cpu_hal.h"
+#include "hal/wdt_types.h"
+#include "hal/wdt_hal.h"
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 #include <string.h>
@@ -53,6 +55,10 @@
 
 bool g_panic_abort = false;
 static char *s_panic_abort_details = NULL;
+
+static wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+static wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
@@ -112,21 +118,18 @@ void panic_print_dec(int d)
 */
 static void reconfigure_all_wdts(void)
 {
-    timer_ll_wdt_set_protect(&TIMERG0, false);
-    timer_ll_wdt_feed(&TIMERG0);
-    timer_ll_wdt_init(&TIMERG0);
-    timer_ll_wdt_set_tick(&TIMERG0, TG0_WDT_TICK_US); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
-    //1st stage timeout: reset system
-    timer_ll_wdt_set_timeout_behavior(&TIMERG0, 0, TIMER_WDT_RESET_SYSTEM);
-    //1 second before reset
-    timer_ll_wdt_set_timeout(&TIMERG0, 0, 1000*1000/TG0_WDT_TICK_US);
-    timer_ll_wdt_set_enable(&TIMERG0, true);
-    timer_ll_wdt_set_protect(&TIMERG0, true);
+    //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
+    //Reconfigure TWDT (Timer Group 0)
+    wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT0_TICK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
+    wdt_hal_write_protect_disable(&wdt0_context);
+    wdt_hal_config_stage(&wdt0_context, 0, 1000*1000/MWDT0_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM);   //1 second before reset
+    wdt_hal_enable(&wdt0_context);
+    wdt_hal_write_protect_enable(&wdt0_context);
 
-    //Disable wdt 1
-    timer_ll_wdt_set_protect(&TIMERG1, false);
-    timer_ll_wdt_set_enable(&TIMERG1, false);
-    timer_ll_wdt_set_protect(&TIMERG1, true);
+    //Disable IWDT (Timer Group 1)
+    wdt_hal_write_protect_disable(&wdt1_context);
+    wdt_hal_disable(&wdt1_context);
+    wdt_hal_write_protect_enable(&wdt1_context);
 }
 
 /*
@@ -134,13 +137,16 @@ static void reconfigure_all_wdts(void)
 */
 static inline void disable_all_wdts(void)
 {
-    timer_ll_wdt_set_protect(&TIMERG0, false);
-    timer_ll_wdt_set_enable(&TIMERG0, false);
-    timer_ll_wdt_set_protect(&TIMERG0, true);
+    //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
+    //Task WDT is the Main Watchdog Timer of Timer Group 0
+    wdt_hal_write_protect_disable(&wdt0_context);
+    wdt_hal_disable(&wdt0_context);
+    wdt_hal_write_protect_enable(&wdt0_context);
 
-    timer_ll_wdt_set_protect(&TIMERG1, false);
-    timer_ll_wdt_set_enable(&TIMERG1, false);
-    timer_ll_wdt_set_protect(&TIMERG1, true);
+    //Interupt WDT is the Main Watchdog Timer of Timer Group 1
+    wdt_hal_write_protect_disable(&wdt1_context);
+    wdt_hal_disable(&wdt1_context);
+    wdt_hal_write_protect_enable(&wdt1_context);
 }
 
 static void print_abort_details(const void *f)
@@ -224,17 +230,16 @@ void esp_panic_handler(panic_info_t *info)
     }
 
     // start panic WDT to restart system if we hang in this handler
-    if (!rtc_wdt_is_on()) {
-        rtc_wdt_protect_off();
-        rtc_wdt_disable();
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_SYSTEM);
+    if (!wdt_hal_is_enabled(&rtc_wdt_ctx)) {
+        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+        uint32_t stage_timeout_ticks = (uint32_t)(7000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
         // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
         // @ 115200 UART speed it will take more than 6 sec to print them out.
-        rtc_wdt_set_time(RTC_WDT_STAGE0, 7000);
-        rtc_wdt_enable();
-        rtc_wdt_protect_on();
+        wdt_hal_enable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+
     }
 
     //Feed the watchdogs, so they will give us time to print out debug info
@@ -264,7 +269,9 @@ void esp_panic_handler(panic_info_t *info)
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
     disable_all_wdts();
-    rtc_wdt_disable();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     panic_print_str("Entering gdb stub now.\r\n");
     esp_gdbstub_panic_handler((XtExcFrame*) info->frame);
 #else
@@ -285,7 +292,9 @@ void esp_panic_handler(panic_info_t *info)
         reconfigure_all_wdts();
     }
 #endif /* CONFIG_ESP32_ENABLE_COREDUMP */
-    rtc_wdt_disable();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #if CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
     if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {

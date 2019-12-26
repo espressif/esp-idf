@@ -14,4 +14,8 @@
 
 #pragma once
 
+#include "soc/soc.h"
+
 #define TIMER_GROUP_SUPPORTS_XTAL_CLOCK
+//APB Frequency
+#define WDT_SOURCE_CLK_FREQ_MHZ     (APB_CLK_FREQ / 1000000)

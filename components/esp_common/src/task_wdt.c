@@ -33,7 +33,8 @@
 #include "driver/periph_ctrl.h"
 #include "esp_task_wdt.h"
 #include "esp_private/system_internal.h"
-#include "hal/timer_ll.h"
+#include "hal/timer_types.h"
+#include "hal/wdt_hal.h"
 
 
 static const char *TAG = "task_wdt";
@@ -48,6 +49,12 @@ static const char *TAG = "task_wdt";
 
 //Empty define used in ASSERT_EXIT_CRIT_RETURN macro when returning in void
 #define VOID_RETURN
+
+//HAL related variables and constants
+#define TWDT_INSTANCE           WDT_MWDT0
+#define TWDT_TICKS_PER_US       MWDT0_TICKS_PER_US
+#define TWDT_PRESCALER          MWDT0_TICK_PRESCALER   //Tick period of 500us if WDT source clock is 80MHz
+static wdt_hal_context_t twdt_context;
 
 //Structure used for each subscribed task
 typedef struct twdt_task_t twdt_task_t;
@@ -108,9 +115,9 @@ static twdt_task_t *find_task_in_twdt_list(TaskHandle_t handle, bool *all_reset)
 static void reset_hw_timer(void)
 {
     //All tasks have reset; time to reset the hardware timer.
-    timer_ll_wdt_set_protect(&TIMERG0, false);
-    timer_ll_wdt_feed(&TIMERG0);
-    timer_ll_wdt_set_protect(&TIMERG0, true);
+    wdt_hal_write_protect_disable(&twdt_context);
+    wdt_hal_feed(&twdt_context);
+    wdt_hal_write_protect_enable(&twdt_context);
     //Clear all has_reset flags in list
     for (twdt_task_t *task = twdt_config->list; task != NULL; task = task->next){
         task->has_reset=false;
@@ -138,11 +145,10 @@ static void task_wdt_isr(void *arg)
     twdt_task_t *twdttask;
     const char *cpu;
     //Reset hardware timer so that 2nd stage timeout is not reached (will trigger system reset)
-    timer_ll_wdt_set_protect(&TIMERG0, false);
-    timer_ll_wdt_feed(&TIMERG0);
-    timer_ll_wdt_set_protect(&TIMERG0, true);
-    //Acknowledge interrupt
-    timer_ll_wdt_clear_intr_status(&TIMERG0);
+    wdt_hal_write_protect_disable(&twdt_context);
+    wdt_hal_handle_intr(&twdt_context);     //Feeds WDT and clears acknowledges interrupt
+    wdt_hal_write_protect_enable(&twdt_context);
+
     //We are taking a spinlock while doing I/O (ESP_EARLY_LOGE) here. Normally, that is a pretty
     //bad thing, possibly (temporarily) hanging up the 2nd core and stopping FreeRTOS. In this case,
     //something bad already happened and reporting this is considered more important
@@ -199,33 +205,27 @@ esp_err_t esp_task_wdt_init(uint32_t timeout, bool panic)
 
         //Configure hardware timer
         periph_module_enable(PERIPH_TIMG0_MODULE);
-        timer_ll_wdt_set_protect(&TIMERG0, false);               //Disable write protection
-        timer_ll_wdt_init(&TIMERG0);
-        timer_ll_wdt_set_tick(&TIMERG0, TG0_WDT_TICK_US); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
-        //1st stage timeout: interrupt
-        timer_ll_wdt_set_timeout_behavior(&TIMERG0, 0, TIMER_WDT_INT);
-        timer_ll_wdt_set_timeout(&TIMERG0, 0, twdt_config->timeout*1000*1000/TG0_WDT_TICK_US);
-        //2nd stage timeout: reset system
-        timer_ll_wdt_set_timeout_behavior(&TIMERG0, 1, TIMER_WDT_RESET_SYSTEM);
-        timer_ll_wdt_set_timeout(&TIMERG0, 1, 2*twdt_config->timeout*1000*1000/TG0_WDT_TICK_US);
-        timer_ll_wdt_set_enable(&TIMERG0, true);
-        timer_ll_wdt_feed(&TIMERG0);
-        timer_ll_wdt_set_protect(&TIMERG0, true);                         //Enable write protection
+        wdt_hal_init(&twdt_context, TWDT_INSTANCE, TWDT_PRESCALER, true);
+        wdt_hal_write_protect_disable(&twdt_context);
+        //Configure 1st stage timeout and behavior
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE0, twdt_config->timeout * 1000000 / TWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);
+        //Configure 2nd stage timeout and behavior
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE1, 2*twdt_config->timeout * 1000000 / TWDT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM);
+        //Enable the WDT
+        wdt_hal_enable(&twdt_context);
+        wdt_hal_write_protect_enable(&twdt_context);
     } else {      //twdt_config previously initialized
         //Reconfigure task wdt
         twdt_config->panic = panic;
         twdt_config->timeout = timeout;
 
         //Reconfigure hardware timer
-        timer_ll_wdt_set_protect(&TIMERG0, false);   //Disable write protection
-        timer_ll_wdt_set_enable(&TIMERG0, false);                   //Disable timer
-        //Set timeout before interrupt
-        timer_ll_wdt_set_timeout(&TIMERG0, 0, twdt_config->timeout*1000*1000/TG0_WDT_TICK_US);
-        //Set timeout before reset
-        timer_ll_wdt_set_timeout(&TIMERG0, 1, 2*twdt_config->timeout*1000*1000/TG0_WDT_TICK_US);
-        timer_ll_wdt_set_enable(&TIMERG0, true);                   //Renable timer
-        timer_ll_wdt_feed(&TIMERG0);                         //Reset timer
-        timer_ll_wdt_set_protect(&TIMERG0, true);                     //Enable write protection
+        wdt_hal_write_protect_disable(&twdt_context);
+        wdt_hal_disable(&twdt_context);
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE0, twdt_config->timeout*1000*1000/TWDT_TICKS_PER_US, WDT_STAGE_ACTION_INT);
+        wdt_hal_config_stage(&twdt_context, WDT_STAGE1, 2*twdt_config->timeout*1000*1000/TWDT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM);
+        wdt_hal_enable(&twdt_context);
+        wdt_hal_write_protect_enable(&twdt_context);
     }
     portEXIT_CRITICAL(&twdt_spinlock);
     return ESP_OK;
@@ -240,9 +240,7 @@ esp_err_t esp_task_wdt_deinit(void)
     ASSERT_EXIT_CRIT_RETURN((twdt_config->list == NULL), ESP_ERR_INVALID_STATE);
 
     //Disable hardware timer
-    timer_ll_wdt_set_protect(&TIMERG0, false);   //Disable write protection
-    timer_ll_wdt_set_enable(&TIMERG0, false);                   //Disable timer
-    timer_ll_wdt_set_protect(&TIMERG0, true);                     //Enable write protection
+    wdt_hal_deinit(&twdt_context);
 
     ESP_ERROR_CHECK(esp_intr_free(twdt_config->intr_handle));  //Unregister interrupt
     free(twdt_config);                      //Free twdt_config

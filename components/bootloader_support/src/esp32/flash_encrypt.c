@@ -22,7 +22,7 @@
 #include "esp_efuse.h"
 #include "esp_log.h"
 #include "esp32/rom/secure_boot.h"
-#include "soc/rtc_wdt.h"
+#include "hal/wdt_hal.h"
 
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"   /* TODO: Remove this */
@@ -345,8 +345,11 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
         return ESP_FAIL;
     }
 
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
-        rtc_wdt_feed();
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_feed(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
         uint32_t sec_start = i + src_addr;
         err = bootloader_flash_read(sec_start, buf, FLASH_SECTOR_SIZE, false);
         if (err != ESP_OK) {

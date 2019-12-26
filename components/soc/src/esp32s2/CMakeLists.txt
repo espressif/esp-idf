@@ -5,7 +5,6 @@ set(srcs "brownout_hal.c"
         "rtc_pm.c"
         "rtc_sleep.c"
         "rtc_time.c"
-        "rtc_wdt.c"
         "soc_memory_layout.c"
         "touch_sensor_hal.c"
         "usb_hal.c")

@@ -20,15 +20,13 @@ else()
         "dport_access.c"
         "esp_himem.c"
         "hw_random.c"
-        "int_wdt.c"
         "intr_alloc.c"
         "pm_esp32.c"
         "pm_trace.c"
         "sleep_modes.c"
         "spiram.c"
         "spiram_psram.c"
-        "system_api_esp32.c"
-        "task_wdt.c")
+        "system_api_esp32.c")
 
     set(include_dirs "include")
 
