@@ -22,10 +22,10 @@ from datetime import datetime
 
 import junit_xml
 
-import Env
-import DUT
-import App
-import Utility
+from . import Env
+from . import DUT
+from . import App
+from . import Utility
 
 
 class DefaultEnvConfig(object):
