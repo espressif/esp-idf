@@ -72,8 +72,8 @@ typedef struct {
 
 int bt_mesh_proxy_prov_client_send(struct bt_mesh_conn *conn, u8_t type, struct net_buf_simple *msg);
 
-int provisioner_pb_gatt_enable(void);
-int provisioner_pb_gatt_disable(void);
+int bt_mesh_provisioner_pb_gatt_enable(void);
+int bt_mesh_provisioner_pb_gatt_disable(void);
 
 int bt_mesh_proxy_client_enable(void);
 int bt_mesh_proxy_client_disable(void);
@@ -88,7 +88,7 @@ void bt_mesh_proxy_client_set_conn_cb(proxy_client_connect_cb_t cb);
 void bt_mesh_proxy_client_set_disconn_cb(proxy_client_disconnect_cb_t cb);
 void bt_mesh_proxy_client_set_filter_status_cb(proxy_client_recv_filter_status_cb_t cb);
 
-void proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
+void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
 
 int bt_mesh_proxy_client_connect(const u8_t addr[6], u8_t addr_type, u16_t net_idx);
 int bt_mesh_proxy_client_disconnect(u8_t conn_handle);

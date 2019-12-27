@@ -630,9 +630,7 @@ void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
             bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
-#if CONFIG_BLE_MESH_NODE
         bt_mesh_proxy_beacon_send(sub);
-#endif
     }
 }
 
@@ -912,23 +910,19 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
      * "The output filter of the interface connected to advertising or
      * GATT bearers shall drop all messages with TTL value set to 1."
      */
-#if CONFIG_BLE_MESH_NODE
-    if (bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-                tx->ctx->send_ttl != 1U) {
-            if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
-                    BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
-                /* Notify completion if this only went
-                * through the Mesh Proxy.
-                */
-                send_cb_finalize(cb, cb_data);
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
+            tx->ctx->send_ttl != 1U) {
+        if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
+                BLE_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
+            /* Notify completion if this only went
+             * through the Mesh Proxy.
+             */
+            send_cb_finalize(cb, cb_data);
 
-                err = 0;
-                goto done;
-            }
+            err = 0;
+            goto done;
         }
     }
-#endif
 
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     if (tx->ctx->send_ttl != 1U) {
@@ -1055,15 +1049,11 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 
     BT_DBG("src 0x%04x", rx->ctx.addr);
 
-#if CONFIG_BLE_MESH_NODE
-    if (bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_PROXY) &&
-                rx->net_if == BLE_MESH_NET_IF_PROXY_CFG) {
-            return bt_mesh_net_decrypt(enc, buf, BLE_MESH_NET_IVI_RX(rx),
-                                       true);
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY) &&
+            rx->net_if == BLE_MESH_NET_IF_PROXY_CFG) {
+        return bt_mesh_net_decrypt(enc, buf, BLE_MESH_NET_IVI_RX(rx),
+                                   true);
     }
-#endif
 
     return bt_mesh_net_decrypt(enc, buf, BLE_MESH_NET_IVI_RX(rx), false);
 }
@@ -1169,8 +1159,6 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
  * get sent to the advertising bearer. If the packet came in through GATT,
  * then we should only relay it if the GATT Proxy state is enabled.
  */
-#if CONFIG_BLE_MESH_NODE
-
 static bool relay_to_adv(enum bt_mesh_net_if net_if)
 {
     switch (net_if) {
@@ -1310,8 +1298,6 @@ done:
     net_buf_unref(buf);
 }
 
-#endif /* CONFIG_BLE_MESH_NODE */
-
 void bt_mesh_net_header_parse(struct net_buf_simple *buf,
                               struct bt_mesh_net_rx *rx)
 {
@@ -1429,14 +1415,10 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
     /* Save the state so the buffer can later be relayed */
     net_buf_simple_save(&buf, &state);
 
-#if CONFIG_BLE_MESH_NODE
-    if (bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-                net_if == BLE_MESH_NET_IF_PROXY) {
-            bt_mesh_proxy_addr_add(data, rx.ctx.addr);
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
+            net_if == BLE_MESH_NET_IF_PROXY) {
+        bt_mesh_proxy_addr_add(data, rx.ctx.addr);
     }
-#endif
 
     rx.local_match = (bt_mesh_fixed_group_match(rx.ctx.recv_dst) ||
                       bt_mesh_elem_find(rx.ctx.recv_dst));
@@ -1458,15 +1440,12 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
     /* Relay if this was a group/virtual address, or if the destination
      * was neither a local element nor an LPN we're Friends for.
      */
-#if CONFIG_BLE_MESH_NODE
-    if (bt_mesh_is_provisioned()) {
-        if (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
-                (!rx.local_match && !rx.friend_match)) {
-            net_buf_simple_restore(&buf, &state);
-            bt_mesh_net_relay(&buf, &rx);
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_RELAY) &&
+            (!BLE_MESH_ADDR_IS_UNICAST(rx.ctx.recv_dst) ||
+            (!rx.local_match && !rx.friend_match))) {
+        net_buf_simple_restore(&buf, &state);
+        bt_mesh_net_relay(&buf, &rx);
     }
-#endif
 }
 
 static void ivu_refresh(struct k_work *work)
@@ -1497,7 +1476,6 @@ static void ivu_refresh(struct k_work *work)
     }
 }
 
-#if defined(CONFIG_BLE_MESH_NODE)
 void bt_mesh_net_start(void)
 {
     if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
@@ -1542,7 +1520,6 @@ void bt_mesh_net_start(void)
         bt_mesh_prov_complete(net_idx, net_key, addr, flags, iv_index);
     }
 }
-#endif
 
 void bt_mesh_net_init(void)
 {

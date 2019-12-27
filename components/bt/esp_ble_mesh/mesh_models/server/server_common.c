@@ -193,8 +193,10 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
      * Here we use the allocated heap memory to store the "struct bt_mesh_msg_ctx".
      */
     __ASSERT(work, "%s, Invalid parameter", __func__);
-    work->_reserved = osi_calloc(sizeof(struct bt_mesh_msg_ctx));
-    __ASSERT(work->_reserved, "%s, Failed to allocate memory", __func__);
+    if (!work->_reserved) {
+        work->_reserved = osi_calloc(sizeof(struct bt_mesh_msg_ctx));
+        __ASSERT(work->_reserved, "%s, Failed to allocate memory", __func__);
+    }
 }
 
 bool bt_mesh_is_server_recv_last_msg(struct bt_mesh_last_msg_info *last,

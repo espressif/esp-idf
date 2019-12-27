@@ -39,26 +39,30 @@
 #if CONFIG_BLE_MESH_PROVISIONER
 
 static struct bt_mesh_node *mesh_nodes[CONFIG_BLE_MESH_MAX_STORED_NODES];
-static osi_mutex_t provisioner_mutex;
+static osi_mutex_t provisioner_lock;
 static u16_t all_node_count;
 static u16_t prov_node_count;
 
-void bt_mesh_provisioner_mutex_new(void)
+static void bt_mesh_provisioner_mutex_new(void)
 {
-    if (!provisioner_mutex) {
-        osi_mutex_new(&provisioner_mutex);
-        __ASSERT(provisioner_mutex, "%s, fail", __func__);
+    if (!provisioner_lock) {
+        osi_mutex_new(&provisioner_lock);
+        __ASSERT(provisioner_lock, "%s, fail", __func__);
     }
 }
 
 static void bt_mesh_provisioner_lock(void)
 {
-    osi_mutex_lock(&provisioner_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (provisioner_lock) {
+        osi_mutex_lock(&provisioner_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
 static void bt_mesh_provisioner_unlock(void)
 {
-    osi_mutex_unlock(&provisioner_mutex);
+    if (provisioner_lock) {
+        osi_mutex_unlock(&provisioner_lock);
+    }
 }
 
 static int provisioner_check_node_index(u16_t index)
@@ -108,10 +112,9 @@ u16_t bt_mesh_provisioner_get_all_node_count(void)
     return all_node_count;
 }
 
-static int provisioner_store_node(struct bt_mesh_node *node, bool prov, u16_t *index)
+static int provisioner_store_node(struct bt_mesh_node *node, bool prov, bool store, u16_t *index)
 {
     u16_t min, max;
-    int err = 0;
     size_t i;
 
     bt_mesh_provisioner_lock();
@@ -120,6 +123,7 @@ static int provisioner_store_node(struct bt_mesh_node *node, bool prov, u16_t *i
     for (i = 0U; i < ARRAY_SIZE(mesh_nodes); i++) {
         if (mesh_nodes[i] && !memcmp(mesh_nodes[i]->dev_uuid, node->dev_uuid, 16)) {
             BT_WARN("Node already exists, uuid %s", bt_hex(node->dev_uuid, 16));
+            bt_mesh_provisioner_unlock();
             return -EEXIST;
         }
     }
@@ -141,8 +145,8 @@ static int provisioner_store_node(struct bt_mesh_node *node, bool prov, u16_t *i
             mesh_nodes[i] = osi_calloc(sizeof(struct bt_mesh_node));
             if (!mesh_nodes[i]) {
                 BT_ERR("%s, Failed to allocate memory", __func__);
-                err = -ENOMEM;
-                goto unlock;
+                bt_mesh_provisioner_unlock();
+                return -ENOMEM;
             }
 
             memcpy(mesh_nodes[i], node, sizeof(struct bt_mesh_node));
@@ -151,19 +155,18 @@ static int provisioner_store_node(struct bt_mesh_node *node, bool prov, u16_t *i
                 *index = i;
             }
 
-            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS) && store) {
                 bt_mesh_store_node_info(mesh_nodes[i], prov);
             }
-            goto unlock;
+
+            bt_mesh_provisioner_unlock();
+            return 0;
         }
     }
 
     BT_ERR("%s, Node queue is full", __func__);
-    err = -ENOMEM;
-
-unlock:
     bt_mesh_provisioner_unlock();
-    return err;
+    return -ENOMEM;
 }
 
 int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const u8_t uuid[16], u16_t oob_info,
@@ -194,7 +197,7 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const u8_t uuid[16
     node.iv_index = iv_index;
     memcpy(node.dev_key, dev_key, 16);
 
-    return provisioner_store_node(&node, true, index);
+    return provisioner_store_node(&node, true, true, index);
 }
 
 static int provisioner_remove_node(u16_t index)
@@ -349,15 +352,9 @@ int bt_mesh_provisioner_net_create(void)
 {
     const struct bt_mesh_prov *prov = NULL;
     struct bt_mesh_subnet *sub = NULL;
-    static bool prov_net_create;
     u8_t p_key[16] = {0};
-    size_t i;
 
     BT_DBG("%s", __func__);
-
-    if (prov_net_create) {
-        return 0;
-    }
 
     prov = bt_mesh_provisioner_get_prov_info();
     if (!prov) {
@@ -370,11 +367,10 @@ int bt_mesh_provisioner_net_create(void)
      */
     bt_mesh_comp_provision(prov->prov_unicast_addr);
 
-    for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
-        if (bt_mesh.p_sub[i]) {
-            BT_DBG("Keys of Provisioner restored from flash");
-            goto end;
-        }
+    if (bt_mesh.p_sub[0]) {
+        BT_DBG("Keys of Provisioner restored from flash");
+        sub = bt_mesh.p_sub[0];
+        goto done;
     }
 
     /* Generate the primary netkey */
@@ -436,9 +432,7 @@ int bt_mesh_provisioner_net_create(void)
         bt_mesh_store_iv(true);
     }
 
-end:
-    prov_net_create = true;
-
+done:
     BT_DBG("net_idx 0x%03x, netkey %s, nid 0x%02x",
         sub->net_idx, bt_hex(sub->keys[0].net, 16), sub->keys[0].nid);
 
@@ -559,14 +553,14 @@ struct bt_mesh_app_key *bt_mesh_provisioner_app_key_find(u16_t app_idx)
     return NULL;
 }
 
-int bt_mesh_provisioner_load_node_info(struct bt_mesh_node *node, bool prov)
+int bt_mesh_provisioner_restore_node_info(struct bt_mesh_node *node, bool prov)
 {
     if (!node) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
     }
 
-    return provisioner_store_node(node, prov, NULL);
+    return provisioner_store_node(node, prov, false, NULL);
 }
 
 int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
@@ -576,7 +570,7 @@ int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
         return -EINVAL;
     }
 
-    return provisioner_store_node(node, false, NULL);
+    return provisioner_store_node(node, false, true, NULL);
 }
 
 struct bt_mesh_node *bt_mesh_provisioner_get_node_info(u16_t unicast_addr)
@@ -1351,12 +1345,12 @@ u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx)
     sub = bt_mesh_fast_prov_subnet_get(net_idx);
     if (sub) {
         key = BLE_MESH_KEY_REFRESH(sub->kr_flag) ? &sub->keys[1] : &sub->keys[0];
-        return provisioner_set_fast_prov_net_idx(key->net, net_idx);
+        return bt_mesh_provisioner_set_fast_prov_net_idx(key->net, net_idx);
     }
 
     /* If net_idx is not found, set net_idx to fast_prov first,
      * and wait for primary provisioner to add net_key */
-    return provisioner_set_fast_prov_net_idx(NULL, net_idx);
+    return bt_mesh_provisioner_set_fast_prov_net_idx(NULL, net_idx);
 }
 
 u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16])
@@ -1365,7 +1359,7 @@ u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16])
     u16_t net_idx;
     int err;
 
-    net_idx = provisioner_get_fast_prov_net_idx();
+    net_idx = bt_mesh_provisioner_get_fast_prov_net_idx();
     bt_mesh.p_net_idx_next = net_idx;
 
     err = bt_mesh_provisioner_local_net_key_add(net_key, &net_idx);
@@ -1378,7 +1372,7 @@ u8_t bt_mesh_add_fast_prov_net_key(const u8_t net_key[16])
         return 0x01; /* status: add net_key fail */
     }
 
-    return provisioner_set_fast_prov_net_idx(keys, net_idx);
+    return bt_mesh_provisioner_set_fast_prov_net_idx(keys, net_idx);
 }
 
 const u8_t *bt_mesh_get_fast_prov_net_key(u16_t net_idx)

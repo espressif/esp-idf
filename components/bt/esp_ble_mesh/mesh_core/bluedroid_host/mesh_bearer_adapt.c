@@ -1586,7 +1586,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                              */
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                             if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
-                                provisioner_clear_link_conn_info(bt_mesh_gattc_info[i].addr.val);
+                                bt_mesh_provisioner_clear_link_info(bt_mesh_gattc_info[i].addr.val);
                             }
 #endif
                         }
@@ -1597,14 +1597,14 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                          */
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                         if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
-                            provisioner_clear_link_conn_info(bt_mesh_gattc_info[i].addr.val);
+                            bt_mesh_provisioner_clear_link_info(bt_mesh_gattc_info[i].addr.val);
                         }
 #endif
                     }
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                     if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
                         /* Decrease provisioner pbg_count */
-                        provisioner_pbg_count_dec();
+                        bt_mesh_provisioner_pbg_count_dec();
                     }
 #endif
                     /* Reset corresponding gattc info */

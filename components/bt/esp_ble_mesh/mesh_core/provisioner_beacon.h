@@ -15,6 +15,6 @@
 #ifndef _PROVISIONER_BEACON_H_
 #define _PROVISIONER_BEACON_H_
 
-void provisioner_beacon_recv(struct net_buf_simple *buf);
+void bt_mesh_provisioner_beacon_recv(struct net_buf_simple *buf);
 
 #endif /* _PROVISIONER_BEACON_H_ */

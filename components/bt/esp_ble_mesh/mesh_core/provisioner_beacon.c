@@ -42,7 +42,7 @@ static void provisioner_secure_beacon_recv(struct net_buf_simple *buf)
     // TODO: Provisioner receive and handle Secure Network Beacon
 }
 
-void provisioner_beacon_recv(struct net_buf_simple *buf)
+void bt_mesh_provisioner_beacon_recv(struct net_buf_simple *buf)
 {
     u8_t type;
 
@@ -57,7 +57,7 @@ void provisioner_beacon_recv(struct net_buf_simple *buf)
     switch (type) {
     case BEACON_TYPE_UNPROVISIONED:
         BT_DBG("Unprovisioned device beacon received");
-        provisioner_unprov_beacon_recv(buf);
+        bt_mesh_provisioner_unprov_beacon_recv(buf);
         break;
     case BEACON_TYPE_SECURE:
         provisioner_secure_beacon_recv(buf);

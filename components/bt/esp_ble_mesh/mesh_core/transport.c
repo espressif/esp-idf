@@ -110,6 +110,30 @@ static u8_t seg_rx_buf_data[(CONFIG_BLE_MESH_RX_SEG_MSG_COUNT *
 
 static u16_t hb_sub_dst = BLE_MESH_ADDR_UNASSIGNED;
 
+static osi_mutex_t tx_seg_lock;
+
+static void bt_mesh_tx_seg_mutex_new(void)
+{
+    if (!tx_seg_lock) {
+        osi_mutex_new(&tx_seg_lock);
+        __ASSERT(tx_seg_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_tx_seg_lock(void)
+{
+    if (tx_seg_lock) {
+        osi_mutex_lock(&tx_seg_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
+}
+
+static void bt_mesh_tx_seg_unlock(void)
+{
+    if (tx_seg_lock) {
+        osi_mutex_unlock(&tx_seg_lock);
+    }
+}
+
 void bt_mesh_set_hb_sub_dst(u16_t addr)
 {
     hb_sub_dst = addr;
@@ -198,6 +222,8 @@ static void seg_tx_reset(struct seg_tx *tx)
         return;
     }
 
+    bt_mesh_tx_seg_lock();
+
     for (i = 0; i <= tx->seg_n; i++) {
         if (!tx->seg[i]) {
             continue;
@@ -208,6 +234,8 @@ static void seg_tx_reset(struct seg_tx *tx)
         net_buf_unref(tx->seg[i]);
         tx->seg[i] = NULL;
     }
+
+    bt_mesh_tx_seg_unlock();
 
     tx->nack_count = 0U;
 
@@ -276,6 +304,8 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 {
     int i, err;
 
+    bt_mesh_tx_seg_lock();
+
     for (i = 0; i <= tx->seg_n; i++) {
         struct net_buf *seg = tx->seg[i];
 
@@ -291,6 +321,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
         if (!(BLE_MESH_ADV(seg)->seg.attempts--)) {
             BT_WARN("Ran out of retransmit attempts");
             seg_tx_complete(tx, -ETIMEDOUT);
+            bt_mesh_tx_seg_unlock();
             return;
         }
 
@@ -301,9 +332,12 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
         if (err) {
             BT_ERR("%s, Sending segment failed", __func__);
             seg_tx_complete(tx, -EIO);
+            bt_mesh_tx_seg_unlock();
             return;
         }
     }
+
+    bt_mesh_tx_seg_unlock();
 }
 
 static void seg_retransmit(struct k_work *work)
@@ -1573,6 +1607,8 @@ void bt_mesh_trans_init(void)
                                (i * CONFIG_BLE_MESH_RX_SDU_MAX));
         seg_rx[i].buf.data = seg_rx[i].buf.__buf;
     }
+
+    bt_mesh_tx_seg_mutex_new();
 }
 
 void bt_mesh_rpl_clear(void)

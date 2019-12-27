@@ -210,25 +210,31 @@ static struct prov_link link;
 
 static const struct bt_mesh_prov *prov;
 
-static osi_mutex_t prov_buf_mutex;
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+static osi_mutex_t pb_buf_lock;
 
-static void bt_mesh_prov_buf_mutex_new(void)
+static void bt_mesh_pb_buf_mutex_new(void)
 {
-    if (!prov_buf_mutex) {
-        osi_mutex_new(&prov_buf_mutex);
-        __ASSERT(prov_buf_mutex, "%s, fail", __func__);
+    if (!pb_buf_lock) {
+        osi_mutex_new(&pb_buf_lock);
+        __ASSERT(pb_buf_lock, "%s, fail", __func__);
     }
 }
 
-static void bt_mesh_prov_buf_lock(void)
+static void bt_mesh_pb_buf_lock(void)
 {
-    osi_mutex_lock(&prov_buf_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (pb_buf_lock) {
+        osi_mutex_lock(&pb_buf_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
-static void bt_mesh_prov_buf_unlock(void)
+static void bt_mesh_pb_buf_unlock(void)
 {
-    osi_mutex_unlock(&prov_buf_mutex);
+    if (pb_buf_lock) {
+        osi_mutex_unlock(&pb_buf_lock);
+    }
 }
+#endif /* CONFIG_BLE_MESH_PB_ADV */
 
 static void reset_state(void)
 {
@@ -283,7 +289,7 @@ static void free_segments(void)
 {
     int i;
 
-    bt_mesh_prov_buf_lock();
+    bt_mesh_pb_buf_lock();
 
     for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
         struct net_buf *buf = link.tx.buf[i];
@@ -299,7 +305,7 @@ static void free_segments(void)
         net_buf_unref(buf);
     }
 
-    bt_mesh_prov_buf_unlock();
+    bt_mesh_pb_buf_unlock();
 }
 
 static void prov_clear_tx(void)
@@ -1304,7 +1310,7 @@ static void prov_retransmit(struct k_work *work)
         return;
     }
 
-    bt_mesh_prov_buf_lock();
+    bt_mesh_pb_buf_lock();
 
     for (i = 0; i < ARRAY_SIZE(link.tx.buf); i++) {
         struct net_buf *buf = link.tx.buf[i];
@@ -1327,7 +1333,7 @@ static void prov_retransmit(struct k_work *work)
 
     }
 
-    bt_mesh_prov_buf_unlock();
+    bt_mesh_pb_buf_unlock();
 }
 
 static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
@@ -1767,7 +1773,9 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 
     reset_state();
 
-    bt_mesh_prov_buf_mutex_new();
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+    bt_mesh_pb_buf_mutex_new();
+#endif
 
     return 0;
 }

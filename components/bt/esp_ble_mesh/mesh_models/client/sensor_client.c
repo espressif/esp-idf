@@ -58,26 +58,28 @@ static const bt_mesh_client_op_pair_t sensor_op_pair[] = {
     { BLE_MESH_MODEL_OP_SENSOR_SERIES_GET,     BLE_MESH_MODEL_OP_SENSOR_SERIES_STATUS     },
 };
 
-static osi_mutex_t sensor_client_mutex;
+static osi_mutex_t sensor_client_lock;
 
 static void bt_mesh_sensor_client_mutex_new(void)
 {
-    static bool init;
-
-    if (!init) {
-        osi_mutex_new(&sensor_client_mutex);
-        init = true;
+    if (!sensor_client_lock) {
+        osi_mutex_new(&sensor_client_lock);
+        __ASSERT(sensor_client_lock, "%s, fail", __func__);
     }
 }
 
 static void bt_mesh_sensor_client_lock(void)
 {
-    osi_mutex_lock(&sensor_client_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (sensor_client_lock) {
+        osi_mutex_lock(&sensor_client_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
 static void bt_mesh_sensor_client_unlock(void)
 {
-    osi_mutex_unlock(&sensor_client_mutex);
+    if (sensor_client_lock) {
+        osi_mutex_unlock(&sensor_client_lock);
+    }
 }
 
 static void timeout_handler(struct k_work *work)
@@ -604,19 +606,22 @@ int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary)
         return -EINVAL;
     }
 
-    /* TODO: call osi_free() when deinit function is invoked*/
-    internal = osi_calloc(sizeof(sensor_internal_data_t));
-    if (!internal) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return -ENOMEM;
+    if (!client->internal_data) {
+        internal = osi_calloc(sizeof(sensor_internal_data_t));
+        if (!internal) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+
+        sys_slist_init(&internal->queue);
+
+        client->model = model;
+        client->op_pair_size = ARRAY_SIZE(sensor_op_pair);
+        client->op_pair = sensor_op_pair;
+        client->internal_data = internal;
+    } else {
+        bt_mesh_client_clear_list(client->internal_data);
     }
-
-    sys_slist_init(&internal->queue);
-
-    client->model = model;
-    client->op_pair_size = ARRAY_SIZE(sensor_op_pair);
-    client->op_pair = sensor_op_pair;
-    client->internal_data = internal;
 
     bt_mesh_sensor_client_mutex_new();
 

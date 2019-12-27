@@ -453,7 +453,7 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                              */
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                             if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
-                                provisioner_clear_link_conn_info(bt_mesh_gattc_info[i].addr.val);
+                                bt_mesh_provisioner_clear_link_info(bt_mesh_gattc_info[i].addr.val);
                             }
 #endif
                         }
@@ -464,14 +464,14 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                          */
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                         if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
-                            provisioner_clear_link_conn_info(bt_mesh_gattc_info[i].addr.val);
+                            bt_mesh_provisioner_clear_link_info(bt_mesh_gattc_info[i].addr.val);
                         }
 #endif
                     }
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                     if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
                         /* Decrease prov pbg_count */
-                        provisioner_pbg_count_dec();
+                        bt_mesh_provisioner_pbg_count_dec();
                     }
 #endif
                     /* Reset corresponding gattc info */

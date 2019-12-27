@@ -108,6 +108,8 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
 
 int bt_mesh_client_free_node(bt_mesh_client_node_t *node);
 
+int bt_mesh_client_clear_list(void *data);
+
 typedef struct {
     struct bt_mesh_model *model;    /* The client model structure */
     u8_t  role;                     /* Role of the device - Node/Provisioner */

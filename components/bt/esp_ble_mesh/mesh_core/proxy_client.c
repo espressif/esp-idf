@@ -207,7 +207,7 @@ static void proxy_complete_pdu(struct bt_mesh_proxy_server *server)
         BT_DBG("Mesh Beacon PDU");
         if (bt_mesh_is_provisioner_en()) {
 #if CONFIG_BLE_MESH_PROVISIONER
-            provisioner_beacon_recv(&server->buf);
+            bt_mesh_provisioner_beacon_recv(&server->buf);
 #endif
         } else {
 #if CONFIG_BLE_MESH_NODE
@@ -223,7 +223,7 @@ static void proxy_complete_pdu(struct bt_mesh_proxy_server *server)
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
     case BLE_MESH_PROXY_PROV:
         BT_DBG("Mesh Provisioning PDU");
-        provisioner_pb_gatt_recv(server->conn, &server->buf);
+        bt_mesh_provisioner_pb_gatt_recv(server->conn, &server->buf);
         break;
 #endif
     default:
@@ -438,7 +438,7 @@ static void proxy_disconnected(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn, 
 
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
     if (server->conn_type == PROV) {
-        provisioner_pb_gatt_close(conn, reason);
+        bt_mesh_provisioner_pb_gatt_close(conn, reason);
     }
 #endif
 
@@ -473,12 +473,12 @@ static ssize_t prov_write_ccc(bt_mesh_addr_t *addr, struct bt_mesh_conn *conn)
     if (server->conn_type == NONE) {
         server->conn_type = PROV;
 
-        if (provisioner_set_prov_conn(addr->val, server->conn)) {
-            BT_ERR("%s, provisioner_set_prov_conn failed", __func__);
+        if (bt_mesh_provisioner_set_prov_conn(addr->val, server->conn)) {
+            BT_ERR("%s, bt_mesh_provisioner_set_prov_conn failed", __func__);
             bt_mesh_gattc_disconnect(server->conn);
             return -EIO;
         }
-        return provisioner_pb_gatt_open(conn, addr->val);
+        return bt_mesh_provisioner_pb_gatt_open(conn, addr->val);
     }
 
     return -ENOMEM;
@@ -500,7 +500,7 @@ static ssize_t prov_recv_ntf(struct bt_mesh_conn *conn, u8_t *data, u16_t len)
     return -EINVAL;
 }
 
-int provisioner_pb_gatt_enable(void)
+int bt_mesh_provisioner_pb_gatt_enable(void)
 {
     u8_t i;
 
@@ -515,7 +515,7 @@ int provisioner_pb_gatt_enable(void)
     return 0;
 }
 
-int provisioner_pb_gatt_disable(void)
+int bt_mesh_provisioner_pb_gatt_disable(void)
 {
     u8_t i;
 
@@ -659,7 +659,7 @@ static struct bt_mesh_subnet *bt_mesh_is_net_id_exist(const u8_t net_id[8])
     return NULL;
 }
 
-void proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
+void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
 {
     bt_mesh_proxy_adv_ctx_t ctx = {0};
     u8_t type;

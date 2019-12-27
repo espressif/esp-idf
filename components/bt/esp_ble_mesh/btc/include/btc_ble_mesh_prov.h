@@ -49,6 +49,7 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_DEV_DEL,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_DEV_UUID_MATCH,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_PROV_DATA_INFO,
+    BTC_BLE_MESH_ACT_PROVISIONER_SET_STATIC_OOB_VAL,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_NODE_NAME,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP,
@@ -133,6 +134,10 @@ typedef union {
     struct ble_mesh_provisioner_set_prov_net_idx_args {
         esp_ble_mesh_prov_data_info_t prov_data;
     } set_prov_data_info;
+    struct ble_mesh_provisioner_set_static_oob_val_args {
+        uint8_t value[16];
+        uint8_t length;
+    } set_static_oob_val;
     struct ble_mesh_provisioner_set_node_name_args {
         uint16_t index;
         char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN];

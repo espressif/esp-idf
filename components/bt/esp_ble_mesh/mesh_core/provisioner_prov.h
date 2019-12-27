@@ -73,7 +73,7 @@ struct bt_mesh_prov_data_info {
  *
  * @return None
  */
-void provisioner_pbg_count_dec(void);
+void bt_mesh_provisioner_pbg_count_dec(void);
 
 /**
  * @brief This function clears the part of the link info of the proper device.
@@ -82,7 +82,7 @@ void provisioner_pbg_count_dec(void);
  *
  * @return None
  */
-void provisioner_clear_link_conn_info(const u8_t addr[6]);
+void bt_mesh_provisioner_clear_link_info(const u8_t addr[6]);
 
 /**
  * @brief This function handles the received PB-ADV PDUs.
@@ -91,7 +91,7 @@ void provisioner_clear_link_conn_info(const u8_t addr[6]);
  *
  * @return Zero - success, otherwise - fail
  */
-void provisioner_pb_adv_recv(struct net_buf_simple *buf);
+void bt_mesh_provisioner_pb_adv_recv(struct net_buf_simple *buf);
 
 /**
  * @brief This function sends provisioning invite to start
@@ -102,7 +102,7 @@ void provisioner_pb_adv_recv(struct net_buf_simple *buf);
  *
  * @return Zero - success, otherwise - fail
  */
-int provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn);
+int bt_mesh_provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn);
 
 /**
  * @brief This function sends provisioning invite to start
@@ -113,7 +113,7 @@ int provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn);
  *
  * @return Zero - success, otherwise - fail
  */
-int provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr);
+int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr);
 
 /**
  * @brief This function resets the used information when
@@ -124,7 +124,7 @@ int provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr);
  *
  * @return Zero - success, otherwise - fail
  */
-int provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason);
+int bt_mesh_provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason);
 
 /**
  * @brief This function handles the received PB-GATT provision
@@ -135,7 +135,7 @@ int provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason);
  *
  * @return Zero - success, otherwise - fail
  */
-int provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf);
+int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf);
 
 /**
  * @brief This function initializes provisioner's PB-GATT and PB-ADV
@@ -156,9 +156,9 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
  *
  * @return None
  */
-void provisioner_unprov_beacon_recv(struct net_buf_simple *buf);
+void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf);
 
-void provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
+void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
 
 /**
  * @brief This function gets the bt_mesh_prov pointer.
@@ -239,7 +239,7 @@ typedef void (*unprov_adv_pkt_cb_t)(const u8_t addr[6], const u8_t addr_type,
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_prov_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb);
+int bt_mesh_provisioner_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb);
 
 /**
  * @brief This function changes net_idx or flags or iv_index used in provisioning data.
@@ -251,6 +251,24 @@ int bt_mesh_prov_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb);
 int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info);
 
 /**
+ * @brief This function sets the provisioning information needed by Provisioner,
+ *        including unicast address, IV Index, etc.
+ *
+ * @return Zero - success, otherwise - fail
+ */
+int bt_mesh_provisioner_set_prov_info(void);
+
+/**
+ * @brief This function sets the Static OOB value used by Provisioner.
+ *
+ * @param[in] value:  Static OOB value
+ * @param[in] length: Static OOB value length
+ *
+ * @return Zero - success, otherwise - fail
+ */
+int bt_mesh_provisioner_set_static_oob_value(const u8_t *value, u8_t length);
+
+/**
  * @brief This function is called to input number/string out-put by unprovisioned device.
  *
  * @param[in] idx       The provisioning link index
@@ -259,7 +277,7 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info);
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_prov_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_flag);
+int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_flag);
 
 /**
  * @brief This function is called to output number/string which will be input by unprovisioned device.
@@ -271,7 +289,7 @@ int bt_mesh_prov_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_fl
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_prov_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag);
+int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag);
 
 /**
  * @brief This function is called to read unprovisioned device's oob public key.
@@ -282,7 +300,7 @@ int bt_mesh_prov_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size,
  *
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_prov_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32]);
+int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32]);
 
 /* The following APIs are for fast provisioning */
 
@@ -293,7 +311,7 @@ int bt_mesh_prov_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], cons
  *
  * @return None
  */
-void provisioner_set_fast_prov_flag(bool flag);
+void bt_mesh_provisioner_set_fast_prov_flag(bool flag);
 
 /**
  * @brief This function is called to set netkey index used for fast provisioning.
@@ -303,14 +321,14 @@ void provisioner_set_fast_prov_flag(bool flag);
  *
  * @return status for set netkey index msg
  */
-u8_t provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx);
+u8_t bt_mesh_provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx);
 
 /**
  * @brief This function is called to get netkey index used for fast provisioning.
  *
  * @return net_idx of fast provisioning
  */
-u16_t provisioner_get_fast_prov_net_idx(void);
+u16_t bt_mesh_provisioner_get_fast_prov_net_idx(void);
 
 /**
  * @brief This function is called to set unicast address range used for fast provisioning.

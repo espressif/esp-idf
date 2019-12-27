@@ -31,9 +31,9 @@ static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t 
     bt_mesh_client_node_t *node = NULL;
     sys_snode_t *cur = NULL;
 
-    bt_mesh_irq_lock();
+    bt_mesh_list_lock();
     if (sys_slist_is_empty(list)) {
-        bt_mesh_irq_unlock();
+        bt_mesh_list_unlock();
         return NULL;
     }
 
@@ -41,12 +41,12 @@ static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t 
             cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
-            bt_mesh_irq_unlock();
+            bt_mesh_list_unlock();
             return node;
         }
     }
 
-    bt_mesh_irq_unlock();
+    bt_mesh_list_unlock();
     return NULL;
 }
 
@@ -125,9 +125,9 @@ static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, u16_t tx_dst)
     bt_mesh_client_node_t *node = NULL;
     sys_snode_t *cur = NULL;
 
-    bt_mesh_irq_lock();
+    bt_mesh_list_lock();
     if (sys_slist_is_empty(list)) {
-        bt_mesh_irq_unlock();
+        bt_mesh_list_unlock();
         return false;
     }
 
@@ -135,12 +135,12 @@ static bool bt_mesh_client_check_node_in_list(sys_slist_t *list, u16_t tx_dst)
             cur != NULL; cur = sys_slist_peek_next(cur)) {
         node = (bt_mesh_client_node_t *)cur;
         if (node->ctx.addr == tx_dst) {
-            bt_mesh_irq_unlock();
+            bt_mesh_list_unlock();
             return true;
         }
     }
 
-    bt_mesh_irq_unlock();
+    bt_mesh_list_unlock();
     return false;
 }
 
@@ -212,9 +212,9 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         if ((err = bt_mesh_model_send(model, ctx, msg, cb, cb_data)) != 0) {
             osi_free(node);
         } else {
-            bt_mesh_irq_lock();
+            bt_mesh_list_lock();
             sys_slist_append(&internal->queue, &node->client_node);
-            bt_mesh_irq_unlock();
+            bt_mesh_list_unlock();
             k_delayed_work_init(&node->timer, timer_handler);
 
 #if !CONFIG_BLE_MESH_PROV_TEST
@@ -232,26 +232,28 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     return err;
 }
 
-static osi_mutex_t client_model_mutex;
+static osi_mutex_t client_model_lock;
 
 static void bt_mesh_client_model_mutex_new(void)
 {
-    static bool init;
-
-    if (!init) {
-        osi_mutex_new(&client_model_mutex);
-        init = true;
+    if (!client_model_lock) {
+        osi_mutex_new(&client_model_lock);
+        __ASSERT(client_model_lock, "%s, fail", __func__);
     }
 }
 
 void bt_mesh_client_model_lock(void)
 {
-    osi_mutex_lock(&client_model_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (client_model_lock) {
+        osi_mutex_lock(&client_model_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
 void bt_mesh_client_model_unlock(void)
 {
-    osi_mutex_unlock(&client_model_mutex);
+    if (client_model_lock) {
+        osi_mutex_unlock(&client_model_lock);
+    }
 }
 
 int bt_mesh_client_init(struct bt_mesh_model *model)
@@ -275,18 +277,21 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    /* TODO: call osi_free() when deinit function is invoked */
-    data = osi_calloc(sizeof(bt_mesh_client_internal_data_t));
-    if (!data) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return -ENOMEM;
+    if (!cli->internal_data) {
+        data = osi_calloc(sizeof(bt_mesh_client_internal_data_t));
+        if (!data) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+
+        /* Init the client data queue */
+        sys_slist_init(&data->queue);
+
+        cli->model = model;
+        cli->internal_data = data;
+    } else {
+        bt_mesh_client_clear_list(cli->internal_data);
     }
-
-    /* Init the client data queue */
-    sys_slist_init(&data->queue);
-
-    cli->model = model;
-    cli->internal_data = data;
 
     bt_mesh_client_model_mutex_new();
 
@@ -316,11 +321,33 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     }
 
     // Release the client node from the queue
-    bt_mesh_irq_lock();
+    bt_mesh_list_lock();
     sys_slist_find_and_remove(&internal->queue, &node->client_node);
-    bt_mesh_irq_unlock();
+    bt_mesh_list_unlock();
     // Free the node
     osi_free(node);
+
+    return 0;
+}
+
+int bt_mesh_client_clear_list(void *data)
+{
+    bt_mesh_client_internal_data_t *internal = NULL;
+    bt_mesh_client_node_t *node = NULL;
+
+    if (!data) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    internal = (bt_mesh_client_internal_data_t *)data;
+
+    bt_mesh_list_lock();
+    while (!sys_slist_is_empty(&internal->queue)) {
+        node = (void *)sys_slist_get_not_empty(&internal->queue);
+        osi_free(node);
+    }
+    bt_mesh_list_unlock();
 
     return 0;
 }

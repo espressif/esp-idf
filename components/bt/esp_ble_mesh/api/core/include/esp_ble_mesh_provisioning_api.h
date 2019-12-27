@@ -291,6 +291,17 @@ esp_err_t esp_ble_mesh_provisioner_set_dev_uuid_match(const uint8_t *match_val, 
 esp_err_t esp_ble_mesh_provisioner_set_prov_data_info(esp_ble_mesh_prov_data_info_t *prov_data_info);
 
 /**
+ * @brief         This function is called by Provisioner to set static oob value used for provisioning.
+ *
+ * @param[in]     value:  Pointer to the static oob value.
+ * @param[in]     length: Length of the static oob value.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_static_oob_value(const uint8_t *value, uint8_t length);
+
+/**
  * @brief         This function is called to set provisioning data information before starting
  *                fast provisioning.
  *

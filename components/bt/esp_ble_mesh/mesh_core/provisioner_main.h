@@ -38,8 +38,6 @@ struct bt_mesh_node {
 
 /* The following APIs are for key init, node provision & node reset. */
 
-void bt_mesh_provisioner_mutex_new(void);
-
 u16_t bt_mesh_provisioner_get_prov_node_count(void);
 
 u16_t bt_mesh_provisioner_get_all_node_count(void);
@@ -72,7 +70,7 @@ const u8_t *bt_mesh_provisioner_dev_key_get(u16_t dst);
 
 struct bt_mesh_app_key *bt_mesh_provisioner_app_key_find(u16_t app_idx);
 
-int bt_mesh_provisioner_load_node_info(struct bt_mesh_node *node, bool prov);
+int bt_mesh_provisioner_restore_node_info(struct bt_mesh_node *node, bool prov);
 
 /* The following APIs are for provisioner application use. */
 

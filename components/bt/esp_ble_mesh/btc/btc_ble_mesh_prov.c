@@ -1513,7 +1513,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         arg->mesh_init.prov->provisioner_link_open = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_link_open_cb;
         arg->mesh_init.prov->provisioner_link_close = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_link_close_cb;
         arg->mesh_init.prov->provisioner_prov_comp = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_prov_complete_cb;
-        bt_mesh_prov_adv_pkt_cb_register(btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb);
+        bt_mesh_provisioner_adv_pkt_cb_register(btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb);
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_LOW_POWER
         bt_mesh_lpn_set_cb(btc_ble_mesh_lpn_cb);
@@ -1587,20 +1587,20 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_PROVISIONER_READ_OOB_PUB_KEY:
         act = ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_COMP_EVT;
         param.provisioner_prov_read_oob_pub_key_comp.err_code =
-            bt_mesh_prov_read_oob_pub_key(arg->provisioner_read_oob_pub_key.link_idx,
-                                          arg->provisioner_read_oob_pub_key.pub_key_x,
-                                          arg->provisioner_read_oob_pub_key.pub_key_y);
+            bt_mesh_provisioner_read_oob_pub_key(arg->provisioner_read_oob_pub_key.link_idx,
+                                                 arg->provisioner_read_oob_pub_key.pub_key_x,
+                                                 arg->provisioner_read_oob_pub_key.pub_key_y);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_INPUT_STR:
         act = ESP_BLE_MESH_PROVISIONER_PROV_INPUT_STRING_COMP_EVT;
         param.provisioner_prov_input_str_comp.err_code =
-            bt_mesh_prov_set_oob_input_data(arg->provisioner_input_str.link_idx,
-                                            (const u8_t *)&arg->provisioner_input_str.string, false);
+            bt_mesh_provisioner_set_oob_input_data(arg->provisioner_input_str.link_idx,
+                (const u8_t *)&arg->provisioner_input_str.string, false);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_INPUT_NUM:
         act = ESP_BLE_MESH_PROVISIONER_PROV_INPUT_NUMBER_COMP_EVT;
         param.provisioner_prov_input_num_comp.err_code =
-            bt_mesh_prov_set_oob_input_data(arg->provisioner_input_num.link_idx,
+            bt_mesh_provisioner_set_oob_input_data(arg->provisioner_input_num.link_idx,
                                             (const u8_t *)&arg->provisioner_input_num.number, true);
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_ENABLE:
@@ -1660,6 +1660,12 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             bt_mesh_provisioner_set_prov_data_info(&info);
         break;
     }
+    case BTC_BLE_MESH_ACT_PROVISIONER_SET_STATIC_OOB_VAL:
+        act = ESP_BLE_MESH_PROVISIONER_SET_STATIC_OOB_VALUE_COMP_EVT;
+        param.provisioner_set_static_oob_val_comp.err_code =
+            bt_mesh_provisioner_set_static_oob_value(
+                arg->set_static_oob_val.value, arg->set_static_oob_val.length);
+        break;
     case BTC_BLE_MESH_ACT_PROVISIONER_SET_NODE_NAME:
         act = ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT;
         param.provisioner_set_node_name_comp.err_code =

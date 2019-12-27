@@ -29,24 +29,28 @@
 
 #include "btc_ble_mesh_generic_model.h"
 
-static osi_mutex_t generic_server_mutex;
+static osi_mutex_t generic_server_lock;
 
 static void bt_mesh_generic_server_mutex_new(void)
 {
-    if (!generic_server_mutex) {
-        osi_mutex_new(&generic_server_mutex);
-        __ASSERT(generic_server_mutex, "%s, fail", __func__);
+    if (!generic_server_lock) {
+        osi_mutex_new(&generic_server_lock);
+        __ASSERT(generic_server_lock, "%s, fail", __func__);
     }
 }
 
 void bt_mesh_generic_server_lock(void)
 {
-    osi_mutex_lock(&generic_server_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (generic_server_lock) {
+        osi_mutex_lock(&generic_server_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
 void bt_mesh_generic_server_unlock(void)
 {
-    osi_mutex_unlock(&generic_server_mutex);
+    if (generic_server_lock) {
+        osi_mutex_unlock(&generic_server_lock);
+    }
 }
 
 /* message handlers (Start) */

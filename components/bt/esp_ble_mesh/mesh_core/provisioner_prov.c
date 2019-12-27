@@ -245,6 +245,12 @@ struct prov_ctx_t {
     /* Current iv_index going to be used in provisioning data */
     u16_t curr_iv_index;
 
+    /* Length of Static OOB value */
+    u8_t  static_oob_len;
+
+    /* Static OOB value */
+    u8_t *static_oob_val;
+
     /* Offset of the device uuid to be matched, based on zero */
     u8_t  match_offset;
 
@@ -257,11 +263,18 @@ struct prov_ctx_t {
     /* Indicate when received uuid_match adv_pkts, can provision it at once */
     bool prov_after_match;
 
+#if defined(CONFIG_BLE_MESH_PB_ADV)
     /* Mutex used to protect the PB-ADV procedure */
     osi_mutex_t pb_adv_lock;
 
+    /* Mutex used to protect the adv buf during PB-ADV procedure */
+    osi_mutex_t pb_buf_lock;
+#endif
+
+#if defined(CONFIG_BLE_MESH_PB_GATT)
     /* Mutex used to protect the PB-GATT procedure */
     osi_mutex_t pb_gatt_lock;
+#endif
 };
 
 static struct prov_ctx_t prov_ctx;
@@ -333,6 +346,7 @@ static u8_t adv_buf_data[ADV_BUF_SIZE * CONFIG_BLE_MESH_PBA_SAME_TIME];
 {                                       \
     if (link[_idx].member) {            \
         osi_free(link[_idx].member);    \
+        link[_idx].member = NULL;       \
     }                                   \
 }
 
@@ -350,27 +364,77 @@ static bool fast_prov_flag;
 
 #define FAST_PROV_FLAG_GET() fast_prov_flag
 
-static osi_mutex_t prov_buf_mutex;
-
-static void bt_mesh_prov_buf_mutex_new(void)
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+static void bt_mesh_pb_adv_mutex_new(void)
 {
-    if (!prov_buf_mutex) {
-        osi_mutex_new(&prov_buf_mutex);
-        __ASSERT(prov_buf_mutex, "%s, fail", __func__);
+    if (!prov_ctx.pb_adv_lock) {
+        osi_mutex_new(&prov_ctx.pb_adv_lock);
+        __ASSERT(prov_ctx.pb_adv_lock, "%s, fail", __func__);
     }
 }
 
-static void bt_mesh_prov_buf_lock(void)
+static void bt_mesh_pb_adv_lock(void)
 {
-    osi_mutex_lock(&prov_buf_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (prov_ctx.pb_adv_lock) {
+        osi_mutex_lock(&prov_ctx.pb_adv_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
-static void bt_mesh_prov_buf_unlock(void)
+static void bt_mesh_pb_adv_unlock(void)
 {
-    osi_mutex_unlock(&prov_buf_mutex);
+    if (prov_ctx.pb_adv_lock) {
+        osi_mutex_unlock(&prov_ctx.pb_adv_lock);
+    }
 }
 
-void provisioner_pbg_count_dec(void)
+static void bt_mesh_pb_buf_mutex_new(void)
+{
+    if (!prov_ctx.pb_buf_lock) {
+        osi_mutex_new(&prov_ctx.pb_buf_lock);
+        __ASSERT(prov_ctx.pb_buf_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_pb_buf_lock(void)
+{
+    if (prov_ctx.pb_buf_lock) {
+        osi_mutex_lock(&prov_ctx.pb_buf_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
+}
+
+static void bt_mesh_pb_buf_unlock(void)
+{
+    if (prov_ctx.pb_buf_lock) {
+        osi_mutex_unlock(&prov_ctx.pb_buf_lock);
+    }
+}
+#endif /* CONFIG_BLE_MESH_PB_ADV */
+
+#if defined(CONFIG_BLE_MESH_PB_GATT)
+static void bt_mesh_pb_gatt_mutex_new(void)
+{
+    if (!prov_ctx.pb_gatt_lock) {
+        osi_mutex_new(&prov_ctx.pb_gatt_lock);
+        __ASSERT(prov_ctx.pb_gatt_lock, "%s, fail", __func__);
+    }
+}
+
+static void bt_mesh_pb_gatt_lock(void)
+{
+    if (prov_ctx.pb_gatt_lock) {
+        osi_mutex_lock(&prov_ctx.pb_gatt_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
+}
+
+static void bt_mesh_pb_gatt_unlock(void)
+{
+    if (prov_ctx.pb_gatt_lock) {
+        osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
+    }
+}
+#endif /* CONFIG_BLE_MESH_PB_GATT */
+
+void bt_mesh_provisioner_pbg_count_dec(void)
 {
     if (prov_ctx.pbg_count) {
         prov_ctx.pbg_count--;
@@ -383,7 +447,7 @@ static inline void provisioner_pbg_count_inc(void)
 }
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
-void provisioner_clear_link_conn_info(const u8_t addr[6])
+void bt_mesh_provisioner_clear_link_info(const u8_t addr[6])
 {
     u8_t i;
 
@@ -589,10 +653,10 @@ static int provisioner_start_prov_pb_adv(const u8_t uuid[16],
         return -EINVAL;
     }
 
-    osi_mutex_lock(&prov_ctx.pb_adv_lock, OSI_MUTEX_MAX_TIMEOUT);
+    bt_mesh_pb_adv_lock();
 
     if (is_unprov_dev_being_provision(uuid)) {
-        osi_mutex_unlock(&prov_ctx.pb_adv_lock);
+        bt_mesh_pb_adv_unlock();
         return -EALREADY;
     }
 
@@ -607,13 +671,14 @@ static int provisioner_start_prov_pb_adv(const u8_t uuid[16],
                 memcpy(link[i].addr.val, addr->val, BLE_MESH_ADDR_LEN);
             }
             send_link_open(i);
-            osi_mutex_unlock(&prov_ctx.pb_adv_lock);
+            bt_mesh_pb_adv_unlock();
             return 0;
         }
     }
 
     BT_ERR("%s, No PB-ADV link is available", __func__);
-    osi_mutex_unlock(&prov_ctx.pb_adv_lock);
+    bt_mesh_pb_adv_unlock();
+
     return -ENOMEM;
 }
 #endif /* CONFIG_BLE_MESH_PB_ADV */
@@ -631,10 +696,10 @@ static int provisioner_start_prov_pb_gatt(const u8_t uuid[16],
         return -EINVAL;
     }
 
-    osi_mutex_lock(&prov_ctx.pb_gatt_lock, OSI_MUTEX_MAX_TIMEOUT);
+    bt_mesh_pb_gatt_lock();
 
     if (is_unprov_dev_being_provision(uuid)) {
-        osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
+        bt_mesh_pb_gatt_unlock();
         return -EALREADY;
     }
 
@@ -652,19 +717,20 @@ static int provisioner_start_prov_pb_gatt(const u8_t uuid[16],
                 memset(link[i].uuid, 0, 16);
                 link[i].oob_info = 0x0;
                 memset(&link[i].addr, 0, sizeof(bt_mesh_addr_t));
-                osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
+                bt_mesh_pb_gatt_unlock();
                 return -EIO;
             }
             /* If creating connection successfully, set connecting flag to 1 */
             link[i].connecting = true;
             provisioner_pbg_count_inc();
-            osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
+            bt_mesh_pb_gatt_unlock();
             return 0;
         }
     }
 
     BT_ERR("%s, No PB-GATT link is available", __func__);
-    osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
+    bt_mesh_pb_gatt_unlock();
+
     return -ENOMEM;
 }
 #endif /* CONFIG_BLE_MESH_PB_GATT */
@@ -923,7 +989,7 @@ int bt_mesh_provisioner_set_dev_uuid_match(u8_t offset, u8_t length,
     return 0;
 }
 
-int bt_mesh_prov_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb)
+int bt_mesh_provisioner_adv_pkt_cb_register(unprov_adv_pkt_cb_t cb)
 {
     if (!cb) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -958,14 +1024,76 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info)
     return 0;
 }
 
+int bt_mesh_provisioner_set_prov_info(void)
+{
+    const struct bt_mesh_comp *comp = NULL;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(prov->prov_unicast_addr) ||
+        !BLE_MESH_ADDR_IS_UNICAST(prov->prov_start_address)) {
+        BT_ERR("%s, Invalid address, own 0x%04x, start 0x%04x",
+            __func__, prov->prov_unicast_addr, prov->prov_start_address);
+        return -EINVAL;
+    }
+
+    comp = bt_mesh_comp_get();
+    if (!comp) {
+        BT_ERR("%s, NULL composition data", __func__);
+        return -EINVAL;
+    }
+
+    if (prov->prov_unicast_addr + comp->elem_count > prov->prov_start_address) {
+        BT_WARN("Too small start address 0x%04x, update to 0x%04x",
+            prov->prov_start_address, prov->prov_unicast_addr + comp->elem_count);
+        prov_ctx.current_addr = prov->prov_unicast_addr + comp->elem_count;
+    } else {
+        prov_ctx.current_addr = prov->prov_start_address;
+    }
+    prov_ctx.curr_net_idx = BLE_MESH_KEY_PRIMARY;
+    prov_ctx.curr_flags = prov->flags;
+    prov_ctx.curr_iv_index = prov->iv_index;
+
+    return 0;
+}
+
+int bt_mesh_provisioner_set_static_oob_value(const u8_t *value, u8_t length)
+{
+    size_t i;
+
+    if (value == NULL || length == 0U || length > 16U) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    /* Make sure Static OOB is not being used. */
+    for (i = 0U; i < BLE_MESH_PROV_SAME_TIME; i++) {
+        if (link[i].auth_method == AUTH_METHOD_STATIC) {
+            BT_ERR("%s, Static OOB is being used", __func__);
+            return -EINVAL;
+        }
+    }
+
+    if (prov_ctx.static_oob_val == NULL) {
+        prov_ctx.static_oob_val = osi_calloc(16);
+        if (!prov_ctx.static_oob_val) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+    }
+
+    prov_ctx.static_oob_len = MIN(16, length);
+    memcpy(prov_ctx.static_oob_val, value, prov_ctx.static_oob_len);
+
+    return 0;
+}
+
 /* The following APIs are for fast provisioning */
 
-void provisioner_set_fast_prov_flag(bool flag)
+void bt_mesh_provisioner_set_fast_prov_flag(bool flag)
 {
     fast_prov_flag = flag;
 }
 
-u8_t provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx)
+u8_t bt_mesh_provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx)
 {
     fast_prov_info.net_idx = net_idx;
     fast_prov_info.net_key = net_key;
@@ -978,7 +1106,7 @@ u8_t provisioner_set_fast_prov_net_idx(const u8_t *net_key, u16_t net_idx)
     return 0x0; /* status: success */
 }
 
-u16_t provisioner_get_fast_prov_net_idx(void)
+u16_t bt_mesh_provisioner_get_fast_prov_net_idx(void)
 {
     return fast_prov_info.net_idx;
 }
@@ -1066,7 +1194,7 @@ static void free_segments(const u8_t idx)
 {
     u8_t i;
 
-    bt_mesh_prov_buf_lock();
+    bt_mesh_pb_buf_lock();
 
     for (i = 0U; i < ARRAY_SIZE(link[idx].tx.buf); i++) {
         struct net_buf *buf = link[idx].tx.buf[i];
@@ -1082,7 +1210,7 @@ static void free_segments(const u8_t idx)
         net_buf_unref(buf);
     }
 
-    bt_mesh_prov_buf_unlock();
+    bt_mesh_pb_buf_unlock();
 }
 
 static void prov_clear_tx(const u8_t idx)
@@ -1520,7 +1648,7 @@ static void prov_capabilities(const u8_t idx, const u8_t *data)
         BT_ERR("%s, Invalid Static OOB type", __func__);
         goto fail;
     }
-    static_oob = (prov->prov_static_oob_val ? static_oob : 0x00);
+    static_oob = (prov_ctx.static_oob_val ? static_oob : 0x00);
 
     output_size = data[5];
     BT_DBG("Output OOB Size:   %u", output_size);
@@ -1700,8 +1828,8 @@ static int prov_auth(const u8_t idx, u8_t method, u8_t action, u8_t size)
         if (action || size) {
             return -EINVAL;
         }
-        memcpy(link[idx].auth + 16 - prov->prov_static_oob_len,
-               prov->prov_static_oob_val, prov->prov_static_oob_len);
+        memcpy(link[idx].auth + 16 - prov_ctx.static_oob_len,
+               prov_ctx.static_oob_val, prov_ctx.static_oob_len);
         memset(link[idx].auth, 0, 16 - prov->prov_static_oob_len);
         return 0;
 
@@ -1834,7 +1962,7 @@ fail:
     return;
 }
 
-int bt_mesh_prov_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_flag)
+int bt_mesh_provisioner_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_flag)
 {
     /** This function should be called in the prov_input_num
      *  callback, after the data output by device has been
@@ -1864,7 +1992,7 @@ int bt_mesh_prov_set_oob_input_data(const u8_t idx, const u8_t *val, bool num_fl
     return 0;
 }
 
-int bt_mesh_prov_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag)
+int bt_mesh_provisioner_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size, bool num_flag)
 {
     /** This function should be called in the prov_output_num
      *  callback, after the data has been output by provisioner.
@@ -1895,7 +2023,7 @@ int bt_mesh_prov_set_oob_output_data(const u8_t idx, const u8_t *num, u8_t size,
     return 0;
 }
 
-int bt_mesh_prov_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32])
+int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32], const u8_t pub_key_y[32])
 {
     if (!link[idx].conf_inputs) {
         BT_ERR("%s, Link conf_inputs is NULL", __func__);
@@ -2456,7 +2584,7 @@ static void prov_retransmit(struct k_work *work)
         link[idx].send_link_close += BIT(3);
     }
 
-    bt_mesh_prov_buf_lock();
+    bt_mesh_pb_buf_lock();
 
     for (i = 0U; i < ARRAY_SIZE(link[idx].tx.buf); i++) {
         struct net_buf *buf = link[idx].tx.buf[i];
@@ -2478,7 +2606,7 @@ static void prov_retransmit(struct k_work *work)
         }
     }
 
-    bt_mesh_prov_buf_unlock();
+    bt_mesh_pb_buf_unlock();
 }
 
 static void link_ack(const u8_t idx, struct prov_rx *rx, struct net_buf_simple *buf)
@@ -2773,7 +2901,7 @@ static int find_link(u32_t link_id, u8_t *idx)
     return -1;
 }
 
-void provisioner_pb_adv_recv(struct net_buf_simple *buf)
+void bt_mesh_provisioner_pb_adv_recv(struct net_buf_simple *buf)
 {
     struct prov_rx rx = {0};
     u8_t idx;
@@ -2819,7 +2947,7 @@ static struct bt_mesh_conn *find_conn(struct bt_mesh_conn *conn, u8_t *idx)
     return NULL;
 }
 
-int provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf)
+int bt_mesh_provisioner_pb_gatt_recv(struct bt_mesh_conn *conn, struct net_buf_simple *buf)
 {
     u8_t type;
     u8_t idx;
@@ -2862,7 +2990,7 @@ fail:
     return -EINVAL;
 }
 
-int provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn)
+int bt_mesh_provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn)
 {
     u8_t i;
 
@@ -2882,7 +3010,7 @@ int provisioner_set_prov_conn(const u8_t addr[6], struct bt_mesh_conn *conn)
     return -ENOMEM;
 }
 
-int provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr)
+int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr)
 {
     u8_t idx = 0, i;
 
@@ -2938,7 +3066,7 @@ int provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr)
     return 0;
 }
 
-int provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason)
+int bt_mesh_provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason)
 {
     u8_t idx;
 
@@ -2971,9 +3099,8 @@ int provisioner_pb_gatt_close(struct bt_mesh_conn *conn, u8_t reason)
 
 int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
 {
-    const struct bt_mesh_comp *comp = NULL;
     const u8_t *key = NULL;
-    u8_t i;
+    size_t i;
 
     if (!prov_info) {
         BT_ERR("%s, No provisioning context provided", __func__);
@@ -2987,6 +3114,16 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
     }
 
     prov = prov_info;
+
+    if (prov->prov_static_oob_val && prov->prov_static_oob_len) {
+        prov_ctx.static_oob_val = osi_calloc(16);
+        if (!prov_ctx.static_oob_val) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+        prov_ctx.static_oob_len = MIN(16, prov->prov_static_oob_len);
+        memcpy(prov_ctx.static_oob_val, prov->prov_static_oob_val, prov_ctx.static_oob_len);
+    }
 
 #if defined(CONFIG_BLE_MESH_PB_ADV)
     for (i = 0U; i < CONFIG_BLE_MESH_PBA_SAME_TIME; i++) {
@@ -3007,34 +3144,13 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
         link[i].timeout.work.index = (int)i;
     }
 
-    if (!BLE_MESH_ADDR_IS_UNICAST(prov->prov_unicast_addr) ||
-        !BLE_MESH_ADDR_IS_UNICAST(prov->prov_start_address)) {
-        BT_ERR("%s, Invalid address, own 0x%04x, start 0x%04x",
-            __func__, prov->prov_unicast_addr, prov->prov_start_address);
-        return -EINVAL;
-    }
-
-    comp = bt_mesh_comp_get();
-    if (!comp) {
-        BT_ERR("%s, NULL composition data", __func__);
-        return -EINVAL;
-    }
-
-    if (prov->prov_unicast_addr + comp->elem_count > prov->prov_start_address) {
-        BT_WARN("Too small start address 0x%04x, update to 0x%04x",
-            prov->prov_start_address, prov->prov_unicast_addr + comp->elem_count);
-        prov_ctx.current_addr = prov->prov_unicast_addr + comp->elem_count;
-    } else {
-        prov_ctx.current_addr = prov->prov_start_address;
-    }
-    prov_ctx.curr_net_idx = BLE_MESH_KEY_PRIMARY;
-    prov_ctx.curr_flags = prov->flags;
-    prov_ctx.curr_iv_index = prov->iv_index;
-
-    osi_mutex_new(&prov_ctx.pb_adv_lock);
-    osi_mutex_new(&prov_ctx.pb_gatt_lock);
-
-    bt_mesh_prov_buf_mutex_new();
+#if defined(CONFIG_BLE_MESH_PB_ADV)
+    bt_mesh_pb_adv_mutex_new();
+    bt_mesh_pb_buf_mutex_new();
+#endif
+#if defined(CONFIG_BLE_MESH_PB_GATT)
+    bt_mesh_pb_gatt_mutex_new();
+#endif
 
     return 0;
 }
@@ -3069,7 +3185,7 @@ static bool is_unprov_dev_info_callback_to_app(bt_mesh_prov_bearer_t bearer,
     return false;
 }
 
-void provisioner_unprov_beacon_recv(struct net_buf_simple *buf)
+void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf)
 {
 #if defined(CONFIG_BLE_MESH_PB_ADV)
     const bt_mesh_addr_t *addr = NULL;
@@ -3105,7 +3221,7 @@ void provisioner_unprov_beacon_recv(struct net_buf_simple *buf)
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 }
 
-void provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
+void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
 {
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     const u8_t *uuid = NULL;

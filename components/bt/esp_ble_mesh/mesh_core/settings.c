@@ -1121,7 +1121,7 @@ static int p_node_set(const char *name)
         node.element_num = val.element_num;
         memcpy(node.dev_key, val.dev_key, 16);
 
-        err = bt_mesh_provisioner_load_node_info(&node, prov);
+        err = bt_mesh_provisioner_restore_node_info(&node, prov);
         if (err) {
             BT_ERR("%s, Failed to store node 0x%04x", __func__, node.unicast_addr);
             goto free;

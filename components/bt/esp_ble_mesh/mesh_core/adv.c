@@ -118,8 +118,10 @@ static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
 
 static inline int adv_send(struct net_buf *buf)
 {
+#if 0
     const s32_t adv_int_min = ((bt_mesh_dev.hci_version >= BLE_MESH_HCI_VERSION_5_0) ?
                                ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
+#endif
     const struct bt_mesh_send_cb *cb = BLE_MESH_ADV(buf)->cb;
     void *cb_data = BLE_MESH_ADV(buf)->cb_data;
     struct bt_mesh_adv_param param = {0};
@@ -149,6 +151,8 @@ static inline int adv_send(struct net_buf *buf)
     param.options = 0U;
     param.interval_min = ADV_SCAN_UNIT(ADV_INT_FAST_MS);
     param.interval_max = param.interval_min;
+
+    bt_mesh_adv_buf_ref_debug(__func__, buf, 4U, BLE_MESH_BUF_REF_SMALL);
 
     err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
     net_buf_unref(buf);
@@ -585,7 +589,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
             }
 
             BT_DBG("Start to handle Mesh Prov Service Data");
-            provisioner_prov_adv_ind_recv(buf, addr);
+            bt_mesh_provisioner_prov_adv_ind_recv(buf, addr);
         }
         break;
 #endif
@@ -598,7 +602,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
         }
 
         BT_DBG("Start to handle Mesh Proxy Service Data");
-        proxy_client_adv_ind_recv(buf, addr);
+        bt_mesh_proxy_client_adv_ind_recv(buf, addr);
         break;
 #endif
     default:
@@ -667,7 +671,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 #endif
 #if CONFIG_BLE_MESH_PROVISIONER
             if (bt_mesh_is_provisioner_en()) {
-                provisioner_pb_adv_recv(buf);
+                bt_mesh_provisioner_pb_adv_recv(buf);
             }
 #endif
             break;
@@ -680,7 +684,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 #endif
 #if CONFIG_BLE_MESH_PROVISIONER
             if (bt_mesh_is_provisioner_en()) {
-                provisioner_beacon_recv(buf);
+                bt_mesh_provisioner_beacon_recv(buf);
             }
 #endif
             break;

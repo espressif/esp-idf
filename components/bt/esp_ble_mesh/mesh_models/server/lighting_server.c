@@ -26,24 +26,28 @@
 
 #include "btc_ble_mesh_lighting_model.h"
 
-static osi_mutex_t light_server_mutex;
+static osi_mutex_t light_server_lock;
 
 static void bt_mesh_light_server_mutex_new(void)
 {
-    if (!light_server_mutex) {
-        osi_mutex_new(&light_server_mutex);
-        __ASSERT(light_server_mutex, "%s, fail", __func__);
+    if (!light_server_lock) {
+        osi_mutex_new(&light_server_lock);
+        __ASSERT(light_server_lock, "%s, fail", __func__);
     }
 }
 
 void bt_mesh_light_server_lock(void)
 {
-    osi_mutex_lock(&light_server_mutex, OSI_MUTEX_MAX_TIMEOUT);
+    if (light_server_lock) {
+        osi_mutex_lock(&light_server_lock, OSI_MUTEX_MAX_TIMEOUT);
+    }
 }
 
 void bt_mesh_light_server_unlock(void)
 {
-    osi_mutex_unlock(&light_server_mutex);
+    if (light_server_lock) {
+        osi_mutex_unlock(&light_server_lock);
+    }
 }
 
 /* message handlers (Start) */

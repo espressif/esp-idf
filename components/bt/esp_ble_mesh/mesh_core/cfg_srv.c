@@ -831,7 +831,6 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
         bt_mesh_store_cfg();
     }
 
-#if CONFIG_BLE_MESH_NODE
     if (cfg->gatt_proxy == BLE_MESH_GATT_PROXY_DISABLED) {
         int i;
 
@@ -855,7 +854,6 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
     }
 
     bt_mesh_adv_update();
-#endif
 
     if (cfg->hb_pub.feat & BLE_MESH_FEAT_PROXY) {
         bt_mesh_heartbeat_send();
@@ -2246,10 +2244,8 @@ static void net_key_add(struct bt_mesh_model *model,
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         sub->node_id = BLE_MESH_NODE_IDENTITY_STOPPED;
-#if CONFIG_BLE_MESH_NODE
         bt_mesh_proxy_beacon_send(sub);
         bt_mesh_adv_update();
-#endif
     } else {
         sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
     }
@@ -2506,7 +2502,6 @@ static void node_identity_set(struct bt_mesh_model *model,
     } else  {
         net_buf_simple_add_u8(&msg, STATUS_SUCCESS);
         net_buf_simple_add_le16(&msg, idx);
-#if CONFIG_BLE_MESH_NODE
         /* Section 4.2.11.1: "When the GATT Proxy state is set to
          * 0x00, the Node Identity state for all subnets shall be set
          * to 0x00 and shall not be changed."
@@ -2520,7 +2515,6 @@ static void node_identity_set(struct bt_mesh_model *model,
             }
             bt_mesh_adv_update();
         }
-#endif
         net_buf_simple_add_u8(&msg, sub->node_id);
     }
 
