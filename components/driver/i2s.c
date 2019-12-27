@@ -99,7 +99,8 @@ typedef struct {
 } i2s_obj_t;
 
 static i2s_obj_t *p_i2s_obj[I2S_NUM_MAX] = {0};
-static i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
+/* DRAM_ATTR is required to avoid I2S array placed in flash, due to accessed from ISR */
+static DRAM_ATTR i2s_dev_t* I2S[I2S_NUM_MAX] = {&I2S0, &I2S1};
 static portMUX_TYPE i2s_spinlock[I2S_NUM_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
 static int _i2s_adc_unit = -1;
 static int _i2s_adc_channel = -1;

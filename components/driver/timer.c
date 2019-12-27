@@ -36,7 +36,8 @@ static const char* TIMER_TAG = "timer_group";
 #define TIMER_SCALE_ERROR       "HW TIMER SCALE ERROR"
 #define TIMER_ALARM_ERROR       "HW TIMER ALARM ERROR"
 #define DIVIDER_RANGE_ERROR     "HW TIMER divider outside of [2, 65536] range error"
-static timg_dev_t *TG[2] = {&TIMERG0, &TIMERG1};
+/* DRAM_ATTR is required to avoid TG array placed in flash, due to accessed from ISR */
+static DRAM_ATTR timg_dev_t *TG[2] = {&TIMERG0, &TIMERG1};
 static portMUX_TYPE timer_spinlock[TIMER_GROUP_MAX] = {portMUX_INITIALIZER_UNLOCKED, portMUX_INITIALIZER_UNLOCKED};
 
 #define TIMER_ENTER_CRITICAL(mux)      portENTER_CRITICAL_SAFE(mux);

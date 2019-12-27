@@ -1217,10 +1217,12 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
     if (adc_unit & ADC_UNIT_1) {
         // Enable ADC data invert
         SENS.sar_read_ctrl.sar1_data_inv = inv_en;
+        SYSCON.saradc_ctrl2.sar1_inv = inv_en;
     }
     if (adc_unit & ADC_UNIT_2) {
         // Enable ADC data invert
         SENS.sar_read_ctrl2.sar2_data_inv = inv_en;
+        SYSCON.saradc_ctrl2.sar2_inv = inv_en;
     }
     portEXIT_CRITICAL(&rtc_spinlock);
     return ESP_OK;
