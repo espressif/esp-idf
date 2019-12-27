@@ -68,6 +68,7 @@
     CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/components/idf_test/unit_test/CIConfigs"
     LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
     ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+    PYTHON_VER: 3
 
 .test_template:
   stage: target_test
