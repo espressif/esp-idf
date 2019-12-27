@@ -18,8 +18,6 @@
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_reg.h"
 
-#define MHZ (1000000)
-
 /* Calibration of RTC_SLOW_CLK is performed using a special feature of TIMG0.
  * This feature counts the number of XTAL clock cycles within a given number of
  * RTC_SLOW_CLK cycles.
@@ -66,14 +64,14 @@ uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
     /* Set timeout reg and expect time delay*/
     uint32_t expected_freq;
     if (cal_clk == RTC_CAL_32K_XTAL) {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, (slowclk_cycles << 13));
-        expected_freq = 32768;
+        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(slowclk_cycles));
+        expected_freq = RTC_SLOW_CLK_FREQ_32K;
     } else if (cal_clk == RTC_CAL_8MD256) {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, (slowclk_cycles << 13));
-        expected_freq = RTC_FAST_CLK_FREQ_APPROX / 256;
+        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(slowclk_cycles));
+        expected_freq = RTC_SLOW_CLK_FREQ_8MD256;
     } else {
-        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, (slowclk_cycles << 11));
-        expected_freq = 90000;
+        REG_SET_FIELD(TIMG_RTCCALICFG2_REG(0), TIMG_RTC_CALI_TIMEOUT_THRES, RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(slowclk_cycles));
+        expected_freq = RTC_SLOW_CLK_FREQ_150K;
     }
     uint32_t us_time_estimate = (uint32_t) (((uint64_t) slowclk_cycles) * MHZ / expected_freq);
     /* Start calibration */

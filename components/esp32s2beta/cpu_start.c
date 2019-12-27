@@ -250,12 +250,8 @@ void start_cpu0_default(void)
     trax_enable(TRAX_ENA_PRO);
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
 #endif
-#if !CONFIG_IDF_ENV_FPGA // ToDo: remove it once we get a real chip
     esp_clk_init();
     esp_perip_clk_init();
-#else
-    ets_update_cpu_frequency(CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ);
-#endif
     intr_matrix_clear();
 
 #ifndef CONFIG_ESP_CONSOLE_UART_NONE

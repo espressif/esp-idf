@@ -275,21 +275,18 @@ extern "C" {
 #define RTC_CNTL_PLL_BUF_WAIT_M  ((RTC_CNTL_PLL_BUF_WAIT_V)<<(RTC_CNTL_PLL_BUF_WAIT_S))
 #define RTC_CNTL_PLL_BUF_WAIT_V  0xFF
 #define RTC_CNTL_PLL_BUF_WAIT_S  24
-#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
 /* RTC_CNTL_XTL_BUF_WAIT : R/W ;bitpos:[23:14] ;default: 10'd80 ; */
 /*description: XTAL wait cycles in slow_clk_rtc*/
 #define RTC_CNTL_XTL_BUF_WAIT  0x000003FF
 #define RTC_CNTL_XTL_BUF_WAIT_M  ((RTC_CNTL_XTL_BUF_WAIT_V)<<(RTC_CNTL_XTL_BUF_WAIT_S))
 #define RTC_CNTL_XTL_BUF_WAIT_V  0x3FF
 #define RTC_CNTL_XTL_BUF_WAIT_S  14
-#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
 /* RTC_CNTL_CK8M_WAIT : R/W ;bitpos:[13:6] ;default: 8'h10 ; */
 /*description: CK8M wait cycles in slow_clk_rtc*/
 #define RTC_CNTL_CK8M_WAIT  0x000000FF
 #define RTC_CNTL_CK8M_WAIT_M  ((RTC_CNTL_CK8M_WAIT_V)<<(RTC_CNTL_CK8M_WAIT_S))
 #define RTC_CNTL_CK8M_WAIT_V  0xFF
 #define RTC_CNTL_CK8M_WAIT_S  6
-#define RTC_CNTL_CK8M_WAIT_DEFAULT  20
 /* RTC_CNTL_CPU_STALL_WAIT : R/W ;bitpos:[5:1] ;default: 5'd1 ; */
 /*description: CPU stall wait cycles in fast_clk_rtc*/
 #define RTC_CNTL_CPU_STALL_WAIT  0x0000001F
@@ -1568,13 +1565,6 @@ extern "C" {
 #define RTC_CNTL_DIG_DBIAS_1V15  6
 #define RTC_CNTL_DIG_DBIAS_1V20  7
 
-/* The value of 1V00 can be adjusted between 0~3*/
-#define RTC_CNTL_DBIAS_1V00  0
-#define RTC_CNTL_DBIAS_1V05  4
-#define RTC_CNTL_DBIAS_1V10  5
-#define RTC_CNTL_DBIAS_1V15  6
-#define RTC_CNTL_DBIAS_1V20  7 
-
 /* RTC_CNTL_DBIAS_SLP : R/W ;bitpos:[24:22] ;default: 3'd4 ; */
 /*description: RTC_DBIAS during sleep*/
 #define RTC_CNTL_DBIAS_SLP  0x00000007
@@ -1587,7 +1577,6 @@ extern "C" {
 #define RTC_CNTL_SCK_DCAP_M  ((RTC_CNTL_SCK_DCAP_V)<<(RTC_CNTL_SCK_DCAP_S))
 #define RTC_CNTL_SCK_DCAP_V  0xFF
 #define RTC_CNTL_SCK_DCAP_S  14
-#define RTC_CNTL_SCK_DCAP_DEFAULT   255
 /* RTC_CNTL_DIG_DBIAS_WAK : R/W ;bitpos:[13:11] ;default: 3'd4 ; */
 /*description: DIG_REG_DBIAS during wakeup*/
 #define RTC_CNTL_DIG_DBIAS_WAK  0x00000007

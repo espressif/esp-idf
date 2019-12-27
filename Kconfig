@@ -28,7 +28,6 @@ mainmenu "Espressif IoT Development Framework Configuration"
         bool
         default "y" if IDF_TARGET="esp32s2beta"
         select FREERTOS_UNICORE
-        select IDF_ENV_FPGA
 
     config IDF_FIRMWARE_CHIP_ID
         hex

@@ -45,7 +45,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .hw = (spi_dev_t *) &SPIMEM1,
         .func = SPI_FUNC_NUM,
     }, {
-        .spiclk_out = FSPICLK_OUT_MUX_IDX,
+        .spiclk_out = FSPICLK_OUT_IDX,
         .spiclk_in = FSPICLK_IN_IDX,
         .spid_out = FSPID_OUT_IDX,
         .spiq_out = FSPIQ_OUT_IDX,

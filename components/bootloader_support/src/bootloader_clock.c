@@ -26,16 +26,6 @@
 #include "esp32s2beta/rom/rtc.h"
 #endif
 
-#if CONFIG_IDF_ENV_FPGA
-void bootloader_clock_configure(void)
-{
-    uart_tx_wait_idle(0);
-    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, 0);
-    rtc_cpu_freq_t cpu_freq = ets_get_apb_freq();
-    ets_update_cpu_frequency(cpu_freq / 1000000);
-    REG_WRITE(RTC_CNTL_STORE5_REG, (cpu_freq >> 12) | ((cpu_freq >> 12) << 16));
-}
-#else // CONFIG_IDF_ENV_FPGA
 void bootloader_clock_configure(void)
 {
     // ROM bootloader may have put a lot of text into UART0 FIFO.
@@ -83,7 +73,6 @@ void bootloader_clock_configure(void)
     }
 #endif
 }
-#endif // CONFIG_IDF_ENV_FPGA
 
 #ifdef BOOTLOADER_BUILD
 

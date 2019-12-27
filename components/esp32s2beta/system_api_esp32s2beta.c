@@ -94,9 +94,7 @@ void IRAM_ATTR esp_restart_noos(void)
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
-#if !CONFIG_IDF_ENV_FPGA
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
-#endif
 
     // Reset CPUs
     if (core_id == 0) {
@@ -114,6 +112,4 @@ void esp_chip_info(esp_chip_info_t *out_info)
     out_info->model = CHIP_ESP32S2BETA;
     out_info->cores = 1;
     out_info->features = CHIP_FEATURE_WIFI_BGN;
-
-    // FIXME: other features?
 }
