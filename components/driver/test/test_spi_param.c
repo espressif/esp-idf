@@ -6,6 +6,10 @@
 #include "test/test_common_spi.h"
 #include "sdkconfig.h"
 
+#ifndef MIN
+#define MIN(a, b)((a) > (b)? (b): (a))
+#endif
+
 /********************************************************************************
  *      Test By Internal Connections
  ********************************************************************************/
@@ -118,9 +122,16 @@ static void local_test_start(spi_device_handle_t *spi, int freq, const spitest_p
         spitest_gpio_output_sel(buscfg.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
     }
 
-    //clear master receive buffer
-    memset(context->master_rxbuf, 0x66, sizeof(context->master_rxbuf));
+    if (context) {
+        //clear master receive buffer
+        memset(context->master_rxbuf, 0x66, sizeof(context->master_rxbuf));
+    }
+}
 
+static void local_test_end(spi_device_handle_t spi)
+{
+    master_free_device_bus(spi);
+    TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
 }
 
 static void local_test_loop(const void* arg1, void* arg2)
@@ -203,8 +214,7 @@ static void local_test_loop(const void* arg1, void* arg2)
                 TEST_ASSERT(rcv_len >= len - 1 && rcv_len <= len + 4);
             }
         }
-        master_free_device_bus(spi);
-        TEST_ASSERT(spi_slave_free(TEST_SLAVE_HOST) == ESP_OK);
+        local_test_end(spi);
     }
 }
 
@@ -495,6 +505,113 @@ static spitest_param_set_t mode_pgroup[] = {
     },
 };
 TEST_SPI_LOCAL(MODE, mode_pgroup)
+
+/**********************SPI master slave transaction length test*************/
+/* Test SPI slave can receive different length of data in all 4 modes (permutations of
+ * CPOL/CPHA and when DMA is used or not).
+ * Length from 1 to 16 bytes are tested.
+*/
+
+#define MASTER_DATA_RAND_SEED 123
+#define SLAVE_DATA_RAND_SEED 456
+
+TEST_CASE("Slave receive correct data", "[spi]")
+{
+   // Initialize device handle and spi bus
+    uint32_t master_seed_send = MASTER_DATA_RAND_SEED;
+    uint32_t slave_seed_send = SLAVE_DATA_RAND_SEED;
+    uint32_t master_seed_cmp = slave_seed_send;
+    uint32_t slave_seed_cmp = master_seed_send;
+
+    const int buf_size = 20;
+
+    WORD_ALIGNED_ATTR uint8_t slave_sendbuf[buf_size];
+    WORD_ALIGNED_ATTR uint8_t slave_recvbuf[buf_size];
+    WORD_ALIGNED_ATTR uint8_t master_sendbuf[buf_size];
+    WORD_ALIGNED_ATTR uint8_t master_recvbuf[buf_size];
+
+    uint8_t master_cmpbuf[buf_size];
+    uint8_t slave_cmpbuf[buf_size];
+
+    for (int spi_mode = 0; spi_mode < 4; spi_mode++) {
+        for (int dma_chan = 0; dma_chan < 2; dma_chan++) {
+            spi_device_handle_t spi;
+            spitest_param_set_t test_param = {
+                .dup = FULL_DUPLEX,
+                .mode = spi_mode,
+                .master_iomux = false,
+                .slave_iomux = false,
+                .master_dma_chan = 0,
+                .slave_dma_chan = (dma_chan? TEST_DMA_CHAN_SLAVE: 0),
+            };
+            ESP_LOGI(SLAVE_TAG, "Test slave recv @ mode %d, dma enabled=%d", spi_mode, dma_chan);
+
+            local_test_start(&spi, 1000*1000, &test_param, NULL);
+
+            for (int round = 0; round < 20; round++) {
+                // printf("trans %d\n", round);
+                int master_trans_len = round + 1;
+                const int slave_trans_len = 16;
+
+                memset(master_sendbuf, 0xcc, buf_size);
+                memset(slave_sendbuf, 0x55, buf_size);
+                memset(master_recvbuf, 0xaa, buf_size);
+                memset(slave_recvbuf, 0xbb, buf_size);
+
+                for(int i = 0; i < master_trans_len; i++){
+                    master_sendbuf[i] = rand_r(&master_seed_send);
+                    slave_sendbuf[i] = rand_r(&slave_seed_send);
+                }
+
+                spi_slave_transaction_t slave_trans = {
+                    .length = slave_trans_len * 8,
+                    .tx_buffer = slave_sendbuf,
+                    .rx_buffer = slave_recvbuf
+                };
+                esp_err_t ret= spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY);
+                TEST_ESP_OK(ret);
+
+                spi_transaction_t master_trans = {
+                    .length = 8 * master_trans_len,
+                    .tx_buffer = master_sendbuf,
+                    .rx_buffer = master_recvbuf
+                };
+                ret = spi_device_transmit(spi, &master_trans);
+                TEST_ESP_OK(ret);
+
+                spi_slave_transaction_t *out_trans;
+                ret = spi_slave_get_trans_result(TEST_SLAVE_HOST, &out_trans, portMAX_DELAY);
+                TEST_ESP_OK(ret);
+                TEST_ASSERT_EQUAL_HEX32(&slave_trans, out_trans);
+
+                for(int i = 0; i < master_trans_len; i++){
+                    master_cmpbuf[i] = rand_r(&master_seed_cmp);
+                    slave_cmpbuf[i] = rand_r(&slave_seed_cmp);
+                }
+
+                // esp_log_buffer_hex("master_send", master_sendbuf, buf_size);
+                // esp_log_buffer_hex("slave_recv", slave_recvbuf, buf_size);
+
+                // esp_log_buffer_hex("slave_send", slave_sendbuf, buf_size);
+                // esp_log_buffer_hex("master_recv", master_recvbuf, buf_size);
+
+                int master_expected_len = MIN(master_trans_len, slave_trans_len);
+                TEST_ASSERT_EQUAL_HEX8_ARRAY(master_cmpbuf, master_recvbuf, master_expected_len);
+
+                int slave_expected_len;
+                if (dma_chan) {
+                    slave_expected_len = (master_expected_len & (~3));
+                } else {
+                    slave_expected_len = master_expected_len;
+                }
+                if (slave_expected_len) {
+                    TEST_ASSERT_EQUAL_HEX8_ARRAY(slave_cmpbuf, slave_recvbuf, slave_expected_len);
+                }
+            }
+            local_test_end(spi);
+        }
+    }
+}
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //These tests are ESP32 only due to lack of runners
