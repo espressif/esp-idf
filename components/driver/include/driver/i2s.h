@@ -226,6 +226,8 @@ esp_err_t i2s_set_sample_rates(i2s_port_t i2s_num, uint32_t rate);
 /**
  * @brief Stop I2S driver
  *
+ * There is no need to call i2s_stop() before calling i2s_driver_uninstall().
+ *
  * Disables I2S TX/RX, until i2s_start() is called.
  *
  * @param i2s_num  I2S_NUM_0, I2S_NUM_1
