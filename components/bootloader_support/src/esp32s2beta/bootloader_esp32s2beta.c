@@ -352,9 +352,15 @@ void abort(void)
     }
 }
 
+static void bootloader_super_wdt_auto_feed(void)
+{
+    REG_SET_BIT(RTC_CNTL_SWD_CONF_REG, RTC_CNTL_SWD_AUTO_FEED_EN);
+}
+
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
+    bootloader_super_wdt_auto_feed();
     // protect memory region
     cpu_configure_region_protection();
     /* check that static RAM is after the stack */
