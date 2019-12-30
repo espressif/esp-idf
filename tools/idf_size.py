@@ -66,9 +66,10 @@ def load_memory_config(map_file):
     """ Memory Configuration section is the total size of each output section """
     result = {}
     scan_to_header(map_file, "Memory Configuration")
-    RE_MEMORY_SECTION = r"(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)"
+    RE_MEMORY_SECTION = re.compile(r"(?P<name>[^ ]+) +0x(?P<origin>[\da-f]+) +0x(?P<length>[\da-f]+)")
+
     for line in map_file:
-        m = re.match(RE_MEMORY_SECTION, line)
+        m = RE_MEMORY_SECTION.match(line)
         if m is None:
             if len(result) == 0:
                 continue  # whitespace or a header, before the content we want
@@ -92,13 +93,32 @@ def load_sections(map_file):
     information for each symbol linked into the section.
     """
     scan_to_header(map_file, "Linker script and memory map")
+
+    # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
+    RE_SECTION_HEADER = re.compile(r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$")
+
+    # source file line, ie
+    # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
+    # cmake build system links some object files directly, not part of any archive, so make that part optional
+    #  .xtensa.info   0x0000000000000000       0x38 CMakeFiles/hello-world.elf.dir/project_elf_src.c.obj
+    RE_SOURCE_LINE = re.compile(r"\s*(?P<sym_name>\S*) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)?\(?(?P<object_file>.+\.(o|obj))\)?")
+
+    # Fast check to see if line is a potential source line before running the slower full regex against it
+    RE_PRE_FILTER = re.compile(r".*\.(o|obj)\)?")
+
+    # Check for lines which only contain the sym name (and rest is on following lines)
+    RE_SYMBOL_ONLY_LINE = re.compile(r"^ (?P<sym_name>\S*)$")
+
     sections = {}
     section = None
     sym_backup = None
     for line in map_file:
-        # output section header, ie '.iram0.text     0x0000000040080400    0x129a5'
-        RE_SECTION_HEADER = r"(?P<name>[^ ]+) +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+)$"
-        m = re.match(RE_SECTION_HEADER, line)
+
+        if line.strip() == "Cross Reference Table":
+            # stop processing lines because we are at the next section in the map file
+            break
+
+        m = RE_SECTION_HEADER.match(line)
         if m is not None:  # start of a new section
             section = {
                 "name": m.group("name"),
@@ -109,37 +129,34 @@ def load_sections(map_file):
             sections[section["name"]] = section
             continue
 
-        # source file line, ie
-        # 0x0000000040080400       0xa4 /home/gus/esp/32/idf/examples/get-started/hello_world/build/esp32/libesp32.a(cpu_start.o)
-        RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<archive>.+\.a)\((?P<object_file>.+\.ob?j?)\)"
+        if section is not None:
+            m = RE_SYMBOL_ONLY_LINE.match(line)
+            if m is not None:
+                # In some cases the section name appears on the previous line, back it up in here
+                sym_backup = m.group("sym_name")
+                continue
 
-        m = re.match(RE_SOURCE_LINE, line, re.M)
-        if not m:
-            # cmake build system links some object files directly, not part of any archive
-            RE_SOURCE_LINE = r"\s*(?P<sym_name>\S*).* +0x(?P<address>[\da-f]+) +0x(?P<size>[\da-f]+) (?P<object_file>.+\.ob?j?)"
-            m = re.match(RE_SOURCE_LINE, line)
-        if section is not None and m is not None:  # input source file details=ma,e
-            sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
-            try:
+            if not RE_PRE_FILTER.match(line):
+                # line does not match our quick check, so skip to next line
+                continue
+
+            m = RE_SOURCE_LINE.match(line)
+            if m is not None:  # input source file details=ma,e
+                sym_name = m.group("sym_name") if len(m.group("sym_name")) > 0 else sym_backup
                 archive = m.group("archive")
-            except IndexError:
-                archive = "(exe)"
+                if archive is None:
+                    # optional named group "archive" was not matched, so assign a value to it
+                    archive = "(exe)"
 
-            source = {
-                "size": int(m.group("size"), 16),
-                "address": int(m.group("address"), 16),
-                "archive": os.path.basename(archive),
-                "object_file": os.path.basename(m.group("object_file")),
-                "sym_name": sym_name,
-            }
-            source["file"] = "%s:%s" % (source["archive"], source["object_file"])
-            section["sources"] += [source]
-
-        # In some cases the section name appears on the previous line, back it up in here
-        RE_SYMBOL_ONLY_LINE = r"^ (?P<sym_name>\S*)$"
-        m = re.match(RE_SYMBOL_ONLY_LINE, line)
-        if section is not None and m is not None:
-            sym_backup = m.group("sym_name")
+                source = {
+                    "size": int(m.group("size"), 16),
+                    "address": int(m.group("address"), 16),
+                    "archive": os.path.basename(archive),
+                    "object_file": os.path.basename(m.group("object_file")),
+                    "sym_name": sym_name,
+                }
+                source["file"] = "%s:%s" % (source["archive"], source["object_file"])
+                section["sources"] += [source]
 
     return sections
 
