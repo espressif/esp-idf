@@ -107,7 +107,7 @@ menu "LWIP"
 
     config LWIP_IP_FRAG
         bool "Enable fragment outgoing IP packets"
-        default n
+        default y
         help
             Enabling this option allows fragmenting outgoing IP packets if their size
             exceeds MTU.
