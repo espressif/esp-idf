@@ -697,13 +697,11 @@ static void beacon_set(struct bt_mesh_model *model,
                 bt_mesh_store_cfg();
             }
 
-#if CONFIG_BLE_MESH_NODE
             if (cfg->beacon) {
                 bt_mesh_beacon_enable();
             } else {
                 bt_mesh_beacon_disable();
             }
-#endif
         }
     } else {
         BT_WARN("Invalid Config Beacon value 0x%02x", buf->data[0]);
@@ -2754,9 +2752,9 @@ static void node_reset(struct bt_mesh_model *model,
         BT_ERR("%s, Unable to send Config Node Reset Status", __func__);
     }
 
-#if CONFIG_BLE_MESH_NODE
-    bt_mesh_reset();
-#endif
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+        bt_mesh_reset();
+    }
 }
 
 static void send_friend_status(struct bt_mesh_model *model,

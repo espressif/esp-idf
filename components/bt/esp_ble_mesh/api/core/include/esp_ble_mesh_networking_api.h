@@ -213,6 +213,16 @@ const char *esp_ble_mesh_provisioner_get_node_name(uint16_t index);
 int esp_ble_mesh_provisioner_get_node_index(const char *name);
 
 /**
+ * @brief        This function is called to get the provisioned node information.
+ *
+ * @param[in]    uuid: Device UUID of the node
+ *
+ * @return       Pointer of the node info struct or NULL on failure.
+ *
+ */
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[16]);
+
+/**
  * @brief         This function is called to set the app key for the local BLE Mesh stack.
  *
  * @param[in]     app_key: The app key to be set for the local BLE Mesh stack.

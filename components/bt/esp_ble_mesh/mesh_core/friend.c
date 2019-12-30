@@ -615,7 +615,7 @@ static void friend_recv_delay(struct bt_mesh_friend *frnd)
 {
     frnd->pending_req = 1U;
     k_delayed_work_submit(&frnd->timer, recv_delay(frnd));
-    BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
+    BT_INFO("Waiting RecvDelay of %d ms", recv_delay(frnd));
 }
 
 int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
@@ -739,7 +739,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     friend_recv_delay(frnd);
 
     if (!frnd->established) {
-        BT_DBG("Friendship established with 0x%04x", frnd->lpn);
+        BT_INFO("Friendship established with 0x%04x", frnd->lpn);
         frnd->established = 1U;
         if (friend_cb) {
             friend_cb(true, frnd->lpn, 0);
@@ -944,7 +944,7 @@ static s32_t offer_delay(struct bt_mesh_friend *frnd, s8_t rssi, u8_t crit)
     static const u8_t fact[] = { 10, 15, 20, 25 };
     s32_t delay;
 
-    BT_DBG("ReceiveWindowFactor %u ReceiveWindow %u RSSIFactor %u RSSI %d",
+    BT_INFO("ReceiveWindowFactor %u ReceiveWindow %u RSSIFactor %u RSSI %d",
            fact[RECV_WIN_FACT(crit)], RECV_WIN,
            fact[RSSI_FACT(crit)], rssi);
 
@@ -1039,7 +1039,7 @@ init_friend:
     frnd->lpn_counter = sys_be16_to_cpu(msg->lpn_counter);
     frnd->clear.frnd = sys_be16_to_cpu(msg->prev_addr);
 
-    BT_DBG("LPN 0x%04x rssi %d recv_delay %u poll_to %ums",
+    BT_INFO("LPN 0x%04x rssi %d recv_delay %u poll_to %ums",
            frnd->lpn, rx->ctx.recv_rssi, frnd->recv_delay, frnd->poll_to);
 
     /**

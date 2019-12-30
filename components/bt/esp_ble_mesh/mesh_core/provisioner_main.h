@@ -20,20 +20,21 @@
 #include "mesh_access.h"
 #include "net.h"
 
-#define MESH_NAME_SIZE  31
+#define NODE_NAME_SIZE  31
 
 /* Each node information stored by provisioner */
 struct bt_mesh_node {
-    char  node_name[MESH_NAME_SIZE];    /* Node name */
-    bt_mesh_addr_t addr;                /* Device address */
-    u8_t  dev_uuid[16];                 /* Device UUID */
-    u16_t oob_info;                     /* Node OOB information */
-    u16_t unicast_addr;                 /* Node unicast address */
-    u8_t  element_num;                  /* Node element number */
-    u16_t net_idx;                      /* Node provision net_idx */
-    u8_t  flags;                        /* Node key refresh flag and iv update flag */
-    u32_t iv_index;                     /* Node IV Index */
-    u8_t  dev_key[16];                  /* Node device key */
+    char  name[NODE_NAME_SIZE]; /* Node name */
+    u8_t  addr[6];      /* Node device address */
+    u8_t  addr_type;    /* Node device address type */
+    u8_t  dev_uuid[16]; /* Device UUID */
+    u16_t oob_info;     /* Node OOB information */
+    u16_t unicast_addr; /* Node unicast address */
+    u8_t  element_num;  /* Node element number */
+    u16_t net_idx;      /* Node NetKey Index */
+    u8_t  flags;        /* Node key refresh flag and iv update flag */
+    u32_t iv_index;     /* Node IV Index */
+    u8_t  dev_key[16];  /* Node device key */
 } __packed;
 
 /* The following APIs are for key init, node provision & node reset. */
@@ -53,6 +54,8 @@ bool bt_mesh_provisioner_find_node_with_addr(const bt_mesh_addr_t *addr, bool re
 int bt_mesh_provisioner_remove_node(const u8_t uuid[16]);
 
 struct bt_mesh_node *bt_mesh_provisioner_get_prov_node_info(const u8_t uuid[16]);
+
+bool bt_mesh_provisioner_check_is_addr_dup(u16_t addr, u8_t elem_num, bool comp_with_own);
 
 int bt_mesh_provisioner_init(void);
 int bt_mesh_provisioner_deinit(void);
@@ -110,7 +113,7 @@ const u8_t *bt_mesh_fast_prov_dev_key_get(u16_t dst);
 
 struct bt_mesh_subnet *bt_mesh_fast_prov_subnet_get(u16_t net_idx);
 
-struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(u16_t net_idx, u16_t app_idx);
+struct bt_mesh_app_key *bt_mesh_fast_prov_app_key_find(u16_t app_idx);
 
 u8_t bt_mesh_set_fast_prov_net_idx(u16_t net_idx);
 

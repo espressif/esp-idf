@@ -160,13 +160,14 @@ int bt_mesh_provisioner_prov_deinit(void);
  *        beacon advertising packets, and if checked, starts to provision this device
  *        using PB-ADV bearer.
  *
- * @param[in] buf: Pointer to the buffer containing unprovisioned device beacon
+ * @param[in] buf:  Pointer to the buffer containing unprovisioned device beacon
+ * @param[in] rssi: RSSI of the received unprovisioned device beacon
  *
  * @return None
  */
-void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf);
+void bt_mesh_provisioner_unprov_beacon_recv(struct net_buf_simple *buf, s8_t rssi);
 
-void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
+void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, s8_t rssi);
 
 /**
  * @brief This function gets the bt_mesh_prov pointer.
@@ -175,7 +176,7 @@ void bt_mesh_provisioner_prov_adv_ind_recv(struct net_buf_simple *buf, const bt_
  */
 const struct bt_mesh_prov *bt_mesh_provisioner_get_prov_info(void);
 
-void bt_mesh_provisoner_restore_prov_info(u16_t addr);
+void bt_mesh_provisoner_restore_prov_info(u16_t primary_addr, u16_t alloc_addr);
 
 /* The following APIs are for primary provisioner application use */
 
@@ -189,13 +190,31 @@ void bt_mesh_provisoner_restore_prov_info(u16_t addr);
  *
  *  @return Zero on success or (negative) error code otherwise.
  *
- *  @Note: 1. Currently address type only supports public address and static random address.
+ *  @note  1. Currently address type only supports public address and static random address.
  *         2. If device UUID and/or device address and address type already exist in the
  *            device queue, but the bearer differs from the existing one, add operation
  *            will also be successful and it will update the provision bearer supported by
  *            the device.
  */
 int bt_mesh_provisioner_add_unprov_dev(struct bt_mesh_unprov_dev_add *add_dev, u8_t flags);
+
+/** @brief Provision an unprovisioned device with fixed unicast address.
+ *
+ *  @param[in] uuid:         Device UUID of the unprovisioned device
+ *  @param[in] addr:         Device address of the unprovisioned device
+ *  @param[in] addr_type:    Device address type of the unprovisioned device
+ *  @param[in] bearer:       Provisioning bearer going to be used
+ *  @param[in] oob_info:     OOB info of the unprovisioned device
+ *  @param[in] unicast_addr: Unicast address going to be allocated for the unprovisioned device
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ *
+ *  @note  1. Currently address type only supports public address and static random address.
+ *         2. Bearer must be equal to BLE_MESH_PROV_ADV or BLE_MESH_PROV_GATT
+ */
+int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t addr[6],
+                                              u8_t addr_type, bt_mesh_prov_bearer_t bearer,
+                                              u16_t oob_info, u16_t unicast_addr);
 
 /** @brief Delete device from queue, reset current provisioning link and reset the node
  *
@@ -232,11 +251,12 @@ int bt_mesh_provisioner_set_dev_uuid_match(u8_t offset, u8_t length,
  *  @param adv_type  Adv packet type, currently this is not used and we can use bearer to device
  *                   the adv_type(ADV_IND or ADV_NONCONN_IND). This parameter will be used, when
  *                   scan response data will be supported.
+ *  @param rssi      RSSI of the received advertising packet
  *
  */
 typedef void (*unprov_adv_pkt_cb_t)(const u8_t addr[6], const u8_t addr_type,
                                     const u8_t adv_type, const u8_t dev_uuid[16],
-                                    u16_t oob_info, bt_mesh_prov_bearer_t bearer);
+                                    u16_t oob_info, bt_mesh_prov_bearer_t bearer, s8_t rssi);
 
 /**
  * @brief This function registers the callback which notifies the application
@@ -267,6 +287,23 @@ int bt_mesh_provisioner_set_prov_data_info(struct bt_mesh_prov_data_info *info);
 int bt_mesh_provisioner_set_prov_info(void);
 
 /**
+ * @brief This function sets the provisioning bearer type used by Provisioner.
+ *
+ * @param[in] bearers: Provisioning bearer type
+ * @param[in] clear:   Indicate if the corresponding bearer type will be cleared
+ *
+ * @return None
+ */
+void bt_mesh_provisioner_set_prov_bearer(bt_mesh_prov_bearer_t bearers, bool clear);
+
+/**
+ * @brief This function gets the provisioning bearer type used by Provisioner.
+ *
+ * @return Currently supported provisioning bearer type
+ */
+bt_mesh_prov_bearer_t bt_mesh_provisioner_get_prov_bearer(void);
+
+/**
  * @brief This function sets the Static OOB value used by Provisioner.
  *
  * @param[in] value:  Static OOB value
@@ -275,6 +312,22 @@ int bt_mesh_provisioner_set_prov_info(void);
  * @return Zero - success, otherwise - fail
  */
 int bt_mesh_provisioner_set_static_oob_value(const u8_t *value, u8_t length);
+
+/**
+ * @brief This function gets the unicast address of primary element of Provisioner.
+ *
+ * @return Unicast address of primary element of Provisioner.
+ */
+u16_t bt_mesh_provisioner_get_primary_elem_addr(void);
+
+/**
+ * @brief This function sets the unicast address of primary element of Provisioner.
+ *
+ * @param[in] addr: unicast address of primary element
+ *
+ * @return Zero - success, otherwise - fail
+ */
+int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr);
 
 /**
  * @brief This function is called to input number/string out-put by unprovisioned device.
@@ -315,11 +368,11 @@ int bt_mesh_provisioner_read_oob_pub_key(const u8_t idx, const u8_t pub_key_x[32
 /**
  * @brief This function is called to set fast_prov_flag.
  *
- * @param[in] flag: Flag set to fast_prov_flag
+ * @param[in] enable: Enable or disable fast provisioning
  *
  * @return None
  */
-void bt_mesh_provisioner_set_fast_prov_flag(bool flag);
+void bt_mesh_provisioner_fast_prov_enable(bool enable);
 
 /**
  * @brief This function is called to set netkey index used for fast provisioning.

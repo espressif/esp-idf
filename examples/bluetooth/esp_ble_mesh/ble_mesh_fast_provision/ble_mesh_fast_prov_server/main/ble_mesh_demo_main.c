@@ -146,8 +146,6 @@ static esp_ble_mesh_prov_t prov = {
     .uuid                = dev_uuid,
     .output_size         = 0,
     .output_actions      = 0,
-    .prov_unicast_addr   = 0x0001,
-    .prov_start_address  = 0x0005,
     .prov_attention      = 0x00,
     .prov_algorithm      = 0x00,
     .prov_pub_key_oob    = 0x00,
@@ -351,10 +349,6 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
             config_server.relay = ESP_BLE_MESH_RELAY_DISABLED;
         }
         prov_start = true;
-        break;
-    case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
-        ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT, err_code: %d",
-                 param->provisioner_prov_enable_comp.err_code);
         break;
     case ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT:
         example_recv_unprov_adv_pkt(param->provisioner_recv_unprov_adv_pkt.dev_uuid, param->provisioner_recv_unprov_adv_pkt.addr,
@@ -700,37 +694,6 @@ static esp_err_t ble_mesh_init(void)
     esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
     esp_ble_mesh_register_config_server_callback(example_ble_mesh_config_server_cb);
     esp_ble_mesh_register_generic_server_callback(example_ble_mesh_generic_server_cb);
-
-    ESP_LOGW(TAG, "prev, free heap size %d", esp_get_free_heap_size());
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    ESP_LOGW(TAG, "start, free heap size %d", esp_get_free_heap_size());
-    /* First time (make erase_flash, then make flash monitor), 72 bytes will be cost
-     * during first (start - end) circle.
-     * Second time (make monitor), 0 byte will be cost during first (start - end) cycle.
-     */
-    for (int i = 0; i < 1000; i++) {
-        err = esp_ble_mesh_init(&prov, &comp);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: Failed to initialize BLE Mesh", __func__);
-            return err;
-        }
-        err = esp_ble_mesh_client_model_init(&vnd_models[1]);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: Failed to initialize fast prov client model", __func__);
-            return err;
-        }
-        err = esp_ble_mesh_client_model_deinit(&vnd_models[1]);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: Failed to deinitialize fast prov client model", __func__);
-            return err;
-        }
-        err = esp_ble_mesh_deinit();
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: Failed to de-initialize BLE Mesh", __func__);
-            return err;
-        }
-        ESP_LOGW(TAG, "end, free heap size %d", esp_get_free_heap_size());
-    }
 
     err = esp_ble_mesh_init(&prov, &comp);
     if (err != ESP_OK) {

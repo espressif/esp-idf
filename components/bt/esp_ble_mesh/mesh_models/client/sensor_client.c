@@ -94,6 +94,8 @@ static void timeout_handler(struct k_work *work)
 {
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
+    struct bt_mesh_msg_ctx ctx = {0};
+    u32_t opcode;
 
     BT_WARN("Receive sensor status message timeout");
 
@@ -104,10 +106,11 @@ static void timeout_handler(struct k_work *work)
     if (timer && !k_delayed_work_free(timer)) {
         node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
         if (node) {
-            bt_mesh_sensor_client_cb_evt_to_btc(node->opcode,
-                                                BTC_BLE_MESH_EVT_SENSOR_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
-            // Don't forget to release the node at the end.
+            memcpy(&ctx, &node->ctx, sizeof(ctx));
+            opcode = node->opcode;
             bt_mesh_client_free_node(node);
+            bt_mesh_sensor_client_cb_evt_to_btc(
+                opcode, BTC_BLE_MESH_EVT_SENSOR_CLIENT_TIMEOUT, ctx.model, &ctx, NULL, 0);
         }
     }
 
@@ -297,9 +300,9 @@ static void sensor_status(struct bt_mesh_model *model,
         }
 
         if (!k_delayed_work_free(&node->timer)) {
-            bt_mesh_sensor_client_cb_evt_to_btc(node->opcode, evt, model, ctx, val, len);
-            // Don't forget to release the node at the end.
+            u32_t opcode = node->opcode;
             bt_mesh_client_free_node(node);
+            bt_mesh_sensor_client_cb_evt_to_btc(opcode, evt, model, ctx, val, len);
         }
     }
 

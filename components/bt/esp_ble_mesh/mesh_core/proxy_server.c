@@ -452,7 +452,7 @@ static void proxy_complete_pdu(struct bt_mesh_proxy_client *client)
         break;
     case BLE_MESH_PROXY_BEACON:
         BT_DBG("Mesh Beacon PDU");
-        bt_mesh_beacon_recv(&client->buf);
+        bt_mesh_beacon_recv(&client->buf, 0);
         break;
     case BLE_MESH_PROXY_CONFIG:
         BT_DBG("Mesh Configuration PDU");
@@ -905,7 +905,7 @@ void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, u16_t addr)
     struct bt_mesh_proxy_client *client =
         CONTAINER_OF(buf, struct bt_mesh_proxy_client, buf);
 
-    BT_DBG("filter_type %u addr 0x%04x", client->filter_type, addr);
+    BT_INFO("filter_type %u addr 0x%04x", client->filter_type, addr);
 
     if (client->filter_type == WHITELIST) {
         filter_add(client, addr);

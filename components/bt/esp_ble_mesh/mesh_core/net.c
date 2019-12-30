@@ -541,7 +541,7 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, u8_t new_kr, bool new_key)
 
     if (sub->kr_flag) {
         if (sub->kr_phase == BLE_MESH_KR_PHASE_1) {
-            BT_DBG("Phase 1 -> Phase 2");
+            BT_INFO("Phase 1 -> Phase 2");
             sub->kr_phase = BLE_MESH_KR_PHASE_2;
             return true;
         }
@@ -560,7 +560,7 @@ bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, u8_t new_kr, bool new_key)
          * Intentional fall-through.
          */
         case BLE_MESH_KR_PHASE_2:
-            BT_DBG("KR Phase 0x%02x -> Normal", sub->kr_phase);
+            BT_INFO("KR Phase 0x%02x -> Normal", sub->kr_phase);
             bt_mesh_net_revoke_keys(sub);
             if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER) ||
                     IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
@@ -708,12 +708,12 @@ do_update:
 
     if (iv_update) {
         bt_mesh.iv_index = iv_index;
-        BT_DBG("IV Update state entered. New index 0x%08x",
+        BT_INFO("IV Update state entered. New index 0x%08x",
                bt_mesh.iv_index);
 
         bt_mesh_rpl_reset();
     } else {
-        BT_DBG("Normal mode entered");
+        BT_INFO("Normal mode entered");
         bt_mesh.seq = 0U;
     }
 
@@ -732,6 +732,21 @@ do_update:
     return true;
 }
 
+bool bt_mesh_primary_subnet_exist(void)
+{
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        if (bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY)) {
+            return true;
+        }
+    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        if (bt_mesh_provisioner_subnet_get(BLE_MESH_KEY_PRIMARY)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 u32_t bt_mesh_next_seq(void)
 {
     u32_t seq = bt_mesh.seq++;
@@ -742,10 +757,8 @@ u32_t bt_mesh_next_seq(void)
 
     if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) &&
             bt_mesh.seq > IV_UPDATE_SEQ_LIMIT &&
-            bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY)) {
-#if CONFIG_BLE_MESH_NODE
+            bt_mesh_primary_subnet_exist()) {
         bt_mesh_beacon_ivu_initiator(true);
-#endif
         bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
         bt_mesh_net_sec_update(NULL);
     }
@@ -992,12 +1005,15 @@ struct bt_mesh_subnet *bt_mesh_subnet_find(const u8_t net_id[8], u8_t flags,
         u32_t iv_index, const u8_t auth[8],
         bool *new_key)
 {
+    size_t subnet_size;
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+    subnet_size = bt_mesh_rx_netkey_size();
 
-        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+    for (i = 0; i < subnet_size; i++) {
+        struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
+
+        if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
             continue;
         }
 
@@ -1374,25 +1390,15 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 
 static bool ready_to_recv(void)
 {
-#if CONFIG_BLE_MESH_NODE
-    if (!bt_mesh_is_provisioner_en()) {
-        if (!bt_mesh_is_provisioned()) {
-            return false;
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        return true;
+    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        if (bt_mesh_provisioner_get_all_node_count()) {
+            return true;
         }
     }
-#endif
 
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    if (!bt_mesh_is_provisioner_en()) {
-        BT_WARN("%s, Provisioner is disabled", __func__);
-        return false;
-    }
-    if (!bt_mesh_provisioner_get_all_node_count()) {
-        return false;
-    }
-#endif
-
-    return true;
+    return false;
 }
 
 void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
@@ -1452,7 +1458,7 @@ static void ivu_refresh(struct k_work *work)
 {
     bt_mesh.ivu_duration += BLE_MESH_IVU_HOURS;
 
-    BT_DBG("%s for %u hour%s",
+    BT_INFO("%s for %u hour%s",
            bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS) ?
            "IVU in Progress" : "IVU Normal mode",
            bt_mesh.ivu_duration, bt_mesh.ivu_duration == 1U ? "" : "s");
@@ -1467,9 +1473,7 @@ static void ivu_refresh(struct k_work *work)
     }
 
     if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS)) {
-#if CONFIG_BLE_MESH_NODE
         bt_mesh_beacon_ivu_initiator(true);
-#endif
         bt_mesh_net_iv_update(bt_mesh.iv_index, false);
     } else if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_store_iv(true);

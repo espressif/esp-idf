@@ -208,7 +208,10 @@ struct bt_mesh_lpn {
 
 /* bt_mesh_net.flags */
 enum {
+    BLE_MESH_NODE,            /* Device is a node */
+    BLE_MESH_PROVISIONER,     /* Device is a Provisioner */
     BLE_MESH_VALID,           /* We have been provisioned */
+    BLE_MESH_VALID_PROV,      /* Provisioner has been enabled */
     BLE_MESH_SUSPENDED,       /* Network is temporarily suspended */
     BLE_MESH_IVU_IN_PROGRESS, /* IV Update in Progress */
     BLE_MESH_IVU_INITIATOR,   /* IV Update initiated by us */
@@ -362,6 +365,8 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 
 void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
                       enum bt_mesh_net_if net_if);
+
+bool bt_mesh_primary_subnet_exist(void);
 
 u32_t bt_mesh_next_seq(void);
 

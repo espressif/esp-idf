@@ -912,7 +912,7 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
 
     hops = (init_ttl - rx->ctx.recv_ttl + 1);
 
-    BT_DBG("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x",
+    BT_INFO("src 0x%04x TTL %u InitTTL %u (%u hop%s) feat 0x%04x",
            rx->ctx.addr, rx->ctx.recv_ttl, init_ttl, hops,
            (hops == 1U) ? "" : "s", feat);
 
@@ -1454,7 +1454,7 @@ found_rx:
     /* Location in buffer can be calculated based on seg_o & rx->ctl */
     memcpy(rx->buf.data + (seg_o * seg_len(rx->ctl)), buf->data, buf->len);
 
-    BT_DBG("Received %u/%u", seg_o, seg_n);
+    BT_INFO("Received %u/%u", seg_o, seg_n);
 
     /* Mark segment as received */
     rx->block |= BIT(seg_o);
@@ -1689,7 +1689,7 @@ void bt_mesh_heartbeat_send(void)
 
     hb.feat = sys_cpu_to_be16(feat);
 
-    BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
+    BT_INFO("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
 
     bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
                      NULL, NULL, NULL);
@@ -1716,7 +1716,7 @@ int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
         return -EINVAL;
     }
 
-    app_key = bt_mesh_tx_appkey_get(role, app_idx, subnet->net_idx);
+    app_key = bt_mesh_tx_appkey_get(role, app_idx);
     if (!app_key) {
         BT_ERR("%s, Failed to get AppKey", __func__);
         return -ENOENT;

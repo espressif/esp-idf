@@ -26,9 +26,8 @@
 #include "access.h"
 #include "beacon.h"
 #include "foundation.h"
-#include "provisioner_prov.h"
 #include "proxy_client.h"
-#include "provisioner_beacon.h"
+#include "provisioner_prov.h"
 #include "provisioner_main.h"
 
 #define PDU_TYPE(data)      (data[0] & BIT_MASK(6))
@@ -82,7 +81,7 @@ static void proxy_sar_timeout(struct k_work *work)
 {
     struct bt_mesh_proxy_server *server = NULL;
 
-    BT_DBG("%s", __func__);
+    BT_WARN("%s", __func__);
 
     server = CONTAINER_OF(work, struct bt_mesh_proxy_server, sar_timer.work);
     if (!server || !server->conn) {
@@ -144,7 +143,7 @@ static void filter_status(struct bt_mesh_proxy_server *server,
 
     list_size = net_buf_simple_pull_be16(buf);
 
-    BT_DBG("%s, filter_type 0x%02x list_size %d", __func__, filter_type, list_size);
+    BT_INFO("%s, filter_type 0x%02x list_size %d", __func__, filter_type, list_size);
 
     if (proxy_client_filter_status_recv_cb) {
         proxy_client_filter_status_recv_cb(server - servers, rx->ctx.addr, server->net_idx, filter_type, list_size);
@@ -205,15 +204,7 @@ static void proxy_complete_pdu(struct bt_mesh_proxy_server *server)
         break;
     case BLE_MESH_PROXY_BEACON:
         BT_DBG("Mesh Beacon PDU");
-        if (bt_mesh_is_provisioner_en()) {
-#if CONFIG_BLE_MESH_PROVISIONER
-            bt_mesh_provisioner_beacon_recv(&server->buf);
-#endif
-        } else {
-#if CONFIG_BLE_MESH_NODE
-            bt_mesh_beacon_recv(&server->buf);
-#endif
-        }
+        bt_mesh_beacon_recv(&server->buf, 0);
         break;
     case BLE_MESH_PROXY_CONFIG:
         BT_DBG("Mesh Configuration PDU");
@@ -659,14 +650,14 @@ static struct bt_mesh_subnet *bt_mesh_is_net_id_exist(const u8_t net_id[8])
     return NULL;
 }
 
-void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr)
+void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, s8_t rssi)
 {
     bt_mesh_proxy_adv_ctx_t ctx = {0};
     u8_t type;
 
     /* Check if connection reaches the maximum limitation */
     if (bt_mesh_gattc_get_free_conn_count() == 0) {
-        BT_WARN("%s, max connections", __func__);
+        BT_INFO("BLE connections for mesh reach max limit");
         return;
     }
 
@@ -697,7 +688,7 @@ void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh
     }
 
     if (proxy_client_adv_recv_cb) {
-        proxy_client_adv_recv_cb(addr, type, &ctx);
+        proxy_client_adv_recv_cb(addr, type, &ctx, rssi);
     }
 }
 
@@ -751,8 +742,6 @@ bool bt_mesh_proxy_client_send(struct net_buf_simple *buf, u16_t dst)
     int err;
     u8_t i;
 
-    BT_DBG("%u bytes to dst 0x%04x", buf->len, dst);
-
     for (i = 0U; i < ARRAY_SIZE(servers); i++) {
         struct bt_mesh_proxy_server *server = &servers[i];
         NET_BUF_SIMPLE_DEFINE(msg, 32);
@@ -771,6 +760,7 @@ bool bt_mesh_proxy_client_send(struct net_buf_simple *buf, u16_t dst)
         if (err) {
             BT_ERR("%s, Failed to send proxy net message (err %d)", __func__, err);
         } else {
+            BT_INFO("%u bytes to dst 0x%04x", buf->len, dst);
             send = true;
         }
     }
@@ -796,22 +786,18 @@ bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub)
 
     /* NULL means we send Secure Network Beacon on all subnets */
     if (!sub) {
-        if (bt_mesh_is_provisioner_en()) {
-#if CONFIG_BLE_MESH_PROVISIONER
-            for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
-                if (bt_mesh.p_sub[i] && bt_mesh.p_sub[i]->net_idx != BLE_MESH_KEY_UNUSED) {
-                    send = bt_mesh_proxy_client_beacon_send(bt_mesh.p_sub[i]);
-                }
-            }
-#endif
-        } else {
-#if CONFIG_BLE_MESH_NODE
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
             for (i = 0U; i < ARRAY_SIZE(bt_mesh.sub); i++) {
                 if (bt_mesh.sub[i].net_idx != BLE_MESH_KEY_UNUSED) {
                     send = bt_mesh_proxy_client_beacon_send(&bt_mesh.sub[i]);
                 }
             }
-#endif
+        } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+            for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
+                if (bt_mesh.p_sub[i] && bt_mesh.p_sub[i]->net_idx != BLE_MESH_KEY_UNUSED) {
+                    send = bt_mesh_proxy_client_beacon_send(bt_mesh.p_sub[i]);
+                }
+            }
         }
 
         return send;
@@ -847,14 +833,10 @@ static int send_proxy_cfg(struct bt_mesh_conn *conn, u16_t net_idx, struct bt_me
     u16_t alloc_len;
     int err;
 
-    if (bt_mesh_is_provisioner_en()) {
-#if CONFIG_BLE_MESH_PROVISIONER
-        tx.sub = bt_mesh_provisioner_subnet_get(net_idx);
-#endif
-    } else {
-#if CONFIG_BLE_MESH_NODE
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         tx.sub = bt_mesh_subnet_get(net_idx);
-#endif
+    } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        tx.sub = bt_mesh_provisioner_subnet_get(net_idx);
     }
     if (!tx.sub) {
         BT_ERR("%s, Failed to find subnet", __func__);

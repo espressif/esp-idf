@@ -534,7 +534,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
     frnd_counter = sys_be16_to_cpu(msg->frnd_counter);
 
-    BT_DBG("recv_win %u queue_size %u sub_list_size %u rssi %d counter %u",
+    BT_INFO("recv_win %u queue_size %u sub_list_size %u rssi %d counter %u",
            msg->recv_win, msg->queue_size, msg->sub_list_size, msg->rssi,
            frnd_counter);
 
@@ -1020,7 +1020,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
     iv_index = sys_be32_to_cpu(msg->iv_index);
 
-    BT_DBG("flags 0x%02x iv_index 0x%08x md %u", msg->flags, iv_index,
+    BT_INFO("flags 0x%02x iv_index 0x%08x md %u", msg->flags, iv_index,
            msg->md);
 
     if (bt_mesh_kr_update(sub, BLE_MESH_KEY_REFRESH(msg->flags),

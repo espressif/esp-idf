@@ -31,10 +31,8 @@
 #include "beacon.h"
 #include "prov.h"
 #include "proxy_server.h"
-
-#include "provisioner_prov.h"
 #include "proxy_client.h"
-#include "provisioner_beacon.h"
+#include "provisioner_prov.h"
 
 /* Convert from ms to 0.625ms units */
 #define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
@@ -278,7 +276,7 @@ static void adv_thread(void *p)
                 /* If the interval between "current time - msg.timestamp" is bigger than
                  * BLE_MESH_RELAY_TIME_INTERVAL, this relay packet will not be sent.
                  */
-                BT_DBG("%s, Ignore relay packet", __func__);
+                BT_INFO("%s, Ignore relay packet", __func__);
                 net_buf_unref(*buf);
             } else {
                 if (adv_send(*buf)) {
@@ -477,7 +475,7 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
      */
     handle = xQueueSelectFromSet(xBleMeshQueueSet, K_NO_WAIT);
     if (handle && uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-        BT_DBG("%s, Full queue, remove the oldest relay packet", __func__);
+        BT_INFO("%s, Full queue, remove the oldest relay packet", __func__);
         /* Remove the oldest relay packet from queue */
         if (xQueueReceive(xBleMeshRelayQueue, &old_msg, K_NO_WAIT) != pdTRUE) {
             BT_ERR("%s, Failed to remove item from queue", __func__);
@@ -584,7 +582,7 @@ static bool bt_mesh_is_adv_srv_uuid_valid(struct net_buf_simple *buf, u16_t *uui
 #define BLE_MESH_PROXY_SRV_DATA_LEN1    0x09
 #define BLE_MESH_PROXY_SRV_DATA_LEN2    0x11
 
-static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid)
+static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid, s8_t rssi)
 {
     u16_t type;
 
@@ -609,7 +607,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
             }
 
             BT_DBG("Start to handle Mesh Prov Service Data");
-            bt_mesh_provisioner_prov_adv_ind_recv(buf, addr);
+            bt_mesh_provisioner_prov_adv_ind_recv(buf, addr, rssi);
         }
         break;
 #endif
@@ -622,7 +620,7 @@ static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_
         }
 
         BT_DBG("Start to handle Mesh Proxy Service Data");
-        bt_mesh_proxy_client_adv_ind_recv(buf, addr);
+        bt_mesh_proxy_client_adv_ind_recv(buf, addr, rssi);
         break;
 #endif
     default:
@@ -684,29 +682,16 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
             break;
 #if CONFIG_BLE_MESH_PB_ADV
         case BLE_MESH_DATA_MESH_PROV:
-#if CONFIG_BLE_MESH_NODE
-            if (!bt_mesh_is_provisioner_en()) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node()) {
                 bt_mesh_pb_adv_recv(buf);
             }
-#endif
-#if CONFIG_BLE_MESH_PROVISIONER
-            if (bt_mesh_is_provisioner_en()) {
+            if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
                 bt_mesh_provisioner_pb_adv_recv(buf);
             }
-#endif
             break;
 #endif /* CONFIG_BLE_MESH_PB_ADV */
         case BLE_MESH_DATA_MESH_BEACON:
-#if CONFIG_BLE_MESH_NODE
-            if (!bt_mesh_is_provisioner_en()) {
-                bt_mesh_beacon_recv(buf);
-            }
-#endif
-#if CONFIG_BLE_MESH_PROVISIONER
-            if (bt_mesh_is_provisioner_en()) {
-                bt_mesh_provisioner_beacon_recv(buf);
-            }
-#endif
+            bt_mesh_beacon_recv(buf, rssi);
             break;
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
@@ -723,7 +708,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
             }
             break;
         case BLE_MESH_DATA_SVC_DATA16:
-            bt_mesh_adv_srv_data_recv(buf, addr, uuid);
+            bt_mesh_adv_srv_data_recv(buf, addr, uuid, rssi);
             break;
 #endif
         default:

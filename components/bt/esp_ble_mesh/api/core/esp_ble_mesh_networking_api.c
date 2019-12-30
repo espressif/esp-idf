@@ -161,6 +161,9 @@ esp_err_t esp_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
     if (model == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
     return btc_ble_mesh_client_model_init(model);
 }
 
@@ -169,6 +172,9 @@ esp_err_t esp_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model)
     if (model == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
     return btc_ble_mesh_client_model_deinit(model);
 }
 
@@ -280,6 +286,15 @@ int esp_ble_mesh_provisioner_get_node_index(const char *name)
     }
 
     return bt_mesh_provisioner_get_node_index(name);
+}
+
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[16])
+{
+    if (!uuid) {
+        return NULL;
+    }
+
+    return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_prov_node_info(uuid);
 }
 
 esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],

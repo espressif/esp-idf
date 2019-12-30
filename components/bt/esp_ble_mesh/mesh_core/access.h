@@ -62,7 +62,7 @@ struct bt_mesh_subnet *bt_mesh_tx_netkey_get(u8_t role, u16_t net_idx);
 
 const u8_t *bt_mesh_tx_devkey_get(u8_t role, u16_t dst);
 
-struct bt_mesh_app_key *bt_mesh_tx_appkey_get(u8_t role, u16_t app_idx, u16_t net_idx);
+struct bt_mesh_app_key *bt_mesh_tx_appkey_get(u8_t role, u16_t app_idx);
 
 size_t bt_mesh_rx_netkey_size(void);
 

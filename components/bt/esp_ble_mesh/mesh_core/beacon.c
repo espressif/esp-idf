@@ -26,8 +26,9 @@
 #include "beacon.h"
 #include "foundation.h"
 #include "proxy_client.h"
-
-#if CONFIG_BLE_MESH_NODE
+#include "access.h"
+#include "provisioner_prov.h"
+#include "provisioner_main.h"
 
 #if defined(CONFIG_BLE_MESH_FAST_PROV)
 #define UNPROVISIONED_INTERVAL     K_SECONDS(3)
@@ -53,12 +54,15 @@ static struct k_delayed_work beacon_timer;
 
 static struct bt_mesh_subnet *cache_check(u8_t data[21])
 {
+    size_t subnet_size;
     int i;
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+    subnet_size = bt_mesh_rx_netkey_size();
 
-        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+    for (i = 0; i < subnet_size; i++) {
+        struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
+
+        if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
             continue;
         }
 
@@ -108,9 +112,9 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 
     net_buf_simple_add_mem(buf, sub->auth, 8);
 
-    BT_DBG("net_idx 0x%04x flags 0x%02x NetID %s", sub->net_idx,
+    BT_INFO("net_idx 0x%04x flags 0x%02x NetID %s", sub->net_idx,
            flags, bt_hex(keys->net_id, 8));
-    BT_DBG("IV Index 0x%08x Auth %s", bt_mesh.iv_index,
+    BT_INFO("IV Index 0x%08x Auth %s", bt_mesh.iv_index,
            bt_hex(sub->auth, 8));
 }
 
@@ -124,16 +128,19 @@ static int secure_beacon_send(void)
         .end = beacon_complete,
     };
     u32_t now = k_uptime_get_32();
+    size_t subnet_size;
     int i;
 
     BT_DBG("%s", __func__);
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+    subnet_size = bt_mesh_rx_netkey_size();
+
+    for (i = 0; i < subnet_size; i++) {
+        struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
         struct net_buf *buf;
         u32_t time_diff;
 
-        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+        if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
             continue;
         }
 
@@ -171,6 +178,7 @@ static int secure_beacon_send(void)
     return 0;
 }
 
+#if defined(CONFIG_BLE_MESH_NODE)
 static int unprovisioned_beacon_send(void)
 {
 #if defined(CONFIG_BLE_MESH_PB_ADV)
@@ -228,10 +236,17 @@ static int unprovisioned_beacon_send(void)
 #endif /* CONFIG_BLE_MESH_PB_ADV */
     return 0;
 }
+#else /* CONFIG_BLE_MESH_NODE */
+static int unprovisioned_beacon_send(void)
+{
+    return 0;
+}
+#endif /* CONFIG_BLE_MESH_NODE */
 
 static void update_beacon_observation(void)
 {
     static bool first_half;
+    size_t subnet_size;
     int i;
 
     /* Observation period is 20 seconds, whereas the beacon timer
@@ -243,10 +258,12 @@ static void update_beacon_observation(void)
         return;
     }
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+    subnet_size = bt_mesh_rx_netkey_size();
 
-        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+    for (i = 0; i < subnet_size; i++) {
+        struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
+
+        if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
             continue;
         }
 
@@ -255,17 +272,33 @@ static void update_beacon_observation(void)
     }
 }
 
+static bool ready_to_send(void)
+{
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        return true;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        if (bt_mesh_provisioner_get_all_node_count()) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 static void beacon_send(struct k_work *work)
 {
     /* Don't send anything if we have an active provisioning link */
-    if (IS_ENABLED(CONFIG_BLE_MESH_PROV) && bt_prov_active()) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+            IS_ENABLED(CONFIG_BLE_MESH_PROV) && bt_prov_active()) {
         k_delayed_work_submit(&beacon_timer, UNPROVISIONED_INTERVAL);
         return;
     }
 
     BT_DBG("%s", __func__);
 
-    if (bt_mesh_is_provisioned()) {
+    if (ready_to_send()) {
         update_beacon_observation();
         secure_beacon_send();
 
@@ -276,8 +309,10 @@ static void beacon_send(struct k_work *work)
                                   PROVISIONED_INTERVAL);
         }
     } else {
-        unprovisioned_beacon_send();
-        k_delayed_work_submit(&beacon_timer, UNPROVISIONED_INTERVAL);
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node()) {
+            unprovisioned_beacon_send();
+            k_delayed_work_submit(&beacon_timer, UNPROVISIONED_INTERVAL);
+        }
     }
 
 }
@@ -326,13 +361,13 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
     cache_add(data, sub);
 
     /* If we have NetKey0 accept initiation only from it */
-    if (bt_mesh_subnet_get(BLE_MESH_KEY_PRIMARY) &&
+    if (bt_mesh_primary_subnet_exist() &&
             sub->net_idx != BLE_MESH_KEY_PRIMARY) {
         BT_WARN("Ignoring secure beacon on non-primary subnet");
         goto update_stats;
     }
 
-    BT_DBG("net_idx 0x%04x iv_index 0x%08x, current iv_index 0x%08x",
+    BT_INFO("net_idx 0x%04x iv_index 0x%08x, current iv_index 0x%08x",
            sub->net_idx, iv_index, bt_mesh.iv_index);
 
     if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_IVU_INITIATOR) &&
@@ -363,7 +398,7 @@ update_stats:
     }
 }
 
-void bt_mesh_beacon_recv(struct net_buf_simple *buf)
+void bt_mesh_beacon_recv(struct net_buf_simple *buf, s8_t rssi)
 {
     u8_t type;
 
@@ -377,7 +412,11 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf)
     type = net_buf_simple_pull_u8(buf);
     switch (type) {
     case BEACON_TYPE_UNPROVISIONED:
-        BT_DBG("Ignoring unprovisioned device beacon");
+        BT_DBG("Unprovisioned device beacon received");
+        if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+                bt_mesh_is_provisioner_en()) {
+            bt_mesh_provisioner_unprov_beacon_recv(buf, rssi);
+        }
         break;
     case BEACON_TYPE_SECURE:
         secure_beacon_recv(buf);
@@ -411,17 +450,21 @@ void bt_mesh_beacon_ivu_initiator(bool enable)
 
 void bt_mesh_beacon_enable(void)
 {
+    size_t subnet_size;
     int i;
 
-    if (!bt_mesh_is_provisioned()) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+            !bt_mesh_is_provisioned()) {
         k_work_submit(&beacon_timer.work);
         return;
     }
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+    subnet_size = bt_mesh_rx_netkey_size();
 
-        if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
+    for (i = 0; i < subnet_size; i++) {
+        struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
+
+        if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
             continue;
         }
 
@@ -440,5 +483,3 @@ void bt_mesh_beacon_disable(void)
         k_delayed_work_cancel(&beacon_timer);
     }
 }
-
-#endif /* CONFIG_BLE_MESH_NODE */

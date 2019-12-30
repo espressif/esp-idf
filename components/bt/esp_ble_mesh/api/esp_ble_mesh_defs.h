@@ -321,13 +321,12 @@ typedef uint8_t BD_ADDR[BD_ADDR_LEN];
 
 typedef uint8_t esp_ble_mesh_bd_addr_t[BD_ADDR_LEN];
 
+#define ESP_BLE_MESH_ADDR_TYPE_PUBLIC       0x00
+#define ESP_BLE_MESH_ADDR_TYPE_RANDOM       0x01
+#define ESP_BLE_MESH_ADDR_TYPE_RPA_PUBLIC   0x02
+#define ESP_BLE_MESH_ADDR_TYPE_RPA_RANDOM   0x03
 /// BLE device address type
-typedef enum {
-    ESP_BLE_MESH_ADDR_TYPE_PUBLIC        = 0x00,
-    ESP_BLE_MESH_ADDR_TYPE_RANDOM        = 0x01,
-    ESP_BLE_MESH_ADDR_TYPE_RPA_PUBLIC    = 0x02,
-    ESP_BLE_MESH_ADDR_TYPE_RPA_RANDOM    = 0x03,
-} esp_ble_mesh_addr_type_t;
+typedef uint8_t esp_ble_mesh_addr_type_t;
 
 typedef struct esp_ble_mesh_model esp_ble_mesh_model_t;
 
@@ -677,6 +676,21 @@ typedef struct {
     uint8_t flag;           /*!< BIT0: net_idx; BIT1: flags; BIT2: iv_index */
 } esp_ble_mesh_prov_data_info_t;
 
+/* Each node information stored by provisioner */
+typedef struct {
+    char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN]; /*!< Node name */
+    esp_ble_mesh_bd_addr_t   addr;      /*!< Node device address */
+    esp_ble_mesh_addr_type_t addr_type; /*!< Node device address type */
+    uint8_t  dev_uuid[16];  /*!< Device UUID */
+    uint16_t oob_info;      /*!< Node OOB information */
+    uint16_t unicast_addr;  /*!< Node unicast address */
+    uint8_t  element_num;   /*!< Node element number */
+    uint16_t net_idx;       /*!< Node NetKey Index */
+    uint8_t  flags;         /*!< Node key refresh flag and iv update flag */
+    uint32_t iv_index;      /*!< Node IV Index */
+    uint8_t  dev_key[16];   /*!< Node device key */
+} __attribute__((packed)) esp_ble_mesh_node_t;
+
 /** Context of fast provisioning which need to be set. */
 typedef struct {
     uint16_t unicast_min;   /*!< Minimum unicast address used for fast provisioning */
@@ -734,10 +748,12 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_PROV_LINK_CLOSE_EVT,               /*!< Provisioner close a BLE Mesh link event */
     ESP_BLE_MESH_PROVISIONER_PROV_COMPLETE_EVT,                 /*!< Provisioner provisioning done event */
     ESP_BLE_MESH_PROVISIONER_ADD_UNPROV_DEV_COMP_EVT,           /*!< Provisioner add a device to the list which contains devices that are waiting/going to be provisioned completion event */
+    ESP_BLE_MESH_PROVISIONER_PROV_DEV_WITH_ADDR_COMP_EVT,       /*!< Provisioner start to provision an unprovisioned device completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_DEV_COMP_EVT,               /*!< Provisioner delete a device from the list, close provisioning link with the device if it exists and remove the device from network completion event */
     ESP_BLE_MESH_PROVISIONER_SET_DEV_UUID_MATCH_COMP_EVT,       /*!< Provisioner set the value to be compared with part of the unprovisioned device UUID completion event */
     ESP_BLE_MESH_PROVISIONER_SET_PROV_DATA_INFO_COMP_EVT,       /*!< Provisioner set net_idx/flags/iv_index used for provisioning completion event */
     ESP_BLE_MESH_PROVISIONER_SET_STATIC_OOB_VALUE_COMP_EVT,     /*!< Provisioner set static oob value used for provisioning completion event */
+    ESP_BLE_MESH_PROVISIONER_SET_PRIMARY_ELEM_ADDR_COMP_EVT,    /*!< Provisioner set unicast address of primary element completion event */
     ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_COMP_EVT,    /*!< Provisioner read unprovisioned device OOB public key completion event */
     ESP_BLE_MESH_PROVISIONER_PROV_INPUT_NUMBER_COMP_EVT,        /*!< Provisioner input number completion event */
     ESP_BLE_MESH_PROVISIONER_PROV_INPUT_STRING_COMP_EVT,        /*!< Provisioner input string completion event */
@@ -889,6 +905,7 @@ typedef union {
         uint16_t oob_info;                      /*!< OOB Info of the unprovisoned device */
         uint8_t  adv_type;                      /*!< Avertising type of the unprovisoned device */
         esp_ble_mesh_prov_bearer_t bearer;      /*!< Bearer of the unprovisoned device */
+        int8_t   rssi;                          /*!< RSSI of the received advertising packet */
     } provisioner_recv_unprov_adv_pkt;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT
@@ -960,6 +977,12 @@ typedef union {
         int err_code;                           /*!< Indicate the result of adding device into queue by the Provisioner */
     } provisioner_add_unprov_dev_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_UNPROV_DEV_COMP_EVT */
     /**
+     * @brief ESP_BLE_MESH_PROVISIONER_PROV_DEV_WITH_ADDR_COMP_EVT
+     */
+    struct ble_mesh_provisioner_prov_dev_with_addr_comp_param {
+        int err_code;                           /*!< Indicate the result of Provisioner starting to provision a device */
+    } provisioner_prov_dev_with_addr_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_DEV_WITH_ADDR_COMP_EVT */
+    /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_DEV_COMP_EVT
      */
     struct ble_mesh_provisioner_delete_dev_comp_param {
@@ -983,6 +1006,12 @@ typedef union {
     struct ble_mesh_provisioner_set_static_oob_val_comp_param {
         int err_code;                           /*!< Indicate the result of setting static oob value by the Provisioner */
     } provisioner_set_static_oob_val_comp;      /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_SET_STATIC_OOB_VALUE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_SET_PRIMARY_ELEM_ADDR_COMP_EVT
+     */
+    struct ble_mesh_provisioner_set_primary_elem_addr_comp_param {
+        int err_code;                           /*!< Indicate the result of setting unicast address of primary element by the Provisioner */
+    } provisioner_set_primary_elem_addr_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_SET_PRIMARY_ELEM_ADDR_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_COMP_EVT
      */
@@ -1107,6 +1136,7 @@ typedef union {
         esp_ble_mesh_addr_type_t addr_type;     /*!< Device address type */
         uint16_t net_idx;                       /*!< Network ID related NetKey Index */
         uint8_t  net_id[8];                     /*!< Network ID contained in the advertising packet */
+        int8_t   rssi;                          /*!< RSSI of the received advertising packet */
     } proxy_client_recv_adv_pkt;                /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_RECV_ADV_PKT_EVT */
     /**
      * @brief ESP_BLE_MESH_PROXY_CLIENT_CONNECTED_EVT

@@ -161,16 +161,12 @@ static struct {
     struct cfg_val cfg;
 } stored_cfg;
 
-struct node_update {
-    bt_mesh_addr_t addr;    /* Device address */
-    u8_t  dev_uuid[16];     /* Device UUID */
-    u16_t oob_info;         /* Node OOB information */
-    u16_t unicast_addr;     /* Node unicast address */
-    u8_t  element_num;      /* Node element number */
-    u8_t  dev_key[16];      /* Node device key */
-} __packed;
+struct prov_info {
+    u16_t primary_addr;
+    u16_t alloc_addr;
+};
 
-static u8_t dev_role = ROLE_NVAL;
+#define DEVICE_ROLE_BITS    (BIT(BLE_MESH_NODE) | BIT(BLE_MESH_PROVISIONER))
 
 static int role_set(const char *name)
 {
@@ -179,7 +175,7 @@ static int role_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&dev_role, sizeof(dev_role), &exist);
+    err = bt_mesh_load_core_settings(name, (u8_t *)bt_mesh.flags, sizeof(bt_mesh.flags), &exist);
     if (err) {
         return err;
     }
@@ -188,7 +184,7 @@ static int role_set(const char *name)
         return 0;
     }
 
-    BT_DBG("Device role 0x%02x", dev_role);
+    BT_INFO("Restored mesh device role %lu", bt_mesh_atomic_get(bt_mesh.flags) & DEVICE_ROLE_BITS);
 
     return 0;
 }
@@ -216,8 +212,8 @@ static int net_set(const char *name)
     memcpy(bt_mesh.dev_key, net.dev_key, sizeof(bt_mesh.dev_key));
     bt_mesh_comp_provision(net.primary_addr);
 
-    BT_DBG("Provisioned with primary address 0x%04x", net.primary_addr);
-    BT_DBG("Recovered DevKey %s", bt_hex(bt_mesh.dev_key, 16));
+    BT_INFO("Restored primary address 0x%04x", net.primary_addr);
+    BT_INFO("Restored DevKey %s", bt_hex(bt_mesh.dev_key, 16));
 
     return 0;
 }
@@ -246,7 +242,7 @@ static int iv_set(const char *name)
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS, iv.iv_update);
     bt_mesh.ivu_duration = iv.iv_duration;
 
-    BT_DBG("IV Index 0x%04x (IV Update Flag %u) duration %u hours",
+    BT_INFO("Restored IV Index 0x%04x (IV Update Flag %u) duration %u hours",
            iv.iv_index, iv.iv_update, iv.iv_duration);
 
     return 0;
@@ -284,7 +280,7 @@ static int seq_set(const char *name)
     bt_mesh.seq--;
 #endif
 
-    BT_DBG("Sequence Number 0x%06x", bt_mesh.seq);
+    BT_INFO("Restored Sequence Number 0x%06x", bt_mesh.seq);
 
     return 0;
 }
@@ -361,7 +357,7 @@ static int rpl_set(const char *name)
             }
         }
 
-        BT_DBG("RPL 0x%04x: Seq 0x%06x, old_iv %u", src, rpl.seq, rpl.old_iv);
+        BT_INFO("Restored RPL 0x%04x: Seq 0x%06x, old_iv %u", src, rpl.seq, rpl.old_iv);
         entry->src = src;
         entry->seq = rpl.seq;
         entry->old_iv = rpl.old_iv;
@@ -430,7 +426,7 @@ static int net_key_set(const char *name)
             }
         }
 
-        BT_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
+        BT_INFO("Restored NetKey Index 0x%03x", net_idx);
         sub->net_idx = net_idx;
         sub->kr_flag = key.kr_flag;
         sub->kr_phase = key.kr_phase;
@@ -495,7 +491,7 @@ static int app_key_set(const char *name)
             }
         }
 
-        BT_DBG("AppKeyIndex 0x%03x recovered from storage", app_idx);
+        BT_INFO("Restored AppKey Index 0x%03x", app_idx);
         app->net_idx = key.net_idx;
         app->app_idx = app_idx;
         app->updated = key.updated;
@@ -550,7 +546,7 @@ static int hb_pub_set(const char *name)
         hb_pub->count = 0U;
     }
 
-    BT_DBG("Restore Heartbeat Publication");
+    BT_INFO("Restored heartbeat publication, dst 0x%04x", hb_pub->dst);
 
     return 0;
 }
@@ -583,7 +579,7 @@ static int cfg_set(const char *name)
 
     memcpy(&stored_cfg.cfg, &val, sizeof(val));
     stored_cfg.valid = true;
-    BT_DBG("Restore configuration state");
+    BT_INFO("Restored configuration state");
     return 0;
 }
 
@@ -667,7 +663,7 @@ static int model_set_pub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
     model->pub->retransmit = pub.retransmit;
     model->pub->count = 0U;
 
-    BT_DBG("Restore model publication, pub_addr 0x%04x app_idx 0x%03x",
+    BT_INFO("Restored model publication, pub_addr 0x%04x, app_idx 0x%03x",
            pub.addr, pub.key);
 
     return 0;
@@ -789,7 +785,7 @@ static int va_set(const char *name)
         lab->addr = va.addr;
         lab->ref = va.ref;
 
-        BT_DBG("Restore virtual address 0x%04x ref 0x%04x", index, lab->ref);
+        BT_INFO("Restored virtual address 0x%04x ref 0x%04x", index, lab->ref);
     }
 
 free:
@@ -799,32 +795,15 @@ free:
 #endif
 
 #if CONFIG_BLE_MESH_PROVISIONER
-
-static int subnet_init(struct bt_mesh_subnet *sub);
-
-/**
- * The following variable is used to check whether Provisioner
- * needs to continue restoring network keys and application keys
- * during initialization.
- * Because if a Provisioner starts to work at the first time, and
- * after trying to restore the "bt_mesh.p_net_idx_next", nothing
- * will be recovered. Hence there will be no need to restore the
- * network keys and application keys. And during the Provisioner
- * initialization, it will generate the primary network key.
- * And if "p_key_exist" is false, which also means the Provisioner
- * has not provisioned any node.
- */
-static bool p_key_exist;
-
 static int p_prov_set(const char *name)
 {
-    u16_t address;
+    struct prov_info val = {0};
     bool exist;
     int err;
 
     BT_DBG("%s", __func__);
 
-    err = bt_mesh_load_core_settings(name, (u8_t *)&address, sizeof(address), &exist);
+    err = bt_mesh_load_core_settings(name, (u8_t *)&val, sizeof(val), &exist);
     if (err) {
         BT_ERR("%s, Failed to load Provisioner prov info", __func__);
         return 0;
@@ -834,9 +813,10 @@ static int p_prov_set(const char *name)
         return 0;
     }
 
-    bt_mesh_provisoner_restore_prov_info(address);
+    bt_mesh_provisoner_restore_prov_info(val.primary_addr, val.alloc_addr);
 
-    BT_DBG("curr_addr 0x%04x", address);
+    BT_INFO("Restored primary_addr 0x%04x, alloc_addr 0x%04x",
+        val.primary_addr, val.alloc_addr);
 
     return 0;
 }
@@ -852,19 +832,16 @@ static int p_net_idx_set(const char *name)
     err = bt_mesh_load_core_settings(name, (u8_t *)&net_idx, sizeof(net_idx), &exist);
     if (err) {
         BT_ERR("%s, Failed to load Provisioner keys", __func__);
-        p_key_exist = false;
         return 0;
     }
 
     if (exist == false) {
-        p_key_exist = false;
         return 0;
     }
 
     bt_mesh.p_net_idx_next = net_idx;
-    p_key_exist = true;
 
-    BT_DBG("p_net_idx_next 0x%04x", bt_mesh.p_net_idx_next);
+    BT_INFO("Restored p_net_idx_next 0x%04x", bt_mesh.p_net_idx_next);
 
     return 0;
 }
@@ -877,15 +854,6 @@ static int p_app_idx_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    if (p_key_exist == false) {
-        /**
-         * Directly return here if a Provisioner fails to restore the
-         * bt_mesh.p_net_idx_next, which means the corresponding keys
-         * have not be stored in the flash for the Provisioner.
-         */
-        return 0;
-    }
-
     err = bt_mesh_load_core_settings(name, (u8_t *)&app_idx, sizeof(app_idx), &exist);
     if (err) {
         return 0;
@@ -897,7 +865,7 @@ static int p_app_idx_set(const char *name)
 
     bt_mesh.p_app_idx_next = app_idx;
 
-    BT_DBG("p_app_idx_next 0x%04x", bt_mesh.p_app_idx_next);
+    BT_INFO("Restored p_app_idx_next 0x%04x", bt_mesh.p_app_idx_next);
 
     return 0;
 }
@@ -953,10 +921,6 @@ static int p_net_key_set(const char *name)
 
     BT_DBG("%s", __func__);
 
-    if (p_key_exist == false) {
-        return 0;
-    }
-
     buf = bt_mesh_get_core_settings_item(name);
     if (!buf) {
         return 0;
@@ -988,17 +952,12 @@ static int p_net_key_set(const char *name)
             }
         }
 
-        BT_DBG("NetKeyIndex 0x%03x recovered from storage", net_idx);
+        BT_INFO("Restored NetKey Index 0x%03x", net_idx);
         sub->net_idx = net_idx;
         sub->kr_flag = key.kr_flag;
         sub->kr_phase = key.kr_phase;
         memcpy(sub->keys[0].net, &key.val[0], 16);
         memcpy(sub->keys[1].net, &key.val[1], 16);
-        err = subnet_init(sub);
-        if (err) {
-            BT_ERR("%s, Failed to init Provisioner subnet 0x%03x", __func__, sub->net_idx);
-        }
-        sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
     }
 
 free:
@@ -1019,10 +978,6 @@ static int p_app_key_set(const char *name)
     size_t i;
 
     BT_DBG("%s", __func__);
-
-    if (p_key_exist == false) {
-        return 0;
-    }
 
     buf = bt_mesh_get_core_settings_item(name);
     if (!buf) {
@@ -1062,7 +1017,7 @@ static int p_app_key_set(const char *name)
             }
         }
 
-        BT_DBG("AppKeyIndex 0x%03x recovered from storage", app_idx);
+        BT_INFO("Restored AppKey Index 0x%03x", app_idx);
         app->net_idx = key.net_idx;
         app->app_idx = app_idx;
         app->updated = key.updated;
@@ -1081,16 +1036,11 @@ static int p_node_set(const char *name)
 {
     struct net_buf_simple *buf = NULL;
     struct bt_mesh_node node = {0};
-    struct node_update val = {0};
     char get[16] = {'\0'};
     bool exist, prov;
     size_t length;
     int err = 0;
     size_t i;
-
-    if (p_key_exist == false) {
-        return 0;
-    }
 
     buf = bt_mesh_get_core_settings_item(name);
     if (!buf) {
@@ -1104,7 +1054,7 @@ static int p_node_set(const char *name)
         u16_t addr = net_buf_simple_pull_le16(buf);
         sprintf(get, prov ? "mesh/pnd/%04x" : "mesh/snd/%04x", addr);
 
-        err = bt_mesh_load_core_settings(get, (u8_t *)&val, sizeof(val), &exist);
+        err = bt_mesh_load_core_settings(get, (u8_t *)&node, sizeof(node), &exist);
         if (err) {
             BT_ERR("%s, Failed to load node %s", __func__, get);
             goto free;
@@ -1114,18 +1064,13 @@ static int p_node_set(const char *name)
             continue;
         }
 
-        memcpy(&node.addr, &val.addr, sizeof(bt_mesh_addr_t));
-        memcpy(node.dev_uuid, val.dev_uuid, 16);
-        node.oob_info = val.oob_info;
-        node.unicast_addr = val.unicast_addr;
-        node.element_num = val.element_num;
-        memcpy(node.dev_key, val.dev_key, 16);
-
         err = bt_mesh_provisioner_restore_node_info(&node, prov);
         if (err) {
             BT_ERR("%s, Failed to store node 0x%04x", __func__, node.unicast_addr);
             goto free;
         }
+
+        BT_INFO("Restored node 0x%04x, uuid %s", node.unicast_addr, bt_hex(node.dev_uuid, 16));
     }
 
 free:
@@ -1179,7 +1124,7 @@ const struct bt_mesh_setting {
  */
 int settings_core_load(void)
 {
-    u8_t i;
+    size_t i;
 
     BT_DBG("%s", __func__);
 
@@ -1189,7 +1134,7 @@ int settings_core_load(void)
             !strcmp(settings[i].name, "mesh/appkey") ||
             !strcmp(settings[i].name, "mesh/hb_pub") ||
             !strcmp(settings[i].name, "mesh/cfg")) &&
-            (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || (dev_role == PROVISIONER))) {
+            (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioner())) {
             BT_DBG("Not restoring %s for Provisioner", settings[i].name);
             continue;
         }
@@ -1201,15 +1146,16 @@ int settings_core_load(void)
             !strcmp(settings[i].name, "mesh/p_appkey") ||
             !strcmp(settings[i].name, "mesh/p_pnode") ||
             !strcmp(settings[i].name, "mesh/p_snode")) &&
-            (!IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) || (dev_role == NODE))) {
+            (!IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) || bt_mesh_is_node())) {
             BT_DBG("Not restoring %s for node", settings[i].name);
             continue;
         }
 
         settings[i].func(settings[i].name);
 
-        if (!strcmp(settings[i].name, "mesh/role") && (dev_role == ROLE_NVAL)) {
-            BT_DBG("Device just starts up");
+        if (!strcmp(settings[i].name, "mesh/role") &&
+            !bt_mesh_is_node() && !bt_mesh_is_provisioner()) {
+            BT_INFO("Device just starts up");
             return 0;
         }
     }
@@ -1263,12 +1209,13 @@ static void commit_model(struct bt_mesh_model *model, struct bt_mesh_elem *elem,
 
 int settings_core_commit(void)
 {
-    struct bt_mesh_hb_pub *hb_pub = NULL;
-    struct bt_mesh_cfg_srv *cfg = NULL;
-    int i;
+    struct bt_mesh_subnet *sub = NULL;
+    size_t i;
+    int err;
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE)) {
-        BT_DBG("sub[0].net_idx 0x%03x", bt_mesh.sub[0].net_idx);
+#if defined(CONFIG_BLE_MESH_NODE)
+    if (bt_mesh_is_node()) {
+        BT_INFO("sub[0].net_idx 0x%03x", bt_mesh.sub[0].net_idx);
 
         if (bt_mesh.sub[0].net_idx == BLE_MESH_KEY_UNUSED) {
             /* Nothing to do since we're not yet provisioned */
@@ -1279,9 +1226,8 @@ int settings_core_commit(void)
             bt_mesh_proxy_prov_disable(true);
         }
 
-        for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-            struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-            int err;
+        for (i = 0U; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+            sub = &bt_mesh.sub[i];
 
             if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
                 continue;
@@ -1293,6 +1239,34 @@ int settings_core_commit(void)
             }
         }
     }
+#endif /* CONFIG_BLE_MESH_NODE */
+
+#if defined(CONFIG_BLE_MESH_PROVISIONER)
+    if (bt_mesh_is_provisioner()) {
+        if (bt_mesh.p_sub[0] == NULL ||
+            bt_mesh.p_sub[0]->net_idx == BLE_MESH_KEY_UNUSED) {
+            return 0;
+        }
+
+        BT_INFO("p_sub[0]->net_idx 0x%03x", bt_mesh.p_sub[0]->net_idx);
+
+        bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
+
+        for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
+            sub = bt_mesh.p_sub[i];
+
+            if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
+                continue;
+            }
+
+            err = subnet_init(sub);
+            if (err) {
+                BT_ERR("%s, Failed to init subnet 0x%03x", __func__, sub->net_idx);
+            }
+            sub->node_id = BLE_MESH_NODE_IDENTITY_NOT_SUPPORTED;
+        }
+    }
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
 
     if (bt_mesh.ivu_duration < BLE_MESH_IVU_MIN_HOURS) {
         k_delayed_work_submit(&bt_mesh.ivu_timer, BLE_MESH_IVU_TIMEOUT);
@@ -1300,7 +1274,11 @@ int settings_core_commit(void)
 
     bt_mesh_model_foreach(commit_model, NULL);
 
-    if(IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE)) {
+#if defined(CONFIG_BLE_MESH_NODE)
+    if (bt_mesh_is_node()) {
+        struct bt_mesh_hb_pub *hb_pub = NULL;
+        struct bt_mesh_cfg_srv *cfg = NULL;
+
         hb_pub = bt_mesh_hb_pub_get();
         if (hb_pub && hb_pub->dst != BLE_MESH_ADDR_UNASSIGNED &&
                 hb_pub->count && hb_pub->period) {
@@ -1322,6 +1300,13 @@ int settings_core_commit(void)
         bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID);
         bt_mesh_net_start();
     }
+#endif /* CONFIG_BLE_MESH_NODE */
+
+#if defined(CONFIG_BLE_MESH_PROVISIONER)
+    if (bt_mesh_is_provisioner()) {
+        bt_mesh_provisioner_net_start(BLE_MESH_PROV_ADV | BLE_MESH_PROV_GATT);
+    }
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
 
     return 0;
 }
@@ -1394,12 +1379,11 @@ static void store_pending_net(void)
     bt_mesh_save_core_settings("mesh/net", (const u8_t *)&net, sizeof(net));
 }
 
-void bt_mesh_store_role(u8_t role)
+void bt_mesh_store_role(void)
 {
-    BT_DBG("Device role 0x%02x", dev_role);
+    BT_DBG("Store, device role %lu", bt_mesh_atomic_get(bt_mesh.flags) & DEVICE_ROLE_BITS);
 
-    dev_role = role;
-    bt_mesh_save_core_settings("mesh/role", (const u8_t *)&role, sizeof(role));
+    bt_mesh_save_core_settings("mesh/role", (const u8_t *)bt_mesh.flags, sizeof(bt_mesh.flags));
 }
 
 void bt_mesh_store_net(void)
@@ -1713,8 +1697,8 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 
     sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
-        !bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+            !bt_mesh_is_provisioned()) {
         bt_mesh_save_core_settings(name, NULL, 0);
         return;
     }
@@ -1744,8 +1728,8 @@ static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
 
     sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
-        !bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+            !bt_mesh_is_provisioned()) {
         bt_mesh_save_core_settings(name, NULL, 0);
         return;
     }
@@ -1789,8 +1773,8 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
 
     sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
-        !bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+            !bt_mesh_is_provisioned()) {
         bt_mesh_save_core_settings(name, NULL, 0);
         return;
     }
@@ -1885,22 +1869,21 @@ static void store_pending(struct k_work *work)
     BT_DBG("%s", __func__);
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_RPL_PENDING)) {
-        if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) ||
-            bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+        if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioned()) {
             store_pending_rpl();
         } else {
             clear_rpl();
         }
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
         bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_KEYS_PENDING)) {
         store_pending_keys();
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
         bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_NET_PENDING)) {
-        if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+        if (bt_mesh_is_provisioned()) {
             store_pending_net();
         } else {
             clear_net();
@@ -1908,8 +1891,7 @@ static void store_pending(struct k_work *work)
     }
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_IV_PENDING)) {
-        if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) ||
-            bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+        if (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioned()) {
             store_pending_iv();
         } else {
             clear_iv();
@@ -1920,14 +1902,14 @@ static void store_pending(struct k_work *work)
         store_pending_seq();
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
         bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_HB_PUB_PENDING)) {
         store_pending_hb_pub();
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
         bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_CFG_PENDING)) {
-        if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+        if (bt_mesh_is_provisioned()) {
             store_pending_cfg();
         } else {
             clear_cfg();
@@ -1936,8 +1918,8 @@ static void store_pending(struct k_work *work)
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_MOD_PENDING)) {
         bt_mesh_model_foreach(store_pending_mod, NULL);
-        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && (dev_role == NODE) &&
-            !bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_node() &&
+                !bt_mesh_is_provisioned()) {
             bt_mesh_save_core_settings("mesh/sig", NULL, 0);
             bt_mesh_save_core_settings("mesh/vnd", NULL, 0);
         }
@@ -2048,7 +2030,7 @@ void bt_mesh_store_cfg(void)
 
 void bt_mesh_clear_role(void)
 {
-    BT_DBG("Clearing device role");
+    BT_DBG("Clear device role");
     bt_mesh_save_core_settings("mesh/role", NULL, 0);
 }
 
@@ -2155,12 +2137,17 @@ void bt_mesh_store_label(void)
  * key: "mesh/p_snode" -> write/read to set/get all locally stored nodes info
  *      key: "mesh/snd/xxxx" -> write/read to set/get the "xxxx" stored node info
  */
-void bt_mesh_store_prov_info(u16_t curr_addr)
+void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
 {
-    BT_DBG("curr_addr 0x%04x", curr_addr);
+    struct prov_info val = {0};
+
+    BT_DBG("primary_addr 0x%04x, alloc_addr 0x%04x", primary_addr, alloc_addr);
+
+    val.primary_addr = primary_addr;
+    val.alloc_addr = alloc_addr;
 
     bt_mesh_save_core_settings("mesh/p_prov",
-        (const u8_t *)&curr_addr, sizeof(curr_addr));
+        (const u8_t *)&val, sizeof(val));
 }
 
 static void clear_p_net_key(u16_t net_idx)
@@ -2336,7 +2323,6 @@ void bt_mesh_clear_rpl_single(u16_t src)
 
 void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov)
 {
-    struct node_update val = {0};
     char name[16] = {'\0'};
     int err;
 
@@ -2345,15 +2331,8 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov)
         return;
     }
 
-    memcpy(&val.addr, &node->addr, sizeof(bt_mesh_addr_t));
-    memcpy(val.dev_uuid, node->dev_uuid, 16);
-    val.oob_info = node->oob_info;
-    val.unicast_addr = node->unicast_addr;
-    val.element_num = node->element_num;
-    memcpy(val.dev_key, node->dev_key, 16);
-
     sprintf(name, prov ? "mesh/pnd/%04x" : "mesh/snd/%04x", node->unicast_addr);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)&val, sizeof(val));
+    err = bt_mesh_save_core_settings(name, (const u8_t *)node, sizeof(struct bt_mesh_node));
     if (err) {
         BT_ERR("%s, Failed to save node %s", __func__, name);
         return;

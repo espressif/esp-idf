@@ -809,11 +809,11 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 
 static void prov_start(const u8_t *data)
 {
-    BT_DBG("Algorithm:   0x%02x", data[0]);
-    BT_DBG("Public Key:  0x%02x", data[1]);
-    BT_DBG("Auth Method: 0x%02x", data[2]);
-    BT_DBG("Auth Action: 0x%02x", data[3]);
-    BT_DBG("Auth Size:   0x%02x", data[4]);
+    BT_INFO("Algorithm:   0x%02x", data[0]);
+    BT_INFO("Public Key:  0x%02x", data[1]);
+    BT_INFO("Auth Method: 0x%02x", data[2]);
+    BT_INFO("Auth Action: 0x%02x", data[3]);
+    BT_INFO("Auth Size:   0x%02x", data[4]);
 
     if (data[0] != PROV_ALG_P256) {
         BT_ERR("%s, Unknown algorithm 0x%02x", __func__, data[0]);
@@ -909,7 +909,7 @@ static void send_input_complete(void)
 
 int bt_mesh_input_number(u32_t num)
 {
-    BT_DBG("%u", num);
+    BT_INFO("%u", num);
 
     if (!bt_mesh_atomic_test_and_clear_bit(link.flags, WAIT_NUMBER)) {
         return -EINVAL;
@@ -932,7 +932,7 @@ int bt_mesh_input_number(u32_t num)
 
 int bt_mesh_input_string(const char *str)
 {
-    BT_DBG("%s", str);
+    BT_INFO("%s", str);
 
     if (!bt_mesh_atomic_test_and_clear_bit(link.flags, WAIT_STRING)) {
         return -EINVAL;
@@ -1736,7 +1736,7 @@ bool bt_prov_active(void)
 
 static void protocol_timeout(struct k_work *work)
 {
-    BT_DBG("Protocol timeout");
+    BT_WARN("Protocol timeout");
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     if (link.conn) {

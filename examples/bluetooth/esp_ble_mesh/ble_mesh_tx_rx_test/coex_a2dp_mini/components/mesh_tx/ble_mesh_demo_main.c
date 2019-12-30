@@ -24,6 +24,7 @@
 #include "esp_ble_mesh_networking_api.h"
 #include "esp_ble_mesh_config_model_api.h"
 #include "esp_ble_mesh_generic_model_api.h"
+#include "esp_ble_mesh_local_data_operation_api.h"
 
 #include "board.h"
 #include "ble_mesh_demo_init.h"
@@ -67,7 +68,10 @@ static void example_start_interval_timer(void);
 
 static SemaphoreHandle_t test_mutex;
 
+static uint8_t match[2] = {0xec, 0xa6};
 static uint8_t dev_uuid[16];
+bool example_deinit_test;
+static uint16_t primary_addr;
 
 typedef struct {
     uint8_t  uuid[16];
@@ -351,6 +355,9 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
                                              esp_ble_mesh_prov_cb_param_t *param)
 {
     switch (event) {
+    case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
+        ESP_LOGI(TAG, "ESP_BLE_MESH_PROV_REGISTER_COMP_EVT, err_code %d", param->prov_register_comp.err_code);
+        break;
     case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT, err_code %d", param->provisioner_prov_enable_comp.err_code);
         if (iperf_test == true) {
@@ -387,6 +394,12 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
     case ESP_BLE_MESH_PROVISIONER_SET_DEV_UUID_MATCH_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_SET_DEV_UUID_MATCH_COMP_EVT, err_code %d", param->provisioner_set_dev_uuid_match_comp.err_code);
         break;
+    case ESP_BLE_MESH_PROVISIONER_SET_PRIMARY_ELEM_ADDR_COMP_EVT:
+        ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_SET_PRIMARY_ELEM_ADDR_COMP_EVT, err_code %d", param->provisioner_set_primary_elem_addr_comp.err_code);
+        if (!param->provisioner_set_primary_elem_addr_comp.err_code) {
+            primary_addr = esp_ble_mesh_get_primary_element_address();
+        }
+        break;
     case ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT, err_code %d", param->provisioner_set_node_name_comp.err_code);
         if (param->provisioner_set_node_name_comp.err_code == ESP_OK) {
@@ -404,7 +417,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
         if (param->provisioner_add_app_key_comp.err_code == ESP_OK) {
             esp_err_t err = 0;
             prov_key.app_idx = param->provisioner_add_app_key_comp.app_idx;
-            err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(PROV_OWN_ADDR, prov_key.app_idx,
+            err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(primary_addr, prov_key.app_idx,
                     ESP_BLE_MESH_VND_MODEL_ID_TEST_CLI, CID_ESP);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "Provisioner bind local model appkey failed");
@@ -467,6 +480,7 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
                 ESP_LOGE(TAG, "%s: Config Model App Bind failed", __func__);
             }
         } else if (param->params->opcode == ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND) {
+            ESP_LOGW(TAG, "%s, Primary element address 0x%04x", __func__, esp_ble_mesh_get_primary_element_address());
             ESP_LOGW(TAG, "%s, Provisioning and config successfully", __func__);
         }
         break;
@@ -542,8 +556,8 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
         example_test_lock();
-        if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS) {
-            uint16_t value = *(uint16_t *)param->model_operation.msg;
+        if (param->client_recv_publish_msg.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS) {
+            uint16_t value = *(uint16_t *)param->client_recv_publish_msg.msg;
             ESP_LOGI(TAG, "%d %d %d", msg_index, value, trans_num);
             if (value == trans_num && retrans_timer_start == true) {
                 msg_record[msg_index].acked = true;
@@ -647,11 +661,49 @@ const esp_timer_create_args_t interval_timer_args = {
         .name = "interval",
 };
 
-static esp_err_t ble_mesh_init(void)
+esp_err_t example_ble_mesh_start(void)
 {
-    uint8_t match[2] = {0xec, 0xa6};
     esp_err_t err;
 
+    err = esp_ble_mesh_init(&provision, &composition);
+    if (err) {
+        return err;
+    }
+
+    err = esp_ble_mesh_client_model_init(&vnd_models[0]);
+    if (err) {
+        return err;
+    }
+
+    err = esp_ble_mesh_provisioner_set_dev_uuid_match(match, sizeof(match), 0x0, false);
+    if (err) {
+        return err;
+    }
+
+    err = esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
+    if (err) {
+        return err;
+    }
+
+    err = esp_ble_mesh_provisioner_set_primary_elem_addr(0x0006);
+    if (err) {
+        return err;
+    }
+
+    err = esp_ble_mesh_provisioner_add_local_app_key(prov_key.app_key, prov_key.net_idx, prov_key.app_idx);
+    if (err) {
+        return err;
+    }
+
+    ESP_LOGW(TAG, "BLE Mesh start");
+    return 0;
+}
+
+static esp_err_t ble_mesh_init(void)
+{
+    esp_err_t err;
+
+    primary_addr = PROV_OWN_ADDR;
     prov_key.net_idx = ESP_BLE_MESH_KEY_PRIMARY;
     prov_key.app_idx = APP_KEY_IDX;
     memset(prov_key.app_key, APP_KEY_OCTET, sizeof(prov_key.app_key));
@@ -660,19 +712,44 @@ static esp_err_t ble_mesh_init(void)
     esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
     esp_ble_mesh_register_custom_model_callback(example_ble_mesh_custom_model_cb);
 
-    err = esp_ble_mesh_init(&provision, &composition);
-    if (err) {
-        ESP_LOGE(TAG, "Initializing mesh failed (err %d)", err);
-        return err;
+    if (example_deinit_test == true) {
+        ESP_LOGW(TAG, "prev, free heap size %d", esp_get_free_heap_size());
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        ESP_LOGW(TAG, "start, free heap size %d", esp_get_free_heap_size());
+        /* First time (make erase_flash, then make flash monitor), 72 bytes will be cost
+         * during first (start - end) circle.
+         * Second time (make monitor), 0 byte will be cost during first (start - end) cycle.
+         */
+        for (int i = 0; i < 100; i++) {
+            err = esp_ble_mesh_init(&provision, &composition);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: Failed to initialize BLE Mesh", __func__);
+                return err;
+            }
+            err = esp_ble_mesh_client_model_init(&vnd_models[0]);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: Failed to initialize vnd client model", __func__);
+                return err;
+            }
+            err = esp_ble_mesh_client_model_deinit(&vnd_models[0]);
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: Failed to deinitialize vnd client model", __func__);
+                return err;
+            }
+            err = esp_ble_mesh_deinit();
+            if (err != ESP_OK) {
+                ESP_LOGE(TAG, "%s: Failed to de-initialize BLE Mesh", __func__);
+                return err;
+            }
+            ESP_LOGW(TAG, "end, free heap size %d", esp_get_free_heap_size());
+        }
     }
 
-    esp_ble_mesh_client_model_init(&vnd_models[0]);
-
-    esp_ble_mesh_provisioner_set_dev_uuid_match(match, sizeof(match), 0x0, false);
-
-    esp_ble_mesh_provisioner_prov_enable(ESP_BLE_MESH_PROV_ADV | ESP_BLE_MESH_PROV_GATT);
-
-    esp_ble_mesh_provisioner_add_local_app_key(prov_key.app_key, prov_key.net_idx, prov_key.app_idx);
+    err = example_ble_mesh_start();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s, BLE Mesh start failed", __func__);
+        return err;
+    }
 
     ESP_LOGI(TAG, "BLE Mesh Provisioner initialized");
 

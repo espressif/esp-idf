@@ -46,10 +46,12 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_ENABLE,
     BTC_BLE_MESH_ACT_PROVISIONER_DISABLE,
     BTC_BLE_MESH_ACT_PROVISIONER_DEV_ADD,
+    BTC_BLE_MESH_ACT_PROVISIONER_PROV_DEV_WITH_ADDR,
     BTC_BLE_MESH_ACT_PROVISIONER_DEV_DEL,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_DEV_UUID_MATCH,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_PROV_DATA_INFO,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_STATIC_OOB_VAL,
+    BTC_BLE_MESH_ACT_PROVISIONER_SET_PRIMARY_ELEM_ADDR,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_NODE_NAME,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP,
@@ -122,6 +124,14 @@ typedef union {
         esp_ble_mesh_unprov_dev_add_t add_dev;
         esp_ble_mesh_dev_add_flag_t   flags;
     } provisioner_dev_add;
+    struct ble_mesh_provisioner_prov_dev_with_addr_args {
+        uint8_t uuid[16];
+        esp_ble_mesh_bd_addr_t addr;
+        esp_ble_mesh_addr_type_t addr_type;
+        esp_ble_mesh_prov_bearer_t bearer;
+        uint16_t oob_info;
+        uint16_t unicast_addr;
+    } provisioner_prov_dev_with_addr;
     struct ble_mesh_provisioner_dev_del_args {
         esp_ble_mesh_device_delete_t del_dev;
     } provisioner_dev_del;
@@ -138,6 +148,9 @@ typedef union {
         uint8_t value[16];
         uint8_t length;
     } set_static_oob_val;
+    struct ble_mesh_provisioner_set_primary_elem_addr_args {
+        uint16_t addr;
+    } set_primary_elem_addr;
     struct ble_mesh_provisioner_set_node_name_args {
         uint16_t index;
         char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN];

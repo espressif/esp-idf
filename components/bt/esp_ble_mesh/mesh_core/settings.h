@@ -19,7 +19,7 @@ int settings_core_load(void);
 int settings_core_commit(void);
 int settings_core_deinit(void);
 
-void bt_mesh_store_role(u8_t role);
+void bt_mesh_store_role(void);
 void bt_mesh_store_net(void);
 void bt_mesh_store_iv(bool only_duration);
 void bt_mesh_store_seq(void);
@@ -40,7 +40,7 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key);
 void bt_mesh_clear_rpl(void);
 
 #if CONFIG_BLE_MESH_PROVISIONER
-void bt_mesh_store_prov_info(u16_t curr_addr);
+void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr);
 void bt_mesh_store_p_net_idx(void);
 void bt_mesh_clear_p_net_idx(void);
 void bt_mesh_store_p_app_idx(void);

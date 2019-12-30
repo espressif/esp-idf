@@ -211,7 +211,7 @@ void app_main()
         iperf_console_start();
     } else {
         initialise_wifi();
-        wifi_sta_join("ASUS", "1234567890");
+        wifi_sta_join("ble_mesh_xiaomi_3g", "1234567890");
     }
 }
 

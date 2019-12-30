@@ -15,6 +15,7 @@
 #include "iot_button.h"
 #include "board.h"
 #include "esp_coexist_internal.h"
+#include "esp_ble_mesh_common_api.h"
 
 #define TAG "BOARD"
 
@@ -27,6 +28,8 @@
 
 extern void example_ble_mesh_send_test_msg(bool resend);
 extern void example_ble_mesh_test_init(void);
+extern esp_err_t example_ble_mesh_start(void);
+extern bool example_deinit_test;
 
 struct _led_state led_state[3] = {
     { LED_OFF, LED_OFF, LED_R, "red"   },
@@ -66,12 +69,27 @@ static void button_tap_cb(void* arg)
 {
     ESP_LOGI(TAG, "tap cb (%s)", (char *)arg);
 
-    coex_schm_status_set(COEX_SCHM_ST_TYPE_BLE, COEX_SCHM_BLE_ST_MESH_TRAFFIC);
+    if (example_deinit_test == true) {
+        static uint8_t count;
+        if (count++ % 2 == 0) {
+            if (esp_ble_mesh_deinit() != ESP_OK) {
+                ESP_LOGE(TAG, "%s, BLE Mesh deinit failed", __func__);
+            } else {
+                ESP_LOGW(TAG, "BLE Mesh deinit");
+            }
+        } else {
+            if (example_ble_mesh_start() != ESP_OK) {
+                ESP_LOGE(TAG, "%s, BLE Mesh start failed", __func__);
+            }
+        }
+    } else {
+        coex_schm_status_set(COEX_SCHM_ST_TYPE_BLE, COEX_SCHM_BLE_ST_MESH_TRAFFIC);
 
-    ESP_LOGW(TAG, "BLE Mesh enters Traffic mode");
+        ESP_LOGW(TAG, "BLE Mesh enters Traffic mode");
 
-    example_ble_mesh_test_init();
-    example_ble_mesh_send_test_msg(false);
+        example_ble_mesh_test_init();
+        example_ble_mesh_send_test_msg(false);
+    }
 }
 
 static void board_button_init(void)
