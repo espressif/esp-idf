@@ -72,7 +72,6 @@ void esp_cache_err_int_init(void)
 
 int IRAM_ATTR esp_cache_err_get_cpuid(void)
 {
-    esp_dport_access_int_pause();
     const uint32_t pro_mask =
             DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1 |
             DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0 |
