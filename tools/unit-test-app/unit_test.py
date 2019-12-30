@@ -344,7 +344,7 @@ class Handler(threading.Thread):
 
         def device_wait_action(data):
             start_time = time.time()
-            expected_signal = data[0]
+            expected_signal = data[0].encode('utf-8')
             while 1:
                 if time.time() > start_time + self.timeout:
                     Utility.console_log("Timeout in device for function: %s" % self.child_case_name, color="orange")
