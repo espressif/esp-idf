@@ -36,8 +36,8 @@ test_list = (
     ('in1.txt',             '*:V',                                                      'in1f1.txt',                60),
     ('in1.txt',             'hello_world',                                              'in1f2.txt',                60),
     ('in1.txt',             '*:N',                                                      'in1f3.txt',                60),
-    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               240),
-    ('in2.txt',             'vfs',                                                      'in2f2.txt',               240),
+    ('in2.txt',             'boot mdf_device_handle:I mesh:E vfs:I',                    'in2f1.txt',               420),
+    ('in2.txt',             'vfs',                                                      'in2f2.txt',               420),
 )
 
 IN_DIR = 'tests/'       # tests are in this directory
@@ -51,7 +51,7 @@ HOST = 'localhost'
 # blocking socket operations are used with timeout:
 SOCKET_TIMEOUT = 30
 # the test is restarted after failure (idf_monitor has to be killed):
-RETRIES_PER_TEST = 3
+RETRIES_PER_TEST = 2
 
 
 def monitor_timeout(process):
