@@ -271,6 +271,10 @@ static esp_err_t rtl8201_init(esp_eth_phy_t *phy)
 {
     phy_rtl8201_t *rtl8201 = __containerof(phy, phy_rtl8201_t, parent);
     esp_eth_mediator_t *eth = rtl8201->eth;
+    // Detect PHY address
+    if (rtl8201->addr == ESP_ETH_PHY_ADDR_AUTO) {
+        PHY_CHECK(esp_eth_detect_phy_addr(eth, &rtl8201->addr) == ESP_OK, "Detect PHY address failed", err);
+    }
     /* Power on Ethernet PHY */
     PHY_CHECK(rtl8201_pwrctl(phy, true) == ESP_OK, "power control failed", err);
     /* Reset Ethernet PHY */

@@ -285,6 +285,10 @@ static esp_err_t dm9051_init(esp_eth_phy_t *phy)
 {
     phy_dm9051_t *dm9051 = __containerof(phy, phy_dm9051_t, parent);
     esp_eth_mediator_t *eth = dm9051->eth;
+    // Detect PHY address
+    if (dm9051->addr == ESP_ETH_PHY_ADDR_AUTO) {
+        PHY_CHECK(esp_eth_detect_phy_addr(eth, &dm9051->addr) == ESP_OK, "Detect PHY address failed", err);
+    }
     /* Power on Ethernet PHY */
     PHY_CHECK(dm9051_pwrctl(phy, true) == ESP_OK, "power control failed", err);
     /* Reset Ethernet PHY */
@@ -315,7 +319,6 @@ err:
 esp_eth_phy_t *esp_eth_phy_new_dm9051(const eth_phy_config_t *config)
 {
     PHY_CHECK(config, "can't set phy config to null", err);
-    PHY_CHECK(config->phy_addr == 1, "dm9051's phy address can only set to 1", err);
     phy_dm9051_t *dm9051 = calloc(1, sizeof(phy_dm9051_t));
     PHY_CHECK(dm9051, "calloc dm9051 failed", err);
     dm9051->addr = config->phy_addr;

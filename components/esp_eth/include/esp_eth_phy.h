@@ -21,6 +21,8 @@ extern "C" {
 #include "esp_eth_com.h"
 #include "sdkconfig.h"
 
+#define ESP_ETH_PHY_ADDR_AUTO (-1)
+
 /**
 * @brief Ethernet PHY
 *
@@ -176,7 +178,7 @@ struct esp_eth_phy_s {
 *
 */
 typedef struct {
-    uint32_t phy_addr;            /*!< PHY address */
+    int32_t phy_addr;             /*!< PHY address, set -1 to enable PHY address detection at initialization stage */
     uint32_t reset_timeout_ms;    /*!< Reset timeout value (Unit: ms) */
     uint32_t autonego_timeout_ms; /*!< Auto-negotiation timeout value (Unit: ms) */
     int reset_gpio_num;           /*!< Reset GPIO number, -1 means no hardware reset */
@@ -186,12 +188,12 @@ typedef struct {
  * @brief Default configuration for Ethernet PHY object
  *
  */
-#define ETH_PHY_DEFAULT_CONFIG()     \
-    {                                \
-        .phy_addr = 1,               \
-        .reset_timeout_ms = 100,     \
-        .autonego_timeout_ms = 4000, \
-        .reset_gpio_num = 5,         \
+#define ETH_PHY_DEFAULT_CONFIG()           \
+    {                                      \
+        .phy_addr = ESP_ETH_PHY_ADDR_AUTO, \
+        .reset_timeout_ms = 100,           \
+        .autonego_timeout_ms = 4000,       \
+        .reset_gpio_num = 5,               \
     }
 
 /**
