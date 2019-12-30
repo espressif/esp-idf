@@ -266,7 +266,7 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
         }
 
         ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
-                                   NULL, 0);
+                                   pki->privkey_password, pki->privkey_password_len);
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
