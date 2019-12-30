@@ -166,27 +166,34 @@ _xt_context_save:
     s32i    a9,  sp, XT_STK_OVLY        /* save overlay state */
     #endif
 
-    rsr     a2, PS                      /* We need to enable window exceptions to */ 
-    movi    a3, PS_INTLEVEL_MASK        /* perform spill registers*/
-    and     a2, a2, a3
-    bnez    a2, _not_l1
-    rsr     a2, PS
-    movi    a3, PS_INTLEVEL(1)          /* For some curious reason the level 1 interrupts */
-    or      a2, a2, a3                  /* dont set the intlevel correctly on PS, we need to */     
-    wsr     a2, PS                      /* do this manually */
-    rsync
-_not_l1:
-    rsr     a2, PS                      /* finally umask the window exceptions */
-    movi    a3, ~(PS_EXCM_MASK)
-    and     a2, a2, a3
-    wsr     a2, PS
-    rsync
+    /* SPILL_ALL_WINDOWS macro requires window overflow exceptions to be enabled,
+     * i.e. PS.EXCM cleared and PS.WOE set.
+     * Since we are going to clear PS.EXCM, we also need to increase INTLEVEL
+     * at least to XCHAL_EXCM_LEVEL. This matches that value of effective INTLEVEL
+     * at entry (CINTLEVEL=max(PS.INTLEVEL, XCHAL_EXCM_LEVEL) when PS.EXCM is set.
+     * Since WindowOverflow exceptions will trigger inside SPILL_ALL_WINDOWS,
+     * need to save/restore EPC1 as well.
+     */
+    rsr     a2, PS                     /* to be restored after SPILL_ALL_WINDOWS */
+    movi    a4, PS_INTLEVEL_MASK
+    and     a3, a2, a4                 /* get the current INTLEVEL */
+    bgeui   a3, XCHAL_EXCM_LEVEL, 1f   /* calculate max(INTLEVEL, XCHAL_EXCM_LEVEL) */
+    movi    a3, XCHAL_EXCM_LEVEL
+1:
+    movi    a4, PS_UM | PS_WOE         /* clear EXCM, enable window overflow, set new INTLEVEL */
+    or      a3, a3, a4
+    wsr     a3, ps
+    rsr     a4, EPC1                   /* to be restored after SPILL_ALL_WINDOWS */
 
     addi    sp,  sp, XT_STK_FRMSZ      /* go back to spill register region */
     SPILL_ALL_WINDOWS                  /* place the live register windows there */ 
     addi    sp,  sp, -XT_STK_FRMSZ     /* return the current stack pointer and proceed with context save*/
-    
-    #endif
+
+    wsr     a2, PS                     /* restore to the value at entry */
+    rsync
+    wsr     a4, EPC1                   /* likewise */
+
+    #endif /* __XTENSA_CALL0_ABI__ */
 
     l32i    a12, sp, XT_STK_TMP0       /* restore the temp saved registers */
     l32i    a13, sp, XT_STK_TMP1       /* our return address is there */
