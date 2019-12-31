@@ -57,11 +57,13 @@ static uint32_t s_module_phy_rf_init = 0;
 /* Whether modem sleep is turned on */
 static volatile bool s_is_phy_rf_en = false;
 
+#if CONFIG_IDF_TARGET_ESP32
 /* Whether WiFi/BT common clock enabled reference */
 static volatile int32_t s_common_clock_enable_ref = 0;
 
 /* PHY spinlock mux */
 static portMUX_TYPE s_phy_spin_lock = portMUX_INITIALIZER_UNLOCKED;
+#endif
 
 /* Bit mask of modules needing to enter modem sleep mode */
 static uint32_t s_modem_sleep_module_enter = 0;
@@ -128,7 +130,6 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
         }
     }
 }
-#endif
 
 IRAM_ATTR static inline void phy_spin_lock(void)
 {
@@ -147,9 +148,11 @@ IRAM_ATTR static inline void phy_spin_unlock(void)
         portEXIT_CRITICAL(&s_phy_spin_lock);
     }
 }
+#endif
 
 IRAM_ATTR void esp_phy_common_clock_enable(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     phy_spin_lock();
 
     if (s_common_clock_enable_ref == 0) {
@@ -159,10 +162,14 @@ IRAM_ATTR void esp_phy_common_clock_enable(void)
 
     s_common_clock_enable_ref++;
     phy_spin_unlock();
+#else
+    periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
+#endif
 }
 
 IRAM_ATTR void esp_phy_common_clock_disable(void)
 {
+#if CONFIG_IDF_TARGET_ESP32
     phy_spin_lock();
 
     if (s_common_clock_enable_ref > 0) {
@@ -177,6 +184,9 @@ IRAM_ATTR void esp_phy_common_clock_disable(void)
     }
 
     phy_spin_unlock();
+#else
+    periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
+#endif
 }
 
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibration_mode_t mode,
