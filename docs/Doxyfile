@@ -223,6 +223,8 @@ INPUT = \
     ../../components/esp_common/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
     ../../components/esp_common/include/esp_ipc.h \
+    ## Call Function with External stack
+    ../../components/esp_common/include/esp_expression_with_stack.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
     ## ESP HTTPS OTA
