@@ -436,16 +436,30 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
 }
 
 /**
- * ADC module output data invert or not.
+ * ADC module RTC output data invert or not.
  *
  * @prarm adc_n ADC unit.
  */
-static inline void adc_ll_output_invert(adc_ll_num_t adc_n, bool inv_en)
+static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
 {
     if (adc_n == ADC_NUM_1) {
         SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
     } else { // adc_n == ADC_NUM_2
         SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
+    }
+}
+
+/**
+ * ADC module Digital output data invert or not.
+ *
+ * @prarm adc_n ADC unit.
+ */
+static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_CTRL.saradc_ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_NUM_2
+        APB_CTRL.saradc_ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
     }
 }
 

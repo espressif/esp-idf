@@ -59,7 +59,7 @@ void adc_hal_init(void);
  *
  * @prarm adc_n ADC unit.
  */
-#define adc_hal_output_invert(adc_n, inv_en) adc_ll_output_invert(adc_n, inv_en)
+void adc_hal_output_invert(adc_ll_num_t adc_n, bool inv_en);
 
 /**
  * Set ADC module controller.
