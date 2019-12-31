@@ -23,14 +23,17 @@ Ring Buffers
 The ESP-IDF FreeRTOS ring buffer is a strictly FIFO buffer that supports arbitrarily sized items.
 Ring buffers are a more memory efficient alternative to FreeRTOS queues in situations where the
 size of items is variable. The capacity of a ring buffer is not measured by the number of items
-it can store, but rather by the amount of memory used for storing items. Items are sent to 
-ring buffers by copy, however for efficiency reasons **items are retrieved by reference**. As a
-result, all retrieved items **must also be returned** in order for them to be removed from
-the ring buffer completely. The ring buffers are split into the three following types:
+it can store, but rather by the amount of memory used for storing items. You may apply for a
+piece of memory on the ring buffer to send an item, or just use the API to copy your data and send
+(according to the send API you call). For efficiency reasons,
+**items are always retrieved from the ring buffer by reference**. As a result, all retrieved
+items *must also be returned* in order for them to be removed from the ring buffer completely.
+The ring buffers are split into the three following types:
 
-**No-Split** buffers will guarantee that an item is stored in contiguous memory and will not 
+**No-Split** buffers will guarantee that an item is stored in contiguous memory and will not
 attempt to split an item under any circumstances. Use no-split buffers when items must occupy
-contiguous memory. 
+contiguous memory. *Only this buffer type allows you getting the data item address and writting
+to the item by yourself.*
 
 **Allow-Split** buffers will allow an item to be split when wrapping around if doing so will allow
 the item to be stored. Allow-split buffers are more memory efficient than no-split buffers but
@@ -42,7 +45,8 @@ do not need to be maintained (e.g. a byte stream).
 
 .. note::
     No-split/allow-split buffers will always store items at 32-bit aligned addresses. Therefore when
-    retrieving an item, the item pointer is guaranteed to be 32-bit aligned.
+    retrieving an item, the item pointer is guaranteed to be 32-bit aligned. This is useful
+    especially when you need to send some data to the DMA.
 
 .. note::
     Each item stored in no-split/allow-split buffers will **require an additional 8 bytes for a header**.
@@ -76,6 +80,46 @@ and :cpp:func:`xRingbufferSend` to create a ring buffer then send an item to it.
             printf("Failed to send item\n");
         }
 
+The following example demonstrates the usage of :cpp:func:`xRingbufferSendAcquire` and
+:cpp:func:`xRingbufferSendComplete` instead of :cpp:func:`xRingbufferSend` to apply for the
+memory on the ring buffer (of type `RINGBUF_TYPE_NOSPLIT`) and then send an item to it. This way
+adds one more step, but allows getting the address of the memory to write to, and writing to the
+memory yourself.
+
+.. code-block:: c
+
+    #include "freertos/ringbuf.h"
+    #include "soc/lldesc.h"
+
+    typedef struct {
+        lldesc_t dma_desc;
+        uint8_t buf[1];
+    } dma_item_t;
+
+    #define DMA_ITEM_SIZE(N) (sizeof(lldesc_t)+(((N)+3)&(~3)))
+
+    ...
+
+        //Retrieve space for DMA descriptor and corresponding data buffer
+        //This has to be done with SendAcquire, or the address may be different when copy
+        dma_item_t item;
+        UBaseType_t res =  xRingbufferSendAcquire(buf_handle,
+                            &item, DMA_ITEM_SIZE(buffer_size), pdMS_TO_TICKS(1000));
+        if (res != pdTRUE) {
+            printf("Failed to acquire memory for item\n");
+        }
+        item->dma_desc = (lldesc_t) {
+            .size = buffer_size,
+            .length = buffer_size,
+            .eof = 0,
+            .owner = 1,
+            .buf = &item->buf,
+        };
+        //Actually send to the ring buffer for consumer to use
+        res = xRingbufferSendComplete(buf_handle, &item);
+        if (res != pdTRUE) {
+            printf("Failed to send item\n");
+        }
 
 The following example demonstrates retrieving and returning an item from a **no-split ring buffer**
 using :cpp:func:`xRingbufferReceive` and :cpp:func:`vRingbufferReturnItem`
@@ -83,7 +127,7 @@ using :cpp:func:`xRingbufferReceive` and :cpp:func:`vRingbufferReturnItem`
 .. code-block:: c
 
     ...
-        
+
         //Receive an item from no-split ring buffer
         size_t item_size;
         char *item = (char *)xRingbufferReceive(buf_handle, &item_size, pdMS_TO_TICKS(1000));
@@ -162,23 +206,23 @@ using :cpp:func:`xRingbufferReceiveUpTo` and :cpp:func:`vRingbufferReturnItem`
 
 
 For ISR safe versions of the functions used above, call :cpp:func:`xRingbufferSendFromISR`, :cpp:func:`xRingbufferReceiveFromISR`,
-:cpp:func:`xRingbufferReceiveSplitFromISR`, :cpp:func:`xRingbufferReceiveUpToFromISR`, and :cpp:func:`vRingbufferReturnItemFromISR` 
+:cpp:func:`xRingbufferReceiveSplitFromISR`, :cpp:func:`xRingbufferReceiveUpToFromISR`, and :cpp:func:`vRingbufferReturnItemFromISR`
 
 
 Sending to Ring Buffer
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The following diagrams illustrate the differences between no-split/allow-split buffers 
-and byte buffers with regards to sending items/data. The diagrams assume that three 
+The following diagrams illustrate the differences between no-split/allow-split buffers
+and byte buffers with regards to sending items/data. The diagrams assume that three
 items of sizes **18, 3, and 27 bytes** are sent respectively to a **buffer of 128 bytes**.
 
 .. packetdiag:: ../../../_static/diagrams/ring-buffer/ring_buffer_send_non_byte_buf.diag
     :caption: Sending items to no-split/allow-split ring buffers
     :align: center
 
-For no-split/allow-split buffers, a header of 8 bytes precedes every data item. Furthermore, the space 
+For no-split/allow-split buffers, a header of 8 bytes precedes every data item. Furthermore, the space
 occupied by each item is **rounded up to the nearest 32-bit aligned size** in order to maintain overall
-32-bit alignment. However the true size of the item is recorded inside the header which will be 
+32-bit alignment. However the true size of the item is recorded inside the header which will be
 returned when the item is retrieved.
 
 Referring to the diagram above, the 18, 3, and 27 byte items are **rounded up to 20, 4, and 28 bytes**
@@ -188,11 +232,41 @@ respectively. An 8 byte header is then added in front of each item.
     :caption: Sending items to byte buffers
     :align: center
 
-Byte buffers treat data as a sequence of bytes and does not incur any overhead 
+Byte buffers treat data as a sequence of bytes and does not incur any overhead
 (no headers). As a result, all data sent to a byte buffer is merged into a single item.
 
 Referring to the diagram above, the 18, 3, and 27 byte items are sequentially written to the
 byte buffer and **merged into a single item of 48 bytes**.
+
+Using SendAcquire and SendComplete
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Items in no-split buffers are acquired (by SendAcquire) in strict FIFO order and must be sent to
+the buffer by SendComplete for the data to be accessible by the consumer. Multiple items can be
+sent or acquired without calling SendComplete, and the items do not necessarily need to be
+completed in the order they were acquired. However the receiving of data items must occur in FIFO
+order, therefore not calling SendComplete the earliest acquired item will prevent the subsequent
+items from being received.
+
+The following diagrams illustrate what will happen when SendAcquire/SendComplete don't happen in
+the same order. At the beginning, there is already an data item of 16 bytes sent to the ring
+buffer. Then SendAcquire is called to acquire space of 20, 8, 24 bytes on the ring buffer.
+
+.. packetdiag:: ../../../_static/diagrams/ring-buffer/ring_buffer_send_acquire_complete.diag
+    :caption: SendAcquire/SendComplete items in no-split ring buffers
+    :align: center
+
+After that, we fill (use) the buffers, and send them to the ring buffer by SendComplete in the
+order of 8, 24, 20. When 8 bytes and 24 bytes data are sent, the consumer still can only get the
+16 bytes data item. Due to the usage if 20 bytes item is not complete, it's not available, nor
+the following data items.
+
+When the 20 bytes item is finally completed, all the 3 data items can be received now, in the
+order of 20, 8, 24 bytes, right after the 16 bytes item existing in the buffer at the beginning.
+
+Allow-split/byte buffers do not allow using SendAcquire/SendComplete since acquired buffers are
+required to be complete (not wrapped).
+
 
 Wrap around
 ^^^^^^^^^^^
@@ -207,15 +281,15 @@ with **56 bytes of free space that wraps around** and a sent item of **28 bytes*
 
 No-split buffers will **only store an item in continuous free space and will not split
 an item under any circumstances**. When the free space at the tail of the buffer is insufficient
-to completely store the item and its header, the free space at the tail will be **marked as dummy data**. 
+to completely store the item and its header, the free space at the tail will be **marked as dummy data**.
 The buffer will then wrap around and store the item in the free space at the head of the buffer.
 
-Referring to the diagram above, the 16 bytes of free space at the tail of the buffer is 
+Referring to the diagram above, the 16 bytes of free space at the tail of the buffer is
 insufficient to store the 28 byte item. Therefore the 16 bytes is marked as dummy data and
 the item is written to the free space at the head of the buffer instead.
 
 .. packetdiag:: ../../../_static/diagrams/ring-buffer/ring_buffer_wrap_allow_split.diag
-    :caption: Wrap around in allow-split buffers 
+    :caption: Wrap around in allow-split buffers
     :align: center
 
 Allow-split buffers will attempt to **split the item into two parts** when the free space at the tail
@@ -232,17 +306,17 @@ as two parts to the buffer.
     parts of a split item in a thread safe manner.
 
 .. packetdiag:: ../../../_static/diagrams/ring-buffer/ring_buffer_wrap_byte_buf.diag
-    :caption: Wrap around in byte buffers 
+    :caption: Wrap around in byte buffers
     :align: center
 
-Byte buffers will **store as much data as possible into the free space at the tail of buffer**. The remaining 
+Byte buffers will **store as much data as possible into the free space at the tail of buffer**. The remaining
 data will then be stored in the free space at the head of the buffer. No overhead is incurred when wrapping
 around in byte buffers.
 
 Referring to the diagram above, the 16 bytes of free space at the tail of the buffer is insufficient to
 completely store the 28 bytes of data. Therefore the 16 bytes of free space is filled with data, and the
 remaining 12 bytes are written to the free space at the head of the buffer. The buffer now contains
-data in two separate continuous parts, and each part continuous will be treated as a separate item by the 
+data in two separate continuous parts, and each part continuous will be treated as a separate item by the
 byte buffer.
 
 Retrieving/Returning
@@ -255,10 +329,10 @@ byte buffers in retrieving and returning data.
     :caption: Retrieving/Returning items in no-split/allow-split ring buffers
     :align: center
 
-Items in no-split/allow-split buffers are **retrieved in strict FIFO order** and **must be returned** 
-for the occupied space to be freed. Multiple items can be retrieved before returning, and the items 
+Items in no-split/allow-split buffers are **retrieved in strict FIFO order** and **must be returned**
+for the occupied space to be freed. Multiple items can be retrieved before returning, and the items
 do not necessarily need to be returned in the order they were retrieved. However the freeing of space
-must occur in FIFO order, therefore not returning the earliest retrieved item will prevent the space 
+must occur in FIFO order, therefore not returning the earliest retrieved item will prevent the space
 of subsequent items from being freed.
 
 Referring to the diagram above, the **16, 20, and 8 byte items are retrieved in FIFO order**. However the items
@@ -270,13 +344,13 @@ are not returned in they were retrieved (20, 8, 16). As such, the space is not f
     :align: center
 
 Byte buffers **do not allow multiple retrievals before returning** (every retrieval must be followed by a return
-before another retrieval is permitted). When using :cpp:func:`xRingbufferReceive` or 
+before another retrieval is permitted). When using :cpp:func:`xRingbufferReceive` or
 :cpp:func:`xRingbufferReceiveFromISR`, all continuous stored data will be retrieved. :cpp:func:`xRingbufferReceiveUpTo`
 or :cpp:func:`xRingbufferReceiveUpToFromISR` can be used to restrict the maximum number of bytes retrieved. Since
 every retrieval must be followed by a return, the space will be freed as soon as the data is returned.
 
-Referring to the diagram above, the 38 bytes of continuous stored data at the tail of the buffer is retrieved, 
-returned, and freed. The next call to :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR` 
+Referring to the diagram above, the 38 bytes of continuous stored data at the tail of the buffer is retrieved,
+returned, and freed. The next call to :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR`
 then wraps around and does the same to the 30 bytes of continuous stored data at the head of the buffer.
 
 Ring Buffers with Queue Sets
@@ -331,7 +405,7 @@ The :cpp:func:`xRingbufferCreateStatic` can be used to create ring buffers with 
 - The ring buffer's data structure of type :cpp:type:`StaticRingbuffer_t`
 - The ring buffer's storage area of size ``xBufferSize``. Note that ``xBufferSize`` must be 32-bit aligned for no-split/allow-split buffers.
 
-The manner in which these blocks are allocated will depend on the users requirements (e.g. all blocks being statically declared, or dynamically allocated with specific capabilities such as external RAM). 
+The manner in which these blocks are allocated will depend on the users requirements (e.g. all blocks being statically declared, or dynamically allocated with specific capabilities such as external RAM).
 
 .. note::
     The :ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig` for statically allocated ring buffers to be available.
@@ -375,20 +449,20 @@ Ring Buffer API Reference
 .. note::
     Ideally, ring buffers can be used with multiple tasks in an SMP fashion where the **highest
     priority task will always be serviced first.** However due to the usage of binary semaphores
-    in the ring buffer's underlying implementation, priority inversion may occur under very 
+    in the ring buffer's underlying implementation, priority inversion may occur under very
     specific circumstances.
 
-    The ring buffer governs sending by a binary semaphore which is given whenever space is 
+    The ring buffer governs sending by a binary semaphore which is given whenever space is
     freed on the ring buffer. The highest priority task waiting to send will repeatedly take
     the semaphore until sufficient free space becomes available or until it times out. Ideally
     this should prevent any lower priority tasks from being serviced as the semaphore should
     always be given to the highest priority task.
 
     However in between iterations of acquiring the semaphore, there is a **gap in the critical
-    section** which may permit another task (on the other core or with an even higher priority) to 
+    section** which may permit another task (on the other core or with an even higher priority) to
     free some space on the ring buffer and as a result give the semaphore. Therefore the semaphore
     will be given before the highest priority task can re-acquire the semaphore. This will result
-    in the **semaphore being acquired by the second highest priority task** waiting to send, hence 
+    in the **semaphore being acquired by the second highest priority task** waiting to send, hence
     causing priority inversion.
 
     This side effect will not affect ring buffer performance drastically given if the number
@@ -403,9 +477,9 @@ Ring Buffer API Reference
 Hooks
 -----
 
-FreeRTOS consists of Idle Hooks and Tick Hooks which allow for application 
-specific functionality to be added to the Idle Task and Tick Interrupt. 
-ESP-IDF provides its own Idle and Tick Hook API in addition to the hooks 
+FreeRTOS consists of Idle Hooks and Tick Hooks which allow for application
+specific functionality to be added to the Idle Task and Tick Interrupt.
+ESP-IDF provides its own Idle and Tick Hook API in addition to the hooks
 provided by Vanilla FreeRTOS. ESP-IDF hooks have the added benefit of
 being run time configurable and asymmetrical.
 
@@ -416,9 +490,9 @@ Idle and Tick Hooks in vanilla FreeRTOS are implemented by the user
 defining the functions ``vApplicationIdleHook()`` and  ``vApplicationTickHook()``
 respectively somewhere in the application. Vanilla FreeRTOS will run the user
 defined Idle Hook and Tick Hook on every iteration of the Idle Task and Tick
-Interrupt respectively. 
+Interrupt respectively.
 
-Vanilla FreeRTOS hooks are referred to as **Legacy Hooks** in ESP-IDF FreeRTOS. 
+Vanilla FreeRTOS hooks are referred to as **Legacy Hooks** in ESP-IDF FreeRTOS.
 To enable legacy hooks, :ref:`CONFIG_FREERTOS_LEGACY_HOOKS` should be enabled
 in :doc:`project configuration menu </api-reference/kconfig>`.
 
@@ -433,9 +507,9 @@ Due to the the dual core nature of the ESP32, it may be necessary for some
 applications to have separate hooks for each core. Furthermore, it may
 be necessary for the Idle Tasks or Tick Interrupts to execute multiple hooks
 that are configurable at run time. Therefore the ESP-IDF provides it's own hooks
-API in addition to the legacy hooks provided by Vanilla FreeRTOS. 
+API in addition to the legacy hooks provided by Vanilla FreeRTOS.
 
-The ESP-IDF tick/idle hooks are registered at run time, and each tick/idle hook 
+The ESP-IDF tick/idle hooks are registered at run time, and each tick/idle hook
 must be registered to a specific CPU. When the idle task runs/tick Interrupt
 occurs on a particular CPU, the CPU will run each of its registered idle/tick hooks
 in turn.
