@@ -15,8 +15,8 @@ import os
 import re
 
 from tiny_test_fw import TinyFW, Utility
-from IDFApp import IDFApp, Example, UT
-from IDFDUT import IDFDUT
+from .IDFApp import IDFApp, Example, UT  # noqa: export all Apps for users
+from .IDFDUT import IDFDUT  # noqa: export DUTs for users
 
 
 def format_case_id(chip, case_name):

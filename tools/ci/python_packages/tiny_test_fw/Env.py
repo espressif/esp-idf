@@ -19,7 +19,7 @@ import functools
 
 import netifaces
 
-import EnvConfig
+from . import EnvConfig
 
 
 def _synced(func):

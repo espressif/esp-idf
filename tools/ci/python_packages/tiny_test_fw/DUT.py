@@ -53,7 +53,7 @@ except ImportError:
 import serial
 from serial.tools import list_ports
 
-import Utility
+from . import Utility
 
 
 class ExpectTimeout(ValueError):
