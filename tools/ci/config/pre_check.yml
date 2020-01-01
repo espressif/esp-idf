@@ -42,8 +42,7 @@ check_python_style:
       - flake8_output.txt
     expire_in: 1 week
   script:
-    # run it only under Python 3 (it is very slow under Python 2)
-    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.4.8 python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh python -m flake8 --config=$IDF_PATH/.flake8 --output-file=flake8_output.txt --tee --benchmark $IDF_PATH
 
 check_kconfigs:
   extends: .check_job_template_with_filter
