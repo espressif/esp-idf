@@ -248,7 +248,7 @@ class IDFApp(App.BaseApp):
         flash_settings["encrypt"] = "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT" in sdkconfig_dict
 
         # make file offsets into integers, make paths absolute
-        flash_files = [(int(offs, 0), os.path.join(self.binary_path, path.strip())) for (offs, path) in flash_files]
+        flash_files = [(int(offs, 0), os.path.join(self.binary_path, file_path.strip())) for (offs, file_path) in flash_files]
 
         return flash_files, flash_settings
 

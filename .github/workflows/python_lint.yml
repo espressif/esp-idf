@@ -4,7 +4,7 @@ name: Python CI
 on:
   pull_request:
     paths:
-      - "*.py"
+      - "**.py"
       - "requirements.txt"
 
 jobs:
