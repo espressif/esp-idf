@@ -25,12 +25,14 @@
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "driver/sdmmc_host.h"
 #include "driver/sdmmc_defs.h"
 #include "sdmmc_cmd.h"
 #include "ff.h"
-#include "../test_fatfs_common.h"
+#include "test_fatfs_common.h"
+#include "soc/soc_caps.h"
 
+#ifdef SOC_SDMMC_HOST_SUPPORTED
+#include "driver/sdmmc_host.h"
 
 static void test_setup(void)
 {
@@ -294,3 +296,5 @@ TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-
     test_teardown();
 }
 #endif // CONFIG_FATFS_API_ENCODING_UTF_8 && CONFIG_FATFS_CODEPAGE == 936
+
+#endif

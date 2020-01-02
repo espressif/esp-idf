@@ -11,6 +11,8 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+
 static __thread int tl_test_var1;
 static __thread uint8_t tl_test_var2 = 55;
 static __thread uint16_t tl_test_var3 = 44;
@@ -86,7 +88,7 @@ static void task_test_tls(void *arg)
     }
 }
 
-TEST_CASE_ESP32("TLS test", "[freertos]")
+TEST_CASE("TLS test", "[freertos]")
 {
     const size_t stack_size = 3072;
     StackType_t s_stack[stack_size]; /* with 8KB test task stack (default) this test still has ~3KB headroom */
@@ -107,4 +109,5 @@ TEST_CASE_ESP32("TLS test", "[freertos]")
     }
     vTaskDelay(10); /* Make sure idle task can clean up s_task, before it goes out of scope */
 }
+#endif
 

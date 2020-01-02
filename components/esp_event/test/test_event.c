@@ -288,39 +288,6 @@ static void test_teardown(void)
 #define TIMER_SCALE           (TIMER_BASE_CLK / TIMER_DIVIDER)  // convert counter value to seconds
 #define TIMER_INTERVAL0_SEC   (2.0) // sample test interval for the first timer
 
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
-static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
-{
-    SemaphoreHandle_t *sem = (SemaphoreHandle_t*) event_handler_arg;
-    // Event data is just the address value (maybe have been truncated due to casting).
-    int *data = (int*) event_data;
-    TEST_ASSERT_EQUAL(*data, (int) (*sem));
-    xSemaphoreGive(*sem);
-}
-
-void IRAM_ATTR test_event_on_timer_alarm(void* para)
-{
-    /* Retrieve the interrupt status and the counter value
-       from the timer that reported the interrupt */
-    uint64_t timer_counter_value =
-        timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
-    timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
-    timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
-
-    int data = (int) para;
-    // Posting events with data more than 4 bytes should fail.
-    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, 5, NULL));
-    // This should succeedd, as data is int-sized. The handler for the event checks that the passed event data
-    // is correct.
-    BaseType_t task_unblocked;
-    TEST_ASSERT_EQUAL(ESP_OK, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, sizeof(data), &task_unblocked));
-    if (task_unblocked == pdTRUE) {
-        portYIELD_FROM_ISR();
-    }
-}
-#endif //CONFIG_ESP_EVENT_POST_FROM_ISR
-
 TEST_CASE("can create and delete event loops", "[event]")
 {
     /* this test aims to verify that:
@@ -492,8 +459,8 @@ TEST_CASE("handler can unregister itself", "[event]")
 
     /*
      * s_test_base1, ev1 = 1
-     * s_test_base1, ev2 = 2 
-     * s_test_base2, ev1 = 11 
+     * s_test_base1, ev2 = 2
+     * s_test_base2, ev1 = 11
      * s_test_base2, ev2 = 12
      */
     int expected_unregistered = 0;
@@ -1247,6 +1214,37 @@ TEST_CASE("can properly prepare event data posted to loop", "[event]")
     TEST_TEARDOWN();
 }
 
+static void test_handler_post_from_isr(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    SemaphoreHandle_t *sem = (SemaphoreHandle_t*) event_handler_arg;
+    // Event data is just the address value (maybe have been truncated due to casting).
+    int *data = (int*) event_data;
+    TEST_ASSERT_EQUAL(*data, (int) (*sem));
+    xSemaphoreGive(*sem);
+}
+
+void IRAM_ATTR test_event_on_timer_alarm(void* para)
+{
+    /* Retrieve the interrupt status and the counter value
+       from the timer that reported the interrupt */
+    uint64_t timer_counter_value =
+        timer_group_get_counter_value_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_group_clr_intr_status_in_isr(TIMER_GROUP_0, TIMER_0);
+    timer_counter_value += (uint64_t) (TIMER_INTERVAL0_SEC * TIMER_SCALE);
+    timer_group_set_alarm_value_in_isr(TIMER_GROUP_0, TIMER_0, timer_counter_value);
+
+    int data = (int) para;
+    // Posting events with data more than 4 bytes should fail.
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, 5, NULL));
+    // This should succeedd, as data is int-sized. The handler for the event checks that the passed event data
+    // is correct.
+    BaseType_t task_unblocked;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_isr_post(s_test_base1, TEST_EVENT_BASE1_EV1, &data, sizeof(data), &task_unblocked));
+    if (task_unblocked == pdTRUE) {
+        portYIELD_FROM_ISR();
+    }
+}
+
 TEST_CASE("can post events from interrupt handler", "[event]")
 {
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
@@ -1282,4 +1280,5 @@ TEST_CASE("can post events from interrupt handler", "[event]")
 
     TEST_TEARDOWN();
 }
+
 #endif // CONFIG_ESP_EVENT_POST_FROM_ISR

@@ -29,6 +29,9 @@
 // Wait timeout for uart driver
 #define PACKET_READ_TICS    (1000 / portTICK_RATE_MS)
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+//No runners
+
 // The table for fast CRC16 calculation
 static const uint8_t crc_hi[] = {
     0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41,
@@ -279,3 +282,5 @@ static void rs485_master(void)
  * RS485 bus driver hardware to be connected to boards.
 */
 TEST_CASE_MULTIPLE_DEVICES("RS485 half duplex uart multiple devices test.", "[driver_RS485][test_env=UT_T2_RS485]", rs485_master, rs485_slave);
+
+#endif

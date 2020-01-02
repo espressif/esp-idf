@@ -55,6 +55,8 @@ static gpio_config_t init_io(gpio_num_t num)
     return io_conf;
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+//No runners
 // edge interrupt event
 static void gpio_isr_edge_handler(void* arg)
 {
@@ -86,6 +88,7 @@ static void gpio_isr_level_handler2(void* arg)
     ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", GPIO_OUTPUT_IO, gpio_get_level(GPIO_OUTPUT_IO), level_intr_times);
     ets_printf("GPIO[%d] intr, val: %d, level_intr_times = %d\n", gpio_num, gpio_get_level(gpio_num), level_intr_times);
 }
+#endif
 
 #if !WAKE_UP_IGNORE
 // get result of waking up or not
@@ -180,6 +183,8 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+//No runners
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
     edge_intr_times = 0;  // set it as 0 prepare to test
@@ -370,6 +375,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_add(GPIO_INPUT_IO, gpio_isr_level_handler, (void*) GPIO_INPUT_IO) == ESP_ERR_INVALID_STATE);
     TEST_ASSERT(gpio_isr_handler_remove(GPIO_INPUT_IO) == ESP_ERR_INVALID_STATE);
 }
+#endif //DISABLED_FOR_TARGETS(ESP32S2BETA)
 
 // ESP32 Connect GPIO18 with GPIO19, ESP32-S2 Connect GPIO18 with GPIO21
 // use multimeter to test the voltage, so it is ignored in CI
@@ -457,6 +463,8 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), 0, "gpio_pullup_dis error, it can pull up");
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+//No runners
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
     //ESP32 connect io18 and io19, ESP32-S2 connect io18 and io21
@@ -529,6 +537,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test","[gpio][te
     }
     TEST_ASSERT_INT32_WITHIN(size, esp_get_free_heap_size(), 100);
 }
+#endif //DISABLED_FOR_TARGETS(ESP32S2BETA)
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored
@@ -717,7 +726,7 @@ static void gpio_isr_handler(void* arg)
     param->isr_cnt++;
 }
 
-/** The previous GPIO interrupt service routine polls the interrupt raw status register to find the GPIO that triggered the interrupt. 
+/** The previous GPIO interrupt service routine polls the interrupt raw status register to find the GPIO that triggered the interrupt.
  * But this will incorrectly handle the interrupt disabled GPIOs, because the raw interrupt status register can still be set when
  * the trigger signal arrives, even if the interrupt is disabled.
  * First on the core 0:

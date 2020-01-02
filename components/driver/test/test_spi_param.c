@@ -212,7 +212,7 @@ static void local_test_loop(const void* arg1, void* arg2)
 //TODO: esp32s2beta has better timing performance
 static spitest_param_set_t timing_pgroup[] = {
 //signals are not fed to peripherals through iomux if the functions are not selected to iomux
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
     {   .pset_name = "FULL_DUP, MASTER IOMUX",
         .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
         .master_limit = SPI_MASTER_FREQ_13M,
@@ -239,7 +239,7 @@ static spitest_param_set_t timing_pgroup[] = {
         .slave_tv_ns = TV_INT_CONNECT_GPIO,
     },
 //signals are not fed to peripherals through iomux if the functions are not selected to iomux
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
     {   .pset_name = "MISO_DUP, MASTER IOMUX",
         .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
         .master_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
@@ -266,7 +266,7 @@ static spitest_param_set_t timing_pgroup[] = {
         .slave_tv_ns = TV_INT_CONNECT_GPIO,
     },
 //signals are not fed to peripherals through iomux if the functions are not selected to iomux
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
     {   .pset_name = "MOSI_DUP, MASTER IOMUX",
         .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
         //.freq_limit = ESP_SPI_SLAVE_MAX_READ_FREQ, //ESP_SPI_SLAVE_MAX_FREQ_SYNC,
@@ -496,7 +496,7 @@ static spitest_param_set_t mode_pgroup[] = {
 };
 TEST_SPI_LOCAL(MODE, mode_pgroup)
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test By Master & Slave (2 boards)
@@ -533,13 +533,9 @@ static const ptest_func_t slave_test_func = {
     .def_param = spitest_def_param,
 };
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define TEST_SPI_MASTER_SLAVE_ESP32(name, param_group, extra_tag) \
+#define TEST_SPI_MASTER_SLAVE(name, param_group, extra_tag) \
     PARAM_GROUP_DECLARE(name, param_group) \
     TEST_MASTER_SLAVE(name, param_group, "[spi_ms][test_env=Example_SPI_Multi_device][timeout=120]"#extra_tag, &master_test_func, &slave_test_func)
-#else
-#define TEST_SPI_MASTER_SLAVE_ESP32(name, param_group, extra_tag)
-#endif
 
 /************ Master Code ***********************************************/
 static void test_master_init(void** arg)
@@ -861,7 +857,7 @@ static spitest_param_set_t timing_conf[] = {
         .slave_tv_ns = TV_WITH_ESP_SLAVE_GPIO,
     },
 };
-TEST_SPI_MASTER_SLAVE_ESP32(TIMING, timing_conf, "")
+TEST_SPI_MASTER_SLAVE(TIMING, timing_conf, "")
 
 /************ Mode Test ***********************************************/
 #define FREQ_LIMIT_MODE SPI_MASTER_FREQ_16M
@@ -1048,6 +1044,6 @@ spitest_param_set_t mode_conf[] = {
         .slave_dma_chan = 1,
     },
 };
-TEST_SPI_MASTER_SLAVE_ESP32(MODE, mode_conf, "")
+TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
 
 #endif

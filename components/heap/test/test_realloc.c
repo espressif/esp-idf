@@ -34,7 +34,7 @@ TEST_CASE("realloc shrink buffer with EXEC CAPS", "[heap]")
 
     //y needs to fall in a compatible memory area of IRAM:
     TEST_ASSERT(esp_ptr_executable(y));
-    
+
     free(y);
 }
 
@@ -55,7 +55,7 @@ TEST_CASE("realloc move data to a new heap type", "[heap]")
     TEST_ASSERT_EQUAL_HEX32_ARRAY(buf, b, 64/sizeof(uint32_t));
 
     // Move data back to DRAM
-    char *c = heap_caps_realloc(b, 48, MALLOC_CAP_8BIT);    
+    char *c = heap_caps_realloc(b, 48, MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(c);
     TEST_ASSERT_NOT_EQUAL(b, c);
     TEST_ASSERT(heap_caps_check_integrity(MALLOC_CAP_INVALID, true));
