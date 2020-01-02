@@ -807,12 +807,12 @@ bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
 {
     if (client->response->is_chunked) {
         if (!client->is_chunk_complete) {
-            ESP_LOGI(TAG, "Chunks were not completely read");
+            ESP_LOGD(TAG, "Chunks were not completely read");
             return false;
         }
     } else {
         if (client->response->data_process != client->response->content_length) {
-            ESP_LOGI(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
+            ESP_LOGD(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
             return false;
         }
     }
