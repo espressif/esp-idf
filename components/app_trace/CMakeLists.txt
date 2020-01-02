@@ -39,4 +39,4 @@ target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-profile-arcs" "-fno-test-c
 
 # Force app_trace to also appear later than gcov in link line
 idf_component_get_property(app_trace app_trace COMPONENT_LIB)
-target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${app_trace}> gcov $<TARGET_FILE:${app_trace}> ${LIBC})
+target_link_libraries(${COMPONENT_LIB} INTERFACE $<TARGET_FILE:${app_trace}> gcov $<TARGET_FILE:${app_trace}> c)
