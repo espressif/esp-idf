@@ -280,11 +280,9 @@ void set_xpd_sar(bool en)
     }
 
     s_wifi_adc_xpd_flag = en;
-#if !CONFIG_IDF_TARGET_ESP32C3
     if (en) {
         adc_power_acquire();
     } else {
         adc_power_release();
     }
-#endif
 }
