@@ -294,14 +294,17 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         switch (err) {
             case HTTPD_404_NOT_FOUND:
                 ESP_LOGW(TAG, LOG_FMT("URI '%s' not found"), req->uri);
-                return httpd_req_handle_err(req, HTTPD_404_NOT_FOUND);
+                httpd_resp_send_err(req, HTTPD_404_NOT_FOUND);
+//                return httpd_resp_send_err(req, HTTPD_404_NOT_FOUND);
             case HTTPD_405_METHOD_NOT_ALLOWED:
-                ESP_LOGW(TAG, LOG_FMT("Method '%d' not allowed for URI '%s'"),
-                         req->method, req->uri);
-                return httpd_req_handle_err(req, HTTPD_405_METHOD_NOT_ALLOWED);
+                ESP_LOGW(TAG, LOG_FMT("Method '%d' not allowed for URI '%s'"), req->method, req->uri);
+                httpd_resp_send_err(req, HTTPD_405_METHOD_NOT_ALLOWED);
+//                return httpd_resp_send_err(req, HTTPD_405_METHOD_NOT_ALLOWED);
             default:
-                return ESP_FAIL;
+            	break;
+//                return ESP_FAIL;
         }
+        return ESP_FAIL;
     }
 
     /* Attach user context data (passed during URI registration) into request */
@@ -313,5 +316,6 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         ESP_LOGW(TAG, LOG_FMT("uri handler execution failed"));
         return ESP_FAIL;
     }
+    httpd_sess_trigger_close(req->handle,httpd_req_to_sockfd(req));
     return ESP_OK;
 }
