@@ -2,3 +2,5 @@
 // During the refactoring and multichip support development process, we
 // seperate these information into periph_caps.h for each peripheral and
 // include them here.
+
+#pragma once

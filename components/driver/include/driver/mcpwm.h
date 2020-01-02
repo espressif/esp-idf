@@ -15,18 +15,18 @@
 #ifndef _DRIVER_MCPWM_H_
 #define _DRIVER_MCPWM_H_
 
+#include "soc/soc_caps.h"
+#ifndef SOC_MCPWM_SUPPORTED
+#error MCPWM is not supported in this chip target
+#endif
+
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "driver/gpio.h"
 #include "driver/periph_ctrl.h"
 #include "esp_intr_alloc.h"
-#include "soc/soc_caps.h"
 #include "hal/mcpwm_types.h"
 #include "soc/mcpwm_caps.h"
-
-#ifndef SOC_MCPWM_SUPPORTED
-#error MCPWM is not supported in this chip target
-#endif
 
 #ifdef __cplusplus
 extern "C" {
