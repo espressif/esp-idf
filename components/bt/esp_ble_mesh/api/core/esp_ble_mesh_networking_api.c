@@ -279,10 +279,10 @@ const char *esp_ble_mesh_provisioner_get_node_name(uint16_t index)
     return bt_mesh_provisioner_get_node_name(index);
 }
 
-int esp_ble_mesh_provisioner_get_node_index(const char *name)
+uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name)
 {
     if (!name || (strlen(name) > ESP_BLE_MESH_NODE_NAME_MAX_LEN)) {
-        return -EINVAL;
+        return ESP_BLE_MESH_INVALID_NODE_INDEX;
     }
 
     return bt_mesh_provisioner_get_node_index(name);
@@ -377,6 +377,28 @@ esp_err_t esp_ble_mesh_provisioner_add_local_net_key(const uint8_t net_key[16], 
 const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx)
 {
     return bt_mesh_provisioner_local_net_key_get(net_idx);
+}
+
+esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t addr, uint8_t *data, uint16_t length)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(addr) || !data || length <= 14) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA;
+
+    arg.store_node_comp_data.addr = addr;
+    arg.store_node_comp_data.length = length;
+    arg.store_node_comp_data.data = data;
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), btc_ble_mesh_prov_arg_deep_copy)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 #endif /* CONFIG_BLE_MESH_PROVISIONER */

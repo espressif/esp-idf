@@ -1794,15 +1794,6 @@ if BLE_MESH
             ability to act as a proxy between a Mesh GATT Client and a Mesh network.
             This option should be enabled if a node is going to be a Proxy Server.
 
-    config BLE_MESH_GATT_PROXY_CLIENT
-        bool "BLE Mesh GATT Proxy Client"
-        select BLE_MESH_PROXY
-        default n
-        help
-            This option enables support for Mesh GATT Proxy Client. The Proxy Client
-            can use the GATT bearer to send mesh messages to a node that supports the
-            advertising bearer.
-
     config BLE_MESH_NODE_ID_TIMEOUT
         int "Node Identity advertising timeout"
         depends on BLE_MESH_GATT_PROXY_SERVER
@@ -1817,20 +1808,25 @@ if BLE_MESH
             node, it will start to advertise using Node Identity during the time
             set by this option. And after that, Network ID will be advertised.
 
-    if BLE_MESH_PROXY
+    config BLE_MESH_PROXY_FILTER_SIZE
+        int "Maximum number of filter entries per Proxy Client"
+        depends on BLE_MESH_GATT_PROXY_SERVER
+        default 4
+        range 1 32767
+        help
+            This option specifies how many Proxy Filter entries the local node supports.
+            The entries of Proxy filter (whitelist or blacklist) are used to store a
+            list of addresses which can be used to decide which messages will be forwarded
+            to the Proxy Client by the Proxy Server.
 
-        config BLE_MESH_PROXY_FILTER_SIZE
-            int "Maximum number of filter entries per Proxy Client"
-            default 1
-            default 3 if BLE_MESH_GATT_PROXY_SERVER
-            range 1 32767
-            help
-                This option specifies how many Proxy Filter entries the local node supports.
-                The entries of Proxy filter (whitelist or blacklist) are used to store a
-                list of addresses which can be used to decide which messages will be forwarded
-                to the Proxy Client by the Proxy Server.
-
-    endif # BLE_MESH_PROXY
+    config BLE_MESH_GATT_PROXY_CLIENT
+        bool "BLE Mesh GATT Proxy Client"
+        select BLE_MESH_PROXY
+        default n
+        help
+            This option enables support for Mesh GATT Proxy Client. The Proxy Client
+            can use the GATT bearer to send mesh messages to a node that supports the
+            advertising bearer.
 
     config BLE_MESH_NET_BUF_POOL_USAGE
         bool "BLE Mesh net buffer pool usage tracking"
@@ -1854,6 +1850,29 @@ if BLE_MESH
             AppKey, etc.
 
     if BLE_MESH_SETTINGS
+
+        config BLE_MESH_SPECIFIC_PARTITION
+            bool "Use a specific NVS partition for BLE Mesh"
+            default n
+            help
+                When selected, the mesh stack will use a specified NVS partition instead of
+                default NVS partition. Note that the specified partition must be registered
+                with NVS using nvs_flash_init_partition() API, and the partition must exists
+                in the csv file.
+                When Provisioner needs to store a large amount of nodes' information in the
+                flash (e.g. more than 20), this option is recommended to be enabled.
+
+        if BLE_MESH_SPECIFIC_PARTITION
+
+            config BLE_MESH_PARTITION_NAME
+                string "Name of the NVS partition for BLE Mesh"
+                default "BLE-MESH"
+                help
+                    This value defines the name of the specified NVS partition used by the
+                    mesh stack.
+
+        endif # BLE_MESH_SPECIFIC_PARTITION
+
         config BLE_MESH_STORE_TIMEOUT
             int "Delay (in seconds) before storing anything persistently"
             range 0 1000000

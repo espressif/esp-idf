@@ -56,6 +56,7 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP,
     BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
     BTC_BLE_MESH_ACT_LPN_ENABLE,
@@ -170,6 +171,11 @@ typedef union {
         uint8_t net_key[16];
         uint16_t net_idx;
     } add_local_net_key;
+    struct ble_mesh_provisioner_store_node_comp_data_args {
+        uint16_t addr;
+        uint16_t length;
+        uint8_t *data;
+    } store_node_comp_data;
     struct ble_mesh_set_fast_prov_info_args {
         uint16_t unicast_min;
         uint16_t unicast_max;

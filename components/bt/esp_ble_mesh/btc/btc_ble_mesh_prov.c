@@ -114,6 +114,15 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
             LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
+        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA", __func__);
+        dst->store_node_comp_data.data = osi_calloc(src->store_node_comp_data.length);
+        if (dst->store_node_comp_data.data) {
+            memcpy(dst->store_node_comp_data.data, src->store_node_comp_data.data, src->store_node_comp_data.length);
+        } else {
+            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+        }
+        break;
     default:
         LOG_DEBUG("%s, Unknown deep copy act %d", __func__, msg->act);
         break;
@@ -140,6 +149,11 @@ static void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR:
         if (arg->proxy_client_remove_filter_addr.addr) {
             osi_free(arg->proxy_client_remove_filter_addr.addr);
+        }
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
+        if (arg->store_node_comp_data.data) {
+            osi_free(arg->store_node_comp_data.data);
         }
         break;
     default:
@@ -1576,6 +1590,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         act = ESP_BLE_MESH_NODE_PROV_INPUT_STRING_COMP_EVT;
         param.node_prov_input_str_comp.err_code = bt_mesh_input_string(arg->input_string.string);
         break;
+#endif /* CONFIG_BLE_MESH_NODE */
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
     case BTC_BLE_MESH_ACT_SET_DEVICE_NAME:
         act = ESP_BLE_MESH_NODE_SET_UNPROV_DEV_NAME_COMP_EVT;
         param.node_set_unprov_dev_name_comp.err_code = bt_mesh_set_device_name(arg->set_device_name.name);
@@ -1594,7 +1611,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.node_proxy_gatt_disable_comp.err_code = bt_mesh_proxy_gatt_disable();
         break;
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_SERVER */
-#endif /* CONFIG_BLE_MESH_NODE */
+#endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #if CONFIG_BLE_MESH_PROVISIONER
     case BTC_BLE_MESH_ACT_PROVISIONER_READ_OOB_PUB_KEY:
         act = ESP_BLE_MESH_PROVISIONER_PROV_READ_OOB_PUB_KEY_COMP_EVT;
@@ -1693,13 +1710,9 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_SET_NODE_NAME:
         act = ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT;
+        param.provisioner_set_node_name_comp.node_index = arg->set_node_name.index;
         param.provisioner_set_node_name_comp.err_code =
             bt_mesh_provisioner_set_node_name(arg->set_node_name.index, arg->set_node_name.name);
-        if (param.provisioner_set_node_name_comp.err_code) {
-            param.provisioner_set_node_name_comp.node_index = ESP_BLE_MESH_INVALID_NODE_INDEX;
-        } else {
-            param.provisioner_set_node_name_comp.node_index = arg->set_node_name.index;
-        }
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY: {
         const u8_t *app_key = NULL;
@@ -1708,18 +1721,18 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             app_key = arg->add_local_app_key.app_key;
         }
         act = ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT;
+        param.provisioner_add_app_key_comp.app_idx = arg->add_local_app_key.app_idx;
         param.provisioner_add_app_key_comp.err_code =
             bt_mesh_provisioner_local_app_key_add(app_key, arg->add_local_app_key.net_idx,
                     &arg->add_local_app_key.app_idx);
-        if (param.provisioner_add_app_key_comp.err_code) {
-            param.provisioner_add_app_key_comp.app_idx = ESP_BLE_MESH_KEY_UNUSED;
-        } else {
-            param.provisioner_add_app_key_comp.app_idx = arg->add_local_app_key.app_idx;
-        }
         break;
     }
     case BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP:
         act = ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT;
+        param.provisioner_bind_app_key_to_model_comp.element_addr = arg->local_mod_app_bind.elem_addr;
+        param.provisioner_bind_app_key_to_model_comp.app_idx = arg->local_mod_app_bind.app_idx;
+        param.provisioner_bind_app_key_to_model_comp.company_id = arg->local_mod_app_bind.cid;
+        param.provisioner_bind_app_key_to_model_comp.model_id = arg->local_mod_app_bind.model_id;
         param.provisioner_bind_app_key_to_model_comp.err_code =
             bt_mesh_provisioner_bind_local_model_app_idx(arg->local_mod_app_bind.elem_addr,
                     arg->local_mod_app_bind.model_id,
@@ -1733,15 +1746,18 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             net_key = arg->add_local_net_key.net_key;
         }
         act = ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT;
+        param.provisioner_add_net_key_comp.net_idx = arg->add_local_net_key.net_idx;
         param.provisioner_add_net_key_comp.err_code =
             bt_mesh_provisioner_local_net_key_add(net_key, &arg->add_local_net_key.net_idx);
-        if (param.provisioner_add_net_key_comp.err_code) {
-            param.provisioner_add_net_key_comp.net_idx = ESP_BLE_MESH_KEY_UNUSED;
-        } else {
-            param.provisioner_add_net_key_comp.net_idx = arg->add_local_net_key.net_idx;
-        }
         break;
     }
+    case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
+        act = ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT;
+        param.provisioner_store_node_comp_data_comp.addr = arg->store_node_comp_data.addr;
+        param.provisioner_store_node_comp_data_comp.err_code =
+            bt_mesh_provisioner_store_node_comp_data(arg->store_node_comp_data.addr,
+                arg->store_node_comp_data.data, arg->store_node_comp_data.length);
+        break;
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_FAST_PROV
     case BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO:

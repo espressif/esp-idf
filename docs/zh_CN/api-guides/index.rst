@@ -30,6 +30,7 @@ API 指南
    RF Calibration <RF_calibration>
    WiFi Driver <wifi>
    ESP-MESH <mesh>
+   ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    BluFi <blufi>
    External SPI-connected RAM <external-ram>
    链接脚本生成机制 <linker-script-generation>

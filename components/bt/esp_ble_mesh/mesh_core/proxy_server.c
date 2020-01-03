@@ -26,7 +26,8 @@
 #include "access.h"
 #include "proxy_server.h"
 
-#if CONFIG_BLE_MESH_NODE
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
 
 /* Not support enabling Proxy Client and Proxy Server simultaneously */
 _Static_assert(!(IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)),
@@ -83,7 +84,7 @@ static bool prov_fast_adv;
 
 static struct bt_mesh_proxy_client {
     struct bt_mesh_conn *conn;
-#if CONFIG_BLE_MESH_PROXY
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     u16_t filter[CONFIG_BLE_MESH_PROXY_FILTER_SIZE];
 #endif
     enum __packed {
@@ -592,7 +593,7 @@ static void proxy_connected(struct bt_mesh_conn *conn, u8_t err)
 
     client->conn = bt_mesh_conn_ref(conn);
     client->filter_type = NONE;
-#if CONFIG_BLE_MESH_PROXY
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     (void)memset(client->filter, 0, sizeof(client->filter));
 #endif
     net_buf_simple_reset(&client->buf);
@@ -1463,4 +1464,4 @@ int bt_mesh_proxy_deinit(void)
     return 0;
 }
 
-#endif /* CONFIG_BLE_MESH_NODE */
+#endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */

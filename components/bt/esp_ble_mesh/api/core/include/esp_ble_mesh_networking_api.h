@@ -207,10 +207,10 @@ const char *esp_ble_mesh_provisioner_get_node_name(uint16_t index);
  *
  * @param[in]    name: Name of the node (end by '\0').
  *
- * @return       Node index on success, or (negative) error code from errno.h on failure.
+ * @return       Node index on success, or an invalid value (0xFFFF) on failure.
  *
  */
-int esp_ble_mesh_provisioner_get_node_index(const char *name);
+uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
 
 /**
  * @brief        This function is called to get the provisioned node information.
@@ -221,6 +221,18 @@ int esp_ble_mesh_provisioner_get_node_index(const char *name);
  *
  */
 esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[16]);
+
+/**
+ * @brief        This function is called to store the Composition Data of the node.
+ *
+ * @param[in]    addr:   Element address of the node
+ * @param[in]    data:   Pointer of Composition Data
+ * @param[in]    length: Length of Composition Data
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t addr, uint8_t *data, uint16_t length);
 
 /**
  * @brief         This function is called to set the app key for the local BLE Mesh stack.

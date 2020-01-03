@@ -18,6 +18,7 @@
 #include <errno.h>
 
 #include "nvs.h"
+#include "nvs_flash.h"
 #include "sdkconfig.h"
 
 #include "mesh_util.h"
@@ -65,12 +66,25 @@ static struct settings_context settings_ctx[] = {
 
 void bt_mesh_settings_foreach(void)
 {
-    int i, err;
+    size_t i;
+    int err;
 
-    for (i = 0; i < ARRAY_SIZE(settings_ctx); i++) {
+#if CONFIG_BLE_MESH_SPECIFIC_PARTITION
+    err = nvs_flash_init_partition(CONFIG_BLE_MESH_PARTITION_NAME);
+    if (err != ESP_OK) {
+        BT_ERR("Failed to init mesh partition, name %s, err %d", CONFIG_BLE_MESH_PARTITION_NAME, err);
+        return;
+    }
+#endif
+
+    for (i = 0U; i < ARRAY_SIZE(settings_ctx); i++) {
         struct settings_context *ctx = &settings_ctx[i];
 
+#if CONFIG_BLE_MESH_SPECIFIC_PARTITION
+        err = nvs_open_from_partition(CONFIG_BLE_MESH_PARTITION_NAME, ctx->nvs_name, NVS_READWRITE, &ctx->handle);
+#else
         err = nvs_open(ctx->nvs_name, NVS_READWRITE, &ctx->handle);
+#endif
         if (err != ESP_OK) {
             BT_ERR("%s, Open nvs failed, name %s, err %d", __func__, ctx->nvs_name, err);
             continue;
@@ -95,9 +109,9 @@ void bt_mesh_settings_foreach(void)
 
 void bt_mesh_settings_deforeach(void)
 {
-    int i;
+    size_t i;
 
-    for (i = 0; i < ARRAY_SIZE(settings_ctx); i++) {
+    for (i = 0U; i < ARRAY_SIZE(settings_ctx); i++) {
         struct settings_context *ctx = &settings_ctx[i];
 
         if (ctx->settings_deinit && ctx->settings_deinit()) {
@@ -107,6 +121,10 @@ void bt_mesh_settings_deforeach(void)
 
         nvs_close(ctx->handle);
     }
+
+#if CONFIG_BLE_MESH_SPECIFIC_PARTITION
+    nvs_flash_deinit_partition(CONFIG_BLE_MESH_PARTITION_NAME);
+#endif
 }
 
 /* API used to get BLE Mesh related nvs handle */

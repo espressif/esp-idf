@@ -64,7 +64,10 @@ static BT_OCTET32 bt_mesh_private_key = {
 static bt_mesh_scan_cb_t *bt_mesh_scan_dev_found_cb;
 static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
 
-#if defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+/* Using UUID with a fixed pattern 0x96 for BLE Mesh GATT Proxy Server */
+#define BLE_MESH_GATTS_APP_UUID_BYTE     0x96
 /* the gatt database list to save the attribute table */
 static sys_slist_t bt_mesh_gatts_db;
 
@@ -78,10 +81,11 @@ static future_t *future_mesh;
 
 /* Static Functions */
 static struct bt_mesh_gatt_attr *bt_mesh_gatts_find_attr_by_handle(u16_t handle);
-#endif /* defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE */
+#endif
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+/* Using UUID with a fixed pattern 0x97 for BLE Mesh GATT Proxy Client */
 #define BLE_MESH_GATTC_APP_UUID_BYTE     0x97
 static struct gattc_prov_info {
     /* Service to be found depends on the type of adv pkt received */
@@ -472,7 +476,8 @@ int bt_le_scan_stop(void)
     return 0;
 }
 
-#if defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
 static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 {
     switch (event) {
@@ -1049,7 +1054,7 @@ int bt_mesh_gatts_set_local_device_name(const char *name)
     return 0;
 }
 
-#endif /* defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE */
+#endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
@@ -1682,31 +1687,32 @@ void bt_mesh_conn_unref(struct bt_mesh_conn *conn)
 
 void bt_mesh_gatt_init(void)
 {
-    tBT_UUID app_uuid = {LEN_UUID_128, {0}};
-
     BTA_GATT_SetLocalMTU(GATT_DEF_BLE_MTU_SIZE);
 
-#if CONFIG_BLE_MESH_NODE
-    /* Fill our internal UUID with a fixed pattern 0x96 for the ble mesh */
-    memset(&app_uuid.uu.uuid128, 0x96, LEN_UUID_128);
-    BTA_GATTS_AppRegister(&app_uuid, bt_mesh_bta_gatts_cb);
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    tBT_UUID gatts_app_uuid = {LEN_UUID_128, {0}};
+    memset(&gatts_app_uuid.uu.uuid128, BLE_MESH_GATTS_APP_UUID_BYTE, LEN_UUID_128);
+    BTA_GATTS_AppRegister(&gatts_app_uuid, bt_mesh_bta_gatts_cb);
 #endif
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    tBT_UUID gattc_app_uuid = {LEN_UUID_128, {0}};
     for (int i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
         bt_mesh_gattc_info[i].conn.handle = 0xFFFF;
         bt_mesh_gattc_info[i].mtu = GATT_DEF_BLE_MTU_SIZE; /* Default MTU_SIZE 23 */
         bt_mesh_gattc_info[i].wr_desc_done = false;
     }
-    memset(&app_uuid.uu.uuid128, BLE_MESH_GATTC_APP_UUID_BYTE, LEN_UUID_128);
-    BTA_GATTC_AppRegister(&app_uuid, bt_mesh_bta_gattc_cb);
+    memset(&gattc_app_uuid.uu.uuid128, BLE_MESH_GATTC_APP_UUID_BYTE, LEN_UUID_128);
+    BTA_GATTC_AppRegister(&gattc_app_uuid, bt_mesh_bta_gattc_cb);
 #endif
 }
 
 void bt_mesh_gatt_deinit(void)
 {
-#if CONFIG_BLE_MESH_NODE
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
     BTA_GATTS_AppDeregister(bt_mesh_gatts_if);
 #endif
 

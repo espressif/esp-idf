@@ -20,21 +20,29 @@
 #include "mesh_access.h"
 #include "net.h"
 
-#define NODE_NAME_SIZE  31
+#define BLE_MESH_INVALID_NODE_INDEX     0xFFFF
+#define BLE_MESH_NODE_NAME_SIZE         31
 
 /* Each node information stored by provisioner */
 struct bt_mesh_node {
-    char  name[NODE_NAME_SIZE]; /* Node name */
+    /* Device information */
     u8_t  addr[6];      /* Node device address */
     u8_t  addr_type;    /* Node device address type */
-    u8_t  dev_uuid[16]; /* Device UUID */
+    u8_t  dev_uuid[16]; /* Node Device UUID */
     u16_t oob_info;     /* Node OOB information */
+
+    /* Provisioning information */
     u16_t unicast_addr; /* Node unicast address */
     u8_t  element_num;  /* Node element number */
     u16_t net_idx;      /* Node NetKey Index */
     u8_t  flags;        /* Node key refresh flag and iv update flag */
     u32_t iv_index;     /* Node IV Index */
     u8_t  dev_key[16];  /* Node device key */
+
+    /* Additional information */
+    char  name[BLE_MESH_NODE_NAME_SIZE]; /* Node name */
+    u16_t comp_length;  /* Length of Composition Data */
+    u8_t *comp_data;    /* Value of Composition Data */
 } __packed;
 
 /* The following APIs are for key init, node provision & node reset. */
@@ -76,6 +84,10 @@ struct bt_mesh_app_key *bt_mesh_provisioner_app_key_find(u16_t app_idx);
 
 int bt_mesh_provisioner_restore_node_info(struct bt_mesh_node *node, bool prov);
 
+int bt_mesh_provisioner_restore_node_name(u16_t addr, const char *name);
+
+int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16_t length, bool prov);
+
 /* The following APIs are for provisioner application use. */
 
 int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node);
@@ -86,7 +98,9 @@ int bt_mesh_provisioner_set_node_name(u16_t index, const char *name);
 
 const char *bt_mesh_provisioner_get_node_name(u16_t index);
 
-int bt_mesh_provisioner_get_node_index(const char *name);
+u16_t bt_mesh_provisioner_get_node_index(const char *name);
+
+int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t length);
 
 int bt_mesh_provisioner_local_app_key_add(const u8_t app_key[16], u16_t net_idx, u16_t *app_idx);
 

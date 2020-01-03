@@ -192,59 +192,46 @@ static void adv_thread(void *p)
     while (1) {
         *buf = NULL;
 #if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
-#if CONFIG_BLE_MESH_NODE
-        if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-            xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+        xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
+        while (!(*buf)) {
+            s32_t timeout;
+            BT_DBG("Mesh Proxy Advertising start");
+            timeout = bt_mesh_proxy_adv_start();
+            BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
+            xQueueReceive(xBleMeshQueue, &msg, timeout);
+            BT_DBG("Mesh Proxy Advertising stop");
+            bt_mesh_proxy_adv_stop();
+        }
+#else
+        xQueueReceive(xBleMeshQueue, &msg, portMAX_DELAY);
+#endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
+#else /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+        handle = xQueueSelectFromSet(xBleMeshQueueSet, K_NO_WAIT);
+        if (handle) {
+            if (uxQueueMessagesWaiting(xBleMeshQueue)) {
+                xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
+            } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
+                xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
+            }
+        } else {
             while (!(*buf)) {
                 s32_t timeout;
                 BT_DBG("Mesh Proxy Advertising start");
                 timeout = bt_mesh_proxy_adv_start();
                 BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
-                xQueueReceive(xBleMeshQueue, &msg, timeout);
+                handle = xQueueSelectFromSet(xBleMeshQueueSet, timeout);
                 BT_DBG("Mesh Proxy Advertising stop");
                 bt_mesh_proxy_adv_stop();
-            }
-        } else {
-            xQueueReceive(xBleMeshQueue, &msg, portMAX_DELAY);
-        }
-#else
-        xQueueReceive(xBleMeshQueue, &msg, portMAX_DELAY);
-#endif
-#else /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
-#if CONFIG_BLE_MESH_NODE
-        if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-            handle = xQueueSelectFromSet(xBleMeshQueueSet, K_NO_WAIT);
-            if (handle) {
-                if (uxQueueMessagesWaiting(xBleMeshQueue)) {
-                    xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
-                } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-                    xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
-                }
-            } else {
-                while (!(*buf)) {
-                    s32_t timeout;
-                    BT_DBG("Mesh Proxy Advertising start");
-                    timeout = bt_mesh_proxy_adv_start();
-                    BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
-                    handle = xQueueSelectFromSet(xBleMeshQueueSet, timeout);
-                    BT_DBG("Mesh Proxy Advertising stop");
-                    bt_mesh_proxy_adv_stop();
-                    if (handle) {
-                        if (uxQueueMessagesWaiting(xBleMeshQueue)) {
-                            xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
-                        } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-                            xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
-                        }
+                if (handle) {
+                    if (uxQueueMessagesWaiting(xBleMeshQueue)) {
+                        xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
+                    } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
+                        xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
                     }
-                }
-            }
-        } else {
-            handle = xQueueSelectFromSet(xBleMeshQueueSet, portMAX_DELAY);
-            if (handle) {
-                if (uxQueueMessagesWaiting(xBleMeshQueue)) {
-                    xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
-                } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-                    xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
                 }
             }
         }
@@ -257,7 +244,7 @@ static void adv_thread(void *p)
                 xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
             }
         }
-#endif
+#endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #endif /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
         if (*buf == NULL) {
@@ -435,10 +422,8 @@ static bool ignore_relay_packet(u32_t timestamp)
     u32_t now = k_uptime_get_32();
     u32_t interval;
 
-    if (now > timestamp) {
+    if (now >= timestamp) {
         interval = now - timestamp;
-    } else if (now == timestamp) {
-        interval = BLE_MESH_MAX_TIME_INTERVAL;
     } else {
         interval = BLE_MESH_MAX_TIME_INTERVAL - (timestamp - now) + 1;
     }

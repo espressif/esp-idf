@@ -786,20 +786,26 @@ bool bt_mesh_proxy_client_beacon_send(struct bt_mesh_subnet *sub)
 
     /* NULL means we send Secure Network Beacon on all subnets */
     if (!sub) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+#if CONFIG_BLE_MESH_NODE
+        if (bt_mesh_is_provisioned()) {
             for (i = 0U; i < ARRAY_SIZE(bt_mesh.sub); i++) {
                 if (bt_mesh.sub[i].net_idx != BLE_MESH_KEY_UNUSED) {
                     send = bt_mesh_proxy_client_beacon_send(&bt_mesh.sub[i]);
                 }
             }
-        } else if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+            return send;
+        }
+#endif /* CONFIG_BLE_MESH_NODE */
+#if CONFIG_BLE_MESH_PROVISIONER
+        if (bt_mesh_is_provisioner_en()) {
             for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
                 if (bt_mesh.p_sub[i] && bt_mesh.p_sub[i]->net_idx != BLE_MESH_KEY_UNUSED) {
                     send = bt_mesh_proxy_client_beacon_send(bt_mesh.p_sub[i]);
                 }
             }
+            return send;
         }
-
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
         return send;
     }
 

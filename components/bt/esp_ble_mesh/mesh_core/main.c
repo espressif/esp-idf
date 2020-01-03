@@ -326,7 +326,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
         return err;
     }
 
-    bt_mesh_gatt_init();
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
+        bt_mesh_gatt_init();
+    }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
         if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
@@ -358,7 +360,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     bt_mesh_adv_init();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+        if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
             bt_mesh_proxy_init();
         }
         if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
@@ -501,11 +505,15 @@ int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
         bt_mesh_provisioner_pb_gatt_enable();
     }
 
+    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
+
+    if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
+        bt_mesh_beacon_enable();
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
         bt_mesh_friend_init();
     }
-
-    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
 
     return 0;
 }
@@ -583,12 +591,17 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
         bt_mesh_atomic_and(bt_mesh.flags, ~(BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV)));
 
         /* When Provisioner is disabled, the device role indicated by bt_mesh.flags
-         * will not be cleared.
+         * will not be cleared, because when Provisioner is restarted after disabled,
+         * its previous information can be recovered from flash properly.
          */
-    }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-        bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
+        if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
+            bt_mesh_beacon_disable();
+        }
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+            bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
+        }
     }
 
     return 0;

@@ -55,6 +55,20 @@ INPUT = \
     ../../components/bt/bluedroid/api/include/api/esp_hf_client_api.h \
      ## NimBLE related Bluetooth APIs
     ../../components/nimble/esp-hci/include/esp_nimble_hci.h \
+    ## ESP BLE Mesh APIs
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_networking_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_provisioning_api.h \
+    ../../components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_proxy_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_config_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_generic_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_health_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_lighting_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_sensor_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/models/include/esp_ble_mesh_time_scene_model_api.h \
+    ../../components/bt/esp_ble_mesh/api/esp_ble_mesh_defs.h \
     ##
     ## Ethernet - API Reference
     ##

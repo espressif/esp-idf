@@ -593,7 +593,7 @@ static bool is_unprov_dev_being_provision(const u8_t uuid[16])
      */
     if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
         BT_WARN("Device has already been provisioned");
-        return -EALREADY;
+        return true;
     }
 #endif
 
@@ -972,7 +972,7 @@ int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t ad
         return -ENOTSUP;
     }
 
-    if (addr == NULL || addr_type > BLE_MESH_ADDR_RANDOM) {
+    if (bearer == BLE_MESH_PROV_GATT && (addr == NULL || addr_type > BLE_MESH_ADDR_RANDOM)) {
         BT_ERR("%s, Invalid device address info", __func__);
         return -EINVAL;
     }
@@ -1002,8 +1002,10 @@ int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t ad
         return err;
     }
 
-    dev_addr.type = addr_type;
-    memcpy(dev_addr.val, addr, BLE_MESH_ADDR_LEN);
+    if (addr) {
+        dev_addr.type = addr_type;
+        memcpy(dev_addr.val, addr, BLE_MESH_ADDR_LEN);
+    }
 
     if (bearer == BLE_MESH_PROV_ADV) {
 #if defined(CONFIG_BLE_MESH_PB_ADV)
@@ -1813,7 +1815,7 @@ static void prov_capabilities(const u8_t idx, const u8_t *data)
     u8_t  auth_method, auth_action, auth_size;
 
     element_num = data[0];
-    BT_INFO("Elements: %u", element_num);
+    BT_INFO("Elements:          0x%02x", element_num);
     if (!element_num) {
         BT_ERR("%s, Invalid element number", __func__);
         goto fail;
@@ -1821,7 +1823,7 @@ static void prov_capabilities(const u8_t idx, const u8_t *data)
     link[idx].element_num = element_num;
 
     algorithms = sys_get_be16(&data[1]);
-    BT_INFO("Algorithms:        %u", algorithms);
+    BT_INFO("Algorithms:        0x%04x", algorithms);
     if (algorithms != BIT(PROV_ALG_P256)) {
         BT_ERR("%s, Invalid algorithms", __func__);
         goto fail;
@@ -1845,7 +1847,7 @@ static void prov_capabilities(const u8_t idx, const u8_t *data)
     static_oob = (prov_ctx.static_oob_len ? static_oob : 0x00);
 
     output_size = data[5];
-    BT_INFO("Output OOB Size:   %u", output_size);
+    BT_INFO("Output OOB Size:   0x%02x", output_size);
     if (output_size > 0x08) {
         BT_ERR("%s, Invalid Output OOB size", __func__);
         goto fail;
@@ -1867,14 +1869,14 @@ static void prov_capabilities(const u8_t idx, const u8_t *data)
     }
 
     input_size = data[8];
-    BT_INFO("Input OOB Size: %u", input_size);
+    BT_INFO("Input OOB Size:    0x%02x", input_size);
     if (input_size > 0x08) {
         BT_ERR("%s, Invalid Input OOB size", __func__);
         goto fail;
     }
 
     input_action = sys_get_be16(&data[9]);
-    BT_INFO("Input OOB Action: 0x%04x", input_action);
+    BT_INFO("Input OOB Action:  0x%04x", input_action);
     if (input_action > 0x0f) {
         BT_ERR("%s, Invalid Input OOB action", __func__);
         goto fail;

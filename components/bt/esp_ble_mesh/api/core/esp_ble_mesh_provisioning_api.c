@@ -292,7 +292,8 @@ esp_err_t esp_ble_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16],
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (uuid == NULL || addr == NULL || addr_type > ESP_BLE_MESH_ADDR_TYPE_RANDOM ||
+    if (uuid == NULL || (bearer == ESP_BLE_MESH_PROV_GATT && (addr == NULL ||
+        addr_type > ESP_BLE_MESH_ADDR_TYPE_RANDOM)) ||
         (bearer != ESP_BLE_MESH_PROV_ADV && bearer != ESP_BLE_MESH_PROV_GATT) ||
         !ESP_BLE_MESH_ADDR_IS_UNICAST(unicast_addr)) {
         return ESP_ERR_INVALID_ARG;
@@ -305,8 +306,10 @@ esp_err_t esp_ble_mesh_provisioner_prov_device_with_addr(const uint8_t uuid[16],
     msg.act = BTC_BLE_MESH_ACT_PROVISIONER_PROV_DEV_WITH_ADDR;
 
     memcpy(arg.provisioner_prov_dev_with_addr.uuid, uuid, 16);
-    memcpy(arg.provisioner_prov_dev_with_addr.addr, addr, BD_ADDR_LEN);
-    arg.provisioner_prov_dev_with_addr.addr_type = addr_type;
+    if (addr) {
+        memcpy(arg.provisioner_prov_dev_with_addr.addr, addr, BD_ADDR_LEN);
+        arg.provisioner_prov_dev_with_addr.addr_type = addr_type;
+    }
     arg.provisioner_prov_dev_with_addr.bearer = bearer;
     arg.provisioner_prov_dev_with_addr.oob_info = oob_info;
     arg.provisioner_prov_dev_with_addr.unicast_addr = unicast_addr;

@@ -44,6 +44,14 @@
 #define APP_KEY_IDX         0x0000
 #define APP_KEY_OCTET       0x12
 
+#define MSG_1_OCTET(msg, offset) (msg[offset])
+#define MSG_2_OCTET(msg, offset) (msg[offset + 1] << 8 | msg[offset])
+
+static uint16_t primary_addr;
+static uint8_t match[2] = {0xec, 0xa6};
+static uint8_t dev_uuid[16];
+
+/* The following is BLE Mesh tx/rx test related context */
 #define MSG_TIMEOUT         200000      /* msg resend interval */
 #define MSG_INTERVAL        1000000     /* msg send interval */
 #define MSG_MAX_RESEND      3           /* max resend count */
@@ -59,6 +67,7 @@ static uint32_t msg_index;
 static struct {
     uint8_t resend;
     bool acked;
+    int64_t time;
 } __attribute__((packed)) msg_record[MSG_TEST_COUNT];
 /* Used to indicate the transaction number in the current message */
 static uint16_t trans_num;
@@ -66,12 +75,10 @@ static bool retrans_timer_start;
 static void example_start_retransmit_timer(void);
 static void example_start_interval_timer(void);
 
-static SemaphoreHandle_t test_mutex;
+static SemaphoreHandle_t tx_rx_mutex;
 
-static uint8_t match[2] = {0xec, 0xa6};
-static uint8_t dev_uuid[16];
+/* The following is BLE Mesh deinit test flag */
 bool example_deinit_test;
-static uint16_t primary_addr;
 
 typedef struct {
     uint8_t  uuid[16];
@@ -79,9 +86,9 @@ typedef struct {
     uint8_t  elem_num;
     uint8_t  onoff;
     uint8_t  tid;
-} esp_ble_mesh_node_info_t;
+} example_ble_mesh_node_info_t;
 
-static esp_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {
+static example_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {
     [0 ... (CONFIG_BLE_MESH_MAX_PROV_NODES - 1)] = {
         .unicast = ESP_BLE_MESH_ADDR_UNASSIGNED,
         .elem_num = 0,
@@ -89,7 +96,7 @@ static esp_ble_mesh_node_info_t nodes[CONFIG_BLE_MESH_MAX_PROV_NODES] = {
     }
 };
 
-static struct esp_ble_mesh_key {
+static struct example_ble_mesh_key {
     uint16_t net_idx;
     uint16_t app_idx;
     uint8_t  app_key[16];
@@ -202,7 +209,7 @@ static esp_err_t example_ble_mesh_store_node_info(const uint8_t uuid[16], uint16
     return ESP_FAIL;
 }
 
-static esp_ble_mesh_node_info_t *example_ble_mesh_get_node_info(uint16_t unicast)
+static example_ble_mesh_node_info_t *example_ble_mesh_get_node_info(uint16_t unicast)
 {
     size_t i;
 
@@ -221,7 +228,7 @@ static esp_ble_mesh_node_info_t *example_ble_mesh_get_node_info(uint16_t unicast
 }
 
 static esp_err_t example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *common,
-                                                 esp_ble_mesh_node_info_t *node,
+                                                 example_ble_mesh_node_info_t *node,
                                                  esp_ble_mesh_model_t *model, uint32_t opcode)
 {
     if (!common || !node || !model) {
@@ -270,7 +277,7 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
 {
     esp_ble_mesh_client_common_param_t common = {0};
     esp_ble_mesh_cfg_client_get_state_t get = {0};
-    esp_ble_mesh_node_info_t *node = NULL;
+    example_ble_mesh_node_info_t *node = NULL;
     char name[10];
     int err;
 
@@ -433,13 +440,51 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
     }
 }
 
+static void example_ble_mesh_parse_node_comp_data(const uint8_t *data, uint16_t length)
+{
+    uint16_t cid, pid, vid, crpl, feat;
+    uint16_t loc, model_id, company_id;
+    uint8_t nums, numv;
+    uint16_t offset;
+    size_t i;
+
+    cid = MSG_2_OCTET(data, 0);
+    pid = MSG_2_OCTET(data, 2);
+    vid = MSG_2_OCTET(data, 4);
+    crpl = MSG_2_OCTET(data, 6);
+    feat = MSG_2_OCTET(data, 8);
+    offset = 10;
+
+    ESP_LOGW(TAG, "***************** Composition Data Start *****************");
+    ESP_LOGI(TAG, "* CID 0x%04x, PID 0x%04x, VID 0x%04x, CRPL 0x%04x, Features 0x%04x *", cid, pid, vid, crpl, feat);
+    for (; offset < length; ) {
+        loc = MSG_2_OCTET(data, offset);
+        nums = MSG_1_OCTET(data, offset + 2);
+        numv = MSG_1_OCTET(data, offset + 3);
+        offset += 4;
+        ESP_LOGI(TAG, "* Loc 0x%04x, NumS 0x%02x, NumV 0x%02x *", loc, nums, numv);
+        for (i = 0; i < nums; i++) {
+            model_id = MSG_2_OCTET(data, offset);
+            ESP_LOGI(TAG, "* SIG Model ID 0x%04x *", model_id);
+            offset += 2;
+        }
+        for (i = 0; i < numv; i++) {
+            company_id = MSG_2_OCTET(data, offset);
+            model_id = MSG_2_OCTET(data, offset + 2);
+            ESP_LOGI(TAG, "* Vendor Model ID 0x%04x, Company ID 0x%04x *", model_id, company_id);
+            offset += 4;
+        }
+    }
+    ESP_LOGW(TAG, "****************** Composition Data End ******************");
+}
+
 static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t event,
                                               esp_ble_mesh_cfg_client_cb_param_t *param)
 {
     esp_ble_mesh_client_common_param_t common = {0};
     esp_ble_mesh_cfg_client_set_state_t set = {0};
     esp_ble_mesh_cfg_client_get_state_t get = {0};
-    esp_ble_mesh_node_info_t *node = NULL;
+    example_ble_mesh_node_info_t *node = NULL;
     esp_err_t err;
 
     if (param->error_code) {
@@ -458,6 +503,11 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
         if (param->params->opcode == ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET) {
             ESP_LOGI(TAG, "composition data %s", bt_hex(param->status_cb.comp_data_status.composition_data->data,
                 param->status_cb.comp_data_status.composition_data->len));
+            example_ble_mesh_parse_node_comp_data(param->status_cb.comp_data_status.composition_data->data,
+                param->status_cb.comp_data_status.composition_data->len);
+            esp_ble_mesh_provisioner_store_node_comp_data(param->params->ctx.addr,
+                param->status_cb.comp_data_status.composition_data->data,
+                param->status_cb.comp_data_status.composition_data->len);
             example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD);
             set.app_key_add.net_idx = prov_key.net_idx;
             set.app_key_add.app_idx = prov_key.app_idx;
@@ -508,8 +558,8 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
             example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
             set.model_app_bind.element_addr = node->unicast;
             set.model_app_bind.model_app_idx = prov_key.app_idx;
-            set.model_app_bind.model_id = ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV;
-            set.model_app_bind.company_id = CID_NVAL;
+            set.model_app_bind.model_id = ESP_BLE_MESH_VND_MODEL_ID_TEST_SRV;
+            set.model_app_bind.company_id = CID_ESP;
             err = esp_ble_mesh_config_client_set_state(&common, &set);
             if (err) {
                 ESP_LOGE(TAG, "%s: Config Model App Bind failed", __func__);
@@ -524,14 +574,26 @@ static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t
     }
 }
 
-static void example_test_lock(void)
+static void example_tx_rx_mutex_create(void)
 {
-    xSemaphoreTake(test_mutex, portMAX_DELAY);
+    if (!tx_rx_mutex) {
+        tx_rx_mutex = xSemaphoreCreateMutex();
+        assert(tx_rx_mutex);
+    }
 }
 
-static void example_test_unlock(void)
+static void example_tx_rx_lock(void)
 {
-    xSemaphoreGive(test_mutex);
+    if (tx_rx_mutex) {
+        xSemaphoreTake(tx_rx_mutex, portMAX_DELAY);
+    }
+}
+
+static void example_tx_rx_unlock(void)
+{
+    if (tx_rx_mutex) {
+        xSemaphoreGive(tx_rx_mutex);
+    }
 }
 
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
@@ -551,20 +613,23 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             if (msg_record[msg_index].resend == 0) {
                 /* If send successfully in the first time, start the interval timer */
                 example_start_interval_timer();
+                msg_record[msg_index].time = esp_timer_get_time();
             }
         }
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
-        example_test_lock();
+        example_tx_rx_lock();
         if (param->client_recv_publish_msg.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS) {
             uint16_t value = *(uint16_t *)param->client_recv_publish_msg.msg;
             ESP_LOGI(TAG, "%d %d %d", msg_index, value, trans_num);
             if (value == trans_num && retrans_timer_start == true) {
                 msg_record[msg_index].acked = true;
                 esp_timer_stop(retransmit_timer);
+                int64_t time = esp_timer_get_time();
+                msg_record[msg_index].time = time - msg_record[msg_index].time;
             }
         }
-        example_test_unlock();
+        example_tx_rx_unlock();
         break;
     default:
         break;
@@ -584,13 +649,13 @@ static void example_start_interval_timer(void)
 
 static void retransmit_timer_callback(void* arg)
 {
-    example_test_lock();
+    example_tx_rx_lock();
     retrans_timer_start = false;
     if (msg_record[msg_index].acked == false &&
         msg_record[msg_index].resend < MSG_MAX_RESEND) {
         example_ble_mesh_send_test_msg(true);
     }
-    example_test_unlock();
+    example_tx_rx_unlock();
 }
 
 static void interval_timer_callback(void* arg)
@@ -604,6 +669,7 @@ static void interval_timer_callback(void* arg)
          * received corresponding response.
          */
         uint32_t no_ack_count = 0;
+        int64_t total_time = 0;
         size_t i, j, k;
 
         for (i = 0; i < sizeof(compare); i++) {
@@ -619,17 +685,22 @@ static void interval_timer_callback(void* arg)
                         count[k]++;
                         if (msg_record[i * MSG_TEST_UNIT + j].resend == MSG_MAX_RESEND &&
                             msg_record[i * MSG_TEST_UNIT + j].acked == false) {
+                            /* If msg is not acked, use 1s for its time */
+                            msg_record[msg_index].time = 1000000;
                             no_ack_count++;
                         }
+                        break;
                     }
                 }
+                total_time += msg_record[msg_index].time;
             }
-            ESP_LOGW(TAG, "Send messages the %d time", i);
+            ESP_LOGW(TAG, "Send messages the %d time, total %lldus, average %lldus", i, total_time, total_time / MSG_TEST_UNIT);
             ESP_LOGW(TAG, "0-resend %d, 1-resend %d, 2-resend %d, 3-resend %d, 3-resend-no-ack %d",
                 count[0], count[1], count[2], count[3], no_ack_count);
             ESP_LOG_BUFFER_HEX("log", msg_record, MSG_TEST_COUNT * sizeof(msg_record[0]));
             bzero(count, sizeof(count));
             no_ack_count = 0;
+            total_time = 0;
         }
         return;
     }
@@ -638,6 +709,7 @@ static void interval_timer_callback(void* arg)
     ++trans_num;
     msg_record[msg_index].resend = 0;
     msg_record[msg_index].acked = false;
+    msg_record[msg_index].time = 0;
     example_ble_mesh_send_test_msg(false);
 }
 
@@ -766,21 +838,6 @@ void ble_mesh_start(void)
 
     board_init();
 
-#if 0
-    err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        err = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(err);
-
-    err = bluetooth_init();
-    if (err) {
-        ESP_LOGE(TAG, "esp32_bluetooth_init failed (err %d)", err);
-        return;
-    }
-#endif
-
     esp_ble_tx_power_set(ESP_BLE_PWR_TYPE_ADV, ESP_PWR_LVL_P9);
     ESP_LOGI(TAG, "tx power level %d", esp_ble_tx_power_get(ESP_BLE_PWR_TYPE_ADV));
 
@@ -800,10 +857,8 @@ void ble_mesh_start(void)
 
     ESP_ERROR_CHECK(esp_timer_create(&retransmit_timer_args, &retransmit_timer));
     ESP_ERROR_CHECK(esp_timer_create(&interval_timer_args, &interval_timer));
-    test_mutex = xSemaphoreCreateMutex();
-    if (test_mutex == NULL) {
-        ESP_LOGE(TAG, "Failed to create test_mutex");
-    }
+
+    example_tx_rx_mutex_create();
 
     board_led_operation(LED_R, LED_ON);
 }
