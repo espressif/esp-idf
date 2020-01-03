@@ -2,7 +2,7 @@
 #
 # Build will fail if sphinx-warning-log.txt contains any lines
 # which are not in this file. Lines are pre-sanitized by
-# check_doc_warnings.sh to remove formatting, paths and line numbers.
+# `build_docs.py build` to remove formatting, paths and line numbers.
 #
 # Warnings in this file must be in the same overall order as the log file.
 #

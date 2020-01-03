@@ -14,7 +14,6 @@ components/partition_table/test_gen_esp32part_host/gen_esp32part_tests.py
 components/spiffs/spiffsgen.py
 components/ulp/esp32ulp_mapgen.py
 docs/build_docs.py
-docs/check_doc_warnings.sh
 docs/check_lang_folder_sync.sh
 docs/idf_extensions/gen_version_specific_includes.py
 examples/build_system/cmake/idf_as_lib/build-esp32.sh

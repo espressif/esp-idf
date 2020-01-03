@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# coding=utf-8
 #
 # Top-level docs builder
 #
@@ -16,9 +17,27 @@ import os
 import os.path
 import subprocess
 import sys
+import re
+from collections import namedtuple
 
 LANGUAGES = ["en", "zh_CN"]
 TARGETS = ["esp32", "esp32s2"]
+
+SPHINX_WARN_LOG = "sphinx-warning-log.txt"
+SPHINX_SANITIZED_LOG = "sphinx-warning-log-sanitized.txt"
+SPHINX_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "sphinx-known-warnings.txt")
+
+DXG_WARN_LOG = "doxygen-warning-log.txt"
+DXG_SANITIZED_LOG = "doxygen-warning-log-sanitized.txt"
+DXG_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "doxygen-known-warnings.txt")
+
+SANITIZE_FILENAME_REGEX = re.compile("[^:]*/([^/:]*)(:.*)")
+SANITIZE_LINENUM_REGEX = re.compile("([^:]*)(:[0-9]+:)(.*)")
+
+LogMessage = namedtuple("LogMessage", "original_text sanitized_text")
+
+languages = LANGUAGES
+targets = TARGETS
 
 
 def main():
@@ -34,10 +53,9 @@ def main():
     except subprocess.CalledProcessError:
         raise SystemExit(2)  # stdout will already have these errors
 
-    parser = argparse.ArgumentParser(description='build_docs.py: Build IDF docs',
-                                     prog='build_docs.py')
-    parser.add_argument("--language", "-l", choices=LANGUAGES,
-                        required=False)
+    parser = argparse.ArgumentParser(description='build_docs.py: Build IDF docs', prog='build_docs.py')
+
+    parser.add_argument("--language", "-l", choices=LANGUAGES, required=False)
     parser.add_argument("--target", "-t", choices=TARGETS, required=False)
     parser.add_argument("--build-dir", "-b", type=str, default="_build")
     parser.add_argument("--sphinx-parallel-builds", "-p", choices=["auto"] + [str(x) for x in range(8)],
@@ -45,20 +63,42 @@ def main():
     parser.add_argument("--sphinx-parallel-jobs", "-j", choices=["auto"] + [str(x) for x in range(8)],
                         help="Sphinx parallel jobs argument - number of threads for each Sphinx build to use", default="1")
 
+    action_parsers = parser.add_subparsers(dest='action')
+
+    build_parser = action_parsers.add_parser('build', help='Build documentation')
+    build_parser.add_argument("--check-warnings-only", "-w", action='store_true')
+
+    action_parsers.add_parser('linkcheck', help='Check links (a current IDF revision should be uploaded to GitHub)')
+
+    action_parsers.add_parser('gh-linkcheck', help='Checking for hardcoded GitHub links')
+
     args = parser.parse_args()
 
+    global languages
     if args.language is None:
         print("Building all languages")
         languages = LANGUAGES
     else:
         languages = [args.language]
 
+    global targets
     if args.target is None:
         print("Building all targets")
         targets = TARGETS
     else:
         targets = [args.target]
 
+    if args.action == "build" or args.action is None:
+        sys.exit(action_build(args))
+
+    if args.action == "linkcheck":
+        sys.exit(action_linkcheck(args))
+
+    if args.action == "gh-linkcheck":
+        sys.exit(action_gh_linkcheck(args))
+
+
+def parallel_call(args, callback):
     num_sphinx_builds = len(languages) * len(targets)
     num_cpus = multiprocessing.cpu_count()
 
@@ -68,6 +108,8 @@ def main():
     else:
         args.sphinx_parallel_builds = int(args.sphinx_parallel_builds)
 
+    # Force -j1 because sphinx works incorrectly
+    args.sphinx_parallel_jobs = 1
     if args.sphinx_parallel_jobs == "auto":
         # N CPUs per build job, rounded up - (maybe smarter to round down to avoid contention, idk)
         args.sphinx_parallel_jobs = int(math.ceil(num_cpus / args.sphinx_parallel_builds))
@@ -90,21 +132,26 @@ def main():
             entries.append((language, target, build_dir, args.sphinx_parallel_jobs))
 
     print(entries)
-    failures = pool.map(call_build_docs, entries)
-    if any(failures):
-        if len(entries) > 1:
-            print("The following language/target combinations failed to build:")
-            for f in failures:
-                if f is not None:
-                    print("language: %s target: %s" % (f[0], f[1]))
-        raise SystemExit(2)
+    errcodes = pool.map(callback, entries)
+    print(errcodes)
+
+    is_error = False
+    for ret in errcodes:
+        if ret != 0:
+            print("\nThe following language/target combinations failed to build:")
+            is_error = True
+            break
+    if is_error:
+        for ret, entry in zip(errcodes, entries):
+            if ret != 0:
+                print("language: %s, target: %s, errcode: %d" % (entry[0], entry[1], ret))
+        #Don't re-throw real error code from each parallel process
+        return 1
+    else:
+        return 0
 
 
-def call_build_docs(entry):
-    build_docs(*entry)
-
-
-def build_docs(language, target, build_dir, sphinx_parallel_jobs=1):
+def sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername):
     # Note: because this runs in a multiprocessing Process, everything which happens here should be isolated to a single process
     # (ie it doesn't matter if Sphinx is using global variables, as they're it's own copy of the global variables)
 
@@ -113,11 +160,12 @@ def build_docs(language, target, build_dir, sphinx_parallel_jobs=1):
     # this doesn't apply to subprocesses, they write to OS stdout & stderr so no prefix appears
     prefix = "%s/%s: " % (language, target)
 
-    print("Building in build_dir:%s" % (build_dir))
+    print("Building in build_dir: %s" % (build_dir))
     try:
         os.makedirs(build_dir)
     except OSError:
-        pass
+        print("Cannot call Sphinx in an existing directory!")
+        return 1
 
     environ = {}
     environ.update(os.environ)
@@ -125,20 +173,20 @@ def build_docs(language, target, build_dir, sphinx_parallel_jobs=1):
 
     args = [sys.executable, "-u", "-m", "sphinx.cmd.build",
             "-j", str(sphinx_parallel_jobs),
-            "-b", "html",  # TODO: PDFs
+            "-b", buildername,
             "-d", os.path.join(build_dir, "doctrees"),
-            # TODO: support multiple sphinx-warning.log files, somehow
-            "-w", "sphinx-warning.log",
+            "-w", SPHINX_WARN_LOG,
             "-t", target,
             "-D", "idf_target={}".format(target),
             os.path.join(os.path.abspath(os.path.dirname(__file__)), language),  # srcdir for this language
-            os.path.join(build_dir, "html")                    # build directory
+            os.path.join(build_dir, buildername)                    # build directory
             ]
-    cwd = build_dir  # also run sphinx in the build directory
 
-    os.chdir(cwd)
+    saved_cwd = os.getcwd()
+    os.chdir(build_dir)  # also run sphinx in the build directory
     print("Running '%s'" % (" ".join(args)))
 
+    ret = 1
     try:
         # Note: we can't call sphinx.cmd.build.main() here as multiprocessing doesn't est >1 layer deep
         # and sphinx.cmd.build() also does a lot of work in the calling thread, especially for j ==1,
@@ -147,9 +195,153 @@ def build_docs(language, target, build_dir, sphinx_parallel_jobs=1):
         for c in iter(lambda: p.stdout.readline(), ''):
             sys.stdout.write(prefix)
             sys.stdout.write(c)
+        ret = p.wait()
+        assert (ret is not None)
+        sys.stdout.flush()
     except KeyboardInterrupt:  # this seems to be the only way to get Ctrl-C to kill everything?
         p.kill()
-        return
+        os.chdir(saved_cwd)
+        return 130 #FIXME It doesn't return this errorcode, why? Just prints stacktrace
+    os.chdir(saved_cwd)
+    return ret
+
+
+def action_build(args):
+    if not args.check_warnings_only:
+        ret = parallel_call(args, call_build_docs)
+        if ret != 0:
+            return ret
+
+    # check Doxygen warnings:
+    ret = 0
+    for target in targets:
+        for language in languages:
+            build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
+            ret += check_docs(language, target,
+                              log_file=os.path.join(build_dir, DXG_WARN_LOG),
+                              known_warnings_file=DXG_KNOWN_WARNINGS,
+                              out_sanitized_log_file=os.path.join(build_dir, DXG_SANITIZED_LOG))
+    if ret != 0:
+        return ret
+
+    # check Sphinx warnings:
+    ret = 0
+    for target in targets:
+        for language in languages:
+            build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
+            ret += check_docs(language, target,
+                              log_file=os.path.join(build_dir, SPHINX_WARN_LOG),
+                              known_warnings_file=SPHINX_KNOWN_WARNINGS,
+                              out_sanitized_log_file=os.path.join(build_dir, SPHINX_SANITIZED_LOG))
+    if ret != 0:
+        return ret
+
+
+def call_build_docs(entry):
+    return sphinx_call(*entry, buildername="html")
+
+
+def sanitize_line(line):
+    """
+    Clear a log message from insignificant parts
+
+    filter:
+        - only filename, no path at the beginning
+        - no line numbers after the filename
+    """
+
+    line = re.sub(SANITIZE_FILENAME_REGEX, r'\1\2', line)
+    line = re.sub(SANITIZE_LINENUM_REGEX, r'\1:line:\3', line)
+    return line
+
+
+def check_docs(language, target, log_file, known_warnings_file, out_sanitized_log_file):
+    """
+    Check for Documentation warnings in `log_file`: should only contain (fuzzy) matches to `known_warnings_file`
+
+    It prints all unknown messages with `target`/`language` prefix
+    It leaves `out_sanitized_log_file` file for observe and debug
+    """
+
+    # Sanitize all messages
+    all_messages = list()
+    with open(log_file) as f, open(out_sanitized_log_file, 'w') as o:
+        for line in f:
+            sanitized_line = sanitize_line(line)
+            all_messages.append(LogMessage(line, sanitized_line))
+            o.write(sanitized_line)
+
+    known_messages = list()
+    with open(known_warnings_file) as k:
+        for known_line in k:
+            known_messages.append(known_line)
+
+    # Collect all new messages that are not match with the known messages.
+    # The order is an important.
+    new_messages = list()
+    known_idx = 0
+    for msg in all_messages:
+        try:
+            known_idx = known_messages.index(msg.sanitized_text, known_idx)
+        except ValueError:
+            new_messages.append(msg)
+
+    if new_messages:
+        print("\n%s/%s: Build failed due to new/different warnings (%s):\n" % (language, target, log_file))
+        for msg in new_messages:
+            print("%s/%s: %s" % (language, target, msg.original_text), end='')
+        print("\n%s/%s: (Check files %s and %s for full details.)" % (language, target, known_warnings_file, log_file))
+        return 1
+
+    return 0
+
+
+def action_linkcheck(args):
+    return parallel_call(args, call_linkcheck)
+
+
+def call_linkcheck(entry):
+    return sphinx_call(*entry, buildername="linkcheck")
+
+
+GH_LINK_FILTER = ["https://github.com/espressif/esp-idf/tree",
+                  "https://github.com/espressif/esp-idf/blob",
+                  "https://github.com/espressif/esp-idf/raw"]
+
+
+def action_gh_linkcheck(args):
+    print("Checking for hardcoded GitHub links\n")
+
+    find_args = ['find',
+                 os.path.join(os.path.abspath(os.path.dirname(__file__)), ".."),
+                 '-name',
+                 '*.rst']
+    grep_args = ['xargs',
+                 'grep',
+                 r'\|'.join(GH_LINK_FILTER)]
+
+    p1 = subprocess.Popen(find_args, stdout=subprocess.PIPE)
+    p2 = subprocess.Popen(grep_args, stdin=p1.stdout, stdout=subprocess.PIPE)
+    p1.stdout.close()
+    found_gh_links, _ = p2.communicate()
+    if found_gh_links:
+        print(found_gh_links)
+        print("WARNINIG: Some .rst files contain hardcoded Github links.")
+        print("Please check above output and replace links with one of the following:")
+        print("- :idf:`dir` - points to directory inside ESP-IDF")
+        print("- :idf_file:`file` - points to file inside ESP-IDF")
+        print("- :idf_raw:`file` - points to raw view of the file inside ESP-IDF")
+        print("- :component:`dir` - points to directory inside ESP-IDF components dir")
+        print("- :component_file:`file` - points to file inside ESP-IDF components dir")
+        print("- :component_raw:`file` - points to raw view of the file inside ESP-IDF components dir")
+        print("- :example:`dir` - points to directory inside ESP-IDF examples dir")
+        print("- :example_file:`file` - points to file inside ESP-IDF examples dir")
+        print("- :example_raw:`file` - points to raw view of the file inside ESP-IDF examples dir")
+        print("These link types will point to the correct GitHub version automatically")
+        return 1
+    else:
+        print("No hardcoded links found")
+        return 0
 
 
 if __name__ == "__main__":
