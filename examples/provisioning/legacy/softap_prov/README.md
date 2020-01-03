@@ -1,4 +1,6 @@
-# SoftAP + HTTPD based Provisioning Example
+# SoftAP + HTTPD based Provisioning Example (Legacy)
+
+> Note: It is recommended to use the new `wifi_prov_mgr` example which is based on the simpler `wifi_provisioning` APIs. Check this example only if you wish to use lower level provisioning and protocomm APIs and want more control over the handlers.
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
