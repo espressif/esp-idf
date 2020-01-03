@@ -26,6 +26,15 @@ inline static uint32_t get_ccount(void)
     return ccount;
 }
 
+/* Architecture-specific return value of __builtin_return_address which
+ * should be interpreted as an invalid address.
+ */
+#ifdef __XTENSA__
+#define HEAP_ARCH_INVALID_PC  0x40000000
+#else
+#define HEAP_ARCH_INVALID_PC  0x00000000
+#endif
+
 // Caller is 2 stack frames deeper than we care about
 #define STACK_OFFSET  2
 
@@ -33,8 +42,9 @@ inline static uint32_t get_ccount(void)
         if (STACK_DEPTH == N) {                                         \
             return;                                                     \
         }                                                               \
-        callers[N] = __builtin_return_address(N+STACK_OFFSET);                \
-        if (!esp_ptr_executable(callers[N])) {                          \
+        callers[N] = __builtin_return_address(N+STACK_OFFSET);          \
+        if (!esp_ptr_executable(callers[N])                             \
+            || callers[N] == (void*) HEAP_ARCH_INVALID_PC) {            \
             callers[N] = 0;                                             \
             return;                                                     \
         }                                                               \

@@ -155,6 +155,7 @@ inline static bool IRAM_ATTR esp_ptr_executable(const void *p)
     intptr_t ip = (intptr_t) p;
     return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
         || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
+        || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
         || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH);
 }
 
