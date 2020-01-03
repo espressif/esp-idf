@@ -4,7 +4,9 @@
 
 `wifi_prov_mgr` example demonstrates the usage of `wifi_provisioning` manager component for building a provisioning application.
 
-For this example BLE is chosen as the mode of transport, over which the provisioning related communication is to take place, between the device (to be provisioned) and the client (owner of the device).
+For this example, BLE is chosen as the default mode of transport, over which the provisioning related communication is to take place. NimBLE has been configured as the default host, but you can also switch to Bluedroid using menuconfig -> Components -> Bluetooth -> Bluetooth Host.
+
+> Note: Since ESP32-S2 does not support BLE, the SoftAP will be the default mode of transport in that case. Even for ESP32, you can change to SoftAP transport from menuconfig.
 
 In the provisioning process the device is configured as a Wi-Fi station with specified credentials. Once configured, the device will retain the Wi-Fi configuration, until a flash erase is performed.
 
@@ -22,7 +24,7 @@ This example can be used, as it is, for adding a provisioning service to any app
 
 ### Hardware Required
 
-Example should be able to run on any commonly available ESP32 development board.
+Example should be able to run on any commonly available ESP32/ESP32-S2 development board.
 
 ### Application Required
 
@@ -49,7 +51,7 @@ There are various applications, specific to Windows and macOS platform which can
 ```
 idf.py menuconfig
 ```
-
+* Set the BLE/Soft AP transport under "Example Configuration" options. ESP32-S2 will have only SoftAP option.
 * Set serial port under Serial Flasher Options.
 
 ### Build and Flash
@@ -155,6 +157,26 @@ Enter passphrase for MyHomeWiFiAP :
 ==== Wi-Fi connection state  ====
 ++++ WiFi state: connected ++++
 ==== Provisioning was successful ====
+```
+
+### Sending Custom Data
+
+The provisioning manager allows applications to send some custom data during provisioning, which may be
+required for some other operations like connecting to some cloud service. This is achieved by creating
+and registering additional endpoints using the below APIs
+
+```
+wifi_prov_mgr_endpoint_create();
+wifi_prov_mgr_endpoint_register();
+```
+
+In this particular example, we have added an endpoint named "custom-data" which can be tested
+by passing the `--custom_data <MyCustomData>` option to the esp\_prov tool. Following output is
+expected on success:
+
+```
+==== Sending Custom data to esp32 ====
+CustomData response: SUCCESS
 ```
 
 ## Troubleshooting

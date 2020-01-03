@@ -1,0 +1,22 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_PROV_TRANSPORT
+        bool "Provisioning Transport"
+        default EXAMPLE_PROV_TRANSPORT_BLE
+        help
+            Wi-Fi provisioning component offers both, SoftAP and BLE transports. Choose any one.
+
+        config EXAMPLE_PROV_TRANSPORT_BLE
+            bool "BLE"
+            select BT_ENABLED
+            depends on IDF_TARGET_ESP32
+        config EXAMPLE_PROV_TRANSPORT_SOFTAP
+            bool "Soft AP"
+    endchoice
+
+    config EXAMPLE_PROV_TRANSPORT
+        int
+        default 1 if EXAMPLE_PROV_TRANSPORT_BLE
+        default 2 if EXAMPLE_PROV_TRANSPORT_SOFTAP
+
+endmenu

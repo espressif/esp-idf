@@ -3,7 +3,7 @@
 This primarily consists of a single unified example wifi_prov_mgr
 
 * wifi_prov_mgr
-    Abstracts out most of the complexity of Wi-Fi provisioning and allows easy switching between the SoftAP (using HTTP) and BLE transports.
+    Abstracts out most of the complexity of Wi-Fi provisioning and allows easy switching between the SoftAP (using HTTP) and BLE transports. It also demonstrates how applications can register and use additional custom data endpoints.
 
 Provisioning applications are available for various platforms:
 

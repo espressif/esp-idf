@@ -29,7 +29,7 @@ esp_prov.config_throw_except = True
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_wifi_prov_mgr(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("wifi_prov_mgr", "examples/provisioning/manager", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut("wifi_prov_mgr", "examples/provisioning/wifi_prov_mgr", dut_class=ttfw_idf.ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "wifi_prov_mgr.bin")
@@ -77,6 +77,10 @@ def test_examples_wifi_prov_mgr(env, extra_data):
     print("Starting Session")
     if not esp_prov.establish_session(transport, security):
         raise RuntimeError("Failed to start session")
+
+    print("Sending Custom Data")
+    if not esp_prov.custom_data(transport, security, "My Custom Data"):
+        raise RuntimeError("Failed to send custom data")
 
     print("Sending Wifi credential to DUT")
     if not esp_prov.send_wifi_config(transport, security, ap_ssid, ap_password):
