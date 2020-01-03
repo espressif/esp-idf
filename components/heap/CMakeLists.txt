@@ -38,5 +38,12 @@ if(CONFIG_HEAP_TRACING)
     foreach(wrap ${WRAP_FUNCTIONS})
         target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=${wrap}")
     endforeach()
-
 endif()
+
+if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+    idf_build_get_property(build_components BUILD_COMPONENTS)
+    if(freertos IN_LIST build_components)
+        target_compile_options(${COMPONENT_TARGET} PRIVATE "-DMULTI_HEAP_FREERTOS")
+    endif()
+endif()
+
