@@ -302,7 +302,16 @@ begin
     
     Log('CheckWinDefenderAvailable: ' + szHasWD);
     
-    WizardForm.TasksList.ItemEnabled[1] := bHasWD;
-    WizardForm.TasksList.Checked[1] := bHasWD;
+    { WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption. 
+      Please, keep this in mind when making changes }
+    for x:=0 to (WizardForm.TasksList.Items.Count-1) do
+    begin
+      if Pos('Windows Defender',  WizardForm.TasksList.ItemCaption[x]) > 0 then
+      begin
+        WizardForm.TasksList.ItemEnabled[x] := bHasWD;
+        WizardForm.TasksList.Checked[x] := bHasWD;
+        break;
+      end;
+    end;
   end;
 end;
