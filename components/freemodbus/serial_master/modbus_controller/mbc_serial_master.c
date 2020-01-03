@@ -50,6 +50,10 @@ extern BOOL xMBMasterPortSerialTxPoll(void);
 
 static mb_master_interface_t* mbm_interface_ptr = NULL; //&default_interface_inst;
 
+static uint8_t send_param_buffer[PARAM_MAX_SIZE] = { 0 };
+static uint8_t read_param_buffer[PARAM_MAX_SIZE] = { 0 };
+
+
 // Modbus event processing task
 static void modbus_master_task(void *pvParameters)
 {
@@ -459,16 +463,17 @@ static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name,
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
+
+    memset(read_param_buffer, 0, PARAM_MAX_SIZE);
 
     error = mbc_serial_master_set_request(name, MB_PARAM_READ, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
-        error = mbc_serial_master_send_request(&request, &param_buffer[0]);
+        error = mbc_serial_master_send_request(&request, &read_param_buffer[0]);
         if (error == ESP_OK) {
             // If data pointer is NULL then we don't need to set value 
             // (it is still in the cache of cid)
             if (value != NULL) {
-                error = mbc_serial_master_set_param_data((void*)value, (void*)&param_buffer[0],
+                error = mbc_serial_master_set_param_data((void*)value, (void*)&read_param_buffer[0],
                                                     reg_info.param_type, reg_info.param_size);
                 MB_MASTER_CHECK((error == ESP_OK), ESP_ERR_INVALID_STATE, "fail to set parameter data.");
             }
@@ -500,17 +505,18 @@ static esp_err_t mbc_serial_master_set_parameter(uint16_t cid, char* name,
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
+
+    memset(send_param_buffer, 0, PARAM_MAX_SIZE);
 
     error = mbc_serial_master_set_request(name, MB_PARAM_WRITE, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
         // Transfer value of characteristic into parameter buffer
-        error = mbc_serial_master_set_param_data((void*)&param_buffer[0], (void*)value,
+        error = mbc_serial_master_set_param_data((void*)&send_param_buffer[0], (void*)value,
                                                 reg_info.param_type, reg_info.param_size);
         MB_MASTER_CHECK((error == ESP_OK), 
                             ESP_ERR_INVALID_STATE, "failure to set parameter data.");
         // Send request to write characteristic data
-        error = mbc_serial_master_send_request(&request, &param_buffer[0]);
+        error = mbc_serial_master_send_request(&request, &send_param_buffer[0]);
         if (error == ESP_OK) {
             ESP_LOGD(MB_MASTER_TAG, "%s: Good response for set cid(%u) = %s",
                                     __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));

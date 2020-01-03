@@ -42,7 +42,7 @@ typedef enum {
     PARAM_SIZE_FLOAT = 0x04,                /*!< Float size */
     PARAM_SIZE_ASCII = 0x08,                /*!< ASCII size */
     PARAM_SIZE_ASCII24 = 0x18,              /*!< ASCII24 size */
-    PARAM_MAX_SIZE
+    PARAM_MAX_SIZE = 128
 } mb_descr_size_t;
 
 /*!
