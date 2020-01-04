@@ -192,6 +192,15 @@ int bt_mesh_update_binding_state(struct bt_mesh_model *model,
 
         bt_mesh_server_stop_transition(&srv->actual_transition);
         srv->state->lightness_actual = value->light_lightness_actual.lightness;
+        /**
+         * Whenever the Light Lightness Actual state is changed with a non-transactional
+         * message or a completed sequence of transactional messages to a non-zero value,
+         * the value of the Light Lightness Last shall be set to the value of the Light
+         * Lightness Actual.
+         */
+        if (srv->state->lightness_actual) {
+            srv->state->lightness_last = srv->state->lightness_actual;
+        }
         light_lightness_publish(model, BLE_MESH_MODEL_OP_LIGHT_LIGHTNESS_STATUS);
         break;
     }
