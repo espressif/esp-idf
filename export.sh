@@ -57,7 +57,7 @@ function idf_export_main() {
     IDF_ADD_PATHS_EXTRAS="${IDF_PATH}/components/esptool_py/esptool"
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/espcoredump"
     IDF_ADD_PATHS_EXTRAS="${IDF_ADD_PATHS_EXTRAS}:${IDF_PATH}/components/partition_table/"
-    export PATH="${IDF_ADD_PATHS_EXTRAS}:${PATH}"
+    export PATH="${PATH}:${IDF_ADD_PATHS_EXTRAS}"
 
     if [[ -n "$BASH" ]]
     then

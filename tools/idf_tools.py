@@ -1041,7 +1041,7 @@ def action_export(args):
         raise NotImplementedError('unsupported export format {}'.format(args.format))
 
     if paths_to_export:
-        export_vars['PATH'] = path_sep.join(to_shell_specific_paths(paths_to_export) + [old_path])
+        export_vars['PATH'] = path_sep.join([old_path] + to_shell_specific_paths(paths_to_export))
 
     export_statements = export_sep.join([export_format.format(k, v) for k, v in export_vars.items()])
 
