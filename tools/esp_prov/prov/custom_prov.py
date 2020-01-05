@@ -44,3 +44,17 @@ def custom_config_response(security_ctx, response_data):
     cmd_resp.ParseFromString(decrypt)
     print_verbose(security_ctx, "CustomConfig status " + str(cmd_resp.status))
     return cmd_resp.status
+
+
+def custom_data_request(security_ctx, data):
+    # Encrypt the custom data
+    enc_cmd = security_ctx.encrypt_data(data)
+    print_verbose(security_ctx, "Client -> Device (CustomData cmd) " + utils.str_to_hexstr(enc_cmd))
+    return enc_cmd
+
+
+def custom_data_response(security_ctx, response_data):
+    # Decrypt response packet
+    decrypt = security_ctx.decrypt_data(tobytes(response_data))
+    print("CustomData response: " + str(decrypt))
+    return 0

@@ -186,6 +186,16 @@ def custom_config(tp, sec, custom_info, custom_ver):
         return None
 
 
+def custom_data(tp, sec, custom_data):
+    try:
+        message = prov.custom_data_request(sec, custom_data)
+        response = tp.send_data('custom-data', message)
+        return (prov.custom_data_response(sec, response) == 0)
+    except RuntimeError as e:
+        on_except(e)
+        return None
+
+
 def scan_wifi_APs(sel_transport, tp, sec):
     APs = []
     group_channels = 0
@@ -328,6 +338,11 @@ if __name__ == '__main__':
                             'If Wi-Fi scanning is supported by the provisioning service, this need not '
                             'be specified'))
 
+    parser.add_argument("--custom_data", dest='custom_data', type=str, default='',
+                        help=desc_format(
+                            'This is an optional parameter, only intended for use with '
+                            '"examples/provisioning/wifi_prov_mgr_custom_data"'))
+
     parser.add_argument("--custom_config", action="store_true",
                         help=desc_format(
                             'This is an optional parameter, only intended for use with '
@@ -393,6 +408,13 @@ if __name__ == '__main__':
             print("---- Error in custom config ----")
             exit(5)
         print("==== Custom config sent successfully ====")
+
+    if args.custom_data != '':
+        print("\n==== Sending Custom data to esp32 ====")
+        if not custom_data(obj_transport, obj_security, args.custom_data):
+            print("---- Error in custom data ----")
+            exit(5)
+        print("==== Custom data sent successfully ====")
 
     if args.ssid == '':
         if not has_capability(obj_transport, 'wifi_scan'):
