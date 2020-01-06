@@ -41,12 +41,11 @@ static void initialize_console(void)
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .use_ref_tick = true
+        .source_clk = UART_SCLK_REF_TICK,
     };
-    ESP_ERROR_CHECK(uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config));
-
     /* Install UART driver for interrupt-driven reads and writes */
     ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0));
+    ESP_ERROR_CHECK(uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config));
 
     /* Tell VFS to use UART driver */
     esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
@@ -80,7 +79,7 @@ void app_main(void)
     initialize_console();
 
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     /* wait for active network connection */
     ESP_ERROR_CHECK(example_connect());

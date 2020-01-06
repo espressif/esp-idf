@@ -8,10 +8,9 @@ assign_test:
   # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
   dependencies:
     - build_ssc
-    - build_esp_idf_tests_make
     - build_esp_idf_tests_cmake
   variables:
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     EXAMPLE_CONFIG_OUTPUT_PATH: "$CI_PROJECT_DIR/examples/test_configs"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
   artifacts:
@@ -19,6 +18,7 @@ assign_test:
       - components/idf_test/*/CIConfigs
       - components/idf_test/*/TC.sqlite
       - $EXAMPLE_CONFIG_OUTPUT_PATH
+      - build_examples/artifact_index.json
     expire_in: 1 week
   only:
     variables:
@@ -28,9 +28,9 @@ assign_test:
       - $BOT_LABEL_EXAMPLE_TEST
   script:
     # assign example tests
-    - python $TEST_FW_PATH/CIAssignExampleTest.py $IDF_PATH/examples $CI_TARGET_TEST_CONFIG_FILE $EXAMPLE_CONFIG_OUTPUT_PATH
+    - python tools/ci/python_packages/ttfw_idf/CIAssignExampleTest.py $IDF_PATH/examples $CI_TARGET_TEST_CONFIG_FILE $EXAMPLE_CONFIG_OUTPUT_PATH
     # assign unit test cases
-    - python $TEST_FW_PATH/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
+    - python tools/ci/python_packages/ttfw_idf/CIAssignUnitTest.py $UNIT_TEST_CASE_FILE $CI_TARGET_TEST_CONFIG_FILE $IDF_PATH/components/idf_test/unit_test/CIConfigs
     # clone test script to assign tests
     - git clone $TEST_SCRIPT_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT auto_test_script auto_test_script
@@ -56,9 +56,9 @@ update_test_cases:
       - ${CI_PROJECT_DIR}/test-management/*.log
     expire_in: 1 week
   variables:
+    SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
     UNIT_TEST_CASE_FILE: "${CI_PROJECT_DIR}/components/idf_test/unit_test/TestCaseAll.yml"
     BOT_ACCOUNT_CONFIG_FILE: "${CI_PROJECT_DIR}/test-management/Config/Account.local.yml"
-    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     AUTO_TEST_SCRIPT_PATH: "${CI_PROJECT_DIR}/auto_test_script"
     PYTHON_VER: 3
   script:

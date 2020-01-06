@@ -61,9 +61,9 @@ Once installation is complete, configure debugging session following steps below
         If you want to update image in the flash automatically before starting new debug session add the following lines of commands at the beginning of "Initialization Commands" textbox::
 
             mon reset halt
-            mon program_esp32 ${workspace_loc:blink/build/blink.bin} 0x10000 verify
+            mon program_esp ${workspace_loc:blink/build/blink.bin} 0x10000 verify
 
-    For description of ``program_esp32`` command see :ref:`jtag-upload-app-debug`.
+    For description of ``program_esp`` command see :ref:`jtag-upload-app-debug`.
 
 9.  Under "Load Image and Symbols" uncheck "Load image" option. 
 

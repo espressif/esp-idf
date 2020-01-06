@@ -175,6 +175,10 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
     idf_build_get_property(python PYTHON)
 
+    set(prepare_kconfig_files_command
+        ${python} ${idf_path}/tools/kconfig_new/prepare_kconfig_files.py
+        --env-file ${config_env_path})
+
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
         --kconfig ${root_kconfig}
@@ -196,6 +200,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(output_sdkconfig __OUTPUT_SDKCONFIG)
     if(output_sdkconfig)
         execute_process(
+            COMMAND ${prepare_kconfig_files_command})
+        execute_process(
             COMMAND ${confgen_basecommand}
             --output header ${sdkconfig_header}
             --output cmake ${sdkconfig_cmake}
@@ -204,6 +210,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
             --output config ${sdkconfig}
             RESULT_VARIABLE config_result)
     else()
+        execute_process(
+            COMMAND ${prepare_kconfig_files_command})
         execute_process(
             COMMAND ${confgen_basecommand}
             --output header ${sdkconfig_header}
@@ -247,19 +255,24 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
         set(MENUCONFIG_CMD ${mconf})
     else()
-        set(MENUCONFIG_CMD "MENUCONFIG_STYLE=aquatic" ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
+        set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
+        set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
     endif()
 
     # Generate the menuconfig target
     add_custom_target(menuconfig
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
-        COMMAND ${confgen_basecommand} --env "IDF_TARGET=${idf_target}" --output config ${sdkconfig}
+        COMMAND ${prepare_kconfig_files_command}
+        COMMAND ${confgen_basecommand}
+        --env "IDF_TARGET=${idf_target}"
+        --dont-write-deprecated
+        --output config ${sdkconfig}
+        COMMAND ${TERM_CHECK_CMD}
         COMMAND ${CMAKE_COMMAND} -E env
         "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
         "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
         "IDF_CMAKE=y"
-        "IDF_TARGET=${IDF_TARGET}"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
         ${MENUCONFIG_CMD} ${root_kconfig}
@@ -273,6 +286,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     # Custom target to run confserver.py from the build tool
     add_custom_target(confserver
+        COMMAND ${prepare_kconfig_files_command}
         COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
         --env-file ${config_env_path}
         --kconfig ${IDF_PATH}/Kconfig

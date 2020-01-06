@@ -67,7 +67,7 @@ The :ref:`getting started guide <get-started-configure>` contains a brief introd
 
 ``idf.py`` should be run in an ESP-IDF "project" directory, ie one containing a ``CMakeLists.txt`` file. Older style projects with a Makefile will not work with ``idf.py``.
 
-Type ``idf.py --help`` for a full list of commands. Here are a summary of the most useful ones:
+Type ``idf.py --help`` for a list of commands. Here are a summary of the most useful ones:
 
 - ``idf.py menuconfig`` runs the "menuconfig" tool to configure the project.
 - ``idf.py build`` will build the project found in the current directory. This can involve multiple steps:
@@ -83,6 +83,8 @@ Type ``idf.py --help`` for a full list of commands. Here are a summary of the mo
 - ``idf.py monitor`` will display serial output from the ESP32. The ``-p`` option can be used to set the serial port name. Type ``Ctrl-]`` to exit the monitor. See :doc:`tools/idf-monitor` for more details about using the monitor.
 
 Multiple ``idf.py`` commands can be combined into one. For example, ``idf.py -p COM4 clean flash monitor`` will clean the source tree, then build the project and flash it to the ESP32 before running the serial monitor.
+
+For commands that are not known to ``idf.py`` an attempt to execute them as a build system target will be made.
 
 .. note:: The environment variables ``ESPPORT`` and ``ESPBAUD`` can be used to set default values for the ``-p`` and ``-b`` options, respectively. Providing these options on the command line overrides the default.
 
@@ -101,8 +103,8 @@ The order of multiple ``idf.py`` commands on the same invocation is not importan
 
 idf.py options
 ^^^^^^^^^^^^^^
-
-To list all available options, run ``idf.py --help``.
+To list all available root level options, run ``idf.py --help``. To list options that are specific for a subcommand, run ``idf.py <command> --help``, for example ``idf.py monitor --help``.
+Here is a list of some useful options:
 
 - ``-C <dir>`` allows overriding the project directory from the default current working directory.
 - ``-B <dir>`` allows overriding the build directory from the default ``build`` subdirectory of the project directory.
@@ -1008,6 +1010,28 @@ Espressif's fork of `mbedtls <https://github.com/ARMmbed/mbedtls>`_. See its :co
 
 The CMake variable ``ESP_PLATFORM`` is set to 1 whenever the ESP-IDF build system is being used. Tests such as ``if (ESP_PLATFORM)`` can be used in generic CMake code if special IDF-specific logic is required.
 
+Using Prebuilt Libraries with Components
+========================================
+
+.. highlight:: cmake
+
+The ESP-IDF build system provides a utility function ``add_prebuilt_library`` for users to be able to easily import and use
+prebuilt libraries::
+
+  add_prebuilt_library(target_name lib_path [REQUIRES req1 req2 ...] [PRIV_REQUIRES req1 req2 ...])
+
+where:
+
+- ``target_name``- name that can be used to reference the imported library, such as when linking to other targets
+- ``lib_path``- path to prebuilt library; may be an absolute or relative path to the component directory
+
+Optional arguments ``REQUIRES`` and ``PRIV_REQUIRES`` specify dependency on other components. These have the same meaning as the arguments for ``idf_component_register``. 
+
+Take note that the prebuilt library must have been compiled for the same target as the consuming project. Configuration relevant to the prebuilt
+library must also match. If not paid attention to, these two factors may contribute to subtle bugs in the app.
+
+For an example, take a look at :example:`build_system/cmake/import_prebuilt`.
+
 
 Using ESP-IDF in Custom CMake Projects
 ======================================
@@ -1395,7 +1419,7 @@ Initialization
     - Upon inclusion of ``idf.cmake`` in ``project.cmake``, the following steps are performed:
         - Set ``IDF_PATH`` from environment variable or inferred from path to ``project.cmake`` included in the top-level CMakeLists.txt.
         - Add :idf:`/tools/cmake` to ``CMAKE_MODULE_PATH`` and include core modules plus the various helper/third-party scripts.
-        - Set build tools/executables such as default Python interpreter, mconf, etc.
+        - Set build tools/executables such as default Python interpreter.
         - Get ESP-IDF git revision and store as ``IDF_VER``.
         - Set global build specifications i.e. compile options, compile definitions, include directories for all components in the build.
         - Add components in :idf:`components` to the build.

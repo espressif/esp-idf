@@ -1,8 +1,11 @@
-set(SOC_SRCS "cpu_util.c"
+set(SOC_SRCS "adc_periph.c"
+    "dac_periph.c"
+    "cpu_util.c"
     "gpio_periph.c"
     "rtc_clk.c"
     "rtc_clk_init.c"
     "rtc_init.c"
+    "rtc_io_periph.c"
     "rtc_periph.c"
     "rtc_pm.c"
     "rtc_sleep.c"
@@ -14,7 +17,11 @@ set(SOC_SRCS "cpu_util.c"
     "soc_memory_layout.c"
     "spi_periph.c"
     "ledc_periph.c"
-    "i2s_periph.c")
+    "i2s_periph.c"
+    "i2c_periph.c"
+    "uart_periph.c"
+    "touch_sensor_hal.c"
+    "touch_sensor_periph.c")
 
 if(NOT BOOTLOADER_BUILD AND CONFIG_ETH_USE_ESP32_EMAC)
     list(APPEND SOC_SRCS "emac_hal.c")

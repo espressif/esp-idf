@@ -32,7 +32,7 @@ It consists of two development boards, the Ethernet board A and the PoE board B,
 
     ESP32-Ethernet-Kit V1.0
 
-For the application loading and monitoring the Ethernet board (A) also features FTDI FT2232HL chip - an advanced multi-interface USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through the USB interface without a separate JTAG debugger.
+For the application loading and monitoring the Ethernet board (A) also features FTDI FT2232H chip - an advanced multi-interface USB bridge. This chip enables to use JTAG for direct debugging of ESP32 through the USB interface without a separate JTAG debugger.
 
 
 Functionality Overview
@@ -85,7 +85,7 @@ Tx/Rx LEDs          Two LEDs to show the status of UART transmission.
 
 GPIO Header 3       Provides access to some GPIOs of ESP32 that can be used depending on the position of the `Function Switch`_.
 
-FT2232              The FT2232 chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232 also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232 chip enhances user-friendliness in terms of application development and debugging. See `ESP32-Ethernet-Kit V1.0 Ethernet board (A) schematic`_.
+FT2232H              The FT2232H chip serves as a multi-protocol USB-to-serial bridge which can be programmed and controlled via USB to provide communication with ESP32. FT2232H also features USB-to-JTAG interface which is available on channel A of the chip, while USB-to-serial is on channel B. The FT2232H chip enhances user-friendliness in terms of application development and debugging. See `ESP32-Ethernet-Kit V1.0 Ethernet board (A) schematic`_.
 
 USB Port            USB interface. Power supply for the board as well as the communication interface between a computer and the board.
 
@@ -164,11 +164,11 @@ The functions for specific GPIO pins can be selected with the Function Switch.
 =======  ================  ================================================================
 DIP SW   GPIO Pin          Pin Functionality if DIP SW is ON
 =======  ================  ================================================================
- 1       GPIO14            Connected to FT2232 to provide JTAG functionality
- 2       GPIO12            Connected to FT2232 to provide JTAG functionality
- 3       GPIO13            Connected to FT2232 to provide JTAG functionality
- 4       GPIO15            Connected to FT2232 to provide JTAG functionality
- 5       GPIO4             Connected to FT2232 to provide JTAG functionality
+ 1       GPIO14            Connected to FT2232H to provide JTAG functionality
+ 2       GPIO12            Connected to FT2232H to provide JTAG functionality
+ 3       GPIO13            Connected to FT2232H to provide JTAG functionality
+ 4       GPIO15            Connected to FT2232H to provide JTAG functionality
+ 5       GPIO4             Connected to FT2232H to provide JTAG functionality
  6       GPIO2             Connected to on-board 25 MHz oscillator
  7       GPIO5             Connected to RESET_N input of IP101GRI
  8       n/a               
@@ -187,8 +187,8 @@ This is a 2 x 2 jumper pin header intended for the UART flow control.
 ====  =======  =================================================
  1    MTDO     GPIO13, see also `Function Switch`_
  2    MTCK     GPIO15, see also `Function Switch`_
- 3    RTS      RTS signal of FT2232
- 4    CTS      CTS signal of FT2232
+ 3    RTS      RTS signal of FT2232H
+ 4    CTS      CTS signal of FT2232H
 ====  =======  =================================================
 
 

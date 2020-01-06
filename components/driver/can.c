@@ -724,12 +724,13 @@ esp_err_t can_driver_install(const can_general_config_t *g_config, const can_tim
     can_config_error(DRIVER_DEFAULT_EWL, DRIVER_DEFAULT_REC, DRIVER_DEFAULT_TEC);
     can_config_acceptance_filter(f_config->acceptance_code, f_config->acceptance_mask, f_config->single_filter);
     can_config_clk_out(g_config->clkout_divider);
-    //Allocate GPIO and Interrupts
-    can_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
     (void) can_get_interrupt_reason();                  //Read interrupt reg to clear it before allocating ISR
-    ESP_ERROR_CHECK(esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, can_intr_handler_main, NULL, &p_can_obj->isr_handle));
     //Todo: Allow interrupt to be registered to specified CPU
     CAN_EXIT_CRITICAL();
+
+    //Allocate GPIO and Interrupts
+    can_configure_gpio(g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
+    ESP_ERROR_CHECK(esp_intr_alloc(ETS_CAN_INTR_SOURCE, 0, can_intr_handler_main, NULL, &p_can_obj->isr_handle));
 
 #ifdef CONFIG_PM_ENABLE
     ESP_ERROR_CHECK(esp_pm_lock_acquire(p_can_obj->pm_lock));     //Acquire pm_lock to keep APB clock at 80MHz
@@ -775,12 +776,12 @@ esp_err_t can_driver_uninstall(void)
     (void) can_get_interrupt_reason();
     (void) can_get_arbitration_lost_capture();
     (void) can_get_error_code_capture();
-
-    ESP_ERROR_CHECK(esp_intr_free(p_can_obj->isr_handle));  //Free interrupt
     periph_module_disable(PERIPH_CAN_MODULE);               //Disable CAN peripheral
     p_can_obj_dummy = p_can_obj;        //Use dummy to shorten critical section
     p_can_obj = NULL;
     CAN_EXIT_CRITICAL();
+
+    ESP_ERROR_CHECK(esp_intr_free(p_can_obj_dummy->isr_handle));  //Free interrupt
 
     //Delete queues, semaphores, and power management locks
     if (p_can_obj_dummy->tx_queue != NULL) {
@@ -958,15 +959,16 @@ esp_err_t can_read_alerts(uint32_t *alerts, TickType_t ticks_to_wait)
 esp_err_t can_reconfigure_alerts(uint32_t alerts_enabled, uint32_t *current_alerts)
 {
     CAN_CHECK(p_can_obj != NULL, ESP_ERR_INVALID_STATE);
+
     CAN_ENTER_CRITICAL();
-    uint32_t cur_alerts;
-    can_read_alerts(&cur_alerts, 0);                    //Clear any unhandled alerts
+    //Clear any unhandled alerts
+    if (current_alerts != NULL) {
+        *current_alerts = p_can_obj->alerts_triggered;;
+    }
+    p_can_obj->alerts_triggered = 0;
     p_can_obj->alerts_enabled = alerts_enabled;         //Update enabled alerts
     CAN_EXIT_CRITICAL();
 
-    if (current_alerts != NULL) {
-        *current_alerts = cur_alerts;
-    }
     return ESP_OK;
 }
 

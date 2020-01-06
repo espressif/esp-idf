@@ -142,26 +142,81 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "c1bbcd65e1e30c7312a50344c8dbc70c2941580a79aa8f8abbce8e0e90c79566",
-            "size": 8246604,
-            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-linux64-2.28.51-esp32ulp-20180809.tar.gz"
+            "sha256": "3016c4fc551181175bd9979869bc1d1f28fa8efa25a0e29ad7f833fca4bc03d7",
+            "size": 8248656,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-amd64-2.28.51-esp-20191205.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "88967c086a6e71834282d9ae05841ee74dae1815f27807b25cdd3f7775a47101",
+            "size": 8033639,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
           },
           "macos": {
-            "sha256": "c92937d85cc9a90eb6c6099ce767ca021108c18c94e34bd7b1fa0cde168f94a0",
-            "size": 5726662,
-            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-macos-2.28.51-esp32ulp-20180809.tar.gz"
+            "sha256": "a35d9e7a0445247c7fc9dccd3fbc35682f0fafc28beeb10c94b59466317190c4",
+            "size": 8872874,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-macos-2.28.51-esp-20191205.tar.gz"
           },
-          "name": "2.28.51.20170517",
+          "name": "2.28.51-esp-20191205",
           "status": "recommended",
           "win32": {
-            "sha256": "92dc83e69e534c9f73d7b939088f2e84f757d2478483415d17fe9dd1c236f2fd",
-            "size": 12231559,
-            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-win32-2.28.51-esp32ulp-20180809.zip"
+            "sha256": "bade309353a9f0a4e5cc03bfe84845e33205f05502c4b199195e871ded271ab5",
+            "size": 12234162,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-win32-2.28.51-esp-20191205.zip"
           },
           "win64": {
-            "sha256": "92dc83e69e534c9f73d7b939088f2e84f757d2478483415d17fe9dd1c236f2fd",
-            "size": 12231559,
-            "url": "https://dl.espressif.com/dl/binutils-esp32ulp-win32-2.28.51-esp32ulp-20180809.zip"
+            "sha256": "bade309353a9f0a4e5cc03bfe84845e33205f05502c4b199195e871ded271ab5",
+            "size": 12234162,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32ulp-win32-2.28.51-esp-20191205.zip"
+          }
+        }
+      ]
+    },
+    {
+      "description": "Toolchain for ESP32-S2 ULP coprocessor",
+      "export_paths": [
+        [
+          "esp32s2ulp-elf-binutils",
+          "bin"
+        ]
+      ],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/binutils-esp32ulp",
+      "install": "always",
+      "license": "GPL-2.0-or-later",
+      "name": "esp32s2ulp-elf",
+      "version_cmd": [
+        "esp32s2ulp-elf-as",
+        "--version"
+      ],
+      "version_regex": "\\(GNU Binutils\\)\\s+([0-9a-z\\.\\-]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "df7b2ff6c7c718a7cbe3b4b6dbcd68180d835d164d1913bc4698fd3781b9a466",
+            "size": 8254018,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-amd64-2.28.51-esp-20191205.tar.gz"
+          },
+          "linux-armel": {
+            "sha256": "893b213c8f716d455a6efb2b08b6cf1bc34d08b78ee19c31e82ac44b1b45417e",
+            "size": 8034624,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-linux-armel-2.28.51-esp-20191205.tar.gz"
+          },
+          "macos": {
+            "sha256": "5a9bb678a5246638cbda303f523d9bb8121a9a24dc01ecb22c21c46c41184155",
+            "size": 8876194,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-macos-2.28.51-esp-20191205.tar.gz"
+          },
+          "name": "2.28.51-esp-20191205",
+          "status": "recommended",
+          "win32": {
+            "sha256": "587de59fbb469a39f96168ae3eaa9f06b2601e6e0543c87eaf1bd97f23e5c4ca",
+            "size": 12239199,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-win32-2.28.51-esp-20191205.zip"
+          },
+          "win64": {
+            "sha256": "587de59fbb469a39f96168ae3eaa9f06b2601e6e0543c87eaf1bd97f23e5c4ca",
+            "size": 12239199,
+            "url": "https://github.com/espressif/binutils-esp32ulp/releases/download/v2.28.51-esp-20191205/binutils-esp32s2ulp-win32-2.28.51-esp-20191205.zip"
           }
         }
       ]
@@ -263,31 +318,31 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "038affba6cb2874098f6b70e61ce139afdf056f926ea6aefcf4d90a6ccf05bc3",
-            "size": 1675213,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-linux64-0.10.0-esp32-20190708.tar.gz"
+            "sha256": "978213e8345dd19762c79d4bda309331bb78db3d2a7f7193641dfcc978f6e5e5",
+            "size": 1680363,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-linux64-0.10.0-esp32-20191114.tar.gz"
           },
           "linux-armel": {
-            "sha256": "f3f01d2b0ec440127b8951b82ee79dd04b9d2774bab4de741067c5f65cffaa7e",
-            "size": 1729130,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-armel-0.10.0-esp32-20190708.tar.gz"
+            "sha256": "3b41d889e54c03d26ebf4423084a1c25a9b0a8c5d93359a3eece1754377dbd81",
+            "size": 1730768,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-armel-0.10.0-esp32-20191114.tar.gz"
           },
           "macos": {
-            "sha256": "840c94ce6208c5b21d0ba6c3113a06405daf6b27085a287cfbb6c9d21e80bd70",
-            "size": 1760060,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-macos-0.10.0-esp32-20190708.tar.gz"
+            "sha256": "75ca2e235c35157d6dad2106cc62210ccb99b736da6940179aa1644fe1ae8c2b",
+            "size": 1765567,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-macos-0.10.0-esp32-20191114.tar.gz"
           },
-          "name": "v0.10.0-esp32-20190708",
+          "name": "v0.10.0-esp32-20191114",
           "status": "recommended",
           "win32": {
-            "sha256": "a3a6f288a501c2992d2950c1b2c502e479e16aedda21b626602933c75f027a13",
-            "size": 2098530,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-win32-0.10.0-esp32-20190708.zip"
+            "sha256": "698bfa5903c99e2ee0a1898379b3a40451fcecbc1fd4fde4f2f1494e5725e7ab",
+            "size": 2102699,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-win32-0.10.0-esp32-20191114.zip"
           },
           "win64": {
-            "sha256": "a3a6f288a501c2992d2950c1b2c502e479e16aedda21b626602933c75f027a13",
-            "size": 2098530,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20190708/openocd-esp32-win32-0.10.0-esp32-20190708.zip"
+            "sha256": "698bfa5903c99e2ee0a1898379b3a40451fcecbc1fd4fde4f2f1494e5725e7ab",
+            "size": 2102699,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-win32-0.10.0-esp32-20191114.zip"
           }
         }
       ]

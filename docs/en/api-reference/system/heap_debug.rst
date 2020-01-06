@@ -218,7 +218,7 @@ Host-Based Mode
 Once you've identified the code which you think is leaking:
 
 - In the project configuration menu, navigate to ``Component settings`` -> ``Heap Memory Debugging`` -> :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
-- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> :ref:`CONFIG_ESP32_APPTRACE_DESTINATION` and select ``Trace memory``.
+- In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> :ref:`CONFIG_APPTRACE_DESTINATION` and select ``Trace memory``.
 - In the project configuration menu, navigate to ``Component settings`` -> ``Application Level Tracing`` -> ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_SYSVIEW_ENABLE`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all mallocs/frees in the system. Call this immediately before the piece of code which you suspect is leaking memory.
@@ -284,7 +284,7 @@ Using this file GDB will connect to the target, reset it, and start tracing when
 
 5. Quit GDB when program stops at :cpp:func:`heap_trace_stop`. Trace data are saved in ``/tmp/heap.svdat``
 
-6. Run processing script ``$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py /tmp/heap_log.svdat </path/to/program/elf>``
+6. Run processing script ``$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b </path/to/program/elf> /tmp/heap_log.svdat``
 
 The output from the heap trace will look something like this::
 

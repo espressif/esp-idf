@@ -122,9 +122,14 @@ begin
 
   if WizardIsTaskSelected('createlnk') then
   begin
-    CreateIDFCommandPromptShortcut();
+    CreateIDFCommandPromptShortcut('{autostartmenu}\Programs\ESP-IDF');
   end;
    
+  if WizardIsTaskSelected('createdsk') then
+  begin
+    CreateIDFCommandPromptShortcut('{autodesktop}');
+  end;
+
   if WizardIsTaskSelected('wdexcl') then
   begin
     RegisterIDFToolsExecutablesInWD();

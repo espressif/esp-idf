@@ -362,7 +362,6 @@ static int32_t IRAM_ATTR task_ms_to_tick_wrapper(uint32_t ms)
     return (int32_t)(ms / portTICK_PERIOD_MS);
 }
 
-
 static int32_t task_get_max_priority_wrapper(void)
 {
     return (int32_t)(configMAX_PRIORITIES);
@@ -534,24 +533,24 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._mutex_lock = mutex_lock_wrapper,
     ._mutex_unlock = mutex_unlock_wrapper,
     ._queue_create = queue_create_wrapper,
-    ._queue_delete = vQueueDelete,
+    ._queue_delete = (void(*)(void *))vQueueDelete,
     ._queue_send = queue_send_wrapper,
     ._queue_send_from_isr = queue_send_from_isr_wrapper,
     ._queue_send_to_back = queue_send_to_back_wrapper,
     ._queue_send_to_front = queue_send_to_front_wrapper,
     ._queue_recv = queue_recv_wrapper,
-    ._queue_msg_waiting = uxQueueMessagesWaiting,
-    ._event_group_create = xEventGroupCreate,
-    ._event_group_delete = vEventGroupDelete,
-    ._event_group_set_bits = xEventGroupSetBits,
-    ._event_group_clear_bits = xEventGroupClearBits,
+    ._queue_msg_waiting = (uint32_t(*)(void *))uxQueueMessagesWaiting,
+    ._event_group_create = (void *(*)(void))xEventGroupCreate,
+    ._event_group_delete = (void(*)(void *))vEventGroupDelete,
+    ._event_group_set_bits = (uint32_t(*)(void *,uint32_t))xEventGroupSetBits,
+    ._event_group_clear_bits = (uint32_t(*)(void *,uint32_t))xEventGroupClearBits,
     ._event_group_wait_bits = event_group_wait_bits_wrapper,
     ._task_create_pinned_to_core = task_create_pinned_to_core_wrapper,
     ._task_create = task_create_wrapper,
-    ._task_delete = vTaskDelete,
+    ._task_delete = (void(*)(void *))vTaskDelete,
     ._task_delay = vTaskDelay,
     ._task_ms_to_tick = task_ms_to_tick_wrapper,
-    ._task_get_current_task = xTaskGetCurrentTaskHandle,
+    ._task_get_current_task = (void *(*)(void))xTaskGetCurrentTaskHandle,
     ._task_get_max_priority = task_get_max_priority_wrapper,
     ._malloc = malloc,
     ._free = free,
@@ -562,6 +561,8 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._dport_access_stall_other_cpu_end_wrap = esp_dport_access_stall_other_cpu_end_wrap,
     ._phy_rf_deinit = esp_phy_rf_deinit,
     ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
+    ._phy_common_clock_enable = esp_phy_common_clock_enable,
+    ._phy_common_clock_disable = esp_phy_common_clock_disable,
     ._read_mac = esp_read_mac,
     ._timer_arm = timer_arm_wrapper,
     ._timer_disarm = timer_disarm_wrapper,

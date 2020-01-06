@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "ip101";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -106,6 +107,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_ip101_t;
 
 static esp_err_t ip101_page_select(phy_ip101_t *ip101, uint32_t page)
@@ -126,17 +128,14 @@ static esp_err_t ip101_update_link_duplex_speed(phy_ip101_t *ip101)
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
     cssr_reg_t cssr;
-    bmsr_reg_t bmsr;
     PHY_CHECK(ip101_page_select(ip101, 16) == ESP_OK, "select page 16 failed", err);
-    PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
-              "read BMSR failed", err);
-    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_CSSR_REG_ADDR, &(cssr.val)) == ESP_OK,
+              "read CSSR failed", err);
+    eth_link_t link = cssr.link_up ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (ip101->link_status != link) {
         /* when link up, read negotiation result */
         if (link == ETH_LINK_UP) {
-            PHY_CHECK(eth->phy_reg_read(eth, ip101->addr, ETH_PHY_CSSR_REG_ADDR, &(cssr.val)) == ESP_OK,
-                      "read CSSR failed", err);
             switch (cssr.op_mode) {
             case 1: //10M Half
                 speed = ETH_SPEED_10M;
@@ -194,6 +193,7 @@ err:
 static esp_err_t ip101_reset(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
+    ip101->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = ip101->eth;
     bmcr_reg_t bmcr = {.reset = 1};
     PHY_CHECK(eth->phy_reg_write(eth, ip101->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
@@ -212,6 +212,18 @@ static esp_err_t ip101_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t ip101_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
+    if (ip101->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(ip101->reset_gpio_num);
+        gpio_set_direction(ip101->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(ip101->reset_gpio_num, 0);
+        gpio_set_level(ip101->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t ip101_negotiate(esp_eth_phy_t *phy)
@@ -305,6 +317,10 @@ static esp_err_t ip101_init(esp_eth_phy_t *phy)
 {
     phy_ip101_t *ip101 = __containerof(phy, phy_ip101_t, parent);
     esp_eth_mediator_t *eth = ip101->eth;
+    // Detect PHY address
+    if (ip101->addr == ESP_ETH_PHY_ADDR_AUTO) {
+        PHY_CHECK(esp_eth_detect_phy_addr(eth, &ip101->addr) == ESP_OK, "Detect PHY address failed", err);
+    }
     /* Power on Ethernet PHY */
     PHY_CHECK(ip101_pwrctl(phy, true) == ESP_OK, "power control failed", err);
     /* Reset Ethernet PHY */
@@ -336,9 +352,11 @@ esp_eth_phy_t *esp_eth_phy_new_ip101(const eth_phy_config_t *config)
     PHY_CHECK(ip101, "calloc ip101 failed", err);
     ip101->addr = config->phy_addr;
     ip101->reset_timeout_ms = config->reset_timeout_ms;
+    ip101->reset_gpio_num = config->reset_gpio_num;
     ip101->link_status = ETH_LINK_DOWN;
     ip101->autonego_timeout_ms = config->autonego_timeout_ms;
     ip101->parent.reset = ip101_reset;
+    ip101->parent.reset_hw = ip101_reset_hw;
     ip101->parent.init = ip101_init;
     ip101->parent.deinit = ip101_deinit;
     ip101->parent.set_mediator = ip101_set_mediator;

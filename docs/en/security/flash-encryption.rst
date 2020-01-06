@@ -377,7 +377,8 @@ On next boot second stage bootloader will encrypt the flash app partition and th
 
 Once the flash encryption is enabled in Release mode the bootloader will write protect the ``FLASH_CRYPT_CNT`` eFuse.
 
-For subsequent plaintext update in field OTA scheme should be used. Please refer :doc:`OTA <../api-reference/system/ota>` for further details.
+For subsequent plaintext update in field :ref:`OTA scheme <updating-encrypted-flash-ota>` should be used.
+
 
 Possible Failures
 ^^^^^^^^^^^^^^^^^
@@ -546,6 +547,10 @@ OTA Updates
 ^^^^^^^^^^^
 
 OTA updates to encrypted partitions will automatically write encrypted, as long as the ``esp_partition_write`` function is used.
+
+Any app image which will be OTA updated onto a device with flash encryption enabled requires :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>` option to be enabled in the app configuration as well, when building the app.
+
+Please refer to :doc:`OTA <../api-reference/system/ota>` for general information about ESP-IDF OTA updates.
 
 .. _updating-encrypted-flash-serial:
 

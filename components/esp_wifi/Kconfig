@@ -310,11 +310,29 @@ menu "Wi-Fi"
 
     config ESP32_WIFI_IRAM_OPT
         bool "WiFi IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
         default y
         help
             Select this option to place frequently called Wi-Fi library functions in IRAM.
             When this option is disabled, more than 10Kbytes of IRAM memory will be saved
             but Wi-Fi throughput will be reduced.
+
+    config ESP32_WIFI_RX_IRAM_OPT
+        bool "WiFi RX IRAM speed optimization"
+        default n if (BT_ENABLED && ESP32_SPIRAM_SUPPORT)
+        default y
+        help
+            Select this option to place frequently called Wi-Fi library RX functions in IRAM.
+            When this option is disabled, more than 17Kbytes of IRAM memory will be saved
+            but Wi-Fi performance will be reduced.
+
+    config ESP32_WIFI_ENABLE_WPA3_SAE
+        bool "Enable WPA3-Personal"
+        default n
+        help
+            Select this option to allow the device to establish a WPA3-Personal connection with eligible AP's.
+            PMF (Protected Management Frames) is a prerequisite feature for a WPA3 connection, it needs to be
+            explicitly configured before attempting connection. Please refer to the Wi-Fi Driver API Guide for details.
 
 endmenu  # Wi-Fi
 

@@ -51,13 +51,6 @@ static inline void cpu_write_itlb(unsigned vpn, unsigned attr)
     asm volatile ("witlb  %1, %0; isync\n" :: "r" (vpn), "r" (attr));
 }
 
-static inline void cpu_init_memctl(void)
-{
-#if XCHAL_ERRATUM_572
-#error "Shouldn't have this errata or need this call on esp32s2beta"
-#endif
-}
-
 /**
  * @brief Configure memory region protection
  *
@@ -127,6 +120,15 @@ static inline uint32_t esp_cpu_process_stack_pc(uint32_t pc)
     }
     //Minus 3 to get PC of previous instruction (i.e. instruction executed before return address)
     return pc - 3;
+}
+
+typedef uint32_t esp_cpu_ccount_t;
+
+static inline esp_cpu_ccount_t esp_cpu_get_ccount(void)
+{
+    uint32_t result; 
+    RSR(CCOUNT, result);
+    return result;
 }
 
 #endif

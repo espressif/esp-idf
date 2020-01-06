@@ -17,7 +17,7 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "lwip/sockets.h"
 #include "esp32/rom/md5_hash.h"
 #include "mbedtls/base64.h"

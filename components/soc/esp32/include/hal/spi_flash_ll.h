@@ -154,6 +154,27 @@ static inline void spi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 }
 
 /**
+ * Set the data to be written in the data buffer.
+ * 
+ * @param dev Beginning address of the peripheral registers.
+ * @param buffer Buffer holding the data 
+ * @param length Length of data in bytes.
+ */
+static inline void spi_flash_ll_set_buffer_data(spi_dev_t *dev, const void *buffer, uint32_t length) 
+{
+    // Load data registers, word at a time
+    int num_words = (length + 3) >> 2;
+    for (int i = 0; i < num_words; i++) {
+        uint32_t word = 0;
+        uint32_t word_len = MIN(length, sizeof(word));
+        memcpy(&word, buffer, word_len);
+        dev->data_buf[i] = word;
+        length -= word_len;
+        buffer = (void *)((intptr_t)buffer + word_len);
+    }
+}
+
+/**
  * Program a page of the flash chip. Call ``spi_flash_ll_set_address`` before
  * this to set the address to program.
  *
@@ -164,18 +185,7 @@ static inline void spi_flash_ll_write_word(spi_dev_t *dev, uint32_t word)
 static inline void spi_flash_ll_program_page(spi_dev_t *dev, const void *buffer, uint32_t length)
 {
     dev->user.usr_dummy = 0;
-
-    // Load data registers, word at a time
-    int num_words = (length + 3) / 4;
-    for (int i = 0; i < num_words; i++) {
-        uint32_t word = 0;
-        uint32_t word_len = MIN(length, sizeof(word));
-        memcpy(&word, buffer, word_len);
-        dev->data_buf[i] = word;
-        length -= word_len;
-        buffer = (void *)((intptr_t)buffer + word_len);
-    }
-
+    spi_flash_ll_set_buffer_data(dev, buffer, length);
     dev->cmd.flash_pp = 1;
 }
 

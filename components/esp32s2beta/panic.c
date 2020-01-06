@@ -48,10 +48,10 @@
 #include "SEGGER_RTT.h"
 #endif
 
-#if CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO == -1
+#if CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO == -1
 #define APPTRACE_ONPANIC_HOST_FLUSH_TMO   ESP_APPTRACE_TMO_INFINITE
 #else
-#define APPTRACE_ONPANIC_HOST_FLUSH_TMO   (1000*CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO)
+#define APPTRACE_ONPANIC_HOST_FLUSH_TMO   (1000*CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO)
 #endif
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -123,16 +123,30 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, s
     abort();
 }
 
+/* These two weak stubs for esp_reset_reason_{get,set}_hint are used when
+ * the application does not call esp_reset_reason() function, and
+ * reset_reason.c is not linked into the output file.
+ */
+void __attribute__((weak)) esp_reset_reason_set_hint(esp_reset_reason_t hint)
+{
+}
+
+esp_reset_reason_t __attribute__((weak)) esp_reset_reason_get_hint(void)
+{
+    return ESP_RST_UNKNOWN;
+}
+
+
 static bool abort_called;
 
 static __attribute__((noreturn)) inline void invoke_abort(void)
 {
     abort_called = true;
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
-    SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+    SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
@@ -149,6 +163,12 @@ void abort(void)
 #if !CONFIG_ESP32S2_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x on core %d\r\n", (intptr_t)__builtin_return_address(0) - 3, xPortGetCoreID());
 #endif
+    /* Calling code might have set other reset reason hint (such as Task WDT),
+     * don't overwrite that.
+     */
+    if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
+    }
     invoke_abort();
 }
 
@@ -280,13 +300,6 @@ static inline void printCacheError(void)
     panicPutStr("\r\n");
 }
 
-//When interrupt watchdog happen in one core, both cores will be interrupted.
-//The core which doesn't trigger the interrupt watchdog will save the frame and return.
-//The core which triggers the interrupt watchdog will use the saved frame, and dump frames for both cores.
-#if !CONFIG_FREERTOS_UNICORE
-static volatile XtExcFrame * other_core_frame = NULL;
-#endif //!CONFIG_FREERTOS_UNICORE
-
 void panicHandler(XtExcFrame *frame)
 {
     int core_id = xPortGetCoreID();
@@ -307,24 +320,9 @@ void panicHandler(XtExcFrame *frame)
         reason = reasons[frame->exccause];
     }
 
-#if !CONFIG_FREERTOS_UNICORE
-    //Save frame for other core.
-    if ((frame->exccause == PANIC_RSN_INTWDT_CPU0 && core_id == 1) || (frame->exccause == PANIC_RSN_INTWDT_CPU1 && core_id == 0)) {
-        other_core_frame = frame;
-        while (1);
+    if (frame->exccause == PANIC_RSN_INTWDT_CPU0) {
+        esp_reset_reason_set_hint(ESP_RST_INT_WDT);
     }
-
-    //The core which triggers the interrupt watchdog will delay 1 us, so the other core can save its frame.
-    if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-        ets_delay_us(1);
-    }
-
-    if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {
-        // Cache error interrupt will be handled by the panic handler
-        // on the other CPU.
-        while (1);
-    }
-#endif //!CONFIG_FREERTOS_UNICORE
 
     haltOtherCore();
     panicPutStr("Guru Meditation Error: Core ");
@@ -380,11 +378,11 @@ void panicHandler(XtExcFrame *frame)
             frame->exccause == PANIC_RSN_INTWDT_CPU1) {
             TIMERG1.int_clr.wdt = 1;
         }
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
-        SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+        SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
+        esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                                   APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
@@ -408,16 +406,15 @@ void xt_unhandled_exception(XtExcFrame *frame)
             panicPutStr("Unknown");
         }
         panicPutStr(")");
-#ifdef PANIC_COMPLETE_IN_ESP32C
         if (esp_cpu_in_ocd_debug_mode()) {
             panicPutStr(" at pc=");
             panicPutHex(frame->pc);
             panicPutStr(". Setting bp and returning..\r\n");
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
-            SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+            SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-            esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
+            esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                                       APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
 #endif
@@ -426,8 +423,8 @@ void xt_unhandled_exception(XtExcFrame *frame)
             setFirstBreakpoint(frame->pc);
             return;
         }
-#endif
         panicPutStr(". Exception was unhandled.\r\n");
+        esp_reset_reason_set_hint(ESP_RST_PANIC);
     }
     commonErrorHandler(frame);
 }
@@ -556,11 +553,7 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
             panicPutStr("\r\n");
         }
 
-        if (xPortInterruptedFromISRContext()
-#if !CONFIG_FREERTOS_UNICORE
-            && other_core_frame != frame
-#endif //!CONFIG_FREERTOS_UNICORE
-            ) {
+        if (xPortInterruptedFromISRContext()) {
             //If the core which triggers the interrupt watchdog was in ISR context, dump the epc registers.
             uint32_t __value;
             panicPutStr("Core");
@@ -619,18 +612,13 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     reconfigureAllWdts();
 
     commonErrorHandler_dump(frame, core_id);
-#if !CONFIG_FREERTOS_UNICORE
-    if (other_core_frame != NULL) {
-        commonErrorHandler_dump((XtExcFrame *)other_core_frame, (core_id ? 0 : 1));
-    }
-#endif //!CONFIG_FREERTOS_UNICORE
 
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
     disableAllWdts();
 #if CONFIG_SYSVIEW_ENABLE
-    SEGGER_RTT_ESP32_FlushNoLock(CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
+    SEGGER_RTT_ESP32_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
-    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_TRAX_THRESH,
+    esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
     reconfigureAllWdts();

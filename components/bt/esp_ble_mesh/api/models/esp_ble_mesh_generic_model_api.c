@@ -70,3 +70,10 @@ esp_err_t esp_ble_mesh_generic_client_set_state(esp_ble_mesh_client_common_param
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_generic_client_args_t), btc_ble_mesh_generic_client_arg_deep_copy)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+esp_err_t esp_ble_mesh_register_generic_server_callback(esp_ble_mesh_generic_server_cb_t callback)
+{
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    return (btc_profile_cb_set(BTC_PID_GENERIC_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
+}

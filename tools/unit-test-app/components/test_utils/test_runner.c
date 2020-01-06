@@ -87,6 +87,10 @@ void setUp(void)
 
 static void check_leak(size_t before_free, size_t after_free, const char *type)
 {
+    printf("MALLOC_CAP_%s leak: Leak threshold is: %u \n",
+            type, 
+            critical_leak_threshold);
+
     if (before_free <= after_free) {
         return;
     }

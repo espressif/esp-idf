@@ -27,6 +27,12 @@
 
 #define MB_PORT_TAG "MB_PORT_COMMON"
 
+// common definitions for serial port implementations
+#define MB_SERIAL_TX_TOUT_MS        (100)
+#define MB_SERIAL_TX_TOUT_TICKS     pdMS_TO_TICKS(MB_SERIAL_TX_TOUT_MS) // timeout for transmission
+#define MB_SERIAL_RX_TOUT_TICKS     pdMS_TO_TICKS(1) // timeout for rx from buffer
+#define MB_SERIAL_RESP_LEN_MIN      (4)
+
 #define MB_PORT_CHECK(a, ret_val, str, ...) \
     if (!(a)) { \
         ESP_LOGE(MB_PORT_TAG, "%s(%u): " str, __FUNCTION__, __LINE__, ##__VA_ARGS__); \
@@ -64,6 +70,9 @@ void vMBPortExitCritical(void);
 
 #define EXIT_CRITICAL_SECTION( )  { vMBPortExitCritical(); \
                                     ESP_LOGD(MB_PORT_TAG,"%s: Port exit critical", __func__); }
+
+#define MB_PORT_CHECK_EVENT( event, mask ) ( event & mask )
+#define MB_PORT_CLEAR_EVENT( event, mask ) do { event &= ~mask; } while(0)
 
 #ifdef __cplusplus
 PR_END_EXTERN_C

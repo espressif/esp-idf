@@ -189,7 +189,11 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
         }
         if (cfg->non_block) {
             int flags = fcntl(fd, F_GETFL, 0);
-            fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+            ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+            if (ret < 0) {
+                ESP_LOGE(TAG, "Failed to configure the socket as non-blocking (errno %d)", errno);
+                goto err_freesocket;
+            }
         }
     }
 

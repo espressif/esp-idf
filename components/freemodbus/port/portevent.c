@@ -120,7 +120,7 @@ xMBPortEventGet(eMBEventType * peEvent)
 xQueueHandle
 xMBPortEventGetHandle(void)
 {
-    if(xQueueHdl != NULL) //
+    if(xQueueHdl != NULL)
     {
         return xQueueHdl;
     }

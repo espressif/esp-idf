@@ -35,7 +35,7 @@ ESP32 调试器支持 2 个硬件断点和 64 个软件断点。硬件断点是�
 
     由于 GDB 在连接 OpenOCD 时仅仅请求一次内存映射，所以可以在 TCL 配置文件中指定该命令，或者通过命令行传递给 OpenOCD。对于后者，命令行示例如下：
 
-    ``openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "init; halt; esp32 appimage_offset 0x210000"``
+    ``openocd -f board/esp32-wrover-kit-3.3v.cfg -c "init; halt; esp32 appimage_offset 0x210000"``
 
     另外还可以通过 OpenOCD 的 telnet 会话执行该命令，然后再连接 GDB， 不过这种方式似乎没有那么便捷。
 
@@ -57,7 +57,7 @@ ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设
 * :ref:`CONFIG_ESP32_DEBUG_OCDAWARE` 默认会被使能。如果程序抛出了不可修复或者未处理的异常，并且此时已经连接上了 JTAG 调试器（即 OpenOCD 正在运行），那么 ESP-IDF 将会进入调试器工作模式。
 * :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 默认没有使能。在所有任务堆栈的末尾设置观察点，从 1 号开始索引。这是调试任务堆栈溢出的最准确的方式。
 
-更多有关设置编译时的选项的信息，请参阅 :ref:`idf.py menuconfig <get-started-configure>`。
+更多有关设置编译时的选项的信息，请参阅 :ref:`项目配置菜单 <get-started-configure>`。
 
 .. _jtag-debugging-tip-freertos-support:
 
@@ -115,8 +115,7 @@ OpenOCD 需要知道当前使用的 JTAG 适配器的类型，以及其连接的
 
 例如，如果使用板载 ESP-WROOM-32 模组的 ESP-WROVER-KIT 开发板（详见 :ref:`esp-modules-and-boards-esp-wrover-kit-v1`），请使用以下配置文件：
 
-* ``interface/ftdi/esp32_devkitj_v1.cfg``
-* ``board/esp-wroom-32.cfg``
+* ``board/esp32-wrover-kit-3.3v.cfg``
 
 当然也可以使用自定义的配置文件，建议在已有配置文件的基础上进行修改，以匹配你的硬件。下面列举一些常用的板级配置参数。
 
@@ -258,13 +257,13 @@ ESP32 的目标配置文件
 
         ::
 
-            openocd -l openocd_log.txt -d 3 -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+            openocd -l openocd_log.txt -d 3 -f board/esp32-wrover-kit-3.3v.cfg
 
         这种方式会将日志输出到文件，但是它会阻止调试信息打印在终端上。当有大量信息需要输出的时候（比如调试等级提高到 ``-d 3``）这是个不错的选择。如果你仍然希望在屏幕上看到调试日志，请改用以下命令：
 
         ::
 
-            openocd -d 3 -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg 2>&1 | tee openocd.log
+            openocd -d 3 -f board/esp32-wrover-kit-3.3v.cfg 2>&1 | tee openocd.log
 
     Debugger 端：
 

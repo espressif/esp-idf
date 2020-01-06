@@ -5,6 +5,7 @@ unset(compile_options)
 unset(c_compile_options)
 unset(cxx_compile_options)
 unset(compile_definitions)
+unset(link_options)
 
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
@@ -31,6 +32,7 @@ if(CONFIG_COMPILER_CXX_RTTI)
     list(APPEND cxx_compile_options "-frtti")
 else()
     list(APPEND cxx_compile_options "-fno-rtti")
+    list(APPEND link_options "-fno-rtti")           # used to invoke correct multilib variant (no-rtti) during linking
 endif()
 
 if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
@@ -38,19 +40,16 @@ if(CONFIG_COMPILER_DISABLE_GCC8_WARNINGS)
                                 "-Wno-sizeof-pointer-memaccess"
                                 "-Wno-clobbered")
 
-    # doesn't use GCC_NOT_5_2_0 because idf_set_global_variables was not called before
-    if(GCC_NOT_5_2_0)
-        list(APPEND compile_options "-Wno-format-overflow"
-                                    "-Wno-stringop-truncation"
-                                    "-Wno-misleading-indentation"
-                                    "-Wno-cast-function-type"
-                                    "-Wno-implicit-fallthrough"
-                                    "-Wno-unused-const-variable"
-                                    "-Wno-switch-unreachable"
-                                    "-Wno-format-truncation"
-                                    "-Wno-memset-elt-size"
-                                    "-Wno-int-in-bool-context")
-    endif()
+    list(APPEND compile_options "-Wno-format-overflow"
+                                "-Wno-stringop-truncation"
+                                "-Wno-misleading-indentation"
+                                "-Wno-cast-function-type"
+                                "-Wno-implicit-fallthrough"
+                                "-Wno-unused-const-variable"
+                                "-Wno-switch-unreachable"
+                                "-Wno-format-truncation"
+                                "-Wno-memset-elt-size"
+                                "-Wno-int-in-bool-context")
 endif()
 
 if(CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE)
@@ -65,11 +64,13 @@ elseif(CONFIG_COMPILER_STACK_CHECK_MODE_ALL)
     list(APPEND compile_options "-fstack-protector-all")
 endif()
 
+list(APPEND link_options "-fno-lto")
 
 idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
 idf_build_set_property(C_COMPILE_OPTIONS "${c_compile_options}" APPEND)
 idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
 idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
+idf_build_set_property(LINK_OPTIONS "${link_options}" APPEND)
 
 idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
 

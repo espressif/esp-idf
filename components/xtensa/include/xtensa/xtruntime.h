@@ -41,6 +41,9 @@
 #define XTOS_KEEPON_DEBUG	0x00001000	/* ==PWRCTL_DEBUG_WAKEUP */
 #define XTOS_KEEPON_DEBUG_SHIFT	12
 
+#define XTOS_IDMA_NO_WAIT	0x00010000	/* Do not wait for idma to finish. Disable if necessary */
+#define XTOS_IDMA_WAIT_STANDBY	0x00020000	/* Also treat standby state as the end of wait */
+
 #define XTOS_COREF_PSO		0x00000001	/* do power shutoff */
 #define XTOS_COREF_PSO_SHIFT	0
 
@@ -54,8 +57,9 @@
 extern "C" {
 #endif
 
-/*typedef void (_xtos_timerdelta_func)(int);*/
-#ifdef __cplusplus
+#if defined(XTOS_MISRA)
+typedef void (_xtos_handler_func)(void *);
+#elif defined(__cplusplus)
 typedef void (_xtos_handler_func)(...);
 #else
 typedef void (_xtos_handler_func)(void);
@@ -84,12 +88,12 @@ typedef _xtos_handler_func *_xtos_handler;
  *  these macros are sometimes used to delineate critical sections;
  *  function calls are natural barriers (the compiler does not know
  *  whether a function modifies memory) unless declared to be inlined.  */
-# define XTOS_SET_INTLEVEL(intlevel)		({ unsigned __tmp; \
+# define XTOS_SET_INTLEVEL(intlevel)	__extension__({ unsigned __tmp; \
 			__asm__ __volatile__(	"rsil	%0, " XTSTR(intlevel) "\n" \
 						: "=a" (__tmp) : : "memory" ); \
 			__tmp;})
 # define XTOS_SET_MIN_INTLEVEL(intlevel)		({ unsigned __tmp, __tmp2, __tmp3; \
-			__asm__ __volatile__(	"rsr	%0, " XTSTR(PS) "\n"	/* get old (current) PS.INTLEVEL */ \
+			__asm__ __volatile__(	"rsr.ps	%0\n"		/* get old (current) PS.INTLEVEL */ \
 						"movi	%2, " XTSTR(intlevel) "\n" \
 						"extui	%1, %0, 0, 4\n"	/* keep only INTLEVEL bits of parameter */ \
 						"blt	%2, %1, 1f\n" \
@@ -98,7 +102,7 @@ typedef _xtos_handler_func *_xtos_handler;
 						: "=a" (__tmp), "=&a" (__tmp2), "=&a" (__tmp3) : : "memory" ); \
 			__tmp;})
 # define XTOS_RESTORE_INTLEVEL(restoreval)	do{ unsigned __tmp = (restoreval); \
-			__asm__ __volatile__(	"wsr	%0, " XTSTR(PS) " ; rsync\n" \
+			__asm__ __volatile__(	"wsr.ps	%0 ; rsync\n" \
 						: : "a" (__tmp) : "memory" ); \
 			}while(0)
 # define XTOS_RESTORE_JUST_INTLEVEL(restoreval)	_xtos_set_intlevel(restoreval)
@@ -147,9 +151,21 @@ extern unsigned		_xtos_vpri_enabled;	/* current virtual priority */
  *  configuration has high-level interrupts and one cares about their latency):  */
 #define XTOS_DISABLE_ALL_INTERRUPTS	XTOS_SET_INTLEVEL(15)
 
-
+/*  These two are deprecated. Use the newer functions below.  */
 extern unsigned int	_xtos_ints_off( unsigned int mask );
 extern unsigned int	_xtos_ints_on( unsigned int mask );
+
+/* Newer functions to enable/disable the specified interrupt.  */
+static inline void _xtos_interrupt_enable(unsigned int intnum)
+{
+    _xtos_ints_on(1 << intnum);
+}
+
+static inline void _xtos_interrupt_disable(unsigned int intnum)
+{
+    _xtos_ints_off(1 << intnum);
+}
+
 extern unsigned		_xtos_set_intlevel( int intlevel );
 extern unsigned		_xtos_set_min_intlevel( int intlevel );
 extern unsigned		_xtos_restore_intlevel( unsigned restoreval );
@@ -182,8 +198,8 @@ extern void		_xtos_dispatch_level6_interrupts( void );
 #endif
 
 /*  Deprecated (but kept because they were documented):  */
-extern unsigned int	_xtos_read_ints( void );		/* use xthal_get_interrupt() instead */
-extern void		_xtos_clear_ints( unsigned int mask );	/* use xthal_set_intclear() instead */
+extern unsigned int	_xtos_read_ints( void );
+extern void		_xtos_clear_ints( unsigned int mask );
 
 
 /*  Power shut-off related routines.  */

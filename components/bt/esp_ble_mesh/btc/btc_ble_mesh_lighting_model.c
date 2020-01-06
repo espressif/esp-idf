@@ -205,12 +205,17 @@ static void btc_ble_mesh_lighting_client_callback(esp_ble_mesh_light_client_cb_p
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_LIGHTING_CLIENT)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_LIGHTING_CLIENT;
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_light_client_cb_param_t), btc_ble_mesh_lighting_client_copy_req_data);
+                         sizeof(esp_ble_mesh_light_client_cb_param_t), btc_ble_mesh_lighting_client_copy_req_data);
 }
 
 void bt_mesh_lighting_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
@@ -278,7 +283,7 @@ void btc_ble_mesh_lighting_client_publish_callback(u32_t opcode,
     }
 
     bt_mesh_lighting_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_LIGHTING_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+                                          BTC_BLE_MESH_EVT_LIGHTING_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -317,7 +322,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
 
         cb.params = arg->light_client_get_state.params;
         cb.error_code = bt_mesh_light_client_get_state(&common,
-                (void *)arg->light_client_get_state.get_state, (void *)&cb.status_cb);
+                        (void *)arg->light_client_get_state.get_state, (void *)&cb.status_cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_lighting_client_callback(&cb, ESP_BLE_MESH_LIGHT_CLIENT_GET_STATE_EVT);
@@ -343,7 +348,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
 
         cb.params = arg->light_client_set_state.params;
         cb.error_code = bt_mesh_light_client_set_state(&common,
-                (void *)arg->light_client_set_state.set_state, (void *)&cb.status_cb);
+                        (void *)arg->light_client_set_state.set_state, (void *)&cb.status_cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_lighting_client_callback(&cb, ESP_BLE_MESH_LIGHT_CLIENT_SET_STATE_EVT);
@@ -379,3 +384,202 @@ void btc_ble_mesh_lighting_client_cb_handler(btc_msg_t *msg)
     return;
 }
 
+/* Lighting Server Models related functions */
+
+static inline void btc_ble_mesh_lighting_server_cb_to_app(
+    esp_ble_mesh_lighting_server_cb_event_t event,
+    esp_ble_mesh_lighting_server_cb_param_t *param)
+{
+    esp_ble_mesh_lighting_server_cb_t btc_ble_mesh_cb =
+        (esp_ble_mesh_lighting_server_cb_t)btc_profile_cb_get(BTC_PID_LIGHTING_SERVER);
+    if (btc_ble_mesh_cb) {
+        btc_ble_mesh_cb(event, param);
+    }
+}
+
+static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_dest, void *p_src)
+{
+    esp_ble_mesh_lighting_server_cb_param_t *p_dest_data = (esp_ble_mesh_lighting_server_cb_param_t *)p_dest;
+    esp_ble_mesh_lighting_server_cb_param_t *p_src_data = (esp_ble_mesh_lighting_server_cb_param_t *)p_src;
+    u16_t length;
+
+    if (!msg || !p_src_data || !p_dest_data) {
+        LOG_ERROR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    switch (msg->act) {
+    case ESP_BLE_MESH_LIGHTING_SERVER_STATE_CHANGE_EVT:
+        if (p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
+                p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+            if (p_src_data->value.state_change.lc_property_set.property_value) {
+                length = p_src_data->value.state_change.lc_property_set.property_value->len;
+                p_dest_data->value.state_change.lc_property_set.property_value = bt_mesh_alloc_buf(length);
+                if (p_dest_data->value.state_change.lc_property_set.property_value == NULL) {
+                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    return;
+                }
+                net_buf_simple_add_mem(p_dest_data->value.state_change.lc_property_set.property_value,
+                                       p_src_data->value.state_change.lc_property_set.property_value->data,
+                                       p_src_data->value.state_change.lc_property_set.property_value->len);
+            }
+        }
+        break;
+    case ESP_BLE_MESH_LIGHTING_SERVER_RECV_SET_MSG_EVT:
+        if (p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
+                p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+            if (p_src_data->value.set.lc_property.property_value) {
+                length = p_src_data->value.set.lc_property.property_value->len;
+                p_dest_data->value.set.lc_property.property_value = bt_mesh_alloc_buf(length);
+                if (p_dest_data->value.set.lc_property.property_value == NULL) {
+                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    return;
+                }
+                net_buf_simple_add_mem(p_dest_data->value.set.lc_property.property_value,
+                                       p_src_data->value.set.lc_property.property_value->data,
+                                       p_src_data->value.set.lc_property.property_value->len);
+            }
+        }
+        break;
+    case ESP_BLE_MESH_LIGHTING_SERVER_RECV_STATUS_MSG_EVT:
+        if (p_src_data->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_STATUS) {
+            if (p_src_data->value.status.sensor_status.data) {
+                length = p_src_data->value.status.sensor_status.data->len;
+                p_dest_data->value.status.sensor_status.data = bt_mesh_alloc_buf(length);
+                if (p_dest_data->value.status.sensor_status.data == NULL) {
+                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    return;
+                }
+                net_buf_simple_add_mem(p_dest_data->value.status.sensor_status.data,
+                                       p_src_data->value.status.sensor_status.data->data,
+                                       p_src_data->value.status.sensor_status.data->len);
+            }
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+static void btc_ble_mesh_lighting_server_free_req_data(btc_msg_t *msg)
+{
+    esp_ble_mesh_lighting_server_cb_param_t *arg = NULL;
+
+    if (!msg || !msg->arg) {
+        LOG_ERROR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    arg = (esp_ble_mesh_lighting_server_cb_param_t *)(msg->arg);
+
+    switch (msg->act) {
+    case ESP_BLE_MESH_LIGHTING_SERVER_STATE_CHANGE_EVT:
+        if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+            bt_mesh_free_buf(arg->value.state_change.lc_property_set.property_value);
+        }
+        break;
+    case ESP_BLE_MESH_LIGHTING_SERVER_RECV_SET_MSG_EVT:
+        if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET ||
+                arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET_UNACK) {
+            bt_mesh_free_buf(arg->value.set.lc_property.property_value);
+        }
+        break;
+    case ESP_BLE_MESH_LIGHTING_SERVER_RECV_STATUS_MSG_EVT:
+        if (arg->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_SENSOR_STATUS) {
+            bt_mesh_free_buf(arg->value.status.sensor_status.data);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+static void btc_ble_mesh_lighting_server_callback(esp_ble_mesh_lighting_server_cb_param_t *cb_params, uint8_t act)
+{
+    btc_msg_t msg = {0};
+
+    LOG_DEBUG("%s", __func__);
+
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_LIGHTING_SERVER)) {
+        return;
+    }
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_LIGHTING_SERVER;
+    msg.act = act;
+
+    btc_transfer_context(
+        &msg, cb_params, sizeof(esp_ble_mesh_lighting_server_cb_param_t), btc_ble_mesh_lighting_server_copy_req_data);
+}
+
+void bt_mesh_lighting_server_cb_evt_to_btc(u8_t evt_type,
+        struct bt_mesh_model *model,
+        struct bt_mesh_msg_ctx *ctx,
+        const u8_t *val, size_t len)
+{
+    esp_ble_mesh_lighting_server_cb_param_t cb_params = {0};
+    size_t length;
+    uint8_t act;
+
+    if (model == NULL || ctx == NULL) {
+        LOG_ERROR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    switch (evt_type) {
+    case BTC_BLE_MESH_EVT_LIGHTING_SERVER_STATE_CHANGE:
+        act = ESP_BLE_MESH_LIGHTING_SERVER_STATE_CHANGE_EVT;
+        break;
+    case BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_GET_MSG:
+        act = ESP_BLE_MESH_LIGHTING_SERVER_RECV_GET_MSG_EVT;
+        break;
+    case BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_SET_MSG:
+        act = ESP_BLE_MESH_LIGHTING_SERVER_RECV_SET_MSG_EVT;
+        break;
+    case BTC_BLE_MESH_EVT_LIGHTING_SERVER_RECV_STATUS_MSG:
+        act = ESP_BLE_MESH_LIGHTING_SERVER_RECV_STATUS_MSG_EVT;
+        break;
+    default:
+        LOG_ERROR("%s, Unknown Lighting Server event type", __func__);
+        return;
+    }
+
+    cb_params.model = (esp_ble_mesh_model_t *)model;
+    cb_params.ctx.net_idx = ctx->net_idx;
+    cb_params.ctx.app_idx = ctx->app_idx;
+    cb_params.ctx.addr = ctx->addr;
+    cb_params.ctx.recv_ttl = ctx->recv_ttl;
+    cb_params.ctx.recv_op = ctx->recv_op;
+    cb_params.ctx.recv_dst = ctx->recv_dst;
+
+    if (val && len) {
+        length = (len <= sizeof(cb_params.value)) ? len : sizeof(cb_params.value);
+        memcpy(&cb_params.value, val, length);
+    }
+
+    btc_ble_mesh_lighting_server_callback(&cb_params, act);
+    return;
+}
+
+void btc_ble_mesh_lighting_server_cb_handler(btc_msg_t *msg)
+{
+    esp_ble_mesh_lighting_server_cb_param_t *param = NULL;
+
+    if (!msg || !msg->arg) {
+        LOG_ERROR("%s, Invalid parameter", __func__);
+        return;
+    }
+
+    param = (esp_ble_mesh_lighting_server_cb_param_t *)(msg->arg);
+
+    if (msg->act < ESP_BLE_MESH_LIGHTING_SERVER_EVT_MAX) {
+        btc_ble_mesh_lighting_server_cb_to_app(msg->act, param);
+    } else {
+        LOG_ERROR("%s, Unknown msg->act = %d", __func__, msg->act);
+    }
+
+    btc_ble_mesh_lighting_server_free_req_data(msg);
+    return;
+}

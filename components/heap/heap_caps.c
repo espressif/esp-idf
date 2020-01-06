@@ -44,9 +44,9 @@ IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
-#if CONFIG_IDF_TARGET_ESP32
+#if SOC_DIRAM_INVERTED
     uint32_t istart = SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - dend);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#else
     uint32_t istart = SOC_DIRAM_IRAM_LOW + (dstart - SOC_DIRAM_DRAM_LOW);
 #endif
     uint32_t *iptr = (uint32_t *)istart;
@@ -107,6 +107,7 @@ IRAM_ATTR void *heap_caps_malloc( size_t size, uint32_t caps )
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
                         ret = multi_heap_malloc(heap->heap, size + 4);  // int overflow checked above
+
                         if (ret != NULL) {
                             return dram_alloc_to_iram_addr(ret, size + 4);  // int overflow checked above
                         }
@@ -274,6 +275,10 @@ IRAM_ATTR void heap_caps_free( void *ptr)
 
 IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
 {
+    bool ptr_in_diram_case = false;
+    heap_t *heap = NULL;
+    void *dram_ptr = NULL;
+    
     if (ptr == NULL) {
         return heap_caps_malloc(size, caps);
     }
@@ -287,15 +292,30 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
         return NULL;
     }
 
-    heap_t *heap = find_containing_heap(ptr);
-
-    assert(heap != NULL && "realloc() pointer is outside heap areas");
+    //The pointer to memory may be aliased, we need to 
+    //recover the corresponding address before to manage a new allocation:
+    if(esp_ptr_in_diram_iram((void *)ptr)) {
+        uint32_t *dram_addr = (uint32_t *)ptr;
+        dram_ptr  = (void *)dram_addr[-1];
+        
+        heap = find_containing_heap(dram_ptr);
+        assert(heap != NULL && "realloc() pointer is outside heap areas");
+        
+        //with pointers that reside on diram space, we avoid using 
+        //the realloc implementation due to address translation issues,
+        //instead force a malloc/copy/free
+        ptr_in_diram_case = true;
+    
+    } else {
+        heap = find_containing_heap(ptr);
+        assert(heap != NULL && "realloc() pointer is outside heap areas");
+    }
 
     // are the existing heap's capabilities compatible with the
     // requested ones?
     bool compatible_caps = (caps & get_all_caps(heap)) == caps;
 
-    if (compatible_caps) {
+    if (compatible_caps && !ptr_in_diram_case) {
         // try to reallocate this memory within the same heap
         // (which will resize the block if it can)
         void *r = multi_heap_realloc(heap->heap, ptr, size);
@@ -308,7 +328,16 @@ IRAM_ATTR void *heap_caps_realloc( void *ptr, size_t size, int caps)
     // in a different heap with requested capabilities.
     void *new_p = heap_caps_malloc(size, caps);
     if (new_p != NULL) {
-        size_t old_size = multi_heap_get_allocated_size(heap->heap, ptr);
+        size_t old_size = 0;
+
+        //If we're dealing with aliased ptr, information regarding its containing
+        //heap can only be obtained with translated address.
+        if(ptr_in_diram_case) {
+            old_size = multi_heap_get_allocated_size(heap->heap, dram_ptr);
+        } else {
+            old_size = multi_heap_get_allocated_size(heap->heap, ptr);
+        }
+
         assert(old_size > 0);
         memcpy(new_p, ptr, MIN(size, old_size));
         heap_caps_free(ptr);

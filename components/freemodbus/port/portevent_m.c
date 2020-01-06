@@ -53,7 +53,7 @@
                                             EV_MASTER_FRAME_RECEIVED | \
                                             EV_MASTER_EXECUTE | \
                                             EV_MASTER_FRAME_SENT | \
-                                            EV_MASTER_FRAME_TRANSMITTED | \
+                                            EV_MASTER_FRAME_TRANSMIT | \
                                             EV_MASTER_ERROR_PROCESS )
 
 // Event bit mask for eMBMasterWaitRequestFinish()
@@ -62,7 +62,6 @@
                                             EV_MASTER_ERROR_RECEIVE_DATA | \
                                             EV_MASTER_ERROR_EXECUTE_FUNCTION )
 
-#define MB_CHECK_EVENT(event, mask) (event & mask)
 
 /* ----------------------- Variables ----------------------------------------*/
 static SemaphoreHandle_t xSemaphorMasterHdl;
@@ -118,19 +117,19 @@ xMBMasterPortEventGet( eMBMasterEventType * eEvent)
 {
     EventBits_t uxBits;
     BOOL    xEventHappened = FALSE;
-    uxBits = xEventGroupWaitBits(
-            xEventGroupMasterHdl,   // The event group being tested.
-            MB_EVENT_POLL_MASK,     // The bits within the event group to wait for.
-            pdTRUE,                 // Masked bits should be cleared before returning.
-            pdFALSE,                // Don't wait for both bits, either bit will do.
-            portMAX_DELAY);        // Wait forever for either bit to be set.
+    uxBits = xEventGroupWaitBits( xEventGroupMasterHdl, // The event group being tested.
+                                    MB_EVENT_POLL_MASK, // The bits within the event group to wait for.
+                                    pdTRUE,             // Masked bits should be cleared before returning.
+                                    pdFALSE,            // Don't wait for both bits, either bit will do.
+                                    portMAX_DELAY);     // Wait forever for either bit to be set.
 
     // Check if poll event is correct
-    if (uxBits & MB_EVENT_POLL_MASK) {
-        *eEvent = (eMBMasterEventType)(uxBits);
+    if (MB_PORT_CHECK_EVENT(uxBits, MB_EVENT_POLL_MASK)) {
+        *eEvent = (eMBMasterEventType)(uxBits & MB_EVENT_POLL_MASK);
         xEventHappened = TRUE;
     } else {
-        ESP_LOGE(MB_PORT_TAG,"%s: Incorrect event triggered.", __func__);
+        ESP_LOGE(MB_PORT_TAG,"%s: Incorrect event triggered = %d.", __func__, uxBits);
+        *eEvent = (eMBMasterEventType)uxBits;
         xEventHappened = FALSE;
     }
     return xEventHappened;
@@ -258,16 +257,16 @@ eMBMasterReqErrCode eMBMasterWaitRequestFinish( void ) {
     if (xRecvedEvent) {
         ESP_LOGD(MB_PORT_TAG,"%s: returned event = 0x%x", __func__, xRecvedEvent);
         if (!(xRecvedEvent & MB_EVENT_REQ_MASK)) {
-            // if we wait for certain event bits but get other then set in mask
+            // if we wait for certain event bits but get from poll subset
             ESP_LOGE(MB_PORT_TAG,"%s: incorrect event set = 0x%x", __func__, xRecvedEvent);
         }
-        if MB_CHECK_EVENT(xRecvedEvent, EV_MASTER_PROCESS_SUCCESS) {
+        if (MB_PORT_CHECK_EVENT(xRecvedEvent, EV_MASTER_PROCESS_SUCCESS)) {
             eErrStatus = MB_MRE_NO_ERR;
-        } else if MB_CHECK_EVENT(xRecvedEvent, EV_MASTER_ERROR_RESPOND_TIMEOUT){
+        } else if (MB_PORT_CHECK_EVENT(xRecvedEvent, EV_MASTER_ERROR_RESPOND_TIMEOUT)) {
             eErrStatus = MB_MRE_TIMEDOUT;
-        } else if MB_CHECK_EVENT(xRecvedEvent, EV_MASTER_ERROR_RECEIVE_DATA){
+        } else if (MB_PORT_CHECK_EVENT(xRecvedEvent, EV_MASTER_ERROR_RECEIVE_DATA)) {
             eErrStatus = MB_MRE_REV_DATA;
-        } else if MB_CHECK_EVENT(xRecvedEvent, EV_MASTER_ERROR_EXECUTE_FUNCTION){
+        } else if (MB_PORT_CHECK_EVENT(xRecvedEvent, EV_MASTER_ERROR_EXECUTE_FUNCTION)) {
             eErrStatus = MB_MRE_EXE_FUN;
         }
     } else {

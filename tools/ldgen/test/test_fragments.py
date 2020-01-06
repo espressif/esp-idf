@@ -69,6 +69,9 @@ class FragmentTest(unittest.TestCase):
         os.environ['COMPONENT_KCONFIGS'] = ''
         os.environ['COMPONENT_KCONFIGS_PROJBUILD'] = ''
 
+        # prepare_kconfig_files.py doesn't have to be called because COMPONENT_KCONFIGS and
+        # COMPONENT_KCONFIGS_PROJBUILD are empty
+
         self.sdkconfig = SDKConfig("data/Kconfig", "data/sdkconfig")
 
     def tearDown(self):

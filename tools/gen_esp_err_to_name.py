@@ -40,7 +40,9 @@ import textwrap
 import functools
 
 # list files here which should not be parsed
-ignore_files = ['components/mdns/test_afl_fuzz_host/esp32_compat.h']
+ignore_files = ['components/mdns/test_afl_fuzz_host/esp32_compat.h',        # used only for host tests (redefines some err codes)
+                'components/tcpip_adapter/include/tcpip_adapter_types.h'    # tcpip_adapter in compatibility mode from 4.1 (errors reused in esp-netif)
+                ]
 
 # add directories here which should not be parsed
 ignore_dirs = ('examples')

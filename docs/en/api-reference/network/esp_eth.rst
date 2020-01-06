@@ -1,6 +1,8 @@
 Ethernet
 ========
 
+:link_to_translation:`zh_CN:[中文]`
+
 Application Example
 -------------------
 
@@ -51,3 +53,8 @@ API Reference - PHY Interface
 -----------------------------
 
 .. include:: /_build/inc/esp_eth_phy.inc
+
+API Reference - Glue for esp_netif
+----------------------------------
+
+.. include:: /_build/inc/esp_eth_netif_glue.inc

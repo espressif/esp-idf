@@ -62,7 +62,7 @@ Debugging using JTAG and application loading / monitoring is integrated under th
 
 If the :doc:`ESP-WROVER-KIT <../../hw-reference/modules-and-boards>` is used, then connection from PC to ESP32 is done effectively with a single USB cable thanks to FT2232H chip installed on WROVER, which provides two USB channels, one for JTAG and the second for UART connection.
 
-Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal / command line, instead from Eclipse.
+Depending on user preferences, both `debugger` and `idf.py build` can be operated directly from terminal/command line, instead from Eclipse.
 
 
 .. _jtag-debugging-selecting-jtag-adapter:
@@ -142,7 +142,7 @@ Once target is configured and connected to computer, you are ready to launch Ope
 
 Open a terminal and set it up for using the ESP-IDF as described in the :ref:`setting up the environment <get-started-set-up-env>` section of the Getting Started Guide. Then run OpenOCD (this command works on Windows, Linux, and macOS)::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 .. note::
 
@@ -152,7 +152,7 @@ Open a terminal and set it up for using the ESP-IDF as described in the :ref:`se
 
 You should now see similar output (this log is for ESP-WROVER-KIT)::
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32-wrover-kit-3.3v.cfg
     Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
@@ -168,7 +168,7 @@ You should now see similar output (this log is for ESP-WROVER-KIT)::
     Info : esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
 
 * If there is an error indicating permission problems, please see the "Permissions delegation" bit in the OpenOCD README file in ``~/esp/openocd-esp32`` directory.
-* In case there is an error finding configuration files, e.g. ``Can't find interface/ftdi/esp32_devkitj_v1.cfg``, check the path after ``-s``. This path is used by OpenOCD to look for the files specified after ``-f``. Also check if the file is indeed under provided path. 
+* In case there is an error finding configuration files, e.g. ``Can't find board/esp32-wrover-kit-3.3v.cfg``, check the path after ``-s``. This path is used by OpenOCD to look for the files specified after ``-f``. Also check if the file is indeed under provided path. 
 * If you see JTAG errors (...all ones/...all zeroes) please check your connections, whether no other signals are connected to JTAG besides ESP32's pins, and see if everything is powered on.
 
 
@@ -181,11 +181,11 @@ Build and upload your application to ESP32 as usual, see :ref:`get-started-build
 
 Another option is to write application image to flash using OpenOCD via JTAG with commands like this::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp filename.bin 0x10000 verify exit"
 
-OpenOCD flashing command ``program_esp32`` has the following format:
+OpenOCD flashing command ``program_esp`` has the following format:
 
-``program_esp32 <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit]``
 
  - ``image_file`` - Path to program image file.
  - ``offset`` - Offset in flash bank to write image.
@@ -261,11 +261,11 @@ For Windows::
 
 Example of invoking OpenOCD build locally from sources, for Linux and macOS::
 
-    src/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    src/openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 and Windows::
 
-    src\openocd -f interface\ftdi\esp32_devkitj_v1.cfg -f board\esp-wroom-32.cfg
+    src\openocd -f board\esp32-wrover-kit-3.3v.cfg
 
 
 .. _jtag-debugging-tips-and-quirks:
@@ -287,6 +287,7 @@ This section provides collection of links to all tips and quirks referred to fro
 * :ref:`jtag-debugging-tip-openocd-configure-target`
 * :ref:`jtag-debugging-tip-reset-by-debugger`
 * :ref:`jtag-debugging-tip-jtag-pins-reconfigured`
+* :ref:`jtag-debugging-tip-at-firmware-issue`
 * :ref:`jtag-debugging-tip-reporting-issues`
 
 

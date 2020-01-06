@@ -83,8 +83,9 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
-#if MB_MASTER_RTU_ENABLED > 0 || MB_MASTER_ASCII_ENABLED > 0
-#if MB_FUNC_WRITE_HOLDING_ENABLED > 0
+#if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
+
+#if MB_FUNC_WRITE_HOLDING_ENABLED
 
 /**
  * This function will request write holding register.
@@ -114,7 +115,7 @@ eMBMasterReqWriteHoldingRegister( UCHAR ucSndAddr, USHORT usRegAddr, USHORT usRe
 		ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF]     = usRegData >> 8;
 		ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF + 1] = usRegData ;
 		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_SIZE );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
 		eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
@@ -192,7 +193,7 @@ eMBMasterReqWriteMultipleHoldingRegister( UCHAR ucSndAddr,
 			*ucMBFrame++ = pusDataBuffer[usRegIndex++] ;
 		}
 		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_MUL_SIZE_MIN + 2*usNRegs );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
 		eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
@@ -278,7 +279,7 @@ eMBMasterReqReadHoldingRegister( UCHAR ucSndAddr, USHORT usRegAddr, USHORT usNRe
 		ucMBFrame[MB_PDU_REQ_READ_REGCNT_OFF]     = usNRegs >> 8;
 		ucMBFrame[MB_PDU_REQ_READ_REGCNT_OFF + 1] = usNRegs;
 		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READ_SIZE );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
 		eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
@@ -384,7 +385,7 @@ eMBMasterReqReadWriteMultipleHoldingRegister( UCHAR ucSndAddr,
 			*ucMBFrame++ = pusDataBuffer[usRegIndex++] ;
 		}
 		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READWRITE_SIZE_MIN + 2*usNWriteRegs );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
 		eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;

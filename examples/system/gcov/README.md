@@ -5,7 +5,7 @@
 The following example demonstrates how to compile an ESP-IDF project to generate code coverage data, and how generate a code coverage report using Gcov or Lcov. Refer to the [Gcov Guide](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#gcov-source-code-coverage) for more details on the code coverage features supported in ESP-IDF.
 
 This example implements a simple blink application but with code coverage enabled. The example will demonstrate the following features:
-* How to compile a project with the `--coverage` flag
+* How to compile a project with coverage info enabled.
 * Various methods of dumping code coverage data (e.g. Instant Run-Time Dump and Hard-coded Dump).
 * How to generate a code coverage report.
 
@@ -63,10 +63,12 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 The example will initially execute two hard-coded dumps. Therefore, when the application outputs `Ready to dump GCOV data...`, users should execute the `esp32 gcov dump` OpenOCD command. The example should output the following:
 
 ```
-Counter = 0
+blink_dummy_func: Counter = 0
+some_dummy_func: Counter = 0
 Ready to dump GCOV data...
 GCOV data have been dumped.
-Counter = 1
+blink_dummy_func: Counter = 1
+some_dummy_func: Counter = 2
 Ready to dump GCOV data...
 GCOV data have been dumped.
 ```
@@ -76,15 +78,24 @@ GCOV data have been dumped.
 After the two hard-coded dumps, the example will continue looping through it's main blink function. Users can call `esp32 gcov` OpenOCD command to trigger an instant run-time dump. The output should resemble the following:
 
 ```
-Counter = 2
-Counter = 3
-Counter = 4
-Counter = 5
-Counter = 6
-Counter = 7
-Counter = 8
-Counter = 9
-Counter = 10
+blink_dummy_func: Counter = 2
+some_dummy_func: Counter = 4
+blink_dummy_func: Counter = 3
+some_dummy_func: Counter = 6
+blink_dummy_func: Counter = 4
+some_dummy_func: Counter = 8
+blink_dummy_func: Counter = 5
+some_dummy_func: Counter = 10
+blink_dummy_func: Counter = 6
+some_dummy_func: Counter = 12
+blink_dummy_func: Counter = 7
+some_dummy_func: Counter = 14
+blink_dummy_func: Counter = 8
+some_dummy_func: Counter = 16
+blink_dummy_func: Counter = 9
+some_dummy_func: Counter = 18
+blink_dummy_func: Counter = 10
+some_dummy_func: Counter = 20
 ...
 ```
 
@@ -99,26 +110,30 @@ To clean Gcov and report related data from the build directory, call `cmake --bu
 The following log should be output when generating the coverage report:
 
 ```
-Generating coverage report in: /home/alexey/projects/esp/esp-idf/examples/system/gcov/build/coverage_report
-Using gcov: ~/projects/esp/crosstool-NG/builds/xtensa-esp32-elf/bin/xtensa-esp32-elf-gcov
-Capturing coverage data from /home/alexey/projects/esp/esp-idf/examples/system/gcov/build
-Found gcov version: 5.2.0
-Scanning /home/alexey/projects/esp/esp-idf/examples/system/gcov/build for .gcda files ...
-Found 2 data files in /home/alexey/projects/esp/esp-idf/examples/system/gcov/build
-Processing main/gcov_example_func.gcda
-Processing main/gcov_example.gcda
+[1/1] Generating coverage report in: /home/user/projects/esp/tmp_idf/esp-idf/examples/system/gcov/build/coverage_report
+Using gcov: xtensa-esp32-elf-gcov
+Capturing coverage data from /home/user/projects/esp/tmp_idf/esp-idf/examples/system/gcov/build
+Found gcov version: 8.2.0
+Using intermediate gcov format
+Scanning /home/user/projects/esp/tmp_idf/esp-idf/examples/system/gcov/build for .gcda files ...
+Found 3 data files in /home/user/projects/esp/tmp_idf/esp-idf/examples/system/gcov/build
+Processing sample/CMakeFiles/__idf_sample.dir/some_funcs.c.gcda
+Processing main/CMakeFiles/__idf_main.dir/gcov_example_func.c.gcda
+Processing main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda
 Finished .info-file creation
-Reading data file /home/alexey/projects/esp/esp-idf/examples/system/gcov/build/coverage_report/gcov_example.info
-Found 2 entries.
-Found common filename prefix "/home/alexey/projects/esp/esp-idf/examples/system/gcov"
+Reading data file /home/user/projects/esp/tmp_idf/esp-idf/examples/system/gcov/build/coverage_report/gcov_example.info
+Found 4 entries.
+Found common filename prefix "/home/user/projects/esp/tmp_idf/esp-idf/examples/system/gcov"
 Writing .css and .png files.
 Generating output.
-Processing file main/gcov_example.c
+Processing file /home/user/projects/esp/tmp_idf/esp-idf/components/freertos/include/freertos/task.h
+Processing file components/sample/some_funcs.c
+Processing file main/gcov_example_main.c
 Processing file main/gcov_example_func.c
 Writing directory view page.
 Overall coverage rate:
-  lines......: 90.0% (18 of 20 lines)
-  functions..: 100.0% (3 of 3 functions)
+  lines......: 100.0% (28 of 28 lines)
+  functions..: 100.0% (4 of 4 functions)
 ```
 
 ## Troubleshooting

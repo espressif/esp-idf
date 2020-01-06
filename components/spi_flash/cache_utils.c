@@ -511,6 +511,7 @@ extern uint32_t esp_spiram_rodata_access_enabled();
             spiram_wrap_sizes[0] = icache_wrap_size;
         } else {
             spiram_wrap_sizes[1] = dcache_wrap_size;
+            flash_wrap_sizes[1] = dcache_wrap_size;
         }
 #ifdef CONFIG_EXT_RODATA_SUPPORT
         spiram_wrap_sizes[1] = dcache_wrap_size;

@@ -13,4 +13,26 @@
 // limitations under the License.
 
 #pragma once
+
+#include "soc/sens_reg.h"
+#include "soc/sens_struct.h"
+#include "soc/rtc_io_reg.h"
+#include "soc/rtc_io_struct.h"
+#include "soc/rtc.h"
 #include "soc/dac_channel.h"
+#include "soc/dac_caps.h"
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+typedef struct {
+    const uint8_t dac_channel_io_num[SOC_DAC_PERIPH_NUM];
+} dac_signal_conn_t;
+
+extern const dac_signal_conn_t dac_periph_signal;
+
+#ifdef __cplusplus
+}
+#endif

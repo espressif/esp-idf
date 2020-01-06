@@ -28,6 +28,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "driver/uart.h"
+#include "soc/uart_struct.h"
 #include "esp_vfs_dev.h"
 #include "esp_vfs.h"
 #include "sdkconfig.h"
@@ -206,6 +207,17 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
     vSemaphoreDelete(write_arg.done);
 }
 
+TEST_CASE("fcntl supported in UART VFS", "[vfs]")
+{
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    TEST_ASSERT_NOT_EQUAL(-1, flags);
+    int res = fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    TEST_ASSERT_NOT_EQUAL(-1, res);
+    /* revert */
+    res = fcntl(STDIN_FILENO, F_SETFL, flags);
+    TEST_ASSERT_NOT_EQUAL(-1, res);
+}
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 TEST_CASE("Can use termios for UART", "[vfs]")
 {
@@ -214,10 +226,11 @@ TEST_CASE("Can use termios for UART", "[vfs]")
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
     };
-    uart_param_config(UART_NUM_1, &uart_config);
     uart_driver_install(UART_NUM_1, 256, 256, 0, NULL, 0);
+    uart_param_config(UART_NUM_1, &uart_config);
 
     const int uart_fd = open("/dev/uart/1", O_RDWR);
     TEST_ASSERT_NOT_EQUAL_MESSAGE(uart_fd, -1, "Cannot open UART");

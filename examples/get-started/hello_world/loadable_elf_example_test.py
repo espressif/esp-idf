@@ -1,19 +1,12 @@
 import os
-import pexpect
-import serial
-import sys
 import threading
 import time
 
-try:
-    import IDF
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import pexpect
+import serial
 
-import Utility
+from tiny_test_fw import Utility
+import ttfw_idf
 
 
 class CustomProcess(object):
@@ -34,14 +27,25 @@ class CustomProcess(object):
 
 class OCDProcess(CustomProcess):
     def __init__(self, proj_path):
-        cmd = 'openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg'
+        cmd = 'openocd -f board/esp32-wrover-kit-3.3v.cfg'
         log_file = os.path.join(proj_path, 'openocd.log')
         super(OCDProcess, self).__init__(cmd, log_file)
-        i = self.p.expect_exact(['Info : Listening on port 3333 for gdb connections', 'Error:'])
-        if i == 0:
-            Utility.console_log('openocd is listening for gdb connections')
-        else:
-            raise RuntimeError('openocd initialization has failed')
+        patterns = ['Info : Listening on port 3333 for gdb connections',
+                    'Error: type \'esp32\' is missing virt2phys']
+
+        try:
+            while True:
+                i = self.p.expect_exact(patterns, timeout=30)
+                # TIMEOUT or EOF exceptions will be thrown upon other errors
+                if i == 0:
+                    Utility.console_log('openocd is listening for gdb connections')
+                    break  # success
+                elif i == 1:
+                    Utility.console_log('Ignoring error: "{}"'.format(patterns[i]))
+                    # this error message is ignored because it is not a fatal error
+        except Exception:
+            Utility.console_log('openocd initialization has failed', 'R')
+            raise
 
     def close(self):
         try:
@@ -114,15 +118,16 @@ class SerialThread(object):
             Utility.console_log('The pyserial thread is still alive', 'O')
 
 
-@IDF.idf_example_test(env_tag="test_jtag_arm")
+@ttfw_idf.idf_example_test(env_tag="test_jtag_arm")
 def test_examples_loadable_elf(env, extra_data):
 
-    idf_path = os.environ['IDF_PATH']
     rel_project_path = os.path.join('examples', 'get-started', 'hello_world')
+    app_files = ['hello-world.elf', 'partition_table/partition-table.bin']
+    example = ttfw_idf.LoadableElfExample(rel_project_path, app_files, target="esp32")
+    idf_path = example.get_sdk_path()
     proj_path = os.path.join(idf_path, rel_project_path)
-    example = IDF.Example(rel_project_path)
     sdkconfig = example.get_sdkconfig()
-    elf_path = os.path.join(example.get_binary_path(rel_project_path), 'hello-world.elf')
+    elf_path = os.path.join(example.binary_path, 'hello-world.elf')
     esp_log_path = os.path.join(proj_path, 'esp.log')
 
     assert(sdkconfig['CONFIG_IDF_TARGET_ESP32'] == 'y'), "Only ESP32 target is supported"

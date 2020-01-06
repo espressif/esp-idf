@@ -60,16 +60,23 @@ void app_main(void)
     touch_pad_init();
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
         touch_pad_config(button[i]);
-        touch_pad_set_thresh(button[i], TOUCH_PAD_THRESHOLD_MAX);
     }
-
+#if 0
+    /* If you want change the touch sensor default setting, please write here(after initialize). There are examples: */
+    touch_pad_set_meas_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
+    touch_pad_set_voltage(TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
+    touch_pad_set_inactive_connect(TOUCH_PAD_INACTIVE_CONNECT_DEFAULT);
+    for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
+        touch_pad_set_cnt_mode(i, TOUCH_PAD_SLOPE_DEFAULT, TOUCH_PAD_TIE_OPT_DEFAULT);
+    }
+#endif
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
             /* The bits to be cancelled are determined according to the noise level. */
             .grade = TOUCH_PAD_DENOISE_BIT4,    
             .cap_level = TOUCH_PAD_DENOISE_CAP_L7,
     };
-    touch_pad_denoise_set_config(denoise);
+    touch_pad_denoise_set_config(&denoise);
     touch_pad_denoise_enable();
     ESP_LOGI(TAG, "Denoise function init");
 

@@ -30,7 +30,7 @@
 #include "access.h"
 
 #include "provisioner_prov.h"
-#include "provisioner_proxy.h"
+#include "proxy_client.h"
 #include "provisioner_main.h"
 
 #if CONFIG_BLE_MESH_PROVISIONER
@@ -240,7 +240,7 @@ int provisioner_upper_init(void)
        which has been initialized in the application layer */
     bt_mesh.iv_index = prov->iv_index;
     bt_mesh_atomic_set_bit_to(bt_mesh.flags, BLE_MESH_IVU_IN_PROGRESS,
-                      BLE_MESH_IV_UPDATE(prov->flags));
+                              BLE_MESH_IV_UPDATE(prov->flags));
 
     /* Set minimum required hours, since the 96-hour minimum requirement
      * doesn't apply straight after provisioning (since we can't know how
@@ -256,7 +256,9 @@ int provisioner_upper_init(void)
     BT_DBG("netkey:     %s, nid: 0x%x", bt_hex(sub->keys[0].net, 16), sub->keys[0].nid);
     BT_DBG("enckey:     %s", bt_hex(sub->keys[0].enc, 16));
     BT_DBG("network id: %s", bt_hex(sub->keys[0].net_id, 8));
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     BT_DBG("identity:   %s", bt_hex(sub->keys[0].identity, 16));
+#endif
     BT_DBG("privacy:    %s", bt_hex(sub->keys[0].privacy, 16));
     BT_DBG("beacon:     %s", bt_hex(sub->keys[0].beacon, 16));
 

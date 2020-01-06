@@ -60,7 +60,7 @@ ESP32 具有两个强大的 Xtensa 内核，支持多种程序架构。ESP-IDF �
 
 如果你使用的是 :doc:`ESP-WROVER-KIT 开发板 <../../hw-reference/modules-and-boards>`，得益于板载的 FT232H 芯片，PC 和 ESP32 的连接仅仅需要一根 USB 线即可完成。FT232H 提供了两路 USB 通道，一路连接到 JTAG，另一路连接到 UART。
 
-根据用户的喜好，除了使用 Eclipse 集成开发环境，上述的调试工具和构建工具还可以直接在命令行终端运行。
+根据用户的喜好，除了使用 Eclipse 集成开发环境，还可以直接在命令行终端运行 `debugger` 和 `idf.py build`。
 
 .. _jtag-debugging-selecting-jtag-adapter:
 
@@ -140,7 +140,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 打开终端，按照快速入门中的指南 :ref:`设置好开发环境 <get-started-set-up-env>` ，然后运行如下命令，启动 OpenOCD（该命令在 Windows，Linux，和 macOS 中通用）::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 .. note::
 
@@ -150,7 +150,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 现在应该可以看到如下输入（此日志来自 ESP-WROVER-KIT）::
 
-    user-name@computer-name:~/esp/esp-idf$ openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    user-name@computer-name:~/esp/esp-idf$ openocd -f board/esp32-wrover-kit-3.3v.cfg
     Open On-Chip Debugger  v0.10.0-esp32-20190708 (2019-07-08-11:04)
     Licensed under GNU GPL v2
     For bug reports, read
@@ -166,7 +166,7 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
     Info : esp32: Core was reset (pwrstat=0x5F, after clear 0x0F).
 
 -  如果出现指示权限问题的错误，请参阅 ``~/esp/openocd-esp32`` 目录下 OpenOCD README 文件中关于 “Permissions delegation” 的说明。
--  如果发现配置文件有错误，例如 ``Can't find interface/ftdi/esp32_devkitj_v1.cfg``，请检查 ``-s`` 后面的路径，OpenOCD 会根据此路径来查找 ``-f`` 指定的文件。此外，还需要检查配置文件是否确实位于该路径下。
+-  如果发现配置文件有错误，例如 ``Can't find board/esp32-wrover-kit-3.3v.cfg``，请检查 ``-s`` 后面的路径，OpenOCD 会根据此路径来查找 ``-f`` 指定的文件。此外，还需要检查配置文件是否确实位于该路径下。
 -  如果看到 JTAG 错误（输出全是 1 或者全是 0），请检查硬件连接，除了 ESP32 的引脚之外是否还有其他信号连接到了 JTAG，并查看是否所有器件都已经上电。
 
 
@@ -179,11 +179,11 @@ JTAG 正常工作至少需要连接的信号线有：TDI，TDO，TCK，TMS 和 G
 
 除此以外，还支持使用 OpenOCD 通过 JTAG 接口将应用程序镜像烧写到闪存中，命令如下::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "program_esp32 filename.bin 0x10000 verify exit"
+    openocd -f board/esp32-wrover-kit-3.3v.cfg -c "program_esp filename.bin 0x10000 verify exit"
 
-其中 OpenOCD 的烧写命令 ``program_esp32`` 具有以下格式：
+其中 OpenOCD 的烧写命令 ``program_esp`` 具有以下格式：
 
-``program_esp32 <image_file> <offset> [verify] [reset] [exit]``
+``program_esp <image_file> <offset> [verify] [reset] [exit]``
 
     -  ``image_file`` - 程序镜像文件存放的路径
     -  ``offset`` - 镜像烧写到闪存中的偏移地址
@@ -260,11 +260,11 @@ Windows 用户可以执行::
 
 运行本地编译的 OpenOCD 的示例如下（Linux 和 macOS 用户）::
 
-    src/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    src/openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 Windows 用户::
 
-    src\openocd -f interface\ftdi\esp32_devkitj_v1.cfg -f board\esp-wroom-32.cfg
+    src\openocd -f board\esp32-wrover-kit-3.3v.cfg
 
 
 .. _jtag-debugging-tips-and-quirks:

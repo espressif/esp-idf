@@ -21,7 +21,7 @@
 #include "freertos/timers.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
 #include "esp_system.h"
@@ -41,19 +41,13 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param);
 /* WiFi should start before using ESPNOW */
 static void example_wifi_init(void)
 {
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(ESPNOW_WIFI_MODE) );
     ESP_ERROR_CHECK( esp_wifi_start());
-
-    /* In order to simplify example, channel is set after WiFi started.
-     * This is not necessary in real application if the two devices have
-     * been already on the same channel.
-     */
-    ESP_ERROR_CHECK( esp_wifi_set_channel(CONFIG_ESPNOW_CHANNEL, 0) );
 
 #if CONFIG_ESPNOW_ENABLE_LONG_RANGE
     ESP_ERROR_CHECK( esp_wifi_set_protocol(ESPNOW_WIFI_IF, WIFI_PROTOCOL_11B|WIFI_PROTOCOL_11G|WIFI_PROTOCOL_11N|WIFI_PROTOCOL_LR) );

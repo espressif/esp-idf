@@ -46,6 +46,7 @@
 #include "esp_heap_caps_init.h"
 #include "esp_system.h"
 #include "esp_spi_flash.h"
+#include "esp_flash_internal.h"
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_spi_flash.h"
@@ -189,7 +190,7 @@ extern void esp_switch_rodata_to_dcache(void);
 extern void esp_spiram_enable_instruction_access(void);
     esp_spiram_enable_instruction_access();
 #endif
-#if SPIRAM_RODATA
+#if CONFIG_SPIRAM_RODATA
 extern void esp_spiram_enable_rodata_access(void);
     esp_spiram_enable_rodata_access();
 #endif
@@ -294,7 +295,7 @@ void start_cpu0_default(void)
 #endif
     esp_timer_init();
     esp_set_time_from_rtc();
-#if CONFIG_ESP32_APPTRACE_ENABLE
+#if CONFIG_APPTRACE_ENABLE
     err = esp_apptrace_init();
     assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
 #endif
@@ -318,6 +319,11 @@ void start_cpu0_default(void)
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
+
+    esp_flash_app_init();
+    esp_err_t flash_ret = esp_flash_init_default_chip();
+    assert(flash_ret == ESP_OK);
+
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();
 #ifdef CONFIG_PM_DFS_INIT_AUTO

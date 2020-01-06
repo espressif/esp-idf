@@ -21,7 +21,7 @@ extern "C" {
 
 #include <stdint.h>
 #include <stdlib.h>
-#include "rom/efuse.h"
+#include "efuse.h"
 
 void ets_hmac_enable(void);
 

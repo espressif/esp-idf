@@ -725,16 +725,6 @@ int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
     return ret;
 }
 
-int __attribute__((weak)) fcntl(int fd, int cmd, ...)
-{
-    va_list args;
-    va_start(args, cmd);
-    int arg = va_arg(args, int);
-    va_end(args);
-    struct _reent* r = __getreent();
-    return _fcntl_r(r, fd, cmd, arg);
-}
-
 int ioctl(int fd, int cmd, ...)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);

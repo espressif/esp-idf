@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "unity.h"
+#include "soc/frc_timer_reg.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
@@ -11,6 +12,7 @@
 #include "freertos/semphr.h"
 #include "test_utils.h"
 #include "esp_private/esp_timer_impl.h"
+#include "esp_freertos_hooks.h"
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
@@ -650,6 +652,43 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
     ref_clock_deinit();
 }
 
+static esp_timer_handle_t timer1;
+static SemaphoreHandle_t sem;
+static void IRAM_ATTR test_tick_hook(void)
+{
+    static int i;
+    const int iterations = 16;
+
+    if (++i <= iterations) {
+        if (i & 0x1) {
+            TEST_ESP_OK(esp_timer_start_once(timer1, 5000));
+        } else {
+            TEST_ESP_OK(esp_timer_stop(timer1));
+        }
+    } else {
+        xSemaphoreGiveFromISR(sem, 0);
+    }
+}
+
+TEST_CASE("Can start/stop timer from ISR context", "[esp_timer]")
+{
+    void timer_func(void* arg)
+    {
+        printf("timer cb\n");
+    }
+
+    esp_timer_create_args_t create_args = {
+        .callback = &timer_func,
+    };
+    TEST_ESP_OK(esp_timer_create(&create_args, &timer1));
+    sem = xSemaphoreCreateBinary();
+    esp_register_freertos_tick_hook(test_tick_hook);
+    TEST_ASSERT(xSemaphoreTake(sem, portMAX_DELAY));
+    esp_deregister_freertos_tick_hook(test_tick_hook);
+    TEST_ESP_OK( esp_timer_delete(timer1) );
+    vSemaphoreDelete(sem);
+}
+
 #if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
 
 #include "soc/dport_reg.h"
@@ -779,3 +818,21 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 }
 
 #endif // !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+
+TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
+{
+    REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
+    esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
+
+    ets_delay_us(2);
+
+    portDISABLE_INTERRUPTS();
+    esp_timer_impl_set_alarm(50331647);
+    uint32_t alarm_reg = REG_READ(FRC_TIMER_ALARM_REG(1));
+    uint32_t count_reg = REG_READ(FRC_TIMER_COUNT_REG(1));
+    portENABLE_INTERRUPTS();
+
+    const uint32_t offset = 80 * 2; // s_timer_ticks_per_us
+    printf("alarm_reg = 0x%x, count_reg 0x%x\n", alarm_reg, count_reg);
+    TEST_ASSERT(alarm_reg <= (count_reg + offset));
+}

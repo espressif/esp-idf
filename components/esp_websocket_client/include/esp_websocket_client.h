@@ -47,9 +47,11 @@ typedef enum {
  * @brief Websocket event data
  */
 typedef struct {
-    const char *data_ptr;   /*!< Data pointer */
-    int         data_len;   /*!< Data length */
-    uint8_t     op_code;    /*!< Received opcode */
+    const char                      *data_ptr;      /*!< Data pointer */
+    int                             data_len;       /*!< Data length */
+    uint8_t                         op_code;        /*!< Received opcode */
+    esp_websocket_client_handle_t   client;         /*!< esp_websocket_client_handle_t context */
+    void                            *user_context;  /*!< user_data context, from esp_websocket_client_config_t user_data */
 } esp_websocket_event_data_t;
 
 /**
@@ -60,19 +62,6 @@ typedef enum {
     WEBSOCKET_TRANSPORT_OVER_TCP,       /*!< Transport over tcp */
     WEBSOCKET_TRANSPORT_OVER_SSL,       /*!< Transport over ssl */
 } esp_websocket_transport_t;
-
-/**
- * @brief Websocket Client events data
- */
-typedef struct {
-    esp_websocket_event_id_t      event_id;     /*!< event_id, to know the cause of the event */
-    esp_websocket_client_handle_t client;       /*!< esp_websocket_client_handle_t context */
-    void                          *user_context;/*!< user_data context, from esp_websocket_client_config_t user_data */
-    char                          *data;        /*!< data of the event */
-    int                           data_len;     /*!< length of data */
-} esp_websocket_event_t;
-
-typedef esp_websocket_event_t* esp_websocket_event_handle_t;
 
 /**
  * @brief Websocket client setup configuration
@@ -92,8 +81,8 @@ typedef struct {
     const char                  *cert_pem;                  /*!< SSL Certification, PEM format as string, if the client requires to verify server */
     esp_websocket_transport_t   transport;                  /*!< Websocket transport type, see `esp_websocket_transport_t */
     char                        *subprotocol;               /*!< Websocket subprotocol */
-	char                        *user_agent;                /*!< Websocket user-agent */
-	char                        *headers;                   /*!< Websocket additional headers */
+    char                        *user_agent;                /*!< Websocket user-agent */
+    char                        *headers;                   /*!< Websocket additional headers */
 } esp_websocket_client_config_t;
 
 /**
@@ -157,7 +146,7 @@ esp_err_t esp_websocket_client_destroy(esp_websocket_client_handle_t client);
  * @param[in]  client  The client
  * @param[in]  data    The data
  * @param[in]  len     The length
- * @param[in]  timeout Write data timeout
+ * @param[in]  timeout Write data timeout in RTOS ticks
  *
  * @return
  *     - Number of data was sent
@@ -171,7 +160,7 @@ int esp_websocket_client_send(esp_websocket_client_handle_t client, const char *
  * @param[in]  client  The client
  * @param[in]  data    The data
  * @param[in]  len     The length
- * @param[in]  timeout Write data timeout
+ * @param[in]  timeout Write data timeout in RTOS ticks
  *
  * @return
  *     - Number of data was sent
@@ -185,7 +174,7 @@ int esp_websocket_client_send_bin(esp_websocket_client_handle_t client, const ch
  * @param[in]  client  The client
  * @param[in]  data    The data
  * @param[in]  len     The length
- * @param[in]  timeout Write data timeout
+ * @param[in]  timeout Write data timeout in RTOS ticks
  *
  * @return
  *     - Number of data was sent

@@ -525,18 +525,16 @@ static tBTM_STATUS btm_send_connect_request(UINT16 acl_handle,
 
                 /* Return error if no packet types left */
                 if (temp_pkt_types == 0) {
-                    BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",
-                                    __FUNCTION__);
+                    BTM_TRACE_ERROR("%s: SCO Conn (BR/EDR SC): No packet types available",__FUNCTION__);
                     return (BTM_WRONG_MODE);
                 }
             } else {
-                BTM_TRACE_DEBUG("%s: SCO Conn(BR/EDR SC):local or peer does not support BR/EDR SC",
-                                __FUNCTION__);
+                BTM_TRACE_DEBUG("%s: SCO Conn(BR/EDR SC):local or peer does not support BR/EDR SC",__FUNCTION__);
             }
         }
 
 
-        BTM_TRACE_API("      txbw 0x%x, rxbw 0x%x, lat 0x%x, voice 0x%x, retrans 0x%02x, pkt 0x%04x",
+        BTM_TRACE_API("txbw 0x%x, rxbw 0x%x, lat 0x%x, voice 0x%x, retrans 0x%02x, pkt 0x%04x",
                       p_setup->tx_bw, p_setup->rx_bw,
                       p_setup->max_latency, p_setup->voice_contfmt,
                       p_setup->retrans_effort, temp_pkt_types);

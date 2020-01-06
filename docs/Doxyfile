@@ -28,6 +28,7 @@ INPUT = \
     ../../components/esp_wifi/include/esp_wifi_types.h \
     ../../components/esp_wifi/include/esp_smartconfig.h \
     ../../components/esp_wifi/include/esp_now.h \
+    ../../components/esp_wifi/include/esp_wifi_default.h \
     ## Mesh - API Reference
     ../../components/esp_wifi/include/esp_mesh.h \
     ## Event loop - API Reference
@@ -57,6 +58,7 @@ INPUT = \
     ../../components/bt/host/bluedroid/api/include/api/esp_spp_api.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_hf_defs.h \
     ../../components/bt/host/bluedroid/api/include/api/esp_hf_client_api.h \
+    ../../components/bt/host/bluedroid/api/include/api/esp_hf_ag_api.h \
     ## NimBLE related Bluetooth APIs
     ../../components/bt/host/nimble/esp-hci/include/esp_nimble_hci.h \
     ## ESP BLE Mesh APIs
@@ -80,6 +82,7 @@ INPUT = \
     ../../components/esp_eth/include/esp_eth_com.h \
     ../../components/esp_eth/include/esp_eth_mac.h \
     ../../components/esp_eth/include/esp_eth_phy.h \
+    ../../components/esp_eth/include/esp_eth_netif_glue.h \
     ##
     ## Peripherals - API Reference
     ##
@@ -92,6 +95,7 @@ INPUT = \
     ../../components/driver/include/driver/i2s.h \
     ../../components/driver/include/driver/ledc.h \
     ../../components/driver/include/driver/mcpwm.h \
+    ../../components/soc/include/hal/mcpwm_types.h \
     ../../components/driver/include/driver/pcnt.h \
     ../../components/driver/include/driver/rmt.h \
     ../../components/driver/include/driver/sigmadelta.h \
@@ -103,14 +107,28 @@ INPUT = \
     ../../components/driver/include/driver/touch_pad.h \
     ../../components/driver/include/driver/uart.h \
     ../../components/esp_adc_cal/include/esp_adc_cal.h \
+    ../../components/soc/include/hal/rmt_types.h \
     ../../components/soc/include/hal/spi_types.h \
+    ../../components/soc/include/hal/pcnt_types.h \
+    ../../components/soc/include/hal/i2s_types.h \
+    ../../components/soc/include/hal/rtc_io_types.h \
+    ../../components/soc/include/hal/sigmadelta_types.h \
+    ../../components/soc/include/hal/timer_types.h \
+    ../../components/soc/include/hal/ledc_types.h \
+    ../../components/soc/include/hal/i2c_types.h \
+    ../../components/soc/include/hal/dac_types.h \
+    ../../components/soc/include/hal/adc_types.h \
+    ../../components/soc/include/hal/gpio_types.h \
+    ../../components/soc/include/hal/uart_types.h \
+    ../../components/soc/include/hal/touch_sensor_types.h \
     ../../components/soc/esp32/include/soc/adc_channel.h \
     ../../components/soc/esp32/include/soc/dac_channel.h \
-    ../../components/soc/esp32/include/soc/touch_channel.h \
+    ../../components/soc/esp32/include/soc/touch_sensor_channel.h \
     ../../components/soc/esp32/include/soc/uart_channel.h \
-    ../../components/soc/esp32/include/soc/rtc_gpio_channel.h \
-    ## tcpip_adapter - API Reference
-    ../../components/tcpip_adapter/include/tcpip_adapter.h \
+    ../../components/soc/esp32/include/soc/rtc_io_channel.h \
+    ## esp_netif - API Reference
+    ../../components/esp_netif/include/esp_netif.h \
+    ../../components/esp_netif/include/esp_netif_net_stack.h \
     ##
     ## Protocols - API Reference
     ##
@@ -129,6 +147,9 @@ INPUT = \
     ../../components/esp_https_server/include/esp_https_server.h \
     ## ESP Local Ctrl
     ../../components/esp_local_ctrl/include/esp_local_ctrl.h \
+    ## ESP Serial Slave Link
+    ../../components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
+    ../../components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
     ##
     ## Provisioning - API Reference
     ##
@@ -165,6 +186,7 @@ INPUT = \
     ../../components/driver/include/driver/sdspi_host.h \
     ## SDIO slave
     ../../components/driver/include/driver/sdio_slave.h \
+    ../../components/soc/include/hal/sdio_slave_types.h \
     ## Non-Volatile Storage
     ../../components/nvs_flash/include/nvs.h \
     ../../components/nvs_flash/include/nvs_flash.h \
@@ -201,6 +223,8 @@ INPUT = \
     ../../components/esp_common/include/esp_freertos_hooks.h \
     ## Inter-Processor Call
     ../../components/esp_common/include/esp_ipc.h \
+    ## Call Function with External stack
+    ../../components/esp_common/include/esp_expression_with_stack.h \
     ## Over The Air Updates (OTA)
     ../../components/app_update/include/esp_ota_ops.h \
     ## ESP HTTPS OTA

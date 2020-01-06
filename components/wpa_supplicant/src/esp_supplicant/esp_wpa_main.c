@@ -32,6 +32,7 @@
 
 #include "esp_wifi_driver.h"
 #include "esp_private/wifi.h"
+#include "esp_wpa3_i.h"
 
 void  wpa_install_key(enum wpa_alg alg, u8 *addr, int key_idx, int set_tx,
                       u8 *seq, size_t seq_len, u8 *key, size_t key_len, int key_entry_valid)
@@ -74,7 +75,7 @@ void  wpa_config_profile(void)
 {
     if (esp_wifi_sta_prof_is_wpa_internal()) {
         wpa_set_profile(WPA_PROTO_WPA, esp_wifi_sta_get_prof_authmode_internal());
-    } else if (esp_wifi_sta_prof_is_wpa2_internal()) {
+    } else if (esp_wifi_sta_prof_is_wpa2_internal() || esp_wifi_sta_prof_is_wpa3_internal()) {
         wpa_set_profile(WPA_PROTO_RSN, esp_wifi_sta_get_prof_authmode_internal());
     } else {
         WPA_ASSERT(0);
@@ -158,32 +159,6 @@ void  wpa_sta_connect(uint8_t *bssid)
     WPA_ASSERT(ret == 0);
 }
 
-int cipher_type_map(int wpa_cipher)
-{
-    switch (wpa_cipher) {
-    case WPA_CIPHER_NONE:
-        return WIFI_CIPHER_TYPE_NONE;
-
-    case WPA_CIPHER_WEP40:
-        return WIFI_CIPHER_TYPE_WEP40;
-
-    case WPA_CIPHER_WEP104:
-        return WIFI_CIPHER_TYPE_WEP104;
-
-    case WPA_CIPHER_TKIP:
-        return WIFI_CIPHER_TYPE_TKIP;
-
-    case WPA_CIPHER_CCMP:
-        return WIFI_CIPHER_TYPE_CCMP;
-
-    case WPA_CIPHER_CCMP|WPA_CIPHER_TKIP:
-        return WIFI_CIPHER_TYPE_TKIP_CCMP;
-
-    default:
-        return WIFI_CIPHER_TYPE_UNKNOWN;
-    }
-}
-
 int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data)
 {
     struct wpa_ie_data ie;
@@ -191,12 +166,12 @@ int wpa_parse_wpa_ie_wrapper(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t 
 
     ret = wpa_parse_wpa_ie(wpa_ie, wpa_ie_len, &ie);
     data->proto = ie.proto;
-    data->pairwise_cipher = cipher_type_map(ie.pairwise_cipher);
-    data->group_cipher = cipher_type_map(ie.group_cipher);
+    data->pairwise_cipher = cipher_type_map_supp_to_public(ie.pairwise_cipher);
+    data->group_cipher = cipher_type_map_supp_to_public(ie.group_cipher);
     data->key_mgmt = ie.key_mgmt;
     data->capabilities = ie.capabilities;
     data->pmkid = ie.pmkid;
-    data->mgmt_group_cipher = cipher_type_map(ie.mgmt_group_cipher);
+    data->mgmt_group_cipher = cipher_type_map_supp_to_public(ie.mgmt_group_cipher);
 
     return ret;
 }
@@ -227,6 +202,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_parse_wpa_ie  = wpa_parse_wpa_ie_wrapper;
     wpa_cb->wpa_config_bss = NULL;//wpa_config_bss;
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
+    esp_wifi_register_wpa3_cb(wpa_cb);
 
     esp_wifi_register_wpa_cb_internal(wpa_cb);
 

@@ -10,4 +10,52 @@ menu "mDNS"
             the maximum amount of services here. The valid value is from 1
             to 64.
 
+    config MDNS_TASK_PRIORITY
+        int "mDNS task priority"
+        range 1 255
+        default 1
+        help
+            Allows setting mDNS task priority. Please do not set the task priority
+            higher than priorities of system tasks. Compile time warning/error
+            would be emitted if the chosen task priority were too high.
+
+    choice MDNS_TASK_AFFINITY
+        prompt "mDNS task affinity"
+        default MDNS_TASK_AFFINITY_CPU0
+        help
+            Allows setting mDNS tasks affinity, i.e. whether the task is pinned to
+            CPU0, pinned to CPU1, or allowed to run on any CPU.
+
+        config MDNS_TASK_AFFINITY_NO_AFFINITY
+            bool "No affinity"
+        config MDNS_TASK_AFFINITY_CPU0
+            bool "CPU0"
+        config MDNS_TASK_AFFINITY_CPU1
+            bool "CPU1"
+            depends on !FREERTOS_UNICORE
+
+    endchoice
+
+    config MDNS_TASK_AFFINITY
+        hex
+        default FREERTOS_NO_AFFINITY if MDNS_TASK_AFFINITY_NO_AFFINITY
+        default 0x0 if MDNS_TASK_AFFINITY_CPU0
+        default 0x1 if MDNS_TASK_AFFINITY_CPU1
+
+    config MDNS_SERVICE_ADD_TIMEOUT_MS
+        int "mDNS adding service timeout (ms)"
+        range 10 30000
+        default 2000
+        help
+            Configures timeout for adding a new mDNS service. Adding a service
+            fails if could not be completed within this time.
+
+    config MDNS_TIMER_PERIOD_MS
+        int "mDNS timer period (ms)"
+        range 10 10000
+        default 100
+        help
+            Configures period of mDNS timer, which periodically transmits packets
+            and schedules mDNS searches.
+
 endmenu

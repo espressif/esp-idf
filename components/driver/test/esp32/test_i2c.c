@@ -107,11 +107,11 @@ static void i2c_master_write_test(void)
     int i;
 
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
 
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
@@ -132,10 +132,10 @@ static void i2c_slave_read_test(void)
     int len = 0;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     unity_send_signal("i2c slave init finish");
 
     unity_wait_for_signal("master write");
@@ -162,10 +162,10 @@ static void master_read_slave_test(void)
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
     memset(data_rd, 0, DATA_LENGTH);
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     unity_wait_for_signal("i2c slave init finish");
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -195,10 +195,10 @@ static void slave_write_buffer_test(void)
     int size_rd;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     unity_send_signal("i2c slave init finish");
 
     unity_wait_for_signal("slave write");
@@ -223,10 +223,10 @@ static void i2c_master_write_read_test(void)
     uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
 
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     unity_wait_for_signal("i2c slave init finish");
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     i2c_master_start(cmd);
@@ -266,10 +266,10 @@ static void i2c_slave_read_write_test(void)
     int size_rd;
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     unity_send_signal("i2c slave init finish");
     unity_wait_for_signal("slave write");
 
@@ -300,11 +300,11 @@ static void i2c_master_repeat_write(void)
     int times = 3;
 
     i2c_config_t conf_master = i2c_master_init();
-    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
-
     TEST_ESP_OK(i2c_driver_install(I2C_MASTER_NUM, I2C_MODE_MASTER,
                                    I2C_MASTER_RX_BUF_DISABLE,
                                    I2C_MASTER_TX_BUF_DISABLE, 0));
+
+    TEST_ESP_OK(i2c_param_config(I2C_MASTER_NUM, &conf_master));
     unity_wait_for_signal("i2c slave init finish");
 
     for (int j = 0; j < times; j++) {
@@ -327,10 +327,10 @@ static void i2c_slave_repeat_read(void)
     uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH * 3);
 
     i2c_config_t conf_slave = i2c_slave_init();
-    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     TEST_ESP_OK(i2c_driver_install(I2C_SLAVE_NUM, I2C_MODE_SLAVE,
                                    I2C_SLAVE_RX_BUF_LEN,
                                    I2C_SLAVE_TX_BUF_LEN, 0));
+    TEST_ESP_OK(i2c_param_config( I2C_SLAVE_NUM, &conf_slave));
     unity_send_signal("i2c slave init finish");
     unity_wait_for_signal("master write");
 

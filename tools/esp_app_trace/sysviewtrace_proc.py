@@ -24,22 +24,34 @@ import sys
 import os.path
 import signal
 import traceback
+import logging
+import json
 import espytrace.apptrace as apptrace
 import espytrace.sysview as sysview
 
 
 def main():
 
+    verbosity_levels = [
+        logging.CRITICAL,
+        logging.ERROR,
+        logging.WARNING,
+        logging.INFO,
+        logging.DEBUG
+    ]
+
     parser = argparse.ArgumentParser(description='ESP32 SEGGER SystemView Trace Parsing Tool')
 
     parser.add_argument('trace_sources', help='Trace data sources. Format: [file://]/path/to/file.', nargs='+', type=str)
-    parser.add_argument('elf_file', help='Path to program ELF file.', type=str)
+    parser.add_argument('--elf-file', '-b', help='Path to program ELF file.', type=str, default='')
     parser.add_argument('--tmo', '-w', help='Data wait timeout in sec. -1: infinite, 0: no wait', type=int, default=0)
     parser.add_argument('--dump-events', '-d', help='Dump all events.', action='store_true')
     parser.add_argument('--print-events', '-p', help='Print events of selected types. By default only reports are printed', action='store_true')
     parser.add_argument('--include-events', '-i', help='Events types to be included into report.', type=str, choices=['heap', 'log', 'all'], default='all')
     parser.add_argument('--toolchain', '-t', help='Toolchain prefix.', type=str, default='xtensa-esp32-elf-')
     parser.add_argument('--events-map', '-e', help='Events map file.', type=str, default=os.path.join(os.path.dirname(__file__), 'SYSVIEW_FreeRTOS.txt'))
+    parser.add_argument('--to-json', '-j', help='Print JSON.', action='store_true', default=False)
+    parser.add_argument('--verbose', '-v', help='Verbosity level. Default 1', choices=range(0, len(verbosity_levels)), type=int, default=1)
     args = parser.parse_args()
 
     def sig_int_handler(signum, frame):
@@ -56,6 +68,8 @@ def main():
     elif args.include_events == 'log':
         include_events['log'] = True
 
+    logging.basicConfig(level=verbosity_levels[args.verbose], format='[%(levelname)s] %(message)s')
+
     # parse trace files
     parsers = []
     for i, trace_source in enumerate(args.trace_sources):
@@ -69,21 +83,22 @@ def main():
                                          sysview.SysViewLogTraceDataParser(print_events=False, core_id=i))
             parsers.append(parser)
         except Exception as e:
-            print("Failed to create data parser ({})!".format(e))
+            logging.error("Failed to create data parser (%s)!", e)
             traceback.print_exc()
             sys.exit(2)
         reader = apptrace.reader_create(trace_source, args.tmo)
         if not reader:
-            print("Failed to create trace reader!")
+            logging.error("Failed to create trace reader!")
             sys.exit(2)
         try:
-            print("Parse trace from '{}'...".format(trace_source))
+            # logging.info("Parse trace from '{}'...".format(trace_source))
+            logging.info("Parse trace from '%s'...", trace_source)
             sysview.parse_trace(reader, parser, args.events_map)
-            print("Parsing completed.")
+            logging.info("Parsing completed.")
         except (apptrace.ReaderTimeoutError, apptrace.ReaderShutdownRequest) as e:
-            print("Stop parsing trace. ({})".format(e))
+            logging.info("Stop parsing trace. (%s)", e)
         except Exception as e:
-            print("Failed to parse trace ({})!".format(e))
+            logging.error("Failed to parse trace (%s)!", e)
             parser.cleanup()
             traceback.print_exc()
             sys.exit(2)
@@ -92,27 +107,32 @@ def main():
 
     # merge and process traces
     try:
-        proc = sysview.SysViewMultiTraceDataProcessor(traces=parsers, print_events=args.dump_events)
+        proc = sysview.SysViewMultiStreamTraceDataProcessor(traces=parsers, print_events=args.dump_events, keep_all_events=True if args.to_json else False)
         if include_events['heap']:
             proc.add_stream_processor(sysview.SysViewTraceDataParser.STREAMID_HEAP,
-                                      sysview.SysViewHeapTraceDataProcessor(args.toolchain, args.elf_file, print_heap_events=args.print_events))
+                                      sysview.SysViewHeapTraceDataProcessor(args.toolchain, args.elf_file, root_proc=proc, print_heap_events=args.print_events))
         if include_events['log']:
             proc.add_stream_processor(sysview.SysViewTraceDataParser.STREAMID_LOG,
-                                      sysview.SysViewLogTraceDataProcessor(print_log_events=args.print_events))
+                                      sysview.SysViewLogTraceDataProcessor(root_proc=proc, print_log_events=args.print_events))
     except Exception as e:
-        print("Failed to create data processor ({})!".format(e))
+        logging.error("Failed to create data processor (%s)!", e)
         traceback.print_exc()
         sys.exit(2)
+
     try:
-        print("Process events from '{}'...".format(args.trace_sources))
+        logging.info("Process events from '%s'...", args.trace_sources)
         proc.merge_and_process()
-        print("Processing completed.")
+        logging.info("Processing completed.")
     except Exception as e:
-        print("Failed to process trace ({})!".format(e))
+        logging.error("Failed to process trace (%s)!", e)
         traceback.print_exc()
         sys.exit(2)
     finally:
-        proc.print_report()
+        if args.to_json:
+            print(json.dumps(proc, cls=sysview.SysViewTraceDataJsonEncoder, indent=4, separators=(',', ': '), sort_keys=True))
+        else:
+            proc.print_report()
+        proc.cleanup()
 
 
 if __name__ == '__main__':

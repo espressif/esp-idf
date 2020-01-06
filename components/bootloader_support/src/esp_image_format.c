@@ -222,6 +222,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             // No secure boot, but SHA-256 can be appended for basic corruption detection
             if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
                 err = verify_simple_hash(sha_handle, data);
+                sha_handle = NULL; // calling verify_simple_hash finishes sha_handle
             }
 #endif // SECURE_BOOT_CHECK_SIGNATURE
         } else { // verify_sha
@@ -229,18 +230,19 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             if (sha_handle != NULL) {
                 bootloader_sha256_finish(sha_handle, NULL);
             }
-
-            if (data->image.hash_appended) {
-                const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
-                if (hash == NULL) {
-                    err = ESP_FAIL;
-                    goto err;
-                }
-                memcpy(data->image_digest, hash, HASH_LEN);
-                bootloader_munmap(hash);
-            }
             sha_handle = NULL;
-        } // verify_sha
+        } //verify_sha
+
+        // Separately, if there's a hash appended to the image then copy it out to the data->image_digest field
+        if (data->image.hash_appended) {
+            const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
+            if (hash == NULL) {
+                err = ESP_FAIL;
+                goto err;
+            }
+            memcpy(data->image_digest, hash, HASH_LEN);
+            bootloader_munmap(hash);
+        }
     } // do_verify
 
     if (err != ESP_OK) {
@@ -310,9 +312,6 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
         }
         err = ESP_ERR_IMAGE_INVALID;
     }
-    if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
-        err = ESP_ERR_IMAGE_INVALID;
-    }
     if (!silent) {
         if (image->spi_mode > ESP_IMAGE_SPI_MODE_SLOW_READ) {
             ESP_LOGW(TAG, "image at 0x%x has invalid SPI mode %d", src_addr, image->spi_mode);
@@ -324,6 +323,16 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
             ESP_LOGW(TAG, "image at 0x%x has invalid SPI size %d", src_addr, image->spi_size);
         }
     }
+
+    if (err == ESP_OK) {
+        // Checking the chip revision header *will* print a bunch of other info
+        // regardless of silent setting as this may be important, but don't bother checking it
+        // if it looks like the app partition is erased or otherwise garbage
+        if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
+            err = ESP_ERR_IMAGE_INVALID;
+        }
+    }
+
     return err;
 }
 

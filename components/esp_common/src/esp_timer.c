@@ -264,12 +264,12 @@ static IRAM_ATTR bool timer_armed(esp_timer_handle_t timer)
 
 static IRAM_ATTR void timer_list_lock(void)
 {
-    portENTER_CRITICAL(&s_timer_lock);
+    portENTER_CRITICAL_SAFE(&s_timer_lock);
 }
 
 static IRAM_ATTR void timer_list_unlock(void)
 {
-    portEXIT_CRITICAL(&s_timer_lock);
+    portEXIT_CRITICAL_SAFE(&s_timer_lock);
 }
 
 static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
@@ -300,8 +300,10 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
 #if WITH_PROFILING
         uint64_t callback_start = now;
 #endif
+        esp_timer_cb_t callback = it->callback;
+        void* arg = it->arg;
         timer_list_unlock();
-        (*it->callback)(it->arg);
+        (*callback)(arg);
         timer_list_lock();
         now = esp_timer_impl_get_time();
 #if WITH_PROFILING

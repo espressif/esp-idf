@@ -8,18 +8,7 @@
 */
 
 /*
-    This example shows how to use the All Channel Scan or Fast Scan to connect
-    to a Wi-Fi network.
-
-    In the Fast Scan mode, the scan will stop as soon as the first network matching
-    the SSID is found. In this mode, an application can set threshold for the
-    authentication mode and the Signal strength. Networks that do not meet the
-    threshold requirements will be ignored.
-
-    In the All Channel Scan mode, the scan will end only after all the channels
-    are scanned, and connection will start with the best network. The networks
-    can be sorted based on Authentication Mode or Signal Strength. The priority
-    for the Authentication mode is:  WPA2 > WPA > WEP > Open
+    This example shows how to scan for available set of APs.
 */
 #include <string.h>
 #include "freertos/FreeRTOS.h"
@@ -114,22 +103,26 @@ static void print_cipher_type(int pairwise_cipher, int group_cipher)
 /* Initialize Wi-Fi as sta and set scan method */
 static void wifi_scan(void)
 {
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
     uint16_t number = DEFAULT_SCAN_LIST_SIZE;
     wifi_ap_record_t ap_info[DEFAULT_SCAN_LIST_SIZE];
+    uint16_t ap_count = 0;
     memset(ap_info, 0, sizeof(ap_info));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_start());
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, true));
     ESP_ERROR_CHECK(esp_wifi_scan_get_ap_records(&number, ap_info));
-
-    for (int i = 0; i < DEFAULT_SCAN_LIST_SIZE; i++) {
+    ESP_ERROR_CHECK(esp_wifi_scan_get_ap_num(&ap_count));
+    ESP_LOGI(TAG, "Total APs scanned = %u", ap_count);
+    for (int i = 0; (i < DEFAULT_SCAN_LIST_SIZE) && (i < ap_count); i++) {
         ESP_LOGI(TAG, "SSID \t\t%s", ap_info[i].ssid);
         ESP_LOGI(TAG, "RSSI \t\t%d", ap_info[i].rssi);
         print_auth_mode(ap_info[i].authmode);

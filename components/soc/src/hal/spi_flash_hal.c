@@ -36,12 +36,23 @@ static const spi_flash_hal_clock_config_t spi_flash_clk_cfg_reg[ESP_FLASH_SPEED_
     {80e6, SPI_FLASH_LL_CLKREG_VAL_80MHZ},
 };
 
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+static const spi_flash_hal_clock_config_t spi_flash_gpspi_clk_cfg_reg[ESP_FLASH_SPEED_MAX] = {
+    {5e6,  {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_5MHZ}},
+    {10e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_10MHZ}},
+    {20e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_20MHZ}},
+    {26e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_26MHZ}},
+    {40e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_40MHZ}},
+    {80e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_80MHZ}},
+};
+#endif
+
 static inline int get_dummy_n(bool gpio_is_used, int input_delay_ns, int eff_clk)
 {
     const int apbclk_kHz = APB_CLK_FREQ / 1000;
     //calculate how many apb clocks a period has
     const int apbclk_n = APB_CLK_FREQ / eff_clk;
-    const int gpio_delay_ns = gpio_is_used ? (APB_CYCLE_NS * 2) : 0;
+    const int gpio_delay_ns = gpio_is_used ? GPIO_MATRIX_DELAY_NS : 0;
 
     //calculate how many apb clocks the delay is, the 1 is to compensate in case ``input_delay_ns`` is rounded off.
     int apb_period_n = (1 + input_delay_ns + gpio_delay_ns) * apbclk_kHz / 1000 / 1000;
@@ -57,13 +68,38 @@ esp_err_t spi_flash_hal_init(spi_flash_memspi_data_t *data_out, const spi_flash_
     if (!esp_ptr_internal(data_out)) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    spi_flash_hal_clock_config_t clock_cfg = spi_flash_clk_cfg_reg[cfg->speed];
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+    if (cfg->host_id > SPI_HOST) {
+        clock_cfg = spi_flash_gpspi_clk_cfg_reg[cfg->speed];
+    }
+#endif
+
     *data_out = (spi_flash_memspi_data_t) {
         .spi = spi_flash_ll_get_hw(cfg->host_id),
         .cs_num = cfg->cs_num,
-        .extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, spi_flash_clk_cfg_reg[cfg->speed].freq),
-        .clock_conf = spi_flash_clk_cfg_reg[cfg->speed].clock_reg_val,
+        .extra_dummy = get_dummy_n(!cfg->iomux, cfg->input_delay_ns, clock_cfg.freq),
+        .clock_conf = clock_cfg.clock_reg_val,
     };
 
     ESP_EARLY_LOGD(TAG, "extra_dummy: %d", data_out->extra_dummy);
     return ESP_OK;
+}
+
+bool spi_flash_hal_supports_direct_write(spi_flash_host_driver_t *host, const void *p)
+{
+    bool direct_write = ( ((spi_flash_memspi_data_t *)host->driver_data)->spi != spi_flash_ll_get_hw(SPI_HOST)
+                          || esp_ptr_in_dram(p) );
+    return direct_write;
+}
+
+
+bool spi_flash_hal_supports_direct_read(spi_flash_host_driver_t *host, const void *p)
+{
+  //currently the host doesn't support to read through dma, no word-aligned requirements
+    bool direct_read = ( ((spi_flash_memspi_data_t *)host->driver_data)->spi != spi_flash_ll_get_hw(SPI_HOST)
+                         || esp_ptr_in_dram(p) );
+    return direct_read;
 }

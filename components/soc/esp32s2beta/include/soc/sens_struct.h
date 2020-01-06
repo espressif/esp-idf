@@ -279,13 +279,21 @@ typedef volatile struct {
     } sar_touch_status[14];
     union {
         struct {
+            uint32_t touch_slp_baseline:22;
+            uint32_t reserved22:         7;
+            uint32_t touch_slp_debounce: 3;
+        };
+        uint32_t val;
+    } sar_touch_slp_status;
+    union {
+        struct {
             uint32_t touch_approach_pad2_cnt: 8;
             uint32_t touch_approach_pad1_cnt: 8;
             uint32_t touch_approach_pad0_cnt: 8;
             uint32_t touch_slp_approach_cnt:  8;
         };
         uint32_t val;
-    } sar_touch_status16;
+    } sar_touch_appr_status;
     union {
         struct {
             uint32_t sw_fstep:          16;                 /*frequency step for CW generator*/

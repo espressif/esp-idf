@@ -565,11 +565,16 @@ class IDFTool(object):
         for retry in range(DOWNLOAD_RETRY_COUNT):
             local_temp_path = local_path + '.tmp'
             info('Downloading {} to {}'.format(archive_name, local_temp_path))
-            urlretrieve(url, local_temp_path, report_progress if not global_non_interactive else None)
-            sys.stdout.write("\rDone\n")
+            try:
+                urlretrieve(url, local_temp_path, report_progress if not global_non_interactive else None)
+                sys.stdout.write("\rDone\n")
+            except Exception as e:
+                # urlretrieve could throw different exceptions, e.g. IOError when the server is down
+                # Errors are ignored because the downloaded file is checked a couple of lines later.
+                warn('Download failure {}'.format(e))
             sys.stdout.flush()
-            if not self.check_download_file(download_obj, local_temp_path):
-                warn('Failed to download file {}'.format(local_temp_path))
+            if not os.path.isfile(local_temp_path) or not self.check_download_file(download_obj, local_temp_path):
+                warn('Failed to download {} to {}'.format(url, local_temp_path))
                 continue
             rename_with_retry(local_temp_path, local_path)
             downloaded = True
@@ -837,9 +842,32 @@ def get_python_env_path():
         with open(version_file_path, "r") as version_file:
             idf_version_str = version_file.read()
     else:
-        idf_version_str = subprocess.check_output(['git', '--work-tree=' + global_idf_path, 'describe', '--tags'], cwd=global_idf_path, env=os.environ).decode()
+        try:
+            idf_version_str = subprocess.check_output(['git', 'describe', '--tags'],
+                                                      cwd=global_idf_path, env=os.environ).decode()
+        except subprocess.CalledProcessError as e:
+            warn('Git describe was unsuccessul: {}'.format(e))
+            idf_version_str = ''
     match = re.match(r'^v([0-9]+\.[0-9]+).*', idf_version_str)
-    idf_version = match.group(1)
+    if match:
+        idf_version = match.group(1)
+    else:
+        idf_version = None
+        # fallback when IDF is a shallow clone
+        try:
+            with open(os.path.join(global_idf_path, 'components', 'esp_common', 'include', 'esp_idf_version.h')) as f:
+                m = re.search(r'^#define\s+ESP_IDF_VERSION_MAJOR\s+(\d+).+?^#define\s+ESP_IDF_VERSION_MINOR\s+(\d+)',
+                              f.read(), re.DOTALL | re.MULTILINE)
+                if m:
+                    idf_version = '.'.join((m.group(1), m.group(2)))
+                else:
+                    warn('Reading IDF version from C header file failed!')
+        except Exception as e:
+            warn('Is it not possible to determine the IDF version: {}'.format(e))
+
+    if idf_version is None:
+        fatal('IDF version cannot be determined')
+        raise SystemExit(1)
 
     idf_python_env_path = os.path.join(global_idf_tools_path, 'python_env',
                                        'idf{}_py{}_env'.format(idf_version, python_ver_major_minor))
@@ -1065,7 +1093,10 @@ def action_download(args):
         tool_for_platform = tool_obj.copy_for_platform(platform)
         tools_info_for_platform[name] = tool_for_platform
 
-    if 'all' in tools_spec:
+    if not tools_spec or 'required' in tools_spec:
+        tools_spec = [k for k, v in tools_info_for_platform.items() if v.get_install_type() == IDFTool.INSTALL_ALWAYS]
+        info('Downloading tools for {}: {}'.format(platform, ', '.join(tools_spec)))
+    elif 'all' in tools_spec:
         tools_spec = [k for k, v in tools_info_for_platform.items() if v.get_install_type() != IDFTool.INSTALL_NEVER]
         info('Downloading tools for {}: {}'.format(platform, ', '.join(tools_spec)))
 
@@ -1084,7 +1115,9 @@ def action_download(args):
             raise SystemExit(1)
         if tool_version is None:
             tool_version = tool_obj.get_recommended_version()
-        assert tool_version is not None
+        if tool_version is None:
+            fatal('tool {} not found for {} platform'.format(tool_name, platform))
+            raise SystemExit(1)
         tool_spec = '{}@{}'.format(tool_name, tool_version)
 
         info('Downloading {}'.format(tool_spec))
@@ -1096,7 +1129,7 @@ def action_download(args):
 def action_install(args):
     tools_info = load_tools_info()
     tools_spec = args.tools
-    if not tools_spec:
+    if not tools_spec or 'required' in tools_spec:
         tools_spec = [k for k, v in tools_info.items() if v.get_install_type() == IDFTool.INSTALL_ALWAYS]
         info('Installing tools: {}'.format(', '.join(tools_spec)))
     elif 'all' in tools_spec:
@@ -1254,15 +1287,19 @@ def main(argv):
                                                 'will be used instead. If this flag is given, the version in PATH ' +
                                                 'will be used.', action='store_true')
     install = subparsers.add_parser('install', help='Download and install tools into the tools directory')
-    install.add_argument('tools', nargs='*', help='Tools to install. ' +
-                                                  'To install a specific version use tool_name@version syntax.' +
-                                                  'Use \'all\' to install all tools, including the optional ones.')
+    install.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
+                         help='Tools to install. ' +
+                         'To install a specific version use <tool_name>@<version> syntax. ' +
+                         'Use empty or \'required\' to install required tools, not optional ones. ' +
+                         'Use \'all\' to install all tools, including the optional ones.')
 
     download = subparsers.add_parser('download', help='Download the tools into the dist directory')
     download.add_argument('--platform', help='Platform to download the tools for')
-    download.add_argument('tools', nargs='+', help='Tools to download. ' +
-                                                   'To download a specific version use tool_name@version syntax.' +
-                                                   'Use \'all\' to download all tools, including the optional ones.')
+    download.add_argument('tools', metavar='TOOL', nargs='*', default=['required'],
+                          help='Tools to download. ' +
+                          'To download a specific version use <tool_name>@<version> syntax. ' +
+                          'Use empty or \'required\' to download required tools, not optional ones. ' +
+                          'Use \'all\' to download all tools, including the optional ones.')
 
     if IDF_MAINTAINER:
         for subparser in [download, install]:
@@ -1311,6 +1348,7 @@ def main(argv):
         global_idf_path = args.idf_path
     if not global_idf_path:
         global_idf_path = os.path.realpath(os.path.join(os.path.dirname(__file__), ".."))
+    os.environ['IDF_PATH'] = global_idf_path
 
     global global_idf_tools_path
     global_idf_tools_path = os.environ.get('IDF_TOOLS_PATH') or os.path.expanduser(IDF_TOOLS_PATH_DEFAULT)

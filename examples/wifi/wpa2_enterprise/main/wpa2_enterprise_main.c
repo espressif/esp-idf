@@ -27,7 +27,7 @@
 #include "esp_log.h"
 #include "esp_system.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 
 /* The examples use simple WiFi configuration that you can set via
    project configuration menu.
@@ -47,6 +47,9 @@
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
+
+/* esp netif object representing the WIFI station */
+static esp_netif_t *sta_netif = NULL;
 
 /* The event group allows multiple bits for each event,
    but we only care about one event - are we connected
@@ -101,9 +104,12 @@ static void initialise_wifi(void)
     unsigned int client_key_bytes = client_key_end - client_key_start;
 #endif /* CONFIG_EXAMPLE_EAP_METHOD_TLS */
 
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
+
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
     ESP_ERROR_CHECK( esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL) );
@@ -139,14 +145,14 @@ static void initialise_wifi(void)
 
 static void wpa2_enterprise_example_task(void *pvParameters)
 {
-    tcpip_adapter_ip_info_t ip;
-    memset(&ip, 0, sizeof(tcpip_adapter_ip_info_t));
+    esp_netif_ip_info_t ip;
+    memset(&ip, 0, sizeof(esp_netif_ip_info_t));
     vTaskDelay(2000 / portTICK_PERIOD_MS);
 
     while (1) {
         vTaskDelay(2000 / portTICK_PERIOD_MS);
 
-        if (tcpip_adapter_get_ip_info(ESP_IF_WIFI_STA, &ip) == 0) {
+        if (esp_netif_get_ip_info(sta_netif, &ip) == 0) {
             ESP_LOGI(TAG, "~~~~~~~~~~~");
             ESP_LOGI(TAG, "IP:"IPSTR, IP2STR(&ip.ip));
             ESP_LOGI(TAG, "MASK:"IPSTR, IP2STR(&ip.netmask));

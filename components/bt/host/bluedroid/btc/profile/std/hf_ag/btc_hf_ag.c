@@ -80,7 +80,7 @@ static hf_local_param_t hf_local_param[BTC_HF_NUM_CB];
 
 /* wide band synchronous */
 #ifndef BTC_HF_WBS_PREFERRED
-#define BTC_HF_WBS_PREFERRED   FALSE
+#define BTC_HF_WBS_PREFERRED   TRUE
 #endif
 BOOLEAN btc_conf_hf_force_wbs = BTC_HF_WBS_PREFERRED;
 
@@ -1301,7 +1301,12 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             do {
                 memset(&param, 0, sizeof(esp_hf_cb_param_t));
                 param.vra_rep.value = p_data->val.num;
-                btc_hf_cb_to_app(ESP_HF_BVRA_EVT, &param);
+                btc_hf_cb_to_app(ESP_HF_BVRA_RESPONSE_EVT, &param);
+                if (p_data->val.num) {
+                    btc_hf_connect_audio(&hf_local_param[idx].btc_hf_cb.connected_bda);
+                } else {
+                    btc_hf_disconnect_audio(&hf_local_param[idx].btc_hf_cb.connected_bda);
+                }
             } while (0);
             break;
         }
@@ -1327,6 +1332,11 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         }
 
         case BTA_AG_AT_CBC_EVT:
+        {
+            btc_hf_cb_to_app(ESP_HF_IND_UPDATE_EVT, NULL);
+            break;
+        }
+
         case BTA_AG_AT_CIND_EVT:
         {
             btc_hf_cind_evt(&p_data->ind);
@@ -1416,48 +1426,41 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         case BTA_AG_AT_BAC_EVT:
         {
             BTC_TRACE_DEBUG("AG Bitmap of peer-codecs %d", p_data->val.num);
-            memset(&param, 0, sizeof(esp_hf_cb_param_t));
-            param.codec.mode = p_data->val.num;
-            btc_hf_cb_to_app(ESP_HF_BAC_RESPONSE_EVT, &param);
-            break;
-        }
-
-#if (BTM_WBS_INCLUDED == TRUE )
-        case BTA_AG_WBS_EVT:
-        {
-            BTC_TRACE_DEBUG("BTA_AG_WBS_EVT Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.num);
-            memset(&param, 0, sizeof(esp_hf_cb_param_t));
-            param.codec.mode = p_data->val.num;
-            if(p_data->val.num == BTA_AG_CODEC_CVSD) {
-                btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
-            } else if(p_data->val.num == BTA_AG_CODEC_MSBC) {
-                btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
-            } else {
-                btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
-            }
-            break;
-        }
-#endif
-
 #if (BTM_WBS_INCLUDED == TRUE)
             /* If the peer supports mSBC and the BTC prefferred codec is also mSBC, then
             ** we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC at the time
             ** of SCO connection establishment */
             if ((btc_conf_hf_force_wbs == TRUE) && (p_data->val.num & BTA_AG_CODEC_MSBC)) {
-                  BTC_TRACE_EVENT("%s btc_hf override-Preferred Codec to MSBC", __FUNCTION__);
+                  BTC_TRACE_DEBUG("%s btc_hf override-Preferred Codec to MSBC", __FUNCTION__);
                   BTA_AgSetCodec(hf_local_param[idx].btc_hf_cb.handle,BTA_AG_CODEC_MSBC);
             }
             else {
-                  BTC_TRACE_EVENT("%s btif_hf override-Preferred Codec to CVSD", __FUNCTION__);
+                  BTC_TRACE_DEBUG("%s btc_hf override-Preferred Codec to CVSD", __FUNCTION__);
                   BTA_AgSetCodec(hf_local_param[idx].btc_hf_cb.handle,BTA_AG_CODEC_CVSD);
             }
 #endif
             break;
+        }
+#if (BTM_WBS_INCLUDED == TRUE)
+        case BTA_AG_WBS_EVT:
+        {
+            BTC_TRACE_DEBUG("Set codec status %d codec %d 1=CVSD 2=MSBC", p_data->val.hdr.status, p_data->val.value);
+            memset(&param, 0, sizeof(esp_hf_cb_param_t));
+            param.wbs_rep.codec = p_data->val.value;
+            btc_hf_cb_to_app(ESP_HF_WBS_RESPONSE_EVT, &param);
+            break;
+        }
+
         case BTA_AG_AT_BCS_EVT:
+        {
             BTC_TRACE_DEBUG("AG final seleded codec is %d 1=CVSD 2=MSBC", p_data->val.num);
-            /*  no ESP_HF_WBS_NONE case, becuase HF 1.6 supported device can send BCS */
+            memset(&param, 0, sizeof(esp_hf_cb_param_t));
+            param.bcs_rep.mode = p_data->val.num;
+            /* No ESP_HF_WBS_NONE case, becuase HFP 1.6 supported device can send BCS */
             btc_hf_cb_to_app(ESP_HF_BCS_RESPONSE_EVT, &param);
             break;
+        }
+#endif
         default:
             BTC_TRACE_WARNING("%s: Unhandled event: %d", __FUNCTION__, event);
             break;

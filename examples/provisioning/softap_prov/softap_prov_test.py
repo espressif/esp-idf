@@ -17,48 +17,26 @@
 from __future__ import print_function
 import re
 import os
-import sys
 import time
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
-
-try:
-    import esp_prov
-except ImportError:
-    esp_prov_path = os.getenv("IDF_PATH") + "/tools/esp_prov"
-    if esp_prov_path and esp_prov_path not in sys.path:
-        sys.path.insert(0, esp_prov_path)
-    import esp_prov
-
-try:
-    import wifi_tools
-except ImportError:
-    wifi_tools_path = os.getenv("IDF_PATH") + "/examples/provisioning/softap_prov/utils"
-    if wifi_tools_path and wifi_tools_path not in sys.path:
-        sys.path.insert(0, wifi_tools_path)
-    import wifi_tools
+import ttfw_idf
+import esp_prov
+import wifi_tools
 
 # Have esp_prov throw exception
 esp_prov.config_throw_except = True
 
 
-@IDF.idf_example_test(env_tag="Example_WIFI_BT")
+@ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_softap(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("softap_prov", "examples/provisioning/softap_prov", dut_class=ESP32DUT)
+    dut1 = env.get_dut("softap_prov", "examples/provisioning/softap_prov", dut_class=ttfw_idf.ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "softap_prov.bin")
     bin_size = os.path.getsize(binary_file)
-    IDF.log_performance("softap_prov_bin_size", "{}KB".format(bin_size // 1024))
-    IDF.check_performance("softap_prov_bin_size", bin_size // 1024)
+    ttfw_idf.log_performance("softap_prov_bin_size", "{}KB".format(bin_size // 1024))
+    ttfw_idf.check_performance("softap_prov_bin_size", bin_size // 1024)
 
     # Upload binary and start testing
     dut1.start_app()
@@ -77,7 +55,7 @@ def test_examples_provisioning_softap(env, extra_data):
     ctrl = wifi_tools.wpa_cli(iface, reset_on_exit=True)
     print("Connecting to DUT SoftAP...")
     ip = ctrl.connect(ssid, password)
-    got_ip = dut1.expect(re.compile(r"softAP assign IP to station,IP is: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
+    got_ip = dut1.expect(re.compile(r"DHCP server assigned IP to a station, IP is: (\d+.\d+.\d+.\d+)"), timeout=30)[0]
     if ip != got_ip:
         raise RuntimeError("SoftAP connected to another host! " + ip + "!=" + got_ip)
     print("Connected to DUT SoftAP")

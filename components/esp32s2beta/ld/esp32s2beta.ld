@@ -95,8 +95,11 @@ MEMORY
 
 _static_data_end = _bss_end;
 
-/* Heap ends at top of dram0_0_seg */
-_heap_end = 0x40000000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM;
+/* Heap ends at top of dram0_0_seg
+   ROM data mappings start from 0x3FFFC000,
+  0x3FFF4000...0x3FFFC000 can be reserved for trace memory mapping
+*/
+_heap_end = 0x3FFFC000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM;
 
 _data_seg_org = ORIGIN(rtc_data_seg);
 

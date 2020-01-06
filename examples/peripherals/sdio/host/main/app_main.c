@@ -1,4 +1,4 @@
-/* SDIO example, host (uses sdmmc host driver)
+/* SDIO example, host (uses sdmmc_host/sdspi_host driver)
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
 
@@ -20,26 +20,18 @@
 #include "soc/sdio_slave_periph.h"
 #include "esp_log.h"
 #include "esp_attr.h"
-#include "esp_slave.h"
+#include "esp_serial_slave_link/essl_sdio.h"
 #include "sdkconfig.h"
 #include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 
+#define TIMEOUT_MAX   UINT32_MAX
 
-/*
- * For SDIO master-slave board, we have 3 pins controlling power of 3 different
- * slaves individially. We only enable one at a time.
- */
-#define GPIO_B1     5
-#define GPIO_B2     18
-#define GPIO_B3     19
+
+#define GPIO_B1     21
 
 #if CONFIG_EXAMPLE_SLAVE_B1
 #define SLAVE_PWR_GPIO GPIO_B1
-#elif CONFIG_EXAMPLE_SLAVE_B2
-#define SLAVE_PWR_GPIO GPIO_B2
-#elif CONFIG_EXAMPLE_SLAVE_B3
-#define SLAVE_PWR_GPIO GPIO_B3
 #endif
 
 /*
@@ -85,6 +77,7 @@
 
 #define WRITE_BUFFER_LEN    4096
 #define READ_BUFFER_LEN     4096
+#define SLAVE_BUFFER_SIZE   128
 
 static const char TAG[] = "example_host";
 
@@ -103,21 +96,21 @@ typedef enum {
 } example_job_t;
 
 //host use this to inform the slave it should reset its counters
-esp_err_t slave_reset(esp_slave_context_t *context)
+esp_err_t slave_reset(essl_handle_t handle)
 {
     esp_err_t ret;
     ESP_LOGI(TAG, "send reset to slave...");
-    ret = esp_slave_write_reg(context, 0, JOB_RESET, NULL);
+    ret = essl_write_reg(handle, 0, JOB_RESET, NULL, TIMEOUT_MAX);
     if (ret != ESP_OK) {
         return ret;
     }
-    ret = esp_slave_send_slave_intr(context, BIT(SLAVE_INTR_NOTIFY));
+    ret = essl_send_slave_intr(handle, BIT(SLAVE_INTR_NOTIFY), TIMEOUT_MAX);
     if (ret != ESP_OK) {
         return ret;
     }
 
     vTaskDelay(500 / portTICK_RATE_MS);
-    ret = esp_slave_wait_for_ioready(context);
+    ret = essl_wait_for_ready(handle, TIMEOUT_MAX);
     ESP_LOGI(TAG, "slave io ready");
     return ret;
 }
@@ -126,7 +119,7 @@ esp_err_t slave_reset(esp_slave_context_t *context)
 static void gpio_d2_set_high(void)
 {
     gpio_config_t d2_config = {
-        .pin_bit_mask = BIT(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
+        .pin_bit_mask = BIT64(SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D2),
         .mode = GPIO_MODE_OUTPUT,
         .pull_up_en = true,
     };
@@ -166,7 +159,7 @@ static esp_err_t print_sdio_cis_information(sdmmc_card_t* card)
 }
 
 //host use this to initialize the slave card as well as SDIO registers
-esp_err_t slave_init(esp_slave_context_t *context)
+esp_err_t slave_init(essl_handle_t* handle)
 {
     esp_err_t err;
     /* Probe */
@@ -247,8 +240,14 @@ esp_err_t slave_init(esp_slave_context_t *context)
     gpio_pullup_en(13);
     gpio_pulldown_dis(13);
 
-    *context = ESP_SLAVE_DEFAULT_CONTEXT(card);
-    esp_err_t ret = esp_slave_init_io(context);
+    essl_sdio_config_t ser_config = {
+        .card = card,
+        .recv_buffer_size = SLAVE_BUFFER_SIZE,
+    };
+    err = essl_sdio_init_dev(handle, &ser_config);
+    ESP_ERROR_CHECK(err);
+
+    esp_err_t ret = essl_init(*handle, TIMEOUT_MAX);
     ESP_ERROR_CHECK(ret);
 
     ret = print_sdio_cis_information(card);
@@ -267,7 +266,7 @@ void slave_power_on(void)
     level_active = 1;
 #endif
     gpio_config_t cfg = {
-        .pin_bit_mask = BIT(GPIO_B1) | BIT(GPIO_B2) | BIT(GPIO_B3),
+        .pin_bit_mask = BIT64(GPIO_B1),
         .mode = GPIO_MODE_DEF_OUTPUT,
         .pull_up_en = false,
         .pull_down_en = false,
@@ -275,8 +274,6 @@ void slave_power_on(void)
     };
     gpio_config(&cfg);
     gpio_set_level(GPIO_B1, !level_active);
-    gpio_set_level(GPIO_B2, !level_active);
-    gpio_set_level(GPIO_B3, !level_active);
 
     vTaskDelay(100);
     gpio_set_level(SLAVE_PWR_GPIO, level_active);
@@ -288,18 +285,18 @@ void slave_power_on(void)
 DMA_ATTR uint8_t rcv_buffer[READ_BUFFER_LEN];
 
 //try to get an interrupt from the slave and handle it, return if none.
-esp_err_t process_event(esp_slave_context_t *context)
+esp_err_t process_event(essl_handle_t handle)
 {
-    esp_err_t ret = esp_slave_wait_int(context, 0);
+    esp_err_t ret = essl_wait_int(handle, 0);
     if (ret == ESP_ERR_TIMEOUT) {
         return ret;
     }
     ESP_ERROR_CHECK(ret);
 
     uint32_t intr_raw, intr_st;
-    ret = esp_slave_get_intr(context, &intr_raw, &intr_st);
+    ret = essl_get_intr(handle, &intr_raw, &intr_st, TIMEOUT_MAX);
     ESP_ERROR_CHECK(ret);
-    ret = esp_slave_clear_intr(context, intr_raw);
+    ret = essl_clear_intr(handle, intr_raw, TIMEOUT_MAX);
     ESP_ERROR_CHECK(ret);
     ESP_LOGD(TAG, "intr: %08X", intr_raw);
 
@@ -314,7 +311,7 @@ esp_err_t process_event(esp_slave_context_t *context)
         ESP_LOGD(TAG, "new packet coming");
         while (1) {
             size_t size_read = READ_BUFFER_LEN;
-            ret = esp_slave_get_packet(context, rcv_buffer, READ_BUFFER_LEN, &size_read, wait_ms);
+            ret = essl_get_packet(handle, rcv_buffer, READ_BUFFER_LEN, &size_read, wait_ms);
             if (ret == ESP_ERR_NOT_FOUND) {
                 ESP_LOGE(TAG, "interrupt but no data can be read");
                 break;
@@ -334,32 +331,32 @@ esp_err_t process_event(esp_slave_context_t *context)
 }
 
 //tell the slave to do a job
-static inline esp_err_t slave_inform_job(esp_slave_context_t *context, example_job_t job)
+static inline esp_err_t slave_inform_job(essl_handle_t handle, example_job_t job)
 {
     esp_err_t ret;
-    ret = esp_slave_write_reg(context, SLAVE_REG_JOB, job, NULL);
+    ret = essl_write_reg(handle, SLAVE_REG_JOB, job, NULL, TIMEOUT_MAX);
     ESP_ERROR_CHECK(ret);
-    ret = esp_slave_send_slave_intr(context, BIT(SLAVE_INTR_NOTIFY));
+    ret = essl_send_slave_intr(handle, BIT(SLAVE_INTR_NOTIFY), TIMEOUT_MAX);
     ESP_ERROR_CHECK(ret);
     return ret;
 }
 
 //tell the slave to write registers by write one of them, and read them back
-void job_write_reg(esp_slave_context_t *context, int value)
+void job_write_reg(essl_handle_t handle, int value)
 {
     esp_err_t ret;
-    uint8_t reg_read[64];
+    uint8_t reg_read[60];
     ESP_LOGI(TAG, "========JOB: write slave reg========");
-    ret = esp_slave_write_reg(context, SLAVE_REG_VALUE, value, NULL);
+    ret = essl_write_reg(handle, SLAVE_REG_VALUE, value, NULL, TIMEOUT_MAX);
     ESP_ERROR_CHECK(ret);
 
-    ret = slave_inform_job(context, JOB_WRITE_REG);
+    ret = slave_inform_job(handle, JOB_WRITE_REG);
     ESP_ERROR_CHECK(ret);
 
     vTaskDelay(10);
-    for (int i = 0; i < 64; i++) {
+    for (int i = 0; i < 60; i++) {
         ESP_LOGD(TAG, "reading register %d", i);
-        ret = esp_slave_read_reg(context, i, &reg_read[i]);
+        ret = essl_read_reg(handle, i, &reg_read[i], TIMEOUT_MAX);
         ESP_ERROR_CHECK(ret);
     }
 
@@ -374,7 +371,7 @@ int packet_len[] = {6, 12, 1024, 512, 3, 513, 517};
 DMA_ATTR uint8_t send_buffer[READ_BUFFER_LEN];
 
 //send packets to the slave (they will return and be handled by the interrupt handler)
-void job_fifo(esp_slave_context_t *context)
+void job_fifo(essl_handle_t handle)
 {
     for (int i = 0; i < READ_BUFFER_LEN; i++) {
         send_buffer[i] = 0x46 + i * 5;
@@ -392,7 +389,7 @@ void job_fifo(esp_slave_context_t *context)
     for (int i = 0; i < sizeof(packet_len) / sizeof(int); i++) {
         const int wait_ms = 50;
         int length = packet_len[i];
-        ret = esp_slave_send_packet(context, send_buffer + pointer, length, wait_ms);
+        ret = essl_send_packet(handle, send_buffer + pointer, length, wait_ms);
         if (ret == ESP_ERR_TIMEOUT) {
             ESP_LOGD(TAG, "several packets are expected to timeout.");
         } else {
@@ -404,15 +401,15 @@ void job_fifo(esp_slave_context_t *context)
 }
 
 //inform the slave to send interrupts to host (the interrupts will be handled in the interrupt handler)
-void job_getint(esp_slave_context_t *context)
+void job_getint(essl_handle_t handle)
 {
     ESP_LOGI(TAG, "========JOB: get interrupts from slave========");
-    slave_inform_job(context, JOB_SEND_INT);
+    slave_inform_job(handle, JOB_SEND_INT);
 }
 
 void app_main(void)
 {
-    esp_slave_context_t context;
+    essl_handle_t handle;
     esp_err_t err;
 
     //enable the power if on espressif SDIO master-slave board
@@ -420,23 +417,23 @@ void app_main(void)
 
     ESP_LOGI(TAG, "host ready, start initializing slave...");
 
-    err = slave_init(&context);
+    err = slave_init(&handle);
     ESP_ERROR_CHECK(err);
 
-    err = slave_reset(&context);
+    err = slave_reset(handle);
     ESP_ERROR_CHECK(err);
 
     uint32_t start, end;
 
-    job_write_reg(&context, 10);
+    job_write_reg(handle, 10);
 
     int times = 2;
 
     while (1) {
-        job_getint(&context);
+        job_getint(handle);
         start = xTaskGetTickCount();
         while (1) {
-            process_event(&context);
+            process_event(handle);
             vTaskDelay(1);
             end = xTaskGetTickCount();
             if ((end - start) * 1000 / CONFIG_FREERTOS_HZ > 5000) {
@@ -449,11 +446,11 @@ void app_main(void)
     };
 
     while (1) {
-        job_fifo(&context);
+        job_fifo(handle);
 
         start = xTaskGetTickCount();
         while (1) {
-            process_event(&context);
+            process_event(handle);
             vTaskDelay(1);
             end = xTaskGetTickCount();
             if ((end - start) * 1000 / CONFIG_FREERTOS_HZ > 2000) {

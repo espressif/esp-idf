@@ -231,7 +231,7 @@
 
 #define LWIP_DHCP_IP_ADDR_RESTORE()     dhcp_ip_addr_restore(netif)
 #define LWIP_DHCP_IP_ADDR_STORE()       dhcp_ip_addr_store(netif)
-#define LWIP_DHCP_IP_ADDR_ERASE()       dhcp_ip_addr_erase(esp_netif[tcpip_if])
+#define LWIP_DHCP_IP_ADDR_ERASE(esp_netif)       dhcp_ip_addr_erase(esp_netif)
 
 #endif
 
@@ -796,6 +796,7 @@
 #define ESP_IPV6                        1
 #define ESP_SOCKET                      1
 #define ESP_LWIP_SELECT                 1
+#define ESP_LWIP_LOCK                   1
 
 #ifdef ESP_IRAM_ATTR
 #undef ESP_IRAM_ATTR
@@ -843,7 +844,10 @@
  */
 #define SNTP_SERVER_DNS            1
 
-#define SNTP_UPDATE_DELAY              CONFIG_LWIP_SNTP_UPDATE_DELAY
+// It disables a check of SNTP_UPDATE_DELAY it is done in sntp_set_sync_interval
+#define SNTP_SUPPRESS_DELAY_CHECK
+
+#define SNTP_UPDATE_DELAY              (sntp_get_sync_interval())
 
 #define SNTP_SET_SYSTEM_TIME_US(sec, us)  \
     do { \

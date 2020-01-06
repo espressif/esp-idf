@@ -16,10 +16,6 @@ ifdef CONFIG_NEWLIB_NANO_FORMAT
 LINKER_SCRIPTS += esp32.rom.newlib-nano.ld
 endif
 
-ifneq ($(GCC_NOT_5_2_0), 1)
-LINKER_SCRIPTS += esp32.rom.newlib-locale.ld
-endif
-
 ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld
 endif

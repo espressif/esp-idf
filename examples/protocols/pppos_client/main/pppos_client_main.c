@@ -9,9 +9,11 @@
 #include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/event_groups.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
+#include "esp_netif_ppp.h"
 #include "mqtt_client.h"
 #include "esp_modem.h"
+#include "esp_modem_netif.h"
 #include "esp_log.h"
 #include "sim800.h"
 #include "bg96.h"
@@ -109,29 +111,14 @@ err:
 static void modem_event_handler(void *event_handler_arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     switch (event_id) {
-    case MODEM_EVENT_PPP_START:
+    case ESP_MODEM_EVENT_PPP_START:
         ESP_LOGI(TAG, "Modem PPP Started");
         break;
-    case MODEM_EVENT_PPP_CONNECT:
-        ESP_LOGI(TAG, "Modem Connect to PPP Server");
-        ppp_client_ip_info_t *ipinfo = (ppp_client_ip_info_t *)(event_data);
-        ESP_LOGI(TAG, "~~~~~~~~~~~~~~");
-        ESP_LOGI(TAG, "IP          : " IPSTR, IP2STR(&ipinfo->ip));
-        ESP_LOGI(TAG, "Netmask     : " IPSTR, IP2STR(&ipinfo->netmask));
-        ESP_LOGI(TAG, "Gateway     : " IPSTR, IP2STR(&ipinfo->gw));
-        ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&ipinfo->ns1));
-        ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&ipinfo->ns2));
-        ESP_LOGI(TAG, "~~~~~~~~~~~~~~");
-        xEventGroupSetBits(event_group, CONNECT_BIT);
-        break;
-    case MODEM_EVENT_PPP_DISCONNECT:
-        ESP_LOGI(TAG, "Modem Disconnect from PPP Server");
-        break;
-    case MODEM_EVENT_PPP_STOP:
+    case ESP_MODEM_EVENT_PPP_STOP:
         ESP_LOGI(TAG, "Modem PPP Stopped");
         xEventGroupSetBits(event_group, STOP_BIT);
         break;
-    case MODEM_EVENT_UNKNOWN:
+    case ESP_MODEM_EVENT_UNKNOWN:
         ESP_LOGW(TAG, "Unknow line received: %s", (char *)event_data);
         break;
     default:
@@ -179,15 +166,72 @@ static esp_err_t mqtt_event_handler(esp_mqtt_event_handle_t event)
     return ESP_OK;
 }
 
+static void on_ppp_changed(void *arg, esp_event_base_t event_base,
+                        int32_t event_id, void *event_data)
+{
+    ESP_LOGI(TAG, "PPP state changed event %d", event_id);
+    if (event_id == NETIF_PPP_ERRORUSER) {
+        /* User interrupted event from esp-netif */
+        esp_netif_t *netif = event_data;
+        ESP_LOGI(TAG, "User interrupted event from netif:%p", netif);
+    }
+}
+
+
+static void on_ip_event(void *arg, esp_event_base_t event_base,
+                      int32_t event_id, void *event_data)
+{
+    ESP_LOGI(TAG, "IP event! %d", event_id);
+    if (event_id == IP_EVENT_PPP_GOT_IP) {
+        esp_netif_dns_info_t dns_info;
+
+        ip_event_got_ip_t *event = (ip_event_got_ip_t *)event_data;
+        esp_netif_t *netif = event->esp_netif;
+
+        ESP_LOGI(TAG, "Modem Connect to PPP Server");
+        ESP_LOGI(TAG, "~~~~~~~~~~~~~~");
+        ESP_LOGI(TAG, "IP          : " IPSTR, IP2STR(&event->ip_info.ip));
+        ESP_LOGI(TAG, "Netmask     : " IPSTR, IP2STR(&event->ip_info.netmask));
+        ESP_LOGI(TAG, "Gateway     : " IPSTR, IP2STR(&event->ip_info.ip));
+        esp_netif_get_dns_info(netif, 0, &dns_info);
+        ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&dns_info.ip.u_addr.ip4));
+        esp_netif_get_dns_info(netif, 1, &dns_info);
+        ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&dns_info.ip.u_addr.ip4));
+        ESP_LOGI(TAG, "~~~~~~~~~~~~~~");
+        xEventGroupSetBits(event_group, CONNECT_BIT);
+
+        ESP_LOGI(TAG, "GOT ip event!!!");
+    } else if (event_id == IP_EVENT_PPP_LOST_IP) {
+        ESP_LOGI(TAG, "Modem Disconnect from PPP Server");
+    }
+}
+
 void app_main(void)
 {
-    tcpip_adapter_init();
+#if CONFIG_LWIP_PPP_PAP_SUPPORT
+    esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_PAP;
+#elif CONFIG_LWIP_PPP_CHAP_SUPPORT
+    esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_CHAP;
+#else
+#error "Unsupported AUTH Negotiation"
+#endif
+    ESP_ERROR_CHECK(esp_netif_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &on_ip_event, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, &on_ppp_changed, NULL));
+
     event_group = xEventGroupCreate();
+
+    // Init netif object
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_PPP();
+    esp_netif_t *esp_netif = esp_netif_new(&cfg);
+    assert(esp_netif);
+
     /* create dte object */
     esp_modem_dte_config_t config = ESP_MODEM_DTE_DEFAULT_CONFIG();
     modem_dte_t *dte = esp_modem_dte_init(&config);
     /* Register event handler */
-    ESP_ERROR_CHECK(esp_modem_add_event_handler(dte, modem_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_modem_set_event_handler(dte, modem_event_handler, ESP_EVENT_ANY_ID, NULL));
     /* create dce object */
 #if CONFIG_EXAMPLE_MODEM_DEVICE_SIM800
     modem_dce_t *dce = sim800_init(dte);
@@ -211,10 +255,15 @@ void app_main(void)
     uint32_t voltage = 0, bcs = 0, bcl = 0;
     ESP_ERROR_CHECK(dce->get_battery_status(dce, &bcs, &bcl, &voltage));
     ESP_LOGI(TAG, "Battery voltage: %d mV", voltage);
-    /* Setup PPP environment */
-    esp_modem_setup_ppp(dte);
+    /* setup PPPoS network parameters */
+    esp_netif_ppp_set_auth(esp_netif, auth_type, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
+    void *modem_netif_adapter = esp_modem_netif_setup(dte);
+    esp_modem_netif_set_default_handlers(modem_netif_adapter, esp_netif);
+    /* attach the modem to the network interface */
+    esp_netif_attach(esp_netif, modem_netif_adapter);
     /* Wait for IP address */
     xEventGroupWaitBits(event_group, CONNECT_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
+    ESP_ERROR_CHECK(dce->power_down(dce));
     /* Config MQTT */
     esp_mqtt_client_config_t mqtt_config = {
         .uri = BROKER_URL,
@@ -225,7 +274,10 @@ void app_main(void)
     xEventGroupWaitBits(event_group, GOT_DATA_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
     esp_mqtt_client_destroy(mqtt_client);
     /* Exit PPP mode */
-    ESP_ERROR_CHECK(esp_modem_exit_ppp(dte));
+    ESP_ERROR_CHECK(esp_modem_stop_ppp(dte));
+    /* Destroy the netif adapter withe events, which internally frees also the esp-netif instance */
+    esp_modem_netif_clear_default_handlers(modem_netif_adapter);
+    esp_modem_netif_teardown(modem_netif_adapter);
     xEventGroupWaitBits(event_group, STOP_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
 #if CONFIG_EXAMPLE_SEND_MSG
     const char *message = "Welcome to ESP32!";

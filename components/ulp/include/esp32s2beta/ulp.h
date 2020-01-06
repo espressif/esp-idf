@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
 #include "soc/soc.h"
 #include "ulp_common.h"
@@ -76,15 +77,29 @@ extern "C" {
 #define ALU_SEL_MOV 4           /*!< Copy value (immediate to destination register or source register to destination register */
 #define ALU_SEL_LSH 5           /*!< Shift left by given number of bits */
 #define ALU_SEL_RSH 6           /*!< Shift right by given number of bits */
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define ALU_SEL_INC 0           /*!< Stage_cnt = Stage_cnt + Imm */
+#define ALU_SEL_DEC 1           /*!< Stage_cnt = Stage_cnt - Imm */
+#define ALU_SEL_RST 2           /*!< Stage_cnt = 0 */
+#endif
 
 #define OPCODE_BRANCH 8         /*!< Branch instructions */
-#define SUB_OPCODE_BX  0        /*!< Branch to absolute PC (immediate or in register) */
 #define BX_JUMP_TYPE_DIRECT 0   /*!< Unconditional jump */
 #define BX_JUMP_TYPE_ZERO 1     /*!< Branch if last ALU result is zero */
 #define BX_JUMP_TYPE_OVF 2      /*!< Branch if last ALU operation caused and overflow */
-#define SUB_OPCODE_B  1         /*!< Branch to a relative offset */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define B_CMP_L 0               /*!< Branch if R0 is less than an immediate */
 #define B_CMP_GE 1              /*!< Branch if R0 is greater than or equal to an immediate */
+#define SUB_OPCODE_BX  0        /*!< Branch to absolute PC (immediate or in register) */
+#define SUB_OPCODE_B  1         /*!< Branch to a relative offset */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define B_CMP_L 1               /*!< Branch if R0 is less than an immediate */
+#define B_CMP_GE 2              /*!< Branch if R0 is greater than an immediate */
+#define B_CMP_EQ 4              /*!< Branch if R0 is  equal to an immediate */
+#define SUB_OPCODE_BX  1        /*!< Branch to absolute PC (immediate or in register) */
+#define SUB_OPCODE_B  0         /*!< Branch to a relative offset base on R0 */
+#define SUB_OPCODE_B_STAGE  2   /*!< Branch to a relative offset base on stage reg */
+#endif
 
 #define OPCODE_END 9            /*!< Stop executing the program */
 #define SUB_OPCODE_END 0        /*!< Stop executing the program and optionally wake up the chip */
@@ -99,6 +114,10 @@ extern "C" {
 #define OPCODE_MACRO 15         /*!< Not a real opcode. Used to identify labels and branches in the program */
 #define SUB_OPCODE_MACRO_LABEL 0    /*!< Label macro */
 #define SUB_OPCODE_MACRO_BRANCH 1   /*!< Branch macro */
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#define OPCODE_SLEEP_WAIT 4
+#endif
 /**@}*/
 
 /**
@@ -123,6 +142,7 @@ union ulp_insn {
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_DELAY) */
     } delay;                        /*!< Format of DELAY instruction */
 
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t dreg : 2;          /*!< Register which contains data to store */
         uint32_t sreg : 2;          /*!< Register which contains address in RTC memory (expressed in words) */
@@ -132,7 +152,24 @@ union ulp_insn {
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ST) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ST) */
     } st;                           /*!< Format of ST instruction */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t dreg : 2;          /*!< Data address register number */
+        uint32_t sreg : 2;          /*!< Base address register number */
+        uint32_t data_label : 2;    /*!< Data label */
+        uint32_t upper : 1;         /*!< High and low half-word Select 1: Write high half-word; 0 : write low half-word; */
+        uint32_t write_way : 2;     /*!< Write number Mode 0 : full word write; 1: with data_label; 3: without label; */
+        uint32_t unused1 : 1;       /*!< Unused */
+        uint32_t offset : 11;       /*!< When you select automatic storage, you need to configure the base address offset*/
+        uint32_t unused2 : 4;       /*!< Unused */
+        uint32_t wr_auto : 1;       /*!< Automatic storage selection enabled (burst mode)*/
+        uint32_t offset_set : 1;    /*!< Configure OFFSET enable */
+        uint32_t manul_en : 1;      /*!< Manual storage selection enabled */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_ST) */
+    } st;                           /*!< Format of ST instruction */
+#endif
 
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t dreg : 2;          /*!< Register where the data should be loaded to */
         uint32_t sreg : 2;          /*!< Register which contains address in RTC memory (expressed in words) */
@@ -141,12 +178,24 @@ union ulp_insn {
         uint32_t unused2 : 7;       /*!< Unused */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_LD) */
     } ld;                           /*!< Format of LD instruction */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t dreg : 2;          /*!< Register where the data should be loaded to */
+        uint32_t sreg : 2;          /*!< Register which contains address in RTC memory (expressed in words) */
+        uint32_t unused1 : 6;       /*!< Unused */
+        uint32_t offset : 11;       /*!< Offset to add to sreg */
+        uint32_t unused2 : 6;       /*!< Unused */
+        uint32_t rd_upper: 1;
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_LD) */
+    } ld;                           /*!< Format of LD instruction */
+#endif
 
     struct {
         uint32_t unused : 28;       /*!< Unused */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_HALT) */
     } halt;                         /*!< Format of HALT instruction */
 
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t dreg : 2;          /*!< Register which contains target PC, expressed in words (used if .reg == 1) */
         uint32_t addr : 11;         /*!< Target PC, expressed in words (used if .reg == 0) */
@@ -165,7 +214,29 @@ union ulp_insn {
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_B) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
     } b;                            /*!< Format of BRANCH instruction (relative address) */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t dreg : 2;          /*!< Register which contains target PC, expressed in words (used if .reg == 1) */
+        uint32_t addr : 11;         /*!< Target PC, expressed in words (used if .reg == 0) */
+        uint32_t unused : 8;        /*!< Unused */
+        uint32_t reg : 1;           /*!< Target PC in register (1) or immediate (0) */
+        uint32_t type : 3;          /*!< Jump condition (BX_JUMP_TYPE_xxx) */
+        uint32_t unused1 : 1;        /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_BX) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
+    } bx;                           /*!< Format of BRANCH instruction (absolute address) */
 
+    struct {
+        uint32_t imm : 15;          /*!< Immediate value to compare against */
+        uint32_t cmp : 3;           /*!< Comparison to perform: B_CMP_L or B_CMP_GE */
+        uint32_t offset : 7;        /*!< Absolute value of target PC offset w.r.t. current PC, expressed in words */
+        uint32_t sign : 1;          /*!< Sign of target PC offset: 0: positive, 1: negative */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_B) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_BRANCH) */
+    } b;    
+#endif
+
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t dreg : 2;          /*!< Destination register */
         uint32_t sreg : 2;          /*!< Register with operand A */
@@ -175,7 +246,20 @@ union ulp_insn {
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_REG) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
     } alu_reg;                      /*!< Format of ALU instruction (both sources are registers) */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t dreg : 2;          /*!< Destination register */
+        uint32_t sreg : 2;          /*!< Register with operand A */
+        uint32_t treg : 2;          /*!< Register with operand B */
+        uint32_t unused : 15;       /*!< Unused */
+        uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_xxx */
+        uint32_t unused1 : 1;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_ALU_REG) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
+    } alu_reg;                      /*!< Format of ALU instruction (both sources are registers) */
+#endif
 
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t dreg : 2;          /*!< Destination register */
         uint32_t sreg : 2;          /*!< Register with operand A */
@@ -185,6 +269,27 @@ union ulp_insn {
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_ALU_IMM) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
     } alu_imm;                      /*!< Format of ALU instruction (one source is an immediate) */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t dreg : 2;          /*!< Destination register */
+        uint32_t sreg : 2;          /*!< Register with operand A */
+        uint32_t imm : 16;          /*!< Immediate value of operand B */
+        uint32_t unused : 1;        /*!< Unused */
+        uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_xxx */
+        uint32_t unused1 : 1;        /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_ALU_IMM) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
+    } alu_imm;                      /*!< Format of ALU instruction (one source is an immediate) */
+    struct {
+        uint32_t unused : 4;        /*!< Unused */
+        uint32_t imm : 16;          /*!< Immediate value of operand B */
+        uint32_t unused1 : 1;        /*!< Unused */
+        uint32_t sel : 4;           /*!< Operation to perform, one of ALU_SEL_xxx */
+        uint32_t unused2 : 1;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_ALU_IMM) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_ALU) */
+    } alu_cnt;                      /*!< Format of ALU instruction (one source is an immediate) */
+#endif
 
     struct {
         uint32_t addr : 8;          /*!< Address within either RTC_CNTL, RTC_IO, or SARADC */
@@ -203,7 +308,7 @@ union ulp_insn {
         uint32_t high : 5;          /*!< High bit */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_WR_REG) */
     } rd_reg;                       /*!< Format of RD_REG instruction */
-
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t dreg : 2;          /*!< Register where to store ADC result */
         uint32_t mux : 4;           /*!< Select SARADC pad (mux + 1) */
@@ -213,7 +318,17 @@ union ulp_insn {
         uint32_t unused2 : 4;       /*!< Unused */
         uint32_t opcode: 4;         /*!< Opcode (OPCODE_ADC) */
     } adc;                          /*!< Format of ADC instruction */
-
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t dreg : 2;          /*!< Register where to store ADC result */
+        uint32_t mux : 4;           /*!< Select SARADC pad (mux + 1) */
+        uint32_t sar_sel : 1;       /*!< Select SARADC0 (0) or SARADC1 (1) */
+        uint32_t hall_phase : 1;       /*!< Unused */
+        uint32_t xpd_hall : 1;       /*!< Unused */
+        uint32_t unused1 : 19;       /*!< Unused */
+        uint32_t opcode: 4;         /*!< Opcode (OPCODE_ADC) */
+    } adc; 
+#endif
     struct {
         uint32_t dreg : 2;          /*!< Register where to store temperature measurement result */
         uint32_t wait_delay: 14;    /*!< Cycles to wait after measurement is done */
@@ -231,7 +346,7 @@ union ulp_insn {
         uint32_t rw : 1;            /*!< Write (1) or read (0) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_I2C) */
     } i2c;                          /*!< Format of I2C instruction */
-
+#ifdef CONFIG_IDF_TARGET_ESP32
     struct {
         uint32_t wakeup : 1;        /*!< Set to 1 to wake up chip */
         uint32_t unused : 24;       /*!< Unused */
@@ -245,7 +360,20 @@ union ulp_insn {
         uint32_t sub_opcode : 3;    /*!< Sub opcode (SUB_OPCODE_SLEEP) */
         uint32_t opcode : 4;        /*!< Opcode (OPCODE_END) */
     } sleep;                        /*!< Format of END instruction with sleep */
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+    struct {
+        uint32_t wakeup : 1;        /*!< Set to 1 to wake up chip */
+        uint32_t unused : 25;       /*!< Unused */
+        uint32_t sub_opcode : 2;    /*!< Sub opcode (SUB_OPCODE_WAKEUP) */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_END) */
+    } end;  
 
+    struct {
+        uint32_t cycle_sel : 16;    /*!< Select which one of SARADC_ULP_CP_SLEEP_CYCx_REG to get the sleep duration from */
+        uint32_t unused : 12;       /*!< Unused */
+        uint32_t opcode : 4;        /*!< Opcode (OPCODE_END) */
+    } sleep;     
+#endif
     struct {
         uint32_t label : 16;        /*!< Label number */
         uint32_t unused : 8;        /*!< Unused */
@@ -373,8 +501,13 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * ULP program will continue running after this instruction. To stop
  * the currently running program, use I_HALT().
  */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define I_END() \
     I_WR_REG_BIT(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN_S, 0)
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define I_END() \
+    I_WR_REG_BIT(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN_S, 0)
+#endif
 /**
  * Select the time interval used to run ULP program.
  *
@@ -390,12 +523,18 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * By default, SENS_SLEEP_CYCLES_S0 register is used by the ULP
  * program timer.
  */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define I_SLEEP_CYCLE_SEL(timer_idx) { .sleep = { \
         .cycle_sel = timer_idx, \
         .unused = 0, \
         .sub_opcode = SUB_OPCODE_SLEEP, \
         .opcode = OPCODE_END } }
-
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define I_SLEEP_CYCLE_SEL(timer_idx) { .sleep = { \
+        .cycle_sel = timer_idx, \
+        .unused = 0, \
+        .opcode = OPCODE_SLEEP_WAIT } }
+#endif
 /**
  * Perform temperature sensor measurement and store it into reg_dest.
  *
@@ -414,6 +553,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * adc_idx selects ADC (0 or 1).
  * pad_idx selects ADC pad (0 - 7).
  */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define I_ADC(reg_dest, adc_idx, pad_idx) { .adc = {\
         .dreg = reg_dest, \
         .mux = pad_idx + 1, \
@@ -422,6 +562,16 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
         .cycles = 0, \
         .unused2 = 0, \
         .opcode = OPCODE_ADC } }
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define I_ADC(reg_dest, adc_idx, pad_idx) { .adc = {\
+        .dreg = reg_dest, \
+        .mux = pad_idx + 1, \
+        .sar_sel = adc_idx, \
+        .hall_phase = 0, \
+        .xpd_hall = 0, \
+        .unused1 = 0, \
+        .opcode = OPCODE_ADC } }
+#endif
 
 /**
  * Store value from register reg_val into RTC memory.
@@ -435,6 +585,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  *
  * RTC_SLOW_MEM[addr + offset_] = { 5'b0, insn_PC[10:0], val[15:0] }
  */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define I_ST(reg_val, reg_addr, offset_) { .st = { \
     .dreg = reg_val, \
     .sreg = reg_addr, \
@@ -443,7 +594,138 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused2 = 0, \
     .sub_opcode = SUB_OPCODE_ST, \
     .opcode = OPCODE_ST } }
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+/**
+ * burst Mode: write to consecutive address spaces.
+ * STW, STC instructions for the Class burst storage instructions for continuous address space write operation;
+ * Need to be used with the SET_OFFSET instruction, you first need to set the start address offset by SET_OFFSET, SREG is the base address,
+ * Where STW instruction WORD instruction, each execution time, address offset+1;STC for the half-word operation
+ * (First write high 16bit current address, the Second Write low 16bit current address), each performed twice, the address offset+1.
+ * Note: when using STC, you must write a word, that is, a burst operation instruction must be an even number.
+ */
+#define I_STO(offset_) { .st = { \
+    .dreg = 0, \
+    .sreg = 0, \
+    .data_label = 0, \
+    .upper = 0, \
+    .write_way = 0, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused2 = 0, \
+    .wr_auto = 0, \
+    .offset_set = 0, \
+    .manul_en = 1, \
+    .opcode = OPCODE_ST } }
 
+#define I_STW(reg_val, reg_addr) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = 0, \
+    .upper = 0, \
+    .write_way = 0, \
+    .unused1 = 0, \
+    .offset = 0, \
+    .unused2 = 0, \
+    .wr_auto = 1, \
+    .offset_set = 0, \
+    .manul_en = 0, \
+    .opcode = OPCODE_ST } }
+
+#define I_STC(reg_val, reg_addr) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = 0, \
+    .upper = 0, \
+    .write_way = 3, \
+    .unused1 = 0, \
+    .offset = 0, \
+    .unused2 = 0, \
+    .wr_auto = 1, \
+    .offset_set = 0, \
+    .manul_en = 0, \
+    .opcode = OPCODE_ST } }
+/**
+ * Single mode of operation: write to a single address space.
+ *
+ * Loads 16 LSBs from RTC memory word given by the sum of value in reg_addr and
+ * value of offset_.
+ */
+/* Mem [ Rsrc1 + offset ]{31:0} = {PC[10:0], 5�d0,Rdst[15:0]} */
+#define I_ST(reg_val, reg_addr, offset_) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = 0, \
+    .upper = 0, \
+    .write_way = 0, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused2 = 0, \
+    .wr_auto = 0, \
+    .offset_set = 0, \
+    .manul_en = 1, \
+    .opcode = OPCODE_ST } }
+
+/* Mem [ Rsrc1 + offset ]{31:16} = {Rdst[15:0]} */
+#define I_STM32U(reg_val, reg_addr, offset_) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = 0, \
+    .upper = 1, \
+    .write_way = 3, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused1 = 0, \
+    .wr_auto = 0, \
+    .offset_set = 0, \
+    .manul_en = 1, \
+    .opcode = OPCODE_ST } }
+
+/* Mem [ Rsrc1 + offset ]{15:0} = {Rdst[15:0]} */
+#define I_STM32L(reg_val, reg_addr, offset_) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = 0, \
+    .upper = 0, \
+    .write_way = 3, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused2 = 0, \
+    .wr_auto = 0, \
+    .offset_set = 0, \
+    .manul_en = 1, \
+    .opcode = OPCODE_ST } }
+
+/* Mem [ Rsrc1 + offset ]{31:0} = {data_label[1:0],Rdst[13:0]} */
+#define I_STMLBU(reg_val, reg_addr, label, offset_) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = label, \
+    .upper = 1, \
+    .write_way = 1, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused1 = 0, \
+    .wr_auto = 0, \
+    .offset_set = 0, \
+    .manul_en = 1, \
+    .opcode = OPCODE_ST } }
+
+/* Mem [ Rsrc1 + offset ]{15:0} = {data_label[1:0],Rdst[13:0]} */
+#define I_STMLBL(reg_val, reg_addr, label, offset_) { .st = { \
+    .dreg = reg_val, \
+    .sreg = reg_addr, \
+    .data_label = label, \
+    .upper = 0, \
+    .write_way = 1, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused2 = 0, \
+    .wr_auto = 0, \
+    .offset_set = 0, \
+    .manul_en = 1, \
+    .opcode = OPCODE_ST } }
+
+#endif
 
 /**
  * Load value from RTC memory into reg_dest register.
@@ -451,6 +733,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
  * Loads 16 LSBs from RTC memory word given by the sum of value in reg_addr and
  * value of offset_.
  */
+#ifdef CONFIG_IDF_TARGET_ESP32
 #define I_LD(reg_dest, reg_addr, offset_) { .ld = { \
     .dreg = reg_dest, \
     .sreg = reg_addr, \
@@ -458,7 +741,16 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .offset = offset_, \
     .unused2 = 0, \
     .opcode = OPCODE_LD } }
-
+#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#define I_LD(reg_dest, reg_addr, offset_) { .ld = { \
+    .dreg = reg_dest, \
+    .sreg = reg_addr, \
+    .unused1 = 0, \
+    .offset = offset_, \
+    .unused2 = 0, \
+    .rd_upper = 0, \
+    .opcode = OPCODE_LD } }
+#endif
 
 /**
  *  Branch relative if R0 less than immediate value.
@@ -474,6 +766,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sub_opcode = SUB_OPCODE_B, \
     .opcode = OPCODE_BRANCH } }
 
+#ifdef CONFIG_IDF_TARGET_ESP32
 /**
  *  Branch relative if R0 greater or equal than immediate value.
  *
@@ -487,7 +780,75 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .sign = (pc_offset >= 0) ? 0 : 1, \
     .sub_opcode = SUB_OPCODE_B, \
     .opcode = OPCODE_BRANCH } }
+#endif
 
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+
+/**
+ *  Branch relative if R0 greater than immediate value.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is a 16-bit value to compare R0 against
+ */
+#define I_BG(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = B_CMP_GE, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_B, \
+    .opcode = OPCODE_BRANCH } }
+
+/**
+ *  Branch relative if R0 equal to immediate value.
+ *
+ *  pc_offset is expressed in words, and can be from -127 to 127
+ *  imm_value is a 16-bit value to compare R0 against
+ */
+#define I_BE(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = B_CMP_EQ, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_B, \
+    .opcode = OPCODE_BRANCH } }
+
+/*
+ * Branch to a relative offset base on stage reg 
+ * If stage reg less imm_value, PC will jump pc_offset.
+ */
+#define I_BRLS(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = B_CMP_L, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_B_STAGE, \
+    .opcode = OPCODE_BRANCH } }
+
+/*
+ * Branch to a relative offset base on stage reg 
+ * If stage reg greater imm_value, PC will jump pc_offset.
+ */
+#define I_BRGS(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = B_CMP_GE, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_B_STAGE, \
+    .opcode = OPCODE_BRANCH } }
+
+/*
+ * Branch to a relative offset base on stage reg 
+ * If stage reg equal to imm_value, PC will jump pc_offset.
+ */
+#define I_BRES(pc_offset, imm_value) { .b = { \
+    .imm = imm_value, \
+    .cmp = B_CMP_EQ, \
+    .offset = abs(pc_offset), \
+    .sign = (pc_offset >= 0) ? 0 : 1, \
+    .sub_opcode = SUB_OPCODE_B_STAGE, \
+    .opcode = OPCODE_BRANCH } }
+
+#endif
 /**
  * Unconditional branch to absolute PC, address in register.
  *
@@ -500,6 +861,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused = 0, \
     .reg = 1, \
     .type = BX_JUMP_TYPE_DIRECT, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -514,6 +876,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused = 0, \
     .reg = 0, \
     .type = BX_JUMP_TYPE_DIRECT, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -529,6 +892,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused = 0, \
     .reg = 1, \
     .type = BX_JUMP_TYPE_ZERO, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -543,6 +907,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused = 0, \
     .reg = 0, \
     .type = BX_JUMP_TYPE_ZERO, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -558,6 +923,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused = 0, \
     .reg = 1, \
     .type = BX_JUMP_TYPE_OVF, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -572,6 +938,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .unused = 0, \
     .reg = 0, \
     .type = BX_JUMP_TYPE_OVF, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_BX, \
     .opcode = OPCODE_BRANCH } }
 
@@ -585,6 +952,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = reg_src2, \
     .unused = 0, \
     .sel = ALU_SEL_ADD, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -597,6 +965,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = reg_src2, \
     .unused = 0, \
     .sel = ALU_SEL_SUB, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -609,6 +978,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = reg_src2, \
     .unused = 0, \
     .sel = ALU_SEL_AND, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -621,6 +991,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = reg_src2, \
     .unused = 0, \
     .sel = ALU_SEL_OR, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -633,6 +1004,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = 0, \
     .unused = 0, \
     .sel = ALU_SEL_MOV, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -645,6 +1017,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = reg_shift, \
     .unused = 0, \
     .sel = ALU_SEL_LSH, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -658,6 +1031,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .treg = reg_shift, \
     .unused = 0, \
     .sel = ALU_SEL_RSH, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_REG, \
     .opcode = OPCODE_ALU } }
 
@@ -670,6 +1044,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_ADD, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -683,6 +1058,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_SUB, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -695,6 +1071,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_AND, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -707,6 +1084,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_OR, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -719,6 +1097,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_MOV, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -731,6 +1110,7 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_LSH, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
 
@@ -744,8 +1124,48 @@ static inline uint32_t SOC_REG_TO_ULP_PERIPH_SEL(uint32_t reg) {
     .imm = imm_, \
     .unused = 0, \
     .sel = ALU_SEL_RSH, \
+    .unused1 = 0, \
     .sub_opcode = SUB_OPCODE_ALU_IMM, \
     .opcode = OPCODE_ALU } }
+
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+/**
+ * Increments the stage counter for the subscript of the cycle count, Stage_cnt = Stage_cnt + Imm
+ */
+#define I_SINC(imm_) { .alu_cnt = { \
+    .unused = 0, \
+    .imm = imm_, \
+    .unused1 = 0, \
+    .sel = ALU_SEL_INC, \
+    .unused2 = 0, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+
+/**
+ * Decrements the stage counter for the subscript of the cycle count, Stage_cnt = Stage_cnt - Imm
+ */
+#define I_SDEC(imm_) { .alu_cnt = { \
+    .unused = 0, \
+    .imm = imm_, \
+    .unused1 = 0, \
+    .sel = ALU_SEL_DEC, \
+    .unused2 = 0, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+
+    /**
+ * Phase counter is reset for the cycle count subscript, Stage_cnt = 0
+ */
+#define I_SRST() { .alu_cnt = { \
+    .unused = 0, \
+    .imm = 0, \
+    .unused1 = 0, \
+    .sel = ALU_SEL_RST, \
+    .unused2 = 0, \
+    .sub_opcode = SUB_OPCODE_ALU_CNT, \
+    .opcode = OPCODE_ALU } }
+#endif
 
 /**
  * Define a label with number label_num.

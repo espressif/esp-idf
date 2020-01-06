@@ -168,7 +168,7 @@
 #define  APB_CLK_FREQ_ROM                            ( 40*1000000 )
 #define  CPU_CLK_FREQ_ROM                            APB_CLK_FREQ_ROM
 #define  UART_CLK_FREQ_ROM                           APB_CLK_FREQ_ROM
-#define  CPU_CLK_FREQ                                APB_CLK_FREQ
+#define  CPU_CLK_FREQ                                APB_CLK_FREQ       //this may be incorrect, please refer to ESP32_DEFAULT_CPU_FREQ_MHZ
 #define  APB_CLK_FREQ                                ( 80*1000000 )       //unit: Hz
 #define  REF_CLK_FREQ                                ( 1000000 )
 #define  UART_CLK_FREQ                               APB_CLK_FREQ
@@ -176,7 +176,7 @@
 #define  TIMER_CLK_FREQ                              (80000000>>4) //80MHz divided by 16
 #define  SPI_CLK_DIV                                 4
 #define  TICKS_PER_US_ROM                            40              // CPU is 80MHz
-#define  GPIO_MATRIX_DELAY_NS                        25
+#define  GPIO_MATRIX_DELAY_NS                        15
 //}}
 
 /* Overall memory map */
@@ -184,6 +184,8 @@
 #define SOC_DROM_HIGH   0x3F400000
 #define SOC_IROM_LOW    0x40080000
 #define SOC_IROM_HIGH   0x40c00000
+#define SOC_IROM_MASK_LOW  0x40000000
+#define SOC_IROM_MASK_HIGH 0x4001A100
 #define SOC_IRAM_LOW    0x40020000
 #define SOC_IRAM_HIGH   0x40070000
 #define SOC_DRAM_LOW    0x3FFB0000

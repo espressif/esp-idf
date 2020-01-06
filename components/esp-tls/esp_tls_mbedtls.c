@@ -389,15 +389,19 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         return ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED;
     }
 
-#ifdef CONFIG_MBEDTLS_SSL_ALPN
+
     if (cfg->alpn_protos) {
+#ifdef CONFIG_MBEDTLS_SSL_ALPN
         if ((ret = mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos) != 0)) {
             ESP_LOGE(TAG, "mbedtls_ssl_conf_alpn_protocols returned -0x%x", -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED;
         }
-    }
+#else
+        ESP_LOGE(TAG, "alpn_protos configured but not enabled in menuconfig: Please enable MBEDTLS_SSL_ALPN option");
+        return ESP_ERR_INVALID_STATE;
 #endif
+    }
     if (cfg->use_global_ca_store == true) {
         esp_err_t esp_ret = set_global_ca_store(tls);
         if (esp_ret != ESP_OK) {

@@ -245,7 +245,7 @@ JP1 连接器包括 14 x 2 个排针，具体功能可见下表中间 “I/O” 
 说明：
 
 * NC/XTAL - :ref:`32.768 kHz 晶振 <get-started-esp-wrover-kit-v4.1-xtal>`
-* JTAG - :ref:`JTAG / JP8 <get-started-esp-wrover-kit-v4.1-jtag-header>`
+* JTAG - :ref:`JTAG / JP2 <get-started-esp-wrover-kit-v4.1-jtag-header>`
 * Boot - Boot 按键 / SW2
 * 摄像头 - :ref:`摄像头 / JP4 <get-started-esp-wrover-kit-v4.1-camera-header>`
 * LED - :ref:`RGB LED <get-started-esp-wrover-kit-v4.1-rgb-led-connections>`

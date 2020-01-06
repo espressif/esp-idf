@@ -22,6 +22,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_attr.h"
+#include "soc/uart_periph.h"
 #include "driver/uart.h"
 #include "sdkconfig.h"
 #include "driver/uart_select.h"

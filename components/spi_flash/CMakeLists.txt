@@ -1,9 +1,12 @@
 set(priv_requires bootloader_support soc)
+
 if(BOOTLOADER_BUILD)
     if (CONFIG_IDF_TARGET_ESP32)
         # ESP32 Bootloader needs SPIUnlock from this file, but doesn't
         # need other parts of this component
-        set(srcs "spi_flash_rom_patch.c")
+        set(srcs "esp32/spi_flash_rom_patch.c")
+    elseif (CONFIG_IDF_TARGET_ESP32S2BETA)
+        set(srcs "esp32s2beta/spi_flash_rom_patch.c")
     else()
         # but on other platforms no source files are needed for bootloader
         set(srcs)
@@ -20,7 +23,10 @@ else()
 
     if (CONFIG_IDF_TARGET_ESP32)
         list(APPEND srcs
-            "spi_flash_rom_patch.c")
+            "esp32/spi_flash_rom_patch.c")
+    elseif (CONFIG_IDF_TARGET_ESP32S2BETA)
+        list(APPEND srcs 
+            "esp32s2beta/spi_flash_rom_patch.c")
     endif()
 
     # New implementation after IDF v4.0
@@ -28,18 +34,15 @@ else()
         "spi_flash_chip_drivers.c"
         "spi_flash_chip_generic.c"
         "spi_flash_chip_issi.c"
-        "spi_flash_chip_gd.c")
+        "spi_flash_chip_gd.c"
+        "memspi_host_driver.c")
 
-    if (NOT CONFIG_IDF_TARGET_ESP32S2BETA)
-        # TODO: workaround until ESP32-S2 supports new API, can be always included
-        list(APPEND srcs
-            "memspi_host_driver.c")
-        list(APPEND cache_srcs
+    list(APPEND cache_srcs
         "esp_flash_api.c"
         "esp_flash_spi_init.c"
         "spi_flash_os_func_app.c"
         "spi_flash_os_func_noos.c")
-    endif()
+
     list(APPEND srcs ${cache_srcs})
     set(priv_requires bootloader_support app_update soc)
 endif()

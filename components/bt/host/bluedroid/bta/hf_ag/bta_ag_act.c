@@ -339,7 +339,7 @@ void bta_ag_rfc_fail(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     p_scb->conn_handle = 0;
     p_scb->conn_service = 0;
     p_scb->peer_features = 0;
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     p_scb->peer_codecs = BTA_AG_CODEC_NONE;
     p_scb->sco_codec = BTA_AG_CODEC_NONE;
 #endif
@@ -373,7 +373,7 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     /* reinitialize stuff */
     p_scb->conn_service = 0;
     p_scb->peer_features = 0;
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     p_scb->peer_codecs = BTA_AG_CODEC_NONE;
     p_scb->sco_codec = BTA_AG_CODEC_NONE;
     /* Clear these flags upon SLC teardown */
@@ -398,8 +398,9 @@ void bta_ag_rfc_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     bta_sys_conn_close(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
     /* call close call-out */
-    // bta_ag_sco_co_close(close.hdr.handle);
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
     bta_ag_sco_co_close();
+#endif
     /* call close cback */
     (*bta_ag_cb.p_cback)(BTA_AG_CLOSE_EVT, (tBTA_AG *) &close);
 
@@ -463,7 +464,9 @@ void bta_ag_rfc_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
     bta_ag_at_init(&p_scb->at_cb);
 
     /* call app open call-out */
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
     bta_ag_sco_co_open(bta_ag_scb_to_idx(p_scb), p_scb->air_mode, BTA_HFP_SCO_OUT_PKT_SIZE, bta_ag_svc_id[p_scb->conn_service]);
+#endif
     bta_sys_conn_open(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
     bta_ag_cback_open(p_scb, NULL, BTA_AG_SUCCESS);
 
@@ -719,7 +722,7 @@ void bta_ag_svc_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
         evt.hdr.app_id = p_scb->app_id;
         evt.peer_feat = p_scb->peer_features;
         bdcpy(evt.bd_addr, p_scb->peer_addr);
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
         evt.peer_codec  = p_scb->peer_codecs;
 #endif
         if ((p_scb->call_ind != BTA_AG_CALL_INACTIVE) ||
@@ -784,7 +787,7 @@ void bta_ag_rcvd_slc_ready(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     tBTA_AG_PEER_CODEC codec_type = p_data->api_setcodec.codec;
     tBTA_AG_VAL        val;
 
@@ -794,22 +797,23 @@ void bta_ag_setcodec(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
        (codec_type != BTA_AG_CODEC_MSBC)) {
         val.num = codec_type;
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
-        APPL_TRACE_ERROR("bta_ag_setcodec error: unsupported codec type %d", codec_type);
+        APPL_TRACE_ERROR("%s error: unsupported codec type %d", __func__, codec_type);
         (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
         return;
     }
 
-    if((p_scb->peer_codecs & codec_type) || (codec_type == BTA_AG_CODEC_NONE) ||
+    if ((p_scb->peer_codecs & codec_type) ||
+        (codec_type == BTA_AG_CODEC_NONE) ||
         (codec_type == BTA_AG_CODEC_CVSD)) {
         p_scb->sco_codec = codec_type;
         p_scb->codec_updated = TRUE;
         val.num = codec_type;
         val.hdr.status = BTA_AG_SUCCESS;
-        APPL_TRACE_DEBUG("bta_ag_setcodec: Updated codec type %d", codec_type);
+        APPL_TRACE_DEBUG("%s: Updated codec type %d", __func__, codec_type);
     } else {
         val.num = codec_type;
         val.hdr.status = BTA_AG_FAIL_RESOURCES;
-        APPL_TRACE_ERROR("bta_ag_setcodec error: unsupported codec type %d", codec_type);
+        APPL_TRACE_ERROR("%s error: unsupported codec type %d",__func__, codec_type);
     }
     (*bta_ag_cb.p_cback)(BTA_AG_WBS_EVT, (tBTA_AG *) &val);
 #endif

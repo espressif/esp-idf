@@ -69,4 +69,4 @@
 #define ADC2_GPIO26_CHANNEL     ADC2_CHANNEL_9
 #define ADC2_CHANNEL_9_GPIO_NUM 26
 
-#endif
+#endif /* _SOC_ADC_CHANNEL_H_ */

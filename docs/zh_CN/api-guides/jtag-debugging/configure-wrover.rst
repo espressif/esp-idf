@@ -123,7 +123,7 @@ MacOS
 
 4. 运行 OpenOCD::
 
-    openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 5. 在另一个终端窗口，再一次加载 FTDI 串口驱动::
 

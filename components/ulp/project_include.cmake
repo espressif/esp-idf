@@ -34,12 +34,19 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         idf_build_get_property(python PYTHON)
         idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
+        if(IDF_TARGET STREQUAL "esp32")
+            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32-ulp.cmake)
+        endif()
+        if(IDF_TARGET STREQUAL "esp32s2beta")
+            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2beta-ulp.cmake)
+        endif()
+
         externalproject_add(${app_name}
             SOURCE_DIR ${idf_path}/components/ulp/cmake
             BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${app_name}
             INSTALL_COMMAND ""
             CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
-                        -DCMAKE_TOOLCHAIN_FILE=${idf_path}/components/ulp/cmake/toolchain-ulp.cmake
+                        -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
                         -DULP_S_SOURCES=${sources} -DULP_APP_NAME=${app_name}
                         -DCOMPONENT_DIR=${COMPONENT_DIR}
                         # Even though this resolves to a ';' separated list, this is fine. This must be special behavior

@@ -211,12 +211,12 @@ uint64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
     // Use calculated alarm value if it is less than ALARM_OVERFLOW_VAL.
     // Note that if by the time we update ALARM_REG, COUNT_REG value is higher,
     // interrupt will not happen for another ALARM_OVERFLOW_VAL timer ticks,
     // so need to check if alarm value is too close in the future (e.g. <2 us away).
-    const uint32_t offset = s_timer_ticks_per_us * 2;
+    const int32_t offset = s_timer_ticks_per_us * 2;
     do {
         // Adjust current time if overflow has happened
         if (timer_overflow_happened()) {
@@ -224,7 +224,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
             s_time_base_us += s_timer_us_per_overflow;
         }
         s_mask_overflow = false;
-        uint64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
+        int64_t cur_count = REG_READ(FRC_TIMER_COUNT_REG(1));
         // Alarm time relative to the moment when counter was 0
         int64_t time_after_timebase_us = (int64_t)timestamp - s_time_base_us;
         // Calculate desired timer compare value (may exceed 2^32-1)
@@ -237,7 +237,7 @@ void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
         }
         REG_WRITE(FRC_TIMER_ALARM_REG(1), alarm_reg_val);
     } while (REG_READ(FRC_TIMER_ALARM_REG(1)) <= REG_READ(FRC_TIMER_COUNT_REG(1)));
-    portEXIT_CRITICAL(&s_time_update_lock);
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)

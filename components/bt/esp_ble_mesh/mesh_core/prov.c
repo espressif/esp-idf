@@ -24,7 +24,7 @@
 #include "net.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy.h"
+#include "proxy_server.h"
 #include "prov.h"
 
 #if CONFIG_BLE_MESH_NODE
@@ -260,14 +260,9 @@ static void free_segments(void)
         }
 
         link.tx.buf[i] = NULL;
+        bt_mesh_adv_buf_ref_debug(__func__, buf, 3U, BLE_MESH_BUF_REF_SMALL);
         /* Mark as canceled */
         BLE_MESH_ADV(buf)->busy = 0U;
-        /** Changed by Espressif. Add this to avoid buf->ref is 2 which will
-         *  cause lack of buf.
-         */
-        if (buf->ref > 1) {
-            buf->ref = 1;
-        }
         net_buf_unref(buf);
     }
 }
@@ -292,7 +287,7 @@ static void reset_adv_link(void)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Remove the link id from exceptional list */
     bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
-        BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
 #endif
 
     reset_state();
@@ -1000,7 +995,7 @@ static int bt_mesh_calc_dh_key(void)
 }
 
 int bt_mesh_set_oob_pub_key(const u8_t pub_key_x[32], const u8_t pub_key_y[32],
-        const u8_t pri_key[32])
+                            const u8_t pri_key[32])
 {
     if (!pub_key_x || !pub_key_y || !pri_key) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -1203,7 +1198,7 @@ static void prov_data(const u8_t *data)
     link.expect = 0U;
 
     /* Store info, since bt_mesh_provision() will end up clearing it */
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
         identity_enable = is_pb_gatt();
     } else {
         identity_enable = false;
@@ -1218,7 +1213,7 @@ static void prov_data(const u8_t *data)
     /* After PB-GATT provisioning we should start advertising
      * using Node Identity.
      */
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY) && identity_enable) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) && identity_enable) {
         bt_mesh_proxy_identity_enable();
     }
 }
@@ -1311,7 +1306,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
             BT_DBG("Resending link ack");
             bearer_ctl_send(LINK_ACK, NULL, 0);
         } else {
-            BT_WARN("Ignoring bearer open: link already active");
+            BT_INFO("Ignoring bearer open: link already active");
         }
 
         return;
@@ -1333,7 +1328,7 @@ static void link_open(struct prov_rx *rx, struct net_buf_simple *buf)
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     /* Add the link id into exceptional list */
     bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_ADD,
-        BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
+                                    BLE_MESH_EXCEP_INFO_MESH_LINK_ID, &link.id);
 #endif
 
     bearer_ctl_send(LINK_ACK, NULL, 0);
@@ -1416,7 +1411,7 @@ static void prov_msg_recv(void)
 
     if (1 + prov_handlers[type].len != link.rx.buf->len) {
         BT_ERR("%s, Invalid length %u for type 0x%02x",
-                __func__, link.rx.buf->len, type);
+               __func__, link.rx.buf->len, type);
         prov_send_fail_msg(PROV_ERR_NVAL_FMT);
         return;
     }
@@ -1436,19 +1431,11 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
     BT_DBG("len %u, seg_index %u", buf->len, seg);
 
     if (!link.rx.seg && link.rx.prev_id == rx->xact_id) {
-        BT_WARN("Resending ack");
+        BT_INFO("Resending ack");
         gen_prov_ack_send(rx->xact_id);
         return;
     }
 
-    /* An issue here:
-     * If the Transaction Start PDU is lost and the device receives corresponding
-     * Transaction Continuation PDU fist, this will trigger the following error -
-     * handling code to be executed and the device must wait for the timeout of
-     * PB-ADV provisioning procedure. Then another provisioning procedure can be
-     * started (link.rx.id will be reset after each provisioning PDU is received
-     * completely). This issue also exists in Provisioner.
-     */
     if (rx->xact_id != link.rx.id) {
         BT_WARN("Data for unknown transaction (%u != %u)",
                 rx->xact_id, link.rx.id);
@@ -1466,14 +1453,14 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
                       ((link.rx.last_seg - 1) * 23U));
         if (expect_len != buf->len) {
             BT_ERR("%s, Incorrect last seg len: %u != %u",
-                    __func__, expect_len, buf->len);
+                   __func__, expect_len, buf->len);
             prov_send_fail_msg(PROV_ERR_NVAL_FMT);
             return;
         }
     }
 
     if (!(link.rx.seg & BIT(seg))) {
-        BT_WARN("Ignoring already received segment");
+        BT_INFO("Ignoring already received segment");
         return;
     }
 
@@ -1501,12 +1488,12 @@ static void gen_prov_ack(struct prov_rx *rx, struct net_buf_simple *buf)
 static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 {
     if (link.rx.seg) {
-        BT_WARN("Got Start while there are unreceived segments");
+        BT_INFO("Got Start while there are unreceived segments");
         return;
     }
 
     if (link.rx.prev_id == rx->xact_id) {
-        BT_WARN("Resending ack");
+        BT_INFO("Resending ack");
         gen_prov_ack_send(rx->xact_id);
         return;
     }
@@ -1526,7 +1513,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 
     if (link.rx.buf->len > link.rx.buf->size) {
         BT_ERR("%s, Too large provisioning PDU (%u bytes)",
-                __func__, link.rx.buf->len);
+               __func__, link.rx.buf->len);
         /* Zephyr uses prov_send_fail_msg() here */
         return;
     }

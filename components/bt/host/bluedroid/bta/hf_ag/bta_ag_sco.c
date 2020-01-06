@@ -58,7 +58,7 @@ enum
     BTA_AG_SCO_LISTEN_E,        /* listen request */
     BTA_AG_SCO_OPEN_E,          /* open request */
     BTA_AG_SCO_XFER_E,          /* transfer request */
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     BTA_AG_SCO_CN_DONE_E,       /* codec negotiation done */
     BTA_AG_SCO_REOPEN_E,        /* Retry with other codec when failed */
 #endif
@@ -66,12 +66,10 @@ enum
     BTA_AG_SCO_SHUTDOWN_E,      /* shutdown request */
     BTA_AG_SCO_CONN_OPEN_E,     /* sco open */
     BTA_AG_SCO_CONN_CLOSE_E,    /* sco closed */
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
     BTA_AG_SCO_CI_DATA_E        /* SCO data ready */
-#endif
 };
 
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
 #define BTA_AG_NUM_CODECS   3
 #define BTA_AG_ESCO_SETTING_IDX_CVSD    0   /* eSCO setting for CVSD */
 #define BTA_AG_ESCO_SETTING_IDX_T1      1   /* eSCO setting for mSBC T1 */
@@ -318,11 +316,12 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
 {
     if (status != BTM_SCO_DATA_CORRECT)
     {
-        APPL_TRACE_DEBUG("bta_ag_sco_read_cback: status(%d)", status);
+        ets_printf("bta_ag_sco_read_cback: status(%d)", status);
     }
 
     /* Callout function must free the data. */
     bta_ag_sco_co_in_data(p_data, status);
+    osi_free(p_data);
 }
 #endif
 /*******************************************************************************
@@ -578,6 +577,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
         /* tell sys to stop av if any */
         bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
 #if (BTM_WBS_INCLUDED == TRUE)
         /* Allow any platform specific pre-SCO set up to take place */
         bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP, esco_codec);
@@ -593,6 +593,7 @@ static void bta_ag_create_sco(tBTA_AG_SCB *p_scb, BOOLEAN is_orig)
 #else
         /* Allow any platform specific pre-SCO set up to take place */
         bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP);
+#endif
 #endif
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
@@ -720,7 +721,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB *p_scb)
         bta_ag_sco_codec_nego(p_scb, TRUE);
     }
 }
-#endif /* (BTM_WBS_INCLUDED == TRUE ) */
+#endif
 
 /*******************************************************************************
 **
@@ -734,10 +735,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB *p_scb)
 *******************************************************************************/
 static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
 {
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
     tBTA_AG_SCO_CB *p_sco = &bta_ag_cb.sco;
-    BT_HDR  *p_buf;
-#endif
 #if (BTM_WBS_INCLUDED == TRUE)
     tBTA_AG_SCB *p_cn_scb = NULL;   /* For codec negotiation */
 #endif
@@ -747,6 +745,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
                         bta_ag_sco_state_str(p_sco->state), event, bta_ag_sco_evt_str(event));
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
+    BT_HDR  *p_buf;
     if (event == BTA_AG_SCO_CI_DATA_E)
     {
         UINT16 pkt_offset = 1 + HCI_SCO_PREAMBLE_SIZE;
@@ -1299,7 +1298,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
                       bta_ag_sco_evt_str(event));
     }
 
-#if (BTM_WBS_INCLUDED == TRUE )
+#if (BTM_WBS_INCLUDED == TRUE)
     if (p_cn_scb)
     {
         bta_ag_codec_negotiate(p_cn_scb);
@@ -1511,7 +1510,9 @@ void bta_ag_sco_conn_open(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 *******************************************************************************/
 void bta_ag_sco_conn_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 {
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
     UINT16 handle = bta_ag_scb_to_idx(p_scb);
+#endif
     UNUSED(p_data);
 
     /* clear current scb */
@@ -1541,6 +1542,7 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 #endif
     else
     {
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
         sco_state_t sco_state = bta_ag_cb.sco.p_xfer_scb ? SCO_STATE_OFF_TRANSFER : SCO_STATE_OFF;
 #if (BTM_WBS_INCLUDED == TRUE)
         /* Indicate if the closing of audio is because of transfer */
@@ -1548,6 +1550,7 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB *p_scb, tBTA_AG_DATA *p_data)
 #else
         /* Indicate if the closing of audio is because of transfer */
         bta_ag_sco_audio_state(handle, p_scb->app_id, sco_state);
+#endif
 #endif
         bta_ag_sco_event(p_scb, BTA_AG_SCO_CONN_CLOSE_E);
 
@@ -1625,17 +1628,15 @@ void bta_ag_sco_conn_rsp(tBTA_AG_SCB *p_scb, tBTM_ESCO_CONN_REQ_EVT_DATA *p_data
         /* tell sys to stop av if any */
         bta_sys_sco_use(BTA_ID_AG, p_scb->app_id, p_scb->peer_addr);
 
-#if (BTM_WBS_INCLUDED == FALSE)
-        /* Allow any platform specific pre-SCO set up to take place */
-        bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP);
-#else
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+#if (BTM_WBS_INCLUDED == TRUE)
         /* When HS initiated SCO, it cannot be WBS. */
         /* Allow any platform specific pre-SCO set up to take place */
-        bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP,
-                              BTA_AG_CODEC_CVSD);
+        bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP, BTA_AG_CODEC_CVSD);
+#else
+        /* Allow any platform specific pre-SCO set up to take place */
+        bta_ag_sco_audio_state(bta_ag_scb_to_idx(p_scb), p_scb->app_id, SCO_STATE_SETUP);
 #endif
-
-#if (BTM_SCO_HCI_INCLUDED == TRUE)
         pcm_sample_rate = BTA_HFP_SCO_SAMP_RATE_8K;
         /* initialize SCO setup, no voice setting for AG, data rate <==> sample rate */
         BTM_ConfigScoPath(bta_ag_sco_co_init(pcm_sample_rate, pcm_sample_rate, &codec_info, p_scb->app_id),

@@ -64,8 +64,7 @@ static void ip_event_handler(void* arg, esp_event_base_t event_base,
         case IP_EVENT_STA_GOT_IP:
             event = (ip_event_got_ip_t*)event_data;
             ESP_LOGI(TAG, "IP_EVENT_STA_GOT_IP");
-            ESP_LOGI(TAG, "got ip:%s\n",
-            ip4addr_ntoa(&event->ip_info.ip));
+            ESP_LOGI(TAG, "got ip:" IPSTR "\n", IP2STR(&event->ip_info.ip));
             if (wifi_events) {
                 xEventGroupSetBits(wifi_events, GOT_IP_EVENT);
             }
@@ -81,6 +80,9 @@ static esp_err_t event_init(void)
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, ESP_EVENT_ANY_ID, &ip_event_handler, NULL));
+    esp_netif_create_default_wifi_sta();
+    esp_netif_create_default_wifi_ap();
+
     return ESP_OK;
 }
 
@@ -145,8 +147,8 @@ TEST_CASE("wifi stop and deinit","[wifi]")
     }
     TEST_ESP_OK(r);
     //init tcpip
-    ESP_LOGI(TAG, EMPH_STR("tcpip_adapter_init"));
-    tcpip_adapter_init();
+    ESP_LOGI(TAG, EMPH_STR("esp_netif_init"));
+    esp_netif_init();
     //init event loop
 
     ESP_LOGI(TAG, EMPH_STR("event_init"));
@@ -164,7 +166,7 @@ TEST_CASE("wifi stop and deinit","[wifi]")
     nvs_flash_deinit();
     ESP_LOGI(TAG, "test passed...");
 
-    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of tcpip_adapter and event_loop.");
+    TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
 
 static void start_wifi_as_softap(void)
@@ -285,7 +287,8 @@ static void wifi_connect_by_bssid(uint8_t *bssid)
 
     TEST_ESP_OK(esp_wifi_set_config(WIFI_IF_STA, &w_config));
     TEST_ESP_OK(esp_wifi_connect());
-    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, 5000/portTICK_RATE_MS);
+    ESP_LOGI(TAG, "called esp_wifi_connect()");
+    bits = xEventGroupWaitBits(wifi_events, GOT_IP_EVENT, 1, 0, 7000/portTICK_RATE_MS);
     TEST_ASSERT(bits == GOT_IP_EVENT);
 }
 

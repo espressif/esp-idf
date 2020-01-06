@@ -119,18 +119,10 @@ function run_tests()
     rm -f ${TESTDIR}/template/version.txt
 
     print_status "Get the version of app from git describe. Project is not inside IDF and do not have a tag only a hash commit."
-    idf.py build >> log.log || failure "Failed to build"
+    idf.py reconfigure >> log.log || failure "Failed to build"
     version="Project version: "
     version+=$(git describe --always --tags --dirty)
     grep "${version}" log.log || failure "Project version should have a hash commit"
-
-    print_status "Can set COMPONENT_SRCS with spaces"
-    clean_build_dir
-    touch main/main2.c
-    ${SED} -i 's/^set(COMPONENT_SRCS.*/set(COMPONENT_SRCS "main.c main2.c")/' main/CMakeLists.txt
-    idf.py build || failure "Set COMPONENT_SRCS with spaces build failed"
-    git checkout -- main/CMakeLists.txt
-    rm main/main2.c
 
     print_status "Moving BUILD_DIR_BASE out of tree"
     clean_build_dir
@@ -276,6 +268,31 @@ function run_tests()
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
 
+    print_status "can build with phy_init_data"
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults
+    idf.py reconfigure > /dev/null
+    idf.py build || failure "Failed to build with PHY_INIT_DATA"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} ${PHY_INIT_BIN}
+    rm sdkconfig
+    rm sdkconfig.defaults
+
+    print_status "can build with ethernet component disabled"
+    idf.py clean > /dev/null
+    idf.py fullclean > /dev/null
+    rm -f sdkconfig.defaults
+    rm -f sdkconfig
+    echo "CONFIG_ETH_USE_SPI_ETHERNET=" >> sdkconfig.defaults
+    echo "CONFIG_ETH_USE_ESP32_EMAC=" >> sdkconfig.defaults
+    idf.py reconfigure > /dev/null
+    idf.py build || failure "Failed to build with ethernet component disabled"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+    rm sdkconfig
+    rm sdkconfig.defaults
+
     # Next two tests will use this fake 'esp31b' target
     export fake_target=esp31b
     mkdir -p components/$fake_target
@@ -320,13 +337,6 @@ function run_tests()
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf components sdkconfig build
 
-    print_status "Can find toolchain file in component directory"
-    clean_build_dir
-    mv ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake ${IDF_PATH}/components/esp32/
-    idf.py build || failure "Failed to build with toolchain file in component directory"
-    mv ${IDF_PATH}/components/esp32/toolchain-esp32.cmake ${IDF_PATH}/tools/cmake/
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
-
     print_status "Can build with auto generated CMakeLists.txt"
     clean_build_dir
     mv CMakeLists.txt CMakeLists.bak
@@ -335,17 +345,23 @@ function run_tests()
     mv CMakeLists.bak CMakeLists.txt
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    print_status "Can find toolchain file in component directory"
+    clean_build_dir
+    mv ${IDF_PATH}/tools/cmake/toolchain-esp32.cmake ${IDF_PATH}/components/esp32/
+    (idf.py reconfigure > /dev/null && grep "${IDF_PATH}/components/esp32/toolchain-esp32.cmake" build/CMakeCache.txt) || failure  "Failed to find toolchain file in component directory"
+    mv ${IDF_PATH}/components/esp32/toolchain-esp32.cmake ${IDF_PATH}/tools/cmake/
+
     print_status "Setting EXTRA_COMPONENT_DIRS works"
     clean_build_dir
+    (idf.py reconfigure | grep "$PWD/main") || failure  "Failed to verify original `main` directory"
     mkdir -p main/main/main # move main component contents to another directory
     mv main/* main/main/main
     cp CMakeLists.txt CMakeLists.bak # set EXTRA_COMPONENT_DIRS to point to the other directory
     ${SED} -i "s%cmake_minimum_required(VERSION \([0-9]\+\).\([0-9]\+\))%cmake_minimum_required(VERSION \1.\2)\nset(EXTRA_COMPONENT_DIRS main/main/main)%" CMakeLists.txt
-    idf.py build || failure "Build with EXTRA_COMPONENT_DIRS set failed"
+    (idf.py reconfigure | grep "$PWD/main/main/main") || failure  "Failed to set EXTRA_COMPONENT_DIRS"
     mv CMakeLists.bak CMakeLists.txt # revert previous modifications
     mv main/main/main/* main
     rm -rf main/main
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
     print_status "sdkconfig should have contents of all files: sdkconfig, sdkconfig.defaults, sdkconfig.defaults.IDF_TARGET"
     idf.py clean > /dev/null
@@ -360,31 +376,6 @@ function run_tests()
     grep "CONFIG_ESP32_DEFAULT_CPU_FREQ_240=y" sdkconfig || failure "The define from sdkconfig.defaults.esp32 should be into sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig should be into sdkconfig"
     rm sdkconfig sdkconfig.defaults sdkconfig.defaults.esp32
-
-    print_status "can build with phy_init_data"
-    idf.py clean > /dev/null
-    idf.py fullclean > /dev/null
-    rm -f sdkconfig.defaults
-    rm -f sdkconfig
-    echo "CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION=y" >> sdkconfig.defaults
-    idf.py reconfigure > /dev/null
-    idf.py build || failure "Failed to build with PHY_INIT_DATA"
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN} ${PHY_INIT_BIN}
-    rm sdkconfig
-    rm sdkconfig.defaults
-
-    print_status "can build with ethernet component disabled"
-    idf.py clean > /dev/null
-    idf.py fullclean > /dev/null
-    rm -f sdkconfig.defaults
-    rm -f sdkconfig
-    echo "CONFIG_ETH_USE_SPI_ETHERNET=" >> sdkconfig.defaults
-    echo "CONFIG_ETH_USE_ESP32_EMAC=" >> sdkconfig.defaults
-    idf.py reconfigure > /dev/null
-    idf.py build || failure "Failed to build with ethernet component disabled"
-    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
-    rm sdkconfig
-    rm sdkconfig.defaults
 
     print_status "Building a project with CMake library imported and PSRAM workaround, all files compile with workaround"
     # Test for libraries compiled within ESP-IDF
@@ -426,7 +417,7 @@ EOF
     rm -f sdkconfig.defaults
     rm -f sdkconfig
     echo "" > ${IDF_PATH}/sdkconfig.rename
-    idf.py build > /dev/null
+    idf.py reconfigure > /dev/null
     echo "CONFIG_TEST_OLD_OPTION=y" >> sdkconfig
     echo "CONFIG_TEST_OLD_OPTION CONFIG_TEST_NEW_OPTION" >> ${IDF_PATH}/sdkconfig.rename
     echo -e "\n\
@@ -437,7 +428,7 @@ menu \"test\"\n\
         help\n\
             TEST_NEW_OPTION description\n\
 endmenu\n" >> ${IDF_PATH}/Kconfig
-    idf.py build > /dev/null
+    idf.py reconfigure > /dev/null
     grep "CONFIG_TEST_OLD_OPTION=y" sdkconfig || failure "CONFIG_TEST_OLD_OPTION should be in sdkconfig for backward compatibility"
     grep "CONFIG_TEST_NEW_OPTION=y" sdkconfig || failure "CONFIG_TEST_NEW_OPTION should be now in sdkconfig"
     grep "#define CONFIG_TEST_NEW_OPTION 1" build/config/sdkconfig.h || failure "sdkconfig.h should contain the new macro"
@@ -463,7 +454,7 @@ menu \"test\"\n\
         help\n\
             TEST_NEW_OPTION description\n\
 endmenu\n" >> ${IDF_PATH}/Kconfig
-    idf.py build > /dev/null
+    idf.py reconfigure > /dev/null
     grep "CONFIG_TEST_OLD_OPTION=7" sdkconfig || failure "CONFIG_TEST_OLD_OPTION=7 should be in sdkconfig for backward compatibility"
     grep "CONFIG_TEST_NEW_OPTION=7" sdkconfig || failure "CONFIG_TEST_NEW_OPTION=7 should be in sdkconfig"
     rm -f sdkconfig.defaults
@@ -487,7 +478,7 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     print_status "Custom bootloader overrides original"
     clean_build_dir
     (mkdir components && cd components && cp -r $IDF_PATH/components/bootloader .)
-    idf.py build
+    idf.py bootloader
     grep "$PWD/components/bootloader/subproject/main/bootloader_start.c" build/bootloader/compile_commands.json \
         || failure "Custom bootloader source files should be built instead of the original's"
     rm -rf components
@@ -555,18 +546,6 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     mv CMakeLists.txt.bak CMakeLists.txt
     rm -rf CMakeLists.txt.bak
 
-    print_status "Print all required argument deprecation warnings"
-    idf.py -C${IDF_PATH}/tools/test_idf_py --test-0=a --test-1=b --test-2=c --test-3=d test-0 --test-sub-0=sa --test-sub-1=sb ta test-1 > out.txt
-    ! grep -e '"test-0" is deprecated' -e '"test_0" is deprecated' out.txt || failure "Deprecation warnings are displayed for non-deprecated option/command"
-    grep -e 'Warning: Option "test_sub_1" is deprecated and will be removed in future versions.' \
-        -e 'Warning: Command "test-1" is deprecated and will be removed in future versions. Please use alternative command.' \
-        -e 'Warning: Option "test_1" is deprecated and will be removed in future versions.' \
-        -e 'Warning: Option "test_2" is deprecated and will be removed in future versions. Please update your parameters.' \
-        -e 'Warning: Option "test_3" is deprecated and will be removed in future versions.' \
-        out.txt \
-        || failure "Deprecation warnings are not displayed"
-    rm out.txt
-
     print_status "should be able to specify multiple sdkconfig default files"
     idf.py clean > /dev/null
     idf.py fullclean > /dev/null
@@ -577,8 +556,37 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py -DSDKCONFIG_DEFAULTS="sdkconfig.defaults1;sdkconfig.defaults2" reconfigure > /dev/null
     grep "CONFIG_PARTITION_TABLE_OFFSET=0x10000" sdkconfig || failure "The define from sdkconfig.defaults1 should be in sdkconfig"
     grep "CONFIG_PARTITION_TABLE_TWO_OTA=y" sdkconfig || failure "The define from sdkconfig.defaults2 should be in sdkconfig"
-    rm sdkconfig.defaults1
-    rm sdkconfig.defaults2
+    rm sdkconfig.defaults1 sdkconfig.defaults2 sdkconfig
+    git checkout sdkconfig.defaults
+
+    print_status "Supports git worktree"
+    clean_build_dir
+    git branch test_build_system
+    git worktree add ../esp-idf-template-test test_build_system
+    diff <(idf.py reconfigure | grep "Project version") <(cd ../esp-idf-template-test && idf.py reconfigure | grep "Project version") \
+        || failure "Version on worktree should have been properly resolved"
+    git worktree remove ../esp-idf-template-test
+
+    print_status "idf.py fallback to build system target"
+    clean_build_dir
+    msg="Custom target is running"
+    echo "" >> CMakeLists.txt
+    echo "add_custom_target(custom_target COMMAND \${CMAKE_COMMAND} -E echo \"${msg}\")" >> CMakeLists.txt
+    idf.py custom_target 1>log.txt || failure "Could not invoke idf.py with custom target"
+    grep "${msg}" log.txt 1>/dev/null || failure "Custom target did not produce expected output"
+    git checkout CMakeLists.txt
+    rm -f log.txt
+
+    print_status "Compiles with dependencies delivered by component manager"
+    clean_build_dir
+    printf "\n#include \"test_component.h\"\n" >> main/main.c
+    printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> idf_project.yml
+    ! idf.py build || failure "Build should fail if dependencies are not installed"
+    pip install ${COMPONENT_MANAGER_REPO}
+    idf.py reconfigure build || failure "Build succeeds once requirements are installed"
+    pip uninstall -y idf_component_manager
+    rm idf_project.yml
+    git checkout main/main.c
 
     print_status "All tests completed"
     if [ -n "${FAILURES}" ]; then

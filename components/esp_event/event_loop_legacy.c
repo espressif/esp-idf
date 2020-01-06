@@ -14,8 +14,8 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
-#include "esp_event_legacy.h"
 #include "esp_event.h"
+#include "esp_event_legacy.h"
 
 #include "sdkconfig.h"
 
@@ -50,7 +50,7 @@ esp_err_t esp_event_send_legacy(system_event_t *event)
         return ESP_ERR_INVALID_STATE;
     }
 
-    return esp_event_post(SYSTEM_EVENT, event->event_id, event, sizeof(*event), 0);
+    return esp_event_post(SYSTEM_EVENT, event->event_id, event, sizeof(*event), portMAX_DELAY);
 }
 
 esp_err_t esp_event_loop_init(system_event_cb_t cb, void *ctx)

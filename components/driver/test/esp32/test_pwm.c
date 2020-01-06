@@ -26,6 +26,7 @@
 #include "esp_log.h"
 #include "soc/rtc.h"
 
+
 #define GPIO_PWMA_OUT  4
 #define GPIO_PWMB_OUT  13
 #define GPIO_CAP_IN   27
@@ -65,9 +66,23 @@ typedef struct {
     mcpwm_capture_signal_t sel_cap_signal;
 } capture;
 
+static const char TAG[] = "test_pwm";
+
+const static mcpwm_io_signals_t pwma[] = {MCPWM0A, MCPWM1A, MCPWM2A};
+const static mcpwm_io_signals_t pwmb[] = {MCPWM0B, MCPWM1B, MCPWM2B};
+const static mcpwm_fault_signal_t fault_sig_array[] = {MCPWM_SELECT_F0, MCPWM_SELECT_F1, MCPWM_SELECT_F2};
+const static mcpwm_io_signals_t fault_io_sig_array[] = {MCPWM_FAULT_0, MCPWM_FAULT_1, MCPWM_FAULT_2};
+const static mcpwm_sync_signal_t sync_sig_array[] = {MCPWM_SELECT_SYNC0, MCPWM_SELECT_SYNC1, MCPWM_SELECT_SYNC2};
+const static mcpwm_io_signals_t sync_io_sig_array[] = {MCPWM_SYNC_0, MCPWM_SYNC_1, MCPWM_SYNC_2};
+const static mcpwm_capture_signal_t cap_sig_array[] = {MCPWM_SELECT_CAP0, MCPWM_SELECT_CAP1, MCPWM_SELECT_CAP2};
+const static mcpwm_io_signals_t cap_io_sig_array[] = {MCPWM_CAP_0, MCPWM_CAP_1, MCPWM_CAP_2};
+
+
 // universal settings of mcpwm
-static void mcpwm_basic_config(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer)
+static void mcpwm_basic_config(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
+    mcpwm_io_signals_t mcpwm_a = pwma[timer];
+    mcpwm_io_signals_t mcpwm_b = pwmb[timer];
     mcpwm_gpio_init(unit, mcpwm_a, GPIO_PWMA_OUT);
     mcpwm_gpio_init(unit, mcpwm_b, GPIO_PWMB_OUT);
     mcpwm_config_t pwm_config = {
@@ -119,10 +134,10 @@ static int16_t pcnt_count(int pulse_gpio_num, int ctrl_gpio_num, int last_time)
     TEST_ESP_OK(pcnt_counter_clear(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_counter_resume(PCNT_UNIT_0));
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
-    printf("COUNT: %d\n", test_counter);
+    printf("COUNT (before): %d\n", test_counter);
     vTaskDelay(last_time / portTICK_RATE_MS);
     TEST_ESP_OK(pcnt_get_counter_value(PCNT_UNIT_0, &test_counter));
-    printf("COUNT: %d\n", test_counter);
+    printf("COUNT (after): %d\n", test_counter);
     return test_counter;
 }
 
@@ -139,9 +154,9 @@ static void judge_count_value(int allow_error ,int expect_freq)
 }
 
 // test the duty configuration
-static void timer_duty_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer)
+static void timer_duty_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
     vTaskDelay(1000 / portTICK_RATE_MS); // stay this status for a while so that can view its waveform by logic anylyzer
 
     TEST_ESP_OK(mcpwm_set_duty(unit, timer, MCPWM_OPR_A, (INITIAL_DUTY * 1)));
@@ -149,7 +164,7 @@ static void timer_duty_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm
 
     TEST_ASSERT_EQUAL_INT(mcpwm_get_duty(unit, timer, MCPWM_OPR_A), INITIAL_DUTY * 1);
     TEST_ASSERT_EQUAL_INT(mcpwm_get_duty(unit, timer, MCPWM_OPR_B), INITIAL_DUTY * 2);
-    vTaskDelay(1000 / portTICK_RATE_MS);  // stay this status for a while so that can view its waveform by logic anylyzer
+    vTaskDelay(100 / portTICK_RATE_MS);  // stay this status for a while so that can view its waveform by logic anylyzer
 
     mcpwm_set_duty(unit, timer, MCPWM_OPR_A, 55.5f);
     mcpwm_set_duty_type(unit, timer, MCPWM_OPR_A, MCPWM_DUTY_MODE_0);
@@ -157,13 +172,15 @@ static void timer_duty_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm
 
     mcpwm_set_duty_in_us(unit, timer, MCPWM_OPR_B, 500);
     printf("mcpwm check = %f\n", mcpwm_get_duty(unit, timer, MCPWM_OPR_B));
-    vTaskDelay(1000 / portTICK_RATE_MS);  // stay this status for a while so that can view its waveform by logic anylyzer
+    vTaskDelay(100 / portTICK_RATE_MS);  // stay this status for a while so that can view its waveform by logic anylyzer
+
+    mcpwm_stop(unit, timer);
 }
 
 // test the start and stop function work or not
-static void start_stop_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer)
+static void start_stop_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
     judge_count_value(2, 1000);
     TEST_ESP_OK(mcpwm_stop(unit, timer));
     vTaskDelay(10 / portTICK_RATE_MS); // wait for a while, stop totally
@@ -174,17 +191,21 @@ static void start_stop_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm
 }
 
 // test the deadtime
-static void deadtime_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer)
+static void deadtime_test(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
     mcpwm_deadtime_type_t deadtime_type[8] = {MCPWM_BYPASS_RED, MCPWM_BYPASS_FED, MCPWM_ACTIVE_HIGH_MODE,
             MCPWM_ACTIVE_LOW_MODE, MCPWM_ACTIVE_HIGH_COMPLIMENT_MODE, MCPWM_ACTIVE_LOW_COMPLIMENT_MODE,
             MCPWM_ACTIVE_RED_FED_FROM_PWMXA, MCPWM_ACTIVE_RED_FED_FROM_PWMXB};
 
     for(int i=0; i<8; i++) {
         mcpwm_deadtime_enable(unit, timer, deadtime_type[i], 1000, 1000);
-        vTaskDelay(1000 / portTICK_RATE_MS);
+        vTaskDelay(100 / portTICK_RATE_MS);
         mcpwm_deadtime_disable(unit, timer);
+        //add a small gap between tests to make the waveform more clear
+        mcpwm_stop(unit, timer);
+        vTaskDelay(10);
+        mcpwm_start(unit, timer);
     }
 }
 
@@ -193,11 +214,11 @@ static void deadtime_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_i
  * 1. by mcpwm_carrier_init
  * 2. by different single setting function
  */
-static void carrier_with_set_function_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer,
-        mcpwm_carrier_out_ivt_t invert_or_not, uint8_t period, uint8_t duty, uint8_t os_width)
+static void carrier_with_set_function_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_carrier_out_ivt_t invert_or_not,
+                                           uint8_t period, uint8_t duty, uint8_t os_width)
 {
     // no inversion and no one shot
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
     TEST_ESP_OK(mcpwm_carrier_enable(unit, timer));
     TEST_ESP_OK(mcpwm_carrier_set_period(unit, timer, period)); //carrier revolution
     TEST_ESP_OK(mcpwm_carrier_set_duty_cycle(unit, timer, duty)); // carrier duty
@@ -208,10 +229,11 @@ static void carrier_with_set_function_test(mcpwm_unit_t unit, mcpwm_io_signals_t
     vTaskDelay(2000 / portTICK_RATE_MS);
 }
 
-static void carrier_with_configuration_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer,
-        mcpwm_carrier_os_t oneshot_or_not, mcpwm_carrier_out_ivt_t invert_or_not, uint8_t period, uint8_t duty, uint8_t os_width)
+static void carrier_with_configuration_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_carrier_os_t oneshot_or_not,
+                                           mcpwm_carrier_out_ivt_t invert_or_not, uint8_t period, uint8_t duty,
+                                           uint8_t os_width)
 {
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
 
     mcpwm_carrier_config_t chop_config;
     chop_config.carrier_period = period;         //carrier period = (period + 1)*800ns
@@ -263,21 +285,21 @@ static void get_action_level(mcpwm_fault_input_level_t input_sig, mcpwm_action_o
 }
 
 // test the fault event
-static void cycle_fault_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer,
-        mcpwm_fault_signal_t fault_sig, mcpwm_fault_input_level_t input_sig, mcpwm_io_signals_t fault_io,
-        mcpwm_action_on_pwmxa_t action_a, mcpwm_action_on_pwmxb_t action_b)
+static void cycle_fault_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_fault_signal_t fault_sig,
+                             mcpwm_fault_input_level_t input_sig, mcpwm_io_signals_t fault_io,
+                             mcpwm_action_on_pwmxa_t action_a, mcpwm_action_on_pwmxb_t action_b)
 {
     gpio_config_t gp;
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = (1 << FAULT_SIG_NUM);
+    gp.pin_bit_mask = (1ULL << FAULT_SIG_NUM);
     gpio_config(&gp); // gpio configure should be more previous than mcpwm configuration
     gpio_set_level(FAULT_SIG_NUM, !input_sig);
 
     pcnt_init(GPIO_PWMA_PCNT_INPUT, PCNT_CTRL_FLOATING_IO1);
     pcnt_init(GPIO_PWMB_PCNT_INPUT, PCNT_CTRL_FLOATING_IO2);
 
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
     mcpwm_gpio_init(unit, fault_io, GPIO_FAULT_IN);
 
     // cycle mode, it can be triggered more than once
@@ -292,45 +314,46 @@ static void cycle_fault_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpw
     TEST_ESP_OK(mcpwm_fault_deinit(unit, fault_sig));
 }
 
-static void oneshot_fault_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer,
-        mcpwm_fault_signal_t fault_sig, mcpwm_fault_input_level_t input_sig, mcpwm_io_signals_t fault_io,
-        mcpwm_action_on_pwmxa_t action_a, mcpwm_action_on_pwmxb_t action_b)
+static void oneshot_fault_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_fault_signal_t fault_sig,
+                              mcpwm_fault_input_level_t input_sig, mcpwm_io_signals_t fault_io,
+                              mcpwm_action_on_pwmxa_t action_a, mcpwm_action_on_pwmxb_t action_b)
 {
     gpio_config_t gp;
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = (1 << FAULT_SIG_NUM);
+    gp.pin_bit_mask = (1ULL << FAULT_SIG_NUM);
     gpio_config(&gp); // gpio configure should be more previous than mcpwm configuration
     gpio_set_level(FAULT_SIG_NUM, !input_sig);
 
     pcnt_init(GPIO_PWMA_PCNT_INPUT, PCNT_CTRL_FLOATING_IO1);
     pcnt_init(GPIO_PWMB_PCNT_INPUT, PCNT_CTRL_FLOATING_IO2);
 
-    mcpwm_basic_config(unit, mcpwm_a, mcpwm_b, timer);
+    mcpwm_basic_config(unit, timer);
     mcpwm_gpio_init(unit, fault_io, GPIO_FAULT_IN);
 
     // one shot mode, it just can be triggered once
     TEST_ESP_OK(mcpwm_fault_init(unit, input_sig, fault_sig));
     TEST_ESP_OK(mcpwm_fault_set_oneshot_mode(unit, timer, fault_sig, action_a, action_b));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_RATE_MS);
     // trigger it
     gpio_set_level(FAULT_SIG_NUM, input_sig);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(10 / portTICK_RATE_MS);
     get_action_level(input_sig, action_a, action_b, 1000, 5);
     TEST_ESP_OK(mcpwm_fault_deinit(unit, fault_sig));
 }
 
 // test the sync event
-static void sync_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_timer_t timer,
-        mcpwm_sync_signal_t sync_sig, mcpwm_io_signals_t sync_io)
+static void sync_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_sync_signal_t sync_sig, mcpwm_io_signals_t sync_io)
 {
     gpio_config_t gp;
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = (1 << SYN_SIG_NUM);
+    gp.pin_bit_mask = (1ULL << SYN_SIG_NUM);
     gpio_config(&gp);
     gpio_set_level(SYN_SIG_NUM, 0);
 
+    mcpwm_io_signals_t mcpwm_a = pwma[timer];
+    mcpwm_io_signals_t mcpwm_b = pwmb[timer];
     mcpwm_gpio_init(unit, mcpwm_a, GPIO_PWMA_OUT);
     mcpwm_gpio_init(unit, mcpwm_b, GPIO_PWMB_OUT);
     mcpwm_gpio_init(unit, sync_io, GPIO_SYNC_IN);
@@ -345,10 +368,13 @@ static void sync_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_si
     gpio_pulldown_en(GPIO_SYNC_IN);
 
     mcpwm_sync_enable(unit, timer, sync_sig, 200);
+    //wait for some pulses before sync
+    vTaskDelay(10);
     gpio_set_level(SYN_SIG_NUM, 1);
-    vTaskDelay(2000 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_RATE_MS);
+    gpio_set_level(SYN_SIG_NUM, 0);
     mcpwm_sync_disable(unit, timer);
-    vTaskDelay(2000 / portTICK_RATE_MS);
+    vTaskDelay(100 / portTICK_RATE_MS);
 }
 
 /**
@@ -398,7 +424,7 @@ static void disp_captured_signal(void *arg)
 // mcpwm event
 static void IRAM_ATTR isr_handler(void *arg)
 {
-	mcpwm_unit_t unit = (mcpwm_unit_t)arg;
+    mcpwm_unit_t unit = (mcpwm_unit_t)arg;
     uint32_t mcpwm_intr_status;
     capture evt;
     mcpwm_intr_status = MCPWM[unit]->int_st.val; //Read interrupt status
@@ -425,10 +451,10 @@ static void gpio_test_signal(void *arg)
 {
 
     printf("intializing test signal...\n");
-    gpio_config_t gp;
+    gpio_config_t gp = {};
     gp.intr_type = GPIO_INTR_DISABLE;
     gp.mode = GPIO_MODE_OUTPUT;
-    gp.pin_bit_mask = 1<<CAP_SIG_NUM;
+    gp.pin_bit_mask = 1ULL << CAP_SIG_NUM;
     gpio_config(&gp);
     for (int i=0; i<1000; i++) {
         //here the period of test signal is 20ms
@@ -441,14 +467,18 @@ static void gpio_test_signal(void *arg)
     vTaskDelete(NULL);
 }
 
+
 // capture event test function
-static void capture_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io_signals_t mcpwm_b, mcpwm_io_signals_t cap_io, mcpwm_timer_t timer,
-        mcpwm_capture_signal_t cap_sig, mcpwm_capture_on_edge_t cap_edge)
+static void capture_test(mcpwm_unit_t unit, mcpwm_timer_t timer, mcpwm_capture_on_edge_t cap_edge)
 {
-	// initialize the capture times
+    // initialize the capture times
     cap0_times = 0;
     cap1_times = 0;
     cap2_times = 0;
+
+    //each timer test the capture sig with the same id with it.
+    mcpwm_io_signals_t cap_io = cap_io_sig_array[timer];
+    mcpwm_capture_signal_t cap_sig = cap_sig_array[timer];
 
     mcpwm_gpio_init(unit, cap_io, GPIO_CAP_IN);
 
@@ -463,11 +493,11 @@ static void capture_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io
         vTaskDelay(10 / portTICK_RATE_MS);
     }
     if(cap_sig == MCPWM_SELECT_CAP0) {
-    	TEST_ASSERT(1000 == cap0_times);
+        TEST_ASSERT(1000 == cap0_times);
     } else if(cap_sig == MCPWM_SELECT_CAP1) {
-    	TEST_ASSERT(1000 == cap1_times);
+        TEST_ASSERT(1000 == cap1_times);
     }else {
-    	TEST_ASSERT(1000 == cap2_times);
+        TEST_ASSERT(1000 == cap2_times);
     }
     flag = 0; // set flag to 0 that it can be used in other case
     mcpwm_capture_disable(unit, cap_sig);
@@ -483,137 +513,126 @@ static void capture_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mcpwm_io
  */
 TEST_CASE("MCPWM timer0 duty test and each timer works or not test(logic analyzer)", "[mcpwm][ignore]")
 {
-    timer_duty_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0);
-    timer_duty_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0);
+    timer_duty_test(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    timer_duty_test(MCPWM_UNIT_1, MCPWM_TIMER_0);
 }
 
 TEST_CASE("MCPWM timer1 duty test and each timer works or not test(logic analyzer)", "[mcpwm][ignore]")
 {
-    timer_duty_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1);
-    timer_duty_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1);
+    timer_duty_test(MCPWM_UNIT_0, MCPWM_TIMER_1);
+    timer_duty_test(MCPWM_UNIT_1, MCPWM_TIMER_1);
 }
 TEST_CASE("MCPWM timer2 duty test and each timer works or not test(logic analyzer)", "[mcpwm][ignore]")
 {
-    timer_duty_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2);
-    timer_duty_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2);
+    timer_duty_test(MCPWM_UNIT_0, MCPWM_TIMER_2);
+    timer_duty_test(MCPWM_UNIT_1, MCPWM_TIMER_2);
 }
 
 // the deadtime configuration test
 // use the logic analyzer to make sure it goes right
 TEST_CASE("MCPWM timer0 deadtime configuration(logic analyzer)", "[mcpwm][ignore]")
 {
-    deadtime_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0);
-    deadtime_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0);
+    deadtime_test(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    deadtime_test(MCPWM_UNIT_1, MCPWM_TIMER_0);
 }
 
 TEST_CASE("MCPWM timer1 deadtime configuration(logic analyzer)", "[mcpwm][ignore]")
 {
-    deadtime_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1);
-    deadtime_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1);
+    deadtime_test(MCPWM_UNIT_0, MCPWM_TIMER_1);
+    deadtime_test(MCPWM_UNIT_1, MCPWM_TIMER_1);
 }
 
 TEST_CASE("MCPWM timer2 deadtime configuration(logic analyzer)", "[mcpwm][ignore]")
 {
-    deadtime_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2);
-    deadtime_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2);
+    deadtime_test(MCPWM_UNIT_0, MCPWM_TIMER_2);
+    deadtime_test(MCPWM_UNIT_1, MCPWM_TIMER_2);
 }
 
 TEST_CASE("MCPWM timer0 start and stop test", "[mcpwm][test_env=UT_T1_MCPWM]")
 {
-    start_stop_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0);
-    start_stop_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0);
+    start_stop_test(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    start_stop_test(MCPWM_UNIT_1, MCPWM_TIMER_0);
 }
 
 // mcpwm start and stop test
 TEST_CASE("MCPWM timer1 start and stop test", "[mcpwm][test_env=UT_T1_MCPWM]")
 {
-    start_stop_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1);
-    start_stop_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1);
+    start_stop_test(MCPWM_UNIT_0, MCPWM_TIMER_1);
+    start_stop_test(MCPWM_UNIT_1, MCPWM_TIMER_1);
 }
 
 TEST_CASE("MCPWM timer2 start and stop test", "[mcpwm][test_env=UT_T1_MCPWM]")
 {
-    start_stop_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2);
-    start_stop_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2);
+    start_stop_test(MCPWM_UNIT_0, MCPWM_TIMER_2);
+    start_stop_test(MCPWM_UNIT_1, MCPWM_TIMER_2);
 }
 
 TEST_CASE("MCPWM timer0 carrier test with set function", "[mcpwm][test_env=UT_T1_MCPWM]")
 {
-    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-            MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-            MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-            MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
-            carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-            MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM_TIMER_0,
+                                   MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM_TIMER_0,
+                                   MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM_TIMER_0,
+                                   MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM_TIMER_0,
+                                   MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
 }
 
 TEST_CASE("MCPWM timer1 carrier test with set function", "[mcpwm][test_env=UT_T1_MCPWM]")
 {
-    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-            MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-            MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-            MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-            MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM_TIMER_1,
+                                   MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM_TIMER_1,
+                                   MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM_TIMER_1,
+                                   MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM_TIMER_1,
+                                   MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
 }
 
 TEST_CASE("MCPWM timer2 carrier test with set function", "[mcpwm][test_env=UT_T1_MCPWM]")
 {
-    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-            MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-            MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-            MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
-    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-            MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM_TIMER_2,
+                                   MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_0, MCPWM_TIMER_2,
+                                   MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM_TIMER_2,
+                                   MCPWM_CARRIER_OUT_IVT_DIS, 6, 3, 3);
+    carrier_with_set_function_test(MCPWM_UNIT_1, MCPWM_TIMER_2,
+                                   MCPWM_CARRIER_OUT_IVT_EN, 6, 3, 3);
+}
+
+
+static void test_carrier_with_config_func(mcpwm_unit_t unit, mcpwm_timer_t timer)
+{
+    mcpwm_carrier_os_t oneshot[2] = {MCPWM_ONESHOT_MODE_DIS, MCPWM_ONESHOT_MODE_EN};
+    mcpwm_carrier_out_ivt_t invert[2] = {MCPWM_CARRIER_OUT_IVT_DIS, MCPWM_CARRIER_OUT_IVT_EN};
+    ESP_LOGI(TAG, "test unit%d timer%d", unit, timer);
+
+    for(int i=0; i<2; i++){
+        for(int j=0; j<2; j++) {
+            printf("i=%d, j=%d\n", i, j);
+            carrier_with_configuration_test(unit, timer, oneshot[i], invert[j], 6, 3, 3);
+        }
+    }
 }
 
 TEST_CASE("MCPWM timer0 carrier test with configuration function", "[mcpwm][test_env=UT_T1_MCPWM][timeout=120]")
 {
-    mcpwm_carrier_os_t oneshot[2] = {MCPWM_ONESHOT_MODE_DIS, MCPWM_ONESHOT_MODE_EN};
-    mcpwm_carrier_out_ivt_t invert[2] = {MCPWM_CARRIER_OUT_IVT_DIS, MCPWM_CARRIER_OUT_IVT_EN};
-    for(int i=0; i<2; i++){
-        for(int j=0; j<2; j++) {
-            printf("i=%d, j=%d\n", i, j);
-            carrier_with_configuration_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-                    oneshot[i], invert[j], 6, 3, 3);
-            carrier_with_configuration_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-                    oneshot[i], invert[j], 6, 3, 3);
-        }
-    }
+    test_carrier_with_config_func(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    test_carrier_with_config_func(MCPWM_UNIT_1, MCPWM_TIMER_0);
 }
 
-TEST_CASE("MCPWM timer1 carrier test with configuration function", "[mcpwm][test_env=UT_T1_MCPWM][timeout=120]")
-{
-    mcpwm_carrier_os_t oneshot[2] = {MCPWM_ONESHOT_MODE_DIS, MCPWM_ONESHOT_MODE_EN};
-    mcpwm_carrier_out_ivt_t invert[2] = {MCPWM_CARRIER_OUT_IVT_DIS, MCPWM_CARRIER_OUT_IVT_EN};
-    for(int i=0; i<2; i++){
-        for(int j=0; j<2; j++) {
-            carrier_with_configuration_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-                    oneshot[i], invert[j], 6, 3, 3);
-            carrier_with_configuration_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-                    oneshot[i], invert[j], 6, 3, 3);
-        }
-    }
+TEST_CASE("MCPWM timer1 carrier test with configuration function", "[mcpwm][test_env=UT_T1_MCPWM][timeout=120]") {
+    test_carrier_with_config_func(MCPWM_UNIT_0, MCPWM_TIMER_1);
+    test_carrier_with_config_func(MCPWM_UNIT_1, MCPWM_TIMER_1);
 }
 
 TEST_CASE("MCPWM timer2 carrier test with configuration function", "[mcpwm][test_env=UT_T1_MCPWM][timeout=120]")
 {
-    mcpwm_carrier_os_t oneshot[2] = {MCPWM_ONESHOT_MODE_DIS, MCPWM_ONESHOT_MODE_EN};
-    mcpwm_carrier_out_ivt_t invert[2] = {MCPWM_CARRIER_OUT_IVT_DIS, MCPWM_CARRIER_OUT_IVT_EN};
-    for(int i=0; i<2; i++){
-        for(int j=0; j<2; j++) {
-            carrier_with_configuration_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-                    oneshot[i], invert[j], 6, 3, 3);
-            carrier_with_configuration_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-                    oneshot[i], invert[j], 6, 3, 3);
-        }
-    }
+    test_carrier_with_config_func(MCPWM_UNIT_0, MCPWM_TIMER_2);
+    test_carrier_with_config_func(MCPWM_UNIT_1, MCPWM_TIMER_2);
 }
 
 /**
@@ -624,201 +643,143 @@ TEST_CASE("MCPWM timer2 carrier test with configuration function", "[mcpwm][test
  * 2. cycle: it can be triggered more than once, it will changed just as the fault signal changes. If set it triggered by high level,
  *           when the fault signal is high level, the event will be triggered. But the event will disappear as the fault signal disappears
  */
-
-TEST_CASE("MCPWM timer0 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180]")
+void test_cycle_fault(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
     // API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
+    //    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
     mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
     mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
+    ESP_LOGI(TAG, "test unit%d timer%d", unit, timer);
+
+    //each timer test the fault sig with the same id with it.
+    mcpwm_fault_signal_t fault_sig = fault_sig_array[timer];
+    mcpwm_io_signals_t fault_io_sig = fault_io_sig_array[timer];
 
     for(int i=0; i<4; i++){
         for(int j=0; j<4; j++) {
             printf("i=%d, j=%d\n",i, j);
-            cycle_fault_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-                    MCPWM_SELECT_F0, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_0,
-                    action_a[i], action_b[j]);
-            cycle_fault_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-                    MCPWM_SELECT_F0, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_0,
-                    action_a[i], action_b[j]);
+            cycle_fault_test(unit, timer, fault_sig, MCPWM_HIGH_LEVEL_TGR, fault_io_sig, action_a[i], action_b[j]);
         }
     }
+}
+
+TEST_CASE("MCPWM timer0 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180]")
+{
+    test_cycle_fault(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    test_cycle_fault(MCPWM_UNIT_1, MCPWM_TIMER_0);
 }
 
 TEST_CASE("MCPWM timer1 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180]")
 {
-    // API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
-    mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
-    mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
-
-    for(int i=0; i<4; i++){
-        for(int j=0; j<4; j++) {
-        	cycle_fault_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-                    MCPWM_SELECT_F1, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_1,
-                    action_a[i], action_b[j]);
-        	cycle_fault_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-                    MCPWM_SELECT_F1, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_1,
-                    action_a[i], action_b[j]);
-        }
-    }
+    test_cycle_fault(MCPWM_UNIT_0, MCPWM_TIMER_1);
+    test_cycle_fault(MCPWM_UNIT_1, MCPWM_TIMER_1);
 }
 
-TEST_CASE("MCPWM timer2 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180][ignore]")
+TEST_CASE("MCPWM timer2 cycle fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=180]")
+{
+    test_cycle_fault(MCPWM_UNIT_0, MCPWM_TIMER_2);
+    test_cycle_fault(MCPWM_UNIT_1, MCPWM_TIMER_2);
+}
+
+static void test_oneshot_fault(mcpwm_unit_t unit, mcpwm_timer_t timer)
 {
 //    API just supports the high level trigger now, so comment it
 //    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
     mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
     mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
 
+    //each timer test the fault sig with the same id with it.
+    mcpwm_fault_signal_t fault_sig = fault_sig_array[timer];
+    mcpwm_io_signals_t fault_io_sig = fault_io_sig_array[timer];
+
+    ESP_LOGI(TAG, "test pwm unit%d, timer%d fault_sig%d", unit, timer, fault_sig);
     for(int i=0; i<4; i++){
         for(int j=0; j<4; j++) {
-        	cycle_fault_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-                    MCPWM_SELECT_F2, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_2,
-                    action_a[i], action_b[j]);
-        	cycle_fault_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-                    MCPWM_SELECT_F2, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_2,
-                    action_a[i], action_b[j]);
+            printf("action (%d, %d)\n", i, j);
+            oneshot_fault_test(unit, timer, fault_sig, MCPWM_HIGH_LEVEL_TGR, fault_io_sig, action_a[i], action_b[j]);
         }
     }
 }
 
-// to debug the "mcpwm_fault_deinit" case. The "MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXB_HIGH" scenario can work right
-// however, the mcpwm_fault_deinit can not release the status after "MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXB_LOW" scenario
-TEST_CASE("MCPWM timer0 one shot fault test single", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
+TEST_CASE("MCPWM timer0 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    // API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
-    mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
-    mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
-
-    oneshot_fault_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-    		MCPWM_SELECT_F0, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_0,
-			action_a[0], action_b[2]);
+    test_oneshot_fault(MCPWM_UNIT_0, MCPWM_TIMER_0);
+    test_oneshot_fault(MCPWM_UNIT_1, MCPWM_TIMER_0);
 }
 
-// the mcpwm_fault_deinit can not release the status after "MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXB_LOW" scenario
-// set it ignore
-// same as the case "MCPWM timer1 one shot fault test" and case "MCPWM timer2 one shot fault test"
-TEST_CASE("MCPWM timer0 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60][ignore]")
+TEST_CASE("MCPWM timer1 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    // API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
-    mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
-    mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
-
-    for(int i=0; i<4; i++){
-        for(int j=0; j<4; j++) {
-            printf("i=%d, j=%d\n",i, j);
-            oneshot_fault_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-                    MCPWM_SELECT_F0, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_0,
-                    action_a[i], action_b[j]);
-            oneshot_fault_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0,
-                    MCPWM_SELECT_F0, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_0,
-                    action_a[i], action_b[j]);
-        }
-    }
+    test_oneshot_fault(MCPWM_UNIT_0, MCPWM_TIMER_1);
+    test_oneshot_fault(MCPWM_UNIT_1, MCPWM_TIMER_1);
 }
 
-TEST_CASE("MCPWM timer1 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60][ignore]")
+TEST_CASE("MCPWM timer2 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    // API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
-    mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
-    mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
-
-    for(int i=0; i<4; i++){
-        for(int j=0; j<4; j++) {
-        	oneshot_fault_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-                    MCPWM_SELECT_F1, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_1,
-                    action_a[i], action_b[j]);
-        	oneshot_fault_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1,
-                    MCPWM_SELECT_F1, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_1,
-                    action_a[i], action_b[j]);
-        }
-    }
+    test_oneshot_fault(MCPWM_UNIT_0, MCPWM_TIMER_2);
+    test_oneshot_fault(MCPWM_UNIT_1, MCPWM_TIMER_2);
 }
 
-TEST_CASE("MCPWM timer2 one shot fault test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60][ignore]")
+static void test_sync(mcpwm_timer_t timer)
 {
-//    API just supports the high level trigger now, so comment it
-//    mcpwm_fault_input_level_t fault_input[2] = {MCPWM_LOW_LEVEL_TGR, MCPWM_HIGH_LEVEL_TGR};
-    mcpwm_action_on_pwmxa_t action_a[4] = {MCPWM_NO_CHANGE_IN_MCPWMXA, MCPWM_FORCE_MCPWMXA_LOW, MCPWM_FORCE_MCPWMXA_HIGH, MCPWM_TOG_MCPWMXA};
-    mcpwm_action_on_pwmxb_t action_b[4] = {MCPWM_NO_CHANGE_IN_MCPWMXB, MCPWM_FORCE_MCPWMXB_LOW, MCPWM_FORCE_MCPWMXB_HIGH, MCPWM_TOG_MCPWMXB};
+    //each timer test the sync sig with the same id with it.
+    mcpwm_sync_signal_t sync_sig = sync_sig_array[timer];
+    mcpwm_io_signals_t sync_io_sig = sync_io_sig_array[timer];
 
-    for(int i=0; i<4; i++){
-        for(int j=0; j<4; j++) {
-        	oneshot_fault_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-                    MCPWM_SELECT_F2, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_2,
-                    action_a[i], action_b[j]);
-        	oneshot_fault_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2,
-                    MCPWM_SELECT_F2, MCPWM_HIGH_LEVEL_TGR, MCPWM_FAULT_2,
-                    action_a[i], action_b[j]);
-        }
-    }
+    sync_test(MCPWM_UNIT_0, timer, sync_sig, sync_io_sig);
+    TEST_ESP_OK(mcpwm_stop(MCPWM_UNIT_0, timer)); // make sure can view the next sync signal clearly
+    vTaskDelay(100 / portTICK_RATE_MS);
+    TEST_ESP_OK(mcpwm_start(MCPWM_UNIT_0, timer));
+    sync_test(MCPWM_UNIT_1, timer, sync_sig, sync_io_sig);
 }
 
 // need to view its phenomenon in logic analyzer
 // set it ignore
 TEST_CASE("MCPWM timer0 sync test(logic analyzer)", "[mcpwm][ignore]")
 {
-    sync_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_TIMER_0, MCPWM_SELECT_SYNC0, MCPWM_SYNC_0);
-    TEST_ESP_OK(mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_0)); // make sure can view the next sync signal clearly
-    vTaskDelay(1000 / portTICK_RATE_MS);
-    TEST_ESP_OK(mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_0));
-    sync_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_TIMER_0, MCPWM_SELECT_SYNC0, MCPWM_SYNC_0);
+    test_sync(MCPWM_TIMER_0);
 }
 
 // need to view its phenomenon in logic analyzer
 // set it ignore
 TEST_CASE("MCPWM timer1 sync test(logic analyzer)", "[mcpwm][ignore]")
 {
-    sync_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_TIMER_1, MCPWM_SELECT_SYNC1, MCPWM_SYNC_1);
-    TEST_ESP_OK(mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_1)); // make sure can view the next sync signal clearly
-    vTaskDelay(1000 / portTICK_RATE_MS);
-    TEST_ESP_OK(mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_1));
-    sync_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_TIMER_1, MCPWM_SELECT_SYNC1, MCPWM_SYNC_1);
+    test_sync(MCPWM_TIMER_1);
 }
 
 // need to view its phenomenon in logic analyzer
 // set it ignore
 TEST_CASE("MCPWM timer2 sync test(logic analyzer)", "[mcpwm][ignore]")
 {
-    sync_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_TIMER_2, MCPWM_SELECT_SYNC2, MCPWM_SYNC_2);
-    TEST_ESP_OK(mcpwm_stop(MCPWM_UNIT_0, MCPWM_TIMER_2)); // make sure can view the next sync signal clearly
-    vTaskDelay(1000 / portTICK_RATE_MS);
-    TEST_ESP_OK(mcpwm_start(MCPWM_UNIT_0, MCPWM_TIMER_2));
-    sync_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_TIMER_2, MCPWM_SELECT_SYNC2, MCPWM_SYNC_2);
+    test_sync(MCPWM_TIMER_2);
 }
 
 TEST_CASE("MCPWM unit0, timer0 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    capture_test(MCPWM_UNIT_0, MCPWM0A, MCPWM0B, MCPWM_CAP_0, MCPWM_TIMER_0, MCPWM_SELECT_CAP0, MCPWM_POS_EDGE);
+    capture_test(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_POS_EDGE);
 }
 
-TEST_CASE("MCPWM uni0, timer1 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
+TEST_CASE("MCPWM unit0, timer1 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    capture_test(MCPWM_UNIT_0, MCPWM1A, MCPWM1B, MCPWM_CAP_1, MCPWM_TIMER_1, MCPWM_SELECT_CAP1, MCPWM_POS_EDGE);
+    capture_test(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_POS_EDGE);
 }
 
 TEST_CASE("MCPWM unit0, timer2 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-
-    capture_test(MCPWM_UNIT_0, MCPWM2A, MCPWM2B, MCPWM_CAP_2, MCPWM_TIMER_2, MCPWM_SELECT_CAP2, MCPWM_POS_EDGE);
+    capture_test(MCPWM_UNIT_0, MCPWM_TIMER_2, MCPWM_POS_EDGE);
 }
 
 TEST_CASE("MCPWM unit1, timer0 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    capture_test(MCPWM_UNIT_1, MCPWM0A, MCPWM0B, MCPWM_CAP_0, MCPWM_TIMER_0, MCPWM_SELECT_CAP0, MCPWM_NEG_EDGE);
+    capture_test(MCPWM_UNIT_1, MCPWM_TIMER_0, MCPWM_NEG_EDGE);
 }
 
 TEST_CASE("MCPWM unit1, timer1 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    capture_test(MCPWM_UNIT_1, MCPWM1A, MCPWM1B, MCPWM_CAP_1, MCPWM_TIMER_1, MCPWM_SELECT_CAP1, MCPWM_POS_EDGE);
+    capture_test(MCPWM_UNIT_1, MCPWM_TIMER_1, MCPWM_POS_EDGE);
 }
 
 TEST_CASE("MCPWM unit1, timer2 capture test", "[mcpwm][test_env=UT_T1_MCPWM][timeout=60]")
 {
-    capture_test(MCPWM_UNIT_1, MCPWM2A, MCPWM2B, MCPWM_CAP_2, MCPWM_TIMER_2, MCPWM_SELECT_CAP2, MCPWM_POS_EDGE);
+    capture_test(MCPWM_UNIT_1, MCPWM_TIMER_2, MCPWM_POS_EDGE);
 }
 

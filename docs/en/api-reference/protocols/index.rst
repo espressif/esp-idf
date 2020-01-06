@@ -16,6 +16,7 @@ Application Protocols
     mDNS <mdns>
     Modbus <modbus>
     Websocket Client <esp_websocket_client>
+    ESP Serial Slave Link <esp_serial_slave_link>
 
 Code examples for this API section are provided in the :example:`protocols` directory of ESP-IDF examples.
 

@@ -1,16 +1,25 @@
 import os
 import shutil
+import subprocess
 import sys
 
 import click
 
-from idf_py_actions.constants import GENERATOR_CMDS, GENERATOR_VERBOSE, SUPPORTED_TARGETS
+from idf_py_actions.constants import GENERATORS, SUPPORTED_TARGETS
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_tool
 
 
 def action_extensions(base_actions, project_path):
+    def run_target(target_name, args):
+        generator_cmd = GENERATORS[args.generator]["command"]
+
+        if args.verbose:
+            generator_cmd += [GENERATORS[args.generator]["verbose_flag"]]
+
+        run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir)
+
     def build_target(target_name, ctx, args):
         """
         Execute the target build system to build target 'target_name'
@@ -19,12 +28,34 @@ def action_extensions(base_actions, project_path):
         directory (with the specified generator) as needed.
         """
         ensure_build_directory(args, ctx.info_name)
-        generator_cmd = GENERATOR_CMDS[args.generator]
+        run_target(target_name, args)
 
-        if args.verbose:
-            generator_cmd += [GENERATOR_VERBOSE[args.generator]]
+    def menuconfig(target_name, ctx, args, style):
+        """
+        Menuconfig target is build_target extended with the style argument for setting the value for the environment
+        variable.
+        """
+        if sys.version_info[0] < 3:
+            # The subprocess lib cannot accept environment variables as "unicode".
+            # This encoding step is required only in Python 2.
+            style = style.encode(sys.getfilesystemencoding() or 'utf-8')
+        os.environ['MENUCONFIG_STYLE'] = style
+        build_target(target_name, ctx, args)
 
-        run_tool(generator_cmd[0], generator_cmd + [target_name], args.build_dir)
+    def fallback_target(target_name, ctx, args):
+        """
+        Execute targets that are not explicitly known to idf.py
+        """
+        ensure_build_directory(args, ctx.info_name)
+
+        try:
+            subprocess.check_output(GENERATORS[args.generator]["dry_run"] + [target_name], cwd=args.build_dir)
+
+        except Exception:
+            raise FatalError(
+                'command "%s" is not known to idf.py and is not a %s target' % (target_name, args.generator))
+
+        run_target(target_name, args)
 
     def verbose_callback(ctx, param, value):
         if not value or ctx.resilient_parsing:
@@ -32,6 +63,8 @@ def action_extensions(base_actions, project_path):
 
         for line in ctx.command.verbose_output:
             print(line)
+
+        return value
 
     def clean(action, ctx, args):
         if not os.path.isdir(args.build_dir):
@@ -69,8 +102,9 @@ def action_extensions(base_actions, project_path):
             return
 
         if not os.path.exists(os.path.join(build_dir, "CMakeCache.txt")):
-            raise FatalError("Directory '%s' doesn't seem to be a CMake build directory. Refusing to automatically "
-                             "delete files in this directory. Delete the directory manually to 'clean' it." % build_dir)
+            raise FatalError(
+                "Directory '%s' doesn't seem to be a CMake build directory. Refusing to automatically "
+                "delete files in this directory. Delete the directory manually to 'clean' it." % build_dir)
         red_flags = ["CMakeLists.txt", ".git", ".svn"]
         for red in red_flags:
             red = os.path.join(build_dir, red)
@@ -111,8 +145,9 @@ def action_extensions(base_actions, project_path):
     def validate_root_options(ctx, args, tasks):
         args.project_dir = realpath(args.project_dir)
         if args.build_dir is not None and args.project_dir == realpath(args.build_dir):
-            raise FatalError("Setting the build directory to the project directory is not supported. Suggest dropping "
-                             "--build-dir option, the default is a 'build' subdirectory inside the project directory.")
+            raise FatalError(
+                "Setting the build directory to the project directory is not supported. Suggest dropping "
+                "--build-dir option, the default is a 'build' subdirectory inside the project directory.")
         if args.build_dir is None:
             args.build_dir = os.path.join(args.project_dir, "build")
         args.build_dir = realpath(args.build_dir)
@@ -129,13 +164,30 @@ def action_extensions(base_actions, project_path):
         print("ESP-IDF %s" % version)
         sys.exit(0)
 
+    def list_targets_callback(ctx, param, value):
+        if not value or ctx.resilient_parsing:
+            return
+
+        for target in SUPPORTED_TARGETS:
+            print(target)
+
+        sys.exit(0)
+
     root_options = {
         "global_options": [
             {
                 "names": ["--version"],
                 "help": "Show IDF version and exit.",
                 "is_flag": True,
+                "expose_value": False,
                 "callback": idf_version_callback
+            },
+            {
+                "names": ["--list-targets"],
+                "help": "Print list of supported targets and exit.",
+                "is_flag": True,
+                "expose_value": False,
+                "callback": list_targets_callback
             },
             {
                 "names": ["-C", "--project-dir"],
@@ -165,15 +217,16 @@ def action_extensions(base_actions, project_path):
             },
             {
                 "names": ["--ccache/--no-ccache"],
-                "help": ("Use ccache in build. Disabled by default, unless "
-                         "IDF_CCACHE_ENABLE environment variable is set to a non-zero value."),
+                "help": (
+                    "Use ccache in build. Disabled by default, unless "
+                    "IDF_CCACHE_ENABLE environment variable is set to a non-zero value."),
                 "is_flag": True,
                 "default": os.getenv("IDF_CCACHE_ENABLE") not in [None, "", "0"],
             },
             {
                 "names": ["-G", "--generator"],
                 "help": "CMake generator.",
-                "type": click.Choice(GENERATOR_CMDS.keys()),
+                "type": click.Choice(GENERATORS.keys()),
             },
             {
                 "names": ["--dry-run"],
@@ -192,15 +245,16 @@ def action_extensions(base_actions, project_path):
                 "aliases": ["build"],
                 "callback": build_target,
                 "short_help": "Build the project.",
-                "help": ("Build the project. This can involve multiple steps:\n\n"
-                         "1. Create the build directory if needed. "
-                         "The sub-directory 'build' is used to hold build output, "
-                         "although this can be changed with the -B option.\n\n"
-                         "2. Run CMake as necessary to configure the project "
-                         "and generate build files for the main build tool.\n\n"
-                         "3. Run the main build tool (Ninja or GNU Make). "
-                         "By default, the build tool is automatically detected "
-                         "but it can be explicitly set by passing the -G option to idf.py.\n\n"),
+                "help": (
+                    "Build the project. This can involve multiple steps:\n\n"
+                    "1. Create the build directory if needed. "
+                    "The sub-directory 'build' is used to hold build output, "
+                    "although this can be changed with the -B option.\n\n"
+                    "2. Run CMake as necessary to configure the project "
+                    "and generate build files for the main build tool.\n\n"
+                    "3. Run the main build tool (Ninja or GNU Make). "
+                    "By default, the build tool is automatically detected "
+                    "but it can be explicitly set by passing the -G option to idf.py.\n\n"),
                 "options": global_options,
                 "order_dependencies": [
                     "reconfigure",
@@ -210,9 +264,23 @@ def action_extensions(base_actions, project_path):
                 ],
             },
             "menuconfig": {
-                "callback": build_target,
+                "callback": menuconfig,
                 "help": 'Run "menuconfig" project configuration tool.',
-                "options": global_options,
+                "options": global_options + [
+                    {
+                        "names": ["--style", "--color-scheme", "style"],
+                        "help": (
+                            "Menuconfig style.\n"
+                            "Is it possible to customize the menuconfig style by either setting the MENUCONFIG_STYLE "
+                            "environment variable or through this option. The built-in styles include:\n\n"
+                            "- default - a yellowish theme,\n\n"
+                            "- monochrome -  a black and white theme, or\n"
+                            "- aquatic - a blue theme.\n\n"
+                            "The default value is \"aquatic\". It is possible to customize these themes further "
+                            "as it is described in the Color schemes section of the kconfiglib documentation."),
+                        "default": os.environ.get('MENUCONFIG_STYLE', 'aquatic'),
+                    }
+                ],
             },
             "confserver": {
                 "callback": build_target,
@@ -282,6 +350,11 @@ def action_extensions(base_actions, project_path):
                 "help": "Read otadata partition.",
                 "options": global_options,
             },
+            "fallback": {
+                "callback": fallback_target,
+                "help": "Handle for targets not known for idf.py.",
+                "hidden": True
+            }
         }
     }
 
@@ -290,23 +363,25 @@ def action_extensions(base_actions, project_path):
             "reconfigure": {
                 "callback": reconfigure,
                 "short_help": "Re-run CMake.",
-                "help": ("Re-run CMake even if it doesn't seem to need re-running. "
-                         "This isn't necessary during normal usage, "
-                         "but can be useful after adding/removing files from the source tree, "
-                         "or when modifying CMake cache variables. "
-                         "For example, \"idf.py -DNAME='VALUE' reconfigure\" "
-                         'can be used to set variable "NAME" in CMake cache to value "VALUE".'),
+                "help": (
+                    "Re-run CMake even if it doesn't seem to need re-running. "
+                    "This isn't necessary during normal usage, "
+                    "but can be useful after adding/removing files from the source tree, "
+                    "or when modifying CMake cache variables. "
+                    "For example, \"idf.py -DNAME='VALUE' reconfigure\" "
+                    'can be used to set variable "NAME" in CMake cache to value "VALUE".'),
                 "options": global_options,
                 "order_dependencies": ["menuconfig", "fullclean"],
             },
             "set-target": {
                 "callback": set_target,
                 "short_help": "Set the chip target to build.",
-                "help": ("Set the chip target to build. This will remove the "
-                         "existing sdkconfig file and corresponding CMakeCache and "
-                         "create new ones according to the new target.\nFor example, "
-                         "\"idf.py set-target esp32\" will select esp32 as the new chip "
-                         "target."),
+                "help": (
+                    "Set the chip target to build. This will remove the "
+                    "existing sdkconfig file and corresponding CMakeCache and "
+                    "create new ones according to the new target.\nFor example, "
+                    "\"idf.py set-target esp32\" will select esp32 as the new chip "
+                    "target."),
                 "arguments": [
                     {
                         "names": ["idf-target"],
@@ -319,22 +394,24 @@ def action_extensions(base_actions, project_path):
             "clean": {
                 "callback": clean,
                 "short_help": "Delete build output files from the build directory.",
-                "help": ("Delete build output files from the build directory, "
-                         "forcing a 'full rebuild' the next time "
-                         "the project is built. Cleaning doesn't delete "
-                         "CMake configuration output and some other files"),
+                "help": (
+                    "Delete build output files from the build directory, "
+                    "forcing a 'full rebuild' the next time "
+                    "the project is built. Cleaning doesn't delete "
+                    "CMake configuration output and some other files"),
                 "order_dependencies": ["fullclean"],
             },
             "fullclean": {
                 "callback": fullclean,
                 "short_help": "Delete the entire build directory contents.",
-                "help": ("Delete the entire build directory contents. "
-                         "This includes all CMake configuration output."
-                         "The next time the project is built, "
-                         "CMake will configure it from scratch. "
-                         "Note that this option recursively deletes all files "
-                         "in the build directory, so use with care."
-                         "Project configuration is not deleted.")
+                "help": (
+                    "Delete the entire build directory contents. "
+                    "This includes all CMake configuration output."
+                    "The next time the project is built, "
+                    "CMake will configure it from scratch. "
+                    "Note that this option recursively deletes all files "
+                    "in the build directory, so use with care."
+                    "Project configuration is not deleted.")
             },
         }
     }

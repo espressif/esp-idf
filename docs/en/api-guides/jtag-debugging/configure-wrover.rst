@@ -123,7 +123,7 @@ Manually unloading the driver
 
 4. Run OpenOCD::
 
-    bin/openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    bin/openocd -f board/esp32-wrover-kit-3.3v.cfg
 
 5. In another terminal window, load FTDI serial port driver again::
 

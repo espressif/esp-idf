@@ -63,6 +63,13 @@ Revision: $Rev: 3734 $
 */
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#include "esp32/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/ets_sys.h"
+#include "esp32s2beta/clk.h"
+#endif
 #include "esp_app_trace.h"
 #include "esp_app_trace_util.h"
 #include "esp_intr_alloc.h"
@@ -136,7 +143,6 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 #define SYSVIEW_TIMESTAMP_FREQ  (CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ * 1000000)
 #endif
-
 #endif // TS_USE_CCOUNT
 
 // System Frequency.

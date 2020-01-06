@@ -30,9 +30,9 @@ static const char *TAG = "TRANSPORT_WS";
 typedef struct {
     char *path;
     char *buffer;
-	char *sub_protocol;
-	char *user_agent;
-	char *headers;
+    char *sub_protocol;
+    char *user_agent;
+    char *headers;
     uint8_t read_opcode;
     esp_transport_handle_t parent;
 } transport_ws_t;
@@ -111,7 +111,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
                          "GET %s HTTP/1.1\r\n"
                          "Connection: Upgrade\r\n"
                          "Host: %s:%d\r\n"
-						 "User-Agent: %s\r\n"
+                         "User-Agent: %s\r\n"
                          "Upgrade: websocket\r\n"
                          "Sec-WebSocket-Version: 13\r\n"
                          "Sec-WebSocket-Key: %s\r\n",
@@ -122,8 +122,8 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
         ESP_LOGE(TAG, "Error in request generation, %d", len);
         return -1;
     }
-	if (ws->sub_protocol) {
-		ESP_LOGD(TAG, "sub_protocol: %s", ws->sub_protocol);
+	  if (ws->sub_protocol) {
+		    ESP_LOGD(TAG, "sub_protocol: %s", ws->sub_protocol);
         int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "Sec-WebSocket-Protocol: %s\r\n", ws->sub_protocol);
         len += r;
         if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
@@ -132,9 +132,9 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
             return -1;
         }
     }
-	if (ws->headers) {
-		ESP_LOGD(TAG, "headers: %s", ws->headers);
-		int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "%s", ws->headers);
+    if (ws->headers) {
+        ESP_LOGD(TAG, "headers: %s", ws->headers);
+        int r = snprintf(ws->buffer + len, DEFAULT_WS_BUFFER - len, "%s", ws->headers);
         len += r;
         if (r <= 0 || len >= DEFAULT_WS_BUFFER) {
             ESP_LOGE(TAG, "Error in request generation"
@@ -371,9 +371,9 @@ static esp_err_t ws_destroy(esp_transport_handle_t t)
     transport_ws_t *ws = esp_transport_get_context_data(t);
     free(ws->buffer);
     free(ws->path);
-	free(ws->sub_protocol);
-	free(ws->user_agent);
-	free(ws->headers);
+    free(ws->sub_protocol);
+    free(ws->user_agent);
+    free(ws->headers);
     free(ws);
     return 0;
 }

@@ -175,27 +175,6 @@ class DeprecatedOptions(object):
                         f_o.write('#define {}{} {}{}\n'.format(self.config_prefix, dep_opt, self.config_prefix, new_opt))
 
 
-def prepare_source_files():
-    """
-    Prepares source files which are sourced from the main Kconfig because upstream kconfiglib doesn't support sourcing
-    a file list.
-    """
-
-    def _dequote(var):
-        return var[1:-1] if len(var) > 0 and (var[0], var[-1]) == ('"',) * 2 else var
-
-    def _write_source_file(config_var, config_file):
-        with open(config_file, "w") as f:
-            f.write('\n'.join(['source "{}"'.format(path) for path in _dequote(config_var).split()]))
-
-    try:
-        _write_source_file(os.environ['COMPONENT_KCONFIGS'], os.environ['COMPONENT_KCONFIGS_SOURCE_FILE'])
-        _write_source_file(os.environ['COMPONENT_KCONFIGS_PROJBUILD'], os.environ['COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE'])
-    except KeyError as e:
-        print('Error:', e, 'is not defined!')
-        raise
-
-
 def dict_enc_for_env(dic, encoding=sys.getfilesystemencoding() or 'utf-8'):
     """
     This function can be deleted after dropping support for Python 2.
@@ -234,6 +213,10 @@ def main():
                         help='File with deprecated Kconfig options',
                         required=False)
 
+    parser.add_argument('--dont-write-deprecated',
+                        help='Do not write compatibility statements for deprecated values',
+                        action='store_true')
+
     parser.add_argument('--output', nargs=2, action='append',
                         help='Write output file (format and output filename)',
                         metavar=('FORMAT', 'FILENAME'),
@@ -266,14 +249,9 @@ def main():
         env = json.load(args.env_file)
         os.environ.update(dict_enc_for_env(env))
 
-    prepare_source_files()
     config = kconfiglib.Kconfig(args.kconfig)
     config.warn_assign_redun = False
     config.warn_assign_override = False
-
-    sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
-    sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
-    deprecated_options = DeprecatedOptions(config.config_prefix, path_rename_files=sdkconfig_renames)
 
     sdkconfig_renames = [args.sdkconfig_rename] if args.sdkconfig_rename else []
     sdkconfig_renames += os.environ.get("COMPONENT_SDKCONFIG_RENAMES", "").split()
@@ -325,6 +303,11 @@ def main():
                 os.remove(temp_file)
             except OSError:
                 pass
+
+    if args.dont_write_deprecated:
+        # The deprecated object was useful until now for replacements. Now it will be redefined with no configurations
+        # and as the consequence, it won't generate output with deprecated statements.
+        deprecated_options = DeprecatedOptions('', path_rename_files=[])
 
     # Output the files specified in the arguments
     for output_type, filename in args.output:

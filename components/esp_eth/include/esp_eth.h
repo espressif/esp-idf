@@ -62,7 +62,7 @@ typedef struct {
     *      - ESP_FAIL: error occurred when inputting buffer to upper stack
     *
     */
-    esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length);
+    esp_err_t (*stack_input)(esp_eth_handle_t eth_handle, uint8_t *buffer, uint32_t length, void *priv);
 
     /**
     * @brief Callback function invoked when lowlevel initialization is finished
@@ -85,6 +85,7 @@ typedef struct {
     *       - ESP_FAIL: error occurred when processing extra lowlevel deinitialization
     */
     esp_err_t (*on_lowlevel_deinit_done)(esp_eth_handle_t eth_handle);
+
 } esp_eth_config_t;
 
 /**
@@ -117,15 +118,67 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
 
 /**
 * @brief Uninstall Ethernet driver
+* @note It's not recommended to uninstall Ethernet driver unless it won't get used any more in application code.
+*       To uninstall Ethernet driver, you have to make sure, all references to the driver are released.
+*       Ethernet driver can only be uninstalled successfully when reference counter equals to one.
 *
 * @param[in] hdl: handle of Ethernet driver
 *
 * @return
 *       - ESP_OK: uninstall esp_eth driver successfully
 *       - ESP_ERR_INVALID_ARG: uninstall esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: uninstall esp_eth driver failed because it has more than one reference
 *       - ESP_FAIL: uninstall esp_eth driver failed because some other error occurred
 */
 esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
+
+/**
+* @brief Start Ethernet driver **ONLY** in standalone mode (i.e. without TCP/IP stack)
+*
+* @note This API will start driver state machine and internal software timer (for checking link status).
+*
+* @param[in] hdl handle of Ethernet driver
+*
+* @return
+*       - ESP_OK: start esp_eth driver successfully
+*       - ESP_ERR_INVALID_ARG: start esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: start esp_eth driver failed because driver has started already
+*       - ESP_FAIL: start esp_eth driver failed because some other error occurred
+*/
+esp_err_t esp_eth_start(esp_eth_handle_t hdl);
+
+/**
+* @brief Stop Ethernet driver
+*
+* @note This function does the oppsite operation of `esp_eth_start`.
+*
+* @param[in] hdl handle of Ethernet driver
+* @return
+*       - ESP_OK: stop esp_eth driver successfully
+*       - ESP_ERR_INVALID_ARG: stop esp_eth driver failed because of some invalid argument
+*       - ESP_ERR_INVALID_STATE: stop esp_eth driver failed because driver has not started yet
+*       - ESP_FAIL: stop esp_eth driver failed because some other error occurred
+*/
+esp_err_t esp_eth_stop(esp_eth_handle_t hdl);
+
+/**
+* @brief Update Ethernet data input path (i.e. specify where to pass the input buffer)
+*
+* @note After install driver, Ethernet still don't know where to deliver the input buffer.
+*       In fact, this API registers a callback function which get invoked when Ethernet received new packets.
+*
+* @param[in] hdl handle of Ethernet driver
+* @param[in] stack_input function pointer, which does the actual process on incoming packets
+* @param[in] priv private resource, which gets passed to `stack_input` callback without any modification
+* @return
+*       - ESP_OK: update input path successfully
+*       - ESP_ERR_INVALID_ARG: update input path failed because of some invalid argument
+*       - ESP_FAIL: update input path failed because some other error occurred
+*/
+esp_err_t esp_eth_update_input_path(
+    esp_eth_handle_t hdl,
+    esp_err_t (*stack_input)(esp_eth_handle_t hdl, uint8_t *buffer, uint32_t length, void *priv),
+    void *priv);
 
 /**
 * @brief General Transmit
@@ -139,7 +192,7 @@ esp_err_t esp_eth_driver_uninstall(esp_eth_handle_t hdl);
 *       - ESP_ERR_INVALID_ARG: transmit frame buffer failed because of some invalid argument
 *       - ESP_FAIL: transmit frame buffer failed because some other error occurred
 */
-esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length);
+esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, void *buf, uint32_t length);
 
 /**
 * @brief General Receive
@@ -173,6 +226,31 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length);
 *       - ESP_FAIL: process io command failed because some other error occurred
 */
 esp_err_t esp_eth_ioctl(esp_eth_handle_t hdl, esp_eth_io_cmd_t cmd, void *data);
+
+/**
+* @brief Increase Ethernet driver reference
+* @note Ethernet driver handle can be obtained by os timer, netif, etc.
+*       It's dangerous when thread A is using Ethernet but thread B uninstall the driver.
+*       Using reference counter can prevent such risk, but care should be taken, when you obtain Ethernet driver,
+*       this API must be invoked so that the driver won't be uninstalled during your using time.
+*
+*
+* @param[in] hdl: handle of Ethernet driver
+* @return
+*       - ESP_OK: increase reference successfully
+*       - ESP_ERR_INVALID_ARG: increase reference failed because of some invalid argument
+*/
+esp_err_t esp_eth_increase_reference(esp_eth_handle_t hdl);
+
+/**
+* @brief Decrease Ethernet driver reference
+*
+* @param[in] hdl: handle of Ethernet driver
+* @return
+*       - ESP_OK: increase reference successfully
+*       - ESP_ERR_INVALID_ARG: increase reference failed because of some invalid argument
+*/
+esp_err_t esp_eth_decrease_reference(esp_eth_handle_t hdl);
 
 #ifdef __cplusplus
 }

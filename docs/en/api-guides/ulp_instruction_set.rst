@@ -1,5 +1,5 @@
-ULP coprocessor instruction set
-===============================
+ESP32 ULP coprocessor instruction set
+=====================================
 
 This document provides details about the instructions used by ESP32 ULP coprocessor assembler.
 
@@ -478,12 +478,35 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    - *Step*          – relative shift from current position, in bytes
    - *Threshold*     – threshold value for branch condition
    - *Condition*:
+      - *EQ* (equal) – jump if value in R0 == threshold
+      - *LT* (less than) – jump if value in R0 < threshold
+      - *LE* (less or equal) – jump if value in R0 <= threshold
+      - *GT* (greater than) – jump if value in R0 > threshold 
       - *GE* (greater or equal) – jump if value in R0 >= threshold 
 
-      - *LT* (less than) – jump if value in R0 < threshold
 
 **Cycles**
-  2 cycles to execute, 2 cycles to fetch next instruction
+  Conditions *LT*, *GE*, *LE* and *GT*: 2 cycles to execute, 2 cycles to fetch next instruction
+
+  Conditions *LE* and *GT* are implemented in the assembler using one **JUMPR** instructions::
+
+    // JUMPR target, threshold, GT is implemented as:
+
+             JUMPR target, threshold+1, GE
+
+    // JUMPR target, threshold, LE is implemented as:
+    
+             JUMPR target, threshold + 1, LT
+
+  Conditions *EQ* is implemented in the assembler using two **JUMPR** instructions::
+
+    // JUMPR target, threshold, EQ is implemented as:
+    
+             JUMPR next, threshold + 1, GE
+             JUMPR target, threshold, GE
+    next:
+
+  Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
 
 **Description**
    The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of R0 register value and the threshold value.

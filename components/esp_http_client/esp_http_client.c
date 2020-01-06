@@ -300,12 +300,10 @@ esp_err_t esp_http_client_set_username(esp_http_client_handle_t client, const ch
         ESP_LOGE(TAG, "client must not be NULL");
         return ESP_ERR_INVALID_ARG;
     }
-    if (username == NULL && client->connection_info.username != NULL) {
+    if (client->connection_info.username != NULL) {
         free(client->connection_info.username);
-        client->connection_info.username = NULL;
-    } else if (username != NULL) {
-        client->connection_info.username = strdup(username);
     }
+    client->connection_info.username = username ? strdup(username) : NULL;
     return ESP_OK;
 }
 
@@ -325,13 +323,21 @@ esp_err_t esp_http_client_set_password(esp_http_client_handle_t client, char *pa
         ESP_LOGE(TAG, "client must not be NULL");
         return ESP_ERR_INVALID_ARG;
     }
-    if (password == NULL && client->connection_info.password != NULL) {
+    if (client->connection_info.password != NULL) {
         memset(client->connection_info.password, 0, strlen(client->connection_info.password));
         free(client->connection_info.password);
-        client->connection_info.password = NULL;
-    } else if (password != NULL) {
-        client->connection_info.password = strdup(password);
     }
+    client->connection_info.password = password ? strdup(password) : NULL;
+    return ESP_OK;
+}
+
+esp_err_t esp_http_client_set_authtype(esp_http_client_handle_t client, esp_http_client_auth_type_t auth_type)
+{
+    if (client == NULL) {
+        ESP_LOGE(TAG, "client must not be NULL");
+        return ESP_ERR_INVALID_ARG;
+    }
+    client->connection_info.auth_type = auth_type;
     return ESP_OK;
 }
 
@@ -657,6 +663,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
     switch (client->response->status_code) {
         case HttpStatus_MovedPermanently:
         case HttpStatus_Found:
+        case HttpStatus_TemporaryRedirect:
             esp_http_client_set_redirection(client);
             client->redirect_counter ++;
             client->process_again = 1;
@@ -800,12 +807,12 @@ bool esp_http_client_is_complete_data_received(esp_http_client_handle_t client)
 {
     if (client->response->is_chunked) {
         if (!client->is_chunk_complete) {
-            ESP_LOGI(TAG, "Chunks were not completely read");
+            ESP_LOGD(TAG, "Chunks were not completely read");
             return false;
         }
     } else {
         if (client->response->data_process != client->response->content_length) {
-            ESP_LOGI(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
+            ESP_LOGD(TAG, "Data processed %d != Data specified in content length %d", client->response->data_process, client->response->content_length);
             return false;
         }
     }

@@ -24,7 +24,7 @@ The :example:`wifi` directory of ESP-IDF examples contains the following applica
 
 Code examples for Wi-Fi are provided in the :example:`wifi` directory of ESP-IDF examples.
 
-In addition, there is a simple `esp-idf-template <https://github.com/espressif/esp-idf-template>`_ application that shows how to connect ESP32 module to an Access Point.
+In addition, there is a simple `esp-idf-template <https://github.com/espressif/esp-idf-template>`_ application to demonstrate a minimal IDF project structure.
 
 
 API Reference

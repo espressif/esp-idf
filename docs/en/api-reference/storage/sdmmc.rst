@@ -71,7 +71,7 @@ In particular, the driver does not set any bits in (1) I/O Enable and Int Enable
 For card configuration and data transfer, choose the pair of functions relevant to your case from the table below.
 
 =========================================================================  =================================  =================================
-Action                                                                     Read Function                      Write Function                   
+Action                                                                     Read Function                      Write Function
 =========================================================================  =================================  =================================
 Read and write a single byte using IO_RW_DIRECT (CMD52)                    :cpp:func:`sdmmc_io_read_byte`     :cpp:func:`sdmmc_io_write_byte`
 Read and write multiple bytes using IO_RW_EXTENDED (CMD53) in byte mode    :cpp:func:`sdmmc_io_read_bytes`    :cpp:func:`sdmmc_io_write_bytes`
@@ -82,6 +82,8 @@ SDIO interrupts can be enabled by the application using the function :cpp:func:`
 
 If you want the application to wait until the SDIO interrupt occurs, use :cpp:func:`sdmmc_io_wait_int`.
 
+There is a component ESSL (ESP Serial Slave Link) to use if you are communicating with an ESP32
+SDIO slave. See :doc:`/api-reference/protocols/esp_serial_slave_link` and example :example:`peripherals/sdio/host`.
 
 Combo (memory + IO) cards
 ^^^^^^^^^^^^^^^^^^^^^^^^^

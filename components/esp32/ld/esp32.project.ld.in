@@ -188,6 +188,7 @@ SECTIONS
     *(.gnu.linkonce.s2.*)
     *(.jcr)
 
+
     mapping[dram0_data]
 
     _data_end = ABSOLUTE(.);

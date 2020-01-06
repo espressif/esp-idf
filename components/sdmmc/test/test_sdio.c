@@ -129,7 +129,7 @@ static void reset_slave(void)
     const int pin_en = 18;
     const int pin_io0 = 19;
     gpio_config_t gpio_cfg = {
-            .pin_bit_mask = BIT(pin_en) | BIT(pin_io0),
+            .pin_bit_mask = BIT64(pin_en) | BIT64(pin_io0),
             .mode = GPIO_MODE_OUTPUT_OD,
     };
     TEST_ESP_OK(gpio_config(&gpio_cfg));

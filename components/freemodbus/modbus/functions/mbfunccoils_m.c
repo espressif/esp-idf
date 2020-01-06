@@ -36,7 +36,6 @@
 #include "port.h"
 
 /* ----------------------- Modbus includes ----------------------------------*/
-//#include "mb.h"
 #include "mb_m.h"
 #include "mbframe.h"
 #include "mbproto.h"
@@ -72,8 +71,9 @@
 eMBException    prveMBError2Exception( eMBErrorCode eErrorCode );
 
 /* ----------------------- Start implementation -----------------------------*/
-#if MB_MASTER_RTU_ENABLED > 0 || MB_MASTER_ASCII_ENABLED > 0
-#if MB_FUNC_READ_COILS_ENABLED > 0
+#if MB_MASTER_RTU_ENABLED || MB_MASTER_ASCII_ENABLED
+
+#if MB_FUNC_READ_COILS_ENABLED
 
 /**
  * This function will request read coil.
@@ -103,7 +103,7 @@ eMBMasterReqReadCoils( UCHAR ucSndAddr, USHORT usCoilAddr, USHORT usNCoils, LONG
         ucMBFrame[MB_PDU_REQ_READ_COILCNT_OFF ]    = usNCoils >> 8;
         ucMBFrame[MB_PDU_REQ_READ_COILCNT_OFF + 1] = usNCoils;
         vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READ_SIZE );
-        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
         eErrStatus = eMBMasterWaitRequestFinish( );
 
     }
@@ -210,7 +210,7 @@ eMBMasterReqWriteCoil( UCHAR ucSndAddr, USHORT usCoilAddr, USHORT usCoilData, LO
         ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF ]    = usCoilData >> 8;
         ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF + 1] = usCoilData;
         vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_SIZE );
-        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
         eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
@@ -320,7 +320,7 @@ eMBMasterReqWriteMultipleCoils( UCHAR ucSndAddr,
             *ucMBFrame++ = pucDataBuffer[usRegIndex++];
         }
         vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_MUL_SIZE_MIN + ucByteCount );
-        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_SENT );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
         eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;

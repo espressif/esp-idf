@@ -36,7 +36,7 @@ Offset should be in hex format. To reset to the default behaviour you can specif
 
     Since GDB requests memory map from OpenOCD only once when connecting to it, this command should be specified in one of the TCL configuration files, or passed to OpenOCD via its command line. In the latter case command line should look like below:
 
-    ``openocd -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg -c "init; halt; esp32 appimage_offset 0x210000"``
+    ``openocd -f board/esp32-wrover-kit-3.3v.cfg.cfg -c "init; halt; esp32 appimage_offset 0x210000"``
 
     Another option is to execute that command via OpenOCD telnet session and then connect GDB, but it seems to be less handy.
 
@@ -112,12 +112,11 @@ On startup, debugger is issuing sequence of commands to reset the chip and halt 
 Configuration of OpenOCD for specific target
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-OpenOCD needs to be told what JTAG adapter **interface** to use, as well as what type of **board** and processor the JTAG adapter is connected to. To do so, use existing configuration files located in OpenOCD's ``share/openocd/scripts/interface`` and ``share/openocd/scripts/board`` folders. 
+OpenOCD needs to be told what JTAG adapter to use and processor the JTAG adapter is connected to. To do so, use existing **board** configuration files located in OpenOCD's ``share/openocd/scripts/board`` folder.
 
 For example, if you connect to ESP-WROVER-KIT with ESP-WROOM-32 module installed (see section :ref:`esp-modules-and-boards-esp-wrover-kit-v1`), use the following configuration files:
 
-* ``interface/ftdi/esp32_devkitj_v1.cfg``
-* ``board/esp-wroom-32.cfg``
+* ``board/esp32-wrover-kit-3.3v.cfg``
 
 Optionally prepare configuration by yourself. To do so, you can check existing files and modify them to match you specific hardware. Below is the summary of available configuration parameters for **board** configuration.
 
@@ -235,6 +234,16 @@ Below is an excerpt from series of errors reported by GDB after the application 
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
 
+.. _jtag-debugging-tip-at-firmware-issue:
+
+JTAG and ESP32-WROOM-32 AT firmware Compatibility Issue
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The ESP32-WROOM series of modules come pre-flashed with AT firmware. This firmware configures the pins GPIO12 to GPIO15 as SPI slave interface, which makes using JTAG impossible.
+
+To make JTAG available, build new firmware that is not using pins GPIO12 to GPIO15 dedicated to JTAG communication. After that, flash the firmware onto your module. See also :ref:`jtag-debugging-tip-jtag-pins-reconfigured`.
+
+
 .. _jtag-debugging-tip-reporting-issues:
 
 Reporting issues with OpenOCD / GDB
@@ -259,13 +268,13 @@ In case you encounter a problem with OpenOCD or GDB programs itself and do not f
 
         ::
 
-            openocd -l openocd_log.txt -d 3 -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+            openocd -l openocd_log.txt -d 3 -f board/esp32-wrover-kit-3.3v.cfg
 
         Logging to a file this way will prevent information displayed on the terminal. This may be a good thing taken amount of information provided, when increased debug level ``-d 3`` is set. If you still like to see the log on the screen, then use another command instead:
 
         ::
 
-            openocd -d 3 -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg 2>&1 | tee openocd.log
+            openocd -d 3 -f board/esp32-wrover-kit-3.3v.cfg 2>&1 | tee openocd.log
 
     Debugger:
 

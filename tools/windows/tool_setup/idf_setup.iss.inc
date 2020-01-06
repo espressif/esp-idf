@@ -229,14 +229,14 @@ end;
 
 { ------------------------------ Start menu shortcut ------------------------------ }
 
-procedure CreateIDFCommandPromptShortcut();
+procedure CreateIDFCommandPromptShortcut(LnkString: String);
 var
   Destination: String;
   Description: String;
   Command: String;
 begin
-  ForceDirectories(ExpandConstant('{group}'));
-  Destination := ExpandConstant('{group}\{#IDFCmdExeShortcutFile}');
+  ForceDirectories(ExpandConstant(LnkString));
+  Destination := ExpandConstant(LnkString + '\{#IDFCmdExeShortcutFile}');  
   Description := '{#IDFCmdExeShortcutDescription}';
   { If cmd.exe command argument starts with a quote, the first and last quote chars in the command
     will be removed by cmd.exe; each argument needs to be surrounded by quotes as well. }
@@ -266,4 +266,43 @@ begin
   CmdLine := ExpandConstant('powershell -ExecutionPolicy ByPass -File "{app}\dist\tools_WD_excl.ps1" -AddExclPath "{app}\*.exe"');
   Log('Registering IDF Tools executables in Windows Defender: ' + CmdLine);
   DoCmdlineInstall('Finishing ESP-IDF installation', 'Registering IDF Tools executables in Windows Defender', CmdLine);
+end;
+
+
+<event('CurPageChanged')>
+procedure CheckWinDefenderAvailable(CurPageID: Integer);
+var
+  bHasWD: Boolean;
+  szHasWD: String;
+  szWDPath: String;
+  listPSModulePath: TStringList;
+  x: Integer;
+begin
+  if CurPageID = wpSelectTasks then
+  begin
+    listPSModulePath := TStringList.Create;
+    listPSModulePath.Delimiter := ';';
+    listPSModulePath.StrictDelimiter := True;
+    listPSModulePath.DelimitedText := GetEnv('PsModulePath');
+    
+    Log('Checking PSMODULEPATH for Windows Defender module...');
+    
+    for x:=0 to (listPSModulePath.Count-1) do
+    begin
+      szWDPath := listPSModulePath[x] + '\Defender'
+      bHasWD := DirExists(szWDPath);
+      if bHasWD then
+      begin
+        szHasWD := 'YES (' + szWDPath + ')';
+        Break;
+      end
+      else 
+        szHasWD := 'NO';
+    end;
+    
+    Log('CheckWinDefenderAvailable: ' + szHasWD);
+    
+    WizardForm.TasksList.ItemEnabled[1] := bHasWD;
+    WizardForm.TasksList.Checked[1] := bHasWD;
+  end;
 end;

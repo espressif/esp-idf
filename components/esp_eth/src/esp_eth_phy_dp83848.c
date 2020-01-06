@@ -19,6 +19,7 @@
 #include "eth_phy_regs_struct.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "driver/gpio.h"
 
 static const char *TAG = "dp83848";
 #define PHY_CHECK(a, str, goto_tag, ...)                                          \
@@ -40,7 +41,7 @@ static const char *TAG = "dp83848";
 typedef union {
     struct {
         uint32_t link_status : 1;               /* Link Status */
-        uint32_t speed_status : 1;              /* Link Status */
+        uint32_t speed_status : 1;              /* Speed Status */
         uint32_t duplex_status : 1;             /* Duplex Status */
         uint32_t loopback_status : 1;           /* MII Loopback */
         uint32_t auto_nego_complete : 1;        /* Auto-Negotiation Complete */
@@ -89,6 +90,7 @@ typedef struct {
     uint32_t reset_timeout_ms;
     uint32_t autonego_timeout_ms;
     eth_link_t link_status;
+    int reset_gpio_num;
 } phy_dp83848_t;
 
 static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
@@ -96,17 +98,14 @@ static esp_err_t dp83848_update_link_duplex_speed(phy_dp83848_t *dp83848)
     esp_eth_mediator_t *eth = dp83848->eth;
     eth_speed_t speed = ETH_SPEED_10M;
     eth_duplex_t duplex = ETH_DUPLEX_HALF;
-    bmsr_reg_t bmsr;
     physts_reg_t physts;
-    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)) == ESP_OK,
-              "read BMSR failed", err);
-    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)) == ESP_OK,
+              "read PHYSTS failed", err);
+    eth_link_t link = physts.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
     /* check if link status changed */
     if (dp83848->link_status != link) {
         /* when link up, read negotiation result */
         if (link == ETH_LINK_UP) {
-            PHY_CHECK(eth->phy_reg_read(eth, dp83848->addr, ETH_PHY_STS_REG_ADDR, &(physts.val)) == ESP_OK,
-                      "read PHYSTS failed", err);
             if (physts.speed_status) {
                 speed = ETH_SPEED_10M;
             } else {
@@ -154,6 +153,7 @@ err:
 static esp_err_t dp83848_reset(esp_eth_phy_t *phy)
 {
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
+    dp83848->link_status = ETH_LINK_DOWN;
     esp_eth_mediator_t *eth = dp83848->eth;
     bmcr_reg_t bmcr = {.reset = 1};
     PHY_CHECK(eth->phy_reg_write(eth, dp83848->addr, ETH_PHY_BMCR_REG_ADDR, bmcr.val) == ESP_OK,
@@ -172,6 +172,18 @@ static esp_err_t dp83848_reset(esp_eth_phy_t *phy)
     return ESP_OK;
 err:
     return ESP_FAIL;
+}
+
+static esp_err_t dp83848_reset_hw(esp_eth_phy_t *phy)
+{
+    phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
+    if (dp83848->reset_gpio_num >= 0) {
+        gpio_pad_select_gpio(dp83848->reset_gpio_num);
+        gpio_set_direction(dp83848->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_set_level(dp83848->reset_gpio_num, 0);
+        gpio_set_level(dp83848->reset_gpio_num, 1);
+    }
+    return ESP_OK;
 }
 
 static esp_err_t dp83848_negotiate(esp_eth_phy_t *phy)
@@ -268,6 +280,10 @@ static esp_err_t dp83848_init(esp_eth_phy_t *phy)
 {
     phy_dp83848_t *dp83848 = __containerof(phy, phy_dp83848_t, parent);
     esp_eth_mediator_t *eth = dp83848->eth;
+    // Detect PHY address
+    if (dp83848->addr == ESP_ETH_PHY_ADDR_AUTO) {
+        PHY_CHECK(esp_eth_detect_phy_addr(eth, &dp83848->addr) == ESP_OK, "Detect PHY address failed", err);
+    }
     /* Power on Ethernet PHY */
     PHY_CHECK(dp83848_pwrctl(phy, true) == ESP_OK, "power control failed", err);
     /* Reset Ethernet PHY */
@@ -303,8 +319,10 @@ esp_eth_phy_t *esp_eth_phy_new_dp83848(const eth_phy_config_t *config)
     dp83848->addr = config->phy_addr;
     dp83848->reset_timeout_ms = config->reset_timeout_ms;
     dp83848->link_status = ETH_LINK_DOWN;
+    dp83848->reset_gpio_num = config->reset_gpio_num;
     dp83848->autonego_timeout_ms = config->autonego_timeout_ms;
     dp83848->parent.reset = dp83848_reset;
+    dp83848->parent.reset_hw = dp83848_reset_hw;
     dp83848->parent.init = dp83848_init;
     dp83848->parent.deinit = dp83848_deinit;
     dp83848->parent.set_mediator = dp83848_set_mediator;

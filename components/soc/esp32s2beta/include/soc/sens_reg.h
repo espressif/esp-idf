@@ -96,6 +96,9 @@ extern "C" {
 #define SENS_FORCE_XPD_AMP_M  ((SENS_FORCE_XPD_AMP_V)<<(SENS_FORCE_XPD_AMP_S))
 #define SENS_FORCE_XPD_AMP_V  0x3
 #define SENS_FORCE_XPD_AMP_S  24
+#define SENS_FORCE_XPD_AMP_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_AMP_PD  2 // Force power down
+#define SENS_FORCE_XPD_AMP_PU  3 // Force power up
 /* SENS_SAR1_STOP : R/W ;bitpos:[2] ;default: 1'b0 ; */
 /*description: stop SAR ADC1 conversion*/
 #define SENS_SAR1_STOP  (BIT(2))
@@ -452,6 +455,10 @@ extern "C" {
 #define SENS_FORCE_XPD_SAR_M  ((SENS_FORCE_XPD_SAR_V)<<(SENS_FORCE_XPD_SAR_S))
 #define SENS_FORCE_XPD_SAR_V  0x3
 #define SENS_FORCE_XPD_SAR_S  29
+#define SENS_FORCE_XPD_SAR_SW_M (BIT1)
+#define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
+#define SENS_FORCE_XPD_SAR_PD  2 // Force power down
+#define SENS_FORCE_XPD_SAR_PU  3 // Force power up
 /* SENS_SAR1_DREF : R/W ;bitpos:[28:26] ;default: 3'd0 ; */
 /*description: Adjust saradc1 offset*/
 #define SENS_SAR1_DREF  0x00000007
@@ -1143,7 +1150,7 @@ extern "C" {
 #define SENS_TOUCH_PAD14_BASELINE_V  0x3FFFFF
 #define SENS_TOUCH_PAD14_BASELINE_S  0
 
-#define SENS_SAR_TOUCH_STATUS15_REG          (DR_REG_SENS_BASE + 0x0114)
+#define SENS_SAR_TOUCH_SLP_STATUS_REG          (DR_REG_SENS_BASE + 0x0114)
 /* SENS_TOUCH_SLP_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
 /*description: */
 #define SENS_TOUCH_SLP_DEBOUNCE  0x00000007
@@ -1157,7 +1164,7 @@ extern "C" {
 #define SENS_TOUCH_SLP_BASELINE_V  0x3FFFFF
 #define SENS_TOUCH_SLP_BASELINE_S  0
 
-#define SENS_SAR_TOUCH_STATUS16_REG          (DR_REG_SENS_BASE + 0x0118)
+#define SENS_SAR_TOUCH_APPR_STATUS_REG          (DR_REG_SENS_BASE + 0x0118)
 /* SENS_TOUCH_SLP_APPROACH_CNT : RO ;bitpos:[31:24] ;default: 8'd0 ; */
 /*description: */
 #define SENS_TOUCH_SLP_APPROACH_CNT  0x000000FF
