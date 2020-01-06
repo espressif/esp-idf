@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "unity.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -29,3 +30,4 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
     vSemaphoreDelete(printf_lock);   
     free(shared_stack);
 }
+
