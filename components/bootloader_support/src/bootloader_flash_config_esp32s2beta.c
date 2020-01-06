@@ -71,11 +71,6 @@ void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t* pfhdr)
     esp_rom_spiflash_config_clk(spi_clk_div, 0);
 }
 
-void IRAM_ATTR bootloader_flash_gpio_config(const esp_image_header_t* pfhdr)
-{
-
-}
-
 void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
 {
     int spi_cache_dummy = 0;

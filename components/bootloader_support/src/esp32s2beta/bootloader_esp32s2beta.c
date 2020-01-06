@@ -201,7 +201,6 @@ static void print_flash_info(const esp_image_header_t *bootloader_hdr)
 
 static void IRAM_ATTR bootloader_init_flash_configure(void)
 {
-    bootloader_flash_gpio_config(&bootloader_image_hdr);
     bootloader_flash_dummy_config(&bootloader_image_hdr);
     bootloader_flash_cs_timing_config();
 }
@@ -329,7 +328,7 @@ static void bootloader_check_wdt_reset(void)
 
     rst_reas[0] = rtc_get_reset_reason(0);
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET || rst_reas[0] == TG1WDT_SYS_RESET ||
-            rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
+        rst_reas[0] == TG0WDT_CPU_RESET || rst_reas[0] == TG1WDT_CPU_RESET || rst_reas[0] == RTCWDT_CPU_RESET) {
         ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
         wdt_rst = 1;
     }
