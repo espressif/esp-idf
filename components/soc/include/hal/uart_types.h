@@ -84,6 +84,7 @@ typedef enum {
  * @brief UART signal bit map
  */
 typedef enum {
+    UART_SIGNAL_INV_DISABLE  =  0,            /*!< Disable UART signal inverse*/
     UART_SIGNAL_IRDA_TX_INV  = (0x1 << 0),    /*!< inverse the UART irda_tx signal*/
     UART_SIGNAL_IRDA_RX_INV  = (0x1 << 1),    /*!< inverse the UART irda_rx signal*/
     UART_SIGNAL_RXD_INV      = (0x1 << 2),    /*!< inverse the UART rxd signal*/
