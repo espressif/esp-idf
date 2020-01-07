@@ -65,18 +65,6 @@ menu "ESP32S2-specific"
                 bool "16KB"
         endchoice
 
-        choice ESP32S2_INSTRUCTION_CACHE_WAYS
-            prompt "Instruction cache associated ways"
-            default ESP32S2_INSTRUCTION_CACHE_8WAYS
-            help
-                Instruction cache associated ways to be set on application startup.
-
-            config ESP32S2_INSTRUCTION_CACHE_4WAYS
-                bool "4 ways"
-            config ESP32S2_INSTRUCTION_CACHE_8WAYS
-                bool "8 ways"
-        endchoice
-
         choice ESP32S2_INSTRUCTION_CACHE_LINE_SIZE
             prompt "Instruction cache line size"
             default ESP32S2_INSTRUCTION_CACHE_LINE_32B
@@ -87,8 +75,6 @@ menu "ESP32S2-specific"
                 bool "16 Bytes"
             config ESP32S2_INSTRUCTION_CACHE_LINE_32B
                 bool "32 Bytes"
-            config ESP32S2_INSTRUCTION_CACHE_LINE_64B
-                bool "64 Bytes"
         endchoice
 
         choice ESP32S2_DATA_CACHE_SIZE
@@ -107,18 +93,6 @@ menu "ESP32S2-specific"
                 bool "16KB"
         endchoice
 
-        choice ESP32S2_DATA_CACHE_ASSOCIATED_WAYS
-            prompt "Data cache associated ways"
-            default ESP32S2_DATA_CACHE_8WAYS
-            help
-                Data cache associated ways to be set on application startup.
-
-            config ESP32S2_DATA_CACHE_4WAYS
-                bool "4 ways"
-            config ESP32S2_DATA_CACHE_8WAYS
-                bool "8 ways"
-        endchoice
-
         choice ESP32S2_DATA_CACHE_LINE_SIZE
             prompt "Data cache line size"
             default ESP32S2_DATA_CACHE_LINE_32B
@@ -129,17 +103,7 @@ menu "ESP32S2-specific"
                 bool "16 Bytes"
             config ESP32S2_DATA_CACHE_LINE_32B
                 bool "32 Bytes"
-            config ESP32S2_DATA_CACHE_LINE_64B
-                bool "64 Bytes"
         endchoice
-
-        config ESP32S2_RODATA_USE_DATA_CACHE
-            depends on ESP32S2_DATA_CACHE_8KB || ESP32S2_DATA_CACHE_16KB
-            bool "Use data cache rather than instruction cache to access read only data"
-            default "n"
-            help
-                If enabled, CPU will access rodata through data cache, which will reduce the overload
-                of instruction cache, however will increase the overload of data cache.
 
         config ESP32S2_INSTRUCTION_CACHE_WRAP
             bool "Enable instruction cache wrap"

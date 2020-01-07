@@ -147,7 +147,7 @@ void IRAM_ATTR call_start_cpu0(void)
     /* If we need use SPIRAM, we should use data cache, or if we want to access rodata, we also should use data cache.
        Configure the mode of data : cache size, cache associated ways, cache line size.
        Enable data cache, so if we don't use SPIRAM, it just works. */
-#if CONFIG_SPIRAM_BOOT_INIT || CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
+#if CONFIG_SPIRAM_BOOT_INIT
     extern void esp_config_data_cache_mode(void);
     esp_config_data_cache_mode();
     Cache_Enable_DCache(0);
@@ -167,12 +167,6 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
 #endif
     }
-#endif
-
-    /* Start to use data cache to access rodata. */
-#if CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
-    extern void esp_switch_rodata_to_dcache(void);
-    esp_switch_rodata_to_dcache();
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
