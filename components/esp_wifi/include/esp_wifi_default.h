@@ -15,6 +15,10 @@
 #ifndef _ESP_WIFI_DEFAULT_H
 #define _ESP_WIFI_DEFAULT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Attaches wifi station interface to supplied netif
  *
@@ -94,5 +98,9 @@ esp_netif_t* esp_netif_create_default_wifi_sta(void);
  * @return ESP_OK on success
  */
 esp_err_t esp_netif_create_default_wifi_mesh_netifs(esp_netif_t **p_netif_sta, esp_netif_t **p_netif_ap);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //_ESP_WIFI_DEFAULT_H

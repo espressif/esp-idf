@@ -29,8 +29,8 @@ extern "C" {
 #define ESP_NETIF_DEFAULT_ETH()                  \
     {                                            \
         .base = ESP_NETIF_BASE_DEFAULT_ETH,      \
+        .driver = NULL,                          \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_ETH, \
-        .driver = NULL,  \
     }
 
 /**
@@ -39,8 +39,8 @@ extern "C" {
 #define ESP_NETIF_DEFAULT_WIFI_AP()                  \
 {                                                    \
         .base = ESP_NETIF_BASE_DEFAULT_WIFI_AP,      \
+        .driver = NULL,                              \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP, \
-        .driver = NULL,  \
     }
 
 /**
@@ -49,8 +49,8 @@ extern "C" {
 #define ESP_NETIF_DEFAULT_WIFI_STA()                  \
     {                                                 \
         .base = ESP_NETIF_BASE_DEFAULT_WIFI_STA,      \
+        .driver = NULL,                               \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA, \
-        .driver = NULL,  \
     }
 
 /**
@@ -59,8 +59,8 @@ extern "C" {
 #define ESP_NETIF_DEFAULT_PPP()                       \
     {                                                 \
         .base = ESP_NETIF_BASE_DEFAULT_PPP,           \
+        .driver = NULL,                               \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_PPP,      \
-        .driver = NULL,     \
     }
 /**
  * @brief  Default base config (esp-netif inherent) of WIFI STA
