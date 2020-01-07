@@ -258,3 +258,26 @@ function(add_c_compile_options)
         add_compile_options($<$<COMPILE_LANGUAGE:C>:${option}>)
     endforeach()
 endfunction()
+
+
+function(add_prebuilt_library target_name lib_path)
+    cmake_parse_arguments(_ "" "" "REQUIRES;PRIV_REQUIRES" ${ARGN})
+
+    get_filename_component(lib_path "${lib_path}"
+                ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+
+    add_library(${target_name} STATIC IMPORTED)
+    set_property(TARGET ${target_name} PROPERTY IMPORTED_LOCATION ${lib_path})
+
+    foreach(req ${__REQUIRES})
+        idf_component_get_property(req_lib "${req}" COMPONENT_LIB)
+        set_property(TARGET ${target_name} APPEND PROPERTY LINK_LIBRARIES "${req_lib}")
+        set_property(TARGET ${target_name} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "${req_lib}")
+    endforeach()
+
+    foreach(req ${__PRIV_REQUIRES})
+        idf_component_get_property(req_lib "${req}" COMPONENT_LIB)
+        set_property(TARGET ${target_name} APPEND PROPERTY LINK_LIBRARIES "${req_lib}")
+        set_property(TARGET ${target_name} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:${req_lib}>")
+    endforeach()
+endfunction()
