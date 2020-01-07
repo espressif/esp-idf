@@ -73,14 +73,14 @@ extern "C" {
 #define ESP_GATT_UUID_CHAR_PRESENT_FORMAT           0x2904          /*  Characteristic Presentation Format*/
 #define ESP_GATT_UUID_CHAR_AGG_FORMAT               0x2905          /*  Characteristic Aggregate Format*/
 #define ESP_GATT_UUID_CHAR_VALID_RANGE              0x2906          /*  Characteristic Valid Range */
-#define ESP_GATT_UUID_EXT_RPT_REF_DESCR             0x2907
-#define ESP_GATT_UUID_RPT_REF_DESCR                 0x2908
-#define ESP_GATT_UUID_NUM_DIGITALS_DESCR            0x2909
-#define ESP_GATT_UUID_VALUE_TRIGGER_DESCR           0x290A
-#define ESP_GATT_UUID_ENV_SENS_CONFIG_DESCR         0x290B
-#define ESP_GATT_UUID_ENV_SENS_MEAS_DESCR           0x290C
-#define ESP_GATT_UUID_ENV_SENS_TRIGGER_DESCR        0x290D
-#define ESP_GATT_UUID_TIME_TRIGGER_DESCR            0x290E
+#define ESP_GATT_UUID_EXT_RPT_REF_DESCR             0x2907          /*  External Report Reference */
+#define ESP_GATT_UUID_RPT_REF_DESCR                 0x2908          /*  Report Reference */
+#define ESP_GATT_UUID_NUM_DIGITALS_DESCR            0x2909          /*  Number of Digitals */
+#define ESP_GATT_UUID_VALUE_TRIGGER_DESCR           0x290A          /*  Value Trigger Setting */
+#define ESP_GATT_UUID_ENV_SENSING_CONFIG_DESCR      0x290B          /*  Environmental Sensing Configuration */
+#define ESP_GATT_UUID_ENV_SENSING_MEASUREMENT_DESCR 0x290C          /*  Environmental Sensing Measurement */
+#define ESP_GATT_UUID_ENV_SENSING_TRIGGER_DESCR     0x290D          /*  Environmental Sensing Trigger Setting */
+#define ESP_GATT_UUID_TIME_TRIGGER_DESCR            0x290E          /*  Time Trigger Setting */
 
 /* GAP Profile Attributes */
 #define ESP_GATT_UUID_GAP_DEVICE_NAME               0x2A00
@@ -449,7 +449,7 @@ typedef struct {
   * @brief service element
   */
 typedef struct {
-    bool                        is_primary;                 /*!< The service flag, true if the service is primary service, else is secondly service */
+    bool                        is_primary;                 /*!< The service flag, true if the service is primary service, else is secondary service */
     uint16_t                    start_handle;               /*!< The start handle of the service */
     uint16_t                    end_handle;                 /*!< The end handle of the service */
     esp_bt_uuid_t               uuid;                       /*!< The uuid of the service */
