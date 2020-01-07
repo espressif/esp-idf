@@ -867,13 +867,6 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     periph_module_enable(i2s_periph_signal[i2s_num].module);
 
 #if SOC_I2S_SUPPORTS_ADC_DAC
-    if(i2s_config->mode & I2S_MODE_ADC_BUILT_IN) {
-        //in ADC built-in mode, we need to call i2s_set_adc_mode to
-        //initialize the specific ADC channel.
-        //in the current stage, we only support ADC1 and single channel mode.
-        //In default data mode, the ADC data is in 12-bit resolution mode.
-        adc_power_acquire();
-    }
 #endif
     // configure I2S data port interface.
     i2s_hal_config_param(&(p_i2s_obj[i2s_num]->hal), i2s_config);
