@@ -213,7 +213,8 @@ const char *esp_ble_mesh_provisioner_get_node_name(uint16_t index);
 uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
 
 /**
- * @brief        This function is called to get the provisioned node information.
+ * @brief        This function is called to get the provisioned node information
+ *               with the node device uuid.
  *
  * @param[in]    uuid: Device UUID of the node
  *
@@ -221,6 +222,17 @@ uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
  *
  */
 esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[16]);
+
+/**
+ * @brief        This function is called to get the provisioned node information
+ *               with the node unicast address.
+ *
+ * @param[in]    unicast_addr: Unicast address of the node
+ *
+ * @return       Pointer of the node info struct or NULL on failure.
+ *
+ */
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info_with_addr(uint16_t unicast_addr);
 
 /**
  * @brief        This function is called to store the Composition Data of the node.

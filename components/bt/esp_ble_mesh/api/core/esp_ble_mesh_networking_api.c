@@ -296,6 +296,15 @@ esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[1
     return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_prov_node_info(uuid);
 }
 
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info_with_addr(uint16_t unicast_addr)
+{
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(unicast_addr)) {
+        return NULL;
+    }
+
+    return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_node_info(unicast_addr);
+}
+
 esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
         uint16_t net_idx, uint16_t app_idx)
 {
