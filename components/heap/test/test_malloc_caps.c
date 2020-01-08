@@ -81,14 +81,14 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     }
 
     printf("Test if allocating executable code still gives IRAM, even with dedicated IRAM region depleted\n");
-    if(free_iram) {        
+    if(free_iram) {
         // (the allocation should come from D/IRAM)
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
         m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
         printf("--> %p\n", m1);
         TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
         for (x=0; x<10; x++) free(m2[x]);
-        
+
     } else {
         // (the allocation should come from D/IRAM)
         free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);

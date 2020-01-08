@@ -76,8 +76,7 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
 
-#if CONFIG_IDF_TARGET_ESP32
-
+#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
 /* ESP32S2BETA has only single I2S port and hence following test cases are not applicable */
 
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_T1_I2S]")

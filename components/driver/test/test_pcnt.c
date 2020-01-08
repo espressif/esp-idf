@@ -23,6 +23,8 @@
 #include "soc/gpio_periph.h"
 #include "unity.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+
 #define PULSE_IO 18
 #define PCNT_INPUT_IO 4
 #define PCNT_CTRL_FLOATING_IO 5
@@ -649,3 +651,5 @@ TEST_CASE("PCNT counting mode test", "[pcnt][test_env=UT_T1_PCNT]")
     printf("PCNT mode test for negative count\n");
     count_mode_test(PCNT_CTRL_GND_IO);
 }
+
+#endif

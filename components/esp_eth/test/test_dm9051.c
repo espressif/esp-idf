@@ -11,6 +11,8 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+
 static const char *TAG = "dm9051_test";
 
 #define ETH_START_BIT BIT(0)
@@ -127,4 +129,6 @@ TEST_CASE("dm9051 io test", "[ethernet][dm9051][ignore]")
     TEST_ESP_OK(spi_bus_remove_device(spi_handle));
     TEST_ESP_OK(spi_bus_free(HSPI_HOST));
 }
+#endif
+
 #endif

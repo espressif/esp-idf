@@ -15,6 +15,8 @@
 #include "ping/ping_sock.h"
 #include "esp32/rom/md5_hash.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+
 static const char *TAG = "esp32_eth_test";
 
 #define ETH_START_BIT BIT(0)
@@ -500,3 +502,5 @@ TEST_CASE("esp32 ethernet download test", "[ethernet][test_env=UT_T2_Ethernet][t
     TEST_ESP_OK(esp_event_loop_delete_default());
     vEventGroupDelete(eth_event_group);
 }
+
+#endif

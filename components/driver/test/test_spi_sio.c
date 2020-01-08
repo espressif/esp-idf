@@ -107,7 +107,7 @@ TEST_CASE("local test sio", "[spi]")
     master_free_device_bus(spi);
 }
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test SIO Master & Slave
@@ -224,5 +224,5 @@ void test_sio_slave(void)
     test_sio_slave_round(false);
 }
 
-TEST_CASE_MULTIPLE_DEVICES_ESP32("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
+TEST_CASE_MULTIPLE_DEVICES("sio mode", "[spi][test_env=Example_SPI_Multi_device]", test_sio_master, test_sio_slave);
 #endif

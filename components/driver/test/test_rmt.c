@@ -18,6 +18,8 @@
 #include "soc/soc.h"
 #include "soc/rmt_periph.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+//No runners
 static const char *TAG = "RMT.test";
 
 #define RMT_RX_ACTIVE_LEVEL 1 /*!< Data bit is active high for self test mode */
@@ -761,3 +763,5 @@ TEST_CASE("RMT loop_en test", "[rmt][test_env=UT_T1_RMT][ignore]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
     TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
 }
+
+#endif //DISABLED_FOR_TARGETS(ESP32S2BETA)

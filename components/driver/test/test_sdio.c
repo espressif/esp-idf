@@ -14,13 +14,14 @@
 
 #include "unity.h"
 #include "esp_serial_slave_link/essl_sdio.h"
-#include "driver/sdio_slave.h"
-#include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "test_utils.h"
 #include "param_test.h"
 #include "esp_log.h"
 
+#if defined(SOC_SDMMC_HOST_SUPPORTED) && defined(SOC_SDIO_SLAVE_SUPPORTED)
+#include "driver/sdio_slave.h"
+#include "driver/sdmmc_host.h"
 
 #define TIMEOUT_MAX             UINT32_MAX
 #define INT_MASK_ALL            0xff
@@ -54,6 +55,7 @@ typedef struct {
     bool check_data;
     bool packet_mode;
 } sdio_test_config_t;
+
 
 sdio_test_config_t test_cfg_array[] = {
     //the first item will be the default config used by all tests
@@ -767,3 +769,5 @@ ptest_func_t tohost_slave = {
 };
 
 TEST_MASTER_SLAVE(SDIO_TOHOST, test_cfg_array, "[sdio][timeout=180][test_env=UT_SDIO]", &tohost_master, &tohost_slave);
+
+#endif

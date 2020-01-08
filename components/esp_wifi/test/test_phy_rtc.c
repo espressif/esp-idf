@@ -13,6 +13,7 @@
 #include <freertos/semphr.h>
 #include "soc/soc_caps.h"
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 
 //Function just extern, need not test
 #ifdef SOC_BT_SUPPORTED
@@ -98,3 +99,5 @@ TEST_CASE("Test PHY/RTC functions called when cache is disabled", "[phy_rtc][cac
 
     vSemaphoreDelete(semphr_done);
 }
+
+#endif

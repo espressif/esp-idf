@@ -262,7 +262,7 @@ TEST_CASE("LEDC normal channel and timer config", "[ledc][test_env=UT_T1_LEDC]")
 // set it ignore: need to debug
 TEST_CASE("LEDC set and get frequency", "[ledc][test_env=UT_T1_LEDC][timeout=60][ignore]")
 {
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_0, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_HIGH_SPEED_MODE);

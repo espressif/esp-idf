@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "soc/soc_caps.h"
+#ifdef SOC_SDMMC_HOST_SUPPORTED
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -382,3 +385,4 @@ TEST_CASE("can probe and talk to ESP32 SDIO slave", "[sdio][ignore]")
     free(card);
 }
 
+#endif

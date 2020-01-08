@@ -139,6 +139,7 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 #endif
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
 {
     char src_buf[64], dst_gold[64];
@@ -168,7 +169,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
+TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
@@ -239,6 +240,7 @@ TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
 #endif
 }
+#endif
 
 #ifdef CONFIG_SPIRAM
 
