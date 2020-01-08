@@ -8,6 +8,13 @@ else()
     set(ldfragments "linker.lf")
 endif()
 
+if(IDF_TARGET_ESP32)
+    # dport workaround headers are in esp32 component
+    set(extra_priv_requires esp32)
+else()
+    set(extra_priv_requires)
+endif()
+
 idf_component_register(SRCS "src/coexist.c"
                             "src/lib_printf.c"
                             "src/mesh_event.c"
@@ -17,8 +24,10 @@ idf_component_register(SRCS "src/coexist.c"
                             "src/wifi_init.c"
                             "src/wifi_default.c"
                             "src/wifi_netif.c"
+                            "${idf_target}/esp_adapter.c"
                     INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif
+                    REQUIRES esp_event
+                    PRIV_REQUIRES wpa_supplicant nvs_flash esp_netif ${extra_priv_requires}
                     LDFRAGMENTS "${ldfragments}")
 
 idf_build_get_property(build_dir BUILD_DIR)

@@ -18,7 +18,6 @@ else()
              "crosscore_int.c"
              "dport_access.c"
              "dport_panic_highint_hdl.S"
-             "esp_adapter.c"
              "esp_timer_esp32s2beta.c"
              "hw_random.c"
              "int_wdt.c"
@@ -34,13 +33,13 @@ else()
              "task_wdt.c")
     set(include_dirs "include")
 
-    set(requires driver esp_event efuse soc) #unfortunately rom/uart uses SOC registers directly
+    set(requires driver efuse soc) #unfortunately rom/uart uses SOC registers directly
 
     # driver is a public requirement because esp_sleep.h uses gpio_num_t & touch_pad_t
     # app_update is added here because cpu_start.c uses esp_ota_get_app_description() function.
     set(priv_requires
         app_trace app_update bootloader_support log mbedtls nvs_flash
-        pthread spi_flash vfs wpa_supplicant espcoredump esp_common esp_wifi)
+        pthread spi_flash vfs espcoredump esp_common)
 
     set(fragments linker.lf ld/esp32s2beta_fragments.lf)
 
