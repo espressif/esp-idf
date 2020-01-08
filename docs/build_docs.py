@@ -221,11 +221,8 @@ def action_build(args):
                               log_file=os.path.join(build_dir, DXG_WARN_LOG),
                               known_warnings_file=DXG_KNOWN_WARNINGS,
                               out_sanitized_log_file=os.path.join(build_dir, DXG_SANITIZED_LOG))
-    if ret != 0:
-        return ret
 
     # check Sphinx warnings:
-    ret = 0
     for target in targets:
         for language in languages:
             build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
