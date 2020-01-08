@@ -318,6 +318,43 @@ esp_err_t esp_wifi_internal_set_log_mod(wifi_log_module_t module, uint32_t submo
   */
 esp_err_t esp_wifi_internal_get_log(wifi_log_level_t *log_level, uint32_t *log_mod);
 
+/**
+  * @brief     Get the user-configured channel info 
+  *
+  * @param     ifx : WiFi interface 
+  * @param     primary : store the configured primary channel 
+  * @param     second : store the configured second channel
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *primary, uint8_t *second);
+
+/**
+  * @brief     Get the negotiated channel info after WiFi connection established 
+  *
+  * @param     ifx : WiFi interface 
+  * @param     aid : the connection number when a STA connects to the softAP    
+  * @param     primary : store the negotiated primary channel 
+  * @param     second : store the negotiated second channel
+  * @attention the aid param is only works when the ESP32 in softAP/softAP+STA mode 
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t aid, uint8_t *primary, uint8_t *second);
+
+/**
+  * @brief     Get the negotiated bandwidth info after WiFi connection established 
+  *
+  * @param     ifx : WiFi interface 
+  * @param     bw : store the negotiated bandwidth 
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
+
 #ifdef __cplusplus
 }
 #endif
