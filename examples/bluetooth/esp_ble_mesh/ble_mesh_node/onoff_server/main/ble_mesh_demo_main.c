@@ -208,6 +208,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
 static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_event_t event,
                                                esp_ble_mesh_generic_server_cb_param_t *param)
 {
+    esp_ble_mesh_gen_onoff_srv_t *srv;
     ESP_LOGI(TAG, "event 0x%02x, opcode 0x%04x, src 0x%04x, dst 0x%04x",
         event, param->ctx.recv_op, param->ctx.addr, param->ctx.recv_dst);
 
@@ -223,6 +224,8 @@ static void example_ble_mesh_generic_server_cb(esp_ble_mesh_generic_server_cb_ev
     case ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT");
         if (param->ctx.recv_op == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET) {
+            srv = param->model->user_data;
+            ESP_LOGI(TAG, "onoff 0x%02x", srv->state.onoff);
             example_handle_gen_onoff_msg(param->model, &param->ctx, NULL);
         }
         break;
