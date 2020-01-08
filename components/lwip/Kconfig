@@ -400,6 +400,12 @@ menu "LWIP"
                 Disable this option to save some RAM during TCP sessions, at the expense
                 of increased retransmissions if segments arrive out of order.
 
+        config LWIP_TCP_SACK_OUT
+            bool "Support sending selective acknowledgements"
+            default n
+            help
+                TCP will support sending selective acknowledgements (SACKs).
+
         config LWIP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES
             bool "Keep TCP connections when IP changed"
             default n
