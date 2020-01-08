@@ -15,7 +15,7 @@
 #pragma once
 
 #include <esp_types.h>
-#include "hal/esp_flash_err.h"
+#include "esp_flash_err.h"
 
 #ifdef __cplusplus
 extern "C" {

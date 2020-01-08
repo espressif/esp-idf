@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include "soc/rtc_io_periph.h"
 #include "hal/rtc_io_types.h"
+#include "hal/gpio_types.h"
 
 typedef enum {
     RTCIO_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */

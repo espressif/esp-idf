@@ -19,8 +19,9 @@ INCLUDE_DIRS := \
 	vfs/include \
 	$(addprefix ../../../../components/, \
 	esp_common/include \
-	soc/esp32/include \
+	soc/soc/esp32/include \
 	soc/include \
+	soc/soc/include \
 	xtensa/include \
 	xtensa/esp32/include \
 	esp32/include \

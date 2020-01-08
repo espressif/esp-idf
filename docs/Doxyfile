@@ -123,11 +123,11 @@ INPUT = \
     $(IDF_PATH)/components/soc/include/hal/gpio_types.h \
     $(IDF_PATH)/components/soc/include/hal/uart_types.h \
     $(IDF_PATH)/components/soc/include/hal/touch_sensor_types.h \
-    $(IDF_PATH)/components/soc/esp32/include/soc/adc_channel.h \
-    $(IDF_PATH)/components/soc/esp32/include/soc/dac_channel.h \
-    $(IDF_PATH)/components/soc/esp32/include/soc/touch_sensor_channel.h \
-    $(IDF_PATH)/components/soc/esp32/include/soc/uart_channel.h \
-    $(IDF_PATH)/components/soc/esp32/include/soc/rtc_io_channel.h \
+    $(IDF_PATH)/components/soc/soc/esp32/include/soc/adc_channel.h \
+    $(IDF_PATH)/components/soc/soc/esp32/include/soc/dac_channel.h \
+    $(IDF_PATH)/components/soc/soc/esp32/include/soc/touch_sensor_channel.h \
+    $(IDF_PATH)/components/soc/soc/esp32/include/soc/uart_channel.h \
+    $(IDF_PATH)/components/soc/soc/esp32/include/soc/rtc_io_channel.h \
     ## esp_netif - API Reference
     $(IDF_PATH)/components/esp_netif/include/esp_netif.h \
     $(IDF_PATH)/components/esp_netif/include/esp_netif_net_stack.h \
