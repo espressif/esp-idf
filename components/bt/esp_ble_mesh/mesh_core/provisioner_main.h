@@ -15,10 +15,8 @@
 #ifndef _PROVISIONER_MAIN_H_
 #define _PROVISIONER_MAIN_H_
 
-#include "mesh_util.h"
-#include "mesh_kernel.h"
-#include "mesh_access.h"
 #include "net.h"
+#include "mesh_bearer_adapt.h"
 
 #define BLE_MESH_INVALID_NODE_INDEX     0xFFFF
 #define BLE_MESH_NODE_NAME_SIZE         31

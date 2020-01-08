@@ -11,30 +11,23 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
-
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_main.h"
-#include "mesh_trace.h"
-#include "cfg_srv.h"
-#include "settings.h"
 
 #include "mesh.h"
 #include "adv.h"
-#include "net.h"
 #include "lpn.h"
 #include "transport.h"
 #include "crypto.h"
 #include "access.h"
 #include "beacon.h"
-#include "proxy_server.h"
 #include "foundation.h"
 #include "friend.h"
 #include "settings.h"
-
+#include "cfg_srv.h"
+#include "proxy_server.h"
+#include "mesh_main.h"
 #include "mesh_common.h"
+
 #include "btc_ble_mesh_config_model.h"
 
 #define DEFAULT_TTL 7

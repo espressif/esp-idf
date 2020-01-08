@@ -10,8 +10,6 @@
 #ifndef _NET_H_
 #define _NET_H_
 
-#include "mesh_util.h"
-#include "mesh_kernel.h"
 #include "mesh_access.h"
 
 #define BLE_MESH_NET_FLAG_KR       BIT(0)

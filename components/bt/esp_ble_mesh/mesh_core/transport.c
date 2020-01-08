@@ -7,31 +7,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
 #include <string.h>
+#include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_TRANS)
-
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_main.h"
-#include "settings.h"
 
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
-#include "net.h"
 #include "lpn.h"
 #include "friend.h"
 #include "access.h"
 #include "foundation.h"
 #include "settings.h"
 #include "transport.h"
+#include "mesh_main.h"
 #include "mesh_common.h"
-#include "client_common.h"
 #include "cfg_srv.h"
 
 /* The transport layer needs at least three buffers for itself to avoid

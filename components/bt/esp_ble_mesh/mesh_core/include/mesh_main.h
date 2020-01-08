@@ -11,7 +11,6 @@
 #ifndef _BLE_MESH_MAIN_H_
 #define _BLE_MESH_MAIN_H_
 
-#include "mesh_util.h"
 #include "mesh_access.h"
 
 /**

@@ -8,17 +8,12 @@
 
 #include <errno.h>
 
-#include "sdkconfig.h"
-
 #include "osi/hash_map.h"
 #include "osi/alarm.h"
 #include "osi/hash_functions.h"
 
-#include "esp_timer.h"
-
 #include "mesh_kernel.h"
 #include "mesh_trace.h"
-
 #include "provisioner_prov.h"
 
 static osi_mutex_t bm_alarm_lock;

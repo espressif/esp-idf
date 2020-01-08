@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
 #include "btc_ble_mesh_sensor_model.h"

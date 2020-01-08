@@ -9,21 +9,14 @@
 #include <string.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_PROXY)
-
-#include "mesh_buf.h"
-#include "mesh_util.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_trace.h"
 
 #include "mesh.h"
 #include "adv.h"
-#include "net.h"
 #include "prov.h"
 #include "beacon.h"
-#include "foundation.h"
 #include "access.h"
+#include "foundation.h"
 #include "proxy_server.h"
 
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \

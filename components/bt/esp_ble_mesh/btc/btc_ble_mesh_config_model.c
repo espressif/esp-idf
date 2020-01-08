@@ -15,11 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include "btc/btc_manage.h"
-#include "osi/allocator.h"
-
-#include "cfg_cli.h"
+#include "foundation.h"
 #include "mesh_common.h"
+#include "cfg_cli.h"
+
 #include "btc_ble_mesh_config_model.h"
 #include "esp_ble_mesh_config_model_api.h"
 

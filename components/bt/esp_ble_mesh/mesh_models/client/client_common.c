@@ -15,16 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-
-#include "mesh_access.h"
-#include "mesh_buf.h"
-#include "mesh_slist.h"
-#include "mesh_main.h"
-
 #include "mesh.h"
+#include "mesh_main.h"
 #include "client_common.h"
+#include "mesh_common.h"
 
 static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t tx_dst)
 {

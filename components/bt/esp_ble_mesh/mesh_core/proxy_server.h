@@ -11,7 +11,6 @@
 #define _PROXY_H_
 
 #include "net.h"
-#include "mesh_buf.h"
 #include "mesh_bearer_adapt.h"
 
 #define BLE_MESH_PROXY_NET_PDU   0x00

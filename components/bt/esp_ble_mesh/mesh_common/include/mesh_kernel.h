@@ -12,7 +12,6 @@
 #include "mesh_types.h"
 #include "mesh_slist.h"
 #include "mesh_atomic.h"
-#include "mesh_dlist.h"
 
 /* number of nsec per usec */
 #define NSEC_PER_USEC   1000
@@ -46,8 +45,6 @@ struct k_work;
  * @return N/A
  */
 typedef void (*k_work_handler_t)(struct k_work *work);
-
-typedef sys_dlist_t _wait_q_t;
 
 struct k_work {
     void *_reserved;

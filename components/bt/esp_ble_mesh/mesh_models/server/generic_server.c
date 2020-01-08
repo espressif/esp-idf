@@ -6,24 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <errno.h>
 
-#include "osi/mutex.h"
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh_common.h"
-#include "mesh.h"
 #include "access.h"
-#include "model_opcode.h"
 #include "transport.h"
-
-#include "server_common.h"
-#include "state_binding.h"
+#include "model_opcode.h"
 #include "state_transition.h"
 #include "device_property.h"
 

@@ -15,8 +15,8 @@
 #ifndef _PROVISIONER_PROV_H_
 #define _PROVISIONER_PROV_H_
 
-#include "mesh_bearer_adapt.h"
 #include "mesh_main.h"
+#include "mesh_bearer_adapt.h"
 
 #if !CONFIG_BLE_MESH_PROVISIONER
 

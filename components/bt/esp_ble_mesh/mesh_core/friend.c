@@ -10,23 +10,16 @@
 #include <errno.h>
 #include <string.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_FRIEND)
-
-#include "mesh_buf.h"
-#include "mesh_util.h"
-#include "mesh_main.h"
-#include "mesh_trace.h"
 
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
-#include "net.h"
 #include "transport.h"
 #include "access.h"
-#include "foundation.h"
 #include "friend.h"
-#include "client_common.h"
+#include "foundation.h"
+#include "mesh_main.h"
 #include "provisioner_main.h"
 
 #ifdef CONFIG_BLE_MESH_FRIEND

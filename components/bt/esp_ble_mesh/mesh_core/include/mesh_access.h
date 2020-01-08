@@ -11,11 +11,10 @@
 #ifndef _BLE_MESH_ACCESS_H_
 #define _BLE_MESH_ACCESS_H_
 
-#include <stddef.h>
 #include "mesh_types.h"
 #include "mesh_util.h"
 #include "mesh_buf.h"
-#include "sdkconfig.h"
+#include "mesh_kernel.h"
 
 /**
  * @brief Bluetooth Mesh Access Layer

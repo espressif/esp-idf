@@ -10,6 +10,8 @@
 #ifndef _TRANSPORT_H_
 #define _TRANSPORT_H_
 
+#include "net.h"
+
 #define TRANS_SEQ_AUTH_NVAL            0xffffffffffffffff
 
 #define BLE_MESH_TX_SDU_MAX            (CONFIG_BLE_MESH_TX_SEG_MAX * 12)

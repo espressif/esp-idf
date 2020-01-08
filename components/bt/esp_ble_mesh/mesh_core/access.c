@@ -10,23 +10,14 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ACCESS)
-
-#include "mesh_util.h"
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_kernel.h"
-#include "mesh_access.h"
-#include "mesh_main.h"
 
 #include "mesh.h"
 #include "adv.h"
-#include "net.h"
-#include "lpn.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
+#include "mesh_main.h"
 #include "mesh_common.h"
 #include "provisioner_main.h"
 

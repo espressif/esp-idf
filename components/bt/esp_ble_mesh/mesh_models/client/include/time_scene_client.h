@@ -19,9 +19,6 @@
 #ifndef _TIME_SCENE_CLIENT_H_
 #define _TIME_SCENE_CLIENT_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
-
 #include "client_common.h"
 
 /* Time scene client model common structure */

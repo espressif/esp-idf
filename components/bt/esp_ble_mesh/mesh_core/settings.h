@@ -7,11 +7,7 @@
 #ifndef _SETTINGS_H_
 #define _SETTINGS_H_
 
-#include "sdkconfig.h"
-
 #include "net.h"
-#include "mesh_access.h"
-#include "mesh_bearer_adapt.h"
 #include "provisioner_main.h"
 
 int settings_core_init(void);

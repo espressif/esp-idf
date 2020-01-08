@@ -10,7 +10,6 @@
 #define _BLE_MESH_TRACE_H_
 
 #include "esp_log.h"
-#include "sdkconfig.h"
 
 /* Define common tracing for all */
 #ifndef LOG_LEVEL_ERROR

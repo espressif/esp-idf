@@ -9,11 +9,11 @@
 #ifndef _BLE_MESH_BEARER_ADRPT_H_
 #define _BLE_MESH_BEARER_ADRPT_H_
 
-#include <string.h>
+#include <sys/types.h>
 #include "mesh_types.h"
 #include "mesh_util.h"
-#include "mesh_buf.h"
 #include "mesh_uuid.h"
+#include "mesh_buf.h"
 
 /* BLE Mesh Max Connection Count */
 #ifdef CONFIG_BLUEDROID_ENABLED
@@ -640,8 +640,8 @@ struct bt_mesh_gatt_attr {
     .attr_count = ARRAY_SIZE(_attrs),   \
 }
 
-esp_err_t bt_mesh_host_init(void);
-esp_err_t bt_mesh_host_deinit(void);
+int bt_mesh_host_init(void);
+int bt_mesh_host_deinit(void);
 
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,

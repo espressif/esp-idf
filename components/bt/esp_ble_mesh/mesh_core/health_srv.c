@@ -9,23 +9,13 @@
 
 #include <string.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
 
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_trace.h"
-#include "health_srv.h"
-
-#include "mesh.h"
-#include "adv.h"
-#include "net.h"
-#include "transport.h"
 #include "access.h"
 #include "foundation.h"
 #include "mesh_common.h"
+#include "health_srv.h"
 
 #include "btc_ble_mesh_health_model.h"
 

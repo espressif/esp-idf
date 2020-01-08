@@ -8,7 +8,6 @@
 #ifndef _FOUNDATION_H_
 #define _FOUNDATION_H_
 
-#include "mesh_access.h"
 #include "net.h"
 
 #define OP_APP_KEY_ADD                     BLE_MESH_MODEL_OP_1(0x00)

@@ -15,25 +15,15 @@
 #include <string.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-
-#include "mesh_util.h"
-#include "mesh_main.h"
-#include "mesh_trace.h"
-#include "mesh_bearer_adapt.h"
-
 #include "mesh.h"
 #include "crypto.h"
 #include "adv.h"
-#include "net.h"
 #include "access.h"
 #include "settings.h"
 #include "friend.h"
-
-#include "provisioner_prov.h"
+#include "mesh_common.h"
 #include "proxy_client.h"
+#include "provisioner_prov.h"
 #include "provisioner_main.h"
 
 #if CONFIG_BLE_MESH_PROVISIONER

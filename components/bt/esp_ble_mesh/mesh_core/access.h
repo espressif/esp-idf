@@ -9,8 +9,6 @@
 #ifndef _ACCESS_H_
 #define _ACCESS_H_
 
-#include "mesh_access.h"
-#include "mesh_buf.h"
 #include "net.h"
 
 /* bt_mesh_model.flags */

@@ -9,24 +9,15 @@
 #include <errno.h>
 #include <string.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_PROV)
-
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-
-#include "mesh_util.h"
-#include "mesh_main.h"
-#include "mesh_uuid.h"
-#include "mesh_trace.h"
-#include "mesh_proxy.h"
 
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
-#include "net.h"
 #include "access.h"
 #include "foundation.h"
+#include "mesh_common.h"
+#include "mesh_proxy.h"
 #include "proxy_server.h"
 #include "prov.h"
 

@@ -8,11 +8,6 @@
 
 #include <errno.h>
 
-#include "sdkconfig.h"
-
-#include "btc/btc_task.h"
-#include "osi/alarm.h"
-
 #include "mbedtls/aes.h"
 #include "mbedtls/ecp.h"
 
@@ -94,21 +89,21 @@ static BD_ADDR bt_mesh_gatts_addr;
 
 #endif /* defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE */
 
-esp_err_t bt_mesh_host_init(void)
+int bt_mesh_host_init(void)
 {
     int rc;
     rc = btc_init();
     if (rc != 0) {
-        return ESP_FAIL;
+        return -1;
     }
 
     rc = osi_alarm_create_mux();
     if (rc != 0) {
-        return ESP_FAIL;
+        return -1;
     }
 
     osi_alarm_init();
-    return ESP_OK;
+    return 0;
 }
 
 uint8_t ble_hs_hci_get_hci_version(void);

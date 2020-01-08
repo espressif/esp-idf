@@ -9,6 +9,8 @@
 #ifndef _BEACON_H_
 #define _BEACON_H_
 
+#include "net.h"
+
 void bt_mesh_beacon_enable(void);
 void bt_mesh_beacon_disable(void);
 

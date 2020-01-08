@@ -14,19 +14,8 @@
 
 #include <string.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-#include "sdkconfig.h"
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-
-#include "mesh.h"
 #include "model_opcode.h"
-#include "mesh_common.h"
 #include "sensor_client.h"
 
 #include "btc_ble_mesh_sensor_model.h"

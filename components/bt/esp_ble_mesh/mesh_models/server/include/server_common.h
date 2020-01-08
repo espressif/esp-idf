@@ -17,10 +17,7 @@
 
 #include <string.h>
 #include <stdint.h>
-
-#include "mesh_buf.h"
 #include "mesh_access.h"
-#include "mesh_kernel.h"
 
 #define BLE_MESH_SERVER_RSP_MAX_LEN         384
 

@@ -11,30 +11,22 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_NET)
-
-#include "mesh_util.h"
-#include "mesh_buf.h"
-#include "mesh_main.h"
-#include "mesh_trace.h"
-#include "mesh.h"
 
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
-#include "net.h"
 #include "lpn.h"
 #include "friend.h"
-#include "proxy_server.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
 #include "beacon.h"
 #include "settings.h"
 #include "prov.h"
-#include "provisioner_main.h"
 #include "proxy_client.h"
+#include "proxy_server.h"
+#include "provisioner_main.h"
 
 /* Minimum valid Mesh Network PDU length. The Network headers
  * themselves take up 9 bytes. After that there is a minumum of 1 byte

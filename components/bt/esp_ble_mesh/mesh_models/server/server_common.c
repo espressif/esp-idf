@@ -12,22 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "osi/allocator.h"
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
 #include "mesh.h"
 #include "access.h"
-#include "model_opcode.h"
-
-#include "server_common.h"
-#include "state_binding.h"
-#include "state_transition.h"
+#include "mesh_common.h"
+#include "generic_server.h"
+#include "lighting_server.h"
 
 /**
  * According to Mesh Model Spec:

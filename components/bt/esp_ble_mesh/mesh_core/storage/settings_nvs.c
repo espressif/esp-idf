@@ -13,18 +13,12 @@
 // limitations under the License.
 
 #include <string.h>
-#include <stdio.h>
-#include <stddef.h>
 #include <errno.h>
 
 #include "nvs.h"
 #include "nvs_flash.h"
-#include "sdkconfig.h"
 
-#include "mesh_util.h"
-#include "mesh_types.h"
 #include "mesh_common.h"
-
 #include "settings_nvs.h"
 #include "settings.h"
 

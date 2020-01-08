@@ -13,9 +13,8 @@
 // limitations under the License.
 
 #include <stdint.h>
-#include <errno.h>
+#include <string.h>
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
 #include "esp_err.h"

@@ -10,6 +10,7 @@
 #ifndef _ADV_H_
 #define _ADV_H_
 
+#include "mesh_access.h"
 #include "mesh_bearer_adapt.h"
 
 /* Maximum advertising data payload for a single data type */

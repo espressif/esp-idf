@@ -16,14 +16,10 @@
  *  @brief Bluetooth Mesh Model Common APIs.
  */
 
-#ifndef _MESH_COMMON_H_
-#define _MESH_COMMON_H_
+#ifndef _BLE_MESH_COMMON_H_
+#define _BLE_MESH_COMMON_H_
 
 #include "osi/allocator.h"
-
-#include "mesh_types.h"
-#include "mesh_buf.h"
-#include "mesh_trace.h"
 #include "mesh_access.h"
 
 /**
@@ -58,4 +54,4 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
  */
 u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
 
-#endif /* _MESH_COMMON_H_ */
+#endif /* _BLE_MESH_COMMON_H_ */

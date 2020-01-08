@@ -7,32 +7,25 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdbool.h>
-#include <errno.h>
 #include <string.h>
+#include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG)
-
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_main.h"
-#include "mesh_hci.h"
 
 #include "adv.h"
 #include "prov.h"
-#include "net.h"
 #include "beacon.h"
 #include "lpn.h"
 #include "friend.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy_server.h"
 #include "settings.h"
 #include "mesh.h"
-#include "provisioner_prov.h"
+#include "mesh_hci.h"
 #include "proxy_client.h"
+#include "proxy_server.h"
+#include "provisioner_prov.h"
 #include "provisioner_main.h"
 
 #define ACTION_ENTER    0x01

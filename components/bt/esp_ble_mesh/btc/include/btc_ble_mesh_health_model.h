@@ -15,8 +15,7 @@
 #ifndef _BTC_BLE_MESH_HEALTH_MODEL_H_
 #define _BTC_BLE_MESH_HEALTH_MODEL_H_
 
-#include <stdint.h>
-#include "btc/btc_task.h"
+#include "btc/btc_manage.h"
 #include "esp_ble_mesh_health_model_api.h"
 
 typedef enum {

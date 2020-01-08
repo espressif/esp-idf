@@ -9,6 +9,8 @@
 #ifndef _FRIEND_H_
 #define _FRIEND_H_
 
+#include "net.h"
+
 enum bt_mesh_friend_pdu_type {
     BLE_MESH_FRIEND_PDU_SINGLE,
     BLE_MESH_FRIEND_PDU_PARTIAL,

@@ -20,7 +20,6 @@
 
 #include "mesh_atomic.h"
 #include "mesh_kernel.h"
-#include "sdkconfig.h"
 
 #ifndef CONFIG_ATOMIC_OPERATIONS_BUILTIN
 

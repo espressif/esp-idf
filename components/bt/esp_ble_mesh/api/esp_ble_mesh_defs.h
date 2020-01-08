@@ -17,17 +17,9 @@
 
 #include <stdint.h>
 
-#include "mesh_proxy.h"
-#include "mesh_access.h"
-#include "mesh_main.h"
-
-#include "mesh.h"
-#include "proxy_server.h"
-#include "foundation.h"
-#include "provisioner_main.h"
-
-#include "model_opcode.h"
 #include "mesh_common.h"
+#include "proxy_server.h"
+#include "provisioner_main.h"
 
 #ifdef CONFIG_BLUEDROID_ENABLED
 #include "esp_bt_defs.h"

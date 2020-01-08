@@ -11,20 +11,13 @@
 #include <errno.h>
 #include <stdbool.h>
 
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
-
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "cfg_cli.h"
 
 #include "mesh.h"
 #include "foundation.h"
 #include "mesh_common.h"
+#include "cfg_cli.h"
+
 #include "btc_ble_mesh_config_model.h"
 
 #define CID_NVAL 0xffff

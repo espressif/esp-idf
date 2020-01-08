@@ -19,9 +19,6 @@
 #ifndef _LIGHTING_CLIENT_H_
 #define _LIGHTING_CLIENT_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
-
 #include "client_common.h"
 
 /* Light client model common structure */

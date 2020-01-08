@@ -6,30 +6,18 @@
  */
 
 #include <errno.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_SETTINGS)
 
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_access.h"
-#include "mesh_main.h"
-#include "mesh_buf.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh_common.h"
-
 #include "mesh.h"
-#include "net.h"
 #include "crypto.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
 #include "proxy_server.h"
 #include "cfg_srv.h"
-
+#include "mesh_common.h"
 #include "settings_nvs.h"
 #include "provisioner_main.h"
 #include "provisioner_prov.h"

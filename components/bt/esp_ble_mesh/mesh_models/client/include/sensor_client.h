@@ -19,9 +19,6 @@
 #ifndef _SENSOR_CLIENT_H_
 #define _SENSOR_CLIENT_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
-
 #include "client_common.h"
 
 /* Sensor Client Model Context */

@@ -15,20 +15,15 @@
 #include <string.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
-
 #include "mesh.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_trace.h"
-#include "mesh_common.h"
-
-#include "net.h"
 #include "access.h"
 #include "beacon.h"
+#include "mesh_common.h"
 #include "foundation.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
 #include "provisioner_main.h"
+#include "mesh_bearer_adapt.h"
 
 #define PDU_TYPE(data)      (data[0] & BIT_MASK(6))
 #define PDU_SAR(data)       (data[0] >> 6)

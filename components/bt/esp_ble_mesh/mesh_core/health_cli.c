@@ -9,20 +9,13 @@
 
 #include <string.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
-
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_trace.h"
-#include "health_cli.h"
 
 #include "foundation.h"
 #include "mesh_common.h"
+#include "health_cli.h"
+
 #include "btc_ble_mesh_health_model.h"
 
 s32_t health_msg_timeout;

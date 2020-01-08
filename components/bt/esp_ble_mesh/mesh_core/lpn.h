@@ -9,6 +9,8 @@
 #ifndef _LPN_H_
 #define _LPN_H_
 
+#include "net.h"
+
 int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
                               struct net_buf_simple *buf);
 int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,

@@ -8,6 +8,7 @@
  */
 
 #include <stdint.h>
+#include <string.h>
 #include <errno.h>
 
 #include "freertos/FreeRTOS.h"
@@ -15,24 +16,18 @@
 #include "freertos/task.h"
 
 #include "osi/thread.h"
-#include "sdkconfig.h"
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ADV)
 
-#include "mesh_util.h"
-#include "mesh_buf.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_trace.h"
-#include "mesh_hci.h"
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ADV)
 
 #include "mesh.h"
 #include "adv.h"
-#include "net.h"
-#include "foundation.h"
 #include "beacon.h"
 #include "prov.h"
+#include "foundation.h"
 #include "proxy_server.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
+#include "mesh_bearer_adapt.h"
 
 /* Convert from ms to 0.625ms units */
 #define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)

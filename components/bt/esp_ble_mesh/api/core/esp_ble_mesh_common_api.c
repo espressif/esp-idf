@@ -17,9 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
-#include "osi/alarm.h"
 
 #include "esp_err.h"
 

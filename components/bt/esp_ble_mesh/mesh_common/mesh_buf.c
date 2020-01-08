@@ -7,10 +7,9 @@
 
 #include <string.h>
 
-#include "sdkconfig.h"
-
 #include "mesh_buf.h"
 #include "mesh_trace.h"
+#include "mesh_kernel.h"
 
 int net_buf_id(struct net_buf *buf)
 {

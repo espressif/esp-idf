@@ -10,16 +10,12 @@
 #include <string.h>
 #include <errno.h>
 
-#include "mesh_trace.h"
-#include "mesh_main.h"
-#include "mesh_access.h"
-
 #include "mesh.h"
 #include "test.h"
 #include "crypto.h"
-#include "net.h"
-#include "foundation.h"
 #include "access.h"
+#include "foundation.h"
+#include "mesh_main.h"
 
 #if defined(CONFIG_BLE_MESH_SELF_TEST)
 

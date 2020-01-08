@@ -15,13 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
-#include "btc/btc_manage.h"
-#include "btc/btc_task.h"
-#include "osi/allocator.h"
-
+#include "foundation.h"
+#include "mesh_common.h"
 #include "health_srv.h"
 #include "health_cli.h"
-#include "mesh_common.h"
 
 #include "btc_ble_mesh_health_model.h"
 #include "esp_ble_mesh_defs.h"

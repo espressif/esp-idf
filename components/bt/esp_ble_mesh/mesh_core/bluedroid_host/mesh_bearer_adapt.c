@@ -6,9 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
 #include <errno.h>
-
-#include "sdkconfig.h"
 
 #include "bta/bta_api.h"
 #include "bta/bta_gatt_api.h"
@@ -16,9 +15,7 @@
 #include "bta_gattc_int.h"
 #include "stack/btm_ble_api.h"
 #include "p_256_ecc_pp.h"
-#include "stack/hcimsgs.h"
 #include "osi/future.h"
-#include "osi/allocator.h"
 #include "device/controller.h"
 
 #include "mbedtls/aes.h"
@@ -26,12 +23,8 @@
 #include "mesh_hci.h"
 #include "mesh_aes_encrypt.h"
 #include "mesh_bearer_adapt.h"
-#include "mesh_trace.h"
-#include "mesh_buf.h"
-#include "mesh_atomic.h"
-
-#include "provisioner_prov.h"
 #include "mesh_common.h"
+#include "provisioner_prov.h"
 
 struct bt_mesh_dev bt_mesh_dev;
 
@@ -104,14 +97,14 @@ static struct bt_mesh_prov_conn_cb *bt_mesh_gattc_conn_cb;
 static tBTA_GATTC_IF bt_mesh_gattc_if;
 #endif
 
-esp_err_t bt_mesh_host_init(void)
+int bt_mesh_host_init(void)
 {
-    return ESP_OK;
+    return 0;
 }
 
-esp_err_t bt_mesh_host_deinit(void)
+int bt_mesh_host_deinit(void)
 {
-    return ESP_OK;
+    return 0;
 }
 
 void bt_mesh_hci_init(void)

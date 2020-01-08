@@ -10,7 +10,6 @@
 #define _PROV_H_
 
 #include "mesh_main.h"
-#include "mesh_buf.h"
 #include "mesh_bearer_adapt.h"
 
 void bt_mesh_pb_adv_recv(struct net_buf_simple *buf);

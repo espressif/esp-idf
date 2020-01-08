@@ -16,33 +16,21 @@
 #include <errno.h>
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-#include "btc/btc_manage.h"
-#include "osi/allocator.h"
-
-#include "sdkconfig.h"
-
-#include "mesh_util.h"
-#include "mesh_main.h"
-#include "mesh_access.h"
 #include "mesh_proxy.h"
-#include "cfg_cli.h"
-#include "health_cli.h"
-#include "cfg_srv.h"
-#include "health_srv.h"
-
 #include "mesh.h"
 #include "access.h"
-#include "transport.h"
-#include "proxy_server.h"
 #include "prov.h"
+#include "proxy_server.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
 #include "provisioner_main.h"
 
+#include "cfg_cli.h"
+#include "health_cli.h"
+#include "cfg_srv.h"
+#include "health_srv.h"
 #include "generic_client.h"
 #include "lighting_client.h"
 #include "sensor_client.h"

@@ -30,9 +30,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mesh_aes_encrypt.h"
 #include "mesh_util.h"
-#include "sdkconfig.h"
+#include "mesh_aes_encrypt.h"
 
 /* max number of calls until change the key (2^48).*/
 const static uint64_t MAX_CALLS = ((uint64_t)1 << 48);

@@ -12,22 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-#include <stdbool.h>
 #include <errno.h>
 
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh.h"
 #include "access.h"
-#include "model_opcode.h"
 #include "transport.h"
-
-#include "server_common.h"
-#include "state_binding.h"
+#include "model_opcode.h"
 #include "state_transition.h"
-#include "sensor_server.h"
 #include "device_property.h"
 
 #include "btc_ble_mesh_sensor_model.h"

@@ -15,15 +15,7 @@
 #ifndef _BTC_BLE_MESH_PROV_H_
 #define _BTC_BLE_MESH_PROV_H_
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-
-#include "btc/btc_task.h"
-
-#include "mesh_access.h"
-#include "mesh_buf.h"
+#include "btc/btc_manage.h"
 #include "mesh_main.h"
 #include "provisioner_prov.h"
 #include "esp_ble_mesh_defs.h"

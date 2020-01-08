@@ -12,24 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-#include <stdbool.h>
 #include <errno.h>
 
-#include "osi/mutex.h"
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh.h"
 #include "access.h"
-#include "model_opcode.h"
 #include "transport.h"
-
-#include "server_common.h"
-#include "state_binding.h"
+#include "model_opcode.h"
 #include "state_transition.h"
-#include "time_scene_server.h"
 
 #include "btc_ble_mesh_time_scene_model.h"
 

@@ -19,9 +19,6 @@
 #ifndef _GENERIC_CLIENT_H_
 #define _GENERIC_CLIENT_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
-
 #include "client_common.h"
 
 /* Generic client model common structure */

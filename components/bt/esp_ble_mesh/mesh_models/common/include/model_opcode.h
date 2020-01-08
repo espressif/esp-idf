@@ -15,7 +15,7 @@
 #ifndef _MODEL_OPCODE_H_
 #define _MODEL_OPCODE_H_
 
-#include "mesh_main.h"
+#include "mesh_access.h"
 
 /* Generic OnOff Message Opcode */
 #define BLE_MESH_MODEL_OP_GEN_ONOFF_GET                          BLE_MESH_MODEL_OP_2(0x82, 0x01)

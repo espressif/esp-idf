@@ -11,18 +11,11 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_CRYPTO)
 
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_aes_encrypt.h"
-
-#include "mesh.h"
 #include "crypto.h"
+#include "mesh_aes_encrypt.h"
+#include "mesh_bearer_adapt.h"
 
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)

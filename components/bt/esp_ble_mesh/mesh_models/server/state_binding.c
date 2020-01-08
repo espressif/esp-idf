@@ -6,22 +6,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdint.h>
 #include <errno.h>
-#include <stdbool.h>
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh.h"
 
 #include "model_opcode.h"
-#include "server_common.h"
 #include "state_binding.h"
 #include "state_transition.h"
-#include "generic_server.h"
-#include "lighting_server.h"
 
 #define MINDIFF (2.25e-308)
 

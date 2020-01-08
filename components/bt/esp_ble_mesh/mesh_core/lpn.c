@@ -9,23 +9,17 @@
 #include <stdint.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_LOW_POWER)
-
-#include "mesh_buf.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh_main.h"
 
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
-#include "net.h"
 #include "transport.h"
 #include "access.h"
 #include "beacon.h"
-#include "foundation.h"
 #include "lpn.h"
+#include "foundation.h"
+#include "mesh_main.h"
 #include "cfg_srv.h"
 
 #ifdef CONFIG_BLE_MESH_LOW_POWER

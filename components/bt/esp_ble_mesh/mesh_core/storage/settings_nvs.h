@@ -15,8 +15,6 @@
 #ifndef _BLE_MESH_SETTINGS_NVS_H_
 #define _BLE_MESH_SETTINGS_NVS_H_
 
-#include <stdint.h>
-#include "mesh_types.h"
 #include "mesh_buf.h"
 
 #ifdef __cplusplus

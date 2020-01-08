@@ -15,19 +15,12 @@
 #include <string.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
-#include "osi/allocator.h"
-#include "osi/mutex.h"
-
-#include "mesh_main.h"
-#include "mesh_trace.h"
-#include "mesh_bearer_adapt.h"
-
 #include "crypto.h"
 #include "adv.h"
 #include "mesh.h"
 #include "access.h"
 #include "settings.h"
+#include "mesh_common.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
 #include "provisioner_main.h"

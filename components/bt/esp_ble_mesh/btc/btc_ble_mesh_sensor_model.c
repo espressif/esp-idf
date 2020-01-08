@@ -15,10 +15,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "btc/btc_manage.h"
-#include "osi/allocator.h"
-
+#include "mesh_common.h"
 #include "sensor_client.h"
+
 #include "btc_ble_mesh_sensor_model.h"
 #include "esp_ble_mesh_sensor_model_api.h"
 
