@@ -49,6 +49,8 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP,
     BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
     BTC_BLE_MESH_ACT_LPN_ENABLE,
@@ -164,10 +166,16 @@ typedef union {
         uint16_t net_idx;
     } add_local_net_key;
     struct ble_mesh_provisioner_store_node_comp_data_args {
-        uint16_t addr;
+        uint16_t unicast_addr;
         uint16_t length;
         uint8_t *data;
     } store_node_comp_data;
+    struct ble_mesh_provisioner_delete_node_with_uuid_args {
+        uint8_t uuid[16];
+    } delete_node_with_uuid;
+    struct ble_mesh_provisioner_delete_node_with_addr_args {
+        uint16_t unicast_addr;
+    } delete_node_with_addr;
     struct ble_mesh_set_fast_prov_info_args {
         uint16_t unicast_min;
         uint16_t unicast_max;
@@ -242,6 +250,10 @@ typedef union {
 void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_uuid(const uint8_t uuid[16]);
+
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicast_addr);
 
 int btc_ble_mesh_deinit(void);
 

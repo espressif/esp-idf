@@ -2498,7 +2498,7 @@ static void send_prov_data(const u8_t idx)
      */
 
     /* Check if this device is a re-provisioned device */
-    node = bt_mesh_provisioner_get_prov_node_info(link[idx].uuid);
+    node = bt_mesh_provisioner_get_node_with_uuid(link[idx].uuid);
     if (node) {
         if (link[idx].element_num <= node->element_num) {
             /**

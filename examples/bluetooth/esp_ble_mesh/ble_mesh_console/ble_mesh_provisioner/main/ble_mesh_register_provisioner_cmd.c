@@ -201,7 +201,7 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
     }
 
     arg_int_to_value(provisioner_get_node.unicast_addr, unicast_addr, "unicast address");
-    node_info = bt_mesh_provisioner_get_node_info(unicast_addr);
+    node_info = esp_ble_mesh_provisioner_get_node_with_addr(unicast_addr);
 
     if (node_info == NULL) {
         return ESP_FAIL;

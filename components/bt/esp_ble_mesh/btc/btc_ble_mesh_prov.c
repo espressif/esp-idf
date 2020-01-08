@@ -771,6 +771,17 @@ static void btc_ble_mesh_provisioner_prov_complete_cb(
     btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_PROVISIONER_PROV_COMPLETE_EVT);
     return;
 }
+
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_uuid(const uint8_t uuid[16])
+{
+    return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_node_with_uuid(uuid);
+}
+
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicast_addr)
+{
+    return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_node_with_addr(unicast_addr);
+}
+
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
@@ -1741,10 +1752,22 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
         act = ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT;
-        param.provisioner_store_node_comp_data_comp.addr = arg->store_node_comp_data.addr;
+        param.provisioner_store_node_comp_data_comp.addr = arg->store_node_comp_data.unicast_addr;
         param.provisioner_store_node_comp_data_comp.err_code =
-            bt_mesh_provisioner_store_node_comp_data(arg->store_node_comp_data.addr,
+            bt_mesh_provisioner_store_node_comp_data(arg->store_node_comp_data.unicast_addr,
                 arg->store_node_comp_data.data, arg->store_node_comp_data.length);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID:
+        act = ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT;
+        memcpy(param.provisioner_delete_node_with_uuid_comp.uuid, arg->delete_node_with_uuid.uuid, 16);
+        param.provisioner_delete_node_with_uuid_comp.err_code =
+            bt_mesh_provisioner_delete_node_with_uuid(arg->delete_node_with_uuid.uuid);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR:
+        act = ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT;
+        param.provisioner_delete_node_with_addr_comp.unicast_addr = arg->delete_node_with_addr.unicast_addr;
+        param.provisioner_delete_node_with_addr_comp.err_code =
+            bt_mesh_provisioner_delete_node_with_addr(arg->delete_node_with_addr.unicast_addr);
         break;
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_FAST_PROV

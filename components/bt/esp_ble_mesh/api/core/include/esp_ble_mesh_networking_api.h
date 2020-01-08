@@ -213,6 +213,18 @@ const char *esp_ble_mesh_provisioner_get_node_name(uint16_t index);
 uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
 
 /**
+ * @brief        This function is called to store the Composition Data of the node.
+ *
+ * @param[in]    addr:   Element address of the node
+ * @param[in]    data:   Pointer of Composition Data
+ * @param[in]    length: Length of Composition Data
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t unicast_addr, uint8_t *data, uint16_t length);
+
+/**
  * @brief        This function is called to get the provisioned node information
  *               with the node device uuid.
  *
@@ -221,7 +233,7 @@ uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
  * @return       Pointer of the node info struct or NULL on failure.
  *
  */
-esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[16]);
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_with_uuid(const uint8_t uuid[16]);
 
 /**
  * @brief        This function is called to get the provisioned node information
@@ -232,19 +244,29 @@ esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info(const uint8_t uuid[1
  * @return       Pointer of the node info struct or NULL on failure.
  *
  */
-esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_info_with_addr(uint16_t unicast_addr);
+esp_ble_mesh_node_t *esp_ble_mesh_provisioner_get_node_with_addr(uint16_t unicast_addr);
 
 /**
- * @brief        This function is called to store the Composition Data of the node.
+ * @brief        This function is called to delete the provisioned node information
+ *               with the node device uuid.
  *
- * @param[in]    addr:   Element address of the node
- * @param[in]    data:   Pointer of Composition Data
- * @param[in]    length: Length of Composition Data
+ * @param[in]    uuid: Device UUID of the node
  *
  * @return       ESP_OK on success or error code otherwise.
  *
  */
-esp_err_t esp_ble_mesh_provisioner_store_node_comp_data(uint16_t addr, uint8_t *data, uint16_t length);
+esp_err_t esp_ble_mesh_provisioner_delete_node_with_uuid(const uint8_t uuid[16]);
+
+/**
+ * @brief        This function is called to delete the provisioned node information
+ *               with the node unicast address.
+ *
+ * @param[in]    unicast_addr: Unicast address of the node
+ *
+ * @return       ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_delete_node_with_addr(uint16_t unicast_addr);
 
 /**
  * @brief         This function is called to set the app key for the local BLE Mesh stack.
