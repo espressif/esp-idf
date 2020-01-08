@@ -43,7 +43,7 @@ def main():
     parser.add_argument("--sphinx-parallel-builds", "-p", choices=["auto"] + [str(x) for x in range(8)],
                         help="Parallel Sphinx builds - number of independent Sphinx builds to run", default="auto")
     parser.add_argument("--sphinx-parallel-jobs", "-j", choices=["auto"] + [str(x) for x in range(8)],
-                        help="Sphinx parallel jobs argument - number of threads for each Sphinx build to use", default="auto")
+                        help="Sphinx parallel jobs argument - number of threads for each Sphinx build to use", default="1")
 
     args = parser.parse_args()
 
@@ -76,6 +76,9 @@ def main():
 
     print("Will use %d parallel builds and %d jobs per build" % (args.sphinx_parallel_builds, args.sphinx_parallel_jobs))
     pool = multiprocessing.Pool(args.sphinx_parallel_builds)
+
+    if args.sphinx_parallel_jobs > 1:
+        print("WARNING: Sphinx parallel jobs currently produce incorrect docs output with Sphinx 1.8.5")
 
     # make a list of all combinations of build_docs() args as tuples
     #
