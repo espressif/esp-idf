@@ -1,0 +1,50 @@
+menu "Example Configuration"
+
+    config EXAMPLE_ENC28J60_SPI_HOST
+        int "SPI Host Number"
+        range 0 2
+        default 1
+        help
+            Set the SPI host used to communicate with the SPI Ethernet Controller.
+
+    config EXAMPLE_ENC28J60_SCLK_GPIO
+        int "SPI SCLK GPIO number"
+        range 0 33
+        default 19
+        help
+            Set the GPIO number used by SPI SCLK.
+
+    config EXAMPLE_ENC28J60_MOSI_GPIO
+        int "SPI MOSI GPIO number"
+        range 0 33
+        default 23
+        help
+            Set the GPIO number used by SPI MOSI.
+
+    config EXAMPLE_ENC28J60_MISO_GPIO
+        int "SPI MISO GPIO number"
+        range 0 33
+        default 25
+        help
+            Set the GPIO number used by SPI MISO.
+
+    config EXAMPLE_ENC28J60_CS_GPIO
+        int "SPI CS GPIO number"
+        range 0 33
+        default 22
+        help
+            Set the GPIO number used by SPI CS.
+
+    config EXAMPLE_ENC28J60_SPI_CLOCK_MHZ
+        int "SPI clock speed (MHz)"
+        range 5 20
+        default 6
+        help
+            Set the clock speed (MHz) of SPI interface.
+
+    config EXAMPLE_ENC28J60_INT_GPIO
+        int "Interrupt GPIO number"
+        default 4
+        help
+            Set the GPIO number used by ENC28J60 interrupt.
+endmenu

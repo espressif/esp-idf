@@ -20,12 +20,6 @@ menu "Example Configuration"
             help
                 Select external SPI-Ethernet module (DM9051).
 
-        config EXAMPLE_USE_ENC28J60
-            bool "ENC28J60 Module"
-            select ETH_USE_SPI_ETHERNET
-            select ETH_SPI_ETHERNET_ENC28J60
-            help
-                Select external SPI-Ethernet module (ENC28J60).
     endchoice
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
