@@ -509,8 +509,10 @@ typedef struct {
     UINT32  company_id;         /* AVRCP Company ID */
     UINT16  avrc_mtu;           /* AVRCP MTU at L2CAP for control channel */
     UINT16  avrc_br_mtu;        /* AVRCP MTU at L2CAP for browsing channel */
-    UINT16  avrc_ct_cat;        /* AVRCP controller categories */
-    UINT16  avrc_tg_cat;        /* AVRCP target categories */
+    UINT16  avrc_snk_ct_cat;    /* AVRCP controller categories as SNK */
+    UINT16  avrc_snk_tg_cat;    /* AVRCP target categories SNK */
+    UINT16  avrc_src_ct_cat;    /* AVRCP controller categories as SRC */
+    UINT16  avrc_src_tg_cat;    /* AVRCP target categories as SRC */
     UINT16  sig_mtu;            /* AVDTP signaling channel MTU at L2CAP */
     UINT16  audio_mtu;          /* AVDTP audio transport channel MTU at L2CAP */
     const UINT16 *p_audio_flush_to;/* AVDTP audio transport channel flush timeout */
