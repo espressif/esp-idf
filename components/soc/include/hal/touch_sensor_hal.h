@@ -25,12 +25,6 @@
 #include "hal/touch_sensor_ll.h"
 #include "hal/touch_sensor_types.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "hal/touch_sensor_hal_esp32.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "hal/touch_sensor_hal_esp32s2.h"
-#endif
-
 typedef struct {
     touch_high_volt_t refh;
     touch_low_volt_t refl;
