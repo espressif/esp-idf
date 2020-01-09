@@ -630,13 +630,6 @@ static void IRAM_ATTR psram_gpio_config(psram_cache_mode_t mode)
     switch (mode) {
         case PSRAM_CACHE_S40M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_40M;
-#if CONFIG_ESPTOOLPY_FLASHFREQ_80M
-                g_rom_spiflash_dummy_len_plus[_SPI_CACHE_PORT] = PSRAM_IO_MATRIX_DUMMY_80M;
-                g_rom_spiflash_dummy_len_plus[_SPI_FLASH_PORT] = PSRAM_IO_MATRIX_DUMMY_40M;
-                SET_PERI_REG_BITS(SPI_MEM_USER1_REG(_SPI_CACHE_PORT), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + PSRAM_IO_MATRIX_DUMMY_80M, SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
-                esp_rom_spiflash_config_clk(_SPI_80M_CLK_DIV, _SPI_CACHE_PORT);
-                esp_rom_spiflash_config_clk(_SPI_40M_CLK_DIV, _SPI_FLASH_PORT);
-#endif
             break;
         case PSRAM_CACHE_S80M:
             extra_dummy = PSRAM_IO_MATRIX_DUMMY_80M;
@@ -884,6 +877,8 @@ static void IRAM_ATTR psram_cache_init(psram_cache_mode_t psram_cache_mode, psra
         SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD);
         // Set cs time.
         SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, 1, SPI_MEM_CS_HOLD_TIME_S);
+    } else {
+        CLEAR_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD | SPI_MEM_CS_SETUP);
     }
 }
 #endif // CONFIG_SPIRAM
