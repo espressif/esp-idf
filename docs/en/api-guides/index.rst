@@ -32,9 +32,8 @@ API Guides
     Secure Boot <../security/secure-boot>
     Thread Local Storage <thread-local-storage>
     Tools <tools/index>
-    ULP Coprocessor (CMake) <ulp-cmake>
-    ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
     ULP Coprocessor <ulp>
+    ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
     Unit Testing (Legacy GNU Make) <unit-tests-legacy>
     Unit Testing <unit-tests>
     WiFi Driver <wifi>

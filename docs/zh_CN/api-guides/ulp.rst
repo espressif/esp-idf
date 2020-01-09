@@ -6,7 +6,8 @@ ULP 协处理器编程
 .. toctree::
    :maxdepth: 1
 
-    指令集参考 <ulp_instruction_set>
+    ESP32 指令集参考 <ulp_instruction_set>
+    ESP32-S2 指令集参考 <ulps2_instruction_set>
     使用宏进行编程（遗留） <ulp_macros>
 
 

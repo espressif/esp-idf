@@ -33,9 +33,6 @@ esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested
 #       sphinx==1.8.4
 #       breathe==4.11.1
 #
-ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
-ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
-ulp-cmake.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
 ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
 ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
