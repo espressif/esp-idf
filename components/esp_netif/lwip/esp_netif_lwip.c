@@ -1308,7 +1308,7 @@ static esp_err_t esp_netif_get_dns_info_api(esp_netif_api_msg_t *msg)
         const ip_addr_t*  dns_ip = NULL;
         dns_ip = dns_getserver(type);
         if(dns_ip != NULL) {
-            memcpy(&dns->ip.u_addr, &dns_ip, sizeof(ip4_addr_t));
+            memcpy(&dns->ip, dns_ip, sizeof(ip_addr_t));
         }
     }
 
