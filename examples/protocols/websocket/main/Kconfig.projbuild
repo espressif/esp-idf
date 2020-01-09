@@ -1,0 +1,35 @@
+menu "Example Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the example to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            WiFi password (WPA or WPA2) for the example to use.
+
+    choice WEBSOCKET_URI_SOURCE
+        prompt "Websocket URI source"
+        default WEBSOCKET_URI_FROM_STRING
+        help
+            Selects the source of the URI used in the example.
+
+        config WEBSOCKET_URI_FROM_STRING
+            bool "From string"
+
+        config WEBSOCKET_URI_FROM_STDIN
+            bool "From stdin"
+    endchoice
+
+    config WEBSOCKET_URI
+        string "Websocket endpoint URI"
+        depends on WEBSOCKET_URI_FROM_STRING
+        default "ws://echo.websocket.org"
+        help
+            URL of websocket endpoint this example connects to and sends echo
+
+endmenu
