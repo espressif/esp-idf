@@ -549,6 +549,72 @@ TEST_CASE("can erase items", "[nvs]")
     CHECK(storage.readItem(3, "key00222", val) == ESP_ERR_NVS_NOT_FOUND);
 }
 
+TEST_CASE("partition name is deep copy", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    char partition_name[16];
+    strcpy(partition_name, "const_name");
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEST_ESP_OK(nvs_flash_init_custom(partition_name, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    strcpy(partition_name, "just_kidding");
+
+    TEST_ESP_OK(nvs_open_from_partition("const_name", "test", NVS_READWRITE, &handle_1));
+    CHECK(nvs_open_from_partition("just_kidding", "test", NVS_READWRITE, &handle_2) == ESP_ERR_NVS_PART_NOT_FOUND);
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    nvs_flash_deinit_partition("const_name");
+    nvs_flash_deinit_partition("just_kidding"); // just in case, try not to affect other tests
+}
+
+TEST_CASE("namespace name is deep copy", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    char ns_name[16];
+    strcpy(ns_name, "const_name");
+
+    nvs_handle_t handle_1;
+    nvs_handle_t handle_2;
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    TEST_ESP_OK(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN));
+
+    TEST_ESP_OK(nvs_open("const_name", NVS_READWRITE, &handle_1));
+    strcpy(ns_name, "just_kidding");
+
+    CHECK(nvs_open("just_kidding", NVS_READONLY, &handle_2) == ESP_ERR_NVS_NOT_FOUND);
+
+    nvs_close(handle_1);
+    nvs_close(handle_2);
+
+    nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
+}
+
+TEST_CASE("Partition name no longer than 16 characters", "[nvs]")
+{
+    SpiFlashEmulator emu(10);
+    const char *TOO_LONG_NAME = "0123456789abcdefg";
+
+    const uint32_t NVS_FLASH_SECTOR = 6;
+    const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
+    emu.setBounds(NVS_FLASH_SECTOR, NVS_FLASH_SECTOR + NVS_FLASH_SECTOR_COUNT_MIN);
+
+    CHECK(nvs_flash_init_custom(TOO_LONG_NAME, NVS_FLASH_SECTOR, NVS_FLASH_SECTOR_COUNT_MIN)
+            == ESP_ERR_INVALID_ARG);
+
+    nvs_flash_deinit_partition(TOO_LONG_NAME); // just in case
+}
+
 TEST_CASE("readonly handle fails on writing", "[nvs]")
 {
     SpiFlashEmulator emu(10);

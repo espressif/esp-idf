@@ -102,6 +102,8 @@ extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSe
 {
     ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
 
+    if (strlen(partName) > NVS_PART_NAME_MAX_SIZE) return ESP_ERR_INVALID_ARG;
+
     nvs::Storage* new_storage = NULL;
     nvs::Storage* storage = lookup_storage_from_name(partName);
     if (storage == NULL) {
