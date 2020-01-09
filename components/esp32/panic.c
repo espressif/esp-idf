@@ -382,7 +382,7 @@ static void illegal_instruction_helper(XtExcFrame *frame)
     panicPutStr("Memory dump at 0x");
     panicPutHex(epc);
     panicPutStr(": ");
-    
+
     panicPutHex(*pepc);
     panicPutStr(" ");
     panicPutHex(*(pepc + 1));
@@ -544,8 +544,9 @@ static void commonErrorHandler_dump(XtExcFrame *frame, int core_id)
 
     panicPutStr("\r\nELF file SHA256: ");
     char sha256_buf[65];
-    esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
-    panicPutStr(sha256_buf);
+    // Disable for avoid access cache
+    // esp_ota_get_app_elf_sha256(sha256_buf, sizeof(sha256_buf));
+    // panicPutStr(sha256_buf);
     panicPutStr("\r\n");
 
     /* With windowed ABI backtracing is easy, let's do it. */
@@ -623,7 +624,7 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
     rtc_wdt_disable();
 #if CONFIG_ESP32_PANIC_PRINT_REBOOT || CONFIG_ESP32_PANIC_SILENT_REBOOT
     panicPutStr("Rebooting...\r\n");
-    if (frame->exccause != PANIC_RSN_CACHEERR) {
+    if (esp_cache_err_get_cpuid() == -1) {
         esp_restart_noos();
     } else {
         // The only way to clear invalid cache access interrupt is to reset the digital part

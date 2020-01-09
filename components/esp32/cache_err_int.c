@@ -13,9 +13,9 @@
 // limitations under the License.
 
 /*
- The cache has an interrupt that can be raised as soon as an access to a cached 
- region (flash, psram) is done without the cache being enabled. We use that here 
- to panic the CPU, which from a debugging perspective is better than grabbing bad 
+ The cache has an interrupt that can be raised as soon as an access to a cached
+ region (flash, psram) is done without the cache being enabled. We use that here
+ to panic the CPU, which from a debugging perspective is better than grabbing bad
  data from the bus.
 */
 
@@ -73,7 +73,6 @@ void esp_cache_err_int_init()
 
 int IRAM_ATTR esp_cache_err_get_cpuid()
 {
-    esp_dport_access_int_pause();
     const uint32_t pro_mask =
             DPORT_PRO_CPU_DISABLED_CACHE_IA_DRAM1 |
             DPORT_PRO_CPU_DISABLED_CACHE_IA_DROM0 |

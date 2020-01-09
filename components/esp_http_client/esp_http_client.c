@@ -742,7 +742,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
         } else {
             return ESP_ERR_NO_MEM;
         }
-    } 
+    }
 
     //Reset path and query if there are no information
     if (purl.field_data[UF_PATH].len) {
@@ -825,7 +825,7 @@ int esp_http_client_read(esp_http_client_handle_t client, char *buffer, int len)
         ESP_LOGD(TAG, "need_read=%d, byte_to_read=%d, rlen=%d, ridx=%d", need_read, byte_to_read, rlen, ridx);
 
         if (rlen <= 0) {
-            return ridx;
+            return rlen;
         }
         res_buffer->output_ptr = buffer + ridx;
         http_parser_execute(client->parser, client->parser_settings, res_buffer->data, rlen);
