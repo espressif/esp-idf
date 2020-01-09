@@ -76,7 +76,7 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
         COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
         COMMAND ${ESPSECUREPY} digest_secure_bootloader --keyfile "${secure_bootloader_key}"
         -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
-        MAIN_DEPENDENCY gen_project_binary
+        MAIN_DEPENDENCY "${CMAKE_BINARY_DIR}/.bin_timestamp"
         DEPENDS gen_secure_bootloader_key gen_project_binary
         VERBATIM)
 
