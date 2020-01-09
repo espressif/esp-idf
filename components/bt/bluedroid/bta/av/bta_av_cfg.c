@@ -40,8 +40,9 @@ const UINT32  bta_av_meta_caps_co_ids[] = {
     AVRC_CO_BROADCOM
 };
 
-/* AVRCP cupported categories */
-#define BTA_AV_RC_SUPF_CT       (AVRC_SUPF_CT_CAT2)
+/* AVRCP supported categories */
+#define BTA_AV_RC_SNK_SUPF_CT       (AVRC_SUPF_CT_CAT1)
+#define BTA_AV_RC_SRC_SUPF_CT       (AVRC_SUPF_CT_CAT2)
 
 /* Added to modify
 **  1. flush timeout
@@ -62,9 +63,11 @@ const UINT16  bta_av_audio_flush_to[] = {
 /* Note: Android doesnt support AVRC_SUPF_TG_GROUP_NAVI  */
 /* Note: if AVRC_SUPF_TG_GROUP_NAVI is set, bta_av_cfg.avrc_group should be TRUE */
 #if AVRC_METADATA_INCLUDED == TRUE
-#define BTA_AV_RC_SUPF_TG       (AVRC_SUPF_TG_CAT1) /* TODO: | AVRC_SUPF_TG_APP_SETTINGS) */
+#define BTA_AV_RC_SNK_SUPF_TG       (AVRC_SUPF_TG_CAT2) /* TODO: | AVRC_SUPF_TG_APP_SETTINGS) */
+#define BTA_AV_RC_SRC_SUPF_TG       (AVRC_SUPF_TG_CAT1) /* TODO: | AVRC_SUPF_TG_APP_SETTINGS) */
 #else
-#define BTA_AV_RC_SUPF_TG       (AVRC_SUPF_TG_CAT1)
+#define BTA_AV_RC_SNK_SUPF_TG       (AVRC_SUPF_TG_CAT2)
+#define BTA_AV_RC_SRC_SUPF_TG       (AVRC_SUPF_TG_CAT1)
 #endif
 
 /*
@@ -95,8 +98,10 @@ const tBTA_AV_CFG bta_av_cfg = {
     48,                     /* AVRCP MTU at L2CAP for control channel */
 #endif
     BTA_AV_MAX_RC_BR_MTU,   /* AVRCP MTU at L2CAP for browsing channel */
-    BTA_AV_RC_SUPF_CT,      /* AVRCP controller categories */
-    BTA_AV_RC_SUPF_TG,      /* AVRCP target categories */
+    BTA_AV_RC_SNK_SUPF_CT,  /* AVRCP controller categories as SNK */
+    BTA_AV_RC_SNK_SUPF_TG,  /* AVRCP target categories as SNK */
+    BTA_AV_RC_SRC_SUPF_CT,  /* AVRCP controller categories as SRC */
+    BTA_AV_RC_SRC_SUPF_TG,  /* AVRCP target categories as SRC */
     672,                    /* AVDTP signaling channel MTU at L2CAP */
     BTA_AV_MAX_A2DP_MTU,    /* AVDTP audio transport channel MTU at L2CAP */
     bta_av_audio_flush_to,  /* AVDTP audio transport channel flush timeout */
