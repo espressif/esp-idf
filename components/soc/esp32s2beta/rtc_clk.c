@@ -351,6 +351,8 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
     uint8_t dchgp;
     uint8_t dcur;
 
+    assert(xtal_freq == RTC_XTAL_FREQ_40M);
+
     if (pll_freq == RTC_PLL_480M) {
         /* Raise the voltage, if needed */
         /* move to 240M logic */
@@ -358,40 +360,12 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
         /* Set this register to let digital know pll is 480M */
         SET_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_PLL_FREQ_SEL);
         /* Configure 480M PLL */
-        switch (xtal_freq) {
-            case RTC_XTAL_FREQ_40M:
-                div_ref = 0;
-                div7_0 = 8;
-                dr1 = 0;
-                dr3 = 0;
-                dchgp = 5;
-                dcur = 4;
-                break;
-            case RTC_XTAL_FREQ_26M:
-                div_ref = 12;
-                div7_0 = 156;
-                dr1 = 3;
-                dr3 = 3;
-                dchgp = 4;
-                dcur = 1;
-                break;
-            case RTC_XTAL_FREQ_24M:
-                div_ref = 11;
-                div7_0 = 156;
-                dr1 = 3;
-                dr3 = 3;
-                dchgp = 4;
-                dcur = 1;
-                break;
-            default:
-                div_ref = 0;
-                div7_0 = 8;
-                dr1 = 0;
-                dr3 = 0;
-                dchgp = 5;
-                dcur = 4;
-                break;
-        }
+        div_ref = 0;
+        div7_0 = 8;
+        dr1 = 0;
+        dr3 = 0;
+        dchgp = 5;
+        dcur = 4;
         I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
     } else {
         /* Raise the voltage */
@@ -399,40 +373,12 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
         //ets_delay_us(DELAY_PLL_DBIAS_RAISE);
         CLEAR_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_PLL_FREQ_SEL);
         /* Configure 480M PLL */
-        switch (xtal_freq) {
-            case RTC_XTAL_FREQ_40M:
-                div_ref = 0;
-                div7_0 = 4;
-                dr1 = 0;
-                dr3 = 0;
-                dchgp = 5;
-                dcur = 5;
-                break;
-            case RTC_XTAL_FREQ_26M:
-                div_ref = 12;
-                div7_0 = 236;
-                dr1 = 3;
-                dr3 = 3;
-                dchgp = 0;
-                dcur = 2;
-                break;
-            case RTC_XTAL_FREQ_24M:
-                div_ref = 11;
-                div7_0 = 236;
-                dr1 = 3;
-                dr3 = 3;
-                dchgp = 0;
-                dcur = 2;
-                break;
-            default:
-                div_ref = 0;
-                div7_0 = 4;
-                dr1 = 0;
-                dr3 = 0;
-                dchgp = 5;
-                dcur = 5;
-                break;
-        }
+        div_ref = 0;
+        div7_0 = 4;
+        dr1 = 0;
+        dr3 = 0;
+        dchgp = 5;
+        dcur = 5;
         I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x69);
     }
     uint8_t i2c_bbpll_lref  = (dchgp << I2C_BBPLL_OC_DCHGP_LSB) | (div_ref);
@@ -719,7 +665,7 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
     uint32_t xtal_freq_reg = READ_PERI_REG(RTC_XTAL_FREQ_REG);
     if (!clk_val_is_valid(xtal_freq_reg)) {
         SOC_LOGW(TAG, "invalid RTC_XTAL_FREQ_REG value: 0x%08x", xtal_freq_reg);
-        return RTC_XTAL_FREQ_AUTO;
+        return RTC_XTAL_FREQ_40M;
     }
     return reg_val_to_clk_val(xtal_freq_reg);
 }
@@ -727,42 +673,6 @@ rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
 void rtc_clk_xtal_freq_update(rtc_xtal_freq_t xtal_freq)
 {
     WRITE_PERI_REG(RTC_XTAL_FREQ_REG, clk_val_to_reg_val(xtal_freq));
-}
-
-static rtc_xtal_freq_t rtc_clk_xtal_freq_estimate(void)
-{
-    /* Enable 8M/256 clock if needed */
-    const bool clk_8m_enabled = rtc_clk_8m_enabled();
-    const bool clk_8md256_enabled = rtc_clk_8md256_enabled();
-    if (!clk_8md256_enabled) {
-        rtc_clk_8m_enable(true, true);
-    }
-
-    uint64_t cal_val = rtc_clk_cal_ratio(RTC_CAL_8MD256, XTAL_FREQ_EST_CYCLES);
-    /* cal_val contains period of 8M/256 clock in XTAL clock cycles
-     * (shifted by RTC_CLK_CAL_FRACT bits).
-     * Xtal frequency will be (cal_val * 8M / 256) / 2^19
-     */
-    uint32_t freq_mhz = (cal_val * RTC_FAST_CLK_FREQ_APPROX / MHZ / 256 ) >> RTC_CLK_CAL_FRACT;
-    /* Guess the XTAL type. For now, only 40 and 26MHz are supported.
-     */
-    switch (freq_mhz) {
-        case 21 ... 31:
-            return RTC_XTAL_FREQ_26M;
-        case 32 ... 33:
-            SOC_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 26 MHz", freq_mhz);
-            return RTC_XTAL_FREQ_26M;
-        case 34 ... 35:
-            SOC_LOGW(TAG, "Potentially bogus XTAL frequency: %d MHz, guessing 40 MHz", freq_mhz);
-            return RTC_XTAL_FREQ_40M;
-        case 36 ... 45:
-            return RTC_XTAL_FREQ_40M;
-        default:
-            SOC_LOGW(TAG, "Bogus XTAL frequency: %d MHz", freq_mhz);
-            return RTC_XTAL_FREQ_AUTO;
-    }
-    /* Restore 8M and 8md256 clocks to original state */
-    rtc_clk_8m_enable(clk_8m_enabled, clk_8md256_enabled);
 }
 
 void rtc_clk_apb_freq_update(uint32_t apb_freq)
@@ -829,31 +739,7 @@ void rtc_clk_init(rtc_clk_config_t cfg)
     SET_PERI_REG_BITS(ANA_CONFIG_REG, ANA_CONFIG_M, ANA_CONFIG_M, ANA_CONFIG_S);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
 
-    /* Estimate XTAL frequency */
     rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-        if (clk_val_is_valid(READ_PERI_REG(RTC_XTAL_FREQ_REG))) {
-            /* XTAL frequency has already been set, use existing value */
-            xtal_freq = rtc_clk_xtal_freq_get();
-        } else {
-            /* Not set yet, estimate XTAL frequency based on RTC_FAST_CLK */
-            xtal_freq = rtc_clk_xtal_freq_estimate();
-            if (xtal_freq == RTC_XTAL_FREQ_AUTO) {
-                SOC_LOGW(TAG, "Can't estimate XTAL frequency, assuming 26MHz");
-                xtal_freq = RTC_XTAL_FREQ_26M;
-            }
-        }
-    } else if (!clk_val_is_valid(READ_PERI_REG(RTC_XTAL_FREQ_REG))) {
-        /* Exact frequency was set in sdkconfig, but still warn if autodetected
-         * frequency is different. If autodetection failed, worst case we get a
-         * bit of garbage output.
-         */
-        rtc_xtal_freq_t est_xtal_freq = rtc_clk_xtal_freq_estimate();
-        if (est_xtal_freq != xtal_freq) {
-            SOC_LOGW(TAG, "Possibly invalid CONFIG_ESP32S2_XTAL_FREQ setting (%dMHz). Detected %d MHz.",
-                    xtal_freq, est_xtal_freq);
-        }
-    }
     uart_tx_wait_idle(0);
     rtc_clk_xtal_freq_update(xtal_freq);
     rtc_clk_apb_freq_update(xtal_freq * MHZ);

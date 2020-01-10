@@ -478,36 +478,6 @@ menu "ESP32S2-specific"
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.
 
-    choice ESP32S2_XTAL_FREQ_SEL
-        prompt "Main XTAL frequency"
-        default ESP32S2_XTAL_FREQ_40
-        help
-            ESP32 currently supports the following XTAL frequencies:
-
-            - 26 MHz
-            - 40 MHz
-
-            Startup code can automatically estimate XTAL frequency. This feature
-            uses the internal 8MHz oscillator as a reference. Because the internal
-            oscillator frequency is temperature dependent, it is not recommended
-            to use automatic XTAL frequency detection in applications which need
-            to work at high ambient temperatures and use high-temperature
-            qualified chips and modules.
-        config ESP32S2_XTAL_FREQ_40
-            bool "40 MHz"
-        config ESP32S2_XTAL_FREQ_26
-            bool "26 MHz"
-        config ESP32S2_XTAL_FREQ_AUTO
-            bool "Autodetect"
-    endchoice
-
-    # Keep these values in sync with rtc_xtal_freq_t enum in soc/rtc.h
-    config ESP32S2_XTAL_FREQ
-        int
-        default 0 if ESP32S2_XTAL_FREQ_AUTO
-        default 40 if ESP32S2_XTAL_FREQ_40
-        default 26 if ESP32S2_XTAL_FREQ_26
-
     config ESP32S2_DISABLE_BASIC_ROM_CONSOLE
         bool "Permanently disable BASIC ROM Console"
         default n
