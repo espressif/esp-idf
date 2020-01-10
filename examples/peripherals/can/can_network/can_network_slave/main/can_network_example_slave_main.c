@@ -67,12 +67,12 @@ static const can_general_config_t g_config = CAN_GENERAL_CONFIG_DEFAULT(TX_GPIO_
 static const can_timing_config_t t_config = CAN_TIMING_CONFIG_25KBITS();
 static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 static const can_message_t ping_resp = {.identifier = ID_SLAVE_PING_RESP, .data_length_code = 0,
-                                        .flags = CAN_MSG_FLAG_NONE, .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                        .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
 static const can_message_t stop_resp = {.identifier = ID_SLAVE_STOP_RESP, .data_length_code = 0,
-                                        .flags = CAN_MSG_FLAG_NONE, .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                        .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
 //Data bytes of data message will be initialized in the transmit task
 static can_message_t data_message = {.identifier = ID_SLAVE_DATA, .data_length_code = 4,
-                                     .flags = CAN_MSG_FLAG_NONE, .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                     .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
 
 static QueueHandle_t tx_task_queue;
 static QueueHandle_t rx_task_queue;
