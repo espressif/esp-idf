@@ -77,6 +77,13 @@ menu "Common ESP-related"
             FreeRTOS timer task size, see "FreeRTOS timer task stack size" option
             in "FreeRTOS" menu.
 
+    config ESP_MINIMAL_SHARED_STACK_SIZE
+        int "Minimal allowed size for shared stack"
+        default 2048
+        help
+            Minimal value of size, in bytes, accepted to execute a expression
+            with shared stack.
+
     choice ESP_CONSOLE_UART
         prompt "UART for console output"
         default ESP_CONSOLE_UART_DEFAULT

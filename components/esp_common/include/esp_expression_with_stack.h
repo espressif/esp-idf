@@ -11,14 +11,16 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
-#ifndef __ESP_EXPRESSION_WITH_STACK_H
-#define __ESP_EXPRESSION_WITH_STACK_H
+#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_debug_helpers.h"
+#include "esp_log.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Executes a 1-line expression with a application alocated stack
@@ -26,20 +28,21 @@
  * @param stack Pointer to user alocated stack
  * @param stack_size Size of current stack in bytes
  * @param expression Expression or function to be executed using the stack
+ * @note  if either lock, stack or stack size is invalid, the expression will
+ *          be called using the current stack.
  */
-#define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, stack_size, expression)  \
-({                                                                  \
-    if (lock && stack && stack_size) {                              \
-        uint32_t backup;                                            \
-        xSemaphoreTake(lock, portMAX_DELAY);                        \
-        StackType_t *top_of_stack = esp_switch_stack_setup(stack, stack_size);\
-        esp_switch_stack_enter(top_of_stack, &backup);              \
-        {                                                           \
-            expression;                                             \
-        }                                                           \
-        esp_switch_stack_exit(&backup);                             \
-        xSemaphoreGive(lock);                                       \
-    }                                                               \
+#define ESP_EXECUTE_EXPRESSION_WITH_STACK(lock, stack, stack_size, expression)      \
+({                                                                                  \
+    assert(lock && stack && (stack_size >= CONFIG_ESP_MINIMAL_SHARED_STACK_SIZE));  \
+    uint32_t backup;                                                                \
+    xSemaphoreTake(lock, portMAX_DELAY);                                            \
+    StackType_t *top_of_stack = esp_switch_stack_setup(stack, stack_size);          \
+    esp_switch_stack_enter(top_of_stack, &backup);                                  \
+    {                                                                               \
+        expression;                                                                 \
+    }                                                                               \
+    esp_switch_stack_exit(&backup);                                                 \
+    xSemaphoreGive(lock);                                                           \
 })
 
 /**
@@ -66,4 +69,6 @@ extern void esp_switch_stack_enter(StackType_t *stack, uint32_t *backup_stack);
  */
 extern void esp_switch_stack_exit(uint32_t *backup_stack);
 
+#ifdef __cplusplus
+}
 #endif
