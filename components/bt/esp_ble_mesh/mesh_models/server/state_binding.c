@@ -16,7 +16,7 @@
 
 static float bt_mesh_sqrt(float square)
 {
-    float root, last, diff;
+    float root = 0.0, last = 0.0, diff = 0.0;
 
     root = square / 3.0;
     diff = 1;

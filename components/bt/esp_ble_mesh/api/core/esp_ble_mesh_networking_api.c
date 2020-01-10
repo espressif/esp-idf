@@ -36,17 +36,17 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     uint8_t op_len = 0, mic_len = 0;
     uint8_t *msg_data = NULL;
     btc_msg_t msg = {0};
-    esp_err_t status;
+    esp_err_t status = ESP_OK;
 
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     if (ctx && ctx->addr == ESP_BLE_MESH_ADDR_UNASSIGNED) {
-        LOG_ERROR("%s, Invalid destination address 0x0000", __func__);
+        BT_ERR("%s, Invalid destination address 0x0000", __func__);
         return ESP_ERR_INVALID_ARG;
     }
 
     if (device_role > ROLE_FAST_PROV) {
-        LOG_ERROR("%s, Invalid device role 0x%02x", __func__, device_role);
+        BT_ERR("%s, Invalid device role 0x%02x", __func__, device_role);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -65,7 +65,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
 
     if (act == BTC_BLE_MESH_ACT_MODEL_PUBLISH) {
         if (op_len + length > model->pub->msg->size) {
-            LOG_ERROR("%s, Model publication msg size %d is too small", __func__, model->pub->msg->size);
+            BT_ERR("%s, Model publication msg size %d is too small", __func__, model->pub->msg->size);
             return ESP_ERR_INVALID_ARG;
         }
     }
@@ -77,7 +77,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     }
 
     if (op_len + length + mic_len > MIN(ESP_BLE_MESH_SDU_MAX_LEN, ESP_BLE_MESH_TX_SDU_MAX)) {
-        LOG_ERROR("%s, Data length %d is too large", __func__, length);
+        BT_ERR("%s, Data length %d is too large", __func__, length);
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -128,7 +128,7 @@ esp_err_t esp_ble_mesh_register_custom_model_callback(esp_ble_mesh_model_cb_t ca
 
 esp_err_t esp_ble_mesh_model_msg_opcode_init(uint8_t *data, uint32_t opcode)
 {
-    uint16_t val;
+    uint16_t val = 0;
 
     if (data == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -379,7 +379,7 @@ esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
 
     msg.sig = BTC_SIG_API_CALL;
     msg.pid = BTC_PID_PROV;
-    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_APP_KEY;
 
     arg.add_local_app_key.net_idx = net_idx;
     arg.add_local_app_key.app_idx = app_idx;
@@ -388,6 +388,29 @@ esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16],
     } else {
         bzero(arg.add_local_app_key.app_key, 16);
     }
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_update_local_app_key(const uint8_t app_key[16],
+            uint16_t net_idx, uint16_t app_idx)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (app_key == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_APP_KEY;
+
+    memcpy(arg.update_local_app_key.app_key, app_key, 16);
+    arg.update_local_app_key.net_idx = net_idx;
+    arg.update_local_app_key.app_idx = app_idx;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
@@ -442,6 +465,27 @@ esp_err_t esp_ble_mesh_provisioner_add_local_net_key(const uint8_t net_key[16], 
     } else {
         bzero(arg.add_local_net_key.net_key, 16);
     }
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_update_local_net_key(const uint8_t net_key[16], uint16_t net_idx)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (net_key == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_NET_KEY;
+
+    memcpy(arg.update_local_net_key.net_key, net_key, 16);
+    arg.update_local_net_key.net_idx = net_idx;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

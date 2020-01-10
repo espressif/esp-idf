@@ -101,11 +101,15 @@ struct bt_mesh_app_key *bt_mesh_provisioner_app_key_find(u16_t app_idx);
 
 int bt_mesh_provisioner_local_app_key_add(const u8_t app_key[16], u16_t net_idx, u16_t *app_idx);
 
+int bt_mesh_provisioner_local_app_key_update(const u8_t app_key[16], u16_t net_idx, u16_t app_idx);
+
 const u8_t *bt_mesh_provisioner_local_app_key_get(u16_t net_idx, u16_t app_idx);
 
 int bt_mesh_provisioner_local_app_key_delete(u16_t net_idx, u16_t app_idx);
 
 int bt_mesh_provisioner_local_net_key_add(const u8_t net_key[16], u16_t *net_idx);
+
+int bt_mesh_provisioner_local_net_key_update(const u8_t net_key[16], u16_t net_idx);
 
 const u8_t *bt_mesh_provisioner_local_net_key_get(u16_t net_idx);
 

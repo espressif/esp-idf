@@ -36,8 +36,8 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
                       u8_t flags, u32_t iv_index, u16_t addr,
                       const u8_t dev_key[16])
 {
-    bool pb_gatt_enabled;
-    int err;
+    bool pb_gatt_enabled = false;
+    int err = 0;
 
     BT_INFO("Primary Element: 0x%04x", addr);
     BT_INFO("net_idx 0x%04x flags 0x%02x iv_index 0x%04x",
@@ -235,7 +235,7 @@ static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 int bt_mesh_suspend(void)
 {
-    int err;
+    int err = 0;
 
     if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
         return -EINVAL;
@@ -277,7 +277,7 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 int bt_mesh_resume(void)
 {
-    int err;
+    int err = 0;
 
     if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
         return -EINVAL;
@@ -306,7 +306,7 @@ int bt_mesh_resume(void)
 int bt_mesh_init(const struct bt_mesh_prov *prov,
                  const struct bt_mesh_comp *comp)
 {
-    int err;
+    int err = 0;
 
     bt_mesh_k_init();
 
@@ -378,7 +378,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
 int bt_mesh_deinit(void)
 {
-    int err;
+    int err = 0;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV)) {
@@ -513,7 +513,7 @@ int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
 
 int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 {
-    int err;
+    int err = 0;
 
     if (bt_mesh_is_provisioner_en()) {
         BT_WARN("%s, Already", __func__);
@@ -543,7 +543,7 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 
 int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
 {
-    bt_mesh_prov_bearer_t enable;
+    bt_mesh_prov_bearer_t enable = 0U;
 
     if (!bt_mesh_is_provisioner_en()) {
         BT_WARN("%s, Already", __func__);

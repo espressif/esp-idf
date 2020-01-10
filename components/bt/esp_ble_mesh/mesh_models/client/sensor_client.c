@@ -84,7 +84,7 @@ static void timeout_handler(struct k_work *work)
     struct k_delayed_work *timer = NULL;
     bt_mesh_client_node_t *node = NULL;
     struct bt_mesh_msg_ctx ctx = {0};
-    u32_t opcode;
+    u32_t opcode = 0U;
 
     BT_WARN("Receive sensor status message timeout");
 
@@ -115,7 +115,7 @@ static void sensor_status(struct bt_mesh_model *model,
     bt_mesh_client_node_t *node = NULL;
     u8_t *val = NULL;
     u8_t evt = 0xFF;
-    size_t len = 0;
+    size_t len = 0U;
 
     BT_DBG("%s, len %d, bytes %s", __func__, buf->len, bt_hex(buf->data, buf->len));
 
@@ -364,7 +364,7 @@ static int sensor_act_state(bt_mesh_client_common_param_t *common,
                             void *value, u16_t value_len, bool need_ack)
 {
     struct net_buf_simple *msg = NULL;
-    int err;
+    int err = 0;
 
     msg = bt_mesh_alloc_buf(value_len);
     if (!msg) {
@@ -471,7 +471,7 @@ end:
 int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void *get, void *status)
 {
     bt_mesh_sensor_client_t *client = NULL;
-    u16_t length = 0;
+    u16_t length = 0U;
 
     if (!common || !common->model || !get) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -536,7 +536,7 @@ int bt_mesh_sensor_client_get_state(bt_mesh_client_common_param_t *common, void 
 int bt_mesh_sensor_client_set_state(bt_mesh_client_common_param_t *common, void *set, void *status)
 {
     bt_mesh_sensor_client_t *client = NULL;
-    u16_t length = 0;
+    u16_t length = 0U;
     bool need_ack = false;
 
     if (!common || !common->model || !set) {

@@ -171,8 +171,8 @@ struct node_info {
 
 static int role_set(const char *name)
 {
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -193,8 +193,8 @@ static int role_set(const char *name)
 static int net_set(const char *name)
 {
     struct net_val net = {0};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -222,8 +222,8 @@ static int net_set(const char *name)
 static int iv_set(const char *name)
 {
     struct iv_val iv = {0};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -252,8 +252,8 @@ static int iv_set(const char *name)
 static int seq_set(const char *name)
 {
     struct seq_val seq = {0};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -319,8 +319,8 @@ static int rpl_set(const char *name)
     struct bt_mesh_rpl *entry = NULL;
     struct rpl_val rpl = {0};
     char get[16] = {'\0'};
-    size_t length;
-    bool exist;
+    bool exist = false;
+    size_t length = 0U;
     int err = 0;
     int i;
 
@@ -389,8 +389,8 @@ static int net_key_set(const char *name)
     struct bt_mesh_subnet *sub = NULL;
     struct net_key_val key = {0};
     char get[16] = {'\0'};
-    size_t length;
-    bool exist;
+    bool exist = false;
+    size_t length = 0U;
     int err = 0;
     int i;
 
@@ -447,8 +447,8 @@ static int app_key_set(const char *name)
     struct net_buf_simple *buf = NULL;
     struct app_key_val key = {0};
     char get[16] = {'\0'};
-    size_t length;
-    bool exist;
+    bool exist = false;
+    size_t length = 0U;
     int err = 0;
     int i;
 
@@ -511,8 +511,8 @@ static int hb_pub_set(const char *name)
 {
     struct bt_mesh_hb_pub *hb_pub = bt_mesh_hb_pub_get();
     struct hb_pub_val hb_val = {0};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -556,8 +556,8 @@ static int cfg_set(const char *name)
 {
     struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
     struct cfg_val val = {0};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -587,8 +587,9 @@ static int cfg_set(const char *name)
 static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key)
 {
     char name[16] = {'\0'};
-    bool exist;
-    int i, err;
+    bool exist = false;
+    int err = 0;
+    int i;
 
     /* Start with empty array regardless of cleared or set value */
     for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
@@ -608,8 +609,9 @@ static int model_set_bind(bool vnd, struct bt_mesh_model *model, u16_t model_key
 static int model_set_sub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
 {
     char name[16] = {'\0'};
-    bool exist;
-    int i, err;
+    bool exist = false;
+    int err = 0;
+    int i;
 
     /* Start with empty array regardless of cleared or set value */
     for (i = 0; i < ARRAY_SIZE(model->groups); i++) {
@@ -630,8 +632,8 @@ static int model_set_pub(bool vnd, struct bt_mesh_model *model, u16_t model_key)
 {
     struct mod_pub_val pub = {0};
     char name[16] = {'\0'};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     if (!model->pub) {
         BT_WARN("%s, Model has no publication context", __func__);
@@ -674,8 +676,8 @@ static int model_set(bool vnd, const char *name)
 {
     struct bt_mesh_model *model = NULL;
     struct net_buf_simple *buf = NULL;
-    u8_t elem_idx, model_idx;
-    size_t length;
+    u8_t elem_idx = 0U, model_idx = 0U;
+    size_t length = 0U;
     int err = 0;
     int i;
 
@@ -741,11 +743,11 @@ static int va_set(const char *name)
     struct net_buf_simple *buf = NULL;
     struct va_val va = {0};
     char get[16] = {'\0'};
-    struct label *lab;
-    size_t length;
-    bool exist;
+    struct label *lab = NULL;
+    size_t length = 0U;
+    bool exist = false;
     int err = 0;
-    u16_t i;
+    int i;
 
     BT_DBG("%s", __func__);
 
@@ -756,7 +758,7 @@ static int va_set(const char *name)
 
     length = buf->len;
 
-    for (i = 0U; i < length / SETTINGS_ITEM_SIZE; i++) {
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t index = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/va/%04x", index);
 
@@ -799,8 +801,8 @@ free:
 static int p_prov_set(const char *name)
 {
     struct prov_info val = {0};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -824,9 +826,9 @@ static int p_prov_set(const char *name)
 
 static int p_net_idx_set(const char *name)
 {
-    u16_t net_idx;
-    bool exist;
-    int err;
+    u16_t net_idx = 0U;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -849,9 +851,9 @@ static int p_net_idx_set(const char *name)
 
 static int p_app_idx_set(const char *name)
 {
-    u16_t app_idx;
-    bool exist;
-    int err;
+    u16_t app_idx = 0U;
+    bool exist = false;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -873,9 +875,9 @@ static int p_app_idx_set(const char *name)
 
 static struct bt_mesh_subnet *p_subnet_alloc(void)
 {
-    size_t i;
+    int i;
 
-    for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
         if (bt_mesh.p_sub[i] == NULL) {
             bt_mesh.p_sub[i] = osi_calloc(sizeof(struct bt_mesh_subnet));
             if (!bt_mesh.p_sub[i]) {
@@ -892,9 +894,9 @@ static struct bt_mesh_subnet *p_subnet_alloc(void)
 
 static struct bt_mesh_app_key *p_appkey_alloc(void)
 {
-    size_t i;
+    int i;
 
-    for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
         if (bt_mesh.p_app_keys[i] == NULL) {
             bt_mesh.p_app_keys[i] = osi_calloc(sizeof(struct bt_mesh_app_key));
             if (!bt_mesh.p_app_keys[i]) {
@@ -915,10 +917,10 @@ static int p_net_key_set(const char *name)
     struct bt_mesh_subnet *sub = NULL;
     struct net_key_val key = {0};
     char get[16] = {'\0'};
-    size_t length;
-    bool exist;
+    size_t length = 0U;
+    bool exist = false;
     int err = 0;
-    size_t i;
+    int i;
 
     BT_DBG("%s", __func__);
 
@@ -929,7 +931,7 @@ static int p_net_key_set(const char *name)
 
     length = buf->len;
 
-    for (i = 0U; i < length / SETTINGS_ITEM_SIZE; i++) {
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t net_idx = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/pnk/%04x", net_idx);
 
@@ -953,12 +955,14 @@ static int p_net_key_set(const char *name)
             }
         }
 
-        BT_INFO("Restored NetKey Index 0x%03x", net_idx);
         sub->net_idx = net_idx;
         sub->kr_flag = key.kr_flag;
         sub->kr_phase = key.kr_phase;
         memcpy(sub->keys[0].net, &key.val[0], 16);
         memcpy(sub->keys[1].net, &key.val[1], 16);
+
+        BT_INFO("Restored NetIdx 0x%03x", sub->net_idx);
+        BT_INFO("Restored NetKey %s", bt_hex(sub->keys[0].net, 16));
     }
 
 free:
@@ -973,10 +977,10 @@ static int p_app_key_set(const char *name)
     struct net_buf_simple *buf = NULL;
     struct app_key_val key = {0};
     char get[16] = {'\0'};
-    size_t length;
-    bool exist;
+    size_t length = 0U;
+    bool exist = false;
     int err = 0;
-    size_t i;
+    int i;
 
     BT_DBG("%s", __func__);
 
@@ -987,7 +991,7 @@ static int p_app_key_set(const char *name)
 
     length = buf->len;
 
-    for (i = 0U; i < length / SETTINGS_ITEM_SIZE; i++) {
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t app_idx = net_buf_simple_pull_le16(buf);
         sprintf(get, "mesh/pak/%04x", app_idx);
 
@@ -1018,7 +1022,6 @@ static int p_app_key_set(const char *name)
             }
         }
 
-        BT_INFO("Restored AppKey Index 0x%03x", app_idx);
         app->net_idx = key.net_idx;
         app->app_idx = app_idx;
         app->updated = key.updated;
@@ -1026,6 +1029,9 @@ static int p_app_key_set(const char *name)
         memcpy(app->keys[1].val, key.val[1], 16);
         bt_mesh_app_id(app->keys[0].val, &app->keys[0].id);
         bt_mesh_app_id(app->keys[1].val, &app->keys[1].id);
+
+        BT_INFO("Restored AppIdx %03x, NetIdx 0x%03x", app->app_idx, app->net_idx);
+        BT_INFO("Restored AppKey %s", bt_hex(app->keys[0].val, 16));
     }
 
 free:
@@ -1038,7 +1044,7 @@ static int node_info_set(u16_t addr, bool prov, bool *exist)
     struct bt_mesh_node node = {0};
     struct node_info info = {0};
     char get[16] = {'\0'};
-    int err;
+    int err = 0;
 
     sprintf(get, prov ? "mesh/pn/%04x/i" : "mesh/sn/%04x/i", addr);
     err = bt_mesh_load_core_settings(get, (u8_t *)&info, sizeof(info), exist);
@@ -1077,8 +1083,8 @@ static int node_name_set(u16_t addr, bool prov)
 {
     char name[BLE_MESH_NODE_NAME_SIZE] = {0};
     char get[16] = {'\0'};
-    bool exist;
-    int err;
+    bool exist = false;
+    int err = 0;
 
     sprintf(get, prov ? "mesh/pn/%04x/n" : "mesh/sn/%04x/n", addr);
     err = bt_mesh_load_core_settings(get, (u8_t *)name, BLE_MESH_NODE_NAME_SIZE, &exist);
@@ -1106,7 +1112,7 @@ static int node_comp_data_set(u16_t addr, bool prov)
 {
     struct net_buf_simple *buf = NULL;
     char get[16] = {'\0'};
-    int err;
+    int err = 0;
 
     sprintf(get, prov ? "mesh/pn/%04x/c" : "mesh/sn/%04x/c", addr);
     buf = bt_mesh_get_core_settings_item(get);
@@ -1128,10 +1134,10 @@ static int node_comp_data_set(u16_t addr, bool prov)
 static int p_node_set(const char *name)
 {
     struct net_buf_simple *buf = NULL;
-    bool exist, prov;
-    size_t length;
+    bool exist = false, prov = false;
+    size_t length = 0U;
     int err = 0;
-    size_t i;
+    int i;
 
     buf = bt_mesh_get_core_settings_item(name);
     if (!buf) {
@@ -1141,7 +1147,7 @@ static int p_node_set(const char *name)
     prov = strcmp(name, "mesh/p_pnode") == 0 ? true : false;
     length = buf->len;
 
-    for (i = 0U; i < length / SETTINGS_ITEM_SIZE; i++) {
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
         u16_t addr = net_buf_simple_pull_le16(buf);
         if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
             BT_ERR("%s, 0x%04x is not a unicast address", __func__, addr);
@@ -1222,11 +1228,11 @@ const struct bt_mesh_setting {
  */
 int settings_core_load(void)
 {
-    size_t i;
+    int i;
 
     BT_DBG("%s", __func__);
 
-    for (i = 0U; i < ARRAY_SIZE(settings); i++) {
+    for (i = 0; i < ARRAY_SIZE(settings); i++) {
         if ((!strcmp(settings[i].name, "mesh/net") ||
             !strcmp(settings[i].name, "mesh/netkey") ||
             !strcmp(settings[i].name, "mesh/appkey") ||
@@ -1269,7 +1275,7 @@ int settings_core_load(void)
 
 static int subnet_init(struct bt_mesh_subnet *sub)
 {
-    int err;
+    int err = 0;
 
     err = bt_mesh_net_keys_create(&sub->keys[0], sub->keys[0].net);
     if (err) {
@@ -1314,8 +1320,8 @@ static void commit_model(struct bt_mesh_model *model, struct bt_mesh_elem *elem,
 int settings_core_commit(void)
 {
     struct bt_mesh_subnet *sub = NULL;
-    size_t i;
-    int err;
+    int err = 0;
+    int i;
 
 #if defined(CONFIG_BLE_MESH_NODE)
     if (bt_mesh_is_node()) {
@@ -1330,7 +1336,7 @@ int settings_core_commit(void)
             bt_mesh_proxy_prov_disable(true);
         }
 
-        for (i = 0U; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+        for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
             sub = &bt_mesh.sub[i];
 
             if (sub->net_idx == BLE_MESH_KEY_UNUSED) {
@@ -1356,7 +1362,7 @@ int settings_core_commit(void)
 
         bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
 
-        for (i = 0U; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
+        for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
             sub = bt_mesh.p_sub[i];
 
             if (sub == NULL || sub->net_idx == BLE_MESH_KEY_UNUSED) {
@@ -1428,7 +1434,7 @@ int settings_core_commit(void)
 
 static void schedule_store(int flag)
 {
-    s32_t timeout, remaining;
+    s32_t timeout = 0, remaining = 0;
 
     bt_mesh_atomic_set_bit(bt_mesh.flags, flag);
 
@@ -1541,7 +1547,7 @@ static void store_rpl(struct bt_mesh_rpl *entry)
 {
     struct rpl_val rpl = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     BT_DBG("src 0x%04x seq 0x%06x old_iv %u", entry->src, entry->seq, entry->old_iv);
 
@@ -1567,8 +1573,8 @@ static void clear_rpl(void)
 {
     struct net_buf_simple *buf = NULL;
     char name[16] = {'\0'};
-    size_t length;
-    u16_t src;
+    size_t length = 0U;
+    u16_t src = 0U;
     int i;
 
     BT_DBG("%s", __func__);
@@ -1662,7 +1668,7 @@ static void clear_cfg(void)
 static void clear_app_key(u16_t app_idx)
 {
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     BT_DBG("AppKeyIndex 0x%03x", app_idx);
 
@@ -1680,7 +1686,7 @@ static void clear_app_key(u16_t app_idx)
 static void clear_net_key(u16_t net_idx)
 {
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     BT_DBG("NetKeyIndex 0x%03x", net_idx);
 
@@ -1699,7 +1705,7 @@ static void store_net_key(struct bt_mesh_subnet *sub)
 {
     struct net_key_val key = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     BT_DBG("NetKeyIndex 0x%03x NetKey %s", sub->net_idx,
            bt_hex(sub->keys[0].net, 16));
@@ -1728,7 +1734,7 @@ static void store_app_key(struct bt_mesh_app_key *app)
 {
     struct app_key_val key = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     key.net_idx = app->net_idx;
     key.updated = app->updated;
@@ -1794,8 +1800,8 @@ static void store_pending_keys(void)
 static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key;
-    int err;
+    u16_t model_key = 0U;
+    int err = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
 
@@ -1825,8 +1831,8 @@ static void store_pending_mod_bind(struct bt_mesh_model *model, bool vnd)
 static void store_pending_mod_sub(struct bt_mesh_model *model, bool vnd)
 {
     char name[16] = {'\0'};
-    u16_t model_key;
-    int err;
+    u16_t model_key = 0U;
+    int err = 0;
 
     model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
 
@@ -1857,8 +1863,8 @@ static void store_pending_mod_pub(struct bt_mesh_model *model, bool vnd)
 {
     struct mod_pub_val pub = {0};
     char name[16] = {'\0'};
-    u16_t model_key;
-    int err;
+    u16_t model_key = 0U;
+    int err = 0;
 
     if (!model->pub) {
         BT_WARN("%s, No model publication to store", __func__);
@@ -1927,9 +1933,9 @@ static void store_pending_va(void)
 {
     struct va_val va = {0};
     char name[16] = {'\0'};
-    struct label *lab;
-    u16_t i;
-    int err;
+    struct label *lab = NULL;
+    u16_t i = 0U;
+    int err = 0;
 
     for (i = 0U; (lab = get_label(i)) != NULL; i++) {
         if (!bt_mesh_atomic_test_and_clear_bit(lab->flags,
@@ -2260,7 +2266,7 @@ void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
 static void clear_p_net_key(u16_t net_idx)
 {
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     sprintf(name, "mesh/pnk/%04x", net_idx);
     bt_mesh_save_core_settings(name, NULL, 0);
@@ -2274,7 +2280,7 @@ static void clear_p_net_key(u16_t net_idx)
 static void clear_p_app_key(u16_t app_idx)
 {
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     sprintf(name, "mesh/pak/%04x", app_idx);
     bt_mesh_save_core_settings(name, NULL, 0);
@@ -2289,7 +2295,7 @@ static void store_p_net_key(struct bt_mesh_subnet *sub)
 {
     struct net_key_val key = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     memcpy(&key.val[0], sub->keys[0].net, 16);
     memcpy(&key.val[1], sub->keys[1].net, 16);
@@ -2313,7 +2319,7 @@ static void store_p_app_key(struct bt_mesh_app_key *app)
 {
     struct app_key_val key = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     key.net_idx = app->net_idx;
     key.updated = app->updated;
@@ -2412,7 +2418,7 @@ void bt_mesh_clear_p_app_key(struct bt_mesh_app_key *key)
 void bt_mesh_clear_rpl_single(u16_t src)
 {
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
         BT_ERR("%s, Invalid source address 0x%04x", __func__, src);
@@ -2432,7 +2438,7 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov)
 {
     struct node_info val = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     if (node == NULL) {
         BT_ERR("%s, Invalid node", __func__);
@@ -2466,7 +2472,7 @@ void bt_mesh_store_node_info(struct bt_mesh_node *node, bool prov)
 static void clear_node(u16_t addr, bool prov)
 {
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     /* Clear node information */
     sprintf(name, prov ? "mesh/pn/%04x/i" : "mesh/sn/%04x/i", addr);
@@ -2502,7 +2508,7 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node, bool prov)
 {
     char node_name[BLE_MESH_NODE_NAME_SIZE] = {0};
     char name[16] = {'\0'};
-    int err;
+    int err = 0;
 
     if (node == NULL) {
         BT_ERR("%s, Invalid node", __func__);
@@ -2522,7 +2528,7 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node, bool prov)
 {
     char name[16] = {'\0'};
     u8_t *data = NULL;
-    int err;
+    int err = 0;
 
     if (node == NULL) {
         BT_ERR("%s, Invalid node", __func__);

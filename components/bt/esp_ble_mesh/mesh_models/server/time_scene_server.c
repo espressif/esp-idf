@@ -168,8 +168,8 @@ static void time_get(struct bt_mesh_model *model,
 {
     struct bt_mesh_server_rsp_ctrl *rsp_ctrl = NULL;
     u8_t zero[5] = {0};
-    u16_t opcode, val;
-    u8_t prev_ttl;
+    u16_t opcode = 0U, val = 0U;
+    u8_t prev_ttl = 0U;
 
     if (model->user_data == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -316,8 +316,8 @@ static void time_set(struct bt_mesh_model *model,
 {
     struct bt_mesh_time_setup_srv *srv = model->user_data;
     bt_mesh_time_scene_server_state_change_t change = {0};
-    u16_t opcode, val;
-    u8_t role;
+    u16_t opcode = 0U, val = 0U;
+    u8_t role = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -501,8 +501,8 @@ static void send_scene_register_status(struct bt_mesh_model *model,
     struct bt_mesh_scene_setup_srv *srv = model->user_data;
     struct scene_register *scene = NULL;
     struct net_buf_simple *msg = NULL;
-    u16_t total_len = 9;
-    u16_t i;
+    u16_t total_len = 9U;
+    int i;
 
     if (ctx == NULL && publish == false) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -526,7 +526,7 @@ static void send_scene_register_status(struct bt_mesh_model *model,
     net_buf_simple_add_u8(msg, status_code);
     net_buf_simple_add_le16(msg, srv->state->current_scene);
 
-    for (i = 0U; i < srv->state->scene_count; i++) {
+    for (i = 0; i < srv->state->scene_count; i++) {
         scene = &srv->state->scenes[i];
         if (scene->scene_number != INVALID_SCENE_NUMBER) {
             total_len += SCENE_NUMBER_LEN;
@@ -602,11 +602,11 @@ static void scene_recall(struct bt_mesh_model *model,
 {
     struct bt_mesh_scene_srv *srv = model->user_data;
     struct scene_register *scene = NULL;
-    u8_t tid, trans_time, delay;
-    u16_t scene_number;
-    bool optional;
-    s64_t now;
-    u16_t i;
+    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    u16_t scene_number = 0U;
+    bool optional = false;
+    s64_t now = 0;
+    int i;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -637,7 +637,7 @@ static void scene_recall(struct bt_mesh_model *model,
         return;
     }
 
-    for (i = 0U; i < srv->state->scene_count; i++) {
+    for (i = 0; i < srv->state->scene_count; i++) {
         scene = &srv->state->scenes[i];
         if (scene->scene_number == scene_number) {
             break;
@@ -734,8 +734,8 @@ static void scene_action(struct bt_mesh_model *model,
 {
     struct bt_mesh_scene_setup_srv *srv = model->user_data;
     struct scene_register *scene = NULL;
-    u16_t scene_number;
-    u16_t i;
+    u16_t scene_number = 0U;
+    int i;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -760,7 +760,7 @@ static void scene_action(struct bt_mesh_model *model,
             return;
         }
         /* Try to find a matching Scene Number */
-        for (i = 0U; i < srv->state->scene_count; i++) {
+        for (i = 0; i < srv->state->scene_count; i++) {
             scene = &srv->state->scenes[i];
             if (scene->scene_number == scene_number) {
                 srv->state->status_code = SCENE_SUCCESS;
@@ -771,7 +771,7 @@ static void scene_action(struct bt_mesh_model *model,
         /* Try to find a unset entry if no matching Scene Number is found */
         if (i == srv->state->scene_count) {
             BT_DBG("%s, No matching Scene Number 0x%04x found", __func__, scene_number);
-            for (i = 0U; i < srv->state->scene_count; i++) {
+            for (i = 0; i < srv->state->scene_count; i++) {
                 scene = &srv->state->scenes[i];
                 if (scene->scene_number == INVALID_SCENE_NUMBER) {
                     scene->scene_number = scene_number;
@@ -825,7 +825,7 @@ static void scene_action(struct bt_mesh_model *model,
                 BTC_BLE_MESH_EVT_TIME_SCENE_SERVER_RECV_SET_MSG, model, ctx, (const u8_t *)&set, sizeof(set));
             return;
         }
-        for (i = 0U; i < srv->state->scene_count; i++) {
+        for (i = 0; i < srv->state->scene_count; i++) {
             scene = &srv->state->scenes[i];
             if (scene->scene_number == scene_number) {
                 scene->scene_number = INVALID_SCENE_NUMBER;
@@ -863,7 +863,7 @@ static void scene_action(struct bt_mesh_model *model,
                     break;
                 }
             }
-            if (i == 0U) {
+            if (i == 0) {
                 /* A value of 0x0000 when no scene is active */
                 srv->state->current_scene = INVALID_SCENE_NUMBER;
             }
@@ -934,10 +934,10 @@ static void scene_action(struct bt_mesh_model *model,
 
 static u16_t get_schedule_reg_bit(struct bt_mesh_scheduler_state *state)
 {
-    u16_t val = 0;
-    u8_t i;
+    u16_t val = 0U;
+    int i;
 
-    for (i = 0U; i < state->schedule_count; i++) {
+    for (i = 0; i < state->schedule_count; i++) {
         if (state->schedules[i].in_use) {
             val |= (1 << i);
         }
@@ -949,7 +949,7 @@ static u16_t get_schedule_reg_bit(struct bt_mesh_scheduler_state *state)
 static u64_t get_schedule_reg_state(struct bt_mesh_scheduler_state *state, u8_t index)
 {
     struct schedule_register *reg = &state->schedules[index];
-    u64_t val;
+    u64_t val = 0U;
 
     val  = ((u64_t)(reg->year) << 4) | index;
     val |= ((u64_t)(reg->day) << 23) | ((u64_t)(reg->month) << 11);
@@ -965,7 +965,7 @@ static void send_scheduler_act_status(struct bt_mesh_model *model,
                                       u8_t index)
 {
     NET_BUF_SIMPLE_DEFINE(msg, 1 + 10 + BLE_MESH_SERVER_TRANS_MIC_SIZE);
-    u64_t value;
+    u64_t value = 0U;
 
     bt_mesh_model_msg_init(&msg, BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS);
     switch (model->id) {
@@ -1059,9 +1059,10 @@ static void scheduler_act_set(struct bt_mesh_model *model,
      * queue.
      */
     struct bt_mesh_scheduler_setup_srv *srv = model->user_data;
-    u8_t index, year, day, hour, minute, second, day_of_week, action, trans_time;
-    u16_t month, scene_number;
-    u64_t value;
+    u8_t index = 0U, year = 0U, day = 0U, hour = 0U, minute = 0U,
+         second = 0U, day_of_week = 0U, action = 0U, trans_time = 0U;
+    u16_t month = 0U, scene_number = 0U;
+    u64_t value = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1213,14 +1214,14 @@ const struct bt_mesh_model_op scheduler_setup_srv_op[] = {
 
 static int check_scene_server_init(struct bt_mesh_scenes_state *state)
 {
-    u16_t i;
+    int i;
 
     if (state->scene_count == 0U || state->scenes == NULL) {
         BT_ERR("%s, Invalid Scene state", __func__);
         return -EINVAL;
     }
 
-    for (i = 0U; i < state->scene_count; i++) {
+    for (i = 0; i < state->scene_count; i++) {
         if (state->scenes[i].scene_value == NULL) {
             BT_ERR("%s, Invalid Scene value, index %d", __func__, i);
             return -EINVAL;

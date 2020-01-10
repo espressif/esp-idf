@@ -761,8 +761,10 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_PROV_INPUT_STRING_COMP_EVT,        /*!< Provisioner input string completion event */
     ESP_BLE_MESH_PROVISIONER_SET_NODE_NAME_COMP_EVT,            /*!< Provisioner set node name completion event */
     ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT,        /*!< Provisioner add local app key completion event */
+    ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_APP_KEY_COMP_EVT,     /*!< Provisioner update local app key completion event */
     ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT,    /*!< Provisioner bind local model with local app key completion event */
     ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT,        /*!< Provisioner add local network key completion event */
+    ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_NET_KEY_COMP_EVT,     /*!< Provisioner update local network key completion event */
     ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT,     /*!< Provisioner store node composition data completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT,    /*!< Provisioner delete node with uuid completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT,    /*!< Provisioner delete node with unicast address completion event */
@@ -1050,6 +1052,14 @@ typedef union {
         uint16_t app_idx;                       /*!< AppKey Index */
     } provisioner_add_app_key_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_APP_KEY_COMP_EVT */
     /**
+     * @brief ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_APP_KEY_COMP_EVT
+     */
+    struct ble_mesh_provisioner_update_local_app_key_comp_param {
+        int err_code;                           /*!< Indicate the result of updating local AppKey by the Provisioner */
+        uint16_t net_idx;                       /*!< NetKey Index */
+        uint16_t app_idx;                       /*!< AppKey Index */
+    } provisioner_update_app_key_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_APP_KEY_COMP_EVT */
+    /**
      * @brief ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT
      */
     struct ble_mesh_provisioner_bind_local_mod_app_comp_param {
@@ -1066,6 +1076,13 @@ typedef union {
         int err_code;                           /*!< Indicate the result of adding local NetKey by the Provisioner */
         uint16_t net_idx;                       /*!< NetKey Index */
     } provisioner_add_net_key_comp;             /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_ADD_LOCAL_NET_KEY_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_NET_KEY_COMP_EVT
+     */
+    struct ble_mesh_provisioner_update_local_net_key_comp_param {
+        int err_code;                           /*!< Indicate the result of updating local NetKey by the Provisioner */
+        uint16_t net_idx;                       /*!< NetKey Index */
+    } provisioner_update_net_key_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_NET_KEY_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT
      */

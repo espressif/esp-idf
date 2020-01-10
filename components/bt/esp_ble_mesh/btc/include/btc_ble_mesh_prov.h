@@ -45,9 +45,11 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_SET_STATIC_OOB_VAL,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_PRIMARY_ELEM_ADDR,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_NODE_NAME,
-    BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_APP_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_APP_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP,
     BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_NET_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR,
@@ -155,6 +157,11 @@ typedef union {
         uint16_t net_idx;
         uint16_t app_idx;
     } add_local_app_key;
+    struct ble_mesh_provisioner_update_local_app_key_args {
+        uint8_t app_key[16];
+        uint16_t net_idx;
+        uint16_t app_idx;
+    } update_local_app_key;
     struct ble_mesh_provisioner_bind_local_mod_app_args {
         uint16_t elem_addr;
         uint16_t model_id;
@@ -165,6 +172,10 @@ typedef union {
         uint8_t net_key[16];
         uint16_t net_idx;
     } add_local_net_key;
+    struct ble_mesh_provisioner_update_local_net_key_args {
+        uint8_t net_key[16];
+        uint16_t net_idx;
+    } update_local_net_key;
     struct ble_mesh_provisioner_store_node_comp_data_args {
         uint16_t unicast_addr;
         uint16_t length;

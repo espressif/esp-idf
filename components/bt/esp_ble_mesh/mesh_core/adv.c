@@ -20,6 +20,7 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ADV)
 
 #include "mesh.h"
+#include "mesh_hci.h"
 #include "adv.h"
 #include "beacon.h"
 #include "prov.h"
@@ -120,9 +121,9 @@ static inline int adv_send(struct net_buf *buf)
     const struct bt_mesh_send_cb *cb = BLE_MESH_ADV(buf)->cb;
     void *cb_data = BLE_MESH_ADV(buf)->cb_data;
     struct bt_mesh_adv_param param = {0};
-    u16_t duration, adv_int;
+    u16_t duration = 0U, adv_int = 0U;
     struct bt_mesh_adv_data ad = {0};
-    int err;
+    int err = 0;
 
 #if 0
     adv_int = MAX(adv_int_min,
@@ -175,10 +176,10 @@ static inline int adv_send(struct net_buf *buf)
 static void adv_thread(void *p)
 {
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
-    QueueSetMemberHandle_t handle;
+    QueueSetMemberHandle_t handle = NULL;
 #endif
     bt_mesh_msg_t msg = {0};
-    struct net_buf **buf;
+    struct net_buf **buf = NULL;
 
     buf = (struct net_buf **)(&msg.arg);
 
@@ -214,7 +215,7 @@ static void adv_thread(void *p)
             }
         } else {
             while (!(*buf)) {
-                s32_t timeout;
+                s32_t timeout = 0;
                 BT_DBG("Mesh Proxy Advertising start");
                 timeout = bt_mesh_proxy_adv_start();
                 BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
@@ -281,8 +282,8 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
         enum bt_mesh_adv_type type,
         u8_t xmit, s32_t timeout)
 {
-    struct bt_mesh_adv *adv;
-    struct net_buf *buf;
+    struct bt_mesh_adv *adv = NULL;
+    struct net_buf *buf = NULL;
 
     if (bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_SUSPENDED)) {
         BT_WARN("Refusing to allocate buffer while suspended");
@@ -310,14 +311,14 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 
 void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool)
 {
-    size_t i;
+    int i;
 
     if (pool == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    for (i = 0U; i < pool->buf_count; i++) {
+    for (i = 0; i < pool->buf_count; i++) {
         struct net_buf *buf = &pool->__bufs[i];
         if (buf->ref > 1U) {
             buf->ref = 1U;
@@ -359,7 +360,7 @@ void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
 
 static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
 {
-    struct net_buf *buf;
+    struct net_buf *buf = NULL;
 
     if (msg->arg) {
         buf = (struct net_buf *)msg->arg;
@@ -415,7 +416,7 @@ void bt_mesh_adv_update(void)
 static bool ignore_relay_packet(u32_t timestamp)
 {
     u32_t now = k_uptime_get_32();
-    u32_t interval;
+    u32_t interval = 0U;
 
     if (now >= timestamp) {
         interval = now - timestamp;
@@ -440,7 +441,7 @@ struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, u8_t xmit,
 
 static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
 {
-    QueueSetMemberHandle_t handle;
+    QueueSetMemberHandle_t handle = NULL;
     bt_mesh_msg_t old_msg = {0};
 
     BT_DBG("%s", __func__);
@@ -513,7 +514,7 @@ const bt_mesh_addr_t *bt_mesh_pba_get_addr(void)
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
 static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
 {
-    u8_t flags;
+    u8_t flags = 0U;
 
     if (buf->len != 1U) {
         BT_DBG("%s, Unexpected flags length", __func__);
@@ -525,6 +526,7 @@ static bool bt_mesh_is_adv_flags_valid(struct net_buf_simple *buf)
     BT_DBG("Received adv pkt with flags: 0x%02x", flags);
 
     /* Flags context will not be checked curently */
+    ((void) flags);
 
     return true;
 }
@@ -564,7 +566,7 @@ static bool bt_mesh_is_adv_srv_uuid_valid(struct net_buf_simple *buf, u16_t *uui
 
 static void bt_mesh_adv_srv_data_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, u16_t uuid, s8_t rssi)
 {
-    u16_t type;
+    u16_t type = 0U;
 
     if (!buf || !addr) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -614,7 +616,7 @@ static void bt_mesh_scan_cb(const bt_mesh_addr_t *addr, s8_t rssi,
 {
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-    u16_t uuid = 0x0;
+    u16_t uuid = 0U;
 #endif
 
     if (adv_type != BLE_MESH_ADV_NONCONN_IND && adv_type != BLE_MESH_ADV_IND) {
@@ -744,7 +746,7 @@ void bt_mesh_adv_deinit(void)
 
 int bt_mesh_scan_enable(void)
 {
-    int err;
+    int err = 0;
 
     struct bt_mesh_scan_param scan_param = {
         .type       = BLE_MESH_SCAN_PASSIVE,
@@ -770,7 +772,7 @@ int bt_mesh_scan_enable(void)
 
 int bt_mesh_scan_disable(void)
 {
-    int err;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 

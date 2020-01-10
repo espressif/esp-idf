@@ -132,9 +132,9 @@ static void gen_onoff_set(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_onoff_srv *srv = model->user_data;
-    u8_t tid, onoff, trans_time, delay;
-    bool optional;
-    s64_t now;
+    u8_t tid = 0U, onoff = 0U, trans_time = 0U, delay = 0U;
+    bool optional = false;
+    s64_t now = 0;
 
     if (srv == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -313,10 +313,10 @@ static void gen_level_set(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_level_srv *srv = model->user_data;
-    u8_t tid, trans_time, delay;
-    bool optional;
-    s16_t level;
-    s64_t now;
+    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    bool optional = false;
+    s16_t level = 0;
+    s64_t now = 0;
 
     if (srv == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -409,10 +409,10 @@ static void gen_delta_set(struct bt_mesh_model *model,
                           struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_level_srv *srv = model->user_data;
-    u8_t tid, trans_time, delay;
-    s32_t tmp32, delta;
-    bool optional;
-    s64_t now;
+    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    s32_t tmp32 = 0, delta = 0;
+    bool optional = false;
+    s64_t now = 0;
 
     if (srv == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -530,11 +530,11 @@ static void gen_move_set(struct bt_mesh_model *model,
                          struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_level_srv *srv = model->user_data;
-    u8_t tid, trans_time, delay;
-    bool optional;
-    s16_t delta;
-    s32_t tmp32;
-    s64_t now;
+    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    bool optional = false;
+    s16_t delta = 0;
+    s32_t tmp32 = 0;
+    s64_t now = 0;
 
     if (srv == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -717,7 +717,7 @@ static void gen_def_trans_time_set(struct bt_mesh_model *model,
                                    struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_def_trans_time_srv *srv = model->user_data;
-    u8_t trans_time;
+    u8_t trans_time = 0U;
 
     if (srv == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -874,7 +874,7 @@ static void gen_onpowerup_set(struct bt_mesh_model *model,
                               struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_power_onoff_setup_srv *srv = model->user_data;
-    u8_t onpowerup;
+    u8_t onpowerup = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1002,7 +1002,7 @@ static void gen_power_level_get(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_power_level_srv *srv = model->user_data;
-    u16_t opcode;
+    u16_t opcode = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1076,10 +1076,10 @@ static void gen_power_level_set(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_power_level_srv *srv = model->user_data;
-    u8_t tid, trans_time, delay;
-    bool optional;
-    u16_t power;
-    s64_t now;
+    u8_t tid = 0U, trans_time = 0U, delay = 0U;
+    bool optional = false;
+    u16_t power = 0U;
+    s64_t now = 0;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1187,7 +1187,7 @@ static void gen_power_default_set(struct bt_mesh_model *model,
                                   struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_power_level_setup_srv *srv = model->user_data;
-    u16_t power;
+    u16_t power = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1237,7 +1237,7 @@ static void gen_power_range_set(struct bt_mesh_model *model,
                                 struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_power_level_setup_srv *srv = model->user_data;
-    u16_t range_min, range_max;
+    u16_t range_min = 0U, range_max = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1403,7 +1403,7 @@ static void gen_location_get(struct bt_mesh_model *model,
                              struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_location_srv *srv = model->user_data;
-    u16_t opcode;
+    u16_t opcode = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1439,7 +1439,7 @@ static void gen_location_set(struct bt_mesh_model *model,
                              struct net_buf_simple *buf)
 {
     struct bt_mesh_gen_location_setup_srv *srv = model->user_data;
-    u16_t opcode;
+    u16_t opcode = 0U;
 
     if (srv == NULL || srv->state == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1552,9 +1552,9 @@ struct bt_mesh_generic_property *gen_get_user_property(struct bt_mesh_model *mod
         u16_t property_id)
 {
     struct bt_mesh_gen_user_prop_srv *srv = model->user_data;
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < srv->property_count; i++) {
+    for (i = 0; i < srv->property_count; i++) {
         if (srv->properties[i].id == property_id) {
             return &srv->properties[i];
         }
@@ -1569,7 +1569,7 @@ static void send_gen_user_prop_status(struct bt_mesh_model *model,
 {
     struct bt_mesh_generic_property *property = NULL;
     struct net_buf_simple *msg = NULL;
-    u16_t length;
+    u16_t length = 0U;
 
     if (property_id == BLE_MESH_INVALID_DEVICE_PROPERTY_ID) {
         BT_ERR("%s, Invalid User Property ID 0x%04x", __func__, property_id);
@@ -1690,8 +1690,8 @@ static void gen_user_prop_set(struct bt_mesh_model *model,
 {
     struct bt_mesh_gen_user_prop_srv *srv = model->user_data;
     struct bt_mesh_generic_property *property = NULL;
-    u16_t property_id;
-    u8_t expect_len;
+    u16_t property_id = 0U;
+    u8_t expect_len = 0U;
 
     if (srv == NULL || srv->property_count == 0U || srv->properties == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1756,9 +1756,9 @@ struct bt_mesh_generic_property *gen_get_admin_property(struct bt_mesh_model *mo
         u16_t property_id)
 {
     struct bt_mesh_gen_admin_prop_srv *srv = model->user_data;
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < srv->property_count; i++) {
+    for (i = 0; i < srv->property_count; i++) {
         if (srv->properties[i].id == property_id) {
             return &srv->properties[i];
         }
@@ -1773,7 +1773,7 @@ static void send_gen_admin_prop_status(struct bt_mesh_model *model,
 {
     struct bt_mesh_generic_property *property = NULL;
     struct net_buf_simple *msg = NULL;
-    u16_t length;
+    u16_t length = 0U;
 
     if (property_id == BLE_MESH_INVALID_DEVICE_PROPERTY_ID) {
         BT_ERR("%s, Invalid User Property ID 0x%04x", __func__, property_id);
@@ -1837,7 +1837,7 @@ static void gen_admin_prop_get(struct bt_mesh_model *model,
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
         bt_mesh_gen_server_recv_get_msg_t get = {0};
         const u8_t *param = NULL;
-        size_t len = 0;
+        size_t len = 0U;
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET) {
             get.admin_property_get.id = net_buf_simple_pull_le16(buf);
             param = (const u8_t *)&get;
@@ -1851,7 +1851,7 @@ static void gen_admin_prop_get(struct bt_mesh_model *model,
     switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTIES_GET: {
         struct net_buf_simple *msg = NULL;
-        u8_t i;
+        u8_t i = 0U;
         msg = bt_mesh_alloc_buf(1 + srv->property_count * 2 + BLE_MESH_SERVER_TRANS_MIC_SIZE);
         if (msg == NULL) {
             BT_ERR("%s, Failed to allocate memory", __func__);
@@ -1882,8 +1882,8 @@ static void gen_admin_prop_set(struct bt_mesh_model *model,
 {
     struct bt_mesh_gen_admin_prop_srv *srv = model->user_data;
     struct bt_mesh_generic_property *property = NULL;
-    u16_t property_id;
-    u8_t access;
+    u16_t property_id = 0U;
+    u8_t access = 0U;
 
     if (srv == NULL || srv->property_count == 0U || srv->properties == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -1944,9 +1944,9 @@ struct bt_mesh_generic_property *gen_get_manu_property(struct bt_mesh_model *mod
         u16_t property_id)
 {
     struct bt_mesh_gen_manu_prop_srv *srv = model->user_data;
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < srv->property_count; i++) {
+    for (i = 0; i < srv->property_count; i++) {
         if (srv->properties[i].id == property_id) {
             return &srv->properties[i];
         }
@@ -1961,7 +1961,7 @@ static void send_gen_manu_prop_status(struct bt_mesh_model *model,
 {
     struct bt_mesh_generic_property *property = NULL;
     struct net_buf_simple *msg = NULL;
-    u16_t length;
+    u16_t length = 0U;
 
     if (property_id == BLE_MESH_INVALID_DEVICE_PROPERTY_ID) {
         BT_ERR("%s, Invalid User Property ID 0x%04x", __func__, property_id);
@@ -2022,7 +2022,7 @@ static void gen_manu_prop_get(struct bt_mesh_model *model,
     if (srv->rsp_ctrl.get_auto_rsp == BLE_MESH_SERVER_RSP_BY_APP) {
         bt_mesh_gen_server_recv_get_msg_t get = {0};
         const u8_t *param = NULL;
-        size_t len = 0;
+        size_t len = 0U;
         if (ctx->recv_op == BLE_MESH_MODEL_OP_GEN_MANU_PROPERTY_GET) {
             get.manu_property_get.id = net_buf_simple_pull_le16(buf);
             param = (const u8_t *)&get;
@@ -2036,7 +2036,7 @@ static void gen_manu_prop_get(struct bt_mesh_model *model,
     switch (ctx->recv_op) {
     case BLE_MESH_MODEL_OP_GEN_MANU_PROPERTIES_GET: {
         struct net_buf_simple *msg = NULL;
-        u8_t i;
+        u8_t i = 0U;
         msg = bt_mesh_alloc_buf(1 + srv->property_count * 2 + BLE_MESH_SERVER_TRANS_MIC_SIZE);
         if (msg == NULL) {
             BT_ERR("%s, Failed to allocate memory", __func__);
@@ -2067,8 +2067,8 @@ static void gen_manu_prop_set(struct bt_mesh_model *model,
 {
     struct bt_mesh_gen_manu_prop_srv *srv = model->user_data;
     struct bt_mesh_generic_property *property = NULL;
-    u16_t property_id;
-    u8_t access;
+    u16_t property_id = 0U;
+    u8_t access = 0U;
 
     if (srv == NULL || srv->property_count == 0U || srv->properties == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);
@@ -2123,8 +2123,8 @@ static void gen_manu_prop_set(struct bt_mesh_model *model,
 static int search_prop_id_index(const u16_t *array, u8_t array_idx, u16_t id)
 {
     static const u16_t *start = NULL;
-    u8_t index;
-    u16_t temp;
+    u8_t index = 0U;
+    u16_t temp = 0U;
 
     if (start == NULL) {
         start = array;
@@ -2156,9 +2156,9 @@ static void gen_client_prop_get(struct bt_mesh_model *model,
 {
     struct bt_mesh_gen_client_prop_srv *srv = model->user_data;
     struct net_buf_simple *sdu = NULL;
-    u16_t total_len = 5;
-    u16_t property_id;
-    int i, index;
+    u16_t total_len = 5U;
+    u16_t property_id = 0U;
+    int i, index = 0;
 
     if (srv == NULL || srv->id_count == 0U || srv->property_ids == NULL) {
         BT_ERR("%s, Invalid model user_data", __func__);

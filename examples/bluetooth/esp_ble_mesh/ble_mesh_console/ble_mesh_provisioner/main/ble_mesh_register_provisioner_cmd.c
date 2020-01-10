@@ -191,7 +191,7 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
 {
     uint16_t unicast_addr = 0;
     uint16_t i = 0;
-    struct bt_mesh_node *node_info;
+    esp_ble_mesh_node_t *node_info;
 
     ESP_LOGD(TAG, "enter %s\n", __func__);
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_get_node);

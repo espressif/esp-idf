@@ -65,7 +65,7 @@ u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model)
 int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_time)
 {
     struct bt_mesh_light_lc_srv *srv = NULL;
-    u32_t value;
+    u32_t value = 0U;
 
     if (model == NULL || trans_time == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);

@@ -39,21 +39,28 @@ void btc_ble_mesh_lighting_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, vo
     btc_ble_mesh_lighting_client_args_t *src = (btc_ble_mesh_lighting_client_args_t *)p_src;
 
     if (!msg || !dst || !src) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_LIGHTING_CLIENT_GET_STATE: {
         dst->light_client_get_state.params = (esp_ble_mesh_client_common_param_t *)osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->light_client_get_state.get_state = (esp_ble_mesh_light_client_get_state_t *)osi_malloc(sizeof(esp_ble_mesh_light_client_get_state_t));
-        if (dst->light_client_get_state.params && dst->light_client_get_state.get_state) {
+        if (dst->light_client_get_state.params) {
             memcpy(dst->light_client_get_state.params, src->light_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
-            memcpy(dst->light_client_get_state.get_state, src->light_client_get_state.get_state,
-                   sizeof(esp_ble_mesh_light_client_get_state_t));
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            break;
+        }
+        if (src->light_client_get_state.get_state) {
+            dst->light_client_get_state.get_state = (esp_ble_mesh_light_client_get_state_t *)osi_malloc(sizeof(esp_ble_mesh_light_client_get_state_t));
+            if (dst->light_client_get_state.get_state) {
+                memcpy(dst->light_client_get_state.get_state, src->light_client_get_state.get_state,
+                    sizeof(esp_ble_mesh_light_client_get_state_t));
+            } else {
+                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            }
         }
         break;
     }
@@ -66,12 +73,12 @@ void btc_ble_mesh_lighting_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, vo
             memcpy(dst->light_client_set_state.set_state, src->light_client_set_state.set_state,
                    sizeof(esp_ble_mesh_light_client_set_state_t));
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
     }
     default:
-        LOG_DEBUG("%s, Unknown deep copy act %d", __func__, msg->act);
+        BT_DBG("%s, Unknown deep copy act %d", __func__, msg->act);
         break;
     }
 }
@@ -81,7 +88,7 @@ static void btc_ble_mesh_lighting_client_arg_deep_free(btc_msg_t *msg)
     btc_ble_mesh_lighting_client_args_t *arg = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -113,17 +120,17 @@ static void btc_ble_mesh_lighting_client_copy_req_data(btc_msg_t *msg, void *p_d
 {
     esp_ble_mesh_light_client_cb_param_t *p_dest_data = (esp_ble_mesh_light_client_cb_param_t *)p_dest;
     esp_ble_mesh_light_client_cb_param_t *p_src_data = (esp_ble_mesh_light_client_cb_param_t *)p_src;
-    u16_t length;
+    u16_t length = 0U;
 
     if (!msg || !p_src_data || !p_dest_data) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     if (p_src_data->params) {
         p_dest_data->params = osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             return;
         }
 
@@ -143,7 +150,7 @@ static void btc_ble_mesh_lighting_client_copy_req_data(btc_msg_t *msg, void *p_d
                     length = p_src_data->status_cb.lc_property_status.property_value->len;
                     p_dest_data->status_cb.lc_property_status.property_value = bt_mesh_alloc_buf(length);
                     if (!p_dest_data->status_cb.lc_property_status.property_value) {
-                        LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                        BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
                         return;
                     }
                     net_buf_simple_add_mem(p_dest_data->status_cb.lc_property_status.property_value,
@@ -167,7 +174,7 @@ static void btc_ble_mesh_lighting_client_free_req_data(btc_msg_t *msg)
     esp_ble_mesh_light_client_cb_param_t *arg = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -202,7 +209,7 @@ static void btc_ble_mesh_lighting_client_callback(esp_ble_mesh_light_client_cb_p
 {
     btc_msg_t msg = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     /* If corresponding callback is not registered, event will not be posted. */
     if (!btc_profile_cb_get(BTC_PID_LIGHTING_CLIENT)) {
@@ -224,11 +231,11 @@ void bt_mesh_lighting_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
 {
     esp_ble_mesh_light_client_cb_param_t cb_params = {0};
     esp_ble_mesh_client_common_param_t params = {0};
-    size_t length;
-    uint8_t act;
+    size_t length = 0U;
+    uint8_t act = 0U;
 
     if (!model || !ctx) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -246,7 +253,7 @@ void bt_mesh_lighting_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
         act = ESP_BLE_MESH_LIGHT_CLIENT_TIMEOUT_EVT;
         break;
     default:
-        LOG_ERROR("%s, Unknown lighting client event type", __func__);
+        BT_ERR("%s, Unknown lighting client event type", __func__);
         return;
     }
 
@@ -277,7 +284,7 @@ void btc_ble_mesh_lighting_client_publish_callback(u32_t opcode,
         struct net_buf_simple *buf)
 {
     if (!model || !ctx || !buf) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -295,7 +302,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
     bt_mesh_role_param_t role_param = {0};
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -307,7 +314,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
-            LOG_ERROR("%s, Failed to set model role", __func__);
+            BT_ERR("%s, Failed to set model role", __func__);
             break;
         }
         common.opcode = params->opcode;
@@ -333,7 +340,7 @@ void btc_ble_mesh_lighting_client_call_handler(btc_msg_t *msg)
         role_param.model = (struct bt_mesh_model *)params->model;
         role_param.role = params->msg_role;
         if (bt_mesh_set_client_model_role(&role_param)) {
-            LOG_ERROR("%s, Failed to set model role", __func__);
+            BT_ERR("%s, Failed to set model role", __func__);
             break;
         }
         common.opcode = params->opcode;
@@ -367,7 +374,7 @@ void btc_ble_mesh_lighting_client_cb_handler(btc_msg_t *msg)
     esp_ble_mesh_light_client_cb_param_t *param = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -376,7 +383,7 @@ void btc_ble_mesh_lighting_client_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_LIGHT_CLIENT_EVT_MAX) {
         btc_ble_mesh_lighting_client_cb_to_app(msg->act, param);
     } else {
-        LOG_ERROR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
     }
 
     btc_ble_mesh_lighting_client_free_req_data(msg);
@@ -400,10 +407,10 @@ static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_d
 {
     esp_ble_mesh_lighting_server_cb_param_t *p_dest_data = (esp_ble_mesh_lighting_server_cb_param_t *)p_dest;
     esp_ble_mesh_lighting_server_cb_param_t *p_src_data = (esp_ble_mesh_lighting_server_cb_param_t *)p_src;
-    u16_t length;
+    u16_t length = 0U;
 
     if (!msg || !p_src_data || !p_dest_data) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -415,7 +422,7 @@ static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_d
                 length = p_src_data->value.state_change.lc_property_set.property_value->len;
                 p_dest_data->value.state_change.lc_property_set.property_value = bt_mesh_alloc_buf(length);
                 if (p_dest_data->value.state_change.lc_property_set.property_value == NULL) {
-                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
                     return;
                 }
                 net_buf_simple_add_mem(p_dest_data->value.state_change.lc_property_set.property_value,
@@ -431,7 +438,7 @@ static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_d
                 length = p_src_data->value.set.lc_property.property_value->len;
                 p_dest_data->value.set.lc_property.property_value = bt_mesh_alloc_buf(length);
                 if (p_dest_data->value.set.lc_property.property_value == NULL) {
-                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
                     return;
                 }
                 net_buf_simple_add_mem(p_dest_data->value.set.lc_property.property_value,
@@ -446,7 +453,7 @@ static void btc_ble_mesh_lighting_server_copy_req_data(btc_msg_t *msg, void *p_d
                 length = p_src_data->value.status.sensor_status.data->len;
                 p_dest_data->value.status.sensor_status.data = bt_mesh_alloc_buf(length);
                 if (p_dest_data->value.status.sensor_status.data == NULL) {
-                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
                     return;
                 }
                 net_buf_simple_add_mem(p_dest_data->value.status.sensor_status.data,
@@ -465,7 +472,7 @@ static void btc_ble_mesh_lighting_server_free_req_data(btc_msg_t *msg)
     esp_ble_mesh_lighting_server_cb_param_t *arg = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -498,7 +505,7 @@ static void btc_ble_mesh_lighting_server_callback(esp_ble_mesh_lighting_server_c
 {
     btc_msg_t msg = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     /* If corresponding callback is not registered, event will not be posted. */
     if (!btc_profile_cb_get(BTC_PID_LIGHTING_SERVER)) {
@@ -519,11 +526,11 @@ void bt_mesh_lighting_server_cb_evt_to_btc(u8_t evt_type,
         const u8_t *val, size_t len)
 {
     esp_ble_mesh_lighting_server_cb_param_t cb_params = {0};
-    size_t length;
-    uint8_t act;
+    size_t length = 0U;
+    uint8_t act = 0U;
 
     if (model == NULL || ctx == NULL) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -541,7 +548,7 @@ void bt_mesh_lighting_server_cb_evt_to_btc(u8_t evt_type,
         act = ESP_BLE_MESH_LIGHTING_SERVER_RECV_STATUS_MSG_EVT;
         break;
     default:
-        LOG_ERROR("%s, Unknown Lighting Server event type", __func__);
+        BT_ERR("%s, Unknown Lighting Server event type", __func__);
         return;
     }
 
@@ -567,7 +574,7 @@ void btc_ble_mesh_lighting_server_cb_handler(btc_msg_t *msg)
     esp_ble_mesh_lighting_server_cb_param_t *param = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -576,7 +583,7 @@ void btc_ble_mesh_lighting_server_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_LIGHTING_SERVER_EVT_MAX) {
         btc_ble_mesh_lighting_server_cb_to_app(msg->act, param);
     } else {
-        LOG_ERROR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
     }
 
     btc_ble_mesh_lighting_server_free_req_data(msg);

@@ -139,8 +139,8 @@ void bt_mesh_hci_init(void)
 static void bt_mesh_scan_results_change_2_bta(tBTM_INQ_RESULTS *p_inq, u8_t *p_eir,
         tBTA_DM_SEARCH_CBACK *p_scan_cback)
 {
-    tBTM_INQ_INFO *p_inq_info;
-    tBTA_DM_SEARCH result;
+    tBTM_INQ_INFO *p_inq_info = NULL;
+    tBTA_DM_SEARCH result = {0};
 
     bdcpy(result.inq_res.bd_addr, p_inq->remote_bd_addr);
     result.inq_res.rssi = p_inq->rssi;
@@ -293,8 +293,8 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window, u8_t filt
 static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data)
 {
     bt_mesh_addr_t addr = {0};
-    UINT8 adv_type;
-    UINT8 rssi;
+    u8_t adv_type = 0U;
+    s8_t rssi = 0;
 
     BT_DBG("%s, event = %d", __func__, event);
 
@@ -329,13 +329,13 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len)
 {
-    tBTA_START_ADV_CMPL_CBACK *p_start_adv_cb;
-    tBTM_BLE_ADV_CHNL_MAP channel_map;
-    tBLE_ADDR_TYPE addr_type_own;
+    tBTA_START_ADV_CMPL_CBACK *p_start_adv_cb = NULL;
+    tBTM_BLE_ADV_CHNL_MAP channel_map = 0U;
+    tBLE_ADDR_TYPE addr_type_own = 0U;
     tBLE_BD_ADDR p_dir_bda = {0};
-    tBTM_BLE_AFP adv_fil_pol;
-    UINT8 adv_type;
-    int err;
+    tBTM_BLE_AFP adv_fil_pol = 0U;
+    u8_t adv_type = 0U;
+    int err = 0;
 
 #if BLE_MESH_DEV
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_ADVERTISING)) {
@@ -421,7 +421,7 @@ int bt_le_adv_stop(void)
 
 int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t cb)
 {
-    int err;
+    int err = 0;
 
 #if BLE_MESH_DEV
     if (bt_mesh_atomic_test_bit(bt_mesh_dev.flags, BLE_MESH_DEV_SCANNING)) {
@@ -482,7 +482,7 @@ static void bt_mesh_bta_gatts_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
     case BTA_GATTS_READ_EVT: {
         struct bt_mesh_gatt_attr *attr = bt_mesh_gatts_find_attr_by_handle(p_data->req_data.p_data->read_req.handle);
         u8_t index = BLE_MESH_GATT_GET_CONN_ID(p_data->req_data.conn_id);
-        tBTA_GATTS_RSP rsp;
+        tBTA_GATTS_RSP rsp = {0};
         u8_t buf[100] = {0};
         u16_t len = 0;
 
@@ -679,7 +679,7 @@ ssize_t bt_mesh_gatts_attr_read(struct bt_mesh_conn *conn, const struct bt_mesh_
                                 void *buf, u16_t buf_len, u16_t offset,
                                 const void *value, u16_t value_len)
 {
-    u16_t len;
+    u16_t len = 0U;
 
     if (offset > value_len) {
         return BLE_MESH_GATT_ERR(BLE_MESH_ATT_ERR_INVALID_OFFSET);
@@ -707,7 +707,7 @@ ssize_t bt_mesh_gatts_attr_read_included(struct bt_mesh_conn *conn,
     struct bt_mesh_gatt_attr *incl = attr->user_data;
     struct bt_mesh_uuid *uuid = incl->user_data;
     struct gatts_incl pdu = {0};
-    u8_t value_len;
+    u8_t value_len = 0U;
 
     /* First attr points to the start handle */
     pdu.start_handle = sys_cpu_to_le16(incl->handle);
@@ -757,7 +757,7 @@ ssize_t bt_mesh_gatts_attr_read_chrc(struct bt_mesh_conn *conn,
     struct bt_mesh_gatt_char *chrc = attr->user_data;
     const struct bt_mesh_gatt_attr *next = NULL;
     struct gatts_chrc pdu = {0};
-    u8_t value_len;
+    u8_t value_len = 0U;
 
     pdu.properties = chrc->properties;
     /* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part G] page 534:
@@ -809,8 +809,8 @@ static void bta_uuid_to_bt_mesh_uuid(tBT_UUID *bta_uuid, const struct bt_mesh_uu
 
 static int gatts_register(struct bt_mesh_gatt_service *svc)
 {
-    struct bt_mesh_gatt_service *last;
-    u16_t handle;
+    struct bt_mesh_gatt_service *last = NULL;
+    u16_t handle = 0U;
 
     if (sys_slist_is_empty(&bt_mesh_gatts_db)) {
         handle = 0;
@@ -820,6 +820,8 @@ static int gatts_register(struct bt_mesh_gatt_service *svc)
     last = SYS_SLIST_PEEK_TAIL_CONTAINER(&bt_mesh_gatts_db, last, node);
     handle = last->attrs[last->attr_count - 1].handle;
     BT_DBG("%s, handle =  %d", __func__, handle);
+
+    ((void) handle);
 
 populate:
     sys_slist_append(&bt_mesh_gatts_db, &svc->node);
@@ -1063,10 +1065,10 @@ void bt_mesh_gattc_conn_cb_deregister(void)
 
 u8_t bt_mesh_gattc_get_free_conn_count(void)
 {
-    u8_t count = 0;
-    u8_t i;
+    u8_t count = 0U;
+    int i;
 
-    for (i = 0U; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
         if (bt_mesh_gattc_info[i].conn.handle == 0xFFFF &&
                 bt_mesh_gattc_info[i].service_uuid == 0x0000) {
             ++count;
@@ -1078,9 +1080,9 @@ u8_t bt_mesh_gattc_get_free_conn_count(void)
 
 u16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn)
 {
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
         if (conn == &bt_mesh_gattc_info[i].conn) {
             return bt_mesh_gattc_info[i].service_uuid;
         }
@@ -1172,7 +1174,7 @@ void bt_mesh_gattc_exchange_mtu(u8_t index)
      *  ATT_MTU >= 69 for Mesh GATT Prov Service
      *  ATT_NTU >= 33 for Mesh GATT Proxy Service
     */
-    u16_t conn_id;
+    u16_t conn_id = 0U;
 
     conn_id = BLE_MESH_GATT_CREATE_CONN_ID(bt_mesh_gattc_if, bt_mesh_gattc_info[index].conn.handle);
 
@@ -1195,7 +1197,7 @@ u16_t bt_mesh_gattc_get_mtu_info(struct bt_mesh_conn *conn)
 int bt_mesh_gattc_write_no_rsp(struct bt_mesh_conn *conn, const struct bt_mesh_gatt_attr *attr,
                                const void *data, u16_t len)
 {
-    u16_t conn_id;
+    u16_t conn_id = 0U;
     int i;
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
@@ -1222,7 +1224,7 @@ void bt_mesh_gattc_disconnect(struct bt_mesh_conn *conn)
      *  when proxy_disconnected callback comes, the proxy server
      *  information and prov_link information should be cleared.
      */
-    u16_t conn_id;
+    u16_t conn_id = 0U;
     int i;
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
@@ -1247,7 +1249,7 @@ void bt_mesh_gattc_disconnect(struct bt_mesh_conn *conn)
 static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
 {
     struct bt_mesh_conn *conn = NULL;
-    u16_t handle = 0;
+    u16_t handle = 0U;
     ssize_t len = 0;
     int i = 0;
 
@@ -1332,8 +1334,8 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
             u16_t notify_en = BLE_MESH_GATT_CCC_NOTIFY;
             btgatt_db_element_t *result = NULL;
             tBT_UUID char_uuid = {0};
-            tBTA_GATT_STATUS status;
-            tBTA_GATT_UNFMT write;
+            tBTA_GATT_STATUS status = 0U;
+            tBTA_GATT_UNFMT write = {0};
             int count = 0;
             int num = 0;
 
@@ -1824,7 +1826,7 @@ int bt_mesh_dh_key_gen(const u8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const u
 static void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_le,
                         u8_t *const cipher_text_le, u8_t *const cipher_text_be)
 {
-    struct bt_mesh_ecb_param ecb;
+    struct bt_mesh_ecb_param ecb = {0};
     mbedtls_aes_context aes_ctx = {0};
 
     aes_ctx.key_bytes = 16;
@@ -1846,7 +1848,7 @@ static void ecb_encrypt(u8_t const *const key_le, u8_t const *const clear_text_l
 static void ecb_encrypt_be(u8_t const *const key_be, u8_t const *const clear_text_be,
                            u8_t *const cipher_text_be)
 {
-    struct bt_mesh_ecb_param ecb;
+    struct bt_mesh_ecb_param ecb = {0};
     mbedtls_aes_context aes_ctx = {0};
 
     aes_ctx.key_bytes = 16;
@@ -1869,8 +1871,8 @@ int bt_mesh_encrypt_le(const u8_t key[16], const u8_t plaintext[16],
     BT_DBG("enc_data %s", bt_hex(enc_data, 16));
     return 0;
 #else /* CONFIG_MBEDTLS_HARDWARE_AES */
-    struct tc_aes_key_sched_struct s;
-    u8_t tmp[16];
+    struct tc_aes_key_sched_struct s = {0};
+    u8_t tmp[16] = {0};
 
     BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
 
@@ -1906,7 +1908,7 @@ int bt_mesh_encrypt_be(const u8_t key[16], const u8_t plaintext[16],
 
     return 0;
 #else /* CONFIG_MBEDTLS_HARDWARE_AES */
-    struct tc_aes_key_sched_struct s;
+    struct tc_aes_key_sched_struct s = {0};
 
     BT_DBG("key %s plaintext %s", bt_hex(key, 16), bt_hex(plaintext, 16));
 

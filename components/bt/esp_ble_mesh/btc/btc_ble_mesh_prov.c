@@ -77,42 +77,42 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     btc_ble_mesh_prov_args_t *src = (btc_ble_mesh_prov_args_t *)p_src;
 
     if (!msg || !dst || !src) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR", __func__);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR", __func__);
         dst->proxy_client_add_filter_addr.addr = (uint16_t *)osi_calloc(src->proxy_client_add_filter_addr.addr_num << 1);
         if (dst->proxy_client_add_filter_addr.addr) {
             memcpy(dst->proxy_client_add_filter_addr.addr, src->proxy_client_add_filter_addr.addr,
                    src->proxy_client_add_filter_addr.addr_num << 1);
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR", __func__);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR", __func__);
         dst->proxy_client_remove_filter_addr.addr = osi_calloc(src->proxy_client_remove_filter_addr.addr_num << 1);
         if (dst->proxy_client_remove_filter_addr.addr) {
             memcpy(dst->proxy_client_remove_filter_addr.addr, src->proxy_client_remove_filter_addr.addr,
                    src->proxy_client_remove_filter_addr.addr_num << 1);
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA", __func__);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA", __func__);
         dst->store_node_comp_data.data = osi_calloc(src->store_node_comp_data.length);
         if (dst->store_node_comp_data.data) {
             memcpy(dst->store_node_comp_data.data, src->store_node_comp_data.data, src->store_node_comp_data.length);
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
     default:
-        LOG_DEBUG("%s, Unknown deep copy act %d", __func__, msg->act);
+        BT_DBG("%s, Unknown deep copy act %d", __func__, msg->act);
         break;
     }
 }
@@ -122,7 +122,7 @@ static void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg)
     btc_ble_mesh_prov_args_t *arg = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -155,42 +155,42 @@ void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     btc_ble_mesh_model_args_t *src = (btc_ble_mesh_model_args_t *)p_src;
 
     if (!msg || !dst || !src) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND:
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_MODEL_SEND, src->model_send.length = %d", __func__, src->model_send.length);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_MODEL_SEND, src->model_send.length = %d", __func__, src->model_send.length);
         dst->model_send.data = src->model_send.length ? (uint8_t *)osi_malloc(src->model_send.length) : NULL;
         dst->model_send.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
         if (src->model_send.length) {
             if (dst->model_send.data) {
                 memcpy(dst->model_send.data, src->model_send.data, src->model_send.length);
             } else {
-                LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             }
         }
         if (dst->model_send.ctx) {
             memcpy(dst->model_send.ctx, src->model_send.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE", __func__);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE", __func__);
         dst->model_update_state.value = osi_malloc(sizeof(esp_ble_mesh_server_state_value_t));
         if (dst->model_update_state.value) {
             memcpy(dst->model_update_state.value, src->model_update_state.value,
                    sizeof(esp_ble_mesh_server_state_value_t));
         } else {
-            LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+            BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
         }
         break;
     default:
-        LOG_DEBUG("%s, Unknown deep copy act %d", __func__, msg->act);
+        BT_DBG("%s, Unknown deep copy act %d", __func__, msg->act);
         break;
     }
 }
@@ -200,7 +200,7 @@ static void btc_ble_mesh_model_arg_deep_free(btc_msg_t *msg)
     btc_ble_mesh_model_args_t *arg = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -234,7 +234,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
     esp_ble_mesh_model_cb_param_t *p_src_data = (esp_ble_mesh_model_cb_param_t *)p_src;
 
     if (!msg || !p_src_data || !p_dest_data) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -246,13 +246,13 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
             if (p_dest_data->model_operation.ctx) {
                 memcpy(p_dest_data->model_operation.ctx, p_src_data->model_operation.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
-                LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             }
             if (p_src_data->model_operation.length) {
                 if (p_dest_data->model_operation.msg) {
                     memcpy(p_dest_data->model_operation.msg, p_src_data->model_operation.msg, p_src_data->model_operation.length);
                 } else {
-                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
                 }
             }
         }
@@ -265,13 +265,13 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
             if (p_dest_data->client_recv_publish_msg.ctx) {
                 memcpy(p_dest_data->client_recv_publish_msg.ctx, p_src_data->client_recv_publish_msg.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
-                LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             }
             if (p_src_data->client_recv_publish_msg.length) {
                 if (p_dest_data->client_recv_publish_msg.msg) {
                     memcpy(p_dest_data->client_recv_publish_msg.msg, p_src_data->client_recv_publish_msg.msg, p_src_data->client_recv_publish_msg.length);
                 } else {
-                    LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                    BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
                 }
             }
         }
@@ -283,7 +283,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
             if (p_dest_data->model_send_comp.ctx) {
                 memcpy(p_dest_data->model_send_comp.ctx, p_src_data->model_send_comp.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
-                LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             }
         }
         break;
@@ -294,7 +294,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
             if (p_dest_data->client_send_timeout.ctx) {
                 memcpy(p_dest_data->client_send_timeout.ctx, p_src_data->client_send_timeout.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
-                LOG_ERROR("%s, Failed to allocate memory, act %d", __func__, msg->act);
+                BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             }
         }
         break;
@@ -309,7 +309,7 @@ static void btc_ble_mesh_model_free_req_data(btc_msg_t *msg)
     esp_ble_mesh_model_cb_param_t *arg = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -354,9 +354,9 @@ static void btc_ble_mesh_model_free_req_data(btc_msg_t *msg)
 static bt_status_t btc_ble_mesh_model_callback(esp_ble_mesh_model_cb_param_t *param, uint8_t act)
 {
     btc_msg_t msg = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     /* If corresponding callback is not registered, event will not be posted. */
     if (!btc_profile_cb_get(BTC_PID_MODEL)) {
@@ -370,7 +370,7 @@ static bt_status_t btc_ble_mesh_model_callback(esp_ble_mesh_model_cb_param_t *pa
     ret = btc_transfer_context(&msg, param,
                                sizeof(esp_ble_mesh_model_cb_param_t), btc_ble_mesh_model_copy_req_data);
     if (ret != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s, btc_transfer_context failed", __func__);
+        BT_ERR("%s, btc_transfer_context failed", __func__);
     }
     return ret;
 }
@@ -399,7 +399,7 @@ static void btc_ble_mesh_client_model_op_cb(struct bt_mesh_model *model,
     bt_mesh_client_node_t *node = NULL;
 
     if (!model || !model->user_data || !ctx || !buf) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -483,9 +483,9 @@ static void btc_ble_mesh_model_publish_comp_cb(esp_ble_mesh_model_t *model, int 
 static int btc_ble_mesh_model_publish_update(struct bt_mesh_model *mod)
 {
     esp_ble_mesh_model_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.model_publish_update.model = (esp_ble_mesh_model_t *)mod;
 
@@ -509,9 +509,9 @@ static void btc_ble_mesh_server_model_update_state_comp_cb(esp_ble_mesh_model_t 
 static bt_status_t btc_ble_mesh_prov_callback(esp_ble_mesh_prov_cb_param_t *param, uint8_t act)
 {
     btc_msg_t msg = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     /* If corresponding callback is not registered, event will not be posted. */
     if (!btc_profile_cb_get(BTC_PID_PROV)) {
@@ -524,7 +524,7 @@ static bt_status_t btc_ble_mesh_prov_callback(esp_ble_mesh_prov_cb_param_t *para
 
     ret = btc_transfer_context(&msg, param, sizeof(esp_ble_mesh_prov_cb_param_t), NULL);
     if (ret != BT_STATUS_SUCCESS) {
-        LOG_ERROR("%s, btc_transfer_context failed", __func__);
+        BT_ERR("%s, btc_transfer_context failed", __func__);
     }
     return ret;
 }
@@ -532,7 +532,7 @@ static bt_status_t btc_ble_mesh_prov_callback(esp_ble_mesh_prov_cb_param_t *para
 #if CONFIG_BLE_MESH_NODE
 static void btc_ble_mesh_oob_pub_key_cb(void)
 {
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     btc_ble_mesh_prov_callback(NULL, ESP_BLE_MESH_NODE_PROV_OOB_PUB_KEY_EVT);
     return;
@@ -541,9 +541,9 @@ static void btc_ble_mesh_oob_pub_key_cb(void)
 static int btc_ble_mesh_output_number_cb(bt_mesh_output_action_t act, u32_t num)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.node_prov_output_num.action = (esp_ble_mesh_output_action_t)act;
     mesh_param.node_prov_output_num.number = num;
@@ -555,9 +555,9 @@ static int btc_ble_mesh_output_number_cb(bt_mesh_output_action_t act, u32_t num)
 static int btc_ble_mesh_output_string_cb(const char *str)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     strncpy(mesh_param.node_prov_output_str.string, str, strlen(str));
 
@@ -568,9 +568,9 @@ static int btc_ble_mesh_output_string_cb(const char *str)
 static int btc_ble_mesh_input_cb(bt_mesh_input_action_t act, u8_t size)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.node_prov_input.action = (esp_ble_mesh_input_action_t)act;
     mesh_param.node_prov_input.size = size;
@@ -583,7 +583,7 @@ static void btc_ble_mesh_link_open_cb(bt_mesh_prov_bearer_t bearer)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.node_prov_link_open.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
 
@@ -595,7 +595,7 @@ static void btc_ble_mesh_link_close_cb(bt_mesh_prov_bearer_t bearer)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.node_prov_link_close.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
 
@@ -607,7 +607,7 @@ static void btc_ble_mesh_complete_cb(u16_t net_idx, const u8_t net_key[16], u16_
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.node_prov_complete.net_idx = net_idx;
     memcpy(mesh_param.node_prov_complete.net_key, net_key, 16);
@@ -621,7 +621,7 @@ static void btc_ble_mesh_complete_cb(u16_t net_idx, const u8_t net_key[16], u16_
 
 static void btc_ble_mesh_reset_cb(void)
 {
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     btc_ble_mesh_prov_callback(NULL, ESP_BLE_MESH_NODE_PROV_RESET_EVT);
     return;
@@ -632,7 +632,7 @@ static void btc_ble_mesh_prov_register_complete_cb(int err_code)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.prov_register_comp.err_code = err_code;
 
@@ -642,7 +642,7 @@ static void btc_ble_mesh_prov_register_complete_cb(int err_code)
 
 static void btc_ble_mesh_prov_set_complete_cb(esp_ble_mesh_prov_cb_param_t *param, uint8_t act)
 {
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     btc_ble_mesh_prov_callback(param, act);
     return;
@@ -656,11 +656,11 @@ static void btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb(
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     if (addr == NULL || dev_uuid == NULL ||
             (bearer != BLE_MESH_PROV_ADV && bearer != BLE_MESH_PROV_GATT)) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -679,9 +679,9 @@ static void btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb(
 static int btc_ble_mesh_provisioner_prov_read_oob_pub_key_cb(u8_t link_idx)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.provisioner_prov_read_oob_pub_key.link_idx = link_idx;
 
@@ -693,9 +693,9 @@ static int btc_ble_mesh_provisioner_prov_input_cb(u8_t method,
         bt_mesh_output_action_t act, u8_t size, u8_t link_idx)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.provisioner_prov_input.method = (esp_ble_mesh_oob_method_t)method;
     mesh_param.provisioner_prov_input.action = (esp_ble_mesh_output_action_t)act;
@@ -710,9 +710,9 @@ static int btc_ble_mesh_provisioner_prov_output_cb(u8_t method,
         bt_mesh_input_action_t act, void *data, u8_t size, u8_t link_idx)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    bt_status_t ret;
+    bt_status_t ret = BT_STATUS_SUCCESS;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.provisioner_prov_output.method = (esp_ble_mesh_oob_method_t)method;
     mesh_param.provisioner_prov_output.action = (esp_ble_mesh_input_action_t)act;
@@ -732,7 +732,7 @@ static void btc_ble_mesh_provisioner_link_open_cb(bt_mesh_prov_bearer_t bearer)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.provisioner_prov_link_open.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
 
@@ -744,7 +744,7 @@ static void btc_ble_mesh_provisioner_link_close_cb(bt_mesh_prov_bearer_t bearer,
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.provisioner_prov_link_close.bearer = (esp_ble_mesh_prov_bearer_t)bearer;
     mesh_param.provisioner_prov_link_close.reason = reason;
@@ -760,7 +760,7 @@ static void btc_ble_mesh_provisioner_prov_complete_cb(
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.provisioner_prov_complete.node_idx = node_idx;
     mesh_param.provisioner_prov_complete.unicast_addr = unicast_addr;
@@ -788,7 +788,7 @@ static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.heartbeat_msg_recv.hops = hops;
     mesh_param.heartbeat_msg_recv.feature = feature;
@@ -801,9 +801,9 @@ static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
 static void btc_ble_mesh_lpn_cb(u16_t friend_addr, bool established)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    u8_t act;
+    u8_t act = 0U;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     if (established) {
         mesh_param.lpn_friendship_establish.friend_addr = friend_addr;
@@ -822,12 +822,12 @@ static void btc_ble_mesh_lpn_cb(u16_t friend_addr, bool established)
 void btc_ble_mesh_friend_cb(bool establish, u16_t lpn_addr, u8_t reason)
 {
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
-    u8_t act;
+    u8_t act = 0U;
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     if (!BLE_MESH_ADDR_IS_UNICAST(lpn_addr)) {
-        LOG_ERROR("%s, Not a unicast address", __func__);
+        BT_ERR("%s, Not a unicast address", __func__);
         return;
     }
 
@@ -852,11 +852,11 @@ static void btc_ble_mesh_proxy_client_adv_recv_cb(const bt_mesh_addr_t *addr,
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
     if (!addr || !ctx || type != BLE_MESH_PROXY_ADV_NET_ID) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.proxy_client_recv_adv_pkt.addr_type = addr->type;
     memcpy(mesh_param.proxy_client_recv_adv_pkt.addr, addr->val, BD_ADDR_LEN);
@@ -874,11 +874,11 @@ static void btc_ble_mesh_proxy_client_connect_cb(const bt_mesh_addr_t *addr,
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
     if (!addr || conn_handle >= BLE_MESH_MAX_CONN) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.proxy_client_connected.addr_type = addr->type;
     memcpy(mesh_param.proxy_client_connected.addr, addr->val, BD_ADDR_LEN);
@@ -895,11 +895,11 @@ static void btc_ble_mesh_proxy_client_disconnect_cb(const bt_mesh_addr_t *addr,
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
     if (!addr || conn_handle >= BLE_MESH_MAX_CONN) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.proxy_client_disconnected.addr_type = addr->type;
     memcpy(mesh_param.proxy_client_disconnected.addr, addr->val, BD_ADDR_LEN);
@@ -917,11 +917,11 @@ static void btc_ble_mesh_proxy_client_filter_status_recv_cb(u8_t conn_handle,
     esp_ble_mesh_prov_cb_param_t mesh_param = {0};
 
     if (conn_handle >= BLE_MESH_MAX_CONN) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
-    LOG_DEBUG("%s", __func__);
+    BT_DBG("%s", __func__);
 
     mesh_param.proxy_client_recv_filter_status.conn_handle = conn_handle;
     mesh_param.proxy_client_recv_filter_status.server_addr = src;
@@ -1068,7 +1068,7 @@ static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
     esp_ble_mesh_model_op_t *op = NULL;
 
     if (!model) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -1423,7 +1423,7 @@ static void btc_ble_mesh_model_op_add(esp_ble_mesh_model_t *model)
         model->op = (esp_ble_mesh_model_op_t *)time_setup_srv_op;
         if (model->pub) {
             /* Time Setup Server model does not support subscribing nor publishing. */
-            LOG_ERROR("%s, Time Setup Server shall not support publication", __func__);
+            BT_ERR("%s, Time Setup Server shall not support publication", __func__);
             return;
         }
         break;
@@ -1484,10 +1484,10 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
 {
     esp_ble_mesh_prov_cb_param_t param = {0};
     btc_ble_mesh_prov_args_t *arg = NULL;
-    uint8_t act;
+    uint8_t act = 0U;
 
     if (!msg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -1495,7 +1495,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_MESH_INIT: {
-        int err_code;
+        int err_code = 0;
         for (int i = 0; i < arg->mesh_init.comp->element_count; i++) {
             esp_ble_mesh_elem_t *elem = &arg->mesh_init.comp->elements[i];
             /* For SIG models */
@@ -1561,17 +1561,17 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     }
 #if CONFIG_BLE_MESH_NODE
     case BTC_BLE_MESH_ACT_PROV_ENABLE:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_PROV_ENABLE, bearers = %d", __func__, arg->node_prov_enable.bearers);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_PROV_ENABLE, bearers = %d", __func__, arg->node_prov_enable.bearers);
         act = ESP_BLE_MESH_NODE_PROV_ENABLE_COMP_EVT;
         param.node_prov_enable_comp.err_code = bt_mesh_prov_enable(arg->node_prov_enable.bearers);
         break;
     case BTC_BLE_MESH_ACT_PROV_DISABLE:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_PROV_DISABLE, bearers = %d", __func__, arg->node_prov_disable.bearers);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_PROV_DISABLE, bearers = %d", __func__, arg->node_prov_disable.bearers);
         act = ESP_BLE_MESH_NODE_PROV_DISABLE_COMP_EVT;
         param.node_prov_disable_comp.err_code = bt_mesh_prov_disable(arg->node_prov_disable.bearers);
         break;
     case BTC_BLE_MESH_ACT_NODE_RESET:
-        LOG_DEBUG("%s, BTC_BLE_MESH_ACT_NODE_RESET", __func__);
+        BT_DBG("%s, BTC_BLE_MESH_ACT_NODE_RESET", __func__);
         bt_mesh_reset();
         return;
     case BTC_BLE_MESH_ACT_SET_OOB_PUB_KEY:
@@ -1713,7 +1713,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_set_node_name_comp.err_code =
             bt_mesh_provisioner_set_node_name(arg->set_node_name.index, arg->set_node_name.name);
         break;
-    case BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY: {
+    case BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_APP_KEY: {
         const u8_t *app_key = NULL;
         const u8_t zero[16] = {0};
         if (memcmp(arg->add_local_app_key.app_key, zero, 16)) {
@@ -1726,6 +1726,14 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
                     &arg->add_local_app_key.app_idx);
         break;
     }
+    case BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_APP_KEY:
+        act = ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_APP_KEY_COMP_EVT;
+        param.provisioner_update_app_key_comp.net_idx = arg->update_local_app_key.net_idx;
+        param.provisioner_update_app_key_comp.app_idx = arg->update_local_app_key.app_idx;
+        param.provisioner_update_app_key_comp.err_code =
+            bt_mesh_provisioner_local_app_key_update(arg->update_local_app_key.app_key,
+                    arg->update_local_app_key.net_idx, arg->update_local_app_key.app_idx);
+        break;
     case BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP:
         act = ESP_BLE_MESH_PROVISIONER_BIND_APP_KEY_TO_MODEL_COMP_EVT;
         param.provisioner_bind_app_key_to_model_comp.element_addr = arg->local_mod_app_bind.elem_addr;
@@ -1750,6 +1758,13 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
             bt_mesh_provisioner_local_net_key_add(net_key, &arg->add_local_net_key.net_idx);
         break;
     }
+    case BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_NET_KEY:
+        act = ESP_BLE_MESH_PROVISIONER_UPDATE_LOCAL_NET_KEY_COMP_EVT;
+        param.provisioner_update_net_key_comp.net_idx = arg->update_local_net_key.net_idx;
+        param.provisioner_update_net_key_comp.err_code =
+            bt_mesh_provisioner_local_net_key_update(arg->update_local_net_key.net_key,
+                arg->update_local_net_key.net_idx);
+        break;
     case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
         act = ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT;
         param.provisioner_store_node_comp_data_comp.addr = arg->store_node_comp_data.unicast_addr;
@@ -1865,7 +1880,7 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
     }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
     default:
-        LOG_WARN("%s, Invalid msg->act %d", __func__, msg->act);
+        BT_WARN("%s, Invalid msg->act %d", __func__, msg->act);
         return;
     }
 
@@ -1883,7 +1898,7 @@ void btc_ble_mesh_prov_cb_handler(btc_msg_t *msg)
     esp_ble_mesh_prov_cb_param_t *param = NULL;
 
     if (!msg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -1892,17 +1907,17 @@ void btc_ble_mesh_prov_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_PROV_EVT_MAX) {
         btc_ble_mesh_prov_cb_to_app(msg->act, param);
     } else {
-        LOG_ERROR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
     }
 }
 
 void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
 {
     btc_ble_mesh_model_args_t *arg = NULL;
-    int err;
+    int err = 0;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -1915,7 +1930,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
             common.model = (struct bt_mesh_model *)(arg->model_publish.model);
             common.role  = arg->model_publish.device_role;
             if (bt_mesh_set_client_model_role(&common)) {
-                LOG_ERROR("%s, Failed to set model role", __func__);
+                BT_ERR("%s, Failed to set model role", __func__);
                 break;
             }
         }
@@ -1927,7 +1942,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         /* arg->model_send.length contains opcode & message, 8 is used for TransMIC */
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 8);
         if (!buf) {
-            LOG_ERROR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Failed to allocate memory", __func__);
             break;
         }
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
@@ -1945,7 +1960,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         /* arg->model_send.length contains opcode & message, 8 is used for TransMIC */
         struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 8);
         if (!buf) {
-            LOG_ERROR("%s, Failed to allocate memory", __func__);
+            BT_ERR("%s, Failed to allocate memory", __func__);
             break;
         }
         net_buf_simple_add_mem(buf, arg->model_send.data, arg->model_send.length);
@@ -1953,7 +1968,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         common.model = (struct bt_mesh_model *)(arg->model_send.model);
         common.role  = arg->model_send.device_role;
         if (bt_mesh_set_client_model_role(&common)) {
-            LOG_ERROR("%s, Failed to set model role", __func__);
+            BT_ERR("%s, Failed to set model role", __func__);
             break;
         }
         err = bt_mesh_client_send_msg((struct bt_mesh_model *)arg->model_send.model,
@@ -1974,7 +1989,7 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
                 arg->model_update_state.type, err);
         break;
     default:
-        LOG_WARN("%s, Unknown msg->act %d", __func__, msg->act);
+        BT_WARN("%s, Unknown msg->act %d", __func__, msg->act);
         break;
     }
 
@@ -1987,7 +2002,7 @@ void btc_ble_mesh_model_cb_handler(btc_msg_t *msg)
     esp_ble_mesh_model_cb_param_t *param = NULL;
 
     if (!msg || !msg->arg) {
-        LOG_ERROR("%s, Invalid parameter", __func__);
+        BT_ERR("%s, Invalid parameter", __func__);
         return;
     }
 
@@ -1996,7 +2011,7 @@ void btc_ble_mesh_model_cb_handler(btc_msg_t *msg)
     if (msg->act < ESP_BLE_MESH_MODEL_EVT_MAX) {
         btc_ble_mesh_model_cb_to_app(msg->act, param);
     } else {
-        LOG_ERROR("%s, Unknown msg->act = %d", __func__, msg->act);
+        BT_ERR("%s, Unknown msg->act = %d", __func__, msg->act);
     }
 
     btc_ble_mesh_model_free_req_data(msg);

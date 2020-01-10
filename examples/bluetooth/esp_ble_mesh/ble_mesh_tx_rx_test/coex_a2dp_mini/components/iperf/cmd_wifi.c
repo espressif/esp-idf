@@ -75,32 +75,6 @@ static void scan_done_handler(void)
     free(ap_list_buffer);
 }
 
-static esp_err_t bt_channel_select(uint8_t wifi_channel)
-{
-    uint8_t low = wifi_channel * 5 - 5;
-    uint8_t high = wifi_channel * 5 + 15;
-    esp_bt_gap_afh_channels bt_channel = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-
-    if (wifi_channel != 0) {
-        if (low/8 < sizeof(bt_channel)) {
-            bt_channel[low/8] = 0xFF >> (8 - low%8);
-        }
-        if (low/8 + 1 < sizeof(bt_channel)) {
-            bt_channel[low/8 + 1] = 0;
-        }
-        if (low/8 + 2 < sizeof(bt_channel)) {
-            bt_channel[low/8 + 2] = 0;
-        }
-        if (high/8 < sizeof(bt_channel)) {
-            bt_channel[high/8] = 0xFF << (high%8 + 1);
-        }
-    }
-    ESP_LOGI(TAG, "WiFi channel: %d, BT channel: %02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x", wifi_channel,
-        bt_channel[0], bt_channel[1], bt_channel[2], bt_channel[3], bt_channel[4],
-        bt_channel[5], bt_channel[6], bt_channel[7], bt_channel[8], bt_channel[9]);
-    return esp_bt_gap_set_afh_channels(bt_channel);
-}
-
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
     switch(event->event_id) {
@@ -115,10 +89,8 @@ static esp_err_t event_handler(void *ctx, system_event_t *event)
         break;
     case SYSTEM_EVENT_STA_CONNECTED:
         ESP_LOGI(TAG, "L2 connected");
-        bt_channel_select(event->event_info.connected.channel);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
-        bt_channel_select(0);
         if (reconnect) {
             ESP_LOGI(TAG, "sta disconnect, reconnect...");
             esp_wifi_connect();

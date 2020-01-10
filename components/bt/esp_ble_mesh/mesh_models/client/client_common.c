@@ -168,7 +168,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     bt_mesh_client_internal_data_t *internal = NULL;
     bt_mesh_client_user_data_t *cli = NULL;
     bt_mesh_client_node_t *node = NULL;
-    int err;
+    int err = 0;
 
     if (!model || !ctx || !msg) {
         BT_ERR("%s, Invalid parameter", __func__);

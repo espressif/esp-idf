@@ -51,7 +51,7 @@
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 
-#include "esp_coexist_internal.h"
+#include "esp_coexist.h"
 
 #define SD_STORE 0
 #define TEST_COUNT_MAX 100
@@ -463,7 +463,7 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
         // if (err) {
         //     ESP_LOGE(TAG, "config_scan_enable (err %d)", err);
         // }
-        coex_schm_status_set(COEX_SCHM_ST_TYPE_BLE, COEX_SCHM_BLE_ST_MESH_CONFIG);
+        esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_CONFIG);
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_DISABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_DISABLE_COMP_EVT, err_code %d", param->provisioner_prov_disable_comp.err_code);

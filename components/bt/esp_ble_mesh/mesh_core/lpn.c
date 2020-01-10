@@ -71,6 +71,7 @@
 
 static void (*lpn_cb)(u16_t friend_addr, bool established);
 
+#if !CONFIG_BLE_MESH_NO_LOG
 static const char *state2str(int state)
 {
     switch (state) {
@@ -98,6 +99,7 @@ static const char *state2str(int state)
         return "(unknown)";
     }
 }
+#endif
 
 static inline void lpn_set_state(int state)
 {
@@ -388,7 +390,7 @@ static int send_friend_poll(void)
     };
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     u8_t fsn = lpn->fsn;
-    int err;
+    int err = 0;
 
     BT_DBG("lpn->sent_req 0x%02x", lpn->sent_req);
 
@@ -507,9 +509,9 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
     struct bt_mesh_ctl_friend_offer *msg = (void *)buf->data;
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     struct bt_mesh_subnet *sub = rx->sub;
-    struct friend_cred *cred;
-    u16_t frnd_counter;
-    int err;
+    struct friend_cred *cred = NULL;
+    u16_t frnd_counter = 0U;
+    int err = 0;
 
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Offer");
@@ -570,7 +572,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 {
     struct bt_mesh_ctl_friend_clear_confirm *msg = (void *)buf->data;
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
-    u16_t addr, counter;
+    u16_t addr = 0U, counter = 0U;
 
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Clear Confirm");
@@ -672,8 +674,8 @@ static bool sub_update(u8_t op)
         .xmit = POLL_XMIT,
         .friend_cred = true,
     };
-    struct bt_mesh_ctl_friend_sub req;
-    size_t i, g;
+    struct bt_mesh_ctl_friend_sub req = {0};
+    size_t i = 0U, g = 0U;
 
     BT_DBG("op 0x%02x sent_req 0x%02x", op, lpn->sent_req);
 
@@ -681,7 +683,7 @@ static bool sub_update(u8_t op)
         return false;
     }
 
-    for (i = 0, g = 0; i < ARRAY_SIZE(lpn->groups); i++) {
+    for (i = 0U, g = 0U; i < ARRAY_SIZE(lpn->groups); i++) {
         if (lpn->groups[i] == BLE_MESH_ADDR_UNASSIGNED) {
             continue;
         }
@@ -709,7 +711,7 @@ static bool sub_update(u8_t op)
         }
     }
 
-    if (g == 0) {
+    if (g == 0U) {
         group_zero(lpn->pending);
         return false;
     }
@@ -957,7 +959,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
     struct bt_mesh_ctl_friend_update *msg = (void *)buf->data;
     struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
     struct bt_mesh_subnet *sub = rx->sub;
-    u32_t iv_index;
+    u32_t iv_index = 0U;
 
     if (buf->len < sizeof(*msg)) {
         BT_WARN("Too short Friend Update");

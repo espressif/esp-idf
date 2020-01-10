@@ -215,9 +215,9 @@ uint16_t esp_ble_mesh_provisioner_get_node_index(const char *name);
 /**
  * @brief        This function is called to store the Composition Data of the node.
  *
- * @param[in]    addr:   Element address of the node
- * @param[in]    data:   Pointer of Composition Data
- * @param[in]    length: Length of Composition Data
+ * @param[in]    unicast_addr: Element address of the node
+ * @param[in]    data:         Pointer of Composition Data
+ * @param[in]    length:       Length of Composition Data
  *
  * @return       ESP_OK on success or error code otherwise.
  *
@@ -269,7 +269,7 @@ esp_err_t esp_ble_mesh_provisioner_delete_node_with_uuid(const uint8_t uuid[16])
 esp_err_t esp_ble_mesh_provisioner_delete_node_with_addr(uint16_t unicast_addr);
 
 /**
- * @brief         This function is called to set the app key for the local BLE Mesh stack.
+ * @brief         This function is called to add a local AppKey for Provisioner.
  *
  * @param[in]     app_key: The app key to be set for the local BLE Mesh stack.
  * @param[in]     net_idx: The network key index.
@@ -284,6 +284,19 @@ esp_err_t esp_ble_mesh_provisioner_delete_node_with_addr(uint16_t unicast_addr);
  *
  */
 esp_err_t esp_ble_mesh_provisioner_add_local_app_key(const uint8_t app_key[16], uint16_t net_idx, uint16_t app_idx);
+
+/**
+ * @brief         This function is used to update a local AppKey for Provisioner.
+ *
+ * @param[in]     app_key: Value of the AppKey.
+ * @param[in]     net_idx: Corresponding NetKey Index.
+ * @param[in]     app_idx: The AppKey Index
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_update_local_app_key(const uint8_t app_key[16],
+                uint16_t net_idx, uint16_t app_idx);
 
 /**
  * @brief         This function is called by Provisioner to get the local app key value.
@@ -327,6 +340,17 @@ esp_err_t esp_ble_mesh_provisioner_bind_app_key_to_local_model(uint16_t element_
  *
  */
 esp_err_t esp_ble_mesh_provisioner_add_local_net_key(const uint8_t net_key[16], uint16_t net_idx);
+
+/**
+ * @brief         This function is called by Provisioner to update a local network key.
+ *
+ * @param[in]     net_key: Value of the NetKey.
+ * @param[in]     net_idx: The NetKey Index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_update_local_net_key(const uint8_t net_key[16], uint16_t net_idx);
 
 /**
  * @brief         This function is called by Provisioner to get the local network key value.

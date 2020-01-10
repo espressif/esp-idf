@@ -40,64 +40,64 @@ static const struct {
     const u16_t id;
     int (*const init)(struct bt_mesh_model *model, bool primary);
 } model_init[] = {
-    { BLE_MESH_MODEL_ID_CFG_SRV, bt_mesh_cfg_srv_init },
-    { BLE_MESH_MODEL_ID_HEALTH_SRV, bt_mesh_health_srv_init },
+    { BLE_MESH_MODEL_ID_CFG_SRV,                   bt_mesh_cfg_srv_init                   },
+    { BLE_MESH_MODEL_ID_HEALTH_SRV,                bt_mesh_health_srv_init                },
 #if defined(CONFIG_BLE_MESH_CFG_CLI)
-    { BLE_MESH_MODEL_ID_CFG_CLI, bt_mesh_cfg_cli_init },
+    { BLE_MESH_MODEL_ID_CFG_CLI,                   bt_mesh_cfg_cli_init                   },
 #endif
 #if defined(CONFIG_BLE_MESH_HEALTH_CLI)
-    { BLE_MESH_MODEL_ID_HEALTH_CLI, bt_mesh_health_cli_init },
+    { BLE_MESH_MODEL_ID_HEALTH_CLI,                bt_mesh_health_cli_init                },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
-    { BLE_MESH_MODEL_ID_GEN_ONOFF_CLI, bt_mesh_gen_onoff_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_ONOFF_CLI,             bt_mesh_gen_onoff_cli_init             },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_LEVEL_CLI)
-    { BLE_MESH_MODEL_ID_GEN_LEVEL_CLI, bt_mesh_gen_level_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_LEVEL_CLI,             bt_mesh_gen_level_cli_init             },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_DEF_TRANS_TIME_CLI)
-    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI, bt_mesh_gen_def_trans_time_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_CLI,    bt_mesh_gen_def_trans_time_cli_init    },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_POWER_ONOFF_CLI)
-    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI, bt_mesh_gen_pwr_onoff_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_CLI,       bt_mesh_gen_pwr_onoff_cli_init         },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_POWER_LEVEL_CLI)
-    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI, bt_mesh_gen_pwr_level_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_CLI,       bt_mesh_gen_pwr_level_cli_init         },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_BATTERY_CLI)
-    { BLE_MESH_MODEL_ID_GEN_BATTERY_CLI, bt_mesh_gen_battery_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_BATTERY_CLI,           bt_mesh_gen_battery_cli_init           },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_LOCATION_CLI)
-    { BLE_MESH_MODEL_ID_GEN_LOCATION_CLI, bt_mesh_gen_location_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_LOCATION_CLI,          bt_mesh_gen_location_cli_init          },
 #endif
 #if defined(CONFIG_BLE_MESH_GENERIC_PROPERTY_CLI)
-    { BLE_MESH_MODEL_ID_GEN_PROP_CLI, bt_mesh_gen_property_cli_init },
+    { BLE_MESH_MODEL_ID_GEN_PROP_CLI,              bt_mesh_gen_property_cli_init          },
 #endif
 #if defined(CONFIG_BLE_MESH_SENSOR_CLI)
-    { BLE_MESH_MODEL_ID_SENSOR_CLI, bt_mesh_sensor_cli_init },
+    { BLE_MESH_MODEL_ID_SENSOR_CLI,                bt_mesh_sensor_cli_init                },
 #endif
 #if defined(CONFIG_BLE_MESH_TIME_CLI)
-    { BLE_MESH_MODEL_ID_TIME_CLI, bt_mesh_time_cli_init },
+    { BLE_MESH_MODEL_ID_TIME_CLI,                  bt_mesh_time_cli_init                  },
 #endif
 #if defined(CONFIG_BLE_MESH_SCENE_CLI)
-    { BLE_MESH_MODEL_ID_SCENE_CLI, bt_mesh_scene_cli_init },
+    { BLE_MESH_MODEL_ID_SCENE_CLI,                 bt_mesh_scene_cli_init                 },
 #endif
 #if defined(CONFIG_BLE_MESH_SCHEDULER_CLI)
-    { BLE_MESH_MODEL_ID_SCHEDULER_CLI, bt_mesh_scheduler_cli_init },
+    { BLE_MESH_MODEL_ID_SCHEDULER_CLI,             bt_mesh_scheduler_cli_init             },
 #endif
 #if defined(CONFIG_BLE_MESH_LIGHT_LIGHTNESS_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI, bt_mesh_light_lightness_cli_init },
+    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_CLI,       bt_mesh_light_lightness_cli_init       },
 #endif
 #if defined(CONFIG_BLE_MESH_LIGHT_CTL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_CTL_CLI, bt_mesh_light_ctl_cli_init },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_CLI,             bt_mesh_light_ctl_cli_init             },
 #endif
 #if defined(CONFIG_BLE_MESH_LIGHT_HSL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_HSL_CLI, bt_mesh_light_hsl_cli_init },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_CLI,             bt_mesh_light_hsl_cli_init             },
 #endif
 #if defined(CONFIG_BLE_MESH_LIGHT_XYL_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_XYL_CLI, bt_mesh_light_xyl_cli_init },
+    { BLE_MESH_MODEL_ID_LIGHT_XYL_CLI,             bt_mesh_light_xyl_cli_init             },
 #endif
 #if defined(CONFIG_BLE_MESH_LIGHT_LC_CLI)
-    { BLE_MESH_MODEL_ID_LIGHT_LC_CLI, bt_mesh_light_lc_cli_init },
+    { BLE_MESH_MODEL_ID_LIGHT_LC_CLI,              bt_mesh_light_lc_cli_init              },
 #endif
     { BLE_MESH_MODEL_ID_GEN_ONOFF_SRV,             bt_mesh_gen_onoff_srv_init             },
     { BLE_MESH_MODEL_ID_GEN_LEVEL_SRV,             bt_mesh_gen_level_srv_init             },
@@ -302,7 +302,7 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 static s32_t next_period(struct bt_mesh_model *mod)
 {
     struct bt_mesh_model_pub *pub = mod->pub;
-    u32_t elapsed, period;
+    u32_t elapsed = 0U, period = 0U;
 
     if (!pub) {
         BT_ERR("%s, Model has no publication support", __func__);
@@ -330,7 +330,7 @@ static s32_t next_period(struct bt_mesh_model *mod)
 static void publish_sent(int err, void *user_data)
 {
     struct bt_mesh_model *mod = user_data;
-    s32_t delay;
+    s32_t delay = 0;
 
     BT_DBG("err %d", err);
 
@@ -394,7 +394,7 @@ static int publish_retransmit(struct bt_mesh_model *mod)
         .xmit = bt_mesh_net_transmit_get(),
         .friend_cred = pub->cred,
     };
-    int err;
+    int err = 0;
 
     key = bt_mesh_app_key_find(pub->key);
     if (!key) {
@@ -428,8 +428,8 @@ static void mod_publish(struct k_work *work)
     struct bt_mesh_model_pub *pub = CONTAINER_OF(work,
                                     struct bt_mesh_model_pub,
                                     timer.work);
-    s32_t period_ms;
-    int err;
+    s32_t period_ms = 0;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -481,7 +481,7 @@ struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod)
 
 struct bt_mesh_model *bt_mesh_model_get(bool vnd, u8_t elem_idx, u8_t mod_idx)
 {
-    struct bt_mesh_elem *elem;
+    struct bt_mesh_elem *elem = NULL;
 
     if (!dev_comp) {
         BT_ERR("%s, dev_comp is not initialized", __func__);
@@ -550,7 +550,7 @@ static void mod_init(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 static void mod_deinit(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                        bool vnd, bool primary, void *user_data)
 {
-    size_t i;
+    int i;
 
     mod->elem = NULL;
 
@@ -559,7 +559,7 @@ static void mod_deinit(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
         k_delayed_work_free(&mod->pub->timer);
     }
 
-    for (i = 0U; i < ARRAY_SIZE(mod->keys); i++) {
+    for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
         mod->keys[i] = BLE_MESH_KEY_UNUSED;
     }
 
@@ -654,8 +654,8 @@ u16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, u16_t addr)
 static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
         u16_t group_addr)
 {
-    struct bt_mesh_model *model;
-    u16_t *match;
+    struct bt_mesh_model *model = NULL;
+    u16_t *match = NULL;
     int i;
 
     for (i = 0; i < elem->model_count; i++) {
@@ -681,7 +681,7 @@ static struct bt_mesh_model *bt_mesh_elem_find_group(struct bt_mesh_elem *elem,
 
 struct bt_mesh_elem *bt_mesh_elem_find(u16_t addr)
 {
-    u16_t index;
+    u16_t index = 0U;
 
     if (BLE_MESH_ADDR_IS_UNICAST(addr)) {
         index = (addr - dev_comp->elem[0].addr);
@@ -726,9 +726,9 @@ static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
         u16_t app_idx, u32_t opcode,
         struct bt_mesh_model **model)
 {
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < model_count; i++) {
+    for (i = 0; i < model_count; i++) {
         const struct bt_mesh_model_op *op;
 
         *model = &models[i];
@@ -808,10 +808,10 @@ bool bt_mesh_fixed_group_match(u16_t addr)
 
 void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
-    struct bt_mesh_model *models, *model;
-    const struct bt_mesh_model_op *op;
-    u32_t opcode;
-    u8_t count;
+    struct bt_mesh_model *models = NULL, *model = NULL;
+    const struct bt_mesh_model_op *op = NULL;
+    u32_t opcode = 0U;
+    u8_t count = 0U;
     int i;
 
     BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
@@ -936,7 +936,7 @@ static int model_send(struct bt_mesh_model *model,
                       struct net_buf_simple *msg,
                       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-    u8_t role;
+    u8_t role = 0U;
 
     role = bt_mesh_get_device_role(model, tx->ctx->srv_send);
     if (role == ROLE_NVAL) {
@@ -977,7 +977,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
                        const struct bt_mesh_send_cb *cb, void *cb_data)
 {
     struct bt_mesh_subnet *sub = NULL;
-    u8_t role;
+    u8_t role = 0U;
 
     role = bt_mesh_get_device_role(model, ctx->srv_send);
     if (role == ROLE_NVAL) {
@@ -1016,7 +1016,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         .src = bt_mesh_model_elem(model)->addr,
         .xmit = bt_mesh_net_transmit_get(),
     };
-    int err;
+    int err = 0;
 
     BT_DBG("%s", __func__);
 
@@ -1088,9 +1088,9 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
         u16_t company, u16_t id)
 {
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < elem->vnd_model_count; i++) {
+    for (i = 0; i < elem->vnd_model_count; i++) {
         if (elem->vnd_models[i].vnd.company == company &&
                 elem->vnd_models[i].vnd.id == id) {
             return &elem->vnd_models[i];
@@ -1103,9 +1103,9 @@ struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
 struct bt_mesh_model *bt_mesh_model_find(struct bt_mesh_elem *elem,
         u16_t id)
 {
-    u8_t i;
+    int i;
 
-    for (i = 0U; i < elem->model_count; i++) {
+    for (i = 0; i < elem->model_count; i++) {
         if (elem->models[i].id == id) {
             return &elem->models[i];
         }
@@ -1168,7 +1168,7 @@ struct bt_mesh_app_key *bt_mesh_tx_appkey_get(u8_t role, u16_t app_idx)
 /* APIs used by messages decryption in network layer & upper transport layer */
 size_t bt_mesh_rx_netkey_size(void)
 {
-    size_t size = 0;
+    size_t size = 0U;
 
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {
@@ -1221,7 +1221,7 @@ struct bt_mesh_subnet *bt_mesh_rx_netkey_get(size_t index)
 
 size_t bt_mesh_rx_devkey_size(void)
 {
-    size_t size = 0;
+    size_t size = 0U;
 
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {
@@ -1274,7 +1274,7 @@ const u8_t *bt_mesh_rx_devkey_get(size_t index, u16_t src)
 
 size_t bt_mesh_rx_appkey_size(void)
 {
-    size_t size = 0;
+    size_t size = 0U;
 
 #if CONFIG_BLE_MESH_NODE && !CONFIG_BLE_MESH_PROVISIONER
     if (bt_mesh_is_provisioned()) {

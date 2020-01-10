@@ -14,7 +14,7 @@
 
 #include "iot_button.h"
 #include "board.h"
-#include "esp_coexist_internal.h"
+#include "esp_coexist.h"
 #include "esp_ble_mesh_common_api.h"
 
 #define TAG "BOARD"
@@ -83,7 +83,8 @@ static void button_tap_cb(void* arg)
             }
         }
     } else {
-        coex_schm_status_set(COEX_SCHM_ST_TYPE_BLE, COEX_SCHM_BLE_ST_MESH_TRAFFIC);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY | ESP_COEX_BLE_ST_MESH_TRAFFIC | ESP_COEX_BLE_ST_MESH_CONFIG);
+        esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_TRAFFIC);
 
         ESP_LOGW(TAG, "BLE Mesh enters Traffic mode");
 

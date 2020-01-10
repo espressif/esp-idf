@@ -34,7 +34,7 @@ int bt_mesh_device_auto_enter_network(struct bt_mesh_device_network_info *info)
     struct bt_mesh_app_key *key = NULL;
     struct bt_mesh_subnet *sub = NULL;
     int i, j, k;
-    int err;
+    int err = 0;
 
     if (info == NULL || !BLE_MESH_ADDR_IS_UNICAST(info->unicast_addr) ||
             !BLE_MESH_ADDR_IS_GROUP(info->group_addr)) {

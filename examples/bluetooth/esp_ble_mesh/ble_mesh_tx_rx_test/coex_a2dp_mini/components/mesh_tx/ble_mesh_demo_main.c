@@ -28,7 +28,7 @@
 
 #include "board.h"
 #include "ble_mesh_demo_init.h"
-#include "esp_coexist_internal.h"
+#include "esp_coexist.h"
 
 #define CID_ESP             0x02E5
 #define CID_NVAL            0xFFFF
@@ -367,11 +367,12 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT, err_code %d", param->provisioner_prov_enable_comp.err_code);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY | ESP_COEX_BLE_ST_MESH_TRAFFIC | ESP_COEX_BLE_ST_MESH_CONFIG);
         if (iperf_test == true) {
-            coex_schm_status_set(COEX_SCHM_ST_TYPE_BLE, COEX_SCHM_BLE_ST_MESH_STANDBY);
+            esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY);
             ESP_LOGW(TAG, "BLE Mesh enters Standby mode");
         } else {
-            coex_schm_status_set(COEX_SCHM_ST_TYPE_BLE, COEX_SCHM_BLE_ST_MESH_CONFIG);
+            esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_CONFIG);
             ESP_LOGW(TAG, "BLE Mesh enters Config mode");
         }
         break;
