@@ -22,7 +22,6 @@ API 指南
    分区表 <partition-tables>
    Secure Boot <../security/secure-boot>
    ULP 协处理器 <ulp>
-   ULP ( CMake) <ulp-cmake>
    ULP ( Legacy GNU Make) <ulp-legacy>
    单元测试 <unit-tests>
    单元测试 (传统 GNU Make) <unit-tests-legacy>
