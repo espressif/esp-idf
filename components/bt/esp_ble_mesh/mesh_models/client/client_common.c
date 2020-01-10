@@ -266,18 +266,21 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
         return -EINVAL;
     }
 
-    /* TODO: call osi_free() when deinit function is invoked */
-    data = osi_calloc(sizeof(bt_mesh_client_internal_data_t));
-    if (!data) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return -ENOMEM;
+    if (!cli->internal_data) {
+        data = osi_calloc(sizeof(bt_mesh_client_internal_data_t));
+        if (!data) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+
+        /* Init the client data queue */
+        sys_slist_init(&data->queue);
+
+        cli->model = model;
+        cli->internal_data = data;
+    } else {
+        bt_mesh_client_clear_list(cli->internal_data);
     }
-
-    /* Init the client data queue */
-    sys_slist_init(&data->queue);
-
-    cli->model = model;
-    cli->internal_data = data;
 
     bt_mesh_client_model_mutex_new();
 
@@ -312,6 +315,28 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     bt_mesh_list_unlock();
     // Free the node
     osi_free(node);
+
+    return 0;
+}
+
+int bt_mesh_client_clear_list(void *data)
+{
+    bt_mesh_client_internal_data_t *internal = NULL;
+    bt_mesh_client_node_t *node = NULL;
+
+    if (!data) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    internal = (bt_mesh_client_internal_data_t *)data;
+
+    bt_mesh_list_lock();
+    while (!sys_slist_is_empty(&internal->queue)) {
+        node = (void *)sys_slist_get_not_empty(&internal->queue);
+        osi_free(node);
+    }
+    bt_mesh_list_unlock();
 
     return 0;
 }

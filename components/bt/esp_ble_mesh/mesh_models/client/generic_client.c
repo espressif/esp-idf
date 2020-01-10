@@ -1172,19 +1172,22 @@ static int generic_client_init(struct bt_mesh_model *model, bool primary)
         return -EINVAL;
     }
 
-    /* TODO: call osi_free() when deinit function is invoked*/
-    internal = osi_calloc(sizeof(generic_internal_data_t));
-    if (!internal) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return -ENOMEM;
+    if (!client->internal_data) {
+        internal = osi_calloc(sizeof(generic_internal_data_t));
+        if (!internal) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+
+        sys_slist_init(&internal->queue);
+
+        client->model = model;
+        client->op_pair_size = ARRAY_SIZE(gen_op_pair);
+        client->op_pair = gen_op_pair;
+        client->internal_data = internal;
+    } else {
+        bt_mesh_client_clear_list(client->internal_data);
     }
-
-    sys_slist_init(&internal->queue);
-
-    client->model = model;
-    client->op_pair_size = ARRAY_SIZE(gen_op_pair);
-    client->op_pair = gen_op_pair;
-    client->internal_data = internal;
 
     bt_mesh_generic_client_mutex_new();
 

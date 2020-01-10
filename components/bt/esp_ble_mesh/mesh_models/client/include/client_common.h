@@ -108,6 +108,8 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
 
 int bt_mesh_client_free_node(bt_mesh_client_node_t *node);
 
+int bt_mesh_client_clear_list(void *data);
+
 enum {
     NODE = 0,
     PROVISIONER,
