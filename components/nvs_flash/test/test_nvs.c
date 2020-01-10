@@ -18,6 +18,25 @@
 
 static const char* TAG = "test_nvs";
 
+// test could have different output on host tests
+TEST_CASE("nvs deinit with open handle", "[nvs]")
+{
+    nvs_handle_t handle_1;
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGW(TAG, "nvs_flash_init failed (0x%x), erasing partition and retrying", err);
+        const esp_partition_t* nvs_partition = esp_partition_find_first(
+                ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, NULL);
+        assert(nvs_partition && "partition table must have an NVS partition");
+        ESP_ERROR_CHECK( esp_partition_erase_range(nvs_partition, 0, nvs_partition->size) );
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK( err );
+
+    TEST_ESP_OK(nvs_open("deinit_ns", NVS_READWRITE, &handle_1));
+    nvs_flash_deinit();
+}
+
 TEST_CASE("various nvs tests", "[nvs]")
 {
     nvs_handle_t handle_1;
