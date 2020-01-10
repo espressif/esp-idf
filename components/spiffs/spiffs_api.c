@@ -35,7 +35,7 @@ s32_t spiffs_api_read(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *dst)
 {
     esp_err_t err = esp_partition_read(((esp_spiffs_t *)(fs->user_data))->partition, 
                                         addr, dst, size);
-    if (err) {
+    if (unlikely(err)) {
         ESP_LOGE(TAG, "failed to read addr %08x, size %08x, err %d", addr, size, err);
         return -1;
     }
@@ -46,7 +46,7 @@ s32_t spiffs_api_write(spiffs *fs, uint32_t addr, uint32_t size, uint8_t *src)
 {
     esp_err_t err = esp_partition_write(((esp_spiffs_t *)(fs->user_data))->partition, 
                                         addr, src, size);
-    if (err) {
+    if (unlikely(err)) {
         ESP_LOGE(TAG, "failed to write addr %08x, size %08x, err %d", addr, size, err);
         return -1;
     }

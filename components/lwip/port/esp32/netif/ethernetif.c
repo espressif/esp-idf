@@ -51,6 +51,7 @@
 #include "esp_eth.h"
 #include "esp_netif.h"
 #include "esp_netif_net_stack.h"
+#include "esp_compiler.h"
 
 /* Define those to better describe your network interface. */
 #define IFNAME0 'e'
@@ -133,7 +134,7 @@ static err_t ethernet_low_level_output(struct netif *netif, struct pbuf *p)
         pbuf_free(q);
     }
     /* Check error */
-    if (ret != ESP_OK) {
+    if (unlikely(ret != ESP_OK)) {
         return ERR_ABRT;
     } else {
         return ERR_OK;
@@ -156,7 +157,7 @@ void ethernetif_input(void *h, void *buffer, size_t len, void *eb)
     struct netif *netif = h;
     struct pbuf *p;
 
-    if (buffer == NULL || !netif_is_up(netif)) {
+    if (unlikely(buffer == NULL || !netif_is_up(netif))) {
         if (buffer) {
             ethernet_free_rx_buf_l2(netif, buffer);
         }
@@ -175,7 +176,7 @@ void ethernetif_input(void *h, void *buffer, size_t len, void *eb)
     p->l2_buf = buffer;
 #endif
     /* full packet send to tcpip_thread to process */
-    if (netif->input(p, netif) != ERR_OK) {
+    if (unlikely(netif->input(p, netif) != ERR_OK)) {
         LWIP_DEBUGF(NETIF_DEBUG, ("ethernetif_input: IP input error\n"));
         pbuf_free(p);
     }

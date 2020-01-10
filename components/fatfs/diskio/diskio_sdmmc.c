@@ -17,6 +17,7 @@
 #include "ff.h"
 #include "sdmmc_cmd.h"
 #include "esp_log.h"
+#include "esp_compiler.h"
 
 static sdmmc_card_t* s_cards[FF_VOLUMES] = { NULL };
 
@@ -37,7 +38,7 @@ DRESULT ff_sdmmc_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
     esp_err_t err = sdmmc_read_sectors(card, buff, sector, count);
-    if (err != ESP_OK) {
+    if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "sdmmc_read_blocks failed (%d)", err);
         return RES_ERROR;
     }
@@ -49,7 +50,7 @@ DRESULT ff_sdmmc_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
     sdmmc_card_t* card = s_cards[pdrv];
     assert(card);
     esp_err_t err = sdmmc_write_sectors(card, buff, sector, count);
-    if (err != ESP_OK) {
+    if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "sdmmc_write_blocks failed (%d)", err);
         return RES_ERROR;
     }

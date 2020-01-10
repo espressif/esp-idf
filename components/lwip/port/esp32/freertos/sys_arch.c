@@ -40,6 +40,7 @@
 #include "arch/sys_arch.h"
 #include "lwip/stats.h"
 #include "esp_log.h"
+#include "esp_compiler.h"
 
 static const char* TAG = "lwip_arch";
 

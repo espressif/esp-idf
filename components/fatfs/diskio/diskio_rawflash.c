@@ -18,6 +18,7 @@
 #include "ff.h"
 #include "esp_log.h"
 #include "diskio_rawflash.h"
+#include "esp_compiler.h"
 
 static const char* TAG = "diskio_rawflash";
 
@@ -40,7 +41,7 @@ DRESULT ff_raw_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
     const esp_partition_t* part = ff_raw_handles[pdrv];
     assert(part);
     esp_err_t err = esp_partition_read(part, sector * SPI_FLASH_SEC_SIZE, buff, count * SPI_FLASH_SEC_SIZE);
-    if (err != ESP_OK) {
+    if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "esp_partition_read failed (0x%x)", err);
         return RES_ERROR;
     }
