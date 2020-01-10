@@ -63,7 +63,6 @@ tools/docker/hooks/build
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py
 tools/esp_app_trace/test/logtrace/test.sh
-tools/esp_app_trace/test/sysview/compare_json.py
 tools/esp_app_trace/test/sysview/test.sh
 tools/find_apps.py
 tools/format.sh
