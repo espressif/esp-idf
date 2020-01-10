@@ -19,7 +19,6 @@
 #include <stdbool.h>
 
 #include "esp_attr.h"
-
 #include "soc/spi_mem_reg.h"
 
 #ifdef __cplusplus
@@ -125,7 +124,12 @@ typedef enum {
     ESP_ROM_SPIFLASH_DIO_MODE,
     ESP_ROM_SPIFLASH_DOUT_MODE,
     ESP_ROM_SPIFLASH_FASTRD_MODE,
-    ESP_ROM_SPIFLASH_SLOWRD_MODE
+    ESP_ROM_SPIFLASH_SLOWRD_MODE,
+    ESP_ROM_SPIFASH_OPI_STR_MODE,
+    ESP_ROM_SPIFASH_OPI_DTR_MODE,
+    ESP_ROM_SPIFASH_OOUT_MODE,
+    ESP_ROM_SPIFASH_OIO_STR_MODE,
+    ESP_ROM_SPIFASH_OIO_DTR_MODE,
 } esp_rom_spiflash_read_mode_t;
 
 typedef enum {

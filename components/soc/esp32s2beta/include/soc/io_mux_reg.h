@@ -139,6 +139,7 @@
 #define U0RXD_GPIO_NUM 44
 #define U0TXD_GPIO_NUM 43
 
+#define SPI_CS1_GPIO_NUM 26
 #define SPI_HD_GPIO_NUM  27
 #define SPI_WP_GPIO_NUM  28
 #define SPI_CS0_GPIO_NUM 29

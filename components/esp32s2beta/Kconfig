@@ -152,6 +152,37 @@ menu "ESP32S2-specific"
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
+        menu "PSRAM clock and cs IO for ESP32S2"
+            depends on ESP32S2_SPIRAM_SUPPORT
+            config DEFAULT_PSRAM_CLK_IO
+                int "PSRAM CLK IO number"
+                range 0 33
+                default 30
+                help
+                    The PSRAM CLOCK IO can be any unused GPIO, user can config it based on hardware design.
+
+            config DEFAULT_PSRAM_CS_IO
+                int "PSRAM CS IO number"
+                range 0 33
+                default 26
+                help
+                    The PSRAM CS IO can be any unused GPIO, user can config it based on hardware design.
+        endmenu
+        config SPIRAM_SPIWP_SD3_PIN
+            int "SPI PSRAM WP(SD3) Pin when customising pins via eFuse (read help)"
+            depends on ESPTOOLPY_FLASHMODE_DIO || ESPTOOLPY_FLASHMODE_DOUT
+            range 0 33
+            default 28
+            help
+                This value is ignored unless flash mode is set to DIO or DOUT and the SPI flash pins have been
+                overriden by setting the eFuses SPI_PAD_CONFIG_xxx.
+
+                Different from esp32 chip, on esp32s2, the WP pin would also be defined in efuse. This value would only
+                be used if the WP pin recorded in efuse SPI_PAD_CONFIG_xxx is invalid.
+
+                When flash mode is set to QIO or QOUT, the PSRAM WP pin will be set as the value configured in
+                bootloader.
+
 
         config SPIRAM_FETCH_INSTRUCTIONS
             bool "Cache fetch instructions from SPI RAM"

@@ -41,12 +41,12 @@ void bootloader_flash_update_id()
 
 void IRAM_ATTR bootloader_flash_cs_timing_config()
 {
-    SET_PERI_REG_MASK(SPI_USER_REG(0), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_CS_HOLD_TIME_V, 1, SPI_CS_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(0), SPI_CS_SETUP_TIME_V, 0, SPI_CS_SETUP_TIME_S);
-    SET_PERI_REG_MASK(SPI_USER_REG(1), SPI_CS_HOLD_M | SPI_CS_SETUP_M);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_CS_HOLD_TIME_V, 1, SPI_CS_HOLD_TIME_S);
-    SET_PERI_REG_BITS(SPI_CTRL2_REG(1), SPI_CS_SETUP_TIME_V, 0, SPI_CS_SETUP_TIME_S);
+    SET_PERI_REG_MASK(SPI_MEM_USER_REG(0), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_HOLD_TIME_V, 0, SPI_MEM_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(0), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
+    SET_PERI_REG_MASK(SPI_MEM_USER_REG(1), SPI_MEM_CS_HOLD_M | SPI_MEM_CS_SETUP_M);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(1), SPI_MEM_CS_HOLD_TIME_V, 1, SPI_MEM_CS_HOLD_TIME_S);
+    SET_PERI_REG_BITS(SPI_MEM_CTRL2_REG(1), SPI_MEM_CS_SETUP_TIME_V, 0, SPI_MEM_CS_SETUP_TIME_S);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t* pfhdr)
@@ -71,43 +71,14 @@ void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t* pfhdr)
     esp_rom_spiflash_config_clk(spi_clk_div, 0);
 }
 
+void IRAM_ATTR bootloader_flash_set_dummy_out(void)
+{
+    REG_SET_BIT(SPI_MEM_CTRL_REG(0), SPI_MEM_FDUMMY_OUT | SPI_MEM_D_POL | SPI_MEM_Q_POL);
+    REG_SET_BIT(SPI_MEM_CTRL_REG(1), SPI_MEM_FDUMMY_OUT | SPI_MEM_D_POL | SPI_MEM_Q_POL);
+}
+
 void IRAM_ATTR bootloader_flash_dummy_config(const esp_image_header_t* pfhdr)
 {
-    int spi_cache_dummy = 0;
-    int drv = 2;
-    switch (pfhdr->spi_mode) {
-    case ESP_IMAGE_SPI_MODE_QIO:
-        spi_cache_dummy = SPI0_R_QIO_DUMMY_CYCLELEN;
-        break;
-    case ESP_IMAGE_SPI_MODE_DIO:
-        spi_cache_dummy = SPI0_R_DIO_DUMMY_CYCLELEN;   //qio 3
-        break;
-    case ESP_IMAGE_SPI_MODE_QOUT:
-    case ESP_IMAGE_SPI_MODE_DOUT:
-    default:
-        spi_cache_dummy = SPI0_R_FAST_DUMMY_CYCLELEN;
-        break;
-    }
-
-    /* dummy_len_plus values defined in ROM for SPI flash configuration */
-    extern uint8_t g_rom_spiflash_dummy_len_plus[];
-    switch (pfhdr->spi_speed) {
-    case ESP_IMAGE_SPI_SPEED_80M:
-        g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_80M;
-        g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_80M;
-        SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_80M,
-                          SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
-        drv = 3;
-        break;
-    case ESP_IMAGE_SPI_SPEED_40M:
-        g_rom_spiflash_dummy_len_plus[0] = FLASH_IO_MATRIX_DUMMY_40M;
-        g_rom_spiflash_dummy_len_plus[1] = FLASH_IO_MATRIX_DUMMY_40M;
-        SET_PERI_REG_BITS(SPI_MEM_USER1_REG(0), SPI_MEM_USR_DUMMY_CYCLELEN_V, spi_cache_dummy + FLASH_IO_MATRIX_DUMMY_40M,
-                          SPI_MEM_USR_DUMMY_CYCLELEN_S);  //DUMMY
-        break;
-    default:
-        break;
-    }
-
-    bootloader_configure_spi_pins(drv);
+    bootloader_configure_spi_pins(1);
+    bootloader_flash_set_dummy_out();
 }
