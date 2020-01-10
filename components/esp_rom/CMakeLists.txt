@@ -24,6 +24,12 @@ else() # Regular app build
 
         if(NOT CONFIG_SPIRAM_CACHE_WORKAROUND)
             list(APPEND scripts "esp32/ld/esp32.rom.newlib-funcs.ld")
+            if(NOT CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS)
+                # If SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS option is defined
+                # then all time functions from the ROM memory will not be linked.
+                # Instead, those functions can be used from the toolchain by ESP-IDF.
+                target_linker_script(${COMPONENT_LIB} INTERFACE "esp32/ld/esp32.rom.newlib-funcs-time.ld")
+            endif()
         endif()
 
         if(CONFIG_NEWLIB_NANO_FORMAT)

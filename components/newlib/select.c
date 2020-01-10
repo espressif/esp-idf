@@ -44,7 +44,7 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct
 #ifdef CONFIG_LWIP_USE_ONLY_LWIP_SELECT
     ESP_LOGD(TAG, "lwip_select starts with nfds = %d", nfds);
     if (timeout) {
-        ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);
+        ESP_LOGD(TAG, "timeout is %lds + %ldus", (long)timeout->tv_sec, timeout->tv_usec);
     }
     log_fd_set("readfds", readfds);
     log_fd_set("writefds", writefds);

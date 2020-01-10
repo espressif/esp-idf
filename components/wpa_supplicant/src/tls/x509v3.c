@@ -1785,7 +1785,7 @@ int x509_certificate_chain_validate(struct x509_certificate *trusted,
 		     (unsigned long) cert->not_after)) {
 			wpa_printf(MSG_INFO, "X509: Certificate not valid "
 				   "(now=%lu not_before=%lu not_after=%lu)",
-				   now.sec, cert->not_before, cert->not_after);
+				   (unsigned long)now.sec, (unsigned long)cert->not_before, (unsigned long)cert->not_after);
 			*reason = X509_VALIDATE_CERTIFICATE_EXPIRED;
 			return -1;
 		}

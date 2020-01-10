@@ -8,12 +8,12 @@
    weak symbols, newlib related functions are exported using assignment,
    which declares strong symbols. This is done so that ROM functions are always
    used instead of the ones provided by libc.a.
+
+   Time functions were moved to the esp32.rom.newlib-funcs-time.ld file.
  */
 
 abs = 0x40056340;
 __ascii_wctomb = 0x40058ef0;
-asctime = 0x40059588;
-asctime_r = 0x40000ec8;
 atoi = 0x400566c4;
 _atoi_r = 0x400566d4;
 atol = 0x400566ec;
@@ -22,8 +22,6 @@ bzero = 0x4000c1f4;
 _cleanup = 0x40001df8;
 _cleanup_r = 0x40001d48;
 creat = 0x40000e8c;
-ctime = 0x400595b0;
-ctime_r = 0x400595c4;
 div = 0x40056348;
 __dummy_lock = 0x4000c728;
 __dummy_lock_try = 0x4000c730;
@@ -41,11 +39,7 @@ fputwc = 0x40058ea8;
 _fputwc_r = 0x40058e4c;
 _fwalk = 0x4000c738;
 _fwalk_reent = 0x4000c770;
-__get_current_time_locale = 0x40001834;
 _getenv_r = 0x40001fbc;
-__gettzinfo = 0x40001fcc;
-gmtime = 0x40059848;
-gmtime_r = 0x40059868;
 isalnum = 0x40000f04;
 isalpha = 0x40000f18;
 isascii = 0x4000c20c;
@@ -63,8 +57,6 @@ __itoa = 0x40056678;
 itoa = 0x400566b4;
 labs = 0x40056370;
 ldiv = 0x40056378;
-localtime = 0x400595dc;
-localtime_r = 0x400595fc;
 longjmp = 0x400562cc;
 memccpy = 0x4000c220;
 memchr = 0x4000c244;
@@ -73,7 +65,6 @@ memcpy = 0x4000c2c8;
 memmove = 0x4000c3c0;
 memrchr = 0x4000c400;
 memset = 0x4000c44c;
-mktime = 0x4005a5e8;
 qsort = 0x40056424;
 rand = 0x40001058;
 rand_r = 0x400010d4;
@@ -105,7 +96,6 @@ strcpy = 0x400013ac;
 strcspn = 0x4000c558;
 strdup = 0x4000143c;
 _strdup_r = 0x40001450;
-strftime = 0x40059ab4;
 strlcat = 0x40001470;
 strlcpy = 0x4000c584;
 strlen = 0x400014c0;
@@ -133,15 +123,11 @@ __swbuf = 0x40058cb4;
 __swbuf_r = 0x40058bec;
 __swrite = 0x40001150;
 __swsetup_r = 0x40058cc8;
-time = 0x40001844;
-__time_load_locale = 0x4000183c;
 toascii = 0x4000c720;
 tolower = 0x40001868;
 toupper = 0x40001884;
 __tzcalc_limits = 0x400018a0;
 __tz_lock = 0x40001a04;
-tzset = 0x40001a1c;
-_tzset_r = 0x40001a28;
 __tz_unlock = 0x40001a10;
 ungetc = 0x400590f4;
 _ungetc_r = 0x40058fa0;
