@@ -166,4 +166,9 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
     esp_core_dump_write((void*)frame, &wr_cfg);
     ESP_COREDUMP_LOGI("Core dump has been written to uart.");
 }
+
+void esp_core_dump_init(void)
+{
+    ESP_COREDUMP_LOGI("Init core dump to UART");
+}
 #endif

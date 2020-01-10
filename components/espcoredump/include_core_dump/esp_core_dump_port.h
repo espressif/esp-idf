@@ -27,9 +27,17 @@
 #include "esp_core_dump_priv.h"
 #include "soc/cpu.h"
 #include "esp_debug_helpers.h"
+#include "esp_app_format.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
+#define COREDUMP_VERSION_CHIP ESP_CHIP_ID_ESP32
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+// TODO: set to ESP32-S2 chip ID
+#define COREDUMP_VERSION_CHIP ~ESP_CHIP_ID_ESP32
 #endif
 
 #define COREDUMP_TCB_SIZE   sizeof(StaticTask_t)

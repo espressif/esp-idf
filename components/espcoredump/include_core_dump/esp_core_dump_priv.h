@@ -41,9 +41,15 @@ extern "C" {
 #endif
 
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
-#define COREDUMP_VERSION_BIN                1
-#define COREDUMP_VERSION_ELF_CRC32          2
-#define COREDUMP_VERSION_ELF_SHA256         3
+// COREDUMP_VERSION_CHIP is defined in ports
+#define COREDUMP_VERSION_MAKE(_maj_, _min_)    ((((COREDUMP_VERSION_CHIP)&0xFFFF) << 16) | (((_maj_)&0xFF) << 8) | (((_min_)&0xFF) << 0))
+#define COREDUMP_VERSION_BIN                0
+#define COREDUMP_VERSION_ELF                1
+// legacy bin coredumps (before IDF v4.1) has version set to 1
+#define COREDUMP_VERSION_BIN_LEGACY         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 1) // -> 0x0001
+#define COREDUMP_VERSION_BIN_CURRENT        COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 2) // -> 0x0002
+#define COREDUMP_VERSION_ELF_CRC32          COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 0) // -> 0x0100
+#define COREDUMP_VERSION_ELF_SHA256         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 1) // -> 0x0101
 #define COREDUMP_CURR_TASK_MARKER           0xDEADBEEF
 #define COREDUMP_CURR_TASK_NOT_FOUND        -1
 
@@ -55,7 +61,7 @@ extern "C" {
 #define COREDUMP_SHA256_LEN                 32
 #endif
 #else
-#define COREDUMP_VERSION                    COREDUMP_VERSION_BIN
+#define COREDUMP_VERSION                    COREDUMP_VERSION_BIN_CURRENT
 #endif
 
 typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len);
