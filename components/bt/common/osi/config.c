@@ -545,6 +545,9 @@ static void config_parse(nvs_handle_t fp, config_t *config)
     char *keyname = osi_calloc(keyname_bufsz);
     int buf_size = get_config_size_from_flash(fp);
     char *buf = osi_calloc(buf_size);
+    if(buf_size == 0) { //First use nvs
+        goto error;
+    }
     if (!line || !section || !buf || !keyname) {
         err_code |= 0x01;
         goto error;
