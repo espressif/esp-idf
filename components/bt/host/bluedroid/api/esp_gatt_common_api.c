@@ -47,3 +47,12 @@ esp_err_t esp_ble_gatt_set_local_mtu (uint16_t mtu)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gatt_com_args_t), NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#if (BLE_INCLUDED == TRUE)
+extern uint16_t L2CA_GetFreePktBufferNum_LE(void);
+
+uint16_t esp_ble_get_sendable_packets_num ()
+{
+    return L2CA_GetFreePktBufferNum_LE();
+}
+#endif
