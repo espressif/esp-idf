@@ -631,7 +631,7 @@ void throughput_server_task(void *param)
                                                     gl_profile_tab[PROFILE_A_APP_ID].char_handle,
                                                     sizeof(indicate_data), indicate_data, false);
                     }
-                } else { //you can delete the else for the fast speed
+                } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                     vTaskDelay( 10 / portTICK_PERIOD_MS );
                 }
             }
@@ -711,7 +711,8 @@ void app_main()
     if (local_mtu_ret){
         ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-
+    // The task is only created on the CPU core that Bluetooth is working on, 
+    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_server_task, "throughput_server_task", 4096, NULL, 15, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #if (CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
     gatts_semaphore = xSemaphoreCreateBinary();

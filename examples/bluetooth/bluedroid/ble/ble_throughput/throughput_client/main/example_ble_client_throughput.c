@@ -516,7 +516,7 @@ static void throughput_client_task(void *param)
                                                             ESP_GATT_WRITE_TYPE_NO_RSP,
                                                             ESP_GATT_AUTH_REQ_NONE);
                         }
-                    } else { //you can delete the else for the fast speed
+                    } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
                         vTaskDelay( 10 / portTICK_PERIOD_MS );
                     }
                 }
@@ -586,7 +586,8 @@ void app_main()
     if (local_mtu_ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
-
+    // The task is only created on the CPU core that Bluetooth is working on, 
+    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
     xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
