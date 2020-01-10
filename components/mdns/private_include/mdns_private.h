@@ -141,7 +141,7 @@ typedef enum {
 
 typedef enum {
     MDNS_ANSWER, MDNS_NS, MDNS_EXTRA
-} mdns_parsed_recort_type_t;
+} mdns_parsed_record_type_t;
 
 typedef enum {
     ACTION_SYSTEM_EVENT,
@@ -210,7 +210,7 @@ typedef struct mdns_parsed_question_s {
 
 typedef struct mdns_parsed_record_s {
     struct mdns_parsed_record_s * next;
-    mdns_parsed_recort_type_t record_type;
+    mdns_parsed_record_type_t record_type;
     uint16_t type;
     uint16_t clas;
     uint8_t flush;
