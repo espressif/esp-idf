@@ -34,9 +34,11 @@ When Wi-Fi or Bluetooth are enabled, numbers returned by hardware random number 
 MAC Address
 -----------
 
-These APIs allow querying and customizing MAC addresses used by Wi-Fi, Bluetooth, and Ethernet drivers.
+These APIs allow querying and customizing MAC addresses for different network interfaces that supported (e.g. Wi-Fi, Bluetooth, Ethernet).
 
-ESP32 has up to 4 network interfaces: Wi-Fi station, Wi-Fi AP, Ethernet, and Bluetooth. Each of these interfaces needs to have a MAC address assigned to it. In ESP-IDF these addresses are calculated from *Base MAC address*. Base MAC address can be initialized with factory-programmed value from EFUSE, or with a user-defined value. In addition to setting the base MAC address, applications can specify the way in which MAC addresses are allocated to devices. See `Number of universally administered MAC address`_ section for more details.
+In ESP-IDF these addresses are calculated from *Base MAC address*. Base MAC address can be initialized with factory-programmed value from internal eFuse, or with a user-defined value. In addition to setting the base MAC address, applications can specify the way in which MAC addresses are allocated to devices. See `Number of universally administered MAC address`_ section for more details.
+
+For ESP32:
 
 +---------------+--------------------------------+----------------------------------+
 | Interface     | MAC address                    | MAC address                      |
@@ -52,20 +54,32 @@ ESP32 has up to 4 network interfaces: Wi-Fi station, Wi-Fi AP, Ethernet, and Blu
 |               |                                | first octet randomized           |
 +---------------+--------------------------------+----------------------------------+
 
+For ESP32-S2:
+
++---------------+--------------------------------+----------------------------------+
+| Interface     | MAC address                    | MAC address                      |
+|               | (2 universally administered)   | (1 universally administered)     |
++===============+================================+==================================+
+| Wi-Fi Station | base_mac                       | base_mac                         |
++---------------+--------------------------------+----------------------------------+
+| Wi-Fi SoftAP  | base_mac, +1 to the last octet | base_mac, first octet randomized |
++---------------+--------------------------------+----------------------------------+
 
 Base MAC address
 ^^^^^^^^^^^^^^^^
 
-Wi-Fi, Bluetooth, and Ethernet drivers use :cpp:func:`esp_read_mac` function to get MAC address for a specific interface.
+To fetch MAC address for a specific interface (e.g. Wi-Fi, Bluetooth, Ethernet), you can simply use :cpp:func:`esp_read_mac` function.
 
-By default, this function will use MAC address factory programmed in BLK0 of EFUSE as the base MAC address. MAC addresses of each interface will be calculated according to the table above.
+By default, this function takes the eFuse value burned at a pre-defined block (e.g. BLK0 for ESP32, BLK1 for ESP32-S2) as the base MAC address. Per-interface MAC addresses will be calculated according to the table above.
 
-Applications which don't use MAC address factory programmed into BLK0 of EFUSE can modify base MAC address used by :cpp:func:`esp_read_mac` using a call to :cpp:func:`esp_base_mac_addr_set`. Custom value of MAC address can come from application defined storage, such as Flash, NVS, etc. Note that the call to :cpp:func:`esp_base_mac_addr_set` needs to happen before network protocol stacks are initialized, for example, early in ``app_main``.
+Applications who want to customize base MAC address (not the one provided by Espressif) should call :cpp:func:`esp_base_mac_addr_set` before :cpp:func:`esp_read_mac`. The customized MAC address can be stored in any supported storage device (e.g. Flash, NVS, etc).
 
-Custom MAC address in BLK3 of EFUSE
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Note that, calls to :cpp:func:`esp_base_mac_addr_set` should take place before the initialization of network stack, for example, early in ``app_main``.
 
-To facilitate usage of custom MAC addresses, ESP-IDF provides :cpp:func:`esp_efuse_mac_get_custom` function, which loads MAC address from BLK3 of EFUSE. This function assumes that custom MAC address is stored in BLK3 of EFUSE (EFUSE_BLK3_RDATA0,  EFUSE_BLK3_RDATA1, EFUSE_BLK3_RDATA2, EFUSE_BLK3_RDATA3, EFUSE_BLK3_RDATA4, EFUSE_BLK3_RDATA5 registers) in the following format:
+Custom MAC address in eFuse
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To facilitate the usage of custom MAC addresses, ESP-IDF provides :cpp:func:`esp_efuse_mac_get_custom` function, which loads MAC address from internal pre-defined eFuse block (e.g. BLK3 for ESP32). This function assumes that custom MAC address is stored in the following format:
 
 +-----------------+-----------+---------------+------------------------------+
 | Field           | # of bits | Range of bits | Notes                        |
@@ -85,19 +99,23 @@ Once MAC address has been obtained using :cpp:func:`esp_efuse_mac_get_custom`, c
 Number of universally administered MAC address
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Serveral MAC addresses (universally administered by IEEE) are uniquely assigned to the networking interfaces (Wi-Fi/BT/Ethernet). The final octet of each universally administered MAC address increases by one. Only the first one of them (which is called base MAC address) is stored in EFUSE or external storage, the others are generated from it. Here, 'generate' means adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
+Several MAC addresses (universally administered by IEEE) are uniquely assigned to the networking interfaces (Wi-Fi/BT/Ethernet). The final octet of each universally administered MAC address increases by one. Only the first one of them (which is called base MAC address) is stored in eFuse or external storage, the others are generated from it. Here, 'generate' means adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
 
 If the universally administered MAC addresses are not enough for all of the networking interfaces, locally administered MAC addresses which are derived from universally administered MAC addresses are assigned to the rest of networking interfaces. 
 
 See `this article <https://en.wikipedia.org/wiki/MAC_address#Universal_vs._local>`_ for the definition of local and universally administered MAC addresses.
 
-The number of universally administered MAC address can be configured using :ref:`CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES`.
+The number of universally administered MAC address can be configured using :ref:`CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES` for ESP32.
 
 If the number of universal MAC addresses is two, only two interfaces (Wi-Fi Station and Bluetooth) receive a universally administered MAC address. These are generated sequentially by adding 0 and 1 (respectively) to the base MAC address. The remaining two interfaces (Wi-Fi SoftAP and Ethernet) receive local MAC addresses. These are derived from the universal Wi-Fi station and Bluetooth MAC addresses, respectively.
 
 If the number of universal MAC addresses is four, all four interfaces (Wi-Fi Station, Wi-Fi SoftAP, Bluetooth and Ethernet) receive a universally administered MAC address. These are generated sequentially by adding 0, 1, 2 and 3 (respectively) to the final octet of the base MAC address.
 
 When using the default (Espressif-assigned) base MAC address, either setting can be used. When using a custom universal MAC address range, the correct setting will depend on the allocation of MAC addresses in this range (either 2 or 4 per device.)
+
+.. todo::
+
+   Add illustration for ESP32-S2 when multi-target doc feature is ready.
 
 Chip version
 ------------

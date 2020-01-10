@@ -1,3 +1,16 @@
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 #include <string.h>
 #include "sdkconfig.h"
 #include "esp_system.h"
@@ -37,7 +50,7 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
     uint8_t null_mac[6] = {0};
 
     if (memcmp(base_mac_addr, null_mac, 6) == 0) {
-        ESP_LOGI(TAG, "Base MAC address is not set, read default base MAC address from BLK0 of EFUSE");
+        ESP_LOGI(TAG, "Base MAC address is not set");
         return ESP_ERR_INVALID_MAC;
     }
 
@@ -137,12 +150,11 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         return ESP_ERR_INVALID_ARG;
     }
 
-    _Static_assert(UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR \
-            || UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR, \
-            "incorrect NUM_MAC_ADDRESS_FROM_EFUSE value");
-
+    // if base mac address is not set, read one from EFUSE and then write back
     if (esp_base_mac_addr_get(efuse_mac) != ESP_OK) {
+        ESP_LOGI(TAG, "read default base MAC address from EFUSE");
         esp_efuse_mac_get_default(efuse_mac);
+        esp_base_mac_addr_set(efuse_mac);
     }
 
     switch (type) {
@@ -150,39 +162,35 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         memcpy(mac, efuse_mac, 6);
         break;
     case ESP_MAC_WIFI_SOFTAP:
-        if (UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR) {
-            memcpy(mac, efuse_mac, 6);
-            mac[5] += 1;
-        }
-        else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
-            esp_derive_local_mac(mac, efuse_mac);
-        }
+#if CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += 1;
+#else
+        esp_derive_local_mac(mac, efuse_mac);
+#endif
         break;
     case ESP_MAC_BT:
         memcpy(mac, efuse_mac, 6);
-        if (UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR) {
-            mac[5] += 2;
-        }
-        else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
-            mac[5] += 1;
-        }
+#if CONFIG_ESP_MAC_ADDR_UNIVERSE_BT
+        mac[5] += 2;
+#else
+        mac[5] += 1;
+#endif
         break;
     case ESP_MAC_ETH:
-        if (UNIVERSAL_MAC_ADDR_NUM == FOUR_UNIVERSAL_MAC_ADDR) {
-            memcpy(mac, efuse_mac, 6);
-            mac[5] += 3;
-        }
-        else if (UNIVERSAL_MAC_ADDR_NUM == TWO_UNIVERSAL_MAC_ADDR) {
-            efuse_mac[5] += 1;
-            esp_derive_local_mac(mac, efuse_mac);
-        }
+#if CONFIG_ESP_MAC_ADDR_UNIVERSE_ETH
+        memcpy(mac, efuse_mac, 6);
+        mac[5] += 3;
+#else
+        efuse_mac[5] += 1;
+        esp_derive_local_mac(mac, efuse_mac);
+#endif
         break;
     default:
-        ESP_LOGW(TAG, "incorrect mac type");
+        ESP_LOGE(TAG, "unsupported mac type");
         break;
     }
 
     return ESP_OK;
 }
-
 
