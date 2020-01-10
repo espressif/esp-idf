@@ -138,6 +138,8 @@ INPUT = \
     ../../components/mqtt/esp-mqtt/include/mqtt_client.h \
     ## ICMP-ECHO
     ../../components/lwip/include/apps/ping/ping_sock.h \
+    ## SNTP
+    ../../components/lwip/include/apps/sntp/sntp.h \
     ## mDNS
     ../../components/mdns/include/mdns.h \
     ../../components/esp_http_client/include/esp_http_client.h \

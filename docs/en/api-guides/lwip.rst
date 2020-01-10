@@ -17,7 +17,7 @@ Adapted APIs
 Some common lwIP "app" APIs are supported indirectly by ESP-IDF:
 
 - DHCP Server & Client are supported indirectly via the :doc:`/api-reference/network/esp_netif` functionality
-- Simple Network Time Protocol (SNTP) is supported via the :component_file:`lwip/include/apps/esp_sntp.h` functions (see also :example:`protocols/sntp`)
+- Simple Network Time Protocol (SNTP) is supported via the :component_file:`lwip/include/apps/sntp/sntp.h` :component_file:`lwip/lwip/src/inlude/lwip/apps/sntp.h` functions (see also :ref:`system-time-sntp-sync`)
 - ICMP Ping is supported using a variation on the lwIP ping API. See :doc:`/api-reference/protocols/icmp_echo`.
 - NetBIOS lookup is available using the standard lwIP API. :example:`protocols/http_server/restful_server` has an option to demonstrate using NetBIOS to look up a host on the LAN.
 - mDNS uses a different implementation to the lwIP default mDNS (see :doc:`/api-reference/protocols/mdns`), but lwIP can look up mDNS hosts using standard APIs such as ``gethostbyname()`` and the convention ``hostname.local``, provided the :ref:`CONFIG_LWIP_DNS_SUPPORT_MDNS_QUERIES` setting is enabled.
