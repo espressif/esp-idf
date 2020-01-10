@@ -15,18 +15,17 @@ Supported features
 ^^^^^^^^^^^^^^^^^^
 ESP platform port currently supports only network asynchronous socket operations; does not support serial port and ssl.
 Internal asio settings for ESP include
-- EXCEPTIONS: Supported, choice in menuconfig
-- SIGNAL, SIGACTION: Not supported
-- EPOLL, EVENTFD: Not supported
-- TYPEID: Disabled by default, but supported in toolchain and asio (provided stdlib recompiled with -frtti)
+
+- EXCEPTIONS are enabled in ASIO if enabled in menuconfig
+- TYPEID is enabled in ASIO if enabled in menuconfig
 
 Application Example
 -------------------
-ESP examples are based on standard asio examples `examples/protocols/asio`:
-- udp_echo_server
-- tcp_echo_server
-- chat_client
-- chat_server
+ESP examples are based on standard asio :example:`examples/protocols/asio`:
+
+- :example:`examples/protocols/asio/udp_echo_server`
+- :example:`examples/protocols/asio/tcp_echo_server`
+- :example:`examples/protocols/asio/chat_client`
+- :example:`examples/protocols/asio/chat_server`
+
 Please refer to the specific example README.md for details
-
-
