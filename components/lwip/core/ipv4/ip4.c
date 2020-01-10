@@ -980,6 +980,8 @@ ip4_output_if_opt_src(struct pbuf *p, const ip4_addr_t *src, const ip4_addr_t *d
   if (netif->mtu && (p->tot_len > netif->mtu)) {
     return ip4_frag(p, netif, dest);
   }
+#else
+  LWIP_ERROR("ip4_output_if: Packets larger than MTU, discarded!!!",!(netif->mtu && p->tot_len > netif->mtu),return ERR_IF;);
 #endif /* IP_FRAG */
 
   LWIP_DEBUGF(IP_DEBUG, ("ip4_output_if: call netif->output()\n"));
