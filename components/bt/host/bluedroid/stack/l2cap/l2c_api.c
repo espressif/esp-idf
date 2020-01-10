@@ -1873,7 +1873,7 @@ BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, UINT16 handle)
 }
 
 #if (BLE_INCLUDED == TRUE)
-UINT16 L2CA_GetFreePkgBufferNum(void)
+UINT16 L2CA_GetFreePktBufferNum_LE(void)
 {
     return l2cb.controller_le_xmit_window;
 }
