@@ -21,7 +21,7 @@
 #include "esp_err.h"
 // #include "esp32/rom/ets_sys.h"
 
-typedef long os_time_t;
+typedef time_t os_time_t;
 
 /**
  * os_sleep - Sleep (sec, usec)
@@ -32,7 +32,7 @@ void os_sleep(os_time_t sec, os_time_t usec);
 
 struct os_time {
 	os_time_t sec;
-	os_time_t usec;
+	suseconds_t usec;
 };
 
 /**

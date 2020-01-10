@@ -6,6 +6,8 @@ Setup Linux Toolchain from Scratch
 
 The following instructions are alternative to downloading binary toolchain from Espressif website. To quickly setup the binary toolchain, instead of compiling it yourself, backup and proceed to section :doc:`linux-setup`.
 
+.. note:: The reason you might need to build your own toolchain is to solve the Y2K38 problem (time_t expand to 64 bits instead of 32 bits).
+
 Install Prerequisites
 =====================
 
@@ -59,6 +61,8 @@ Create the working directory and go into it::
 Download ``crosstool-NG`` and build it:
 
 .. include:: /_build/inc/scratch-build-code.inc
+
+.. note:: To create a toolchain with support for 64-bit time_t, you need to remove the ``--enable-newlib-long-time_t`` option from the ``crosstool-NG/samples/xtensa-esp32-elf/crosstool.config`` file in 33 and 43 lines.
 
 Build the toolchain::
 

@@ -35,8 +35,13 @@
 static const char* TAG = "SPIFFS";
 
 #ifdef CONFIG_SPIFFS_USE_MTIME
-_Static_assert(CONFIG_SPIFFS_META_LENGTH >= sizeof(time_t),
-        "SPIFFS_META_LENGTH size should be >= sizeof(time_t)");
+#ifdef CONFIG_SPIFFS_MTIME_WIDE_64_BITS
+typedef time_t spiffs_time_t;
+#else
+typedef unsigned long spiffs_time_t;
+#endif
+_Static_assert(CONFIG_SPIFFS_META_LENGTH >= sizeof(spiffs_time_t),
+        "SPIFFS_META_LENGTH size should be >= sizeof(spiffs_time_t)");
 #endif //CONFIG_SPIFFS_USE_MTIME
 
 /**
@@ -726,7 +731,7 @@ static int vfs_spiffs_link(void* ctx, const char* n1, const char* n2)
 static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file fd)
 {
 #ifdef CONFIG_SPIFFS_USE_MTIME
-    time_t t = time(NULL);
+    spiffs_time_t t = (spiffs_time_t)time(NULL);
     spiffs_stat s;
     int ret = SPIFFS_OK;
     if (CONFIG_SPIFFS_META_LENGTH > sizeof(t)) {
@@ -744,15 +749,15 @@ static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file fd)
 
 static time_t vfs_spiffs_get_mtime(const spiffs_stat* s)
 {
-    time_t t = 0;
+    spiffs_time_t t = 0;
 #ifdef CONFIG_SPIFFS_USE_MTIME
     memcpy(&t, s->meta, sizeof(t));
 #endif
-    return t;
+    return (time_t)t;
 }
 
 #ifdef CONFIG_SPIFFS_USE_MTIME
-static int vfs_spiffs_update_mtime_value(spiffs *fs, const char *path, time_t t)
+static int vfs_spiffs_update_mtime_value(spiffs *fs, const char *path, spiffs_time_t t)
 {
     int ret = SPIFFS_OK;
     spiffs_stat s;
@@ -776,13 +781,13 @@ static int vfs_spiffs_utime(void *ctx, const char *path, const struct utimbuf *t
     assert(path);
 
     esp_spiffs_t *efs = (esp_spiffs_t *) ctx;
-    time_t t;
+    spiffs_time_t t;
 
     if (times) {
-        t = times->modtime;
+        t = (spiffs_time_t)times->modtime;
     } else {
         // use current time
-        t = time(NULL);
+        t = (spiffs_time_t)time(NULL);
     }
 
     int ret = vfs_spiffs_update_mtime_value(efs->fs, path, t);

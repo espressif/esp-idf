@@ -31,7 +31,11 @@
 
 int os_get_time(struct os_time *t)
 {
-    return gettimeofday((struct timeval*) t, NULL);
+    struct timeval tv;
+    int ret = gettimeofday(&tv, NULL);
+    t->sec = (os_time_t) tv.tv_sec;
+    t->usec = tv.tv_usec;
+    return ret;
 }
 
 unsigned long os_random(void)
