@@ -2,7 +2,7 @@
 name: Bug report
 about: ESP-IDF crashes, produces incorrect output, or has incorrect behavior
 title: ''
-labels: 'Type: Bug'
+labels: ''
 assignees: ''
 
 ---
