@@ -356,16 +356,16 @@ typedef struct {
     esp_ble_mesh_model_t *model;
 
     uint16_t publish_addr; /*!< Publish Address. */
-    uint16_t app_idx;      /*!< Publish AppKey Index. */
+    uint16_t app_idx:12,   /*!< Publish AppKey Index. */
+             cred:1;       /*!< Friendship Credentials Flag. */
 
     uint8_t  ttl;          /*!< Publish Time to Live. */
     uint8_t  retransmit;   /*!< Retransmit Count & Interval Steps. */
 
     uint8_t  period;        /*!< Publish Period. */
-    uint16_t period_div: 4, /*!< Divisor for the Period. */
-             cred: 1,       /*!< Friendship Credentials Flag. */
-             fast_period: 1, /*!< Use FastPeriodDivisor */
-             count: 3;      /*!< Retransmissions left. */
+    uint8_t  period_div:4,  /*!< Divisor for the Period. */
+             fast_period:1, /*!< Use FastPeriodDivisor */
+             count:3;       /*!< Retransmissions left. */
 
     uint32_t period_start; /*!< Start of the current period. */
 
@@ -490,6 +490,9 @@ typedef struct {
 
     /** Destination address of a received message. Not used for sending. */
     uint16_t recv_dst;
+
+    /** RSSI of received packet. Not used for sending. */
+    int8_t   recv_rssi;
 
     /** Received TTL value. Not used for sending. */
     uint8_t  recv_ttl: 7;

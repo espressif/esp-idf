@@ -169,6 +169,19 @@ static inline void net_buf_simple_reset(struct net_buf_simple *buf)
 }
 
 /**
+ * Clone buffer state, using the same data buffer.
+ *
+ * Initializes a buffer to point to the same data as an existing buffer.
+ * Allows operations on the same data without altering the length and
+ * offset of the original.
+ *
+ * @param original Buffer to clone.
+ * @param clone The new clone.
+ */
+void net_buf_simple_clone(const struct net_buf_simple *original,
+                          struct net_buf_simple *clone);
+
+/**
  * @brief Prepare data to be added at the end of the buffer
  *
  * Increments the data length of a buffer to account for more data
@@ -964,6 +977,20 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_pull(buf, len) net_buf_simple_pull(&(buf)->b, len)
 
 /**
+ * @def net_buf_pull_mem
+ * @brief Remove data from the beginning of the buffer.
+ *
+ * Removes data from the beginning of the buffer by modifying the data
+ * pointer and buffer length.
+ *
+ * @param buf Buffer to update.
+ * @param len Number of bytes to remove.
+ *
+ * @return Pointer to the old beginning of the buffer data.
+ */
+#define net_buf_pull_mem(buf, len) net_buf_simple_pull_mem(&(buf)->b, len)
+
+/**
  *  @def net_buf_pull_u8
  *  @brief Remove a 8-bit value from the beginning of the buffer
  *
@@ -1051,6 +1078,180 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @return Number of bytes available in the beginning of the buffer.
  */
 #define net_buf_headroom(buf) net_buf_simple_headroom(&(buf)->b)
+
+/**
+ * @def net_buf_tail
+ * @brief Get the tail pointer for a buffer.
+ *
+ * Get a pointer to the end of the data in a buffer.
+ *
+ * @param buf Buffer.
+ *
+ * @return Tail pointer for the buffer.
+ */
+#define net_buf_tail(buf) net_buf_simple_tail(&(buf)->b)
+
+/**
+ * @brief Find the last fragment in the fragment list.
+ *
+ * @return Pointer to last fragment in the list.
+ */
+struct net_buf *net_buf_frag_last(struct net_buf *frags);
+
+/**
+ * @brief Insert a new fragment to a chain of bufs.
+ *
+ * Insert a new fragment into the buffer fragments list after the parent.
+ *
+ * Note: This function takes ownership of the fragment reference so the
+ * caller is not required to unref.
+ *
+ * @param parent Parent buffer/fragment.
+ * @param frag Fragment to insert.
+ */
+void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag);
+
+/**
+ * @brief Add a new fragment to the end of a chain of bufs.
+ *
+ * Append a new fragment into the buffer fragments list.
+ *
+ * Note: This function takes ownership of the fragment reference so the
+ * caller is not required to unref.
+ *
+ * @param head Head of the fragment chain.
+ * @param frag Fragment to add.
+ *
+ * @return New head of the fragment chain. Either head (if head
+ *         was non-NULL) or frag (if head was NULL).
+ */
+struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag);
+
+/**
+ * @brief Delete existing fragment from a chain of bufs.
+ *
+ * @param parent Parent buffer/fragment, or NULL if there is no parent.
+ * @param frag Fragment to delete.
+ *
+ * @return Pointer to the buffer following the fragment, or NULL if it
+ *         had no further fragments.
+ */
+#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
+                       struct net_buf *frag,
+                       const char *func, int line);
+#define net_buf_frag_del(_parent, _frag) \
+    net_buf_frag_del_debug(_parent, _frag, __func__, __LINE__)
+#else
+struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag);
+#endif
+
+/**
+ * @brief Copy bytes from net_buf chain starting at offset to linear buffer
+ *
+ * Copy (extract) @a len bytes from @a src net_buf chain, starting from @a
+ * offset in it, to a linear buffer @a dst. Return number of bytes actually
+ * copied, which may be less than requested, if net_buf chain doesn't have
+ * enough data, or destination buffer is too small.
+ *
+ * @param dst Destination buffer
+ * @param dst_len Destination buffer length
+ * @param src Source net_buf chain
+ * @param offset Starting offset to copy from
+ * @param len Number of bytes to copy
+ * @return number of bytes actually copied
+ */
+size_t net_buf_linearize(void *dst, size_t dst_len,
+             struct net_buf *src, size_t offset, size_t len);
+
+/**
+ * @typedef net_buf_allocator_cb
+ * @brief Network buffer allocator callback.
+ *
+ * @details The allocator callback is called when net_buf_append_bytes
+ * needs to allocate a new net_buf.
+ *
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ * @param user_data The user data given in net_buf_append_bytes call.
+ * @return pointer to allocated net_buf or NULL on error.
+ */
+typedef struct net_buf *(*net_buf_allocator_cb)(s32_t timeout, void *user_data);
+
+/**
+ * @brief Append data to a list of net_buf
+ *
+ * @details Append data to a net_buf. If there is not enough space in the
+ * net_buf then more net_buf will be added, unless there are no free net_buf
+ * and timeout occurs.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of input data
+ * @param value Data to be added
+ * @param timeout Timeout is passed to the net_buf allocator callback.
+ * @param allocate_cb When a new net_buf is required, use this callback.
+ * @param user_data A user data pointer to be supplied to the allocate_cb.
+ *        This pointer is can be anything from a mem_pool or a net_pkt, the
+ *        logic is left up to the allocate_cb function.
+ *
+ * @return Length of data actually added. This may be less than input
+ *         length if other timeout than K_FOREVER was used, and there
+ *         were no free fragments in a pool to accommodate all data.
+ */
+size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
+                const void *value, s32_t timeout,
+                net_buf_allocator_cb allocate_cb, void *user_data);
+
+/**
+ * @brief Skip N number of bytes in a net_buf
+ *
+ * @details Skip N number of bytes starting from fragment's offset. If the total
+ * length of data is placed in multiple fragments, this function will skip from
+ * all fragments until it reaches N number of bytes.  Any fully skipped buffers
+ * are removed from the net_buf list.
+ *
+ * @param buf Network buffer.
+ * @param len Total length of data to be skipped.
+ *
+ * @return Pointer to the fragment or
+ *         NULL and pos is 0 after successful skip,
+ *         NULL and pos is 0xffff otherwise.
+ */
+static inline struct net_buf *net_buf_skip(struct net_buf *buf, size_t len)
+{
+    while (buf && len--) {
+        net_buf_pull_u8(buf);
+        if (!buf->len) {
+            buf = net_buf_frag_del(NULL, buf);
+        }
+    }
+
+    return buf;
+}
+
+/**
+ * @brief Calculate amount of bytes stored in fragments.
+ *
+ * Calculates the total amount of data stored in the given buffer and the
+ * fragments linked to it.
+ *
+ * @param buf Buffer to start off with.
+ *
+ * @return Number of bytes in the buffer and its fragments.
+ */
+static inline size_t net_buf_frags_len(struct net_buf *buf)
+{
+    size_t bytes = 0;
+
+    while (buf) {
+        bytes += buf->len;
+        buf = buf->frags;
+    }
+
+    return bytes;
+}
 
 /**
  * @}

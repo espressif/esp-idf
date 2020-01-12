@@ -224,6 +224,7 @@ enum {
     BLE_MESH_HB_PUB_PENDING,
     BLE_MESH_CFG_PENDING,
     BLE_MESH_MOD_PENDING,
+    BLE_MESH_VA_PENDING,
 
     /* Don't touch - intentionally last */
     BLE_MESH_FLAG_COUNT,
@@ -296,7 +297,6 @@ struct bt_mesh_net_rx {
            local_match: 1, /* Matched a local element */
            friend_match: 1; /* Matched an LPN we're friends for */
     u16_t  msg_cache_idx;  /* Index of entry in message cache */
-    s8_t   rssi;
 };
 
 /* Encoding context for Network/Transport data */
@@ -366,6 +366,8 @@ u32_t bt_mesh_next_seq(void);
 void bt_mesh_net_start(void);
 
 void bt_mesh_net_init(void);
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+                              struct bt_mesh_net_rx *rx);
 
 /* Friendship Credential Management */
 struct friend_cred {
