@@ -312,6 +312,11 @@
 #define TCP_QUEUE_OOSEQ                 CONFIG_LWIP_TCP_QUEUE_OOSEQ
 
 /**
+ * LWIP_TCP_SACK_OUT==1: TCP will support sending selective acknowledgements (SACKs).
+ */
+#define LWIP_TCP_SACK_OUT               CONFIG_LWIP_TCP_SACK_OUT
+
+/**
  * ESP_TCP_KEEP_CONNECTION_WHEN_IP_CHANGES==1: Keep TCP connection when IP changed
  * scenario happens: 192.168.0.2 -> 0.0.0.0 -> 192.168.0.2 or 192.168.0.2 -> 0.0.0.0
  */
