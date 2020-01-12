@@ -2683,8 +2683,22 @@ extern void BTA_VendorInit  (void);
 **
 *******************************************************************************/
 extern void BTA_VendorCleanup (void);
-
 #endif
+
+enum {
+    BTA_COEX_EVT_SCAN_STARTED = 1,
+    BTA_COEX_EVT_SCAN_STOPPED,
+    BTA_COEX_EVT_ACL_CONNECTED,
+    BTA_COEX_EVT_ACL_DISCONNECTED,
+    BTA_COEX_EVT_STREAMING_STARTED,
+    BTA_COEX_EVT_STREAMING_STOPPED,
+    BTA_COEX_EVT_SNIFF_ENTER,
+    BTA_COEX_EVT_SNIFF_EXIT,
+    BTA_COEX_EVT_A2DP_PAUSED_ENTER,
+    BTA_COEX_EVT_A2DP_PAUSED_EXIT,
+};
+
+extern void BTA_DmCoexEventTrigger(uint32_t event);
 
 #ifdef __cplusplus
 }
