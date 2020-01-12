@@ -1871,6 +1871,14 @@ BOOLEAN L2CA_CheckIsCongest(UINT16 fixed_cid, UINT16 handle)
 
     return TRUE;
 }
+
+#if (BLE_INCLUDED == TRUE)
+UINT16 L2CA_GetFreePktBufferNum_LE(void)
+{
+    return l2cb.controller_le_xmit_window;
+}
+#endif
+
 /*******************************************************************************
 **
 **  Function        L2CA_RemoveFixedChnl
