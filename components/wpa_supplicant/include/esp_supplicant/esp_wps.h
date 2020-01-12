@@ -74,10 +74,10 @@ typedef struct {
 #define WPS_CONFIG_INIT_DEFAULT(type) { \
     .wps_type = type, \
     .factory_info = {   \
-        .manufacturer = "ESPRESSIF",  \
-        .model_number = "ESP32",  \
-        .model_name = "ESPRESSIF IOT",  \
-        .device_name = "ESP STATION",  \
+        {.manufacturer = "ESPRESSIF"},  \
+        {.model_number = "ESP32"},  \
+        {.model_name = "ESPRESSIF IOT"},  \
+        {.device_name = "ESP STATION"},  \
     }  \
 }
 
