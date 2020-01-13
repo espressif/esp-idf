@@ -55,8 +55,8 @@ static uint8_t dev_uuid[16];
 #define MSG_TIMEOUT         200000      /* msg resend interval */
 #define MSG_INTERVAL        1000000     /* msg send interval */
 #define MSG_MAX_RESEND      3           /* max resend count */
-#define MSG_TEST_COUNT      500         /* message test count */
-#define MSG_TEST_UNIT       500         /* message test unit */
+#define MSG_TEST_COUNT      10          /* message test count */
+#define MSG_TEST_UNIT       10          /* message test unit */
 
 static esp_timer_handle_t   retransmit_timer;
 static esp_timer_handle_t   interval_timer;
@@ -79,6 +79,9 @@ static SemaphoreHandle_t tx_rx_mutex;
 
 /* The following is BLE Mesh deinit test flag */
 bool example_deinit_test;
+
+/* The following is BLE Mesh client message timeout with internal timer flag */
+bool msg_to_internal;
 
 typedef struct {
     uint8_t  uuid[16];
@@ -251,6 +254,8 @@ static esp_err_t example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_para
 void example_ble_mesh_send_test_msg(bool resend)
 {
     esp_ble_mesh_msg_ctx_t ctx = {0};
+    bool need_ack = false;
+    int32_t timeout;
     esp_err_t err;
 
     ctx.net_idx = prov_key.net_idx;
@@ -259,9 +264,20 @@ void example_ble_mesh_send_test_msg(bool resend)
     ctx.send_ttl = MSG_SEND_TTL;
     ctx.send_rel = MSG_SEND_REL;
 
+    uint8_t data[8] = {0};
+    memcpy(data, &trans_num, sizeof(trans_num));
+
+    if (msg_to_internal) {
+        need_ack = true;
+        timeout = 1000;
+    } else {
+        need_ack = false;
+        timeout = 0;
+    }
+
     err = esp_ble_mesh_client_model_send_msg(test_client.model,
             &ctx, ESP_BLE_MESH_VND_MODEL_OP_TEST_SEND,
-            sizeof(trans_num), (uint8_t *)&trans_num, 0, false, MSG_ROLE);
+            sizeof(data), data, timeout, need_ack, MSG_ROLE);
     if (err) {
         ESP_LOGE(TAG, "%s, Failed to send test message", __func__);
         return;
@@ -367,7 +383,9 @@ static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
         break;
     case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
         ESP_LOGI(TAG, "ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT, err_code %d", param->provisioner_prov_enable_comp.err_code);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY | ESP_COEX_BLE_ST_MESH_TRAFFIC | ESP_COEX_BLE_ST_MESH_CONFIG);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_CONFIG);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_TRAFFIC);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY);
         if (iperf_test == true) {
             esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY);
             ESP_LOGW(TAG, "BLE Mesh enters Standby mode");
@@ -597,6 +615,66 @@ static void example_tx_rx_unlock(void)
     }
 }
 
+static void example_test_result_output(void)
+{
+    uint32_t count[MSG_MAX_RESEND + 1] = {0};
+    uint8_t compare[MSG_MAX_RESEND + 1];
+    /**
+     * Used to record if resend reaches max number, whether we have
+     * received corresponding response.
+     */
+    uint32_t no_ack_count = 0;
+    int64_t total_time = 0;
+    size_t i, j, k;
+
+    for (i = 0; i < sizeof(compare); i++) {
+        compare[i] = i;
+    }
+
+    ESP_LOGI(TAG, "ble mesh tx rx test finished");
+
+    for (i = 0; i < MSG_TEST_COUNT / MSG_TEST_UNIT; i++) {
+        for (j = 0; j < MSG_TEST_UNIT; j++) {
+            for (k = 0; k < sizeof(compare); k++) {
+                if (msg_record[i * MSG_TEST_UNIT + j].resend == compare[k]) {
+                    count[k]++;
+                    if (msg_record[i * MSG_TEST_UNIT + j].resend == MSG_MAX_RESEND &&
+                        msg_record[i * MSG_TEST_UNIT + j].acked == false) {
+                        /* If msg is not acked, use 1s for its time */
+                        msg_record[msg_index].time = 1000000;
+                        no_ack_count++;
+                    }
+                    break;
+                }
+            }
+            total_time += msg_record[msg_index].time;
+        }
+        ESP_LOGW(TAG, "Send messages the %d time, total %lldus, average %lldus", i, total_time, total_time / MSG_TEST_UNIT);
+        ESP_LOGW(TAG, "0-resend %d, 1-resend %d, 2-resend %d, 3-resend %d, 3-resend-no-ack %d",
+            count[0], count[1], count[2], count[3], no_ack_count);
+        ESP_LOG_BUFFER_HEX("log", msg_record, MSG_TEST_COUNT * sizeof(msg_record[0]));
+        bzero(count, sizeof(count));
+        no_ack_count = 0;
+        total_time = 0;
+    }
+}
+
+static void example_ble_mesh_send_next(void)
+{
+    if (msg_index >= MSG_TEST_COUNT - 1) {
+        example_test_result_output();
+        return;
+    }
+
+    ++msg_index;
+    ++trans_num;
+    msg_record[msg_index].resend = 0;
+    msg_record[msg_index].acked = false;
+    msg_record[msg_index].time = 0;
+
+    example_ble_mesh_send_test_msg(false);
+}
+
 static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event,
                                              esp_ble_mesh_model_cb_param_t *param)
 {
@@ -607,30 +685,49 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             ESP_LOGE(TAG, "%s, Invalid parameter", __func__);
             break;
         }
+        if (msg_to_internal && param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS) {
+            uint16_t value = *(uint16_t *)param->model_operation.msg;
+            ESP_LOGI(TAG, "response, %d %d %d", msg_index, value, trans_num);
+            if (value == trans_num) {
+                msg_record[msg_index].acked = true;
+                int64_t time = esp_timer_get_time();
+                // ESP_LOGW(TAG, "End %lldus", time);
+                msg_record[msg_index].time = time - msg_record[msg_index].time;
+
+                example_ble_mesh_send_next();
+            }
+        }
         break;
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
         if (param->model_send_comp.err_code == ESP_OK) {
+            ESP_LOGI(TAG, "send, %d", msg_index);
             example_start_retransmit_timer();
             if (msg_record[msg_index].resend == 0) {
                 /* If send successfully in the first time, start the interval timer */
                 example_start_interval_timer();
                 msg_record[msg_index].time = esp_timer_get_time();
+                // ESP_LOGW(TAG, "Start %lldus", msg_record[msg_index].time);
             }
         }
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
         example_tx_rx_lock();
-        if (param->client_recv_publish_msg.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS) {
+        if (msg_to_internal == false && param->client_recv_publish_msg.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS) {
             uint16_t value = *(uint16_t *)param->client_recv_publish_msg.msg;
             ESP_LOGI(TAG, "%d %d %d", msg_index, value, trans_num);
             if (value == trans_num && retrans_timer_start == true) {
                 msg_record[msg_index].acked = true;
                 esp_timer_stop(retransmit_timer);
                 int64_t time = esp_timer_get_time();
+                // ESP_LOGW(TAG, "End %lldus", time);
                 msg_record[msg_index].time = time - msg_record[msg_index].time;
             }
         }
         example_tx_rx_unlock();
+        break;
+    case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
+        ESP_LOGI(TAG, "timeout, %d", msg_index);
+        example_ble_mesh_send_test_msg(true);
         break;
     default:
         break;
@@ -639,13 +736,19 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
 
 void example_start_retransmit_timer(void)
 {
-    ESP_ERROR_CHECK(esp_timer_start_once(retransmit_timer, MSG_TIMEOUT));
+    if (msg_to_internal) {
+        return;
+    }
+    esp_timer_start_once(retransmit_timer, MSG_TIMEOUT);
     retrans_timer_start = true;
 }
 
 static void example_start_interval_timer(void)
 {
-    ESP_ERROR_CHECK(esp_timer_start_once(interval_timer, MSG_INTERVAL));
+    if (msg_to_internal) {
+        return;
+    }
+    esp_timer_start_once(interval_timer, MSG_INTERVAL);
 }
 
 static void retransmit_timer_callback(void* arg)
@@ -661,57 +764,8 @@ static void retransmit_timer_callback(void* arg)
 
 static void interval_timer_callback(void* arg)
 {
-    /* Example timer timeout handler */
-    if (msg_index >= MSG_TEST_COUNT - 1) {
-        uint32_t count[MSG_MAX_RESEND + 1] = {0};
-        uint8_t compare[MSG_MAX_RESEND + 1];
-        /**
-         * Used to record if resend reaches max number, whether we have
-         * received corresponding response.
-         */
-        uint32_t no_ack_count = 0;
-        int64_t total_time = 0;
-        size_t i, j, k;
-
-        for (i = 0; i < sizeof(compare); i++) {
-            compare[i] = i;
-        }
-
-        ESP_LOGI(TAG, "ble mesh tx rx test finished");
-
-        for (i = 0; i < MSG_TEST_COUNT / MSG_TEST_UNIT; i++) {
-            for (j = 0; j < MSG_TEST_UNIT; j++) {
-                for (k = 0; k < sizeof(compare); k++) {
-                    if (msg_record[i * MSG_TEST_UNIT + j].resend == compare[k]) {
-                        count[k]++;
-                        if (msg_record[i * MSG_TEST_UNIT + j].resend == MSG_MAX_RESEND &&
-                            msg_record[i * MSG_TEST_UNIT + j].acked == false) {
-                            /* If msg is not acked, use 1s for its time */
-                            msg_record[msg_index].time = 1000000;
-                            no_ack_count++;
-                        }
-                        break;
-                    }
-                }
-                total_time += msg_record[msg_index].time;
-            }
-            ESP_LOGW(TAG, "Send messages the %d time, total %lldus, average %lldus", i, total_time, total_time / MSG_TEST_UNIT);
-            ESP_LOGW(TAG, "0-resend %d, 1-resend %d, 2-resend %d, 3-resend %d, 3-resend-no-ack %d",
-                count[0], count[1], count[2], count[3], no_ack_count);
-            ESP_LOG_BUFFER_HEX("log", msg_record, MSG_TEST_COUNT * sizeof(msg_record[0]));
-            bzero(count, sizeof(count));
-            no_ack_count = 0;
-            total_time = 0;
-        }
-        return;
-    }
-
-    ++msg_index;
-    ++trans_num;
-    msg_record[msg_index].resend = 0;
-    msg_record[msg_index].acked = false;
-    msg_record[msg_index].time = 0;
-    example_ble_mesh_send_test_msg(false);
+    /* Message interval timer timeout handler */
+    example_ble_mesh_send_next();
 }
 
 void example_ble_mesh_test_init(void)
@@ -809,7 +863,10 @@ static esp_err_t ble_mesh_init(void)
                 ESP_LOGE(TAG, "%s: Failed to deinitialize vnd client model", __func__);
                 return err;
             }
-            err = esp_ble_mesh_deinit();
+            esp_ble_mesh_deinit_param_t param = {
+                .erase_flash = false,
+            };
+            err = esp_ble_mesh_deinit(&param);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "%s: Failed to de-initialize BLE Mesh", __func__);
                 return err;

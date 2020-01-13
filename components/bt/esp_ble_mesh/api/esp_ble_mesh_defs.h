@@ -323,6 +323,11 @@ typedef uint8_t esp_ble_mesh_bd_addr_t[BD_ADDR_LEN];
 /// BLE device address type
 typedef uint8_t esp_ble_mesh_addr_type_t;
 
+/*!< BLE Mesh deinit parameters */
+typedef struct {
+    bool erase_flash;   /*!< Indicate if erasing flash when deinit mesh stack */
+} esp_ble_mesh_deinit_param_t;
+
 typedef struct esp_ble_mesh_model esp_ble_mesh_model_t;
 
 /** Abstraction that describes a BLE Mesh Element.

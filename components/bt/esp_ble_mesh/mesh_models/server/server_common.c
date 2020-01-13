@@ -185,7 +185,7 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
      */
     __ASSERT(work, "%s, Invalid parameter", __func__);
     if (!work->_reserved) {
-        work->_reserved = osi_calloc(sizeof(struct bt_mesh_msg_ctx));
+        work->_reserved = bt_mesh_calloc(sizeof(struct bt_mesh_msg_ctx));
         __ASSERT(work->_reserved, "%s, Failed to allocate memory", __func__);
     }
 }
@@ -194,7 +194,7 @@ void bt_mesh_server_free_ctx(struct k_work *work)
 {
     __ASSERT(work, "%s, Invalid parameter", __func__);
     if (work->_reserved) {
-        osi_free(work->_reserved);
+        bt_mesh_free(work->_reserved);
         work->_reserved = NULL;
     }
 }

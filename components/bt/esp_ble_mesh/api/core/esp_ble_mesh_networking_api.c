@@ -85,7 +85,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
         bt_mesh_model_msg_init(model->pub->msg, opcode);
         net_buf_simple_add_mem(model->pub->msg, data, length);
     } else {
-        msg_data = (uint8_t *)osi_malloc(op_len + length);
+        msg_data = (uint8_t *)bt_mesh_malloc(op_len + length);
         if (msg_data == NULL) {
             return ESP_ERR_NO_MEM;
         }
@@ -114,7 +114,7 @@ static esp_err_t ble_mesh_model_send_msg(esp_ble_mesh_model_t *model,
     status = (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_model_args_t), btc_ble_mesh_model_arg_deep_copy)
               == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
-    osi_free(msg_data);
+    bt_mesh_free(msg_data);
 
     return status;
 }

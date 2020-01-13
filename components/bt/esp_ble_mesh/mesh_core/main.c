@@ -23,6 +23,7 @@
 #include "settings.h"
 #include "mesh.h"
 #include "mesh_hci.h"
+#include "mesh_common.h"
 #include "proxy_client.h"
 #include "proxy_server.h"
 #include "provisioner_prov.h"
@@ -376,9 +377,14 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
     return 0;
 }
 
-int bt_mesh_deinit(void)
+int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 {
     int err = 0;
+
+    if (param == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV)) {
@@ -408,15 +414,15 @@ int bt_mesh_deinit(void)
             }
         }
         if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
-            err = bt_mesh_provisioner_prov_deinit();
+            err = bt_mesh_provisioner_prov_deinit(param->erase);
             if (err) {
                 return err;
             }
         }
     }
 
-    bt_mesh_trans_deinit();
-    bt_mesh_net_deinit();
+    bt_mesh_trans_deinit(param->erase);
+    bt_mesh_net_deinit(param->erase);
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
         bt_mesh_beacon_deinit();
@@ -437,7 +443,7 @@ int bt_mesh_deinit(void)
     bt_mesh_gatt_deinit();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
-        err = bt_mesh_provisioner_deinit();
+        err = bt_mesh_provisioner_deinit(param->erase);
         if (err) {
             return err;
         }
@@ -459,6 +465,9 @@ int bt_mesh_deinit(void)
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        if (param->erase) {
+            bt_mesh_clear_role();
+        }
         bt_mesh_settings_deinit();
     }
 
@@ -633,6 +642,7 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
             bt_mesh_provisioner_pb_gatt_enable();
         }
+        bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
         bt_mesh_provisioner_fast_prov_enable(true);
         bt_mesh_atomic_or(bt_mesh.flags, BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV));
     } else {

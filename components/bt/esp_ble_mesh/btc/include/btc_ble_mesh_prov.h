@@ -266,7 +266,7 @@ esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_uuid(const uint8_t u
 
 esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicast_addr);
 
-int btc_ble_mesh_deinit(void);
+int btc_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param);
 
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
 

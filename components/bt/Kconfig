@@ -1644,6 +1644,13 @@ if BLE_MESH
             option in the Bluetooth Controller section in menuconfig, which is
             "Scan Duplicate By Device Address and Advertising Data".
 
+    config BLE_MESH_ALLOC_FROM_PSRAM_FIRST
+        bool "BLE Mesh will first allocate memory from PSRAM"
+        default n
+        help
+            When this option is enabled, BLE Mesh stack will try to allocate memory
+            from PSRAM firstly. This will save the internal RAM if PSRAM exists.
+
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
         select BLE_MESH_NODE

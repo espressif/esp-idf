@@ -101,36 +101,28 @@ static u8_t seg_rx_buf_data[(CONFIG_BLE_MESH_RX_SEG_MSG_COUNT *
 
 static u16_t hb_sub_dst = BLE_MESH_ADDR_UNASSIGNED;
 
-static osi_mutex_t tx_seg_lock;
+static bt_mesh_mutex_t tx_seg_lock;
 
 static void bt_mesh_tx_seg_mutex_new(void)
 {
-    if (!tx_seg_lock) {
-        osi_mutex_new(&tx_seg_lock);
-        __ASSERT(tx_seg_lock, "%s, fail", __func__);
+    if (!tx_seg_lock.mutex) {
+        bt_mesh_mutex_create(&tx_seg_lock);
     }
 }
 
 static void bt_mesh_tx_seg_mutex_free(void)
 {
-    if (tx_seg_lock) {
-        osi_mutex_free(&tx_seg_lock);
-        tx_seg_lock = NULL;
-    }
+    bt_mesh_mutex_free(&tx_seg_lock);
 }
 
 static void bt_mesh_tx_seg_lock(void)
 {
-    if (tx_seg_lock) {
-        osi_mutex_lock(&tx_seg_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&tx_seg_lock);
 }
 
 static void bt_mesh_tx_seg_unlock(void)
 {
-    if (tx_seg_lock) {
-        osi_mutex_unlock(&tx_seg_lock);
-    }
+    bt_mesh_mutex_unlock(&tx_seg_lock);
 }
 
 void bt_mesh_set_hb_sub_dst(u16_t addr)
@@ -1610,11 +1602,20 @@ void bt_mesh_trans_init(void)
     bt_mesh_tx_seg_mutex_new();
 }
 
-void bt_mesh_trans_deinit(void)
+void bt_mesh_trans_deinit(bool erase)
 {
     int i;
 
-    bt_mesh_rx_reset();
+    for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
+        seg_rx_reset(&seg_rx[i], true);
+    }
+
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_rpl();
+    } else {
+        bt_mesh_rpl_clear();
+    }
+
     bt_mesh_tx_reset();
 
     for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {

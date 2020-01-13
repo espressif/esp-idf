@@ -151,9 +151,11 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info);
  * @brief This function deinitializes provisioner's PB-GATT and PB-ADV
  *        related information.
  *
+ * @param[in] erase: Indicate if erasing provisioning information from flash.
+ * 
  * @return Zero - success, otherwise - fail
  */
-int bt_mesh_provisioner_prov_deinit(void);
+int bt_mesh_provisioner_prov_deinit(bool erase);
 
 /**
  * @brief This function parses the received unprovisioned device

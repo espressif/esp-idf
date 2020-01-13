@@ -471,11 +471,18 @@ int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers);
 int bt_mesh_init(const struct bt_mesh_prov *prov,
                  const struct bt_mesh_comp *comp);
 
+/* BLE Mesh deinit parameters */
+struct bt_mesh_deinit_param {
+    bool erase; /* Indicate if erasing flash when deinit mesh stack */
+};
+
 /** @brief De-initialize Mesh support
+ *
+ *  @param param BLE Mesh deinit parameters.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
-int bt_mesh_deinit(void);
+int bt_mesh_deinit(struct bt_mesh_deinit_param *param);
 
 /** @brief Reset the state of the local Mesh node.
  *

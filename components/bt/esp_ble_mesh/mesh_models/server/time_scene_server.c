@@ -21,36 +21,28 @@
 
 #include "btc_ble_mesh_time_scene_model.h"
 
-static osi_mutex_t time_scene_server_lock;
+static bt_mesh_mutex_t time_scene_server_lock;
 
 static void bt_mesh_time_scene_server_mutex_new(void)
 {
-    if (!time_scene_server_lock) {
-        osi_mutex_new(&time_scene_server_lock);
-        __ASSERT(time_scene_server_lock, "%s, fail", __func__);
+    if (!time_scene_server_lock.mutex) {
+        bt_mesh_mutex_create(&time_scene_server_lock);
     }
 }
 
 static void bt_mesh_time_scene_server_mutex_free(void)
 {
-    if (time_scene_server_lock) {
-        osi_mutex_free(&time_scene_server_lock);
-        time_scene_server_lock = NULL;
-    }
+    bt_mesh_mutex_free(&time_scene_server_lock);
 }
 
 void bt_mesh_time_scene_server_lock(void)
 {
-    if (time_scene_server_lock) {
-        osi_mutex_lock(&time_scene_server_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&time_scene_server_lock);
 }
 
 void bt_mesh_time_scene_server_unlock(void)
 {
-    if (time_scene_server_lock) {
-        osi_mutex_unlock(&time_scene_server_lock);
-    }
+    bt_mesh_mutex_unlock(&time_scene_server_lock);
 }
 
 /* message handlers (Start) */

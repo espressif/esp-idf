@@ -63,36 +63,28 @@ static const bt_mesh_client_op_pair_t time_scene_op_pair[] = {
     { BLE_MESH_MODEL_OP_SCHEDULER_ACT_SET,  BLE_MESH_MODEL_OP_SCHEDULER_ACT_STATUS  },
 };
 
-static osi_mutex_t time_scene_client_lock;
+static bt_mesh_mutex_t time_scene_client_lock;
 
 static void bt_mesh_time_scene_client_mutex_new(void)
 {
-    if (!time_scene_client_lock) {
-        osi_mutex_new(&time_scene_client_lock);
-        __ASSERT(time_scene_client_lock, "%s, fail", __func__);
+    if (!time_scene_client_lock.mutex) {
+        bt_mesh_mutex_create(&time_scene_client_lock);
     }
 }
 
 static void bt_mesh_time_scene_client_mutex_free(void)
 {
-    if (time_scene_client_lock) {
-        osi_mutex_free(&time_scene_client_lock);
-        time_scene_client_lock = NULL;
-    }
+    bt_mesh_mutex_free(&time_scene_client_lock);
 }
 
 static void bt_mesh_time_scene_client_lock(void)
 {
-    if (time_scene_client_lock) {
-        osi_mutex_lock(&time_scene_client_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&time_scene_client_lock);
 }
 
 static void bt_mesh_time_scene_client_unlock(void)
 {
-    if (time_scene_client_lock) {
-        osi_mutex_unlock(&time_scene_client_lock);
-    }
+    bt_mesh_mutex_unlock(&time_scene_client_lock);
 }
 
 static void timeout_handler(struct k_work *work)
@@ -142,7 +134,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Time Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_time_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_time_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -165,7 +157,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Time Zone Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_time_zone_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_time_zone_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -184,7 +176,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid TAI UTC Delta Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_tai_utc_delta_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_tai_utc_delta_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -207,7 +199,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Time Role Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_time_role_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_time_role_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -223,7 +215,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Scene Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_scene_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_scene_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -241,7 +233,7 @@ static void time_scene_status(struct bt_mesh_model *model,
     }
     case BLE_MESH_MODEL_OP_SCENE_REGISTER_STATUS: {
         struct bt_mesh_scene_register_status *status = NULL;
-        status = osi_calloc(sizeof(struct bt_mesh_scene_register_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_scene_register_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -251,7 +243,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         status->scenes = bt_mesh_alloc_buf(buf->len);
         if (!status->scenes) {
             BT_ERR("%s, Failed to allocate memory", __func__);
-            osi_free(status);
+            bt_mesh_free(status);
             return;
         }
         net_buf_simple_add_mem(status->scenes, buf->data, buf->len);
@@ -265,7 +257,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Scheduler Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_scheduler_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_scheduler_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -281,7 +273,7 @@ static void time_scene_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Scheduler Action Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_scheduler_act_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_scheduler_act_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -352,7 +344,7 @@ static void time_scene_status(struct bt_mesh_model *model,
         break;
     }
 
-    osi_free(val);
+    bt_mesh_free(val);
 
     return;
 }
@@ -670,7 +662,7 @@ static int time_scene_client_init(struct bt_mesh_model *model, bool primary)
     }
 
     if (!client->internal_data) {
-        internal = osi_calloc(sizeof(time_scene_internal_data_t));
+        internal = bt_mesh_calloc(sizeof(time_scene_internal_data_t));
         if (!internal) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return -ENOMEM;
@@ -726,7 +718,7 @@ static int time_scene_client_deinit(struct bt_mesh_model *model, bool primary)
         bt_mesh_client_clear_list(client->internal_data);
 
         /* Free the allocated internal data */
-        osi_free(client->internal_data);
+        bt_mesh_free(client->internal_data);
         client->internal_data = NULL;
     }
 

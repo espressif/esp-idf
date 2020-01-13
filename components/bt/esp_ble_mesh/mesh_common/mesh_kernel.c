@@ -12,14 +12,13 @@
 #include "osi/alarm.h"
 #include "osi/hash_functions.h"
 
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
+#include "mesh_common.h"
 #include "provisioner_prov.h"
 
-static osi_mutex_t bm_alarm_lock;
-static osi_mutex_t bm_list_lock;
-static osi_mutex_t bm_buf_lock;
-static osi_mutex_t bm_atomic_lock;
+static bt_mesh_mutex_t bm_alarm_lock;
+static bt_mesh_mutex_t bm_list_lock;
+static bt_mesh_mutex_t bm_buf_lock;
+static bt_mesh_mutex_t bm_atomic_lock;
 static hash_map_t *bm_alarm_hash_map;
 static const size_t BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE = 20 + CONFIG_BLE_MESH_PBA_SAME_TIME + \
         CONFIG_BLE_MESH_PBG_SAME_TIME;
@@ -34,122 +33,90 @@ typedef struct alarm_t {
 
 static void bt_mesh_alarm_mutex_new(void)
 {
-    if (!bm_alarm_lock) {
-        osi_mutex_new(&bm_alarm_lock);
-        __ASSERT(bm_alarm_lock, "%s, fail", __func__);
+    if (!bm_alarm_lock.mutex) {
+        bt_mesh_mutex_create(&bm_alarm_lock);
     }
 }
 
 static void bt_mesh_alarm_mutex_free(void)
 {
-    if (bm_alarm_lock) {
-        osi_mutex_free(&bm_alarm_lock);
-        bm_alarm_lock = NULL;
-    }
+    bt_mesh_mutex_free(&bm_alarm_lock);
 }
 
 static void bt_mesh_alarm_lock(void)
 {
-    if (bm_alarm_lock) {
-        osi_mutex_lock(&bm_alarm_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&bm_alarm_lock);
 }
 
 static void bt_mesh_alarm_unlock(void)
 {
-    if (bm_alarm_lock) {
-        osi_mutex_unlock(&bm_alarm_lock);
-    }
+    bt_mesh_mutex_unlock(&bm_alarm_lock);
 }
 
 static void bt_mesh_list_mutex_new(void)
 {
-    if (!bm_list_lock) {
-        osi_mutex_new(&bm_list_lock);
-        __ASSERT(bm_list_lock, "%s, fail", __func__);
+    if (!bm_list_lock.mutex) {
+        bt_mesh_mutex_create(&bm_list_lock);
     }
 }
 
 static void bt_mesh_list_mutex_free(void)
 {
-    if (bm_list_lock) {
-        osi_mutex_free(&bm_list_lock);
-        bm_list_lock = NULL;
-    }
+    bt_mesh_mutex_free(&bm_list_lock);
 }
 
 void bt_mesh_list_lock(void)
 {
-    if (bm_list_lock) {
-        osi_mutex_lock(&bm_list_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&bm_list_lock);
 }
 
 void bt_mesh_list_unlock(void)
 {
-    if (bm_list_lock) {
-        osi_mutex_unlock(&bm_list_lock);
-    }
+    bt_mesh_mutex_unlock(&bm_list_lock);
 }
 
 static void bt_mesh_buf_mutex_new(void)
 {
-    if (!bm_buf_lock) {
-        osi_mutex_new(&bm_buf_lock);
-        __ASSERT(bm_buf_lock, "%s, fail", __func__);
+    if (!bm_buf_lock.mutex) {
+        bt_mesh_mutex_create(&bm_buf_lock);
     }
 }
 
 static void bt_mesh_buf_mutex_free(void)
 {
-    if (bm_buf_lock) {
-        osi_mutex_free(&bm_buf_lock);
-        bm_buf_lock = NULL;
-    }
+    bt_mesh_mutex_free(&bm_buf_lock);
 }
 
 void bt_mesh_buf_lock(void)
 {
-    if (bm_buf_lock) {
-        osi_mutex_lock(&bm_buf_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&bm_buf_lock);
 }
 
 void bt_mesh_buf_unlock(void)
 {
-    if (bm_buf_lock) {
-        osi_mutex_unlock(&bm_buf_lock);
-    }
+    bt_mesh_mutex_unlock(&bm_buf_lock);
 }
 
 static void bt_mesh_atomic_mutex_new(void)
 {
-    if (!bm_atomic_lock) {
-        osi_mutex_new(&bm_atomic_lock);
-        __ASSERT(bm_atomic_lock, "%s, fail", __func__);
+    if (!bm_atomic_lock.mutex) {
+        bt_mesh_mutex_create(&bm_atomic_lock);
     }
 }
 
 static void bt_mesh_atomic_mutex_free(void)
 {
-    if (bm_atomic_lock) {
-        osi_mutex_free(&bm_atomic_lock);
-        bm_atomic_lock = NULL;
-    }
+    bt_mesh_mutex_free(&bm_atomic_lock);
 }
 
 void bt_mesh_atomic_lock(void)
 {
-    if (bm_atomic_lock) {
-        osi_mutex_lock(&bm_atomic_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&bm_atomic_lock);
 }
 
 void bt_mesh_atomic_unlock(void)
 {
-    if (bm_atomic_lock) {
-        osi_mutex_unlock(&bm_atomic_lock);
-    }
+    bt_mesh_mutex_unlock(&bm_atomic_lock);
 }
 
 s64_t k_uptime_get(void)
@@ -183,7 +150,7 @@ void bt_mesh_k_init(void)
     bm_alarm_hash_map = hash_map_new(BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE,
                                      hash_function_pointer, NULL,
                                      (data_free_fn)osi_alarm_free, NULL);
-    assert(bm_alarm_hash_map != NULL);
+    __ASSERT(bm_alarm_hash_map, "%s, Failed to create hash map", __func__);
 }
 
 void bt_mesh_k_deinit(void)
@@ -202,7 +169,10 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 {
     osi_alarm_t *alarm = NULL;
 
-    assert(work != NULL && bm_alarm_hash_map != NULL);
+    if (!work || !bm_alarm_hash_map) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return;
+    }
 
     k_work_init(&work->work, handler);
 
@@ -233,7 +203,10 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 
 int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
 {
-    assert(work != NULL && bm_alarm_hash_map != NULL);
+    if (!work || !bm_alarm_hash_map) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
@@ -249,7 +222,10 @@ int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
 
 int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period)
 {
-    assert(work != NULL && bm_alarm_hash_map != NULL);
+    if (!work || !bm_alarm_hash_map) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
@@ -266,7 +242,10 @@ int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period)
 
 int k_delayed_work_cancel(struct k_delayed_work *work)
 {
-    assert(work != NULL && bm_alarm_hash_map != NULL);
+    if (!work || !bm_alarm_hash_map) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
@@ -281,7 +260,10 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 
 int k_delayed_work_free(struct k_delayed_work *work)
 {
-    assert(work != NULL && bm_alarm_hash_map != NULL);
+    if (!work || !bm_alarm_hash_map) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, work);
     if (alarm == NULL) {
@@ -296,7 +278,10 @@ int k_delayed_work_free(struct k_delayed_work *work)
 
 s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
-    assert(work != NULL && bm_alarm_hash_map != NULL);
+    if (!work || !bm_alarm_hash_map) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return 0;
+    }
 
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {

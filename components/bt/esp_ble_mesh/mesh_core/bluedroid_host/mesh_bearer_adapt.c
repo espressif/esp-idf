@@ -316,7 +316,7 @@ static void bt_mesh_scan_result_callback(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARC
         if (bt_mesh_scan_dev_found_cb != NULL) {
             bt_mesh_scan_dev_found_cb(&addr, rssi, adv_type, buf);
         }
-        osi_free(buf);
+        bt_mesh_free(buf);
     } else if (event == BTA_DM_INQ_CMPL_EVT) {
         BT_INFO("%s, Scan completed, number of scan response %d", __func__, p_data->inq_cmpl.num_resps);
     } else {
@@ -1369,28 +1369,28 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
                 }
 
                 if (num != 1) {
-                    osi_free(result);
+                    bt_mesh_free(result);
                     bt_mesh_gattc_disconnect(conn);
                     return;
                 }
 
                 if (!j) {
                     if (!(result[0].properties & BLE_MESH_GATT_CHRC_WRITE_WITHOUT_RESP)) {
-                        osi_free(result);
+                        bt_mesh_free(result);
                         bt_mesh_gattc_disconnect(conn);
                         return;
                     }
                     bt_mesh_gattc_info[i].data_in_handle = result[0].attribute_handle;
                 } else {
                     if (!(result[0].properties & BLE_MESH_GATT_CHRC_NOTIFY)) {
-                        osi_free(result);
+                        bt_mesh_free(result);
                         bt_mesh_gattc_disconnect(conn);
                         return;
                     }
                     bt_mesh_gattc_info[i].data_out_handle = result[0].attribute_handle;
                 }
 
-                osi_free(result);
+                bt_mesh_free(result);
                 result = NULL;
             }
 
@@ -1424,7 +1424,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
             }
 
             if (num != 1) {
-                osi_free(result);
+                bt_mesh_free(result);
                 bt_mesh_gattc_disconnect(conn);
                 return;
             }
@@ -1439,7 +1439,7 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
             BTA_GATTC_WriteCharDescr(p_data->search_cmpl.conn_id, result[0].attribute_handle,
                                      BTA_GATTC_TYPE_WRITE, &write, BTA_GATT_AUTH_REQ_NONE);
 
-            osi_free(result);
+            bt_mesh_free(result);
             result = NULL;
         }
         break;
@@ -1709,11 +1709,28 @@ void bt_mesh_gatt_deinit(void)
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_SERVER
     BTA_GATTS_AppDeregister(bt_mesh_gatts_if);
+    memset(bt_mesh_gatts_addr, 0, BLE_MESH_ADDR_LEN);
+    bt_mesh_gatts_if = 0U;
+    svc_handle = 0U;
+    char_handle = 0U;
 #endif
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
     BTA_GATTC_AppDeregister(bt_mesh_gattc_if);
+    bt_mesh_gattc_if = 0U;
+    for (int i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
+        bt_mesh_gattc_info[i].conn.handle = 0xFFFF;
+        memset(&bt_mesh_gattc_info[i].addr, 0, sizeof(bt_mesh_addr_t));
+        bt_mesh_gattc_info[i].service_uuid = 0U;
+        bt_mesh_gattc_info[i].mtu = GATT_DEF_BLE_MTU_SIZE; /* Default MTU_SIZE 23 */
+        bt_mesh_gattc_info[i].wr_desc_done = false;
+        bt_mesh_gattc_info[i].start_handle = 0U;
+        bt_mesh_gattc_info[i].end_handle = 0U;
+        bt_mesh_gattc_info[i].data_in_handle = 0U;
+        bt_mesh_gattc_info[i].data_out_handle = 0U;
+        bt_mesh_gattc_info[i].ccc_handle = 0U;
+    }
 #endif
 }
 

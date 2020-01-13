@@ -202,36 +202,28 @@ static struct prov_link link;
 static const struct bt_mesh_prov *prov;
 
 #if defined(CONFIG_BLE_MESH_PB_ADV)
-static osi_mutex_t pb_buf_lock;
+static bt_mesh_mutex_t pb_buf_lock;
 
 static void bt_mesh_pb_buf_mutex_new(void)
 {
-    if (!pb_buf_lock) {
-        osi_mutex_new(&pb_buf_lock);
-        __ASSERT(pb_buf_lock, "%s, fail", __func__);
+    if (!pb_buf_lock.mutex) {
+        bt_mesh_mutex_create(&pb_buf_lock);
     }
 }
 
 static void bt_mesh_pb_buf_mutex_free(void)
 {
-    if (pb_buf_lock) {
-        osi_mutex_free(&pb_buf_lock);
-        pb_buf_lock = NULL;
-    }
+    bt_mesh_mutex_free(&pb_buf_lock);
 }
 
 static void bt_mesh_pb_buf_lock(void)
 {
-    if (pb_buf_lock) {
-        osi_mutex_lock(&pb_buf_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&pb_buf_lock);
 }
 
 static void bt_mesh_pb_buf_unlock(void)
 {
-    if (pb_buf_lock) {
-        osi_mutex_unlock(&pb_buf_lock);
-    }
+    bt_mesh_mutex_unlock(&pb_buf_lock);
 }
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 

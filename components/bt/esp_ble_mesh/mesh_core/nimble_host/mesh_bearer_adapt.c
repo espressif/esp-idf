@@ -396,7 +396,7 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
         if (bt_mesh_scan_dev_found_cb) {
             bt_mesh_scan_dev_found_cb((bt_mesh_addr_t *)&desc->addr, desc->rssi, desc->event_type, buf);
         }
-        osi_free(buf);
+        bt_mesh_free(buf);
         break;
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT

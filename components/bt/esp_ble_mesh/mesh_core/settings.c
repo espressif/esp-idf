@@ -879,7 +879,7 @@ static struct bt_mesh_subnet *p_subnet_alloc(void)
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
         if (bt_mesh.p_sub[i] == NULL) {
-            bt_mesh.p_sub[i] = osi_calloc(sizeof(struct bt_mesh_subnet));
+            bt_mesh.p_sub[i] = bt_mesh_calloc(sizeof(struct bt_mesh_subnet));
             if (!bt_mesh.p_sub[i]) {
                 BT_ERR("%s, Failed to allocate memory", __func__);
                 return NULL;
@@ -898,7 +898,7 @@ static struct bt_mesh_app_key *p_appkey_alloc(void)
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
         if (bt_mesh.p_app_keys[i] == NULL) {
-            bt_mesh.p_app_keys[i] = osi_calloc(sizeof(struct bt_mesh_app_key));
+            bt_mesh.p_app_keys[i] = bt_mesh_calloc(sizeof(struct bt_mesh_app_key));
             if (!bt_mesh.p_app_keys[i]) {
                 BT_ERR("%s, Failed to allocate memory", __func__);
                 return NULL;
@@ -1522,6 +1522,11 @@ void bt_mesh_store_iv(bool only_duration)
     }
 }
 
+void bt_mesh_clear_iv(void)
+{
+    clear_iv();
+}
+
 static void store_pending_seq(void)
 {
     struct seq_val seq = {0};
@@ -1541,6 +1546,11 @@ void bt_mesh_store_seq(void)
     }
 
     schedule_store(BLE_MESH_SEQ_PENDING);
+}
+
+void bt_mesh_clear_seq(void)
+{
+    bt_mesh_save_core_settings("mesh/seq", NULL, 0);
 }
 
 static void store_rpl(struct bt_mesh_rpl *entry)
@@ -2263,6 +2273,11 @@ void bt_mesh_store_prov_info(u16_t primary_addr, u16_t alloc_addr)
     bt_mesh_save_core_settings("mesh/p_prov", (const u8_t *)&val, sizeof(val));
 }
 
+void bt_mesh_clear_prov_info(void)
+{
+    bt_mesh_save_core_settings("mesh/p_prov", NULL, 0);
+}
+
 static void clear_p_net_key(u16_t net_idx)
 {
     char name[16] = {'\0'};
@@ -2527,29 +2542,18 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node, bool prov)
 void bt_mesh_store_node_comp_data(struct bt_mesh_node *node, bool prov)
 {
     char name[16] = {'\0'};
-    u8_t *data = NULL;
     int err = 0;
 
-    if (node == NULL) {
-        BT_ERR("%s, Invalid node", __func__);
+    if (!node || !node->comp_data || node->comp_length == 0U) {
+        BT_ERR("%s, Invalid node info", __func__);
         return;
     }
-
-    data = osi_calloc(node->comp_length);
-    if (!data) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return;
-    }
-
-    memcpy(data, node->comp_data, node->comp_length);
 
     sprintf(name, prov ? "mesh/pn/%04x/c" : "mesh/sn/%04x/c", node->unicast_addr);
-    err = bt_mesh_save_core_settings(name, (const u8_t *)data, node->comp_length);
+    err = bt_mesh_save_core_settings(name, (const u8_t *)node->comp_data, node->comp_length);
     if (err) {
         BT_ERR("%s, Failed to save node comp data %s", __func__, name);
     }
-
-    osi_free(data);
 }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 

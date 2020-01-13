@@ -67,7 +67,15 @@ NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BLE_MESH_ADV_BUF_COUNT + 3 * CONFIG_BLE
 
 static struct bt_mesh_adv adv_pool[CONFIG_BLE_MESH_ADV_BUF_COUNT + 3 * CONFIG_BLE_MESH_PBA_SAME_TIME];
 
-static QueueHandle_t xBleMeshQueue;
+struct bt_mesh_queue {
+    QueueHandle_t queue;
+#if CONFIG_SPIRAM_USE_MALLOC
+    StaticQueue_t *buffer;
+    u8_t *storage;
+#endif
+};
+
+static struct bt_mesh_queue xBleMeshQueue;
 #define BLE_MESH_QUEUE_SIZE         150
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
@@ -76,7 +84,7 @@ NET_BUF_POOL_DEFINE(relay_adv_buf_pool, CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT,
 
 static struct bt_mesh_adv relay_adv_pool[CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT];
 
-static QueueHandle_t xBleMeshRelayQueue;
+static struct bt_mesh_queue xBleMeshRelayQueue;
 #define BLE_MESH_RELAY_QUEUE_SIZE   150
 
 static QueueSetHandle_t xBleMeshQueueSet;
@@ -88,7 +96,15 @@ static QueueSetHandle_t xBleMeshQueueSet;
 static bool ignore_relay_packet(u32_t timestamp);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
-static TaskHandle_t adv_task_handle;
+struct bt_mesh_adv_task {
+    TaskHandle_t handle;
+#if CONFIG_SPIRAM_USE_MALLOC
+    StaticTask_t *task;
+    StackType_t *stack;
+#endif
+};
+
+static struct bt_mesh_adv_task adv_task;
 
 static struct bt_mesh_adv *adv_alloc(int id)
 {
@@ -190,28 +206,28 @@ static void adv_thread(void *p)
 #if !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_SERVER
-        xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
+        xQueueReceive(xBleMeshQueue.queue, &msg, K_NO_WAIT);
         while (!(*buf)) {
             s32_t timeout;
             BT_DBG("Mesh Proxy Advertising start");
             timeout = bt_mesh_proxy_adv_start();
             BT_DBG("Mesh Proxy Advertising up to %d ms", timeout);
-            xQueueReceive(xBleMeshQueue, &msg, timeout);
+            xQueueReceive(xBleMeshQueue.queue, &msg, timeout);
             BT_DBG("Mesh Proxy Advertising stop");
             bt_mesh_proxy_adv_stop();
         }
 #else
-        xQueueReceive(xBleMeshQueue, &msg, portMAX_DELAY);
+        xQueueReceive(xBleMeshQueue.queue, &msg, portMAX_DELAY);
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
 #else /* !defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_SERVER
         handle = xQueueSelectFromSet(xBleMeshQueueSet, K_NO_WAIT);
         if (handle) {
-            if (uxQueueMessagesWaiting(xBleMeshQueue)) {
-                xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
-            } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-                xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
+            if (uxQueueMessagesWaiting(xBleMeshQueue.queue)) {
+                xQueueReceive(xBleMeshQueue.queue, &msg, K_NO_WAIT);
+            } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue.queue)) {
+                xQueueReceive(xBleMeshRelayQueue.queue, &msg, K_NO_WAIT);
             }
         } else {
             while (!(*buf)) {
@@ -223,10 +239,10 @@ static void adv_thread(void *p)
                 BT_DBG("Mesh Proxy Advertising stop");
                 bt_mesh_proxy_adv_stop();
                 if (handle) {
-                    if (uxQueueMessagesWaiting(xBleMeshQueue)) {
-                        xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
-                    } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-                        xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
+                    if (uxQueueMessagesWaiting(xBleMeshQueue.queue)) {
+                        xQueueReceive(xBleMeshQueue.queue, &msg, K_NO_WAIT);
+                    } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue.queue)) {
+                        xQueueReceive(xBleMeshRelayQueue.queue, &msg, K_NO_WAIT);
                     }
                 }
             }
@@ -234,10 +250,10 @@ static void adv_thread(void *p)
 #else
         handle = xQueueSelectFromSet(xBleMeshQueueSet, portMAX_DELAY);
         if (handle) {
-            if (uxQueueMessagesWaiting(xBleMeshQueue)) {
-                xQueueReceive(xBleMeshQueue, &msg, K_NO_WAIT);
-            } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
-                xQueueReceive(xBleMeshRelayQueue, &msg, K_NO_WAIT);
+            if (uxQueueMessagesWaiting(xBleMeshQueue.queue)) {
+                xQueueReceive(xBleMeshQueue.queue, &msg, K_NO_WAIT);
+            } else if (uxQueueMessagesWaiting(xBleMeshRelayQueue.queue)) {
+                xQueueReceive(xBleMeshRelayQueue.queue, &msg, K_NO_WAIT);
             }
         }
 #endif /* (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || CONFIG_BLE_MESH_GATT_PROXY_SERVER */
@@ -374,7 +390,13 @@ static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
 static void bt_mesh_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
 {
     BT_DBG("%s", __func__);
-    if (xQueueSend(xBleMeshQueue, msg, timeout) != pdTRUE) {
+
+    if (xBleMeshQueue.queue == NULL) {
+        BT_ERR("%s, Invalid queue", __func__);
+        return;
+    }
+
+    if (xQueueSend(xBleMeshQueue.queue, msg, timeout) != pdTRUE) {
         BT_ERR("%s, Failed to send item to queue", __func__);
         bt_mesh_unref_buf(msg);
     }
@@ -446,7 +468,12 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
 
     BT_DBG("%s", __func__);
 
-    if (xQueueSend(xBleMeshRelayQueue, msg, timeout) == pdTRUE) {
+    if (xBleMeshRelayQueue.queue == NULL) {
+        BT_ERR("%s, Invalid relay queue", __func__);
+        return;
+    }
+
+    if (xQueueSend(xBleMeshRelayQueue.queue, msg, timeout) == pdTRUE) {
         return;
     }
 
@@ -455,10 +482,10 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
      * remove the oldest packet in the queue and put the new one into it.
      */
     handle = xQueueSelectFromSet(xBleMeshQueueSet, K_NO_WAIT);
-    if (handle && uxQueueMessagesWaiting(xBleMeshRelayQueue)) {
+    if (handle && uxQueueMessagesWaiting(xBleMeshRelayQueue.queue)) {
         BT_INFO("%s, Full queue, remove the oldest relay packet", __func__);
         /* Remove the oldest relay packet from queue */
-        if (xQueueReceive(xBleMeshRelayQueue, &old_msg, K_NO_WAIT) != pdTRUE) {
+        if (xQueueReceive(xBleMeshRelayQueue.queue, &old_msg, K_NO_WAIT) != pdTRUE) {
             BT_ERR("%s, Failed to remove item from queue", __func__);
             bt_mesh_unref_buf(msg);
             return;
@@ -466,7 +493,7 @@ static void ble_mesh_relay_task_post(bt_mesh_msg_t *msg, uint32_t timeout)
         /* Unref buf used for the oldest relay packet */
         bt_mesh_unref_buf(&old_msg);
         /* Send the latest relay packet to queue */
-        if (xQueueSend(xBleMeshRelayQueue, msg, K_NO_WAIT) != pdTRUE) {
+        if (xQueueSend(xBleMeshRelayQueue.queue, msg, K_NO_WAIT) != pdTRUE) {
             BT_ERR("%s, Failed to send item to relay queue", __func__);
             bt_mesh_unref_buf(msg);
             return;
@@ -501,7 +528,7 @@ void bt_mesh_relay_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *c
 
 u16_t bt_mesh_get_stored_relay_count(void)
 {
-    return (u16_t)uxQueueMessagesWaiting(xBleMeshRelayQueue);
+    return (u16_t)uxQueueMessagesWaiting(xBleMeshRelayQueue.queue);
 }
 #endif /* #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
 
@@ -709,39 +736,105 @@ extern bool lld_evt_adv_delay_time(uint8_t time);
 void bt_mesh_adv_init(void)
 {
     lld_evt_adv_delay_time(0);    /* disable adv random delay */
-    xBleMeshQueue = xQueueCreate(BLE_MESH_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
-    configASSERT(xBleMeshQueue);
+
+#if !CONFIG_SPIRAM_USE_MALLOC
+    xBleMeshQueue.queue = xQueueCreate(BLE_MESH_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
+    __ASSERT(xBleMeshQueue.queue, "%s, Failed to create queue", __func__);
+#else
+    xBleMeshQueue.buffer = heap_caps_calloc(1, sizeof(StaticQueue_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    __ASSERT(xBleMeshQueue.buffer, "%s, Failed to create queue buffer", __func__);
+    xBleMeshQueue.storage = heap_caps_calloc(1, (BLE_MESH_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    __ASSERT(xBleMeshQueue.storage, "%s, Failed to create queue storage", __func__);
+    xBleMeshQueue.queue = xQueueCreateStatic(BLE_MESH_QUEUE_SIZE, sizeof(bt_mesh_msg_t), (uint8_t*)xBleMeshQueue.storage, xBleMeshQueue.buffer);
+    __ASSERT(xBleMeshQueue.queue, "%s, Failed to create static queue", __func__);
+#endif
+
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
-    xBleMeshRelayQueue = xQueueCreate(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
-    configASSERT(xBleMeshRelayQueue);
+#if !CONFIG_SPIRAM_USE_MALLOC
+    xBleMeshRelayQueue.queue = xQueueCreate(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t));
+    __ASSERT(xBleMeshRelayQueue.queue, "%s, Failed to create relay queue", __func__);
+#else
+    xBleMeshRelayQueue.buffer = heap_caps_calloc(1, sizeof(StaticQueue_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    __ASSERT(xBleMeshRelayQueue.buffer, "%s, Failed to create relay queue buffer", __func__);
+    xBleMeshRelayQueue.storage = heap_caps_calloc(1, (BLE_MESH_RELAY_QUEUE_SIZE * sizeof(bt_mesh_msg_t)), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    __ASSERT(xBleMeshRelayQueue.storage, "%s, Failed to create relay queue storage", __func__);
+    xBleMeshRelayQueue.queue = xQueueCreateStatic(BLE_MESH_RELAY_QUEUE_SIZE, sizeof(bt_mesh_msg_t), (uint8_t*)xBleMeshRelayQueue.storage, xBleMeshRelayQueue.buffer);
+    __ASSERT(xBleMeshRelayQueue.queue, "%s, Failed to create static relay queue", __func__);
+#endif
+
     xBleMeshQueueSet = xQueueCreateSet(BLE_MESH_QUEUE_SET_SIZE);
-    configASSERT(xBleMeshQueueSet);
-    xQueueAddToSet(xBleMeshQueue, xBleMeshQueueSet);
-    xQueueAddToSet(xBleMeshRelayQueue, xBleMeshQueueSet);
+    __ASSERT(xBleMeshQueueSet, "%s, Failed to create queue set", __func__);
+    xQueueAddToSet(xBleMeshQueue.queue, xBleMeshQueueSet);
+    xQueueAddToSet(xBleMeshRelayQueue.queue, xBleMeshQueueSet);
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
-    int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", 3072, NULL,
-                                      configMAX_PRIORITIES - 5, &adv_task_handle, ADV_TASK_CORE);
-    configASSERT(ret == pdTRUE);
+
+#if !CONFIG_SPIRAM_USE_MALLOC
+    int ret = xTaskCreatePinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
+                                      configMAX_PRIORITIES - 5, &adv_task.handle, BLE_MESH_ADV_TASK_CORE);
+    __ASSERT(ret == pdTRUE, "%s, Failed to create adv thread", __func__);
+#else
+    adv_task.task = heap_caps_calloc(1, sizeof(StaticTask_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+    __ASSERT(adv_task.task, "%s, Failed to create adv thread task", __func__);
+#if CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+    adv_task.stack = heap_caps_calloc(1, BLE_MESH_ADV_TASK_STACK_SIZE * sizeof(StackType_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+#else
+    adv_task.stack = heap_caps_calloc(1, BLE_MESH_ADV_TASK_STACK_SIZE * sizeof(StackType_t), MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT);
+#endif
+    __ASSERT(adv_task.stack, "%s, Failed to create adv thread stack", __func__);
+    adv_task.handle = xTaskCreateStaticPinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
+                                  configMAX_PRIORITIES - 5, adv_task.stack, adv_task.task, BLE_MESH_ADV_TASK_CORE);
+    __ASSERT(adv_task.stack, "%s, Failed to create static adv thread stack", __func__);
+#endif
 }
 
 void bt_mesh_adv_deinit(void)
 {
-    if (xBleMeshQueue == NULL) {
+    if (xBleMeshQueue.queue == NULL) {
         return;
     }
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
-    xQueueRemoveFromSet(xBleMeshQueue, xBleMeshQueueSet);
-    xQueueRemoveFromSet(xBleMeshRelayQueue, xBleMeshQueueSet);
-    vQueueDelete(xBleMeshRelayQueue);
+    xQueueRemoveFromSet(xBleMeshQueue.queue, xBleMeshQueueSet);
+    xQueueRemoveFromSet(xBleMeshRelayQueue.queue, xBleMeshQueueSet);
+
+    vQueueDelete(xBleMeshRelayQueue.queue);
+    xBleMeshRelayQueue.queue = NULL;
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_free(xBleMeshRelayQueue.buffer);
+    xBleMeshRelayQueue.buffer = NULL;
+    heap_caps_free(xBleMeshRelayQueue.storage);
+    xBleMeshRelayQueue.storage = NULL;
+#endif
+
     bt_mesh_unref_buf_from_pool(&relay_adv_buf_pool);
     memset(relay_adv_pool, 0, sizeof(relay_adv_pool));
+
     vQueueDelete(xBleMeshQueueSet);
+    xBleMeshQueueSet = NULL;
 #endif /* defined(CONFIG_BLE_MESH_RELAY_ADV_BUF) */
-    vQueueDelete(xBleMeshQueue);
+
+    vQueueDelete(xBleMeshQueue.queue);
+    xBleMeshQueue.queue = NULL;
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_free(xBleMeshQueue.buffer);
+    xBleMeshQueue.buffer = NULL;
+    heap_caps_free(xBleMeshQueue.storage);
+    xBleMeshQueue.storage = NULL;
+#endif
+
     bt_mesh_unref_buf_from_pool(&adv_buf_pool);
     memset(adv_pool, 0, sizeof(adv_pool));
-    vTaskDelete(adv_task_handle);
+
+    vTaskDelete(adv_task.handle);
+    adv_task.handle = NULL;
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_free(adv_task.stack);
+    adv_task.stack = NULL;
+    /* Delay certain period for free adv_task.task */
+    vTaskDelay(10 / portTICK_PERIOD_MS);
+    heap_caps_free(adv_task.task);
+    adv_task.task = NULL;
+#endif
 }
 
 int bt_mesh_scan_enable(void)

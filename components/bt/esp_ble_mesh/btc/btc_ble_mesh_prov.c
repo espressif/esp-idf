@@ -84,7 +84,7 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR:
         BT_DBG("%s, BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR", __func__);
-        dst->proxy_client_add_filter_addr.addr = (uint16_t *)osi_calloc(src->proxy_client_add_filter_addr.addr_num << 1);
+        dst->proxy_client_add_filter_addr.addr = (uint16_t *)bt_mesh_calloc(src->proxy_client_add_filter_addr.addr_num << 1);
         if (dst->proxy_client_add_filter_addr.addr) {
             memcpy(dst->proxy_client_add_filter_addr.addr, src->proxy_client_add_filter_addr.addr,
                    src->proxy_client_add_filter_addr.addr_num << 1);
@@ -94,7 +94,7 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR:
         BT_DBG("%s, BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR", __func__);
-        dst->proxy_client_remove_filter_addr.addr = osi_calloc(src->proxy_client_remove_filter_addr.addr_num << 1);
+        dst->proxy_client_remove_filter_addr.addr = bt_mesh_calloc(src->proxy_client_remove_filter_addr.addr_num << 1);
         if (dst->proxy_client_remove_filter_addr.addr) {
             memcpy(dst->proxy_client_remove_filter_addr.addr, src->proxy_client_remove_filter_addr.addr,
                    src->proxy_client_remove_filter_addr.addr_num << 1);
@@ -104,7 +104,7 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
         BT_DBG("%s, BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA", __func__);
-        dst->store_node_comp_data.data = osi_calloc(src->store_node_comp_data.length);
+        dst->store_node_comp_data.data = bt_mesh_calloc(src->store_node_comp_data.length);
         if (dst->store_node_comp_data.data) {
             memcpy(dst->store_node_comp_data.data, src->store_node_comp_data.data, src->store_node_comp_data.length);
         } else {
@@ -131,17 +131,17 @@ static void btc_ble_mesh_prov_arg_deep_free(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR:
         if (arg->proxy_client_add_filter_addr.addr) {
-            osi_free(arg->proxy_client_add_filter_addr.addr);
+            bt_mesh_free(arg->proxy_client_add_filter_addr.addr);
         }
         break;
     case BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR:
         if (arg->proxy_client_remove_filter_addr.addr) {
-            osi_free(arg->proxy_client_remove_filter_addr.addr);
+            bt_mesh_free(arg->proxy_client_remove_filter_addr.addr);
         }
         break;
     case BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA:
         if (arg->store_node_comp_data.data) {
-            osi_free(arg->store_node_comp_data.data);
+            bt_mesh_free(arg->store_node_comp_data.data);
         }
         break;
     default:
@@ -163,8 +163,8 @@ void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND:
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
         BT_DBG("%s, BTC_BLE_MESH_ACT_MODEL_SEND, src->model_send.length = %d", __func__, src->model_send.length);
-        dst->model_send.data = src->model_send.length ? (uint8_t *)osi_malloc(src->model_send.length) : NULL;
-        dst->model_send.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+        dst->model_send.data = src->model_send.length ? (uint8_t *)bt_mesh_malloc(src->model_send.length) : NULL;
+        dst->model_send.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
         if (src->model_send.length) {
             if (dst->model_send.data) {
                 memcpy(dst->model_send.data, src->model_send.data, src->model_send.length);
@@ -181,7 +181,7 @@ void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
         BT_DBG("%s, BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE", __func__);
-        dst->model_update_state.value = osi_malloc(sizeof(esp_ble_mesh_server_state_value_t));
+        dst->model_update_state.value = bt_mesh_malloc(sizeof(esp_ble_mesh_server_state_value_t));
         if (dst->model_update_state.value) {
             memcpy(dst->model_update_state.value, src->model_update_state.value,
                    sizeof(esp_ble_mesh_server_state_value_t));
@@ -210,15 +210,15 @@ static void btc_ble_mesh_model_arg_deep_free(btc_msg_t *msg)
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND:
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND:
         if (arg->model_send.data) {
-            osi_free(arg->model_send.data);
+            bt_mesh_free(arg->model_send.data);
         }
         if (arg->model_send.ctx) {
-            osi_free(arg->model_send.ctx);
+            bt_mesh_free(arg->model_send.ctx);
         }
         break;
     case BTC_BLE_MESH_ACT_SERVER_MODEL_UPDATE_STATE:
         if (arg->model_update_state.value) {
-            osi_free(arg->model_update_state.value);
+            bt_mesh_free(arg->model_update_state.value);
         }
         break;
     default:
@@ -241,8 +241,8 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
     switch (msg->act) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT: {
         if (p_src_data->model_operation.ctx && p_src_data->model_operation.msg) {
-            p_dest_data->model_operation.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
-            p_dest_data->model_operation.msg = p_src_data->model_operation.length ? (uint8_t *)osi_malloc(p_src_data->model_operation.length) : NULL;
+            p_dest_data->model_operation.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            p_dest_data->model_operation.msg = p_src_data->model_operation.length ? (uint8_t *)bt_mesh_malloc(p_src_data->model_operation.length) : NULL;
             if (p_dest_data->model_operation.ctx) {
                 memcpy(p_dest_data->model_operation.ctx, p_src_data->model_operation.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
@@ -260,8 +260,8 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
     }
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT: {
         if (p_src_data->client_recv_publish_msg.ctx && p_src_data->client_recv_publish_msg.msg) {
-            p_dest_data->client_recv_publish_msg.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
-            p_dest_data->client_recv_publish_msg.msg = p_src_data->client_recv_publish_msg.length ? (uint8_t *)osi_malloc(p_src_data->client_recv_publish_msg.length) : NULL;
+            p_dest_data->client_recv_publish_msg.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            p_dest_data->client_recv_publish_msg.msg = p_src_data->client_recv_publish_msg.length ? (uint8_t *)bt_mesh_malloc(p_src_data->client_recv_publish_msg.length) : NULL;
             if (p_dest_data->client_recv_publish_msg.ctx) {
                 memcpy(p_dest_data->client_recv_publish_msg.ctx, p_src_data->client_recv_publish_msg.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
@@ -279,7 +279,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
     }
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT: {
         if (p_src_data->model_send_comp.ctx) {
-            p_dest_data->model_send_comp.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            p_dest_data->model_send_comp.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
             if (p_dest_data->model_send_comp.ctx) {
                 memcpy(p_dest_data->model_send_comp.ctx, p_src_data->model_send_comp.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
@@ -290,7 +290,7 @@ static void btc_ble_mesh_model_copy_req_data(btc_msg_t *msg, void *p_dest, void 
     }
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT: {
         if (p_src_data->client_send_timeout.ctx) {
-            p_dest_data->client_send_timeout.ctx = osi_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
+            p_dest_data->client_send_timeout.ctx = bt_mesh_malloc(sizeof(esp_ble_mesh_msg_ctx_t));
             if (p_dest_data->client_send_timeout.ctx) {
                 memcpy(p_dest_data->client_send_timeout.ctx, p_src_data->client_send_timeout.ctx, sizeof(esp_ble_mesh_msg_ctx_t));
             } else {
@@ -318,31 +318,31 @@ static void btc_ble_mesh_model_free_req_data(btc_msg_t *msg)
     switch (msg->act) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT: {
         if (arg->model_operation.msg) {
-            osi_free(arg->model_operation.msg);
+            bt_mesh_free(arg->model_operation.msg);
         }
         if (arg->model_operation.ctx) {
-            osi_free(arg->model_operation.ctx);
+            bt_mesh_free(arg->model_operation.ctx);
         }
         break;
     }
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT: {
         if (arg->client_recv_publish_msg.msg) {
-            osi_free(arg->client_recv_publish_msg.msg);
+            bt_mesh_free(arg->client_recv_publish_msg.msg);
         }
         if (arg->client_recv_publish_msg.ctx) {
-            osi_free(arg->client_recv_publish_msg.ctx);
+            bt_mesh_free(arg->client_recv_publish_msg.ctx);
         }
         break;
     }
     case ESP_BLE_MESH_MODEL_SEND_COMP_EVT: {
         if (arg->model_send_comp.ctx) {
-            osi_free(arg->model_send_comp.ctx);
+            bt_mesh_free(arg->model_send_comp.ctx);
         }
         break;
     }
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT: {
         if (arg->client_send_timeout.ctx) {
-            osi_free(arg->client_send_timeout.ctx);
+            bt_mesh_free(arg->client_send_timeout.ctx);
         }
         break;
     }
@@ -934,9 +934,9 @@ static void btc_ble_mesh_proxy_client_filter_status_recv_cb(u8_t conn_handle,
 }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
-int btc_ble_mesh_deinit(void)
+int btc_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
 {
-    return bt_mesh_deinit();
+    return bt_mesh_deinit((struct bt_mesh_deinit_param *)param);
 }
 
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)

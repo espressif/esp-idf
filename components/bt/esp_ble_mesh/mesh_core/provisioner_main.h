@@ -47,7 +47,7 @@ int bt_mesh_provisioner_init(void);
 
 int bt_mesh_provisioner_net_create(void);
 
-int bt_mesh_provisioner_deinit(void);
+int bt_mesh_provisioner_deinit(bool erase);
 
 bool bt_mesh_provisioner_check_is_addr_dup(u16_t addr, u8_t elem_num, bool comp_with_own);
 

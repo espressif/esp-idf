@@ -72,7 +72,10 @@ static void button_tap_cb(void* arg)
     if (example_deinit_test == true) {
         static uint8_t count;
         if (count++ % 2 == 0) {
-            if (esp_ble_mesh_deinit() != ESP_OK) {
+            esp_ble_mesh_deinit_param_t param = {
+                .erase_flash = false,
+            };
+            if (esp_ble_mesh_deinit(&param) != ESP_OK) {
                 ESP_LOGE(TAG, "%s, BLE Mesh deinit failed", __func__);
             } else {
                 ESP_LOGW(TAG, "BLE Mesh deinit");
@@ -83,7 +86,9 @@ static void button_tap_cb(void* arg)
             }
         }
     } else {
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY | ESP_COEX_BLE_ST_MESH_TRAFFIC | ESP_COEX_BLE_ST_MESH_CONFIG);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_CONFIG);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_TRAFFIC);
+        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_STANDBY);
         esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BLE, ESP_COEX_BLE_ST_MESH_TRAFFIC);
 
         ESP_LOGW(TAG, "BLE Mesh enters Traffic mode");

@@ -19,8 +19,26 @@
 #ifndef _BLE_MESH_COMMON_H_
 #define _BLE_MESH_COMMON_H_
 
-#include "osi/allocator.h"
+#include <stddef.h>
+#include <stdlib.h>
+
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/queue.h"
+#include "freertos/semphr.h"
+
+#include "esp_heap_caps.h"
+
 #include "mesh_access.h"
+
+#if CONFIG_BLE_MESH_ALLOC_FROM_PSRAM_FIRST
+#define bt_mesh_malloc(size)    heap_caps_malloc_prefer(size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#define bt_mesh_calloc(size)    heap_caps_calloc_prefer(1, size, 2, MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM, MALLOC_CAP_DEFAULT|MALLOC_CAP_INTERNAL)
+#else
+#define bt_mesh_malloc(size)    malloc((size))
+#define bt_mesh_calloc(size)    calloc(1, (size))
+#endif /* CONFIG_BLE_MESH_ALLOC_FROM_PSRAM_FIRST */
+#define bt_mesh_free(p)         free((p))
 
 /**
  * @brief This function allocates memory to store outgoing message.
@@ -53,5 +71,20 @@ void bt_mesh_free_buf(struct net_buf_simple *buf);
  * @return 0 - Node, 1 - Provisioner
  */
 u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send);
+
+typedef struct {
+    SemaphoreHandle_t mutex;
+#if CONFIG_SPIRAM_USE_MALLOC
+    StaticQueue_t *buffer;
+#endif
+} bt_mesh_mutex_t;
+
+void bt_mesh_mutex_create(bt_mesh_mutex_t *mutex);
+
+void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex);
+
+void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex);
+
+void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex);
 
 #endif /* _BLE_MESH_COMMON_H_ */

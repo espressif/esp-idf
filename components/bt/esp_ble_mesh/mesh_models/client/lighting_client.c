@@ -118,36 +118,28 @@ static const bt_mesh_client_op_pair_t light_op_pair[] = {
     { BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_SET,           BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS           },
 };
 
-static osi_mutex_t light_client_lock;
+static bt_mesh_mutex_t light_client_lock;
 
 static void bt_mesh_light_client_mutex_new(void)
 {
-    if (!light_client_lock) {
-        osi_mutex_new(&light_client_lock);
-        __ASSERT(light_client_lock, "%s, fail", __func__);
+    if (!light_client_lock.mutex) {
+        bt_mesh_mutex_create(&light_client_lock);
     }
 }
 
 static void bt_mesh_light_client_mutex_free(void)
 {
-    if (light_client_lock) {
-        osi_mutex_free(&light_client_lock);
-        light_client_lock = NULL;
-    }
+    bt_mesh_mutex_free(&light_client_lock);
 }
 
 static void bt_mesh_light_client_lock(void)
 {
-    if (light_client_lock) {
-        osi_mutex_lock(&light_client_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&light_client_lock);
 }
 
 static void bt_mesh_light_client_unlock(void)
 {
-    if (light_client_lock) {
-        osi_mutex_unlock(&light_client_lock);
-    }
+    bt_mesh_mutex_unlock(&light_client_lock);
 }
 
 static void timeout_handler(struct k_work *work)
@@ -197,7 +189,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light Lightness Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lightness_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lightness_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -218,7 +210,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light Lightness Linear Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lightness_linear_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lightness_linear_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -239,7 +231,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light Lightness Last Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lightness_last_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lightness_last_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -255,7 +247,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light Lightness Default Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lightness_default_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lightness_default_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -271,7 +263,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light Lightness Range Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lightness_range_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lightness_range_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -289,7 +281,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light CTL Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_ctl_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_ctl_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -312,7 +304,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light CTL Temperature Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_ctl_temperature_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_ctl_temperature_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -335,7 +327,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light CTL Temperature Range Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_ctl_temperature_range_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_ctl_temperature_range_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -353,7 +345,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light CTL Default Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_ctl_default_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_ctl_default_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -371,7 +363,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light HSL Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_hsl_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_hsl_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -393,7 +385,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light HSL Target Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_hsl_target_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_hsl_target_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -415,7 +407,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light HSL Hue Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_hsl_hue_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_hsl_hue_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -436,7 +428,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light HSL Saturation Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_hsl_saturation_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_hsl_saturation_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -457,7 +449,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light HSL Default Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_hsl_default_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_hsl_default_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -475,7 +467,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light HSL Range Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_hsl_range_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_hsl_range_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -495,7 +487,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light xyL Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_xyl_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_xyl_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -517,7 +509,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light xyL Target Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_xyl_target_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_xyl_target_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -539,7 +531,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light xyL Default Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_xyl_default_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_xyl_default_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -557,7 +549,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light xyL Range Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_xyl_range_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_xyl_range_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -577,7 +569,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light LC Mode Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lc_mode_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lc_mode_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -593,7 +585,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light LC OM Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lc_om_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lc_om_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -609,7 +601,7 @@ static void light_status(struct bt_mesh_model *model,
             BT_ERR("%s, Invalid Light LC Light OnOff Status length %d", __func__, buf->len);
             return;
         }
-        status = osi_calloc(sizeof(struct bt_mesh_light_lc_light_onoff_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lc_light_onoff_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -626,7 +618,7 @@ static void light_status(struct bt_mesh_model *model,
     }
     case BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_STATUS: {
         struct bt_mesh_light_lc_property_status *status = NULL;
-        status = osi_calloc(sizeof(struct bt_mesh_light_lc_property_status));
+        status = bt_mesh_calloc(sizeof(struct bt_mesh_light_lc_property_status));
         if (!status) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return;
@@ -635,7 +627,7 @@ static void light_status(struct bt_mesh_model *model,
         status->light_lc_property_value = bt_mesh_alloc_buf(buf->len);
         if (!status->light_lc_property_value) {
             BT_ERR("%s, Failed to allocate memory", __func__);
-            osi_free(status);
+            bt_mesh_free(status);
             return;
         }
         net_buf_simple_add_mem(status->light_lc_property_value, buf->data, buf->len);
@@ -729,7 +721,7 @@ static void light_status(struct bt_mesh_model *model,
         break;
     }
 
-    osi_free(val);
+    bt_mesh_free(val);
 
     return;
 }
@@ -1365,7 +1357,7 @@ static int light_client_init(struct bt_mesh_model *model, bool primary)
     }
 
     if (!client->internal_data) {
-        internal = osi_calloc(sizeof(light_internal_data_t));
+        internal = bt_mesh_calloc(sizeof(light_internal_data_t));
         if (!internal) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return -ENOMEM;
@@ -1431,7 +1423,7 @@ static int light_client_deinit(struct bt_mesh_model *model, bool primary)
         bt_mesh_client_clear_list(client->internal_data);
 
         /* Free the allocated internal data */
-        osi_free(client->internal_data);
+        bt_mesh_free(client->internal_data);
         client->internal_data = NULL;
     }
 

@@ -8,7 +8,6 @@
 #ifndef _BLE_MESH_KERNEL_H_
 #define _BLE_MESH_KERNEL_H_
 
-#include "osi/mutex.h"
 #include "mesh_types.h"
 #include "mesh_slist.h"
 #include "mesh_atomic.h"

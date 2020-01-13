@@ -1525,7 +1525,7 @@ void bt_mesh_net_init(void)
     k_work_init(&bt_mesh.local_work, bt_mesh_net_local);
 }
 
-void bt_mesh_net_deinit(void)
+void bt_mesh_net_deinit(bool erase)
 {
     k_delayed_work_free(&bt_mesh.ivu_timer);
 
@@ -1549,4 +1549,9 @@ void bt_mesh_net_deinit(void)
     bt_mesh.seq = 0U;
 
     memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
+
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_seq();
+        bt_mesh_clear_iv();
+    }
 }

@@ -71,8 +71,12 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     return ESP_OK;
 }
 
-esp_err_t esp_ble_mesh_deinit(void)
+esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
 {
-    return btc_ble_mesh_deinit();
+    if (param == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return btc_ble_mesh_deinit(param);
 }
 

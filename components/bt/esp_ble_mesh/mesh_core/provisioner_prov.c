@@ -265,15 +265,15 @@ struct bt_mesh_prov_ctx {
 
 #if defined(CONFIG_BLE_MESH_PB_ADV)
     /* Mutex used to protect the PB-ADV procedure */
-    osi_mutex_t pb_adv_lock;
+    bt_mesh_mutex_t pb_adv_lock;
 
     /* Mutex used to protect the adv buf during PB-ADV procedure */
-    osi_mutex_t pb_buf_lock;
+    bt_mesh_mutex_t pb_buf_lock;
 #endif
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
     /* Mutex used to protect the PB-GATT procedure */
-    osi_mutex_t pb_gatt_lock;
+    bt_mesh_mutex_t pb_gatt_lock;
 #endif
 
     /* Fast provisioning related information */
@@ -358,7 +358,7 @@ static u8_t adv_buf_data[ADV_BUF_SIZE * CONFIG_BLE_MESH_PBA_SAME_TIME];
 #define PROV_FREE_MEM(_idx, member)     \
 {                                       \
     if (link[_idx].member) {            \
-        osi_free(link[_idx].member);    \
+        bt_mesh_free(link[_idx].member);    \
         link[_idx].member = NULL;       \
     }                                   \
 }
@@ -366,94 +366,70 @@ static u8_t adv_buf_data[ADV_BUF_SIZE * CONFIG_BLE_MESH_PBA_SAME_TIME];
 #if defined(CONFIG_BLE_MESH_PB_ADV)
 static void bt_mesh_pb_adv_mutex_new(void)
 {
-    if (!prov_ctx.pb_adv_lock) {
-        osi_mutex_new(&prov_ctx.pb_adv_lock);
-        __ASSERT(prov_ctx.pb_adv_lock, "%s, fail", __func__);
+    if (!prov_ctx.pb_adv_lock.mutex) {
+        bt_mesh_mutex_create(&prov_ctx.pb_adv_lock);
     }
 }
 
 static void bt_mesh_pb_adv_mutex_free(void)
 {
-    if (prov_ctx.pb_adv_lock) {
-        osi_mutex_free(&prov_ctx.pb_adv_lock);
-        prov_ctx.pb_adv_lock = NULL;
-    }
+    bt_mesh_mutex_free(&prov_ctx.pb_adv_lock);
 }
 
 static void bt_mesh_pb_adv_lock(void)
 {
-    if (prov_ctx.pb_adv_lock) {
-        osi_mutex_lock(&prov_ctx.pb_adv_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&prov_ctx.pb_adv_lock);
 }
 
 static void bt_mesh_pb_adv_unlock(void)
 {
-    if (prov_ctx.pb_adv_lock) {
-        osi_mutex_unlock(&prov_ctx.pb_adv_lock);
-    }
+    bt_mesh_mutex_unlock(&prov_ctx.pb_adv_lock);
 }
 
 static void bt_mesh_pb_buf_mutex_new(void)
 {
-    if (!prov_ctx.pb_buf_lock) {
-        osi_mutex_new(&prov_ctx.pb_buf_lock);
-        __ASSERT(prov_ctx.pb_buf_lock, "%s, fail", __func__);
+    if (!prov_ctx.pb_buf_lock.mutex) {
+        bt_mesh_mutex_create(&prov_ctx.pb_buf_lock);
     }
 }
 
 static void bt_mesh_pb_buf_mutex_free(void)
 {
-    if (prov_ctx.pb_buf_lock) {
-        osi_mutex_free(&prov_ctx.pb_buf_lock);
-        prov_ctx.pb_buf_lock = NULL;
-    }
+    bt_mesh_mutex_free(&prov_ctx.pb_buf_lock);
 }
 
 static void bt_mesh_pb_buf_lock(void)
 {
-    if (prov_ctx.pb_buf_lock) {
-        osi_mutex_lock(&prov_ctx.pb_buf_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&prov_ctx.pb_buf_lock);
 }
 
 static void bt_mesh_pb_buf_unlock(void)
 {
-    if (prov_ctx.pb_buf_lock) {
-        osi_mutex_unlock(&prov_ctx.pb_buf_lock);
-    }
+    bt_mesh_mutex_unlock(&prov_ctx.pb_buf_lock);
 }
 #endif /* CONFIG_BLE_MESH_PB_ADV */
 
 #if defined(CONFIG_BLE_MESH_PB_GATT)
 static void bt_mesh_pb_gatt_mutex_new(void)
 {
-    if (!prov_ctx.pb_gatt_lock) {
-        osi_mutex_new(&prov_ctx.pb_gatt_lock);
-        __ASSERT(prov_ctx.pb_gatt_lock, "%s, fail", __func__);
+    if (!prov_ctx.pb_gatt_lock.mutex) {
+        bt_mesh_mutex_create(&prov_ctx.pb_gatt_lock);
     }
 }
 
 static void bt_mesh_pb_gatt_mutex_free(void)
 {
-    if (prov_ctx.pb_gatt_lock) {
-        osi_mutex_free(&prov_ctx.pb_gatt_lock);
-        prov_ctx.pb_gatt_lock = NULL;
-    }
+    bt_mesh_mutex_free(&prov_ctx.pb_gatt_lock);
 }
 
 static void bt_mesh_pb_gatt_lock(void)
 {
-    if (prov_ctx.pb_gatt_lock) {
-        osi_mutex_lock(&prov_ctx.pb_gatt_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&prov_ctx.pb_gatt_lock);
 }
 
 static void bt_mesh_pb_gatt_unlock(void)
 {
-    if (prov_ctx.pb_gatt_lock) {
-        osi_mutex_unlock(&prov_ctx.pb_gatt_lock);
-    }
+    bt_mesh_mutex_unlock(&prov_ctx.pb_gatt_lock);
 }
 #endif /* CONFIG_BLE_MESH_PB_GATT */
 
@@ -1998,7 +1974,7 @@ static int prov_auth(const u8_t idx, u8_t method, u8_t action, u8_t size)
     bt_mesh_output_action_t output = 0U;
     bt_mesh_input_action_t input = 0U;
 
-    link[idx].auth = (u8_t *)osi_calloc(PROV_AUTH_VAL_SIZE);
+    link[idx].auth = (u8_t *)bt_mesh_calloc(PROV_AUTH_VAL_SIZE);
     if (!link[idx].auth) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         close_link(idx, CLOSE_REASON_FAILED);
@@ -2019,7 +1995,7 @@ static int prov_auth(const u8_t idx, u8_t method, u8_t action, u8_t size)
         }
         memcpy(link[idx].auth + 16 - prov_ctx.static_oob_len,
                prov_ctx.static_oob_val, prov_ctx.static_oob_len);
-        memset(link[idx].auth, 0, 16 - prov->prov_static_oob_len);
+        memset(link[idx].auth, 0, 16 - prov_ctx.static_oob_len);
         return 0;
 
     case AUTH_METHOD_OUTPUT:
@@ -2087,13 +2063,13 @@ static void send_confirm(const u8_t idx)
     BT_DBG("ConfInputs[64]  %s", bt_hex(link[idx].conf_inputs + 64, 64));
     BT_DBG("ConfInputs[128] %s", bt_hex(link[idx].conf_inputs + 128, 17));
 
-    link[idx].conf_salt = (u8_t *)osi_calloc(PROV_CONF_SALT_SIZE);
+    link[idx].conf_salt = (u8_t *)bt_mesh_calloc(PROV_CONF_SALT_SIZE);
     if (!link[idx].conf_salt) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         goto fail;
     }
 
-    link[idx].conf_key = (u8_t *)osi_calloc(PROV_CONF_KEY_SIZE);
+    link[idx].conf_key = (u8_t *)bt_mesh_calloc(PROV_CONF_KEY_SIZE);
     if (!link[idx].conf_key) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         goto fail;
@@ -2246,7 +2222,7 @@ static void prov_dh_key_cb(const u8_t key[32], const u8_t idx)
         goto fail;
     }
 
-    link[idx].dhkey = (u8_t *)osi_calloc(PROV_DH_KEY_SIZE);
+    link[idx].dhkey = (u8_t *)bt_mesh_calloc(PROV_DH_KEY_SIZE);
     if (!link[idx].dhkey) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         goto fail;
@@ -2409,7 +2385,7 @@ static void prov_confirm(const u8_t idx, const u8_t *data)
         k_delayed_work_cancel(&link[idx].timeout);
     }
 
-    link[idx].conf = (u8_t *)osi_calloc(PROV_CONFIRM_SIZE);
+    link[idx].conf = (u8_t *)bt_mesh_calloc(PROV_CONFIRM_SIZE);
     if (!link[idx].conf) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         close_link(idx, CLOSE_REASON_FAILED);
@@ -2637,11 +2613,11 @@ static void prov_random(const u8_t idx, const u8_t *data)
     /** After provisioner receives provisioning random from device,
      *  and successfully check the confirmation, the following
      *  should be done:
-     *  1. osi_calloc memory for prov_salt
+     *  1. bt_mesh_calloc memory for prov_salt
      *  2. calculate prov_salt
      *  3. prepare provisioning data and send
      */
-    link[idx].prov_salt = (u8_t *)osi_calloc(PROV_PROV_SALT_SIZE);
+    link[idx].prov_salt = (u8_t *)bt_mesh_calloc(PROV_PROV_SALT_SIZE);
     if (!link[idx].prov_salt) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         goto fail;
@@ -2849,7 +2825,7 @@ static void link_ack(const u8_t idx, struct prov_rx *rx, struct net_buf_simple *
         return;
     }
 
-    link[idx].conf_inputs = (u8_t *)osi_calloc(PROV_CONF_INPUTS_SIZE);
+    link[idx].conf_inputs = (u8_t *)bt_mesh_calloc(PROV_CONF_INPUTS_SIZE);
     if (!link[idx].conf_inputs) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         close_link(idx, CLOSE_REASON_FAILED);
@@ -3280,7 +3256,7 @@ int bt_mesh_provisioner_pb_gatt_open(struct bt_mesh_conn *conn, u8_t *addr)
         prov->prov_link_open(BLE_MESH_PROV_GATT);
     }
 
-    link[idx].conf_inputs = (u8_t *)osi_calloc(PROV_CONF_INPUTS_SIZE);
+    link[idx].conf_inputs = (u8_t *)bt_mesh_calloc(PROV_CONF_INPUTS_SIZE);
     if (!link[idx].conf_inputs) {
         /* Disconnect this connection, clear corresponding informations */
         BT_ERR("%s, Failed to allocate memory", __func__);
@@ -3378,7 +3354,7 @@ int bt_mesh_provisioner_prov_init(const struct bt_mesh_prov *prov_info)
     return 0;
 }
 
-int bt_mesh_provisioner_prov_deinit(void)
+int bt_mesh_provisioner_prov_deinit(bool erase)
 {
     int i;
 
@@ -3419,6 +3395,10 @@ int bt_mesh_provisioner_prov_deinit(void)
     memset(adv_buf_data, 0, sizeof(adv_buf_data));
 #endif
     memset(unprov_dev, 0, sizeof(unprov_dev));
+
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_prov_info();
+    }
 
     prov = NULL;
 

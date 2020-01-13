@@ -29,40 +29,32 @@
 #if CONFIG_BLE_MESH_PROVISIONER
 
 static struct bt_mesh_node *mesh_nodes[CONFIG_BLE_MESH_MAX_STORED_NODES];
-static osi_mutex_t provisioner_lock;
+static bt_mesh_mutex_t provisioner_lock;
 static u16_t all_node_count;
 static u16_t prov_node_count;
 
-static int provisioner_remove_node(u16_t index);
+static int provisioner_remove_node(u16_t index, bool erase);
 
 static void bt_mesh_provisioner_mutex_new(void)
 {
-    if (!provisioner_lock) {
-        osi_mutex_new(&provisioner_lock);
-        __ASSERT(provisioner_lock, "%s, fail", __func__);
+    if (!provisioner_lock.mutex) {
+        bt_mesh_mutex_create(&provisioner_lock);
     }
 }
 
 static void bt_mesh_provisioner_mutex_free(void)
 {
-    if (provisioner_lock) {
-        osi_mutex_free(&provisioner_lock);
-        provisioner_lock = NULL;
-    }
+    bt_mesh_mutex_free(&provisioner_lock);
 }
 
 static void bt_mesh_provisioner_lock(void)
 {
-    if (provisioner_lock) {
-        osi_mutex_lock(&provisioner_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&provisioner_lock);
 }
 
 static void bt_mesh_provisioner_unlock(void)
 {
-    if (provisioner_lock) {
-        osi_mutex_unlock(&provisioner_lock);
-    }
+    bt_mesh_mutex_unlock(&provisioner_lock);
 }
 
 int bt_mesh_provisioner_init(void)
@@ -111,7 +103,7 @@ int bt_mesh_provisioner_net_create(void)
         return -EIO;
     }
 
-    sub = osi_calloc(sizeof(struct bt_mesh_subnet));
+    sub = bt_mesh_calloc(sizeof(struct bt_mesh_subnet));
     if (!sub) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -121,7 +113,7 @@ int bt_mesh_provisioner_net_create(void)
     if (sub->kr_flag) {
         if (bt_mesh_net_keys_create(&sub->keys[1], p_key)) {
             BT_ERR("%s, Failed to generate net-related keys", __func__);
-            osi_free(sub);
+            bt_mesh_free(sub);
             return -EIO;
         }
         sub->kr_phase = BLE_MESH_KR_PHASE_2;
@@ -129,7 +121,7 @@ int bt_mesh_provisioner_net_create(void)
         /* Currently provisioner only use keys[0] */
         if (bt_mesh_net_keys_create(&sub->keys[0], p_key)) {
             BT_ERR("%s, Failed to create net-related keys", __func__);
-            osi_free(sub);
+            bt_mesh_free(sub);
             return -EIO;
         }
         sub->kr_phase = BLE_MESH_KR_NORMAL;
@@ -171,39 +163,39 @@ done:
     return 0;
 }
 
-int bt_mesh_provisioner_deinit(void)
+int bt_mesh_provisioner_deinit(bool erase)
 {
     int i;
 
     for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_SUBNET_COUNT; i++) {
         if (bt_mesh.p_sub[i]) {
-            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
                 bt_mesh_clear_p_subnet(bt_mesh.p_sub[i]);
             }
-            osi_free(bt_mesh.p_sub[i]);
+            bt_mesh_free(bt_mesh.p_sub[i]);
             bt_mesh.p_sub[i] = NULL;
         }
     }
 
     for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_APP_KEY_COUNT; i++) {
         if (bt_mesh.p_app_keys[i]) {
-            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
                 bt_mesh_clear_p_app_key(bt_mesh.p_app_keys[i]);
             }
-            osi_free(bt_mesh.p_app_keys[i]);
+            bt_mesh_free(bt_mesh.p_app_keys[i]);
             bt_mesh.p_app_keys[i] = NULL;
         }
     }
 
     bt_mesh.p_net_idx_next = 0U;
     bt_mesh.p_app_idx_next = 0U;
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_clear_p_net_idx();
         bt_mesh_clear_p_app_idx();
     }
 
     for (i = 0; i < CONFIG_BLE_MESH_MAX_STORED_NODES; i++) {
-        provisioner_remove_node(i);
+        provisioner_remove_node(i, erase);
     }
 
     all_node_count = 0U;
@@ -316,7 +308,7 @@ static int provisioner_store_node(struct bt_mesh_node *node, bool prov, bool sto
 
     for (i = min; i < max; i++) {
         if (mesh_nodes[i] == NULL) {
-            mesh_nodes[i] = osi_calloc(sizeof(struct bt_mesh_node));
+            mesh_nodes[i] = bt_mesh_calloc(sizeof(struct bt_mesh_node));
             if (!mesh_nodes[i]) {
                 BT_ERR("%s, Failed to allocate memory", __func__);
                 bt_mesh_provisioner_unlock();
@@ -385,7 +377,7 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const u8_t uuid[16
     return provisioner_store_node(&node, true, true, index);
 }
 
-static int provisioner_remove_node(u16_t index)
+static int provisioner_remove_node(u16_t index, bool erase)
 {
     struct bt_mesh_node *node = NULL;
     struct bt_mesh_rpl *rpl = NULL;
@@ -425,14 +417,14 @@ static int provisioner_remove_node(u16_t index)
 
     is_prov = index < CONFIG_BLE_MESH_MAX_PROV_NODES ? true : false;
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_clear_node_info(node->unicast_addr, is_prov);
     }
 
     if (mesh_nodes[index]->comp_data) {
-        osi_free(mesh_nodes[index]->comp_data);
+        bt_mesh_free(mesh_nodes[index]->comp_data);
     }
-    osi_free(mesh_nodes[index]);
+    bt_mesh_free(mesh_nodes[index]);
     mesh_nodes[index] = NULL;
 
     provisioner_node_count_dec(is_prov);
@@ -479,7 +471,7 @@ bool bt_mesh_provisioner_find_node_with_uuid(const u8_t uuid[16], bool reset)
     }
 
     if (reset) {
-        provisioner_remove_node(index);
+        provisioner_remove_node(index, true);
     }
     return true;
 }
@@ -493,7 +485,7 @@ bool bt_mesh_provisioner_find_node_with_addr(const bt_mesh_addr_t *addr, bool re
             if (!memcmp(mesh_nodes[i]->addr, addr->val, BLE_MESH_ADDR_LEN) &&
                 mesh_nodes[i]->addr_type == addr->type) {
                 if (reset) {
-                    provisioner_remove_node(i);
+                    provisioner_remove_node(i, true);
                 }
                 return true;
             }
@@ -512,7 +504,7 @@ int bt_mesh_provisioner_remove_node(const u8_t uuid[16])
     if (uuid == NULL) {
         for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
             if (mesh_nodes[i]) {
-                provisioner_remove_node(i);
+                provisioner_remove_node(i, true);
             }
         }
         return 0;
@@ -524,7 +516,7 @@ int bt_mesh_provisioner_remove_node(const u8_t uuid[16])
         return -ENODEV;
     }
 
-    provisioner_remove_node(index);
+    provisioner_remove_node(index, true);
     return 0;
 }
 
@@ -576,13 +568,18 @@ int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16
 {
     struct bt_mesh_node *node = NULL;
 
+    if (!data || length == 0U) {
+        BT_ERR("%s, Invalid comp data info", __func__);
+        return -EINVAL;
+    }
+
     node = provisioner_find_node_with_addr(addr, NULL);
     if (node == NULL) {
         BT_ERR("%s, Node 0x%04x not exist", __func__, addr);
         return -ENODEV;
     }
 
-    node->comp_data = osi_calloc(length);
+    node->comp_data = bt_mesh_calloc(length);
     if (!node->comp_data) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -625,7 +622,7 @@ int bt_mesh_provisioner_delete_node_with_uuid(const u8_t uuid[16])
         return -ENODEV;
     }
 
-    provisioner_remove_node(index);
+    provisioner_remove_node(index, true);
     return 0;
 }
 
@@ -640,7 +637,7 @@ int bt_mesh_provisioner_delete_node_with_addr(u16_t unicast_addr)
         return -ENODEV;
     }
 
-    provisioner_remove_node(index);
+    provisioner_remove_node(index, true);
     return 0;
 }
 
@@ -749,6 +746,7 @@ u16_t bt_mesh_provisioner_get_node_index(const char *name)
 int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t length)
 {
     struct bt_mesh_node *node = NULL;
+    u16_t index = 0U;
 
     if (!BLE_MESH_ADDR_IS_UNICAST(addr) || !data ||
             (length % 2) || length <= 14) {
@@ -756,24 +754,26 @@ int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t
         return -EINVAL;
     }
 
-    node = provisioner_find_node_with_addr(addr, NULL);
+    node = provisioner_find_node_with_addr(addr, &index);
     if (node == NULL) {
         BT_ERR("%s, Node 0x%04x not exist", __func__, addr);
         return -ENODEV;
     }
 
-    node->comp_data = osi_calloc(length);
+    node->comp_data = bt_mesh_calloc(length);
     if (node->comp_data == NULL) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
     }
+
+    BT_DBG("%s, index %d", __func__, index);
 
     memcpy(node->comp_data, data, length);
     node->comp_length = length;
 
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_store_node_comp_data(node,
-            (node - mesh_nodes[0]) < CONFIG_BLE_MESH_MAX_PROV_NODES ? true : false);
+            index < CONFIG_BLE_MESH_MAX_PROV_NODES ? true : false);
     }
 
     return 0;
@@ -1063,7 +1063,7 @@ int bt_mesh_provisioner_local_app_key_add(const u8_t app_key[16], u16_t net_idx,
         memcpy(p_key, app_key, 16);
     }
 
-    key = osi_calloc(sizeof(struct bt_mesh_app_key));
+    key = bt_mesh_calloc(sizeof(struct bt_mesh_app_key));
     if (!key) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -1072,7 +1072,7 @@ int bt_mesh_provisioner_local_app_key_add(const u8_t app_key[16], u16_t net_idx,
     keys = &key->keys[0];
     if (bt_mesh_app_id(p_key, &keys->id)) {
         BT_ERR("%s, Failed to generate AID", __func__);
-        osi_free(key);
+        bt_mesh_free(key);
         return -EIO;
     }
 
@@ -1087,7 +1087,7 @@ int bt_mesh_provisioner_local_app_key_add(const u8_t app_key[16], u16_t net_idx,
                 key->app_idx = (++bt_mesh.p_app_idx_next);
                 if (key->app_idx >= 0x1000) {
                     BT_ERR("%s, No AppKey Index available", __func__);
-                    osi_free(key);
+                    bt_mesh_free(key);
                     return -EIO;
                 }
             } else {
@@ -1268,7 +1268,7 @@ int bt_mesh_provisioner_local_app_key_delete(u16_t net_idx, u16_t app_idx)
                 bt_mesh_clear_p_app_key(key);
             }
 
-            osi_free(bt_mesh.p_app_keys[i]);
+            bt_mesh_free(bt_mesh.p_app_keys[i]);
             bt_mesh.p_app_keys[i] = NULL;
             return 0;
         }
@@ -1321,7 +1321,7 @@ int bt_mesh_provisioner_local_net_key_add(const u8_t net_key[16], u16_t *net_idx
         memcpy(p_key, net_key, 16);
     }
 
-    sub = osi_calloc(sizeof(struct bt_mesh_subnet));
+    sub = bt_mesh_calloc(sizeof(struct bt_mesh_subnet));
     if (!sub) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -1329,7 +1329,7 @@ int bt_mesh_provisioner_local_net_key_add(const u8_t net_key[16], u16_t *net_idx
 
     if (bt_mesh_net_keys_create(&sub->keys[0], p_key)) {
         BT_ERR("%s, Failed to generate NID", __func__);
-        osi_free(sub);
+        bt_mesh_free(sub);
         return -EIO;
     }
 
@@ -1342,7 +1342,7 @@ int bt_mesh_provisioner_local_net_key_add(const u8_t net_key[16], u16_t *net_idx
                 sub->net_idx = (++bt_mesh.p_net_idx_next);
                 if (sub->net_idx >= 0x1000) {
                     BT_ERR("%s, No NetKey Index available", __func__);
-                    osi_free(sub);
+                    bt_mesh_free(sub);
                     return -EIO;
                 }
             } else {
@@ -1461,7 +1461,7 @@ int bt_mesh_provisioner_local_net_key_delete(u16_t net_idx)
                 bt_mesh_clear_p_subnet(sub);
             }
 
-            osi_free(bt_mesh.p_sub[i]);
+            bt_mesh_free(bt_mesh.p_sub[i]);
             bt_mesh.p_sub[i] = NULL;
             return 0;
         }

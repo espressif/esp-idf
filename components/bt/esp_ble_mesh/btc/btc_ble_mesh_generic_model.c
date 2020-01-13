@@ -46,7 +46,7 @@ void btc_ble_mesh_generic_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, voi
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_GENERIC_CLIENT_GET_STATE: {
-        dst->generic_client_get_state.params = (esp_ble_mesh_client_common_param_t *)osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        dst->generic_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->generic_client_get_state.params) {
             memcpy(dst->generic_client_get_state.params, src->generic_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
@@ -55,7 +55,7 @@ void btc_ble_mesh_generic_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, voi
             break;
         }
         if (src->generic_client_get_state.get_state) {
-            dst->generic_client_get_state.get_state = (esp_ble_mesh_generic_client_get_state_t *)osi_malloc(sizeof(esp_ble_mesh_generic_client_get_state_t));
+            dst->generic_client_get_state.get_state = (esp_ble_mesh_generic_client_get_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_generic_client_get_state_t));
             if (dst->generic_client_get_state.get_state) {
                 memcpy(dst->generic_client_get_state.get_state, src->generic_client_get_state.get_state,
                     sizeof(esp_ble_mesh_generic_client_get_state_t));
@@ -66,8 +66,8 @@ void btc_ble_mesh_generic_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, voi
         break;
     }
     case BTC_BLE_MESH_ACT_GENERIC_CLIENT_SET_STATE: {
-        dst->generic_client_set_state.params = (esp_ble_mesh_client_common_param_t *)osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->generic_client_set_state.set_state = (esp_ble_mesh_generic_client_set_state_t *)osi_malloc(sizeof(esp_ble_mesh_generic_client_set_state_t));
+        dst->generic_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        dst->generic_client_set_state.set_state = (esp_ble_mesh_generic_client_set_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_generic_client_set_state_t));
         if (dst->generic_client_set_state.params && dst->generic_client_set_state.set_state) {
             memcpy(dst->generic_client_set_state.params, src->generic_client_set_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
@@ -129,10 +129,10 @@ static void btc_ble_mesh_generic_client_arg_deep_free(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_GENERIC_CLIENT_GET_STATE:
         if (arg->generic_client_get_state.params) {
-            osi_free(arg->generic_client_get_state.params);
+            bt_mesh_free(arg->generic_client_get_state.params);
         }
         if (arg->generic_client_get_state.get_state) {
-            osi_free(arg->generic_client_get_state.get_state);
+            bt_mesh_free(arg->generic_client_get_state.get_state);
         }
         break;
     case BTC_BLE_MESH_ACT_GENERIC_CLIENT_SET_STATE:
@@ -149,10 +149,10 @@ static void btc_ble_mesh_generic_client_arg_deep_free(btc_msg_t *msg)
                     break;
                 }
             }
-            osi_free(arg->generic_client_set_state.set_state);
+            bt_mesh_free(arg->generic_client_set_state.set_state);
         }
         if (arg->generic_client_set_state.params) {
-            osi_free(arg->generic_client_set_state.params);
+            bt_mesh_free(arg->generic_client_set_state.params);
         }
         break;
     default:
@@ -172,7 +172,7 @@ static void btc_ble_mesh_generic_client_copy_req_data(btc_msg_t *msg, void *p_de
     }
 
     if (p_src_data->params) {
-        p_dest_data->params = osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
             BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             return;
@@ -353,7 +353,7 @@ static void btc_ble_mesh_generic_client_free_req_data(btc_msg_t *msg)
         }
     case ESP_BLE_MESH_GENERIC_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
-            osi_free(arg->params);
+            bt_mesh_free(arg->params);
         }
         break;
     default:

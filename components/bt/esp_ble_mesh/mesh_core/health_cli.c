@@ -32,36 +32,28 @@ static const bt_mesh_client_op_pair_t health_op_pair[] = {
     { OP_ATTENTION_SET,      OP_ATTENTION_STATUS     },
 };
 
-static osi_mutex_t health_client_lock;
+static bt_mesh_mutex_t health_client_lock;
 
 static void bt_mesh_health_client_mutex_new(void)
 {
-    if (!health_client_lock) {
-        osi_mutex_new(&health_client_lock);
-        __ASSERT(health_client_lock, "%s, fail", __func__);
+    if (!health_client_lock.mutex) {
+        bt_mesh_mutex_create(&health_client_lock);
     }
 }
 
 static void bt_mesh_health_client_mutex_free(void)
 {
-    if (health_client_lock) {
-        osi_mutex_free(&health_client_lock);
-        health_client_lock = NULL;
-    }
+    bt_mesh_mutex_free(&health_client_lock);
 }
 
 static void bt_mesh_health_client_lock(void)
 {
-    if (health_client_lock) {
-        osi_mutex_lock(&health_client_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&health_client_lock);
 }
 
 static void bt_mesh_health_client_unlock(void)
 {
-    if (health_client_lock) {
-        osi_mutex_unlock(&health_client_lock);
-    }
+    bt_mesh_mutex_unlock(&health_client_lock);
 }
 
 static void timeout_handler(struct k_work *work)
@@ -464,7 +456,7 @@ int bt_mesh_health_cli_init(struct bt_mesh_model *model, bool primary)
     }
 
     if (!client->internal_data) {
-        internal = osi_calloc(sizeof(health_internal_data_t));
+        internal = bt_mesh_calloc(sizeof(health_internal_data_t));
         if (!internal) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return -ENOMEM;
@@ -510,7 +502,7 @@ int bt_mesh_health_cli_deinit(struct bt_mesh_model *model, bool primary)
         bt_mesh_client_clear_list(client->internal_data);
 
         /* Free the allocated internal data */
-        osi_free(client->internal_data);
+        bt_mesh_free(client->internal_data);
         client->internal_data = NULL;
     }
 

@@ -190,7 +190,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         err = -EBUSY;
     } else {
         /* Don't forget to free the node in the timeout (timer_handler) function. */
-        node = (bt_mesh_client_node_t *)osi_calloc(sizeof(bt_mesh_client_node_t));
+        node = (bt_mesh_client_node_t *)bt_mesh_calloc(sizeof(bt_mesh_client_node_t));
         if (!node) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return -ENOMEM;
@@ -200,11 +200,11 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         node->opcode = opcode;
         if ((node->op_pending = bt_mesh_client_get_status_op(cli->op_pair, cli->op_pair_size, opcode)) == 0) {
             BT_ERR("%s, Not found the status opcode in the op_pair list", __func__);
-            osi_free(node);
+            bt_mesh_free(node);
             return -EINVAL;
         }
         if ((err = bt_mesh_model_send(model, ctx, msg, cb, cb_data)) != 0) {
-            osi_free(node);
+            bt_mesh_free(node);
         } else {
             bt_mesh_list_lock();
             sys_slist_append(&internal->queue, &node->client_node);
@@ -226,36 +226,28 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
     return err;
 }
 
-static osi_mutex_t client_model_lock;
+static bt_mesh_mutex_t client_model_lock;
 
 static void bt_mesh_client_model_mutex_new(void)
 {
-    if (!client_model_lock) {
-        osi_mutex_new(&client_model_lock);
-        __ASSERT(client_model_lock, "%s, fail", __func__);
+    if (!client_model_lock.mutex) {
+        bt_mesh_mutex_create(&client_model_lock);
     }
 }
 
 static void bt_mesh_client_model_mutex_free(void)
 {
-    if (client_model_lock) {
-        osi_mutex_free(&client_model_lock);
-        client_model_lock = NULL;
-    }
+    bt_mesh_mutex_free(&client_model_lock);
 }
 
 void bt_mesh_client_model_lock(void)
 {
-    if (client_model_lock) {
-        osi_mutex_lock(&client_model_lock, OSI_MUTEX_MAX_TIMEOUT);
-    }
+    bt_mesh_mutex_lock(&client_model_lock);
 }
 
 void bt_mesh_client_model_unlock(void)
 {
-    if (client_model_lock) {
-        osi_mutex_unlock(&client_model_lock);
-    }
+    bt_mesh_mutex_unlock(&client_model_lock);
 }
 
 int bt_mesh_client_init(struct bt_mesh_model *model)
@@ -280,7 +272,7 @@ int bt_mesh_client_init(struct bt_mesh_model *model)
     }
 
     if (!cli->internal_data) {
-        data = osi_calloc(sizeof(bt_mesh_client_internal_data_t));
+        data = bt_mesh_calloc(sizeof(bt_mesh_client_internal_data_t));
         if (!data) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             return -ENOMEM;
@@ -320,7 +312,7 @@ int bt_mesh_client_deinit(struct bt_mesh_model *model)
         bt_mesh_client_clear_list(client->internal_data);
 
         /* Free the allocated internal data */
-        osi_free(client->internal_data);
+        bt_mesh_free(client->internal_data);
         client->internal_data = NULL;
     }
 
@@ -356,7 +348,7 @@ int bt_mesh_client_free_node(bt_mesh_client_node_t *node)
     sys_slist_find_and_remove(&internal->queue, &node->client_node);
     bt_mesh_list_unlock();
     // Free the node
-    osi_free(node);
+    bt_mesh_free(node);
 
     return 0;
 }
@@ -376,7 +368,7 @@ int bt_mesh_client_clear_list(void *data)
     bt_mesh_list_lock();
     while (!sys_slist_is_empty(&internal->queue)) {
         node = (void *)sys_slist_get_not_empty(&internal->queue);
-        osi_free(node);
+        bt_mesh_free(node);
     }
     bt_mesh_list_unlock();
 

@@ -49,7 +49,7 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_HEALTH_CLIENT_GET_STATE: {
-        dst->health_client_get_state.params = (esp_ble_mesh_client_common_param_t *)osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        dst->health_client_get_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (dst->health_client_get_state.params) {
             memcpy(dst->health_client_get_state.params, src->health_client_get_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
@@ -58,7 +58,7 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
             break;
         }
         if (src->health_client_get_state.get_state) {
-            dst->health_client_get_state.get_state = (esp_ble_mesh_health_client_get_state_t *)osi_malloc(sizeof(esp_ble_mesh_health_client_get_state_t));
+            dst->health_client_get_state.get_state = (esp_ble_mesh_health_client_get_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_health_client_get_state_t));
             if (dst->health_client_get_state.get_state) {
                 memcpy(dst->health_client_get_state.get_state, src->health_client_get_state.get_state,
                     sizeof(esp_ble_mesh_health_client_get_state_t));
@@ -69,8 +69,8 @@ void btc_ble_mesh_health_client_arg_deep_copy(btc_msg_t *msg, void *p_dest, void
         break;
     }
     case BTC_BLE_MESH_ACT_HEALTH_CLIENT_SET_STATE: {
-        dst->health_client_set_state.params = (esp_ble_mesh_client_common_param_t *)osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
-        dst->health_client_set_state.set_state = (esp_ble_mesh_health_client_set_state_t *)osi_malloc(sizeof(esp_ble_mesh_health_client_set_state_t));
+        dst->health_client_set_state.params = (esp_ble_mesh_client_common_param_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        dst->health_client_set_state.set_state = (esp_ble_mesh_health_client_set_state_t *)bt_mesh_malloc(sizeof(esp_ble_mesh_health_client_set_state_t));
         if (dst->health_client_set_state.params && dst->health_client_set_state.set_state) {
             memcpy(dst->health_client_set_state.params, src->health_client_set_state.params,
                    sizeof(esp_ble_mesh_client_common_param_t));
@@ -101,18 +101,18 @@ static void btc_ble_mesh_health_client_arg_deep_free(btc_msg_t *msg)
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_HEALTH_CLIENT_GET_STATE:
         if (arg->health_client_get_state.params) {
-            osi_free(arg->health_client_get_state.params);
+            bt_mesh_free(arg->health_client_get_state.params);
         }
         if (arg->health_client_get_state.get_state) {
-            osi_free(arg->health_client_get_state.get_state);
+            bt_mesh_free(arg->health_client_get_state.get_state);
         }
         break;
     case BTC_BLE_MESH_ACT_HEALTH_CLIENT_SET_STATE:
         if (arg->health_client_set_state.params) {
-            osi_free(arg->health_client_set_state.params);
+            bt_mesh_free(arg->health_client_set_state.params);
         }
         if (arg->health_client_set_state.set_state) {
-            osi_free(arg->health_client_set_state.set_state);
+            bt_mesh_free(arg->health_client_set_state.set_state);
         }
         break;
     default:
@@ -132,7 +132,7 @@ static void btc_ble_mesh_health_client_copy_req_data(btc_msg_t *msg, void *p_des
     }
 
     if (p_src_data->params) {
-        p_dest_data->params = osi_malloc(sizeof(esp_ble_mesh_client_common_param_t));
+        p_dest_data->params = bt_mesh_malloc(sizeof(esp_ble_mesh_client_common_param_t));
         if (!p_dest_data->params) {
             BT_ERR("%s, Failed to allocate memory, act %d", __func__, msg->act);
             return;
@@ -219,7 +219,7 @@ static void btc_ble_mesh_health_client_free_req_data(btc_msg_t *msg)
         }
     case ESP_BLE_MESH_HEALTH_CLIENT_TIMEOUT_EVT:
         if (arg->params) {
-            osi_free(arg->params);
+            bt_mesh_free(arg->params);
         }
         break;
     default:

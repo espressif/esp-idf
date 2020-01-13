@@ -183,10 +183,10 @@ static void example_ble_mesh_custom_model_cb(esp_ble_mesh_model_cb_event_t event
             break;
         }
         if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_SEND) {
-            // uint16_t value = *(uint16_t *)param->model_operation.msg;
-            // ESP_LOGI(TAG, "%d %d", value, trans_num);
-            err = esp_ble_mesh_server_model_send_msg(&vnd_models[0], param->model_operation.ctx, ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS,
-                    param->model_operation.length, param->model_operation.msg);
+            uint16_t value = *(uint16_t *)param->model_operation.msg;
+            ESP_LOGI(TAG, "%d", value);
+            err = esp_ble_mesh_server_model_send_msg(&vnd_models[0], param->model_operation.ctx,
+                    ESP_BLE_MESH_VND_MODEL_OP_TEST_STATUS, sizeof(value), (uint8_t *)&value);
             if (err) {
                 ESP_LOGE(TAG, "Faild to send test status");
             }
