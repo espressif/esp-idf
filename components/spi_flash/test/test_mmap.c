@@ -93,7 +93,6 @@ static void setup_mmap_tests(void)
     }
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 TEST_CASE("Can mmap into data address space", "[spi_flash][mmap]")
 {
     setup_mmap_tests();
@@ -251,8 +250,6 @@ TEST_CASE("Can mmap unordered pages into contiguous memory", "[spi_flash][mmap]"
     spi_flash_munmap(handle1);
     spi_flash_mmap_dump();
 }
-#endif
-
 
 TEST_CASE("flash_mmap invalidates just-written data", "[spi_flash][mmap]")
 {
@@ -352,7 +349,6 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 {
     uint8_t buf[64];
@@ -385,7 +381,6 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     spi_flash_read_maybe_encrypted(phys, buf, sizeof(constant_data));
     TEST_ASSERT_EQUAL_HEX8_ARRAY(constant_data, buf, sizeof(constant_data));
 }
-#endif
 
 TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash][mmap]")
 {
@@ -431,7 +426,6 @@ TEST_CASE("munmap followed by mmap flushes cache", "[spi_flash][mmap]")
     TEST_ASSERT_NOT_EQUAL(0, memcmp(buf, data, sizeof(buf)));
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
 TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]")
 {
     /* Buffer size is set to 32 to allow encrypted flash writes */
@@ -456,4 +450,3 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
     spi_flash_munmap(handle);
     TEST_ASSERT_EQUAL(0, memcmp(buf, read_data, sizeof(buf)));
 }
-#endif
