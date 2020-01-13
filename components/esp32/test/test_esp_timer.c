@@ -779,3 +779,31 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 }
 
 #endif // !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_ESP32_DPORT_WORKAROUND)
+
+TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
+{
+    REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
+    esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
+
+    ets_delay_us(2);
+
+    portDISABLE_INTERRUPTS();
+    esp_timer_impl_set_alarm(50331647);
+    uint32_t alarm_reg = REG_READ(FRC_TIMER_ALARM_REG(1));
+    uint32_t count_reg = REG_READ(FRC_TIMER_COUNT_REG(1));
+    portENABLE_INTERRUPTS();
+
+    const uint32_t offset = 80 * 2; // s_timer_ticks_per_us
+    printf("alarm_reg = 0x%x, count_reg 0x%x\n", alarm_reg, count_reg);
+    TEST_ASSERT(alarm_reg <= (count_reg + offset));
+}
+
+TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow value", "[esp_timer]")
+{
+    for (int i = 0; i < 1024; ++i) {
+        uint32_t count_reg = 0xeffffe00 + i;
+        REG_WRITE(FRC_TIMER_LOAD_REG(1), count_reg);
+        printf("%d) count_reg = 0x%x\n", i, count_reg);
+        esp_timer_impl_set_alarm(1); // timestamp is expired
+    }
+}
