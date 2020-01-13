@@ -71,7 +71,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     ssl->cfg.timeout_ms = timeout_ms;
     ssl->ssl_initialized = true;
     ssl->tls = esp_tls_init();
-    if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) < 0) {
+    if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) <= 0) {
         ESP_LOGE(TAG, "Failed to open a new connection");
         esp_transport_set_errors(t, ssl->tls->error_handle);
         esp_tls_conn_delete(ssl->tls);

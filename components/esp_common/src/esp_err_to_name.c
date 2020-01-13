@@ -601,6 +601,10 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED
     ERR_TBL_IT(ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED),            /* 32785 0x8011 mbedtls api returned failed */
 #   endif
+#   ifdef      ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT),             /* 32786 0x8012 new connection in esp_tls_low_level_conn
+                                                                                connection timeouted */
+#   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE
     ERR_TBL_IT(ESP_ERR_HTTPS_OTA_BASE),                         /* 36864 0x9000 */
