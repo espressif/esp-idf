@@ -22,7 +22,7 @@
       - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_REGULAR_TEST
 
-build_ssc:
+.build_ssc_template:
   extends: .build_template
   parallel: 3
   artifacts:
@@ -30,7 +30,7 @@ build_ssc:
       - SSC/ssc_bin
     expire_in: 1 week
   variables:
-    SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
+    TARGET_NAME: "ESP32"
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -41,7 +41,18 @@ build_ssc:
     - git clone $SSC_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT SSC SSC
     - cd SSC
-    - MAKEFLAGS= ./ci_build_ssc.sh
+    - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
+
+build_ssc_esp32:
+  extends: .build_ssc_template
+  variables:
+    TARGET_NAME: "ESP32"
+
+build_ssc_esp32s2beta:
+  extends: .build_ssc_template
+  parallel: 2
+  variables:
+    TARGET_NAME: "ESP32S2"
 
 build_esp_idf_tests_make:
   extends: .build_esp_idf_unit_test_template

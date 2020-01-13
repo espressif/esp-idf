@@ -7,7 +7,7 @@ assign_test:
   # gitlab ci do not support match job with RegEx or wildcard now in dependencies.
   # we have a lot build example jobs. now we don't use dependencies, just download all artificats of build stage.
   dependencies:
-    - build_ssc
+    - build_ssc_esp32
     - build_esp_idf_tests_cmake
   variables:
     SUBMODULES_TO_FETCH: "components/esptool_py/esptool"
