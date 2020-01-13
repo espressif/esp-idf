@@ -449,6 +449,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
             return mpi_mult_mpi_failover_mod_mult(Z, X, Y, z_words);
         } else {
             /* Still too long for the hardware unit... */
+            mbedtls_mpi_grow(Z, z_words);
             if(y_words > x_words) {
                 return mpi_mult_mpi_overlong(Z, X, Y, y_words, z_words);
             } else {
@@ -572,9 +573,6 @@ static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbe
         .s = Y->s
     };
     mbedtls_mpi_init(&Ztemp);
-
-    /* Grow Z to result size early, avoid interim allocations */
-    mbedtls_mpi_grow(Z, z_words);
 
     /* Get result Ztemp = Yp * X (need temporary variable Ztemp) */
     MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi(&Ztemp, X, &Yp) );
