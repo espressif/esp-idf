@@ -526,6 +526,13 @@
 #define LWIP_SO_SNDTIMEO                1
 
 /**
+ * LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS==1: randomize the local port for the first
+ * local TCP/UDP pcb (default==0). This can prevent creating predictable port
+ * numbers after booting a device.
+ */
+#define LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS   CONFIG_LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS
+
+/**
  * LWIP_SO_RCVTIMEO==1: Enable receive timeout for sockets/netconns and
  * SO_RCVTIMEO processing.
  */
@@ -759,7 +766,6 @@
 #define ESP_DNS                         1
 #define ESP_IPV6_AUTOCONFIG             1
 #define ESP_PERF                        0
-#define ESP_RANDOM_TCP_PORT             1
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
 #define ESP_L2_TO_L3_COPY               CONFIG_L2_TO_L3_COPY
