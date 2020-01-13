@@ -4,6 +4,7 @@
 #include <sys/time.h>
 #include <sys/param.h>
 #include "unity.h"
+#include "soc/frc_timer_reg.h"
 #include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
@@ -593,4 +594,15 @@ TEST_CASE("after esp_timer_impl_advance, timers run when expected", "[esp_timer]
     TEST_ASSERT(state.cb_time > t_start);
 
     ref_clock_deinit();
+}
+
+
+TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow value", "[esp_timer]")
+{
+    for (int i = 0; i < 1024; ++i) {
+        uint32_t count_reg = 0xeffffe00 + i;
+        REG_WRITE(FRC_TIMER_LOAD_REG(1), count_reg);
+        printf("%d) count_reg = 0x%x\n", i, count_reg);
+        esp_timer_impl_set_alarm(1); // timestamp is expired
+    }
 }
