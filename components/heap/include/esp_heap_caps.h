@@ -86,6 +86,51 @@ void heap_caps_free( void *ptr);
 void *heap_caps_realloc( void *ptr, size_t size, int caps);
 
 /**
+ * @brief Allocate a aligned chunk of memory which has the given capabilities
+ *
+ * Equivalent semantics to libc aligned_alloc(), for capability-aware memory.
+ * @param alignment  How the pointer received needs to be aligned
+ *                   must be a power of two
+ * @param size Size, in bytes, of the amount of memory to allocate
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory to be returned
+ *
+ * @return A pointer to the memory allocated on success, NULL on failure
+ * 
+ * @note Any memory allocated with heaps_caps_aligned_alloc() MUST 
+ * be freed with heap_caps_aligned_free() and CANNOT be passed to free()
+ * 
+ */
+void *heap_caps_aligned_alloc(size_t alignment, size_t size, int caps);
+
+/**
+ * @brief Allocate a aligned chunk of memory which has the given capabilities. The initialized value in the memory is set to zero.
+ *
+ * @param alignment  How the pointer received needs to be aligned
+ *                   must be a power of two
+ * @param n    Number of continuing chunks of memory to allocate
+ * @param size Size, in bytes, of a chunk of memory to allocate
+ * @param caps        Bitwise OR of MALLOC_CAP_* flags indicating the type
+ *                    of memory to be returned
+ *
+ * @return A pointer to the memory allocated on success, NULL on failure
+ * 
+ * @note Any memory allocated with heap_caps_aligned_calloc() MUST 
+ * be freed with heap_caps_aligned_free() and CANNOT be passed to free()
+ */
+void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps);
+
+/**
+ * @brief Used to deallocate memory previously allocated with heap_caps_aligned_alloc
+ * 
+ * @param ptr Pointer to the memory allocated
+ * @note This function is aimed to deallocate only memory allocated with
+ *       heap_caps_aligned_alloc, memory allocated with heap_caps_malloc
+ *       MUST not be passed to this function
+ */
+void heap_caps_aligned_free(void *ptr);
+
+/**
  * @brief Allocate a chunk of memory which has the given capabilities. The initialized value in the memory is set to zero.
  *
  * Equivalent semantics to libc calloc(), for capability-aware memory.

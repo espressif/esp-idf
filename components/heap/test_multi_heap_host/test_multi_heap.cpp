@@ -494,3 +494,51 @@ TEST_CASE("unaligned heaps", "[multi_heap]")
         }
     }
 }
+
+#ifndef CONFIG_HEAP_POISONING_NONE
+
+TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
+{
+    uint8_t test_heap[1024 * 1024];
+    multi_heap_handle_t heap = multi_heap_register(test_heap, sizeof(test_heap));
+    uint32_t aligments = 0; // starts from alignment by 4-byte boundary
+    size_t old_size = multi_heap_free_size(heap);
+    size_t leakage = 1024;
+    printf("[ALIGNED_ALLOC] heap_size before: %d \n", old_size);
+
+    printf("New heap:\n");
+    multi_heap_dump(heap);
+    printf("*********************\n");
+
+    for(;aligments < 500 * 1024; aligments++) {
+
+        //Use some stupid size value to test correct alignment even in strange
+        //memory layout objects:
+        uint8_t *buf = (uint8_t *)multi_heap_aligned_alloc(heap, (aligments + 137), aligments );
+        if(((aligments & (aligments - 1)) != 0) || (!aligments)) {
+            REQUIRE( buf == NULL );
+            //printf("[ALIGNED_ALLOC] alignment: %u is not a power of two, don't allow allocation \n", aligments);
+        } else {
+            REQUIRE( buf != NULL );
+            REQUIRE((intptr_t)buf >= (intptr_t)test_heap);
+            REQUIRE((intptr_t)buf < (intptr_t)(test_heap + sizeof(test_heap)));
+
+            printf("[ALIGNED_ALLOC] alignment required: %u \n", aligments);
+            //printf("[ALIGNED_ALLOC] allocated size: %d \n", multi_heap_get_allocated_size(heap, buf));    
+            printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
+            //Address of obtained block must be aligned with selected value
+            REQUIRE(((intptr_t)buf & (aligments - 1)) == 0);
+
+            //Write some data, if it corrupts memory probably the heap
+            //canary verification will fail:
+            memset(buf, 0xA5, (aligments + 137));
+
+            multi_heap_aligned_free(heap, buf);    
+        }
+    }
+
+    printf("[ALIGNED_ALLOC] heap_size after: %d \n", multi_heap_free_size(heap));
+    REQUIRE((old_size - multi_heap_free_size(heap)) <= leakage);
+}
+
+#endif

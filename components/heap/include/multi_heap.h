@@ -29,6 +29,17 @@ extern "C" {
 /** @brief Opaque handle to a registered heap */
 typedef struct multi_heap_info *multi_heap_handle_t;
 
+/**
+ * @brief allocate a chunk of memory with specific alignment 
+ * 
+ * @param heap  Handle to a registered heap.
+ * @param size  size in bytes of memory chunk
+ * @param alignment  how the memory must be aligned
+ *
+ * @return pointer to the memory allocated, NULL on failure
+ */
+void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t alignment);
+
 /** @brief malloc() a buffer in a given heap
  *
  * Semantics are the same as standard malloc(), only the returned buffer will be allocated in the specified heap.
@@ -39,6 +50,14 @@ typedef struct multi_heap_info *multi_heap_handle_t;
  * @return Pointer to new memory, or NULL if allocation fails.
  */
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size);
+
+/** @brief free() a buffer aligned in a given heap.
+ *
+ * @param heap Handle to a registered heap.
+ * @param p NULL, or a pointer previously returned from multi_heap_aligned_alloc() for the same heap.
+ */
+void multi_heap_aligned_free(multi_heap_handle_t heap, void *p);
+
 
 /** @brief free() a buffer in a given heap.
  *
