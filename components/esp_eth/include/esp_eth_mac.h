@@ -24,7 +24,6 @@ extern "C" {
 #include "driver/spi_master.h"
 #endif
 
-
 /**
 * @brief Ethernet MAC
 *
@@ -252,7 +251,10 @@ typedef struct {
     uint32_t rx_task_prio;        /*!< Priority of the receive task */
     int smi_mdc_gpio_num;         /*!< SMI MDC GPIO number */
     int smi_mdio_gpio_num;        /*!< SMI MDIO GPIO number */
+    uint32_t flags;               /*!< Flags that specify extra capability for mac driver */
 } eth_mac_config_t;
+
+#define ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE (1 << 0) /*!< MAC driver can work when cache is disabled */
 
 /**
  * @brief Default configuration for Ethernet MAC object
@@ -265,6 +267,7 @@ typedef struct {
         .rx_task_prio = 15,         \
         .smi_mdc_gpio_num = 23,     \
         .smi_mdio_gpio_num = 18,    \
+        .flags = 0,                 \
     }
 
 #if CONFIG_ETH_USE_ESP32_EMAC
@@ -312,7 +315,6 @@ typedef struct {
 */
 esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, const eth_mac_config_t *mac_config);
 #endif
-
 
 #if CONFIG_ETH_USE_OPENETH
 esp_eth_mac_t *esp_eth_mac_new_openeth(const eth_mac_config_t *config);

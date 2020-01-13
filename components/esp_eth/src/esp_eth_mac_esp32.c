@@ -358,6 +358,7 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+// To achieve a better performance, we put the ISR always in IRAM
 IRAM_ATTR void emac_esp32_isr_handler(void *args)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
@@ -371,11 +372,16 @@ IRAM_ATTR void emac_esp32_isr_handler(void *args)
 
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
 {
+    esp_err_t ret_code = ESP_OK;
     esp_eth_mac_t *ret = NULL;
     void *descriptors = NULL;
     emac_esp32_t *emac = NULL;
     MAC_CHECK(config, "can't set mac config to null", err, NULL);
-    emac = calloc(1, sizeof(emac_esp32_t));
+    if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
+        emac = heap_caps_calloc(1, sizeof(emac_esp32_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    } else {
+        emac = calloc(1, sizeof(emac_esp32_t));
+    }
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
@@ -416,9 +422,14 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.transmit = emac_esp32_transmit;
     emac->parent.receive = emac_esp32_receive;
     /* Interrupt configuration */
-    MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_esp32_isr_handler,
-                             &emac->hal, &(emac->intr_hdl)) == ESP_OK,
-              "alloc emac interrupt failed", err, NULL);
+    if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
+        ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM,
+                                  emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
+    } else {
+        ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0,
+                                  emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
+    }
+    MAC_CHECK(ret_code == ESP_OK, "alloc emac interrupt failed", err, NULL);
 #ifdef CONFIG_PM_ENABLE
     MAC_CHECK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock) == ESP_OK,
               "create pm lock failed", err, NULL);
