@@ -49,6 +49,8 @@ extern "C" {
 #define ESP_ERR_MBEDTLS_SSL_WRITE_FAILED                  (ESP_ERR_ESP_TLS_BASE + 0x0E)  /*!< mbedtls api returned error */
 #define ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x0F)  /*!< mbedtls api returned failed  */
 #define ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED              (ESP_ERR_ESP_TLS_BASE + 0x10)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED               (ESP_ERR_ESP_TLS_BASE + 0x11)  /*!< mbedtls api returned failed  */
+#define ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT                (ESP_ERR_ESP_TLS_BASE + 0x12)  /*!< new connection in esp_tls_low_level_conn connection timeouted */
 
 typedef struct esp_tls_last_error* esp_tls_error_handle_t;
 
@@ -273,7 +275,7 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
  * @return
  *             - -1      If connection establishment fails.
  *             -  1      If connection establishment is successful.
- *             -  0      Reserved for connection state is in progress.
+ *             -  0      If connection state is in progress.
  */
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
