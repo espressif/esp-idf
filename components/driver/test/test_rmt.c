@@ -312,3 +312,61 @@ TEST_CASE("RMT TX stop", "[rmt]")
     TEST_ASSERT(num < count);
     rmt_clean_testbench(tx_channel, rx_channel);
 }
+
+#ifdef RMT_SUPPORT_RX_DEMODULATION
+/**
+ * @brief RMT demoudulation receiver initialization
+ */
+static void rx_demoudulation_init(void)
+{
+    rmt_rx_config_t rx_cfg = {
+        .filter_en = true,
+        .filter_ticks_thresh = 100,
+        .idle_threshold = RMT_ITEM32_TIMEOUT_US / 10 * (RMT_TICK_10_US),
+        .rm_carrier = true,
+        .high_thres = 20,
+        .low_thres = 20,
+        .carrier_level = RMT_CARRIER_LEVEL_HIGH,
+    };
+    rmt_config_t rmt_rx = {
+        .channel = RMT_RX_CHANNEL,
+        .gpio_num = RMT_RX_GPIO_NUM,
+        .clk_div = RMT_CLK_DIV,
+        .mem_block_num = 1,
+        .rmt_mode = RMT_MODE_RX,
+        .rx_config = rx_cfg,
+    };
+    rmt_config(&rmt_rx);
+    rmt_driver_install(rmt_rx.channel, (sizeof(rmt_item32_t) * DATA_ITEM_NUM * (RMT_TX_DATA_NUM + 6)), 0);
+}
+
+TEST_CASE("RMT carrier TX and RX", "[rmt][test_env=UT_T1_RMT]")
+{
+    rx_demoudulation_init();
+    RingbufHandle_t rb = NULL;
+    rmt_get_ringbuf_handle(RMT_RX_CHANNEL, &rb);
+    rmt_rx_start(RMT_RX_CHANNEL, 1);
+    ESP_LOGI(TAG, "Star receiving RMT data...");
+
+    tx_init();
+    rmt_set_tx_carrier(RMT_TX_CHANNEL, true, 1052, 1052, RMT_CARRIER_LEVEL_HIGH);
+    uint16_t cmd = 0x0;
+    uint16_t addr = 0x11;
+    int num_items = DATA_ITEM_NUM * RMT_TX_DATA_NUM;
+    rmt_item32_t *items = calloc(num_items + 1, sizeof(rmt_item32_t));
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    ESP_LOGI(TAG, "Sending RMT data...");
+    // send data
+    set_tx_data(RMT_TX_CHANNEL, cmd, addr, num_items, items, 0);
+    // wait until tx done
+    rmt_write_items(RMT_TX_CHANNEL, items, num_items, 1);
+    free(items);
+    // receive data
+    uint16_t tmp = get_rx_data(rb);
+    TEST_ASSERT(tmp == RMT_TX_DATA_NUM);
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
+}
+#endif

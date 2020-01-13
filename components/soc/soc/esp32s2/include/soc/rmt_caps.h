@@ -20,6 +20,8 @@ extern "C" {
 
 #define RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
 #define RMT_CHANNELS_NUM (4)       /*!< Total 4 channels */
+#define RMT_SUPPORT_RX_PINGPONG_MODE (1)
+#define RMT_SUPPORT_RX_DEMODULATION  (1)
 
 #ifdef __cplusplus
 }

@@ -59,12 +59,12 @@ static inline void rmt_ll_enable_rx(rmt_dev_t *dev, uint32_t channel, bool enabl
 
 static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
-    dev->conf_ch[channel].conf0.mem_pd = enable;
+    dev->conf_ch[0].conf0.mem_pd = enable; // Only conf0 register of channel0 has `mem_pd`
 }
 
 static inline bool rmt_ll_is_mem_power_down(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf0.mem_pd;
+    return dev->conf_ch[0].conf0.mem_pd; // Only conf0 register of channel0 has `mem_pd`
 }
 
 static inline void rmt_ll_set_mem_blocks(rmt_dev_t *dev, uint32_t channel, uint8_t block_num)
