@@ -113,7 +113,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
         // Temporarily raise current task priority to prevent a deadlock while
         // waiting for IPC task to start on the other CPU
         int old_prio = uxTaskPriorityGet(NULL);
-        vTaskPrioritySet(NULL, configMAX_PRIORITIES - 1);
+        vTaskPrioritySetCurrent(NULL, configMAX_PRIORITIES - 1);
         // Signal to the spi_flash_op_block_task on the other CPU that we need it to
         // disable cache there and block other tasks from executing.
         s_flash_op_can_start = false;
@@ -126,7 +126,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
         // Disable scheduler on the current CPU
         vTaskSuspendAll();
         // Can now set the priority back to the normal one
-        vTaskPrioritySet(NULL, old_prio);
+        vTaskPrioritySetCurrent(NULL, old_prio);
         // This is guaranteed to run on CPU <cpuid> because the other CPU is now
         // occupied by highest priority task
         assert(xPortGetCoreID() == cpuid);

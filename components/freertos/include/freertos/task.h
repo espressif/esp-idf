@@ -975,6 +975,19 @@ eTaskState eTaskGetState( TaskHandle_t xTask ) PRIVILEGED_FUNCTION;
 void vTaskPrioritySet( TaskHandle_t xTask, UBaseType_t uxNewPriority ) PRIVILEGED_FUNCTION;
 
 /**
+ * Set the current priority of any task.
+ *
+ * This function sets the current priority of a task, and does not modify the
+ * base priority at all.
+ *
+ * @param xTask Handle to the task for which the priority is being set.
+ * Passing a NULL handle results in the priority of the calling task being set.
+ *
+ * @param uxNewPriority The priority to which the task will be set.
+ */
+void vTaskPrioritySetCurrent( TaskHandle_t xTask, UBaseType_t uxNewPriority )
+
+/**
  * Suspend a task.
  *
  * INCLUDE_vTaskSuspend must be defined as 1 for this function to be available.
