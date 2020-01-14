@@ -693,13 +693,6 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
     if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE || p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE) {
         BTM_SetPairableMode((BOOLEAN)(!(bta_dm_cb.disable_pair_mode)), bta_dm_cb.conn_paired_only);
     }
-
-    if (((p_data->set_visibility.conn_mode & BTA_DM_IGNORE) == BTA_DM_NON_CONN) &&
-        ((p_data->set_visibility.disc_mode & BTA_DM_IGNORE) == BTA_DM_NON_DISC)) {
-        BTA_DmCoexEventTrigger(BTA_COEX_EVT_SCAN_STOPPED);
-    } else {
-        BTA_DmCoexEventTrigger(BTA_COEX_EVT_SCAN_STARTED);
-    }
 }
 
 /*******************************************************************************

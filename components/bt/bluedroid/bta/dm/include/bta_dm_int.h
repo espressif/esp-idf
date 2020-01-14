@@ -1039,11 +1039,7 @@ typedef struct {
 
     tBTA_DM_ENCRYPT_CBACK      *p_encrypt_cback;
     TIMER_LIST_ENT              switch_delay_timer;
-    bool coex_scan_st;
-    bool coex_acl_st;
-    bool coex_streaming_st;
-    bool coex_sniff_st;
-    bool coex_a2dp_paused_st;
+
 } tBTA_DM_CB;
 
 #ifndef BTA_DM_SDP_DB_SIZE

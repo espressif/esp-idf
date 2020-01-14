@@ -302,7 +302,8 @@ menu "LWIP"
         config TCP_SND_BUF_DEFAULT
             int "Default send buffer size"
             default 5744  # 4 * default MSS
-            range 2440 65535
+            range 2440 65535 if !LWIP_WND_SCALE
+            range 2440 1024000 if LWIP_WND_SCALE
             help
                 Set default send buffer size for new TCP sockets.
 

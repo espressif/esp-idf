@@ -24,8 +24,3 @@ esp_err_t esp_coex_preference_set(esp_coex_prefer_t prefer)
 {
     return coex_preference_set((coex_prefer_t)prefer);
 }
-
-esp_err_t esp_coex_wifi_percent_set(int wifi_percent)
-{
-    return coex_wifi_percent_set(wifi_percent);
-}
