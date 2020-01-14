@@ -243,7 +243,51 @@ By default, the directives ``.. todo::`` and ``.. todolist::`` are ignored by do
 
 Before pushing your changes to origin, please set the value of ``todo_include_todos`` back to ``False``.
 
-For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documenation.
+For more details about the extension, see `sphinx.ext.todo <https://www.sphinx-doc.org/en/master/usage/extensions/todo.html#directive-todolist>`_ documentation.
+
+Writing generic documentation for multiple chips
+------------------------------------------------
+
+The documentation for all of Espressif's chips is built from the same files. To faciliate the writing of documents that can be re-used for multiple different chips (called below "targets"), we provide you with the following functionality:
+
+Exclusion of content based on chip-target
+"""""""""""""""""""""""""""""""""""""""""
+Occasionally there will be content that is only relevant for one of targets. When this is the case, you can exclude that content by using the ''.. only:: TARGET'' directive, where you replace 'TARGET' with one of the chip names. As of now the following targets are available:
+
+* esp32
+* esp32s2 
+
+Example:
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        ESP32 specific content.
+
+This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
+
+The :TARGET: role is used for excluding content from a table of content tree. For example:
+
+.. code-block:: none
+
+    .. toctree::
+        :maxdepth: 1
+
+        :esp32: configure-wrover
+        configure-other-jtag
+
+When building the documents, Sphinx will use the above mentioned directive and role to include or exclude content based on the target tag it was called with.
+
+Substitution macros
+"""""""""""""""""""
+When you need to refer to the chip's name, toolchain name, path or other common names that depend on the target type you can consider using the substitution macros supplied by :idf_file:`docs/idf_extensions/format_idf_target.py`.
+
+This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will render as: This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+
+This extension also supports markup for defining a local (for a single .rst-file) substitutions. You can do this by putting a definition like {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE",esp32="ESP32_VALUE",esp32s2beta="ESP32S2BETA_VALUE"}, in your rst-file. This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current rst-file. For example:
+
+{\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2beta="IO5"} will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2beta.
 
 
 Put it all together
