@@ -745,6 +745,8 @@ void bta_gattc_conncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 void bta_gattc_disconncback(tBTA_GATTC_RCB *p_rcb, tBTA_GATTC_DATA *p_data)
 {
     if (p_rcb) {
+        // Clear up the notification registration information by BD_ADDR
+        bta_gattc_clear_notif_registration_by_bda(p_rcb, p_data->int_conn.remote_bda);
         bta_gattc_send_disconnect_cback(p_rcb,
                                      p_data->int_conn.reason,
                                      p_data->int_conn.remote_bda,
