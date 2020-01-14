@@ -420,6 +420,14 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
     const int max_fds = MIN(nfds, UART_NUM);
     *end_select_args = NULL;
 
+    for (int i = 0; i < max_fds; ++i) {
+        if (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds)) {
+            if (!uart_is_driver_installed(i)) {
+                return ESP_ERR_INVALID_STATE;
+            }
+        }
+    }
+
     uart_select_args_t *args = malloc(sizeof(uart_select_args_t));
 
     if (args == NULL) {
