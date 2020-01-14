@@ -74,14 +74,21 @@ typedef struct {
     wps_factory_information_t factory_info;
 } esp_wps_config_t;
 
+/* C & C++ compilers have different rules about C99-style named initializers */
+#ifdef __cplusplus
+#define WPS_AGG(X) { X }
+#else
+#define WPS_AGG(X) X
+#endif
+
 #define WPS_CONFIG_INIT_DEFAULT(type) { \
     .wps_type = type, \
     .crypto_funcs = &g_wifi_default_wps_crypto_funcs, \
     .factory_info = {   \
-        .manufacturer = "ESPRESSIF",  \
-        .model_number = "ESP32",  \
-        .model_name = "ESPRESSIF IOT",  \
-        .device_name = "ESP STATION",  \
+        WPS_AGG( .manufacturer = "ESPRESSIF" ),  \
+        WPS_AGG( .model_number = "ESP32" ),  \
+        WPS_AGG( .model_name = "ESPRESSIF IOT" ),  \
+        WPS_AGG( .device_name = "ESP STATION" ),  \
     }  \
 }
 
