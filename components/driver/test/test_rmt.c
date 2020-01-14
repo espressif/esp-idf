@@ -311,6 +311,21 @@ static void rx_init(void)
     rmt_driver_install(rmt_rx.channel, (sizeof(rmt_item32_t) * DATA_ITEM_NUM * (RMT_TX_DATA_NUM + 6)), 0);
 }
 
+//A sample case to test if sending 63 data will cause crash in error interrupt.
+TEST_CASE("RMT tx test", "[rmt][test_env=UT_T1_RMT]")
+{
+    tx_init();
+    rmt_item32_t *items = (rmt_item32_t*)malloc(sizeof(rmt_item32_t) * 63);
+    for(int i = 0; i < 63; i++) {
+        items[i] = (rmt_item32_t){{{200, 1, 200, 0}}};
+    }
+    TEST_ESP_OK(rmt_write_items(RMT_TX_CHANNEL, items,
+                                    63, /* Number of items */
+                                    1 /* wait till done */));
+    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
+    free(items);
+}
+
 TEST_CASE("RMT init config", "[rmt][test_env=UT_T1_RMT]")
 {
     // tx settings

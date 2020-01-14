@@ -387,7 +387,6 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
         RMT_CHECK(evt_thresh <= 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
         RMT_ENTER_CRITICAL();
         rmt_ll_set_tx_limit(p_rmt_obj[channel]->hal.regs, channel, evt_thresh);
-        rmt_ll_enable_tx_pingpong(p_rmt_obj[channel]->hal.regs, true);
         rmt_ll_enable_tx_thres_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
         RMT_EXIT_CRITICAL();
     } else {
@@ -454,6 +453,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 
         RMT_ENTER_CRITICAL();
         rmt_ll_enable_tx_cyclic(dev, channel, rmt_param->tx_config.loop_en);
+        rmt_ll_enable_tx_pingpong(dev, true);
         /*Set idle level */
         rmt_ll_enable_tx_idle(dev, channel, rmt_param->tx_config.idle_output_en);
         rmt_ll_set_tx_idle_level(dev, channel, idle_level);
@@ -675,6 +675,9 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         status &= ~(1 << channel);
         rmt_obj_t *p_rmt = p_rmt_obj[channel];
         if (p_rmt) {
+            // Reset the receiver/transmitter's write/read addresses to prevent endless err interrupts.
+            rmt_ll_reset_tx_pointer(p_rmt_obj[channel]->hal.regs, channel);
+            rmt_ll_reset_rx_pointer(p_rmt_obj[channel]->hal.regs, channel);
             ESP_EARLY_LOGD(RMT_TAG, "RMT[%d] ERR", channel);
             ESP_EARLY_LOGD(RMT_TAG, "status: 0x%08x", rmt_ll_get_channel_status(p_rmt_obj[channel]->hal.regs, channel));
         }
