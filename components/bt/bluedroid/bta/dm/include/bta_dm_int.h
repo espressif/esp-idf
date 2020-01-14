@@ -52,7 +52,6 @@ enum {
     BTA_DM_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_DM),
     BTA_DM_API_DISABLE_EVT,
     BTA_DM_API_SET_NAME_EVT,
-    BTA_DM_API_SET_AFH_CHANNELS_EVT,
     BTA_DM_API_SET_VISIBILITY_EVT,
 
     BTA_DM_ACL_CHANGE_EVT,
@@ -188,13 +187,6 @@ typedef struct {
     BT_HDR              hdr;
     BD_NAME             name; /* max 248 bytes name, plus must be Null terminated */
 } tBTA_DM_API_SET_NAME;
-
-/* data type for BTA_DM_API_SET_AFH_CHANNELS_EVT */
-typedef struct {
-    BT_HDR              hdr;
-    AFH_CHANNELS        channels;
-    tBTA_CMPL_CB        *set_afh_cb;
-}tBTA_DM_API_SET_AFH_CHANNELS;
 
 typedef struct {
     BT_HDR    hdr;
@@ -485,7 +477,7 @@ typedef struct {
 
 typedef struct {
     BT_HDR                  hdr;
-    BOOLEAN                 add;
+    BOOLEAN                 add;      
     UINT32                  static_passkey;
 } tBTA_DM_API_SET_DEFAULT_PASSKEY;
 
@@ -791,8 +783,6 @@ typedef union {
     tBTA_DM_API_ENABLE  enable;
 
     tBTA_DM_API_SET_NAME set_name;
-
-    tBTA_DM_API_SET_AFH_CHANNELS set_afh_channels;
 
     tBTA_DM_API_UPDATE_WHITE_LIST white_list;
     tBTA_DM_API_READ_ADV_TX_POWER read_tx_power;
@@ -1235,7 +1225,6 @@ extern void bta_dm_search_sm_disable( void );
 extern void bta_dm_enable (tBTA_DM_MSG *p_data);
 extern void bta_dm_disable (tBTA_DM_MSG *p_data);
 extern void bta_dm_set_dev_name (tBTA_DM_MSG *p_data);
-extern void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data);
 extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_rssi(tBTA_DM_MSG *p_data);

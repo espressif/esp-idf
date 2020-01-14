@@ -183,35 +183,6 @@ void BTA_DmSetDeviceName(const char *p_name)
 
 }
 
-#if (CLASSIC_BT_INCLUDED == TRUE)
-/*******************************************************************************
-**
-** Function         BTA_DmSetAfhChannels
-**
-** Description      This function sets the AFH channels
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmSetAfhChannels(const uint8_t *channels, tBTA_CMPL_CB  *set_afh_cb)
-{
-
-    tBTA_DM_API_SET_AFH_CHANNELS *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_SET_AFH_CHANNELS *) osi_malloc(sizeof(tBTA_DM_API_SET_AFH_CHANNELS))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_SET_AFH_CHANNELS_EVT;
-
-        p_msg->set_afh_cb = set_afh_cb;
-        memcpy(p_msg->channels, channels, AFH_CHANNELS_LEN);
-
-        bta_sys_sendmsg(p_msg);
-    }
-
-
-}
-#endif /// CLASSIC_BT_INCLUDED == TRUE
-
 void BTA_DmUpdateWhiteList(BOOLEAN add_remove,  BD_ADDR remote_addr, tBTA_ADD_WHITELIST_CBACK *add_wl_cb)
 {
     tBTA_DM_API_UPDATE_WHITE_LIST *p_msg;
