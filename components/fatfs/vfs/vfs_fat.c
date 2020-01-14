@@ -242,9 +242,7 @@ static int fresult_to_errno(FRESULT fr)
 {
     switch(fr) {
         case FR_DISK_ERR:       return EIO;
-        case FR_INT_ERR:
-            assert(0 && "fatfs internal error");
-            return EIO;
+        case FR_INT_ERR:        return EIO;
         case FR_NOT_READY:      return ENODEV;
         case FR_NO_FILE:        return ENOENT;
         case FR_NO_PATH:        return ENOENT;

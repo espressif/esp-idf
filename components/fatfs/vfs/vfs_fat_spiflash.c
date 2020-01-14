@@ -76,7 +76,8 @@ esp_err_t esp_vfs_fat_spiflash_mount(const char* base_path,
     FRESULT fresult = f_mount(fs, drv, 1);
     if (fresult != FR_OK) {
         ESP_LOGW(TAG, "f_mount failed (%d)", fresult);
-        if (!(fresult == FR_NO_FILESYSTEM && mount_config->format_if_mount_failed)) {
+        if (!((fresult == FR_NO_FILESYSTEM || fresult == FR_INT_ERR)
+              && mount_config->format_if_mount_failed)) {
             result = ESP_FAIL;
             goto fail;
         }
