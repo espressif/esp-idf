@@ -41,6 +41,8 @@ update_submodules() {
     else
         ${SCRIPT_DIR}/mirror-submodule-update.sh || return $?
     fi
+    # possibility that there are some untracked files left in submodule working directories
+    git submodule foreach --recursive git clean -ffdx
 }
 
 del_files() {
