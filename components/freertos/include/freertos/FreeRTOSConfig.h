@@ -72,6 +72,10 @@
 
 #include "sdkconfig.h"
 
+/* enable use of optimized task selection by the scheduler */
+#ifdef CONFIG_FREERTOS_OPTIMIZED_SCHEDULER
+#define configUSE_PORT_OPTIMISED_TASK_SELECTION 1
+#endif
 
 /* ESP31 and ESP32 are dualcore processors. */
 #ifndef CONFIG_FREERTOS_UNICORE

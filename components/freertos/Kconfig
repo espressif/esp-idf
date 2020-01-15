@@ -39,6 +39,15 @@ menu "FreeRTOS"
 
     endchoice
 
+    config FREERTOS_OPTIMIZED_SCHEDULER
+        bool "Enable FreeRTOS pĺatform optimized scheduler"
+        depends on FREERTOS_UNICORE
+        default y
+        help
+            On most platforms there are instructions can speedup the ready task
+            searching. Enabling this option the FreeRTOS with this instructions
+            support will be built.
+
     config FREERTOS_HZ
         int "Tick rate (Hz)"
         range 1 1000
