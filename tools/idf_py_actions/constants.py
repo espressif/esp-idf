@@ -37,3 +37,5 @@ GENERATORS = collections.OrderedDict([
 ])
 
 SUPPORTED_TARGETS = ["esp32", "esp32s2"]
+
+PREVIEW_TARGETS = ["esp32s3"]

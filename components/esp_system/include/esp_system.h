@@ -251,6 +251,7 @@ void  __attribute__((noreturn)) esp_system_abort(const char* details);
 typedef enum {
     CHIP_ESP32  = 1, //!< ESP32
     CHIP_ESP32S2 = 2, //!< ESP32-S2
+    CHIP_ESP32S3 = 4, //!< ESP32-S3
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */

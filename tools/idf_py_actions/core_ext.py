@@ -5,7 +5,7 @@ import sys
 
 import click
 
-from idf_py_actions.constants import GENERATORS, SUPPORTED_TARGETS
+from idf_py_actions.constants import GENERATORS, SUPPORTED_TARGETS, PREVIEW_TARGETS
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
 from idf_py_actions.tools import ensure_build_directory, idf_version, merge_action_lists, realpath, run_target, TargetChoice
@@ -122,6 +122,8 @@ def action_extensions(base_actions, project_path):
                 os.remove(f)
 
     def set_target(action, ctx, args, idf_target):
+        if(not args["preview"] and idf_target in PREVIEW_TARGETS):
+            raise FatalError("%s is still in preview. You have to append '--preview' option after idf.py to use any preview feature." % idf_target)
         args.define_cache_entry.append("IDF_TARGET=" + idf_target)
         sdkconfig_path = os.path.join(args.project_dir, 'sdkconfig')
         sdkconfig_old = sdkconfig_path + ".old"
@@ -163,6 +165,10 @@ def action_extensions(base_actions, project_path):
 
         for target in SUPPORTED_TARGETS:
             print(target)
+
+        if "preview" in ctx.params:
+            for target in PREVIEW_TARGETS:
+                print(target)
 
         sys.exit(0)
 
@@ -207,6 +213,12 @@ def action_extensions(base_actions, project_path):
                 "is_eager": True,
                 "default": False,
                 "callback": verbose_callback
+            },
+            {
+                "names": ["--preview"],
+                "help": "Enable IDF features that are still in preview.",
+                "is_flag": True,
+                "default": False,
             },
             {
                 "names": ["--ccache/--no-ccache"],
@@ -379,7 +391,7 @@ def action_extensions(base_actions, project_path):
                     {
                         "names": ["idf-target"],
                         "nargs": 1,
-                        "type": TargetChoice(SUPPORTED_TARGETS),
+                        "type": TargetChoice(SUPPORTED_TARGETS + PREVIEW_TARGETS),
                     },
                 ],
                 "dependencies": ["fullclean"],
