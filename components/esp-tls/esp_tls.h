@@ -478,6 +478,18 @@ void esp_tls_conn_delete(esp_tls_t *tls);
 ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls);
 
 /**
+ * @brief       Returns the connection socket file descriptor from esp_tls session
+ *
+ * @param[in]   tls          handle to esp_tls context
+ *
+ * @param[out]  sockfd       int pointer to sockfd value.
+ *
+ * @return     - ESP_OK on success and value of sockfd will be updated with socket file descriptor for connection
+ *             - ESP_ERR_INVALID_ARG if (tls == NULL || sockfd == NULL)
+ */
+esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd);
+
+/**
  * @brief      Create a global CA store, initially empty.
  *
  * This function should be called if the application wants to use the same CA store for multiple connections.

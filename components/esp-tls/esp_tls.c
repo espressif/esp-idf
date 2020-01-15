@@ -115,8 +115,9 @@ esp_tls_t *esp_tls_init(void)
         return NULL;
     }
 #ifdef CONFIG_ESP_TLS_USING_MBEDTLS
-    tls->server_fd.fd = tls->sockfd = -1;
+    tls->server_fd.fd = -1;
 #endif
+    tls->sockfd = -1;
     return tls;
 }
 
@@ -309,7 +310,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
  */
 esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg)
 {
-    esp_tls_t *tls = (esp_tls_t *)calloc(1, sizeof(esp_tls_t));
+    esp_tls_t *tls = esp_tls_init();
     if (!tls) {
         return NULL;
     }
@@ -430,6 +431,16 @@ void esp_tls_server_session_delete(esp_tls_t *tls)
 ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
 {
     return _esp_tls_get_bytes_avail(tls);
+}
+
+esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd)
+{
+    if (!tls || !sockfd) {
+        ESP_LOGE(TAG, "Invalid arguments passed");
+        return ESP_ERR_INVALID_ARG;
+    }
+    *sockfd = tls->sockfd;
+    return ESP_OK;
 }
 
 esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tls_code, int *esp_tls_flags)
