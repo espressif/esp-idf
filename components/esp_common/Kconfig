@@ -238,4 +238,16 @@ menu "Common ESP-related"
             Debug stubs are used by OpenOCD to execute pre-compiled onboard code
             which does some useful debugging stuff, e.g. GCOV data dump.
 
+    config ESP_MAC_ADDR_UNIVERSE_WIFI_STA
+        bool
+
+    config ESP_MAC_ADDR_UNIVERSE_WIFI_AP
+        bool
+
+    config ESP_MAC_ADDR_UNIVERSE_BT
+        bool
+
+    config ESP_MAC_ADDR_UNIVERSE_ETH
+        bool
+
 endmenu # Common ESP-related
