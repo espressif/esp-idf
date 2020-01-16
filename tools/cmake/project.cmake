@@ -55,7 +55,6 @@ function(__project_get_revision var)
             endif()
         endif()
     endif()
-    message(STATUS "Project version: ${PROJECT_VER}")
     set(${var} "${PROJECT_VER}" PARENT_SCOPE)
 endfunction()
 
