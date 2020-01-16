@@ -145,6 +145,15 @@ inline static bool IRAM_ATTR esp_ptr_dma_capable(const void *p)
     return (intptr_t)p >= SOC_DMA_LOW && (intptr_t)p < SOC_DMA_HIGH;
 }
 
+inline static bool IRAM_ATTR esp_ptr_dma_ext_capable(const void *p)
+{
+#if CONFIG_IDF_TARGET_ESP32S2
+    return (intptr_t)p >= SOC_DMA_EXT_LOW && (intptr_t)p < SOC_DMA_EXT_HIGH;
+#else
+    return false;
+#endif
+}
+
 inline static bool IRAM_ATTR esp_ptr_word_aligned(const void *p)
 {
     return ((intptr_t)p) % 4 == 0;

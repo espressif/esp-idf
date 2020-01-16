@@ -84,6 +84,18 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return DPORT_WIFI_CLK_WIFI_BT_COMMON_M;
     case PERIPH_SYSTIMER_MODULE:
         return DPORT_SYSTIMER_CLK_EN;
+    case PERIPH_AES_MODULE:
+        return DPORT_CRYPTO_AES_CLK_EN;
+    case PERIPH_SHA_MODULE:
+        return DPORT_CRYPTO_SHA_CLK_EN;
+    case PERIPH_RSA_MODULE:
+        return DPORT_CRYPTO_RSA_CLK_EN;
+    case PERIPH_CRYPTO_DMA_MODULE:
+        return DPORT_CRYPTO_DMA_CLK_EN;
+    case PERIPH_SHA_DMA_MODULE:
+        return DPORT_CRYPTO_DMA_CLK_EN | DPORT_CRYPTO_SHA_CLK_EN;
+    case PERIPH_AES_DMA_MODULE:
+        return DPORT_CRYPTO_DMA_CLK_EN | DPORT_CRYPTO_AES_CLK_EN;
     default:
         return 0;
     }
@@ -144,6 +156,49 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return DPORT_CAN_RST;
     case PERIPH_SYSTIMER_MODULE:
         return DPORT_SYSTIMER_RST;
+    case PERIPH_AES_MODULE:
+        if (enable == true) {
+            // Clear reset on digital signature, otherwise AES unit is held in reset also.
+            return (DPORT_CRYPTO_AES_RST | DPORT_CRYPTO_DS_RST);
+        } else {
+            //Don't return other units to reset, as this pulls reset on RSA & SHA units, respectively.
+            return DPORT_CRYPTO_AES_RST;
+        }
+    case PERIPH_SHA_MODULE:
+        if (enable == true) {
+            // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
+            return (DPORT_CRYPTO_SHA_RST | DPORT_CRYPTO_DS_RST | DPORT_CRYPTO_HMAC_RST);
+        } else {
+            // Don't assert reset on secure boot, otherwise AES is held in reset
+            return DPORT_CRYPTO_SHA_RST;
+        }
+    case PERIPH_RSA_MODULE:
+        if (enable == true) {
+            // Also clear reset on digital signature, otherwise RSA is held in reset
+            return (DPORT_CRYPTO_RSA_RST | DPORT_CRYPTO_DS_RST);
+        } else {
+            // Don't reset digital signature unit, as this resets AES also
+            return DPORT_CRYPTO_RSA_RST;
+        }
+    case PERIPH_CRYPTO_DMA_MODULE:
+        return DPORT_CRYPTO_DMA_RST;
+
+    case PERIPH_AES_DMA_MODULE:
+        if (enable == true) {
+            // Clear reset on digital signature, otherwise AES unit is held in reset also.
+            return (DPORT_CRYPTO_AES_RST | DPORT_CRYPTO_DS_RST | DPORT_CRYPTO_DMA_RST);
+        } else {
+            //Don't return other units to reset, as this pulls reset on RSA & SHA units, respectively.
+            return (DPORT_CRYPTO_AES_RST | DPORT_CRYPTO_DMA_RST);
+        }
+    case PERIPH_SHA_DMA_MODULE:
+        if (enable == true) {
+            // Clear reset on digital signature and HMAC, otherwise SHA is held in reset
+            return (DPORT_CRYPTO_SHA_RST | DPORT_CRYPTO_DS_RST | DPORT_CRYPTO_HMAC_RST | DPORT_CRYPTO_DMA_RST);
+        } else {
+            // Don't assert reset on secure boot, otherwise AES is held in reset
+            return (DPORT_CRYPTO_SHA_RST | DPORT_CRYPTO_DMA_RST);
+        }
     default:
         return 0;
     }
@@ -156,6 +211,13 @@ static inline uint32_t periph_ll_get_clk_en_reg(periph_module_t periph)
     case PERIPH_WIFI_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:
         return DPORT_WIFI_CLK_EN_REG;
+    case PERIPH_AES_MODULE:
+    case PERIPH_SHA_MODULE:
+    case PERIPH_RSA_MODULE:
+    case PERIPH_CRYPTO_DMA_MODULE:
+    case PERIPH_AES_DMA_MODULE:
+    case PERIPH_SHA_DMA_MODULE:
+        return DPORT_PERIP_CLK_EN1_REG;
     default:
         return DPORT_PERIP_CLK_EN_REG;
     }
@@ -168,6 +230,13 @@ static inline uint32_t periph_ll_get_rst_en_reg(periph_module_t periph)
     case PERIPH_WIFI_MODULE:
     case PERIPH_WIFI_BT_COMMON_MODULE:
         return DPORT_CORE_RST_EN_REG;
+    case PERIPH_AES_MODULE:
+    case PERIPH_SHA_MODULE:
+    case PERIPH_RSA_MODULE:
+    case PERIPH_CRYPTO_DMA_MODULE:
+    case PERIPH_AES_DMA_MODULE:
+    case PERIPH_SHA_DMA_MODULE:
+        return DPORT_PERIP_RST_EN1_REG;
     default:
         return DPORT_PERIP_RST_EN_REG;
     }

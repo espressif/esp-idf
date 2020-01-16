@@ -69,24 +69,6 @@
 #define SHA_H_BASE                    ((DR_REG_SHA_BASE) + 0x40)
 #define SHA_TEXT_BASE                 ((DR_REG_SHA_BASE) + 0x80)
 
-/* AES Block operation modes */
-#define AES_BLOCK_MODE_ECB     0
-#define AES_BLOCK_MODE_CBC     1
-#define AES_BLOCK_MODE_OFB     2
-#define AES_BLOCK_MODE_CTR     3
-#define AES_BLOCK_MODE_CFB8    4
-#define AES_BLOCK_MODE_CFB128  5
-#define AES_BLOCK_MODE_GCM     6
-
-/* AES Block operation modes (used with DMA) */
-#define AES_BLOCK_MODE_ECB     0
-#define AES_BLOCK_MODE_CBC     1
-#define AES_BLOCK_MODE_OFB     2
-#define AES_BLOCK_MODE_CTR     3
-#define AES_BLOCK_MODE_CFB8    4
-#define AES_BLOCK_MODE_CFB128  5
-#define AES_BLOCK_MODE_GCM     6
-
 /* AES acceleration registers */
 #define AES_MODE_REG            ((DR_REG_AES_BASE) + 0x40)
 #define AES_ENDIAN_REG          ((DR_REG_AES_BASE) + 0x44)

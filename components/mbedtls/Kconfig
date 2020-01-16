@@ -189,12 +189,32 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
         default y
-        depends on !IDF_TARGET_ESP32S2
         help
             Enable hardware accelerated AES encryption & decryption.
 
             Note that if the ESP32 CPU is running at 240MHz, hardware AES does not
             offer any speed boost over software AES.
+
+    config MBEDTLS_AES_USE_INTERRUPT
+        bool "Use interrupt for long AES operations"
+        depends on MBEDTLS_HARDWARE_AES
+        default y
+        help
+            Use an interrupt to coordinate long AES operations.
+
+            This allows other code to run on the CPU while an AES operation is pending.
+            Otherwise the CPU busy-waits.
+
+    config MBEDTLS_HARDWARE_GCM
+        bool "Enable partially hardware accelerated GCM"
+        #depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
+        depends on 0
+        default n
+        help
+            Enable partially hardware accelerated GCM.
+
+            Due to hardware limitations, hardware acceleration currently does not
+            offer any speed boost over software GCM with hardware accelerated AES operations.
 
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
@@ -211,11 +231,10 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
         default y
-        depends on !IDF_TARGET_ESP32S2
         help
             Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
 
-            Due to a hardware limitation, hardware acceleration is only
+            Due to a hardware limitation, on the ESP32 hardware acceleration is only
             guaranteed if SHA digests are calculated one at a time. If more
             than one SHA digest is calculated at the same time, one will
             be calculated fully in hardware and the rest will be calculated

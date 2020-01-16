@@ -74,14 +74,15 @@ target_sources(mbedtls PRIVATE  "${COMPONENT_DIR}/port/mbedtls_debug.c"
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/esp_hardware.c"
                                 "${COMPONENT_DIR}/port/esp_mem.c"
-                                "${COMPONENT_DIR}/port/esp_sha.c"
-                                "${COMPONENT_DIR}/port/esp_sha1.c"
-                                "${COMPONENT_DIR}/port/esp_sha256.c"
-                                "${COMPONENT_DIR}/port/esp_sha512.c"
                                 "${COMPONENT_DIR}/port/esp_timing.c"
+                                "${COMPONENT_DIR}/port/esp_sha.c"
+                                "${COMPONENT_DIR}/port/esp_aes_xts.c"
                                 "${COMPONENT_DIR}/port/${idf_target}/esp_bignum.c"
                                 "${COMPONENT_DIR}/port/${idf_target}/aes.c"
-                                "${COMPONENT_DIR}/port/${idf_target}/sha.c")
+                                "${COMPONENT_DIR}/port/${idf_target}/sha.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/esp_sha1.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/esp_sha256.c"
+                                "${COMPONENT_DIR}/port/${idf_target}/esp_sha512.c")
 
 foreach(target ${mbedtls_targets})
     target_compile_definitions(${target} PUBLIC -DMBEDTLS_CONFIG_FILE="mbedtls/esp_config.h")
