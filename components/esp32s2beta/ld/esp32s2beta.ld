@@ -48,7 +48,7 @@ MEMORY
 
   /* Even though the segment name is iram, it is actually mapped to flash
   */
-  iram0_2_seg (RX) :                 org = 0x40080020, len = 0x380000-0x20
+  iram0_2_seg (RX) :                 org = 0x40080020, len = 0x780000-0x20
 
   /*
     (0x20 offset above is a convenience for the app binary image generation.

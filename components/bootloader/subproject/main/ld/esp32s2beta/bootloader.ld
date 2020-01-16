@@ -5,9 +5,9 @@
 
 MEMORY
 {
-  iram_loader_seg (RWX) :           org = 0x40060000, len = 0x4000  /* 16KB, SRAM Block_18 */
-  iram_seg (RWX) :                  org = 0x40064000, len = 0x4000  /* 16KB, SRAM Block_19 */
-  dram_seg (RW) :                   org = 0x3FFF8000, len = 0x4000  /* 16KB, SRAM Block_20 */
+  iram_loader_seg (RWX) :           org = 0x40050000, len = 0x4000  /* 16KB, SRAM Block_14 */
+  iram_seg (RWX) :                  org = 0x40054000, len = 0x4000  /* 16KB, SRAM Block_15 */
+  dram_seg (RW) :                   org = 0x3FFE8000, len = 0x2800  /* 10KB, Top of SRAM Block_16, and before ROM data and stack */
 }
 
 /*  Default entry point:  */
