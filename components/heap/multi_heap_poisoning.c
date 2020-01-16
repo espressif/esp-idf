@@ -241,21 +241,6 @@ void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     return data;
 }
 
-void multi_heap_aligned_free(multi_heap_handle_t heap, void *p)
-{
-    multi_heap_internal_lock(heap);
-    poison_head_t *head = verify_allocated_region(p, true);
-    assert(head != NULL); 
-
-#ifdef SLOW
-    /* replace everything with FREE_FILL_PATTERN, including the poison head/tail */
-    memset(head, FREE_FILL_PATTERN, head->alloc_size + POISON_OVERHEAD);
-#endif
-
-    multi_heap_aligned_free_impl(heap, head);
-    multi_heap_internal_unlock(heap);
-}
-
 void multi_heap_free(multi_heap_handle_t heap, void *p)
 {
     if (p == NULL) {
@@ -274,6 +259,11 @@ void multi_heap_free(multi_heap_handle_t heap, void *p)
     multi_heap_free_impl(heap, head);
 
     multi_heap_internal_unlock(heap);
+}
+
+void multi_heap_aligned_free(multi_heap_handle_t heap, void *p)
+{
+    multi_heap_free(heap, p);
 }
 
 void *multi_heap_realloc(multi_heap_handle_t heap, void *p, size_t size)
@@ -337,17 +327,6 @@ void *multi_heap_get_block_address(multi_heap_block_handle_t block)
     return head + sizeof(poison_head_t);
 }
 
-size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
-{
-    poison_head_t *head = verify_allocated_region(p, true);
-    assert(head != NULL);
-    size_t result = multi_heap_get_allocated_size_impl(heap, head);
-    if (result > 0) {
-        return result - POISON_OVERHEAD;
-    }
-    return 0;
-}
-
 void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
 {
     return MULTI_HEAP_GET_BLOCK_OWNER((poison_head_t*)multi_heap_get_block_address_impl(block));
@@ -369,6 +348,14 @@ static inline void subtract_poison_overhead(size_t *arg) {
     } else {
         *arg = 0;
     }
+}
+
+size_t multi_heap_get_allocated_size(multi_heap_handle_t heap, void *p)
+{
+    poison_head_t *head = verify_allocated_region(p, true);
+    assert(head != NULL);
+    size_t result = multi_heap_get_allocated_size_impl(heap, head);
+    return result;
 }
 
 void multi_heap_get_info(multi_heap_handle_t heap, multi_heap_info_t *info)

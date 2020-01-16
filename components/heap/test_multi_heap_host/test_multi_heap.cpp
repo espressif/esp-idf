@@ -18,7 +18,7 @@
 
 TEST_CASE("multi_heap simple allocations", "[multi_heap]")
 {
-    uint8_t small_heap[128];
+    uint8_t small_heap[10 * 1024];
 
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
@@ -59,10 +59,10 @@ TEST_CASE("multi_heap simple allocations", "[multi_heap]")
 
 TEST_CASE("multi_heap fragmentation", "[multi_heap]")
 {
-    uint8_t small_heap[256];
+    uint8_t small_heap[10 * 1024];
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
-    const size_t alloc_size = 24;
+    const size_t alloc_size = 1350;
 
     void *p[4];
     for (int i = 0; i < 4; i++) {
@@ -85,13 +85,14 @@ TEST_CASE("multi_heap fragmentation", "[multi_heap]")
     multi_heap_free(heap, p[0]);
     multi_heap_free(heap, p[1]);
     multi_heap_free(heap, p[3]);
-
+             
     printf("1 allocations:\n");
     multi_heap_dump(heap);
     printf("****************\n");
 
     void *big = multi_heap_malloc(heap, alloc_size * 3);
-    REQUIRE( p[3] == big ); /* big should go where p[3] was freed from */
+    //Blocks in TLSF are organized in different form, so this makes no sense
+    //REQUIRE( p[3] == big ); /* big should go where p[3] was freed from */
     multi_heap_free(heap, big);
 
     multi_heap_free(heap, p[2]);
@@ -101,7 +102,8 @@ TEST_CASE("multi_heap fragmentation", "[multi_heap]")
     printf("****************\n");
 
     big = multi_heap_malloc(heap, alloc_size * 2);
-    REQUIRE( p[0] == big ); /* big should now go where p[0] was freed from */
+    //Blocks in TLSF are organized in different form, so this makes no sense
+    //REQUIRE( p[0] == big ); /* big should now go where p[0] was freed from */
     multi_heap_free(heap, big);
 }
 
@@ -109,7 +111,7 @@ TEST_CASE("multi_heap fragmentation", "[multi_heap]")
 TEST_CASE("multi_heap defrag", "[multi_heap]")
 {
     void *p[4];
-    uint8_t small_heap[512];
+    uint8_t small_heap[10 * 1024];
     multi_heap_info_t info, info2;
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
@@ -159,7 +161,7 @@ TEST_CASE("multi_heap defrag", "[multi_heap]")
 TEST_CASE("multi_heap defrag realloc", "[multi_heap]")
 {
     void *p[4];
-    uint8_t small_heap[512];
+    uint8_t small_heap[10 * 1024];
     multi_heap_info_t info, info2;
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
@@ -204,7 +206,7 @@ TEST_CASE("multi_heap defrag realloc", "[multi_heap]")
 
 TEST_CASE("multi_heap many random allocations", "[multi_heap]")
 {
-    uint8_t big_heap[1024];
+    uint8_t big_heap[64 * 1024];
     const int NUM_POINTERS = 64;
 
     printf("Running multi-allocation test...\n");
@@ -296,7 +298,7 @@ TEST_CASE("multi_heap many random allocations", "[multi_heap]")
 
 TEST_CASE("multi_heap_get_info() function", "[multi_heap]")
 {
-    uint8_t heapdata[256];
+    uint8_t heapdata[10 * 1024];
     multi_heap_handle_t heap = multi_heap_register(heapdata, sizeof(heapdata));
     multi_heap_info_t before, after, freed;
 
@@ -349,25 +351,26 @@ TEST_CASE("multi_heap_get_info() function", "[multi_heap]")
 
 TEST_CASE("multi_heap minimum-size allocations", "[multi_heap]")
 {
-    uint8_t heapdata[16384];
-    void *p[sizeof(heapdata) / sizeof(void *)];
+    uint8_t heapdata[4096];
+    void *p[sizeof(heapdata) / sizeof(void *)] = {NULL};
     const size_t NUM_P = sizeof(p) / sizeof(void *);
+    size_t allocated_size = 0;
     multi_heap_handle_t heap = multi_heap_register(heapdata, sizeof(heapdata));
-
     size_t before_free = multi_heap_free_size(heap);
 
     size_t i;
     for (i = 0; i < NUM_P; i++) {
+        //TLSF minimum block size is 4 bytes
         p[i] = multi_heap_malloc(heap, 1);
         if (p[i] == NULL) {
             break;
-        }
+        } 
     }
 
     REQUIRE( i < NUM_P); // Should have run out of heap before we ran out of pointers
     printf("Allocated %zu minimum size chunks\n", i);
-
-    REQUIRE( 0 == multi_heap_free_size(heap) );
+    
+    REQUIRE(multi_heap_free_size(heap) < before_free);
     multi_heap_check(heap, true);
 
     /* Free in random order */
@@ -391,7 +394,7 @@ TEST_CASE("multi_heap minimum-size allocations", "[multi_heap]")
 TEST_CASE("multi_heap_realloc()", "[multi_heap]")
 {
     const uint32_t PATTERN = 0xABABDADA;
-    uint8_t small_heap[300];
+    uint8_t small_heap[10 * 1024];
     multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
 
     uint32_t *a = (uint32_t *)multi_heap_malloc(heap, 64);
@@ -427,9 +430,9 @@ TEST_CASE("multi_heap_realloc()", "[multi_heap]")
     REQUIRE( f == b ); /* 'b' should be extended in-place, over space formerly occupied by 'd' */
 
 #ifdef MULTI_HEAP_POISONING
-#define TOO_MUCH 92 + 1
+#define TOO_MUCH 7420 + 1
 #else
-#define TOO_MUCH 128 + 1
+#define TOO_MUCH 7420 + 1
 #endif
     /* not enough contiguous space left in the heap */
     uint32_t *g = (uint32_t *)multi_heap_realloc(heap, e, TOO_MUCH);
@@ -443,57 +446,12 @@ TEST_CASE("multi_heap_realloc()", "[multi_heap]")
 #endif
 }
 
-TEST_CASE("corrupt heap block", "[multi_heap]")
-{
-    uint8_t small_heap[256];
-    multi_heap_handle_t heap = multi_heap_register(small_heap, sizeof(small_heap));
+//TEST_CASE("corrupt heap block", "[multi_heap]"), this 
+// test will crash since heap check failling will trigger
+// an assert failure.
 
-    void *a = multi_heap_malloc(heap, 32);
-    REQUIRE( multi_heap_check(heap, true) );
-    memset(a, 0xEE, 64);
-    REQUIRE( !multi_heap_check(heap, true) );
-}
-
-TEST_CASE("unaligned heaps", "[multi_heap]")
-{
-    const size_t CHUNK_LEN = 256;
-    const size_t CANARY_LEN = 16;
-    const uint8_t CANARY_BYTE = 0x3E;
-    uint8_t heap_chunk[CHUNK_LEN + CANARY_LEN * 2];
-
-    /* Put some canary bytes before and after the bytes we intend to use for
-       the heap, make sure they aren't ever overwritten */
-    memset(heap_chunk, CANARY_BYTE, CANARY_LEN);
-    memset(heap_chunk + CANARY_LEN + CHUNK_LEN, CANARY_BYTE, CANARY_LEN);
-
-    for (int i = 0; i < 8; i++) {
-        printf("Testing with offset %d\n", i);
-        multi_heap_handle_t heap = multi_heap_register(heap_chunk + CANARY_LEN + i, CHUNK_LEN - i);
-        multi_heap_info_t info;
-
-        REQUIRE( multi_heap_check(heap, true) );
-
-        multi_heap_get_info(heap, &info);
-
-        REQUIRE( info.total_free_bytes > CHUNK_LEN - 64 - i );
-        REQUIRE( info.largest_free_block > CHUNK_LEN - 64 - i );
-
-        void *a = multi_heap_malloc(heap, info.largest_free_block);
-        REQUIRE( a != NULL );
-        memset(a, 0xAA, info.largest_free_block);
-
-        REQUIRE( multi_heap_check(heap, true) );
-
-        multi_heap_free(heap, a);
-
-        REQUIRE( multi_heap_check(heap, true) );
-
-        for (unsigned j = 0; j < CANARY_LEN; j++) { // check canaries
-            REQUIRE( heap_chunk[j] == CANARY_BYTE );
-            REQUIRE( heap_chunk[CHUNK_LEN + CANARY_LEN + j] == CANARY_BYTE );
-        }
-    }
-}
+// TLSF only accepts heaps aligned to 4-byte boundary so
+// unaligned test does not make sense
 
 TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
 {
@@ -508,7 +466,7 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
     multi_heap_dump(heap);
     printf("*********************\n");
 
-    for(;aligments < 500 * 1024; aligments++) {
+    for(;aligments <= 128 * 1024; aligments++) {
 
         //Use some stupid size value to test correct alignment even in strange
         //memory layout objects:
@@ -525,7 +483,6 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
             //printf("[ALIGNED_ALLOC] allocated size: %d \n", multi_heap_get_allocated_size(heap, buf));    
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-
             if((aligments & 0x03) == 0) {
                 //Alignment is a multiple of four:
                 REQUIRE(((intptr_t)buf & 0x03) == 0);
@@ -538,7 +495,7 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
             //canary verification will fail:
             memset(buf, 0xA5, (aligments + 137));
 
-            multi_heap_aligned_free(heap, buf);    
+            multi_heap_free(heap, buf);    
         }
     }
 

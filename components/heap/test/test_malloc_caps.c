@@ -34,8 +34,8 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     free32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     printf("Free 8bit-capable memory (both reduced): %dK, 32-bit capable memory %dK\n", free8, free32);
     //Both should have gone down by 10K; 8bit capable ram is also 32-bit capable
-    TEST_ASSERT(free8<(free8start-10*1024));
-    TEST_ASSERT(free32<(free32start-10*1024));
+    TEST_ASSERT(free8<=(free8start-10*1024));
+    TEST_ASSERT(free32<=(free32start-10*1024));
     //Assume we got DRAM back
     TEST_ASSERT((((int)m1)&0xFF000000)==0x3F000000);
     free(m1);
@@ -55,7 +55,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
         free32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
         printf("Free 8bit-capable memory (after 32-bit): %dK, 32-bit capable memory %dK\n", free8, free32);
         //Only 32-bit should have gone down by alloc32: 32-bit isn't necessarily 8bit capable
-        TEST_ASSERT(free32<(free32start-alloc32));
+        TEST_ASSERT(free32<=(free32start-alloc32));
         TEST_ASSERT(free8==free8start);
         free(m1);
     } else {
@@ -121,8 +121,8 @@ TEST_CASE("IRAM_8BIT capability test", "[heap]")
 
     TEST_ASSERT((((int)ptr)&0xFF000000)==0x40000000);
 
-    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT) == (free_size - largest_free_size));
-    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_32BIT) == (free_size32 - largest_free_size));
+    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT) == (free_size - heap_caps_get_allocated_size(ptr)));
+    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_32BIT) == (free_size32 - heap_caps_get_allocated_size(ptr)));
 
     free(ptr);
 }
@@ -133,7 +133,6 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     /* need to print something as first printf allocates some heap */
     printf("heap_caps metadata test\n");
     heap_caps_print_heap_info(MALLOC_CAP_8BIT);
-    heap_caps_print_heap_info(MALLOC_CAP_32BIT);
 
     multi_heap_info_t original;
     heap_caps_get_info(&original, MALLOC_CAP_8BIT);
@@ -151,6 +150,10 @@ TEST_CASE("heap_caps metadata test", "[heap]")
 
     free(b);
     heap_caps_get_info(&after, MALLOC_CAP_8BIT);
+    
+    printf("\n\n After test, heap status:\n");
+    heap_caps_print_heap_info(MALLOC_CAP_8BIT);
+
     /* Allow some leeway here, because LWIP sometimes allocates up to 144 bytes in the background
        as part of timer management.
     */
@@ -158,6 +161,8 @@ TEST_CASE("heap_caps metadata test", "[heap]")
     TEST_ASSERT_INT32_WITHIN(200, after.largest_free_block, original.largest_free_block);
     TEST_ASSERT(after.minimum_free_bytes < original.total_free_bytes);
 }
+
+#ifndef CONFIG_SPIRAM
 
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
@@ -167,9 +172,9 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
     spi_flash_guard_get()->start(); // Disables flash cache
 
     bool result = true;
-    void *x = heap_caps_malloc(64, MALLOC_CAP_32BIT);
+    void *x = heap_caps_malloc(64, MALLOC_CAP_EXEC);
     result = result && (x != NULL);
-    void *y = heap_caps_realloc(x, 32, MALLOC_CAP_32BIT);
+    void *y = heap_caps_realloc(x, 32, MALLOC_CAP_EXEC);
     result = result && (y != NULL);
     heap_caps_free(y);
 
@@ -177,6 +182,7 @@ static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 
     return result;
 }
+
 
 TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
 {
@@ -241,3 +247,4 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
 
     (void)ptr;
 }
+#endif
