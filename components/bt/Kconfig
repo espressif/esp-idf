@@ -29,6 +29,19 @@ config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF
     default 1 if BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
     default 0
 
+config BTDM_CONTROLLER_AUTO_LATENCY
+    bool "Auto latency"
+    depends on BT_ENABLED
+    default n
+    help
+        BLE auto latency, used to enhance classic BT performance
+        while classic BT and BLE are enabled at the same time.
+
+config BTDM_CONTROLLER_AUTO_LATENCY_EFF
+    bool
+    default BTDM_CONTROLLER_AUTO_LATENCY if BT_ENABLED
+    default n
+
 choice BTDM_CONTROLLER_PINNED_TO_CORE_CHOICE
     prompt "The cpu core which bluetooth controller run"
     depends on BT_ENABLED && !FREERTOS_UNICORE
