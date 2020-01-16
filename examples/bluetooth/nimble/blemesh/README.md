@@ -6,7 +6,7 @@ This example implements Bluetooth Mesh node that supports On/Off and Level model
 
 It has suport for both Advertising Bearer and GATT Bearer.
 
-For more information on NimBLE MESH, please visit [NimBLE_MESH](https://mynewt.apache.org/latest/network/docs/mesh/index.html#bluetooth-mesh).
+For more information on NimBLE MESH, please visit [NimBLE_MESH](https://mynewt.apache.org/latest/network/mesh/index.html#bluetooth-mesh).
 
 It uses ESP32's Bluetooth controller and NimBLE stack based BLE host.
 
