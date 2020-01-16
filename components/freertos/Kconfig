@@ -420,4 +420,12 @@ menu "FreeRTOS"
         help
             Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
 
+    config FREERTOS_FPU_IN_ISR
+        bool "Allow use of float inside Level 1 ISR (EXPERIMENTAL)"
+        depends on IDF_TARGET_ESP32
+        default n
+        help
+            When enabled, the usage of float type is allowed inside Level 1
+            ISRs.
+
 endmenu

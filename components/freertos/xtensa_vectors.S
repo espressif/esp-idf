@@ -955,7 +955,12 @@ _xt_coproc_exc:
 
     /* Get co-processor state save area of new owner thread. */
     call0   XT_RTOS_CP_STATE                /* a15 = new owner's save area */
-    beqz    a15, .L_goto_invalid            /* not in a thread (invalid) */
+
+    #ifndef CONFIG_FREERTOS_FPU_IN_ISR     
+    beqz    a15, .L_goto_invalid
+    #endif
+    
+    /*When FPU in ISR is enabled we could deal with zeroed a15 */
 
     /* Enable the co-processor's bit in CPENABLE. */
     movi    a0, _xt_coproc_mask
@@ -997,7 +1002,13 @@ locking.
     rsync                                    /* ensure wsr.CPENABLE is complete */
 
     /* Only need to context switch if new owner != old owner. */
+    /* If float is necessary on ISR, we need to remove this check */
+    /* below, because on restoring from ISR we may have new == old condition used
+     * to force cp restore to next thread
+     */
+    #ifndef CONFIG_FREERTOS_FPU_IN_ISR     
     beq     a15, a2, .L_goto_done           /* new owner == old, we're done */
+    #endif
 
     /* If no old owner then nothing to save. */
     beqz    a2, .L_check_new
@@ -1039,6 +1050,7 @@ locking.
 .L_check_new:
     /* Check if any state has to be restored for new owner. */
     /* NOTE: a15 = new owner's save area, cannot be zero when we get here. */
+    beqz    a15, .L_xt_coproc_done
 
     l16ui   a3,  a15, XT_CPSTORED           /* a3 = new owner's CPSTORED */
     movi    a4, _xt_coproc_sa_offset
@@ -1132,7 +1144,6 @@ _xt_lowint1:
     wsr     a0, EXCSAVE_1
     #endif
     #endif
-
 
     /* Save rest of interrupt context and enter RTOS. */
     call0   XT_RTOS_INT_ENTER               /* common RTOS interrupt entry */
