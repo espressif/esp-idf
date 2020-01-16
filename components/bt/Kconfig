@@ -76,6 +76,19 @@ config BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF
     default 1 if BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_PCM
     default 0
 
+config BTDM_CONTROLLER_AUTO_LATENCY
+    bool "Auto latency"
+    depends on BTDM_CONTROLLER_MODE_BTDM
+    default n
+    help
+        BLE auto latency, used to enhance classic BT performance
+        while classic BT and BLE are enabled at the same time.
+
+config BTDM_CONTROLLER_AUTO_LATENCY_EFF
+    bool
+    default BTDM_CONTROLLER_AUTO_LATENCY if BTDM_CONTROLLER_MODE_BTDM
+    default n
+
 config BTDM_CONTROLLER_BLE_MAX_CONN_EFF
     int
     default BTDM_CONTROLLER_BLE_MAX_CONN if BTDM_CONTROLLER_MODE_BLE_ONLY || BTDM_CONTROLLER_MODE_BTDM
