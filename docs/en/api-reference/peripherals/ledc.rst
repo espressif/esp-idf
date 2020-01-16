@@ -1,12 +1,14 @@
 LED Control
 ===========
 
+:link_to_translation:`zh_CN:[中文]`
+
 Introduction
 ------------
 
 The LED control (LEDC) peripheral is primarily designed to control the intensity of LEDs, although it can also be used to generate PWM signals for other purposes as well. It has 16 channels which can generate independent waveforms that can be used, for example, to drive RGB LED devices. 
 
-A half of LEDC's channels operate in high speed mode. This mode is implemented in hardware and offers automatic and glitch-free changing of the PWM duty cycle. The other half of channels operate in low speed mode, where the moment of change depends on the application software. Each group of channels is also able to use different clock sources, but this feature is not yet supported in the LEDC driver.
+A half of LEDC's channels operate in high speed mode. This mode is implemented in hardware and offers automatic and glitch-free changing of the PWM duty cycle. The other half of channels operate in low speed mode, where the moment of change depends on the application software. Each group of channels is also able to use different clock sources.
 
 The PWM controller can automatically increase or decrease the duty cycle gradually, allowing for fades without any processor interference.
 
@@ -113,7 +115,7 @@ There are several lower level timer-specific functions that can be used to chang
 * :cpp:func:`ledc_timer_pause`
 * :cpp:func:`ledc_timer_resume`
 
-The first two functions are called "behind the scenes" by :cpp:func:`ledc_channel_config` to provide a "clean" startup of a timer after it is configured.
+The first two functions are called "behind the scenes" by :cpp:func:`ledc_channel_config` to provide a startup of a timer after it is configured.
 
 
 Use Interrupts
@@ -131,7 +133,7 @@ LEDC High and Low Speed Mode
 
 Of the total 8 timers and 16 channels available in the LED PWM Controller, half of them are dedicated to operation in high speed mode and the other half in low speed mode. Selection of a low or high speed timer or channel is done with the parameter :cpp:type:`ledc_mode_t` that can be found in applicable function calls.
 
-The advantage of high speed mode is hardware-supported, glitch-free changeover of the timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called. 
+The advantage of high speed mode is glitch-free changeover of the timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called. 
 
 For additional details regarding speed modes, refer to `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf>`_ (PDF). Please note that the support for ``SLOW_CLOCK`` mentioned in this manual is not yet supported in the LEDC driver.
 
