@@ -478,6 +478,10 @@ esp_err_t esp_modem_stop_ppp(modem_dte_t *dte)
 {
     modem_dce_t *dce = dte->dce;
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
+    esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
+
+    /* post PPP mode stopped event */
+    esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_PPP_STOP, NULL, 0, 0);
     /* Enter command mode */
     MODEM_CHECK(dte->change_mode(dte, MODEM_COMMAND_MODE) == ESP_OK, "enter command mode failed", err);
     /* Hang up */
