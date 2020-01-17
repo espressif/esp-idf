@@ -287,34 +287,34 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
     switch (chip->read_mode) {
     case SPI_FLASH_QIO:
         //for QIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
-        addr_bitlen = 32;
-        dummy_cyclelen_base = 4;
+        addr_bitlen = SPI_FLASH_QIO_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_QIO_DUMMY_BITLEN;
         read_command = CMD_FASTRD_QIO;
         break;
     case SPI_FLASH_QOUT:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 8;
+        addr_bitlen = SPI_FLASH_QOUT_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_QOUT_DUMMY_BITLEN;
         read_command = CMD_FASTRD_QUAD;
         break;
     case SPI_FLASH_DIO:
         //for DIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
-        addr_bitlen = 28;
-        dummy_cyclelen_base = 2;
+        addr_bitlen = SPI_FLASH_DIO_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_DIO_DUMMY_BITLEN;
         read_command = CMD_FASTRD_DIO;
         break;
     case SPI_FLASH_DOUT:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 8;
+        addr_bitlen = SPI_FLASH_DOUT_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_DOUT_DUMMY_BITLEN;
         read_command = CMD_FASTRD_DUAL;
         break;
     case SPI_FLASH_FASTRD:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 8;
+        addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_FASTRD_DUMMY_BITLEN;
         read_command = CMD_FASTRD;
         break;
     case SPI_FLASH_SLOWRD:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 0;
+        addr_bitlen = SPI_FLASH_SLOWRD_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_SLOWRD_DUMMY_BITLEN;
         read_command = CMD_READ;
         break;
     default:

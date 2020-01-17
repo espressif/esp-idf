@@ -42,6 +42,9 @@
 /// Get the start address of SPI peripheral registers by the host ID
 #define spi_flash_ll_get_hw(host_id)  ((host_id)==SPI1_HOST? &SPI1:((host_id)==SPI2_HOST?&SPI2:((host_id)==SPI3_HOST?&SPI3:({abort();(spi_dev_t*)0;}))))
 
+/// Empty function to be compatible with new version chips.
+#define spi_flash_ll_set_dummy_out(dev, out_en, out_lev)
+
 /// type to store pre-calculated register value in above layers
 typedef typeof(SPI1.clock) spi_flash_ll_clock_reg_t;
 
@@ -317,6 +320,17 @@ static inline void spi_flash_ll_set_command8(spi_dev_t *dev, uint8_t command)
 }
 
 /**
+ * Get the address length that is set in register, in bits.
+ * 
+ * @param dev Beginning address of the peripheral registers.
+ * 
+ */ 
+static inline int spi_flash_ll_get_addr_bitlen(spi_dev_t *dev)
+{
+    return dev->user.usr_addr ? dev->user1.usr_addr_bitlen + 1 : 0;
+}
+
+/**
  * Set the address length to send, in bits. Should be called before commands that requires the address e.g. erase sector, read, write...
  *
  * @param dev Beginning address of the peripheral registers.
@@ -326,6 +340,17 @@ static inline void spi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitlen)
 {
     dev->user1.usr_addr_bitlen = (bitlen - 1);
     dev->user.usr_addr = bitlen ? 1 : 0;
+}
+
+/**
+ * Set the address to send in user command mode. Should be called before commands that requires the address e.g. erase sector, read, write...
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param addr Address to send
+ */
+static inline void spi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, int bit_len)
+{
+    dev->addr = (addr << (32 - bit_len));
 }
 
 /**

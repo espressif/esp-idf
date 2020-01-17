@@ -60,6 +60,7 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     spi_flash_ll_set_addr_bitlen(dev, addr_bitlen);
     // Add dummy cycles to compensate for latency of GPIO matrix and external delay, if necessary...
     spi_flash_ll_set_dummy(dev, COMPUTE_DUMMY_CYCLELEN(host, dummy_cyclelen_base));
+    spi_flash_ll_set_dummy_out(dev, 1, 1);
     //disable all data phases, enable them later if needed
     spi_flash_ll_set_miso_bitlen(dev, 0);
     spi_flash_ll_set_mosi_bitlen(dev, 0);
@@ -78,8 +79,7 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *host, spi_flash_
         spi_flash_ll_set_dummy(dev, 0);
     }
 
-    spi_flash_ll_set_address(dev, (trans->address & ADDRESS_MASK_24BIT) << 8);
-
+    spi_flash_ll_set_usr_address(dev, (trans->address & ADDRESS_MASK_24BIT), spi_flash_ll_get_addr_bitlen(dev));
     spi_flash_ll_set_mosi_bitlen(dev, trans->mosi_len * 8);
     spi_flash_ll_set_buffer_data(dev, trans->mosi_data, trans->mosi_len);
 
@@ -93,7 +93,7 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *host, spi_flash_
 esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *host, void *buffer, uint32_t address, uint32_t read_len)
 {
     spi_dev_t *dev = get_spi_dev(host);
-    spi_flash_ll_set_address(dev, address << 8);
+    spi_flash_ll_set_usr_address(dev, address, spi_flash_ll_get_addr_bitlen(dev));
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
     spi_flash_ll_user_start(dev);
     host->poll_cmd_done(host);
