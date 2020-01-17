@@ -207,10 +207,8 @@ esp_err_t esp_netif_ppp_set_auth(esp_netif_t *netif, esp_netif_auth_type_t autht
     if (netif == NULL || !netif->is_ppp_netif) {
         return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
     }
+#if PPP_AUTH_SUPPORT
     struct lwip_ppp_ctx *obj =  netif->lwip_ppp_ctx;
-#if PAP_SUPPORT
-    pppapi_set_auth(obj->ppp, authtype, user, passwd);
-#elif CHAP_SUPPORT
     pppapi_set_auth(obj->ppp, authtype, user, passwd);
 #else
 #error "Unsupported AUTH Negotiation"
