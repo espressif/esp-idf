@@ -50,3 +50,7 @@ a.internal + code.descname::before {
 a.internal + em::before {
   content: ' ';
 }
+
+.tool-sha256 {
+  word-break: break-all;
+}

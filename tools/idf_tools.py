@@ -57,6 +57,11 @@ import copy
 from collections import OrderedDict, namedtuple
 
 try:
+    import typing  # noqa: F401
+except ImportError:
+    pass
+
+try:
     from urllib.request import urlretrieve
 except ImportError:
     from urllib import urlretrieve
@@ -137,9 +142,9 @@ EXPORT_KEY_VALUE = 'key-value'
 
 global_quiet = False
 global_non_interactive = False
-global_idf_path = None
-global_idf_tools_path = None
-global_tools_json = None
+global_idf_path = None  # type: typing.Optional[str]
+global_idf_tools_path = None  # type: typing.Optional[str]
+global_tools_json = None  # type: typing.Optional[str]
 
 
 def fatal(text, *args):
@@ -356,7 +361,7 @@ class IDFToolVersion(object):
     def add_download(self, platform_name, url, size, sha256):
         self.downloads[platform_name] = IDFToolDownload(platform_name, url, size, sha256)
 
-    def get_download_for_platform(self, platform_name):
+    def get_download_for_platform(self, platform_name):  # type: (str) -> IDFToolDownload
         if platform_name in PLATFORM_FROM_NAME.keys():
             platform_name = PLATFORM_FROM_NAME[platform_name]
         if platform_name in self.downloads.keys():
@@ -367,6 +372,9 @@ class IDFToolVersion(object):
 
     def compatible_with_platform(self, platform_name=PYTHON_PLATFORM):
         return self.get_download_for_platform(platform_name) is not None
+
+    def get_supported_platforms(self):  # type: () -> typing.Set[str]
+        return set(self.downloads.keys())
 
 
 OPTIONS_LIST = ['version_cmd',
@@ -392,7 +400,7 @@ class IDFTool(object):
                  strip_container_dirs=0):
         self.name = name
         self.description = description
-        self.versions = OrderedDict()
+        self.versions = OrderedDict()  # type: typing.Dict[str, IDFToolVersion]
         self.version_in_path = None
         self.versions_installed = []
         if version_regex_replace is None:
@@ -403,7 +411,7 @@ class IDFTool(object):
         self._platform = CURRENT_PLATFORM
         self._update_current_options()
 
-    def copy_for_platform(self, platform):
+    def copy_for_platform(self, platform):  # type: (str) -> IDFTool
         result = copy.deepcopy(self)
         result._platform = platform
         result._update_current_options()
@@ -422,18 +430,18 @@ class IDFTool(object):
         assert(type(version) is IDFToolVersion)
         self.versions[version.version] = version
 
-    def get_path(self):
+    def get_path(self):  # type: () -> str
         return os.path.join(global_idf_tools_path, 'tools', self.name)
 
-    def get_path_for_version(self, version):
+    def get_path_for_version(self, version):  # type: (str) -> str
         assert(version in self.versions)
         return os.path.join(self.get_path(), version)
 
-    def get_export_paths(self, version):
+    def get_export_paths(self, version):  # type: (str) -> typing.List[str]
         tool_path = self.get_path_for_version(version)
         return [os.path.join(tool_path, *p) for p in self._current_options.export_paths]
 
-    def get_export_vars(self, version):
+    def get_export_vars(self, version):  # type: (str) -> typing.Dict[str]
         """
         Get the dictionary of environment variables to be exported, for the given version.
         Expands:
@@ -448,7 +456,7 @@ class IDFTool(object):
             result[k] = v_repl
         return result
 
-    def check_version(self, extra_paths=None):
+    def check_version(self, extra_paths=None):  # type: (typing.Optional[typing.List[str]]) -> str
         """
         Execute the tool, optionally prepending extra_paths to PATH,
         extract the version string and return it as a result.
@@ -480,6 +488,12 @@ class IDFTool(object):
 
     def compatible_with_platform(self):
         return any([v.compatible_with_platform() for v in self.versions.values()])
+
+    def get_supported_platforms(self):  # type: () -> typing.Set[str]
+        result = set()
+        for v in self.versions.values():
+            result.update(v.get_supported_platforms())
+        return result
 
     def get_recommended_version(self):
         recommended_versions = [k for k, v in self.versions.items()
@@ -792,7 +806,7 @@ class IDFTool(object):
         return tool_json
 
 
-def load_tools_info():
+def load_tools_info():  # type: () -> typing.Dict[str, IDFTool]
     """
     Load tools metadata from tools.json, return a dictionary: tool name - tool info
     """
@@ -1267,6 +1281,87 @@ def action_validate(args):
     # on failure, this will raise an exception with a fairly verbose diagnostic message
 
 
+def action_gen_doc(args):
+    f = args.output
+    tools_info = load_tools_info()
+
+    def print_out(text):
+        f.write(text + '\n')
+
+    print_out(".. |zwsp| unicode:: U+200B")
+    print_out("   :trim:")
+    print_out("")
+
+    idf_gh_url = "https://github.com/espressif/esp-idf"
+    for tool_name, tool_obj in tools_info.items():
+        info_url = tool_obj.options.info_url
+        if idf_gh_url + "/tree" in info_url:
+            info_url = re.sub(idf_gh_url + r"/tree/\w+/(.*)", r":idf:`\1`", info_url)
+
+        license_url = "https://spdx.org/licenses/" + tool_obj.options.license
+
+        print_out("""
+.. _tool-{name}:
+
+{name}
+{underline}
+
+{description}
+
+.. include:: idf-tools-notes.inc
+   :start-after: tool-{name}-notes
+   :end-before: ---
+
+License: `{license} <{license_url}>`_
+
+More info: {info_url}
+
+.. list-table::
+   :widths: 10 10 80
+   :header-rows: 1
+
+   * - Platform
+     - Required
+     - Download
+""".rstrip().format(name=tool_name,
+                    underline=args.heading_underline_char * len(tool_name),
+                    description=tool_obj.description,
+                    license=tool_obj.options.license,
+                    license_url=license_url,
+                    info_url=info_url))
+
+        for platform_name in sorted(tool_obj.get_supported_platforms()):
+            platform_tool = tool_obj.copy_for_platform(platform_name)
+            install_type = platform_tool.get_install_type()
+            if install_type == IDFTool.INSTALL_NEVER:
+                continue
+            elif install_type == IDFTool.INSTALL_ALWAYS:
+                install_type_str = "required"
+            elif install_type == IDFTool.INSTALL_ON_REQUEST:
+                install_type_str = "optional"
+            else:
+                raise NotImplementedError()
+
+            version = platform_tool.get_recommended_version()
+            version_obj = platform_tool.versions[version]
+            download_obj = version_obj.get_download_for_platform(platform_name)
+
+            # Note: keep the list entries indented to the same number of columns
+            # as the list header above.
+            print_out("""
+   * - {}
+     - {}
+     - {}
+
+       .. rst-class:: tool-sha256
+
+          SHA256: {}
+""".strip('\n').format(platform_name, install_type_str, download_obj.url, download_obj.sha256))
+
+        print_out('')
+    print_out('')
+
+
 def main(argv):
     parser = argparse.ArgumentParser()
 
@@ -1327,6 +1422,11 @@ def main(argv):
         rewrite.add_argument('--output', help='Save new tools.json into this file')
 
         subparsers.add_parser('validate', help='Validate tools.json against schema file')
+
+        gen_doc = subparsers.add_parser('gen-doc', help='Write the list of tools as a documentation page')
+        gen_doc.add_argument('--output', type=argparse.FileType('w'), default=sys.stdout,
+                             help='Output file name')
+        gen_doc.add_argument('--heading-underline-char', help='Character to use when generating RST sections', default='~')
 
     args = parser.parse_args(argv)
 
