@@ -34,10 +34,10 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/cache.h"
 #include "esp32/spiram.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/spi_flash.h"
-#include "esp32s2beta/rom/cache.h"
-#include "esp32s2beta/spiram.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#include "esp32s2/rom/cache.h"
+#include "esp32s2/spiram.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #endif
@@ -57,7 +57,7 @@
 #define PAGE_IN_FLASH(page)     (page)
 #define INVALID_ENTRY_VAL DPORT_FLASH_MMU_TABLE_INVALID_VAL
 #define MMU_ADDR_MASK DPORT_MMU_ADDRESS_MASK
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define REGIONS_COUNT 6
 #define IROM0_PAGES_START (PRO_CACHE_IBUS0_MMU_START / sizeof(uint32_t))
 #define IROM0_PAGES_END (PRO_CACHE_IBUS1_MMU_END / sizeof(uint32_t))
@@ -250,7 +250,7 @@ esp_err_t IRAM_ATTR spi_flash_mmap_pages(const int *pages, size_t page_count, sp
                     DPORT_APP_FLASH_MMU_TABLE[i] = pages[pageno];
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
                     Cache_Invalidate_Addr(region_addr + (i - region_begin) * SPI_FLASH_MMU_PAGE_SIZE, SPI_FLASH_MMU_PAGE_SIZE);
 #endif
                     need_flush = true;
@@ -454,7 +454,7 @@ static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page, const void **o
     for (int j = 0; j < 2; j++) {
         for (int i = start[j]; i < end[j]; i++) {
             if (DPORT_SEQUENCE_REG_READ((uint32_t)&DPORT_PRO_FLASH_MMU_TABLE[i]) == PAGE_IN_FLASH(phys_page)) {
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
                 if (j == 0) { /* SPI_FLASH_MMAP_DATA */
                     *out_ptr = (const void *)(VADDR0_START_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[0]));
                 } else { /* SPI_FLASH_MMAP_INST */
@@ -495,7 +495,7 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
             Cache_Flush(1);
 #endif
             return true;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
             if (vaddr != NULL) {
                 Cache_Invalidate_Addr((uint32_t)vaddr, SPI_FLASH_MMU_PAGE_SIZE);
                 ret = true;

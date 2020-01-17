@@ -10,8 +10,8 @@
 #include "sdkconfig.h"
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
 #endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -107,7 +107,7 @@ TEST_CASE("local test sio", "[spi]")
     master_free_device_bus(spi);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //These tests are ESP32 only due to lack of runners
 /********************************************************************************
  *      Test SIO Master & Slave

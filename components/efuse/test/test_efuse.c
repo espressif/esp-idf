@@ -34,7 +34,7 @@ static void test_read_blob(void)
     TEST_ASSERT_EQUAL_INT(sizeof(mac) * 8, esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY));
     ESP_LOGI(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
     ESP_LOGI(TAG, "2. Check CRC by MAC");
     uint8_t crc;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &crc, 8));
@@ -510,7 +510,7 @@ TEST_CASE("Test esp_efuse_read_block esp_efuse_write_block functions", "[efuse]"
         printf("EFUSE_CODING_SCHEME_REPEAT\n");
         count_useful_reg = 4;
     }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
         printf("EFUSE_CODING_SCHEME_RS\n");
         count_useful_reg = 8;
@@ -573,7 +573,7 @@ TEST_CASE("Test Bits are not empty. Write operation is forbidden", "[efuse]")
             printf("EFUSE_CODING_SCHEME_REPEAT\n");
             count_useful_reg = 4;
         }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         if (coding_scheme == EFUSE_CODING_SCHEME_RS) {
             printf("EFUSE_CODING_SCHEME_RS\n");
             if (num_block == EFUSE_BLK1) {
@@ -741,7 +741,7 @@ TEST_CASE("Test a write/read protection", "[efuse]")
     test_rp(EFUSE_BLK1, ESP_EFUSE_RD_DIS_BLK1, true);
     test_rp(EFUSE_BLK2, ESP_EFUSE_RD_DIS_BLK2, false);
     test_rp(EFUSE_BLK3, ESP_EFUSE_RD_DIS_BLK3, false);
-#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
     test_wp(EFUSE_BLK2, ESP_EFUSE_WR_DIS_SYS_DATA_PART1);
     test_wp(EFUSE_BLK3, ESP_EFUSE_WR_DIS_USER_DATA);
 

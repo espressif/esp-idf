@@ -427,7 +427,7 @@ class ESP32DUT(IDFDUT):
 
 
 class ESP32S2DUT(IDFDUT):
-    TARGET = "esp32s2beta"
+    TARGET = "esp32s2"
     TOOLCHAIN_PREFIX = "xtensa-esp32s2-elf-"
 
     @classmethod

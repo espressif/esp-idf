@@ -19,8 +19,8 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
 #endif
 
 /* esp_system.h APIs relating to MAC addresses */
@@ -61,7 +61,7 @@ esp_err_t esp_base_mac_addr_get(uint8_t *mac)
 
 esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
     return ESP_ERR_NOT_SUPPORTED; // TODO: support custom MAC in efuse
 #else
     uint8_t version;
@@ -81,7 +81,7 @@ esp_err_t esp_efuse_mac_get_custom(uint8_t *mac)
         return ESP_ERR_INVALID_CRC;
     }
     return ESP_OK;
-#endif // IDF_TARGET_ESP32S2BETA
+#endif // IDF_TARGET_ESP32S2
 }
 
 esp_err_t esp_efuse_mac_get_default(uint8_t* mac)

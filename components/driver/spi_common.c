@@ -105,7 +105,7 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 
 static inline uint32_t get_dma_periph(int dma_chan)
 {
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     if (dma_chan == 1) {
         return PERIPH_SPI2_DMA_MODULE;
     } else if (dma_chan==2) {
@@ -135,7 +135,7 @@ bool spicommon_dma_chan_claim (int dma_chan)
 
 #if CONFIG_IDF_TARGET_ESP32
     periph_module_enable(get_dma_periph(dma_chan));
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     if (dma_chan==1) {
         periph_module_enable(PERIPH_SPI2_DMA_MODULE);
     } else if (dma_chan==2) {
@@ -167,7 +167,7 @@ bool spicommon_dma_chan_free(int dma_chan)
         //disable the DMA only when all the channels are freed.
         periph_module_disable(get_dma_periph(dma_chan));
     }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     if (dma_chan==1) {
         periph_module_disable(PERIPH_SPI2_DMA_MODULE);
     } else if (dma_chan==2) {
@@ -305,7 +305,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
                 gpio_set_direction(bus_config->mosi_io_num, GPIO_MODE_INPUT);
             }
             gpio_matrix_in(bus_config->mosi_io_num, spi_periph_signal[host].spid_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->mosi_io_num]);
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->mosi_io_num], FUNC_GPIO);
@@ -318,7 +318,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
                 gpio_set_direction(bus_config->miso_io_num, GPIO_MODE_INPUT);
             }
             gpio_matrix_in(bus_config->miso_io_num, spi_periph_signal[host].spiq_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->miso_io_num]);
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->miso_io_num], FUNC_GPIO);
@@ -327,7 +327,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             gpio_set_direction(bus_config->quadwp_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_out, false, false);
             gpio_matrix_in(bus_config->quadwp_io_num, spi_periph_signal[host].spiwp_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num]);
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadwp_io_num], FUNC_GPIO);
@@ -336,7 +336,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
             gpio_set_direction(bus_config->quadhd_io_num, GPIO_MODE_INPUT_OUTPUT);
             gpio_matrix_out(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_out, false, false);
             gpio_matrix_in(bus_config->quadhd_io_num, spi_periph_signal[host].spihd_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num]);
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->quadhd_io_num], FUNC_GPIO);
@@ -349,7 +349,7 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
                 gpio_set_direction(bus_config->sclk_io_num, GPIO_MODE_INPUT);
             }
             gpio_matrix_in(bus_config->sclk_io_num, spi_periph_signal[host].spiclk_in, false);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             PIN_INPUT_ENABLE(GPIO_PIN_MUX_REG[bus_config->sclk_io_num]);
 #endif
             PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[bus_config->sclk_io_num], FUNC_GPIO);
@@ -388,7 +388,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
         gpio_iomux_in(cs_io_num, spi_periph_signal[host].spics_in);
 #if CONFIG_IDF_TARGET_ESP32
         gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         gpio_iomux_out(cs_io_num, spi_periph_signal[host].func, false);
 #endif
     } else {

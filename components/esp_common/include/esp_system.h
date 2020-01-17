@@ -40,7 +40,7 @@ typedef enum {
 #define FOUR_UNIVERSAL_MAC_ADDR 4
 #if CONFIG_IDF_TARGET_ESP32
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_ESP32S2_UNIVERSAL_MAC_ADDRESSES
 #endif
 /** @endcond */
@@ -243,7 +243,7 @@ esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
  */
 typedef enum {
     CHIP_ESP32  = 1, //!< ESP32
-    CHIP_ESP32S2BETA = 2, //!< ESP32-S2 Beta
+    CHIP_ESP32S2 = 2, //!< ESP32-S2
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */

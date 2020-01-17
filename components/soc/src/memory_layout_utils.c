@@ -74,7 +74,7 @@ static void s_prepare_reserved_regions(soc_reserved_region_t *reserved, size_t c
     //ESP32 has a IRAM-only region 0x4008_0000 - 0x4009_FFFF, protect the used part
     reserved[1].start = (intptr_t)&_iram_start; /* IRAM used by code */
     reserved[1].end = (intptr_t)&_iram_end;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     //ESP32S2 has a big D/IRAM region, the part used by code is reserved
     //The address of the D/I bus are in the same order, directly shift IRAM address to get reserved DRAM address
     const uint32_t i_d_offset = SOC_IRAM_LOW - SOC_DRAM_LOW;

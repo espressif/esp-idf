@@ -18,7 +18,7 @@
 #define CACHE_LINE_SIZE         32
 #define CACHE_SIZE              (1 << 15)
 // Only test half due to lack of memory
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 // Default cache configuration - no override specified on
 // test_utils config
 #define CACHE_WAYS              8

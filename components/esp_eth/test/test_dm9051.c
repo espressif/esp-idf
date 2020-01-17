@@ -11,7 +11,7 @@
 #include "esp_log.h"
 #include "driver/gpio.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 static const char *TAG = "dm9051_test";
 

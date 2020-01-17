@@ -66,7 +66,7 @@ bool spi_flash_hal_host_idle(spi_flash_host_driver_t *chip_drv)
     if ((void*) dev == spi_flash_ll_get_hw(SPI_HOST)) {
 #if CONFIG_IDF_TARGET_ESP32
         idle &= spi_flash_ll_host_idle(&SPI0);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         idle &= spi_flash_ll_host_idle(&SPIMEM0);
 #endif
     }

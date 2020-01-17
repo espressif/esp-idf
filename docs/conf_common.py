@@ -95,10 +95,10 @@ kconfigs = find_component_files("../../components", "Kconfig")
 kconfig_projbuilds = find_component_files("../../components", "Kconfig.projbuild")
 sdkconfig_renames = find_component_files("../../components", "sdkconfig.rename")
 
-# trim the esp32s2beta component, until we have proper multi-target support
-kconfigs = [k for k in kconfigs if "esp32s2beta" not in k]
-kconfig_projbuilds = [k for k in kconfig_projbuilds if "esp32s2beta" not in k]
-sdkconfig_renames = [r for r in sdkconfig_renames if "esp32s2beta" not in r]
+# trim the esp32s2 component, until we have proper multi-target support
+kconfigs = [k for k in kconfigs if "esp32s2" not in k]
+kconfig_projbuilds = [k for k in kconfig_projbuilds if "esp32s2" not in k]
+sdkconfig_renames = [r for r in sdkconfig_renames if "esp32s2" not in r]
 
 kconfigs_source_path = '{}/inc/kconfigs_source.in'.format(builddir)
 kconfig_projbuilds_source_path = '{}/inc/kconfig_projbuilds_source.in'.format(builddir)

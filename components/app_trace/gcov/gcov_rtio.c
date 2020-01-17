@@ -26,8 +26,8 @@
 #include "hal/timer_ll.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/libc_stubs.h"
 #endif
 
 #if CONFIG_APPTRACE_GCOV_ENABLE

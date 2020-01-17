@@ -121,7 +121,7 @@ typedef enum {
 #define TOUCH_TRIGGER_MODE_DEFAULT      (TOUCH_TRIGGER_BELOW)   /*!<Interrupts can be triggered if sensor value gets below or above threshold */
 #define TOUCH_TRIGGER_SOURCE_DEFAULT    (TOUCH_TRIGGER_SOURCE_SET1)  /*!<The wakeup trigger source can be SET1 or both SET1 and SET2 */
 
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 /**
  * Excessive total time will slow down the touch response.
  * Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
@@ -137,7 +137,7 @@ typedef enum {
                                                     Range: 0 ~ 0xffff */
 #endif // CONFIG_IDF_TARGET_ESP32
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 
 typedef enum {
     TOUCH_PAD_INTR_DONE = 0,    /*!<Each enabled channel measure done */
@@ -261,4 +261,4 @@ typedef struct {
     bool en_proximity;              /*!<enable proximity function for sleep pad */
 } touch_pad_sleep_channel_t;
 
-#endif // CONFIG_IDF_TARGET_ESP32S2BETA
+#endif // CONFIG_IDF_TARGET_ESP32S2

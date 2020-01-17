@@ -17,7 +17,7 @@ case $IDF_TARGET in
         PREFIX=xtensa-esp32-elf-
         LIB_DIR=esp32
         ;;
-    esp32s2beta)
+    esp32s2)
         PREFIX=xtensa-esp32s2-elf-
         LIB_DIR=esp32s2beta
         ;;

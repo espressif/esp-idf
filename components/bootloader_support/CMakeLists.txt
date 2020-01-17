@@ -12,7 +12,7 @@ set(srcs
     )
 
 if(IDF_TARGET STREQUAL "esp32")
-    # Not supported on ESP32S2Beta yet
+    # Not supported on ESP32S2 yet
     list(APPEND srcs "src/flash_encrypt.c")
 endif()
 

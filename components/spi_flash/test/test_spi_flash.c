@@ -120,7 +120,7 @@ typedef struct {
     size_t repeat_count;
 } block_task_arg_t;
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #define int_clr_timers int_clr
 #endif
 

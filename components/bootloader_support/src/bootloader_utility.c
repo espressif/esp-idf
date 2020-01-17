@@ -29,16 +29,16 @@
 #include "esp32/rom/uart.h"
 #include "esp32/rom/gpio.h"
 #include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/cache.h"
-#include "esp32s2beta/rom/efuse.h"
-#include "esp32s2beta/rom/ets_sys.h"
-#include "esp32s2beta/rom/spi_flash.h"
-#include "esp32s2beta/rom/crc.h"
-#include "esp32s2beta/rom/rtc.h"
-#include "esp32s2beta/rom/uart.h"
-#include "esp32s2beta/rom/gpio.h"
-#include "esp32s2beta/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/cache.h"
+#include "esp32s2/rom/efuse.h"
+#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/spi_flash.h"
+#include "esp32s2/rom/crc.h"
+#include "esp32s2/rom/rtc.h"
+#include "esp32s2/rom/uart.h"
+#include "esp32s2/rom/gpio.h"
+#include "esp32s2/rom/secure_boot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #else
@@ -679,7 +679,7 @@ static void set_cache_and_start_app(
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Flush(0);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     uint32_t autoload = Cache_Suspend_ICache();
     Cache_Invalidate_ICache_All();
 #endif
@@ -691,7 +691,7 @@ static void set_cache_and_start_app(
     for (int i = 0; i < DPORT_FLASH_MMU_TABLE_SIZE; i++) {
         DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
     }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     for (int i = 0; i < FLASH_MMU_TABLE_SIZE; i++) {
         FLASH_MMU_TABLE[i] = MMU_TABLE_INVALID_VAL;
     }
@@ -702,7 +702,7 @@ static void set_cache_and_start_app(
              drom_addr & MMU_FLASH_MASK, drom_load_addr_aligned, drom_size, drom_page_count);
 #if CONFIG_IDF_TARGET_ESP32
     rc = cache_flash_mmu_set(0, 0, drom_load_addr_aligned, drom_addr & MMU_FLASH_MASK, 64, drom_page_count);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     rc = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, drom_load_addr & 0xffff0000, drom_addr & 0xffff0000, 64, drom_page_count, 0);
 #endif
     ESP_LOGV(TAG, "rc=%d", rc);
@@ -716,7 +716,7 @@ static void set_cache_and_start_app(
              irom_addr & MMU_FLASH_MASK, irom_load_addr_aligned, irom_size, irom_page_count);
 #if CONFIG_IDF_TARGET_ESP32
     rc = cache_flash_mmu_set(0, 0, irom_load_addr_aligned, irom_addr & MMU_FLASH_MASK, 64, irom_page_count);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     uint32_t iram1_used = 0;
     if (irom_load_addr + irom_size > IRAM1_ADDRESS_LOW) {
         iram1_used = 1;
@@ -740,12 +740,12 @@ static void set_cache_and_start_app(
                        (DPORT_APP_CACHE_MASK_IRAM0) | (DPORT_APP_CACHE_MASK_IRAM1 & 0) |
                        (DPORT_APP_CACHE_MASK_IROM0 & 0) | DPORT_APP_CACHE_MASK_DROM0 |
                        DPORT_APP_CACHE_MASK_DRAM1 );
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     REG_CLR_BIT( EXTMEM_PRO_ICACHE_CTRL1_REG, (EXTMEM_PRO_ICACHE_MASK_IRAM0) | (EXTMEM_PRO_ICACHE_MASK_IRAM1 & 0) | EXTMEM_PRO_ICACHE_MASK_DROM0 );
 #endif
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Enable(0);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     Cache_Resume_ICache(autoload);
 #endif
     // Application will need to do Cache_Flush(1) and Cache_Read_Enable(1)

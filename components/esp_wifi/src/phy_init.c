@@ -38,9 +38,9 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/ets_sys.h"
-#include "esp32s2beta/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/rtc.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -241,7 +241,7 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             esp_phy_common_clock_enable();
             phy_set_wifi_mode_only(0);
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             if (module == PHY_MODEM_MODULE) {
                 phy_wakeup_init();
             }
@@ -681,7 +681,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
 }
 
 #if CONFIG_ESP32_REDUCE_PHY_TX_POWER
-// TODO: fix the esp_phy_reduce_tx_power unused warning for esp32s2beta - IDF-759
+// TODO: fix the esp_phy_reduce_tx_power unused warning for esp32s2 - IDF-759
 static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
 {
     uint8_t i;

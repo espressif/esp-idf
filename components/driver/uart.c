@@ -32,8 +32,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
 #endif
 
 #ifdef CONFIG_UART_ISR_IN_IRAM
@@ -481,7 +481,7 @@ esp_err_t uart_enable_pattern_det_baud_intr(uart_port_t uart_num, char pattern_c
     at_cmd.gap_tout = chr_tout * uart_div;
     at_cmd.pre_idle = pre_idle * uart_div;
     at_cmd.post_idle = post_idle * uart_div;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     at_cmd.gap_tout = chr_tout;
     at_cmd.pre_idle = pre_idle;
     at_cmd.post_idle = post_idle;

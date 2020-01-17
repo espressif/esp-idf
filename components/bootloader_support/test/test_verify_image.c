@@ -33,7 +33,7 @@ TEST_CASE("Verify bootloader image in flash", "[bootloader_support]")
     TEST_ASSERT_EQUAL(data.image_len, bootloader_length);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("Verify unit test app image", "[bootloader_support]")
 {
     esp_image_metadata_t data = { 0 };

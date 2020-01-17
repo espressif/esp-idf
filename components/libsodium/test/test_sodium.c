@@ -37,7 +37,7 @@ TEST_CASE("box tests", "[libsodium]")
     TEST_ASSERT_EQUAL(0, box2_xmain());
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 extern int ed25519_convert_xmain(void);
 
 TEST_CASE("ed25519_convert tests", "[libsodium][timeout=60]")

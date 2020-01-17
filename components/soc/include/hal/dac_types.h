@@ -4,8 +4,8 @@
 #include "sdkconfig.h"
 
 typedef enum {
-    DAC_CHANNEL_1 = 0,    /*!< DAC channel 1 is GPIO25(ESP32) / GPIO17(ESP32S2BETA) */
-    DAC_CHANNEL_2 = 1,    /*!< DAC channel 2 is GPIO26(ESP32) / GPIO18(ESP32S2BETA) */
+    DAC_CHANNEL_1 = 0,    /*!< DAC channel 1 is GPIO25(ESP32) / GPIO17(ESP32S2) */
+    DAC_CHANNEL_2 = 1,    /*!< DAC channel 2 is GPIO26(ESP32) / GPIO18(ESP32S2) */
     DAC_CHANNEL_MAX,
 } dac_channel_t;
 

@@ -23,7 +23,7 @@
 #include "soc/gpio_periph.h"
 #include "unity.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 #define PULSE_IO 18
 #define PCNT_INPUT_IO 4

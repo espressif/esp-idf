@@ -218,7 +218,7 @@ menu "Common ESP-related"
     config ESP_PANIC_HANDLER_IRAM
         bool "Place panic handler code in IRAM"
         default n
-        depends on IDF_TARGET_ESP32  # pending ESP32-S2 Beta support
+        depends on IDF_TARGET_ESP32  # pending ESP32-S2 support
         help
             If this option is disabled (default), the panic handler code is placed in flash not IRAM.
             This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will

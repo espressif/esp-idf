@@ -36,7 +36,7 @@ static const spi_flash_hal_clock_config_t spi_flash_clk_cfg_reg[ESP_FLASH_SPEED_
     {80e6, SPI_FLASH_LL_CLKREG_VAL_80MHZ},
 };
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 static const spi_flash_hal_clock_config_t spi_flash_gpspi_clk_cfg_reg[ESP_FLASH_SPEED_MAX] = {
     {5e6,  {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_5MHZ}},
     {10e6, {.gpspi=GPSPI_FLASH_LL_CLKREG_VAL_10MHZ}},
@@ -71,7 +71,7 @@ esp_err_t spi_flash_hal_init(spi_flash_memspi_data_t *data_out, const spi_flash_
 
     spi_flash_hal_clock_config_t clock_cfg = spi_flash_clk_cfg_reg[cfg->speed];
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
     if (cfg->host_id > SPI_HOST) {
         clock_cfg = spi_flash_gpspi_clk_cfg_reg[cfg->speed];
     }

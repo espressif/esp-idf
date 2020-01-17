@@ -2,7 +2,7 @@
 #include "esp_partition.h"
 #include "unity.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("Basic handling of a partition in external flash", "[partition]")
 {
     esp_flash_t flash = {

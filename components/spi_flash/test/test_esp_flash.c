@@ -44,7 +44,7 @@ static uint8_t sector_buf[4096];
 #define VSPI_PIN_NUM_HD     VSPI_IOMUX_PIN_NUM_HD
 #define VSPI_PIN_NUM_WP     VSPI_IOMUX_PIN_NUM_WP
 #define VSPI_PIN_NUM_CS     VSPI_IOMUX_PIN_NUM_CS
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define FSPI_PIN_NUM_MOSI   FSPI_IOMUX_PIN_NUM_MOSI
 #define FSPI_PIN_NUM_MISO   FSPI_IOMUX_PIN_NUM_MISO
 #define FSPI_PIN_NUM_CLK    FSPI_IOMUX_PIN_NUM_CLK
@@ -73,7 +73,7 @@ typedef void (*flash_test_func_t)(esp_flash_t* chip);
 
 #define FLASH_TEST_CASE(STR, FUNC_TO_RUN) \
     TEST_CASE(STR, "[esp_flash]") {flash_test_func(FUNC_TO_RUN, 1);}
-#if defined(CONFIG_SPIRAM_SUPPORT) || TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if defined(CONFIG_SPIRAM_SUPPORT) || TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 // These tests needs external flash, right on the place of psram
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #else
@@ -111,7 +111,7 @@ flashtest_config_t config_list[] = {
     //     .speed = TEST_SPI_SPEED,
     //     .host_id = HSPI_HOST,
     //     .cs_id = 0,
-    //     // uses GPIO matrix on esp32s2beta regardles if FORCE_GPIO_MATRIX
+    //     // uses GPIO matrix on esp32s2 regardles if FORCE_GPIO_MATRIX
     //     .cs_io_num = HSPI_PIN_NUM_CS,
     //     .input_delay_ns = 20,
     // },
@@ -124,10 +124,10 @@ flashtest_config_t config_list[] = {
         .input_delay_ns = 0,
     },
 };
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 flashtest_config_t config_list[] = {
     FLASHTEST_CONFIG_COMMON,
-    /* No runners for esp32s2beta for these config yet */
+    /* No runners for esp32s2 for these config yet */
     // {
     //     .io_mode = TEST_SPI_READ_MODE,
     //     .speed = TEST_SPI_SPEED,
@@ -142,7 +142,7 @@ flashtest_config_t config_list[] = {
     //     .speed = TEST_SPI_SPEED,
     //     .host_id = HSPI_HOST,
     //     .cs_id = 0,
-    //     // uses GPIO matrix on esp32s2beta regardles if FORCE_GPIO_MATRIX
+    //     // uses GPIO matrix on esp32s2 regardles if FORCE_GPIO_MATRIX
     //     .cs_io_num = HSPI_PIN_NUM_CS,
     //     .input_delay_ns = 20,
     // },
@@ -185,7 +185,7 @@ static void setup_bus(spi_host_device_t host_id)
             .quadwp_io_num = HSPI_PIN_NUM_WP,
             .max_transfer_sz = 64,
         };
-#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !DISABLED_FOR_TARGETS(ESP32S2)
 #ifdef FORCE_GPIO_MATRIX
         hspi_bus_cfg.quadhd_io_num = 23;
 #endif
@@ -202,7 +202,7 @@ static void setup_bus(spi_host_device_t host_id)
         gpio_set_level(HSPI_PIN_NUM_WP, 1);
 #endif
     }
-#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !DISABLED_FOR_TARGETS(ESP32S2)
     else if (host_id == VSPI_HOST) {
         ESP_LOGI(TAG, "setup flash on SPI%d (VSPI) CS0...\n", host_id + 1);
         spi_bus_config_t vspi_bus_cfg = {
@@ -219,7 +219,7 @@ static void setup_bus(spi_host_device_t host_id)
         esp_err_t ret = spi_bus_initialize(host_id, &vspi_bus_cfg, 0);
         TEST_ESP_OK(ret);
     }
-#endif // disabled for esp32s2beta
+#endif // disabled for esp32s2
     else {
         ESP_LOGE(TAG, "invalid bus");
     }
@@ -229,7 +229,7 @@ static void release_bus(int host_id)
 {
 #if CONFIG_IDF_TARGET_ESP32
     if (host_id == HSPI_HOST || host_id == VSPI_HOST) {
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     if (host_id == FSPI_HOST || host_id == HSPI_HOST || host_id == VSPI_HOST) {
 #endif
         spi_bus_free(host_id);
@@ -612,7 +612,7 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
 }
 
 #ifndef CONFIG_SPIRAM_SUPPORT
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < ALL_TEST_NUM; i++) {

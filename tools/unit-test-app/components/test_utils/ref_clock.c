@@ -62,7 +62,7 @@ static int get_pcnt_sig(void)
             PCNT_SIG_CH0_IN0_IDX + 4 * REF_CLOCK_PCNT_UNIT :
             PCNT_SIG_CH0_IN5_IDX + 4 * (REF_CLOCK_PCNT_UNIT - 5);
 }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define REF_CLOCK_RMT_CHANNEL   3
 
 static int get_pcnt_sig(void)

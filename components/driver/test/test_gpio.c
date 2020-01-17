@@ -16,8 +16,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
 #endif
 
 #define WAKE_UP_IGNORE 1  // gpio_wakeup function development is not completed yet, set it deprecated.
@@ -25,7 +25,7 @@
 #define GPIO_OUTPUT_IO   18  // default output GPIO
 #define GPIO_INPUT_IO   19  // default input GPIO
 #define GPIO_OUTPUT_MAX GPIO_NUM_34
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 // ESP32_S2 DEVKIC uses IO19 and IO20 as USB functions, so it is necessary to avoid using IO19, otherwise GPIO io pull up/down function cannot pass
 #define GPIO_OUTPUT_IO   18  // default output GPIO
 #define GPIO_INPUT_IO   21  // default input GPIO
@@ -55,7 +55,7 @@ static gpio_config_t init_io(gpio_num_t num)
     return io_conf;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //No runners
 // edge interrupt event
 static void gpio_isr_edge_handler(void* arg)
@@ -169,7 +169,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
     io_config.mode = GPIO_MODE_OUTPUT;
     // ESP32 34-39 input only, once set as output should log something
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     io_config.pin_bit_mask = (uint64_t)1<<26;
     TEST_ESP_OK(gpio_config(&io_config));
 
@@ -183,7 +183,7 @@ TEST_CASE("GPIO config parameters test", "[gpio]")
 
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //No runners
 TEST_CASE("GPIO rising edge interrupt test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -375,7 +375,7 @@ TEST_CASE("GPIO enable and disable interrupt test", "[gpio][test_env=UT_T1_GPIO]
     TEST_ASSERT(gpio_isr_handler_add(GPIO_INPUT_IO, gpio_isr_level_handler, (void*) GPIO_INPUT_IO) == ESP_ERR_INVALID_STATE);
     TEST_ASSERT(gpio_isr_handler_remove(GPIO_INPUT_IO) == ESP_ERR_INVALID_STATE);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2BETA)
+#endif //DISABLED_FOR_TARGETS(ESP32S2)
 
 // ESP32 Connect GPIO18 with GPIO19, ESP32-S2 Connect GPIO18 with GPIO21
 // use multimeter to test the voltage, so it is ignored in CI
@@ -408,7 +408,7 @@ TEST_CASE("GPIO set gpio output level test", "[gpio][ignore]")
     io_conf.mode = GPIO_MODE_OUTPUT;
     gpio_config(&io_conf);
     TEST_ASSERT(gpio_config(&io_conf) == ESP_ERR_INVALID_ARG);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     //ESP32-S2 IO46 are just used for input
     io_conf.pin_bit_mask = ((uint64_t)1<<46);
     io_conf.mode = GPIO_MODE_OUTPUT;
@@ -463,7 +463,7 @@ TEST_CASE("GPIO io pull up/down function", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(gpio_get_level(GPIO_INPUT_IO), 0, "gpio_pullup_dis error, it can pull up");
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //No runners
 TEST_CASE("GPIO output and input mode test", "[gpio][test_env=UT_T1_GPIO]")
 {
@@ -537,7 +537,7 @@ TEST_CASE("GPIO repeate call service and isr has no memory leak test","[gpio][te
     }
     TEST_ASSERT_INT32_WITHIN(size, esp_get_free_heap_size(), 100);
 }
-#endif //DISABLED_FOR_TARGETS(ESP32S2BETA)
+#endif //DISABLED_FOR_TARGETS(ESP32S2)
 
 #if !WAKE_UP_IGNORE
 //this function development is not completed yet, set it ignored

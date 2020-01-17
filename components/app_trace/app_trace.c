@@ -158,7 +158,7 @@
 #include <sys/param.h>
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "soc/sensitive_reg.h"
 #endif
 #include "eri.h"
@@ -210,7 +210,7 @@ const static char *TAG = "esp_apptrace";
 #define TRACEMEM_MUX_BLK0_ONLY                  1
 #define TRACEMEM_MUX_BLK1_ONLY                  2
 #define TRACEMEM_MUX_PROBLK1_APPBLK0            3
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define TRACEMEM_MUX_BLK0_NUM                   19
 #define TRACEMEM_MUX_BLK1_NUM                   20
 #define TRACEMEM_BLK_NUM2ADDR(_n_)              (0x3FFB8000UL + 0x4000UL*((_n_)-4))
@@ -244,7 +244,7 @@ static volatile uint8_t *s_trax_blocks[] = {
     (volatile uint8_t *) 0x3FFFC000,
     (volatile uint8_t *) 0x3FFF8000
 };
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 static volatile uint8_t *s_trax_blocks[] = {
     (volatile uint8_t *)TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK0_NUM),
     (volatile uint8_t *)TRACEMEM_BLK_NUM2ADDR(TRACEMEM_MUX_BLK1_NUM)
@@ -435,7 +435,7 @@ static inline void esp_apptrace_trax_select_memory_block(int block_num)
     // select memory block to be exposed to the TRAX module (accessed by host)
 #if CONFIG_IDF_TARGET_ESP32
     DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, block_num ? TRACEMEM_MUX_BLK0_ONLY : TRACEMEM_MUX_BLK1_ONLY);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     DPORT_WRITE_PERI_REG(DPORT_PMS_OCCUPY_3_REG, block_num ? BIT(TRACEMEM_MUX_BLK0_NUM-4) : BIT(TRACEMEM_MUX_BLK1_NUM-4));
 #endif
 }
