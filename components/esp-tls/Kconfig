@@ -15,10 +15,10 @@ menu "ESP-TLS"
 
     config ESP_TLS_SERVER
         bool "Enable ESP-TLS Server"
-        depends on ESP_TLS_USING_MBEDTLS
         default n
         help
-            Enable support for creating server side SSL/TLS session, uses the mbedtls crypto library
+            Enable support for creating server side SSL/TLS session, available for mbedTLS
+            as well as wolfSSL TLS library.
 
     config ESP_TLS_PSK_VERIFICATION
         bool "Enable PSK verification"

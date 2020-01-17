@@ -36,6 +36,11 @@ ssize_t esp_wolfssl_read(esp_tls_t *tls, char *data, size_t datalen);
 ssize_t esp_wolfssl_write(esp_tls_t *tls, const char *data, size_t datalen);
 
 /**
+ * Configures the SSL/TLS connection for client method
+ */
+esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls);
+
+/**
  * Internal Callback for wolfssl_cleanup , frees up all the memory used by wolfssl
  */
 void esp_wolfssl_cleanup(esp_tls_t *tls);
@@ -70,3 +75,22 @@ void esp_wolfssl_free_global_ca_store(void);
  * Callback function for Initializing the global ca store for TLS?SSL using wolfssl
  */
 esp_err_t esp_wolfssl_init_global_ca_store(void);
+
+#ifdef CONFIG_ESP_TLS_SERVER
+
+/**
+ * Configures the SSL/TLS connection for server method
+ */
+esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
+
+/**
+ * Function to Create ESP-TLS Server session with wolfssl Stack
+ */
+int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
+
+/*
+ * Delete Server Session
+ */
+void esp_wolfssl_server_session_delete(esp_tls_t *tls);
+
+#endif

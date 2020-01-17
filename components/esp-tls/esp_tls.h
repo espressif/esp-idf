@@ -562,6 +562,7 @@ esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tl
  */
 mbedtls_x509_crt *esp_tls_get_global_ca_store(void);
 
+#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #ifdef CONFIG_ESP_TLS_SERVER
 /**
  * @brief      Create TLS/SSL server session
@@ -589,7 +590,6 @@ int esp_tls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls
  */
 void esp_tls_server_session_delete(esp_tls_t *tls);
 #endif /* ! CONFIG_ESP_TLS_SERVER */
-#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
 #ifdef __cplusplus
 }
