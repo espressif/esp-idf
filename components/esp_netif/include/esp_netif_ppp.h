@@ -74,6 +74,7 @@ typedef enum {
  *
  */
 typedef enum {
+    NETIF_PPP_AUTHTYPE_NONE =      0x00,
     NETIF_PPP_AUTHTYPE_PAP =       0x01,
     NETIF_PPP_AUTHTYPE_CHAP =      0x02,
     NETIF_PPP_AUTHTYPE_MSCHAP =    0x04,
