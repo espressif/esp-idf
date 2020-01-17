@@ -171,7 +171,8 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     esp_eth_mac_t *mac = config->mac;
     esp_eth_phy_t *phy = config->phy;
     ETH_CHECK(mac && phy, "can't set eth->mac or eth->phy to null", err, ESP_ERR_INVALID_ARG);
-    esp_eth_driver_t *eth_driver = calloc(1, sizeof(esp_eth_driver_t));
+    // eth_driver contains an atomic variable, which should not be put in PSRAM
+    esp_eth_driver_t *eth_driver = heap_caps_calloc(1, sizeof(esp_eth_driver_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ETH_CHECK(eth_driver, "request memory for eth_driver failed", err, ESP_ERR_NO_MEM);
     atomic_init(&eth_driver->ref_count, 1);
     eth_driver->mac = mac;
