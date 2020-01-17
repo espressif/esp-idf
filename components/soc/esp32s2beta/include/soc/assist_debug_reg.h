@@ -4,32 +4,53 @@
 #define ASSIST_DEBUG_INTERRUPT_RAW              ((ASSIST_DEBUG_BASE) +0x04)
 #define ASSIST_DEBUG_INTERRUPT_RLS              ((ASSIST_DEBUG_BASE) +0x08)
 #define ASSIST_DEBUG_INTERRUPT_CLR              ((ASSIST_DEBUG_BASE) +0x0C)
-#define ASSIST_DEBUG_INTERRUPT_AREA_0_TOUCH_PRO_RD                   BIT(0)
-#define ASSIST_DEBUG_INTERRUPT_AREA_0_TOUCH_PRO_WR                   BIT(1)
-#define ASSIST_DEBUG_INTERRUPT_AREA_1_TOUCH_PRO_RD                   BIT(2)
-#define ASSIST_DEBUG_INTERRUPT_AREA_1_TOUCH_PRO_WR                   BIT(3)
-#define ASSIST_DEBUG_INTERRUPT_PRO_SP_SPILL_MIN                      BIT(4)
-#define ASSIST_DEBUG_INTERRUPT_PRO_SP_SPILL_MAX                      BIT(5)
+
+#define ASSIST_DEBUG_SP_SPILL_MAX                                    BIT(19)
+#define ASSIST_DEBUG_SP_SPILL_MIN                                    BIT(18)
+#define ASSIST_DEBUG_AREA_2_1_AHB_WR                                 BIT(17)
+#define ASSIST_DEBUG_AREA_2_1_AHB_RD                                 BIT(16)
+#define ASSIST_DEBUG_AREA_2_0_AHB_WR                                 BIT(15)
+#define ASSIST_DEBUG_AREA_2_0_AHB_RD                                 BIT(14)
+#define ASSIST_DEBUG_AREA_1_1_DROM0_RD                               BIT(13)
+#define ASSIST_DEBUG_AREA_1_0_DROM0_RD                               BIT(12)
+#define ASSIST_DEBUG_AREA_0_1_DPORT0_WR                              BIT(11)
+#define ASSIST_DEBUG_AREA_0_1_DPORT0_RD                              BIT(10)
+#define ASSIST_DEBUG_AREA_0_1_DRAM1_WR                               BIT(9)
+#define ASSIST_DEBUG_AREA_0_1_DRAM1_RD                               BIT(8)
+#define ASSIST_DEBUG_AREA_0_1_DRAM0_WR                               BIT(7)
+#define ASSIST_DEBUG_AREA_0_1_DRAM0_RD                               BIT(6)
+#define ASSIST_DEBUG_AREA_0_0_DPORT0_WR                              BIT(5)
+#define ASSIST_DEBUG_AREA_0_0_DPORT0_RD                              BIT(4)
+#define ASSIST_DEBUG_AREA_0_0_DRAM1_WR                               BIT(3)
+#define ASSIST_DEBUG_AREA_0_0_DRAM1_RD                               BIT(2)
+#define ASSIST_DEBUG_AREA_0_0_DRAM0_WR                               BIT(1)
+#define ASSIST_DEBUG_AREA_0_0_DRAM0_RD                               BIT(0)
 
 
-#define ASSIST_DEBUG_AREA_0_MIN                 ((ASSIST_DEBUG_BASE) +0x10)
-#define ASSIST_DEBUG_AREA_0_MAX                 ((ASSIST_DEBUG_BASE) +0x14)
-#define ASSIST_DEBUG_AREA_0_PC                  ((ASSIST_DEBUG_BASE) +0x18)
-#define ASSIST_DEBUG_AREA_0_SP                  ((ASSIST_DEBUG_BASE) +0x1C)
+#define ASSIST_DEBUG_AREA_0_0_MIN               ((ASSIST_DEBUG_BASE) +0x10)
+#define ASSIST_DEBUG_AREA_0_0_MAX               ((ASSIST_DEBUG_BASE) +0x14)
+#define ASSIST_DEBUG_AREA_0_1_MIN               ((ASSIST_DEBUG_BASE) +0x18)
+#define ASSIST_DEBUG_AREA_0_1_MAX               ((ASSIST_DEBUG_BASE) +0x1C)
+#define ASSIST_DEBUG_AREA_1_0_MIN               ((ASSIST_DEBUG_BASE) +0x20)
+#define ASSIST_DEBUG_AREA_1_0_MAX               ((ASSIST_DEBUG_BASE) +0x24)
+#define ASSIST_DEBUG_AREA_1_1_MIN               ((ASSIST_DEBUG_BASE) +0x28)
+#define ASSIST_DEBUG_AREA_1_1_MAX               ((ASSIST_DEBUG_BASE) +0x2C)
+#define ASSIST_DEBUG_AREA_2_0_MIN               ((ASSIST_DEBUG_BASE) +0x30)
+#define ASSIST_DEBUG_AREA_2_0_MAX               ((ASSIST_DEBUG_BASE) +0x34)
+#define ASSIST_DEBUG_AREA_2_1_MIN               ((ASSIST_DEBUG_BASE) +0x38)
+#define ASSIST_DEBUG_AREA_2_1_MAX               ((ASSIST_DEBUG_BASE) +0x3C)
+#define ASSIST_DEBUG_AREA_PC                    ((ASSIST_DEBUG_BASE) +0x40)
+#define ASSIST_DEBUG_AREA_SP                    ((ASSIST_DEBUG_BASE) +0x44)
 
-#define ASSIST_DEBUG_AREA_1_MIN                 ((ASSIST_DEBUG_BASE) +0x20)
-#define ASSIST_DEBUG_AREA_1_MAX                 ((ASSIST_DEBUG_BASE) +0x24)
-#define ASSIST_DEBUG_AREA_1_PC                  ((ASSIST_DEBUG_BASE) +0x28)
-#define ASSIST_DEBUG_AREA_1_SP                  ((ASSIST_DEBUG_BASE) +0x2C)
 
-#define ASSIST_DEBUG_PRO_SP_UNSTABLE            ((ASSIST_DEBUG_BASE) +0x30)
-#define ASSIST_DEBUG_PRO_SP_MIN                 ((ASSIST_DEBUG_BASE) +0x34)
-#define ASSIST_DEBUG_PRO_SP_MAX                 ((ASSIST_DEBUG_BASE) +0x38)
-#define ASSIST_DEBUG_PRO_SP_PC                  ((ASSIST_DEBUG_BASE) +0x3C)
+#define ASSIST_DEBUG_PRO_SP_UNSTABLE            ((ASSIST_DEBUG_BASE) +0x48)
+#define ASSIST_DEBUG_PRO_SP_MIN                 ((ASSIST_DEBUG_BASE) +0x4C)
+#define ASSIST_DEBUG_PRO_SP_MAX                 ((ASSIST_DEBUG_BASE) +0x50)
+#define ASSIST_DEBUG_PRO_SP_PC                  ((ASSIST_DEBUG_BASE) +0x54)
 
-#define ASSIST_DEBUG_PRO_PDEBUGENABLE		((ASSIST_DEBUG_BASE) +0x40)
-#define ASSIST_DEBUG_PRO_RCD_RECORDING		((ASSIST_DEBUG_BASE) +0x44)
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGINST		((ASSIST_DEBUG_BASE) +0x48)
+#define ASSIST_DEBUG_PRO_PDEBUGENABLE           ((ASSIST_DEBUG_BASE) +0x58)
+#define ASSIST_DEBUG_PRO_RCD_RECORDING          ((ASSIST_DEBUG_BASE) +0x5C)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGINST	        ((ASSIST_DEBUG_BASE) +0x60)
 /* register layout:
  * SIZE [7..0]           : Instructions normally complete in the W stage. The size of the instruction in the W is given
  *                         by this field in number of bytes. If it is 8’b0 in a given cycle the W stage has no completing
@@ -57,7 +78,7 @@
 #define DPORT_RECORD_PDEBUGINST_CINTL_S         24
 #define DPORT_RECORD_PDEBUGINST_CINTL(_r_)      (((_r_)>>DPORT_RECORD_PDEBUGINST_CINTL_S) & DPORT_RECORD_PDEBUGINST_CINTL_V)
 
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGSTATUS	((ASSIST_DEBUG_BASE) +0x4C)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGSTATUS	((ASSIST_DEBUG_BASE) +0x64)
 /* register layout:
  * BBCAUSE [5..0]: Indicates cause for bubble cycle. See below for posible values. When DPORT_RECORD_PDEBUGINST_SZ == 0
  * INSNTYPE[5..0]: Indicates type of instruction retiring in the W stage. See below for posible values. When DPORT_RECORD_PDEBUGINST_SZ > 0
@@ -106,10 +127,12 @@
 #define DPORT_RECORD_PDEBUGSTATUS_INSNTYPE_DEF          0x3C /* Default */
 
 
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGDATA		((ASSIST_DEBUG_BASE) +0x50)
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGPC		((ASSIST_DEBUG_BASE) +0x54)
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGLS0STAT	((ASSIST_DEBUG_BASE) +0x58)
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGLS0ADDR	((ASSIST_DEBUG_BASE) +0x5C)
-#define ASSIST_DEBUG_PRO_RCD_PDEBUGLS0DATA	((ASSIST_DEBUG_BASE) +0x60)
-#define ASSIST_DEBUG_PRO_RCD_SP			((ASSIST_DEBUG_BASE) +0x64)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGDATA		((ASSIST_DEBUG_BASE) +0x68)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGPC		((ASSIST_DEBUG_BASE) +0x6C)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGLS0STAT	((ASSIST_DEBUG_BASE) +0x70)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGLS0ADDR	((ASSIST_DEBUG_BASE) +0x74)
+#define ASSIST_DEBUG_PRO_RCD_PDEBUGLS0DATA	((ASSIST_DEBUG_BASE) +0x78)
+#define ASSIST_DEBUG_PRO_RCD_SP			    ((ASSIST_DEBUG_BASE) +0x7C)
 
+#define ASSIST_DEBUG_CLOCK_GATE	    		((ASSIST_DEBUG_BASE) +0x80)
+#define ASSIST_DEBUG_REG_DATE		    	((ASSIST_DEBUG_BASE) +0xFFC)

@@ -20,48 +20,51 @@ extern "C" {
 typedef volatile struct {
     union {
         struct {
-            uint32_t reserved0: 18;                       /*reserved*/
-            uint32_t usr:        1;                       /*User define command enable.  An operation will be triggered when the bit is set. The bit will be cleared once the operation done.1: enable 0: disable.*/
-            uint32_t reserved19:13;
+            uint32_t conf_bitlen:23;                      /*Define the spi_clk cycles of  SPI_CONF state.*/
+            uint32_t reserved23:  1;                      /*reserved*/
+            uint32_t usr:         1;                      /*User define command enable.  An operation will be triggered when the bit is set. The bit will be cleared once the operation done.1: enable 0: disable. Can not be changed by CONF_buf.*/
+            uint32_t reserved25:  7;                      /*reserved*/
         };
         uint32_t val;
     } cmd;
     uint32_t addr;                                        /*[31:8]:address to slave  [7:0]:Reserved.*/
     union {
         struct {
-            uint32_t reserved0:       2;                  /*reserved*/
-            uint32_t ext_hold_en:     1;                  /*Set the bit to hold spi. The bit is combined with spi_usr_prep_hold spi_usr_cmd_hold spi_usr_addr_hold spi_usr_dummy_hold spi_usr_din_hold spi_usr_dout_hold and spi_usr_hold_pol.*/
-            uint32_t dummy_out:       1;                  /*In the dummy phase the signal level of spi is output by the spi controller.*/
-            uint32_t reserved4:       1;                  /*reserved*/
-            uint32_t faddr_dual:      1;                  /*Apply 2 signals during addr phase 1:enable 0: disable*/
-            uint32_t faddr_quad:      1;                  /*Apply 4 signals during addr phase 1:enable 0: disable*/
-            uint32_t fcmd_dual:       1;                  /*Apply 2 signals during command phase 1:enable 0: disable*/
-            uint32_t fcmd_quad:       1;                  /*Apply 4 signals during command phase 1:enable 0: disable*/
-            uint32_t reserved9:       4;
-            uint32_t fast_rd_mode:    1;                  /*Enable 2/4 lines addr command  including read and write command.*/
-            uint32_t fread_dual:      1;                  /*In the read operations  read-data phase apply 2 signals. 1: enable 0: disable.*/
-            uint32_t reserved15:      3;
-            uint32_t q_pol:           1;                  /*The bit is used to set MISO line polarity  1: high 0  low*/
-            uint32_t d_pol:           1;                  /*The bit is used to set MOSI line polarity  1: high 0  low*/
-            uint32_t fread_quad:      1;                  /*In the read operations read-data phase apply 4 signals. 1: enable 0: disable.*/
-            uint32_t wp:              1;                  /*Write protect signal output when SPI is idle.  1: output high  0: output low.*/
-            uint32_t reserved22:      3;                  /*reserved*/
-            uint32_t rd_bit_order:    1;                  /*In read-data (MISO) phase 1: LSB first 0: MSB first*/
-            uint32_t wr_bit_order:    1;                  /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first*/
-            uint32_t define_addr:     1;                  /*set spi_usr_addr and spi_usr_addr_value in spi defined slave mode. 1: disable 0:enable.*/
-            uint32_t reserved28:      4;                  /*reserved*/
+            uint32_t reserved0:    2;                     /*reserved*/
+            uint32_t ext_hold_en:  1;                     /*Set the bit to hold spi. The bit is combined with spi_usr_prep_hold spi_usr_cmd_hold spi_usr_addr_hold spi_usr_dummy_hold spi_usr_din_hold spi_usr_dout_hold and spi_usr_hold_pol.*/
+            uint32_t dummy_out:    1;                     /*In the dummy phase the signal level of spi is output by the spi controller.*/
+            uint32_t reserved4:    1;                     /*reserved*/
+            uint32_t faddr_dual:   1;                     /*Apply 2 signals during addr phase 1:enable 0: disable*/
+            uint32_t faddr_quad:   1;                     /*Apply 4 signals during addr phase 1:enable 0: disable*/
+            uint32_t faddr_oct:    1;                     /*Apply 8 signals during addr phase 1:enable 0: disable*/
+            uint32_t fcmd_dual:    1;                     /*Apply 2 signals during command phase 1:enable 0: disable*/
+            uint32_t fcmd_quad:    1;                     /*Apply 4 signals during command phase 1:enable 0: disable*/
+            uint32_t fcmd_oct:     1;                     /*Apply 8 signals during command phase 1:enable 0: disable*/
+            uint32_t reserved11:   3;                     /*reserved*/
+            uint32_t fread_dual:   1;                     /*In the read operations  read-data phase apply 2 signals. 1: enable 0: disable.*/
+            uint32_t fread_quad:   1;                     /*In the read operations read-data phase apply 4 signals. 1: enable 0: disable.*/
+            uint32_t fread_oct:    1;                     /*In the read operations read-data phase apply 8 signals. 1: enable 0: disable.*/
+            uint32_t reserved17:   1;                     /*reserved*/
+            uint32_t q_pol:        1;                     /*The bit is used to set MISO line polarity  1: high 0  low*/
+            uint32_t d_pol:        1;                     /*The bit is used to set MOSI line polarity  1: high 0  low*/
+            uint32_t reserved20:   1;                     /*reserved*/
+            uint32_t wp:           1;                     /*Write protect signal output when SPI is idle.  1: output high  0: output low.*/
+            uint32_t reserved22:   3;                     /*reserved*/
+            uint32_t rd_bit_order: 1;                     /*In read-data (MISO) phase 1: LSB first 0: MSB first*/
+            uint32_t wr_bit_order: 1;                     /*In command address write-data (MOSI) phases 1: LSB firs 0: MSB first*/
+            uint32_t reserved27:   5;                     /*reserved*/
         };
         uint32_t val;
     } ctrl;
     union {
         struct {
             uint32_t clk_mode:      2;                    /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is alwasy on.*/
-            uint32_t clk_mode_13:   1;                    /*{CPOL  CPHA} 1: support spi clk mode 1 and 3  first edge output data B[0]/B[7]*/
+            uint32_t clk_mode_13:   1;                    /*{CPOL  CPHA} 1: support spi clk mode 1 and 3  first edge output data B[0]/B[7].  0: support spi clk mode 0 and 2  first edge output data B[1]/B[6].*/
             uint32_t rsck_data_out: 1;                    /*It saves half a cycle when tsck is the same as rsck. 1: output data at rsck posedge   0: output data at tsck posedge*/
             uint32_t w16_17_wr_ena: 1;                    /*1:reg_buf[16] [17] can be written   0:reg_buf[16] [17] can not  be written.*/
             uint32_t reserved5:     9;                    /*reserved*/
             uint32_t cs_hold_delay: 6;                    /*SPI cs signal is delayed by spi clock cycles.*/
-            uint32_t reserved20:   12;
+            uint32_t reserved20:   12;                    /*reserved*/
         };
         uint32_t val;
     } ctrl1;
@@ -69,10 +72,9 @@ typedef volatile struct {
         struct {
             uint32_t cs_setup_time:13;                    /*(cycles-1) of prepare phase by spi clock this bits are combined with spi_cs_setup bit.*/
             uint32_t cs_hold_time: 13;                    /*delay cycles of cs pin by spi clock this bits are combined with spi_cs_hold bit.*/
-            uint32_t cs_delay_mode: 2;                    /*spi_cs signal is delayed by spi_clk . 0: zero 1: if spi_ck_out_edge or spi_ck_i_edge is set 1 delayed by half cycle  else delayed by one cycle 2: if spi_ck_out_edge or spi_ck_i_edge is set 1 delayed by one cycle  else delayed by half cycle 3: delayed one cycle*/
+            uint32_t cs_delay_mode: 3;                    /*spi_cs signal is delayed by spi_clk . 0: zero 1: if spi_ck_out_edge or spi_ck_i_edge is set 1 delayed by half cycle  else delayed by one cycle 2: if spi_ck_out_edge or spi_ck_i_edge is set 1 delayed by one cycle  else delayed by half cycle 3: delayed one cycle*/
             uint32_t cs_delay_num:  2;                    /*spi_cs signal is delayed by system clock cycles*/
-            uint32_t reserved30:    1;                    /*reserved*/
-            uint32_t cs_delay_edge: 1;
+            uint32_t reserved31:    1;                    /*reserved*/
         };
         uint32_t val;
     } ctrl2;
@@ -100,8 +102,8 @@ typedef volatile struct {
             uint32_t wr_byte_order:     1;                /*In command address write-data (MOSI) phases 1: big-endian 0: litte_endian*/
             uint32_t fwrite_dual:       1;                /*In the write operations read-data phase apply 2 signals*/
             uint32_t fwrite_quad:       1;                /*In the write operations read-data phase apply 4 signals*/
-            uint32_t reserved14:        1;                /*reserved*/
-            uint32_t reserved15:        1;                /*reserved*/
+            uint32_t fwrite_oct:        1;                /*In the write operations read-data phase apply 8 signals*/
+            uint32_t usr_conf_nxt:      1;                /*1: Enable the DMA CONF phase of next seg-trans operation  which means seg-trans will continue. 0: The seg-trans will end after the current SPI seg-trans or this is not seg-trans mode.*/
             uint32_t sio:               1;                /*Set the bit to enable 3-line half duplex communication mosi and miso signals share the same pin. 1: enable 0: disable.*/
             uint32_t usr_hold_pol:      1;                /*It is combined with hold bits to set the polarity of spi hold line 1: spi will be held when spi hold line is high 0: spi will be held when spi hold line is low*/
             uint32_t usr_dout_hold:     1;                /*spi is hold at data out state the bit are combined with spi_usr_hold_pol bit.*/
@@ -124,8 +126,8 @@ typedef volatile struct {
     union {
         struct {
             uint32_t usr_dummy_cyclelen: 8;               /*The length in spi_clk cycles of dummy phase. The register value shall be (cycle_num-1).*/
-            uint32_t reserved8:         18;               /*reserved*/
-            uint32_t usr_addr_bitlen:    6;               /*The length in bits of address phase. The register value shall be (bit_num-1).*/
+            uint32_t reserved8:         19;               /*reserved*/
+            uint32_t usr_addr_bitlen:    5;               /*The length in bits of address phase. The register value shall be (bit_num-1).*/
         };
         uint32_t val;
     } user1;
@@ -139,15 +141,15 @@ typedef volatile struct {
     } user2;
     union {
         struct {
-            uint32_t usr_mosi_bit_len:24;                 /*The length in bits of write-data. The register value shall be (bit_num-1).*/
-            uint32_t reserved24:       8;                 /*reserved*/
+            uint32_t usr_mosi_bit_len:23;                 /*The length in bits of write-data. The register value shall be (bit_num-1).*/
+            uint32_t reserved23:       9;                 /*reserved*/
         };
         uint32_t val;
     } mosi_dlen;
     union {
         struct {
-            uint32_t usr_miso_bit_len:24;                 /*The length in bits of  read-data. The register value shall be (bit_num-1).*/
-            uint32_t reserved24:       8;                 /*reserved*/
+            uint32_t usr_miso_bit_len:23;                 /*The length in bits of  read-data. The register value shall be (bit_num-1).*/
+            uint32_t reserved23:       9;                 /*reserved*/
         };
         uint32_t val;
     } miso_dlen;
@@ -157,14 +159,20 @@ typedef volatile struct {
             uint32_t cs0_dis:           1;                /*SPI CS0 pin enable  1: disable CS0  0: spi_cs0 signal is from/to CS0 pin*/
             uint32_t cs1_dis:           1;                /*SPI CS1 pin enable  1: disable CS1  0: spi_cs1 signal is from/to CS1 pin*/
             uint32_t cs2_dis:           1;                /*SPI CS2 pin enable  1: disable CS2  0: spi_cs2 signal is from/to CS2 pin*/
-            uint32_t reserved3:         2;                /*reserved*/
+            uint32_t cs3_dis:           1;                /*reserved*/
+            uint32_t cs4_dis:           1;                /*SPI CS4 pin enable  1: disable CS4  0: spi_cs4 signal is from/to CS4 pin*/
+            uint32_t cs5_dis:           1;                /*SPI CS5 pin enable  1: disable CS5  0: spi_cs5 signal is from/to CS5 pin*/
             uint32_t ck_dis:            1;                /*1: spi clk out disable   0: spi clk out enable*/
-            uint32_t master_cs_pol:     3;                /*In the master mode the bits are the polarity of spi cs line  the value is equivalent to spi_cs ^ spi_master_cs_pol.*/
-            uint32_t reserved9:        14;                /*reserved*/
+            uint32_t master_cs_pol:     6;                /*In the master mode the bits are the polarity of spi cs line  the value is equivalent to spi_cs ^ spi_master_cs_pol.*/
+            uint32_t reserved13:        7;                /*reserved*/
+            uint32_t cd_data_set:       1;                /*1: spi_cd = !spi_cd_idle_edge when spi_st[3:0] is in SPI_DOUT or SPI_DIN state.  0: spi_cd = spi_cd_idle_edge.*/
+            uint32_t cd_dummy_set:      1;                /*1: spi_cd = !spi_cd_idle_edge when spi_st[3:0] is in SPI_DUMMY state.  0: spi_cd = spi_cd_idle_edge.*/
+            uint32_t cd_addr_set:       1;                /*1: spi_cd = !spi_cd_idle_edge when spi_st[3:0] is in SPI_SEND_ADDR state.  0: spi_cd = spi_cd_idle_edge.*/
             uint32_t slave_cs_pol:      1;                /*spi slave input cs polarity select. 1: inv  0: not change*/
-            uint32_t reserved24:        3;                /*reserved*/
-            uint32_t q_idle_out:        1;                /*The idle output value of spi_q.*/
-            uint32_t reserved28:        1;                /*reserved*/
+            uint32_t dqs_idle_edge:     1;                /*The default value of spi_dqs.*/
+            uint32_t cd_cmd_set:        1;                /*1: spi_cd = !spi_cd_idle_edge when spi_st[3:0] is in SPI_SEND_CMD state.  0: spi_cd = spi_cd_idle_edge.*/
+            uint32_t cd_idle_edge:      1;                /*The default value of spi_cd.*/
+            uint32_t reserved27:        2;                /*reserved*/
             uint32_t ck_idle_edge:      1;                /*1: spi clk line is high when idle     0: spi clk line is low when idle*/
             uint32_t cs_keep_active:    1;                /*spi cs line keep low when the bit is set.*/
             uint32_t quad_din_pin_swap: 1;                /*1:  spi quad input swap enable  0:  spi quad input swap disable*/
@@ -173,41 +181,39 @@ typedef volatile struct {
     } misc;
     union {
         struct {
-            uint32_t reserved0:          4;               /*reserved*/
-            uint32_t trans_done:         1;               /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
-            uint32_t int_rd_buf_done_en: 1;               /*spi_slv_rd_buf Interrupt enable. 1: enable 0: disable*/
-            uint32_t int_wr_buf_done_en: 1;               /*spi_slv_wr_buf Interrupt enable. 1: enable 0: disable*/
-            uint32_t int_rd_dma_done_en: 1;               /*spi_slv_rd_dma Interrupt enable. 1: enable 0: disable*/
-            uint32_t int_wr_dma_done_en: 1;               /*spi_slv_wr_dma Interrupt enable. 1: enable 0: disable*/
-            uint32_t int_trans_done_en:  1;               /*spi_trans_done Interrupt enable. 1: enable 0: disable*/
-            uint32_t reserved10:        13;               /*reserved*/
-            uint32_t trans_cnt:          4;               /*The operations counter in both the master mode and the slave mode.*/
-            uint32_t reserved27:         1;               /*reserved*/
-            uint32_t reserved28:         1;               /*reserved*/
-            uint32_t reserved29:         1;               /*reserved*/
-            uint32_t slave_mode:         1;               /*Set SPI work mode. 1: slave mode 0: master mode.*/
-            uint32_t sync_reset:         1;               /*Software reset enable  reset the spi clock line cs line and data lines.*/
+            uint32_t reserved0:  4;                       /*reserved*/
+            uint32_t trans_done: 1;                       /*The interrupt raw bit for the completion of any operation in both the master mode and the slave mode.*/
+            uint32_t rd_buf_inten:     1;                   /*The interrupt enable bit for the completion of read-buffer operation in the slave mode.*/
+            uint32_t wr_buf_inten:     1;                   /*The interrupt enable bit for the completion of write-buffer operation in the slave mode.*/
+            uint32_t rd_dma_inten:     1;                   /*The interrupt enable bit for the completion of read-status operation in the slave mode.*/
+            uint32_t wr_dma_inten:     1;                   /*The interrupt enable bit for the completion of write-status operation in the slave mode.*/
+            uint32_t trans_inten:      1;                   /*The interrupt enable bit for the completion of any operation in both the master mode and the slave mode.*/
+            uint32_t reserved10:13;                       /*reserved*/
+            uint32_t trans_cnt:  4;                       /*The operations counter in both the master mode and the slave mode.*/
+            uint32_t reserved27: 1;                       /*reserved*/
+            uint32_t reserved28: 1;                       /*reserved*/
+            uint32_t reserved29: 1;                       /*reserved*/
+            uint32_t slave_mode: 1;                       /*Set SPI work mode. 1: slave mode 0: master mode.*/
+            uint32_t sync_reset: 1;                       /*Software reset enable  reset the spi clock line cs line and data lines.*/
         };
         uint32_t val;
     } slave;
     union {
         struct {
-            uint32_t rd_addr_bytelen:     4;              /*In the slave mode it is the address length in bytes for read-buffer operation. The register value shall be byte_num.*/
-            uint32_t wr_addr_bytelen:     4;              /*In the slave mode it is the address length in bytes for write-buffer operation. The register value shall be byte_num.*/
-            uint32_t reserved8:           3;              /*reserved*/
-            uint32_t wr_dma_done:         1;              /*The interrupt raw bit for the completion of dma write operation in the slave mode.*/
-            uint32_t last_command:        3;              /*In the slave mode it is the value of command.*/
-            uint32_t last_addr:           7;              /*In the slave mode it is the value of address.*/
-            uint32_t reserved22:         10;              /*reserved*/
+            uint32_t reserved0:       13;                 /*reserved*/
+            uint32_t addr_err:         1;                 /*1: The address value of the last SPI transfer is not supported by SPI slave. 0: The address value is supported or no address value is received.*/
+            uint32_t cmd_err:          1;                 /*1: The command value of the last SPI transfer is not supported by SPI slave. 0: The command value is supported or no command value is received.*/
+            uint32_t wr_dma_done:      1;                 /*The interrupt raw bit for the completion of dma write operation in the slave mode.  Can not be changed by CONF_buf.*/
+            uint32_t last_command:     8;                 /*In the slave mode it is the value of command.*/
+            uint32_t last_addr:        8;                 /*In the slave mode it is the value of address.*/
         };
         uint32_t val;
     } slave1;
     union {
         struct {
-            uint32_t rd_dummy_bytelen:     4;             /*In the slave mode it is the length in spi_clk byte cycles of dummy phase for read operations.*/
-            uint32_t wr_dummy_bytelen:     4;             /*In the slave mode it is the length in spi_clk byte cycles of dummy phase for write operations.*/
-            uint32_t rd_dma_done:          1;             /*The interrupt raw bit for the completion of dma read operation in the slave mode.*/
-            uint32_t reserved9:           23;             /*reserved*/
+            uint32_t reserved0:       8;
+            uint32_t rd_dma_done:     1;                  /*The interrupt raw bit for the completion of Rd-DMA operation in the slave mode.  Can not be changed by CONF_buf.*/
+            uint32_t reserved9:      23;                  /*reserved*/
         };
         uint32_t val;
     } slave2;
@@ -237,45 +243,52 @@ typedef volatile struct {
     uint32_t reserved_4c;
     union {
         struct {
-            uint32_t st:         3;                       /*The status of spi state machine. 0: idle state  1: preparation state  2: send command state  3: send data state  4: red data state  5:write data state  6: wait state  7: done state.*/
-            uint32_t reserved3: 29;                       /*reserved*/
+            uint32_t st:                 4;               /*The status of spi state machine. 0: idle state  1: preparation state  2: send command state  3: send data state  4: red data state  5:write data state  6: wait state  7: done state.*/
+            uint32_t reserved4:          8;               /*reserved*/
+            uint32_t mst_dma_rd_bytelen:20;               /*Define the master DMA read byte length in non seg-trans or seg-trans mode. Invalid when spi_rx_eof_en is 0.*/
         };
         uint32_t val;
     } fsm;
     union {
         struct {
-            uint32_t int_hold_ena:  2;                    /*This register is for two SPI masters to share the same cs clock and data signals. The bits of one SPI are set  if the other SPI is busy  the SPI will be hold. 1(3): hold at  idle  phase 2: hold at  prepare  phase.*/
-            uint32_t hold_val:      1;                    /*spi hold output value  which should be used with spi_hold_out_en.*/
-            uint32_t hold_out_en:   1;                    /*Enable set spi output hold value to spi_hold_reg. It can be used to hold spi state machine with spi_ext_hold_en and other usr hold signals.*/
-            uint32_t hold_out_time: 3;                    /*set the hold cycles of output spi_hold signal when spi_hold_out_en is enable.*/
-            uint32_t reserved7:    25;                    /*reserved*/
+            uint32_t int_hold_ena:       2;               /*This register is for two SPI masters to share the same cs clock and data signals. The bits of one SPI are set  if the other SPI is busy  the SPI will be hold. 1(3): hold at  idle  phase 2: hold at  prepare  phase.*/
+            uint32_t hold_val:           1;               /*spi hold output value  which should be used with spi_hold_out_en.*/
+            uint32_t hold_out_en:        1;               /*Enable set spi output hold value to spi_hold_reg. It can be used to hold spi state machine with spi_ext_hold_en and other usr hold signals.*/
+            uint32_t hold_out_time:      3;               /*set the hold cycles of output spi_hold signal when spi_hold_out_en is enable.*/
+            uint32_t dma_seg_trans_done: 1;               /*1:  spi master DMA full-duplex/half-duplex seg-trans ends or slave half-duplex seg-trans ends. And data has been pushed to corresponding memory.  0:  seg-trans is not ended or not occurred.  Can not be changed by CONF_buf.*/
+            uint32_t reserved8:         24;               /*reserved*/
         };
         uint32_t val;
     } hold;
     union {
         struct {
-            uint32_t reserved0:             2;            /*reserved*/
-            uint32_t in_rst:                1;            /*The bit is used to reset in dma fsm and in data fifo pointer.*/
-            uint32_t out_rst:               1;            /*The bit is used to reset out dma fsm and out data fifo pointer.*/
-            uint32_t ahbm_fifo_rst:         1;            /*Reset spi dma ahb master fifo pointer.*/
-            uint32_t ahbm_rst:              1;            /*Reset spi dma ahb master.*/
-            uint32_t in_loop_test:          1;            /*Set bit to test in link.*/
-            uint32_t out_loop_test:         1;            /*Set bit to test out link.*/
-            uint32_t out_auto_wrback:       1;            /*when the bit is set  DMA continue to use the next inlink node when the length of inlink is 0.*/
-            uint32_t out_eof_mode:          1;            /*out eof flag generation mode . 1: when dma pop all data from fifo  0:when ahb push all data to fifo.*/
-            uint32_t outdscr_burst_en:      1;            /*read descriptor use burst mode when read data for memory.*/
-            uint32_t indscr_burst_en:       1;            /*read descriptor use burst mode when write data to memory.*/
-            uint32_t out_data_burst_en:     1;            /*spi dma read data from memory in burst mode.*/
-            uint32_t mem_trans_en:          1;
-            uint32_t dma_rx_stop:           1;            /*spi dma read data stop  when in continue tx/rx mode.*/
-            uint32_t dma_tx_stop:           1;            /*spi dma write data stop when in continue tx/rx mode.*/
-            uint32_t dma_continue:          1;            /*spi dma continue tx/rx data.*/
-            uint32_t continue_pop_data_clr: 1;            /*Disable spi slave dma to pop data continuously in next transmission in dma half duplex slave mode. 1: disable continue transmit.   0: enable continue transmit.*/
-            uint32_t slv_rx_seg_trans_en:   1;           /*enable DMA segment transfer in slave mode*/
-            uint32_t reserved19:           3;            /*reserved*/
-            uint32_t infifo_full_clr:        1;
-            uint32_t outfifo_empty_clr:      1;
-            uint32_t reserved24:          8;
+            uint32_t reserved0:               2;          /*reserved*/
+            uint32_t in_rst:                  1;          /*The bit is used to reset in dma fsm and in data fifo pointer.*/
+            uint32_t out_rst:                 1;          /*The bit is used to reset out dma fsm and out data fifo pointer.*/
+            uint32_t ahbm_fifo_rst:           1;          /*Reset spi dma ahb master fifo pointer.*/
+            uint32_t ahbm_rst:                1;          /*Reset spi dma ahb master.*/
+            uint32_t in_loop_test:            1;          /*Set bit to test in link.*/
+            uint32_t out_loop_test:           1;          /*Set bit to test out link.*/
+            uint32_t out_auto_wrback:         1;          /*when the bit is set  DMA continue to use the next inlink node when the length of inlink is 0.*/
+            uint32_t out_eof_mode:            1;          /*out eof flag generation mode . 1: when dma pop all data from fifo  0:when ahb push all data to fifo.*/
+            uint32_t outdscr_burst_en:        1;          /*read descriptor use burst mode when read data for memory.*/
+            uint32_t indscr_burst_en:         1;          /*read descriptor use burst mode when write data to memory.*/
+            uint32_t out_data_burst_en:       1;          /*spi dma read data from memory in burst mode.*/
+            uint32_t mem_trans_en:            1;
+            uint32_t dma_rx_stop:             1;          /*spi dma read data stop  when in continue tx/rx mode.*/
+            uint32_t dma_tx_stop:             1;          /*spi dma write data stop when in continue tx/rx mode.*/
+            uint32_t dma_continue:            1;          /*spi dma continue tx/rx data.*/
+            uint32_t last_seg_pop_clr:        1;          /*1: Clear spi_slv_seg_frt_pop_mask. 0 : others*/
+            uint32_t dma_seg_trans_en:        1;          /*Enable dma segment transfer in spi dma half slave mode. 1: enable. 0: disable.*/
+            uint32_t rx_seg_trans_clr_en:     1;          /*1: spi_dma_infifo_full_vld is cleared by spi slave cmd 5. 0: spi_dma_infifo_full_vld is cleared by spi_trans_done.*/
+            uint32_t tx_seg_trans_clr_en:     1;          /*1: spi_dma_outfifo_empty_vld is cleared by spi slave cmd 6. 0: spi_dma_outfifo_empty_vld is cleared by spi_trans_done.*/
+            uint32_t rx_eof_en:               1;          /*1: spi_dma_inlink_eof is set when the number of dma pushed data bytes is equal to the value of spi_slv/mst_dma_rd_bytelen[19:0] in spi dma transition.  0: spi_dma_inlink_eof is set by spi_trans_done in non-seg-trans or spi_dma_seg_trans_done in seg-trans.*/
+            uint32_t infifo_full_clr:         1;          /*1:Clear spi_dma_infifo_full_vld. 0: Do not control it.*/
+            uint32_t outfifo_empty_clr:       1;          /*1:Clear spi_dma_outfifo_empty_vld. 0: Do not control it.*/
+            uint32_t infifo_full_err:         1;          /*1:spi_dma_infifo_full and spi_push_data_prep are valid  which means that DMA Rx buffer is full but push is valid.  0: Others.  Can not be changed by CONF_buf.*/
+            uint32_t outfifo_empty_err:       1;          /*1:spi_dma_outfifo_empty and spi_pop_data_prep are valid  which means that there is no data to pop but pop is valid.  0: Others.  Can not be changed by CONF_buf.*/
+            uint32_t ext_mem_bk_size:         2;          /*Select the external memory block size.*/
+            uint32_t reserved28:              4;          /*reserved*/
         };
         uint32_t val;
     } dma_conf;
@@ -397,16 +410,16 @@ typedef volatile struct {
     uint32_t data_buf[18];                                          /*data buffer*/
     union {
         struct {
-            uint32_t din0_mode:     2;                    /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t din1_mode:     2;                    /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t din2_mode:     2;                    /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t din3_mode:     2;                    /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t reserved8:    10;
-            uint32_t din0_dly_edge: 1;                    /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t din1_dly_edge: 1;                    /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t din2_dly_edge: 1;                    /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t din3_dly_edge: 1;                    /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t reserved22:   10;                    /*reserved*/
+            uint32_t din0_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din1_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din2_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din3_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din4_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din5_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din6_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din7_mode:      3;                   /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t timing_clk_ena: 1;                   /*1:enable hclk in spi_timing.v.  0: disable it.*/
+            uint32_t reserved25:     7;                   /*reserved*/
         };
         uint32_t val;
     } din_mode;
@@ -416,24 +429,25 @@ typedef volatile struct {
             uint32_t din1_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
             uint32_t din2_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
             uint32_t din3_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t reserved8: 24;                       /*reserved*/
+            uint32_t din4_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din5_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din6_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din7_num:   2;                       /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t reserved16:16;                       /*reserved*/
         };
         uint32_t val;
     } din_num;
     union {
         struct {
-            uint32_t dout0_mode:     2;                   /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout1_mode:     2;                   /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout2_mode:     2;                   /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout3_mode:     2;                   /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout4_mode:     2;                   /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t reserved10:     8;                   /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout0_dly_edge: 1;                   /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout1_dly_edge: 1;                   /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout2_dly_edge: 1;                   /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout3_dly_edge: 1;                   /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout4_dly_edge: 1;                   /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t reserved23:     9;                   /*reserved*/
+            uint32_t dout0_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout1_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout2_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout3_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout4_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout5_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout6_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout7_mode: 3;                       /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t reserved24: 8;                       /*reserved*/
         };
         uint32_t val;
     } dout_mode;
@@ -444,34 +458,63 @@ typedef volatile struct {
             uint32_t dout2_num:  2;                       /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
             uint32_t dout3_num:  2;                       /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
             uint32_t dout4_num:  2;                       /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t reserved10:22;                       /*reserved*/
+            uint32_t dout5_num:  2;                       /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t dout6_num:  2;                       /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t dout7_num:  2;                       /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t reserved16:16;                       /*reserved*/
         };
         uint32_t val;
     } dout_num;
     union {
         struct {
-            uint32_t sop_en:       1;
-            uint32_t sop_mode:     4;
-            uint32_t sop_rcmd:     8;
-            uint32_t sop_wcmd:     8;
-            uint32_t sop_dqs_edge: 1;
-            uint32_t reserved22:  10;
+            uint32_t lcd_hb_front:    11;                 /*It is the horizontal blank front porch of a frame.*/
+            uint32_t lcd_va_height:   10;                 /*It is the vertical active height of a frame.*/
+            uint32_t lcd_vt_height:   10;                 /*It is the vertical total height of a frame.*/
+            uint32_t lcd_srgb_mode_en: 1;                 /*1: Enable LCD mode output vsync  hsync  de. 0: Disable.*/
         };
         uint32_t val;
-    } spr_cfg0;
+    } lcd_ctrl;
     union {
         struct {
-            uint32_t sop_itl:    12;
-            uint32_t sop_len:     6;
-            uint32_t sop_dlen:    6;
-            uint32_t sop_dc_mode: 1;
-            uint32_t reserved25:  7;
+            uint32_t lcd_vb_front: 8;                     /*It is the vertical blank front porch of a frame.*/
+            uint32_t lcd_ha_width:12;                     /*It is the horizontal active width of a frame.*/
+            uint32_t lcd_ht_width:12;                     /*It is the horizontal total width of a frame.*/
         };
         uint32_t val;
-    } spr_cfg1;
-    uint32_t reserved_104;
-    uint32_t reserved_108;
-    uint32_t reserved_10c;
+    } lcd_ctrl1;
+    union {
+        struct {
+            uint32_t lcd_vsync_width:    7;               /*It is the position of spi_vsync_out active pulse in a line.*/
+            uint32_t vsync_idle_pol:     1;               /*It is the idle value of spi_vsync_out.*/
+            uint32_t lcd_vsync_position: 8;               /*It is the position of spi_vsync_out active pulse in a line.*/
+            uint32_t lcd_hsync_width:    7;               /*It is the position of spi_hsync_out active pulse in a line.*/
+            uint32_t hsync_idle_pol:     1;               /*It is the idle value of spi_hsync_out.*/
+            uint32_t lcd_hsync_position: 8;               /*It is the position of spi_hsync_out active pulse in a line.*/
+        };
+        uint32_t val;
+    } lcd_ctrl2;
+    union {
+        struct {
+            uint32_t d_dqs_mode:   3;                     /*the output spi_dqs is delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t d_cd_mode:    3;                     /*the output spi_cd is delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t d_de_mode:    3;                     /*the output spi_de is delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t d_hsync_mode: 3;                     /*the output spi_hsync is delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t d_vsync_mode: 3;                     /*the output spi_vsync is delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t reserved15:  17;                     /*reserved*/
+        };
+        uint32_t val;
+    } lcd_d_mode;
+    union {
+        struct {
+            uint32_t d_dqs_num:   2;                      /*the output spi_dqs is delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t d_cd_num:    2;                      /*the output spi_cd is delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t d_de_num:    2;                      /*the output spi_de is delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t d_hsync_num: 2;                      /*the output spi_hsync is delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t d_vsync_num: 2;                      /*the output spi_vsync is delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t reserved10: 22;                      /*reserved*/
+        };
+        uint32_t val;
+    } lcd_d_num;
     uint32_t reserved_110;
     uint32_t reserved_114;
     uint32_t reserved_118;
@@ -669,7 +712,6 @@ typedef volatile struct {
 } spi_dev_t;
 extern spi_dev_t GPSPI2;   //FSPI
 extern spi_dev_t GPSPI3;   //HSPI
-extern spi_dev_t GPSPI4;   //VSPI
 
 
 _Static_assert(sizeof(spi_dev_t)==0x400, "***invalid spi");

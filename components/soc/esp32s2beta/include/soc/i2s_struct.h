@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -250,7 +250,8 @@ typedef volatile struct {
             uint32_t out_data_burst_en:  1;               /*Transmitter data transfer mode configuration bit. 1:  to prepare out data with burst mode      0: to prepare out data with byte mode*/
             uint32_t check_owner:        1;               /*Set this bit to enable check owner bit by hardware*/
             uint32_t mem_trans_en:       1;               /*don't use*/
-            uint32_t reserved14:        18;
+            uint32_t ext_mem_bk_size:    2;               /*DMA access external memory block size. 0: 16 bytes      1: 32 bytes    2:64 bytes      3:reserved*/
+            uint32_t reserved16:        16;
         };
         uint32_t val;
     } lc_conf;

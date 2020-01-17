@@ -68,7 +68,7 @@ typedef volatile struct {
             uint32_t timer_sys_stall: 1;                 /*Enable to record system stall time*/
             uint32_t timer_xtl_off:   1;                 /*Enable to record 40M XTAL OFF time*/
             uint32_t timer_sys_rst:   1;                 /*enable to record system reset time*/
-            uint32_t valid:           1;                 /*To indicate the register is updated*/
+            uint32_t reserved30:      1;
             uint32_t update:          1;                 /*Set 1: to update register with RTC timer*/
         };
         uint32_t val;
@@ -188,7 +188,7 @@ typedef volatile struct {
             uint32_t slp_reject:                 1;      /*enable sleep reject interrupt*/
             uint32_t sdio_idle:                  1;      /*enable SDIO idle interrupt*/
             uint32_t rtc_wdt:                    1;      /*enable RTC WDT interrupt*/
-            uint32_t rtc_time_valid:             1;      /*enable RTC time valid interrupt*/
+            uint32_t reserved4:                  1;
             uint32_t rtc_ulp_cp:                 1;      /*enable ULP-coprocessor interrupt*/
             uint32_t rtc_touch_done:             1;      /*enable touch done interrupt*/
             uint32_t rtc_touch_active:           1;      /*enable touch active interrupt*/
@@ -212,7 +212,7 @@ typedef volatile struct {
             uint32_t slp_reject:                 1;      /*sleep reject interrupt raw*/
             uint32_t sdio_idle:                  1;      /*SDIO idle interrupt raw*/
             uint32_t rtc_wdt:                    1;      /*RTC WDT interrupt raw*/
-            uint32_t rtc_time_valid:             1;      /*RTC time valid interrupt raw*/
+            uint32_t reserved4:                  1;
             uint32_t rtc_ulp_cp:                 1;      /*ULP-coprocessor interrupt raw*/
             uint32_t rtc_touch_done:             1;      /*touch interrupt raw*/
             uint32_t rtc_touch_active:           1;      /*touch active interrupt raw*/
@@ -236,7 +236,7 @@ typedef volatile struct {
             uint32_t slp_reject:                1;       /*sleep reject interrupt state*/
             uint32_t sdio_idle:                 1;       /*SDIO idle interrupt state*/
             uint32_t rtc_wdt:                   1;       /*RTC WDT interrupt state*/
-            uint32_t rtc_time_valid:            1;       /*RTC time valid interrupt state*/
+            uint32_t reserved4:                 1;
             uint32_t rtc_ulp_cp:                1;       /*ULP-coprocessor interrupt state*/
             uint32_t rtc_touch_done:            1;       /*touch done interrupt state*/
             uint32_t rtc_touch_active:          1;       /*touch active interrupt state*/
@@ -260,7 +260,7 @@ typedef volatile struct {
             uint32_t slp_reject:                 1;      /*Clear sleep reject interrupt state*/
             uint32_t sdio_idle:                  1;      /*Clear SDIO idle interrupt state*/
             uint32_t rtc_wdt:                    1;      /*Clear RTC WDT interrupt state*/
-            uint32_t rtc_time_valid:             1;      /*Clear RTC time valid interrupt state*/
+            uint32_t reserved4:                  1;
             uint32_t rtc_ulp_cp:                 1;      /*Clear ULP-coprocessor interrupt state*/
             uint32_t rtc_touch_done:             1;      /*Clear touch done interrupt state*/
             uint32_t rtc_touch_active:           1;      /*Clear touch active interrupt state*/
@@ -818,10 +818,21 @@ typedef volatile struct {
             uint32_t usb_txp:                 1;
             uint32_t usb_tx_en:               1;
             uint32_t usb_tx_en_override:      1;
-            uint32_t reserved17:             15;
+            uint32_t usb_reset_disable:       1;
+            uint32_t io_mux_reset_disable:    1;
+            uint32_t reserved19:             13;
         };
         uint32_t val;
     } usb_conf;
+    uint32_t reserved_124;
+    uint32_t reserved_128;
+    union {
+        struct {
+            uint32_t force_download_boot: 1;
+            uint32_t reserved1:          31;
+        };
+        uint32_t val;
+    } option1;
     union {
         struct {
             uint32_t date:      28;

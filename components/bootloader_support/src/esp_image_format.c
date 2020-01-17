@@ -24,11 +24,11 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include <esp32/rom/rtc.h>
-#include <esp32/rom/secure_boot.h>
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include <esp32s2beta/rom/rtc.h>
-#include <esp32s2beta/rom/secure_boot.h>
+#include "esp32s2beta/rom/rtc.h"
+#include "esp32s2beta/rom/secure_boot.h"
 #endif
 
 /* Checking signatures as part of verifying images is necessary:
@@ -107,7 +107,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     bool do_verify = (mode == ESP_IMAGE_LOAD) || (mode == ESP_IMAGE_VERIFY) || (mode == ESP_IMAGE_VERIFY_SILENT);
 #else
     bool do_load   = false; // Can't load the image in app mode
-    bool do_verify = true;	// In app mode is avalible only verify mode
+    bool do_verify = true;  // In app mode is available only verify mode
 #endif
     bool silent    = (mode == ESP_IMAGE_VERIFY_SILENT);
     esp_err_t err = ESP_OK;
@@ -198,13 +198,13 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         }
 
         /* For secure boot on ESP32, we don't calculate SHA or verify signautre on bootloaders.
-           For ESP32S2, we do verify signature on botoloaders which includes the SHA calculation.
+           For ESP32S2, we do verify signature on bootloader which includes the SHA calculation.
 
            (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
            esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
         */
         bool verify_sha;
-#if defined(CONFIG_SECURE_BOOT_ENABLED) && defined(CONFIG_IDF_TARGET_ESP32S2BETA)
+#if CONFIG_SECURE_BOOT_ENABLED && CONFIG_IDF_TARGET_ESP32S2BETA
         verify_sha = true;
 #else // ESP32, or ESP32S2 without secure boot enabled
         verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
@@ -378,7 +378,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
 #ifdef BOOTLOADER_BUILD
     /* Before loading segment, check it doesn't clobber bootloader RAM. */
-    if (do_load) {
+    if (do_load && data_len > 0) {
         const intptr_t load_end = load_addr + data_len;
         if (load_end < (intptr_t) SOC_DRAM_HIGH) {
             /* Writing to DRAM */
@@ -638,7 +638,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(simple_hash);
     }
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2BETA
     // Pad to 4096 byte sector boundary
     if (end % FLASH_SECTOR_SIZE != 0) {
         uint32_t pad_len = FLASH_SECTOR_SIZE - (end % FLASH_SECTOR_SIZE);

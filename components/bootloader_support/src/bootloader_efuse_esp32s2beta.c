@@ -16,12 +16,6 @@
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
 
-int bootloader_clock_get_rated_freq_mhz()
-{
-    /* No known limitation: all chips are 240MHz rated */
-    return 240;
-}
-
 uint8_t bootloader_common_get_chip_revision(void)
 {
     /* No other revisions for ESP32-S2beta */

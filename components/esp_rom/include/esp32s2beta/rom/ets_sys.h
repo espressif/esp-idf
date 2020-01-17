@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#pragma once
+#ifndef _ROM_ETS_SYS_H_
+#define _ROM_ETS_SYS_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -189,6 +190,23 @@ void ets_set_appcpu_boot_addr(uint32_t start);
 int ets_printf(const char *fmt, ...);
 
 /**
+  * @brief  Set the uart channel of ets_printf(uart_tx_one_char).
+  *         ROM will set it base on the efuse and gpio setting, however, this can be changed after booting.
+  *
+  * @param  uart_no : 0 for UART0, 1 for UART1, 2 for UART2.
+  *
+  * @return None
+  */
+void ets_set_printf_channel(uint8_t uart_no);
+
+/**
+  * @brief Get the uart channel of ets_printf(uart_tx_one_char).
+  *
+  * @return uint8_t uart channel used by ets_printf(uart_tx_one_char).
+  */
+uint8_t ets_get_printf_channel(void);
+
+/**
   * @brief  Output a char to uart, which uart to output(which is in uart module in ROM) is not in scope of the function.
   *         Can not print float point data format, or longlong data format
   *
@@ -360,6 +378,18 @@ void ets_delay_us(uint32_t us);
 void ets_update_cpu_frequency(uint32_t ticks_per_us);
 
 /**
+  * @brief  Set the real CPU ticks per us to the ets, so that ets_delay_us will be accurate.
+  *
+  * @note This function only sets the tick rate for the current CPU. It is located in ROM,
+  *       so the deep sleep stub can use it even if IRAM is not initialized yet.
+  *
+  * @param  uint32_t ticks_per_us : CPU ticks per us.
+  *
+  * @return None
+  */
+void ets_update_cpu_frequency_rom(uint32_t ticks_per_us);
+
+/**
   * @brief  Get the real CPU ticks per us to the ets.
   *         This function do not return real CPU ticks per us, just the record in ets. It can be used to check with the real CPU frequency.
   *
@@ -368,15 +398,6 @@ void ets_update_cpu_frequency(uint32_t ticks_per_us);
   * @return uint32_t : CPU ticks per us record in ets.
   */
 uint32_t ets_get_cpu_frequency(void);
-
-/**
-  * @brief  Get xtal_freq/analog_8M*256 value calibrated in rtc module.
-  *
-  * @param  None
-  *
-  * @return uint32_t : xtal_freq/analog_8M*256.
-  */
-uint32_t ets_get_xtal_scale(void);
 
 /**
   * @brief  Get xtal_freq value, If value not stored in RTC_STORE5, than store.
@@ -390,6 +411,32 @@ uint32_t ets_get_xtal_scale(void);
   *                    else clock = 40M.
   */
 uint32_t ets_get_xtal_freq(void);
+
+/**
+  * @brief  Get the apb divisor. The xtal frequency gets divided
+  *         by this value to generate the APB clock.
+  *         When any types of reset happens, the default value is 2.
+  *
+  * @param  None
+  *
+  * @return uint32_t : 1 or 2.
+  */
+uint32_t ets_get_xtal_div(void);
+
+
+/**
+  * @brief  Modifies the apb divisor. The xtal frequency gets divided by this to
+  *         generate the APB clock.
+  *
+  * @note The xtal frequency divisor is 2 by default as the glitch detector
+  *       doesn't properly stop glitches when it is 1. Please do not set the
+  *       divisor to 1 before the PLL is active without being aware that you
+  *       may be introducing a security risk.
+  *
+  * @param  div Divisor. 1 = xtal freq, 2 = 1/2th xtal freq.
+  */
+void ets_set_xtal_div(int div);
+
 
 /**
   * @brief  Get apb_freq value, If value not stored in RTC_STORE5, than store.
@@ -607,3 +654,5 @@ typedef enum {
 #ifdef __cplusplus
 }
 #endif
+
+#endif /* _ROM_ETS_SYS_H_ */

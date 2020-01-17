@@ -1,18 +1,11 @@
-/* ESP32S2Beta Linker Script Memory Layout
+/* ESP32S2 Linker Script Memory Layout
 
-   This file describes the memory layout (memory blocks) as virtual
-   memory addresses.
+   This file describes the memory layout (memory blocks) by virtual memory addresses.
 
-   esp32.common.ld contains output sections to link compiler output
-   into these memory blocks.
+   This linker script is passed through the C preprocessor to include configuration options.
 
-   ***
-
-   This linker script is passed through the C preprocessor to include
-   configuration options.
-
-   Please use preprocessor features sparingly! Restrict
-   to simple macros with numeric values, and/or #if/#endif blocks.
+   Please use preprocessor features sparingly!
+   Restrict to simple macros with numeric values, and/or #if/#endif blocks.
 */
 #include "sdkconfig.h"
 
@@ -33,7 +26,7 @@
 
 #define RAM_IRAM_START    0x40020000
 #define RAM_DRAM_START    0x3FFB0000
-#define DATA_RAM_END      0x3FFF2000  /* start address of bootloader */
+#define DATA_RAM_END      0x3FFF0000  /* start address of bootloader */
 
 #define IRAM_ORG    (RAM_IRAM_START + CONFIG_ESP32S2_INSTRUCTION_CACHE_SIZE \
                                     + CONFIG_ESP32S2_DATA_CACHE_SIZE)
@@ -55,7 +48,7 @@ MEMORY
 
   /* Even though the segment name is iram, it is actually mapped to flash
   */
-  iram0_2_seg (RX) :                 org = 0x40080020, len = 0xb80000-0x20
+  iram0_2_seg (RX) :                 org = 0x40080020, len = 0x780000-0x20
 
   /*
     (0x20 offset above is a convenience for the app binary image generation.
@@ -66,11 +59,7 @@ MEMORY
   */
 
 
-  /* Shared data RAM, excluding memory reserved for bootloader and ROM bss/data/stack.
-
-     Enabling Bluetooth & Trace Memory features in menuconfig will decrease
-     the amount of RAM available.
-  */
+  /* Shared data RAM, excluding memory reserved for bootloader and ROM bss/data/stack. */
   dram0_0_seg (RW) :                 org = DRAM_ORG, len = DRAM_SIZE
 
   /* Flash mapped constant data */

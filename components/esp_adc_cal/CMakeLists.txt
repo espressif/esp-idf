@@ -1,5 +1,6 @@
-# TODO esp32s2beta: Use require_idf_targets here
-if(IDF_TARGET STREQUAL "esp32s2beta")
+idf_build_get_property(target IDF_TARGET)
+# ToDo: re-enable adc-cal for other target
+if(NOT ${target} STREQUAL "esp32")
     return()
 endif()
 

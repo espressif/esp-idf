@@ -78,7 +78,7 @@ void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attri
 void start_cpu0_default(void) IRAM_ATTR __attribute__((noreturn));
 
 static void do_global_ctors(void);
-static void main_task(void* args);
+static void main_task(void *args);
 extern void app_main(void);
 extern esp_err_t esp_pthread_init(void);
 
@@ -91,14 +91,16 @@ extern void (*__init_array_start)(void);
 extern void (*__init_array_end)(void);
 extern volatile int port_xSchedulerRunning[2];
 
-static const char* TAG = "cpu_start";
+static const char *TAG = "cpu_start";
 
-struct object { long placeholder[ 10 ]; };
+struct object {
+    long placeholder[ 10 ];
+};
 void __register_frame_info (const void *begin, struct object *ob);
 extern char __eh_frame[];
 
 //If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
-static bool s_spiram_okay=true;
+static bool s_spiram_okay = true;
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -134,19 +136,14 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
-extern void esp_config_instruction_cache_mode(void);
+    extern void esp_config_instruction_cache_mode(void);
     esp_config_instruction_cache_mode();
-
-    /* copy MMU table from ICache to DCache, so we can use DCache to access rodata later. */
-#if CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
-    MMU_Drom0_I2D_Copy();
-#endif
 
     /* If we need use SPIRAM, we should use data cache, or if we want to access rodata, we also should use data cache.
        Configure the mode of data : cache size, cache associated ways, cache line size.
        Enable data cache, so if we don't use SPIRAM, it just works. */
-#if CONFIG_SPIRAM_BOOT_INIT || CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
-extern void esp_config_data_cache_mode(void);
+#if CONFIG_SPIRAM_BOOT_INIT
+    extern void esp_config_data_cache_mode(void);
     esp_config_data_cache_mode();
     Cache_Enable_DCache(0);
 #endif
@@ -167,18 +164,12 @@ extern void esp_config_data_cache_mode(void);
     }
 #endif
 
-    /* Start to use data cache to access rodata. */
-#if CONFIG_ESP32S2_RODATA_USE_DATA_CACHE
-extern void esp_switch_rodata_to_dcache(void);
-    esp_switch_rodata_to_dcache();
-#endif
-
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
     ESP_EARLY_LOGI(TAG, "Single core mode");
 
 #if CONFIG_SPIRAM_MEMTEST
     if (s_spiram_okay) {
-        bool ext_ram_ok=esp_spiram_test();
+        bool ext_ram_ok = esp_spiram_test();
         if (!ext_ram_ok) {
             ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
             abort();
@@ -187,23 +178,23 @@ extern void esp_switch_rodata_to_dcache(void);
 #endif
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-extern void esp_spiram_enable_instruction_access(void);
+    extern void esp_spiram_enable_instruction_access(void);
     esp_spiram_enable_instruction_access();
 #endif
 #if CONFIG_SPIRAM_RODATA
-extern void esp_spiram_enable_rodata_access(void);
+    extern void esp_spiram_enable_rodata_access(void);
     esp_spiram_enable_rodata_access();
 #endif
 
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP || CONFIG_ESP32S2_DATA_CACHE_WRAP
-uint32_t icache_wrap_enable = 0,dcache_wrap_enable = 0;
+    uint32_t icache_wrap_enable = 0, dcache_wrap_enable = 0;
 #if CONFIG_ESP32S2_INSTRUCTION_CACHE_WRAP
     icache_wrap_enable = 1;
 #endif
 #if CONFIG_ESP32S2_DATA_CACHE_WRAP
     dcache_wrap_enable = 1;
 #endif
-extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
+    extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
     esp_enable_cache_wrap(icache_wrap_enable, dcache_wrap_enable);
 #endif
 
@@ -236,13 +227,13 @@ void start_cpu0_default(void)
 
     if (s_spiram_okay) {
 #if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-        esp_err_t r=esp_spiram_add_to_heapalloc();
+        esp_err_t r = esp_spiram_add_to_heapalloc();
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
             abort();
         }
 #if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-        r=esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+        r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
         if (r != ESP_OK) {
             ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool!");
             abort();
@@ -284,14 +275,14 @@ void start_cpu0_default(void)
     esp_vfs_dev_uart_register();
     esp_reent_init(_GLOBAL_REENT);
 #ifndef CONFIG_ESP_CONSOLE_UART_NONE
-    const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
+    const char *default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
     _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
 #else
-    _GLOBAL_REENT->_stdin  = (FILE*) &__sf_fake_stdin;
-    _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
-    _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
+    _GLOBAL_REENT->_stdin  = (FILE *) &__sf_fake_stdin;
+    _GLOBAL_REENT->_stdout = (FILE *) &__sf_fake_stdout;
+    _GLOBAL_REENT->_stderr = (FILE *) &__sf_fake_stderr;
 #endif
     esp_timer_init();
     esp_set_time_from_rtc();
@@ -330,8 +321,8 @@ void start_cpu0_default(void)
     rtc_cpu_freq_t max_freq;
     rtc_clk_cpu_freq_from_mhz(CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ, &max_freq);
     esp_pm_config_esp32_t cfg = {
-            .max_cpu_freq = max_freq,
-            .min_cpu_freq = RTC_CPU_FREQ_XTAL
+        .max_cpu_freq = max_freq,
+        .min_cpu_freq = RTC_CPU_FREQ_XTAL
     };
     esp_pm_configure(&cfg);
 #endif //CONFIG_PM_DFS_INIT_AUTO
@@ -342,8 +333,8 @@ void start_cpu0_default(void)
 #endif
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
-                                                ESP_TASK_MAIN_STACK, NULL,
-                                                ESP_TASK_MAIN_PRIO, NULL, 0);
+                        ESP_TASK_MAIN_STACK, NULL,
+                        ESP_TASK_MAIN_PRIO, NULL, 0);
     assert(res == pdTRUE);
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
@@ -370,7 +361,7 @@ static void do_global_ctors(void)
     }
 }
 
-static void main_task(void* args)
+static void main_task(void *args)
 {
     //Enable allocation in region where the startup stacks were located.
     heap_caps_enable_nonos_stack_heaps();
@@ -385,7 +376,7 @@ static void main_task(void* args)
     //Add IDLE 0 to task wdt
 #ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
     TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 != NULL){
+    if (idle_0 != NULL) {
         ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
     }
 #endif

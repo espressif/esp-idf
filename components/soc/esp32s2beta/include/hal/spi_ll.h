@@ -22,12 +22,12 @@
 
 #pragma once
 
-#include "hal/hal_defs.h"
-#include "soc/spi_periph.h"
-#include "esp32/rom/lldesc.h"
-#include <string.h>
-#include <esp_types.h>
 #include <stdlib.h> //for abs()
+#include <string.h>
+#include "hal/hal_defs.h"
+#include "esp_types.h"
+#include "soc/spi_periph.h"
+#include "esp32s2beta/rom/lldesc.h"
 
 /// Registers to reset during initialization. Don't use in app.
 #define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
@@ -36,7 +36,7 @@
 /// Swap the bit order to its correct place to send
 #define HAL_SPI_SWAP_DATA_TX(data, len) HAL_SWAP32((uint32_t)data<<(32-len))
 
-#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : ((ID)==2? &GPSPI3: &GPSPI4)))
+#define SPI_LL_GET_HW(ID) ((ID)==0? ({abort();NULL;}):((ID)==1? &GPSPI2 : &GPSPI3))
 
 /**
  * The data structure holding calculated clock configuration. Since the
@@ -140,7 +140,7 @@ static inline void spi_ll_reset_dma(spi_dev_t *hw)
     hw->dma_conf.indscr_burst_en = 1;
     hw->dma_conf.outdscr_burst_en = 1;
     hw->dma_in_link.dma_rx_ena = 0;
-    assert(hw->dma_in_link.dma_rx_ena==0);
+    assert(hw->dma_in_link.dma_rx_ena == 0);
 }
 
 /**
@@ -249,7 +249,7 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
  */
 static inline void spi_ll_disable_int(spi_dev_t *hw)
 {
-    hw->slave.int_trans_done_en = 0;
+    hw->slave.trans_inten = 0;
 }
 
 /**
@@ -280,7 +280,7 @@ static inline void spi_ll_set_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_enable_int(spi_dev_t *hw)
 {
-    hw->slave.int_trans_done_en = 1;
+    hw->slave.trans_inten = 1;
 }
 
 /**
@@ -291,17 +291,16 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
  */
 static inline void spi_ll_slave_set_int_type(spi_dev_t *hw, spi_ll_slave_intr_type int_type)
 {
-    switch (int_type)
-    {
+    switch (int_type) {
     case SPI_LL_INT_TYPE_SEG:
         hw->dma_int_ena.in_suc_eof = 1;
         hw->dma_int_ena.out_total_eof = 1;
-        hw->slave.int_trans_done_en = 0;
+        hw->slave.trans_inten = 0;
         break;
     default:
         hw->dma_int_ena.in_suc_eof = 0;
         hw->dma_int_ena.out_total_eof = 0;
-        hw->slave.int_trans_done_en = 1;
+        hw->slave.trans_inten = 1;
     }
 }
 
@@ -687,7 +686,7 @@ static inline void spi_ll_master_set_cs_setup(spi_dev_t *hw, uint8_t setup)
  */
 static inline void spi_ll_slave_set_seg_en(spi_dev_t *hw, bool en)
 {
-    hw->dma_conf.slv_rx_seg_trans_en = en;
+    hw->dma_conf.dma_seg_trans_en = en;
 }
 
 /*------------------------------------------------------------------------------

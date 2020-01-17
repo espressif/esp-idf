@@ -105,8 +105,8 @@ int spicommon_irqdma_source_for_host(spi_host_device_t host)
 
 static inline uint32_t get_dma_periph(int dma_chan)
 {
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
-    if (dma_chan==1) {
+#if CONFIG_IDF_TARGET_ESP32S2BETA
+    if (dma_chan == 1) {
         return PERIPH_SPI2_DMA_MODULE;
     } else if (dma_chan==2) {
         return PERIPH_SPI3_DMA_MODULE;
@@ -116,7 +116,7 @@ static inline uint32_t get_dma_periph(int dma_chan)
         abort();
         return -1;
     }
-#elif defined(CONFIG_IDF_TARGET_ESP32)
+#elif CONFIG_IDF_TARGET_ESP32
     return PERIPH_SPI_DMA_MODULE;
 #endif
 }
@@ -357,12 +357,8 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
 
     //Select DMA channel.
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     DPORT_SET_PERI_REG_BITS(DPORT_SPI_DMA_CHAN_SEL_REG, 3, dma_chan, (host * 2));
-#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
-    if (dma_chan==VSPI_HOST) {
-        DPORT_SET_PERI_REG_MASK(DPORT_SPI_DMA_CHAN_SEL_REG, DPORT_SPI_SHARED_DMA_SEL_M);
-    }
 #endif
 
     if (flags_o) *flags_o = temp_flag;

@@ -25,6 +25,8 @@
 #include "soc/uart_reg.h"
 #include "soc/io_mux_reg.h"
 #include "soc/dport_reg.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/timer_group_struct.h"
 #include "soc/timer_group_reg.h"
@@ -214,35 +216,34 @@ static inline void printCacheError(void)
 {
     uint32_t vaddr = 0, size = 0;
     uint32_t status[2];
-    status[0] = REG_READ(DPORT_CACHE_DBG_STATUS0_REG);
-    status[1] = REG_READ(DPORT_CACHE_DBG_STATUS1_REG);
+    status[0] = REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG);
+    status[1] = REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG);
     for (int i = 0; i < 32; i++) {
-        switch (status[0] & BIT(i))
-        {
-        case DPORT_IC_SYNC_SIZE_FAULT_ST:
-            vaddr = REG_READ(DPORT_PRO_ICACHE_MEM_SYNC0_REG);
-            size = REG_READ(DPORT_PRO_ICACHE_MEM_SYNC1_REG);
+        switch (status[0] & BIT(i)) {
+        case EXTMEM_IC_SYNC_SIZE_FAULT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_ICACHE_MEM_SYNC0_REG);
+            size = REG_READ(EXTMEM_PRO_ICACHE_MEM_SYNC1_REG);
             panicPutStr("Icache sync parameter configuration error, the error address and size is 0x");
             panicPutHex(vaddr);
             panicPutStr("(0x");
             panicPutHex(size);
             panicPutStr(")\r\n");
             break;
-        case DPORT_IC_PRELOAD_SIZE_FAULT_ST:
-            vaddr = REG_READ(DPORT_PRO_ICACHE_PRELOAD_ADDR_REG);
-            size = REG_READ(DPORT_PRO_ICACHE_PRELOAD_SIZE_REG);
+        case EXTMEM_IC_PRELOAD_SIZE_FAULT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_ICACHE_PRELOAD_ADDR_REG);
+            size = REG_READ(EXTMEM_PRO_ICACHE_PRELOAD_SIZE_REG);
             panicPutStr("Icache preload parameter configuration error, the error address and size is 0x");
             panicPutHex(vaddr);
             panicPutStr("(0x");
             panicPutHex(size);
             panicPutStr(")\r\n");
             break;
-        case DPORT_ICACHE_REJECT_ST:
-            vaddr = REG_READ(DPORT_PRO_ICACHE_REJECT_VADDR_REG);
+        case EXTMEM_ICACHE_REJECT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_ICACHE_REJECT_VADDR_REG);
             panicPutStr("Icache reject error occurred while accessing the address 0x");
             panicPutHex(vaddr);
 
-            if (REG_READ(DPORT_PRO_CACHE_MMU_ERROR_CONTENT_REG) & DPORT_MMU_INVALID) {
+            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
                 panicPutStr(" (invalid mmu entry)");
             }
             panicPutStr("\r\n");
@@ -250,45 +251,44 @@ static inline void printCacheError(void)
         default:
             break;
         }
-        switch (status[1] & BIT(i))
-        {
-        case DPORT_DC_SYNC_SIZE_FAULT_ST:
-            vaddr = REG_READ(DPORT_PRO_DCACHE_MEM_SYNC0_REG);
-            size = REG_READ(DPORT_PRO_DCACHE_MEM_SYNC1_REG);
+        switch (status[1] & BIT(i)) {
+        case EXTMEM_DC_SYNC_SIZE_FAULT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_DCACHE_MEM_SYNC0_REG);
+            size = REG_READ(EXTMEM_PRO_DCACHE_MEM_SYNC1_REG);
             panicPutStr("Dcache sync parameter configuration error, the error address and size is 0x");
             panicPutHex(vaddr);
             panicPutStr("(0x");
             panicPutHex(size);
             panicPutStr(")\r\n");
             break;
-        case DPORT_DC_PRELOAD_SIZE_FAULT_ST:
-            vaddr = REG_READ(DPORT_PRO_DCACHE_PRELOAD_ADDR_REG);
-            size = REG_READ(DPORT_PRO_DCACHE_PRELOAD_SIZE_REG);
+        case EXTMEM_DC_PRELOAD_SIZE_FAULT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_DCACHE_PRELOAD_ADDR_REG);
+            size = REG_READ(EXTMEM_PRO_DCACHE_PRELOAD_SIZE_REG);
             panicPutStr("Dcache preload parameter configuration error, the error address and size is 0x");
             panicPutHex(vaddr);
             panicPutStr("(0x");
             panicPutHex(size);
             panicPutStr(")\r\n");
             break;
-        case DPORT_DCACHE_WRITE_FLASH_ST:
+        case EXTMEM_DCACHE_WRITE_FLASH_ST:
             panicPutStr("Write back error occurred while dcache tries to write back to flash\r\n");
             break;
-        case DPORT_DCACHE_REJECT_ST:
-            vaddr = REG_READ(DPORT_PRO_DCACHE_REJECT_VADDR_REG);
+        case EXTMEM_DCACHE_REJECT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_DCACHE_REJECT_VADDR_REG);
             panicPutStr("Dcache reject error occurred while accessing the address 0x");
             panicPutHex(vaddr);
 
-            if (REG_READ(DPORT_PRO_CACHE_MMU_ERROR_CONTENT_REG) & DPORT_MMU_INVALID) {
+            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
                 panicPutStr(" (invalid mmu entry)");
             }
             panicPutStr("\r\n");
             break;
-        case DPORT_MMU_ENTRY_FAULT_ST:
-            vaddr = REG_READ(DPORT_PRO_CACHE_MMU_ERROR_VADDR_REG);
+        case EXTMEM_MMU_ENTRY_FAULT_ST:
+            vaddr = REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_VADDR_REG);
             panicPutStr("MMU entry fault error occurred while accessing the address 0x");
             panicPutHex(vaddr);
 
-            if (REG_READ(DPORT_PRO_CACHE_MMU_ERROR_CONTENT_REG) & DPORT_MMU_INVALID) {
+            if (REG_READ(EXTMEM_PRO_CACHE_MMU_FAULT_CONTENT_REG) & MMU_INVALID) {
                 panicPutStr(" (invalid mmu entry)");
             }
             panicPutStr("\r\n");
@@ -375,7 +375,7 @@ void panicHandler(XtExcFrame *frame)
     if (esp_cpu_in_ocd_debug_mode()) {
         disableAllWdts();
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
-            frame->exccause == PANIC_RSN_INTWDT_CPU1) {
+                frame->exccause == PANIC_RSN_INTWDT_CPU1) {
             TIMERG1.int_clr.wdt = 1;
         }
 #if CONFIG_APPTRACE_ENABLE

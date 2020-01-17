@@ -1,4 +1,4 @@
-// Copyright 2015-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@
 /*
  Bunch of constants for every SPI peripheral: GPIO signals, irqs, hw addr of registers etc
 */
-const spi_signal_conn_t spi_periph_signal[4] = {
+const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
     {
         .spiclk_out = SPICLK_OUT_IDX,
         .spiclk_in = 0,/* SPI clock is not an input signal*/
@@ -39,12 +39,13 @@ const spi_signal_conn_t spi_periph_signal[4] = {
         .spihd_iomux_pin = SPI_IOMUX_PIN_NUM_HD,
         .spics0_iomux_pin = SPI_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI1_INTR_SOURCE,
-        .irq_dma = ETS_SPI1_DMA_INTR_SOURCE,
+        //TODO: SPI1 do not have DMA
+        /*.irq_dma = ETS_SPI1_DMA_INTR_SOURCE,*/
         .module = PERIPH_SPI_MODULE,
         .hw = (spi_dev_t *) &SPIMEM1,
         .func = SPI_FUNC_NUM,
     }, {
-        .spiclk_out = FSPICLK_OUT_MUX_IDX,
+        .spiclk_out = FSPICLK_OUT_IDX,
         .spiclk_in = FSPICLK_IN_IDX,
         .spid_out = FSPID_OUT_IDX,
         .spiq_out = FSPIQ_OUT_IDX,
@@ -92,32 +93,6 @@ const spi_signal_conn_t spi_periph_signal[4] = {
         .irq_dma = ETS_SPI3_DMA_INTR_SOURCE,
         .module = PERIPH_HSPI_MODULE,
         .hw = &GPSPI3,
-        .func = -1,
-    }, {
-        .spiclk_out = SPI4_CLK_OUT_MUX_IDX,
-        .spiclk_in = SPI4_CLK_IN_IDX,
-        .spid_out = SPI4_D_OUT_IDX,
-        .spiq_out = SPI4_Q_OUT_IDX,
-        //SPI4 doesn't have wp and hd signals
-        .spiwp_out = -1,
-        .spihd_out = -1,
-        .spid_in = SPI4_D_IN_IDX,
-        .spiq_in = SPI4_Q_IN_IDX,
-        .spiwp_in = -1,
-        .spihd_in = -1,
-        .spics_out = {SPI4_CS0_OUT_IDX, SPI4_CS1_OUT_IDX, SPI4_CS2_OUT_IDX},
-        .spics_in = SPI4_CS0_IN_IDX,
-        //SPI4 doesn't have iomux pins
-        .spiclk_iomux_pin = -1,
-        .spid_iomux_pin = -1,
-        .spiq_iomux_pin = -1,
-        .spiwp_iomux_pin = -1,
-        .spihd_iomux_pin = -1,
-        .spics0_iomux_pin = -1,
-        .irq = ETS_SPI4_INTR_SOURCE,
-        .irq_dma = ETS_SPI4_DMA_INTR_SOURCE,
-        .module = PERIPH_VSPI_MODULE,
-        .hw = &GPSPI4,
         .func = -1,
     }
 };

@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -203,6 +203,12 @@ extern "C" {
 #define I2S_TX_RESET_S  0
 
 #define I2S_INT_RAW_REG(i)          (REG_I2S_BASE(i) + 0x000c)
+/* I2S_V_SYNC_INT_RAW : RO ;bitpos:[17] ;default: 1'b0 ; */
+/*description: The raw interrupt status bit  for the i2s_v_sync_int interrupt*/
+#define I2S_V_SYNC_INT_RAW  (BIT(17))
+#define I2S_V_SYNC_INT_RAW_M  (BIT(17))
+#define I2S_V_SYNC_INT_RAW_V  0x1
+#define I2S_V_SYNC_INT_RAW_S  17
 /* I2S_OUT_TOTAL_EOF_INT_RAW : RO ;bitpos:[16] ;default: 1'b0 ; */
 /*description: The raw interrupt status bit  for the i2s_out_total_eof_int interrupt*/
 #define I2S_OUT_TOTAL_EOF_INT_RAW  (BIT(16))
@@ -307,6 +313,12 @@ extern "C" {
 #define I2S_RX_TAKE_DATA_INT_RAW_S  0
 
 #define I2S_INT_ST_REG(i)          (REG_I2S_BASE(i) + 0x0010)
+/* I2S_V_SYNC_INT_ST : RO ;bitpos:[17] ;default: 1'b0 ; */
+/*description: The masked interrupt status bit  for the i2s_v_sync_int  interrupt*/
+#define I2S_V_SYNC_INT_ST  (BIT(17))
+#define I2S_V_SYNC_INT_ST_M  (BIT(17))
+#define I2S_V_SYNC_INT_ST_V  0x1
+#define I2S_V_SYNC_INT_ST_S  17
 /* I2S_OUT_TOTAL_EOF_INT_ST : RO ;bitpos:[16] ;default: 1'b0 ; */
 /*description: The masked interrupt status bit  for the i2s_out_total_eof_int interrupt*/
 #define I2S_OUT_TOTAL_EOF_INT_ST  (BIT(16))
@@ -411,6 +423,12 @@ extern "C" {
 #define I2S_RX_TAKE_DATA_INT_ST_S  0
 
 #define I2S_INT_ENA_REG(i)          (REG_I2S_BASE(i) + 0x0014)
+/* I2S_V_SYNC_INT_ENA : R/W ;bitpos:[17] ;default: 1'b0 ; */
+/*description: The interrupt enable bit  for the i2s_v_sync_int interrupt*/
+#define I2S_V_SYNC_INT_ENA  (BIT(17))
+#define I2S_V_SYNC_INT_ENA_M  (BIT(17))
+#define I2S_V_SYNC_INT_ENA_V  0x1
+#define I2S_V_SYNC_INT_ENA_S  17
 /* I2S_OUT_TOTAL_EOF_INT_ENA : R/W ;bitpos:[16] ;default: 1'b0 ; */
 /*description: The interrupt enable bit  for the i2s_out_total_eof_int interrupt*/
 #define I2S_OUT_TOTAL_EOF_INT_ENA  (BIT(16))
@@ -515,6 +533,12 @@ extern "C" {
 #define I2S_RX_TAKE_DATA_INT_ENA_S  0
 
 #define I2S_INT_CLR_REG(i)          (REG_I2S_BASE(i) + 0x0018)
+/* I2S_V_SYNC_INT_CLR : WO ;bitpos:[17] ;default: 1'b0 ; */
+/*description: Set this bit to clear the  i2s_v_sync_int interrupt*/
+#define I2S_V_SYNC_INT_CLR  (BIT(17))
+#define I2S_V_SYNC_INT_CLR_M  (BIT(17))
+#define I2S_V_SYNC_INT_CLR_V  0x1
+#define I2S_V_SYNC_INT_CLR_S  17
 /* I2S_OUT_TOTAL_EOF_INT_CLR : WO ;bitpos:[16] ;default: 1'b0 ; */
 /*description: Set this bit to clear the i2s_out_total_eof_int interrupt*/
 #define I2S_OUT_TOTAL_EOF_INT_CLR  (BIT(16))
@@ -952,6 +976,13 @@ extern "C" {
 #define I2S_OUTLINK_DSCR_BF1_S  0
 
 #define I2S_LC_CONF_REG(i)          (REG_I2S_BASE(i) + 0x0060)
+/* I2S_EXT_MEM_BK_SIZE : R/W ;bitpos:[15:14] ;default: 2'b0 ; */
+/*description: DMA access external memory block size. 0: 16 bytes      1: 32
+ bytes    2:64 bytes      3:reserved*/
+#define I2S_EXT_MEM_BK_SIZE  0x00000003
+#define I2S_EXT_MEM_BK_SIZE_M  ((I2S_EXT_MEM_BK_SIZE_V)<<(I2S_EXT_MEM_BK_SIZE_S))
+#define I2S_EXT_MEM_BK_SIZE_V  0x3
+#define I2S_EXT_MEM_BK_SIZE_S  14
 /* I2S_MEM_TRANS_EN : R/W ;bitpos:[13] ;default: 1'b0 ; */
 /*description: don't use*/
 #define I2S_MEM_TRANS_EN  (BIT(13))
@@ -1168,226 +1199,6 @@ extern "C" {
 #define I2S_LC_FIFO_TIMEOUT_V  0xFF
 #define I2S_LC_FIFO_TIMEOUT_S  0
 
-#define I2S_CVSD_CONF0_REG(i)          (REG_I2S_BASE(i) + 0x0080)
-/* I2S_CVSD_Y_MIN : R/W ;bitpos:[31:16] ;default: 16'h8000 ; */
-/*description: don't use*/
-#define I2S_CVSD_Y_MIN  0x0000FFFF
-#define I2S_CVSD_Y_MIN_M  ((I2S_CVSD_Y_MIN_V)<<(I2S_CVSD_Y_MIN_S))
-#define I2S_CVSD_Y_MIN_V  0xFFFF
-#define I2S_CVSD_Y_MIN_S  16
-/* I2S_CVSD_Y_MAX : R/W ;bitpos:[15:0] ;default: 16'h7fff ; */
-/*description: don't use*/
-#define I2S_CVSD_Y_MAX  0x0000FFFF
-#define I2S_CVSD_Y_MAX_M  ((I2S_CVSD_Y_MAX_V)<<(I2S_CVSD_Y_MAX_S))
-#define I2S_CVSD_Y_MAX_V  0xFFFF
-#define I2S_CVSD_Y_MAX_S  0
-
-#define I2S_CVSD_CONF1_REG(i)          (REG_I2S_BASE(i) + 0x0084)
-/* I2S_CVSD_SIGMA_MIN : R/W ;bitpos:[31:16] ;default: 16'd10 ; */
-/*description: don't use*/
-#define I2S_CVSD_SIGMA_MIN  0x0000FFFF
-#define I2S_CVSD_SIGMA_MIN_M  ((I2S_CVSD_SIGMA_MIN_V)<<(I2S_CVSD_SIGMA_MIN_S))
-#define I2S_CVSD_SIGMA_MIN_V  0xFFFF
-#define I2S_CVSD_SIGMA_MIN_S  16
-/* I2S_CVSD_SIGMA_MAX : R/W ;bitpos:[15:0] ;default: 16'd1280 ; */
-/*description: don't use*/
-#define I2S_CVSD_SIGMA_MAX  0x0000FFFF
-#define I2S_CVSD_SIGMA_MAX_M  ((I2S_CVSD_SIGMA_MAX_V)<<(I2S_CVSD_SIGMA_MAX_S))
-#define I2S_CVSD_SIGMA_MAX_V  0xFFFF
-#define I2S_CVSD_SIGMA_MAX_S  0
-
-#define I2S_CVSD_CONF2_REG(i)          (REG_I2S_BASE(i) + 0x0088)
-/* I2S_CVSD_H : R/W ;bitpos:[18:16] ;default: 3'd5 ; */
-/*description: don't use*/
-#define I2S_CVSD_H  0x00000007
-#define I2S_CVSD_H_M  ((I2S_CVSD_H_V)<<(I2S_CVSD_H_S))
-#define I2S_CVSD_H_V  0x7
-#define I2S_CVSD_H_S  16
-/* I2S_CVSD_BETA : R/W ;bitpos:[15:6] ;default: 10'd10 ; */
-/*description: don't use*/
-#define I2S_CVSD_BETA  0x000003FF
-#define I2S_CVSD_BETA_M  ((I2S_CVSD_BETA_V)<<(I2S_CVSD_BETA_S))
-#define I2S_CVSD_BETA_V  0x3FF
-#define I2S_CVSD_BETA_S  6
-/* I2S_CVSD_J : R/W ;bitpos:[5:3] ;default: 3'h4 ; */
-/*description: don't use*/
-#define I2S_CVSD_J  0x00000007
-#define I2S_CVSD_J_M  ((I2S_CVSD_J_V)<<(I2S_CVSD_J_S))
-#define I2S_CVSD_J_V  0x7
-#define I2S_CVSD_J_S  3
-/* I2S_CVSD_K : R/W ;bitpos:[2:0] ;default: 3'h4 ; */
-/*description: don't use*/
-#define I2S_CVSD_K  0x00000007
-#define I2S_CVSD_K_M  ((I2S_CVSD_K_V)<<(I2S_CVSD_K_S))
-#define I2S_CVSD_K_V  0x7
-#define I2S_CVSD_K_S  0
-
-#define I2S_PLC_CONF0_REG(i)          (REG_I2S_BASE(i) + 0x008C)
-/* I2S_N_MIN_ERR : R/W ;bitpos:[27:25] ;default: 3'd4 ; */
-/*description: don't use*/
-#define I2S_N_MIN_ERR  0x00000007
-#define I2S_N_MIN_ERR_M  ((I2S_N_MIN_ERR_V)<<(I2S_N_MIN_ERR_S))
-#define I2S_N_MIN_ERR_V  0x7
-#define I2S_N_MIN_ERR_S  25
-/* I2S_PACK_LEN_8K : R/W ;bitpos:[24:20] ;default: 5'd10 ; */
-/*description: don't use*/
-#define I2S_PACK_LEN_8K  0x0000001F
-#define I2S_PACK_LEN_8K_M  ((I2S_PACK_LEN_8K_V)<<(I2S_PACK_LEN_8K_S))
-#define I2S_PACK_LEN_8K_V  0x1F
-#define I2S_PACK_LEN_8K_S  20
-/* I2S_MAX_SLIDE_SAMPLE : R/W ;bitpos:[19:12] ;default: 8'd128 ; */
-/*description: don't use*/
-#define I2S_MAX_SLIDE_SAMPLE  0x000000FF
-#define I2S_MAX_SLIDE_SAMPLE_M  ((I2S_MAX_SLIDE_SAMPLE_V)<<(I2S_MAX_SLIDE_SAMPLE_S))
-#define I2S_MAX_SLIDE_SAMPLE_V  0xFF
-#define I2S_MAX_SLIDE_SAMPLE_S  12
-/* I2S_SHIFT_RATE : R/W ;bitpos:[11:9] ;default: 3'h1 ; */
-/*description: don't use*/
-#define I2S_SHIFT_RATE  0x00000007
-#define I2S_SHIFT_RATE_M  ((I2S_SHIFT_RATE_V)<<(I2S_SHIFT_RATE_S))
-#define I2S_SHIFT_RATE_V  0x7
-#define I2S_SHIFT_RATE_S  9
-/* I2S_N_ERR_SEG : R/W ;bitpos:[8:6] ;default: 3'h4 ; */
-/*description: don't use*/
-#define I2S_N_ERR_SEG  0x00000007
-#define I2S_N_ERR_SEG_M  ((I2S_N_ERR_SEG_V)<<(I2S_N_ERR_SEG_S))
-#define I2S_N_ERR_SEG_V  0x7
-#define I2S_N_ERR_SEG_S  6
-/* I2S_GOOD_PACK_MAX : R/W ;bitpos:[5:0] ;default: 6'h39 ; */
-/*description: don't use*/
-#define I2S_GOOD_PACK_MAX  0x0000003F
-#define I2S_GOOD_PACK_MAX_M  ((I2S_GOOD_PACK_MAX_V)<<(I2S_GOOD_PACK_MAX_S))
-#define I2S_GOOD_PACK_MAX_V  0x3F
-#define I2S_GOOD_PACK_MAX_S  0
-
-#define I2S_PLC_CONF1_REG(i)          (REG_I2S_BASE(i) + 0x0090)
-/* I2S_SLIDE_WIN_LEN : R/W ;bitpos:[31:24] ;default: 8'd160 ; */
-/*description: don't use*/
-#define I2S_SLIDE_WIN_LEN  0x000000FF
-#define I2S_SLIDE_WIN_LEN_M  ((I2S_SLIDE_WIN_LEN_V)<<(I2S_SLIDE_WIN_LEN_S))
-#define I2S_SLIDE_WIN_LEN_V  0xFF
-#define I2S_SLIDE_WIN_LEN_S  24
-/* I2S_BAD_OLA_WIN2_PARA : R/W ;bitpos:[23:16] ;default: 8'd23 ; */
-/*description: don't use*/
-#define I2S_BAD_OLA_WIN2_PARA  0x000000FF
-#define I2S_BAD_OLA_WIN2_PARA_M  ((I2S_BAD_OLA_WIN2_PARA_V)<<(I2S_BAD_OLA_WIN2_PARA_S))
-#define I2S_BAD_OLA_WIN2_PARA_V  0xFF
-#define I2S_BAD_OLA_WIN2_PARA_S  16
-/* I2S_BAD_OLA_WIN2_PARA_SHIFT : R/W ;bitpos:[15:12] ;default: 4'd8 ; */
-/*description: don't use*/
-#define I2S_BAD_OLA_WIN2_PARA_SHIFT  0x0000000F
-#define I2S_BAD_OLA_WIN2_PARA_SHIFT_M  ((I2S_BAD_OLA_WIN2_PARA_SHIFT_V)<<(I2S_BAD_OLA_WIN2_PARA_SHIFT_S))
-#define I2S_BAD_OLA_WIN2_PARA_SHIFT_V  0xF
-#define I2S_BAD_OLA_WIN2_PARA_SHIFT_S  12
-/* I2S_BAD_CEF_ATTEN_PARA_SHIFT : R/W ;bitpos:[11:8] ;default: 4'd10 ; */
-/*description: don't use*/
-#define I2S_BAD_CEF_ATTEN_PARA_SHIFT  0x0000000F
-#define I2S_BAD_CEF_ATTEN_PARA_SHIFT_M  ((I2S_BAD_CEF_ATTEN_PARA_SHIFT_V)<<(I2S_BAD_CEF_ATTEN_PARA_SHIFT_S))
-#define I2S_BAD_CEF_ATTEN_PARA_SHIFT_V  0xF
-#define I2S_BAD_CEF_ATTEN_PARA_SHIFT_S  8
-/* I2S_BAD_CEF_ATTEN_PARA : R/W ;bitpos:[7:0] ;default: 8'd5 ; */
-/*description: don't use*/
-#define I2S_BAD_CEF_ATTEN_PARA  0x000000FF
-#define I2S_BAD_CEF_ATTEN_PARA_M  ((I2S_BAD_CEF_ATTEN_PARA_V)<<(I2S_BAD_CEF_ATTEN_PARA_S))
-#define I2S_BAD_CEF_ATTEN_PARA_V  0xFF
-#define I2S_BAD_CEF_ATTEN_PARA_S  0
-
-#define I2S_PLC_CONF2_REG(i)          (REG_I2S_BASE(i) + 0x0094)
-/* I2S_MIN_PERIOD : R/W ;bitpos:[6:2] ;default: 5'd10 ; */
-/*description: don't use*/
-#define I2S_MIN_PERIOD  0x0000001F
-#define I2S_MIN_PERIOD_M  ((I2S_MIN_PERIOD_V)<<(I2S_MIN_PERIOD_S))
-#define I2S_MIN_PERIOD_V  0x1F
-#define I2S_MIN_PERIOD_S  2
-/* I2S_CVSD_SEG_MOD : R/W ;bitpos:[1:0] ;default: 2'd0 ; */
-/*description: don't use*/
-#define I2S_CVSD_SEG_MOD  0x00000003
-#define I2S_CVSD_SEG_MOD_M  ((I2S_CVSD_SEG_MOD_V)<<(I2S_CVSD_SEG_MOD_S))
-#define I2S_CVSD_SEG_MOD_V  0x3
-#define I2S_CVSD_SEG_MOD_S  0
-
-#define I2S_ESCO_CONF0_REG(i)          (REG_I2S_BASE(i) + 0x0098)
-/* I2S_PLC2DMA_EN : R/W ;bitpos:[12] ;default: 1'b0 ; */
-/*description: don't use*/
-#define I2S_PLC2DMA_EN  (BIT(12))
-#define I2S_PLC2DMA_EN_M  (BIT(12))
-#define I2S_PLC2DMA_EN_V  0x1
-#define I2S_PLC2DMA_EN_S  12
-/* I2S_PLC_EN : R/W ;bitpos:[11] ;default: 1'b0 ; */
-/*description: don't use*/
-#define I2S_PLC_EN  (BIT(11))
-#define I2S_PLC_EN_M  (BIT(11))
-#define I2S_PLC_EN_V  0x1
-#define I2S_PLC_EN_S  11
-/* I2S_CVSD_DEC_RESET : R/W ;bitpos:[10] ;default: 1'b0 ; */
-/*description: don't use*/
-#define I2S_CVSD_DEC_RESET  (BIT(10))
-#define I2S_CVSD_DEC_RESET_M  (BIT(10))
-#define I2S_CVSD_DEC_RESET_V  0x1
-#define I2S_CVSD_DEC_RESET_S  10
-/* I2S_CVSD_DEC_START : R/W ;bitpos:[9] ;default: 1'b0 ; */
-/*description: don't use*/
-#define I2S_CVSD_DEC_START  (BIT(9))
-#define I2S_CVSD_DEC_START_M  (BIT(9))
-#define I2S_CVSD_DEC_START_V  0x1
-#define I2S_CVSD_DEC_START_S  9
-/* I2S_ESCO_CVSD_INF_EN : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: don't use*/
-#define I2S_ESCO_CVSD_INF_EN  (BIT(8))
-#define I2S_ESCO_CVSD_INF_EN_M  (BIT(8))
-#define I2S_ESCO_CVSD_INF_EN_V  0x1
-#define I2S_ESCO_CVSD_INF_EN_S  8
-/* I2S_ESCO_CVSD_PACK_LEN_8K : R/W ;bitpos:[7:3] ;default: 5'b0 ; */
-/*description: don't use*/
-#define I2S_ESCO_CVSD_PACK_LEN_8K  0x0000001F
-#define I2S_ESCO_CVSD_PACK_LEN_8K_M  ((I2S_ESCO_CVSD_PACK_LEN_8K_V)<<(I2S_ESCO_CVSD_PACK_LEN_8K_S))
-#define I2S_ESCO_CVSD_PACK_LEN_8K_V  0x1F
-#define I2S_ESCO_CVSD_PACK_LEN_8K_S  3
-/* I2S_ESCO_CVSD_DEC_PACK_ERR : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: don't use*/
-#define I2S_ESCO_CVSD_DEC_PACK_ERR  (BIT(2))
-#define I2S_ESCO_CVSD_DEC_PACK_ERR_M  (BIT(2))
-#define I2S_ESCO_CVSD_DEC_PACK_ERR_V  0x1
-#define I2S_ESCO_CVSD_DEC_PACK_ERR_S  2
-/* I2S_ESCO_CHAN_MOD : R/W ;bitpos:[1] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_ESCO_CHAN_MOD  (BIT(1))
-#define I2S_ESCO_CHAN_MOD_M  (BIT(1))
-#define I2S_ESCO_CHAN_MOD_V  0x1
-#define I2S_ESCO_CHAN_MOD_S  1
-/* I2S_ESCO_EN : R/W ;bitpos:[0] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_ESCO_EN  (BIT(0))
-#define I2S_ESCO_EN_M  (BIT(0))
-#define I2S_ESCO_EN_V  0x1
-#define I2S_ESCO_EN_S  0
-
-#define I2S_SCO_CONF0_REG(i)          (REG_I2S_BASE(i) + 0x009c)
-/* I2S_CVSD_ENC_RESET : R/W ;bitpos:[3] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_CVSD_ENC_RESET  (BIT(3))
-#define I2S_CVSD_ENC_RESET_M  (BIT(3))
-#define I2S_CVSD_ENC_RESET_V  0x1
-#define I2S_CVSD_ENC_RESET_S  3
-/* I2S_CVSD_ENC_START : R/W ;bitpos:[2] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_CVSD_ENC_START  (BIT(2))
-#define I2S_CVSD_ENC_START_M  (BIT(2))
-#define I2S_CVSD_ENC_START_V  0x1
-#define I2S_CVSD_ENC_START_S  2
-/* I2S_SCO_NO_I2S_EN : R/W ;bitpos:[1] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_SCO_NO_I2S_EN  (BIT(1))
-#define I2S_SCO_NO_I2S_EN_M  (BIT(1))
-#define I2S_SCO_NO_I2S_EN_V  0x1
-#define I2S_SCO_NO_I2S_EN_S  1
-/* I2S_SCO_WITH_I2S_EN : R/W ;bitpos:[0] ;default: 1'd0 ; */
-/*description: don't use*/
-#define I2S_SCO_WITH_I2S_EN  (BIT(0))
-#define I2S_SCO_WITH_I2S_EN_M  (BIT(0))
-#define I2S_SCO_WITH_I2S_EN_V  0x1
-#define I2S_SCO_WITH_I2S_EN_S  0
-
 #define I2S_CONF1_REG(i)          (REG_I2S_BASE(i) + 0x00a0)
 /* I2S_TX_ZEROS_RM_EN : R/W ;bitpos:[9] ;default: 1'd0 ; */
 /*description: don't use*/
@@ -1430,6 +1241,24 @@ extern "C" {
 #define I2S_TX_PCM_CONF_S  0
 
 #define I2S_PD_CONF_REG(i)          (REG_I2S_BASE(i) + 0x00a4)
+/* I2S_DMA_RAM_CLK_FO : R/W ;bitpos:[6] ;default: 1'h0 ; */
+/*description: */
+#define I2S_DMA_RAM_CLK_FO  (BIT(6))
+#define I2S_DMA_RAM_CLK_FO_M  (BIT(6))
+#define I2S_DMA_RAM_CLK_FO_V  0x1
+#define I2S_DMA_RAM_CLK_FO_S  6
+/* I2S_DMA_RAM_FORCE_PU : R/W ;bitpos:[5] ;default: 1'h1 ; */
+/*description: */
+#define I2S_DMA_RAM_FORCE_PU  (BIT(5))
+#define I2S_DMA_RAM_FORCE_PU_M  (BIT(5))
+#define I2S_DMA_RAM_FORCE_PU_V  0x1
+#define I2S_DMA_RAM_FORCE_PU_S  5
+/* I2S_DMA_RAM_FORCE_PD : R/W ;bitpos:[4] ;default: 1'h0 ; */
+/*description: */
+#define I2S_DMA_RAM_FORCE_PD  (BIT(4))
+#define I2S_DMA_RAM_FORCE_PD_M  (BIT(4))
+#define I2S_DMA_RAM_FORCE_PD_V  0x1
+#define I2S_DMA_RAM_FORCE_PD_S  4
 /* I2S_PLC_MEM_FORCE_PU : R/W ;bitpos:[3] ;default: 1'h1 ; */
 /*description: */
 #define I2S_PLC_MEM_FORCE_PU  (BIT(3))
@@ -1590,127 +1419,16 @@ extern "C" {
 #define I2S_TX_BCK_DIV_NUM_V  0x3F
 #define I2S_TX_BCK_DIV_NUM_S  0
 
-#define I2S_PDM_CONF_REG(i)          (REG_I2S_BASE(i) + 0x00b4)
-/* I2S_RX_PDM_WAY_MODE : R/W ;bitpos:[31:30] ;default: 2'h0 ; */
-/*description: 0/1 pdm rx use one-way*/
-#define I2S_RX_PDM_WAY_MODE  0x00000003
-#define I2S_RX_PDM_WAY_MODE_M  ((I2S_RX_PDM_WAY_MODE_V)<<(I2S_RX_PDM_WAY_MODE_S))
-#define I2S_RX_PDM_WAY_MODE_V  0x3
-#define I2S_RX_PDM_WAY_MODE_S  30
-/* I2S_TX_PDM_WAY_MODE : R/W ;bitpos:[29:28] ;default: 2'b0 ; */
-/*description: 0/1 pdm rx use one-way*/
-#define I2S_TX_PDM_WAY_MODE  0x00000003
-#define I2S_TX_PDM_WAY_MODE_M  ((I2S_TX_PDM_WAY_MODE_V)<<(I2S_TX_PDM_WAY_MODE_S))
-#define I2S_TX_PDM_WAY_MODE_V  0x3
-#define I2S_TX_PDM_WAY_MODE_S  28
-/* I2S_TX_PDM_CHAN_MOD : R/W ;bitpos:[27:26] ;default: 2'h0 ; */
-/*description: pdm tx channel mode*/
-#define I2S_TX_PDM_CHAN_MOD  0x00000003
-#define I2S_TX_PDM_CHAN_MOD_M  ((I2S_TX_PDM_CHAN_MOD_V)<<(I2S_TX_PDM_CHAN_MOD_S))
-#define I2S_TX_PDM_CHAN_MOD_V  0x3
-#define I2S_TX_PDM_CHAN_MOD_S  26
-/* I2S_TX_PDM_HP_BYPASS : R/W ;bitpos:[25] ;default: 1'h0 ; */
-/*description: Set this bit to enable tx pdm hp filter bypass*/
-#define I2S_TX_PDM_HP_BYPASS  (BIT(25))
-#define I2S_TX_PDM_HP_BYPASS_M  (BIT(25))
-#define I2S_TX_PDM_HP_BYPASS_V  0x1
-#define I2S_TX_PDM_HP_BYPASS_S  25
-/* I2S_RX_PDM_SINC_DSR_16_EN : R/W ;bitpos:[24] ;default: 1'h1 ; */
-/*description: PDM down-sampling rate for filter group1 in receiver mode. 0:
- downsample rate = 64  1:downsample rate = 128*/
-#define I2S_RX_PDM_SINC_DSR_16_EN  (BIT(24))
-#define I2S_RX_PDM_SINC_DSR_16_EN_M  (BIT(24))
-#define I2S_RX_PDM_SINC_DSR_16_EN_V  0x1
-#define I2S_RX_PDM_SINC_DSR_16_EN_S  24
-/* I2S_TX_PDM_SIGMADELTA_IN_SHIFT : R/W ;bitpos:[23:22] ;default: 2'h1 ; */
-/*description: Adjust size of input signal to filter module. 0: divided by 2
-  1:multiplied by 1  2:multiplied by 2  3:multiplied by 4*/
-#define I2S_TX_PDM_SIGMADELTA_IN_SHIFT  0x00000003
-#define I2S_TX_PDM_SIGMADELTA_IN_SHIFT_M  ((I2S_TX_PDM_SIGMADELTA_IN_SHIFT_V)<<(I2S_TX_PDM_SIGMADELTA_IN_SHIFT_S))
-#define I2S_TX_PDM_SIGMADELTA_IN_SHIFT_V  0x3
-#define I2S_TX_PDM_SIGMADELTA_IN_SHIFT_S  22
-/* I2S_TX_PDM_SINC_IN_SHIFT : R/W ;bitpos:[21:20] ;default: 2'h1 ; */
-/*description: Adjust size of input signal to filter module. 0: divided by 2
-  1:multiplied by 1  2:multiplied by 2  3:multiplied by 4*/
-#define I2S_TX_PDM_SINC_IN_SHIFT  0x00000003
-#define I2S_TX_PDM_SINC_IN_SHIFT_M  ((I2S_TX_PDM_SINC_IN_SHIFT_V)<<(I2S_TX_PDM_SINC_IN_SHIFT_S))
-#define I2S_TX_PDM_SINC_IN_SHIFT_V  0x3
-#define I2S_TX_PDM_SINC_IN_SHIFT_S  20
-/* I2S_TX_PDM_LP_IN_SHIFT : R/W ;bitpos:[19:18] ;default: 2'h1 ; */
-/*description: Adjust size of input signal to filter module. 0: divided by 2
-  1:multiplied by 1  2:multiplied by 2  3:multiplied by 4*/
-#define I2S_TX_PDM_LP_IN_SHIFT  0x00000003
-#define I2S_TX_PDM_LP_IN_SHIFT_M  ((I2S_TX_PDM_LP_IN_SHIFT_V)<<(I2S_TX_PDM_LP_IN_SHIFT_S))
-#define I2S_TX_PDM_LP_IN_SHIFT_V  0x3
-#define I2S_TX_PDM_LP_IN_SHIFT_S  18
-/* I2S_TX_PDM_HP_IN_SHIFT : R/W ;bitpos:[17:16] ;default: 2'h1 ; */
-/*description: Adjust size of input signal to filter module. 0: divided by 2
-  1:multiplied by 1  2:multiplied by 2  3:multiplied by 4*/
-#define I2S_TX_PDM_HP_IN_SHIFT  0x00000003
-#define I2S_TX_PDM_HP_IN_SHIFT_M  ((I2S_TX_PDM_HP_IN_SHIFT_V)<<(I2S_TX_PDM_HP_IN_SHIFT_S))
-#define I2S_TX_PDM_HP_IN_SHIFT_V  0x3
-#define I2S_TX_PDM_HP_IN_SHIFT_S  16
-/* I2S_TX_PDM_PRESCALE : R/W ;bitpos:[15:8] ;default: 8'h0 ; */
-/*description: set to 0*/
-#define I2S_TX_PDM_PRESCALE  0x000000FF
-#define I2S_TX_PDM_PRESCALE_M  ((I2S_TX_PDM_PRESCALE_V)<<(I2S_TX_PDM_PRESCALE_S))
-#define I2S_TX_PDM_PRESCALE_V  0xFF
-#define I2S_TX_PDM_PRESCALE_S  8
-/* I2S_TX_PDM_SINC_OSR2 : R/W ;bitpos:[7:4] ;default: 4'h2 ; */
-/*description: upsample rate = 64 * reg_tx_pdm_sinc_osr2*/
-#define I2S_TX_PDM_SINC_OSR2  0x0000000F
-#define I2S_TX_PDM_SINC_OSR2_M  ((I2S_TX_PDM_SINC_OSR2_V)<<(I2S_TX_PDM_SINC_OSR2_S))
-#define I2S_TX_PDM_SINC_OSR2_V  0xF
-#define I2S_TX_PDM_SINC_OSR2_S  4
-/* I2S_PDM2PCM_CONV_EN : R/W ;bitpos:[3] ;default: 1'h0 ; */
-/*description: Set this bit to enable PDM-to-PCM converter*/
-#define I2S_PDM2PCM_CONV_EN  (BIT(3))
-#define I2S_PDM2PCM_CONV_EN_M  (BIT(3))
-#define I2S_PDM2PCM_CONV_EN_V  0x1
-#define I2S_PDM2PCM_CONV_EN_S  3
-/* I2S_PCM2PDM_CONV_EN : R/W ;bitpos:[2] ;default: 1'h0 ; */
-/*description: Set this bit to enable PCM-to-PDM converter*/
-#define I2S_PCM2PDM_CONV_EN  (BIT(2))
-#define I2S_PCM2PDM_CONV_EN_M  (BIT(2))
-#define I2S_PCM2PDM_CONV_EN_V  0x1
-#define I2S_PCM2PDM_CONV_EN_S  2
-/* I2S_RX_PDM_EN : R/W ;bitpos:[1] ;default: 1'h0 ; */
-/*description: Set this bit to enable receiver PDM mode*/
-#define I2S_RX_PDM_EN  (BIT(1))
-#define I2S_RX_PDM_EN_M  (BIT(1))
-#define I2S_RX_PDM_EN_V  0x1
-#define I2S_RX_PDM_EN_S  1
-/* I2S_TX_PDM_EN : R/W ;bitpos:[0] ;default: 1'h0 ; */
-/*description: Set this bit to enable transmitter PDM mode*/
-#define I2S_TX_PDM_EN  (BIT(0))
-#define I2S_TX_PDM_EN_M  (BIT(0))
-#define I2S_TX_PDM_EN_V  0x1
-#define I2S_TX_PDM_EN_S  0
-
-#define I2S_PDM_FREQ_CONF_REG(i)          (REG_I2S_BASE(i) + 0x00b8)
-/* I2S_TX_PDM_FP : R/W ;bitpos:[19:10] ;default: 10'd960 ; */
-/*description: PCM-to-PDM converter PDM frequency parameter*/
-#define I2S_TX_PDM_FP  0x000003FF
-#define I2S_TX_PDM_FP_M  ((I2S_TX_PDM_FP_V)<<(I2S_TX_PDM_FP_S))
-#define I2S_TX_PDM_FP_V  0x3FF
-#define I2S_TX_PDM_FP_S  10
-/* I2S_TX_PDM_FS : R/W ;bitpos:[9:0] ;default: 10'd480 ; */
-/*description: PCM-to-PDM converter PCM frequency parameter*/
-#define I2S_TX_PDM_FS  0x000003FF
-#define I2S_TX_PDM_FS_M  ((I2S_TX_PDM_FS_V)<<(I2S_TX_PDM_FS_S))
-#define I2S_TX_PDM_FS_V  0x3FF
-#define I2S_TX_PDM_FS_S  0
-
 #define I2S_STATE_REG(i)          (REG_I2S_BASE(i) + 0x00bc)
 /* I2S_TX_IDLE : RO ;bitpos:[0] ;default: 1'b1 ; */
-/*description: 1: i2s_tx is idle state*/
+/*description: */
 #define I2S_TX_IDLE  (BIT(0))
 #define I2S_TX_IDLE_M  (BIT(0))
 #define I2S_TX_IDLE_V  0x1
 #define I2S_TX_IDLE_S  0
 
 #define I2S_DATE_REG(i)          (REG_I2S_BASE(i) + 0x00fc)
-/* I2S_I2SDATE : R/W ;bitpos:[31:0] ;default: 32'h18092900 ; */
+/* I2S_I2SDATE : R/W ;bitpos:[31:0] ;default: 32'h19052500 ; */
 /*description: */
 #define I2S_I2SDATE  0xFFFFFFFF
 #define I2S_I2SDATE_M  ((I2S_I2SDATE_V)<<(I2S_I2SDATE_S))

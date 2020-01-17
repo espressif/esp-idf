@@ -35,4 +35,4 @@ GENERATORS = {
     }
 }
 
-SUPPORTED_TARGETS = ["esp32", "esp32s2beta"]
+SUPPORTED_TARGETS = ["esp32", "esp32s2beta", "esp32s2"]

@@ -82,8 +82,7 @@ typedef enum {
     NO_MEAN                =  0,
     POWERON_RESET          =  1,    /**<1, Vbat power on reset*/
     RTC_SW_SYS_RESET       =  3,    /**<3, Software reset digital core*/
-    DEEPSLEEP_RESET        =  5,    /**<3, Deep Sleep reset digital core*/
-    SDIO_RESET             =  6,    /**<6, Reset by SLC module, reset digital core*/
+    DEEPSLEEP_RESET        =  5,    /**<5, Deep Sleep reset digital core*/
     TG0WDT_SYS_RESET       =  7,    /**<7, Timer Group0 Watch dog reset digital core*/
     TG1WDT_SYS_RESET       =  8,    /**<8, Timer Group1 Watch dog reset digital core*/
     RTCWDT_SYS_RESET       =  9,    /**<9, RTC Watch dog Reset digital core*/
@@ -93,8 +92,9 @@ typedef enum {
     RTCWDT_CPU_RESET       = 13,    /**<13, RTC Watch dog Reset CPU*/
     RTCWDT_BROWN_OUT_RESET = 15,    /**<15, Reset when the vdd voltage is not stable*/
     RTCWDT_RTC_RESET       = 16,    /**<16, RTC Watch dog reset digital core and rtc module*/
-    TG1WDT_CPU_RESET       = 17,    /**<11, Time Group1 reset CPU*/
-    SUPER_WDT_RESET        = 18,    /**<11, super watchdog reset digital core and rtc module*/
+    TG1WDT_CPU_RESET       = 17,    /**<17, Time Group1 reset CPU*/
+    SUPER_WDT_RESET        = 18,    /**<18, super watchdog reset digital core and rtc module*/
+    GLITCH_RTC_RESET       = 19,    /**<19, glitch reset digital core and rtc module*/
 } RESET_REASON;
 
 typedef enum {

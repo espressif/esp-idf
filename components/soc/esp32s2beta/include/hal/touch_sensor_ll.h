@@ -945,11 +945,11 @@ static inline void touch_ll_proximity_get_meas_times(uint32_t *times)
 static inline void touch_ll_proximity_read_meas_cnt(touch_pad_t touch_num, uint32_t *cnt)
 {
     if (SENS.sar_touch_conf.touch_approach_pad0 == touch_num) {
-        *cnt = SENS.sar_touch_appr_status.touch_approach_pad0_cnt;
+        *cnt = SENS.sar_touch_status16.touch_approach_pad0_cnt;
     } else if (SENS.sar_touch_conf.touch_approach_pad1 == touch_num) {
-        *cnt = SENS.sar_touch_appr_status.touch_approach_pad1_cnt;
+        *cnt = SENS.sar_touch_status16.touch_approach_pad1_cnt;
     } else if (SENS.sar_touch_conf.touch_approach_pad2 == touch_num) {
-        *cnt = SENS.sar_touch_appr_status.touch_approach_pad2_cnt;
+        *cnt = SENS.sar_touch_status16.touch_approach_pad2_cnt;
     }
 }
 
@@ -1040,7 +1040,7 @@ static inline void touch_ll_sleep_disable_approach(void)
  */
 static inline void touch_ll_sleep_read_baseline(uint32_t *baseline)
 {
-    *baseline = REG_GET_FIELD(SENS_SAR_TOUCH_SLP_STATUS_REG, SENS_TOUCH_SLP_BASELINE);
+    *baseline = REG_GET_FIELD(SENS_SAR_TOUCH_STATUS15_REG, SENS_TOUCH_SLP_BASELINE);
 }
 
 /**
@@ -1050,7 +1050,7 @@ static inline void touch_ll_sleep_read_baseline(uint32_t *baseline)
  */
 static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
 {
-    *debounce = REG_GET_FIELD(SENS_SAR_TOUCH_SLP_STATUS_REG, SENS_TOUCH_SLP_DEBOUNCE);
+    *debounce = REG_GET_FIELD(SENS_SAR_TOUCH_STATUS15_REG, SENS_TOUCH_SLP_DEBOUNCE);
 }
 
 /**
@@ -1059,7 +1059,7 @@ static inline void touch_ll_sleep_read_debounce(uint32_t *debounce)
  */
 static inline void touch_ll_sleep_read_proximity_cnt(uint32_t *approach_cnt)
 {
-    *approach_cnt = REG_GET_FIELD(SENS_SAR_TOUCH_APPR_STATUS_REG, SENS_TOUCH_SLP_APPROACH_CNT);
+    *approach_cnt = REG_GET_FIELD(SENS_SAR_TOUCH_STATUS16_REG, SENS_TOUCH_SLP_APPROACH_CNT);
 }
 
 /**

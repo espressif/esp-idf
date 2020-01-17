@@ -594,6 +594,12 @@ extern "C" {
 #define UART_RXFIFO_CNT_S  0
 
 #define UART_CONF0_REG(i)          (REG_UART_BASE(i) + 0x20)
+/* UART_MEM_CLK_EN : R/W ;bitpos:[28] ;default: 1'h1 ; */
+/*description: */
+#define UART_MEM_CLK_EN  (BIT(28))
+#define UART_MEM_CLK_EN_M  (BIT(28))
+#define UART_MEM_CLK_EN_V  0x1
+#define UART_MEM_CLK_EN_S  28
 /* UART_TICK_REF_ALWAYS_ON : R/W ;bitpos:[27] ;default: 1'b1 ; */
 /*description: */
 #define UART_TICK_REF_ALWAYS_ON  (BIT(27))
@@ -984,6 +990,18 @@ extern "C" {
 #define UART_AT_CMD_CHAR_S  0
 
 #define UART_MEM_CONF_REG(i)          (REG_UART_BASE(i) + 0x5c)
+/* UART_MEM_FORCE_PU : R/W ;bitpos:[27] ;default: 1'b0 ; */
+/*description: */
+#define UART_MEM_FORCE_PU  (BIT(27))
+#define UART_MEM_FORCE_PU_M  (BIT(27))
+#define UART_MEM_FORCE_PU_V  0x1
+#define UART_MEM_FORCE_PU_S  27
+/* UART_MEM_FORCE_PD : R/W ;bitpos:[26] ;default: 1'b0 ; */
+/*description: */
+#define UART_MEM_FORCE_PD  (BIT(26))
+#define UART_MEM_FORCE_PD_M  (BIT(26))
+#define UART_MEM_FORCE_PD_V  0x1
+#define UART_MEM_FORCE_PD_S  26
 /* UART_RX_TOUT_THRHD : R/W ;bitpos:[25:16] ;default: 10'ha ; */
 /*description: */
 #define UART_RX_TOUT_THRHD  0x000003FF
@@ -1008,12 +1026,6 @@ extern "C" {
 #define UART_RX_SIZE_M  ((UART_RX_SIZE_V)<<(UART_RX_SIZE_S))
 #define UART_RX_SIZE_V  0x7
 #define UART_RX_SIZE_S  1
-/* UART_MEM_PD : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: */
-#define UART_MEM_PD  (BIT(0))
-#define UART_MEM_PD_M  (BIT(0))
-#define UART_MEM_PD_V  0x1
-#define UART_MEM_PD_S  0
 
 #define UART_MEM_TX_STATUS_REG(i)          (REG_UART_BASE(i) + 0x60)
 /* UART_TX_RADDR : RO ;bitpos:[20:11] ;default: 10'h0 ; */
@@ -1074,7 +1086,7 @@ extern "C" {
 #define UART_NEGEDGE_MIN_CNT_S  0
 
 #define UART_DATE_REG(i)          (REG_UART_BASE(i) + 0x74)
-/* UART_DATE : R/W ;bitpos:[31:0] ;default: 32'h18082800 ; */
+/* UART_DATE : R/W ;bitpos:[31:0] ;default: 32'h19031400 ; */
 /*description: */
 #define UART_DATE  0xFFFFFFFF
 #define UART_DATE_M  ((UART_DATE_V)<<(UART_DATE_S))

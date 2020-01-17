@@ -71,7 +71,7 @@ typedef struct lldesc_s {
                         sosf  : 1, /* start of sub-frame */
                         eof   : 1, /* end of frame */
                         owner : 1; /* hw or sw */
-    volatile uint8_t *buf;       /* point to buffer data */
+    volatile const uint8_t *buf;       /* point to buffer data */
     union{
         volatile uint32_t empty;
         STAILQ_ENTRY(lldesc_s) qe;  /* pointing to the next desc */

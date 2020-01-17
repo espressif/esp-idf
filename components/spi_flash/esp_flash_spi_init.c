@@ -50,6 +50,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
@@ -57,6 +58,16 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .iomux = false, \
     .input_delay_ns = 0,\
 }
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/efuse.h"
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = true, \
+    .input_delay_ns = 0,\
+}
+#endif
 
 
 esp_flash_t *esp_flash_default_chip = NULL;
@@ -181,6 +192,12 @@ static DRAM_ATTR esp_flash_t default_chip = {
 esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
+
+    #ifdef CONFIG_IDF_TARGET_ESP32S2BETA 
+    // For esp32s2 spi IOs are configured as from IO MUX by default
+    cfg.iomux = ets_efuse_get_spiconfig() == 0 ?  true : false;
+    #endif
+
     //the host is already initialized, only do init for the data and load it to the host
     spi_flash_hal_init(&default_driver_data, &cfg);
     default_chip.host->driver_data = &default_driver_data;

@@ -32,8 +32,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_FIRMWARE_CHIP_ID
         hex
         default 0x0000 if IDF_TARGET_ESP32
-        # note: S2 beta uses Chip ID 0 still, S2 will use 0x0002
-        default 0x0000 if IDF_TARGET_ESP32S2BETA
+        default 0x0002 if IDF_TARGET_ESP32S2BETA
         default 0xFFFF
 
     menu "SDK tool configuration"

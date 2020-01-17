@@ -70,6 +70,21 @@ class Parser(object):
         :param config_output_folder: build folder of this config
         :param config_name: built unit test config name
         """
+        tags = self.parse_tags(os.path.join(config_output_folder, self.SDKCONFIG_FILE))
+        print("Tags of config %s: %s" % (config_name, tags))
+        # Search in tags to set the target
+        target_tag_dict = {"ESP32_IDF": "esp32", "ESP32S2BETA_IDF": "esp32s2beta"}
+        for tag in target_tag_dict:
+            if tag in tags:
+                target = target_tag_dict[tag]
+                break
+        else:
+            target = "esp32"
+
+        if target == "esp32s2beta":
+            # Unit tests temporarily disabled for beta chip
+            return []
+
         test_groups = self.get_test_groups(os.path.join(configs_folder, config_name))
 
         elf_file = os.path.join(config_output_folder, self.ELF_FILE)
@@ -78,8 +93,6 @@ class Parser(object):
         subprocess.check_output('xtensa-esp32-elf-objdump -s {} > section_table.tmp'.format(elf_file), shell=True)
 
         table = CreateSectionTable.SectionTable("section_table.tmp")
-        tags = self.parse_tags(os.path.join(config_output_folder, self.SDKCONFIG_FILE))
-        print("Tags of config %s: %s" % (config_name, tags))
         test_cases = []
 
         # we could split cases of same config into multiple binaries as we have limited rom space
@@ -101,15 +114,6 @@ class Parser(object):
                 name = table.get_string("any", name_addr)
                 desc = table.get_string("any", desc_addr)
                 file_name = table.get_string("any", file_name_addr)
-
-                # Search in tags to set the target
-                target_tag_dict = {"ESP32_IDF": "esp32", "ESP32S2BETA_IDF": "esp32s2beta"}
-                for tag in target_tag_dict:
-                    if tag in tags:
-                        target = target_tag_dict[tag]
-                        break
-                else:
-                    target = "esp32"
 
                 tc = self.parse_one_test_case(name, desc, file_name, config_name, stripped_config_name, tags, target)
 

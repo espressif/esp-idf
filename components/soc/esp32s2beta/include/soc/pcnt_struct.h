@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,116 +18,137 @@ extern "C" {
 #endif
 
 typedef volatile struct {
-    struct{
+    struct {
         union {
             struct {
-                uint32_t filter_thres:  10;         /*This register is used to filter pulse whose width is smaller than this value for unit0.*/
-                uint32_t filter_en:      1;         /*This is the enable bit for filtering input signals for unit0.*/
-                uint32_t thr_zero_en:    1;         /*This is the enable bit for comparing unit0's count with 0 value.*/
-                uint32_t thr_h_lim_en:   1;         /*This is the enable bit for  comparing unit0's count with thr_h_lim value.*/
-                uint32_t thr_l_lim_en:   1;         /*This is the enable bit for comparing unit0's count with thr_l_lim  value.*/
-                uint32_t thr_thres0_en:  1;         /*This is the enable bit for comparing unit0's count with  thres0 value.*/
-                uint32_t thr_thres1_en:  1;         /*This is the enable bit for  comparing  unit0's count with thres1 value .*/
-                uint32_t ch0_neg_mode:   2;         /*This register is used to control the mode of channel0's input neg-edge signal for unit0. 2'd1：increase at the negedge of input signal    2'd2:decrease at the negedge of input signal    others:forbidden*/
-                uint32_t ch0_pos_mode:   2;         /*This register is used to control the mode of channel0's input pos-edge signal for unit0. 2'd1：increase at the posedge of input signal    2'd2:decrease at the posedge of input signal    others:forbidden*/
-                uint32_t ch0_hctrl_mode: 2;         /*This register is used to control the mode of channel0's high control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
-                uint32_t ch0_lctrl_mode: 2;         /*This register is used to control the mode of channel0's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
-                uint32_t ch1_neg_mode:   2;         /*This register is used to control the mode of channel1's input neg-edge signal for unit0. 2'd1：increase at the negedge of input signal    2'd2:decrease at the negedge of input signal    others:forbidden*/
-                uint32_t ch1_pos_mode:   2;         /*This register is used to control the mode of channel1's input pos-edge signal for unit0. 2'd1：increase at the posedge of input signal    2'd2:decrease at the posedge of input signal    others:forbidden*/
-                uint32_t ch1_hctrl_mode: 2;         /*This register is used to control the mode of channel1's high control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
-                uint32_t ch1_lctrl_mode: 2;         /*This register is used to control the mode of channel1's low control signal for unit0. 2'd0:increase when control signal is low   2'd1：decrease when control signal is high   others:forbidden*/
+                uint32_t filter_thres:     10;
+                uint32_t filter_en:         1;
+                uint32_t thr_zero_en:       1;
+                uint32_t thr_h_lim_en:      1;
+                uint32_t thr_l_lim_en:      1;
+                uint32_t thr_thres0_en:     1;
+                uint32_t thr_thres1_en:     1;
+                uint32_t ch0_neg_mode:      2;
+                uint32_t ch0_pos_mode:      2;
+                uint32_t ch0_hctrl_mode:    2;
+                uint32_t ch0_lctrl_mode:    2;
+                uint32_t ch1_neg_mode:      2;
+                uint32_t ch1_pos_mode:      2;
+                uint32_t ch1_hctrl_mode:    2;
+                uint32_t ch1_lctrl_mode:    2;
             };
             uint32_t val;
         } conf0;
         union {
             struct {
-                uint32_t cnt_thres0:16;             /*This register is used to configure thres0 value for unit0.*/
-                uint32_t cnt_thres1:16;             /*This register is used to configure thres1 value for unit0.*/
+                uint32_t cnt_thres0:   16;
+                uint32_t cnt_thres1:   16;
             };
             uint32_t val;
         } conf1;
         union {
             struct {
-                uint32_t cnt_h_lim:16;              /*This register is used to configure thr_h_lim value for unit0.*/
-                uint32_t cnt_l_lim:16;              /*This register is used to configure thr_l_lim value for unit0.*/
+                uint32_t cnt_h_lim:   16;
+                uint32_t cnt_l_lim:   16;
             };
             uint32_t val;
         } conf2;
     } conf_unit[4];
     union {
         struct {
-            uint32_t cnt_val   : 16;                /*This register stores the current pulse count value for unit0.*/
-            uint32_t reserved16: 16;
+            uint32_t cnt_val:     16;
+            uint32_t reserved16:  16;
         };
         uint32_t val;
     } cnt_unit[4];
     union {
         struct {
-            uint32_t cnt_thr_event_u0: 1;           /*This is the interrupt raw bit for channel0 event.*/
-            uint32_t cnt_thr_event_u1: 1;           /*This is the interrupt raw bit for channel1 event.*/
-            uint32_t cnt_thr_event_u2: 1;           /*This is the interrupt raw bit for channel2 event.*/
-            uint32_t cnt_thr_event_u3: 1;           /*This is the interrupt raw bit for channel3 event.*/
-            uint32_t reserved4:       28;
+            uint32_t cnt_thr_event_u0:         1;
+            uint32_t cnt_thr_event_u1:         1;
+            uint32_t cnt_thr_event_u2:         1;
+            uint32_t cnt_thr_event_u3:         1;
+            uint32_t reserved4:               28;
         };
         uint32_t val;
     } int_raw;
     union {
         struct {
-            uint32_t cnt_thr_event_u0: 1;            /*This is the  interrupt status bit for channel0 event.*/
-            uint32_t cnt_thr_event_u1: 1;            /*This is the  interrupt status bit for channel1 event.*/
-            uint32_t cnt_thr_event_u2: 1;            /*This is the  interrupt status bit for channel2 event.*/
-            uint32_t cnt_thr_event_u3: 1;            /*This is the  interrupt status bit for channel3 event.*/
-            uint32_t reserved4:       28;
+            uint32_t cnt_thr_event_u0:        1;
+            uint32_t cnt_thr_event_u1:        1;
+            uint32_t cnt_thr_event_u2:        1;
+            uint32_t cnt_thr_event_u3:        1;
+            uint32_t reserved4:              28;
         };
         uint32_t val;
     } int_st;
     union {
         struct {
-            uint32_t cnt_thr_event_u0: 1;           /*This is the  interrupt enable bit for channel0 event.*/
-            uint32_t cnt_thr_event_u1: 1;           /*This is the  interrupt enable bit for channel1 event.*/
-            uint32_t cnt_thr_event_u2: 1;           /*This is the  interrupt enable bit for channel2 event.*/
-            uint32_t cnt_thr_event_u3: 1;           /*This is the  interrupt enable bit for channel3 event.*/
-            uint32_t reserved4:       28;
+            uint32_t cnt_thr_event_u0:         1;
+            uint32_t cnt_thr_event_u1:         1;
+            uint32_t cnt_thr_event_u2:         1;
+            uint32_t cnt_thr_event_u3:         1;
+            uint32_t reserved4:               28;
         };
         uint32_t val;
     } int_ena;
     union {
         struct {
-            uint32_t cnt_thr_event_u0: 1;           /*Set this bit to clear channel0 event interrupt.*/
-            uint32_t cnt_thr_event_u1: 1;           /*Set this bit to clear channel1 event interrupt.*/
-            uint32_t cnt_thr_event_u2: 1;           /*Set this bit to clear channel2 event interrupt.*/
-            uint32_t cnt_thr_event_u3: 1;           /*Set this bit to clear channel3 event interrupt.*/
-            uint32_t reserved4:       28;
+            uint32_t cnt_thr_event_u0:         1;
+            uint32_t cnt_thr_event_u1:         1;
+            uint32_t cnt_thr_event_u2:         1;
+            uint32_t cnt_thr_event_u3:         1;
+            uint32_t reserved4:               28;
         };
         uint32_t val;
     } int_clr;
     union {
         struct {
-            uint32_t cnt_mode:2;                    /*0: positive value to zero; 1: negative value to zero; 2: counter value negative ; 3: counter value positive*/
-            uint32_t thres1_lat:1;                  /* counter value equals to thresh1*/
-            uint32_t thres0_lat:1;                  /* counter value equals to thresh0*/
-            uint32_t l_lim_lat:1;                   /* counter value reaches h_lim*/
-            uint32_t h_lim_lat:1;                   /* counter value reaches l_lim*/
-            uint32_t zero_lat:1;                    /* counter value equals zero*/
-            uint32_t reserved7:25;
+            uint32_t cnt_mode:              2;
+            uint32_t thres1_lat:            1;
+            uint32_t thres0_lat:            1;
+            uint32_t l_lim_lat:             1;
+            uint32_t h_lim_lat:             1;
+            uint32_t zero_lat:              1;
+            uint32_t reserved7:            25;
         };
         uint32_t val;
     } status_unit[4];
     union {
         struct {
-            uint32_t cnt_rst_u0:   1;               /*Set this bit to clear unit0's counter.*/
-            uint32_t cnt_pause_u0: 1;               /*Set this bit to pause unit0's counter.*/
-            uint32_t cnt_rst_u1:   1;               /*Set this bit to clear unit1's counter.*/
-            uint32_t cnt_pause_u1: 1;               /*Set this bit to pause unit1's counter.*/
-            uint32_t cnt_rst_u2:   1;               /*Set this bit to clear unit2's counter.*/
-            uint32_t cnt_pause_u2: 1;               /*Set this bit to pause unit2's counter.*/
-            uint32_t cnt_rst_u3:   1;               /*Set this bit to clear unit3's counter.*/
-            uint32_t cnt_pause_u3: 1;               /*Set this bit to pause unit3's counter.*/
-            uint32_t clk_en:       1;
-            uint32_t reserved9:  13;
+            uint32_t cnt_rst_u0:       1;
+            uint32_t cnt_pause_u0:     1;
+            uint32_t cnt_rst_u1:       1;
+            uint32_t cnt_pause_u1:     1;
+            uint32_t cnt_rst_u2:       1;
+            uint32_t cnt_pause_u2:     1;
+            uint32_t cnt_rst_u3:       1;
+            uint32_t cnt_pause_u3:     1;
+            uint32_t reserved8:        8;
+            uint32_t clk_en:           1;
+            uint32_t reserved17:      15;
         };
         uint32_t val;
     } ctrl;
+    uint32_t reserved_64;
+    uint32_t reserved_68;
+    uint32_t reserved_6c;
+    uint32_t reserved_70;
+    uint32_t reserved_74;
+    uint32_t reserved_78;
+    uint32_t reserved_7c;
+    uint32_t reserved_80;
+    uint32_t reserved_84;
+    uint32_t reserved_88;
+    uint32_t reserved_8c;
+    uint32_t reserved_90;
+    uint32_t reserved_94;
+    uint32_t reserved_98;
+    uint32_t reserved_9c;
+    uint32_t reserved_a0;
+    uint32_t reserved_a4;
+    uint32_t reserved_a8;
+    uint32_t reserved_ac;
+    uint32_t reserved_b0;
     uint32_t reserved_b4;
     uint32_t reserved_b8;
     uint32_t reserved_bc;

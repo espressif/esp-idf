@@ -57,9 +57,6 @@ static esp_reset_reason_t get_reset_reason(RESET_REASON rtc_reset_reason, esp_re
         case RTCWDT_BROWN_OUT_RESET:
             return ESP_RST_BROWNOUT;
 
-        case SDIO_RESET:
-            return ESP_RST_SDIO;
-
         case INTRUSION_RESET: /* unused */
         default:
             return ESP_RST_UNKNOWN;

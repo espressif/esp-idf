@@ -30,8 +30,8 @@ extern uint32_t virt_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK];
 /*Range addresses to read blocks*/
 const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_WR_DIS_REG,       EFUSE_RD_REPEAT_DATA4_REG},      // range address of EFUSE_BLK0  REPEAT
-    {EFUSE_RD_MAC_SPI_8M_0_REG, EFUSE_RD_MAC_SPI_8M_5_REG},      // range address of EFUSE_BLK1  MAC_SPI_8M
-    {EFUSE_RD_SYS_DATA0_REG,    EFUSE_RD_SYS_DATA7_REG},         // range address of EFUSE_BLK2  SYS_DATA
+    {EFUSE_RD_MAC_SPI_SYS_0_REG, EFUSE_RD_MAC_SPI_SYS_5_REG},      // range address of EFUSE_BLK1  MAC_SPI_8M
+    {EFUSE_RD_SYS_PART1_DATA0_REG,    EFUSE_RD_SYS_PART1_DATA7_REG},         // range address of EFUSE_BLK2  SYS_DATA
     {EFUSE_RD_USR_DATA0_REG,    EFUSE_RD_USR_DATA7_REG},         // range address of EFUSE_BLK3  USR_DATA
     {EFUSE_RD_KEY0_DATA0_REG,   EFUSE_RD_KEY0_DATA7_REG},        // range address of EFUSE_BLK4  KEY0
     {EFUSE_RD_KEY1_DATA0_REG,   EFUSE_RD_KEY1_DATA7_REG},        // range address of EFUSE_BLK5  KEY1
@@ -39,24 +39,24 @@ const esp_efuse_range_addr_t range_read_addr_blocks[] = {
     {EFUSE_RD_KEY3_DATA0_REG,   EFUSE_RD_KEY3_DATA7_REG},        // range address of EFUSE_BLK7  KEY3
     {EFUSE_RD_KEY4_DATA0_REG,   EFUSE_RD_KEY4_DATA7_REG},        // range address of EFUSE_BLK8  KEY4
     {EFUSE_RD_KEY5_DATA0_REG,   EFUSE_RD_KEY5_DATA7_REG},        // range address of EFUSE_BLK9  KEY5
-    {EFUSE_RD_KEY6_DATA0_REG,   EFUSE_RD_KEY6_DATA7_REG}         // range address of EFUSE_BLK10 KEY6
+    {EFUSE_RD_SYS_PART2_DATA0_REG,   EFUSE_RD_SYS_PART2_DATA7_REG}         // range address of EFUSE_BLK10 KEY6
 };
 
 static uint32_t write_mass_blocks[COUNT_EFUSE_BLOCKS][COUNT_EFUSE_REG_PER_BLOCK] = { 0 };
 
 /*Range addresses to write blocks (it is not real regs, it is buffer) */
 const esp_efuse_range_addr_t range_write_addr_blocks[] = {
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK0][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK0][5]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK1][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK1][5]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK2][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK2][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK3][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK3][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK4][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK4][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK5][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK5][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK6][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK6][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK7][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK7][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK8][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK8][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK9][0],  (uint32_t)&write_mass_blocks[EFUSE_BLK9][7]},
-    {(uint32_t)&write_mass_blocks[EFUSE_BLK10][0], (uint32_t)&write_mass_blocks[EFUSE_BLK10][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK0][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK0][5]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK1][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK1][5]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK2][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK2][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK3][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK3][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK4][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK4][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK5][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK5][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK6][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK6][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK7][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK7][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK8][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK8][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK9][0],  (uint32_t) &write_mass_blocks[EFUSE_BLK9][7]},
+    {(uint32_t) &write_mass_blocks[EFUSE_BLK10][0], (uint32_t) &write_mass_blocks[EFUSE_BLK10][7]},
 };
 
 #ifndef CONFIG_EFUSE_VIRTUAL
@@ -65,7 +65,7 @@ static esp_err_t esp_efuse_set_timing(void)
 {
     uint32_t clock = esp_clk_apb_freq();
     // ets_efuse_set_timing(clock);
-    uint32_t clk_div, power_on; 
+    uint32_t clk_div, power_on;
     //uint32_t power_off; // Support for 7.2.3 chip
     uint32_t tsup_a = 1, thp_a = 1, tpgm, tpgm_inact;
     uint32_t tsur_a = 1, thr_a = 1, trd;
@@ -153,7 +153,7 @@ void esp_efuse_utility_burn_efuses(void)
 
 // After esp_efuse_write.. functions EFUSE_BLKx_WDATAx_REG were filled is not coded values.
 // This function reads EFUSE_BLKx_WDATAx_REG registers, and checks possible to write these data with RS coding scheme.
-// The RS coding scheme does not require data changes for the encoded data. esp32s2beta has special registers for this.
+// The RS coding scheme does not require data changes for the encoded data. esp32s2 has special registers for this.
 // They will be filled during the burn operation.
 esp_err_t esp_efuse_utility_apply_new_coding_scheme()
 {
@@ -165,7 +165,7 @@ esp_err_t esp_efuse_utility_apply_new_coding_scheme()
                     int num_reg = 0;
                     for (uint32_t addr_rd_block = range_read_addr_blocks[num_block].start; addr_rd_block <= range_read_addr_blocks[num_block].end; addr_rd_block += 4, ++num_reg) {
                         if (esp_efuse_utility_read_reg(num_block, num_reg)) {
-                        	ESP_LOGE(TAG, "Bits are not empty. Write operation is forbidden.");
+                            ESP_LOGE(TAG, "Bits are not empty. Write operation is forbidden.");
                             return ESP_ERR_CODING;
                         }
                     }

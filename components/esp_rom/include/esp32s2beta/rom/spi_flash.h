@@ -19,7 +19,6 @@
 #include <stdbool.h>
 
 #include "esp_attr.h"
-
 #include "soc/spi_mem_reg.h"
 
 #ifdef __cplusplus
@@ -83,18 +82,18 @@ extern "C" {
 #define PERIPHS_SPI_FLASH_C7                  SPI_MEM_W7_REG(1)
 #define PERIPHS_SPI_FLASH_TX_CRC              SPI_MEM_TX_CRC_REG(1)
 
-#define SPI0_R_QIO_DUMMY_CYCLELEN             3
-#define SPI0_R_QIO_ADDR_BITSLEN               31
+#define SPI0_R_QIO_DUMMY_CYCLELEN             5
+#define SPI0_R_QIO_ADDR_BITSLEN               23
 #define SPI0_R_FAST_DUMMY_CYCLELEN            7
 #define SPI0_R_DIO_DUMMY_CYCLELEN             3
 #define SPI0_R_FAST_ADDR_BITSLEN              23
 #define SPI0_R_SIO_ADDR_BITSLEN               23
 
-#define SPI1_R_QIO_DUMMY_CYCLELEN             3
-#define SPI1_R_QIO_ADDR_BITSLEN               31
+#define SPI1_R_QIO_DUMMY_CYCLELEN             5
+#define SPI1_R_QIO_ADDR_BITSLEN               23
 #define SPI1_R_FAST_DUMMY_CYCLELEN            7
 #define SPI1_R_DIO_DUMMY_CYCLELEN             3
-#define SPI1_R_DIO_ADDR_BITSLEN               31
+#define SPI1_R_DIO_ADDR_BITSLEN               23
 #define SPI1_R_FAST_ADDR_BITSLEN              23
 #define SPI1_R_SIO_ADDR_BITSLEN               23
 
@@ -125,7 +124,12 @@ typedef enum {
     ESP_ROM_SPIFLASH_DIO_MODE,
     ESP_ROM_SPIFLASH_DOUT_MODE,
     ESP_ROM_SPIFLASH_FASTRD_MODE,
-    ESP_ROM_SPIFLASH_SLOWRD_MODE
+    ESP_ROM_SPIFLASH_SLOWRD_MODE,
+    ESP_ROM_SPIFASH_OPI_STR_MODE,
+    ESP_ROM_SPIFASH_OPI_DTR_MODE,
+    ESP_ROM_SPIFASH_OOUT_MODE,
+    ESP_ROM_SPIFASH_OIO_STR_MODE,
+    ESP_ROM_SPIFASH_OIO_DTR_MODE,
 } esp_rom_spiflash_read_mode_t;
 
 typedef enum {
@@ -359,7 +363,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_lock(void);
   *         ESP_ROM_SPIFLASH_RESULT_ERR : Update error.
   *         ESP_ROM_SPIFLASH_RESULT_TIMEOUT : Update timeout.
   */
-esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size, 
+esp_rom_spiflash_result_t esp_rom_spiflash_config_param(uint32_t deviceId, uint32_t chip_size, uint32_t block_size,
                                                         uint32_t sector_size, uint32_t page_size, uint32_t status_mask);
 
 /**

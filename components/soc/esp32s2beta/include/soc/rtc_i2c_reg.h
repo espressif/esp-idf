@@ -50,6 +50,12 @@ extern "C" {
 #define RTC_I2C_RESET_M  (BIT(30))
 #define RTC_I2C_RESET_V  0x1
 #define RTC_I2C_RESET_S  30
+/* RTC_I2C_CTRL_CLK_GATE_EN : R/W ;bitpos:[29] ;default: 1'b0 ; */
+/*description: */
+#define RTC_I2C_CTRL_CLK_GATE_EN  (BIT(29))
+#define RTC_I2C_CTRL_CLK_GATE_EN_M  (BIT(29))
+#define RTC_I2C_CTRL_CLK_GATE_EN_V  0x1
+#define RTC_I2C_CTRL_CLK_GATE_EN_S  29
 /* RTC_I2C_RX_LSB_FIRST : R/W ;bitpos:[5] ;default: 1'b0 ; */
 /*description: receive lsb first*/
 #define RTC_I2C_RX_LSB_FIRST  (BIT(5))
@@ -672,7 +678,7 @@ extern "C" {
 #define RTC_I2C_COMMAND15_S  0
 
 #define RTC_I2C_DATE_REG          (DR_REG_RTC_I2C_BASE + 0x00FC)
-/* RTC_I2C_DATE : R/W ;bitpos:[27:0] ;default: 28'h1711170 ; */
+/* RTC_I2C_DATE : R/W ;bitpos:[27:0] ;default: 28'h1905310 ; */
 /*description: */
 #define RTC_I2C_DATE  0x0FFFFFFF
 #define RTC_I2C_DATE_M  ((RTC_I2C_DATE_V)<<(RTC_I2C_DATE_S))

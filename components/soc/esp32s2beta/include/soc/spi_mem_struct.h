@@ -42,55 +42,57 @@ typedef volatile struct {
     uint32_t addr;                                              /*In user mode  it is the memory address. other then the bit0-bit23 is the memory address  the bit24-bit31 are the byte length of a transfer.*/
     union {
         struct {
-            uint32_t reserved0:        3;                       /*reserved*/
-            uint32_t dummy_out:        1;                       /*In the dummy phase the signal level of spi is output by the spi controller.*/
-            uint32_t reserved4:        3;                       /*reserved*/
-            uint32_t fcmd_dual:        1;                       /*Apply 2 signals during command phase 1:enable 0: disable*/
-            uint32_t fcmd_quad:        1;                       /*Apply 4 signals during command phase 1:enable 0: disable*/
-            uint32_t reserved9:        1;                       /*reserved*/
-            uint32_t fcs_crc_en:       1;                       /*For SPI1   initialize crc32 module before writing encrypted data to flash. Active low.*/
-            uint32_t tx_crc_en:        1;                       /*For SPI1   enable crc32 when writing encrypted data to flash. 1: enable 0:disable*/
-            uint32_t reserved12:       1;                       /*reserved*/
-            uint32_t fastrd_mode:      1;                       /*This bit enable the bits: spi_mem_fread_qio  spi_mem_fread_dio  spi_mem_fread_qout and spi_mem_fread_dout. 1: enable 0: disable.*/
-            uint32_t fread_dual:       1;                       /*In the read operations  read-data phase apply 2 signals. 1: enable 0: disable.*/
-            uint32_t resandres:        1;                       /*The Device ID is read out to SPI_MEM_RD_STATUS register   this bit combine with spi_mem_flash_res bit. 1: enable 0: disable.*/
-            uint32_t reserved16:       1;                       /*reserved*/
-            uint32_t flash_suspending: 1;                       /*The status of flash suspend  only used in SPI1.*/
-            uint32_t q_pol:            1;                       /*The bit is used to set MISO line polarity  1: high 0  low*/
-            uint32_t d_pol:            1;                       /*The bit is used to set MOSI line polarity  1: high 0  low*/
-            uint32_t fread_quad:       1;                       /*In the read operations read-data phase apply 4 signals. 1: enable 0: disable.*/
-            uint32_t wp:               1;                       /*Write protect signal output when SPI is idle.  1: output high  0: output low.*/
-            uint32_t wrsr_2b:          1;                       /*two bytes data will be written to status register when it is set. 1: enable 0: disable.*/
-            uint32_t fread_dio:        1;                       /*In the read operations address phase and read-data phase apply 2 signals. 1: enable 0: disable.*/
-            uint32_t fread_qio:        1;                       /*In the read operations address phase and read-data phase apply 4 signals. 1: enable 0: disable.*/
-            uint32_t reserved25:       7;                       /*reserved*/
+            uint32_t reserved0:   3;                            /*reserved*/
+            uint32_t fdummy_out:  1;                            /*In the dummy phase the signal level of spi is output by the spi controller.*/
+            uint32_t fdout_oct:   1;                            /*Apply 8 signals during write-data phase 1:enable 0: disable*/
+            uint32_t fdin_oct:    1;                            /*Apply 8 signals during read-data phase 1:enable 0: disable*/
+            uint32_t faddr_oct:   1;                            /*Apply 8 signals during address phase 1:enable 0: disable*/
+            uint32_t fcmd_dual:   1;                            /*Apply 2 signals during command phase 1:enable 0: disable*/
+            uint32_t fcmd_quad:   1;                            /*Apply 4 signals during command phase 1:enable 0: disable*/
+            uint32_t fcmd_oct:    1;                            /*Apply 8 signals during command phase 1:enable 0: disable*/
+            uint32_t fcs_crc_en:  1;                            /*For SPI1   initialize crc32 module before writing encrypted data to flash. Active low.*/
+            uint32_t tx_crc_en:   1;                            /*For SPI1   enable crc32 when writing encrypted data to flash. 1: enable 0:disable*/
+            uint32_t reserved12:  1;                            /*reserved*/
+            uint32_t fastrd_mode: 1;                            /*This bit enable the bits: spi_mem_fread_qio  spi_mem_fread_dio  spi_mem_fread_qout and spi_mem_fread_dout. 1: enable 0: disable.*/
+            uint32_t fread_dual:  1;                            /*In the read operations  read-data phase apply 2 signals. 1: enable 0: disable.*/
+            uint32_t resandres:   1;                            /*The Device ID is read out to SPI_MEM_RD_STATUS register   this bit combine with spi_mem_flash_res bit. 1: enable 0: disable.*/
+            uint32_t reserved16:  2;                            /*reserved*/
+            uint32_t q_pol:       1;                            /*The bit is used to set MISO line polarity  1: high 0  low*/
+            uint32_t d_pol:       1;                            /*The bit is used to set MOSI line polarity  1: high 0  low*/
+            uint32_t fread_quad:  1;                            /*In the read operations read-data phase apply 4 signals. 1: enable 0: disable.*/
+            uint32_t wp:          1;                            /*Write protect signal output when SPI is idle.  1: output high  0: output low.*/
+            uint32_t wrsr_2b:     1;                            /*two bytes data will be written to status register when it is set. 1: enable 0: disable.*/
+            uint32_t fread_dio:   1;                            /*In the read operations address phase and read-data phase apply 2 signals. 1: enable 0: disable.*/
+            uint32_t fread_qio:   1;                            /*In the read operations address phase and read-data phase apply 4 signals. 1: enable 0: disable.*/
+            uint32_t reserved25:  7;                            /*reserved*/
         };
         uint32_t val;
     } ctrl;
     union {
         struct {
-            uint32_t clk_mode:          2;                      /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is alwasy on.*/
-            uint32_t cs_hold_delay_res:12;                      /*Delay cycles of resume Flash when resume Flash is enable by spi clock.*/
-            uint32_t cs_hold_delay:     6;                      /*SPI cs signal is delayed by spi clock cycles.*/
-            uint32_t reserved20:       12;                      /*reserved*/
+            uint32_t clk_mode:        2;                        /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is alwasy on.*/
+            uint32_t cs_hold_dly_res:12;                        /*Delay cycles of resume Flash when resume Flash from standby mode is enable by spi clock.*/
+            uint32_t cs_hold_dly:    12;                        /*SPI fsm is delayed to idle by spi clock cycles.*/
+            uint32_t cs_dly_num:      2;                        /*spi_mem_cs signal is delayed by system clock cycles*/
+            uint32_t cs_dly_mode:     2;                        /*The cs signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk*/
+            uint32_t reserved30:      1;
+            uint32_t cs_dly_edge:     1;                        /*The bit is used to select the spi clock edge to modify CS line timing.*/
         };
         uint32_t val;
     } ctrl1;
     union {
         struct {
             uint32_t cs_setup_time:13;                          /*(cycles-1) of prepare phase by spi clock this bits are combined with spi_mem_cs_setup bit.*/
-            uint32_t cs_hold_time: 13;                          /*delay cycles of cs pin by spi clock this bits are combined with spi_mem_cs_hold bit.*/
-            uint32_t cs_delay_mode: 2;                          /*spi_mem_cs signal is delayed by spi_mem_clk . 0: zero 1: if spi_mem_ck_out_edge or spi_mem_ck_i_edge is set 1 delayed by half cycle  else delayed by one cycle 2: if spi_mem_ck_out_edge or spi_mem_ck_i_edge is set 1 delayed by one cycle  else delayed by half cycle 3: delayed one cycle*/
-            uint32_t cs_delay_num:  2;                          /*spi_mem_cs signal is delayed by system clock cycles*/
-            uint32_t cs_delay_edge: 1;                          /*The bit is used to select the spi clock edge to modify CS line timing.*/
+            uint32_t cs_hold_time: 13;                          /*Spi cs signal is delayed to inactive by spi clock this bits are combined with spi_mem_cs_hold bit.*/
+            uint32_t reserved26:    5;                          /*reserved*/
             uint32_t sync_reset:    1;                          /*The FSM will be reset.*/
         };
         uint32_t val;
     } ctrl2;
     union {
         struct {
-            uint32_t clkcnt_l:       8;                         /*In the master mode it must be equal to spi_mem_clkcnt_N. In the slave mode it must be 0.*/
-            uint32_t clkcnt_h:       8;                         /*In the master mode it must be floor((spi_mem_clkcnt_N+1)/2-1). In the slave mode it must be 0.*/
+            uint32_t clkcnt_l:       8;                         /*In the master mode it must be equal to spi_mem_clkcnt_N.*/
+            uint32_t clkcnt_h:       8;                         /*In the master mode it must be floor((spi_mem_clkcnt_N+1)/2-1).*/
             uint32_t clkcnt_n:       8;                         /*In the master mode it is the divider of spi_mem_clk. So spi_mem_clk frequency is system/(spi_mem_clkcnt_N+1)*/
             uint32_t reserved24:     7;                         /*In the master mode it is pre-divider of spi_mem_clk.*/
             uint32_t clk_equ_sysclk: 1;                         /*reserved*/
@@ -102,7 +104,7 @@ typedef volatile struct {
             uint32_t reserved0:         6;                      /*reserved*/
             uint32_t cs_hold:           1;                      /*spi cs keep low when spi is in  done  phase. 1: enable 0: disable.*/
             uint32_t cs_setup:          1;                      /*spi cs is enable when spi is in  prepare  phase. 1: enable 0: disable.*/
-            uint32_t ck_i_edge:         1;                      /*In the slave mode the bit is same as spi_mem_ck_out_edge in master mode. It is combined with  spi_mem_miso_delay_mode bits.*/
+            uint32_t reserved8:         1;                      /*reserved*/
             uint32_t ck_out_edge:       1;                      /*the bit combined with spi_mem_mosi_delay_mode bits to set mosi signal delay mode.*/
             uint32_t reserved10:        2;                      /*reserved*/
             uint32_t fwrite_dual:       1;                      /*In the write operations read-data phase apply 2 signals*/
@@ -166,7 +168,7 @@ typedef volatile struct {
             uint32_t cs1_dis:           1;                      /*SPI CS1 pin enable  1: disable CS1  0: spi_mem_cs1 signal is from/to CS1 pin*/
             uint32_t reserved2:         1;                      /*reserved*/
             uint32_t trans_end:         1;                      /*The bit is used to indicate the transimitting is done.*/
-            uint32_t trans_end_en:         1;                      /*The bit is used to enable the intterrupt of SPI transmitting done.*/
+            uint32_t trans_end_en:      1;                      /*The bit is used to enable the intterrupt of SPI transmitting done.*/
             uint32_t cs_pol:            2;                      /*In the master mode the bits are the polarity of spi cs line  the value is equivalent to spi_mem_cs ^ spi_mem_master_cs_pol.*/
             uint32_t fsub_pin:          1;                      /*For SPI0   flash is connected to SUBPINs.*/
             uint32_t ssub_pin:          1;                      /*For SPI0   sram is connected to SUBPINs.*/
@@ -204,7 +206,7 @@ typedef volatile struct {
             uint32_t sram_rdummy_cyclelen: 8;                   /*For SPI0  In the sram mode  it is the length in bits of read dummy phase. The register value shall be (bit_num-1).*/
             uint32_t sram_addr_bitlen:     6;                   /*For SPI0  In the sram mode  it is the length in bits of address phase. The register value shall be (bit_num-1).*/
             uint32_t cache_sram_usr_wcmd:  1;                   /*For SPI0  In the spi sram mode cache write sram for user define command*/
-            uint32_t reserved21:           1;                   /*reserved*/
+            uint32_t sram_oct:             1;                   /*reserved*/
             uint32_t sram_wdummy_cyclelen: 8;                   /*For SPI0  In the sram mode  it is the length in bits of write dummy phase. The register value shall be (bit_num-1).*/
             uint32_t reserved30:           2;                   /*reserved*/
         };
@@ -222,7 +224,12 @@ typedef volatile struct {
             uint32_t sdout_quad: 1;                             /*For SPI0 sram  dout phase apply 4 signals. 1: enable 0: disable. The bit is the same with spi_mem_usr_sram_qio.*/
             uint32_t saddr_quad: 1;                             /*For SPI0 sram  address phase apply 4 signals. 1: enable 0: disable. The bit is the same with spi_mem_usr_sram_qio.*/
             uint32_t scmd_quad:  1;                             /*For SPI0 sram  cmd phase apply 4 signals. 1: enable 0: disable. The bit is the same with spi_mem_usr_sram_qio.*/
-            uint32_t reserved18:14;                             /*reserved*/
+            uint32_t sdin_oct:   1;                             /*For SPI0 sram  din phase apply 8 signals. 1: enable 0: disable.*/
+            uint32_t sdout_oct:  1;                             /*For SPI0 sram  dout phase apply 8 signals. 1: enable 0: disable.*/
+            uint32_t saddr_oct:  1;                             /*For SPI0 sram  address phase apply 4 signals. 1: enable 0: disable.*/
+            uint32_t scmd_oct:   1;                             /*For SPI0 sram  cmd phase apply 8 signals. 1: enable 0: disable.*/
+            uint32_t sdummy_out: 1;                             /*In the dummy phase the signal level of spi is output by the spi controller.*/
+            uint32_t reserved23: 9;                             /*reserved*/
         };
         uint32_t val;
     } sram_cmd;
@@ -244,8 +251,8 @@ typedef volatile struct {
     } sram_dwr_cmd;
     union {
         struct {
-            uint32_t cnt_l:           8;                        /*For SPI0 sram interface  it must be equal to spi_mem_clkcnt_N. In the slave mode it must be 0.*/
-            uint32_t cnt_h:           8;                        /*For SPI0 sram interface  it must be floor((spi_mem_clkcnt_N+1)/2-1). In the slave mode it must be 0.*/
+            uint32_t cnt_l:           8;                        /*For SPI0 sram interface  it must be equal to spi_mem_clkcnt_N.*/
+            uint32_t cnt_h:           8;                        /*For SPI0 sram interface  it must be floor((spi_mem_clkcnt_N+1)/2-1).*/
             uint32_t cnt_n:           8;                        /*For SPI0 sram interface  it is the divider of spi_mem_clk. So spi_mem_clk frequency is system/(spi_mem_clkcnt_N+1)*/
             uint32_t reserved24:      7;                        /*reserved*/
             uint32_t equ_sysclk:      1;                        /*For SPI0 sram interface  1: spi_mem_clk is eqaul to system 0: spi_mem_clk is divided from system clock.*/
@@ -259,152 +266,7 @@ typedef volatile struct {
         };
         uint32_t val;
     } fsm;
-    union {
-        struct {
-            uint32_t hold_ena:   2;                             /*This register is for two SPI masters to share the same cs clock and data signals. The bits of one SPI are set  if the other SPI is busy  the SPI will be hold. 1(3): hold at  idle  phase 2: hold at  prepare  phase.*/
-            uint32_t reserved2: 30;                             /*reserved*/
-        };
-        uint32_t val;
-    } hold;
-    union {
-        struct {
-            uint32_t dma_rx_ena:        1;                      /*spi dma rx data enable.*/
-            uint32_t dma_tx_ena:        1;                      /*spi dma tx data enable.*/
-            uint32_t in_rst:            1;                      /*The bit is used to reset in dma fsm and in data fifo pointer.*/
-            uint32_t out_rst:           1;                      /*The bit is used to reset out dma fsm and out data fifo pointer.*/
-            uint32_t ahbm_fifo_rst:     1;                      /*Reset spi dma ahb master fifo pointer.*/
-            uint32_t ahbm_rst:          1;                      /*Reset spi dma ahb master.*/
-            uint32_t in_loop_test:      1;                      /*Set bit to test in link.*/
-            uint32_t out_loop_test:     1;                      /*Set bit to test out link.*/
-            uint32_t out_auto_wrback:   1;                      /*when the bit is set  DMA continue to use the next inlink node when the length of inlink is 0.*/
-            uint32_t out_eof_mode:      1;                      /*out eof flag generation mode . 1: when dma pop all data from fifo  0:when ahb push all data to fifo.*/
-            uint32_t outdscr_burst_en:  1;                      /*read descriptor use burst mode when read data for memory.*/
-            uint32_t indscr_burst_en:   1;                      /*read descriptor use burst mode when write data to memory.*/
-            uint32_t out_data_burst_en: 1;                      /*spi dma read data from memory in burst mode.*/
-            uint32_t dma_mem_trans_ena: 1;                      /*reserved*/
-            uint32_t dma_rx_stop:       1;                      /*spi dma read data stop  when in continue tx/rx mode.*/
-            uint32_t dma_tx_stop:       1;                      /*spi dma write data stop when in continue tx/rx mode.*/
-            uint32_t dma_continue:      1;                      /*spi dma continue tx/rx data.*/
-            uint32_t reserved17:       15;                      /*reserved*/
-        };
-        uint32_t val;
-    } dma_conf;
-    union {
-        struct {
-            uint32_t addr:           20;                        /*The address of the first outlink descriptor.*/
-            uint32_t reserved20:      8;                        /*reserved*/
-            uint32_t stop:            1;                        /*Set the bit to stop to use outlink descriptor.*/
-            uint32_t start:           1;                        /*Set the bit to start to use outlink descriptor.*/
-            uint32_t restart:         1;                        /*Set the bit to mount on new outlink descriptors.*/
-            uint32_t reserved31:      1;                        /*reserved*/
-        };
-        uint32_t val;
-    } dma_out_link;
-    union {
-        struct {
-            uint32_t addr:           20;                        /*The address of the first inlink descriptor.*/
-            uint32_t auto_ret:        1;                        /*when the bit is set  the inlink descriptor returns to the first link node when a packet is error.*/
-            uint32_t reserved21:      7;                        /*reserved*/
-            uint32_t stop:            1;                        /*Set the bit to stop to use inlink descriptor.*/
-            uint32_t start:           1;                        /*Set the bit to start to use inlink descriptor.*/
-            uint32_t restart:         1;                        /*Set the bit to mount on new inlink descriptors.*/
-            uint32_t reserved31:      1;                        /*reserved*/
-        };
-        uint32_t val;
-    } dma_in_link;
-    union {
-        struct {
-            uint32_t inlink_dscr_empty:          1;             /*The enable bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error:         1;             /*The enable bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error:          1;             /*The enable bit for inlink descriptor error.*/
-            uint32_t in_done:                    1;             /*The enable bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof:                 1;             /*The enable bit for receiving error.*/
-            uint32_t in_suc_eof:                 1;             /*The enable bit for completing receiving all the packets from host.*/
-            uint32_t out_done:                   1;             /*The enable bit for completing usage of a outlink descriptor .*/
-            uint32_t out_eof:                    1;             /*The enable bit for sending a packet to host done.*/
-            uint32_t out_total_eof:              1;             /*The enable bit for sending all the packets to host done.*/
-            uint32_t reserved9:                 23;             /*reserved*/
-        };
-        uint32_t val;
-    } dma_int_ena;
-    union {
-        struct {
-            uint32_t inlink_dscr_empty:          1;             /*The raw bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error:         1;             /*The raw bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error:          1;             /*The raw bit for inlink descriptor error.*/
-            uint32_t in_done:                    1;             /*The raw bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof:                 1;             /*The raw bit for receiving error.*/
-            uint32_t in_suc_eof:                 1;             /*The raw bit for completing receiving all the packets from host.*/
-            uint32_t out_done:                   1;             /*The raw bit for completing usage of a outlink descriptor.*/
-            uint32_t out_eof:                    1;             /*The raw bit for sending a packet to host done.*/
-            uint32_t out_total_eof:              1;             /*The raw bit for sending all the packets to host done.*/
-            uint32_t reserved9:                 23;             /*reserved*/
-        };
-        uint32_t val;
-    } dma_int_raw;
-    union {
-        struct {
-            uint32_t inlink_dscr_empty:         1;              /*The status bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error:        1;              /*The status bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error:         1;              /*The status bit for inlink descriptor error.*/
-            uint32_t in_done:                   1;              /*The status bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof:                1;              /*The status bit for receiving error.*/
-            uint32_t in_suc_eof:                1;              /*The status bit for completing receiving all the packets from host.*/
-            uint32_t out_done:                  1;              /*The status bit for completing usage of a outlink descriptor.*/
-            uint32_t out_eof:                   1;              /*The status bit for sending a packet to host done.*/
-            uint32_t out_total_eof:             1;              /*The status bit for sending all the packets to host done.*/
-            uint32_t reserved9:                23;              /*reserved*/
-        };
-        uint32_t val;
-    } dma_int_st;
-    union {
-        struct {
-            uint32_t inlink_dscr_empty:          1;             /*The clear bit for lack of enough inlink descriptors.*/
-            uint32_t outlink_dscr_error:         1;             /*The clear bit for outlink descriptor error.*/
-            uint32_t inlink_dscr_error:          1;             /*The clear bit for inlink descriptor error.*/
-            uint32_t in_done:                    1;             /*The clear bit for completing usage of a inlink descriptor.*/
-            uint32_t in_err_eof:                 1;             /*The clear bit for receiving error.*/
-            uint32_t in_suc_eof:                 1;             /*The clear bit for completing receiving all the packets from host.*/
-            uint32_t out_done:                   1;             /*The clear bit for completing usage of a outlink descriptor.*/
-            uint32_t out_eof:                    1;             /*The clear bit for sending a packet to host done.*/
-            uint32_t out_total_eof:              1;             /*The clear bit for sending all the packets to host done.*/
-            uint32_t reserved9:                 23;             /*reserved*/
-        };
-        uint32_t val;
-    } dma_int_clr;
-    uint32_t dma_in_err_eof_des_addr;                               /*The inlink descriptor address when spi dma produce receiving error.*/
-    uint32_t dma_in_suc_eof_des_addr;                               /*The last inlink descriptor address when spi dma produce from_suc_eof.*/
-    uint32_t dma_inlink_dscr;                                       /*The content of current in descriptor pointer.*/
-    uint32_t dma_inlink_dscr_bf0;                                   /*The content of next in descriptor pointer.*/
-    uint32_t dma_inlink_dscr_bf1;                                   /*The content of current in descriptor data buffer pointer.*/
-    uint32_t dma_out_eof_bfr_des_addr;                              /*The address of buffer relative to the outlink descriptor that produce eof.*/
-    uint32_t dma_out_eof_des_addr;                                  /*The last outlink descriptor address when spi dma produce to_eof.*/
-    uint32_t dma_outlink_dscr;                                      /*The content of current out descriptor pointer.*/
-    uint32_t dma_outlink_dscr_bf0;                                  /*The content of next out descriptor pointer.*/
-    uint32_t dma_outlink_dscr_bf1;                                  /*The content of current out descriptor data buffer pointer.*/
-    union {
-        struct {
-            uint32_t out_dscr_addr:    18;                      /*SPI dma out descriptor address.*/
-            uint32_t out_dscr_state:    2;                      /*SPI dma out descriptor state.*/
-            uint32_t out_state:         3;                      /*SPI dma out data state.*/
-            uint32_t out_fifo_cnt:      7;                      /*The remains of SPI dma outfifo data.*/
-            uint32_t out_fifo_full:     1;                      /*SPI dma outfifo is full.*/
-            uint32_t out_fifo_empty:    1;                      /*SPI dma outfifo is empty.*/
-        };
-        uint32_t val;
-    } dma_out_status;
-    union {
-        struct {
-            uint32_t in_dscr_addr:    18;                       /*SPI dma in descriptor address.*/
-            uint32_t in_dscr_state:    2;                       /*SPI dma in descriptor state.*/
-            uint32_t in_state:         3;                       /*SPI dma in data state.*/
-            uint32_t in_fifo_cnt:      7;                       /*The remains of SPI dma infifo data.*/
-            uint32_t in_fifo_full:     1;                       /*SPI dma infifo is full.*/
-            uint32_t in_fifo_empty:    1;                       /*SPI dma infifo is empty.*/
-        };
-        uint32_t val;
-    } dma_in_status;
-    uint32_t data_buf[16];                                                /*data buffer*/
+    uint32_t data_buf[18];                                                /*data buffer*/
     union {
         struct {
             uint32_t waiti_en:             1;                   /*auto-waiting flash idle operation when program flash or erase flash. 1: enable 0: disable.*/
@@ -434,41 +296,62 @@ typedef volatile struct {
     } flash_sus_ctrl;
     union {
         struct {
-            uint32_t din0_mode:     2;                          /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t din1_mode:     2;                          /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t din2_mode:     2;                          /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t din3_mode:     2;                          /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t reserved8:    10;                          /*reserved*/
-            uint32_t din0_dly_edge: 1;                          /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t din1_dly_edge: 1;                          /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t din2_dly_edge: 1;                          /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t din3_dly_edge: 1;                          /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t reserved22:   10;                          /*reserved*/
+            uint32_t flash_sus:  1;                             /*The status of flash suspend  only used in SPI1.*/
+            uint32_t reserved1: 31;
+        };
+        uint32_t val;
+    } sus_status;
+    union {
+        struct {
+            uint32_t timing_clk_ena:       1;                   /*The bit is used to enable timing adjust clock for all reading operations.*/
+            uint32_t timing_cali:          1;                   /*The bit is used to enable timing auto-calibration for all reading operations.*/
+            uint32_t extra_dummy_cyclelen: 3;                   /*add extra dummy spi clock cycle length for spi clock calibration.*/
+            uint32_t reserved5:           27;
+        };
+        uint32_t val;
+    } timing_cali;
+    union {
+        struct {
+            uint32_t din0_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t din1_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t din2_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t din3_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t din4_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din5_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din6_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t din7_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t dins_mode:  2;                             /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+            uint32_t reserved18:14;                             /*reserved*/
         };
         uint32_t val;
     } din_mode;
     union {
         struct {
-            uint32_t din0_num:   2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t din1_num:   2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t din2_num:   2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t din3_num:   2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t reserved8: 24;                             /*reserved*/
+            uint32_t din0_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din1_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din2_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din3_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din4_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din5_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din6_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t din7_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t dins_num:   3;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t reserved27: 5;                             /*reserved*/
         };
         uint32_t val;
     } din_num;
     union {
         struct {
-            uint32_t dout0_mode:     2;                         /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout1_mode:     2;                         /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout2_mode:     2;                         /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout3_mode:     2;                         /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t reserved8:     10;                         /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t dout0_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout1_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout2_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t dout3_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t reserved22:    10;                         /*reserved*/
+            uint32_t dout0_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t dout1_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t dout2_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t dout3_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t dout4_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout5_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout6_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t dout7_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t douts_mode: 2;                             /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+            uint32_t reserved18:14;                             /*reserved*/
         };
         uint32_t val;
     } dout_mode;
@@ -478,67 +361,151 @@ typedef volatile struct {
             uint32_t dout1_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
             uint32_t dout2_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
             uint32_t dout3_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t reserved8: 24;                             /*reserved*/
+            uint32_t dout4_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t dout5_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t dout6_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t dout7_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t douts_num:  2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t reserved18:14;                             /*reserved*/
         };
         uint32_t val;
     } dout_num;
     union {
         struct {
-            uint32_t sdin0_mode:     2;                         /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t sdin1_mode:     2;                         /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t sdin2_mode:     2;                         /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t sdin3_mode:     2;                         /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
-            uint32_t reserved8:     10;
-            uint32_t sdin0_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t sdin1_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t sdin2_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t sdin3_dly_edge: 1;                         /*The bit is used to select the spi clock edge to modify input line timing.*/
-            uint32_t reserved22:    10;                         /*reserved*/
+            uint32_t spi_smem_timing_clk_ena:       1;          /*For sram  the bit is used to enable timing adjust clock for all reading operations.*/
+            uint32_t spi_smem_timing_cali:          1;          /*For sram  the bit is used to enable timing auto-calibration for all reading operations.*/
+            uint32_t spi_smem_extra_dummy_cyclelen: 3;          /*For sram  add extra dummy spi clock cycle length for spi clock calibration.*/
+            uint32_t reserved5:                    27;
         };
         uint32_t val;
-    } sdin_mode;
+    } spi_smem_timing_cali;
     union {
         struct {
-            uint32_t sdin0_num:  2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t sdin1_num:  2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t sdin2_num:  2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t sdin3_num:  2;                             /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t reserved8: 24;                             /*reserved*/
+            uint32_t spi_smem_din0_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din1_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din2_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din3_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din4_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din5_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din6_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_din7_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t spi_smem_dins_mode: 2;                     /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t reserved18:        14;                     /*reserved*/
         };
         uint32_t val;
-    } sdin_num;
+    } spi_smem_din_mode;
     union {
         struct {
-            uint32_t sdout0_mode:     2;                        /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t sdout1_mode:     2;                        /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t sdout2_mode:     2;                        /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t sdout3_mode:     2;                        /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t reserved8:      10;                        /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
-            uint32_t sdout0_dly_edge: 1;                        /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t sdout1_dly_edge: 1;                        /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t sdout2_dly_edge: 1;                        /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t sdout3_dly_edge: 1;                        /*The bit is used to select the spi clock edge to modify output line timing.*/
-            uint32_t reserved22:     10;                        /*reserved*/
+            uint32_t spi_smem_din0_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din1_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din2_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din3_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din4_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din5_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din6_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_din7_num: 3;                      /*the input signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_dins_num: 3;                      /*the input signals are delayed by system clock cycles  0: input without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+            uint32_t reserved27:        5;                      /*reserved*/
         };
         uint32_t val;
-    } sdout_mode;
+    } spi_smem_din_num;
     union {
         struct {
-            uint32_t sdout0_num: 2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t sdout1_num: 2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t sdout2_num: 2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t sdout3_num: 2;                             /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
-            uint32_t reserved8: 24;                             /*reserved*/
+            uint32_t spi_smem_dout0_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout1_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout2_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout3_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout4_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout5_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout6_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout7_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_douts_mode: 2;                    /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t reserved18:         14;                    /*reserved*/
         };
         uint32_t val;
-    } sdout_num;
+    } spi_smem_dout_mode;
     union {
         struct {
-            uint32_t clk_en:     1;
-            uint32_t reserved1: 31;
+            uint32_t spi_smem_dout0_num: 2;                     /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_dout1_num: 2;                     /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_dout2_num: 2;                     /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_dout3_num: 2;                     /*the output signals are delayed by system clock cycles  0: delayed by 1 cycle  1: delayed by 2 cycles ...*/
+            uint32_t spi_smem_dout4_num: 2;                     /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout5_num: 2;                     /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout6_num: 2;                     /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_dout7_num: 2;                     /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t spi_smem_douts_num: 2;                     /*the output signals are delayed by system clock cycles  0: output without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+            uint32_t reserved18:        14;                     /*reserved*/
+        };
+        uint32_t val;
+    } spi_smem_dout_num;
+    union {
+        struct {
+            uint32_t spi_smem_cs_setup:      1;                 /*For spi0  spi cs is enable when spi is in prepare phase. 1: enable 0: disable.*/
+            uint32_t spi_smem_cs_hold:       1;                 /*For spi0  spi cs keep low when spi is in done phase. 1: enable 0: disable.*/
+            uint32_t spi_smem_cs_setup_time:13;                 /*For spi0  (cycles-1) of prepare phase by spi clock this bits are combined with spi_mem_cs_setup bit.*/
+            uint32_t spi_smem_cs_hold_time: 13;                 /*For spi0  spi cs signal is delayed to inactive by spi clock this bits are combined with spi_mem_cs_hold bit.*/
+            uint32_t reserved28:             4;
+        };
+        uint32_t val;
+    } spi_smem_ac;
+    union {
+        struct {
+            uint32_t spi_fmem_ddr_en:            1;             /*1: in ddr mode   0 in sdr mode*/
+            uint32_t spi_fmem_var_dummy:         1;             /*Set the bit to enable variable dummy cycle in spi ddr mode.*/
+            uint32_t spi_fmem_ddr_rdat_swp:      1;             /*Set the bit to reorder rx data of the word in spi ddr mode.*/
+            uint32_t spi_fmem_ddr_wdat_swp:      1;             /*Set the bit to reorder tx data of the word in spi ddr mode.*/
+            uint32_t spi_fmem_ddr_cmd_dis:       1;             /*the bit is used to disable dual edge in command phase when ddr mode.*/
+            uint32_t spi_fmem_outminbytelen:     8;             /*It is the minimum output data length in the panda device.*/
+            uint32_t spi_fmem_usr_ddr_dqs_thd:   8;             /*The delay number of data strobe which from memory based on SPI clock.*/
+            uint32_t spi_fmem_ddr_dqs_loop:      1;             /*the data strobe is generated by SPI.*/
+            uint32_t spi_fmem_ddr_dqs_loop_mode: 2;             /*the bits are combined with the bit spi_fmem_ddr_fdqs_loop which used to select data strobe generating mode in ddr mode.*/
+            uint32_t reserved24:                 8;             /*reserved*/
+        };
+        uint32_t val;
+    } ddr;
+    union {
+        struct {
+            uint32_t spi_smem_ddr_en:            1;             /*1: in ddr mode   0 in sdr mode*/
+            uint32_t spi_smem_var_dummy:         1;             /*Set the bit to enable variable dummy cycle in spi ddr mode.*/
+            uint32_t spi_smem_ddr_rdat_swp:      1;             /*Set the bit to reorder rx data of the word in spi ddr mode.*/
+            uint32_t spi_smem_ddr_wdat_swp:      1;             /*Set the bit to reorder tx data of the word in spi ddr mode.*/
+            uint32_t spi_smem_ddr_cmd_dis:       1;             /*the bit is used to disable dual edge in command phase when ddr mode.*/
+            uint32_t spi_smem_outminbytelen:     8;             /*It is the minimum output data length in the ddr psram.*/
+            uint32_t spi_smem_usr_ddr_dqs_thd:   8;             /*The delay number of data strobe which from memory based on SPI clock.*/
+            uint32_t spi_smem_ddr_dqs_loop:      1;             /*the data strobe is generated by SPI.*/
+            uint32_t spi_smem_ddr_dqs_loop_mode: 2;             /*the bits are combined with the bit spi_smem_ddr_fdqs_loop which used to select data strobe generating mode in ddr mode.*/
+            uint32_t reserved24:                 8;             /*reserved*/
+        };
+        uint32_t val;
+    } spi_smem_ddr;
+    union {
+        struct {
+            uint32_t clk_en:     1;                             /*Register clock gate enable signal. 1: Enable. 0: Disable.*/
+            uint32_t reserved1: 31;                             /*reserved*/
         };
         uint32_t val;
     } clock_gate;
+    union {
+        struct {
+            uint32_t spi01_clk_sel: 2;                          /*When the digital system clock selects PLL clock and the frequency of PLL clock is 480MHz  the value of reg_spi01_clk_sel:  0: SPI0/1 module clock (clk) is 80MHz. 1: SPI0/1 module clock (clk) is 120MHz.  2: SPI0/1 module clock (clk) 160MHz. 3: Not used. When the digital system clock selects PLL clock and the frequency of PLL clock is 320MHz  the value of reg_spi01_clk_sel:  0: SPI0/1 module clock (clk) is 80MHz. 1: SPI0/1 module clock (clk) is 80MHz.  2: SPI0/1 module clock (clk) 160MHz. 3: Not used.*/
+            uint32_t reserved2:    30;                          /*reserved*/
+        };
+        uint32_t val;
+    } spi_core_clk_sel;
+    uint32_t reserved_e4;
+    uint32_t reserved_e8;
+    uint32_t reserved_ec;
+    uint32_t reserved_f0;
+    uint32_t reserved_f4;
+    uint32_t reserved_f8;
+    uint32_t reserved_fc;
+    uint32_t reserved_100;
+    uint32_t reserved_104;
+    uint32_t reserved_108;
+    uint32_t reserved_10c;
+    uint32_t reserved_110;
+    uint32_t reserved_114;
     uint32_t reserved_118;
     uint32_t reserved_11c;
     uint32_t reserved_120;

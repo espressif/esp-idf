@@ -2265,6 +2265,20 @@ extern "C" {
 #define RTC_IO_SAR_DEBUG_BIT_SEL_V  0x1F
 #define RTC_IO_SAR_DEBUG_BIT_SEL_S  23
 
+#define RTC_IO_TOUCH_CTRL_REG          (DR_REG_RTCIO_BASE + 0xE8)
+/* RTC_IO_IO_TOUCH_BUFMODE : R/W ;bitpos:[4] ;default: 1'd0 ; */
+/*description: BUF_MODE when touch work without fsm*/
+#define RTC_IO_IO_TOUCH_BUFMODE  (BIT(4))
+#define RTC_IO_IO_TOUCH_BUFMODE_M  (BIT(4))
+#define RTC_IO_IO_TOUCH_BUFMODE_V  0x1
+#define RTC_IO_IO_TOUCH_BUFMODE_S  4
+/* RTC_IO_IO_TOUCH_BUFSEL : R/W ;bitpos:[3:0] ;default: 4'd0 ; */
+/*description: BUF_SEL when touch work without fsm*/
+#define RTC_IO_IO_TOUCH_BUFSEL  0x0000000F
+#define RTC_IO_IO_TOUCH_BUFSEL_M  ((RTC_IO_IO_TOUCH_BUFSEL_V)<<(RTC_IO_IO_TOUCH_BUFSEL_S))
+#define RTC_IO_IO_TOUCH_BUFSEL_V  0xF
+#define RTC_IO_IO_TOUCH_BUFSEL_S  0
+
 #define RTC_IO_DATE_REG          (DR_REG_RTCIO_BASE + 0x1FC)
 /* RTC_IO_IO_DATE : R/W ;bitpos:[27:0] ;default: 28'h1903170 ; */
 /*description: */

@@ -38,6 +38,8 @@
 #include "esp32s2beta/rom/spi_flash.h"
 #include "esp32s2beta/rom/cache.h"
 #include "esp32s2beta/spiram.h"
+#include "soc/extmem_reg.h"
+#include "soc/cache_memory.h"
 #endif
 
 #ifndef NDEBUG
@@ -46,31 +48,31 @@
 #endif
 #include "sys/queue.h"
 
-#define PAGES_PER_REGION 64
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define REGIONS_COUNT 4
 #define IROM0_PAGES_START 64
 #define IROM0_PAGES_END 256
 #define DROM0_PAGES_START 0
 #define DROM0_PAGES_END 64
-
 #define PAGE_IN_FLASH(page)     (page)
-
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#define REGIONS_COUNT 8
-#define IROM0_PAGES_START (PRO_CACHE_IBUS0_MMU_START / sizeof(uint32_t))
-#define IROM0_PAGES_END (PRO_CACHE_IBUS2_MMU_END / sizeof(uint32_t))
-#define DROM0_PAGES_START (Cache_Drom0_Using_ICache()? PRO_CACHE_IBUS3_MMU_START / sizeof(uint32_t) : PRO_CACHE_DBUS3_MMU_START /sizeof(uint32_t))
-#define DROM0_PAGES_END (Cache_Drom0_Using_ICache()? PRO_CACHE_IBUS3_MMU_END / sizeof(uint32_t) : PRO_CACHE_DBUS3_MMU_END / sizeof(uint32_t))
-
-#define PAGE_IN_FLASH(page)     ((page) | DPORT_MMU_ACCESS_FLASH)
-
-#endif
+#define INVALID_ENTRY_VAL DPORT_FLASH_MMU_TABLE_INVALID_VAL
 #define MMU_ADDR_MASK DPORT_MMU_ADDRESS_MASK
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#define REGIONS_COUNT 6
+#define IROM0_PAGES_START (PRO_CACHE_IBUS0_MMU_START / sizeof(uint32_t))
+#define IROM0_PAGES_END (PRO_CACHE_IBUS1_MMU_END / sizeof(uint32_t))
+#define DROM0_PAGES_START (PRO_CACHE_IBUS2_MMU_START / sizeof(uint32_t))
+#define DROM0_PAGES_END (PRO_CACHE_IBUS2_MMU_END / sizeof(uint32_t))
+#define DPORT_PRO_FLASH_MMU_TABLE FLASH_MMU_TABLE
+#define INVALID_ENTRY_VAL MMU_TABLE_INVALID_VAL
+#define MMU_ADDR_MASK MMU_ADDRESS_MASK
+#define PAGE_IN_FLASH(page)     ((page) | MMU_ACCESS_FLASH)
+#endif
+
+#define PAGES_PER_REGION 64
 #define IROM0_PAGES_NUM (IROM0_PAGES_END - IROM0_PAGES_START)
 #define DROM0_PAGES_NUM (DROM0_PAGES_END - DROM0_PAGES_START)
 #define PAGES_LIMIT (IROM0_PAGES_END > DROM0_PAGES_END ? IROM0_PAGES_END:DROM0_PAGES_END)
-#define INVALID_ENTRY_VAL DPORT_FLASH_MMU_TABLE_INVALID_VAL
 #define VADDR0_START_ADDR SOC_DROM_LOW
 #define VADDR1_START_ADDR 0x40000000
 #define VADDR1_FIRST_USABLE_ADDR SOC_IROM_LOW
@@ -103,16 +105,16 @@ static void IRAM_ATTR spi_flash_mmap_init(void)
 
         if (entry_pro != entry_app) {
             // clean up entries used by boot loader
-            entry_pro = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
-            DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+            entry_pro = INVALID_ENTRY_VAL;
+            DPORT_PRO_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
         }
 #endif
         if ((entry_pro & INVALID_ENTRY_VAL) == 0 && (i == DROM0_PAGES_START || i == PRO_IRAM0_FIRST_USABLE_PAGE || entry_pro != 0)) {
             s_mmap_page_refcnt[i] = 1;
         } else {
-            DPORT_PRO_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+            DPORT_PRO_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
 #if !CONFIG_FREERTOS_UNICORE
-            DPORT_APP_FLASH_MMU_TABLE[i] = DPORT_FLASH_MMU_TABLE_INVALID_VAL;
+            DPORT_APP_FLASH_MMU_TABLE[i] = INVALID_ENTRY_VAL;
 #endif
         }
     }

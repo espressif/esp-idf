@@ -217,6 +217,12 @@ extern "C" {
 #define SPI_MEM_FCS_CRC_EN_M  (BIT(10))
 #define SPI_MEM_FCS_CRC_EN_V  0x1
 #define SPI_MEM_FCS_CRC_EN_S  10
+/* SPI_MEM_FCMD_OCT : R/W ;bitpos:[9] ;default: 1'b0 ; */
+/*description: Apply 8 signals during command phase 1:enable 0: disable*/
+#define SPI_MEM_FCMD_OCT  (BIT(9))
+#define SPI_MEM_FCMD_OCT_M  (BIT(9))
+#define SPI_MEM_FCMD_OCT_V  0x1
+#define SPI_MEM_FCMD_OCT_S  9
 /* SPI_MEM_FCMD_QUAD : R/W ;bitpos:[8] ;default: 1'b0 ; */
 /*description: Apply 4 signals during command phase 1:enable 0: disable*/
 #define SPI_MEM_FCMD_QUAD  (BIT(8))
@@ -229,12 +235,30 @@ extern "C" {
 #define SPI_MEM_FCMD_DUAL_M  (BIT(7))
 #define SPI_MEM_FCMD_DUAL_V  0x1
 #define SPI_MEM_FCMD_DUAL_S  7
-/* SPI_MEM_DUMMY_OUT : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/* SPI_MEM_FADDR_OCT : R/W ;bitpos:[6] ;default: 1'b0 ; */
+/*description: Apply 8 signals during address phase 1:enable 0: disable*/
+#define SPI_MEM_FADDR_OCT  (BIT(6))
+#define SPI_MEM_FADDR_OCT_M  (BIT(6))
+#define SPI_MEM_FADDR_OCT_V  0x1
+#define SPI_MEM_FADDR_OCT_S  6
+/* SPI_MEM_FDIN_OCT : R/W ;bitpos:[5] ;default: 1'b0 ; */
+/*description: Apply 8 signals during read-data phase 1:enable 0: disable*/
+#define SPI_MEM_FDIN_OCT  (BIT(5))
+#define SPI_MEM_FDIN_OCT_M  (BIT(5))
+#define SPI_MEM_FDIN_OCT_V  0x1
+#define SPI_MEM_FDIN_OCT_S  5
+/* SPI_MEM_FDOUT_OCT : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: Apply 8 signals during write-data phase 1:enable 0: disable*/
+#define SPI_MEM_FDOUT_OCT  (BIT(4))
+#define SPI_MEM_FDOUT_OCT_M  (BIT(4))
+#define SPI_MEM_FDOUT_OCT_V  0x1
+#define SPI_MEM_FDOUT_OCT_S  4
+/* SPI_MEM_FDUMMY_OUT : R/W ;bitpos:[3] ;default: 1'b0 ; */
 /*description: In the dummy phase the signal level of spi is output by the spi controller.*/
-#define SPI_MEM_DUMMY_OUT  (BIT(3))
-#define SPI_MEM_DUMMY_OUT_M  (BIT(3))
-#define SPI_MEM_DUMMY_OUT_V  0x1
-#define SPI_MEM_DUMMY_OUT_S  3
+#define SPI_MEM_FDUMMY_OUT  (BIT(3))
+#define SPI_MEM_FDUMMY_OUT_M  (BIT(3))
+#define SPI_MEM_FDUMMY_OUT_V  0x1
+#define SPI_MEM_FDUMMY_OUT_S  3
 
 #define SPI_MEM_CTRL1_REG(i)          (REG_SPI_MEM_BASE(i) + 0x00C)
 /* SPI_MEM_CS_DLY_EDGE : R/W ;bitpos:[31] ;default: 1'b0 ; */
@@ -630,6 +654,12 @@ extern "C" {
 #define SPI_MEM_SRAM_WDUMMY_CYCLELEN_M  ((SPI_MEM_SRAM_WDUMMY_CYCLELEN_V)<<(SPI_MEM_SRAM_WDUMMY_CYCLELEN_S))
 #define SPI_MEM_SRAM_WDUMMY_CYCLELEN_V  0xFF
 #define SPI_MEM_SRAM_WDUMMY_CYCLELEN_S  22
+/* SPI_MEM_SRAM_OCT : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/*description: reserved*/
+#define SPI_MEM_SRAM_OCT  (BIT(21))
+#define SPI_MEM_SRAM_OCT_M  (BIT(21))
+#define SPI_MEM_SRAM_OCT_V  0x1
+#define SPI_MEM_SRAM_OCT_S  21
 /* SPI_MEM_CACHE_SRAM_USR_WCMD : R/W ;bitpos:[20] ;default: 1'b1 ; */
 /*description: For SPI0  In the spi sram mode cache write sram for user define command*/
 #define SPI_MEM_CACHE_SRAM_USR_WCMD  (BIT(20))
@@ -691,6 +721,36 @@ extern "C" {
 #define SPI_MEM_CACHE_USR_SCMD_4BYTE_S  0
 
 #define SPI_MEM_SRAM_CMD_REG(i)          (REG_SPI_MEM_BASE(i) + 0x044)
+/* SPI_MEM_SDUMMY_OUT : R/W ;bitpos:[22] ;default: 1'b0 ; */
+/*description: In the dummy phase the signal level of spi is output by the spi controller.*/
+#define SPI_MEM_SDUMMY_OUT  (BIT(22))
+#define SPI_MEM_SDUMMY_OUT_M  (BIT(22))
+#define SPI_MEM_SDUMMY_OUT_V  0x1
+#define SPI_MEM_SDUMMY_OUT_S  22
+/* SPI_MEM_SCMD_OCT : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/*description: For SPI0 sram  cmd phase apply 8 signals. 1: enable 0: disable.*/
+#define SPI_MEM_SCMD_OCT  (BIT(21))
+#define SPI_MEM_SCMD_OCT_M  (BIT(21))
+#define SPI_MEM_SCMD_OCT_V  0x1
+#define SPI_MEM_SCMD_OCT_S  21
+/* SPI_MEM_SADDR_OCT : R/W ;bitpos:[20] ;default: 1'b0 ; */
+/*description: For SPI0 sram  address phase apply 4 signals. 1: enable 0: disable.*/
+#define SPI_MEM_SADDR_OCT  (BIT(20))
+#define SPI_MEM_SADDR_OCT_M  (BIT(20))
+#define SPI_MEM_SADDR_OCT_V  0x1
+#define SPI_MEM_SADDR_OCT_S  20
+/* SPI_MEM_SDOUT_OCT : R/W ;bitpos:[19] ;default: 1'b0 ; */
+/*description: For SPI0 sram  dout phase apply 8 signals. 1: enable 0: disable.*/
+#define SPI_MEM_SDOUT_OCT  (BIT(19))
+#define SPI_MEM_SDOUT_OCT_M  (BIT(19))
+#define SPI_MEM_SDOUT_OCT_V  0x1
+#define SPI_MEM_SDOUT_OCT_S  19
+/* SPI_MEM_SDIN_OCT : R/W ;bitpos:[18] ;default: 1'b0 ; */
+/*description: For SPI0 sram  din phase apply 8 signals. 1: enable 0: disable.*/
+#define SPI_MEM_SDIN_OCT  (BIT(18))
+#define SPI_MEM_SDIN_OCT_M  (BIT(18))
+#define SPI_MEM_SDIN_OCT_V  0x1
+#define SPI_MEM_SDIN_OCT_S  18
 /* SPI_MEM_SCMD_QUAD : R/W ;bitpos:[17] ;default: 1'b0 ; */
 /*description: For SPI0 sram  cmd phase apply 4 signals. 1: enable 0: disable.
  The bit is the same with spi_mem_usr_sram_qio.*/
@@ -831,561 +891,7 @@ extern "C" {
 #define SPI_MEM_ST_V  0x7
 #define SPI_MEM_ST_S  0
 
-#define SPI_MEM_HOLD_REG(i)          (REG_SPI_MEM_BASE(i) + 0x058)
-/* SPI_MEM_HOLD_ENA : R/W ;bitpos:[1:0] ;default: 2'd3 ; */
-/*description: This register is for two SPI masters to share the same cs clock
- and data signals. The bits of one SPI are set  if the other SPI is busy  the SPI will be hold. 1(3): hold at  idle  phase 2: hold at  prepare  phase.*/
-#define SPI_MEM_HOLD_ENA  0x00000003
-#define SPI_MEM_HOLD_ENA_M  ((SPI_MEM_HOLD_ENA_V)<<(SPI_MEM_HOLD_ENA_S))
-#define SPI_MEM_HOLD_ENA_V  0x3
-#define SPI_MEM_HOLD_ENA_S  0
-
-#define SPI_MEM_DMA_CONF_REG(i)          (REG_SPI_MEM_BASE(i) + 0x05C)
-/* SPI_MEM_DMA_CONTINUE : R/W ;bitpos:[16] ;default: 1'b0 ; */
-/*description: spi dma continue tx/rx data.*/
-#define SPI_MEM_DMA_CONTINUE  (BIT(16))
-#define SPI_MEM_DMA_CONTINUE_M  (BIT(16))
-#define SPI_MEM_DMA_CONTINUE_V  0x1
-#define SPI_MEM_DMA_CONTINUE_S  16
-/* SPI_MEM_DMA_TX_STOP : R/W ;bitpos:[15] ;default: 1'b0 ; */
-/*description: spi dma write data stop when in continue tx/rx mode.*/
-#define SPI_MEM_DMA_TX_STOP  (BIT(15))
-#define SPI_MEM_DMA_TX_STOP_M  (BIT(15))
-#define SPI_MEM_DMA_TX_STOP_V  0x1
-#define SPI_MEM_DMA_TX_STOP_S  15
-/* SPI_MEM_DMA_RX_STOP : R/W ;bitpos:[14] ;default: 1'b0 ; */
-/*description: spi dma read data stop  when in continue tx/rx mode.*/
-#define SPI_MEM_DMA_RX_STOP  (BIT(14))
-#define SPI_MEM_DMA_RX_STOP_M  (BIT(14))
-#define SPI_MEM_DMA_RX_STOP_V  0x1
-#define SPI_MEM_DMA_RX_STOP_S  14
-/* SPI_MEM_DMA_MEM_TRANS_ENA : R/W ;bitpos:[13] ;default: 1'b0 ; */
-/*description: reserved*/
-#define SPI_MEM_DMA_MEM_TRANS_ENA  (BIT(13))
-#define SPI_MEM_DMA_MEM_TRANS_ENA_M  (BIT(13))
-#define SPI_MEM_DMA_MEM_TRANS_ENA_V  0x1
-#define SPI_MEM_DMA_MEM_TRANS_ENA_S  13
-/* SPI_MEM_OUT_DATA_BURST_EN : R/W ;bitpos:[12] ;default: 1'b0 ; */
-/*description: spi dma read data from memory in burst mode.*/
-#define SPI_MEM_OUT_DATA_BURST_EN  (BIT(12))
-#define SPI_MEM_OUT_DATA_BURST_EN_M  (BIT(12))
-#define SPI_MEM_OUT_DATA_BURST_EN_V  0x1
-#define SPI_MEM_OUT_DATA_BURST_EN_S  12
-/* SPI_MEM_INDSCR_BURST_EN : R/W ;bitpos:[11] ;default: 1'b0 ; */
-/*description: read descriptor use burst mode when write data to memory.*/
-#define SPI_MEM_INDSCR_BURST_EN  (BIT(11))
-#define SPI_MEM_INDSCR_BURST_EN_M  (BIT(11))
-#define SPI_MEM_INDSCR_BURST_EN_V  0x1
-#define SPI_MEM_INDSCR_BURST_EN_S  11
-/* SPI_MEM_OUTDSCR_BURST_EN : R/W ;bitpos:[10] ;default: 1'b0 ; */
-/*description: read descriptor use burst mode when read data for memory.*/
-#define SPI_MEM_OUTDSCR_BURST_EN  (BIT(10))
-#define SPI_MEM_OUTDSCR_BURST_EN_M  (BIT(10))
-#define SPI_MEM_OUTDSCR_BURST_EN_V  0x1
-#define SPI_MEM_OUTDSCR_BURST_EN_S  10
-/* SPI_MEM_OUT_EOF_MODE : R/W ;bitpos:[9] ;default: 1'b1 ; */
-/*description: out eof flag generation mode . 1: when dma pop all data from
- fifo  0:when ahb push all data to fifo.*/
-#define SPI_MEM_OUT_EOF_MODE  (BIT(9))
-#define SPI_MEM_OUT_EOF_MODE_M  (BIT(9))
-#define SPI_MEM_OUT_EOF_MODE_V  0x1
-#define SPI_MEM_OUT_EOF_MODE_S  9
-/* SPI_MEM_OUT_AUTO_WRBACK : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: when the bit is set  DMA continue to use the next inlink node
- when the length of inlink is 0.*/
-#define SPI_MEM_OUT_AUTO_WRBACK  (BIT(8))
-#define SPI_MEM_OUT_AUTO_WRBACK_M  (BIT(8))
-#define SPI_MEM_OUT_AUTO_WRBACK_V  0x1
-#define SPI_MEM_OUT_AUTO_WRBACK_S  8
-/* SPI_MEM_OUT_LOOP_TEST : R/W ;bitpos:[7] ;default: 1'b0 ; */
-/*description: Set bit to test out link.*/
-#define SPI_MEM_OUT_LOOP_TEST  (BIT(7))
-#define SPI_MEM_OUT_LOOP_TEST_M  (BIT(7))
-#define SPI_MEM_OUT_LOOP_TEST_V  0x1
-#define SPI_MEM_OUT_LOOP_TEST_S  7
-/* SPI_MEM_IN_LOOP_TEST : R/W ;bitpos:[6] ;default: 1'b0 ; */
-/*description: Set bit to test in link.*/
-#define SPI_MEM_IN_LOOP_TEST  (BIT(6))
-#define SPI_MEM_IN_LOOP_TEST_M  (BIT(6))
-#define SPI_MEM_IN_LOOP_TEST_V  0x1
-#define SPI_MEM_IN_LOOP_TEST_S  6
-/* SPI_MEM_AHBM_RST : R/W ;bitpos:[5] ;default: 1'b0 ; */
-/*description: Reset spi dma ahb master.*/
-#define SPI_MEM_AHBM_RST  (BIT(5))
-#define SPI_MEM_AHBM_RST_M  (BIT(5))
-#define SPI_MEM_AHBM_RST_V  0x1
-#define SPI_MEM_AHBM_RST_S  5
-/* SPI_MEM_AHBM_FIFO_RST : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: Reset spi dma ahb master fifo pointer.*/
-#define SPI_MEM_AHBM_FIFO_RST  (BIT(4))
-#define SPI_MEM_AHBM_FIFO_RST_M  (BIT(4))
-#define SPI_MEM_AHBM_FIFO_RST_V  0x1
-#define SPI_MEM_AHBM_FIFO_RST_S  4
-/* SPI_MEM_OUT_RST : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The bit is used to reset out dma fsm and out data fifo pointer.*/
-#define SPI_MEM_OUT_RST  (BIT(3))
-#define SPI_MEM_OUT_RST_M  (BIT(3))
-#define SPI_MEM_OUT_RST_V  0x1
-#define SPI_MEM_OUT_RST_S  3
-/* SPI_MEM_IN_RST : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: The bit is used to reset in dma fsm and in data fifo pointer.*/
-#define SPI_MEM_IN_RST  (BIT(2))
-#define SPI_MEM_IN_RST_M  (BIT(2))
-#define SPI_MEM_IN_RST_V  0x1
-#define SPI_MEM_IN_RST_S  2
-/* SPI_MEM_DMA_TX_ENA : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: spi dma tx data enable.*/
-#define SPI_MEM_DMA_TX_ENA  (BIT(1))
-#define SPI_MEM_DMA_TX_ENA_M  (BIT(1))
-#define SPI_MEM_DMA_TX_ENA_V  0x1
-#define SPI_MEM_DMA_TX_ENA_S  1
-/* SPI_MEM_DMA_RX_ENA : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: spi dma rx data enable.*/
-#define SPI_MEM_DMA_RX_ENA  (BIT(0))
-#define SPI_MEM_DMA_RX_ENA_M  (BIT(0))
-#define SPI_MEM_DMA_RX_ENA_V  0x1
-#define SPI_MEM_DMA_RX_ENA_S  0
-
-#define SPI_MEM_DMA_OUT_LINK_REG(i)          (REG_SPI_MEM_BASE(i) + 0x060)
-/* SPI_MEM_OUTLINK_RESTART : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: Set the bit to mount on new outlink descriptors.*/
-#define SPI_MEM_OUTLINK_RESTART  (BIT(30))
-#define SPI_MEM_OUTLINK_RESTART_M  (BIT(30))
-#define SPI_MEM_OUTLINK_RESTART_V  0x1
-#define SPI_MEM_OUTLINK_RESTART_S  30
-/* SPI_MEM_OUTLINK_START : R/W ;bitpos:[29] ;default: 1'b0 ; */
-/*description: Set the bit to start to use outlink descriptor.*/
-#define SPI_MEM_OUTLINK_START  (BIT(29))
-#define SPI_MEM_OUTLINK_START_M  (BIT(29))
-#define SPI_MEM_OUTLINK_START_V  0x1
-#define SPI_MEM_OUTLINK_START_S  29
-/* SPI_MEM_OUTLINK_STOP : R/W ;bitpos:[28] ;default: 1'b0 ; */
-/*description: Set the bit to stop to use outlink descriptor.*/
-#define SPI_MEM_OUTLINK_STOP  (BIT(28))
-#define SPI_MEM_OUTLINK_STOP_M  (BIT(28))
-#define SPI_MEM_OUTLINK_STOP_V  0x1
-#define SPI_MEM_OUTLINK_STOP_S  28
-/* SPI_MEM_OUTLINK_ADDR : R/W ;bitpos:[19:0] ;default: 20'h0 ; */
-/*description: The address of the first outlink descriptor.*/
-#define SPI_MEM_OUTLINK_ADDR  0x000FFFFF
-#define SPI_MEM_OUTLINK_ADDR_M  ((SPI_MEM_OUTLINK_ADDR_V)<<(SPI_MEM_OUTLINK_ADDR_S))
-#define SPI_MEM_OUTLINK_ADDR_V  0xFFFFF
-#define SPI_MEM_OUTLINK_ADDR_S  0
-
-#define SPI_MEM_DMA_IN_LINK_REG(i)          (REG_SPI_MEM_BASE(i) + 0x064)
-/* SPI_MEM_INLINK_RESTART : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: Set the bit to mount on new inlink descriptors.*/
-#define SPI_MEM_INLINK_RESTART  (BIT(30))
-#define SPI_MEM_INLINK_RESTART_M  (BIT(30))
-#define SPI_MEM_INLINK_RESTART_V  0x1
-#define SPI_MEM_INLINK_RESTART_S  30
-/* SPI_MEM_INLINK_START : R/W ;bitpos:[29] ;default: 1'b0 ; */
-/*description: Set the bit to start to use inlink descriptor.*/
-#define SPI_MEM_INLINK_START  (BIT(29))
-#define SPI_MEM_INLINK_START_M  (BIT(29))
-#define SPI_MEM_INLINK_START_V  0x1
-#define SPI_MEM_INLINK_START_S  29
-/* SPI_MEM_INLINK_STOP : R/W ;bitpos:[28] ;default: 1'b0 ; */
-/*description: Set the bit to stop to use inlink descriptor.*/
-#define SPI_MEM_INLINK_STOP  (BIT(28))
-#define SPI_MEM_INLINK_STOP_M  (BIT(28))
-#define SPI_MEM_INLINK_STOP_V  0x1
-#define SPI_MEM_INLINK_STOP_S  28
-/* SPI_MEM_INLINK_AUTO_RET : R/W ;bitpos:[20] ;default: 1'b0 ; */
-/*description: when the bit is set  the inlink descriptor returns to the first
- link node when a packet is error.*/
-#define SPI_MEM_INLINK_AUTO_RET  (BIT(20))
-#define SPI_MEM_INLINK_AUTO_RET_M  (BIT(20))
-#define SPI_MEM_INLINK_AUTO_RET_V  0x1
-#define SPI_MEM_INLINK_AUTO_RET_S  20
-/* SPI_MEM_INLINK_ADDR : R/W ;bitpos:[19:0] ;default: 20'h0 ; */
-/*description: The address of the first inlink descriptor.*/
-#define SPI_MEM_INLINK_ADDR  0x000FFFFF
-#define SPI_MEM_INLINK_ADDR_M  ((SPI_MEM_INLINK_ADDR_V)<<(SPI_MEM_INLINK_ADDR_S))
-#define SPI_MEM_INLINK_ADDR_V  0xFFFFF
-#define SPI_MEM_INLINK_ADDR_S  0
-
-#define SPI_MEM_DMA_INT_ENA_REG(i)          (REG_SPI_MEM_BASE(i) + 0x068)
-/* SPI_MEM_OUT_TOTAL_EOF_INT_ENA : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: The enable bit for sending all the packets to host done.*/
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ENA  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ENA_M  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ENA_V  0x1
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ENA_S  8
-/* SPI_MEM_OUT_EOF_INT_ENA : R/W ;bitpos:[7] ;default: 1'b0 ; */
-/*description: The enable bit for sending a packet to host done.*/
-#define SPI_MEM_OUT_EOF_INT_ENA  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_ENA_M  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_ENA_V  0x1
-#define SPI_MEM_OUT_EOF_INT_ENA_S  7
-/* SPI_MEM_OUT_DONE_INT_ENA : R/W ;bitpos:[6] ;default: 1'b0 ; */
-/*description: The enable bit for completing usage of a outlink descriptor .*/
-#define SPI_MEM_OUT_DONE_INT_ENA  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_ENA_M  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_ENA_V  0x1
-#define SPI_MEM_OUT_DONE_INT_ENA_S  6
-/* SPI_MEM_IN_SUC_EOF_INT_ENA : R/W ;bitpos:[5] ;default: 1'b0 ; */
-/*description: The enable bit for completing receiving all the packets from host.*/
-#define SPI_MEM_IN_SUC_EOF_INT_ENA  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_ENA_M  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_ENA_V  0x1
-#define SPI_MEM_IN_SUC_EOF_INT_ENA_S  5
-/* SPI_MEM_IN_ERR_EOF_INT_ENA : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: The enable bit for receiving error.*/
-#define SPI_MEM_IN_ERR_EOF_INT_ENA  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_ENA_M  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_ENA_V  0x1
-#define SPI_MEM_IN_ERR_EOF_INT_ENA_S  4
-/* SPI_MEM_IN_DONE_INT_ENA : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The enable bit for completing usage of a inlink descriptor.*/
-#define SPI_MEM_IN_DONE_INT_ENA  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_ENA_M  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_ENA_V  0x1
-#define SPI_MEM_IN_DONE_INT_ENA_S  3
-/* SPI_MEM_INLINK_DSCR_ERROR_INT_ENA : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: The enable bit for inlink descriptor error.*/
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ENA  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ENA_M  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ENA_V  0x1
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ENA_S  2
-/* SPI_MEM_OUTLINK_DSCR_ERROR_INT_ENA : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: The enable bit for outlink descriptor error.*/
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ENA  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ENA_M  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ENA_V  0x1
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ENA_S  1
-/* SPI_MEM_INLINK_DSCR_EMPTY_INT_ENA : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: The enable bit for lack of enough inlink descriptors.*/
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ENA  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ENA_M  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ENA_V  0x1
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ENA_S  0
-
-#define SPI_MEM_DMA_INT_RAW_REG(i)          (REG_SPI_MEM_BASE(i) + 0x06C)
-/* SPI_MEM_OUT_TOTAL_EOF_INT_RAW : RO ;bitpos:[8] ;default: 1'b0 ; */
-/*description: The raw bit for sending all the packets to host done.*/
-#define SPI_MEM_OUT_TOTAL_EOF_INT_RAW  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_RAW_M  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_RAW_V  0x1
-#define SPI_MEM_OUT_TOTAL_EOF_INT_RAW_S  8
-/* SPI_MEM_OUT_EOF_INT_RAW : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: The raw bit for sending a packet to host done.*/
-#define SPI_MEM_OUT_EOF_INT_RAW  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_RAW_M  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_RAW_V  0x1
-#define SPI_MEM_OUT_EOF_INT_RAW_S  7
-/* SPI_MEM_OUT_DONE_INT_RAW : RO ;bitpos:[6] ;default: 1'b0 ; */
-/*description: The raw bit for completing usage of a outlink descriptor.*/
-#define SPI_MEM_OUT_DONE_INT_RAW  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_RAW_M  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_RAW_V  0x1
-#define SPI_MEM_OUT_DONE_INT_RAW_S  6
-/* SPI_MEM_IN_SUC_EOF_INT_RAW : RO ;bitpos:[5] ;default: 1'b0 ; */
-/*description: The raw bit for completing receiving all the packets from host.*/
-#define SPI_MEM_IN_SUC_EOF_INT_RAW  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_RAW_M  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_RAW_V  0x1
-#define SPI_MEM_IN_SUC_EOF_INT_RAW_S  5
-/* SPI_MEM_IN_ERR_EOF_INT_RAW : RO ;bitpos:[4] ;default: 1'b0 ; */
-/*description: The raw bit for receiving error.*/
-#define SPI_MEM_IN_ERR_EOF_INT_RAW  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_RAW_M  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_RAW_V  0x1
-#define SPI_MEM_IN_ERR_EOF_INT_RAW_S  4
-/* SPI_MEM_IN_DONE_INT_RAW : RO ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The raw bit for completing usage of a inlink descriptor.*/
-#define SPI_MEM_IN_DONE_INT_RAW  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_RAW_M  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_RAW_V  0x1
-#define SPI_MEM_IN_DONE_INT_RAW_S  3
-/* SPI_MEM_INLINK_DSCR_ERROR_INT_RAW : RO ;bitpos:[2] ;default: 1'b0 ; */
-/*description: The raw bit for inlink descriptor error.*/
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_RAW  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_RAW_M  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_RAW_V  0x1
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_RAW_S  2
-/* SPI_MEM_OUTLINK_DSCR_ERROR_INT_RAW : RO ;bitpos:[1] ;default: 1'b0 ; */
-/*description: The raw bit for outlink descriptor error.*/
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_RAW  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_RAW_M  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_RAW_V  0x1
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_RAW_S  1
-/* SPI_MEM_INLINK_DSCR_EMPTY_INT_RAW : RO ;bitpos:[0] ;default: 1'b0 ; */
-/*description: The raw bit for lack of enough inlink descriptors.*/
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_RAW  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_RAW_M  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_RAW_V  0x1
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_RAW_S  0
-
-#define SPI_MEM_DMA_INT_ST_REG(i)          (REG_SPI_MEM_BASE(i) + 0x070)
-/* SPI_MEM_OUT_TOTAL_EOF_INT_ST : RO ;bitpos:[8] ;default: 1'b0 ; */
-/*description: The status bit for sending all the packets to host done.*/
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ST  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ST_M  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ST_V  0x1
-#define SPI_MEM_OUT_TOTAL_EOF_INT_ST_S  8
-/* SPI_MEM_OUT_EOF_INT_ST : RO ;bitpos:[7] ;default: 1'b0 ; */
-/*description: The status bit for sending a packet to host done.*/
-#define SPI_MEM_OUT_EOF_INT_ST  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_ST_M  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_ST_V  0x1
-#define SPI_MEM_OUT_EOF_INT_ST_S  7
-/* SPI_MEM_OUT_DONE_INT_ST : RO ;bitpos:[6] ;default: 1'b0 ; */
-/*description: The status bit for completing usage of a outlink descriptor.*/
-#define SPI_MEM_OUT_DONE_INT_ST  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_ST_M  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_ST_V  0x1
-#define SPI_MEM_OUT_DONE_INT_ST_S  6
-/* SPI_MEM_IN_SUC_EOF_INT_ST : RO ;bitpos:[5] ;default: 1'b0 ; */
-/*description: The status bit for completing receiving all the packets from host.*/
-#define SPI_MEM_IN_SUC_EOF_INT_ST  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_ST_M  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_ST_V  0x1
-#define SPI_MEM_IN_SUC_EOF_INT_ST_S  5
-/* SPI_MEM_IN_ERR_EOF_INT_ST : RO ;bitpos:[4] ;default: 1'b0 ; */
-/*description: The status bit for receiving error.*/
-#define SPI_MEM_IN_ERR_EOF_INT_ST  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_ST_M  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_ST_V  0x1
-#define SPI_MEM_IN_ERR_EOF_INT_ST_S  4
-/* SPI_MEM_IN_DONE_INT_ST : RO ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The status bit for completing usage of a inlink descriptor.*/
-#define SPI_MEM_IN_DONE_INT_ST  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_ST_M  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_ST_V  0x1
-#define SPI_MEM_IN_DONE_INT_ST_S  3
-/* SPI_MEM_INLINK_DSCR_ERROR_INT_ST : RO ;bitpos:[2] ;default: 1'b0 ; */
-/*description: The status bit for inlink descriptor error.*/
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ST  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ST_M  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ST_V  0x1
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_ST_S  2
-/* SPI_MEM_OUTLINK_DSCR_ERROR_INT_ST : RO ;bitpos:[1] ;default: 1'b0 ; */
-/*description: The status bit for outlink descriptor error.*/
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ST  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ST_M  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ST_V  0x1
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_ST_S  1
-/* SPI_MEM_INLINK_DSCR_EMPTY_INT_ST : RO ;bitpos:[0] ;default: 1'b0 ; */
-/*description: The status bit for lack of enough inlink descriptors.*/
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ST  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ST_M  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ST_V  0x1
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_ST_S  0
-
-#define SPI_MEM_DMA_INT_CLR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x074)
-/* SPI_MEM_OUT_TOTAL_EOF_INT_CLR : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: The clear bit for sending all the packets to host done.*/
-#define SPI_MEM_OUT_TOTAL_EOF_INT_CLR  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_CLR_M  (BIT(8))
-#define SPI_MEM_OUT_TOTAL_EOF_INT_CLR_V  0x1
-#define SPI_MEM_OUT_TOTAL_EOF_INT_CLR_S  8
-/* SPI_MEM_OUT_EOF_INT_CLR : R/W ;bitpos:[7] ;default: 1'b0 ; */
-/*description: The clear bit for sending a packet to host done.*/
-#define SPI_MEM_OUT_EOF_INT_CLR  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_CLR_M  (BIT(7))
-#define SPI_MEM_OUT_EOF_INT_CLR_V  0x1
-#define SPI_MEM_OUT_EOF_INT_CLR_S  7
-/* SPI_MEM_OUT_DONE_INT_CLR : R/W ;bitpos:[6] ;default: 1'b0 ; */
-/*description: The clear bit for completing usage of a outlink descriptor.*/
-#define SPI_MEM_OUT_DONE_INT_CLR  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_CLR_M  (BIT(6))
-#define SPI_MEM_OUT_DONE_INT_CLR_V  0x1
-#define SPI_MEM_OUT_DONE_INT_CLR_S  6
-/* SPI_MEM_IN_SUC_EOF_INT_CLR : R/W ;bitpos:[5] ;default: 1'b0 ; */
-/*description: The clear bit for completing receiving all the packets from host.*/
-#define SPI_MEM_IN_SUC_EOF_INT_CLR  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_CLR_M  (BIT(5))
-#define SPI_MEM_IN_SUC_EOF_INT_CLR_V  0x1
-#define SPI_MEM_IN_SUC_EOF_INT_CLR_S  5
-/* SPI_MEM_IN_ERR_EOF_INT_CLR : R/W ;bitpos:[4] ;default: 1'b0 ; */
-/*description: The clear bit for receiving error.*/
-#define SPI_MEM_IN_ERR_EOF_INT_CLR  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_CLR_M  (BIT(4))
-#define SPI_MEM_IN_ERR_EOF_INT_CLR_V  0x1
-#define SPI_MEM_IN_ERR_EOF_INT_CLR_S  4
-/* SPI_MEM_IN_DONE_INT_CLR : R/W ;bitpos:[3] ;default: 1'b0 ; */
-/*description: The clear bit for completing usage of a inlink descriptor.*/
-#define SPI_MEM_IN_DONE_INT_CLR  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_CLR_M  (BIT(3))
-#define SPI_MEM_IN_DONE_INT_CLR_V  0x1
-#define SPI_MEM_IN_DONE_INT_CLR_S  3
-/* SPI_MEM_INLINK_DSCR_ERROR_INT_CLR : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: The clear bit for inlink descriptor error.*/
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_CLR  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_CLR_M  (BIT(2))
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_CLR_V  0x1
-#define SPI_MEM_INLINK_DSCR_ERROR_INT_CLR_S  2
-/* SPI_MEM_OUTLINK_DSCR_ERROR_INT_CLR : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: The clear bit for outlink descriptor error.*/
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_CLR  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_CLR_M  (BIT(1))
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_CLR_V  0x1
-#define SPI_MEM_OUTLINK_DSCR_ERROR_INT_CLR_S  1
-/* SPI_MEM_INLINK_DSCR_EMPTY_INT_CLR : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: The clear bit for lack of enough inlink descriptors.*/
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_CLR  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_CLR_M  (BIT(0))
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_CLR_V  0x1
-#define SPI_MEM_INLINK_DSCR_EMPTY_INT_CLR_S  0
-
-#define SPI_MEM_IN_ERR_EOF_DES_ADDR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x078)
-/* SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The inlink descriptor address when spi dma produce receiving error.*/
-#define SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR  0xFFFFFFFF
-#define SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR_M  ((SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR_V)<<(SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR_S))
-#define SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR_V  0xFFFFFFFF
-#define SPI_MEM_DMA_IN_ERR_EOF_DES_ADDR_S  0
-
-#define SPI_MEM_IN_SUC_EOF_DES_ADDR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x07C)
-/* SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The last inlink descriptor address when spi dma produce from_suc_eof.*/
-#define SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR  0xFFFFFFFF
-#define SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR_M  ((SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR_V)<<(SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR_S))
-#define SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR_V  0xFFFFFFFF
-#define SPI_MEM_DMA_IN_SUC_EOF_DES_ADDR_S  0
-
-#define SPI_MEM_INLINK_DSCR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x080)
-/* SPI_MEM_DMA_INLINK_DSCR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The content of current in descriptor pointer.*/
-#define SPI_MEM_DMA_INLINK_DSCR  0xFFFFFFFF
-#define SPI_MEM_DMA_INLINK_DSCR_M  ((SPI_MEM_DMA_INLINK_DSCR_V)<<(SPI_MEM_DMA_INLINK_DSCR_S))
-#define SPI_MEM_DMA_INLINK_DSCR_V  0xFFFFFFFF
-#define SPI_MEM_DMA_INLINK_DSCR_S  0
-
-#define SPI_MEM_INLINK_DSCR_BF0_REG(i)          (REG_SPI_MEM_BASE(i) + 0x084)
-/* SPI_MEM_DMA_INLINK_DSCR_BF0 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The content of next in descriptor pointer.*/
-#define SPI_MEM_DMA_INLINK_DSCR_BF0  0xFFFFFFFF
-#define SPI_MEM_DMA_INLINK_DSCR_BF0_M  ((SPI_MEM_DMA_INLINK_DSCR_BF0_V)<<(SPI_MEM_DMA_INLINK_DSCR_BF0_S))
-#define SPI_MEM_DMA_INLINK_DSCR_BF0_V  0xFFFFFFFF
-#define SPI_MEM_DMA_INLINK_DSCR_BF0_S  0
-
-#define SPI_MEM_INLINK_DSCR_BF1_REG(i)          (REG_SPI_MEM_BASE(i) + 0x088)
-/* SPI_MEM_DMA_INLINK_DSCR_BF1 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The content of current in descriptor data buffer pointer.*/
-#define SPI_MEM_DMA_INLINK_DSCR_BF1  0xFFFFFFFF
-#define SPI_MEM_DMA_INLINK_DSCR_BF1_M  ((SPI_MEM_DMA_INLINK_DSCR_BF1_V)<<(SPI_MEM_DMA_INLINK_DSCR_BF1_S))
-#define SPI_MEM_DMA_INLINK_DSCR_BF1_V  0xFFFFFFFF
-#define SPI_MEM_DMA_INLINK_DSCR_BF1_S  0
-
-#define SPI_MEM_OUT_EOF_BFR_DES_ADDR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x08C)
-/* SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The address of buffer relative to the outlink descriptor that produce eof.*/
-#define SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR  0xFFFFFFFF
-#define SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR_M  ((SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR_V)<<(SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR_S))
-#define SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR_V  0xFFFFFFFF
-#define SPI_MEM_DMA_OUT_EOF_BFR_DES_ADDR_S  0
-
-#define SPI_MEM_OUT_EOF_DES_ADDR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x090)
-/* SPI_MEM_DMA_OUT_EOF_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The last outlink descriptor address when spi dma produce to_eof.*/
-#define SPI_MEM_DMA_OUT_EOF_DES_ADDR  0xFFFFFFFF
-#define SPI_MEM_DMA_OUT_EOF_DES_ADDR_M  ((SPI_MEM_DMA_OUT_EOF_DES_ADDR_V)<<(SPI_MEM_DMA_OUT_EOF_DES_ADDR_S))
-#define SPI_MEM_DMA_OUT_EOF_DES_ADDR_V  0xFFFFFFFF
-#define SPI_MEM_DMA_OUT_EOF_DES_ADDR_S  0
-
-#define SPI_MEM_OUTLINK_DSCR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x094)
-/* SPI_MEM_DMA_OUTLINK_DSCR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The content of current out descriptor pointer.*/
-#define SPI_MEM_DMA_OUTLINK_DSCR  0xFFFFFFFF
-#define SPI_MEM_DMA_OUTLINK_DSCR_M  ((SPI_MEM_DMA_OUTLINK_DSCR_V)<<(SPI_MEM_DMA_OUTLINK_DSCR_S))
-#define SPI_MEM_DMA_OUTLINK_DSCR_V  0xFFFFFFFF
-#define SPI_MEM_DMA_OUTLINK_DSCR_S  0
-
-#define SPI_MEM_OUTLINK_DSCR_BF0_REG(i)          (REG_SPI_MEM_BASE(i) + 0x098)
-/* SPI_MEM_DMA_OUTLINK_DSCR_BF0 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The content of next out descriptor pointer.*/
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF0  0xFFFFFFFF
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF0_M  ((SPI_MEM_DMA_OUTLINK_DSCR_BF0_V)<<(SPI_MEM_DMA_OUTLINK_DSCR_BF0_S))
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF0_V  0xFFFFFFFF
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF0_S  0
-
-#define SPI_MEM_OUTLINK_DSCR_BF1_REG(i)          (REG_SPI_MEM_BASE(i) + 0x09C)
-/* SPI_MEM_DMA_OUTLINK_DSCR_BF1 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
-/*description: The content of current out descriptor data buffer pointer.*/
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF1  0xFFFFFFFF
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF1_M  ((SPI_MEM_DMA_OUTLINK_DSCR_BF1_V)<<(SPI_MEM_DMA_OUTLINK_DSCR_BF1_S))
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF1_V  0xFFFFFFFF
-#define SPI_MEM_DMA_OUTLINK_DSCR_BF1_S  0
-
-#define SPI_MEM_DMA_OUTSTATUS_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0A0)
-/* SPI_MEM_DMA_OUTFIFO_EMPTY : RO ;bitpos:[31] ;default: 1'b1 ; */
-/*description: SPI dma outfifo is empty.*/
-#define SPI_MEM_DMA_OUTFIFO_EMPTY  (BIT(31))
-#define SPI_MEM_DMA_OUTFIFO_EMPTY_M  (BIT(31))
-#define SPI_MEM_DMA_OUTFIFO_EMPTY_V  0x1
-#define SPI_MEM_DMA_OUTFIFO_EMPTY_S  31
-/* SPI_MEM_DMA_OUTFIFO_FULL : RO ;bitpos:[30] ;default: 1'b0 ; */
-/*description: SPI dma outfifo is full.*/
-#define SPI_MEM_DMA_OUTFIFO_FULL  (BIT(30))
-#define SPI_MEM_DMA_OUTFIFO_FULL_M  (BIT(30))
-#define SPI_MEM_DMA_OUTFIFO_FULL_V  0x1
-#define SPI_MEM_DMA_OUTFIFO_FULL_S  30
-/* SPI_MEM_DMA_OUTFIFO_CNT : RO ;bitpos:[29:23] ;default: 7'b0 ; */
-/*description: The remains of SPI dma outfifo data.*/
-#define SPI_MEM_DMA_OUTFIFO_CNT  0x0000007F
-#define SPI_MEM_DMA_OUTFIFO_CNT_M  ((SPI_MEM_DMA_OUTFIFO_CNT_V)<<(SPI_MEM_DMA_OUTFIFO_CNT_S))
-#define SPI_MEM_DMA_OUTFIFO_CNT_V  0x7F
-#define SPI_MEM_DMA_OUTFIFO_CNT_S  23
-/* SPI_MEM_DMA_OUT_STATE : RO ;bitpos:[22:20] ;default: 3'b0 ; */
-/*description: SPI dma out data state.*/
-#define SPI_MEM_DMA_OUT_STATE  0x00000007
-#define SPI_MEM_DMA_OUT_STATE_M  ((SPI_MEM_DMA_OUT_STATE_V)<<(SPI_MEM_DMA_OUT_STATE_S))
-#define SPI_MEM_DMA_OUT_STATE_V  0x7
-#define SPI_MEM_DMA_OUT_STATE_S  20
-/* SPI_MEM_DMA_OUTDSCR_STATE : RO ;bitpos:[19:18] ;default: 2'b0 ; */
-/*description: SPI dma out descriptor state.*/
-#define SPI_MEM_DMA_OUTDSCR_STATE  0x00000003
-#define SPI_MEM_DMA_OUTDSCR_STATE_M  ((SPI_MEM_DMA_OUTDSCR_STATE_V)<<(SPI_MEM_DMA_OUTDSCR_STATE_S))
-#define SPI_MEM_DMA_OUTDSCR_STATE_V  0x3
-#define SPI_MEM_DMA_OUTDSCR_STATE_S  18
-/* SPI_MEM_DMA_OUTDSCR_ADDR : RO ;bitpos:[17:0] ;default: 18'b0 ; */
-/*description: SPI dma out descriptor address.*/
-#define SPI_MEM_DMA_OUTDSCR_ADDR  0x0003FFFF
-#define SPI_MEM_DMA_OUTDSCR_ADDR_M  ((SPI_MEM_DMA_OUTDSCR_ADDR_V)<<(SPI_MEM_DMA_OUTDSCR_ADDR_S))
-#define SPI_MEM_DMA_OUTDSCR_ADDR_V  0x3FFFF
-#define SPI_MEM_DMA_OUTDSCR_ADDR_S  0
-
-#define SPI_MEM_DMA_INSTATUS_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0A4)
-/* SPI_MEM_DMA_INFIFO_EMPTY : RO ;bitpos:[31] ;default: 1'b1 ; */
-/*description: SPI dma infifo is empty.*/
-#define SPI_MEM_DMA_INFIFO_EMPTY  (BIT(31))
-#define SPI_MEM_DMA_INFIFO_EMPTY_M  (BIT(31))
-#define SPI_MEM_DMA_INFIFO_EMPTY_V  0x1
-#define SPI_MEM_DMA_INFIFO_EMPTY_S  31
-/* SPI_MEM_DMA_INFIFO_FULL : RO ;bitpos:[30] ;default: 1'b0 ; */
-/*description: SPI dma infifo is full.*/
-#define SPI_MEM_DMA_INFIFO_FULL  (BIT(30))
-#define SPI_MEM_DMA_INFIFO_FULL_M  (BIT(30))
-#define SPI_MEM_DMA_INFIFO_FULL_V  0x1
-#define SPI_MEM_DMA_INFIFO_FULL_S  30
-/* SPI_MEM_DMA_INFIFO_CNT : RO ;bitpos:[29:23] ;default: 7'b0 ; */
-/*description: The remains of SPI dma infifo data.*/
-#define SPI_MEM_DMA_INFIFO_CNT  0x0000007F
-#define SPI_MEM_DMA_INFIFO_CNT_M  ((SPI_MEM_DMA_INFIFO_CNT_V)<<(SPI_MEM_DMA_INFIFO_CNT_S))
-#define SPI_MEM_DMA_INFIFO_CNT_V  0x7F
-#define SPI_MEM_DMA_INFIFO_CNT_S  23
-/* SPI_MEM_DMA_IN_STATE : RO ;bitpos:[22:20] ;default: 3'b0 ; */
-/*description: SPI dma in data state.*/
-#define SPI_MEM_DMA_IN_STATE  0x00000007
-#define SPI_MEM_DMA_IN_STATE_M  ((SPI_MEM_DMA_IN_STATE_V)<<(SPI_MEM_DMA_IN_STATE_S))
-#define SPI_MEM_DMA_IN_STATE_V  0x7
-#define SPI_MEM_DMA_IN_STATE_S  20
-/* SPI_MEM_DMA_INDSCR_STATE : RO ;bitpos:[19:18] ;default: 2'b0 ; */
-/*description: SPI dma in descriptor state.*/
-#define SPI_MEM_DMA_INDSCR_STATE  0x00000003
-#define SPI_MEM_DMA_INDSCR_STATE_M  ((SPI_MEM_DMA_INDSCR_STATE_V)<<(SPI_MEM_DMA_INDSCR_STATE_S))
-#define SPI_MEM_DMA_INDSCR_STATE_V  0x3
-#define SPI_MEM_DMA_INDSCR_STATE_S  18
-/* SPI_MEM_DMA_INDSCR_ADDR : RO ;bitpos:[17:0] ;default: 18'b0 ; */
-/*description: SPI dma in descriptor address.*/
-#define SPI_MEM_DMA_INDSCR_ADDR  0x0003FFFF
-#define SPI_MEM_DMA_INDSCR_ADDR_M  ((SPI_MEM_DMA_INDSCR_ADDR_V)<<(SPI_MEM_DMA_INDSCR_ADDR_S))
-#define SPI_MEM_DMA_INDSCR_ADDR_V  0x3FFFF
-#define SPI_MEM_DMA_INDSCR_ADDR_S  0
-
-#define SPI_MEM_W0_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0A8)
+#define SPI_MEM_W0_REG(i)          (REG_SPI_MEM_BASE(i) + 0x058)
 /* SPI_MEM_BUF0 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF0  0xFFFFFFFF
@@ -1393,7 +899,7 @@ extern "C" {
 #define SPI_MEM_BUF0_V  0xFFFFFFFF
 #define SPI_MEM_BUF0_S  0
 
-#define SPI_MEM_W1_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0AC)
+#define SPI_MEM_W1_REG(i)          (REG_SPI_MEM_BASE(i) + 0x05C)
 /* SPI_MEM_BUF1 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF1  0xFFFFFFFF
@@ -1401,7 +907,7 @@ extern "C" {
 #define SPI_MEM_BUF1_V  0xFFFFFFFF
 #define SPI_MEM_BUF1_S  0
 
-#define SPI_MEM_W2_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0B0)
+#define SPI_MEM_W2_REG(i)          (REG_SPI_MEM_BASE(i) + 0x060)
 /* SPI_MEM_BUF2 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF2  0xFFFFFFFF
@@ -1409,7 +915,7 @@ extern "C" {
 #define SPI_MEM_BUF2_V  0xFFFFFFFF
 #define SPI_MEM_BUF2_S  0
 
-#define SPI_MEM_W3_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0B4)
+#define SPI_MEM_W3_REG(i)          (REG_SPI_MEM_BASE(i) + 0x064)
 /* SPI_MEM_BUF3 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF3  0xFFFFFFFF
@@ -1417,7 +923,7 @@ extern "C" {
 #define SPI_MEM_BUF3_V  0xFFFFFFFF
 #define SPI_MEM_BUF3_S  0
 
-#define SPI_MEM_W4_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0B8)
+#define SPI_MEM_W4_REG(i)          (REG_SPI_MEM_BASE(i) + 0x068)
 /* SPI_MEM_BUF4 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF4  0xFFFFFFFF
@@ -1425,7 +931,7 @@ extern "C" {
 #define SPI_MEM_BUF4_V  0xFFFFFFFF
 #define SPI_MEM_BUF4_S  0
 
-#define SPI_MEM_W5_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0BC)
+#define SPI_MEM_W5_REG(i)          (REG_SPI_MEM_BASE(i) + 0x06C)
 /* SPI_MEM_BUF5 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF5  0xFFFFFFFF
@@ -1433,7 +939,7 @@ extern "C" {
 #define SPI_MEM_BUF5_V  0xFFFFFFFF
 #define SPI_MEM_BUF5_S  0
 
-#define SPI_MEM_W6_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0C0)
+#define SPI_MEM_W6_REG(i)          (REG_SPI_MEM_BASE(i) + 0x070)
 /* SPI_MEM_BUF6 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF6  0xFFFFFFFF
@@ -1441,7 +947,7 @@ extern "C" {
 #define SPI_MEM_BUF6_V  0xFFFFFFFF
 #define SPI_MEM_BUF6_S  0
 
-#define SPI_MEM_W7_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0C4)
+#define SPI_MEM_W7_REG(i)          (REG_SPI_MEM_BASE(i) + 0x074)
 /* SPI_MEM_BUF7 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF7  0xFFFFFFFF
@@ -1449,7 +955,7 @@ extern "C" {
 #define SPI_MEM_BUF7_V  0xFFFFFFFF
 #define SPI_MEM_BUF7_S  0
 
-#define SPI_MEM_W8_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0C8)
+#define SPI_MEM_W8_REG(i)          (REG_SPI_MEM_BASE(i) + 0x078)
 /* SPI_MEM_BUF8 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF8  0xFFFFFFFF
@@ -1457,7 +963,7 @@ extern "C" {
 #define SPI_MEM_BUF8_V  0xFFFFFFFF
 #define SPI_MEM_BUF8_S  0
 
-#define SPI_MEM_W9_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0CC)
+#define SPI_MEM_W9_REG(i)          (REG_SPI_MEM_BASE(i) + 0x07C)
 /* SPI_MEM_BUF9 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF9  0xFFFFFFFF
@@ -1465,7 +971,7 @@ extern "C" {
 #define SPI_MEM_BUF9_V  0xFFFFFFFF
 #define SPI_MEM_BUF9_S  0
 
-#define SPI_MEM_W10_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0D0)
+#define SPI_MEM_W10_REG(i)          (REG_SPI_MEM_BASE(i) + 0x080)
 /* SPI_MEM_BUF10 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF10  0xFFFFFFFF
@@ -1473,7 +979,7 @@ extern "C" {
 #define SPI_MEM_BUF10_V  0xFFFFFFFF
 #define SPI_MEM_BUF10_S  0
 
-#define SPI_MEM_W11_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0D4)
+#define SPI_MEM_W11_REG(i)          (REG_SPI_MEM_BASE(i) + 0x084)
 /* SPI_MEM_BUF11 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF11  0xFFFFFFFF
@@ -1481,7 +987,7 @@ extern "C" {
 #define SPI_MEM_BUF11_V  0xFFFFFFFF
 #define SPI_MEM_BUF11_S  0
 
-#define SPI_MEM_W12_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0D8)
+#define SPI_MEM_W12_REG(i)          (REG_SPI_MEM_BASE(i) + 0x088)
 /* SPI_MEM_BUF12 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF12  0xFFFFFFFF
@@ -1489,7 +995,7 @@ extern "C" {
 #define SPI_MEM_BUF12_V  0xFFFFFFFF
 #define SPI_MEM_BUF12_S  0
 
-#define SPI_MEM_W13_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0DC)
+#define SPI_MEM_W13_REG(i)          (REG_SPI_MEM_BASE(i) + 0x08C)
 /* SPI_MEM_BUF13 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF13  0xFFFFFFFF
@@ -1497,7 +1003,7 @@ extern "C" {
 #define SPI_MEM_BUF13_V  0xFFFFFFFF
 #define SPI_MEM_BUF13_S  0
 
-#define SPI_MEM_W14_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0E0)
+#define SPI_MEM_W14_REG(i)          (REG_SPI_MEM_BASE(i) + 0x090)
 /* SPI_MEM_BUF14 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF14  0xFFFFFFFF
@@ -1505,7 +1011,7 @@ extern "C" {
 #define SPI_MEM_BUF14_V  0xFFFFFFFF
 #define SPI_MEM_BUF14_S  0
 
-#define SPI_MEM_W15_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0E4)
+#define SPI_MEM_W15_REG(i)          (REG_SPI_MEM_BASE(i) + 0x094)
 /* SPI_MEM_BUF15 : SRW ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_MEM_BUF15  0xFFFFFFFF
@@ -1513,7 +1019,7 @@ extern "C" {
 #define SPI_MEM_BUF15_V  0xFFFFFFFF
 #define SPI_MEM_BUF15_S  0
 
-#define SPI_MEM_FLASH_WAITI_CTRL_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0E8)
+#define SPI_MEM_FLASH_WAITI_CTRL_REG(i)          (REG_SPI_MEM_BASE(i) + 0x098)
 /* SPI_MEM_WAITI_DUMMY_CYCLELEN : R/W ;bitpos:[17:10] ;default: 8'h0 ; */
 /*description: The dummy cycle length when auto wait flash idle*/
 #define SPI_MEM_WAITI_DUMMY_CYCLELEN  0x000000FF
@@ -1540,7 +1046,7 @@ extern "C" {
 #define SPI_MEM_WAITI_EN_V  0x1
 #define SPI_MEM_WAITI_EN_S  0
 
-#define SPI_MEM_FLASH_SUS_CMD_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0EC)
+#define SPI_MEM_FLASH_SUS_CMD_REG(i)          (REG_SPI_MEM_BASE(i) + 0x09C)
 /* SPI_MEM_FLASH_PES : R/W ;bitpos:[1] ;default: 1'b0 ; */
 /*description: program erase suspend bit  program erase suspend operation will
  be triggered when the bit is set. The bit will be cleared once the operation done.1: enable 0: disable.*/
@@ -1556,7 +1062,7 @@ extern "C" {
 #define SPI_MEM_FLASH_PER_V  0x1
 #define SPI_MEM_FLASH_PER_S  0
 
-#define SPI_MEM_FLASH_SUS_CTRL_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0F0)
+#define SPI_MEM_FLASH_SUS_CTRL_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0A0)
 /* SPI_MEM_FLASH_PES_COMMAND : R/W ;bitpos:[16:9] ;default: 8'h75 ; */
 /*description: Program/Erase suspend command.*/
 #define SPI_MEM_FLASH_PES_COMMAND  0x000000FF
@@ -1576,7 +1082,7 @@ extern "C" {
 #define SPI_MEM_FLASH_PES_EN_V  0x1
 #define SPI_MEM_FLASH_PES_EN_S  0
 
-#define SPI_MEM_SUS_STATUS_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0F4)
+#define SPI_MEM_SUS_STATUS_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0A4)
 /* SPI_MEM_FLASH_SUS : R/W ;bitpos:[0] ;default: 1'h0 ; */
 /*description: The status of flash suspend  only used in SPI1.*/
 #define SPI_MEM_FLASH_SUS  (BIT(0))
@@ -1584,7 +1090,7 @@ extern "C" {
 #define SPI_MEM_FLASH_SUS_V  0x1
 #define SPI_MEM_FLASH_SUS_S  0
 
-#define SPI_MEM_TIMING_CALI_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0F8)
+#define SPI_MEM_TIMING_CALI_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0A8)
 /* SPI_MEM_EXTRA_DUMMY_CYCLELEN : R/W ;bitpos:[3:2] ;default: 2'd0 ; */
 /*description: add extra dummy spi clock cycle length for spi clock calibration.*/
 #define SPI_MEM_EXTRA_DUMMY_CYCLELEN  0x00000003
@@ -1604,7 +1110,42 @@ extern "C" {
 #define SPI_MEM_TIMING_CLK_ENA_V  0x1
 #define SPI_MEM_TIMING_CLK_ENA_S  0
 
-#define SPI_MEM_DIN_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0FC)
+#define SPI_MEM_DIN_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0AC)
+/* SPI_MEM_DINS_MODE : R/W ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+#define SPI_MEM_DINS_MODE  0x00000007
+#define SPI_MEM_DINS_MODE_M  ((SPI_MEM_DINS_MODE_V)<<(SPI_MEM_DINS_MODE_S))
+#define SPI_MEM_DINS_MODE_V  0x7
+#define SPI_MEM_DINS_MODE_S  24
+/* SPI_MEM_DIN7_MODE : R/W ;bitpos:[23:21] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+#define SPI_MEM_DIN7_MODE  0x00000007
+#define SPI_MEM_DIN7_MODE_M  ((SPI_MEM_DIN7_MODE_V)<<(SPI_MEM_DIN7_MODE_S))
+#define SPI_MEM_DIN7_MODE_V  0x7
+#define SPI_MEM_DIN7_MODE_S  21
+/* SPI_MEM_DIN6_MODE : R/W ;bitpos:[20:18] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+#define SPI_MEM_DIN6_MODE  0x00000007
+#define SPI_MEM_DIN6_MODE_M  ((SPI_MEM_DIN6_MODE_V)<<(SPI_MEM_DIN6_MODE_S))
+#define SPI_MEM_DIN6_MODE_V  0x7
+#define SPI_MEM_DIN6_MODE_S  18
+/* SPI_MEM_DIN5_MODE : R/W ;bitpos:[17:15] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+#define SPI_MEM_DIN5_MODE  0x00000007
+#define SPI_MEM_DIN5_MODE_M  ((SPI_MEM_DIN5_MODE_V)<<(SPI_MEM_DIN5_MODE_S))
+#define SPI_MEM_DIN5_MODE_V  0x7
+#define SPI_MEM_DIN5_MODE_S  15
+/* SPI_MEM_DIN4_MODE : R/W ;bitpos:[14:12] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb  3: input with the spi_clk*/
+#define SPI_MEM_DIN4_MODE  0x00000007
+#define SPI_MEM_DIN4_MODE_M  ((SPI_MEM_DIN4_MODE_V)<<(SPI_MEM_DIN4_MODE_S))
+#define SPI_MEM_DIN4_MODE_V  0x7
+#define SPI_MEM_DIN4_MODE_S  12
 /* SPI_MEM_DIN3_MODE : R/W ;bitpos:[11:9] ;default: 3'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: input
  without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
@@ -1634,7 +1175,42 @@ extern "C" {
 #define SPI_MEM_DIN0_MODE_V  0x7
 #define SPI_MEM_DIN0_MODE_S  0
 
-#define SPI_MEM_DIN_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x100)
+#define SPI_MEM_DIN_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0B0)
+/* SPI_MEM_DINS_NUM : R/W ;bitpos:[17:16] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DINS_NUM  0x00000003
+#define SPI_MEM_DINS_NUM_M  ((SPI_MEM_DINS_NUM_V)<<(SPI_MEM_DINS_NUM_S))
+#define SPI_MEM_DINS_NUM_V  0x3
+#define SPI_MEM_DINS_NUM_S  16
+/* SPI_MEM_DIN7_NUM : R/W ;bitpos:[15:14] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DIN7_NUM  0x00000003
+#define SPI_MEM_DIN7_NUM_M  ((SPI_MEM_DIN7_NUM_V)<<(SPI_MEM_DIN7_NUM_S))
+#define SPI_MEM_DIN7_NUM_V  0x3
+#define SPI_MEM_DIN7_NUM_S  14
+/* SPI_MEM_DIN6_NUM : R/W ;bitpos:[13:12] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DIN6_NUM  0x00000003
+#define SPI_MEM_DIN6_NUM_M  ((SPI_MEM_DIN6_NUM_V)<<(SPI_MEM_DIN6_NUM_S))
+#define SPI_MEM_DIN6_NUM_V  0x3
+#define SPI_MEM_DIN6_NUM_S  12
+/* SPI_MEM_DIN5_NUM : R/W ;bitpos:[11:10] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DIN5_NUM  0x00000003
+#define SPI_MEM_DIN5_NUM_M  ((SPI_MEM_DIN5_NUM_V)<<(SPI_MEM_DIN5_NUM_S))
+#define SPI_MEM_DIN5_NUM_V  0x3
+#define SPI_MEM_DIN5_NUM_S  10
+/* SPI_MEM_DIN4_NUM : R/W ;bitpos:[9:8] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DIN4_NUM  0x00000003
+#define SPI_MEM_DIN4_NUM_M  ((SPI_MEM_DIN4_NUM_V)<<(SPI_MEM_DIN4_NUM_S))
+#define SPI_MEM_DIN4_NUM_V  0x3
+#define SPI_MEM_DIN4_NUM_S  8
 /* SPI_MEM_DIN3_NUM : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
@@ -1664,7 +1240,42 @@ extern "C" {
 #define SPI_MEM_DIN0_NUM_V  0x3
 #define SPI_MEM_DIN0_NUM_S  0
 
-#define SPI_MEM_DOUT_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x104)
+#define SPI_MEM_DOUT_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0B4)
+/* SPI_MEM_DOUTS_MODE : R/W ;bitpos:[26:24] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+#define SPI_MEM_DOUTS_MODE  0x00000007
+#define SPI_MEM_DOUTS_MODE_M  ((SPI_MEM_DOUTS_MODE_V)<<(SPI_MEM_DOUTS_MODE_S))
+#define SPI_MEM_DOUTS_MODE_V  0x7
+#define SPI_MEM_DOUTS_MODE_S  24
+/* SPI_MEM_DOUT7_MODE : R/W ;bitpos:[23:21] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+#define SPI_MEM_DOUT7_MODE  0x00000007
+#define SPI_MEM_DOUT7_MODE_M  ((SPI_MEM_DOUT7_MODE_V)<<(SPI_MEM_DOUT7_MODE_S))
+#define SPI_MEM_DOUT7_MODE_V  0x7
+#define SPI_MEM_DOUT7_MODE_S  21
+/* SPI_MEM_DOUT6_MODE : R/W ;bitpos:[20:18] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+#define SPI_MEM_DOUT6_MODE  0x00000007
+#define SPI_MEM_DOUT6_MODE_M  ((SPI_MEM_DOUT6_MODE_V)<<(SPI_MEM_DOUT6_MODE_S))
+#define SPI_MEM_DOUT6_MODE_V  0x7
+#define SPI_MEM_DOUT6_MODE_S  18
+/* SPI_MEM_DOUT5_MODE : R/W ;bitpos:[17:15] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+#define SPI_MEM_DOUT5_MODE  0x00000007
+#define SPI_MEM_DOUT5_MODE_M  ((SPI_MEM_DOUT5_MODE_V)<<(SPI_MEM_DOUT5_MODE_S))
+#define SPI_MEM_DOUT5_MODE_V  0x7
+#define SPI_MEM_DOUT5_MODE_S  15
+/* SPI_MEM_DOUT4_MODE : R/W ;bitpos:[14:12] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk*/
+#define SPI_MEM_DOUT4_MODE  0x00000007
+#define SPI_MEM_DOUT4_MODE_M  ((SPI_MEM_DOUT4_MODE_V)<<(SPI_MEM_DOUT4_MODE_S))
+#define SPI_MEM_DOUT4_MODE_V  0x7
+#define SPI_MEM_DOUT4_MODE_S  12
 /* SPI_MEM_DOUT3_MODE : R/W ;bitpos:[11:9] ;default: 3'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
@@ -1694,7 +1305,42 @@ extern "C" {
 #define SPI_MEM_DOUT0_MODE_V  0x7
 #define SPI_MEM_DOUT0_MODE_S  0
 
-#define SPI_MEM_DOUT_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x108)
+#define SPI_MEM_DOUT_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0B8)
+/* SPI_MEM_DOUTS_NUM : R/W ;bitpos:[17:16] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DOUTS_NUM  0x00000003
+#define SPI_MEM_DOUTS_NUM_M  ((SPI_MEM_DOUTS_NUM_V)<<(SPI_MEM_DOUTS_NUM_S))
+#define SPI_MEM_DOUTS_NUM_V  0x3
+#define SPI_MEM_DOUTS_NUM_S  16
+/* SPI_MEM_DOUT7_NUM : R/W ;bitpos:[15:14] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DOUT7_NUM  0x00000003
+#define SPI_MEM_DOUT7_NUM_M  ((SPI_MEM_DOUT7_NUM_V)<<(SPI_MEM_DOUT7_NUM_S))
+#define SPI_MEM_DOUT7_NUM_V  0x3
+#define SPI_MEM_DOUT7_NUM_S  14
+/* SPI_MEM_DOUT6_NUM : R/W ;bitpos:[13:12] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DOUT6_NUM  0x00000003
+#define SPI_MEM_DOUT6_NUM_M  ((SPI_MEM_DOUT6_NUM_V)<<(SPI_MEM_DOUT6_NUM_S))
+#define SPI_MEM_DOUT6_NUM_V  0x3
+#define SPI_MEM_DOUT6_NUM_S  12
+/* SPI_MEM_DOUT5_NUM : R/W ;bitpos:[11:10] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DOUT5_NUM  0x00000003
+#define SPI_MEM_DOUT5_NUM_M  ((SPI_MEM_DOUT5_NUM_V)<<(SPI_MEM_DOUT5_NUM_S))
+#define SPI_MEM_DOUT5_NUM_V  0x3
+#define SPI_MEM_DOUT5_NUM_S  10
+/* SPI_MEM_DOUT4_NUM : R/W ;bitpos:[9:8] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_DOUT4_NUM  0x00000003
+#define SPI_MEM_DOUT4_NUM_M  ((SPI_MEM_DOUT4_NUM_V)<<(SPI_MEM_DOUT4_NUM_S))
+#define SPI_MEM_DOUT4_NUM_V  0x3
+#define SPI_MEM_DOUT4_NUM_S  8
 /* SPI_MEM_DOUT3_NUM : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
@@ -1724,149 +1370,431 @@ extern "C" {
 #define SPI_MEM_DOUT0_NUM_V  0x3
 #define SPI_MEM_DOUT0_NUM_S  0
 
-#define SPI_SMEM_TIMING_CALI_REG(i)          (REG_SPI_MEM_BASE(i) + 0x10C)
-/* SPI_SMEM_EXTRA_DUMMY_CYCLELEN : R/W ;bitpos:[3:2] ;default: 2'd0 ; */
+#define SPI_MEM_SPI_SMEM_TIMING_CALI_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0BC)
+/* SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN : R/W ;bitpos:[3:2] ;default: 2'd0 ; */
 /*description: For sram  add extra dummy spi clock cycle length for spi clock calibration.*/
-#define SPI_SMEM_EXTRA_DUMMY_CYCLELEN  0x00000003
-#define SPI_SMEM_EXTRA_DUMMY_CYCLELEN_M  ((SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V)<<(SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S))
-#define SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V  0x3
-#define SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S  2
-/* SPI_SMEM_TIMING_CALI : R/W ;bitpos:[1] ;default: 1'b0 ; */
+#define SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN  0x00000003
+#define SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_M  ((SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V)<<(SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S))
+#define SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_V  0x3
+#define SPI_MEM_SPI_SMEM_EXTRA_DUMMY_CYCLELEN_S  2
+/* SPI_MEM_SPI_SMEM_TIMING_CALI : R/W ;bitpos:[1] ;default: 1'b0 ; */
 /*description: For sram  the bit is used to enable timing auto-calibration for
  all reading operations.*/
-#define SPI_SMEM_TIMING_CALI  (BIT(1))
-#define SPI_SMEM_TIMING_CALI_M  (BIT(1))
-#define SPI_SMEM_TIMING_CALI_V  0x1
-#define SPI_SMEM_TIMING_CALI_S  1
-/* SPI_SMEM_TIMING_CLK_ENA : R/W ;bitpos:[0] ;default: 1'b1 ; */
+#define SPI_MEM_SPI_SMEM_TIMING_CALI  (BIT(1))
+#define SPI_MEM_SPI_SMEM_TIMING_CALI_M  (BIT(1))
+#define SPI_MEM_SPI_SMEM_TIMING_CALI_V  0x1
+#define SPI_MEM_SPI_SMEM_TIMING_CALI_S  1
+/* SPI_MEM_SPI_SMEM_TIMING_CLK_ENA : R/W ;bitpos:[0] ;default: 1'b1 ; */
 /*description: For sram  the bit is used to enable timing adjust clock for all
  reading operations.*/
-#define SPI_SMEM_TIMING_CLK_ENA  (BIT(0))
-#define SPI_SMEM_TIMING_CLK_ENA_M  (BIT(0))
-#define SPI_SMEM_TIMING_CLK_ENA_V  0x1
-#define SPI_SMEM_TIMING_CLK_ENA_S  0
+#define SPI_MEM_SPI_SMEM_TIMING_CLK_ENA  (BIT(0))
+#define SPI_MEM_SPI_SMEM_TIMING_CLK_ENA_M  (BIT(0))
+#define SPI_MEM_SPI_SMEM_TIMING_CLK_ENA_V  0x1
+#define SPI_MEM_SPI_SMEM_TIMING_CLK_ENA_S  0
 
-#define SPI_SMEM_DIN_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x110)
-/* SPI_SMEM_DIN3_MODE : R/W ;bitpos:[11:9] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0C0)
+/* SPI_MEM_SPI_SMEM_DINS_MODE : R/W ;bitpos:[26:24] ;default: 3'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: input
  without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
-#define SPI_SMEM_DIN3_MODE  0x00000007
-#define SPI_SMEM_DIN3_MODE_M  ((SPI_SMEM_DIN3_MODE_V)<<(SPI_SMEM_DIN3_MODE_S))
-#define SPI_SMEM_DIN3_MODE_V  0x7
-#define SPI_SMEM_DIN3_MODE_S  9
-/* SPI_SMEM_DIN2_MODE : R/W ;bitpos:[8:6] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DINS_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DINS_MODE_M  ((SPI_MEM_SPI_SMEM_DINS_MODE_V)<<(SPI_MEM_SPI_SMEM_DINS_MODE_S))
+#define SPI_MEM_SPI_SMEM_DINS_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DINS_MODE_S  24
+/* SPI_MEM_SPI_SMEM_DIN7_MODE : R/W ;bitpos:[23:21] ;default: 3'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: input
  without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
-#define SPI_SMEM_DIN2_MODE  0x00000007
-#define SPI_SMEM_DIN2_MODE_M  ((SPI_SMEM_DIN2_MODE_V)<<(SPI_SMEM_DIN2_MODE_S))
-#define SPI_SMEM_DIN2_MODE_V  0x7
-#define SPI_SMEM_DIN2_MODE_S  6
-/* SPI_SMEM_DIN1_MODE : R/W ;bitpos:[5:3] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN7_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN7_MODE_M  ((SPI_MEM_SPI_SMEM_DIN7_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN7_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN7_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN7_MODE_S  21
+/* SPI_MEM_SPI_SMEM_DIN6_MODE : R/W ;bitpos:[20:18] ;default: 3'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: input
  without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
-#define SPI_SMEM_DIN1_MODE  0x00000007
-#define SPI_SMEM_DIN1_MODE_M  ((SPI_SMEM_DIN1_MODE_V)<<(SPI_SMEM_DIN1_MODE_S))
-#define SPI_SMEM_DIN1_MODE_V  0x7
-#define SPI_SMEM_DIN1_MODE_S  3
-/* SPI_SMEM_DIN0_MODE : R/W ;bitpos:[2:0] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN6_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN6_MODE_M  ((SPI_MEM_SPI_SMEM_DIN6_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN6_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN6_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN6_MODE_S  18
+/* SPI_MEM_SPI_SMEM_DIN5_MODE : R/W ;bitpos:[17:15] ;default: 3'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: input
  without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
-#define SPI_SMEM_DIN0_MODE  0x00000007
-#define SPI_SMEM_DIN0_MODE_M  ((SPI_SMEM_DIN0_MODE_V)<<(SPI_SMEM_DIN0_MODE_S))
-#define SPI_SMEM_DIN0_MODE_V  0x7
-#define SPI_SMEM_DIN0_MODE_S  0
+#define SPI_MEM_SPI_SMEM_DIN5_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN5_MODE_M  ((SPI_MEM_SPI_SMEM_DIN5_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN5_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN5_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN5_MODE_S  15
+/* SPI_MEM_SPI_SMEM_DIN4_MODE : R/W ;bitpos:[14:12] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DIN4_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN4_MODE_M  ((SPI_MEM_SPI_SMEM_DIN4_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN4_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN4_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN4_MODE_S  12
+/* SPI_MEM_SPI_SMEM_DIN3_MODE : R/W ;bitpos:[11:9] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DIN3_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN3_MODE_M  ((SPI_MEM_SPI_SMEM_DIN3_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN3_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN3_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN3_MODE_S  9
+/* SPI_MEM_SPI_SMEM_DIN2_MODE : R/W ;bitpos:[8:6] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DIN2_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN2_MODE_M  ((SPI_MEM_SPI_SMEM_DIN2_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN2_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN2_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN2_MODE_S  6
+/* SPI_MEM_SPI_SMEM_DIN1_MODE : R/W ;bitpos:[5:3] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DIN1_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN1_MODE_M  ((SPI_MEM_SPI_SMEM_DIN1_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN1_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN1_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN1_MODE_S  3
+/* SPI_MEM_SPI_SMEM_DIN0_MODE : R/W ;bitpos:[2:0] ;default: 3'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DIN0_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DIN0_MODE_M  ((SPI_MEM_SPI_SMEM_DIN0_MODE_V)<<(SPI_MEM_SPI_SMEM_DIN0_MODE_S))
+#define SPI_MEM_SPI_SMEM_DIN0_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DIN0_MODE_S  0
 
-#define SPI_SMEM_DIN_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x114)
-/* SPI_SMEM_DIN3_NUM : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0C4)
+/* SPI_MEM_SPI_SMEM_DINS_NUM : R/W ;bitpos:[17:16] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: input
+ without delayed  1: input with the posedge of clk_apb 2 input with the negedge of clk_apb   3: input with the posedge of clk_160  4 input with the negedge of clk_160  5: input with the spi_clk high edge   6: input with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DINS_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DINS_NUM_M  ((SPI_MEM_SPI_SMEM_DINS_NUM_V)<<(SPI_MEM_SPI_SMEM_DINS_NUM_S))
+#define SPI_MEM_SPI_SMEM_DINS_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DINS_NUM_S  16
+/* SPI_MEM_SPI_SMEM_DIN7_NUM : R/W ;bitpos:[15:14] ;default: 2'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DIN3_NUM  0x00000003
-#define SPI_SMEM_DIN3_NUM_M  ((SPI_SMEM_DIN3_NUM_V)<<(SPI_SMEM_DIN3_NUM_S))
-#define SPI_SMEM_DIN3_NUM_V  0x3
-#define SPI_SMEM_DIN3_NUM_S  6
-/* SPI_SMEM_DIN2_NUM : R/W ;bitpos:[5:4] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN7_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN7_NUM_M  ((SPI_MEM_SPI_SMEM_DIN7_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN7_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN7_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN7_NUM_S  14
+/* SPI_MEM_SPI_SMEM_DIN6_NUM : R/W ;bitpos:[13:12] ;default: 2'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DIN2_NUM  0x00000003
-#define SPI_SMEM_DIN2_NUM_M  ((SPI_SMEM_DIN2_NUM_V)<<(SPI_SMEM_DIN2_NUM_S))
-#define SPI_SMEM_DIN2_NUM_V  0x3
-#define SPI_SMEM_DIN2_NUM_S  4
-/* SPI_SMEM_DIN1_NUM : R/W ;bitpos:[3:2] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN6_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN6_NUM_M  ((SPI_MEM_SPI_SMEM_DIN6_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN6_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN6_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN6_NUM_S  12
+/* SPI_MEM_SPI_SMEM_DIN5_NUM : R/W ;bitpos:[11:10] ;default: 2'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DIN1_NUM  0x00000003
-#define SPI_SMEM_DIN1_NUM_M  ((SPI_SMEM_DIN1_NUM_V)<<(SPI_SMEM_DIN1_NUM_S))
-#define SPI_SMEM_DIN1_NUM_V  0x3
-#define SPI_SMEM_DIN1_NUM_S  2
-/* SPI_SMEM_DIN0_NUM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DIN5_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN5_NUM_M  ((SPI_MEM_SPI_SMEM_DIN5_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN5_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN5_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN5_NUM_S  10
+/* SPI_MEM_SPI_SMEM_DIN4_NUM : R/W ;bitpos:[9:8] ;default: 2'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DIN0_NUM  0x00000003
-#define SPI_SMEM_DIN0_NUM_M  ((SPI_SMEM_DIN0_NUM_V)<<(SPI_SMEM_DIN0_NUM_S))
-#define SPI_SMEM_DIN0_NUM_V  0x3
-#define SPI_SMEM_DIN0_NUM_S  0
+#define SPI_MEM_SPI_SMEM_DIN4_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN4_NUM_M  ((SPI_MEM_SPI_SMEM_DIN4_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN4_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN4_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN4_NUM_S  8
+/* SPI_MEM_SPI_SMEM_DIN3_NUM : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_SPI_SMEM_DIN3_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN3_NUM_M  ((SPI_MEM_SPI_SMEM_DIN3_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN3_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN3_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN3_NUM_S  6
+/* SPI_MEM_SPI_SMEM_DIN2_NUM : R/W ;bitpos:[5:4] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_SPI_SMEM_DIN2_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN2_NUM_M  ((SPI_MEM_SPI_SMEM_DIN2_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN2_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN2_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN2_NUM_S  4
+/* SPI_MEM_SPI_SMEM_DIN1_NUM : R/W ;bitpos:[3:2] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_SPI_SMEM_DIN1_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN1_NUM_M  ((SPI_MEM_SPI_SMEM_DIN1_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN1_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN1_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN1_NUM_S  2
+/* SPI_MEM_SPI_SMEM_DIN0_NUM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+/*description: the input signals are delayed by system clock cycles  0: delayed
+ by 1 cycle  1: delayed by 2 cycles ...*/
+#define SPI_MEM_SPI_SMEM_DIN0_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DIN0_NUM_M  ((SPI_MEM_SPI_SMEM_DIN0_NUM_V)<<(SPI_MEM_SPI_SMEM_DIN0_NUM_S))
+#define SPI_MEM_SPI_SMEM_DIN0_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DIN0_NUM_S  0
 
-#define SPI_SMEM_DOUT_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x118)
-/* SPI_SMEM_DOUT3_MODE : R/W ;bitpos:[11:9] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT_MODE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0C8)
+/* SPI_MEM_SPI_SMEM_DOUTS_MODE : R/W ;bitpos:[26:24] ;default: 3'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
-#define SPI_SMEM_DOUT3_MODE  0x00000007
-#define SPI_SMEM_DOUT3_MODE_M  ((SPI_SMEM_DOUT3_MODE_V)<<(SPI_SMEM_DOUT3_MODE_S))
-#define SPI_SMEM_DOUT3_MODE_V  0x7
-#define SPI_SMEM_DOUT3_MODE_S  9
-/* SPI_SMEM_DOUT2_MODE : R/W ;bitpos:[8:6] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUTS_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUTS_MODE_M  ((SPI_MEM_SPI_SMEM_DOUTS_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUTS_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUTS_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUTS_MODE_S  24
+/* SPI_MEM_SPI_SMEM_DOUT7_MODE : R/W ;bitpos:[23:21] ;default: 3'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
-#define SPI_SMEM_DOUT2_MODE  0x00000007
-#define SPI_SMEM_DOUT2_MODE_M  ((SPI_SMEM_DOUT2_MODE_V)<<(SPI_SMEM_DOUT2_MODE_S))
-#define SPI_SMEM_DOUT2_MODE_V  0x7
-#define SPI_SMEM_DOUT2_MODE_S  6
-/* SPI_SMEM_DOUT1_MODE : R/W ;bitpos:[5:3] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT7_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT7_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT7_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT7_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT7_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT7_MODE_S  21
+/* SPI_MEM_SPI_SMEM_DOUT6_MODE : R/W ;bitpos:[20:18] ;default: 3'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
-#define SPI_SMEM_DOUT1_MODE  0x00000007
-#define SPI_SMEM_DOUT1_MODE_M  ((SPI_SMEM_DOUT1_MODE_V)<<(SPI_SMEM_DOUT1_MODE_S))
-#define SPI_SMEM_DOUT1_MODE_V  0x7
-#define SPI_SMEM_DOUT1_MODE_S  3
-/* SPI_SMEM_DOUT0_MODE : R/W ;bitpos:[2:0] ;default: 3'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT6_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT6_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT6_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT6_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT6_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT6_MODE_S  18
+/* SPI_MEM_SPI_SMEM_DOUT5_MODE : R/W ;bitpos:[17:15] ;default: 3'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
-#define SPI_SMEM_DOUT0_MODE  0x00000007
-#define SPI_SMEM_DOUT0_MODE_M  ((SPI_SMEM_DOUT0_MODE_V)<<(SPI_SMEM_DOUT0_MODE_S))
-#define SPI_SMEM_DOUT0_MODE_V  0x7
-#define SPI_SMEM_DOUT0_MODE_S  0
+#define SPI_MEM_SPI_SMEM_DOUT5_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT5_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT5_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT5_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT5_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT5_MODE_S  15
+/* SPI_MEM_SPI_SMEM_DOUT4_MODE : R/W ;bitpos:[14:12] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT4_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT4_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT4_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT4_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT4_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT4_MODE_S  12
+/* SPI_MEM_SPI_SMEM_DOUT3_MODE : R/W ;bitpos:[11:9] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT3_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT3_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT3_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT3_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT3_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT3_MODE_S  9
+/* SPI_MEM_SPI_SMEM_DOUT2_MODE : R/W ;bitpos:[8:6] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT2_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT2_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT2_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT2_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT2_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT2_MODE_S  6
+/* SPI_MEM_SPI_SMEM_DOUT1_MODE : R/W ;bitpos:[5:3] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT1_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT1_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT1_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT1_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT1_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT1_MODE_S  3
+/* SPI_MEM_SPI_SMEM_DOUT0_MODE : R/W ;bitpos:[2:0] ;default: 3'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT0_MODE  0x00000007
+#define SPI_MEM_SPI_SMEM_DOUT0_MODE_M  ((SPI_MEM_SPI_SMEM_DOUT0_MODE_V)<<(SPI_MEM_SPI_SMEM_DOUT0_MODE_S))
+#define SPI_MEM_SPI_SMEM_DOUT0_MODE_V  0x7
+#define SPI_MEM_SPI_SMEM_DOUT0_MODE_S  0
 
-#define SPI_SMEM_DOUT_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x11C)
-/* SPI_SMEM_DOUT3_NUM : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT_NUM_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0CC)
+/* SPI_MEM_SPI_SMEM_DOUTS_NUM : R/W ;bitpos:[17:16] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUTS_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUTS_NUM_M  ((SPI_MEM_SPI_SMEM_DOUTS_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUTS_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUTS_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUTS_NUM_S  16
+/* SPI_MEM_SPI_SMEM_DOUT7_NUM : R/W ;bitpos:[15:14] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT7_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT7_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT7_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT7_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT7_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT7_NUM_S  14
+/* SPI_MEM_SPI_SMEM_DOUT6_NUM : R/W ;bitpos:[13:12] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT6_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT6_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT6_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT6_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT6_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT6_NUM_S  12
+/* SPI_MEM_SPI_SMEM_DOUT5_NUM : R/W ;bitpos:[11:10] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT5_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT5_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT5_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT5_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT5_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT5_NUM_S  10
+/* SPI_MEM_SPI_SMEM_DOUT4_NUM : R/W ;bitpos:[9:8] ;default: 2'h0 ; */
+/*description: the output signals are delayed by system clock cycles  0: output
+ without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the posedge of clk_160 4 output with the negedge of clk_160 5: output with the spi_clk high edge  6: output with the spi_clk low edge*/
+#define SPI_MEM_SPI_SMEM_DOUT4_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT4_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT4_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT4_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT4_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT4_NUM_S  8
+/* SPI_MEM_SPI_SMEM_DOUT3_NUM : R/W ;bitpos:[7:6] ;default: 2'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DOUT3_NUM  0x00000003
-#define SPI_SMEM_DOUT3_NUM_M  ((SPI_SMEM_DOUT3_NUM_V)<<(SPI_SMEM_DOUT3_NUM_S))
-#define SPI_SMEM_DOUT3_NUM_V  0x3
-#define SPI_SMEM_DOUT3_NUM_S  6
-/* SPI_SMEM_DOUT2_NUM : R/W ;bitpos:[5:4] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT3_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT3_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT3_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT3_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT3_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT3_NUM_S  6
+/* SPI_MEM_SPI_SMEM_DOUT2_NUM : R/W ;bitpos:[5:4] ;default: 2'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DOUT2_NUM  0x00000003
-#define SPI_SMEM_DOUT2_NUM_M  ((SPI_SMEM_DOUT2_NUM_V)<<(SPI_SMEM_DOUT2_NUM_S))
-#define SPI_SMEM_DOUT2_NUM_V  0x3
-#define SPI_SMEM_DOUT2_NUM_S  4
-/* SPI_SMEM_DOUT1_NUM : R/W ;bitpos:[3:2] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT2_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT2_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT2_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT2_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT2_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT2_NUM_S  4
+/* SPI_MEM_SPI_SMEM_DOUT1_NUM : R/W ;bitpos:[3:2] ;default: 2'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DOUT1_NUM  0x00000003
-#define SPI_SMEM_DOUT1_NUM_M  ((SPI_SMEM_DOUT1_NUM_V)<<(SPI_SMEM_DOUT1_NUM_S))
-#define SPI_SMEM_DOUT1_NUM_V  0x3
-#define SPI_SMEM_DOUT1_NUM_S  2
-/* SPI_SMEM_DOUT0_NUM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
+#define SPI_MEM_SPI_SMEM_DOUT1_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT1_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT1_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT1_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT1_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT1_NUM_S  2
+/* SPI_MEM_SPI_SMEM_DOUT0_NUM : R/W ;bitpos:[1:0] ;default: 2'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...*/
-#define SPI_SMEM_DOUT0_NUM  0x00000003
-#define SPI_SMEM_DOUT0_NUM_M  ((SPI_SMEM_DOUT0_NUM_V)<<(SPI_SMEM_DOUT0_NUM_S))
-#define SPI_SMEM_DOUT0_NUM_V  0x3
-#define SPI_SMEM_DOUT0_NUM_S  0
+#define SPI_MEM_SPI_SMEM_DOUT0_NUM  0x00000003
+#define SPI_MEM_SPI_SMEM_DOUT0_NUM_M  ((SPI_MEM_SPI_SMEM_DOUT0_NUM_V)<<(SPI_MEM_SPI_SMEM_DOUT0_NUM_S))
+#define SPI_MEM_SPI_SMEM_DOUT0_NUM_V  0x3
+#define SPI_MEM_SPI_SMEM_DOUT0_NUM_S  0
 
-#define SPI_MEM_CLOCK_GATE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x120)
+#define SPI_MEM_SPI_SMEM_AC_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0D0)
+/* SPI_MEM_SPI_SMEM_CS_HOLD_TIME : R/W ;bitpos:[27:15] ;default: 13'h1 ; */
+/*description: For spi0  spi cs signal is delayed to inactive by spi clock this
+ bits are combined with spi_mem_cs_hold bit.*/
+#define SPI_MEM_SPI_SMEM_CS_HOLD_TIME  0x00001FFF
+#define SPI_MEM_SPI_SMEM_CS_HOLD_TIME_M  ((SPI_MEM_SPI_SMEM_CS_HOLD_TIME_V)<<(SPI_MEM_SPI_SMEM_CS_HOLD_TIME_S))
+#define SPI_MEM_SPI_SMEM_CS_HOLD_TIME_V  0x1FFF
+#define SPI_MEM_SPI_SMEM_CS_HOLD_TIME_S  15
+/* SPI_MEM_SPI_SMEM_CS_SETUP_TIME : R/W ;bitpos:[14:2] ;default: 13'h1 ; */
+/*description: For spi0  (cycles-1) of prepare phase by spi clock this bits
+ are combined with spi_mem_cs_setup bit.*/
+#define SPI_MEM_SPI_SMEM_CS_SETUP_TIME  0x00001FFF
+#define SPI_MEM_SPI_SMEM_CS_SETUP_TIME_M  ((SPI_MEM_SPI_SMEM_CS_SETUP_TIME_V)<<(SPI_MEM_SPI_SMEM_CS_SETUP_TIME_S))
+#define SPI_MEM_SPI_SMEM_CS_SETUP_TIME_V  0x1FFF
+#define SPI_MEM_SPI_SMEM_CS_SETUP_TIME_S  2
+/* SPI_MEM_SPI_SMEM_CS_HOLD : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: For spi0  spi cs keep low when spi is in done phase. 1: enable 0: disable.*/
+#define SPI_MEM_SPI_SMEM_CS_HOLD  (BIT(1))
+#define SPI_MEM_SPI_SMEM_CS_HOLD_M  (BIT(1))
+#define SPI_MEM_SPI_SMEM_CS_HOLD_V  0x1
+#define SPI_MEM_SPI_SMEM_CS_HOLD_S  1
+/* SPI_MEM_SPI_SMEM_CS_SETUP : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/*description: For spi0  spi cs is enable when spi is in prepare phase. 1: enable 0: disable.*/
+#define SPI_MEM_SPI_SMEM_CS_SETUP  (BIT(0))
+#define SPI_MEM_SPI_SMEM_CS_SETUP_M  (BIT(0))
+#define SPI_MEM_SPI_SMEM_CS_SETUP_V  0x1
+#define SPI_MEM_SPI_SMEM_CS_SETUP_S  0
+
+#define SPI_MEM_DDR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0D4)
+/* SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE : R/W ;bitpos:[23:22] ;default: 2'b0 ; */
+/*description: the bits are combined with the bit spi_fmem_ddr_fdqs_loop which
+ used to select data strobe generating mode in ddr mode.*/
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE  0x00000003
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE_M  ((SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE_V)<<(SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE_S))
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE_V  0x3
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_MODE_S  22
+/* SPI_MEM_SPI_FMEM_DDR_DQS_LOOP : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/*description: the data strobe is generated by SPI.*/
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP  (BIT(21))
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_M  (BIT(21))
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_V  0x1
+#define SPI_MEM_SPI_FMEM_DDR_DQS_LOOP_S  21
+/* SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD : R/W ;bitpos:[20:13] ;default: 8'b0 ; */
+/*description: The delay number of data strobe which from memory based on SPI clock.*/
+#define SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD  0x000000FF
+#define SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD_M  ((SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD_V)<<(SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD_S))
+#define SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD_V  0xFF
+#define SPI_MEM_SPI_FMEM_USR_DDR_DQS_THD_S  13
+/* SPI_MEM_SPI_FMEM_OUTMINBYTELEN : R/W ;bitpos:[12:5] ;default: 8'b1 ; */
+/*description: It is the minimum output data length in the panda device.*/
+#define SPI_MEM_SPI_FMEM_OUTMINBYTELEN  0x000000FF
+#define SPI_MEM_SPI_FMEM_OUTMINBYTELEN_M  ((SPI_MEM_SPI_FMEM_OUTMINBYTELEN_V)<<(SPI_MEM_SPI_FMEM_OUTMINBYTELEN_S))
+#define SPI_MEM_SPI_FMEM_OUTMINBYTELEN_V  0xFF
+#define SPI_MEM_SPI_FMEM_OUTMINBYTELEN_S  5
+/* SPI_MEM_SPI_FMEM_DDR_CMD_DIS : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: the bit is used to disable dual edge in command phase when ddr mode.*/
+#define SPI_MEM_SPI_FMEM_DDR_CMD_DIS  (BIT(4))
+#define SPI_MEM_SPI_FMEM_DDR_CMD_DIS_M  (BIT(4))
+#define SPI_MEM_SPI_FMEM_DDR_CMD_DIS_V  0x1
+#define SPI_MEM_SPI_FMEM_DDR_CMD_DIS_S  4
+/* SPI_MEM_SPI_FMEM_DDR_WDAT_SWP : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: Set the bit to reorder tx data of the word in spi ddr mode.*/
+#define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP  (BIT(3))
+#define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP_M  (BIT(3))
+#define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP_V  0x1
+#define SPI_MEM_SPI_FMEM_DDR_WDAT_SWP_S  3
+/* SPI_MEM_SPI_FMEM_DDR_RDAT_SWP : R/W ;bitpos:[2] ;default: 1'b0 ; */
+/*description: Set the bit to reorder rx data of the word in spi ddr mode.*/
+#define SPI_MEM_SPI_FMEM_DDR_RDAT_SWP  (BIT(2))
+#define SPI_MEM_SPI_FMEM_DDR_RDAT_SWP_M  (BIT(2))
+#define SPI_MEM_SPI_FMEM_DDR_RDAT_SWP_V  0x1
+#define SPI_MEM_SPI_FMEM_DDR_RDAT_SWP_S  2
+/* SPI_MEM_SPI_FMEM_VAR_DUMMY : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: Set the bit to enable variable dummy cycle in spi ddr mode.*/
+#define SPI_MEM_SPI_FMEM_VAR_DUMMY  (BIT(1))
+#define SPI_MEM_SPI_FMEM_VAR_DUMMY_M  (BIT(1))
+#define SPI_MEM_SPI_FMEM_VAR_DUMMY_V  0x1
+#define SPI_MEM_SPI_FMEM_VAR_DUMMY_S  1
+/* SPI_MEM_SPI_FMEM_DDR_EN : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/*description: 1: in ddr mode   0 in sdr mode*/
+#define SPI_MEM_SPI_FMEM_DDR_EN  (BIT(0))
+#define SPI_MEM_SPI_FMEM_DDR_EN_M  (BIT(0))
+#define SPI_MEM_SPI_FMEM_DDR_EN_V  0x1
+#define SPI_MEM_SPI_FMEM_DDR_EN_S  0
+
+#define SPI_MEM_SPI_SMEM_DDR_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0D8)
+/* SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE : R/W ;bitpos:[23:22] ;default: 2'b0 ; */
+/*description: the bits are combined with the bit spi_smem_ddr_fdqs_loop which
+ used to select data strobe generating mode in ddr mode.*/
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE  0x00000003
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE_M  ((SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE_V)<<(SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE_S))
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE_V  0x3
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_MODE_S  22
+/* SPI_MEM_SPI_SMEM_DDR_DQS_LOOP : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/*description: the data strobe is generated by SPI.*/
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP  (BIT(21))
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_M  (BIT(21))
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_V  0x1
+#define SPI_MEM_SPI_SMEM_DDR_DQS_LOOP_S  21
+/* SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD : R/W ;bitpos:[20:13] ;default: 8'b0 ; */
+/*description: The delay number of data strobe which from memory based on SPI clock.*/
+#define SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD  0x000000FF
+#define SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD_M  ((SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD_V)<<(SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD_S))
+#define SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD_V  0xFF
+#define SPI_MEM_SPI_SMEM_USR_DDR_DQS_THD_S  13
+/* SPI_MEM_SPI_SMEM_OUTMINBYTELEN : R/W ;bitpos:[12:5] ;default: 8'b1 ; */
+/*description: It is the minimum output data length in the ddr psram.*/
+#define SPI_MEM_SPI_SMEM_OUTMINBYTELEN  0x000000FF
+#define SPI_MEM_SPI_SMEM_OUTMINBYTELEN_M  ((SPI_MEM_SPI_SMEM_OUTMINBYTELEN_V)<<(SPI_MEM_SPI_SMEM_OUTMINBYTELEN_S))
+#define SPI_MEM_SPI_SMEM_OUTMINBYTELEN_V  0xFF
+#define SPI_MEM_SPI_SMEM_OUTMINBYTELEN_S  5
+/* SPI_MEM_SPI_SMEM_DDR_CMD_DIS : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: the bit is used to disable dual edge in command phase when ddr mode.*/
+#define SPI_MEM_SPI_SMEM_DDR_CMD_DIS  (BIT(4))
+#define SPI_MEM_SPI_SMEM_DDR_CMD_DIS_M  (BIT(4))
+#define SPI_MEM_SPI_SMEM_DDR_CMD_DIS_V  0x1
+#define SPI_MEM_SPI_SMEM_DDR_CMD_DIS_S  4
+/* SPI_MEM_SPI_SMEM_DDR_WDAT_SWP : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: Set the bit to reorder tx data of the word in spi ddr mode.*/
+#define SPI_MEM_SPI_SMEM_DDR_WDAT_SWP  (BIT(3))
+#define SPI_MEM_SPI_SMEM_DDR_WDAT_SWP_M  (BIT(3))
+#define SPI_MEM_SPI_SMEM_DDR_WDAT_SWP_V  0x1
+#define SPI_MEM_SPI_SMEM_DDR_WDAT_SWP_S  3
+/* SPI_MEM_SPI_SMEM_DDR_RDAT_SWP : R/W ;bitpos:[2] ;default: 1'b0 ; */
+/*description: Set the bit to reorder rx data of the word in spi ddr mode.*/
+#define SPI_MEM_SPI_SMEM_DDR_RDAT_SWP  (BIT(2))
+#define SPI_MEM_SPI_SMEM_DDR_RDAT_SWP_M  (BIT(2))
+#define SPI_MEM_SPI_SMEM_DDR_RDAT_SWP_V  0x1
+#define SPI_MEM_SPI_SMEM_DDR_RDAT_SWP_S  2
+/* SPI_MEM_SPI_SMEM_VAR_DUMMY : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/*description: Set the bit to enable variable dummy cycle in spi ddr mode.*/
+#define SPI_MEM_SPI_SMEM_VAR_DUMMY  (BIT(1))
+#define SPI_MEM_SPI_SMEM_VAR_DUMMY_M  (BIT(1))
+#define SPI_MEM_SPI_SMEM_VAR_DUMMY_V  0x1
+#define SPI_MEM_SPI_SMEM_VAR_DUMMY_S  1
+/* SPI_MEM_SPI_SMEM_DDR_EN : R/W ;bitpos:[0] ;default: 1'b0 ; */
+/*description: 1: in ddr mode   0 in sdr mode*/
+#define SPI_MEM_SPI_SMEM_DDR_EN  (BIT(0))
+#define SPI_MEM_SPI_SMEM_DDR_EN_M  (BIT(0))
+#define SPI_MEM_SPI_SMEM_DDR_EN_V  0x1
+#define SPI_MEM_SPI_SMEM_DDR_EN_S  0
+
+#define SPI_MEM_CLOCK_GATE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x0DC)
 /* SPI_MEM_CLK_EN : R/W ;bitpos:[0] ;default: 1'b1 ; */
 /*description: */
 #define SPI_MEM_CLK_EN  (BIT(0))
@@ -1875,7 +1803,7 @@ extern "C" {
 #define SPI_MEM_CLK_EN_S  0
 
 #define SPI_MEM_DATE_REG(i)          (REG_SPI_MEM_BASE(i) + 0x3FC)
-/* SPI_MEM_DATE : R/W ;bitpos:[27:0] ;default: 28'h1810250 ; */
+/* SPI_MEM_DATE : R/W ;bitpos:[27:0] ;default: 28'h1905270 ; */
 /*description: SPI register version.*/
 #define SPI_MEM_DATE  0x0FFFFFFF
 #define SPI_MEM_DATE_M  ((SPI_MEM_DATE_V)<<(SPI_MEM_DATE_S))

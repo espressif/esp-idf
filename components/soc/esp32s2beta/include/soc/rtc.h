@@ -51,6 +51,79 @@ extern "C" {
  * - rtc_init: initialization
  */
 
+#define MHZ (1000000)
+
+#define RTC_SLOW_CLK_X32K_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
+#define RTC_SLOW_CLK_8MD256_CAL_TIMEOUT_THRES(cycles)  (cycles << 12)
+#define RTC_SLOW_CLK_150K_CAL_TIMEOUT_THRES(cycles)  (cycles << 10)
+
+#define RTC_SLOW_CLK_FREQ_150K      150000
+#define RTC_SLOW_CLK_FREQ_8MD256    (RTC_FAST_CLK_FREQ_APPROX / 256)
+#define RTC_SLOW_CLK_FREQ_32K       32768
+
+#define OTHER_BLOCKS_POWERUP        1
+#define OTHER_BLOCKS_WAIT           1
+
+/* Approximate mapping of voltages to RTC_CNTL_DBIAS_WAK, RTC_CNTL_DBIAS_SLP,
+ * RTC_CNTL_DIG_DBIAS_WAK, RTC_CNTL_DIG_DBIAS_SLP values.
+ * Valid if RTC_CNTL_DBG_ATTEN is 0.
+ */
+#define RTC_CNTL_DBIAS_0V90 0
+#define RTC_CNTL_DBIAS_0V95 1
+#define RTC_CNTL_DBIAS_1V00 2
+#define RTC_CNTL_DBIAS_1V05 3
+#define RTC_CNTL_DBIAS_1V10 4
+#define RTC_CNTL_DBIAS_1V15 5
+#define RTC_CNTL_DBIAS_1V20 6
+#define RTC_CNTL_DBIAS_1V25 7
+
+#define DELAY_FAST_CLK_SWITCH           3
+#define DELAY_SLOW_CLK_SWITCH           300
+#define DELAY_8M_ENABLE                 50
+
+/* Number of 8M/256 clock cycles to use for XTAL frequency estimation.
+ * 10 cycles will take approximately 300 microseconds.
+ */
+#define XTAL_FREQ_EST_CYCLES            10
+
+/* Core voltage needs to be increased in two cases:
+ * 1. running at 240 MHz
+ * 2. running with 80MHz Flash frequency
+ */
+#ifdef CONFIG_ESPTOOLPY_FLASHFREQ_80M
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V25
+#else
+#define DIG_DBIAS_80M_160M  RTC_CNTL_DBIAS_1V10
+#endif
+#define DIG_DBIAS_240M      RTC_CNTL_DBIAS_1V25
+#define DIG_DBIAS_XTAL      RTC_CNTL_DBIAS_1V10
+#define DIG_DBIAS_2M        RTC_CNTL_DBIAS_1V00
+
+#define RTC_CNTL_PLL_BUF_WAIT_DEFAULT  20
+#define RTC_CNTL_XTL_BUF_WAIT_DEFAULT  100
+#define RTC_CNTL_CK8M_WAIT_DEFAULT  20
+#define RTC_CK8M_ENABLE_WAIT_DEFAULT 1
+
+#define RTC_CNTL_CK8M_DFREQ_DEFAULT 172
+#define RTC_CNTL_SCK_DCAP_DEFAULT   255
+
+/*
+set sleep_init default param
+*/
+#define RTC_CNTL_DBG_ATTEN_LIGHTSLEEP_DEFAULT  6
+#define RTC_CNTL_DBG_ATTEN_DEEPSLEEP_DEFAULT  15
+#define RTC_CNTL_DBG_ATTEN_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_MONITOR_DEFAULT  0
+#define RTC_CNTL_BIASSLP_SLEEP_DEFAULT  1
+#define RTC_CNTL_PD_CUR_MONITOR_DEFAULT  0
+#define RTC_CNTL_PD_CUR_SLEEP_DEFAULT  1
+
+#define APLL_SDM_STOP_VAL_1         0x09
+#define APLL_SDM_STOP_VAL_2_REV0    0x69
+#define APLL_SDM_STOP_VAL_2_REV1    0x49
+#define APLL_CAL_DELAY_1            0x0f
+#define APLL_CAL_DELAY_2            0x3f
+#define APLL_CAL_DELAY_3            0x1f
 
 /**
  * @brief Possible main XTAL frequency values.
@@ -72,6 +145,7 @@ typedef enum {
     RTC_CPU_FREQ_2M = 4,        //!< 2 MHz
     RTC_CPU_320M_80M = 5,       //!< for test
     RTC_CPU_320M_160M = 6,      //!< for test
+    RTC_CPU_FREQ_XTAL_DIV2 = 7, //!< XTAL/2 after reset
 } rtc_cpu_freq_t;
 
 /**
@@ -93,6 +167,11 @@ typedef enum {
 
 /* With the default value of CK8M_DFREQ, 8M clock frequency is 8.5 MHz +/- 7% */
 #define RTC_FAST_CLK_FREQ_APPROX 8500000
+
+#define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
+
+#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
+#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
 /**
  * @brief Clock source to be calibrated using rtc_clk_cal function
@@ -129,6 +208,64 @@ typedef struct {
     .clk_8m_clk_div = 0, \
     .slow_clk_dcap = RTC_CNTL_SCK_DCAP_DEFAULT, \
     .clk_8m_dfreq = RTC_CNTL_CK8M_DFREQ_DEFAULT, \
+}
+
+typedef struct {
+    uint32_t dac : 6;
+    uint32_t dres : 3;
+    uint32_t dgm : 3;
+    uint32_t dbuf: 1;
+} x32k_config_t;
+
+#define X32K_CONFIG_DEFAULT() { \
+    .dac = 1, \
+    .dres = 3, \
+    .dgm = 0, \
+    .dbuf = 1, \
+}
+
+#if 0
+#define X32K_CONFIG_BOOTSTRAP_DEFAULT() { \
+    .dac = 3, \
+    .dres = 3, \
+    .dgm = 0, \
+}
+
+typedef struct {
+    x32k_config_t x32k_cfg;
+    uint32_t bt_lpck_div_num : 12;
+    uint32_t bt_lpck_div_a : 12;
+    uint32_t bt_lpck_div_b : 12;
+} x32k_bootstrap_config_t;
+
+#define X32K_BOOTSTRAP_CONFIG_DEFAULT() { \
+    .x32k_cfg = X32K_CONFIG_BOOTSTRAP_DEFAULT(), \
+    .bt_lpck_div_num = 2441, \
+    .bt_lpck_div_a = 32, \
+    .bt_lpck_div_b = 13, \
+}
+#endif
+
+typedef struct {
+    uint16_t wifi_powerup_cycles : 7;
+    uint16_t wifi_wait_cycles : 9;
+    uint16_t rtc_powerup_cycles : 7;
+    uint16_t rtc_wait_cycles : 9;
+    uint16_t dg_wrap_powerup_cycles : 7;
+    uint16_t dg_wrap_wait_cycles : 9;
+    uint16_t rtc_mem_powerup_cycles : 7;
+    uint16_t rtc_mem_wait_cycles : 9;
+} rtc_init_config_t;
+
+#define RTC_INIT_CONFIG_DEFAULT() { \
+    .wifi_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .wifi_wait_cycles = OTHER_BLOCKS_WAIT, \
+    .rtc_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .rtc_wait_cycles = OTHER_BLOCKS_WAIT, \
+    .dg_wrap_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .dg_wrap_wait_cycles = OTHER_BLOCKS_WAIT, \
+    .rtc_mem_powerup_cycles = OTHER_BLOCKS_POWERUP, \
+    .rtc_mem_wait_cycles = OTHER_BLOCKS_WAIT, \
 }
 
 void rtc_clk_divider_set(uint32_t div);
@@ -356,8 +493,6 @@ void rtc_clk_apb_freq_update(uint32_t apb_freq);
  */
 uint32_t rtc_clk_apb_freq_get(void);
 
-#define RTC_CLK_CAL_FRACT  19  //!< Number of fractional bits in values returned by rtc_clk_cal
-
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles);
 
 /**
@@ -494,10 +629,10 @@ typedef struct {
     .wifi_pd_en = ((sleep_flags) & RTC_SLEEP_PD_WIFI) ? 1 : 0, \
     .deep_slp = ((sleep_flags) & RTC_SLEEP_PD_DIG) ? 1 : 0, \
     .wdt_flashboot_mod_en = 0, \
-    .dig_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .dig_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .dig_dbias_wak = RTC_CNTL_DIG_DBIAS_1V10, \
+    .dig_dbias_slp = RTC_CNTL_DIG_DBIAS_0V90, \
     .rtc_dbias_wak = RTC_CNTL_DBIAS_1V10, \
-    .rtc_dbias_slp = RTC_CNTL_DBIAS_0V90, \
+    .rtc_dbias_slp = RTC_CNTL_DBIAS_1V00, \
     .vddsdio_pd_en = ((sleep_flags) & RTC_SLEEP_PD_VDDSDIO) ? 1 : 0, \
     .deep_slp_reject = 1, \
     .light_slp_reject = 1 \
@@ -616,9 +751,6 @@ typedef struct {
  * @param cfg configuration options as rtc_config_t
  */
 void rtc_init(rtc_config_t cfg);
-
-#define RTC_VDDSDIO_TIEH_1_8V 0 //!< TIEH field value for 1.8V VDDSDIO
-#define RTC_VDDSDIO_TIEH_3_3V 1 //!< TIEH field value for 3.3V VDDSDIO
 
 /**
  * Structure describing vddsdio configuration

@@ -30,6 +30,7 @@
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "soc/dport_reg.h"
+#include "soc/extmem_reg.h"
 #include "soc/rtc_wdt.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/uart_caps.h"
@@ -128,8 +129,7 @@ void esp_set_deep_sleep_wake_stub(esp_deep_sleep_wake_stub_fn_t new_stub)
 
 void RTC_IRAM_ATTR esp_default_wake_deep_sleep(void) {
     /* Clear MMU for CPU 0 */
-    _DPORT_REG_SET_BIT(DPORT_PRO_CACHE_IA_INT_EN_REG, DPORT_PRO_CACHE_INT_CLR);
-    _DPORT_REG_SET_BIT(DPORT_PRO_CACHE_IA_INT_EN_REG, DPORT_PRO_CACHE_DBG_EN);
+    REG_SET_BIT(EXTMEM_CACHE_DBG_INT_ENA_REG, EXTMEM_CACHE_DBG_EN);
 }
 
 void __attribute__((weak, alias("esp_default_wake_deep_sleep"))) esp_wake_deep_sleep(void);
@@ -196,7 +196,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
         s_config.sleep_duration > 0) {
         timer_wakeup_prepare();
     }
-    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0, 0);
+    uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0, 1);
 
     // Restore CPU frequency
     rtc_clk_cpu_freq_set(cpu_freq);
@@ -422,7 +422,7 @@ touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
         return TOUCH_PAD_MAX;
     }
     touch_pad_t pad_num;
-    esp_err_t ret = touch_pad_get_wakeup_status(&pad_num);
+    esp_err_t ret = touch_pad_get_wakeup_status(&pad_num); //TODO 723diff commit id:fda9ada1b
     assert(ret == ESP_OK && "wakeup reason is RTC_TOUCH_TRIG_EN but SENS_TOUCH_MEAS_EN is zero");
     return pad_num;
 }

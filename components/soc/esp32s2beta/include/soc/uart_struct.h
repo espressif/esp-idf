@@ -20,8 +20,7 @@ extern "C" {
 typedef volatile struct {
     union {
         struct {
-            uint8_t rw_byte;
-            uint8_t reserved[3];
+            uint32_t rw_byte;/*note: rw_byte is a uint8_t field, however, ESP32-S2 do not support 8 bits read/write*/
         };
         uint32_t val;
     } ahb_fifo;
@@ -189,7 +188,8 @@ typedef volatile struct {
             uint32_t clk_en:             1;
             uint32_t err_wr_mask:        1;
             uint32_t tick_ref_always_on: 1;
-            uint32_t reserved28:         4;
+            uint32_t mem_clk_en:         1;
+            uint32_t reserved29:         3;
         };
         uint32_t val;
     } conf0;
@@ -313,12 +313,14 @@ typedef volatile struct {
     } at_cmd_char;
     union {
         struct {
-            uint32_t mem_pd:        1;
+            uint32_t reserved0:     1;
             uint32_t rx_size:       3;
             uint32_t tx_size:       3;
             uint32_t rx_flow_thrhd: 9;
             uint32_t rx_tout_thrhd:10;
-            uint32_t reserved26:    6;
+            uint32_t force_pd:      1;
+            uint32_t force_pu:      1;
+            uint32_t reserved28:    4;
         };
         uint32_t val;
     } mem_conf;

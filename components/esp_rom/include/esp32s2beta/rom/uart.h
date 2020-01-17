@@ -33,7 +33,7 @@ extern "C" {
   * @{
   */
 
-#define RX_BUFF_SIZE                     0x100
+#define RX_BUFF_SIZE                     0x400
 #define TX_BUFF_SIZE                     100
 
 //uart int enalbe register ctrl bits
@@ -156,7 +156,6 @@ typedef struct {
     UartStopBitsNum  stop_bits;
     UartFlowCtrl     flow_ctrl;
     uint8_t          buff_uart_no;  //indicate which uart use tx/rx buffer
-    uint8_t          tx_uart_no;
     RcvMsgBuff       rcv_buff;
 //    TrxMsgBuff       trx_buff;
     RcvMsgState      rcv_state;
@@ -167,11 +166,11 @@ typedef struct {
   * @brief Init uart device struct value and reset uart0/uart1 rx.
   *        Please do not call this function in SDK.
   *
-  * @param  None
+  * @param  rxBuffer, must be a pointer to RX_BUFF_SIZE bytes or NULL
   *
   * @return None
   */
-void uartAttach(void);
+void uartAttach(void *rxBuffer);
 
 /**
   * @brief Init uart0 or uart1 for UART download booting mode.
@@ -196,6 +195,21 @@ void Uart_Init(uint8_t uart_no, uint32_t clock);
   * @return None
   */
 void uart_div_modify(uint8_t uart_no, uint32_t DivLatchValue);
+
+
+/**
+  * @brief Re-calculate UART baudrate divisor for a given (changed)
+  *        clock speed.
+  *        This function will not reset RX/TX fifo for uart.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @param  uint32_t clock : clock used by uart module, to adjust baudrate.
+  *
+  * @return None
+  */
+void uart_div_reinit(uint8_t uart_no, uint32_t clock);
+
 
 /**
   * @brief Init uart0 or uart1 for UART download booting mode.
@@ -400,6 +414,33 @@ STATUS SendMsg(uint8_t *pData, uint16_t DataLen);
   *         FAIL for failed.
   */
 STATUS RcvMsg(uint8_t *pData, uint16_t MaxDataLen, uint8_t is_sync);
+
+/**
+  * @brief Check if this UART is in download connection.
+  *        Please do not call this function in SDK.
+  *
+  * @param  uint8_t uart_no : 0 for UART0, 1 for UART1.
+  *
+  * @return ETS_NO_BOOT = 0 for no.
+  *         SEL_UART_BOOT = BIT(1) for yes.
+  */
+uint8_t UartConnCheck(uint8_t uart_no);
+
+/**
+  * @brief Initialize the USB ACM UART
+  * Needs to be fed a buffer of at least 128 bytes, plus any rx buffer you may want to have.
+  *
+  * @param cdc_acm_work_mem Pointer to work mem for CDC-ACM code
+  * @param cdc_acm_work_mem_len Length of work mem
+  */
+void Uart_Init_USB(void *cdc_acm_work_mem, int cdc_acm_work_mem_len);
+
+
+/**
+  * @brief Install handler to reset the chip when a RTS change has been detected on the CDC-ACM 'UART'.
+  */
+void uart_usb_enable_reset_on_rts(void);
+
 
 extern UartDevice UartDev;
 

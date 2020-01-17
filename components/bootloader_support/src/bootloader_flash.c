@@ -92,13 +92,14 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 
 #else
 /* Bootloader version, uses ROM functions only */
-#include <soc/dport_reg.h>
+#include "soc/dport_reg.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include <esp32/rom/spi_flash.h>
-#include <esp32/rom/cache.h>
+#include "esp32/rom/spi_flash.h"
+#include "esp32/rom/cache.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include <esp32s2beta/rom/spi_flash.h>
-#include <esp32s2beta/rom/cache.h>
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/cache.h"
+#include "soc/cache_memory.h"
 #endif
 static const char *TAG = "bootloader_flash";
 
@@ -121,7 +122,7 @@ static const char *TAG = "bootloader_flash";
 #endif
 
 #define MMU_FREE_PAGES    (MMU_SIZE / FLASH_BLOCK_SIZE)
-    
+
 static bool mapped;
 
 // Current bootloader mapping (ab)used for bootloader_read()
@@ -161,7 +162,7 @@ const void *bootloader_mmap(uint32_t src_addr, uint32_t size)
 #if CONFIG_IDF_TARGET_ESP32
     int e = cache_flash_mmu_set(0, 0, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-    int e = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
+    int e = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK0_VADDR, src_addr_aligned, 64, count, 0);
 #endif
     if (e != 0) {
         ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);
@@ -255,7 +256,7 @@ static esp_err_t bootloader_flash_read_allow_decrypt(size_t src_addr, void *dest
 #if CONFIG_IDF_TARGET_ESP32
             int e = cache_flash_mmu_set(0, 0, FLASH_READ_VADDR, map_at, 64, 1);
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
-            int e = Cache_Ibus_MMU_Set(DPORT_MMU_ACCESS_FLASH, FLASH_READ_VADDR, map_at, 64, 1, 0);
+            int e = Cache_Ibus_MMU_Set(MMU_ACCESS_FLASH, MMU_BLOCK63_VADDR, map_at, 64, 1, 0);
 #endif
             if (e != 0) {
                 ESP_LOGE(TAG, "cache_flash_mmu_set failed: %d\n", e);

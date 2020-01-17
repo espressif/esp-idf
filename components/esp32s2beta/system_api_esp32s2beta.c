@@ -13,12 +13,12 @@
 // limitations under the License.
 
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_system.h"
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
 #include "esp_wifi.h"
 #include "esp_log.h"
-#include "sdkconfig.h"
 #include "esp32s2beta/rom/cache.h"
 #include "esp32s2beta/rom/uart.h"
 #include "soc/dport_reg.h"
@@ -56,19 +56,13 @@ void IRAM_ATTR esp_restart_noos(void)
     // instruction. This would cause memory pool to be locked by arbiter
     // to the stalled CPU, preventing current CPU from accessing this pool.
     const uint32_t core_id = xPortGetCoreID();
-#if !CONFIG_FREERTOS_UNICORE
-    const uint32_t other_core_id = (core_id == 0) ? 1 : 0;
-    esp_cpu_reset(other_core_id);
-    esp_cpu_stall(other_core_id);
-#endif
-
     // Disable TG0/TG1 watchdogs
-    TIMERG0.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG0.wdt_config0.en = 0;
-    TIMERG0.wdt_wprotect=0;
-    TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
+    TIMERG0.wdt_wprotect = 0;
+    TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
     TIMERG1.wdt_config0.en = 0;
-    TIMERG1.wdt_wprotect=0;
+    TIMERG1.wdt_wprotect = 0;
 
     // Flush any data left in UART FIFOs
     uart_tx_wait_idle(0);
@@ -88,54 +82,34 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-         DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
-         DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
-         DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+                            DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
+                            DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
+                            DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
+                            DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG,
-            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST);
+                            DPORT_TIMERS_RST | DPORT_SPI01_RST | DPORT_UART_RST);
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
 
     // Set CPU back to XTAL source, no PLL, same as hard reset
     rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
 
-#if !CONFIG_FREERTOS_UNICORE
-    // Clear entry point for APP CPU
-    DPORT_REG_WRITE(DPORT_APPCPU_CTRL_D_REG, 0);
-#endif
-
     // Reset CPUs
     if (core_id == 0) {
-        // Running on PRO CPU: APP CPU is stalled. Can reset both CPUs.
-#if !CONFIG_FREERTOS_UNICORE
-        esp_cpu_reset(1);
-#endif
         esp_cpu_reset(0);
     }
-#if !CONFIG_FREERTOS_UNICORE
-      else {
-        // Running on APP CPU: need to reset PRO CPU and unstall it,
-        // then reset APP CPU
-        esp_cpu_reset(0);
-        esp_cpu_unstall(0);
-        esp_cpu_reset(1);
-    }
-#endif
-    while(true) {
+    while (true) {
         ;
     }
 }
 
-void esp_chip_info(esp_chip_info_t* out_info)
+void esp_chip_info(esp_chip_info_t *out_info)
 {
     memset(out_info, 0, sizeof(*out_info));
 
     out_info->model = CHIP_ESP32S2BETA;
     out_info->cores = 1;
     out_info->features = CHIP_FEATURE_WIFI_BGN;
-
-    // FIXME: other features?
 }

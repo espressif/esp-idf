@@ -16,11 +16,12 @@
 #include "soc/rtc.h"
 #include "soc/dport_reg.h"
 #include "soc/efuse_periph.h"
+#include "soc/rtc_cntl_reg.h"
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
 #include "esp32/rom/rtc.h"
-#else
+#elif CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/rom/uart.h"
 #include "esp32s2beta/rom/rtc.h"
 #endif

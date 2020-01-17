@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,12 +20,6 @@ extern "C" {
 #endif
 #include "soc.h"
 #define LEDC_LSCH0_CONF0_REG          (DR_REG_LEDC_BASE + 0x0000)
-/* LEDC_CLK_EN : R/W ;bitpos:[31] ;default: 1'h0 ; */
-/*description: */
-#define LEDC_CLK_EN  (BIT(31))
-#define LEDC_CLK_EN_M  (BIT(31))
-#define LEDC_CLK_EN_V  0x1
-#define LEDC_CLK_EN_S  31
 /* LEDC_OVF_CNT_RESET_ST_LSCH0 : RO ;bitpos:[17] ;default: 1'b0 ; */
 /*description: */
 #define LEDC_OVF_CNT_RESET_ST_LSCH0  (BIT(17))
@@ -1546,6 +1540,12 @@ extern "C" {
 #define LEDC_LSTIMER0_OVF_INT_CLR_S  0
 
 #define LEDC_CONF_REG          (DR_REG_LEDC_BASE + 0x00d0)
+/* LEDC_CLK_EN : R/W ;bitpos:[31] ;default: 1'h0 ; */
+/*description: */
+#define LEDC_CLK_EN  (BIT(31))
+#define LEDC_CLK_EN_M  (BIT(31))
+#define LEDC_CLK_EN_V  0x1
+#define LEDC_CLK_EN_S  31
 /* LEDC_APB_CLK_SEL : R/W ;bitpos:[1:0] ;default: 2'b0 ; */
 /*description: */
 #define LEDC_APB_CLK_SEL  0x00000003
@@ -1554,7 +1554,7 @@ extern "C" {
 #define LEDC_APB_CLK_SEL_S  0
 
 #define LEDC_DATE_REG          (DR_REG_LEDC_BASE + 0x00FC)
-/* LEDC_DATE : R/W ;bitpos:[31:0] ;default: 32'h18072700 ; */
+/* LEDC_DATE : R/W ;bitpos:[31:0] ;default: 32'h19040200 ; */
 /*description: */
 #define LEDC_DATE  0xFFFFFFFF
 #define LEDC_DATE_M  ((LEDC_DATE_V)<<(LEDC_DATE_S))
@@ -1565,4 +1565,8 @@ extern "C" {
 }
 #endif
 
+
+
 #endif /*_SOC_LEDC_REG_H_ */
+
+

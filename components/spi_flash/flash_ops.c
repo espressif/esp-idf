@@ -21,8 +21,6 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
-#include <esp32/rom/spi_flash.h>
-#include <esp32/rom/cache.h>
 #include <soc/soc.h>
 #include <soc/dport_reg.h>
 #include <soc/soc_memory_layout.h>
@@ -32,8 +30,12 @@
 #include "esp_spi_flash.h"
 #include "esp_log.h"
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/spi_flash.h"
+#include "esp32/rom/cache.h"
 #include "esp32/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
+#include "esp32s2beta/rom/spi_flash.h"
+#include "esp32s2beta/rom/cache.h"
 #include "esp32s2beta/clk.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/spi_mem_struct.h"
@@ -804,7 +806,7 @@ esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
     SPIFLASH.user.fwrite_dio = 0;
     SPIFLASH.user.fwrite_dual = 0;
     SPIFLASH.user.fwrite_qio = 1;
-    SPIFLASH.user.fwrite_quad = 0;  
+    SPIFLASH.user.fwrite_quad = 0;
     SPIFLASH.ctrl.fcmd_dual = 0;
     SPIFLASH.ctrl.fcmd_quad = 0;
     SPIFLASH.user.usr_dummy = 0;

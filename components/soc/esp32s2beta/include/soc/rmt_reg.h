@@ -1,4 +1,4 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -28,18 +28,6 @@ extern "C" {
 #define RMT_CH3DATA_REG          (DR_REG_RMT_BASE + 0x000c)
 
 #define RMT_CH0CONF0_REG          (DR_REG_RMT_BASE + 0x0010)
-/* RMT_CLK_EN : R/W ;bitpos:[31] ;default: 1'h0 ; */
-/*description: */
-#define RMT_CLK_EN  (BIT(31))
-#define RMT_CLK_EN_M  (BIT(31))
-#define RMT_CLK_EN_V  0x1
-#define RMT_CLK_EN_S  31
-/* RMT_MEM_PD : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: */
-#define RMT_MEM_PD  (BIT(30))
-#define RMT_MEM_PD_M  (BIT(30))
-#define RMT_MEM_PD_V  0x1
-#define RMT_MEM_PD_S  30
 /* RMT_CARRIER_OUT_LV_CH0 : R/W ;bitpos:[29] ;default: 1'b1 ; */
 /*description: */
 #define RMT_CARRIER_OUT_LV_CH0  (BIT(29))
@@ -52,6 +40,12 @@ extern "C" {
 #define RMT_CARRIER_EN_CH0_M  (BIT(28))
 #define RMT_CARRIER_EN_CH0_V  0x1
 #define RMT_CARRIER_EN_CH0_S  28
+/* RMT_CARRIER_EFF_EN_CH0 : R/W ;bitpos:[27] ;default: 1'b1 ; */
+/*description: */
+#define RMT_CARRIER_EFF_EN_CH0  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH0_M  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH0_V  0x1
+#define RMT_CARRIER_EFF_EN_CH0_S  27
 /* RMT_MEM_SIZE_CH0 : R/W ;bitpos:[26:24] ;default: 3'h1 ; */
 /*description: */
 #define RMT_MEM_SIZE_CH0  0x00000007
@@ -96,6 +90,12 @@ extern "C" {
 #define RMT_REF_ALWAYS_ON_CH0_M  (BIT(17))
 #define RMT_REF_ALWAYS_ON_CH0_V  0x1
 #define RMT_REF_ALWAYS_ON_CH0_S  17
+/* RMT_CHK_RX_CARRIER_EN_CH0 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CHK_RX_CARRIER_EN_CH0  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH0_M  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH0_V  0x1
+#define RMT_CHK_RX_CARRIER_EN_CH0_S  16
 /* RMT_RX_FILTER_THRES_CH0 : R/W ;bitpos:[15:8] ;default: 8'hf ; */
 /*description: */
 #define RMT_RX_FILTER_THRES_CH0  0x000000FF
@@ -164,6 +164,12 @@ extern "C" {
 #define RMT_CARRIER_EN_CH1_M  (BIT(28))
 #define RMT_CARRIER_EN_CH1_V  0x1
 #define RMT_CARRIER_EN_CH1_S  28
+/* RMT_CARRIER_EFF_EN_CH1 : R/W ;bitpos:[27] ;default: 1'b1 ; */
+/*description: */
+#define RMT_CARRIER_EFF_EN_CH1  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH1_M  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH1_V  0x1
+#define RMT_CARRIER_EFF_EN_CH1_S  27
 /* RMT_MEM_SIZE_CH1 : R/W ;bitpos:[26:24] ;default: 3'h1 ; */
 /*description: */
 #define RMT_MEM_SIZE_CH1  0x00000007
@@ -208,6 +214,12 @@ extern "C" {
 #define RMT_REF_ALWAYS_ON_CH1_M  (BIT(17))
 #define RMT_REF_ALWAYS_ON_CH1_V  0x1
 #define RMT_REF_ALWAYS_ON_CH1_S  17
+/* RMT_CHK_RX_CARRIER_EN_CH1 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CHK_RX_CARRIER_EN_CH1  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH1_M  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH1_V  0x1
+#define RMT_CHK_RX_CARRIER_EN_CH1_S  16
 /* RMT_RX_FILTER_THRES_CH1 : R/W ;bitpos:[15:8] ;default: 8'hf ; */
 /*description: */
 #define RMT_RX_FILTER_THRES_CH1  0x000000FF
@@ -276,6 +288,12 @@ extern "C" {
 #define RMT_CARRIER_EN_CH2_M  (BIT(28))
 #define RMT_CARRIER_EN_CH2_V  0x1
 #define RMT_CARRIER_EN_CH2_S  28
+/* RMT_CARRIER_EFF_EN_CH2 : R/W ;bitpos:[27] ;default: 1'b1 ; */
+/*description: */
+#define RMT_CARRIER_EFF_EN_CH2  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH2_M  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH2_V  0x1
+#define RMT_CARRIER_EFF_EN_CH2_S  27
 /* RMT_MEM_SIZE_CH2 : R/W ;bitpos:[26:24] ;default: 3'h1 ; */
 /*description: */
 #define RMT_MEM_SIZE_CH2  0x00000007
@@ -320,6 +338,12 @@ extern "C" {
 #define RMT_REF_ALWAYS_ON_CH2_M  (BIT(17))
 #define RMT_REF_ALWAYS_ON_CH2_V  0x1
 #define RMT_REF_ALWAYS_ON_CH2_S  17
+/* RMT_CHK_RX_CARRIER_EN_CH2 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CHK_RX_CARRIER_EN_CH2  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH2_M  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH2_V  0x1
+#define RMT_CHK_RX_CARRIER_EN_CH2_S  16
 /* RMT_RX_FILTER_THRES_CH2 : R/W ;bitpos:[15:8] ;default: 8'hf ; */
 /*description: */
 #define RMT_RX_FILTER_THRES_CH2  0x000000FF
@@ -388,6 +412,12 @@ extern "C" {
 #define RMT_CARRIER_EN_CH3_M  (BIT(28))
 #define RMT_CARRIER_EN_CH3_V  0x1
 #define RMT_CARRIER_EN_CH3_S  28
+/* RMT_CARRIER_EFF_EN_CH3 : R/W ;bitpos:[27] ;default: 1'b1 ; */
+/*description: */
+#define RMT_CARRIER_EFF_EN_CH3  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH3_M  (BIT(27))
+#define RMT_CARRIER_EFF_EN_CH3_V  0x1
+#define RMT_CARRIER_EFF_EN_CH3_S  27
 /* RMT_MEM_SIZE_CH3 : R/W ;bitpos:[26:24] ;default: 3'h1 ; */
 /*description: */
 #define RMT_MEM_SIZE_CH3  0x00000007
@@ -432,6 +462,12 @@ extern "C" {
 #define RMT_REF_ALWAYS_ON_CH3_M  (BIT(17))
 #define RMT_REF_ALWAYS_ON_CH3_V  0x1
 #define RMT_REF_ALWAYS_ON_CH3_S  17
+/* RMT_CHK_RX_CARRIER_EN_CH3 : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CHK_RX_CARRIER_EN_CH3  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH3_M  (BIT(16))
+#define RMT_CHK_RX_CARRIER_EN_CH3_V  0x1
+#define RMT_CHK_RX_CARRIER_EN_CH3_S  16
 /* RMT_RX_FILTER_THRES_CH3 : R/W ;bitpos:[15:8] ;default: 8'hf ; */
 /*description: */
 #define RMT_RX_FILTER_THRES_CH3  0x000000FF
@@ -1392,6 +1428,30 @@ extern "C" {
 #define RMT_TX_LIM_CH3_S  0
 
 #define RMT_APB_CONF_REG          (DR_REG_RMT_BASE + 0x0080)
+/* RMT_CLK_EN : R/W ;bitpos:[31] ;default: 1'h0 ; */
+/*description: */
+#define RMT_CLK_EN  (BIT(31))
+#define RMT_CLK_EN_M  (BIT(31))
+#define RMT_CLK_EN_V  0x1
+#define RMT_CLK_EN_S  31
+/* RMT_MEM_FORCE_PU : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: */
+#define RMT_MEM_FORCE_PU  (BIT(4))
+#define RMT_MEM_FORCE_PU_M  (BIT(4))
+#define RMT_MEM_FORCE_PU_V  0x1
+#define RMT_MEM_FORCE_PU_S  4
+/* RMT_MEM_FORCE_PD : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: */
+#define RMT_MEM_FORCE_PD  (BIT(3))
+#define RMT_MEM_FORCE_PD_M  (BIT(3))
+#define RMT_MEM_FORCE_PD_V  0x1
+#define RMT_MEM_FORCE_PD_S  3
+/* RMT_MEM_CLK_FORCE_ON : R/W ;bitpos:[2] ;default: 1'b1 ; */
+/*description: */
+#define RMT_MEM_CLK_FORCE_ON  (BIT(2))
+#define RMT_MEM_CLK_FORCE_ON_M  (BIT(2))
+#define RMT_MEM_CLK_FORCE_ON_V  0x1
+#define RMT_MEM_CLK_FORCE_ON_S  2
 /* RMT_MEM_TX_WRAP_EN : R/W ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
 #define RMT_MEM_TX_WRAP_EN  (BIT(1))
@@ -1463,8 +1523,64 @@ extern "C" {
 #define RMT_REF_CNT_RST_CH0_V  0x1
 #define RMT_REF_CNT_RST_CH0_S  0
 
+#define RMT_CH0_RX_CARRIER_RM_REG          (DR_REG_RMT_BASE + 0x008c)
+/* RMT_CARRIER_HIGH_THRES_CH0 : R/W ;bitpos:[31:16] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_HIGH_THRES_CH0  0x0000FFFF
+#define RMT_CARRIER_HIGH_THRES_CH0_M  ((RMT_CARRIER_HIGH_THRES_CH0_V)<<(RMT_CARRIER_HIGH_THRES_CH0_S))
+#define RMT_CARRIER_HIGH_THRES_CH0_V  0xFFFF
+#define RMT_CARRIER_HIGH_THRES_CH0_S  16
+/* RMT_CARRIER_LOW_THRES_CH0 : R/W ;bitpos:[15:0] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_LOW_THRES_CH0  0x0000FFFF
+#define RMT_CARRIER_LOW_THRES_CH0_M  ((RMT_CARRIER_LOW_THRES_CH0_V)<<(RMT_CARRIER_LOW_THRES_CH0_S))
+#define RMT_CARRIER_LOW_THRES_CH0_V  0xFFFF
+#define RMT_CARRIER_LOW_THRES_CH0_S  0
+
+#define RMT_CH1_RX_CARRIER_RM_REG          (DR_REG_RMT_BASE + 0x0090)
+/* RMT_CARRIER_HIGH_THRES_CH1 : R/W ;bitpos:[31:16] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_HIGH_THRES_CH1  0x0000FFFF
+#define RMT_CARRIER_HIGH_THRES_CH1_M  ((RMT_CARRIER_HIGH_THRES_CH1_V)<<(RMT_CARRIER_HIGH_THRES_CH1_S))
+#define RMT_CARRIER_HIGH_THRES_CH1_V  0xFFFF
+#define RMT_CARRIER_HIGH_THRES_CH1_S  16
+/* RMT_CARRIER_LOW_THRES_CH1 : R/W ;bitpos:[15:0] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_LOW_THRES_CH1  0x0000FFFF
+#define RMT_CARRIER_LOW_THRES_CH1_M  ((RMT_CARRIER_LOW_THRES_CH1_V)<<(RMT_CARRIER_LOW_THRES_CH1_S))
+#define RMT_CARRIER_LOW_THRES_CH1_V  0xFFFF
+#define RMT_CARRIER_LOW_THRES_CH1_S  0
+
+#define RMT_CH2_RX_CARRIER_RM_REG          (DR_REG_RMT_BASE + 0x0094)
+/* RMT_CARRIER_HIGH_THRES_CH2 : R/W ;bitpos:[31:16] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_HIGH_THRES_CH2  0x0000FFFF
+#define RMT_CARRIER_HIGH_THRES_CH2_M  ((RMT_CARRIER_HIGH_THRES_CH2_V)<<(RMT_CARRIER_HIGH_THRES_CH2_S))
+#define RMT_CARRIER_HIGH_THRES_CH2_V  0xFFFF
+#define RMT_CARRIER_HIGH_THRES_CH2_S  16
+/* RMT_CARRIER_LOW_THRES_CH2 : R/W ;bitpos:[15:0] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_LOW_THRES_CH2  0x0000FFFF
+#define RMT_CARRIER_LOW_THRES_CH2_M  ((RMT_CARRIER_LOW_THRES_CH2_V)<<(RMT_CARRIER_LOW_THRES_CH2_S))
+#define RMT_CARRIER_LOW_THRES_CH2_V  0xFFFF
+#define RMT_CARRIER_LOW_THRES_CH2_S  0
+
+#define RMT_CH3_RX_CARRIER_RM_REG          (DR_REG_RMT_BASE + 0x0098)
+/* RMT_CARRIER_HIGH_THRES_CH3 : R/W ;bitpos:[31:16] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_HIGH_THRES_CH3  0x0000FFFF
+#define RMT_CARRIER_HIGH_THRES_CH3_M  ((RMT_CARRIER_HIGH_THRES_CH3_V)<<(RMT_CARRIER_HIGH_THRES_CH3_S))
+#define RMT_CARRIER_HIGH_THRES_CH3_V  0xFFFF
+#define RMT_CARRIER_HIGH_THRES_CH3_S  16
+/* RMT_CARRIER_LOW_THRES_CH3 : R/W ;bitpos:[15:0] ;default: 16'h0 ; */
+/*description: */
+#define RMT_CARRIER_LOW_THRES_CH3  0x0000FFFF
+#define RMT_CARRIER_LOW_THRES_CH3_M  ((RMT_CARRIER_LOW_THRES_CH3_V)<<(RMT_CARRIER_LOW_THRES_CH3_S))
+#define RMT_CARRIER_LOW_THRES_CH3_V  0xFFFF
+#define RMT_CARRIER_LOW_THRES_CH3_S  0
+
 #define RMT_DATE_REG          (DR_REG_RMT_BASE + 0x0fc)
-/* RMT_DATE : R/W ;bitpos:[31:0] ;default: 32'h18072600 ; */
+/* RMT_DATE : R/W ;bitpos:[31:0] ;default: 32'h19040200 ; */
 /*description: */
 #define RMT_DATE  0xFFFFFFFF
 #define RMT_DATE_M  ((RMT_DATE_V)<<(RMT_DATE_S))
@@ -1474,7 +1590,7 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
-#define RMT_CHANNEL_MEM(i)  (DR_REG_RMT_BASE + 0x400 + 64 * 4 * (i))
+
 
 
 #endif /*_SOC_RMT_REG_H_ */
