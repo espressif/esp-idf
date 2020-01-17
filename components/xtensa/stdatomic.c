@@ -16,7 +16,6 @@
 
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "xtensa/config/core-isa.h"
 
 

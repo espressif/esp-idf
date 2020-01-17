@@ -78,7 +78,7 @@
 #include <limits.h>
 
 #include "list.h"
-#include "portmacro.h"
+#include "freertos/portmacro.h"
 
 #ifdef __cplusplus
 extern "C" {

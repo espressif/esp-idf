@@ -6,7 +6,6 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-#include "freertos/portmacro.h"
 #include "esp_log.h"
 #include "driver/periph_ctrl.h"
 #include "driver/timer.h"

@@ -21,7 +21,6 @@
 #include "esp_attr.h"
 #include "eri.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "esp_freertos_hooks.h"
 #include "perfmon.h"
 #include "xtensa/core-macros.h"

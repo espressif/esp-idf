@@ -5,28 +5,40 @@ if(BOOTLOADER_BUILD)
 endif()
 
 set(srcs
+    "xtensa/port.c"
+    "xtensa/portasm.S"
+    "xtensa/xtensa_context.S"
+    "xtensa/xtensa_init.c"
+    "xtensa/xtensa_intr_asm.S"
+    "xtensa/xtensa_intr.c"
+    "xtensa/xtensa_overlay_os_hook.c"
+    "xtensa/xtensa_vector_defaults.S"
+    "xtensa/xtensa_vectors.S")
+
+list(APPEND srcs 
     "croutine.c"
     "event_groups.c"
     "FreeRTOS-openocd.c"
     "list.c"
-    "port.c"
-    "portasm.S"
     "queue.c"
     "tasks.c"
-    "timers.c"
-    "xtensa_context.S"
-    "xtensa_init.c"
-    "xtensa_intr.c"
-    "xtensa_intr_asm.S"
-    "xtensa_overlay_os_hook.c"
-    "xtensa_vector_defaults.S"
-    "xtensa_vectors.S")
+    "timers.c")
+
+set(include_dirs 
+    include
+    xtensa/include)
+
+set(private_include_dirs
+    include/freertos
+    xtensa/include/freertos
+    xtensa
+    .)
 
 # app_trace is required by FreeRTOS headers only when CONFIG_SYSVIEW_ENABLE=y,
 # but requirements can't depend on config options, so always require it.
 idf_component_register(SRCS "${srcs}"
-                    INCLUDE_DIRS include
-                    PRIV_INCLUDE_DIRS include/freertos .
+                    INCLUDE_DIRS ${include_dirs}
+                    PRIV_INCLUDE_DIRS  ${private_include_dirs} 
                     LDFRAGMENTS linker.lf
                     REQUIRES app_trace
                     PRIV_REQUIRES soc)

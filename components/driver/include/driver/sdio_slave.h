@@ -16,7 +16,6 @@
 #define _DRIVER_SDIO_SLAVE_H_
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "esp_err.h"
 #include "sys/queue.h"
 

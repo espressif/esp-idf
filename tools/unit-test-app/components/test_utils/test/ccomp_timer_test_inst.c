@@ -7,7 +7,6 @@
 #include "ccomp_timer.h"
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 
 #include "unity.h"
 

@@ -7,6 +7,8 @@ components/xtensa/esp32/include/xtensa/config/*
 components/newlib/platform_include/*
 
 components/freertos/include/freertos/*
+components/freertos/xtensa/include/freertos/*
+
 
 components/log/include/esp_log_internal.h
 
