@@ -31,6 +31,13 @@ static unsigned char *global_cacert = NULL;
 static unsigned int global_cacert_pem_bytes = 0;
 static const char *TAG = "esp-tls-wolfssl";
 
+/* Prototypes for the static functions */
+static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls);
+
+#ifdef CONFIG_ESP_TLS_SERVER
+static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
+#endif /* CONFIG_ESP_TLS_SERVER */
+
 esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
 {
 #ifdef CONFIG_ESP_DEBUG_WOLFSSL
@@ -75,120 +82,150 @@ exit:
     return esp_ret;
 }
 
-esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls)
+static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
+    int ret = WOLFSSL_FAILURE;
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_client_method());
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
-        goto exit;
+        return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
     }
 
-#ifdef HAVE_ALPN
     if (cfg->alpn_protos) {
+#ifdef CONFIG_WOLFSSL_HAVE_ALPN
         char **alpn_list = (char **)cfg->alpn_protos;
         for (; *alpn_list != NULL; alpn_list ++) {
-            if (wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH) != WOLFSSL_SUCCESS) {
+            if ((ret = wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH)) != WOLFSSL_SUCCESS) {
                 ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
                 ESP_LOGE(TAG, "Use wolfSSL ALPN failed");
-                goto exit;
+                return ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED;
             }
         }
+#else
+    ESP_LOGE(TAG, "CONFIG_WOLFSSL_HAVE_ALPN not enabled in menuconfig");
+    return ESP_FAIL;
+#endif /* CONFIG_WOLFSSL_HAVE_ALPN */
     }
-#endif
 
-    if ( cfg->use_global_ca_store == true) {
-        wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, global_cacert, global_cacert_pem_bytes, WOLFSSL_FILETYPE_PEM);
+    if (cfg->use_global_ca_store == true) {
+        if(wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, global_cacert, global_cacert_pem_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
+        }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
     } else if (cfg->cacert_buf != NULL) {
-        wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->cacert_buf, cfg->cacert_bytes, WOLFSSL_FILETYPE_PEM);
+        if (wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->cacert_buf, cfg->cacert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
+        }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
     } else if (cfg->psk_hint_key) {
         ESP_LOGE(TAG,"psk_hint_key not supported in wolfssl");
-        goto exit;
+        return ESP_FAIL;
     } else {
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL);
     }
 
     if (cfg->clientcert_buf != NULL && cfg->clientkey_buf != NULL) {
-        wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->clientcert_buf, cfg->clientcert_pem_bytes, WOLFSSL_FILETYPE_PEM);
-        wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->clientkey_buf, cfg->clientkey_bytes, WOLFSSL_FILETYPE_PEM);
+        if (wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->clientcert_buf, cfg->clientcert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
+        };
+        if (wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->clientkey_buf, cfg->clientkey_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED;
+        }
     } else if (cfg->clientcert_buf != NULL || cfg->clientkey_buf != NULL) {
         ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication\n\n");
-        goto exit;
+        return ESP_FAIL;
     }
 
     tls->priv_ssl =(void *)wolfSSL_new( (WOLFSSL_CTX *)tls->priv_ctx);
     if (!tls->priv_ssl) {
         ESP_LOGE(TAG, "Create wolfSSL failed");
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
-        goto exit;
+        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
     }
 
 #ifdef HAVE_SNI
-    /* Hostname set here should match CN in server certificate */
-    char *use_host = strndup(hostname, hostlen);
-    if (!use_host) {
-        goto exit;
+    if (!cfg->skip_common_name) {
+        char *use_host = NULL;
+        if (cfg->common_name != NULL) {
+            use_host = strdup(cfg->common_name);
+        } else {
+            use_host = strndup(hostname, hostlen);
+        }
+        if (use_host == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
+        /* Hostname set here should match CN in server certificate */
+        if ((ret = wolfSSL_set_tlsext_host_name( (WOLFSSL *)tls->priv_ssl, use_host))!= WOLFSSL_SUCCESS) {
+            ESP_LOGE(TAG, "wolfSSL_set_tlsext_host_name returned -0x%x", -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
+            free(use_host);
+            return ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED;
+        }
+        free(use_host);
     }
-    wolfSSL_set_tlsext_host_name( (WOLFSSL *)tls->priv_ssl, use_host);
-    free(use_host);
 #endif
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return ESP_OK;
-exit:
-    return ESP_FAIL;
 }
 
 #ifdef CONFIG_ESP_TLS_SERVER
-esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
+static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
 {
+    int ret = WOLFSSL_FAILURE;
     tls->priv_ctx = (void *)wolfSSL_CTX_new(wolfTLSv1_2_server_method());
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
-        goto exit;
+        return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
     }
 
-#ifdef HAVE_ALPN
     if (cfg->alpn_protos) {
+#ifdef CONFIG_WOLFSSL_HAVE_ALPN
         char **alpn_list = (char **)cfg->alpn_protos;
         for (; *alpn_list != NULL; alpn_list ++) {
-            if (wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH) != WOLFSSL_SUCCESS) {
+            if ((ret = wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH)) != WOLFSSL_SUCCESS) {
                 ESP_LOGE(TAG, "Use wolfSSL ALPN failed");
-                goto exit;
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
+                return ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED;
             }
         }
+#else
+    ESP_LOGE(TAG, "CONFIG_WOLFSSL_HAVE_ALPN not enabled in menuconfig");
+    return ESP_FAIL;
+#endif /* CONFIG_WOLFSSL_HAVE_ALPN */
     }
-#endif
+
     if (cfg->cacert_buf != NULL) {
-        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
-        if (wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->cacert_buf, cfg->cacert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
-            goto exit;
+        if (wolfSSL_CTX_load_verify_buffer((WOLFSSL_CTX *)tls->priv_ctx, cfg->cacert_buf, cfg->cacert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
+        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
         ESP_LOGD(TAG," Verify Client for Mutual Auth");
     } else {
-            ESP_LOGD(TAG," Not verifying Client ");
-            wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL);
+        ESP_LOGD(TAG," Not verifying Client ");
+        wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL);
     }
 
     if (cfg->servercert_buf != NULL && cfg->serverkey_buf != NULL) {
-        wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->servercert_buf, cfg->servercert_bytes, WOLFSSL_FILETYPE_PEM);
-        wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->serverkey_buf, cfg->serverkey_bytes, WOLFSSL_FILETYPE_PEM);
+        if(wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->servercert_buf, cfg->servercert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
+        }
+        if(wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->serverkey_buf, cfg->serverkey_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+            return ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED;
+        }
     } else {
         ESP_LOGE(TAG, "You have to provide both servercert_buf and serverkey_buf for https_server\n\n");
-        goto exit;
+        return ESP_FAIL;
     }
 
     tls->priv_ssl =(void *)wolfSSL_new( (WOLFSSL_CTX *)tls->priv_ctx);
     if (!tls->priv_ssl) {
         ESP_LOGE(TAG, "Create wolfSSL failed");
-        goto exit;
+        return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
     }
 
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return ESP_OK;
-exit:
-    return ESP_FAIL;
 }
 #endif
 
@@ -204,7 +241,7 @@ int esp_wolfssl_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
         if (err != ESP_TLS_ERR_SSL_WANT_READ && err != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_LOGE(TAG, "wolfSSL_connect returned -0x%x", -ret);
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
-
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED);
             if (cfg->cacert_buf != NULL || cfg->use_global_ca_store == true) {
                 /* This is to check whether handshake failed due to invalid certificate*/
                 esp_wolfssl_verify_certificate(tls);
@@ -243,7 +280,9 @@ ssize_t esp_wolfssl_write(esp_tls_t *tls, const char *data, size_t datalen)
         ret = wolfSSL_get_error( (WOLFSSL *)tls->priv_ssl, ret);
         if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_WOLFSSL_SSL_WRITE_FAILED);
             ESP_LOGE(TAG, "write error :%d:", ret);
+
         }
     }
     return ret;
@@ -307,11 +346,11 @@ int esp_wolfssl_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     }
     tls->read = esp_wolfssl_read;
     tls->write = esp_wolfssl_write;
-    
     int ret;
     while ((ret = wolfSSL_accept((WOLFSSL *)tls->priv_ssl)) != WOLFSSL_SUCCESS) {
         if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
-            ESP_LOGE(TAG, "wolfSSL_handshake returned %d", ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
+            ESP_LOGE(TAG, "wolfSSL_handshake_server returned %d", ret);
             tls->conn_state = ESP_TLS_FAIL;
             return ret;
         }
