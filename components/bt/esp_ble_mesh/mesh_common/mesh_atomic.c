@@ -20,7 +20,6 @@
 
 #include "mesh_atomic.h"
 #include "mesh_kernel.h"
-#include "sdkconfig.h"
 
 #ifndef CONFIG_ATOMIC_OPERATIONS_BUILTIN
 
@@ -55,7 +54,7 @@ bt_mesh_atomic_val_t bt_mesh_atomic_get(const bt_mesh_atomic_t *target)
  */
 bt_mesh_atomic_val_t bt_mesh_atomic_set(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t value)
 {
-    bt_mesh_atomic_val_t ret;
+    bt_mesh_atomic_val_t ret = 0;
 
     bt_mesh_atomic_lock();
 
@@ -82,7 +81,7 @@ bt_mesh_atomic_val_t bt_mesh_atomic_set(bt_mesh_atomic_t *target, bt_mesh_atomic
  */
 bt_mesh_atomic_val_t bt_mesh_atomic_or(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t value)
 {
-    bt_mesh_atomic_val_t ret;
+    bt_mesh_atomic_val_t ret = 0;
 
     bt_mesh_atomic_lock();
 
@@ -109,7 +108,7 @@ bt_mesh_atomic_val_t bt_mesh_atomic_or(bt_mesh_atomic_t *target, bt_mesh_atomic_
  */
 bt_mesh_atomic_val_t bt_mesh_atomic_and(bt_mesh_atomic_t *target, bt_mesh_atomic_val_t value)
 {
-    bt_mesh_atomic_val_t ret;
+    bt_mesh_atomic_val_t ret = 0;
 
     bt_mesh_atomic_lock();
 
@@ -134,7 +133,7 @@ bt_mesh_atomic_val_t bt_mesh_atomic_and(bt_mesh_atomic_t *target, bt_mesh_atomic
  */
 bt_mesh_atomic_val_t bt_mesh_atomic_dec(bt_mesh_atomic_t *target)
 {
-    bt_mesh_atomic_val_t ret;
+    bt_mesh_atomic_val_t ret = 0;
 
     bt_mesh_atomic_lock();
 
@@ -159,7 +158,7 @@ bt_mesh_atomic_val_t bt_mesh_atomic_dec(bt_mesh_atomic_t *target)
  */
 bt_mesh_atomic_val_t bt_mesh_atomic_inc(bt_mesh_atomic_t *target)
 {
-    bt_mesh_atomic_val_t ret;
+    bt_mesh_atomic_val_t ret = 0;
 
     bt_mesh_atomic_lock();
 

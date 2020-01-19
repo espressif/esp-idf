@@ -12,11 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _PROVISIONER_PROXY_H_
-#define _PROVISIONER_PROXY_H_
+#ifndef _PROXY_CLIENT_H_
+#define _PROXY_CLIENT_H_
 
-#include "mesh_buf.h"
 #include "net.h"
+#include "mesh_bearer_adapt.h"
 
 #define BLE_MESH_PROXY_ADV_NET_ID           0x00
 #define BLE_MESH_PROXY_ADV_NODE_ID          0x01
@@ -72,13 +72,13 @@ typedef struct {
 
 int bt_mesh_proxy_prov_client_send(struct bt_mesh_conn *conn, u8_t type, struct net_buf_simple *msg);
 
-int provisioner_pb_gatt_enable(void);
-int provisioner_pb_gatt_disable(void);
+int bt_mesh_provisioner_pb_gatt_enable(void);
+int bt_mesh_provisioner_pb_gatt_disable(void);
 
 int bt_mesh_proxy_client_enable(void);
 int bt_mesh_proxy_client_disable(void);
 
-typedef void (*proxy_client_recv_adv_cb_t)(const bt_mesh_addr_t *addr, u8_t type, bt_mesh_proxy_adv_ctx_t *ctx);
+typedef void (*proxy_client_recv_adv_cb_t)(const bt_mesh_addr_t *addr, u8_t type, bt_mesh_proxy_adv_ctx_t *ctx, s8_t rssi);
 typedef void (*proxy_client_connect_cb_t)(const bt_mesh_addr_t *addr, u8_t conn_handle, u16_t net_idx);
 typedef void (*proxy_client_disconnect_cb_t)(const bt_mesh_addr_t *addr, u8_t conn_handle, u16_t net_idx, u8_t reason);
 typedef void (*proxy_client_recv_filter_status_cb_t)(u8_t conn_handle, u16_t src, u16_t net_idx, u8_t filter_type, u16_t list_size);
@@ -88,7 +88,7 @@ void bt_mesh_proxy_client_set_conn_cb(proxy_client_connect_cb_t cb);
 void bt_mesh_proxy_client_set_disconn_cb(proxy_client_disconnect_cb_t cb);
 void bt_mesh_proxy_client_set_filter_status_cb(proxy_client_recv_filter_status_cb_t cb);
 
-void proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr);
+void bt_mesh_proxy_client_adv_ind_recv(struct net_buf_simple *buf, const bt_mesh_addr_t *addr, s8_t rssi);
 
 int bt_mesh_proxy_client_connect(const u8_t addr[6], u8_t addr_type, u16_t net_idx);
 int bt_mesh_proxy_client_disconnect(u8_t conn_handle);
@@ -98,5 +98,6 @@ bool bt_mesh_proxy_client_send(struct net_buf_simple *buf, u16_t dst);
 int bt_mesh_proxy_client_send_cfg(u8_t conn_handle, u16_t net_idx, struct bt_mesh_proxy_cfg_pdu *pdu);
 
 int bt_mesh_proxy_prov_client_init(void);
+int bt_mesh_proxy_prov_client_deinit(void);
 
-#endif /* _PROVISIONER_PROXY_H_ */
+#endif /* _PROXY_CLIENT_H_ */

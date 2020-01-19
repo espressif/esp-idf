@@ -30,9 +30,8 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "mesh_aes_encrypt.h"
 #include "mesh_util.h"
-#include "sdkconfig.h"
+#include "mesh_aes_encrypt.h"
 
 /* max number of calls until change the key (2^48).*/
 const static uint64_t MAX_CALLS = ((uint64_t)1 << 48);
@@ -162,7 +161,7 @@ static inline void mult_row_column(uint8_t *out, const uint8_t *in)
 
 static inline void mix_columns(uint8_t *s)
 {
-    uint8_t t[Nb * Nk];
+    uint8_t t[Nb * Nk] = {0};
 
     mult_row_column(t, s);
     mult_row_column(&t[Nb], s + Nb);
@@ -177,7 +176,7 @@ static inline void mix_columns(uint8_t *s)
  */
 static inline void shift_rows(uint8_t *s)
 {
-    uint8_t t[Nb * Nk];
+    uint8_t t[Nb * Nk] = {0};
 
     t[0]  = s[0]; t[1] = s[5]; t[2] = s[10]; t[3] = s[15];
     t[4]  = s[4]; t[5] = s[9]; t[6] = s[14]; t[7] = s[3];
@@ -188,7 +187,7 @@ static inline void shift_rows(uint8_t *s)
 
 int tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 {
-    uint8_t state[Nk * Nb];
+    uint8_t state[Nk * Nb] = {0};
     unsigned int i;
 
     if (out == (uint8_t *) 0) {
@@ -364,7 +363,7 @@ int tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length)
 
 int tc_cmac_final(uint8_t *tag, TCCmacState_t s)
 {
-    uint8_t *k;
+    uint8_t *k = NULL;
     unsigned int i;
 
     /* input sanity check: */

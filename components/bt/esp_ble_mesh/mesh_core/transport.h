@@ -10,6 +10,8 @@
 #ifndef _TRANSPORT_H_
 #define _TRANSPORT_H_
 
+#include "net.h"
+
 #define TRANS_SEQ_AUTH_NVAL            0xffffffffffffffff
 
 #define BLE_MESH_TX_SDU_MAX            (CONFIG_BLE_MESH_TX_SEG_MAX * 12)
@@ -97,6 +99,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 
 void bt_mesh_trans_init(void);
+void bt_mesh_trans_deinit(bool erase);
 
 void bt_mesh_rpl_clear(void);
 

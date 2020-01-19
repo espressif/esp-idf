@@ -10,12 +10,7 @@
 #ifndef _BLE_MESH_TEST_H_
 #define _BLE_MESH_TEST_H_
 
-#include <stdbool.h>
-#include <errno.h>
-#include <string.h>
-
-#include "mesh_buf.h"
-#include "sdkconfig.h"
+#include "mesh_types.h"
 
 #if defined(CONFIG_BLE_MESH_SELF_TEST)
 int bt_mesh_test(void);
