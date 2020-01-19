@@ -12,22 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
 #include <errno.h>
-#include <stdbool.h>
 
-#include "osi/allocator.h"
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
 #include "mesh.h"
 #include "access.h"
-#include "model_opcode.h"
-
-#include "server_common.h"
-#include "state_binding.h"
-#include "state_transition.h"
+#include "mesh_common.h"
+#include "generic_server.h"
+#include "lighting_server.h"
 
 /**
  * According to Mesh Model Spec:
@@ -74,7 +65,7 @@ u8_t bt_mesh_get_default_trans_time(struct bt_mesh_model *model)
 int bt_mesh_get_light_lc_trans_time(struct bt_mesh_model *model, u8_t *trans_time)
 {
     struct bt_mesh_light_lc_srv *srv = NULL;
-    u32_t value;
+    u32_t value = 0U;
 
     if (model == NULL || trans_time == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
@@ -194,8 +185,17 @@ void bt_mesh_server_alloc_ctx(struct k_work *work)
      */
     __ASSERT(work, "%s, Invalid parameter", __func__);
     if (!work->_reserved) {
-        work->_reserved = osi_calloc(sizeof(struct bt_mesh_msg_ctx));
+        work->_reserved = bt_mesh_calloc(sizeof(struct bt_mesh_msg_ctx));
         __ASSERT(work->_reserved, "%s, Failed to allocate memory", __func__);
+    }
+}
+
+void bt_mesh_server_free_ctx(struct k_work *work)
+{
+    __ASSERT(work, "%s, Invalid parameter", __func__);
+    if (work->_reserved) {
+        bt_mesh_free(work->_reserved);
+        work->_reserved = NULL;
     }
 }
 
