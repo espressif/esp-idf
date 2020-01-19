@@ -24,6 +24,8 @@
 #include "xtensa/config/specreg.h"
 #include "xt_instr_macros.h"
 
+#include "hal/cpu_hal.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,9 +35,7 @@ extern "C" {
  */
 static inline void *get_sp(void)
 {
-    void *sp;
-    asm volatile ("mov %0, sp;" : "=r" (sp));
-    return sp;
+    return cpu_hal_get_sp();
 }
 
 /* Functions to set page attributes for Region Protection option in the CPU.

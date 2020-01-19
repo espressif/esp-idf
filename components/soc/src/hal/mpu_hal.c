@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <stdlib.h>
+#include <stdint.h>
+
+#include "esp_err.h"
+
 #include "hal/mpu_hal.h"
 #include "hal/mpu_ll.h"
 #include "hal/mpu_types.h"

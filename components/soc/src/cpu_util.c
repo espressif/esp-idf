@@ -1,4 +1,4 @@
-// Copyright 2013-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,104 +15,66 @@
 #include "esp_attr.h"
 #include "soc/cpu.h"
 #include "soc/soc.h"
-#include "soc/rtc_cntl_reg.h"
-#include "esp_err.h"
+#include "soc/rtc_periph.h"
+#include "sdkconfig.h"
+
+#include "hal/cpu_hal.h"
+#include "esp_debug_helpers.h"
+#include "hal/cpu_types.h"
+
+#include "hal/soc_hal.h"
 
 #include "sdkconfig.h"
 
 void IRAM_ATTR esp_cpu_stall(int cpu_id)
 {
-    if (cpu_id == 1) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C1_M);
-        SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21<<RTC_CNTL_SW_STALL_APPCPU_C1_S);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C0_M);
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2<<RTC_CNTL_SW_STALL_APPCPU_C0_S);
-    } else {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_PROCPU_C1_M);
-        SET_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, 0x21<<RTC_CNTL_SW_STALL_PROCPU_C1_S);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_PROCPU_C0_M);
-        SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, 2<<RTC_CNTL_SW_STALL_PROCPU_C0_S);
-    }
+    soc_hal_stall_core(cpu_id);
 }
 
 void IRAM_ATTR esp_cpu_unstall(int cpu_id)
 {
-    if (cpu_id == 1) {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_APPCPU_C1_M);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_APPCPU_C0_M);
-    } else {
-        CLEAR_PERI_REG_MASK(RTC_CNTL_SW_CPU_STALL_REG, RTC_CNTL_SW_STALL_PROCPU_C1_M);
-        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_STALL_PROCPU_C0_M);
-    }
+    soc_hal_unstall_core(cpu_id);
 }
 
 void IRAM_ATTR esp_cpu_reset(int cpu_id)
 {
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
-            cpu_id == 0 ? RTC_CNTL_SW_PROCPU_RST_M : RTC_CNTL_SW_APPCPU_RST_M);
+    soc_hal_reset_core(cpu_id);
+}
+
+esp_err_t IRAM_ATTR esp_set_watchpoint(int no, void *adr, int size, int flags)
+{
+    watchpoint_trigger_t trigger;
+
+    switch (flags)
+    {
+    case ESP_WATCHPOINT_LOAD:
+        trigger = WATCHPOINT_TRIGGER_ON_RO;
+        break;
+    case ESP_WATCHPOINT_STORE:
+        trigger = WATCHPOINT_TRIGGER_ON_WO;
+        break;
+    case ESP_WATCHPOINT_ACCESS:
+        trigger = WATCHPOINT_TRIGGER_ON_RW;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    return cpu_hal_set_watchpoint(no, adr, size, trigger);
+}
+
+void IRAM_ATTR esp_clear_watchpoint(int no)
+{
+    cpu_hal_clear_watchpoint(no);
 }
 
 bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 {
-#if CONFIG_ESP32S2_DEBUG_OCDAWARE
-    int dcr;
-    int reg=0x10200C; //DSRSET register
-    asm("rer %0,%1":"=r"(dcr):"r"(reg));
-    return (dcr&0x1);
+#if (CONFIG_ESP32_DEBUG_OCDAWARE == 1) || \
+    (CONFIG_ESP32S2_DEBUG_OCDAWARE == 1)
+    return cpu_ll_is_debugger_attached();
 #else
     return false; // Always return false if "OCD aware" is disabled
 #endif
-}
-
-esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
-{
-    int x;
-    if (no < 0 || no > 1) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (flags & (~0xC0000000)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    int dbreakc = 0x3F;
-    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
-    for (x = 0; x < 7; x++) {
-        if (size == (1 << x)) {
-            break;
-        }
-        dbreakc <<= 1;
-    }
-    if (x == 7) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    //Mask mask and add in flags.
-    dbreakc = (dbreakc & 0x3f) | flags;
-
-    if (no == 0) {
-        asm volatile(
-            "wsr.dbreaka0 %0\n" \
-            "wsr.dbreakc0 %1\n" \
-            ::"r"(adr), "r"(dbreakc));
-    } else {
-        asm volatile(
-            "wsr.dbreaka1 %0\n" \
-            "wsr.dbreakc1 %1\n" \
-            ::"r"(adr), "r"(dbreakc));
-    }
-    return ESP_OK;
-}
-
-void esp_clear_watchpoint(int no)
-{
-    //Setting a dbreakc register to 0 makes it trigger on neither load nor store, effectively disabling it.
-    int dbreakc = 0;
-    if (no == 0) {
-        asm volatile(
-            "wsr.dbreakc0 %0\n" \
-            ::"r"(dbreakc));
-    } else {
-        asm volatile(
-            "wsr.dbreakc1 %0\n" \
-            ::"r"(dbreakc));
-    }
 }
 
