@@ -21,15 +21,12 @@
 #include "xtensa/corebits.h"
 #include "xtensa/config/core.h"
 
+#include "xtensa/config/specreg.h"
+#include "xt_instr_macros.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-/* C macros for xtensa special register read/write/exchange */
-
-#define RSR(reg, curval)  asm volatile ("rsr %0, " #reg : "=r" (curval));
-#define WSR(reg, newval)  asm volatile ("wsr %0, " #reg : : "r" (newval));
-#define XSR(reg, swapval) asm volatile ("xsr %0, " #reg : "+r" (swapval));
 
 /** @brief Read current stack pointer address
  *

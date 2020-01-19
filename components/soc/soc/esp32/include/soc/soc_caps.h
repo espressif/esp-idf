@@ -11,3 +11,5 @@
 #define SOC_SDIO_SLAVE_SUPPORTED    1
 #define SOC_CAN_SUPPORTED 1
 #define SOC_EMAC_SUPPORTED 1
+
+#define SOC_CPU_CORES_NUM      2

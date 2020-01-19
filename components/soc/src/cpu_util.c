@@ -15,7 +15,9 @@
 #include "esp_attr.h"
 #include "soc/cpu.h"
 #include "soc/soc.h"
-#include "soc/rtc_periph.h"
+#include "soc/rtc_cntl_reg.h"
+#include "esp_err.h"
+
 #include "sdkconfig.h"
 
 void IRAM_ATTR esp_cpu_stall(int cpu_id)
@@ -52,7 +54,7 @@ void IRAM_ATTR esp_cpu_reset(int cpu_id)
 
 bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 {
-#if CONFIG_ESP32_DEBUG_OCDAWARE
+#if CONFIG_ESP32S2_DEBUG_OCDAWARE
     int dcr;
     int reg=0x10200C; //DSRSET register
     asm("rer %0,%1":"=r"(dcr):"r"(reg));
@@ -61,3 +63,56 @@ bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
     return false; // Always return false if "OCD aware" is disabled
 #endif
 }
+
+esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
+{
+    int x;
+    if (no < 0 || no > 1) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (flags & (~0xC0000000)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    int dbreakc = 0x3F;
+    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
+    for (x = 0; x < 7; x++) {
+        if (size == (1 << x)) {
+            break;
+        }
+        dbreakc <<= 1;
+    }
+    if (x == 7) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    //Mask mask and add in flags.
+    dbreakc = (dbreakc & 0x3f) | flags;
+
+    if (no == 0) {
+        asm volatile(
+            "wsr.dbreaka0 %0\n" \
+            "wsr.dbreakc0 %1\n" \
+            ::"r"(adr), "r"(dbreakc));
+    } else {
+        asm volatile(
+            "wsr.dbreaka1 %0\n" \
+            "wsr.dbreakc1 %1\n" \
+            ::"r"(adr), "r"(dbreakc));
+    }
+    return ESP_OK;
+}
+
+void esp_clear_watchpoint(int no)
+{
+    //Setting a dbreakc register to 0 makes it trigger on neither load nor store, effectively disabling it.
+    int dbreakc = 0;
+    if (no == 0) {
+        asm volatile(
+            "wsr.dbreakc0 %0\n" \
+            ::"r"(dbreakc));
+    } else {
+        asm volatile(
+            "wsr.dbreakc1 %0\n" \
+            ::"r"(dbreakc));
+    }
+}
+

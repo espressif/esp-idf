@@ -664,59 +664,6 @@ void esp_set_breakpoint_if_jtag(void *fn)
     }
 }
 
-
-esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
-{
-    int x;
-    if (no < 0 || no > 1) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (flags & (~0xC0000000)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    int dbreakc = 0x3F;
-    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
-    for (x = 0; x < 7; x++) {
-        if (size == (1 << x)) {
-            break;
-        }
-        dbreakc <<= 1;
-    }
-    if (x == 7) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    //Mask mask and add in flags.
-    dbreakc = (dbreakc & 0x3f) | flags;
-
-    if (no == 0) {
-        asm volatile(
-            "wsr.dbreaka0 %0\n" \
-            "wsr.dbreakc0 %1\n" \
-            ::"r"(adr), "r"(dbreakc));
-    } else {
-        asm volatile(
-            "wsr.dbreaka1 %0\n" \
-            "wsr.dbreakc1 %1\n" \
-            ::"r"(adr), "r"(dbreakc));
-    }
-    return ESP_OK;
-}
-
-void esp_clear_watchpoint(int no)
-{
-    //Setting a dbreakc register to 0 makes it trigger on neither load nor store, effectively disabling it.
-    int dbreakc = 0;
-    if (no == 0) {
-        asm volatile(
-            "wsr.dbreakc0 %0\n" \
-            ::"r"(dbreakc));
-    } else {
-        asm volatile(
-            "wsr.dbreakc1 %0\n" \
-            ::"r"(dbreakc));
-    }
-}
-
 static void esp_error_check_failed_print(const char *msg, esp_err_t rc, const char *file, int line, const char *function, const char *expression)
 {
     ets_printf("%s failed: esp_err_t 0x%x", msg, rc);

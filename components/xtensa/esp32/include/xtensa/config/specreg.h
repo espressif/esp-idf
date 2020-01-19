@@ -57,6 +57,7 @@
 #define DBREAKA_1	145
 #define DBREAKC_0	160
 #define DBREAKC_1	161
+#define CONFIGID0	176
 #define EPC_1		177
 #define EPC_2		178
 #define EPC_3		179
@@ -71,6 +72,7 @@
 #define EPS_5		197
 #define EPS_6		198
 #define EPS_7		199
+#define CONFIGID1	208
 #define EXCSAVE_1	209
 #define EXCSAVE_2	210
 #define EXCSAVE_3	211

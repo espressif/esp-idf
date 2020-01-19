@@ -21,3 +21,5 @@ entries:
     i2c_hal_iram (noflash)
     spi_flash_hal_gpspi (noflash)
     lldesc (noflash_text)
+    cpu_hal (noflash)
+    soc_hal (noflash)

@@ -1,5 +1,4 @@
 set(srcs "brownout_hal.c"
-    "cpu_util.c"
     "rtc_clk.c"
     "rtc_clk_init.c"
     "rtc_init.c"
