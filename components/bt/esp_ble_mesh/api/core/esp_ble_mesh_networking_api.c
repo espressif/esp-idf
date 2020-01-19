@@ -495,6 +495,11 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx)
     return bt_mesh_provisioner_local_net_key_get(net_idx);
 }
 
+uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void)
+{
+    return btc_ble_mesh_provisioner_get_prov_node_count();
+}
+
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 #if (CONFIG_BLE_MESH_FAST_PROV)

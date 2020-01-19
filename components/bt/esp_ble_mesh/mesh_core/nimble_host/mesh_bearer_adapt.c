@@ -8,6 +8,9 @@
 
 #include <errno.h>
 
+#include "btc/btc_task.h"
+#include "osi/alarm.h"
+
 #include "mbedtls/aes.h"
 #include "mbedtls/ecp.h"
 
@@ -19,16 +22,9 @@
 #include "services/gatt/ble_svc_gatt.h"
 
 #include "mesh_hci.h"
-#include "mesh_aes_encrypt.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_trace.h"
-#include "mesh_buf.h"
-#include "mesh_atomic.h"
-
-#include "esp_ble_mesh_defs.h"
-
-#include "provisioner_prov.h"
 #include "mesh_common.h"
+#include "mesh_aes_encrypt.h"
+#include "provisioner_prov.h"
 
 /** @def BT_UUID_MESH_PROV
  *  @brief Mesh Provisioning Service
@@ -67,7 +63,7 @@ struct bt_mesh_dev bt_mesh_dev;
 
 /* P-256 Variables */
 static u8_t bt_mesh_public_key[64];
-static BT_OCTET32 bt_mesh_private_key = {
+static u8_t bt_mesh_private_key[32] = {
     0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38,
     0x74, 0xc9, 0xb3, 0xe3, 0xd2, 0x10, 0x3f, 0x50,
     0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
@@ -85,7 +81,7 @@ static sys_slist_t bt_mesh_gatts_db;
 static struct bt_mesh_conn bt_mesh_gatts_conn[BLE_MESH_MAX_CONN];
 static struct bt_mesh_conn_cb *bt_mesh_gatts_conn_cb;
 
-static BD_ADDR bt_mesh_gatts_addr;
+static u8_t bt_mesh_gatts_addr[6];
 
 #endif /* defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE */
 
@@ -1705,7 +1701,7 @@ int bt_mesh_dh_key_gen(const u8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const u
 {
     uint8_t dhkey[32];
 
-    BT_DBG("private key = %s", bt_hex(bt_mesh_private_key, BT_OCTET32_LEN));
+    BT_DBG("private key = %s", bt_hex(bt_mesh_private_key, 32));
 
     ble_sm_alg_gen_dhkey((uint8_t *)&remote_pk[0], (uint8_t *)&remote_pk[32], bt_mesh_private_key, dhkey);
 

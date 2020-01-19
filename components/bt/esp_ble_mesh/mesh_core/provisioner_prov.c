@@ -31,11 +31,7 @@ _Static_assert(BLE_MESH_MAX_CONN >= CONFIG_BLE_MESH_PBG_SAME_TIME,
                "Too large BLE Mesh PB-GATT count");
 
 /* 3 transmissions, 20ms interval */
-#if !CONFIG_BLE_MESH_PROV_TEST
 #define PROV_XMIT              BLE_MESH_TRANSMIT(2, 20)
-#else
-#define PROV_XMIT              BLE_MESH_TRANSMIT(4, 10)
-#endif
 
 #define AUTH_METHOD_NO_OOB     0x00
 #define AUTH_METHOD_STATIC     0x01
@@ -315,11 +311,7 @@ static unprov_adv_pkt_cb_t   notify_unprov_adv_pkt_cb;
 #define TRANSACTION_TIMEOUT  K_SECONDS(3)
 #define PROVISION_TIMEOUT    K_SECONDS(6)
 #else
-#if !CONFIG_BLE_MESH_PROV_TEST
 #define RETRANSMIT_TIMEOUT   K_MSEC(500)
-#else
-#define RETRANSMIT_TIMEOUT   K_MSEC(100)
-#endif
 #define TRANSACTION_TIMEOUT  K_SECONDS(30)
 #define PROVISION_TIMEOUT    K_SECONDS(60)
 #endif /* CONFIG_BLE_MESH_FAST_PROV */
@@ -1339,16 +1331,7 @@ static void buf_sent(int err, void *user_data)
         return;
     }
 
-#if !CONFIG_BLE_MESH_PROV_TEST
     k_delayed_work_submit(&link[idx].tx.retransmit, RETRANSMIT_TIMEOUT);
-#else
-    if (link[idx].tx_pdu_type == 0x2) {
-        BT_DBG("expect_ack_for: %x %x",link[idx].tx_pdu_type,link[idx].expect_ack_for);
-        k_delayed_work_submit(&link[idx].tx.retransmit, 100 * 3);
-    } else {
-        k_delayed_work_submit(&link[idx].tx.retransmit, 100);
-    }
-#endif
 }
 
 static struct bt_mesh_send_cb buf_sent_cb = {
@@ -1460,12 +1443,6 @@ static void gen_prov_ack_send(const u8_t idx, u8_t xact_id)
         BT_DBG("Not sending duplicate ack");
         return;
     }
-
-#if CONFIG_BLE_MESH_PROV_TEST
-    if (link[idx].pending_ack < xact_id) {
-        link[idx].pending_ack = xact_id;
-    }
-#endif
 
     buf = adv_buf_create();
     if (!buf) {

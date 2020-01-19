@@ -323,7 +323,7 @@ typedef uint8_t esp_ble_mesh_bd_addr_t[BD_ADDR_LEN];
 /// BLE device address type
 typedef uint8_t esp_ble_mesh_addr_type_t;
 
-/*!< BLE Mesh deinit parameters */
+/** BLE Mesh deinit parameters */
 typedef struct {
     bool erase_flash;   /*!< Indicate if erasing flash when deinit mesh stack */
 } esp_ble_mesh_deinit_param_t;
@@ -354,17 +354,17 @@ typedef struct {
     /** Pointer to the model to which the context belongs. Initialized by the stack. */
     esp_ble_mesh_model_t *model;
 
-    uint16_t publish_addr; /*!< Publish Address. */
-    uint16_t app_idx;      /*!< Publish AppKey Index. */
+    uint16_t publish_addr;  /*!< Publish Address. */
+    uint16_t app_idx:12,    /*!< Publish AppKey Index. */
+             cred:1;        /*!< Friendship Credentials Flag. */
 
-    uint8_t  ttl;          /*!< Publish Time to Live. */
-    uint8_t  retransmit;   /*!< Retransmit Count & Interval Steps. */
+    uint8_t  ttl;           /*!< Publish Time to Live. */
+    uint8_t  retransmit;    /*!< Retransmit Count & Interval Steps. */
 
     uint8_t  period;        /*!< Publish Period. */
-    uint16_t period_div: 4, /*!< Divisor for the Period. */
-             cred: 1,       /*!< Friendship Credentials Flag. */
-             fast_period: 1, /*!< Use FastPeriodDivisor */
-             count: 3;      /*!< Retransmissions left. */
+    uint8_t  period_div:4,  /*!< Divisor for the Period. */
+             fast_period:1, /*!< Use FastPeriodDivisor */
+             count:3;       /*!< Retransmissions left. */
 
     uint32_t period_start; /*!< Start of the current period. */
 
@@ -993,7 +993,7 @@ typedef union {
      */
     struct ble_mesh_provisioner_prov_dev_with_addr_comp_param {
         int err_code;                           /*!< Indicate the result of Provisioner starting to provision a device */
-    } provisioner_prov_dev_with_addr_comp;          /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_DEV_WITH_ADDR_COMP_EVT */
+    } provisioner_prov_dev_with_addr_comp;      /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_PROV_DEV_WITH_ADDR_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_DEV_COMP_EVT
      */

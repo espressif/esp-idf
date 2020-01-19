@@ -210,16 +210,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
             sys_slist_append(&internal->queue, &node->client_node);
             bt_mesh_list_unlock();
             k_delayed_work_init(&node->timer, timer_handler);
-
-#if !CONFIG_BLE_MESH_PROV_TEST
             k_delayed_work_submit(&node->timer, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
-#else
-            if (node->opcode == 0x8008 || node->opcode == 0x0) {
-                k_delayed_work_submit(&node->timer, timeout ? timeout : 600 * 4);
-            } else {
-                k_delayed_work_submit(&node->timer, timeout ? timeout : 400);
-            }
-#endif
         }
     }
 

@@ -363,6 +363,14 @@ esp_err_t esp_ble_mesh_provisioner_update_local_net_key(const uint8_t net_key[16
 const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx);
 
 /**
+ * @brief         This function is called by Provisioner to get provisioned node count.
+ *
+ * @return        Number of the provisioned nodes.
+ *
+ */
+uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void);
+
+/**
  * @brief         This function is called to get fast provisioning application key.
  *
  * @param[in]     net_idx: Network key index.

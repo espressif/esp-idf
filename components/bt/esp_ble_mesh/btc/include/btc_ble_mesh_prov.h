@@ -290,6 +290,8 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem,
 
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
 
+u16_t btc_ble_mesh_provisioner_get_prov_node_count(void);
+
 void btc_ble_mesh_model_call_handler(btc_msg_t *msg);
 void btc_ble_mesh_model_cb_handler(btc_msg_t *msg);
 

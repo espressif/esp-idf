@@ -226,9 +226,9 @@ static void seg_tx_reset(struct seg_tx *tx)
         tx->seg[i] = NULL;
     }
 
-    bt_mesh_tx_seg_unlock();
-
     tx->nack_count = 0U;
+
+    bt_mesh_tx_seg_unlock();
 
     if (bt_mesh_atomic_test_and_clear_bit(bt_mesh.flags, BLE_MESH_IVU_PENDING)) {
         BT_DBG("Proceding with pending IV Update");
@@ -322,8 +322,8 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
                                  &seg_sent_cb, tx);
         if (err) {
             BT_ERR("%s, Sending segment failed", __func__);
-            seg_tx_complete(tx, -EIO);
             bt_mesh_tx_seg_unlock();
+            seg_tx_complete(tx, -EIO);
             return;
         }
     }

@@ -24,11 +24,7 @@
 #if CONFIG_BLE_MESH_NODE
 
 /* 3 transmissions, 20ms interval */
-#if !CONFIG_BLE_MESH_PROV_TEST
 #define PROV_XMIT              BLE_MESH_TRANSMIT(2, 20)
-#else
-#define PROV_XMIT              BLE_MESH_TRANSMIT(3, 10)
-#endif
 
 #define AUTH_METHOD_NO_OOB     0x00
 #define AUTH_METHOD_STATIC     0x01
@@ -178,11 +174,7 @@ struct prov_rx {
 #define TRANSACTION_TIMEOUT  K_SECONDS(3)
 #define PROTOCOL_TIMEOUT     K_SECONDS(6)
 #else
-#if !CONFIG_BLE_MESH_PROV_TEST
 #define RETRANSMIT_TIMEOUT   K_MSEC(500)
-#else
-#define RETRANSMIT_TIMEOUT   K_MSEC(80)
-#endif
 #define TRANSACTION_TIMEOUT  K_SECONDS(30)
 #define PROTOCOL_TIMEOUT     K_SECONDS(60)
 #endif /* CONFIG_BLE_MESH_FAST_PROV */

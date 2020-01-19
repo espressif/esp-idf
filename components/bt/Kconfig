@@ -1749,7 +1749,7 @@ if BLE_MESH
 
         config BLE_MESH_PROVISIONER_APP_KEY_COUNT
             int "Maximum number of application keys that can be owned by Provisioner"
-            default 9
+            default 3
             range 1 4096
             help
                 This option specifies how many application keys the Provisioner can have.
@@ -2058,7 +2058,7 @@ if BLE_MESH
 
     config BLE_MESH_TX_SEG_MAX
         int "Maximum number of segments in outgoing messages"
-        default 20
+        default 32
         range 2 32
         help
             Maximum number of segments supported for outgoing messages.

@@ -996,6 +996,11 @@ const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void)
     return (const esp_ble_mesh_comp_t *)bt_mesh_comp_get();
 }
 
+u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
+{
+    return bt_mesh_provisioner_get_prov_node_count();
+}
+
 /* Configuration Models */
 extern const struct bt_mesh_model_op bt_mesh_cfg_srv_op[];
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
