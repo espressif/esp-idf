@@ -11,7 +11,6 @@
 #define _BLE_MESH_CFG_SRV_H_
 
 #include "mesh_access.h"
-#include "mesh_kernel.h"
 
 /**
  * @brief Bluetooth Mesh

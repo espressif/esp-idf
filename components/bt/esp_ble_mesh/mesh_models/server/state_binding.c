@@ -6,28 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <stdint.h>
 #include <errno.h>
-#include <stdbool.h>
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh.h"
 
 #include "model_opcode.h"
-#include "server_common.h"
 #include "state_binding.h"
 #include "state_transition.h"
-#include "generic_server.h"
-#include "lighting_server.h"
 
 #define MINDIFF (2.25e-308)
 
 static float bt_mesh_sqrt(float square)
 {
-    float root, last, diff;
+    float root = 0.0, last = 0.0, diff = 0.0;
 
     root = square / 3.0;
     diff = 1;

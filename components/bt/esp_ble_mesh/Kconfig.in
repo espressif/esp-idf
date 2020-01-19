@@ -18,6 +18,13 @@ if BLE_MESH
             option in the Bluetooth Controller section in menuconfig, which is
             "Scan Duplicate By Device Address and Advertising Data".
 
+    config BLE_MESH_ALLOC_FROM_PSRAM_FIRST
+        bool "BLE Mesh will first allocate memory from PSRAM"
+        default n
+        help
+            When this option is enabled, BLE Mesh stack will try to allocate memory
+            from PSRAM firstly. This will save the internal RAM if PSRAM exists.
+
     config BLE_MESH_FAST_PROV
         bool "Enable BLE Mesh Fast Provisioning"
         select BLE_MESH_NODE
@@ -116,7 +123,7 @@ if BLE_MESH
 
         config BLE_MESH_PROVISIONER_APP_KEY_COUNT
             int "Maximum number of application keys that can be owned by Provisioner"
-            default 9
+            default 3
             range 1 4096
             help
                 This option specifies how many application keys the Provisioner can have.
@@ -168,15 +175,6 @@ if BLE_MESH
             ability to act as a proxy between a Mesh GATT Client and a Mesh network.
             This option should be enabled if a node is going to be a Proxy Server.
 
-    config BLE_MESH_GATT_PROXY_CLIENT
-        bool "BLE Mesh GATT Proxy Client"
-        select BLE_MESH_PROXY
-        default n
-        help
-            This option enables support for Mesh GATT Proxy Client. The Proxy Client
-            can use the GATT bearer to send mesh messages to a node that supports the
-            advertising bearer.
-
     config BLE_MESH_NODE_ID_TIMEOUT
         int "Node Identity advertising timeout"
         depends on BLE_MESH_GATT_PROXY_SERVER
@@ -191,20 +189,25 @@ if BLE_MESH
             node, it will start to advertise using Node Identity during the time
             set by this option. And after that, Network ID will be advertised.
 
-    if BLE_MESH_PROXY
+    config BLE_MESH_PROXY_FILTER_SIZE
+        int "Maximum number of filter entries per Proxy Client"
+        depends on BLE_MESH_GATT_PROXY_SERVER
+        default 4
+        range 1 32767
+        help
+            This option specifies how many Proxy Filter entries the local node supports.
+            The entries of Proxy filter (whitelist or blacklist) are used to store a
+            list of addresses which can be used to decide which messages will be forwarded
+            to the Proxy Client by the Proxy Server.
 
-        config BLE_MESH_PROXY_FILTER_SIZE
-            int "Maximum number of filter entries per Proxy Client"
-            default 1
-            default 3 if BLE_MESH_GATT_PROXY_SERVER
-            range 1 32767
-            help
-                This option specifies how many Proxy Filter entries the local node supports.
-                The entries of Proxy filter (whitelist or blacklist) are used to store a
-                list of addresses which can be used to decide which messages will be forwarded
-                to the Proxy Client by the Proxy Server.
-
-    endif # BLE_MESH_PROXY
+    config BLE_MESH_GATT_PROXY_CLIENT
+        bool "BLE Mesh GATT Proxy Client"
+        select BLE_MESH_PROXY
+        default n
+        help
+            This option enables support for Mesh GATT Proxy Client. The Proxy Client
+            can use the GATT bearer to send mesh messages to a node that supports the
+            advertising bearer.
 
     config BLE_MESH_NET_BUF_POOL_USAGE
         bool "BLE Mesh net buffer pool usage tracking"
@@ -215,16 +218,42 @@ if BLE_MESH
             devices. Recommend to enable this option as default.
 
     config BLE_MESH_SETTINGS
-        bool "Store BLE Mesh Node configuration persistently"
+        bool "Store BLE Mesh configuration persistently"
         default n
         help
-            When selected, the BLE Mesh stack will take care of storing/restoring the
-            BLE Mesh configuration persistently in flash. Currently this only supports
-            storing BLE Mesh node configuration.
-            Currently enabling this option will only store BLE Mesh nodes' information
-            in the flash.
+            When selected, the BLE Mesh stack will take care of storing/restoring the BLE
+            Mesh configuration persistently in flash.
+            If the device is a BLE Mesh node, when this option is enabled, the configuration
+            of the device will be stored persistently, including unicast address, NetKey,
+            AppKey, etc.
+            And if the device is a BLE Mesh Provisioner, the information of the device will
+            be stored persistently, including the information of provisioned nodes, NetKey,
+            AppKey, etc.
 
     if BLE_MESH_SETTINGS
+
+        config BLE_MESH_SPECIFIC_PARTITION
+            bool "Use a specific NVS partition for BLE Mesh"
+            default n
+            help
+                When selected, the mesh stack will use a specified NVS partition instead of
+                default NVS partition. Note that the specified partition must be registered
+                with NVS using nvs_flash_init_partition() API, and the partition must exists
+                in the csv file.
+                When Provisioner needs to store a large amount of nodes' information in the
+                flash (e.g. more than 20), this option is recommended to be enabled.
+
+        if BLE_MESH_SPECIFIC_PARTITION
+
+            config BLE_MESH_PARTITION_NAME
+                string "Name of the NVS partition for BLE Mesh"
+                default "ble_mesh"
+                help
+                    This value defines the name of the specified NVS partition used by the
+                    mesh stack.
+
+        endif # BLE_MESH_SPECIFIC_PARTITION
+
         config BLE_MESH_STORE_TIMEOUT
             int "Delay (in seconds) before storing anything persistently"
             range 0 1000000
@@ -239,7 +268,7 @@ if BLE_MESH
         config BLE_MESH_SEQ_STORE_RATE
             int "How often the sequence number gets updated in storage"
             range 0 1000000
-            default 128
+            default 6
             help
                 This value defines how often the local sequence number gets updated in
                 persistent storage (i.e. flash). e.g. a value of 100 means that the
@@ -403,7 +432,7 @@ if BLE_MESH
 
     config BLE_MESH_TX_SEG_MAX
         int "Maximum number of segments in outgoing messages"
-        default 20
+        default 32
         range 2 32
         help
             Maximum number of segments supported for outgoing messages.
