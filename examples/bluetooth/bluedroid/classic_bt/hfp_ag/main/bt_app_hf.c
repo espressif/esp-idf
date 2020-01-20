@@ -190,7 +190,7 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_UNAT_RESPONSE_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "--UNKOW AT CMD: %s", param->unat_rep.unat);
-            esp_hf_unat_response(hf_peer_addr, param->unat_rep.unat);
+            esp_hf_unat_response(hf_peer_addr, NULL);
             break;
         }
 
