@@ -78,6 +78,8 @@ typedef struct {
     void (* _dport_access_stall_other_cpu_end_wrap)(void);
     int32_t (* _phy_rf_deinit)(uint32_t module);
     void (* _phy_load_cal_and_init)(uint32_t module);
+    void (* _phy_common_clock_enable)(void);
+    void (* _phy_common_clock_disable)(void);
     int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
     void (* _timer_arm)(void *timer, uint32_t tmout, bool repeat);
     void (* _timer_disarm)(void *timer);
