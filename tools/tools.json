@@ -127,9 +127,8 @@
       "name": "esp32ulp-elf",
       "platform_overrides": [
         {
-          "install": "on_request",
+          "install": "never",
           "platforms": [
-            "linux-armel",
             "linux-i686"
           ]
         }
@@ -184,6 +183,14 @@
       "install": "always",
       "license": "GPL-2.0-or-later",
       "name": "esp32s2ulp-elf",
+      "platform_overrides": [
+        {
+          "install": "never",
+          "platforms": [
+            "linux-i686"
+          ]
+        }
+      ],
       "version_cmd": [
         "esp32s2ulp-elf-as",
         "--version"
