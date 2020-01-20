@@ -40,14 +40,14 @@
 /**********************************************************
  * Thread/Task reference
  **********************************************************/
-#ifdef CONFIG_BLUEDROID_PINNED_TO_CORE
-#define UC_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#ifdef CONFIG_BT_BLUEDROID_PINNED_TO_CORE
+#define UC_TASK_PINNED_TO_CORE              (CONFIG_BT_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
 #else
 #define UC_TASK_PINNED_TO_CORE              (0)
 #endif
 
-#ifdef CONFIG_BTC_TASK_STACK_SIZE
-#define UC_BTC_TASK_STACK_SIZE              CONFIG_BTC_TASK_STACK_SIZE
+#ifdef CONFIG_BT_BTC_TASK_STACK_SIZE
+#define UC_BTC_TASK_STACK_SIZE              CONFIG_BT_BTC_TASK_STACK_SIZE
 #else
 #define UC_BTC_TASK_STACK_SIZE              4096
 #endif
