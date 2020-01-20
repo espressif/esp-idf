@@ -263,7 +263,6 @@ void app_main(void)
     esp_netif_attach(esp_netif, modem_netif_adapter);
     /* Wait for IP address */
     xEventGroupWaitBits(event_group, CONNECT_BIT, pdTRUE, pdTRUE, portMAX_DELAY);
-    ESP_ERROR_CHECK(dce->power_down(dce));
     /* Config MQTT */
     esp_mqtt_client_config_t mqtt_config = {
         .uri = BROKER_URL,
