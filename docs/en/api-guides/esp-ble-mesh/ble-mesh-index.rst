@@ -2,6 +2,8 @@
 ESP-BLE-MESH
 ************
 
+:link_to_translation:`zh_CN:[中文]`
+
 Bluetooth® mesh networking enables many-to-many (m:m) device communications and is optimized for creating large-scale device networks.
 
 Devices may relay data to other devices not in direct radio range of the originating device. In this way, mesh networks can span very large physical areas and contain large numbers of devices. It is ideally suited for building automation, sensor networks, and other IoT solutions where tens, hundreds, or thousands of devices need to reliably and securely communicate with one another.
@@ -211,9 +213,9 @@ ESP-BLE-MESH Examples
 
 * :example:`ESP-BLE-MESH Node OnOff Server <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server/tutorial/BLE_Mesh_Node_OnOff_Server_Example_Walkthrough.md>` - shows the use of ESP-BLE-MESH as a node having a Configuration Server model and a Generic OnOff Server model. A ESP-BLE-MESH Provisioner can then provision the unprovisioned device and control a RGB LED representing on/off state, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server>`.
 
-* :example:`ESP-BLE-MESH Node OnOff Client <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Waclthrough.md>` - shows how a Generic OnOff Client model works within a node. The node has a Configuration Server model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client>`.
+* :example:`ESP-BLE-MESH Node OnOff Client <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client/tutorial/BLE_Mesh_Node_OnOff_Client_Example_Walkthrough.md>` - shows how a Generic OnOff Client model works within a node. The node has a Configuration Server model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_node/onoff_client>`.
 
-* :example:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/Ble_Mesh_Provisioner_Example_Walkthrough.md>` - shows how a device can act as an ESP-BLE-MESH Provisioner to provision devices. The Provisioner has a Configuration Server model, a Configuration Client model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`.
+* :example:`ESP-BLE-MESH Provisioner <bluetooth/esp_ble_mesh/ble_mesh_provisioner/tutorial/BLE_Mesh_Provisioner_Example_Walkthrough.md>` - shows how a device can act as an ESP-BLE-MESH Provisioner to provision devices. The Provisioner has a Configuration Server model, a Configuration Client model and a Generic OnOff Client model, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_provisioner>`.
 
 * ESP-BLE-MESH Fast Provisioning - :example:`Client <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` and :example:`Server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - this example is used for showing how fast provisioning can be used in order to create a mesh network. It takes no more than 60 seconds to provision 100 devices, see :example:`example client code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client>` and :example:`example server code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>`.
 
