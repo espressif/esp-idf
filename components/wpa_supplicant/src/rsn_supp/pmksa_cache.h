@@ -57,7 +57,7 @@ struct rsn_pmksa_cache_entry * pmksa_cache_get(struct rsn_pmksa_cache *pmksa,
 int pmksa_cache_list(struct rsn_pmksa_cache *pmksa, char *buf, size_t len);
 struct rsn_pmksa_cache_entry *
 pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
-        const u8 *kck, size_t kck_len,
+        const u8 *pmkid, const u8 *kck, size_t kck_len,
         const u8 *aa, const u8 *spa, void *network_ctx, int akmp);
 struct rsn_pmksa_cache_entry * pmksa_cache_get_current(struct wpa_sm *sm);
 void pmksa_cache_clear_current(struct wpa_sm *sm);
@@ -105,7 +105,7 @@ static inline int pmksa_cache_list(struct rsn_pmksa_cache *pmksa, char *buf,
 
     static inline struct rsn_pmksa_cache_entry *
 pmksa_cache_add(struct rsn_pmksa_cache *pmksa, const u8 *pmk, size_t pmk_len,
-        const u8 *kck, size_t kck_len,
+        const u8 *pmkid, const u8 *kck, size_t kck_len,
         const u8 *aa, const u8 *spa, void *network_ctx, int akmp)
 {
     return NULL;

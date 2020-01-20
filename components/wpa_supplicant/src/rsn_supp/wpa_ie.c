@@ -220,9 +220,9 @@ static int  wpa_gen_wpa_ie_rsn(u8 *rsn_ie, size_t rsn_ie_len,
 #ifdef CONFIG_IEEE80211W
     if (sm->pmf_cfg.capable) {
         capab |= WPA_CAPABILITY_MFPC;
-        if (sm->pmf_cfg.required) {
+        if (sm->pmf_cfg.required || key_mgmt == WPA_KEY_MGMT_SAE) {
             capab |= WPA_CAPABILITY_MFPR;
-	}
+        }
     }
 #endif /* CONFIG_IEEE80211W */
     WPA_PUT_LE16(pos, capab);
