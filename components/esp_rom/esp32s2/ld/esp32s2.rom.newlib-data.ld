@@ -1,9 +1,15 @@
+/**
+ * These are the .bss/.data symbols used by newlib functions present in ESP32-S2 ROM.
+ * See also esp32s2.rom.newlib-funcs.ld for the list of general newlib functions.
+ *
+ * Unlike other ROM functions and data which are exported using PROVIDE, which declare weak symbols,
+ * newlib related functions are exported using assignment, which declare strong symbols.
+ * This is done so that ROM functions are always used instead of the ones provided by libc.a.
+ */
+
 _ctype_ = 0x3ffac76c;
-__default_global_locale = 0x3ffac600;
 _global_impure_ptr = 0x3ffffd8c;
-__global_locale_ptr = 0x3ffffd7c;
-__locale_ctype_ptr = 0x40001c2c;
-__locale_ctype_ptr_l = 0x40001c24;
-__locale_mb_cur_max = 0x40001c0c;
-__packed = 0x3ffffcec;
 _PathLocale = 0x3ffffd80;
+__sf_fake_stderr = 0x3ffaf08c;
+__sf_fake_stdin = 0x3ffaf0cc;
+__sf_fake_stdout = 0x3ffaf0ac;

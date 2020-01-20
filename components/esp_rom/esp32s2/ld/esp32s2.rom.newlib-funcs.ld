@@ -1,20 +1,40 @@
+/**
+ * These are the newlib functions present in ESP32-S2 ROM.
+ * See also esp32s2.rom.newlib-data.ld for the list of .data/.bss symbols used by these functions.
+
+ * Unlike other ROM functions which are exported using PROVIDE, which declare weak symbols,
+ * newlib related functions are exported using assignment, which declares strong symbols.
+ * This is done so that ROM functions are always used instead of the ones provided by libc.a.
+ */
+
 abs = 0x40000618;
 __ascii_mbtowc = 0x40007a04;
 __ascii_wctomb = 0x400018d0;
 __assert = 0x4001a430;
 __assert_func = 0x4001a408;
-/*
-atoi = ;
-_atoi_r = ;
-atol = ;
-_atol_r = ;
-*/
 bzero = 0x400078c8;
-_cvt = 0x4000f9b8;
+_cleanup_r = 0x4001a480;
+creat = 0x4000788c;
 div = 0x40000620;
+fclose = 0x4001a804;
+_fclose_r = 0x4001a714;
+fflush = 0x40001bb8;
+_fflush_r = 0x40001b30;
+fiprintf = 0x40000a3c;
+_fiprintf_r = 0x40000a18;
+__fp_lock_all = 0x4001a638;
+fprintf = 0x40000a3c;
+_fprintf_r = 0x40000a18;
+__fp_unlock_all = 0x4001a64c;
+__fputwc = 0x40001770;
+fputwc = 0x40001864;
+_fputwc_r = 0x400017f8;
+_fwalk = 0x4001bcec;
+_fwalk_reent = 0x4001bd24;
 isalnum = 0x400078d8;
 isalpha = 0x400078e8;
 isascii = 0x4001aaec;
+_isatty_r = 0x400078a0;
 isblank = 0x400078f8;
 iscntrl = 0x40007918;
 isdigit = 0x40007930;
@@ -24,12 +44,11 @@ isprint = 0x40007980;
 ispunct = 0x40007994;
 isspace = 0x400079ac;
 isupper = 0x400079c4;
-/*
-itoa = ;
-__itoa = ;
-*/
 labs = 0x40000648;
 ldiv = 0x40000650;
+__locale_ctype_ptr = 0x40001c2c;
+__locale_ctype_ptr_l = 0x40001c24;
+__locale_mb_cur_max = 0x40001c0c;
 longjmp = 0x400005a4;
 _mbtowc_r = 0x400079e0;
 memccpy = 0x4001ab00;
@@ -39,12 +58,28 @@ memcpy = 0x4001aba8;
 memmove = 0x4001acb0;
 memrchr = 0x4001acec;
 memset = 0x4001ad3c;
-pthread_setcancelstate = 0x40019fa8;
+open = 0x400080c4;
 qsort = 0x400006f4;
-rand = 0x40007a78;
 rand_r = 0x40007af4;
+__sclose = 0x4001a700;
+__seofread = 0x4001a690;
 setjmp = 0x40000540;
+setlocale = 0x40001c44;
+_setlocale_r = 0x40001bdc;
+__sflush_r = 0x400019dc;
+__sfmoreglue = 0x4001a4c8;
+__sfp = 0x4001a590;
+__sfp_lock_acquire = 0x4001a508;
+__sfp_lock_release = 0x4001a514;
+__sfvwrite_r = 0x40001310;
+__sinit = 0x4001a538;
+__sinit_lock_acquire = 0x4001a520;
+__sinit_lock_release = 0x4001a52c;
+__smakebuf_r = 0x40001954;
+__sprint_r = 0x40000aec;
 srand = 0x40007a24;
+__sread = 0x4001a660;
+__sseek = 0x4001a6cc;
 strcasecmp = 0x40007b38;
 strcasestr = 0x40007b7c;
 strcat = 0x4001ad90;
@@ -72,22 +107,19 @@ strspn = 0x4001aebc;
 strstr = 0x4001aee8;
 __strtok_r = 0x4001af18;
 strtok_r = 0x4001af7c;
-/*
-strtol = ;
-strtol_l = ;
-_strtol_r = ;
-strtoul = ;
-strtoul_l = ;
-_strtoul_r = ;
-*/
 strupr = 0x40008084;
+__swbuf = 0x4000167c;
+__swbuf_r = 0x400015bc;
+__swhatbuf_r = 0x400018f8;
+__swrite = 0x4001a698;
+__swsetup_r = 0x40001690;
 toascii = 0x4001af90;
 tolower = 0x40008158;
 toupper = 0x40008174;
-/*
-utoa = ;
-__utoa = ;
-*/
+vfiprintf = 0x40000e40;
+_vfiprintf_r = 0x40000b58;
+vfprintf = 0x40000e40;
+_vfprintf_r = 0x40000b58;
 wcrtomb = 0x400012f4;
 _wcrtomb_r = 0x400012a0;
 _wctomb_r = 0x400018ac;

@@ -1,9 +1,9 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -26,13 +26,13 @@ extern "C" {
 #endif
 
 /* 
-ESP32 ROM code contains implementations of some of C library functions.
+ESP32-S2 ROM code contains implementations of some of C library functions.
 Whenever a function in ROM needs to use a syscall, it calls a pointer to the corresponding syscall
 implementation defined in the following struct.
 
-The table itself, by default, is not allocated in RAM. There are two pointers, `syscall_table_ptr_pro` and
-`syscall_table_ptr_app`, which can be set to point to the locations of syscall tables of CPU 0 (aka PRO CPU)
-and CPU 1 (aka APP CPU). Location of these pointers in .bss segment of ROM code is defined in linker script.
+The table itself, by default, is not allocated in RAM. There is a pointer, `syscall_table_ptr_pro`,
+which can be set to point to the locations of syscall tables of CPU 0 (aka PRO CPU).
+Location of this pointer in .bss segment of ROM code is defined in linker script.
 
 So, before using any of the C library functions (except for pure functions and memcpy/memset functions),
 application must allocate syscall table structure for each CPU being used, and populate it with pointers
@@ -80,7 +80,6 @@ struct syscall_stub_table
 };
 
 extern struct syscall_stub_table* syscall_table_ptr_pro;
-extern struct syscall_stub_table* syscall_table_ptr_app;
 
 #ifdef __cplusplus
 } // extern "C"

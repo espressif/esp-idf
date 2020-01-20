@@ -1,8 +1,10 @@
-/*
-ESP32S2 ROM address table
-Generated for ROM with MD5sum:
-0a2c7ec5109c17884606d23b47045796  /home/jack/esp-rom/rom//.output/eagle/release/image/eagle.pro.rom.out
-*/
+/**
+ * ESP32-S2 ROM address table (except symbols from libgcc and libc)
+ * Generated for ROM with MD5sum: 0a2c7ec5109c17884606d23b47045796
+ * 
+ * These are all weak symbols that could be overwritten in ESP-IDF.
+ */
+
 PROVIDE ( abort = 0x40019fb4 );
 PROVIDE ( acm_config_descr = 0x3ffaef0f );
 PROVIDE ( acm_usb_descriptors = 0x3ffaee68 );
@@ -103,7 +105,6 @@ PROVIDE ( chip_usb_dw_init = 0x400133bc );
 PROVIDE ( chip_usb_dw_prepare_persist = 0x40013588 );
 PROVIDE ( chip_usb_get_persist_flags = 0x400135d8 );
 PROVIDE ( chip_usb_set_persist_flags = 0x400135e8 );
-PROVIDE ( __clear_cache = 0x40005abc );
 PROVIDE ( context = 0x3fffeb34 );
 PROVIDE ( cpio_destroy = 0x4001599c );
 PROVIDE ( cpio_done = 0x40015968 );
@@ -112,6 +113,7 @@ PROVIDE ( cpio_start = 0x4001561c );
 PROVIDE ( crc16_le = 0x40011a10 );
 PROVIDE ( crc32_le = 0x400119dc );
 PROVIDE ( crc8_le = 0x40011a4c );
+PROVIDE ( _cvt = 0x4000f9b8 );
 PROVIDE ( _data_end_all_pro = 0x3fffff98 );
 PROVIDE ( _data_end_c = 0x3ffffd80 );
 PROVIDE ( _data_end_ets = 0x3fffe710 );
@@ -144,6 +146,7 @@ PROVIDE ( dbus_baseaddrs = 0x3ffaf030 );
 PROVIDE ( _DebugExceptionVector = 0x40000280 );
 PROVIDE ( _DebugExceptionVector_text_end = 0x4000028b );
 PROVIDE ( _DebugExceptionVector_text_start = 0x40000280 );
+PROVIDE ( __default_global_locale = 0x3ffac600 );
 PROVIDE ( dfu_class_handle_req = 0x400152f0 );
 PROVIDE ( dfu_config_descr = 0x3ffaeeb2 );
 PROVIDE ( dfu_cpio_callback = 0x4001360c );
@@ -333,6 +336,7 @@ PROVIDE ( _GeneralException = 0x400073cf );
 PROVIDE ( get_id = 0x4001610c );
 PROVIDE ( GetSecurityInfoProc = 0x40012098 );
 PROVIDE ( GetUartDevice = 0x40012f60 );
+PROVIDE ( __global_locale_ptr = 0x3ffffd7c );
 PROVIDE ( g_phyFuns = 0x3ffffd90 );
 PROVIDE ( g_phyFuns_instance = 0x3ffffd94 );
 PROVIDE ( gpio_input_get = 0x400193a0 );
@@ -426,9 +430,11 @@ PROVIDE ( mz_free = 0x40002fa4 );
 PROVIDE ( _NMIExceptionVector = 0x400002c0 );
 PROVIDE ( _NMIExceptionVector_text_end = 0x400002c3 );
 PROVIDE ( _NMIExceptionVector_text_start = 0x400002c0 );
+PROVIDE ( __packed = 0x3ffffcec );
 PROVIDE ( phy_get_romfuncs = 0x4000a88c );
 PROVIDE ( _Pri_4_HandlerAddress = 0x3fffed78 );
 PROVIDE ( _Pri_5_HandlerAddress = 0x3fffed7c );
+PROVIDE ( pthread_setcancelstate = 0x40019fa8 );
 PROVIDE ( _putc1 = 0x3ffffd6c );
 PROVIDE ( _putc2 = 0x3ffffd68 );
 PROVIDE ( RcvMsg = 0x40012f10 );
@@ -582,8 +588,6 @@ PROVIDE ( SelectSpiFunction = 0x40015d08 );
 PROVIDE ( SelectSpiQIO = 0x40015b88 );
 PROVIDE ( SendMsg = 0x40012d0c );
 PROVIDE ( send_packet = 0x40012cc8 );
-PROVIDE ( setlocale = 0x40001c44 );
-PROVIDE ( _setlocale_r = 0x40001bdc );
 PROVIDE ( set_rtc_memory_crc = 0x40010010 );
 PROVIDE ( SetSpiDrvs = 0x40015c18 );
 PROVIDE ( sig_matrix = 0x3ffffd57 );
@@ -644,7 +648,6 @@ PROVIDE ( str_prod_descr = 0x3ffaee88 );
 PROVIDE ( str_serial_descr = 0x3ffaee84 );
 PROVIDE ( s_usb_osglue = 0x3ffffcdc );
 PROVIDE ( _SyscallException = 0x4000732a );
-PROVIDE ( syscall_table_ptr_app = 0x3ffffd74 );
 PROVIDE ( syscall_table_ptr_pro = 0x3ffffd78 );
 PROVIDE ( tdefl_compress = 0x400041dc );
 PROVIDE ( tdefl_compress_buffer = 0x40004938 );

@@ -1,3 +1,9 @@
+/**
+ * Unlike other ROM functions which are exported using PROVIDE, which declares weak symbols,
+ * these libgcc functions are exported using assignment, which declare strong symbols.
+ * This is done so that ROM functions are always used instead of the ones provided by libgcc.a.
+ */
+
 __absvdi2 = 0x40005ad8;
 __absvsi2 = 0x40005ac4;
 __adddf3 = 0x40008660;
@@ -8,6 +14,7 @@ __ashldi3 = 0x4001b000;
 __ashrdi3 = 0x4001b018;
 __bswapdi2 = 0x40006d34;
 __bswapsi2 = 0x40006d0c;
+__clear_cache = 0x40005abc;
 __clrsbdi2 = 0x40006da8;
 __clrsbsi2 = 0x40006d90;
 __clzdi2 = 0x4001b238;
