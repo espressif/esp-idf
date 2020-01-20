@@ -238,8 +238,8 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
             SPI_CHECK(false, "dma channel already in use", ESP_ERR_INVALID_STATE);
         }
     }
-
-    spihost[host]=malloc(sizeof(spi_host_t));
+    // spihost contains atomic variables, which should not be put in PSRAM
+    spihost[host] = heap_caps_malloc(sizeof(spi_host_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (spihost[host]==NULL) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
