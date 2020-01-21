@@ -3,60 +3,23 @@
 # Many of these are read when generating flash_app_args & flash_project_args
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(python PYTHON)
+
 set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${target})
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
-set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
-set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
-set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
-
-set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
-set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
-set(ESPTOOLPY_CHIP "${target}")
-set(ESPTOOLPY_WITH_STUB TRUE)
-
-if(CONFIG_SECURE_BOOT_ENABLED OR CONFIG_SECURE_FLASH_ENC_ENABLED)
-    # If security enabled then override post flash option
-    set(ESPTOOLPY_AFTER "no_reset")
-endif()
-
-set(ESPTOOLPY_SERIAL "${ESPTOOLPY}"
-    --port "${ESPPORT}"
-    --baud ${ESPBAUD}
-    --before "${ESPTOOLPY_BEFORE}"
-    --after "${ESPTOOLPY_AFTER}"
-    )
-
-if(CONFIG_ESPTOOLPY_COMPRESSED)
-    set(ESPTOOLPY_COMPRESSED_OPT -z)
-else()
-    set(ESPTOOLPY_COMPRESSED_OPT -u)
-endif()
-
-set(ESPTOOLPY_FLASH_OPTIONS
-    --flash_mode ${ESPFLASHMODE}
-    --flash_freq ${ESPFLASHFREQ}
-    --flash_size ${ESPFLASHSIZE}
-    )
-
-# String for printing flash command
-string(REPLACE ";" " " ESPTOOLPY_WRITE_FLASH_STR
-    "${ESPTOOLPY} --port (PORT) --baud (BAUD) --before ${ESPTOOLPY_BEFORE} --after ${ESPTOOLPY_AFTER} "
-    "write_flash ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_EXTRA_FLASH_OPTIONS} ${ESPTOOLPY_COMPRESSED_OPT}")
-
 if(NOT BOOTLOADER_BUILD)
-    set(ESPTOOLPY_ELF2IMAGE_OPTIONS --elf-sha256-offset 0xb0)
+    set(esptool_elf2image_args --elf-sha256-offset 0xb0)
 endif()
 
 if(CONFIG_SECURE_BOOT_ENABLED AND
     NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
     AND NOT BOOTLOADER_BUILD)
-    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --secure-pad)
+    list(APPEND esptool_elf2image_args --secure-pad)
 endif()
 
 if(CONFIG_ESP32_REV_MIN)
-    set(ESPTOOLPY_ELF2IMAGE_OPTIONS ${ESPTOOLPY_ELF2IMAGE_OPTIONS} --min-rev ${CONFIG_ESP32_REV_MIN})
+    list(APPEND esptool_elf2image_args --min-rev ${CONFIG_ESP32_REV_MIN})
 endif()
 
 if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
@@ -83,7 +46,7 @@ set(PROJECT_BIN "${elf_name}.bin")
 #
 if(CONFIG_APP_BUILD_GENERATE_BINARIES)
     add_custom_command(OUTPUT "${build_dir}/.bin_timestamp"
-        COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${ESPTOOLPY_ELF2IMAGE_OPTIONS}
+        COMMAND ${ESPTOOLPY} elf2image ${ESPTOOLPY_FLASH_OPTIONS} ${esptool_elf2image_args}
             -o "${build_dir}/${unsigned_project_binary}" "${elf}"
         COMMAND ${CMAKE_COMMAND} -E echo "Generated ${build_dir}/${unsigned_project_binary}"
         COMMAND ${CMAKE_COMMAND} -E md5sum "${build_dir}/${unsigned_project_binary}" > "${build_dir}/.bin_timestamp"
@@ -135,24 +98,6 @@ if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
     endif()
 endif()
 
-#
-# Add 'flash' target - not all build systems can run this directly
-#
-function(esptool_py_custom_target target_name flasher_filename dependencies)
-    idf_build_get_property(idf_path IDF_PATH)
-    idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
-    add_custom_target(${target_name} DEPENDS ${dependencies}
-        COMMAND ${CMAKE_COMMAND}
-        -D IDF_PATH="${idf_path}"
-        -D ESPTOOLPY="${ESPTOOLPY}"
-        -D ESPTOOL_ARGS="write_flash;@flash_${flasher_filename}_args"
-        -D WORKING_DIRECTORY="${build_dir}"
-        -P ${esptool_py_dir}/run_esptool.cmake
-        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-        USES_TERMINAL
-        )
-endfunction()
-
 add_custom_target(erase_flash
     COMMAND ${CMAKE_COMMAND}
     -D IDF_PATH="${idf_path}"
@@ -174,69 +119,128 @@ add_custom_target(monitor
     USES_TERMINAL
     )
 
-esptool_py_custom_target(flash project "app;partition_table;bootloader")
-esptool_py_custom_target(app-flash app "app")
+set(esptool_flash_main_args "--before=${CONFIG_ESPTOOLPY_BEFORE}")
 
-if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
-    esptool_py_custom_target(encrypted-flash encrypted_project "app;partition_table;bootloader")
-    esptool_py_custom_target(encrypted-app-flash encrypted_app "app")
+if(CONFIG_SECURE_BOOT_ENABLED OR CONFIG_SECURE_FLASH_ENC_ENABLED)
+    # If security enabled then override post flash option
+    list(APPEND esptool_flash_main_args "--after=no_reset")
+else()
+    list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
 endif()
 
-# esptool_py_flash_project_args
-#
-# Add file to the flasher args list, to be flashed at a particular offset.
-#
-# When a template FLASH_FILE_TEMPLATE is given, the variables OFFSET and IMAGE
-# hold the value of arguments offset and image, respectively.
-function(esptool_py_flash_project_args entry offset image)
-    set(options FLASH_IN_PROJECT)  # flash the image when flashing the project
-    set(single_value FLASH_FILE_TEMPLATE) # template file to use to be able to
-                                        # flash the image individually using esptool
-    cmake_parse_arguments(_ "${options}" "${single_value}" "" "${ARGN}")
+set(esptool_flash_sub_args "--flash_mode=${CONFIG_ESPTOOLPY_FLASHMODE}"
+                        "--flash_freq=${CONFIG_ESPTOOLPY_FLASHFREQ}"
+                        "--flash_size=${CONFIG_ESPTOOLPY_FLASHSIZE}")
 
-    if(${entry} IN_LIST flash_project_entries)
-        message(FATAL_ERROR "entry '${entry}' has already been added to flash project entries")
-    endif()
+idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
+idf_component_set_property(esptool_py FLASH_SUB_ARGS "${esptool_flash_sub_args}")
 
-    idf_component_set_property(esptool_py FLASH_PROJECT_ENTRIES "${entry}" APPEND)
-
+function(esptool_py_flash_target_image target_name image_name offset image)
     idf_build_get_property(build_dir BUILD_DIR)
     file(RELATIVE_PATH image ${build_dir} ${image})
 
-    # Generate the standalone flash file to flash the image individually using esptool
-    set(entry_flash_args ${build_dir}/flash_${entry}_args)
-    if(NOT __FLASH_FILE_TEMPLATE)
-        file(GENERATE OUTPUT ${entry_flash_args} CONTENT "${offset} ${image}")
-    else()
-        set(OFFSET ${offset})
-        set(IMAGE ${image})
+    set_property(TARGET ${target_name} APPEND PROPERTY FLASH_FILE
+                "\"${offset}\" : \"${image}\"")
+    set_property(TARGET ${target_name} APPEND PROPERTY FLASH_ENTRY
+                "\"${image_name}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
+    set_property(TARGET ${target_name} APPEND PROPERTY IMAGES "${offset} ${image}")
 
-        get_filename_component(template_in "${__FLASH_FILE_TEMPLATE}" ABSOLUTE)
-        get_filename_component(template_name "${template_in}" NAME)
-        set(template_partial "${CMAKE_CURRENT_BINARY_DIR}/${template_name}.in2")
-
-        configure_file("${template_in}" "${template_partial}")
-        file(GENERATE OUTPUT ${entry_flash_args} INPUT "${template_partial}")
-        set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                    APPEND PROPERTY
-                    ADDITIONAL_MAKE_CLEAN_FILES "${template_partial}")
-        unset(OFFSET)
-        unset(IMAGE)
-    endif()
-
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES ${entry_flash_args})
-
-    # Generate standalone entries in the flasher args json file
-    idf_component_set_property(esptool_py FLASH_PROJECT_ARGS_ENTRY_JSON
-                "\"${entry}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }" APPEND)
-
-    # Generate entries in the flasher args json file
-    if(__FLASH_IN_PROJECT)
-        idf_component_set_property(esptool_py FLASH_PROJECT_ARGS
-                                "${offset} ${image}" APPEND)
-
-        idf_component_set_property(esptool_py FLASH_PROJECT_ARGS_JSON
-                                "\"${offset}\" : \"${image}\"" APPEND)
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        set_property(TARGET encrypted-${target_name} APPEND PROPERTY FLASH_FILE
+                    "\"${offset}\" : \"${image}\"")
+        set_property(TARGET encrypted-${target_name} APPEND PROPERTY FLASH_ENTRY
+                    "\"${image_name}\" : { \"offset\" : \"${offset}\", \"file\" : \"${image}\" }")
+        set_property(TARGET encrypted-${target_name} APPEND PROPERTY IMAGES "${offset} ${image}")
     endif()
 endfunction()
+
+function(esptool_py_flash_target target_name main_args sub_args)
+    set(single_value OFFSET IMAGE) # template file to use to be able to
+                                        # flash the image individually using esptool
+    cmake_parse_arguments(_ "" "${single_value}" "" "${ARGN}")
+
+    idf_build_get_property(idf_path IDF_PATH)
+    idf_build_get_property(build_dir BUILD_DIR)
+    idf_component_get_property(esptool_py_dir esptool_py COMPONENT_DIR)
+
+    add_custom_target(${target_name}
+        COMMAND ${CMAKE_COMMAND}
+        -D IDF_PATH="${idf_path}"
+        -D ESPTOOLPY="${ESPTOOLPY}"
+        -D ESPTOOL_ARGS="${main_args};write_flash;@${target_name}_args"
+        -D WORKING_DIRECTORY="${build_dir}"
+        -P ${esptool_py_dir}/run_esptool.cmake
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+        USES_TERMINAL
+        )
+
+    set_target_properties(${target_name} PROPERTIES SUB_ARGS "${sub_args}")
+
+    set(flash_args_content "$<JOIN:$<TARGET_PROPERTY:${target_name},SUB_ARGS>, >\n\
+$<JOIN:$<TARGET_PROPERTY:${target_name},IMAGES>,\n>")
+
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_args.in"
+                CONTENT "${flash_args_content}")
+    file(GENERATE OUTPUT "${build_dir}/${target_name}_args"
+                INPUT "${CMAKE_CURRENT_BINARY_DIR}/${target_name}_args.in")
+
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        add_custom_target(encrypted-${target_name}
+            COMMAND ${CMAKE_COMMAND}
+            -D IDF_PATH="${idf_path}"
+            -D ESPTOOLPY="${ESPTOOLPY}"
+            -D ESPTOOL_ARGS="${main_args};write_flash;@encrypted_${target_name}_args"
+            -D WORKING_DIRECTORY="${build_dir}"
+            -P ${esptool_py_dir}/run_esptool.cmake
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+            USES_TERMINAL
+            )
+
+        set_target_properties(encrypted-${target_name} PROPERTIES SUB_ARGS "${sub_args};--encrypt")
+
+        set(flash_args_content "$<JOIN:$<TARGET_PROPERTY:encrypted-${target_name},SUB_ARGS>, >\n\
+$<JOIN:$<TARGET_PROPERTY:encrypted-${target_name},IMAGES>,\n>")
+
+        file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in"
+                    CONTENT "${flash_args_content}")
+        file(GENERATE OUTPUT "${build_dir}/encrypted_${target_name}_args"
+                    INPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in")
+    endif()
+endfunction()
+
+
+function(esptool_py_custom_target target_name flasher_filename dependencies)
+    idf_component_get_property(main_args esptool_py FLASH_ARGS)
+    idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+
+    idf_build_get_property(build_dir BUILD_DIR)
+
+    esptool_py_flash_target(${target_name} "${main_args}" "${sub_args}")
+
+    # Copy the file to flash_xxx_args for compatibility for select target
+    file_generate("${build_dir}/flash_${flasher_filename}_args"
+                INPUT "${build_dir}/${target_name}_args")
+
+    add_dependencies(${target_name} ${dependencies})
+
+    if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
+        file_generate("${build_dir}/flash_encrypted_${flasher_filename}_args"
+                    INPUT "${build_dir}/encrypted_${target_name}_args")
+
+        add_dependencies(encrypted-${target_name} ${dependencies})
+    endif()
+endfunction()
+
+if(NOT BOOTLOADER_BUILD)
+    set(flash_deps "partition_table")
+
+    if(CONFIG_APP_BUILD_GENERATE_BINARIES)
+        list(APPEND flash_deps "app")
+    endif()
+
+    if(CONFIG_APP_BUILD_BOOTLOADER)
+        list(APPEND flash_deps "bootloader")
+    endif()
+
+    esptool_py_custom_target(flash project "${flash_deps}")
+endif()

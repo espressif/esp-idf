@@ -260,6 +260,9 @@ function(add_c_compile_options)
 endfunction()
 
 
+# add_prebuild_library
+#
+# Add prebuilt library with support for adding dependencies on ESP-IDF components.
 function(add_prebuilt_library target_name lib_path)
     cmake_parse_arguments(_ "" "" "REQUIRES;PRIV_REQUIRES" ${ARGN})
 
@@ -280,4 +283,23 @@ function(add_prebuilt_library target_name lib_path)
         set_property(TARGET ${target_name} APPEND PROPERTY LINK_LIBRARIES "${req_lib}")
         set_property(TARGET ${target_name} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "$<LINK_ONLY:${req_lib}>")
     endforeach()
+endfunction()
+
+
+# file_generate
+#
+# Utility to generate file and have the output automatically added to cleaned files.
+function(file_generate output)
+    cmake_parse_arguments(_ "" "INPUT;CONTENT" "" ${ARGN})
+
+    if(__INPUT)
+        file(GENERATE OUTPUT "${output}" INPUT "${__INPUT}")
+    elseif(__CONTENT)
+        file(GENERATE OUTPUT "${output}" CONTENT "${__CONTENT}")
+    else()
+        message(FATAL_ERROR "Content to generate not specified.")
+    endif()
+
+    set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${output}")
 endfunction()
