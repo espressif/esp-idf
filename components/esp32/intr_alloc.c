@@ -743,11 +743,11 @@ esp_err_t esp_intr_free(intr_handle_t handle)
         }
         //If nothing left, disable interrupt.
         if (handle->vector_desc->shared_vec_info==NULL) free_shared_vector=true;
-        ESP_LOGV(TAG, "esp_intr_free: Deleting shared int: %s. Shared int is %s", svd?"not found or last one":"deleted", free_shared_vector?"empty now.":"still in use");
+        ESP_EARLY_LOGV(TAG, "esp_intr_free: Deleting shared int: %s. Shared int is %s", svd?"not found or last one":"deleted", free_shared_vector?"empty now.":"still in use");
     }
 
     if ((handle->vector_desc->flags&VECDESC_FL_NONSHARED) || free_shared_vector) {
-        ESP_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
+        ESP_EARLY_LOGV(TAG, "esp_intr_free: Disabling int, killing handler");
 #if CONFIG_SYSVIEW_ENABLE
         if (!free_shared_vector) {
             void *isr_arg = xt_get_interrupt_handler_arg(handle->vector_desc->intno);
