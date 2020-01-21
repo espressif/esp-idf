@@ -110,6 +110,17 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
 esp_err_t uart_driver_delete(uart_port_t uart_num);
 
 /**
+ * @brief Checks whether the driver is installed or not
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return
+ *     - true  driver is installed
+ *     - false driver is not installed
+ */
+bool uart_is_driver_installed(uart_port_t uart_num);
+
+/**
  * @brief Set UART data bits.
  *
  * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
