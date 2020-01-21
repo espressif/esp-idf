@@ -6,7 +6,8 @@ if(BOOTLOADER_BUILD)
     set_property(TARGET ${COMPONENT_LIB} APPEND PROPERTY INTERFACE_LINK_LIBRARIES "-Wl,--gc-sections")
 else()
     # Regular app build
-    set(srcs "src/dbg_stubs.c"
+    set(srcs "src/brownout.c"
+             "src/dbg_stubs.c"
              "src/esp_err_to_name.c"
              "src/esp_timer.c"
              "src/ets_timer_legacy.c"

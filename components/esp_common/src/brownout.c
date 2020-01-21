@@ -17,20 +17,29 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "esp_log.h"
 #include "soc/soc.h"
 #include "soc/cpu.h"
 #include "soc/rtc_periph.h"
 #include "hal/brownout_hal.h"
-#include "esp32/rom/ets_sys.h"
 #include "esp_private/system_internal.h"
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
 
-#ifdef CONFIG_ESP32_BROWNOUT_DET_LVL
+#if defined(CONFIG_ESP32_BROWNOUT_DET_LVL)
 #define BROWNOUT_DET_LVL CONFIG_ESP32_BROWNOUT_DET_LVL
+#elif defined(CONFIG_ESP32S2_BROWNOUT_DET_LVL)
+#define BROWNOUT_DET_LVL CONFIG_ESP32S2_BROWNOUT_DET_LVL
 #else
 #define BROWNOUT_DET_LVL 0
-#endif //CONFIG_ESP32_BROWNOUT_DET_LVL
+#endif
+
+#ifdef SOC_BROWNOUT_RESET_SUPPORTED
+#define BROWNOUT_RESET_EN true
+#else
+#define BROWNOUT_RESET_EN false
+#endif // SOC_BROWNOUT_RESET_SUPPORTED
+
 
 static void rtc_brownout_isr_handler(void *arg)
 {
@@ -38,7 +47,7 @@ static void rtc_brownout_isr_handler(void *arg)
      * handler returns. Since restart is called here, the flag needs to be
      * cleared manually.
      */
-    REG_WRITE(RTC_CNTL_INT_CLR_REG, RTC_CNTL_BROWN_OUT_INT_CLR);
+    brownout_hal_intr_clear();
     /* Stall the other CPU to make sure the code running there doesn't use UART
      * at the same time as the following ets_printf.
      */
@@ -53,7 +62,7 @@ void esp_brownout_init(void)
     brownout_hal_config_t cfg = {
         .threshold = BROWNOUT_DET_LVL,
         .enabled = true,
-        .reset_enabled = false,
+        .reset_enabled = BROWNOUT_RESET_EN,
         .flash_power_down = true,
         .rf_power_down = true,
     };

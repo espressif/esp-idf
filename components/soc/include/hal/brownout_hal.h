@@ -27,6 +27,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "soc/brownout_caps.h"
 
 typedef struct {
     uint8_t threshold;

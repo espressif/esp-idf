@@ -11,8 +11,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
 
-    set(srcs "brownout.c"
-             "cache_err_int.c"
+    set(srcs "cache_err_int.c"
              "clk.c"
              "cpu_start.c"
              "crosscore_int.c"
