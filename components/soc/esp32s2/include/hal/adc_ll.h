@@ -586,26 +586,5 @@ static inline void adc_ll_set_hall_controller(adc_ll_hall_controller_t hall_ctrl
  */
 static inline bool adc_ll_vref_output(int io)
 {
-    int channel;
-    if (io == 25) {
-        channel = 8;    //Channel 8 bit
-    } else if (io == 26) {
-        channel = 9;    //Channel 9 bit
-    } else if (io == 27) {
-        channel = 7;    //Channel 7 bit
-    } else {
-        return false;
-    }
-    RTCCNTL.bias_conf.dbg_atten = 0;     //Check DBG effect outside sleep mode
-    //set dtest (MUX_SEL : 0 -> RTC; 1-> vdd_sar2)
-    RTCCNTL.test_mux.dtest_rtc = 1;      //Config test mux to route v_ref to ADC2 Channels
-    //set ent
-    RTCCNTL.test_mux.ent_rtc = 1;
-    //set sar2_en_test
-    SENS.sar_meas2_ctrl1.sar2_en_test = 1;
-    //set sar2 en force
-    SENS.sar_meas2_ctrl2.sar2_en_pad_force = 1;      //Pad bitmap controlled by SW
-    //set en_pad for channels 7,8,9 (bits 0x380)
-    SENS.sar_meas2_ctrl2.sar2_en_pad = 1 << channel;
-    return true;
+    return false;
 }
