@@ -41,6 +41,7 @@
 #if( defined BTA_AR_INCLUDED ) && (BTA_AR_INCLUDED == TRUE)
 #include "bta/bta_ar_api.h"
 #endif
+#include "bta/bta_api.h"
 
 /*****************************************************************************
 **  Constants
@@ -528,8 +529,21 @@ static void bta_av_proc_stream_evt(UINT8 handle, BD_ADDR bd_addr, UINT8 event, t
         /* look up application event */
         if ((p_data == NULL) || (p_data->hdr.err_code == 0)) {
             p_msg->hdr.event = bta_av_stream_evt_ok[event];
+            if (p_msg->hdr.event == BTA_AV_STR_START_OK_EVT) {
+                BTA_DmCoexEventTrigger(BTA_COEX_EVT_STREAMING_STARTED);
+            } else if (p_msg->hdr.event == BTA_AV_STR_START_FAIL_EVT ||
+                p_msg->hdr.event == BTA_AV_STR_SUSPEND_CFM_EVT ||
+                p_msg->hdr.event == BTA_AV_STR_CLOSE_EVT) {
+                BTA_DmCoexEventTrigger(BTA_COEX_EVT_STREAMING_STOPPED);
+            }
         } else {
             p_msg->hdr.event = bta_av_stream_evt_fail[event];
+            if (p_msg->hdr.event == BTA_AV_STR_START_FAIL_EVT ||
+                p_msg->hdr.event == BTA_AV_STR_START_OK_EVT ||
+                p_msg->hdr.event == BTA_AV_STR_SUSPEND_CFM_EVT ||
+                p_msg->hdr.event == BTA_AV_STR_CLOSE_EVT) {
+                BTA_DmCoexEventTrigger(BTA_COEX_EVT_STREAMING_STOPPED);
+            }
         }
 
         p_msg->initiator = FALSE;

@@ -241,7 +241,6 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
         uint32_t phy_bt_wifi_mask = BIT(PHY_BT_MODULE) | BIT(PHY_WIFI_MODULE);
         if ((s_module_phy_rf_init & phy_bt_wifi_mask) == phy_bt_wifi_mask) { //both wifi & bt enabled
             coex_init();
-            coex_preference_set(CONFIG_SW_COEXIST_PREFERENCE_VALUE);
             coex_resume();
         }
     }
