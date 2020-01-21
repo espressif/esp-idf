@@ -105,6 +105,9 @@ extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t
 
     if(cfg) {
         auto encrMgr = EncrMgr::getInstance();
+
+        if (!encrMgr) return ESP_ERR_NO_MEM;
+
         auto err = encrMgr->setSecurityContext(baseSector, sectorCount, cfg);
         if(err != ESP_OK) {
             return err;
@@ -180,7 +183,7 @@ extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
     Lock::init();
     Lock lock;
 
-    // Delete all corresponding open handles
+    // Delete all corresponding open handles // TODO: why all handles, not just the ones with partition_name?
     s_nvs_handles.clearAndFreeNodes();
 
     // Deinit partition
@@ -212,7 +215,7 @@ extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* 
     NVSHandleSimple *handle;
     esp_err_t result = nvs::NVSPartitionManager::get_instance()->open_handle(part_name, name, open_mode, &handle);
     if (result == ESP_OK) {
-        NVSHandleEntry *entry = new NVSHandleEntry(handle, part_name);
+        NVSHandleEntry *entry = new (std::nothrow) NVSHandleEntry(handle, part_name);
         if (entry) {
             s_nvs_handles.push_back(entry);
             *out_handle = entry->mHandle;
