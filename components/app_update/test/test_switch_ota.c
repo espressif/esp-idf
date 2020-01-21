@@ -48,9 +48,11 @@ static void copy_app_partition(esp_ota_handle_t update_handle, const esp_partiti
 {
     const void *partition_bin = NULL;
     spi_flash_mmap_handle_t  data_map;
+    ESP_LOGI(TAG, "start the copy process");
     TEST_ESP_OK(esp_partition_mmap(curr_app, 0, curr_app->size, SPI_FLASH_MMAP_DATA, &partition_bin, &data_map));
     TEST_ESP_OK(esp_ota_write(update_handle, (const void *)partition_bin, curr_app->size));
     spi_flash_munmap(data_map);
+    ESP_LOGI(TAG, "finish the copy process");
 }
 
 #if defined(CONFIG_BOOTLOADER_FACTORY_RESET) || defined(CONFIG_BOOTLOADER_APP_TEST)
@@ -116,6 +118,7 @@ static void erase_ota_data(void)
  */
 static void reboot_as_deep_sleep(void)
 {
+    ESP_LOGI(TAG, "reboot as deep sleep");
     esp_sleep_enable_timer_wakeup(2000);
     esp_deep_sleep_start();
 }
@@ -125,6 +128,7 @@ static void reboot_as_deep_sleep(void)
 static void copy_current_app_to_next_part_and_reboot(void)
 {
     const esp_partition_t *cur_app = esp_ota_get_running_partition();
+    ESP_LOGI(TAG, "copy current app to next part");
     copy_current_app_to_next_part(cur_app, get_next_update_partition());
     reboot_as_deep_sleep();
 }
@@ -256,6 +260,7 @@ static void start_test(void)
     ESP_LOGI(TAG, "boot count 1 - reset");
     boot_count = 1;
     erase_ota_data();
+    ESP_LOGI(TAG, "ota_data erased");
     reboot_as_deep_sleep();
 }
 
