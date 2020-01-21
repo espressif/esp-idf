@@ -22,9 +22,20 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+#include "esp_vfs_dev.h"
+#include "driver/uart.h"
+#endif
+
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+#include "esp_wifi.h"
+#endif
+
 static const char *TAG = "advanced_https_ota_example";
 extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
+
+#define OTA_URL_SIZE 256
 
 /* FreeRTOS event group to signal when we are connected & ready to make a request */
 static EventGroupHandle_t wifi_event_group;
@@ -33,6 +44,24 @@ static EventGroupHandle_t wifi_event_group;
    but we only care about one event - are we connected
    to the AP with an IP? */
 const int CONNECTED_BIT = BIT0;
+
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+static esp_err_t example_configure_stdin_stdout(void)
+{
+    // Initialize VFS & UART so we can use std::cout/cin
+    setvbuf(stdin, NULL, _IONBF, 0);
+    setvbuf(stdout, NULL, _IONBF, 0);
+    /* Install UART driver for interrupt-driven reads and writes */
+    ESP_ERROR_CHECK( uart_driver_install( (uart_port_t)CONFIG_CONSOLE_UART_NUM,
+            256, 0, 0, NULL, 0) );
+    /* Tell VFS to use UART driver */
+    esp_vfs_dev_uart_use_driver(CONFIG_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_set_rx_line_endings(ESP_LINE_ENDINGS_CR);
+    /* Move the caret to the beginning of the next line on '\n' */
+    esp_vfs_dev_uart_set_tx_line_endings(ESP_LINE_ENDINGS_CRLF);
+    return ESP_OK;
+}
+#endif
 
 static esp_err_t event_handler(void *ctx, system_event_t *event)
 {
@@ -87,10 +116,12 @@ static esp_err_t validate_image_header(esp_app_desc_t *new_app_info)
         ESP_LOGI(TAG, "Running firmware version: %s", running_app_info.version);
     }
 
+#ifndef CONFIG_EXAMPLE_SKIP_VERSION_CHECK
     if (memcmp(new_app_info->version, running_app_info.version, sizeof(new_app_info->version)) == 0) {
         ESP_LOGW(TAG, "Current running version is the same as a new. We will not continue the update.");
         return ESP_FAIL;
     }
+#endif
     return ESP_OK;
 }
 
@@ -106,8 +137,27 @@ void advanced_ota_example_task(void * pvParameter)
     esp_http_client_config_t config = {
         .url = CONFIG_FIRMWARE_UPGRADE_URL,
         .cert_pem = (char *)server_cert_pem_start,
+        .timeout_ms = CONFIG_EXAMPLE_OTA_RECV_TIMEOUT,
     };
     
+#ifdef CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL_FROM_STDIN
+    char url_buf[OTA_URL_SIZE];
+    if (strcmp(config.url, "FROM_STDIN") == 0) {
+        example_configure_stdin_stdout();
+        fgets(url_buf, OTA_URL_SIZE, stdin);
+        int len = strlen(url_buf);
+        url_buf[len - 1] = '\0';
+        config.url = url_buf;
+    } else {
+        ESP_LOGE(TAG, "Configuration mismatch: wrong firmware upgrade image url");
+        abort();
+    }
+#endif
+
+#ifdef CONFIG_EXAMPLE_SKIP_COMMON_NAME_CHECK
+    config.skip_cert_common_name_check = true;
+#endif
+
     esp_https_ota_config_t ota_config = {
         .http_config = &config,
     };
@@ -142,6 +192,11 @@ void advanced_ota_example_task(void * pvParameter)
         ESP_LOGD(TAG, "Image bytes read: %d", esp_https_ota_get_image_len_read(https_ota_handle));
     }
 
+    if (esp_https_ota_is_complete_data_received(https_ota_handle) != true) {
+        // the OTA image was not completely received and user can customise the response to this situation.
+        ESP_LOGE(TAG, "Complete data was not received.");
+    }
+
 ota_end:
     ota_finish_err = esp_https_ota_finish(https_ota_handle);
     if ((err == ESP_OK) && (ota_finish_err == ESP_OK)) {
@@ -149,11 +204,11 @@ ota_end:
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         esp_restart();
     } else {
-        ESP_LOGE(TAG, "ESP_HTTPS_OTA upgrade failed...");
-    }
-
-    while (1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        if (ota_finish_err == ESP_ERR_OTA_VALIDATE_FAILED) {
+            ESP_LOGE(TAG, "Image validation failed, image is corrupted");
+        }
+        ESP_LOGE(TAG, "ESP_HTTPS_OTA upgrade failed %d", ota_finish_err);
+        vTaskDelete(NULL);
     }
 }
 
@@ -172,6 +227,14 @@ void app_main()
     ESP_ERROR_CHECK( err );
 
     initialise_wifi();
+
+#if CONFIG_EXAMPLE_CONNECT_WIFI
+    /* Ensure to disable any WiFi power save mode, this allows best throughput
+     * and hence timings for overall OTA operation.
+     */
+    esp_wifi_set_ps(WIFI_PS_NONE);
+#endif // CONFIG_EXAMPLE_CONNECT_WIFI
+
     xTaskCreate(&advanced_ota_example_task, "advanced_ota_example_task", 1024 * 8, NULL, 5, NULL);
 }
 
