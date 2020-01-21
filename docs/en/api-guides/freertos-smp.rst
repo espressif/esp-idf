@@ -356,14 +356,15 @@ a valid protection method against simultaneous access to shared data as it
 leaves the other core free to access the data even if the current core has 
 disabled its own interrupts. 
 
-For this reason, ESP-IDF FreeRTOS implements critical sections using mutexes, 
-and calls to enter or exit a critical must provide a mutex that is associated 
-with a shared resource requiring access protection. When entering a critical 
-section in ESP-IDF FreeRTOS, the calling core will disable its scheduler and 
-interrupts similar to the vanilla FreeRTOS implementation. However, the calling 
-core will also take the mutex whilst the other core is left unaffected during 
-the critical section. If the other core attempts to take the same mutex, it 
-will spin until the mutex is released. Therefore, the ESP-IDF FreeRTOS 
+For this reason, ESP-IDF FreeRTOS implements critical sections using special mutexes,
+referred by portMUX_Type objects on top of specific ESP32 spinlock component 
+and calls to enter or exit a critical must provide a spinlock object that 
+is associated with a shared resource requiring access protection. 
+When entering a critical section in ESP-IDF FreeRTOS, the calling core will disable
+its scheduler and interrupts similar to the vanilla FreeRTOS implementation. However, 
+the calling core will also take the locks whilst the other core is left unaffected during 
+the critical section. If the other core attempts to take the spinlock, it 
+will spin until the lock is released. Therefore, the ESP-IDF FreeRTOS 
 implementation of critical sections allows a core to have protected access to a
 shared resource without disabling the other core. The other core will only be 
 affected if it tries to concurrently access the same resource.
@@ -389,7 +390,7 @@ and :component_file:`freertos/task.c`
 It should be noted that when modifying vanilla FreeRTOS code to be ESP-IDF 
 FreeRTOS compatible, it is trivial to modify the type of critical section 
 called as they are all defined to call the same function. As long as the same 
-mutex is provided upon entering and exiting, the type of call should not 
+spinlock is provided upon entering and exiting, the type of call should not 
 matter.
 
 

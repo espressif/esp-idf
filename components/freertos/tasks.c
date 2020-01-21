@@ -2776,11 +2776,7 @@ void vTaskSwitchContext( void )
 		 swapping that out here. Instead, we're going to do the work here ourselves. Because interrupts are already disabled, we only
 		 need to acquire the mutex.
 		*/
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUAcquireMutex( &xTaskQueueMutex, __FUNCTION__, __LINE__ );
-#else
 		vPortCPUAcquireMutex( &xTaskQueueMutex );
-#endif
 
 #if !configUSE_PORT_OPTIMISED_TASK_SELECTION
 		unsigned portBASE_TYPE foundNonExecutingWaiter = pdFALSE, ableToSchedule = pdFALSE, resetListHead;
@@ -2881,11 +2877,7 @@ void vTaskSwitchContext( void )
 
 		//Exit critical region manually as well: release the mux now, interrupts will be re-enabled when we
 		//exit the function.
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUReleaseMutex( &xTaskQueueMutex, __FUNCTION__, __LINE__ );
-#else
 		vPortCPUReleaseMutex( &xTaskQueueMutex );
-#endif
 
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
@@ -4189,13 +4181,7 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
-#include "portmux_impl.h"
-
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	void vTaskEnterCritical( portMUX_TYPE *mux, const char *function, int line )
-#else
 	void vTaskEnterCritical( portMUX_TYPE *mux )
-#endif
 	{
 		BaseType_t oldInterruptLevel=0;
 		BaseType_t schedulerRunning = xSchedulerRunning;
@@ -4206,13 +4192,9 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 			//and save for real there.
 			oldInterruptLevel=portENTER_CRITICAL_NESTED();
 		}
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT, function, line );
-#else
-		vPortCPUAcquireMutexIntsDisabled( mux, portMUX_NO_TIMEOUT );
-#endif
 
-		if(schedulerRunning != pdFALSE)
+		vPortCPUAcquireMutex( mux );
+		if( schedulerRunning != pdFALSE )
 		{
 			TCB_t *tcb = pxCurrentTCB[xPortGetCoreID()];
 			BaseType_t newNesting = tcb->uxCriticalNesting + 1;
@@ -4253,25 +4235,16 @@ For ESP32 FreeRTOS, vTaskEnterCritical implements both portENTER_CRITICAL and po
 
 #endif /* portCRITICAL_NESTING_IN_TCB */
 /*-----------------------------------------------------------*/
-
-
 /*
 For ESP32 FreeRTOS, vTaskExitCritical implements both portEXIT_CRITICAL and portEXIT_CRITICAL_ISR.
 */
 #if ( portCRITICAL_NESTING_IN_TCB == 1 )
 
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-	void vTaskExitCritical( portMUX_TYPE *mux, const char *function, int line )
-#else
 	void vTaskExitCritical( portMUX_TYPE *mux )
-#endif
 	{
-#ifdef CONFIG_FREERTOS_PORTMUX_DEBUG
-		vPortCPUReleaseMutexIntsDisabled( mux, function, line );
-#else
-		vPortCPUReleaseMutexIntsDisabled( mux );
-#endif
-		if(xSchedulerRunning != pdFALSE)
+
+		vPortCPUReleaseMutex( mux );
+		if( xSchedulerRunning != pdFALSE )
 		{
 			TCB_t *tcb = pxCurrentTCB[xPortGetCoreID()];
 			BaseType_t nesting = tcb->uxCriticalNesting;
