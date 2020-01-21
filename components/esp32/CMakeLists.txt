@@ -143,7 +143,7 @@ else()
             DEPENDS ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
             COMMAND ${CMAKE_C_COMPILER} -x c -c
             -I ${CMAKE_CURRENT_LIST_DIR} -I ${CMAKE_CURRENT_LIST_DIR}/include -I ${IDF_BUILD_ARTIFACTS_DIR}
-            -o phy_init_data.obj
+            -I ${CONFIG_DIR} -o phy_init_data.obj
             ${CMAKE_CURRENT_LIST_DIR}/phy_init_data.h
             COMMAND ${CMAKE_OBJCOPY} -O binary phy_init_data.obj ${PHY_INIT_DATA_BIN}
             )
