@@ -227,11 +227,8 @@ static void setup_bus(spi_host_device_t host_id)
 
 static void release_bus(int host_id)
 {
-#if CONFIG_IDF_TARGET_ESP32
-    if (host_id == HSPI_HOST || host_id == VSPI_HOST) {
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if (host_id == FSPI_HOST || host_id == HSPI_HOST || host_id == VSPI_HOST) {
-#endif
+    //SPI1 bus can't be deinitialized
+    if (host_id == SPI2_HOST || host_id == SPI3_HOST) {
         spi_bus_free(host_id);
     }
 }

@@ -752,7 +752,13 @@ void test_cmd_addr(spi_slave_task_context_t *slave_context, bool lsb_first)
         vTaskDelay(50);
         //prepare master tx data
         int cmd_bits = (i+1)*2;
-        int addr_bits = 56-8*i;
+        int addr_bits =
+#ifdef CONFIG_IDF_TARGET_ESP32
+                56-8*i;
+#elif CONFIG_IDF_TARGET_ESP32S2
+        //ESP32S2 only supportes up to 32 bits address
+                28-4*i;
+#endif
         int round_up = (cmd_bits+addr_bits+7)/8*8;
         addr_bits = round_up - cmd_bits;
 

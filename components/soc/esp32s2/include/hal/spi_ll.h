@@ -97,22 +97,19 @@ static inline void spi_ll_master_init(spi_dev_t *hw)
  */
 static inline void spi_ll_slave_init(spi_dev_t *hw)
 {
-    //it's stupid, but if something goes wrong, try to uncomment it
-    //hw->slave.slave_mode = 1;
     //Configure slave
     hw->clock.val = 0;
     hw->user.val = 0;
     hw->ctrl.val = 0;
     hw->user.doutdin = 1; //we only support full duplex
     hw->user.sio = 0;
-    hw->user.tx_start_bit = 7;
     hw->slave.slave_mode = 1;
     hw->dma_conf.val |= SPI_LL_RST_MASK;
     hw->dma_out_link.start = 0;
     hw->dma_in_link.start = 0;
     hw->dma_conf.val &= ~SPI_LL_RST_MASK;
-    hw->slave.sync_reset = 1;
-    hw->slave.sync_reset = 0;
+    hw->slave.soft_reset = 1;
+    hw->slave.soft_reset = 0;
     //use all 64 bytes of the buffer
     hw->user.usr_miso_highpart = 0;
     hw->user.usr_mosi_highpart = 0;
@@ -136,7 +133,7 @@ static inline void spi_ll_reset_dma(spi_dev_t *hw)
     hw->dma_out_link.start = 0;
     hw->dma_in_link.start = 0;
     hw->dma_conf.val &= ~SPI_LL_RST_MASK;
-    hw->dma_conf.out_data_burst_en = 1;
+    hw->dma_conf.out_data_burst_en = 0;
     hw->dma_conf.indscr_burst_en = 1;
     hw->dma_conf.outdscr_burst_en = 1;
     hw->dma_in_link.dma_rx_ena = 0;
@@ -151,8 +148,6 @@ static inline void spi_ll_reset_dma(spi_dev_t *hw)
  */
 static inline void spi_ll_rxdma_start(spi_dev_t *hw, lldesc_t *addr)
 {
-    //if something breaks, uncomment this line
-    //hw->dma_in_link.restart = 1;
     hw->dma_in_link.addr = (int) addr & 0xFFFFF;
     hw->dma_in_link.start = 1;
 }
@@ -165,8 +160,6 @@ static inline void spi_ll_rxdma_start(spi_dev_t *hw, lldesc_t *addr)
  */
 static inline void spi_ll_txdma_start(spi_dev_t *hw, lldesc_t *addr)
 {
-    //if something breaks, uncomment this line
-    hw->dma_out_link.restart = 1;
     hw->dma_out_link.addr = (int) addr & 0xFFFFF;
     hw->dma_out_link.start = 1;
 }
@@ -249,7 +242,7 @@ static inline uint32_t spi_ll_get_running_cmd(spi_dev_t *hw)
  */
 static inline void spi_ll_disable_int(spi_dev_t *hw)
 {
-    hw->slave.trans_inten = 0;
+    hw->slave.int_trans_done_en = 0;
 }
 
 /**
@@ -280,7 +273,7 @@ static inline void spi_ll_set_int_stat(spi_dev_t *hw)
  */
 static inline void spi_ll_enable_int(spi_dev_t *hw)
 {
-    hw->slave.trans_inten = 1;
+    hw->slave.int_trans_done_en = 1;
 }
 
 /**
@@ -295,16 +288,14 @@ static inline void spi_ll_slave_set_int_type(spi_dev_t *hw, spi_ll_slave_intr_ty
     case SPI_LL_INT_TYPE_SEG:
         hw->dma_int_ena.in_suc_eof = 1;
         hw->dma_int_ena.out_total_eof = 1;
-        hw->slave.trans_inten = 0;
+        hw->slave.int_trans_done_en = 0;
         break;
     default:
         hw->dma_int_ena.in_suc_eof = 0;
         hw->dma_int_ena.out_total_eof = 0;
-        hw->slave.trans_inten = 1;
+        hw->slave.int_trans_done_en = 1;
     }
 }
-
-
 
 /*------------------------------------------------------------------------------
  * Configs: mode
@@ -383,28 +374,24 @@ static inline void spi_ll_slave_set_mode(spi_dev_t *hw, const int mode, bool dma
         hw->misc.ck_idle_edge = 0;
         hw->user.rsck_i_edge = 0;
         hw->user.tsck_i_edge = 0;
-        hw->ctrl1.rsck_data_out = 0;
         hw->ctrl1.clk_mode_13 = 0;
     } else if (mode == 1) {
         hw->misc.ck_idle_edge = 0;
         hw->user.rsck_i_edge = 1;
         hw->user.tsck_i_edge = 1;
-        hw->ctrl1.rsck_data_out = 0;
         hw->ctrl1.clk_mode_13 = 1;
     } else if (mode == 2) {
         hw->misc.ck_idle_edge = 1;
         hw->user.rsck_i_edge = 1;
         hw->user.tsck_i_edge = 1;
-        hw->ctrl1.rsck_data_out = 0;
         hw->ctrl1.clk_mode_13 = 0;
     } else if (mode == 3) {
         hw->misc.ck_idle_edge = 1;
         hw->user.rsck_i_edge = 0;
         hw->user.tsck_i_edge = 0;
-        hw->ctrl1.rsck_data_out = 0;
         hw->ctrl1.clk_mode_13 = 1;
     }
-    //hw->ctrl1.rsck_data_out = 1;
+    hw->ctrl1.rsck_data_out = 0;
 }
 
 /**
@@ -439,31 +426,34 @@ static inline void spi_ll_set_sio_mode(spi_dev_t *hw, int sio_mode)
  */
 static inline void spi_ll_master_set_io_mode(spi_dev_t *hw, spi_ll_io_mode_t io_mode)
 {
-    hw->ctrl.val &= ~(SPI_FREAD_DUAL | SPI_FREAD_QUAD | SPI_FREAD_DIO | SPI_FREAD_QIO);
-    hw->user.val &= ~(SPI_FWRITE_DUAL | SPI_FWRITE_QUAD | SPI_FWRITE_DIO | SPI_FWRITE_QIO);
-    switch (io_mode) {
-    case SPI_LL_IO_MODE_DIO:
-        // hw->ctrl.fread_dio = 1;
-        // hw->user.fwrite_dio = 1;
-        break;
-    case SPI_LL_IO_MODE_DUAL:
-        hw->ctrl.fread_dual = 1;
-        hw->user.fwrite_dual = 1;
-        break;
-    case SPI_LL_IO_MODE_QIO:
-        // hw->ctrl.fread_qio = 1;
-        // hw->user.fwrite_qio = 1;
-        break;
-    case SPI_LL_IO_MODE_QUAD:
-        hw->ctrl.fread_quad = 1;
-        hw->user.fwrite_quad = 1;
-        break;
-    default:
-        break;
-    };
-    // if (io_mode != SPI_LL_IO_MODE_NORMAL) {
-    //     hw->ctrl.fastrd_mode = 1;
-    // }
+    if (io_mode == SPI_LL_IO_MODE_DIO || io_mode == SPI_LL_IO_MODE_DUAL) {
+        hw->ctrl.fcmd_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
+        hw->ctrl.faddr_dual= (io_mode == SPI_LL_IO_MODE_DIO) ? 1 : 0;
+        hw->ctrl.fread_dual=1;
+        hw->user.fwrite_dual=1;
+        hw->ctrl.fcmd_quad = 0;
+        hw->ctrl.faddr_quad = 0;
+        hw->ctrl.fread_quad = 0;
+        hw->user.fwrite_quad = 0;
+    } else if (io_mode == SPI_LL_IO_MODE_QIO || io_mode == SPI_LL_IO_MODE_QUAD) {
+        hw->ctrl.fcmd_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
+        hw->ctrl.faddr_quad = (io_mode == SPI_LL_IO_MODE_QIO) ? 1 : 0;
+        hw->ctrl.fread_quad=1;
+        hw->user.fwrite_quad=1;
+        hw->ctrl.fcmd_dual = 0;
+        hw->ctrl.faddr_dual = 0;
+        hw->ctrl.fread_dual = 0;
+        hw->user.fwrite_dual = 0;
+    } else {
+        hw->ctrl.fcmd_dual = 0;
+        hw->ctrl.faddr_dual = 0;
+        hw->ctrl.fread_dual = 0;
+        hw->user.fwrite_dual = 0;
+        hw->ctrl.fcmd_quad = 0;
+        hw->ctrl.faddr_quad = 0;
+        hw->ctrl.fread_quad = 0;
+        hw->user.fwrite_quad = 0;
+    }
 }
 
 /**
@@ -722,7 +712,7 @@ static inline void spi_ll_set_mosi_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    hw->slv_wrbuf_dlen.bit_len = bitlen - 1;
+    spi_ll_set_miso_bitlen(hw, bitlen);
 }
 
 /**
@@ -733,7 +723,7 @@ static inline void spi_ll_slave_set_rx_bitlen(spi_dev_t *hw, size_t bitlen)
  */
 static inline void spi_ll_slave_set_tx_bitlen(spi_dev_t *hw, size_t bitlen)
 {
-    hw->slv_rdbuf_dlen.bit_len = bitlen - 1;
+    spi_ll_set_miso_bitlen(hw, bitlen);
 }
 
 /**
@@ -785,27 +775,13 @@ static inline void spi_ll_set_address(spi_dev_t *hw, uint64_t addr, int addrlen,
         * addr[0] -> addr[7]
         * So swap the byte order to let the LSB sent first.
         */
-        addr = HAL_SWAP64(addr);
-        if (addrlen > 32) {
-            //The slv_wr_status register bits are sent first, then
-            //bits in addr register is sent.
-            hw->slv_wr_status = addr >> 32;
-            hw->addr = addr;
-        } else {
-            //otherwise only addr register is sent
-            hw->addr = addr >> 32;
-        }
+        addr = HAL_SWAP32(addr);
+        //otherwise only addr register is sent
+        hw->addr = addr;
     } else {
-        // shift the address to MSB of addr (and maybe slv_wr_status) register.
-        if (addrlen > 32) {
-            // output address will be sent from MSB to LSB of slv_wr_status register, then comes the MSB to
-            // LSB of addr register.
-            hw->addr = addr << (64 - addrlen);
-            hw->slv_wr_status = addr >> (addrlen - 32);
-        } else {
-            // output address will be sent from MSB to LSB of addr register
-            hw->addr = addr << (32 - addrlen);
-        }
+        // shift the address to MSB of addr register.
+        // output address will be sent from MSB to LSB of addr register
+        hw->addr = addr << (32 - addrlen);
     }
 }
 
@@ -863,8 +839,8 @@ static inline void spi_ll_enable_mosi(spi_dev_t *hw, int enable)
  */
 static inline void spi_ll_slave_reset(spi_dev_t *hw)
 {
-    hw->slave.sync_reset = 1;
-    hw->slave.sync_reset = 0;
+    hw->slave.soft_reset = 1;
+    hw->slave.soft_reset = 0;
 }
 
 /**
@@ -876,7 +852,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
  */
 static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 {
-    return hw->slv_rd_byte.slv_rdata_bit * 8;
+    return hw->slv_rd_byte.data_bytelen * 8;
 }
 
 

@@ -38,5 +38,4 @@ typedef enum {
 #define SPI_HOST    SPI1_HOST
 #define FSPI_HOST   SPI2_HOST
 #define HSPI_HOST   SPI3_HOST
-#define VSPI_HOST   SPI4_HOST
 #endif
