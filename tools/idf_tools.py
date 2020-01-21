@@ -1347,7 +1347,7 @@ def main(argv):
     # On macOS, unset __PYVENV_LAUNCHER__ variable if it is set.
     # Otherwise sys.executable keeps pointing to the system Python, even when a python binary from a virtualenv is invoked.
     # See https://bugs.python.org/issue22490#msg283859.
-    os.environ.pop('__PYVENV_LAUNCER__', None)
+    os.environ.pop('__PYVENV_LAUNCHER__', None)
 
     if sys.version_info.major == 2:
         try:
