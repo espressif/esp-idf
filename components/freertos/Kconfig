@@ -389,35 +389,6 @@ menu "FreeRTOS"
             FreeRTOS will enter light sleep mode if no tasks need to run for this number
             of ticks.
 
-    menuconfig FREERTOS_DEBUG_INTERNALS
-        bool "Debug FreeRTOS internals"
-        default n
-        help
-            Enable this option to show the menu with internal FreeRTOS debugging features.
-            This option does not change any code by itself, it just shows/hides some options.
-
-    if FREERTOS_DEBUG_INTERNALS
-
-        config FREERTOS_PORTMUX_DEBUG
-            bool "Debug portMUX portENTER_CRITICAL/portEXIT_CRITICAL"
-            depends on FREERTOS_DEBUG_INTERNALS
-            default n
-            help
-                If enabled, debug information (including integrity checks) will be printed
-                to UART for the port-specific MUX implementation.
-
-        if !FREERTOS_UNICORE
-            config FREERTOS_PORTMUX_DEBUG_RECURSIVE
-                bool "Debug portMUX Recursion"
-                depends on FREERTOS_PORTMUX_DEBUG
-                default n
-                help
-                    If enabled, additional debug information will be printed for recursive
-                    portMUX usage.
-        endif #FREERTOS_UNICORE
-
-    endif # FREERTOS_DEBUG_INTERNALS
-
     config FREERTOS_TASK_FUNCTION_WRAPPER
         bool "Enclose all task functions in a wrapper function"
         depends on COMPILER_OPTIMIZATION_DEFAULT

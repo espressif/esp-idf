@@ -35,6 +35,7 @@ list(APPEND srcs
     "src/hal/uart_hal_iram.c"
     "src/hal/spi_flash_hal.c"
     "src/hal/spi_flash_hal_iram.c"
+    "src/compare_set.c"
     )
 
 if(IDF_TARGET STREQUAL "esp32")
