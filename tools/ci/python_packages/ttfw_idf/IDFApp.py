@@ -319,6 +319,9 @@ class Example(IDFApp):
         if not config_name:
             config_name = "default"
 
+        if not target:
+            target = "esp32"
+
         # Search for CI build folders.
         # Path format: $IDF_PATH/build_examples/app_path_with_underscores/config/target
         # (see tools/ci/build_examples_cmake.sh)
