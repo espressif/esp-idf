@@ -702,6 +702,13 @@ static void httpd_req_cleanup(httpd_req_t *r)
     if ((r->ignore_sess_ctx_changes == false) && (ra->sd->ctx != r->sess_ctx)) {
         httpd_sess_free_ctx(ra->sd->ctx, ra->sd->free_ctx);
     }
+
+    /* Close the socket when a WebSocket Close request is received */
+    if (ra->sd->ws_close) {
+        ESP_LOGD(TAG, LOG_FMT("Try closing WS connection at FD: %d"), ra->sd->fd);
+        httpd_sess_trigger_close(r->handle, ra->sd->fd);
+    }
+
     /* Retrieve session info from the request into the socket database. */
     ra->sd->ctx = r->sess_ctx;
     ra->sd->free_ctx = r->free_ctx;
@@ -742,16 +749,17 @@ esp_err_t httpd_req_new(struct httpd_data *hd, struct sock_db *sd)
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
     /* Handle WebSocket */
-    ESP_LOGD(TAG, LOG_FMT("New request, has WS? %s, sd->ws_handler valid? %s"),
+    ESP_LOGD(TAG, LOG_FMT("New request, has WS? %s, sd->ws_handler valid? %s, sd->ws_close? %s"),
              sd->ws_handshake_done ? "Yes" : "No",
-             sd->ws_handler != NULL ? "Yes" : "No");
+             sd->ws_handler != NULL ? "Yes" : "No",
+             sd->ws_close ? "Yes" : "No");
     if (sd->ws_handshake_done && sd->ws_handler != NULL) {
         ESP_LOGD(TAG, LOG_FMT("New WS request from existing socket"));
         ret = httpd_ws_get_frame_type(r);
 
-        /* Close the connection immediately if it's a CLOSE frame */
+        /*  Stop and return here immediately if it's a CLOSE frame */
         if (ra->ws_type == HTTPD_WS_TYPE_CLOSE) {
-            httpd_req_cleanup(r);
+            sd->ws_close = true;
             return ret;
         }
 

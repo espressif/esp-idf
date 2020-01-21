@@ -333,8 +333,12 @@ esp_err_t httpd_ws_get_frame_type(httpd_req_t *req)
     /* Please refer to RFC6455 Section 5.2 for more details */
     uint8_t first_byte = 0;
     if (httpd_recv_with_opt(req, (char *)&first_byte, sizeof(first_byte), false) <= 0) {
-        ESP_LOGW(TAG, LOG_FMT("Failed to receive the first byte"));
-        return ESP_FAIL;
+        /* If the recv() return code is <= 0, then this socket FD is invalid (i.e. a broken connection) */
+        /* Here we mark it as a Close message and close it later. */
+        ESP_LOGW(TAG, LOG_FMT("Failed to read header byte (socket FD invalid), closing socket now"));
+        aux->ws_final = true;
+        aux->ws_type = HTTPD_WS_TYPE_CLOSE;
+        return ESP_OK;
     }
 
     ESP_LOGD(TAG, LOG_FMT("First byte received: 0x%02X"), first_byte);

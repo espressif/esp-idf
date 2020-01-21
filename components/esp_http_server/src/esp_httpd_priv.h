@@ -71,8 +71,11 @@ struct sock_db {
     uint64_t lru_counter;                   /*!< LRU Counter indicating when the socket was last used */
     char pending_data[PARSER_BLOCK_SIZE];   /*!< Buffer for pending data to be received */
     size_t pending_len;                     /*!< Length of pending data to be received */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
     bool ws_handshake_done;                 /*!< True if it has done WebSocket handshake (if this socket is a valid WS) */
+    bool ws_close;                          /*!< Set to true to close the socket later (when WS Close frame received) */
     esp_err_t (*ws_handler)(httpd_req_t *r);   /*!< WebSocket handler, leave to null if it's not WebSocket */
+#endif
 };
 
 /**
