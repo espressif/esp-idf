@@ -177,4 +177,13 @@ SOC_RESERVE_MEMORY_REGION(0x3fffc000, 0x40000000, trace_mem); //Reserve trace me
 SOC_RESERVE_MEMORY_REGION(SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_LOW + RESERVE_SPIRAM_SIZE, spi_ram); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #endif
 
+extern int _data_start, _heap_start, _iram_start, _iram_end;
+// Static data region. DRAM used by data+bss and possibly rodata
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);
+
+// IRAM code region
+// ESP32 has an IRAM-only region 0x4008_0000 - 0x4009_FFFF, reserve the used part
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start, (intptr_t)&_iram_end, iram_code);
+
+
 #endif /* BOOTLOADER_BUILD */
