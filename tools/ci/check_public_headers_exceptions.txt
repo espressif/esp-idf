@@ -90,7 +90,6 @@ components/unity/include/unity_test_runner.h
 
 ### Here are the files that do not compile for some reason
 #
-components/esp_rom/include/esp32s2beta/rom/spi_flash.h
 components/app_trace/include/esp_sysview_trace.h
 components/esp_gdbstub/include/esp_gdbstub.h
 components/openssl/include/platform/ssl_pm.h

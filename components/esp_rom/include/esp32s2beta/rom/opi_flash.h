@@ -10,6 +10,10 @@
 #include <stdint.h>
 #include "spi_flash.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     uint16_t cmd;                /*!< Command value */
     uint16_t cmdBitLen;          /*!< Command byte length*/
@@ -286,6 +290,10 @@ esp_rom_spiflash_result_t esp_rom_opiflash_write(int spi_num, esp_rom_spiflash_r
  * @param target the target operation mode to be set
  */
 void esp_rom_opiflash_set_mode(int spi_num, esp_rom_spiflash_read_mode_t cur_mode, esp_rom_spiflash_read_mode_t target_mode);
+#endif
+
+#ifdef __cplusplus
+}
 #endif
 
 #endif
