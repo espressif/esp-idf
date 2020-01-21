@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from builtins import str
 import re
-import os
 import sys
 import ssl
 import paho.mqtt.client as mqtt
@@ -128,12 +127,7 @@ def test_weekend_mqtt_publish(env, extra_data):
       3. Test evaluates python client received correct qos0 message
       4. Test ESP32 client received correct qos0 message
     """
-    dut1 = env.get_dut("mqtt_publish", "examples/protocols/mqtt/publish_test")
-    # check and log bin size
-    binary_file = os.path.join(dut1.app.binary_path, "mqtt_publish.bin")
-    bin_size = os.path.getsize(binary_file)
-    ttfw_idf.log_performance("mqtt_publish_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("mqtt_publish_size", bin_size // 1024)
+    dut1 = env.get_dut("mqtt_publish_connect_test", "examples/protocols/mqtt/publish_connect_test")
     # Look for host:port in sdkconfig
     try:
         # python client subscribes to the topic to which esp client publishes and vice versa

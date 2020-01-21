@@ -1,4 +1,4 @@
-# ESP-MQTT advanced published test
+# ESP-MQTT advanced publish and connect test project
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
 Main purpose of this example is to test the MQTT library to correctly publish and receive messages (of different size and sequences) over different transports. 
