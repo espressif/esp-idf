@@ -20,6 +20,7 @@
 #include "soc/soc.h"
 #include "soc/cpu.h"
 #include "soc/rtc_periph.h"
+#include "hal/brownout_hal.h"
 #include "esp32/rom/ets_sys.h"
 #include "esp_private/system_internal.h"
 #include "driver/rtc_cntl.h"
@@ -49,14 +50,17 @@ static void rtc_brownout_isr_handler(void *arg)
 
 void esp_brownout_init(void)
 {
-    REG_WRITE(RTC_CNTL_BROWN_OUT_REG,
-            RTC_CNTL_BROWN_OUT_ENA /* Enable BOD */
-            | RTC_CNTL_BROWN_OUT_PD_RF_ENA /* Automatically power down RF */
-            /* Reset timeout must be set to >1 even if BOR feature is not used */
-            | (2 << RTC_CNTL_BROWN_OUT_RST_WAIT_S)
-            | (BROWNOUT_DET_LVL << RTC_CNTL_DBROWN_OUT_THRES_S));
+    brownout_hal_config_t cfg = {
+        .threshold = BROWNOUT_DET_LVL,
+        .enabled = true,
+        .reset_enabled = false,
+        .flash_power_down = true,
+        .rf_power_down = true,
+    };
+
+    brownout_hal_config(&cfg);
 
     ESP_ERROR_CHECK( rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M) );
 
-    REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_BROWN_OUT_INT_ENA_M);
+    brownout_hal_intr_enable(true);
 }

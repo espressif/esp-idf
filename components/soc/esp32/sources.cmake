@@ -1,4 +1,5 @@
 set(SOC_SRCS "adc_periph.c"
+    "brownout_hal.c"
     "dac_periph.c"
     "cpu_util.c"
     "gpio_periph.c"

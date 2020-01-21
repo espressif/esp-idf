@@ -17,10 +17,11 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
+#include "esp_log.h"
 #include "soc/soc.h"
 #include "soc/cpu.h"
-#include "soc/rtc_cntl_reg.h"
-#include "esp32s2/rom/ets_sys.h"
+#include "soc/rtc_periph.h"
+#include "hal/brownout_hal.h"
 #include "esp_private/system_internal.h"
 #include "driver/rtc_cntl.h"
 #include "freertos/FreeRTOS.h"
@@ -42,15 +43,24 @@ static void rtc_brownout_isr_handler(void *arg)
      * at the same time as the following ets_printf.
      */
     esp_cpu_stall(!xPortGetCoreID());
+    esp_reset_reason_set_hint(ESP_RST_BROWNOUT);
     ets_printf("\r\nBrownout detector was triggered\r\n\r\n");
     esp_restart_noos();
 }
 
 void esp_brownout_init(void)
 {
-// TODO: implement brownout threshold configuration for esp32s2 - IDF-751
+    brownout_hal_config_t cfg = {
+        .threshold = BROWNOUT_DET_LVL,
+        .enabled = true,
+        .reset_enabled = false,
+        .flash_power_down = true,
+        .rf_power_down = true,
+    };
+
+    brownout_hal_config(&cfg);
 
     ESP_ERROR_CHECK( rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M) );
 
-    REG_SET_BIT(RTC_CNTL_INT_ENA_REG, RTC_CNTL_BROWN_OUT_INT_ENA_M);
+    brownout_hal_intr_enable(true);
 }
