@@ -40,6 +40,12 @@
 /*!< The maximum length of a BLE Mesh unprovisioned device name */
 #define ESP_BLE_MESH_DEVICE_NAME_MAX_LEN    DEVICE_NAME_SIZE
 
+/*!< The maximum length of the settings user_id of Provisioner */
+#define ESP_BLE_MESH_SETTINGS_USER_ID_SIZE  20
+
+/*!< Invalid settings index of Provisioner */
+#define ESP_BLE_MESH_INVALID_SETTINGS_INDEX 0xFF
+
 /*!< Define the BLE Mesh octet 16 bytes size */
 #define ESP_BLE_MESH_OCTET16_LEN    16
 typedef uint8_t esp_ble_mesh_octet16_t[ESP_BLE_MESH_OCTET16_LEN];
@@ -773,6 +779,16 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_STORE_NODE_COMP_DATA_COMP_EVT,     /*!< Provisioner store node composition data completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT,    /*!< Provisioner delete node with uuid completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT,    /*!< Provisioner delete node with unicast address completion event */
+    ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT,      /*!< Provisioner open settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_USER_ID_COMP_EVT,    /*!< Provisioner open settings with user_id completion event */
+    ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT,     /*!< Provisioner close settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_USER_ID_COMP_EVT,   /*!< Provisioner close settings with user_id completion event */
+    ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_INDEX_COMP_EVT,   /*!< Provisioner restore settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_USER_ID_COMP_EVT, /*!< Provisioner restore settings with user_id completion event */
+    ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_INDEX_COMP_EVT,   /*!< Provisioner release settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID_COMP_EVT, /*!< Provisioner release settings with user_id completion event */
+    ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT,    /*!< Provisioner delete settings with index completion event */
+    ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT,  /*!< Provisioner delete settings with user_id completion event */
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
     ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
@@ -1098,17 +1114,87 @@ typedef union {
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT
      */
-    struct ble_mesh_provisioner_delete_node_with_uuid_comp_data_comp_param {
+    struct ble_mesh_provisioner_delete_node_with_uuid_comp_param {
         int err_code;                           /*!< Indicate the result of deleting node with uuid by the Provisioner */
         uint8_t uuid[16];                       /*!< Node device uuid */
     } provisioner_delete_node_with_uuid_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_UUID_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT
      */
-    struct ble_mesh_provisioner_delete_node_with_addr_comp_data_comp_param {
+    struct ble_mesh_provisioner_delete_node_with_addr_comp_param {
         int err_code;                           /*!< Indicate the result of deleting node with unicast address by the Provisioner */
         uint16_t unicast_addr;                  /*!< Node unicast address */
     } provisioner_delete_node_with_addr_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_NODE_WITH_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct ble_mesh_provisioner_open_settings_with_index_comp_param {
+        int err_code;                               /*!< Indicate the result of opening settings with index by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_open_settings_with_index_comp;    /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_USER_ID_COMP_EVT
+     */
+    struct ble_mesh_provisioner_open_settings_with_user_id_comp_param {
+        int err_code;                               /*!< Indicate the result of opening settings with user_id by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_open_settings_with_user_id_comp;  /* !< Event parameters of ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_USER_ID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct ble_mesh_provisioner_close_settings_with_index_comp_param {
+        int err_code;                               /*!< Indicate the result of closing settings with index by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_close_settings_with_index_comp;   /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_USER_ID_COMP_EVT
+     */
+    struct ble_mesh_provisioner_close_settings_with_user_id_comp_param {
+        int err_code;                               /*!< Indicate the result of closing settings with user_id by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_close_settings_with_user_id_comp; /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_USER_ID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct ble_mesh_provisioner_restore_settings_with_index_comp_param {
+        int err_code;                               /*!< Indicate the result of restoring settings with index by the Provisioner */
+        uint8_t index;                              /*!< Index of Provisioner settings */
+    } provisioner_restore_settings_with_index_comp; /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_USER_ID_COMP_EVT
+     */
+    struct ble_mesh_provisioner_restore_settings_with_user_id_comp_param {
+        int err_code;                                   /*!< Indicate the result of restoring settings with user_id by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+    } provisioner_restore_settings_with_user_id_comp;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_USER_ID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct ble_mesh_provisioner_release_settings_with_index_comp_param {
+        int err_code;                                   /*!< Indicate the result of releasing settings with index by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+    } provisioner_release_settings_with_index_comp;     /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID_COMP_EVT
+     */
+    struct ble_mesh_provisioner_release_settings_with_user_id_comp_param {
+        int err_code;                                   /*!< Indicate the result of releasing settings with user_id by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+    } provisioner_release_settings_with_user_id_comp;   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT
+     */
+    struct ble_mesh_provisioner_delete_settings_with_index_comp_param {
+        int err_code;                                   /*!< Indicate the result of deleting settings with index by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+    } provisioner_delete_settings_with_index_comp;      /*!< Event parameter of ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT
+     */
+    struct ble_mesh_provisioner_delete_settings_with_user_id_comp_param {
+        int err_code;                                   /*!< Indicate the result of deleting settings with user_id by the Provisioner */
+        uint8_t index;                                  /*!< Index of Provisioner settings */
+    } provisioner_delete_settings_with_user_id_comp;    /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT
      */

@@ -163,11 +163,11 @@ done:
     return 0;
 }
 
-int bt_mesh_provisioner_deinit(bool erase)
+void bt_mesh_provisioner_release_netkey(bool erase)
 {
     int i;
 
-    for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_SUBNET_COUNT; i++) {
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_sub); i++) {
         if (bt_mesh.p_sub[i]) {
             if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
                 bt_mesh_clear_p_subnet(bt_mesh.p_sub[i]);
@@ -177,7 +177,18 @@ int bt_mesh_provisioner_deinit(bool erase)
         }
     }
 
-    for (i = 0; i < CONFIG_BLE_MESH_PROVISIONER_APP_KEY_COUNT; i++) {
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_p_net_idx();
+    }
+    bt_mesh.p_net_idx_next = 0U;
+    return;
+}
+
+void bt_mesh_provisioner_release_appkey(bool erase)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.p_app_keys); i++) {
         if (bt_mesh.p_app_keys[i]) {
             if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
                 bt_mesh_clear_p_app_key(bt_mesh.p_app_keys[i]);
@@ -187,22 +198,32 @@ int bt_mesh_provisioner_deinit(bool erase)
         }
     }
 
-    bt_mesh.p_net_idx_next = 0U;
-    bt_mesh.p_app_idx_next = 0U;
     if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        bt_mesh_clear_p_net_idx();
         bt_mesh_clear_p_app_idx();
     }
+    bt_mesh.p_app_idx_next = 0U;
+    return;
+}
 
-    for (i = 0; i < CONFIG_BLE_MESH_MAX_STORED_NODES; i++) {
+void bt_mesh_provisioner_release_node(bool erase)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
         provisioner_remove_node(i, erase);
     }
 
     all_node_count = 0U;
     prov_node_count = 0U;
+    return;
+}
 
+int bt_mesh_provisioner_deinit(bool erase)
+{
+    bt_mesh_provisioner_release_netkey(erase);
+    bt_mesh_provisioner_release_appkey(erase);
+    bt_mesh_provisioner_release_node(erase);
     bt_mesh_provisioner_mutex_free();
-
     return 0;
 }
 

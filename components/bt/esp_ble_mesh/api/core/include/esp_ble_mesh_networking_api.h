@@ -371,6 +371,237 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx);
 uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void);
 
 /**
+ * @brief         This function is called by Provisioner to open the corresponding
+ *                flash section for storing mesh provisioning information.
+ *
+ * @note          1. Provisioner can use this function to open a flash section for
+ *                storing mesh information.
+ *                2. And before calling any of restore, release and close functions,
+ *                the open function must be called firstly.
+ *
+ * @param[in]     index: Provisioner settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_open_settings_with_index(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to open the corresponding
+ *                flash section for storing mesh provisioning information.
+ *
+ * @note          1. Provisioner can use this function to open a flash section for
+ *                storing mesh information.
+ *                2. And before calling any of restore, release and close functions,
+ *                the open function must be called firstly.
+ *
+ * @param[in]     user_id: User id of Provisioner settings.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_open_settings_with_user_id(const char *user_id);
+
+/**
+ * @brief         This function is called by Provisioner to close the corresponding
+ *                flash section which has been opened previously for storing mesh
+ *                provisioning information.
+ *
+ * @note          1. Before closing the flash section, it must has been opened previously.
+ *                2. When the release function is invoked, and the "erase" flag is set to
+ *                false, then calling the close function will only close the flash section.
+ *                And if the "erase" flag is set to true, besides closing the flash section,
+ *                the corresponding settings user_id will also be cleaned and erased.
+ *
+ * @param[in]     index: Provisioner settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_close_settings_with_index(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to close the corresponding
+ *                flash section which has been opened previously for storing mesh
+ *                provisioning information.
+ *
+ * @note          1. Before closing the flash section, it must has been opened previously.
+ *                2. When the release function is invoked, and the "erase" flag is set to
+ *                false, then calling the close function will only close the flash section.
+ *                And if the "erase" flag is set to true, besides closing the flash section,
+ *                the corresponding settings user_id will also be cleaned and erased.
+ *
+ * @param[in]     user_id: User id of Provisioner settings.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_close_settings_with_user_id(const char *user_id);
+
+/**
+ * @brief         This function is called by Provisioner to restore the mesh provisioning
+ *                information from the corresponding flash section which has been opened
+ *                previously.
+ *
+ * @note          1. Before calling this function to restore corresponding mesh information,
+ *                the previously restored mesh information must be released using the release
+ *                function.
+ *                2. And the flash section must has been opened using the open function.
+ *
+ * @param[in]     index: Provisioner settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_restore_settings_with_index(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to restore the mesh provisioning
+ *                information from the corresponding flash section which has been opened
+ *                previously.
+ *
+ * @note          1. Before calling this function to restore corresponding mesh information,
+ *                the previously restored mesh information must be released using the release
+ *                function.
+ *                2. And the flash section must has been opened using the open function.
+ *
+ * @param[in]     user_id: User id of Provisioner settings.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_restore_settings_with_user_id(const char *user_id);
+
+/**
+ * @brief         This function is called by Provisioner to release the mesh provisioning
+ *                information which has been restored from the corresponding flash section.
+ *
+ * @note          1. When this function is called, if the "erase" flag is set to false, the
+ *                restored mesh information will be cleaned (e.g. removing the NetKey, etc).
+ *                If the "erase" flag is set to true, besides cleaning the mesh information,
+ *                the mesh information stored in the flash section will also be erased. And
+ *                this function will also disable the Provisioner functionality internally.
+ *                2. If Provisioner tries to work properly again, the restored function must
+ *                be invoked to restore mesh information from this flash section if the mesh
+ *                information is not erased, or from another flash section if erased.
+ *                Before calling this, the open and restore functions must be invoked.
+ *                3. The whole working process of Provisioner settings should be as following:
+ *                a) open settings A
+ *                b) restore settings A
+ *                c) start to provision and control nodes
+ *                d) release settings A
+ *                e) close settings A
+ *                f) open settings B
+ *                g) restore settings B
+ *                h) start to provision and control other nodes
+ *                i) release settings B
+ *                j) close settings B
+ *                k) ......
+ *
+ * @param[in]     index: Provisioner settings index.
+ * @param[in]     erase: Indicate whether erase the information from flash.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_release_settings_with_index(uint8_t index, bool erase);
+
+/**
+ * @brief         This function is called by Provisioner to release the mesh provisioning
+ *                information which has been restored from the corresponding flash section.
+ *
+ * @note          1. When this function is called, if the "erase" flag is set to false, the
+ *                restored mesh information will be cleaned (e.g. removing the NetKey, etc).
+ *                If the "erase" flag is set to true, besides cleaning the mesh information,
+ *                the mesh information stored in the flash section will also be erased. And
+ *                this function will also disable the Provisioner functionality internally.
+ *                2. If Provisioner tries to work properly again, the restored function must
+ *                be invoked to restore mesh information from this flash section if the mesh
+ *                information is not erased, or from another flash section if erased.
+ *                Before calling this, the open and restore functions must be invoked.
+ *                3. The whole working process of Provisioner settings should be as following:
+ *                a) open settings A
+ *                b) restore settings A
+ *                c) start to provision and control nodes
+ *                d) release settings A
+ *                e) close settings A
+ *                f) open settings B
+ *                g) restore settings B
+ *                h) start to provision and control other nodes
+ *                i) release settings B
+ *                j) close settings B
+ *                k) ......
+ *
+ * @param[in]     user_id: User id of Provisioner settings.
+ * @param[in]     erase: Indicate whether erase the information from flash.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_release_settings_with_user_id(const char *user_id, bool erase);
+
+/**
+ * @brief         This function is called by Provisioner to erase the mesh provisioning
+ *                information which is not been restored, and the corrseponding settings
+ *                user_id from the flash section.
+ *
+ * @note          When this function is called, the corresponding nvs namespace must not
+ *                be open and restored. This function is used to erase the mesh information
+ *                and settings user_id which are not been used currently.
+ *
+ * @param[in]     index: Provisioner settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_delete_settings_with_index(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to erase the mesh provisioning
+ *                information which is not been restored, and the corrseponding settings
+ *                user_id from the flash section.
+ *
+ * @note          When this function is called, the corresponding nvs namespace must not
+ *                be open and restored. This function is used to erase the mesh information
+ *                and settings user_id which are not been used currently.
+ *
+ * @param[in]     index: Provisioner settings index.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_delete_settings_with_user_id(const char *user_id);
+
+/**
+ * @brief         This function is called by Provisioner to get the settings user id.
+ *
+ * @param[in]     index: Provisioner settings index.
+ *
+ * @return        User id on success or NULL on failure.
+ *
+ */
+const char *esp_ble_mesh_provisioner_get_settings_user_id(uint8_t index);
+
+/**
+ * @brief         This function is called by Provisioner to get the settings index.
+ *
+ * @param[in]     user_id: User id of Provisioner settings.
+ *
+ * @return        Provisioner Settings index.
+ *
+ */
+uint8_t esp_ble_mesh_provisioner_get_settings_index(const char *user_id);
+
+/**
+ * @brief         This function is called by Provisioner to get the number of free
+ *                settings user_id.
+ *
+ * @return        Number of free Provisioner Settings.
+ *
+ */
+uint8_t esp_ble_mesh_provisioner_get_free_settings_user_id_count(void);
+
+/**
  * @brief         This function is called to get fast provisioning application key.
  *
  * @param[in]     net_idx: Network key index.

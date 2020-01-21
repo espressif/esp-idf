@@ -167,7 +167,47 @@ struct node_info {
     u8_t  dev_key[16];
 } __packed;
 
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
+#define SETTINGS_USER_ID_SIZE       20
+#define SETTINGS_NVS_NAME_SIZE      15
+#define INVALID_SETTINGS_INDEX      0xFF
+#define INVALID_SETTINGS_HANDLE     UINT32_MAX
+
+static struct settings_namespace {
+    u8_t open:1,    /* Settings is open */
+         restore:1, /* Settings is restored */
+         erase:1;   /* Settings is erased */
+    char user_id[SETTINGS_USER_ID_SIZE + 1];
+    char nvs_name[SETTINGS_NVS_NAME_SIZE + 1];
+    nvs_handle handle;
+} settings_name[CONFIG_BLE_MESH_MAX_NVS_NAMESPACE];
+#endif
+
 #define DEVICE_ROLE_BITS    (BIT(BLE_MESH_NODE) | BIT(BLE_MESH_PROVISIONER))
+
+static bt_mesh_mutex_t settings_lock;
+
+static void bt_mesh_settings_mutex_new(void)
+{
+    if (!settings_lock.mutex) {
+        bt_mesh_mutex_create(&settings_lock);
+    }
+}
+
+static void bt_mesh_settings_mutex_free(void)
+{
+    bt_mesh_mutex_free(&settings_lock);
+}
+
+void bt_mesh_settings_lock(void)
+{
+    bt_mesh_mutex_lock(&settings_lock);
+}
+
+void bt_mesh_settings_unlock(void)
+{
+    bt_mesh_mutex_unlock(&settings_lock);
+}
 
 static int role_set(const char *name)
 {
@@ -1187,44 +1227,46 @@ const struct bt_mesh_setting {
     const char *name;
     int (*func)(const char *name);
 } settings[] = {
-    { "mesh/role",     role_set      },
-    { "mesh/net",      net_set       },
-    { "mesh/iv",       iv_set        },
-    { "mesh/seq",      seq_set       },
-    { "mesh/rpl",      rpl_set       },
-    { "mesh/netkey",   net_key_set   },
-    { "mesh/appkey",   app_key_set   },
-    { "mesh/hb_pub",   hb_pub_set    },
-    { "mesh/cfg",      cfg_set       },
-    { "mesh/sig",      sig_mod_set   },
-    { "mesh/vnd",      vnd_mod_set   },
+    { "mesh/role",     role_set      }, /* For node & Provisioner */
+    { "mesh/net",      net_set       }, /* For node */
+    { "mesh/iv",       iv_set        }, /* For node & Provisioner */
+    { "mesh/seq",      seq_set       }, /* For node & Provisioner */
+    { "mesh/rpl",      rpl_set       }, /* For node & Provisioner */
+    { "mesh/netkey",   net_key_set   }, /* For node */
+    { "mesh/appkey",   app_key_set   }, /* For node */
+    { "mesh/hb_pub",   hb_pub_set    }, /* For node */
+    { "mesh/cfg",      cfg_set       }, /* For node */
+    { "mesh/sig",      sig_mod_set   }, /* For node & Provisioner */
+    { "mesh/vnd",      vnd_mod_set   }, /* For node & Provisioner */
 #if CONFIG_BLE_MESH_LABEL_COUNT > 0
-    { "mesh/vaddr",    va_set        },
+    { "mesh/vaddr",    va_set        }, /* For node */
 #endif
 #if CONFIG_BLE_MESH_PROVISIONER
-    { "mesh/p_prov",   p_prov_set    },
-    { "mesh/p_netidx", p_net_idx_set },
-    { "mesh/p_appidx", p_app_idx_set },
-    { "mesh/p_netkey", p_net_key_set },
-    { "mesh/p_appkey", p_app_key_set },
-    { "mesh/p_pnode",  p_node_set    },
-    { "mesh/p_snode",  p_node_set    },
+    { "mesh/p_prov",   p_prov_set    }, /* For Provisioner */
+    { "mesh/p_netidx", p_net_idx_set }, /* For Provisioner */
+    { "mesh/p_appidx", p_app_idx_set }, /* For Provisioner */
+    { "mesh/p_netkey", p_net_key_set }, /* For Provisioner */
+    { "mesh/p_appkey", p_app_key_set }, /* For Provisioner */
+    { "mesh/p_pnode",  p_node_set    }, /* For Provisioner */
+    { "mesh/p_snode",  p_node_set    }, /* For Provisioner */
 #endif
 };
 
 /**
  * For Provisioner, the load operation needs the following actions:
+ * role_set:    Need, restore the device role
  * net_set:     Not needed
  * iv_set:      Need, although Provisioner will do some initialization of IV Index
  *              during startup, but we need to restore the last IV Index status
  * seq_set:     Need, restore the previous sequence number
  * rpl_set:     Need, restore the previous Replay Protection List
- * net_key_set: Need, restore the previous network keys
- * app_key_set: Need, restore the previous application keys
+ * net_key_set: Not needed
+ * app_key_set: Not needed
  * hb_pub_set:  Not needed currently
  * cfg_set:     Not needed currently
  * sig_mod_set: Need, restore SIG models related info (app, sub, pub)
  * vnd_mod_set: Need, restore vendor models related info (app, sub, pub)
+ * va_set:      Not needed currently
  */
 int settings_core_load(void)
 {
@@ -1237,7 +1279,8 @@ int settings_core_load(void)
             !strcmp(settings[i].name, "mesh/netkey") ||
             !strcmp(settings[i].name, "mesh/appkey") ||
             !strcmp(settings[i].name, "mesh/hb_pub") ||
-            !strcmp(settings[i].name, "mesh/cfg")) &&
+            !strcmp(settings[i].name, "mesh/cfg") ||
+            !strcmp(settings[i].name, "mesh/vaddr")) &&
             (!IS_ENABLED(CONFIG_BLE_MESH_NODE) || bt_mesh_is_provisioner())) {
             BT_DBG("Not restoring %s for Provisioner", settings[i].name);
             continue;
@@ -1358,7 +1401,7 @@ int settings_core_commit(void)
             return 0;
         }
 
-        BT_INFO("p_sub[0]->net_idx 0x%03x", bt_mesh.p_sub[0]->net_idx);
+        BT_INFO("Settings commit, p_sub[0]->net_idx 0x%03x", bt_mesh.p_sub[0]->net_idx);
 
         bt_mesh_comp_provision(bt_mesh_provisioner_get_primary_elem_addr());
 
@@ -1378,11 +1421,13 @@ int settings_core_commit(void)
     }
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
-    if (bt_mesh.ivu_duration < BLE_MESH_IVU_MIN_HOURS) {
-        k_delayed_work_submit(&bt_mesh.ivu_timer, BLE_MESH_IVU_TIMEOUT);
-    }
+    if (bt_mesh_is_node() || bt_mesh_is_provisioner()) {
+        if (bt_mesh.ivu_duration < BLE_MESH_IVU_MIN_HOURS) {
+            k_delayed_work_submit(&bt_mesh.ivu_timer, BLE_MESH_IVU_TIMEOUT);
+        }
 
-    bt_mesh_model_foreach(commit_model, NULL);
+        bt_mesh_model_foreach(commit_model, NULL);
+    }
 
 #if defined(CONFIG_BLE_MESH_NODE)
     if (bt_mesh_is_node()) {
@@ -1411,12 +1456,6 @@ int settings_core_commit(void)
         bt_mesh_net_start();
     }
 #endif /* CONFIG_BLE_MESH_NODE */
-
-#if defined(CONFIG_BLE_MESH_PROVISIONER)
-    if (bt_mesh_is_provisioner()) {
-        bt_mesh_provisioner_net_start(BLE_MESH_PROV_ADV | BLE_MESH_PROV_GATT);
-    }
-#endif /* CONFIG_BLE_MESH_PROVISIONER */
 
     return 0;
 }
@@ -1593,7 +1632,7 @@ static void clear_rpl(void)
 
     buf = bt_mesh_get_core_settings_item("mesh/rpl");
     if (!buf) {
-        BT_WARN("%s, Erase RPL", __func__);
+        BT_INFO("%s, Erase mesh/rpl", __func__);
         bt_mesh_save_core_settings("mesh/rpl", NULL, 0);
         return;
     }
@@ -2217,7 +2256,12 @@ void bt_mesh_clear_app_key(struct bt_mesh_app_key *key)
 
 void bt_mesh_clear_rpl(void)
 {
-    schedule_store(BLE_MESH_RPL_PENDING);
+    if (bt_mesh_is_node()) {
+        schedule_store(BLE_MESH_RPL_PENDING);
+    } else {
+        /* For Provisioner, clear rpl directly */
+        clear_rpl();
+    }
 }
 
 void bt_mesh_store_mod_bind(struct bt_mesh_model *model)
@@ -2236,6 +2280,130 @@ void bt_mesh_store_mod_pub(struct bt_mesh_model *model)
 {
     model->flags |= BLE_MESH_MOD_PUB_PENDING;
     schedule_store(BLE_MESH_MOD_PENDING);
+}
+
+static void clear_mod_bind(struct bt_mesh_model *model,
+                           struct bt_mesh_elem *elem, bool vnd,
+                           bool primary, void *user_data)
+{
+    char name[16] = {'\0'};
+    u16_t model_key = 0U;
+    int err = 0;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+
+    sprintf(name, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
+    bt_mesh_save_core_settings(name, NULL, 0);
+
+    err = bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    if (err) {
+        BT_ERR("%s, Failed to remove 0x%04x to %s", __func__, model_key,
+               vnd ? "mesh/vnd" : "mesh/sig");
+    }
+}
+
+static void clear_mod_sub(struct bt_mesh_model *model,
+                          struct bt_mesh_elem *elem, bool vnd,
+                          bool primary, void *user_data)
+{
+    char name[16] = {'\0'};
+    u16_t model_key = 0U;
+    int err = 0;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+
+    sprintf(name, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
+    bt_mesh_save_core_settings(name, NULL, 0);
+
+    err = bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    if (err) {
+        BT_ERR("%s, Failed to remove 0x%04x to %s", __func__, model_key,
+               vnd ? "mesh/vnd" : "mesh/sig");
+    }
+}
+
+static void clear_mod_pub(struct bt_mesh_model *model,
+                          struct bt_mesh_elem *elem, bool vnd,
+                          bool primary, void *user_data)
+{
+    char name[16] = {'\0'};
+    u16_t model_key = 0U;
+    int err = 0;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(model->elem_idx, model->model_idx);
+
+    sprintf(name, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
+    bt_mesh_save_core_settings(name, NULL, 0);
+
+    err = bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    if (err) {
+        BT_ERR("%s, Failed to remove 0x%04x to %s", __func__, model_key,
+            vnd ? "mesh/vnd" : "mesh/sig");
+    }
+}
+
+void bt_mesh_clear_mod_bind(void)
+{
+    bt_mesh_model_foreach(clear_mod_bind, NULL);
+}
+
+void bt_mesh_clear_mod_sub(void)
+{
+    bt_mesh_model_foreach(clear_mod_sub, NULL);
+}
+
+void bt_mesh_clear_mod_pub(void)
+{
+    bt_mesh_model_foreach(clear_mod_pub, NULL);
+}
+
+static void reset_mod_bind(struct bt_mesh_model *model,
+                           struct bt_mesh_elem *elem, bool vnd,
+                           bool primary, void *user_data)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(model->keys); i++) {
+        if (model->keys[i] != BLE_MESH_KEY_DEV) {
+            model->keys[i] = BLE_MESH_KEY_UNUSED;
+        }
+    }
+}
+
+static void reset_mod_sub(struct bt_mesh_model *model,
+                          struct bt_mesh_elem *elem, bool vnd,
+                          bool primary, void *user_data)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(model->groups); i++) {
+        model->groups[i] = BLE_MESH_ADDR_UNASSIGNED;
+    }
+}
+
+static void reset_mod_pub(struct bt_mesh_model *model,
+                          struct bt_mesh_elem *elem, bool vnd,
+                          bool primary, void *user_data)
+{
+    if (model->pub) {
+        model->pub->addr = BLE_MESH_ADDR_UNASSIGNED;
+        k_delayed_work_cancel(&model->pub->timer);
+    }
+}
+
+void bt_mesh_reset_mod_bind(void)
+{
+    bt_mesh_model_foreach(reset_mod_bind, NULL);
+}
+
+void bt_mesh_reset_mod_sub(void)
+{
+    bt_mesh_model_foreach(reset_mod_sub, NULL);
+}
+
+void bt_mesh_reset_mod_pub(void)
+{
+    bt_mesh_model_foreach(reset_mod_pub, NULL);
 }
 
 void bt_mesh_store_label(void)
@@ -2555,6 +2723,922 @@ void bt_mesh_store_node_comp_data(struct bt_mesh_node *node, bool prov)
         BT_ERR("%s, Failed to save node comp data %s", __func__, name);
     }
 }
+
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
+/*
+ * key: "mesh/uid" -> write/read to set/get all the user_ids.
+ *      key: "mesh/id/xxxx" -> write/read to set/get the "xxxx" user_id
+ */
+static int settings_user_id_delete(u8_t index);
+
+int settings_user_id_init(void)
+{
+    struct settings_namespace *item = NULL;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        item = &settings_name[i];
+        memset(item, 0, sizeof(struct settings_namespace));
+    }
+
+    return 0;
+}
+
+int settings_user_id_load(void)
+{
+    struct settings_namespace *item = NULL;
+    struct net_buf_simple *buf = NULL;
+    char get[16] = {'\0'};
+    size_t length = 0U;
+    bool exist = false;
+    int err = 0;
+    int i;
+
+    /* Before users can use user_id to search settings, we need to
+     * restore all the settings user_ids properly.
+     */
+
+    buf = bt_mesh_get_user_id_settings_item("mesh/uid");
+    if (!buf) {
+        return 0;
+    }
+
+    length = buf->len;
+
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t index = net_buf_simple_pull_le16(buf);
+        sprintf(get, "mesh/id/%04x", index);
+
+        item = &settings_name[index];
+        err = bt_mesh_load_user_id_settings(get, (u8_t *)item->user_id, SETTINGS_USER_ID_SIZE, &exist);
+        if (err) {
+            BT_ERR("%s, Failed to load user_id %s", __func__, get);
+            goto free;
+        }
+
+        if (exist == false) {
+            continue;
+        }
+
+        BT_INFO("Restored settings %d, user_id %s", index, item->user_id);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return err;
+}
+
+static inline bool settings_user_id_empty(struct settings_namespace *item)
+{
+    return (item->user_id[0] == '\0') ? true : false;
+}
+
+int settings_user_id_deinit(bool erase)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        struct settings_namespace *item = &settings_name[i];
+
+        if (item->open == true) {
+            /* When the nvs namespace is open, which means it is currently
+             * been used. And its information will be erased when the deinit
+             * function is invoked, no need to erase it again here.
+             */
+            bt_mesh_settings_nvs_close(item->handle);
+        } else if (settings_user_id_empty(item) == false) {
+            /* When the settings user_id is not empty, when means the nvs
+             * namespace may contains some mesh information, need to erase
+             * it here.
+             */
+            if (erase) {
+                settings_user_id_delete(i);
+            }
+        }
+
+        memset(item, 0, sizeof(struct settings_namespace));
+    }
+
+    if (erase) {
+        bt_mesh_save_user_id_settings("mesh/uid", NULL, 0);
+    }
+
+    return 0;
+}
+
+u32_t bt_mesh_provisioner_get_settings_handle(void)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        if (settings_name[i].open) {
+            return settings_name[i].handle;
+        }
+    }
+
+    BT_ERR("%s, Failed to get nvs handle", __func__);
+    return INVALID_SETTINGS_HANDLE;
+}
+
+static u8_t settings_index_get(const char *user_id, u8_t *index)
+{
+    u8_t idx = 0U;
+    int i;
+
+    if (!user_id || strlen(user_id) > SETTINGS_USER_ID_SIZE) {
+        BT_ERR("%s, Invalid settings user_id", __func__);
+        idx = INVALID_SETTINGS_INDEX;
+        goto done;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        if (strlen(settings_name[i].user_id) != strlen(user_id)) {
+            continue;
+        }
+        if (!strncmp(settings_name[i].user_id, user_id, strlen(user_id))) {
+            idx = i;
+            goto done;
+        }
+    }
+
+    BT_ERR("%s, Settings user_id %s not exists", __func__, user_id);
+    idx = INVALID_SETTINGS_INDEX;
+
+done:
+    if (index) {
+        *index = idx;
+    }
+    return idx;
+}
+
+static u8_t settings_user_id_set(const char *user_id, u8_t *index)
+{
+    struct settings_namespace *item = NULL;
+    u8_t idx = 0U;
+    int i;
+
+    if (!user_id || strlen(user_id) > SETTINGS_USER_ID_SIZE) {
+        BT_ERR("%s, Invalid settings user_id", __func__);
+        idx = INVALID_SETTINGS_INDEX;
+        goto done;
+    }
+
+    /* Find if the same settings user_id exists */
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        item = &settings_name[i];
+        if (strlen(settings_name[i].user_id) != strlen(user_id)) {
+            continue;
+        }
+        if (!strncmp(item->user_id, user_id, strlen(user_id))) {
+            idx = i;
+            goto done;
+        }
+    }
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        item = &settings_name[i];
+        if (settings_user_id_empty(item)) {
+            strncpy(item->user_id, user_id, strlen(user_id));
+            idx = i;
+            goto done;
+        }
+    }
+
+    BT_ERR("%s, No empty settings user_id", __func__);
+    idx = INVALID_SETTINGS_INDEX;
+
+done:
+    if (index) {
+        *index = idx;
+    }
+    return idx;
+}
+
+static int provisioner_settings_open(u8_t index)
+{
+    struct settings_namespace *item = NULL;
+    char name[16] = {'\0'};
+    int err = 0;
+    int i;
+
+    if (index >= ARRAY_SIZE(settings_name)) {
+        BT_ERR("%s, Invalid settings index %d", __func__, index);
+        return -EINVAL;
+    }
+
+    item = &settings_name[index];
+
+    /* Corresponding nvs namespace is already open */
+    if (item->open == true) {
+        BT_ERR("%s, Settings %d is already open", __func__, index);
+        return -EALREADY;
+    }
+
+    memset(item->nvs_name, 0, sizeof(item->nvs_name));
+    sprintf(item->nvs_name, "%s_%02x", "mesh_core", index);
+
+    err = bt_mesh_settings_nvs_open(item->nvs_name, &item->handle);
+    if (err) {
+        BT_ERR("%s, Open nvs failed, name %s, err %d", __func__, item->nvs_name, err);
+        return -EIO;
+    }
+
+    if (settings_user_id_empty(item)) {
+        /* If the settings is not open with user_id, then we use
+         * the index as the user_id. Or when the device restarts,
+         * the user_id may be restored, in this case the user_id
+         * shall not be updated.
+         */
+        sprintf(item->user_id, "%04x", index);
+    }
+
+    sprintf(name, "mesh/id/%04x", index);
+    err = bt_mesh_save_user_id_settings(name, (const u8_t *)item->user_id, SETTINGS_USER_ID_SIZE);
+    if (err) {
+        BT_ERR("%s, Failed to save user_id %s", __func__, name);
+        return err;
+    }
+
+    err = bt_mesh_add_user_id_settings_item("mesh/uid", index);
+    if (err) {
+        BT_ERR("%s, Failed to add 0x%04x to mesh/uid", __func__, index);
+        return err;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        if (settings_name[i].open == true) {
+            /* Only close corresponding nvs namespace here */
+            bt_mesh_settings_nvs_close(settings_name[i].handle);
+            settings_name[i].open = false;
+        }
+    }
+
+    BT_INFO("Open settings %d, user_id %s", index, item->user_id);
+
+    item->open = true;
+    return 0;
+}
+
+int bt_mesh_provisioner_open_settings_with_index(u8_t index)
+{
+    return provisioner_settings_open(index);
+}
+
+int bt_mesh_provisioner_open_settings_with_user_id(const char *user_id, u8_t *index)
+{
+    u8_t idx = settings_user_id_set(user_id, index);
+
+    if (idx >= ARRAY_SIZE(settings_name)) {
+        return -EIO;
+    }
+
+    return provisioner_settings_open(idx);
+}
+
+static int provisioner_settings_close(u8_t index)
+{
+    struct settings_namespace *item = NULL;
+    char name[16] = {'\0'};
+    int err = 0;
+
+    if (index >= ARRAY_SIZE(settings_name)) {
+        BT_ERR("%s, Invalid settings index %d", __func__, index);
+        return -EINVAL;
+    }
+
+    item = &settings_name[index];
+
+    /* Corresponding nvs namespace is not open */
+    if (item->open == false) {
+        BT_ERR("%s, Settings %d is not open", __func__, index);
+        return -EIO;
+    }
+
+    if (item->erase == true) {
+        /* Only when the corresponding mesh information is erased,
+         * then invoking the settings close function will reset and
+         * erase the settings user_id. And if opening the settings
+         * again with the same user_id, the settings index will be
+         * reallocated.
+         * Otherwise only the nvs namespace will be closed, and when
+         * opened again, the previous settings index will be used.
+         */
+        sprintf(name, "mesh/id/%04x", index);
+        bt_mesh_save_user_id_settings(name, NULL, 0);
+
+        err = bt_mesh_remove_user_id_settings_item("mesh/uid", index);
+        if (err) {
+            BT_ERR("%s, Failed to remove user_id 0x%04x", __func__, index);
+            return err;
+        }
+        memset(item->user_id, 0, sizeof(item->user_id));
+    }
+
+    BT_INFO("Close settings %d, user_id %s", index, item->user_id);
+
+    bt_mesh_settings_nvs_close(item->handle);
+    item->open = false;
+    return 0;
+}
+
+int bt_mesh_provisioner_close_settings_with_index(u8_t index)
+{
+    return provisioner_settings_close(index);
+}
+
+int bt_mesh_provisioner_close_settings_with_user_id(const char *user_id, u8_t *index)
+{
+    u8_t idx = settings_index_get(user_id, index);
+
+    if (idx >= ARRAY_SIZE(settings_name)) {
+        return -EIO;
+    }
+
+    return provisioner_settings_close(idx);
+}
+
+static int provisioner_settings_restore(u8_t index)
+{
+    struct settings_namespace *item = NULL;
+    int err = 0;
+    int i;
+
+    if (index >= ARRAY_SIZE(settings_name)) {
+        BT_ERR("%s, Invalid settings index %d", __func__, index);
+        return -EINVAL;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        item = &settings_name[i];
+        if (item->restore == true) {
+            BT_ERR("%s, Settings %d is restored, release first", __func__, index);
+            return -EIO;
+        }
+    }
+
+    item = &settings_name[index];
+
+    if (item->open == false) {
+        BT_ERR("%s, Settings %d is not open", __func__, index);
+        return -EIO;
+    }
+
+    BT_INFO("Restore settings %d, user_id %s", index, item->user_id);
+
+    err = settings_core_load();
+    if (err) {
+        BT_ERR("%s, Load settings failed, name %s", __func__, item->nvs_name);
+        return err;
+    }
+
+    err = settings_core_commit();
+    if (err) {
+        BT_ERR("%s, Commit settings failed, name %s", __func__, item->nvs_name);
+        return err;
+    }
+
+    item->restore = true;
+    return 0;
+}
+
+int bt_mesh_provisioner_restore_settings_with_index(u8_t index)
+{
+    return provisioner_settings_restore(index);
+}
+
+int bt_mesh_provisioner_restore_settings_with_user_id(const char *user_id, u8_t *index)
+{
+    u8_t idx = settings_index_get(user_id, index);
+
+    if (idx >= ARRAY_SIZE(settings_name)) {
+        return -EIO;
+    }
+
+    return provisioner_settings_restore(idx);
+}
+
+static int provisioner_settings_release(u8_t index, bool erase)
+{
+    struct settings_namespace *item = NULL;
+    int err = 0;
+
+    if (index >= ARRAY_SIZE(settings_name)) {
+        BT_ERR("%s, Invalid name index %d", __func__, index);
+        return -EINVAL;
+    }
+
+    item = &settings_name[index];
+
+    if (item->open == false) {
+        BT_ERR("%s, Settings %d is not open", __func__, index);
+        return -EIO;
+    }
+
+    if (item->restore == false) {
+        BT_ERR("%s, Settings %d is not restored, restore first", __func__, index);
+        return -EIO;
+    }
+
+    BT_INFO("Release settings %d, user_id %s", index, item->user_id);
+
+    /* Disable Provisioner firstly */
+    err = bt_mesh_provisioner_disable(BLE_MESH_PROV_ADV | BLE_MESH_PROV_GATT);
+    if (err && err != -EALREADY) {
+        BT_ERR("%s, Failed to disable Provisioner", __func__);
+        return err;
+    }
+
+    /* Release all the dynamic allocated memory for NetKey, AppKey,
+     * provisioned nodes, etc.
+     */
+    bt_mesh_provisioner_release_node(erase);
+    bt_mesh_provisioner_release_netkey(erase);
+    bt_mesh_provisioner_release_appkey(erase);
+    bt_mesh_rx_reset(erase);
+    bt_mesh_tx_reset();
+    bt_mesh_reset_mod_bind();
+    bt_mesh_reset_mod_sub();
+    bt_mesh_reset_mod_pub();
+    if (erase) {
+        bt_mesh_clear_role();
+        bt_mesh_clear_prov_info();
+        bt_mesh_clear_seq();
+        bt_mesh_clear_iv();
+        bt_mesh_clear_mod_bind();
+        bt_mesh_clear_mod_sub();
+        bt_mesh_clear_mod_pub();
+    }
+
+    item->restore = false;
+    item->erase = erase;
+    return 0;
+}
+
+int bt_mesh_provisioner_release_settings_with_index(u8_t index, bool erase)
+{
+    return provisioner_settings_release(index, erase);
+}
+
+int bt_mesh_provisioner_release_settings_with_user_id(const char *user_id, bool erase, u8_t *index)
+{
+    u8_t idx = settings_index_get(user_id, index);
+
+    if (idx >= ARRAY_SIZE(settings_name)) {
+        return -EIO;
+    }
+
+    return provisioner_settings_release(idx, erase);
+}
+
+static int role_erase(nvs_handle handle, const char *name)
+{
+    return bt_mesh_save_settings(handle, name, NULL, 0);
+}
+
+static int iv_erase(nvs_handle handle, const char *name)
+{
+    return bt_mesh_save_settings(handle, name, NULL, 0);
+}
+
+static int seq_erase(nvs_handle handle, const char *name)
+{
+    return bt_mesh_save_settings(handle, name, NULL, 0);
+}
+
+static int rpl_erase(nvs_handle handle, const char *name)
+{
+    struct net_buf_simple *buf = NULL;
+    char get[16] = {'\0'};
+    size_t length = 0U;
+    int err = 0;
+    int i;
+
+    buf = bt_mesh_get_settings_item(handle, name);
+    if (!buf) {
+        return 0;
+    }
+
+    length = buf->len;
+
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t src = net_buf_simple_pull_le16(buf);
+
+        sprintf(get, "mesh/rpl/%04x", src);
+        err = bt_mesh_save_settings(handle, get, NULL, 0);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, get);
+            goto free;
+        }
+    }
+
+    err = bt_mesh_save_settings(handle, name, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, name);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return 0;
+}
+
+static int model_erase_bind(nvs_handle handle, bool vnd, u16_t model_key)
+{
+    char get[16] = {'\0'};
+    int err = 0;
+
+    sprintf(get, "mesh/%s/%04x/b", vnd ? "v" : "s", model_key);
+    err = bt_mesh_save_settings(handle, get, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, get);
+    }
+
+    return err;
+}
+
+static int model_erase_sub(nvs_handle handle, bool vnd, u16_t model_key)
+{
+    char get[16] = {'\0'};
+    int err = 0;
+
+    sprintf(get, "mesh/%s/%04x/s", vnd ? "v" : "s", model_key);
+    err = bt_mesh_save_settings(handle, get, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, get);
+    }
+
+    return err;
+}
+
+static int model_erase_pub(nvs_handle handle, bool vnd, u16_t model_key)
+{
+    char get[16] = {'\0'};
+    int err = 0;
+
+    sprintf(get, "mesh/%s/%04x/p", vnd ? "v" : "s", model_key);
+    err = bt_mesh_save_settings(handle, get, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, get);
+    }
+
+    return err;
+}
+
+static int model_erase(nvs_handle handle, bool vnd, const char *name)
+{
+    struct net_buf_simple *buf = NULL;
+    size_t length = 0U;
+    int err = 0;
+    int i;
+
+    BT_DBG("%s", __func__);
+
+    buf = bt_mesh_get_settings_item(handle, name);
+    if (!buf) {
+        return 0;
+    }
+
+    length = buf->len;
+
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t model_key = net_buf_simple_pull_le16(buf);
+
+        err = model_erase_bind(handle, vnd, model_key);
+        if (err) {
+            BT_ERR("%s, Failed to erase model binding", __func__);
+            goto free;
+        }
+
+        err = model_erase_sub(handle, vnd, model_key);
+        if (err) {
+            BT_ERR("%s, Failed to erase model subscrption", __func__);
+            goto free;
+        }
+
+        err = model_erase_pub(handle, vnd, model_key);
+        if (err) {
+            BT_ERR("%s, Failed to erase model publication", __func__);
+            goto free;
+        }
+    }
+
+    err = bt_mesh_save_settings(handle, name, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, name);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return err;
+}
+
+static int sig_mod_erase(nvs_handle handle, const char *name)
+{
+    return model_erase(handle, false, name);
+}
+
+static int vnd_mod_erase(nvs_handle handle, const char *name)
+{
+    return model_erase(handle, true, name);
+}
+
+static int p_prov_erase(nvs_handle handle, const char *name)
+{
+    return bt_mesh_save_settings(handle, name, NULL, 0);
+}
+
+static int p_net_idx_erase(nvs_handle handle, const char *name)
+{
+    return bt_mesh_save_settings(handle, name, NULL, 0);
+}
+
+static int p_app_idx_erase(nvs_handle handle, const char *name)
+{
+    return bt_mesh_save_settings(handle, name, NULL, 0);
+}
+
+static int p_net_key_erase(nvs_handle handle, const char *name)
+{
+    struct net_buf_simple *buf = NULL;
+    char get[16] = {'\0'};
+    size_t length = 0U;
+    int err = 0;
+    int i;
+
+    buf = bt_mesh_get_settings_item(handle, name);
+    if (!buf) {
+        return 0;
+    }
+
+    length = buf->len;
+
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t net_idx = net_buf_simple_pull_le16(buf);
+
+        sprintf(get, "mesh/pnk/%04x", net_idx);
+        err = bt_mesh_save_settings(handle, get, NULL, 0);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, get);
+            goto free;
+        }
+    }
+
+    err = bt_mesh_save_settings(handle, name, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, name);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return err;
+}
+
+static int p_app_key_erase(nvs_handle handle, const char *name)
+{
+    struct net_buf_simple *buf = NULL;
+    char get[16] = {'\0'};
+    size_t length = 0U;
+    int err = 0;
+    int i;
+
+    buf = bt_mesh_get_settings_item(handle, name);
+    if (!buf) {
+        return 0;
+    }
+
+    length = buf->len;
+
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t app_idx = net_buf_simple_pull_le16(buf);
+
+        sprintf(get, "mesh/pak/%04x", app_idx);
+        err = bt_mesh_save_settings(handle, get, NULL, 0);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, get);
+            goto free;
+        }
+    }
+
+    err = bt_mesh_save_settings(handle, name, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, name);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return err;
+}
+
+static int p_node_erase(nvs_handle handle, const char *name)
+{
+    struct net_buf_simple *buf = NULL;
+    char get[16] = {'\0'};
+    size_t length = 0U;
+    bool prov = false;
+    int err = 0;
+    int i;
+
+    buf = bt_mesh_get_settings_item(handle, name);
+    if (!buf) {
+        return 0;
+    }
+
+    prov = strcmp(name, "mesh/p_pnode") ? false : true;
+    length = buf->len;
+
+    for (i = 0; i < length / SETTINGS_ITEM_SIZE; i++) {
+        u16_t addr = net_buf_simple_pull_le16(buf);
+
+        /* Clear node information */
+        sprintf(get, prov ? "mesh/pn/%04x/i" : "mesh/sn/%04x/i", addr);
+        err = bt_mesh_save_settings(handle, get, NULL, 0);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, get);
+            goto free;
+        }
+
+        /* Clear node name */
+        sprintf(get, prov ? "mesh/pn/%04x/n" : "mesh/sn/%04x/n", addr);
+        err = bt_mesh_save_settings(handle, get, NULL, 0);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, get);
+            goto free;
+        }
+
+        /* Clear node composition data */
+        sprintf(get, prov ? "mesh/pn/%04x/c" : "mesh/sn/%04x/c", addr);
+        err = bt_mesh_save_settings(handle, get, NULL, 0);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, get);
+            goto free;
+        }
+    }
+
+    err = bt_mesh_save_settings(handle, name, NULL, 0);
+    if (err) {
+        BT_ERR("%s, Failed to erase %s", __func__, name);
+    }
+
+free:
+    bt_mesh_free_buf(buf);
+    return err;
+}
+
+const struct bt_mesh_setting_erase {
+    const char *name;
+    int (*func)(nvs_handle handle, const char *name);
+} settings_erase[] = {
+    { "mesh/role",     role_erase      },
+    { "mesh/iv",       iv_erase        },
+    { "mesh/seq",      seq_erase       },
+    { "mesh/rpl",      rpl_erase       },
+    { "mesh/sig",      sig_mod_erase   },
+    { "mesh/vnd",      vnd_mod_erase   },
+    { "mesh/p_prov",   p_prov_erase    },
+    { "mesh/p_netidx", p_net_idx_erase },
+    { "mesh/p_appidx", p_app_idx_erase },
+    { "mesh/p_netkey", p_net_key_erase },
+    { "mesh/p_appkey", p_app_key_erase },
+    { "mesh/p_pnode",  p_node_erase    },
+    { "mesh/p_snode",  p_node_erase    },
+};
+
+int bt_mesh_settings_erase_by_handle(nvs_handle handle)
+{
+    int err = 0;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(settings_erase); i++) {
+        err = settings_erase[i].func(handle, settings_erase[i].name);
+        if (err) {
+            BT_ERR("%s, Failed to erase %s", __func__, settings_erase[i].name);
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+static int settings_user_id_delete(u8_t index)
+{
+    char nvs_name[16] = {'\0'};
+    char name[16] = {'\0'};
+    nvs_handle handle = 0U;
+    int err = 0;
+
+    sprintf(nvs_name, "%s_%02x", "mesh_core", index);
+
+    err = bt_mesh_settings_nvs_open(nvs_name, &handle);
+    if (err) {
+        BT_ERR("%s, Open nvs failed, name %s, err %d", __func__, nvs_name, err);
+        return -EIO;
+    }
+
+    /* Erase mesh information */
+    err = bt_mesh_settings_erase_by_handle(handle);
+    if (err) {
+        BT_ERR("%s, Failed to erase settings by handle", __func__);
+        return err;
+    }
+
+    bt_mesh_settings_nvs_close(handle);
+
+    /* Erase settings user_id */
+    sprintf(name, "mesh/id/%04x", index);
+    bt_mesh_save_user_id_settings(name, NULL, 0);
+
+    err = bt_mesh_remove_user_id_settings_item("mesh/uid", index);
+    if (err) {
+        BT_ERR("%s, Failed to remove 0x%04x from mesh/uid", __func__, index);
+        return err;
+    }
+
+    return 0;
+}
+
+static int provisioner_settings_delete(u8_t index)
+{
+    /* This function is used to erase the mesh information from
+     * the corresponding nvs namespace when it is not restored.
+     */
+    struct settings_namespace *item = NULL;
+    int err = 0;
+
+    if (index >= ARRAY_SIZE(settings_name)) {
+        BT_ERR("%s, Invalid name index %d", __func__, index);
+        return -EINVAL;
+    }
+
+    item = &settings_name[index];
+
+    if (item->open == true) {
+        BT_ERR("%s, Settings %d is currently been used", __func__, index);
+        return -EIO;
+    }
+
+    if (item->restore == true) {
+        BT_ERR("%s, Settings %d is restored, release instead", __func__, index);
+        return -EIO;
+    }
+
+    BT_INFO("Delete settings %d, user_id %s", index, item->user_id);
+
+    err = settings_user_id_delete(index);
+    if (err) {
+        BT_ERR("%s, Failed to delete settings %d, user_id %s", __func__, index, item->user_id);
+        return err;
+    }
+
+    memset(item, 0, sizeof(struct settings_namespace));
+
+    return 0;
+}
+
+int bt_mesh_provisioner_delete_settings_with_index(u8_t index)
+{
+    return provisioner_settings_delete(index);
+}
+
+int bt_mesh_provisioner_delete_settings_with_user_id(const char *user_id, u8_t *index)
+{
+    u8_t idx = settings_index_get(user_id, index);
+
+    if (idx >= ARRAY_SIZE(settings_name)) {
+        return -EIO;
+    }
+
+    return provisioner_settings_delete(idx);
+}
+
+const char *bt_mesh_provisioner_get_settings_user_id(u8_t index)
+{
+    if (index >= ARRAY_SIZE(settings_name)) {
+        BT_ERR("%s, Invalid settings index %d", __func__, index);
+        return NULL;
+    }
+    return settings_name[index].user_id;
+}
+
+u8_t bt_mesh_provisioner_get_settings_index(const char *user_id)
+{
+    u8_t idx = 0U;
+    settings_index_get(user_id, &idx);
+    return idx;
+}
+
+u8_t bt_mesh_provisioner_get_free_settings_user_id_count(void)
+{
+    u8_t count = 0U;
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        if (settings_name[i].user_id[0] == '\0') {
+            count++;
+        }
+    }
+
+    return count;
+}
+#endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 int settings_core_init(void)
@@ -2570,21 +3654,30 @@ int bt_mesh_settings_init(void)
 {
     BT_DBG("%s", __func__);
 
+    bt_mesh_settings_mutex_new();
     bt_mesh_settings_foreach();
 
     return 0;
 }
 
-int settings_core_deinit(void)
+int settings_core_deinit(bool erase)
 {
     k_delayed_work_free(&pending_store);
+
+    if (erase) {
+        bt_mesh_clear_role();
+        bt_mesh_clear_mod_bind();
+        bt_mesh_clear_mod_sub();
+        bt_mesh_clear_mod_pub();
+    }
 
     return 0;
 }
 
-int bt_mesh_settings_deinit(void)
+int bt_mesh_settings_deinit(bool erase)
 {
-    bt_mesh_settings_deforeach();
+    bt_mesh_settings_deforeach(erase);
+    bt_mesh_settings_mutex_free();
 
     return 0;
 }

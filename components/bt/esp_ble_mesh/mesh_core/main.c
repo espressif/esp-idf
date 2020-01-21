@@ -107,7 +107,7 @@ void bt_mesh_reset(void)
 
     bt_mesh_cfg_reset();
 
-    bt_mesh_rx_reset();
+    bt_mesh_rx_reset(true);
     bt_mesh_tx_reset();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
@@ -459,16 +459,13 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 
     bt_mesh_adv_deinit();
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_settings_deinit(param->erase);
+    }
+
     err = bt_mesh_comp_deregister();
     if (err) {
         return err;
-    }
-
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-        if (param->erase) {
-            bt_mesh_clear_role();
-        }
-        bt_mesh_settings_deinit();
     }
 
     bt_mesh_k_deinit();

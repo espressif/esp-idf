@@ -86,7 +86,7 @@ struct bt_mesh_app_key *bt_mesh_app_key_find(u16_t app_idx);
 
 bool bt_mesh_tx_in_progress(void);
 
-void bt_mesh_rx_reset(void);
+void bt_mesh_rx_reset(bool erase);
 void bt_mesh_tx_reset(void);
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,

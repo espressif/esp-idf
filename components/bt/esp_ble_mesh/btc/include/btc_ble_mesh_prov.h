@@ -53,6 +53,16 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID,
     BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR,
+    BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_USER_ID,
+    BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_USER_ID,
+    BTC_BLE_MESH_ACT_PROVISIONER_RESTORE_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_RESTORE_SETTINGS_WITH_USER_ID,
+    BTC_BLE_MESH_ACT_PROVISIONER_RELEASE_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_INDEX,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
     BTC_BLE_MESH_ACT_LPN_ENABLE,
@@ -187,6 +197,38 @@ typedef union {
     struct ble_mesh_provisioner_delete_node_with_addr_args {
         uint16_t unicast_addr;
     } delete_node_with_addr;
+    struct ble_mesh_provisioner_open_settings_with_index_args {
+        uint8_t index;
+    } open_settings_with_index;
+    struct ble_mesh_provisioner_open_settings_with_user_id_args {
+        char user_id[ESP_BLE_MESH_SETTINGS_USER_ID_SIZE + 1];
+    } open_settings_with_user_id;
+    struct ble_mesh_provisioner_close_settings_with_index_args {
+        uint8_t index;
+    } close_settings_with_index;
+    struct ble_mesh_provisioner_close_settings_with_user_id_args {
+        char user_id[ESP_BLE_MESH_SETTINGS_USER_ID_SIZE + 1];
+    } close_settings_with_user_id;
+    struct ble_mesh_provisioner_restore_settings_with_index_args {
+        uint8_t index;
+    } restore_settings_with_index;
+    struct ble_mesh_provisioner_restore_settings_with_user_id_args {
+        char user_id[ESP_BLE_MESH_SETTINGS_USER_ID_SIZE + 1];
+    } restore_settings_with_user_id;
+    struct ble_mesh_provisioner_release_settings_with_index_args {
+        uint8_t index;
+        bool erase;
+    } release_settings_with_index;
+    struct ble_mesh_provisioner_release_settings_with_user_id_args {
+        char user_id[ESP_BLE_MESH_SETTINGS_USER_ID_SIZE + 1];
+        bool erase;
+    } release_settings_with_user_id;
+    struct ble_mesh_provisioner_delete_settings_with_index_args {
+        uint8_t index;
+    } delete_settings_with_index;
+    struct ble_mesh_provisioner_delete_settings_with_user_id_args {
+        char user_id[ESP_BLE_MESH_SETTINGS_USER_ID_SIZE + 1];
+    } delete_settings_with_user_id;
     struct ble_mesh_set_fast_prov_info_args {
         uint16_t unicast_min;
         uint16_t unicast_max;
@@ -291,6 +333,10 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem,
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
 
 u16_t btc_ble_mesh_provisioner_get_prov_node_count(void);
+
+const char *btc_ble_mesh_provisioner_get_settings_user_id(uint8_t index);
+uint8_t btc_ble_mesh_provisioner_get_settings_index(const char *user_id);
+uint8_t btc_ble_mesh_provisioner_get_free_settings_user_id_count(void);
 
 void btc_ble_mesh_model_call_handler(btc_msg_t *msg);
 void btc_ble_mesh_model_cb_handler(btc_msg_t *msg);

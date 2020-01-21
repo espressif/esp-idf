@@ -62,10 +62,10 @@ static const u8_t adv_type[] = {
     [BLE_MESH_ADV_URI]    = BLE_MESH_DATA_URI,
 };
 
-NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BLE_MESH_ADV_BUF_COUNT + 3 * CONFIG_BLE_MESH_PBA_SAME_TIME,
+NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BLE_MESH_ADV_BUF_COUNT,
                     BLE_MESH_ADV_DATA_SIZE, BLE_MESH_ADV_USER_DATA_SIZE, NULL);
 
-static struct bt_mesh_adv adv_pool[CONFIG_BLE_MESH_ADV_BUF_COUNT + 3 * CONFIG_BLE_MESH_PBA_SAME_TIME];
+static struct bt_mesh_adv adv_pool[CONFIG_BLE_MESH_ADV_BUF_COUNT];
 
 struct bt_mesh_queue {
     QueueHandle_t queue;
@@ -76,7 +76,8 @@ struct bt_mesh_queue {
 };
 
 static struct bt_mesh_queue xBleMeshQueue;
-#define BLE_MESH_QUEUE_SIZE         150
+/* We reserve one queue for bt_mesh_adv_update() */
+#define BLE_MESH_QUEUE_SIZE         (CONFIG_BLE_MESH_ADV_BUF_COUNT + 1)
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
 NET_BUF_POOL_DEFINE(relay_adv_buf_pool, CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT,
@@ -85,7 +86,7 @@ NET_BUF_POOL_DEFINE(relay_adv_buf_pool, CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT,
 static struct bt_mesh_adv relay_adv_pool[CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT];
 
 static struct bt_mesh_queue xBleMeshRelayQueue;
-#define BLE_MESH_RELAY_QUEUE_SIZE   150
+#define BLE_MESH_RELAY_QUEUE_SIZE   CONFIG_BLE_MESH_RELAY_ADV_BUF_COUNT
 
 static QueueSetHandle_t xBleMeshQueueSet;
 #define BLE_MESH_QUEUE_SET_SIZE     (BLE_MESH_QUEUE_SIZE + BLE_MESH_RELAY_QUEUE_SIZE)

@@ -42,6 +42,8 @@
 
 static struct k_delayed_work beacon_timer;
 
+static bool ready_to_send(void);
+
 static struct bt_mesh_subnet *cache_check(u8_t data[21])
 {
     size_t subnet_size = 0U;
@@ -74,6 +76,16 @@ static void beacon_complete(int err, void *user_data)
     struct bt_mesh_subnet *sub = user_data;
 
     BT_DBG("err %d", err);
+
+    /* Care should be taken here, since the user_data is the
+     * pointer of a subnet. When the device is a Provisioner,
+     * its subnet is allocated dynamically. And if the
+     * corresponding subnet has been removed, this will cause
+     * exception here.
+     */
+    if (ready_to_send() == false) {
+        return;
+    }
 
     sub->beacon_sent = k_uptime_get_32();
 }

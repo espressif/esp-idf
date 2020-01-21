@@ -1556,7 +1556,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
     return err;
 }
 
-void bt_mesh_rx_reset(void)
+void bt_mesh_rx_reset(bool erase)
 {
     int i;
 
@@ -1566,7 +1566,11 @@ void bt_mesh_rx_reset(void)
         seg_rx_reset(&seg_rx[i], true);
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+    /* For node, the "erase" flag shall always be true. And
+     * only the macro CONFIG_BLE_MESH_SETTINGS will be used
+     * to decide whether to erase the RPL list from flash.
+     */
+    if (erase && IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_clear_rpl();
     } else {
         (void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));

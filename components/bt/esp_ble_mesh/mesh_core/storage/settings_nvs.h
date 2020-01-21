@@ -15,6 +15,8 @@
 #ifndef _BLE_MESH_SETTINGS_NVS_H_
 #define _BLE_MESH_SETTINGS_NVS_H_
 
+#include "nvs.h"
+#include "nvs_flash.h"
 #include "mesh_buf.h"
 
 #ifdef __cplusplus
@@ -28,17 +30,28 @@ extern "C" {
 #define BLE_MESH_GET_MODEL_KEY(a, b)    ((u16_t)(((u16_t)((a) << 8)) | b))
 
 void bt_mesh_settings_foreach(void);
-void bt_mesh_settings_deforeach(void);
+void bt_mesh_settings_deforeach(bool erase);
+
+int bt_mesh_settings_nvs_open(const char* name, nvs_handle *handle);
+void bt_mesh_settings_nvs_close(nvs_handle handle);
+
+int bt_mesh_save_settings(nvs_handle handle, const char *key, const u8_t *val, size_t len);
+int bt_mesh_load_settings(nvs_handle handle, const char *key, u8_t *buf, size_t buf_len, bool *exist);
+struct net_buf_simple *bt_mesh_get_settings_item(nvs_handle handle, const char *key);
+int bt_mesh_add_settings_item(nvs_handle handle, const char *key, const u16_t val);
+int bt_mesh_remove_settings_item(nvs_handle handle, const char *key, const u16_t val);
 
 int bt_mesh_save_core_settings(const char *key, const u8_t *val, size_t len);
-
 int bt_mesh_load_core_settings(const char *key, u8_t *buf, size_t buf_len, bool *exist);
-
 struct net_buf_simple *bt_mesh_get_core_settings_item(const char *key);
-
 int bt_mesh_add_core_settings_item(const char *key, const u16_t val);
-
 int bt_mesh_remove_core_settings_item(const char *key, const u16_t val);
+
+int bt_mesh_save_user_id_settings(const char *key, const u8_t *val, size_t len);
+int bt_mesh_load_user_id_settings(const char *key, u8_t *buf, size_t buf_len, bool *exist);
+struct net_buf_simple *bt_mesh_get_user_id_settings_item(const char *key);
+int bt_mesh_add_user_id_settings_item(const char *key, const u16_t val);
+int bt_mesh_remove_user_id_settings_item(const char *key, const u16_t val);
 
 #ifdef __cplusplus
 }

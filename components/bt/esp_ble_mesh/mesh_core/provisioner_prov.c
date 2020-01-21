@@ -1126,6 +1126,11 @@ int bt_mesh_provisioner_set_prov_info(void)
         /* If unicast address of primary element of Provisioner has not been set
          * before, then the following initilization procedure will be used.
          */
+        if (prov == NULL) {
+            BT_ERR("%s, NULL provisioning", __func__);
+            return -EINVAL;
+        }
+
         if (!BLE_MESH_ADDR_IS_UNICAST(prov->prov_unicast_addr) ||
             !BLE_MESH_ADDR_IS_UNICAST(prov->prov_start_address)) {
             BT_ERR("%s, Invalid address, own 0x%04x, start 0x%04x",

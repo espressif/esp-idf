@@ -37,6 +37,7 @@
 #include "time_scene_client.h"
 #include "client_common.h"
 #include "state_binding.h"
+#include "settings.h"
 
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_config_model.h"
@@ -782,6 +783,27 @@ esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicas
     return (esp_ble_mesh_node_t *)bt_mesh_provisioner_get_node_with_addr(unicast_addr);
 }
 
+u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
+{
+    return bt_mesh_provisioner_get_prov_node_count();
+}
+
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
+const char *btc_ble_mesh_provisioner_get_settings_user_id(uint8_t index)
+{
+    return bt_mesh_provisioner_get_settings_user_id(index);
+}
+
+uint8_t btc_ble_mesh_provisioner_get_settings_index(const char *user_id)
+{
+    return bt_mesh_provisioner_get_settings_index(user_id);
+}
+
+uint8_t btc_ble_mesh_provisioner_get_free_settings_user_id_count(void)
+{
+    return bt_mesh_provisioner_get_free_settings_user_id_count();
+}
+#endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
@@ -994,11 +1016,6 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem, u
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void)
 {
     return (const esp_ble_mesh_comp_t *)bt_mesh_comp_get();
-}
-
-u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
-{
-    return bt_mesh_provisioner_get_prov_node_count();
 }
 
 /* Configuration Models */
@@ -1789,6 +1806,71 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         param.provisioner_delete_node_with_addr_comp.err_code =
             bt_mesh_provisioner_delete_node_with_addr(arg->delete_node_with_addr.unicast_addr);
         break;
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
+    case BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_INDEX:
+        act = ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_INDEX_COMP_EVT;
+        param.provisioner_open_settings_with_index_comp.index = arg->open_settings_with_index.index;
+        param.provisioner_open_settings_with_index_comp.err_code =
+            bt_mesh_provisioner_open_settings_with_index(arg->open_settings_with_index.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_OPEN_SETTINGS_WITH_USER_ID:
+        act = ESP_BLE_MESH_PROVISIONER_OPEN_SETTINGS_WITH_USER_ID_COMP_EVT;
+        param.provisioner_open_settings_with_user_id_comp.err_code =
+            bt_mesh_provisioner_open_settings_with_user_id(arg->open_settings_with_user_id.user_id,
+                &param.provisioner_open_settings_with_user_id_comp.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX:
+        act = ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_INDEX_COMP_EVT;
+        param.provisioner_close_settings_with_index_comp.index = arg->close_settings_with_index.index;
+        param.provisioner_close_settings_with_index_comp.err_code =
+            bt_mesh_provisioner_close_settings_with_index(arg->close_settings_with_index.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_CLOSE_SETTINGS_WITH_USER_ID:
+        act = ESP_BLE_MESH_PROVISIONER_CLOSE_SETTINGS_WITH_USER_ID_COMP_EVT;
+        param.provisioner_close_settings_with_user_id_comp.err_code =
+            bt_mesh_provisioner_close_settings_with_user_id(arg->close_settings_with_user_id.user_id,
+                &param.provisioner_close_settings_with_user_id_comp.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_RESTORE_SETTINGS_WITH_INDEX:
+        act = ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_INDEX_COMP_EVT;
+        param.provisioner_restore_settings_with_index_comp.index = arg->restore_settings_with_index.index;
+        param.provisioner_restore_settings_with_index_comp.err_code =
+            bt_mesh_provisioner_restore_settings_with_index(arg->restore_settings_with_index.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_RESTORE_SETTINGS_WITH_USER_ID:
+        act = ESP_BLE_MESH_PROVISIONER_RESTORE_SETTINGS_WITH_USER_ID_COMP_EVT;
+        param.provisioner_restore_settings_with_user_id_comp.err_code =
+            bt_mesh_provisioner_restore_settings_with_user_id(arg->restore_settings_with_user_id.user_id,
+                &param.provisioner_restore_settings_with_user_id_comp.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_RELEASE_SETTINGS_WITH_INDEX:
+        act = ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_INDEX_COMP_EVT;
+        param.provisioner_release_settings_with_index_comp.index = arg->release_settings_with_index.index;
+        param.provisioner_release_settings_with_index_comp.err_code =
+            bt_mesh_provisioner_release_settings_with_index(
+                arg->release_settings_with_index.index, arg->release_settings_with_index.erase);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID:
+        act = ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID_COMP_EVT;
+        param.provisioner_release_settings_with_user_id_comp.err_code =
+            bt_mesh_provisioner_release_settings_with_user_id(
+                arg->release_settings_with_user_id.user_id, arg->release_settings_with_user_id.erase,
+                &param.provisioner_release_settings_with_user_id_comp.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_INDEX:
+        act = ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT;
+        param.provisioner_delete_settings_with_index_comp.index = arg->delete_settings_with_index.index;
+        param.provisioner_delete_settings_with_index_comp.err_code =
+            bt_mesh_provisioner_delete_settings_with_index(arg->delete_settings_with_index.index);
+        break;
+    case BTC_BLE_MESH_ACT_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID:
+        act = ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT;
+        param.provisioner_delete_settings_with_user_id_comp.err_code =
+            bt_mesh_provisioner_delete_settings_with_user_id(
+                arg->delete_settings_with_user_id.user_id,
+                &param.provisioner_delete_settings_with_user_id_comp.index);
+        break;
+#endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 #if CONFIG_BLE_MESH_FAST_PROV
     case BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO:

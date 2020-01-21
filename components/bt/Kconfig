@@ -1858,6 +1858,37 @@ if BLE_MESH
 
     if BLE_MESH_SETTINGS
 
+        if BLE_MESH_PROVISIONER
+
+            config BLE_MESH_USE_MULTIPLE_NAMESPACE
+                bool "Provisioner uses multiple NVS namespaces for BLE Mesh"
+                default n
+                help
+                    When selected, Provisioner can use different namespaces to store
+                    different instances of mesh information. For example, if in the
+                    first area, Provisioner uses NetKey A, AppKey A, etc. and provisions
+                    three devices, these information will be treated as mesh information
+                    instance A. When Provisioner is in the second area, it uses NetKey
+                    B, AppKey B, etc. and provisions two devices, then these information
+                    will be treated as mesh information instance B. Here instance A and
+                    instance B will be stored in different namespaces.
+                    And when this option is enabled, Provisioner needs to use specific
+                    functions to open the corresponding namespace, restore the mesh
+                    information or erase the mesh information.
+
+            if BLE_MESH_USE_MULTIPLE_NAMESPACE
+
+                config BLE_MESH_MAX_NVS_NAMESPACE
+                    int "Maximum NVS namespaces supported by Provisioner"
+                    default 3
+                    range 1 255
+                    help
+                        This option specifies the maximum nvs namespaces supported by Provisioner.
+
+            endif # BLE_MESH_USE_MULTIPLE_NAMESPACE
+
+        endif # BLE_MESH_PROVISIONER
+
         config BLE_MESH_SPECIFIC_PARTITION
             bool "Use a specific NVS partition for BLE Mesh"
             default n
@@ -1873,7 +1904,7 @@ if BLE_MESH
 
             config BLE_MESH_PARTITION_NAME
                 string "Name of the NVS partition for BLE Mesh"
-                default "BLE-MESH"
+                default "ble_mesh"
                 help
                     This value defines the name of the specified NVS partition used by the
                     mesh stack.
