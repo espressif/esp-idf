@@ -46,6 +46,7 @@ MEMORY
   /* IRAM for CPU.*/
   iram0_0_seg (RX) :                 org = IRAM_ORG, len = IRAM_SIZE
 
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Even though the segment name is iram, it is actually mapped to flash
   */
   iram0_2_seg (RX) :                 org = 0x40080020, len = 0x780000-0x20
@@ -57,15 +58,18 @@ MEMORY
     header. Setting this offset makes it simple to meet the flash cache MMU's
     constraint that (paddr % 64KB == vaddr % 64KB).)
   */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
 
   /* Shared data RAM, excluding memory reserved for bootloader and ROM bss/data/stack. */
   dram0_0_seg (RW) :                 org = DRAM_ORG, len = DRAM_SIZE
 
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
   /* Flash mapped constant data */
   drom0_0_seg (R) :                  org = 0x3F000020, len = 0x3f0000-0x20
 
   /* (See iram0_2_seg for meaning of 0x20 offset in the above.) */
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
 
   /* RTC fast memory (executable). Persists over deep sleep.
    */
@@ -101,3 +105,15 @@ REGION_ALIAS("rtc_data_location", rtc_slow_seg );
 #else
 REGION_ALIAS("rtc_data_location", rtc_data_seg );
 #endif
+
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("default_code_seg", iram0_2_seg);
+#else
+  REGION_ALIAS("default_code_seg", iram0_0_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+
+#ifdef CONFIG_APP_BUILD_USE_FLASH_SECTIONS
+  REGION_ALIAS("default_rodata_seg", drom0_0_seg);
+#else
+  REGION_ALIAS("default_rodata_seg", dram0_0_seg);
+#endif // CONFIG_APP_BUILD_USE_FLASH_SECTIONS
