@@ -25,7 +25,7 @@ Tests are added in a function in the C file as follows:
 The first argument is a descriptive name for the test, the second argument is an identifier in square brackets.
 Identifiers are used to group related test, or tests with specific properties.
 
-.. note:: 
+.. note::
     There is no need to add a main function with ``UNITY_BEGIN()`` and ``​UNITY_END()`` in each test case. ``unity_platform.c`` will run ``UNITY_BEGIN()`` autonomously, and run the test cases, then call ``​UNITY_END()``.
 
 The ``test`` subdirectory should contain a :ref:`component CMakeLists.txt <component-directories>`, since they are themselves, components. ESP-IDF uses the ``unity`` test framework and should be specified as a requirement for the component. Normally, components :ref:`should list their sources manually <cmake-file-globbing>`; for component tests however, this requirement is relaxed and the use of the ``SRC_DIRS`` argument in ``idf_component_register`` is advised.
@@ -118,6 +118,70 @@ To support this, we can define multi-stage test cases, to group a set of test fu
 
 Multi-stage test cases present a group of test functions to users. It needs user interactions (select cases and select different stages) to run the case.
 
+
+Tests For Different Targets
+---------------------------
+
+Some tests (especially those related to hardware) cannot run on all targets. Below is a guide how
+to make your unit tests run on only specified targets.
+
+1. Wrap your test code by ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` macros and place them either in
+   the original test file, or sepeprate the code into files grouped by functions, but make sure all
+   these files will be processed by the compiler. E.g.: ::
+
+      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
+      TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")
+      {
+      }
+      #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
+
+   Once you need one of the tests to be compiled on a specified target, just modify the targets
+   in the disabled list. It's more encouraged to use some general conception that can be
+   described in ``soc_caps.h`` to control the disabling of tests. If this is done but some of the
+   tests are not ready yet, use both of them (and remove ``!(TEMPORARY_)DISABLED_FOR_TARGETS()``
+   later). E.g.: ::
+
+      #if SOC_SDIO_SLAVE_SUPPORTED
+      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP64)
+      TEST_CASE("a sdio slave tests that is not ready for esp64 yet", "[sdio_slave]")
+      {
+          //available for esp32 now, and will be available for esp64 in the future
+      }
+      #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP64)
+      #endif //SOC_SDIO_SLAVE_SUPPORTED
+
+2. For test code that you are 100% for sure that will not be supported (e.g. no peripheral at
+   all), use ``DISABLED_FOR_TARGETS``; for test code that should be disabled temporarily, or due to
+   lack of runners, etc., use ``TEMPORARY_DISABLED_FOR_TARGETS``.
+
+Some old ways of disabling unit tests for targets, that have obvious disadvantages, are deprecated:
+
+- DON'T put the test code under ``test/target`` folder and use CMakeLists.txt to choose one of the
+  target folder. This is prevented because test code is more likely to be reused than the
+  implementations. If you put something into ``test/esp32`` just to avoid building it on esp32s2,
+  it's hard to make the code tidy if you want to enable the test again on esp32s3.
+
+- DON'T use ``CONFIG_IDF_TARGET_xxx`` macros to disable the test items any more. This makes it
+  harder to track disabled tests and enable them again. Also, a black-list style ``#if !disabled``
+  is preferred to white-list style ``#if CONFIG_IDF_TARGET_xxx``, since you will not silently
+  disable cases when new targets are added in the future. But for test implementations, it's
+  allowed to use ``#if CONFIG_IDF_TARGET_xxx`` to pick one of the implementation code.
+
+  - Test item: some items that will be performed on some targets, but skipped on other
+    targets. E.g.
+
+    There are three test items SD 1-bit, SD 4-bit and SDSPI. For ESP32S2, which doesn't have
+    SD host, among the tests only SDSPI is enabled on ESP32S2.
+
+  - Test implementation: some code will always happen, but in different ways. E.g.
+
+    There is no SDIO PKT_LEN register on ESP8266. If you want to get the length from the slave
+    as a step in the test process, you can have different implementation code protected by
+    ``#if CONFIG_IDF_TARGET_`` reading in different ways.
+
+    But please avoid using ``#else`` macro. When new target is added, the test case will fail at
+    building stage, so that the maintainer will be aware of this, and choose one of the
+    implementations explicitly.
 
 Building Unit Test App
 ----------------------

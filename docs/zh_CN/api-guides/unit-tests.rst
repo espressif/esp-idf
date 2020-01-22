@@ -34,7 +34,7 @@ C 文件可以包含多个测试用例。测试文件的名字要以 “test” 
 
 ``test`` 子目录应包含 ：ref：`组件 CMakeLists.txt <component-directories>`，因为他们本身就是一种组件。ESP-IDF 使用了
 ``unity`` 测试框架，需要将其指定为组件的依赖项。通常，组件
-：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。 
+：ref：`需要手动指定待编译的源文件 <cmake-file-globbing>`;但是，对于测试组件来说，这个要求被放宽为仅建议将参数 ``SRC_DIRS`` 用于 ``idf_component_register``。
 
 总的来说，``test`` 子目录下最小的 CMakeLists.txt 文件可能如下所示:
 
@@ -137,6 +137,48 @@ DUT2（slave）终端：
 
 多阶段测试用例向用户呈现了一组测试函数，它需要用户进行交互（选择用例并选择不同的阶段）来运行。
 
+应用于不同芯片的单元测试
+------------------------
+
+某些测试（尤其与硬件相关的）无法在所有的芯片上执行。请参照本节让你的单元测试只在其中一部分芯片上执行。
+
+1. 使用宏 ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` 保护你的测试代码，并将其放于原来的位置，或者放在另外准备以功能区分的文件。但请确保所有这些文件都会被编译器处理到。例： ::
+
+      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266) TEST_CASE("a test that is not ready for esp32 and esp8266 yet", "[]")
+      {
+      }
+      #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32, ESP8266)
+
+   一旦你需要其中一个测试在某个芯片上被编译，只需要修改禁止的芯片列表。我们更鼓励使用一些通用的概念（能在 ``soc_caps.h`` 中被清楚描述）来禁止某些单元测试。如果你已经这样做，但有一些测试还没有在新的芯片版本中被调试通过，请同时使用上述两种方法，当调试完成后再移除 ``!(TEMPORARY_)DISABLED_FOR_TARGETS()`` 。例： ::
+
+      #if SOC_SDIO_SLAVE_SUPPORTED
+      #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP64)
+      TEST_CASE("a sdio slave tests that is not ready for esp64 yet", "[sdio_slave]")
+      {
+          //available for esp32 now, and will be available for esp64 in the future
+      }
+      #endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP64)
+      #endif //SOC_SDIO_SLAVE_SUPPORTED
+
+2. 对于某些你绝对肯定不可能被支持的测试（例如，芯片根本没有该外设），使用 ``DISABLED_FOR_TARGETS`` 来禁止该测试；对于其他只是临时性需要关闭的（例如，没有 runner 资源等），使用 ``TEMPORARY_DISABLED_FOR_TARGETS`` 来暂时关闭该测试。
+
+请勿继续使用一些旧的禁止单元测试在一些芯片上执行的做法，因为他们具有明显的坏处：
+
+- 请勿将测试代码放在 ``test/芯片版本`` 目录下面，然后用 CMakeLists.txt 来选择其中一个进行编译。这是因为测试代码比实现代码更容易被复用。如果你将一些代码放在 ``test/esp32`` 目录下来避免 esp32s2 芯片执行它，一旦你需要在新的芯片（比如 esp32s3 ）中启用该测试，你会发现这种结构非常难以保持代码的整洁。
+
+- 请勿继续使用 ``CONFIG_IDF_TARGET_xxx`` 宏来禁止某些测试在一些芯片上编译。这种 方法会让被禁止的测试项目难以追踪和重新打开。并且，相比于白名单式的 ``#if CONFIG_IDF_TARGET_xxx`` ，黑名单式的 ``#if !disabled`` 能避免新芯片引入时，这些测试被自动关闭。
+
+  但对于用于测试的一些实现， ``#if CONFIG_IDF_TARGET_xxx`` 仍可用于给不同芯片版本选择实现代码。测试项目和测试实现区分如下：
+
+  - 测试项目：某些你会在一些芯片上执行，而在另外一些上跳过的项目，例如：
+
+    有三个测试项目 SD 1-bit 、 SD 4-bit 和 SDSPI 。对于不支持 SD Host 外设的ESP32-S2 芯片，只有 SDSPI 一个项目需要被执行。
+
+  - 测试实现：某些代码永远会发生，但采取不同的做法。例如：
+
+    ESP8266 芯片没有 SDIO_PKT_LEN 寄存器。如果在测试过程中需要获取从机准备好的数据长度，你可以用 ``#if CONFIG_IDF_TARGET_`` 宏来选择读取该长度的不同方法实现。
+
+    但请注意避免使用 ``#else`` 宏。这样当新芯片被引入时，测试就会在编译阶段失败，提示维护者去显示选择一个正确的测试实现。
 
 编译单元测试程序
 ----------------
