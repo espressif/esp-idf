@@ -130,5 +130,9 @@ SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #endif
 
-
+// Blocks 19 and 20 may be reserved for the trace memory
+#if CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM > 0
+SOC_RESERVE_MEMORY_REGION(0x3fffc000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM, 0x3fffc000, trace_mem);
 #endif
+
+#endif // BOOTLOADER_BUILD
