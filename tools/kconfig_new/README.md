@@ -82,6 +82,13 @@ After a request is processed, a response is printed to stdout similar to this:
 * `visible` contains any visibility changes, where the visible config symbols have changed.
 * `values` contains any value changes, where a config symbol value has changed. This may be due to an explicit change (ie the client `set` this value), or a change caused by some other change in the config system. Note that a change which is set by the client may not be reflected exactly the same in the response, due to restrictions on allowed values which are enforced by the config server. Invalid changes are ignored by the config server.
 
+### KConfig Item Types
+
+* `string` types are represented as JSON strings.
+* `bool` and `tristate` types are represented as JSON Booleans, the third `tristate` state is not supported.
+* `int` types are represented as JSON integers
+* `hex` types are also represented as JSON integers, clients should read the separate metadata file to know if the UI representation is `int` or `hex`. It is possible to set a `hex` item by sending the server a JSON string of hex digits (no prefix) as the value, but the server always sends `hex` values as JSON integers.
+
 ### Error Responses
 
 In some cases, a request may lead to an error message. In this case, the error message is printed to stderr but an array of errors is also returned in the `error` key of the response:

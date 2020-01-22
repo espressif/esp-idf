@@ -45,3 +45,11 @@
 * Enabling submenuconfig item re-shows its children
 > { "SUBMENU_CONFIG": true }
 < { "values" : { "SUBMENU_CONFIG_ITEM": true, "SUBMENU_CONFIG" : true }, "visible": { "SUBMENU_CONFIG_ITEM": true } }
+
+* Read/write hex values as decimal integers
+> { "TEST_CONDITIONAL_HEX_RANGES": 140 }
+< { "values" : { "TEST_CONDITIONAL_HEX_RANGES" : 140 } }
+
+* Can write hex values as hex strings, but the result is a decimal integer
+> { "TEST_CONDITIONAL_HEX_RANGES": "90" }
+< { "values" : { "TEST_CONDITIONAL_HEX_RANGES" : 144 } }
