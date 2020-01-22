@@ -665,6 +665,7 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
     }
     /* esp_tls_conn_new() API establishes connection in a blocking manner thus this loop ensures that esp_tls_conn_new()
        API returns only after connection is established unless there is an error*/
+    size_t start = xTaskGetTickCount();
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
         if (ret == 1) {
@@ -673,6 +674,14 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
             esp_tls_conn_delete(tls);
             ESP_LOGE(TAG, "Failed to open new connection");
             return NULL;
+        } else if (ret == 0 && cfg->timeout_ms >= 0) {
+            size_t timeout_ticks = pdMS_TO_TICKS(cfg->timeout_ms);
+            uint32_t expired = xTaskGetTickCount() - start;
+            if (expired >= timeout_ticks) {
+                esp_tls_conn_delete(tls);
+                ESP_LOGE(TAG, "Failed to open new connection in specified timeout");
+                return NULL;
+            }
         }
     }
     return NULL;
@@ -680,8 +689,9 @@ esp_tls_t *esp_tls_conn_new(const char *hostname, int hostlen, int port, const e
 
 int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp_tls_cfg_t *cfg, esp_tls_t *tls)
 {
-    /* esp_tls_conn_new_sync() is a sync alternative to esp_tls_conn_new_async() with symetric function prototype
+    /* esp_tls_conn_new_sync() is a sync alternative to esp_tls_conn_new_async() with symmetric function prototype
     it is an alternative to esp_tls_conn_new() which is left for compatibility reasons */
+    size_t start = xTaskGetTickCount();
     while (1) {
         int ret = esp_tls_low_level_conn(hostname, hostlen, port, cfg, tls);
         if (ret == 1) {
@@ -689,6 +699,14 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
         } else if (ret == -1) {
             ESP_LOGE(TAG, "Failed to open new connection");
             return -1;
+        } else if (ret == 0 && cfg->timeout_ms >= 0) {
+            size_t timeout_ticks = pdMS_TO_TICKS(cfg->timeout_ms);
+            uint32_t expired = xTaskGetTickCount() - start;
+            if (expired >= timeout_ticks) {
+                ESP_LOGW(TAG, "Failed to open new connection in specified timeout");
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
+                return 0;
+            }
         }
     }
     return 0;
@@ -732,6 +750,7 @@ esp_tls_t *esp_tls_conn_http_new(const char *url, const esp_tls_cfg_t *cfg)
                      get_port(url, &u), cfg, tls) == 1) {
         return tls;
     }
+    esp_tls_conn_delete(tls);
     return NULL;
 }
 
