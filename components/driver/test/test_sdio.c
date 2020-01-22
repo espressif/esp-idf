@@ -19,6 +19,7 @@
 #include "param_test.h"
 #include "esp_log.h"
 #include "driver/spi_common.h"
+#include "soc/soc_caps.h"
 
 #if defined(SOC_SDMMC_HOST_SUPPORTED) && defined(SOC_SDIO_SLAVE_SUPPORTED)
 #include "driver/sdio_slave.h"

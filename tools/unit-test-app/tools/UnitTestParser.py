@@ -81,10 +81,6 @@ class Parser(object):
         else:
             target = "esp32"
 
-        if target == "esp32s2":
-            # Unit tests temporarily disabled for beta chip
-            return []
-
         test_groups = self.get_test_groups(os.path.join(configs_folder, config_name))
 
         elf_file = os.path.join(config_output_folder, self.ELF_FILE)
