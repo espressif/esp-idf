@@ -8,6 +8,16 @@ set(ESPTOOLPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/esptool.py" --chip ${
 set(ESPSECUREPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espsecure.py")
 set(ESPEFUSEPY ${python} "${CMAKE_CURRENT_LIST_DIR}/esptool/espefuse.py")
 
+set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
+set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
+set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
+
+set(ESPTOOLPY_FLASH_OPTIONS
+    --flash_mode ${ESPFLASHMODE}
+    --flash_freq ${ESPFLASHFREQ}
+    --flash_size ${ESPFLASHSIZE}
+    )
+
 if(NOT BOOTLOADER_BUILD)
     set(esptool_elf2image_args --elf-sha256-offset 0xb0)
 endif()
@@ -128,12 +138,9 @@ else()
     list(APPEND esptool_flash_main_args "--after=${CONFIG_ESPTOOLPY_AFTER}")
 endif()
 
-set(esptool_flash_sub_args "--flash_mode=${CONFIG_ESPTOOLPY_FLASHMODE}"
-                        "--flash_freq=${CONFIG_ESPTOOLPY_FLASHFREQ}"
-                        "--flash_size=${CONFIG_ESPTOOLPY_FLASHSIZE}")
 
 idf_component_set_property(esptool_py FLASH_ARGS "${esptool_flash_main_args}")
-idf_component_set_property(esptool_py FLASH_SUB_ARGS "${esptool_flash_sub_args}")
+idf_component_set_property(esptool_py FLASH_SUB_ARGS "${ESPTOOLPY_FLASH_OPTIONS}")
 
 function(esptool_py_flash_target_image target_name image_name offset image)
     idf_build_get_property(build_dir BUILD_DIR)
