@@ -461,7 +461,7 @@ static bt_status_t btc_hf_unat_response(bt_bdaddr_t *bd_addr, const char *unat)
         return BT_STATUS_FAIL;
     }
 
-    if (is_connected(NULL) && (idx != BTC_HF_INVALID_IDX))
+    if (is_connected(bd_addr) && (idx != BTC_HF_INVALID_IDX))
     {
         tBTA_AG_RES_DATA    ag_res;
         /* Format the response and send */
