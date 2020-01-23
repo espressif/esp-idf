@@ -15,7 +15,7 @@ components/soc/esp32/include/soc/*
 components/soc/include/hal/*
 components/soc/include/soc/*
 
-components/esp_rom/include/esp32s2beta/rom/rsa_pss.h
+components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
 components/esp_common/include/esp_private/*
 

@@ -23,9 +23,9 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include <esp32/rom/spi_flash.h>
 #include <esp32/rom/cache.h>
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/spi_flash.h"
-#include "esp32s2beta/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#include "esp32s2/rom/cache.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #endif
@@ -298,7 +298,7 @@ static void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_st
     }
 #endif
     *saved_state = ret;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     *saved_state = Cache_Suspend_ICache();
 #endif
 }
@@ -317,7 +317,7 @@ static void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_sta
         DPORT_SET_PERI_REG_BITS(DPORT_APP_CACHE_CTRL1_REG, cache_mask, saved_state, 0);
     }
 #endif
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     Cache_Resume_ICache(saved_state);
 #endif
 }
@@ -329,13 +329,13 @@ IRAM_ATTR bool spi_flash_cache_enabled(void)
 #if portNUM_PROCESSORS == 2
     result = result && (DPORT_REG_GET_BIT(DPORT_APP_CACHE_CTRL_REG, DPORT_APP_CACHE_ENABLE) != 0);
 #endif
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     bool result = (REG_GET_BIT(EXTMEM_PRO_ICACHE_CTRL_REG, EXTMEM_PRO_ICACHE_ENABLE) != 0);
 #endif
     return result;
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
 IRAM_ATTR void esp_config_instruction_cache_mode(void)
 {
     cache_size_t cache_size;

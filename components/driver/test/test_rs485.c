@@ -29,7 +29,7 @@
 // Wait timeout for uart driver
 #define PACKET_READ_TICS    (1000 / portTICK_RATE_MS)
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //No runners
 
 // The table for fast CRC16 calculation

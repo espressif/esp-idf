@@ -1,4 +1,4 @@
-set(srcs 
+set(srcs
     "adc.c"
     "can.c"
     "dac.c"
@@ -34,11 +34,11 @@ if(IDF_TARGET STREQUAL "esp32")
     list(APPEND includes "esp32/include")
 endif()
 
-if(IDF_TARGET STREQUAL "esp32s2beta")
-    list(APPEND srcs "esp32s2beta/rtc_tempsensor.c"
-                     "esp32s2beta/touch_sensor.c")
+if(IDF_TARGET STREQUAL "esp32s2")
+    list(APPEND srcs "esp32s2/rtc_tempsensor.c"
+                     "esp32s2/touch_sensor.c")
     # currently only S2 beta has its own target-specific includes
-    list(APPEND includes "esp32s2beta/include")
+    list(APPEND includes "esp32s2/include")
 endif()
 
 idf_component_register(SRCS "${srcs}"

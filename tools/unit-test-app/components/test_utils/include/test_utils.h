@@ -46,7 +46,7 @@
 //Add more targets here, and corresponding performance requirements for that target in idf_performance.h
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define PERFORMANCE_TARGET_SUFFIX       _ESP32
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define PERFORMANCE_TARGET_SUFFIX       _ESP32S2
 #else
 #error target surfix not defined!

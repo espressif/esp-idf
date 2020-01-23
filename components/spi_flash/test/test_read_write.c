@@ -139,7 +139,7 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
 #endif
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
 {
     char src_buf[64], dst_gold[64];
@@ -216,7 +216,7 @@ TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)

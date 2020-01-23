@@ -60,7 +60,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               65000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              850000
 
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
 #define IDF_PERFORMANCE_MIN_AES_CBC_THROUGHPUT_MBSEC                            14.4
 
 // SHA256 hardware throughput at 240MHz, threshold set lower than worst case
@@ -74,7 +74,7 @@
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PUBLIC_OP                               60000
 #define IDF_PERFORMANCE_MAX_RSA_4096KEY_PRIVATE_OP                              600000
 
-#endif //CONFIG_IDF_TARGET_ESP32S2BETA
+#endif //CONFIG_IDF_TARGET_ESP32S2
 
 //time to perform the task selection plus context switch (from task)
 #define IDF_PERFORMANCE_MAX_SCHEDULING_TIME                                     1500

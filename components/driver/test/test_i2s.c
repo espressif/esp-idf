@@ -21,7 +21,7 @@
 #if CONFIG_IDF_TARGET_ESP32
 #define MASTER_WS_IO 25
 #define DATA_OUT_IO 22
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define MASTER_WS_IO 28
 #define DATA_OUT_IO 20
 #endif
@@ -76,8 +76,8 @@ TEST_CASE("I2S basic driver install, uninstall, set pin test", "[i2s]")
     TEST_ESP_OK(i2s_driver_uninstall(I2S_NUM_0));
 }
 
-#if !DISABLED_FOR_TARGETS(ESP32S2BETA)
-/* ESP32S2BETA has only single I2S port and hence following test cases are not applicable */
+#if !DISABLED_FOR_TARGETS(ESP32S2)
+/* ESP32S2 has only single I2S port and hence following test cases are not applicable */
 
 TEST_CASE("I2S write and read test(master tx and slave rx)", "[i2s][test_env=UT_T1_I2S]")
 {

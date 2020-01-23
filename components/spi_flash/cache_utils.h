@@ -60,7 +60,7 @@ void spi_flash_enable_interrupts_caches_no_os(void);
 bool spi_flash_check_and_flush_cache(uint32_t start_addr, uint32_t length);
 
 //config cache mode
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 //config instrcutin cache size and cache block size by menuconfig
 void esp_config_instruction_cache_mode(void);
 //config data cache size and cache block size by menuconfig

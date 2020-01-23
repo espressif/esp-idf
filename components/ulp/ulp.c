@@ -22,9 +22,9 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
 #include "esp32/ulp.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/clk.h"
-#include "esp32s2beta/ulp.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
+#include "esp32s2/ulp.h"
 #endif
 
 #include "soc/soc.h"
@@ -65,7 +65,7 @@ esp_err_t ulp_run(uint32_t entry_point)
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_SLEEP_FOLW_8M);
     // enable ULP timer
     SET_PERI_REG_MASK(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     // disable ULP timer
     CLEAR_PERI_REG_MASK(RTC_CNTL_ULP_CP_TIMER_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN);
     // wait for at least 1 RTC_SLOW_CLK cycle
@@ -150,7 +150,7 @@ esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
     }
     REG_SET_FIELD(SENS_ULP_CP_SLEEP_CYC0_REG + period_index * sizeof(uint32_t),
             SENS_SLEEP_CYCLES_S0, (uint32_t) period_cycles);
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     if (period_index > 4) {
         return ESP_ERR_INVALID_ARG;
     }

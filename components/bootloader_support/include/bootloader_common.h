@@ -19,8 +19,8 @@
 // RESET_REASON is declared in rom/rtc.h
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/rtc.h"
 #endif
 
 #ifdef __cplusplus

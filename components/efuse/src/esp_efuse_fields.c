@@ -28,8 +28,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
 #endif
 
 // Permanently update values written to the efuse write registers

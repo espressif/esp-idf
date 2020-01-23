@@ -24,7 +24,7 @@ class Group(CIAssignTest.Group):
     CI_JOB_MATCH_KEYS = ["test environment"]
     DUT_CLS_NAME = {
         "esp32": "ESP32DUT",
-        "esp32s2beta": "ESP32S2DUT",
+        "esp32s2": "ESP32S2DUT",
         "esp8266": "ESP8266DUT",
     }
 

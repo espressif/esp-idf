@@ -206,11 +206,11 @@ menu "Bootloader config"
         depends on BOOTLOADER_APP_ANTI_ROLLBACK
         range 1 32 if IDF_TARGET_ESP32
         default 32 if IDF_TARGET_ESP32
-        range 1 16 if IDF_TARGET_ESP32S2BETA
-        default 16 if IDF_TARGET_ESP32S2BETA
+        range 1 16 if IDF_TARGET_ESP32S2
+        default 16 if IDF_TARGET_ESP32S2
         help
             The size of the efuse secure version field.
-            Its length is limited to 32 bits for ESP32 and 16 bits for ESP32S2BETA.
+            Its length is limited to 32 bits for ESP32 and 16 bits for ESP32-S2.
             This determines how many times the security version can be increased.
 
     config BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
@@ -468,7 +468,7 @@ menu "Security features"
     choice SECURE_FLASH_ENCRYPTION_KEYSIZE
         bool "Size of generated AES-XTS key"
         default SECURE_FLASH_ENCRYPTION_AES128
-        depends on IDF_TARGET_ESP32S2BETA && SECURE_FLASH_ENC_ENABLED
+        depends on IDF_TARGET_ESP32S2 && SECURE_FLASH_ENC_ENABLED
         help
             Size of generated AES-XTS key.
 

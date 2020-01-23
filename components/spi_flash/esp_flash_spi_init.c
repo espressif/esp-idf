@@ -58,8 +58,8 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .iomux = false, \
     .input_delay_ns = 0,\
 }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
@@ -193,7 +193,7 @@ esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
 
-    #ifdef CONFIG_IDF_TARGET_ESP32S2BETA 
+    #ifdef CONFIG_IDF_TARGET_ESP32S2 
     // For esp32s2 spi IOs are configured as from IO MUX by default
     cfg.iomux = ets_efuse_get_spiconfig() == 0 ?  true : false;
     #endif

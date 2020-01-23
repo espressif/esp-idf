@@ -37,8 +37,8 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
         if(IDF_TARGET STREQUAL "esp32")
             set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32-ulp.cmake)
         endif()
-        if(IDF_TARGET STREQUAL "esp32s2beta")
-            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2beta-ulp.cmake)
+        if(IDF_TARGET STREQUAL "esp32s2")
+            set(TOOLCHAIN_FLAG ${idf_path}/components/ulp/cmake/toolchain-esp32s2-ulp.cmake)
         endif()
 
         externalproject_add(${app_name}

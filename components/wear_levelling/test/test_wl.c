@@ -9,8 +9,8 @@
 #include "freertos/semphr.h"
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/clk.h"
-#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
-#include "esp32s2beta/clk.h"
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
+#include "esp32s2/clk.h"
 #endif
 #include "soc/cpu.h"
 

@@ -21,9 +21,9 @@
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
 #include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/uart.h"
-#include "esp32s2beta/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
+#include "esp32s2/rom/rtc.h"
 #endif
 
 void bootloader_clock_configure(void)
@@ -55,7 +55,7 @@ void bootloader_clock_configure(void)
 #if CONFIG_IDF_TARGET_ESP32
     clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
     clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     clk_cfg.xtal_freq = RTC_XTAL_FREQ_40M;
     clk_cfg.cpu_freq = RTC_CPU_FREQ_80M;
 #endif

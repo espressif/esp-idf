@@ -1,9 +1,0 @@
-_ctype_ = 0x3ffac76c;
-__default_global_locale = 0x3ffac600;
-_global_impure_ptr = 0x3ffffd8c;
-__global_locale_ptr = 0x3ffffd7c;
-__locale_ctype_ptr = 0x40001c2c;
-__locale_ctype_ptr_l = 0x40001c24;
-__locale_mb_cur_max = 0x40001c0c;
-__packed = 0x3ffffcec;
-_PathLocale = 0x3ffffd80;

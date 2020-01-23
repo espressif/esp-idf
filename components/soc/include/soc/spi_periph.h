@@ -23,7 +23,7 @@
 #include "soc/spi_struct.h"
 #include "soc/gpio_sig_map.h"
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "soc/spi_mem_struct.h"
 #include "soc/spi_mem_reg.h"
 #endif
@@ -33,7 +33,7 @@ extern "C"
 {
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
 #define SPI_FREAD_DIO 0
 #define SPI_FREAD_QIO 0
 #define SPI_FWRITE_DIO 0

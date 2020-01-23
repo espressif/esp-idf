@@ -10,7 +10,7 @@ else()
              "eri.c"
              )
 
-    if(IDF_TARGET STREQUAL "esp32s2beta")
+    if(IDF_TARGET STREQUAL "esp32s2")
         list(APPEND srcs "stdatomic.c")
     endif()
     if(IDF_TARGET STREQUAL "esp32")

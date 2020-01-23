@@ -28,8 +28,8 @@
 #include "driver/uart_select.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
 #endif
 
 // TODO: make the number of UARTs chip dependent
@@ -162,7 +162,7 @@ static void uart_tx_char(int fd, int c)
     }
 #if CONFIG_IDF_TARGET_ESP32
     uart->fifo.rw_byte = c;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     uart->ahb_fifo.rw_byte = c;
 #endif
 }
@@ -181,7 +181,7 @@ static int uart_rx_char(int fd)
     }
 #if CONFIG_IDF_TARGET_ESP32
     return uart->fifo.rw_byte;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     return READ_PERI_REG(UART_FIFO_AHB_REG(fd));
 #endif
 }

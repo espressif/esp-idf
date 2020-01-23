@@ -15,7 +15,7 @@
 #include "unity.h"
 #include "test_utils.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #define int_clr_timers int_clr
 #define update update.update
 #define int_st_timers int_st

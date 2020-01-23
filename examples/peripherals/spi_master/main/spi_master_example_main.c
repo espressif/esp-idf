@@ -40,7 +40,7 @@
 #define PIN_NUM_DC   21
 #define PIN_NUM_RST  18
 #define PIN_NUM_BCKL 5
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
 #define LCD_HOST    SPI2_HOST
 #define DMA_CHAN    LCD_HOST
 

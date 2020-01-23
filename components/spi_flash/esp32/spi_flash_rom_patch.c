@@ -32,7 +32,7 @@ esp_rom_spiflash_result_t esp_rom_spiflash_wait_idle(esp_rom_spiflash_chip_t *sp
     }
     while ((REG_READ(SPI_EXT2_REG(0)) & SPI_ST)) {
     }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     while ((REG_READ(SPI_MEM_FSM_REG(1)) & SPI_MEM_ST)) {
     }
     while ((REG_READ(SPI_MEM_FSM_REG(0)) & SPI_MEM_ST)) {

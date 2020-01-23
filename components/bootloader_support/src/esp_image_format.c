@@ -26,9 +26,9 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/rtc.h"
-#include "esp32s2beta/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/rtc.h"
+#include "esp32s2/rom/secure_boot.h"
 #endif
 
 /* Checking signatures as part of verifying images is necessary:
@@ -204,7 +204,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
            esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
         */
         bool verify_sha;
-#if CONFIG_SECURE_BOOT_ENABLED && CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_SECURE_BOOT_ENABLED && CONFIG_IDF_TARGET_ESP32S2
         verify_sha = true;
 #else // ESP32, or ESP32S2 without secure boot enabled
         verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
@@ -638,7 +638,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(simple_hash);
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     // Pad to 4096 byte sector boundary
     if (end % FLASH_SECTOR_SIZE != 0) {
         uint32_t pad_len = FLASH_SECTOR_SIZE - (end % FLASH_SECTOR_SIZE);
@@ -677,7 +677,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         return ESP_ERR_IMAGE_INVALID;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     // Adjust image length result to include the appended signature
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
 #endif

@@ -21,8 +21,8 @@
 #include "unity.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
 #endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

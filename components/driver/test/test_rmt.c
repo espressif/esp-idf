@@ -18,7 +18,7 @@
 #include "soc/soc.h"
 #include "soc/rmt_periph.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //No runners
 static const char *TAG = "RMT.test";
 
@@ -779,4 +779,4 @@ TEST_CASE("RMT loop_en test", "[rmt][test_env=UT_T1_RMT][ignore]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
 }
 
-#endif //DISABLED_FOR_TARGETS(ESP32S2BETA)
+#endif //DISABLED_FOR_TARGETS(ESP32S2)

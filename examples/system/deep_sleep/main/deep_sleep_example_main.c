@@ -168,7 +168,7 @@ void app_main(void)
     touch_pad_config(TOUCH_PAD_NUM9, TOUCH_THRESH_NO_USE);
     calibrate_touch_pad(TOUCH_PAD_NUM8);
     calibrate_touch_pad(TOUCH_PAD_NUM9);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     /* Initialize touch pad peripheral. */
     touch_pad_init();
     /* Only support one touch channel in sleep mode. */
@@ -212,7 +212,7 @@ void app_main(void)
     touch_pad_sleep_channel_read_baseline(&touch_value);
     slp_config.sleep_pad_threshold = touch_value * 0.1;
     touch_pad_sleep_channel_config(&slp_config); //10%
-    printf("test init: touch pad [%d] slp %d, thresh %d\n", 
+    printf("test init: touch pad [%d] slp %d, thresh %d\n",
         TOUCH_PAD_NUM9, touch_value, (uint32_t)(touch_value * 0.1));
 #endif
     printf("Enabling touch pad wakeup\n");
@@ -244,7 +244,7 @@ void app_main(void)
 #endif
 
     esp_deep_sleep_start();
-} 
+}
 
 #ifdef CONFIG_ENABLE_TOUCH_WAKEUP
 #if CONFIG_IDF_TARGET_ESP32

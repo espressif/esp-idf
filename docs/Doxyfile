@@ -103,7 +103,7 @@ INPUT = \
     ../../components/driver/include/driver/spi_common.h \
     ../../components/driver/include/driver/spi_master.h \
     ../../components/driver/include/driver/spi_slave.h \
-    ../../components/driver/esp32s2beta/include/temp_sensor.h \
+    ../../components/driver/esp32s2/include/temp_sensor.h \
     ../../components/driver/include/driver/timer.h \
     ../../components/driver/include/driver/touch_pad.h \
     ../../components/driver/include/driver/uart.h \

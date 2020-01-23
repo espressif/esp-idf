@@ -18,8 +18,8 @@
 #include "esp_flash_internal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/crc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/crc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/crc.h"
 #endif
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_flash";

@@ -27,8 +27,8 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "hal/touch_sensor_hal_esp32.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "hal/touch_sensor_hal_esp32s2beta.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "hal/touch_sensor_hal_esp32s2.h"
 #endif
 
 typedef struct {

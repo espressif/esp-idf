@@ -138,7 +138,7 @@ TEST_CASE("LEDC error log channel and timer config", "[ledc][test_env=UT_T1_LEDC
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     const ledc_mode_t test_speed_mode = LEDC_HIGH_SPEED_MODE;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     const ledc_mode_t test_speed_mode = LEDC_LOW_SPEED_MODE;
 #endif
     //channel configuration test
@@ -236,7 +236,7 @@ TEST_CASE("LEDC normal channel and timer config", "[ledc][test_env=UT_T1_LEDC]")
     // use all kinds of speed mode, channel, timer combination to test all of possible configuration
 #ifdef CONFIG_IDF_TARGET_ESP32
     ledc_mode_t speed_mode[LEDC_SPEED_MODE_MAX] = {LEDC_HIGH_SPEED_MODE, LEDC_LOW_SPEED_MODE};
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     ledc_mode_t speed_mode[LEDC_SPEED_MODE_MAX] = {LEDC_LOW_SPEED_MODE};
 #endif
     ledc_channel_t channel_type[8] = {LEDC_CHANNEL_0, LEDC_CHANNEL_1, LEDC_CHANNEL_2, LEDC_CHANNEL_3, LEDC_CHANNEL_4, LEDC_CHANNEL_5, LEDC_CHANNEL_6, LEDC_CHANNEL_7};
@@ -262,7 +262,7 @@ TEST_CASE("LEDC normal channel and timer config", "[ledc][test_env=UT_T1_LEDC]")
 // set it ignore: need to debug
 TEST_CASE("LEDC set and get frequency", "[ledc][test_env=UT_T1_LEDC][timeout=60][ignore]")
 {
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_0, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_1, LEDC_HIGH_SPEED_MODE);
     timer_frequency_test(LEDC_CHANNEL_0, LEDC_TIMER_13_BIT, LEDC_TIMER_2, LEDC_HIGH_SPEED_MODE);
@@ -281,7 +281,7 @@ TEST_CASE("LEDC set and get dut(with logic analyzer)", "[ledc][ignore]")
     ledc_timer_t timer_list[4] = {LEDC_TIMER_0, LEDC_TIMER_1, LEDC_TIMER_2, LEDC_TIMER_3};
 #ifdef CONFIG_IDF_TARGET_ESP32
     ledc_mode_t speed_mode_list[LEDC_SPEED_MODE_MAX] = {LEDC_HIGH_SPEED_MODE, LEDC_LOW_SPEED_MODE};
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     ledc_mode_t speed_mode_list[LEDC_SPEED_MODE_MAX] = {LEDC_LOW_SPEED_MODE};
 #endif
     for(int i=0; i<LEDC_TIMER_MAX-1; i++) {
@@ -295,7 +295,7 @@ TEST_CASE("LEDC timer set", "[ledc][test_env=UT_T1_LEDC]")
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     const ledc_mode_t test_speed_mode = LEDC_HIGH_SPEED_MODE;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     const ledc_mode_t test_speed_mode = LEDC_LOW_SPEED_MODE;
 #endif
     ledc_channel_config_t ledc_ch_config = {
@@ -351,7 +351,7 @@ TEST_CASE("LEDC timer pause and resume", "[ledc][test_env=UT_T1_LEDC]")
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     const ledc_mode_t test_speed_mode = LEDC_HIGH_SPEED_MODE;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     const ledc_mode_t test_speed_mode = LEDC_LOW_SPEED_MODE;
 #endif
     int16_t count;
@@ -408,7 +408,7 @@ TEST_CASE("LEDC fade with time(logic analyzer)", "[ledc][test_env=UT_T1_LEDC]")
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     const ledc_mode_t test_speed_mode = LEDC_HIGH_SPEED_MODE;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     const ledc_mode_t test_speed_mode = LEDC_LOW_SPEED_MODE;
 #endif
     ledc_channel_config_t ledc_ch_config = {
@@ -456,7 +456,7 @@ TEST_CASE("LEDC fade with step(logic analyzer)", "[ledc][test_env=UT_T1_LEDC]")
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     const ledc_mode_t test_speed_mode = LEDC_HIGH_SPEED_MODE;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     const ledc_mode_t test_speed_mode = LEDC_LOW_SPEED_MODE;
 #endif
     ledc_channel_config_t ledc_ch_config = {
@@ -504,7 +504,7 @@ TEST_CASE("LEDC memory test", "[ledc][test_env=UT_T1_LEDC]")
 {
 #ifdef CONFIG_IDF_TARGET_ESP32
     const ledc_mode_t test_speed_mode = LEDC_HIGH_SPEED_MODE;
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
     const ledc_mode_t test_speed_mode = LEDC_LOW_SPEED_MODE;
 #endif
     ledc_channel_config_t ledc_ch_config = {

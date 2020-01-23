@@ -307,8 +307,8 @@ function run_tests()
     rm sdkconfig
     rm sdkconfig.defaults
 
-    # the next four tests use the esp32s2beta target
-    export other_target=esp32s2beta
+    # the next four tests use the esp32s2 target
+    export other_target=esp32s2
 
     print_status "Can override IDF_TARGET from environment"
     clean_build_dir

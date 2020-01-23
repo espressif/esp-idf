@@ -21,11 +21,11 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/crc.h"
 #include "esp32/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/spi_flash.h"
-#include "esp32s2beta/rom/crc.h"
-#include "esp32s2beta/rom/ets_sys.h"
-#include "esp32s2beta/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#include "esp32s2/rom/crc.h"
+#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/gpio.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"

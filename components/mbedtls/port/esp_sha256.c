@@ -50,8 +50,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/sha.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/sha.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/sha.h"
 #endif
 
 /* Implementation that should never be optimized out by the compiler */

@@ -73,7 +73,7 @@ class Parser(object):
         tags = self.parse_tags(os.path.join(config_output_folder, self.SDKCONFIG_FILE))
         print("Tags of config %s: %s" % (config_name, tags))
         # Search in tags to set the target
-        target_tag_dict = {"ESP32_IDF": "esp32", "ESP32S2BETA_IDF": "esp32s2beta"}
+        target_tag_dict = {"ESP32_IDF": "esp32", "ESP32S2_IDF": "esp32s2"}
         for tag in target_tag_dict:
             if tag in tags:
                 target = target_tag_dict[tag]
@@ -81,7 +81,7 @@ class Parser(object):
         else:
             target = "esp32"
 
-        if target == "esp32s2beta":
+        if target == "esp32s2":
             # Unit tests temporarily disabled for beta chip
             return []
 

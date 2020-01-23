@@ -22,8 +22,8 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
 #endif
 
 /*
@@ -117,7 +117,7 @@ static app_func_arg_t spi3_arg = {
     .host_id = SPI3_HOST,   //for SPI3,
 };
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 static app_func_arg_t spi4_arg = {
     .host_id = SPI4_HOST,   //for SPI4,
 };
@@ -144,7 +144,7 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
         chip->os_func = &esp_flash_spi1_default_os_functions;
         chip->os_func_data = &spi1_arg;
     } else if (host_id == SPI2_HOST || host_id == SPI3_HOST
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
         || host_id == SPI4_HOST
 #endif
     ) {
@@ -152,7 +152,7 @@ esp_err_t esp_flash_init_os_functions(esp_flash_t *chip, int host_id)
         chip->os_func = &esp_flash_spi23_default_os_functions;
 #if CONFIG_IDF_TARGET_ESP32
         chip->os_func_data = (host_id == SPI2_HOST) ? &spi2_arg : &spi3_arg;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         chip->os_func_data = (host_id == SPI2_HOST) ? &spi2_arg : ((host_id == SPI3_HOST) ? &spi3_arg : &spi4_arg);
 #endif
     } else {

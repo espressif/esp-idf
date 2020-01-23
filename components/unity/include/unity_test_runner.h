@@ -184,7 +184,7 @@ void unity_run_menu(void);
  *
  * Usage:
  * ```
- * #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA, ESP32S2)
+ * #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2, ESP32S2)
  * TEST_CASE("only for esp32", "")
  * {
  * }

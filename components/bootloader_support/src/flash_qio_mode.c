@@ -19,9 +19,9 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/efuse.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/spi_flash.h"
-#include "esp32s2beta/rom/efuse.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#include "esp32s2/rom/efuse.h"
 #include "soc/spi_mem_struct.h"
 #endif
 #include "soc/spi_struct.h"
@@ -33,7 +33,7 @@
 /* SPI flash controller */
 #if CONFIG_IDF_TARGET_ESP32
 #define SPIFLASH SPI1
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define SPIFLASH SPIMEM1
 #endif
 
@@ -141,7 +141,7 @@ uint32_t bootloader_read_flash_id(void)
     return id;
 }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
 #define FLASH_WRAP_CMD   0x77
 typedef enum {
     FLASH_WRAP_MODE_8B  = 0,
@@ -212,7 +212,7 @@ void bootloader_enable_qio_mode(void)
     enable_qio_mode(chip_data[i].read_status_fn,
                     chip_data[i].write_status_fn,
                     chip_data[i].status_qio_bit);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
 #endif
 }
@@ -277,7 +277,7 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 
 #if CONFIG_IDF_TARGET_ESP32
     esp_rom_spiflash_select_qio_pins(CONFIG_BOOTLOADER_SPI_WP_PIN, spiconfig);
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     if (ets_efuse_get_wp_pad() <= MAX_PAD_GPIO_NUM) {
         esp_rom_spiflash_select_qio_pins(ets_efuse_get_wp_pad(), spiconfig);
     } else {
@@ -340,7 +340,7 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
     uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
 #if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     SPIFLASH.ctrl.val = SPI_MEM_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
 #endif
     SPIFLASH.user.usr_dummy = 0;
@@ -352,13 +352,13 @@ static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8
     SPIFLASH.user.usr_miso = miso_len > 0;
 #if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.miso_dlen.usr_miso_dbitlen = miso_len ? (miso_len - 1) : 0;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     SPIFLASH.miso_dlen.usr_miso_bit_len = miso_len ? (miso_len - 1) : 0;
 #endif
     SPIFLASH.user.usr_mosi = mosi_len > 0;
 #if CONFIG_IDF_TARGET_ESP32
     SPIFLASH.mosi_dlen.usr_mosi_dbitlen = mosi_len ? (mosi_len - 1) : 0;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     SPIFLASH.mosi_dlen.usr_mosi_bit_len = mosi_len ? (mosi_len - 1) : 0;
 #endif
     SPIFLASH.data_buf[0] = mosi_data;

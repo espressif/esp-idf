@@ -45,7 +45,7 @@ if(IDF_TARGET STREQUAL "esp32")
     )
 endif()
 
-if(IDF_TARGET STREQUAL "esp32s2beta")
+if(IDF_TARGET STREQUAL "esp32s2")
     list(APPEND srcs "src/hal/spi_flash_hal_gpspi.c")
 endif()
 
