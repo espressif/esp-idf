@@ -42,10 +42,13 @@ else() # Regular app build
 
     elseif(target STREQUAL "esp32s2")
         # no SPIRAM workaround for esp32s2
-        # no nano formatting function in ROM
 
         list(APPEND scripts "esp32s2/ld/esp32s2.rom.newlib-funcs.ld"
                             "esp32s2/ld/esp32s2.rom.spiflash.ld")
+
+        if(CONFIG_NEWLIB_NANO_FORMAT)
+            list(APPEND scripts "esp32s2/ld/esp32s2.rom.newlib-nano.ld")
+        endif()
     endif()
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
