@@ -3,7 +3,7 @@ import os.path
 import sys
 import subprocess
 
-from util import copy_if_modified
+from .util import copy_if_modified
 
 
 def setup(app):

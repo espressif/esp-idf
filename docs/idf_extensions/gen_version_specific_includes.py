@@ -7,7 +7,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from io import open
-from util import copy_if_modified
+from .util import copy_if_modified
 import subprocess
 import os
 import re

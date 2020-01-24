@@ -7,7 +7,7 @@ import os
 import os.path
 import re
 import subprocess
-from util import copy_if_modified
+from .util import copy_if_modified
 
 ALL_KINDS = [
     ("function", "Functions"),

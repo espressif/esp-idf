@@ -188,9 +188,9 @@ def sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername):
         # and sphinx.cmd.build() also does a lot of work in the calling thread, especially for j ==1,
         # so using a Pyhthon thread for this part is  a poor option (GIL)
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        for c in iter(lambda: p.stdout.readline(), ''):
+        for c in iter(lambda: p.stdout.readline(), b''):
             sys.stdout.write(prefix)
-            sys.stdout.write(c)
+            sys.stdout.write(c.decode('utf-8'))
         ret = p.wait()
         assert (ret is not None)
         sys.stdout.flush()

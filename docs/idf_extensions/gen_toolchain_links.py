@@ -2,7 +2,7 @@
 from __future__ import print_function
 import os.path
 from collections import namedtuple
-from util import copy_if_modified
+from .util import copy_if_modified
 
 BASE_URL = 'https://dl.espressif.com/dl/'
 
