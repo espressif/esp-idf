@@ -246,7 +246,8 @@ SECTIONS
   ASSERT(((_bss_end - ORIGIN(dram0_0_seg)) <= LENGTH(dram0_0_seg)),
           "DRAM segment data does not fit.")
 
-  .flash.rodata :
+  /* When modifying the alignment, update tls_section_alignment in pxPortInitialiseStack */
+  .flash.rodata : ALIGN(0x10)
   {
     _rodata_start = ABSOLUTE(.);
 
