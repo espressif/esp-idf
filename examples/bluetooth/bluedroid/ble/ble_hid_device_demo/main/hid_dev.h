@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -124,9 +124,9 @@ extern "C" {
 #define HID_KEY_LEFT_SHIFT     225  // Keyboard LeftShift
 #define HID_KEY_LEFT_ALT       226  // Keyboard LeftAlt
 #define HID_KEY_LEFT_GUI       227  // Keyboard LeftGUI
-#define HID_KEY_RIGHT_CTRL     228  // Keyboard LeftContorl
-#define HID_KEY_RIGHT_SHIFT    229  // Keyboard LeftShift
-#define HID_KEY_RIGHT_ALT      230  // Keyboard LeftAlt
+#define HID_KEY_RIGHT_CTRL     228  // Keyboard RightContorl
+#define HID_KEY_RIGHT_SHIFT    229  // Keyboard RightShift
+#define HID_KEY_RIGHT_ALT      230  // Keyboard RightAlt
 #define HID_KEY_RIGHT_GUI      231  // Keyboard RightGUI
 typedef uint8_t keyboard_cmd_t;
 
