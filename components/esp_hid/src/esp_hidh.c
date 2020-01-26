@@ -1,16 +1,8 @@
-// Copyright 2017-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include "sys/queue.h"
 #include "esp_hidh_private.h"
@@ -591,7 +583,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_id_and_proto(esp_hidh_de
 {
     esp_hidh_dev_report_t *r = dev->reports;
     while (r) {
-        if (r->report_id == report_id && (r->report_type & 1) && r->protocol_mode == protocol_mode) {
+        if (r->report_id == report_id && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) && r->protocol_mode == protocol_mode) {
             return r;
         }
         r = r->next;
@@ -603,7 +595,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_len_and_proto(esp_hidh_d
 {
     esp_hidh_dev_report_t *r = dev->reports;
     while (r) {
-        if (r->value_len == len && (r->report_type & 1) && r->protocol_mode == protocol_mode) {
+        if (r->value_len == len && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) && r->protocol_mode == protocol_mode) {
             return r;
         }
         r = r->next;
@@ -623,7 +615,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
     *has_report_id = false;
     // first, assume data not include report id
     while (r) {
-        if (r->value_len == len && r->report_id == 0 && (r->report_type & 1) &&
+        if (r->value_len == len && r->report_id == 0 && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) &&
             r->protocol_mode == protocol_mode) {
             *has_report_id = false;
             break;
@@ -639,7 +631,7 @@ esp_hidh_dev_report_t *esp_hidh_dev_get_input_report_by_proto_and_data(esp_hidh_
         }
         r = dev->reports;
         while (r) {
-            if (r->value_len == len - 1 && r->report_id == *data && (r->report_type & 1) &&
+            if (r->value_len == len - 1 && r->report_id == *data && (r->report_type & ESP_HID_REPORT_TYPE_INPUT) &&
                 r->protocol_mode == protocol_mode) {
                 *has_report_id = true;
                 break;
