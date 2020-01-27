@@ -57,7 +57,7 @@ echo "build_examples running for target $IDF_TARGET"
 
 cd ${IDF_PATH}
 
-# This part of the script produces the same result for all the example build jobs. It may be moved to a separate stage
+# This part of the script produces the same result for all the test app build jobs. It may be moved to a separate stage
 # (pre-build) later, then the build jobs will receive ${BUILD_LIST_JSON} file as an artifact.
 
 # If changing the work-dir or build-dir, remember to update the "artifacts" in gitlab-ci configs, and IDFApp.py.
@@ -68,7 +68,8 @@ ${IDF_PATH}/tools/find_apps.py tools/test_apps \
     --build-system cmake \
     --target ${IDF_TARGET} \
     --recursive \
-    --build-dir "\${IDF_PATH}/${BUILD_PATH}/@f/@w/@t/build" \
+    --work-dir "${BUILD_PATH}/@f/@w/@t" \
+    --build-dir build \
     --build-log "${LOG_PATH}/@f.txt" \
     --output ${ALL_BUILD_LIST_JSON} \
     --config 'sdkconfig.ci=default' \
@@ -79,6 +80,11 @@ ${IDF_PATH}/tools/find_apps.py tools/test_apps \
 # 1. If sdkconfig.ci exists, use it build the example with configuration name "default"
 # 2. If sdkconfig.ci.* exists, use it to build the "*" configuration
 # 3. If none of the above exist, build the default configuration under the name "default"
+# --work-dir and --build-log above uses "placeholders" @x:
+# - @f: full path to the test with slashes replaced with underscores
+# - @w: wildcard used as config name
+# - @t: target name
+# so the workdir .../@f/@w/@t would expand to e.g. tools_test_apps_system_startup/default/esp32
 
 # The part below is where the actual builds happen
 

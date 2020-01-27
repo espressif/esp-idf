@@ -88,10 +88,11 @@ def idf_unit_test(app=UT, dut=IDFDUT, chip="ESP32", module="unit-test", executio
     return test
 
 
-def idf_test_app_test(app=TestApp, dut=IDFDUT, chip="ESP32", module="misc", execution_time=1,
-                      level="integration", erase_nvs=True, **kwargs):
+def idf_custom_test(app=TestApp, dut=IDFDUT, chip="ESP32", module="misc", execution_time=1,
+                    level="integration", erase_nvs=True, config_name=None, group="test-apps", **kwargs):
+
     """
-    decorator for testing idf unit tests (with default values for some keyword args).
+    decorator for idf custom tests (with default values for some keyword args).
 
     :param app: test application class
     :param dut: dut class
@@ -100,6 +101,8 @@ def idf_test_app_test(app=TestApp, dut=IDFDUT, chip="ESP32", module="misc", exec
     :param execution_time: execution time in minutes, int
     :param level: test level, could be used to filter test cases, string
     :param erase_nvs: if need to erase_nvs in DUT.start_app()
+    :param config_name: if specified, name of the app configuration
+    :param group: identifier to group custom tests (unused for now, defaults to "test-apps")
     :param kwargs: other keyword args
     :return: test method
     """

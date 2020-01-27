@@ -139,7 +139,7 @@ class UnitTestAssignTest(CIAssignTest.AssignTest):
     def __init__(self, test_case_path, ci_config_file):
         CIAssignTest.AssignTest.__init__(self, test_case_path, ci_config_file, case_group=Group)
 
-    def _search_cases(self, test_case_path, case_filter=None):
+    def _search_cases(self, test_case_path, case_filter=None, test_case_file_pattern=None):
         """
         For unit test case, we don't search for test functions.
         The unit test cases is stored in a yaml file which is created in job build-idf-test.

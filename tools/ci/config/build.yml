@@ -186,8 +186,7 @@ build_examples_cmake_esp32s2:
 
 .build_test_apps: &build_test_apps
   extends: .build_template
-  parallel: 2
-  stage: pre_build
+  stage: build
   artifacts:
     when: always
     paths:
@@ -225,7 +224,7 @@ build_test_apps_esp32:
 build_test_apps_esp32s2:
   extends: .build_test_apps
   variables:
-    IDF_TARGET: esp32s2beta
+    IDF_TARGET: esp32s2
 
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
