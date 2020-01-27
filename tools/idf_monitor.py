@@ -355,6 +355,7 @@ class SerialReader(StoppableThread):
             self.serial.rts = True  # Force an RTS reset on open
             self.serial.open()
             self.serial.rts = False
+            self.serial.dtr = self.serial.dtr # usbser.sys workaround, as in esptool.py
         try:
             while self.alive:
                 data = self.serial.read(self.serial.in_waiting or 1)
@@ -741,8 +742,10 @@ class Monitor(object):
             self.serial_reader.stop()
         elif cmd == CMD_RESET:
             self.serial.setRTS(True)
+            self.serial.setDTR(self.serial.dtr) # usbser.sys workaround
             time.sleep(0.2)
             self.serial.setRTS(False)
+            self.serial.setDTR(self.serial.dtr)
             self.output_enable(True)
         elif cmd == CMD_MAKE:
             self.run_make("flash")
@@ -755,9 +758,11 @@ class Monitor(object):
         elif cmd == CMD_ENTER_BOOT:
             self.serial.setDTR(False)  # IO0=HIGH
             self.serial.setRTS(True)   # EN=LOW, chip in reset
+            self.serial.setDTR(self.serial.dtr) # usbser.sys workaround
             time.sleep(1.3)  # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.1
             self.serial.setDTR(True)   # IO0=LOW
             self.serial.setRTS(False)  # EN=HIGH, chip out of reset
+            self.serial.setDTR(self.serial.dtr)
             time.sleep(0.45)  # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.05
             self.serial.setDTR(False)  # IO0=HIGH, done
         else:
