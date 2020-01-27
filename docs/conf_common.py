@@ -151,6 +151,13 @@ toolchain_tmpdir = '{}/toolchain_inc'.format(builddir)
 call_with_python('../gen-toolchain-links.py ../../tools/toolchain_versions.mk {} {}'.format(base_url, toolchain_tmpdir))
 copy_if_modified(toolchain_tmpdir, '{}/inc'.format(builddir))
 
+print("Generating IDF Tools list")
+os.environ["IDF_MAINTAINER"] = "1"
+tools_rst = os.path.join(builddir, 'idf-tools-inc.rst')
+tools_rst_tmp = os.path.join(builddir, 'inc', 'idf-tools-inc.rst')
+call_with_python("{}/tools/idf_tools.py gen-doc --output {}".format(idf_path, tools_rst_tmp))
+copy_if_modified(tools_rst_tmp, tools_rst)
+
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 #
 suppress_warnings = ['image.nonlocal_uri']
