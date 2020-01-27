@@ -15,6 +15,8 @@
 #ifndef _SOC_PERIPH_DEFS_H_
 #define _SOC_PERIPH_DEFS_H_
 
+#include "sdkconfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

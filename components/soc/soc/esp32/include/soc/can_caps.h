@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include "sdkconfig.h"
+
 #if (CONFIG_ESP32_REV_MIN >= 2)
 #define CAN_BRP_DIV_SUPPORTED       1
 #define CAN_BRP_DIV_THRESH          128

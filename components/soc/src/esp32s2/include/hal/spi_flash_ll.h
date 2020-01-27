@@ -25,6 +25,10 @@
 #include "gpspi_flash_ll.h"
 #include "spimem_flash_ll.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // For esp32s2, spimem is equivalent to traditional spi peripherals found
 // in esp32. Let the spi flash clock reg definitions reflect this.
 #define SPI_FLASH_LL_CLKREG_VAL_5MHZ   {.spimem=SPIMEM_FLASH_LL_CLKREG_VAL_5MHZ}
@@ -88,4 +92,8 @@ typedef union  {
 #define spi_flash_ll_set_usr_address(dev, addr, bitlen)      spimem_flash_ll_set_address((spi_mem_dev_t*)dev, addr)
 #define spi_flash_ll_set_dummy(dev, dummy)                   spimem_flash_ll_set_dummy((spi_mem_dev_t*)dev, dummy)
 #define spi_flash_ll_set_dummy_out(dev, en, lev)             spimem_flash_ll_set_dummy_out((spi_mem_dev_t*)dev, en, lev)
+#endif
+
+#ifdef __cplusplus
+}
 #endif

@@ -30,6 +30,10 @@
 
 #include "esp_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Get the address of peripheral registers
 #define MCPWM_LL_GET_HW(ID) (((ID)==0)? &MCPWM0: &MCPWM1)
 
@@ -725,3 +729,7 @@ static inline mcpwm_intr_t mcpwm_ll_get_cap_intr_def(int bit)
 {
     return BIT(bit+MCPWM_CAP0_INT_RAW_S);
 }
+
+#ifdef __cplusplus
+}
+#endif

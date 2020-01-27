@@ -18,6 +18,10 @@
 #include "soc/i2c_caps.h"
 #include "soc/periph_defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     const uint8_t sda_out_sig;
     const uint8_t sda_in_sig;
@@ -28,3 +32,7 @@ typedef struct {
 } i2c_signal_conn_t;
 
 extern const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM];
+
+#ifdef __cplusplus
+}
+#endif

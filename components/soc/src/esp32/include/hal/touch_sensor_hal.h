@@ -27,6 +27,10 @@
 
 #include_next "hal/touch_sensor_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Set touch sensor measurement time.
  *
@@ -120,3 +124,7 @@
  * @param pad_num pointer to touch pad which caused wakeup.
  */
 void touch_hal_get_wakeup_status(touch_pad_t *pad_num);
+
+#ifdef __cplusplus
+}
+#endif

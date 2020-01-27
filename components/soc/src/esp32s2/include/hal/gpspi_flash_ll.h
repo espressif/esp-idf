@@ -30,6 +30,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define gpspi_flash_ll_get_hw(host_id)  (((host_id)==SPI2_HOST ? &GPSPI2 \
                                                 : ((host_id)==SPI3_HOST ? &GPSPI3 \
@@ -352,3 +355,6 @@ static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en,
     dev->ctrl.d_pol = out_lev;
 }
 
+#ifdef __cplusplus
+}
+#endif

@@ -27,6 +27,10 @@
 
 #include_next "hal/touch_sensor_hal.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Reset the whole of touch module.
  *
@@ -572,3 +576,7 @@ void touch_hal_sleep_channel_config(const touch_pad_sleep_channel_t *slp_config)
  * @param pad_num pointer to touch pad which caused wakeup.
  */
 #define touch_hal_get_wakeup_status(pad_num) touch_ll_get_wakeup_status(pad_num)
+
+#ifdef __cplusplus
+}
+#endif

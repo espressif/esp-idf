@@ -30,6 +30,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 //Supported clock register values
 #define SPI_FLASH_LL_CLKREG_VAL_5MHZ    ((spi_flash_ll_clock_reg_t){.val=0x0000F1CF})   ///< Clock set to 5 MHz
@@ -375,3 +378,7 @@ static inline void spi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
     dev->user.usr_dummy = dummy_n ? 1 : 0;
     dev->user1.usr_dummy_cyclelen = dummy_n - 1;
 }
+
+#ifdef __cplusplus
+}
+#endif

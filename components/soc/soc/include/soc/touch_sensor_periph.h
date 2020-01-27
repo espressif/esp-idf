@@ -22,4 +22,12 @@
 #include "soc/sens_struct.h"
 #include "soc/rtc_io_struct.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern const int touch_sensor_channel_io_map[SOC_TOUCH_SENSOR_NUM];
+
+#ifdef __cplusplus
+}
+#endif

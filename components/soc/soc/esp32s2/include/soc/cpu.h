@@ -20,6 +20,10 @@
 #include <stddef.h>
 #include "xtensa/corebits.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* C macros for xtensa special register read/write/exchange */
 
 #define RSR(reg, curval)  asm volatile ("rsr %0, " #reg : "=r" (curval));
@@ -130,5 +134,9 @@ static inline esp_cpu_ccount_t esp_cpu_get_ccount(void)
     RSR(CCOUNT, result);
     return result;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

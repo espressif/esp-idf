@@ -22,6 +22,10 @@
 
 #define LEDC_LL_GET_HW() &LEDC
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Set LEDC low speed timer clock
  *
@@ -456,3 +460,7 @@ static inline void ledc_ll_bind_channel_timer(ledc_dev_t *hw, ledc_mode_t speed_
 static inline void ledc_ll_get_channel_timer(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, ledc_timer_t *timer_sel){
     *timer_sel = hw->channel_group[speed_mode].channel[channel_num].conf0.timer_sel;
 }
+
+#ifdef __cplusplus
+}
+#endif

@@ -13,5 +13,3 @@
 // limitations under the License.
 
 #pragma once
-#include "soc/emac_reg_v2.h"
-#include "soc/emac_ex_reg.h"

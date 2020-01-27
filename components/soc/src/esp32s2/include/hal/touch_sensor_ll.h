@@ -27,6 +27,11 @@
 #include "soc/touch_sensor_periph.h"
 #include "hal/touch_sensor_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
 /**
  * Set touch sensor touch sensor times of charge and discharge.
  *
@@ -1071,3 +1076,7 @@ static inline void touch_ll_get_wakeup_status(touch_pad_t *pad_num)
 {
     *pad_num = (touch_pad_t)RTCCNTL.touch_slp_thres.touch_slp_pad;
 }
+
+#ifdef __cplusplus
+}
+#endif

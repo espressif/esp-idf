@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include "sdkconfig.h"
+
 #if (CONFIG_ESP32_REV_MIN >= 1)
 #define SOC_BROWNOUT_RESET_SUPPORTED 1
 #endif

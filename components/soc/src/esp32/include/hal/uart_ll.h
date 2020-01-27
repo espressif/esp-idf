@@ -20,6 +20,10 @@
 #include "hal/uart_types.h"
 #include "soc/uart_periph.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // The default fifo depth
 #define UART_LL_FIFO_DEF_LEN  (UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
@@ -803,3 +807,7 @@ static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 }
 
 #undef UART_LL_TOUT_REF_FACTOR_DEFAULT
+
+#ifdef __cplusplus
+}
+#endif

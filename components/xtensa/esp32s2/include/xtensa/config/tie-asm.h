@@ -32,6 +32,10 @@
 #ifndef _XTENSA_CORE_TIE_ASM_H
 #define _XTENSA_CORE_TIE_ASM_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*  Selection parameter values for save-area save/restore macros:  */
 /*  Option vs. TIE:  */
 #define XTHAL_SAS_TIE	0x0001	/* custom extension or coprocessor */
@@ -125,6 +129,10 @@
 #define XCHAL_NCP_NUM_ATMPS	1
 
 #define XCHAL_SA_NUM_ATMPS	1
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*_XTENSA_CORE_TIE_ASM_H*/
 

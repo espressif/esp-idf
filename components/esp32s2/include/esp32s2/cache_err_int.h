@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief initialize cache invalid access interrupt
@@ -31,3 +34,7 @@ void esp_cache_err_int_init(void);
  *  - (-1) otherwise
  */
 int esp_cache_err_get_cpuid(void);
+
+#ifdef __cplusplus
+}
+#endif

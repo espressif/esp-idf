@@ -25,6 +25,10 @@
 #include "hal/rtc_io_types.h"
 #include "hal/gpio_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     RTCIO_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */
     RTCIO_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
@@ -347,3 +351,7 @@ static inline void rtcio_ll_disable_sleep_setting(gpio_num_t gpio_num)
 {
     CLEAR_PERI_REG_MASK(rtc_io_desc[gpio_num].reg, rtc_io_desc[gpio_num].slpsel);
 }
+
+#ifdef __cplusplus
+}
+#endif

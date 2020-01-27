@@ -24,6 +24,10 @@
 #include "soc/dac_periph.h"
 #include "hal/dac_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * Power on dac module and start output voltage.
  *
@@ -183,3 +187,8 @@ static inline void dac_ll_dma_disable(void)
 {
     SENS.sar_dac_ctrl1.dac_dig_force = 0;
 }
+
+
+#ifdef __cplusplus
+}
+#endif

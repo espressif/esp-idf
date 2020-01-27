@@ -21,6 +21,10 @@
 #include <stdbool.h>
 #include "esp_err.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Initialize spiram interface/hardware. Normally called from cpu_start.c.
  *
@@ -87,5 +91,8 @@ void esp_spiram_writeback_cache(void);
  */
 esp_err_t esp_spiram_reserve_dma_pool(size_t size);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -19,6 +19,10 @@
 #include "soc/periph_defs.h"
 #include "soc/gpio_sig_map.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     const uint8_t tx_sig;
     const uint8_t rx_sig;
@@ -29,3 +33,8 @@ typedef struct {
 } uart_signal_conn_t;
 
 extern const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM];
+
+#ifdef __cplusplus
+}
+#endif
+

@@ -31,6 +31,10 @@
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define spimem_flash_ll_get_hw(host_id)  (((host_id)==SPI1_HOST ?  &SPIMEM1 : NULL ))
 
 typedef typeof(SPIMEM1.clock) spimem_flash_ll_clock_reg_t;
@@ -377,3 +381,7 @@ static inline void spimem_flash_ll_set_dummy_out(spi_mem_dev_t *dev, uint32_t ou
     dev->ctrl.q_pol = out_lev;
     dev->ctrl.d_pol = out_lev;
 }
+
+#ifdef __cplusplus
+}
+#endif

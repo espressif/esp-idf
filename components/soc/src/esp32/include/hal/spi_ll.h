@@ -29,6 +29,10 @@
 #include <esp_types.h>
 #include <stdlib.h> //for abs()
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Registers to reset during initialization. Don't use in app.
 #define SPI_LL_RST_MASK (SPI_OUT_RST | SPI_IN_RST | SPI_AHBM_RST | SPI_AHBM_FIFO_RST)
 /// Interrupt not used. Don't use in app.
@@ -874,3 +878,7 @@ static inline uint32_t spi_ll_slave_get_rcv_bitlen(spi_dev_t *hw)
 
 #undef SPI_LL_RST_MASK
 #undef SPI_LL_UNUSED_INT_MASK
+
+#ifdef __cplusplus
+}
+#endif

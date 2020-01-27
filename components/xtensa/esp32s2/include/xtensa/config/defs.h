@@ -30,8 +30,5 @@
 
 #ifdef __XTENSA__
 
-#include <xtensa/tie/xt_core.h>
-#include <xtensa/tie/xt_misc.h>
-
 #endif /* __XTENSA__ */
 #endif /* !_XTENSA_BASE_HEADER */

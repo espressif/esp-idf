@@ -27,6 +27,11 @@
 #include "soc/touch_sensor_periph.h"
 #include "hal/touch_sensor_types.h"
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 //Some register bits of touch sensor 8 and 9 are mismatched, we need to swap the bits.
 #define TOUCH_LL_BIT_SWAP(data, n, m)   (((data >> n) &  0x1)  == ((data >> m) & 0x1) ? (data) : ((data) ^ ((0x1 <<n) | (0x1 << m))))
 #define TOUCH_LL_BITS_SWAP(v)  TOUCH_LL_BIT_SWAP(v, TOUCH_PAD_NUM8, TOUCH_PAD_NUM9)
@@ -488,3 +493,7 @@ static inline bool touch_ll_meas_is_done(void)
 {
     return (bool)SENS.sar_touch_ctrl2.touch_meas_done;
 }
+
+#ifdef __cplusplus
+}
+#endif

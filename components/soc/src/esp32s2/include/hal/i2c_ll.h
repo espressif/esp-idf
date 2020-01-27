@@ -18,6 +18,10 @@
 #include "soc/i2c_periph.h"
 #include "hal/i2c_types.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief I2C hardware cmd register filed.
  */
@@ -864,3 +868,7 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
     hw->ctr.val = ctrl_reg.val;
     hw->fifo_conf.fifo_addr_cfg_en = 0;
 }
+
+#ifdef __cplusplus
+}
+#endif

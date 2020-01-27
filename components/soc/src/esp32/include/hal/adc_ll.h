@@ -4,6 +4,10 @@
 #include "hal/adc_types.h"
 #include <stdbool.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef enum {
     ADC_DIG_FORMAT_12BIT,   /*!< ADC to I2S data format, [15:12]-channel [11:0]-12 bits ADC data.
                                  Note: In single convert mode. */
@@ -620,3 +624,7 @@ static inline bool adc_ll_vref_output(int io)
     SENS.sar_meas_start2.sar2_en_pad = 1 << channel;
     return true;
 }
+
+#ifdef __cplusplus
+}
+#endif

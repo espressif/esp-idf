@@ -16,6 +16,10 @@
 
 #define MHZ (1000000)
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void rtc_clk_cpu_freq_to_xtal(int freq, int div);
 
 /* Values of RTC_XTAL_FREQ_REG and RTC_APB_FREQ_REG are stored as two copies in
@@ -36,3 +40,6 @@ static inline uint32_t clk_val_to_reg_val(uint32_t val) {
     return (val & UINT16_MAX) | ((val & UINT16_MAX) << 16);
 }
 
+#ifdef __cplusplus
+}
+#endif

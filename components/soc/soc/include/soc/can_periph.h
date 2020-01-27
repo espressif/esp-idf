@@ -16,7 +16,15 @@
 
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/can_struct.h"
 #include "soc/can_caps.h"
+#endif
+
+#ifdef __cplusplus
+}
 #endif

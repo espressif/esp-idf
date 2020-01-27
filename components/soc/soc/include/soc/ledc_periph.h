@@ -17,6 +17,10 @@
 #include "soc/ledc_struct.h"
 #include "soc/ledc_caps.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  Stores a bunch of per-ledc-peripheral data.
 */
@@ -28,4 +32,8 @@ typedef struct {
 extern const ledc_signal_conn_t ledc_periph_signal[2];
 #else
 extern const ledc_signal_conn_t ledc_periph_signal[1];
+#endif
+
+#ifdef __cplusplus
+}
 #endif

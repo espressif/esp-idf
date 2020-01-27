@@ -17,6 +17,10 @@
 #include "i2c_apll.h"
 #include "i2c_bbpll.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* Analog function control register */
 #define ANA_CONFIG_REG  0x6000E044
 #define ANA_CONFIG_S    (8)
@@ -46,3 +50,8 @@ void rom_i2c_writeReg_Mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint
 
 #define I2C_READREG_RTC(block, reg_add) \
       rom_i2c_readReg(block, block##_HOSTID,  reg_add)
+
+
+#ifdef __cplusplus
+}
+#endif
