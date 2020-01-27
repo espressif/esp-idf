@@ -222,6 +222,7 @@ class SerialReader(StoppableThread):
             self.serial.rts = True  # Force an RTS reset on open
             self.serial.open()
             self.serial.rts = False
+            self.serial.dtr = self.serial.dtr   # usbser.sys workaround
         try:
             while self.alive:
                 data = self.serial.read(self.serial.in_waiting or 1)
@@ -469,8 +470,10 @@ class Monitor(object):
             red_print(self.get_help_text())
         elif c == CTRL_R:  # Reset device via RTS
             self.serial.setRTS(True)
+            self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             time.sleep(0.2)
             self.serial.setRTS(False)
+            self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             self.output_enable(True)
         elif c == CTRL_F:  # Recompile & upload
             self.run_make("flash")
@@ -483,9 +486,11 @@ class Monitor(object):
             # to fast trigger pause without press menu key
             self.serial.setDTR(False)  # IO0=HIGH
             self.serial.setRTS(True)   # EN=LOW, chip in reset
+            self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             time.sleep(1.3)  # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.1
             self.serial.setDTR(True)   # IO0=LOW
             self.serial.setRTS(False)  # EN=HIGH, chip out of reset
+            self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             time.sleep(0.45)  # timeouts taken from esptool.py, includes esp32r0 workaround. defaults: 0.05
             self.serial.setDTR(False)  # IO0=HIGH, done
         elif c in [CTRL_X, 'x', 'X']:  # Exiting from within the menu
