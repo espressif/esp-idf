@@ -2,7 +2,7 @@
 # and component makefiles (component_wrapper.mk)
 #
 
-PYTHON=$(call dequote,$(CONFIG_SDK_PYTHON))
+PYTHON ?= $(call dequote,$(CONFIG_SDK_PYTHON))
 
 # Include project config makefile, if it exists.
 #
