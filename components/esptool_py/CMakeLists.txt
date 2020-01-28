@@ -22,15 +22,7 @@ if(NOT BOOTLOADER_BUILD)
 
     # Generate flasher_args.json for tools that need it. The variables below are used
     # in configuring the template flasher_args.json.in.
-    set(ESPFLASHMODE ${CONFIG_ESPTOOLPY_FLASHMODE})
-    set(ESPFLASHFREQ ${CONFIG_ESPTOOLPY_FLASHFREQ})
-    set(ESPFLASHSIZE ${CONFIG_ESPTOOLPY_FLASHSIZE})
-
-    set(ESPTOOLPY_FLASH_OPTIONS
-        --flash_mode ${ESPFLASHMODE}
-        --flash_freq ${ESPFLASHFREQ}
-        --flash_size ${ESPFLASHSIZE}
-        )
+    # Some of the variables (flash mode, size, frequency) are already set in project_include.cmake.
 
     set(ESPTOOLPY_BEFORE "${CONFIG_ESPTOOLPY_BEFORE}")
     set(ESPTOOLPY_AFTER  "${CONFIG_ESPTOOLPY_AFTER}")
