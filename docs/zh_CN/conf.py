@@ -20,16 +20,4 @@ copyright = u'2016 - 2019 乐鑫信息科技（上海）股份有限公司'
 # for a list of supported languages.
 language = 'zh_CN'
 
-# Download font file that is stored on a separate server to save on esp-idf repository size.
-print("Downloading font file")
-download_file_if_missing('https://dl.espressif.com/dl/esp-idf/docs/_static/NotoSansSC-Regular.otf', '../_static')
-
-# Set up font for blockdiag, nwdiag, rackdiag and packetdiag
-blockdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
-seqdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
-actdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
-nwdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
-rackdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
-packetdiag_fontpath = '../_static/NotoSansSC-Regular.otf'
-
 update_exclude_patterns(tags)  # noqa: F405, need to import * from conf_common

@@ -26,6 +26,7 @@ from idf_extensions.util import download_file_if_missing
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
 
+config_dir = os.path.abspath(os.path.dirname(__file__))
 
 # http://stackoverflow.com/questions/12772927/specifying-an-online-image-in-sphinx-restructuredtext-format
 #
@@ -367,3 +368,31 @@ def setup(app):
     # note: we generate into xml_in and then copy_if_modified to xml dir
     app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}
     app.config.breathe_default_project = "esp32-idf"
+
+
+    setup_diag_font(app)
+
+def setup_diag_font(app):
+    # blockdiag and other tools require a font which supports their character set
+    # the font file is stored on the download server to save repo size
+
+    font_name = {
+        'en': 'DejaVuSans.ttf',
+        'zh_CN': 'NotoSansSC-Regular.otf',
+    }[app.config.language]
+
+    font_dir = os.path.join(config_dir, '_static')
+    assert os.path.exists(font_dir)
+
+    print("Downloading font file %s for %s" % (font_name, app.config.language))
+    download_file_if_missing('https://dl.espressif.com/dl/esp-idf/docs/_static/{}'.format(font_name), font_dir)
+
+    font_path = os.path.abspath(os.path.join(font_dir, font_name))
+    assert os.path.exists(font_path)
+
+    app.config.blockdiag_fontpath = font_path
+    app.config.seqdiag_fontpath = font_path
+    app.config.actdiag_fontpath = font_path
+    app.config.nwdiag_fontpath = font_path
+    app.config.rackdiag_fontpath = font_path
+    app.config.packetdiag_fontpath = font_path
