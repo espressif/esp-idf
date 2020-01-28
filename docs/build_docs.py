@@ -161,8 +161,7 @@ def sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername):
     try:
         os.makedirs(build_dir)
     except OSError:
-        print("Cannot call Sphinx in an existing directory!")
-        return 1
+        pass
 
     environ = {}
     environ.update(os.environ)
