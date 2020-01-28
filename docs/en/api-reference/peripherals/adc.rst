@@ -85,7 +85,7 @@ Reading voltage on ADC2 channel 7 ({IDF_TARGET_ADC2_CH7})::
 The reading may fail due to collision with Wi-Fi, should check it.
 An example using the ADC2 driver to read the output of DAC is available in esp-idf: :example:`peripherals/adc2`
 
-.. only: esp32
+.. only:: esp32
 
     Reading the internal hall effect sensor::
 

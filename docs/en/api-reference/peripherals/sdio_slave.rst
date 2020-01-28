@@ -4,14 +4,6 @@ SDIO Card Slave Driver
 Overview
 --------
 
-.. only:: esp32s2
-
-    .. note::
-
-        {IDF_TARGET_NAME} does not have a SDIO peripheral.
-
-.. only:: esp32
-
     The ESP32 SDIO Card peripherals (Host, Slave) shares two sets of pins as below table.
     The first set is usually occupied by SPI0 bus which is responsible for the SPI flash holding the code to run.
     This means SDIO slave driver can only runs on the second set of pins while SDIO host is not using it.

@@ -6,12 +6,6 @@ Communication with ESP SDIO Slave
 ESP SDIO slave initialization
 ------------------------------
 
-.. only:: esp32s2
-
-    .. note::
-
-        {IDF_TARGET_NAME} does not have a SDIO peripheral.
-
 The host should initialize the {IDF_TARGET_NAME} SDIO slave according to the standard
 SDIO initialization process (Sector 3.1.2 of `SDIO Simplified
 Specification <https://www.sdcard.org/downloads/pls/>`_). In this specification

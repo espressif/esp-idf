@@ -40,6 +40,12 @@ ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t
 ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
 ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+
+
+# This seems like a bug, as the field are ::model_id and ::vnd::model_id
+esp_ble_mesh_defs.inc:line: WARNING: Duplicate declaration, uint16_t esp_ble_mesh_model::model_id
+
+
 #
 # Issue present only when building on msys2 / mingw32 START >>>
 #

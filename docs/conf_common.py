@@ -21,6 +21,7 @@ import os
 import os.path
 import re
 import subprocess
+from idf_extensions.util import download_file_if_missing
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
 sys.setrecursionlimit(3500)
@@ -132,21 +133,30 @@ def update_exclude_patterns(tags):
                   'api-guides/esp-ble-mesh/**',
                   'api-guides/ulp-legacy.rst',
                   'api-guides/unit-tests-legacy.rst',
+                  'api-guides/ulp_instruction_set.rst',
                   'api-guides/jtag-debugging/configure-wrover.rst',
                   'api-reference/system/himem.rst',
                   'api-reference/bluetooth/**',
+                  'api-reference/peripherals/sdio_slave.rst',
+                  'api-reference/peripherals/esp_slave_protocol.rst',
+                  'api-reference/peripherals/mcpwm.rst',
+                  'api-reference/peripherals/sd_pullup_requirements.rst',
+                  'api-reference/peripherals/sdmmc_host.rst',
+                  'api-reference/protocols/esp_serial_slave_link.rst',
                   'api-reference/system/ipc.rst',
                   'get-started-legacy/**',
                   'gnu-make-legacy.rst',
-                  'hw-reference/esp32/**']:
+                  'hw-reference/esp32/**',
+                  ]:
             exclude_patterns.append(e)
 
     if "esp32s2" not in tags:
         # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
         # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['hw-reference/esp32s2/**']:
+        for e in ['hw-reference/esp32s2/**',
+                  'api-guides/ulps2_instruction_set.rst',
+                  'api-reference/peripherals/temp_sensor.rst']:
             exclude_patterns.append(e)
-
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.

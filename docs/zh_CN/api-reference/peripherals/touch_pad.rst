@@ -156,7 +156,8 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 API 参考
 -------------
 
-.. include-build-file:: inc/touch_pad.inc
+.. include-build-file:: inc/touch_sensor.inc
+.. include-build-file:: inc/touch_sensor_common.inc
 
 GPIO 宏查找表
 ^^^^^^^^^^^^^^^^^^

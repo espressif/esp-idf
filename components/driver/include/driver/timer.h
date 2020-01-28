@@ -331,8 +331,6 @@ esp_err_t timer_disable_intr(timer_group_t group_num, timer_idx_t timer_num);
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index.
  *
- * @return
- *     - None
  */
 void timer_group_intr_clr_in_isr(timer_group_t group_num, timer_idx_t timer_num) __attribute__((deprecated));
 
@@ -341,8 +339,6 @@ void timer_group_intr_clr_in_isr(timer_group_t group_num, timer_idx_t timer_num)
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index.
  *
- * @return
- *     - None
  */
 void timer_group_clr_intr_status_in_isr(timer_group_t group_num, timer_idx_t timer_num);
 
@@ -351,8 +347,6 @@ void timer_group_clr_intr_status_in_isr(timer_group_t group_num, timer_idx_t tim
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param timer_num Timer index.
  *
- * @return
- *     - None
  */
 void timer_group_enable_alarm_in_isr(timer_group_t group_num, timer_idx_t timer_num);
 
@@ -372,8 +366,6 @@ uint64_t timer_group_get_counter_value_in_isr(timer_group_t group_num, timer_idx
  * @param timer_num Timer index.
  * @param alarm_val Alarm threshold.
  *
- * @return
- *     - None
  */
 void timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t timer_num, uint64_t alarm_val);
 
@@ -383,8 +375,6 @@ void timer_group_set_alarm_value_in_isr(timer_group_t group_num, timer_idx_t tim
  * @param timer_num Timer index.
  * @param counter_en Enable/disable.
  *
- * @return
- *     - None
  */
 void timer_group_set_counter_enable_in_isr(timer_group_t group_num, timer_idx_t timer_num, timer_start_t counter_en);
 
@@ -411,8 +401,6 @@ uint32_t timer_group_get_intr_status_in_isr(timer_group_t group_num);
  * @param group_num Timer group number, 0 for TIMERG0 or 1 for TIMERG1
  * @param intr_mask Masked interrupt.
  *
- * @return
- *     - None
  */
 void timer_group_clr_intr_sta_in_isr(timer_group_t group_num, timer_intr_t intr_mask) __attribute__((deprecated));
 

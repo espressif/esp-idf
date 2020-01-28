@@ -17,6 +17,7 @@
 #include "soc/touch_sensor_caps.h"
 #include "sdkconfig.h"
 
+/** Touch pad channel */
 typedef enum {
     TOUCH_PAD_NUM0 = 0, /*!< Touch pad channel 0 is GPIO4(ESP32) */
     TOUCH_PAD_NUM1,     /*!< Touch pad channel 1 is GPIO0(ESP32) / GPIO1(ESP32-S2) */
@@ -38,6 +39,7 @@ typedef enum {
     TOUCH_PAD_MAX,
 } touch_pad_t;
 
+/** Touch sensor high reference voltage */
 typedef enum {
     TOUCH_HVOLT_KEEP = -1, /*!<Touch sensor high reference voltage, no change  */
     TOUCH_HVOLT_2V4 = 0,   /*!<Touch sensor high reference voltage, 2.4V  */
@@ -47,6 +49,7 @@ typedef enum {
     TOUCH_HVOLT_MAX,
 } touch_high_volt_t;
 
+/** Touch sensor low reference voltage */
 typedef enum {
     TOUCH_LVOLT_KEEP = -1, /*!<Touch sensor low reference voltage, no change  */
     TOUCH_LVOLT_0V5 = 0,   /*!<Touch sensor low reference voltage, 0.5V  */
@@ -56,6 +59,7 @@ typedef enum {
     TOUCH_LVOLT_MAX,
 } touch_low_volt_t;
 
+/** Touch sensor high reference voltage attenuation */
 typedef enum {
     TOUCH_HVOLT_ATTEN_KEEP = -1,  /*!<Touch sensor high reference voltage attenuation, no change  */
     TOUCH_HVOLT_ATTEN_1V5 = 0,    /*!<Touch sensor high reference voltage attenuation, 1.5V attenuation  */
@@ -65,6 +69,7 @@ typedef enum {
     TOUCH_HVOLT_ATTEN_MAX,
 } touch_volt_atten_t;
 
+/** Touch sensor charge/discharge speed */
 typedef enum {
     TOUCH_PAD_SLOPE_0 = 0,       /*!<Touch sensor charge / discharge speed, always zero  */
     TOUCH_PAD_SLOPE_1 = 1,       /*!<Touch sensor charge / discharge speed, slowest  */
@@ -77,12 +82,14 @@ typedef enum {
     TOUCH_PAD_SLOPE_MAX,
 } touch_cnt_slope_t;
 
+/** Touch sensor initial charge level */
 typedef enum {
     TOUCH_PAD_TIE_OPT_LOW = 0,    /*!<Initial level of charging voltage, low level */
     TOUCH_PAD_TIE_OPT_HIGH = 1,   /*!<Initial level of charging voltage, high level */
     TOUCH_PAD_TIE_OPT_MAX,
 } touch_tie_opt_t;
 
+/** Touch sensor FSM mode */
 typedef enum {
     TOUCH_FSM_MODE_TIMER = 0,   /*!<To start touch FSM by timer */
     TOUCH_FSM_MODE_SW,          /*!<To start touch FSM by software trigger */
@@ -175,6 +182,7 @@ typedef enum {
     TOUCH_PAD_DENOISE_CAP_MAX
 } touch_pad_denoise_cap_t;
 
+/** Touch sensor denoise configuration */
 typedef struct touch_pad_denoise {
     touch_pad_denoise_grade_t grade;    /*!<Select denoise range of denoise channel.
                                             Determined by measuring the noise amplitude of the denoise channel. */
@@ -195,6 +203,7 @@ typedef enum {
     TOUCH_PAD_SHIELD_DRV_MAX
 } touch_pad_shield_driver_t;
 
+/** Touch sensor waterproof configuration */
 typedef struct touch_pad_waterproof {
     touch_pad_t guard_ring_pad;             /*!<Waterproof. Select touch channel use for guard pad */
     touch_pad_shield_driver_t shield_driver;/*!<Waterproof. Select max equivalent capacitance for sheild pad
@@ -202,6 +211,7 @@ typedef struct touch_pad_waterproof {
                                                 reading to the Touch0 reading to estimate the equivalent capacitance.*/
 } touch_pad_waterproof_t;
 
+/** Touch sensor proximity detection configuration */
 typedef struct touch_pad_proximity {
     touch_pad_t select_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM];  /*!<Set touch channel number for proximity pad.
                                                                   If clear the proximity channel, point this pad to `TOUCH_PAD_NUM0` */
@@ -209,9 +219,10 @@ typedef struct touch_pad_proximity {
 #define TOUCH_PROXIMITY_MEAS_NUM_MAX (0xFF)
 } touch_pad_proximity_t;
 
+/** Touch channel idle state configuration */
 typedef enum {
-    TOUCH_PAD_CONN_HIGHZ = 0,   /*!<Idel status of touch channel is high resistance state */
-    TOUCH_PAD_CONN_GND = 1,     /*!<Idel status of touch channel is ground connection */
+    TOUCH_PAD_CONN_HIGHZ = 0,   /*!<Idle status of touch channel is high resistance state */
+    TOUCH_PAD_CONN_GND = 1,     /*!<Idle status of touch channel is ground connection */
     TOUCH_PAD_CONN_MAX
 } touch_pad_conn_type_t;
 
@@ -223,6 +234,7 @@ typedef enum {
     TOUCH_PAD_FILTER_MAX
 } touch_filter_mode_t;
 
+/** Touch sensor filter configuration */
 typedef struct touch_filter_config {
     touch_filter_mode_t mode;   /*!<Set filter mode. The input to the filter is raw data and the output is the baseline value.
                                     Larger filter coefficients increase the stability of the baseline. */
@@ -253,6 +265,7 @@ typedef struct touch_filter_config {
 #define TOUCH_JITTER_STEP_MAX       (15)
 } touch_filter_config_t;
 
+/** Touch sensor channel sleep configuration */
 typedef struct {
     touch_pad_t touch_num;          /*!<Set touch channel number for sleep pad.
                                         Only one touch sensor channel is supported in deep sleep mode. */

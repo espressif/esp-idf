@@ -302,6 +302,7 @@ esp_err_t esp_event_isr_post(esp_event_base_t event_base,
 /**
  * @brief Special variant of esp_event_post_to for posting events from interrupt handlers
  *
+ * @param[in] event_loop the event loop to post to
  * @param[in] event_base the event base that identifies the event
  * @param[in] event_id the event id that identifies the event
  * @param[in] event_data the data, specific to the event occurence, that gets passed to the handler

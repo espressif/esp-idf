@@ -83,11 +83,11 @@ typedef struct{
     union {
         struct {
             uint32_t clk_speed;     /*!< I2C clock frequency for master mode, (no higher than 1MHz for now) */
-        } master;
+        } master;                   /*!< I2C master config */
         struct {
             uint8_t addr_10bit_en;  /*!< I2C 10bit address mode enable for slave mode */
             uint16_t slave_addr;    /*!< I2C address for slave mode */
-        } slave;
+        } slave;                    /*!< I2C slave config */
     };
 } i2c_config_t;
 

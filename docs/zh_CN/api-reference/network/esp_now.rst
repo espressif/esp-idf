@@ -84,5 +84,5 @@ ESP-NOW 采用 CCMP 方法保护供应商特定动作帧的安全，具体可参
 API 参考
 -------------
 
-.. include:: /_build/inc/esp_now.inc
+.. include-build-file:: inc/esp_now.inc
 

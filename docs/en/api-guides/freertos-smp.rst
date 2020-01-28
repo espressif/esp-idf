@@ -412,7 +412,7 @@ matter.
     .. _floating-points:
 
     Floating Point Arithmetic
-    ------------------------
+    -------------------------
 
     ESP-IDF FreeRTOS implements Lazy Context Switching for FPUs. In other words,
     the state of a core's FPU registers are not immediately saved when a context 

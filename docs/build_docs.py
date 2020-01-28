@@ -31,9 +31,6 @@ DXG_WARN_LOG = "doxygen-warning-log.txt"
 DXG_SANITIZED_LOG = "doxygen-warning-log-sanitized.txt"
 DXG_KNOWN_WARNINGS = os.path.join(os.environ["IDF_PATH"], "docs", "doxygen-known-warnings.txt")
 
-SANITIZE_FILENAME_REGEX = re.compile("[^:]*/([^/:]*)(:.*)")
-SANITIZE_LINENUM_REGEX = re.compile("([^:]*)(:[0-9]+:)(.*)")
-
 LogMessage = namedtuple("LogMessage", "original_text sanitized_text")
 
 languages = LANGUAGES
@@ -238,6 +235,10 @@ def call_build_docs(entry):
     return sphinx_call(*entry, buildername="html")
 
 
+SANITIZE_FILENAME_REGEX = re.compile("[^:]*/([^/:]*)(:.*)")
+SANITIZE_LINENUM_REGEX = re.compile("([^:]*)(:[0-9]+:)(.*)")
+
+
 def sanitize_line(line):
     """
     Clear a log message from insignificant parts
@@ -272,6 +273,14 @@ def check_docs(language, target, log_file, known_warnings_file, out_sanitized_lo
     with open(known_warnings_file) as k:
         for known_line in k:
             known_messages.append(known_line)
+
+    if "doxygen" in known_warnings_file:
+        # Clean a known Doxygen limitation: it's expected to always document anonymous
+        # structs/unions but we don't do this in our docs, so filter these all out with a regex
+        # (this won't match any named field, only anonymous members -
+        # ie the last part of the field is is just <something>::@NUM not <something>::name)
+        RE_ANONYMOUS_FIELD = re.compile(r".+:line: warning: parameters of member [^:\s]+(::[^:\s]+)*(::@\d+)+ are not \(all\) documented")
+        all_messages = [msg for msg in all_messages if not re.match(RE_ANONYMOUS_FIELD, msg.sanitized_text)]
 
     # Collect all new messages that are not match with the known messages.
     # The order is an important.

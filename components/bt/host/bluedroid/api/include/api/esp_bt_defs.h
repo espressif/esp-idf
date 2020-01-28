@@ -86,9 +86,9 @@ typedef struct {
 #define ESP_UUID_LEN_128    16
     uint16_t len;							/*!< UUID length, 16bit, 32bit or 128bit */
     union {
-        uint16_t    uuid16;
-        uint32_t    uuid32;
-        uint8_t     uuid128[ESP_UUID_LEN_128];
+        uint16_t    uuid16;                 /*!< 16bit UUID */
+        uint32_t    uuid32;                 /*!< 32bit UUID */
+        uint8_t     uuid128[ESP_UUID_LEN_128]; /*!< 128bit UUID */
     } uuid;									/*!< UUID */
 } __attribute__((packed)) esp_bt_uuid_t;
 

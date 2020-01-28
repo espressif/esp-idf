@@ -56,7 +56,6 @@ extern "C" {
 #define ESP_INTR_FLAG_LEVELMASK	(ESP_INTR_FLAG_LEVEL1|ESP_INTR_FLAG_LEVEL2|ESP_INTR_FLAG_LEVEL3| \
 								 ESP_INTR_FLAG_LEVEL4|ESP_INTR_FLAG_LEVEL5|ESP_INTR_FLAG_LEVEL6| \
 								 ESP_INTR_FLAG_NMI) ///< Mask for all level flags
-/**@}*/
 
 
 /** @addtogroup Intr_Alloc_Pseudo_Src
@@ -78,16 +77,23 @@ extern "C" {
 
 /**@}*/
 
-// This is used to provide SystemView with positive IRQ IDs, otherwise sheduler events are not shown properly
+/** Provides SystemView with positive IRQ IDs, otherwise scheduler events are not shown properly
+ */
 #define ETS_INTERNAL_INTR_SOURCE_OFF		(-ETS_INTERNAL_PROFILING_INTR_SOURCE)
 
+/** Enable interrupt by interrupt number */
 #define ESP_INTR_ENABLE(inum)  xt_ints_on((1<<inum))
+
+/** Disable interrupt by interrupt number */
 #define ESP_INTR_DISABLE(inum) xt_ints_off((1<<inum))
 
+/** Function prototype for interrupt handler function */
 typedef void (*intr_handler_t)(void *arg);
 
-
+/** Interrupt handler associated data structure */
 typedef struct intr_handle_data_t intr_handle_data_t;
+
+/** Handle to an interrupt handler */
 typedef intr_handle_data_t* intr_handle_t ;
 
 /**

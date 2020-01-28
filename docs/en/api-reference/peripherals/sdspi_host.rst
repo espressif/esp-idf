@@ -4,7 +4,11 @@ SD SPI Host Driver
 Overview
 --------
 
-The SD SPI host driver allows using the SPI2 (HSPI) or SPI3 (VSPI) controller for communication with SD cards. This driver's naming pattern was adopted from the :doc:`SDMMC Host <sdmmc_host>` driver due to their similarity. Likewise, the APIs of both drivers are also very similar.
+The SD SPI host driver allows using the SPI2 (HSPI) or SPI3 (VSPI) controller for communication with SD cards.
+
+.. only:: esp32
+
+    This driver's naming pattern was adopted from the :doc:`SDMMC Host <sdmmc_host>` driver due to their similarity. Likewise, the APIs of both drivers are also very similar.
 
 The SD SPI host driver has the following modes:
 
