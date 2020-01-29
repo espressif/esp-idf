@@ -98,7 +98,7 @@ extern "C" {
 #include "esp_compiler.h"
 
 /* Application specific configuration options. */
-#include "FreeRTOSConfig.h"
+#include "freertos/FreeRTOSConfig.h"
 
 /* Basic FreeRTOS definitions. */
 #include "projdefs.h"

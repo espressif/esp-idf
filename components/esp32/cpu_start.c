@@ -37,7 +37,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/portmacro.h"
 
 #include "esp_heap_caps_init.h"
 #include "sdkconfig.h"

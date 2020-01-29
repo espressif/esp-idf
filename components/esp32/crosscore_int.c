@@ -30,7 +30,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/portmacro.h"
 
 
 #define REASON_YIELD            BIT(0)

@@ -183,7 +183,7 @@ function run_tests()
     # and therefore should rebuild
     assert_rebuilt newlib/syscall_table.o
     assert_rebuilt nvs_flash/src/nvs_api.o
-    assert_rebuilt freertos/xtensa_vectors.o
+    assert_rebuilt freertos/xtensa/xtensa_vectors.o
 
     print_status "Updating project Makefile triggers full recompile"
     make
@@ -193,7 +193,7 @@ function run_tests()
     # similar to previous test
     assert_rebuilt newlib/syscall_table.o
     assert_rebuilt nvs_flash/src/nvs_api.o
-    assert_rebuilt freertos/xtensa_vectors.o
+    assert_rebuilt freertos/xtensa/xtensa_vectors.o
 
     print_status "print_flash_cmd target should produce one line of output"
     make

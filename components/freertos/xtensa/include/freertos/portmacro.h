@@ -128,7 +128,6 @@ typedef unsigned portBASE_TYPE	UBaseType_t;
 
 // portbenchmark
 #include "portbenchmark.h"
-
 #include "sdkconfig.h"
 #include "esp_attr.h"
 

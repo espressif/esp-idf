@@ -37,7 +37,6 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/portmacro.h"
 
 #include "xtensa/core-macros.h"
 

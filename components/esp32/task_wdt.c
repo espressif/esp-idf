@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
-#include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
