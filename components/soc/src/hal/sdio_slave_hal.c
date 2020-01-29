@@ -372,8 +372,8 @@ esp_err_t sdio_slave_hal_send_reset_counter(sdio_slave_context_t* hal)
     SDIO_SLAVE_CHECK(send_get_state(hal) == STATE_IDLE,
                      "reset counter when transmission started", ESP_ERR_INVALID_STATE);
 
-    uint32_t len;
-    sdio_slave_ll_send_write_len(hal->slc, 0);
+    const uint32_t len = 0U;
+    sdio_slave_ll_send_write_len(hal->slc, len);
     ESP_EARLY_LOGV(TAG, "send_length_write: %d, last_len: %08X", len, sdio_slave_ll_send_read_len(hal->host));
 
     hal->tail_pkt_len = 0;
