@@ -145,14 +145,14 @@ void wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 			   size_t len);
 #else
-#define wpa_printf(level,fmt, args...)
-#define wpa_hexdump(...)
-#define wpa_dump_mem(...)
-#define wpa_hexdump_buf(...)
-#define wpa_hexdump_key(...)
-#define wpa_hexdump_buf_key(...)
-#define wpa_hexdump_ascii(...)
-#define wpa_hexdump_ascii_key(...)
+#define wpa_printf(level,fmt, args...) do {} while(0)
+#define wpa_hexdump(...) do {} while(0)
+#define wpa_dump_mem(...) do {} while(0)
+#define wpa_hexdump_buf(...) do {} while(0)
+#define wpa_hexdump_key(...) do {} while(0)
+#define wpa_hexdump_buf_key(...) do {} while(0)
+#define wpa_hexdump_ascii(...) do {} while(0)
+#define wpa_hexdump_ascii_key(...) do {} while(0)
 #endif
 
 #define wpa_auth_logger
