@@ -35,44 +35,16 @@
 //
 // Default configuration of common interfaces, such as STA, AP, ETH
 //
-const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config = {
-        .flags = ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
-        .lost_ip_event = IP_EVENT_STA_LOST_IP,
-        .get_ip_event = IP_EVENT_STA_GOT_IP,
-        .if_key = "WIFI_STA_DEF",
-        .if_desc = "sta",
-        .route_prio = 100
-};
+const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
 
-static const esp_netif_ip_info_t soft_ap_ip = {
+const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+
+const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = ESP_NETIF_INHERENT_DEFAULT_ETH();
+
+const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = ESP_NETIF_INHERENT_DEFAULT_PPP();
+
+const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip = {
         .ip = { .addr = IP4TOADDR( 192, 168, 4, 1) },
         .gw = { .addr = IP4TOADDR( 192, 168, 4, 1) },
         .netmask = { .addr = IP4TOADDR( 255, 255, 255, 0) },
-
-};
-
-const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config = {
-        .flags = ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP,
-        .ip_info = (esp_netif_ip_info_t*)&soft_ap_ip,
-        .if_key = "WIFI_AP_DEF",
-        .if_desc = "ap",
-        .route_prio = 10
-};
-
-const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config = {
-        .get_ip_event = IP_EVENT_ETH_GOT_IP,
-        .lost_ip_event = 0,
-        .flags = ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED,
-        .if_key = "ETH_DEF",
-        .if_desc = "eth",
-        .route_prio = 50
-};
-
-const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config = {
-        .flags = ESP_NETIF_FLAG_IS_PPP,
-        .lost_ip_event = IP_EVENT_PPP_LOST_IP,
-        .get_ip_event = IP_EVENT_PPP_GOT_IP,
-        .if_key = "PPP_DEF",
-        .if_desc = "ppp",
-        .route_prio = 128
 };
