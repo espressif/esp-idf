@@ -409,8 +409,9 @@ the state of a core's FPU registers are not immediately saved when a context
 switch occurs. Therefore, tasks that utilize ``float`` must be pinned to a
 particular core upon creation. If not, ESP-IDF FreeRTOS will automatically pin
 the task in question to whichever core the task was running on upon the task's 
-first use of ``float``. Likewise due to Lazy Context Switching, interrupt service 
-routines must also not use ``float``.
+first use of ``float``. Likewise due to Lazy Context Switching, only interrupt
+service routines of lowest priority (that is it the Level 1) can use ``float``, 
+higher priority interrupts do not support FPU usage.
 
 ESP32 does not support hardware acceleration for double precision floating point
 arithmetic (``double``). Instead ``double`` is implemented via software hence the 
