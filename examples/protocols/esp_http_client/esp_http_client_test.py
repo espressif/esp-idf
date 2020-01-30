@@ -33,7 +33,8 @@ def test_examples_protocol_esp_http_client(env, extra_data):
     dut1.expect(re.compile(r"HTTP Absolute path redirect Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTPS Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"HTTP redirect to HTTPS Status = 200, content_length = (\d)"), timeout=10)
-    dut1.expect(re.compile(r"HTTP chunk encoding Status = 200, content_length = (\d)"))
+    dut1.expect(re.compile(r"HTTP chunk encoding Status = 200, content_length = (-?\d)"))
+    # content-len for chunked encoding is typically -1, could be a positive length in some cases
     dut1.expect(re.compile(r"HTTP Stream reader Status = 200, content_length = (\d)"))
     dut1.expect(re.compile(r"Last esp error code: 0x8001"))
     dut1.expect("Finish http example")
