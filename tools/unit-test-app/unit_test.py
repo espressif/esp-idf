@@ -51,6 +51,25 @@ DUT_STARTUP_CHECK_RETRY_COUNT = 5
 TEST_HISTORY_CHECK_TIMEOUT = 2
 
 
+def reset_reason_matches(reported_str, expected_str):
+    known_aliases = {
+        "_RESET": "_RST",
+        "POWERON_RESET": "POWERON",
+        "DEEPSLEEP_RESET": "DSLEEP",
+    }
+
+    if expected_str in reported_str:
+        return True
+
+    for token, alias in known_aliases.items():
+        if token in expected_str:
+            alt_expected_str = expected_str.replace(token, alias)
+            if alt_expected_str in reported_str:
+                return True
+
+    return False
+
+
 class TestCaseFailed(AssertionError):
     pass
 
@@ -223,7 +242,7 @@ def run_one_normal_case(dut, one_case, junit_test_case):
         result = False
         if len(one_case["reset"]) == len(exception_reset_list):
             for i, exception in enumerate(exception_reset_list):
-                if one_case["reset"][i] not in exception:
+                if not reset_reason_matches(exception, one_case["reset"][i]):
                     break
             else:
                 result = True
@@ -542,7 +561,7 @@ def run_one_multiple_stage_case(dut, one_case, junit_test_case):
                 result = False
                 if len(one_case["reset"]) == len(exception_reset_list):
                     for i, exception in enumerate(exception_reset_list):
-                        if one_case["reset"][i] not in exception:
+                        if not reset_reason_matches(exception, one_case["reset"][i]):
                             break
                     else:
                         result = True
