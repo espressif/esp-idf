@@ -154,7 +154,9 @@ Other Extensions
 
     This will define a replacement of the tag {\IDF_TARGET_TX_PIN} in the current rst-file.
 
-    These replacements cannot be used inside markup that rely on allignment of characters, e.g. tables.
+    These replacements cannot be used inside markup that rely on alignment of characters, e.g. tables.
+
+    These replacement can't be used in a file which is `::include`-ed from another file. *This includes any English document where the ``zh_CN`` translation includes then ``en`` translation*.
 
 Related Documents
 -----------------
