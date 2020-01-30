@@ -255,9 +255,24 @@ void esp_netif_action_got_ip(void *esp_netif, esp_event_base_t base, int32_t eve
 
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in]  mac Desired mac address for the related network interface
- * @return     ESP_OK
+ * @return
+ *         - ESP_OK - success
+ *         - ESP_ERR_ESP_NETIF_IF_NOT_READY - interface status error
+ *         - ESP_ERR_NOT_SUPPORTED - mac not supported on this interface
  */
 esp_err_t esp_netif_set_mac(esp_netif_t *esp_netif, uint8_t mac[]);
+
+/**
+ * @brief Get the mac address for the interface instance
+
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[out]  mac Resultant mac address for the related network interface
+ * @return
+ *         - ESP_OK - success
+ *         - ESP_ERR_ESP_NETIF_IF_NOT_READY - interface status error
+ *         - ESP_ERR_NOT_SUPPORTED - mac not supported on this interface
+ */
+esp_err_t esp_netif_get_mac(esp_netif_t *esp_netif, uint8_t mac[]);
 
 /**
  * @brief  Set the hostname of an interface
@@ -718,6 +733,15 @@ const char *esp_netif_get_ifkey(esp_netif_t *esp_netif);
  * @return Enumerated type of this interface, such as station, AP, ethernet
  */
 const char *esp_netif_get_desc(esp_netif_t *esp_netif);
+
+/**
+ * @brief Returns configured routing priority number
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ *
+ * @return Integer representing the instance's route-prio, or -1 if invalid paramters
+ */
+int esp_netif_get_route_prio(esp_netif_t *esp_netif);
 
 /**
  * @brief Returns configured event for this esp-netif instance and supplied event type

@@ -3,6 +3,8 @@
 #include "esp_netif.h"
 #include "esp_wifi.h"
 #include "nvs_flash.h"
+#include "esp_wifi_netif.h"
+#include <string.h>
 
 TEST_CASE("esp_netif: init and destroy", "[esp_netif]")
 {
@@ -187,3 +189,39 @@ TEST_CASE("esp_netif: test dhcp state transitions for mesh netifs", "[esp_netif]
     TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
     nvs_flash_deinit();
 }
+
+TEST_CASE("esp_netif: create custom wifi interfaces", "[esp_netif][leaks=0]")
+{
+    esp_netif_t *ap = NULL;
+    esp_netif_t *sta = NULL;
+    uint8_t configured_mac[6] = {1, 2, 3, 4, 5, 6};
+    uint8_t actual_mac[6] = { 0 };
+
+    // create customized station
+    esp_netif_inherent_config_t esp_netif_config = ESP_NETIF_INHERENT_DEFAULT_WIFI_STA();
+    esp_netif_config.if_desc = "custom wifi station";
+    esp_netif_config.route_prio = 1;
+    sta = esp_netif_create_wifi(WIFI_IF_STA, &esp_netif_config);
+    TEST_ASSERT_NOT_NULL(sta);
+    TEST_ASSERT_EQUAL_STRING("custom wifi station", esp_netif_get_desc(sta));
+    TEST_ASSERT_EQUAL(1, esp_netif_get_route_prio(sta));
+
+    // create customized access point
+    esp_netif_inherent_config_t esp_netif_config2 = ESP_NETIF_INHERENT_DEFAULT_WIFI_AP();
+    esp_netif_config2.if_desc = "custom wifi ap";
+    esp_netif_config2.route_prio = 10;
+    memcpy(esp_netif_config2.mac, configured_mac, 6);
+
+    ap = esp_netif_create_wifi(WIFI_IF_AP, &esp_netif_config2);
+    TEST_ASSERT_NOT_NULL(ap);
+    TEST_ASSERT_EQUAL_STRING( "custom wifi ap", esp_netif_get_desc(ap));
+    TEST_ASSERT_EQUAL(10, esp_netif_get_route_prio(ap));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_mac(ap, actual_mac));
+    TEST_ASSERT_EQUAL_HEX8_ARRAY(configured_mac, actual_mac, 6);
+
+    esp_wifi_destroy_if_driver(esp_netif_get_io_driver(ap));
+    esp_wifi_destroy_if_driver(esp_netif_get_io_driver(sta));
+    esp_netif_destroy(ap);
+    esp_netif_destroy(sta);
+}
+

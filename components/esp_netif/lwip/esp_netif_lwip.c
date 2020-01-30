@@ -528,6 +528,22 @@ esp_err_t esp_netif_set_mac(esp_netif_t *esp_netif, uint8_t mac[])
     return ESP_OK;
 }
 
+esp_err_t esp_netif_get_mac(esp_netif_t *esp_netif, uint8_t mac[])
+{
+    if (esp_netif == NULL || esp_netif->lwip_netif == NULL) {
+        return ESP_ERR_ESP_NETIF_IF_NOT_READY;
+    }
+    if (esp_netif->is_ppp_netif) {
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+    if (esp_netif_is_netif_up(esp_netif)) {
+        memcpy(mac, esp_netif->lwip_netif->hwaddr, NETIF_MAX_HWADDR_LEN);
+        return ESP_OK;
+    }
+    memcpy(mac, esp_netif->mac, NETIF_MAX_HWADDR_LEN);
+    return ESP_OK;
+}
+
 
 static void esp_netif_dhcps_cb(u8_t client_ip[4])
 {
@@ -1432,6 +1448,14 @@ const char *esp_netif_get_ifkey(esp_netif_t *esp_netif)
 const char *esp_netif_get_desc(esp_netif_t *esp_netif)
 {
     return esp_netif->if_desc;
+}
+
+int esp_netif_get_route_prio(esp_netif_t *esp_netif)
+{
+    if (esp_netif == NULL) {
+        return -1;
+    }
+    return esp_netif->route_prio;
 }
 
 int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type)
