@@ -171,6 +171,18 @@ def ensure_build_directory(args, prog_name, always_run_cmake=False):
     if not os.path.isdir(build_dir):
         os.makedirs(build_dir)
     cache_path = os.path.join(build_dir, "CMakeCache.txt")
+    if not os.path.exists(cache_path) and not os.environ.get("IDF_TARGET"):
+        # CMakeCache.txt does not exist yet, and IDF_TARGET is not set in the environment.
+        # Try to guess the target from sdkconfig, so that it doesn't get reset to the default ("esp32").
+        sdkconfig_path = os.path.join(args.project_dir, "sdkconfig")
+        # Also consider the CONFIG_IDF_TARGET value in sdkconfig.defaults.
+        sdkconfig_defaults_path = os.path.join(args.project_dir, "sdkconfig.defaults")
+        idf_target_from_sdkconfig = (get_sdkconfig_value(sdkconfig_path, "CONFIG_IDF_TARGET") or
+                                     get_sdkconfig_value(sdkconfig_defaults_path, "CONFIG_IDF_TARGET"))
+        if idf_target_from_sdkconfig:
+            if args.verbose:
+                print("IDF_TARGET is not set, guessed '%s' from sdkconfig" % (idf_target_from_sdkconfig))
+            args.define_cache_entry.append("IDF_TARGET=" + idf_target_from_sdkconfig)
 
     args.define_cache_entry.append("CCACHE_ENABLE=%d" % args.ccache)
 
@@ -233,3 +245,23 @@ def merge_action_lists(*action_lists):
         merged_actions["actions"].update(action_list.get("actions", {}))
         merged_actions["global_action_callbacks"].extend(action_list.get("global_action_callbacks", []))
     return merged_actions
+
+
+def get_sdkconfig_value(sdkconfig_file, key):
+    """
+    Return the value of given key from sdkconfig_file.
+    If sdkconfig_file does not exist or the option is not present, returns None.
+    """
+    assert key.startswith("CONFIG_")
+    if not os.path.exists(sdkconfig_file):
+        return None
+    # keep track of the last seen value for the given key
+    value = None
+    # if the value is quoted, this excludes the quotes from the value
+    pattern = re.compile(r"^{}=\"?([^\"]*)\"?$".format(key))
+    with open(sdkconfig_file, "r") as f:
+        for line in f:
+            match = re.match(pattern, line)
+            if match:
+                value = match.group(1)
+    return value

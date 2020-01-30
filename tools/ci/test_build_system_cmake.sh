@@ -340,6 +340,34 @@ function run_tests()
     grep "CONFIG_IDF_TARGET=\"${other_target}\"" sdkconfig || failure "Project not configured correctly using idf.py set-target"
     grep "IDF_TARGET:STRING=${other_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt using idf.py set-target"
 
+    print_status "Can guess target from sdkconfig, if CMakeCache does not exist"
+    idf.py fullclean || failure "Failed to clean the build directory"
+    idf.py reconfigure || failure "Failed to reconfigure after fullclean"
+    grep "CONFIG_IDF_TARGET=\"${other_target}\"" sdkconfig || failure "Didn't find the expected CONFIG_IDF_TARGET value"
+    grep "IDF_TARGET:STRING=${other_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt after fullclean and reconfigure"
+
+    print_status "Can set the default target using sdkconfig.defaults"
+    clean_build_dir
+    rm sdkconfig
+    echo "CONFIG_IDF_TARGET=\"${other_target}\"" > sdkconfig.defaults
+    idf.py reconfigure || failure "Failed to reconfigure with default target set in sdkconfig.defaults"
+    grep "CONFIG_IDF_TARGET=\"${other_target}\"" sdkconfig || failure "Didn't find the expected CONFIG_IDF_TARGET value"
+    grep "CONFIG_IDF_TARGET_${other_target^^}=y" sdkconfig || failure "Didn't find CONFIG_IDF_TARGET_${other_target^^} value"
+    grep "IDF_TARGET:STRING=${other_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt after fullclean and reconfigure"
+    rm sdkconfig.defaults
+
+    print_status "IDF_TARGET takes precedence over the value of CONFIG_IDF_TARGET in sdkconfig.defaults"
+    clean_build_dir
+    rm sdkconfig
+    echo "CONFIG_IDF_TARGET=\"${other_target}\"" > sdkconfig.defaults
+    export IDF_TARGET=esp32
+    idf.py reconfigure || failure "Failed to reconfigure with default target set in sdkconfig.defaults and different IDF_TARGET in the environment"
+    grep "CONFIG_IDF_TARGET=\"esp32\"" sdkconfig || failure "Didn't find the expected CONFIG_IDF_TARGET value"
+    grep "CONFIG_IDF_TARGET_ESP32=y" sdkconfig || failure "Didn't find CONFIG_IDF_TARGET_${other_target^^} value"
+    grep "IDF_TARGET:STRING=esp32" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt after fullclean and reconfigure"
+    rm sdkconfig.defaults
+    unset IDF_TARGET
+
     unset other_target  # done changing target from the default
     clean_build_dir
     rm sdkconfig
