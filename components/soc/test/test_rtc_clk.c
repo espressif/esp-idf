@@ -10,7 +10,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "../esp_clk_internal.h"
+
+extern void rtc_clk_select_rtc_slow_clk(void); 
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
