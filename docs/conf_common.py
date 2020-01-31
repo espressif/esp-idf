@@ -132,6 +132,7 @@ def update_exclude_patterns(tags):
         for e in ['api-guides/blufi.rst',
                   'api-guides/build-system-legacy.rst',
                   'api-guides/esp-ble-mesh/**',
+                  'api-guides/RF_calibration.rst',  # temporary until support re-added in esp_wifi
                   'api-guides/ulp-legacy.rst',
                   'api-guides/unit-tests-legacy.rst',
                   'api-guides/ulp_instruction_set.rst',

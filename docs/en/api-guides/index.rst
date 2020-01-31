@@ -27,7 +27,7 @@ API Guides
     Linker Script Generation <linker-script-generation>
     lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
-    RF Calibration <RF_calibration>
+    :esp32: RF Calibration <RF_calibration>
     ROM debug console <romconsole>
     Secure Boot <../security/secure-boot>
     Thread Local Storage <thread-local-storage>

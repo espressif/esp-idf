@@ -28,7 +28,7 @@ API 指南
    应用层跟踪 <app_trace>
    控制台终端组件 <console>
    ROM debug console <romconsole>
-   RF Calibration <RF_calibration>
+   :esp32: RF Calibration <RF_calibration>
    WiFi Driver <wifi>
    :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
    ESP-MESH (Wi-Fi) <mesh>
