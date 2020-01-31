@@ -966,9 +966,9 @@ def init_cli():
             },
             {
                 "names": ["--ccache/--no-ccache"],
-                "help": "Use ccache in build. Disabled by default.",
+                "help": "Use ccache in build. Disabled by default, unless IDF_CCACHE_ENABLE environment variable is set to a non-zero value.",
                 "is_flag": True,
-                "default": False,
+                "default": os.getenv("IDF_CCACHE_ENABLE") not in [None, "", "0"],
             },
             {
                 "names": ["-G", "--generator"],
