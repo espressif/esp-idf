@@ -307,7 +307,7 @@ function run_tests()
     rm sdkconfig
     rm sdkconfig.defaults
 
-    # the next four tests use the esp32s2 target
+    # the next tests use the esp32s2 target
     export other_target=esp32s2
 
     print_status "Can override IDF_TARGET from environment"
@@ -367,6 +367,20 @@ function run_tests()
     grep "IDF_TARGET:STRING=esp32" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt after fullclean and reconfigure"
     rm sdkconfig.defaults
     unset IDF_TARGET
+
+    print_status "idf.py fails if IDF_TARGET settings don't match in sdkconfig, CMakeCache.txt, and the environment"
+    clean_build_dir
+    rm sdkconfig
+    idf.py set-target ${other_target} || failure "Couldn't set target to ${other_target}"
+    # Change to a different IDF_TARGET in the environment
+    export IDF_TARGET=esp32
+    ! idf.py reconfigure || failure "Build did't fail when IDF_TARGET was set to an incompatible value in the environment"
+    # Now make sdkconfig consistent with the environement (note: not really consistent, just for the purpose of the test)
+    echo "CONFIG_IDF_TARGET=\"esp32\"" >> sdkconfig
+    ! idf.py reconfigure || failure "Build did't fail when IDF_TARGET in CMakeCache.txt didn't match the environment"
+    # Now unset IDF_TARGET in the environment, sdkconfig and CMakeCache.txt are still inconsistent
+    unset IDF_TARGET
+    ! idf.py reconfigure || failure "Build did't fail when IDF_TARGET in CMakeCache.txt didn't match the sdkconfig"
 
     unset other_target  # done changing target from the default
     clean_build_dir
