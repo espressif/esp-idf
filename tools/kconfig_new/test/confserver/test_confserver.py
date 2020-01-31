@@ -56,12 +56,12 @@ def main():
         with tempfile.NamedTemporaryFile(delete=False) as f:
             temp_kconfig_projbuilds_source_file = os.path.join(tempfile.gettempdir(), f.name)
 
-        cmdline = '''../confserver.py --env "COMPONENT_KCONFIGS_SOURCE_FILE=%s" \
-                                      --env "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=%s" \
-                                      --env "COMPONENT_KCONFIGS=" \
-                                      --env "COMPONENT_KCONFIGS_PROJBUILD=" \
-                                      --kconfig Kconfig \
-                                      --config %s \
+        cmdline = '''../../confserver.py --env "COMPONENT_KCONFIGS_SOURCE_FILE=%s" \
+                                         --env "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=%s" \
+                                         --env "COMPONENT_KCONFIGS=" \
+                                         --env "COMPONENT_KCONFIGS_PROJBUILD=" \
+                                         --kconfig Kconfig \
+                                         --config %s \
                   ''' % (temp_kconfigs_source_file, temp_kconfig_projbuilds_source_file, temp_sdkconfig_path)
 
         cmdline = re.sub(r' +', ' ', cmdline)

@@ -1,4 +1,5 @@
 menu "Bluetooth"
+    visible if IDF_TARGET_ESP32
 
     config BT_ENABLED
         bool "Bluetooth"
@@ -432,6 +433,7 @@ endmenu
 
 menuconfig BLE_MESH
     bool "ESP BLE Mesh Support"
+    depends on BT_ENABLED
     help
         This option enables ESP BLE Mesh support. The specific features that are
         available may depend on other features that have been enabled in the

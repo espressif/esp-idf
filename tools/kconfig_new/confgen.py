@@ -7,7 +7,7 @@
 # Used internally by the ESP-IDF build system. But designed to be
 # non-IDF-specific.
 #
-# Copyright 2018 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2018-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -112,10 +112,10 @@ class DeprecatedOptions(object):
                         print('{}:{} {} was replaced with {}'.format(sdkconfig_in, line_num, depr_opt, new_opt))
                 f_out.write(line)
 
-    def append_doc(self, config, path_output):
+    def append_doc(self, config, visibility, path_output):
 
         def option_was_written(opt):
-            return any(gen_kconfig_doc.node_should_write(node) for node in config.syms[opt].nodes)
+            return any(visibility.visible(node) for node in config.syms[opt].nodes)
 
         if len(self.r_dic) > 0:
             with open(path_output, 'a') as f_o:
@@ -572,8 +572,15 @@ def write_json_menus(deprecated_options, config, filename):
 
 
 def write_docs(deprecated_options, config, filename):
-    gen_kconfig_doc.write_docs(config, filename)
-    deprecated_options.append_doc(config, filename)
+    try:
+        target = os.environ['IDF_TARGET']
+    except KeyError:
+        print('IDF_TARGET environment variable must be defined!')
+        sys.exit(1)
+
+    visibility = gen_kconfig_doc.ConfigTargetVisibility(config, target)
+    gen_kconfig_doc.write_docs(config, visibility, filename)
+    deprecated_options.append_doc(config, visibility, filename)
 
 
 def update_if_changed(source, destination):

@@ -7,7 +7,7 @@
 # generated, allowing options to be referenced in other documents
 # (using :ref:`CONFIG_FOO`)
 #
-# Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -42,13 +42,126 @@ INITIAL_HEADING_LEVEL = 3
 MAX_HEADING_LEVEL = len(HEADING_SYMBOLS) - 1
 
 
-def write_docs(config, filename):
+class ConfigTargetVisibility(object):
+    """
+    Determine the visibility of Kconfig options based on IDF targets. Note that other environment variables should not
+    imply invisibility and neither dependencies on visible options with default disabled state. This difference makes
+    it necessary to implement our own visibility and cannot use the visibility defined inside Kconfiglib.
+    """
+    def __init__(self, config, target):
+        # target actually is not necessary here because kconfiglib.expr_value() will evaluate it internally
+        self.config = config
+        self.visibility = dict()  # node name to (x, y) mapping where x is the visibility (True/False) and y is the
+        # name of the config which implies the visibility
+        self.target_env_var = 'IDF_TARGET'
+        self.direct_eval_set = frozenset([kconfiglib.EQUAL, kconfiglib.UNEQUAL, kconfiglib.LESS, kconfiglib.LESS_EQUAL,
+                                         kconfiglib.GREATER, kconfiglib.GREATER_EQUAL])
+
+    def _implies_invisibility(self, item):
+        if isinstance(item, tuple):
+            if item[0] == kconfiglib.NOT:
+                (invisibility, source) = self._implies_invisibility(item[1])
+                if source is not None and source.startswith(self.target_env_var):
+                    return (not invisibility, source)
+                else:
+                    # we want to be visible all configs which are not dependent on target variables,
+                    # e.g. "depends on XY" and "depends on !XY" as well
+                    return (False, None)
+            elif item[0] == kconfiglib.AND:
+                (invisibility, source) = self._implies_invisibility(item[1])
+                if invisibility:
+                    return (True, source)
+                (invisibility, source) = self._implies_invisibility(item[2])
+                if invisibility:
+                    return (True, source)
+                return (False, None)
+            elif item[0] == kconfiglib.OR:
+                implication_list = [self._implies_invisibility(item[1]), self._implies_invisibility(item[2])]
+                if all([implies for (implies, _) in implication_list]):
+                    source_list = [s for (_, s) in implication_list if s.startswith(self.target_env_var)]
+                    if len(set(source_list)) != 1:  # set removes the duplicates
+                        print('[WARNING] list contains targets: {}'.format(source_list))
+                    return (True, source_list[0])
+                return (False, None)
+            elif item[0] in self.direct_eval_set:
+                def node_is_invisible(item):
+                    return all([node.prompt is None for node in item.nodes])
+                if node_is_invisible(item[1]) or node_is_invisible(item[1]):
+                    # it makes no sense to call self._implies_invisibility() here because it won't generate any useful
+                    # "source"
+                    return (not kconfiglib.expr_value(item), None)
+                else:
+                    # expressions with visible configs can be changed to make the item visible
+                    return (False, None)
+            else:
+                raise RuntimeError('Unimplemented operation in {}'.format(item))
+        else:  # Symbol or Choice
+            vis_list = [self._visible(node) for node in item.nodes]
+            if len(vis_list) > 0 and all([not visible for (visible, _) in vis_list]):
+                source_list = [s for (_, s) in vis_list if s is not None and s.startswith(self.target_env_var)]
+                if len(set(source_list)) != 1:  # set removes the duplicates
+                    print('[WARNING] list contains targets: {}'.format(source_list))
+                return (True, source_list[0])
+
+            if item.name.startswith(self.target_env_var):
+                return (not kconfiglib.expr_value(item), item.name)
+
+            if len(vis_list) == 1:
+                (visible, source) = vis_list[0]
+                if visible:
+                    return (False, item.name)  # item.name is important here in case the result will be inverted: if
+                    # the dependency is on another config then it can be still visible
+
+            return (False, None)
+
+    def _visible(self, node):
+        if isinstance(node.item, kconfiglib.Symbol) or isinstance(node.item, kconfiglib.Choice):
+            dependencies = node.item.direct_dep  # "depends on" for configs
+            name_id = node.item.name
+            simple_def = len(node.item.nodes) <= 1  # defined only in one source file
+            # Probably it is not necessary to check the default statements.
+        else:
+            dependencies = node.visibility  # "visible if" for menu
+            name_id = node.prompt[0]
+            simple_def = False  # menus can be defined with the same name at multiple locations and they don't know
+            # about each other like configs through node.item.nodes. Therefore, they cannot be stored and have to be
+            # re-evaluated always.
+
+        try:
+            (visib, source) = self.visibility[name_id]
+        except KeyError:
+            def invert_first_arg(_tuple):
+                return (not _tuple[0], _tuple[1])
+
+            (visib, source) = self._visible(node.parent) if node.parent else (True, None)
+
+            if visib:
+                (visib, source) = invert_first_arg(self._implies_invisibility(dependencies))
+
+            if simple_def:
+                # Configs defined at multiple places are not stored because they could have different visibility based
+                # on different targets. kconfiglib.expr_value() will handle the visibility.
+                self.visibility[name_id] = (visib, source)
+
+        return (visib, source)  # not used in "finally" block because failure messages from _implies_invisibility are
+        # this way more understandable
+
+    def visible(self, node):
+        if not node.prompt:
+            # don't store this in self.visibility because don't want to stop at invisible nodes when recursively
+            # searching for invisible targets
+            return False
+
+        return self._visible(node)[0]
+
+
+def write_docs(config, visibility, filename):
     """ Note: writing .rst documentation ignores the current value
     of any items. ie the --config option can be ignored.
     (However at time of writing it still needs to be set to something...) """
     with open(filename, "w") as f:
         for node in config.node_iter():
-            write_menu_item(f, node)
+            write_menu_item(f, node, visibility)
 
 
 def node_is_menu(node):
@@ -108,18 +221,12 @@ def format_rest_text(text, indent):
     return text
 
 
-def node_should_write(node):
-    if not node.prompt:
-        return False  # Don't do anything for invisible menu items
+def write_menu_item(f, node, visibility):
+    def is_choice(node):
+        """ Skip choice nodes, they are handled as part of the parent (see below) """
+        return isinstance(node.parent.item, kconfiglib.Choice)
 
-    if isinstance(node.parent.item, kconfiglib.Choice):
-        return False  # Skip choice nodes, they are handled as part of the parent (see below)
-
-    return True
-
-
-def write_menu_item(f, node):
-    if not node_should_write(node):
+    if is_choice(node) or not visibility.visible(node):
         return
 
     try:
@@ -175,7 +282,7 @@ def write_menu_item(f, node):
         child = node.list
         while child:
             try:
-                if node_should_write(child):
+                if not is_choice(child) and child.prompt and visibility.visible(child):
                     if first:
                         f.write("Contains:\n\n")
                         first = False

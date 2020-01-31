@@ -160,8 +160,14 @@ test_multi_heap_on_host:
 test_confserver:
   extends: .host_test_template
   script:
-    - cd tools/kconfig_new/test
+    - cd tools/kconfig_new/test/confserver
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confserver.py
+
+test_gen_kconfig_doc:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/gen_kconfig_doc/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_target_visibility.py
 
 test_idf_monitor:
   extends: .host_test_template
