@@ -309,29 +309,34 @@ def call_linkcheck(entry):
     return sphinx_call(*entry, buildername="linkcheck")
 
 
-GH_LINK_FILTER = ["https://github.com/espressif/esp-idf/tree",
-                  "https://github.com/espressif/esp-idf/blob",
-                  "https://github.com/espressif/esp-idf/raw"]
+# https://github.com/espressif/esp-idf/tree/
+# https://github.com/espressif/esp-idf/blob/
+# https://github.com/espressif/esp-idf/raw/
+GH_LINK_RE = r"https://github.com/espressif/esp-idf/(?:tree|blob|raw)/[^\s]+"
 
+# we allow this one link, because we always want users to see the latest support policy
+GH_LINK_ALLOWED = [ "https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md" ]
 
 def action_gh_linkcheck(args):
     print("Checking for hardcoded GitHub links\n")
 
-    find_args = ['find',
-                 os.path.join(os.path.abspath(os.path.dirname(__file__)), ".."),
-                 '-name',
-                 '*.rst']
-    grep_args = ['xargs',
-                 'grep',
-                 r'\|'.join(GH_LINK_FILTER)]
+    github_links = []
 
-    p1 = subprocess.Popen(find_args, stdout=subprocess.PIPE)
-    p2 = subprocess.Popen(grep_args, stdin=p1.stdout, stdout=subprocess.PIPE)
-    p1.stdout.close()
-    found_gh_links, _ = p2.communicate()
-    if found_gh_links:
-        print(found_gh_links)
-        print("WARNINIG: Some .rst files contain hardcoded Github links.")
+    docs_dir = os.path.relpath(os.path.dirname(__file__))
+    for root, _, files in os.walk(docs_dir):
+        if "_build" in root:
+            continue
+        files = [ os.path.join(root, f) for f in files if f.endswith(".rst") ]
+        for path in files:
+            with open(path, "r") as f:
+                 for link in re.findall(GH_LINK_RE, f.read()):
+                     if link not in GH_LINK_ALLOWED:
+                         github_links.append((path, link))
+
+    if github_links:
+        for path, link in github_links:
+            print("%s: %s" % (path, link))
+        print("WARNING: Some .rst files contain hardcoded Github links.")
         print("Please check above output and replace links with one of the following:")
         print("- :idf:`dir` - points to directory inside ESP-IDF")
         print("- :idf_file:`file` - points to file inside ESP-IDF")
