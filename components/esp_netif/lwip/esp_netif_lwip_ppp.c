@@ -45,20 +45,23 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
 {
     struct netif *pppif = ppp_netif(pcb);
     const ip_addr_t *dest_ip = NULL;
-    ip_event_ap_staipassigned_t evt = { 0 };
-    esp_err_t err;
     esp_netif_t *netif = ctx;
+    ip_event_got_ip_t evt = {
+            .esp_netif = netif,
+            .if_index = -1,
+    };
+    esp_err_t err;
     struct lwip_ppp_ctx *obj =  netif->lwip_ppp_ctx;
-    esp_netif_ip_info_t ipinfo = { {0}, {0}, {0} };
     esp_ip4_addr_t ns1;
     esp_ip4_addr_t ns2;
     switch (err_code) {
         case PPPERR_NONE: /* Connected */
             ESP_LOGI(TAG, "Connected");
 
-            ipinfo.ip.addr = pppif->ip_addr.u_addr.ip4.addr;
-            ipinfo.gw.addr = pppif->gw.u_addr.ip4.addr;
-            ipinfo.netmask.addr = pppif->netmask.u_addr.ip4.addr;
+            evt.ip_info.ip.addr = pppif->ip_addr.u_addr.ip4.addr;
+            evt.ip_info.gw.addr = pppif->gw.u_addr.ip4.addr;
+            evt.ip_info.netmask.addr = pppif->netmask.u_addr.ip4.addr;
+
             dest_ip = dns_getserver(0);
             if(dest_ip != NULL){
                 ns1.addr = (*dest_ip).u_addr.ip4.addr;
@@ -70,7 +73,6 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
             ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&ns1));
             ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&ns2));
 
-            evt.ip.addr =  ipinfo.ip.addr;
 
             err = esp_event_post(IP_EVENT, netif->get_ip_event, &evt, sizeof(evt), 0);
             if (ESP_OK != err) {
