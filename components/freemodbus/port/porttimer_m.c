@@ -51,8 +51,8 @@
 #define MB_TIMER_WITH_RELOAD    (1)
 
 // Timer group and timer number to measure time (configurable in KConfig)
-#define MB_TIMER_INDEX          (CONFIG_FMB_TIMER_INDEX)
-#define MB_TIMER_GROUP          (CONFIG_FMB_TIMER_GROUP)
+#define MB_TIMER_INDEX          (CONFIG_FMB_TIMER_INDEX +1)
+#define MB_TIMER_GROUP          (CONFIG_FMB_TIMER_GROUP +1)
 
 /* ----------------------- Variables ----------------------------------------*/
 static USHORT usT35TimeOut50us;
