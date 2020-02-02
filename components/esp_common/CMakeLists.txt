@@ -7,6 +7,7 @@ if(BOOTLOADER_BUILD)
 else()
     # Regular app build
     set(srcs "src/brownout.c"
+             "src/esp_err.c"
              "src/dbg_stubs.c"
              "src/esp_err_to_name.c"
              "src/freertos_hooks.c"
