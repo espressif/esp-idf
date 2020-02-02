@@ -241,7 +241,7 @@ INPUT = \
     $(IDF_PATH)/components/log/include/esp_log.h \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
-    $(IDF_PATH)/components/esp_common/include/esp_system.h \
+    $(IDF_PATH)/components/esp_system/include/esp_system.h \
     ## IDF version
     $(IDF_PATH)/components/esp_common/include/esp_idf_version.h \
     ##
@@ -282,7 +282,7 @@ INPUT = \
     ### Helper functions for error codes
     $(IDF_PATH)/components/esp_common/include/esp_err.h \
     ### System APIs
-    $(IDF_PATH)/components/esp_common/include/esp_system.h \
+    $(IDF_PATH)/components/esp_system/include/esp_system.h \
     ### Modbus controller component header file
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_common.h \
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_slave.h \
