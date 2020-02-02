@@ -1,0 +1,35 @@
+menu "ESP System Settings"
+
+    choice ESP_SYSTEM_PANIC
+        prompt "Panic handler behaviour"
+        default ESP_SYSTEM_PANIC_PRINT_REBOOT
+        help
+            If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is
+            invoked. Configure the panic handler's action here.
+
+        config ESP_SYSTEM_PANIC_PRINT_HALT
+            bool "Print registers and halt"
+            help
+                Outputs the relevant registers over the serial port and halt the
+                processor. Needs a manual reset to restart.
+
+        config ESP_SYSTEM_PANIC_PRINT_REBOOT
+            bool "Print registers and reboot"
+            help
+                Outputs the relevant registers over the serial port and immediately
+                reset the processor.
+
+        config ESP_SYSTEM_PANIC_SILENT_REBOOT
+            bool "Silent reboot"
+            help
+                Just resets the processor without outputting anything
+
+        config ESP_SYSTEM_PANIC_GDBSTUB
+            bool "Invoke GDBStub"
+            select ESP_GDBSTUB_ENABLED
+            help
+                Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
+                of the crash.
+    endchoice
+
+endmenu  # ESP System Settings

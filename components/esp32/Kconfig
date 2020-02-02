@@ -356,38 +356,6 @@ menu "ESP32-specific"
 
             Data is reserved at the beginning of RTC slow memory.
 
-    choice ESP32_PANIC
-        prompt "Panic handler behaviour"
-        default ESP32_PANIC_PRINT_REBOOT
-        help
-            If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is
-            invoked. Configure the panic handlers action here.
-
-        config ESP32_PANIC_PRINT_HALT
-            bool "Print registers and halt"
-            help
-                Outputs the relevant registers over the serial port and halt the
-                processor. Needs a manual reset to restart.
-
-        config ESP32_PANIC_PRINT_REBOOT
-            bool "Print registers and reboot"
-            help
-                Outputs the relevant registers over the serial port and immediately
-                reset the processor.
-
-        config ESP32_PANIC_SILENT_REBOOT
-            bool "Silent reboot"
-            help
-                Just resets the processor without outputting anything
-
-        config ESP32_PANIC_GDBSTUB
-            bool "Invoke GDBStub"
-            select ESP_GDBSTUB_ENABLED
-            help
-                Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
-                of the crash.
-    endchoice
-
     config ESP32_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y

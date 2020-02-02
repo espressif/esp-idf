@@ -4,6 +4,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+#include "esp_system.h"
+#include "panic_internal.h"
 
 #define SHUTDOWN_HANDLERS_NO 2
 static shutdown_handler_t shutdown_handlers[SHUTDOWN_HANDLERS_NO];
@@ -61,3 +63,7 @@ const char* esp_get_idf_version(void)
     return IDF_VER;
 }
 
+void __attribute__((noreturn)) esp_system_abort(const char* details)
+{
+    panic_abort(details);
+}

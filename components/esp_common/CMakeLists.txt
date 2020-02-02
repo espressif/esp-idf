@@ -12,8 +12,7 @@ else()
              "src/freertos_hooks.c"
              "src/mac_addr.c"
              "src/pm_locks.c"
-             "src/stack_check.c"
-             "src/system_api.c")
+             "src/stack_check.c")
 
     # IPC framework is not applicable if freertos unicore config is selected
     if(NOT CONFIG_FREERTOS_UNICORE)
@@ -22,8 +21,9 @@ else()
 
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
-                           REQUIRES ${target} esp_timer
-                           PRIV_REQUIRES soc)
+                           REQUIRES ${target} espcoredump esp_timer
+                           PRIV_REQUIRES soc
+                           LDFRAGMENTS "linker.lf")
 
     set_source_files_properties(
         "src/stack_check.c"
