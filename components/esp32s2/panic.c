@@ -195,10 +195,6 @@ static inline void disableAllWdts(void);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
-static void haltOtherCore(void)
-{
-    esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
-}
 
 
 static void setFirstBreakpoint(uint32_t pc)
@@ -324,7 +320,6 @@ void panicHandler(XtExcFrame *frame)
         esp_reset_reason_set_hint(ESP_RST_INT_WDT);
     }
 
-    haltOtherCore();
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(core_id);
     panicPutStr(" panic'ed (");
@@ -394,7 +389,6 @@ void panicHandler(XtExcFrame *frame)
 
 void xt_unhandled_exception(XtExcFrame *frame)
 {
-    haltOtherCore();
     if (!abort_called) {
         panicPutStr("Guru Meditation Error: Core ");
         panicPutDec(xPortGetCoreID());
@@ -477,8 +471,6 @@ static void esp_panic_dig_reset(void)
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_freq_set_xtal();
-    // reset the digital part
-    esp_cpu_unstall(PRO_CPU_NUM);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
     while (true) {
         ;
