@@ -23,10 +23,12 @@
 
 #include "soc/mpu_caps.h"
 
+#define CHECK(cond)         {  if (!(cond)) abort(); }
+
 esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access)
 {
-    assert(id < SOC_MPU_REGIONS_MAX_NUM && id >= 0);
-    assert(
+    CHECK(id < SOC_MPU_REGIONS_MAX_NUM && id >= 0);
+    CHECK(
 #if SOC_MPU_REGION_RO_SUPPORTED
            access == MPU_REGION_RO ||
 #endif

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "esp_err.h"
 
@@ -21,17 +22,19 @@
 
 #include "soc/cpu_caps.h"
 
+#define CHECK(cond)         {  if (!(cond)) abort(); }
+
 #if SOC_CPU_BREAKPOINTS_NUM > 0
 esp_err_t cpu_hal_set_breakpoint(int id, const void* addr)
 {
-    assert(id < SOC_CPU_BREAKPOINTS_NUM && id >= 0);
+    CHECK(id < SOC_CPU_BREAKPOINTS_NUM && id >= 0);
     cpu_ll_set_breakpoint(id, cpu_ll_ptr_to_pc(addr));
     return ESP_OK;
 }
 
 esp_err_t cpu_hal_clear_breakpoint(int id)
 {
-    assert(id < SOC_CPU_BREAKPOINTS_NUM && id >= 0);
+    CHECK(id < SOC_CPU_BREAKPOINTS_NUM && id >= 0);
     cpu_ll_clear_breakpoint(id);
     return ESP_OK;
 }
@@ -40,9 +43,9 @@ esp_err_t cpu_hal_clear_breakpoint(int id)
 #if SOC_CPU_WATCHPOINTS_NUM > 0
 esp_err_t cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger)
 {
-    assert(id < SOC_CPU_WATCHPOINTS_NUM && id >= 0);
-    assert(size <= SOC_CPU_WATCHPOINT_SIZE);
-    assert(trigger == WATCHPOINT_TRIGGER_ON_RO || 
+    CHECK(id < SOC_CPU_WATCHPOINTS_NUM && id >= 0);
+    CHECK(size <= SOC_CPU_WATCHPOINT_SIZE);
+    CHECK(trigger == WATCHPOINT_TRIGGER_ON_RO || 
            trigger == WATCHPOINT_TRIGGER_ON_WO ||
            trigger == WATCHPOINT_TRIGGER_ON_RW);
 
@@ -63,7 +66,7 @@ esp_err_t cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoi
 
 esp_err_t cpu_hal_clear_watchpoint(int id)
 {
-    assert(id < SOC_CPU_WATCHPOINTS_NUM && id >= 0);
+    CHECK(id < SOC_CPU_WATCHPOINTS_NUM && id >= 0);
     cpu_ll_clear_watchpoint(id);
     return ESP_OK;
 }

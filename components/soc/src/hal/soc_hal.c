@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include <stdint.h>
+#include <stdlib.h>
 
 #include "esp_err.h"
 
@@ -20,18 +21,20 @@
 #include "hal/soc_ll.h"
 #include "soc/soc_caps.h"
 
+#define CHECK(cond)         {  if (!(cond)) abort(); }
+
 #if SOC_CPU_CORES_NUM > 1
 
 esp_err_t soc_hal_stall_core(int core)
 {
-    assert(core < SOC_CPU_CORES_NUM && core >= 0);
+    CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_stall_core(core);
     return ESP_OK;
 }
 
 esp_err_t soc_hal_unstall_core(int core)
 {
-    assert(core < SOC_CPU_CORES_NUM && core >= 0);
+    CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_unstall_core(core);
     return ESP_OK;
 }
@@ -40,7 +43,7 @@ esp_err_t soc_hal_unstall_core(int core)
 
 esp_err_t soc_hal_reset_core(int core)
 {
-    assert(core < SOC_CPU_CORES_NUM && core >= 0);
+    CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_reset_core(core);
     return ESP_OK;
 }
