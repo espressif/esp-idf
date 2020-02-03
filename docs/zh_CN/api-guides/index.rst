@@ -26,7 +26,6 @@ API 指南
    单元测试 <unit-tests>
    :esp32: 单元测试 (传统 GNU Make) <unit-tests-legacy>
    应用层跟踪 <app_trace>
-   控制台终端组件 <console>
    ROM debug console <romconsole>
    :esp32: RF Calibration <RF_calibration>
    WiFi Driver <wifi>

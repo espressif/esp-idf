@@ -210,7 +210,9 @@ INPUT = \
     ##
     ## System - API Reference
     ##
-    ## Memory Allocation    #
+    ## ESP Console
+    $(IDF_PATH)/components/console/esp_console.h \
+    ## Memory Allocation
     $(IDF_PATH)/components/heap/include/esp_heap_caps.h \
     $(IDF_PATH)/components/heap/include/esp_heap_trace.h \
     $(IDF_PATH)/components/heap/include/esp_heap_caps_init.h \

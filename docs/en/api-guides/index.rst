@@ -10,7 +10,6 @@ API Guides
     Bootloader <bootloader>
     Build System <build-system>
     :esp32: Build System (Legacy GNU Make) <build-system-legacy>
-    Console Component <console>
     Deep Sleep Wake Stubs <deep-sleep-stub>
     Error Handling <error-handling>
     :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>

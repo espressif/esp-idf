@@ -10,7 +10,7 @@ def test_i2ctools_example(env, extra_data):
     # Get device under test, flash and start example. "i2ctool" must be defined in EnvConfig
     dut = env.get_dut('i2ctools', 'examples/peripherals/i2c/i2c_tools', dut_class=ttfw_idf.ESP32DUT)
     dut.start_app()
-    dut.expect("esp32>", timeout=EXPECT_TIMEOUT)
+    dut.expect("i2c-tools>", timeout=EXPECT_TIMEOUT)
     # Get i2c address
     dut.write("i2cdetect")
     dut.expect("5b", timeout=EXPECT_TIMEOUT)

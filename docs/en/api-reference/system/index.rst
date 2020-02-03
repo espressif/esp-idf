@@ -6,6 +6,7 @@ System API
 
     App image format <app_image_format>
     Application Level Tracing <app_trace>
+    Console Component <console>
     eFuse Manager <efuse>
     Error Codes and Helper Functions <esp_err>
     ESP HTTPS OTA <esp_https_ota>
