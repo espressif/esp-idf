@@ -216,6 +216,37 @@ config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
         low-priority event buffers, then an incoming advertising report will
         get dropped
 
+config BT_NIMBLE_HS_FLOW_CTRL
+    bool "Enable Host Flow control"
+    depends on BT_NIMBLE_ENABLED
+    default y
+    help
+        Enable Host Flow control
+
+config BT_NIMBLE_HS_FLOW_CTRL_ITVL
+    int "Host Flow control interval"
+    depends on BT_NIMBLE_HS_FLOW_CTRL
+    default 1000
+    help
+        Host flow control interval in msecs
+
+config BT_NIMBLE_HS_FLOW_CTRL_THRESH
+    int "Host Flow control threshold"
+    depends on BT_NIMBLE_HS_FLOW_CTRL
+    default 2
+    help
+        Host flow control threshold, if the number of free buffers are at or
+        below this threshold, send an immediate number-of-completed-packets
+        event
+
+config BT_NIMBLE_HS_FLOW_CTRL_TX_ON_DISCONNECT
+    bool "Host Flow control on disconnect"
+    depends on BT_NIMBLE_HS_FLOW_CTRL
+    default y
+    help
+        Enable this option to send number-of-completed-packets event to
+        controller after disconnection
+
 menuconfig BT_NIMBLE_MESH
     bool "Enable BLE mesh functionality"
     select BT_NIMBLE_SM_SC

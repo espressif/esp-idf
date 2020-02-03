@@ -319,6 +319,7 @@ blecent_should_connect(const struct ble_gap_disc_desc *disc)
 static void
 blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
 {
+    uint8_t own_addr_type;
     int rc;
 
     /* Don't do anything if we don't care about this advertiser. */
@@ -333,16 +334,23 @@ blecent_connect_if_interesting(const struct ble_gap_disc_desc *disc)
         return;
     }
 
+    /* Figure out address to use for connect (no privacy for now) */
+    rc = ble_hs_id_infer_auto(0, &own_addr_type);
+    if (rc != 0) {
+        MODLOG_DFLT(ERROR, "error determining address type; rc=%d\n", rc);
+        return;
+    }
+
     /* Try to connect the the advertiser.  Allow 30 seconds (30000 ms) for
      * timeout.
      */
 
-    rc = ble_gap_connect(BLE_OWN_ADDR_PUBLIC, &disc->addr, 30000, NULL,
+    rc = ble_gap_connect(own_addr_type, &disc->addr, 30000, NULL,
                          blecent_gap_event, NULL);
     if (rc != 0) {
         MODLOG_DFLT(ERROR, "Error: Failed to connect to device; addr_type=%d "
-                    "addr=%s\n",
-                    disc->addr.type, addr_str(disc->addr.val));
+                    "addr=%s; rc=%d\n",
+                    disc->addr.type, addr_str(disc->addr.val), rc);
         return;
     }
 }
