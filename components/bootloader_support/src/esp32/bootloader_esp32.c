@@ -22,6 +22,7 @@
 #include "bootloader_clock.h"
 #include "bootloader_common.h"
 #include "bootloader_flash_config.h"
+#include "bootloader_mem.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
@@ -426,10 +427,9 @@ void abort(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
-    // workaround for tensilica erratum572
-    cpu_init_memctl();
-    // protect memory region
-    cpu_configure_region_protection();
+
+    bootloader_init_mem();
+
     // check that static RAM is after the stack
 #ifndef NDEBUG
     {

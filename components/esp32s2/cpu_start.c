@@ -69,6 +69,7 @@
 #include "esp_private/pm_impl.h"
 #include "trax.h"
 #include "esp_efuse.h"
+#include "bootloader_mem.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -110,7 +111,7 @@ void IRAM_ATTR call_start_cpu0(void)
 {
     RESET_REASON rst_reas;
 
-    cpu_configure_region_protection();
+    bootloader_init_mem();
 
     //Move exception vectors to IRAM
     asm volatile (\
