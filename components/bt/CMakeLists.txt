@@ -282,7 +282,6 @@ if(CONFIG_BT_ENABLED)
 
         if(CONFIG_BLE_MESH)
             list(APPEND COMPONENT_ADD_INCLUDEDIRS bluedroid/osi/include)
-            list(APPEND COMPONENT_SRCS "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c")
         endif()
 
     endif()
@@ -327,6 +326,7 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_common/mesh_common.c"
                     "esp_ble_mesh/mesh_common/mesh_kernel.c"
                     "esp_ble_mesh/mesh_common/mesh_util.c"
+                    "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c"
                     "esp_ble_mesh/mesh_core/storage/settings_nvs.c"
                     "esp_ble_mesh/mesh_core/access.c"
                     "esp_ble_mesh/mesh_core/adv.c"

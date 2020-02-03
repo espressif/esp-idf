@@ -4,7 +4,7 @@
 
 Please help note that breaking changes may be introduced into ESP-BLE-MESH on [minor IDF versions](https://docs.espressif.com/projects/esp-idf/en/latest/versions.html).
 
-Note: To use examples in this directory, you need to have Bluetooth enabled in configuration, and either Bluedroid or NimBLE can be selected as the host stack.
+Note: To use examples in this directory, you need to have Bluetooth enabled in configuration, and only Bluedroid can be selected as the host stack.
 
 # Example Layout
 
