@@ -279,6 +279,8 @@ The :TARGET: role is used for excluding content from a table of content tree. Fo
 
 When building the documents, Sphinx will use the above mentioned directive and role to include or exclude content based on the target tag it was called with.
 
+.. note:: If excluding an entire document from the toctree based on targets, it's necessary to also update the ``exclude_patterns`` list in :idf_file:`docs/conf_common.py` to exclude the file for other targets, or a Sphinx warning "WARNING: document isn't included in any toctree" will be generated..
+
 Substitution macros
 """""""""""""""""""
 When you need to refer to the chip's name, toolchain name, path or other common names that depend on the target type you can consider using the substitution macros supplied by :idf_file:`docs/idf_extensions/format_idf_target.py`.
@@ -289,6 +291,7 @@ This extension also supports markup for defining a local (for a single .rst-file
 
 {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2beta="IO5"} will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2beta.
 
+.. note:: Due to limitations in Sphinx processing, these substitutions are not applied to any document that is included via the ``.. include::` directive. In these cases it's necessary to use the ``only`` blocks and write per-target sections instead. Unfortunately this includes any document which is not yet translated, as the ``zh_CN`` version will include the ``en`` version.
 
 Put it all together
 -------------------
