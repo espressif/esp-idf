@@ -17,7 +17,10 @@
 #include "esp_err.h"
 
 #include "hal/mpu_types.h"
-#include "soc/mpu_caps.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * Specify the type of access allowed on a memory region.
@@ -26,7 +29,11 @@
  * the region divisions is predefined in hardware which is likely reflected in LL implementation.
  * @param access type of access allowed
  * 
- * @return ESP_ERR_INVALID_ARG invalid id or access
  * @return ESP_OK success
+ * @return others fail
  */
 esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access);
+
+#ifdef __cplusplus
+}
+#endif

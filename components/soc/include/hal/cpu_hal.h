@@ -21,6 +21,7 @@
 
 #include "hal/cpu_types.h"
 #include "hal/cpu_ll.h"
+#include "soc/cpu_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,55 +67,59 @@ extern "C" {
  */
 #define cpu_hal_break()                 cpu_ll_break()
 
+#if SOC_CPU_BREAKPOINTS_NUM > 0
+
 /**
  * Set and enable breakpoint at an instruction address.
  *
  * @note Overwrites previously set breakpoint with same breakpoint ID.
  *
- * @param id breakpoint to set [0..SOC_CPU_BREAKPOINT_NUM - 1]
+ * @param id breakpoint to set [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  * @param addr address to set a breakpoint on
- *
- * @return ESP_ERR_INVALID_ARG invalid breakpoint id or addr
- * @return ESP_ERR_NOT_SUPPORTED processor does not support breakpoints
+ * 
  * @return ESP_OK success
+ * @return others fail
  */
 esp_err_t cpu_hal_set_breakpoint(int id, const void* addr);
 
 /**
  * Clear and disable breakpoint.
  *
- * @param id breakpoint to clear [0..SOC_CPU_BREAKPOINT_NUM - 1]
+ * @param id breakpoint to clear [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  *
- * @return ESP_ERR_INVALID_ARG invalid breakpoint id
- * @return ESP_ERR_NOT_SUPPORTED processor does not support breakpoints
  * @return ESP_OK success
+ * @return others fail
  */
 esp_err_t cpu_hal_clear_breakpoint(int id);
+
+#endif // SOC_CPU_BREAKPOINTS_NUM > 0
+
+#if SOC_CPU_WATCHPOINTS_NUM > 0
 
 /**
  * Set and enable a watchpoint, specifying the memory range and trigger operation.
  *
- * @param id watchpoint to set [0..SOC_CPU_WATCHPOINT_NUM - 1]
+ * @param id watchpoint to set [0..SOC_CPU_WATCHPOINTS_NUM - 1]
  * @param addr starting address
  * @param size number of bytes from starting address to watch
  * @param trigger operation on specified memory range that triggers the watchpoint (read, write, read/write)
- *
- * @return ESP_ERR_INVALID_ARG invalid watchpoint id
- * @return ESP_ERR_NOT_SUPPORTED processor does not support watchpoints
+ * 
  * @return ESP_OK success
+ * @return others fail
  */
 esp_err_t cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger);
 
 /**
  * Clear and disable watchpoint.
  *
- * @param id watchpoint to clear [0..SOC_CPU_WATCHPOINT_NUM - 1]
- *
- * @return ESP_ERR_INVALID_ARG invalid watchpoint id
- * @return ESP_ERR_NOT_SUPPORTED processor does not support watchpoints
+ * @param id watchpoint to clear [0..SOC_CPU_WATCHPOINTS_NUM - 1]
+ * 
  * @return ESP_OK success
+ * @return others fail
  */
 esp_err_t cpu_hal_clear_watchpoint(int id);
+
+#endif // SOC_CPU_WATCHPOINTS_NUM > 0
 
 #ifdef __cplusplus
 }

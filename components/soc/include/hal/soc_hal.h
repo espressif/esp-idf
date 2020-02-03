@@ -17,7 +17,29 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "hal/cpu_hal.h"
+#include "soc/soc_caps.h"
+
 #include "esp_err.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if SOC_CPU_CORES_NUM > 1
+
+// Utility functions for multicore targets
+#define __SOC_HAL_PERFORM_ON_OTHER_CORES(action)    { \
+                                                        for (int i = 0, cur = cpu_hal_get_core_id(); i < SOC_CPU_CORES_NUM; i++) { \
+                                                            if (i != cur) { \
+                                                                action(i); \
+                                                            } \
+                                                        } \
+                                                    }
+
+#define SOC_HAL_STALL_OTHER_CORES()                 __SOC_HAL_PERFORM_ON_OTHER_CORES(soc_hal_stall_core);
+#define SOC_HAL_UNSTALL_OTHER_CORES()               __SOC_HAL_PERFORM_ON_OTHER_CORES(soc_hal_unstall_core);
+#define SOC_HAL_RESET_OTHER_CORES()                 __SOC_HAL_PERFORM_ON_OTHER_CORES(soc_hal_reset_core);
 
 /**
  * Stall the specified CPU core.
@@ -25,7 +47,7 @@
  * @note Has no effect if the core is already stalled - does not return an
  * ESP_ERR_INVALID_STATE.
  *
- * @param core core to stall [0..SOC_CPU_CORES_NUM - 1]; if core < 0 is specified, all other cores are stalled
+ * @param core core to stall [0..SOC_CPU_CORES_NUM - 1]
  *
  * @return ESP_ERR_INVALID_ARG core argument invalid
  * @return ESP_OK success
@@ -38,19 +60,25 @@ esp_err_t soc_hal_stall_core(int core);
  * @note Has no effect if the core is already unstalled - does not return an
  * ESP_ERR_INVALID_STATE.
  *
- * @param core core to unstall [0..SOC_CPU_CORES_NUM - 1]; if core < 0 is specified, all other cores are unstalled
+ * @param core core to unstall [0..SOC_CPU_CORES_NUM - 1]
  *
  * @return ESP_ERR_INVALID_ARG core argument invalid
  * @return ESP_OK success
  */
 esp_err_t soc_hal_unstall_core(int core);
 
+#endif // SOC_CPU_CORES_NUM > 1
+
 /**
  * Reset the specified core.
  *
- * @param core core to reset [0..SOC_CPU_CORES_NUM - 1]; if core < 0 is specified, all other cores are reset
+ * @param core core to reset [0..SOC_CPU_CORES_NUM - 1]
  *
  * @return ESP_ERR_INVALID_ARG core argument invalid
  * @return ESP_OK success
  */
 esp_err_t soc_hal_reset_core(int core);
+
+#ifdef __cplusplus
+}
+#endif

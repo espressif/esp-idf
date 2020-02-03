@@ -16,55 +16,31 @@
 
 #include "esp_err.h"
 
-#include "hal/cpu_hal.h"
 #include "hal/soc_hal.h"
 #include "hal/soc_ll.h"
 #include "soc/soc_caps.h"
 
-#define CHECK_CORE(core)                            { if ((core) > SOC_CPU_CORES_NUM) return ESP_ERR_INVALID_ARG; }
-#define PERFORM_ON_OTHER_CORES(action)              { \
-                                                        for (int i = 0, cur = cpu_hal_get_core_id(); i < SOC_CPU_CORES_NUM; i++) { \
-                                                            if (i != cur) { \
-                                                                action(i); \
-                                                            } \
-                                                        } \
-                                                    }
+#if SOC_CPU_CORES_NUM > 1
 
 esp_err_t soc_hal_stall_core(int core)
 {
-    CHECK_CORE(core);
-
-    if (core < 0) {
-        PERFORM_ON_OTHER_CORES(soc_hal_stall_core);
-    } else {
-        soc_ll_stall_core(core);
-    }
-
+    assert(core < SOC_CPU_CORES_NUM && core >= 0);
+    soc_ll_stall_core(core);
     return ESP_OK;
 }
 
 esp_err_t soc_hal_unstall_core(int core)
 {
-    CHECK_CORE(core);
-
-    if (core < 0) {
-        PERFORM_ON_OTHER_CORES(soc_hal_unstall_core);
-    } else {
-        soc_ll_unstall_core(core);
-    }
-
+    assert(core < SOC_CPU_CORES_NUM && core >= 0);
+    soc_ll_unstall_core(core);
     return ESP_OK;
 }
 
+#endif // SOC_CPU_CORES_NUM > 1
+
 esp_err_t soc_hal_reset_core(int core)
 {
-    CHECK_CORE(core);
-
-    if (core < 0) {
-        PERFORM_ON_OTHER_CORES(soc_hal_reset_core);
-    } else {
-        soc_ll_reset_core(core);
-    }
-
+    assert(core < SOC_CPU_CORES_NUM && core >= 0);
+    soc_ll_reset_core(core);
     return ESP_OK;
 }

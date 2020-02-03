@@ -14,6 +14,8 @@
 
 #include <stdint.h>
 
+#include "soc/mpu_caps.h"
+
 #include "xt_instr_macros.h"
 
 #ifdef __cplusplus

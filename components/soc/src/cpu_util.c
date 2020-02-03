@@ -23,17 +23,22 @@
 #include "hal/cpu_types.h"
 
 #include "hal/soc_hal.h"
+#include "soc/soc_caps.h"
 
 #include "sdkconfig.h"
 
 void IRAM_ATTR esp_cpu_stall(int cpu_id)
 {
+#if SOC_CPU_CORES_NUM > 1
     soc_hal_stall_core(cpu_id);
+#endif
 }
 
 void IRAM_ATTR esp_cpu_unstall(int cpu_id)
 {
+#if SOC_CPU_CORES_NUM > 1
     soc_hal_unstall_core(cpu_id);
+#endif
 }
 
 void IRAM_ATTR esp_cpu_reset(int cpu_id)

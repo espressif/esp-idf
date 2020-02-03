@@ -21,11 +21,22 @@
 #include "hal/mpu_ll.h"
 #include "hal/mpu_types.h"
 
+#include "soc/mpu_caps.h"
+
 esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access)
 {
-    if (id > SOC_MPU_REGIONS_MAX_NUM || id < 0) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    assert(id < SOC_MPU_REGIONS_MAX_NUM && id >= 0);
+    assert(
+#if SOC_MPU_REGION_RO_SUPPORTED
+           access == MPU_REGION_RO ||
+#endif
+#if SOC_MPU_REGION_WO_SUPPORTED
+           access == MPU_REGION_WO ||
+#endif
+           access == MPU_REGION_RW ||
+           access == MPU_REGION_X  ||
+           access == MPU_REGION_RWX ||
+           access == MPU_REGION_ILLEGAL);
 
     uint32_t addr = cpu_ll_id_to_addr(id);
 
@@ -51,7 +62,6 @@ esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access)
             mpu_ll_set_region_rwx(addr);
             break;
         default:
-            return ESP_ERR_INVALID_ARG;
             break;
     }
 
