@@ -142,7 +142,7 @@ def parallel_call(args, callback):
         for ret, entry in zip(errcodes, entries):
             if ret != 0:
                 print("language: %s, target: %s, errcode: %d" % (entry[0], entry[1], ret))
-        #Don't re-throw real error code from each parallel process
+        # Don't re-throw real error code from each parallel process
         return 1
     else:
         return 0
@@ -197,7 +197,7 @@ def sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername):
     except KeyboardInterrupt:  # this seems to be the only way to get Ctrl-C to kill everything?
         p.kill()
         os.chdir(saved_cwd)
-        return 130 #FIXME It doesn't return this errorcode, why? Just prints stacktrace
+        return 130  # FIXME It doesn't return this errorcode, why? Just prints stacktrace
     os.chdir(saved_cwd)
     return ret
 
@@ -315,7 +315,8 @@ def call_linkcheck(entry):
 GH_LINK_RE = r"https://github.com/espressif/esp-idf/(?:tree|blob|raw)/[^\s]+"
 
 # we allow this one link, because we always want users to see the latest support policy
-GH_LINK_ALLOWED = [ "https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md" ]
+GH_LINK_ALLOWED = ["https://github.com/espressif/esp-idf/blob/master/SUPPORT_POLICY.md"]
+
 
 def action_gh_linkcheck(args):
     print("Checking for hardcoded GitHub links\n")
@@ -326,12 +327,12 @@ def action_gh_linkcheck(args):
     for root, _, files in os.walk(docs_dir):
         if "_build" in root:
             continue
-        files = [ os.path.join(root, f) for f in files if f.endswith(".rst") ]
+        files = [os.path.join(root, f) for f in files if f.endswith(".rst")]
         for path in files:
             with open(path, "r") as f:
-                 for link in re.findall(GH_LINK_RE, f.read()):
-                     if link not in GH_LINK_ALLOWED:
-                         github_links.append((path, link))
+                for link in re.findall(GH_LINK_RE, f.read()):
+                    if link not in GH_LINK_ALLOWED:
+                        github_links.append((path, link))
 
     if github_links:
         for path, link in github_links:

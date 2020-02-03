@@ -10,7 +10,6 @@ import sys
 import os
 sys.path.insert(0, os.path.abspath('..'))
 from conf_common import *  # noqa: F401, F403 - need to make available everything from common
-from idf_extensions.util import download_file_if_missing  # noqa: E402 - need to import from common folder
 
 # General information about the project.
 project = u'ESP-IDF 编程指南'

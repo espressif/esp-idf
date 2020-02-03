@@ -160,6 +160,7 @@ def update_exclude_patterns(tags):
                   'api-reference/peripherals/temp_sensor.rst']:
             exclude_patterns.append(e)
 
+
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
 # default_role = None
@@ -370,8 +371,8 @@ def setup(app):
     app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}
     app.config.breathe_default_project = "esp32-idf"
 
-
     setup_diag_font(app)
+
 
 def setup_diag_font(app):
     # blockdiag and other tools require a font which supports their character set

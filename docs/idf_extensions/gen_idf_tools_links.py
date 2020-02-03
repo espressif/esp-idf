@@ -3,6 +3,7 @@ from __future__ import print_function
 import os.path
 from util import copy_if_modified, call_with_python
 
+
 def setup(app):
     # we don't actually need idf-info, just a convenient event to trigger this on
     app.connect('idf-info', generate_idf_tools_links)
