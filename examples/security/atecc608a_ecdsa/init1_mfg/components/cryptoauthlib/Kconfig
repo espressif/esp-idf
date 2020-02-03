@@ -1,0 +1,29 @@
+menu "Cryptoauthlib"
+
+config ATCA_MBEDTLS_ECDH
+   bool "Enable Hardware ECDH with ATECC608A"
+   depends on MBEDTLS_ECDH_C
+   select MBEDTLS_HARDWARE_ECDH
+   select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+   help
+      Enable hardware ECDH operations on an ATECC608A device
+
+config ATCA_MBEDTLS_ECDSA
+   bool "Enable Hardware ECDSA keys for mbedTLS"
+   depends on MBEDTLS_ECDSA_C
+   help
+      Enable Hardware ECDSA
+
+config ATCA_MBEDTLS_ECDSA_SIGN
+   bool "Enable ATECC608A sign operations in mbedTLS"
+   depends on ATCA_MBEDTLS_ECDSA
+   select MBEDTLS_HARDWARE_ECDSA_SIGN
+   select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+
+config ATCA_MBEDTLS_ECDSA_VERIFY
+   bool "Enable ATECC608A verify operations in mbedTLS"
+   depends on ATCA_MBEDTLS_ECDSA
+   select MBEDTLS_HARDWARE_ECDSA_VERIFY
+   select MBEDTLS_ECP_DP_SECP256R1_ENABLED
+
+endmenu # cryptoauthlib

@@ -1,0 +1,15 @@
+menu "Mfg Configuration"
+
+config MFG_DEBUGGING
+    bool "MFG Debug"
+	default n
+	help
+		Turn on debugging during the manufacturing workflow.
+
+config MFG_TEST_MODE
+	bool "MFG Test mode"
+	default n
+	help
+		Enables test mode, thus the modules can be reprogrammed. Skips the flash encryption & secure boot part in the finalize step.
+
+endmenu

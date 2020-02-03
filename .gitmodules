@@ -79,3 +79,6 @@
 	path = components/esp_wifi/lib
 	url = ../../espressif/esp32-wifi-lib.git
 
+[submodule "examples/security/atecc608a_ecdsa/init1_mfg/components/cryptoauthlib/cryptoauthlib"]
+	path = examples/security/atecc608a_ecdsa/init1_mfg/components/cryptoauthlib/cryptoauthlib
+	url = https://github.com/MicrochipTech/cryptoauthlib
