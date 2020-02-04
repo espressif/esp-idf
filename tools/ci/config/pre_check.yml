@@ -24,7 +24,7 @@ check_docs_gh_links:
     SUBMODULES_TO_FETCH: "none"
   script:
     - cd docs
-    - ./build_docs.py gh-linkcheck
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py gh-linkcheck
 
 check_version:
   extends: .check_job_template

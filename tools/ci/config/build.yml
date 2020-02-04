@@ -188,7 +188,7 @@ build_examples_cmake_esp32s2:
 
 .build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:esp-docs-20200204-ea18dcbd
+  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2-d4034371
   tags:
     - build_docs
   artifacts:
@@ -206,7 +206,7 @@ build_examples_cmake_esp32s2:
   dependencies: []
   script:
     - cd docs
-    - ./build_docs.py -l $DOCLANG -t $DOCTGT build
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT build
 
 build_docs_en_esp32:
   extends: .build_docs_template

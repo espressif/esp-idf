@@ -9,9 +9,9 @@ from docutils import nodes
 
 
 def get_github_rev():
-    path = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip()
+    path = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).strip().decode('utf-8')
     try:
-        tag = subprocess.check_output(['git', 'describe', '--exact-match']).strip()
+        tag = subprocess.check_output(['git', 'describe', '--exact-match']).strip().decode('utf-8')
     except subprocess.CalledProcessError:
         tag = None
     print('Git commit ID: ', path)
@@ -41,11 +41,11 @@ def setup(app):
     if on_rtd:
         # provide RTD specific commit identification to be included in the link
         tag_rev = 'latest'
-        if (subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).strip() != rev):
+        if (subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).decode('utf-8').strip() != rev):
             tag_rev = rev
     else:
         # if not on the RTD then provide generic identification
-        tag_rev = subprocess.check_output(['git', 'describe', '--always']).strip()
+        tag_rev = subprocess.check_output(['git', 'describe', '--always']).decode('utf-8').strip()
 
     app.add_role('link_to_translation', crosslink('%s../../%s/{}/%s.html'.format(tag_rev)))
 

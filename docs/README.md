@@ -16,16 +16,12 @@ The above URLs are all for the master branch latest version. Click the drop-down
 
 # Building Documentation
 
-* Install `make` and `doxygen` for your platform (`make` may already be installed as an ESP-IDF prerequisite).
-* Change to either the docs/en or docs/zh_CN subdirectory and run `make html`
-* `make` will probably prompt you to run a python pip install step to get some other Python-related prerequisites. Run the command as shown, then re-run `make html` to build the docs.
+* Documentation build requres Python 3 and will not work with Python 2
+* Install dependencies for ESP-IDF as per the Getting Started guide
+* Install documentation Python depdendencies, ie `pip install -r $IDF_PATH/docs/requirements.txt`
+* Run `./build_docs.py build` to build docs for all supported Language & Target combinations, or `./build_docs.py -t esp32 -l en build` to build docs for a single supported language & target combination only.
 
-## For MSYS2 MINGW32 on Windows
+See [Documenting Code](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/documenting-code.rst) for more information.
 
-If using Windows and the MSYS2 MINGW32 terminal, run this command before running "make html" the first time:
+Available languages are `en` and `zh_CN`, targets are any target supported by ESP-IDF - for example `esp32` or `esp32s2`.
 
-```
-pacman -S doxygen mingw-w64-i686-python2-pillow
-```
-
-Note: Currently it is not possible to build docs on Windows without using a Unix-on-Windows layer such as MSYS2 MINGW32.

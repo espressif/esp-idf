@@ -320,6 +320,9 @@ OK, but I am new to Sphinx!
 Setup for building documentation locally
 ----------------------------------------
 
+Install Dependencies
+""""""""""""""""""""
+
 You can setup environment to build documentation locally on your PC by installing:
 
 1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
@@ -333,6 +336,8 @@ You can setup environment to build documentation locally on your PC by installin
 The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
 
 Do not worry about being confronted with several packages to install. Besides Doxygen, all remaining packages are written in Python. Therefore installation of all of them is combined into one simple step.
+
+.. important:: Docs building now supports Python 3 only. Python 2 installations will not work.
 
 Installation of Doxygen is OS dependent:
 
@@ -356,7 +361,7 @@ Installation of Doxygen is OS dependent:
 
 .. note::
 
-    If you are installing on Windows system (Linux and MacOS users should skip this note), **before** going further, execute two extra steps below. These steps are required to install dependencies of "blockdiag" discussed under :ref:`add-illustrations`.
+    If you are installing on Windows MSYS2 system (Linux and MacOS users should skip this note, Windows users who don't use MSYS2 will need to find other alternatives), **before** going further, execute two extra steps below. These steps are required to install dependencies of "blockdiag" discussed under :ref:`add-illustrations`.
 
     1.  Update all the system packages:
 
@@ -370,9 +375,9 @@ Installation of Doxygen is OS dependent:
 
         ::
 
-            $ pacman -S mingw32/mingw-w64-i686-python2-pillow
+            $ pacman -S mingw32/mingw-w64-i686-python-pillow
 
-        Check the log on the screen that ``mingw-w64-i686-python2-pillow-4.3.0-1`` is installed. Previous versions of *pillow* will not work.
+        Check the log on the screen that ``mingw-w64-i686-python-pillow-4.3.0-1`` or newer is installed. Previous versions of *pillow* will not work.
 
     A downside of Windows installation is that fonts of the `blockdiag pictures <add-illustrations>` do not render correctly, you will see some random characters instead. Until this issue is fixed, you can use the `interactive shell`_ to see how the complete picture looks like.
 
@@ -387,15 +392,26 @@ All remaining applications are `Python <https://www.python.org/>`_ packages and 
 
 	Installation steps assume that ESP-IDF is placed in ``~/esp/esp-idf`` directory, that is default location of ESP-IDF used in documentation.
 
-Change to directory with files for specific language::
+Building Documentation
+""""""""""""""""""""""
 
-    cd en
+::
+
+    cd ~/esp/esp-idf/docs
 
 Now you should be ready to build documentation by invoking::
 
-    make html
+    ./build_docs.py build
 
-This may take couple of minutes. After completion, documentation will be placed in ``~/esp/esp-idf/docs/en/_build/html`` folder. To see it, open ``index.html`` in a web browser.
+This will build docs for all supported ESP-IDF languages & targets. This can take some time, although jobs will run in parallel up to the number of CPU cores you have (can modify this with the ``--sphinx-parallel-builds`` option, see ``./build_docs.py --help`` for details).
+
+To build for a single language and target combination only::
+
+    ./build_docs.py -l en -t esp32 build
+
+Choices for language (``-l``) are ``en`` and ``zh_CN``. Choices for target (``-t``) are any supported ESP-IDF build system target (for example ``esp32`` and ``esp32s2``).
+
+Build documentation will be placed in ``_build/<language>/<target>/html`` folder. To see it, open the ``index.html`` inside this directory in a web browser.
 
 
 Wrap up

@@ -201,21 +201,21 @@ def get_version():
 
     # Otherwise, use git to look for a tag
     try:
-        tag = subprocess.check_output(["git", "describe", "--tags", "--exact-match"]).strip()
+        tag = subprocess.check_output(["git", "describe", "--tags", "--exact-match"]).strip().decode('utf-8')
         is_stable = re.match(r"v[0-9\.]+$", tag) is not None
         return (tag, "tag", is_stable)
     except subprocess.CalledProcessError:
         pass
 
     # No tag, look for a branch
-    refs = subprocess.check_output(["git", "for-each-ref", "--points-at", "HEAD", "--format", "%(refname)"])
+    refs = subprocess.check_output(["git", "for-each-ref", "--points-at", "HEAD", "--format", "%(refname)"]).decode('utf-8')
     print("refs:\n%s" % refs)
-    refs = refs.split(b"\n")
+    refs = refs.split("\n")
     # Note: this looks for branches in 'origin' because GitLab CI doesn't check out a local branch
-    branches = [r.replace(b"refs/remotes/origin/",b"").strip() for r in refs if r.startswith(b"refs/remotes/origin/")]
+    branches = [r.replace("refs/remotes/origin/","").strip() for r in refs if r.startswith("refs/remotes/origin/")]
     if len(branches) == 0:
         # last resort, return the commit (may happen on Gitlab CI sometimes, unclear why)
-        return (subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip(), "commit", False)
+        return (subprocess.check_output(["git", "rev-parse", "--short", "HEAD"]).strip().decode('utf-8'), "commit", False)
     if "master" in branches:
         return ("master", "branch", False)
     else:

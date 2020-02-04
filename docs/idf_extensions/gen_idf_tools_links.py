@@ -1,7 +1,7 @@
 # Generate toolchain download links from toolchain info makefile
 from __future__ import print_function
 import os.path
-from util import copy_if_modified, call_with_python
+from .util import copy_if_modified, call_with_python
 
 
 def setup(app):

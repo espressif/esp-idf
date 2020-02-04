@@ -75,7 +75,7 @@ class StringSubstituter:
         # Add any new local tags that matches the reg.ex.
         sub_defs = re.findall(self.RE_PATTERN, source[0])
 
-        if len(sub_defs) is not 0:
+        if len(sub_defs) != 0:
             self.add_local_subs(sub_defs)
 
         # Remove the tag defines

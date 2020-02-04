@@ -107,7 +107,7 @@ master_doc = 'index'
 # This is supposed to be "the short X.Y version", but it's the only version
 # visible when you open index.html.
 # Display full version to make things less confusing.
-version = subprocess.check_output(['git', 'describe']).strip()
+version = subprocess.check_output(['git', 'describe']).strip().decode('utf-8')
 # The full version, including alpha/beta/rc tags.
 # If needed, nearest tag is returned by 'git describe --abbrev=0'.
 release = version
@@ -121,7 +121,7 @@ print('Version: {0}  Release: {1}'.format(version, release))
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
-exclude_patterns = ['**/inc/**', '_static']
+exclude_patterns = ['**/inc/**', '_static', '**/_build']
 
 
 # Add target-specific excludes based on tags (for the IDF_TARGET). Haven't found any better way to do this yet
