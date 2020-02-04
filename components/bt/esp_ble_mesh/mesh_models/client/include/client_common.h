@@ -65,6 +65,7 @@ typedef struct {
     struct bt_mesh_msg_ctx ctx;     /* Message context */
     u32_t opcode;                   /* Message opcode */
     u32_t op_pending;               /* Expected status message opcode */
+    s32_t timeout;                  /* Calculated message timeout value */
     struct k_delayed_work timer;    /* Time used to get response. Only for internal use. */
 } bt_mesh_client_node_t;
 
