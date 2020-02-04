@@ -245,7 +245,7 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
                             void *cb_data)
 {
     bt_mesh_client_internal_data_t *internal = NULL;
-    bt_mesh_client_user_data_t *cli = NULL;
+    bt_mesh_client_user_data_t *client = NULL;
     bt_mesh_client_node_t *node = NULL;
     int err = 0;
 
@@ -254,49 +254,80 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    cli = (bt_mesh_client_user_data_t *)model->user_data;
-    __ASSERT(cli, "Invalid client value when sent client msg.");
-    internal = (bt_mesh_client_internal_data_t *)cli->internal_data;
-    __ASSERT(internal, "Invalid internal value when sent client msg.");
+    client = (bt_mesh_client_user_data_t *)model->user_data;
+    if (!client) {
+        BT_ERR("%s, Invalid client user data", __func__);
+        return -EINVAL;
+    }
+
+    internal = (bt_mesh_client_internal_data_t *)client->internal_data;
+    if (!internal) {
+        BT_ERR("%s, Invalid client internal data", __func__);
+        return -EINVAL;
+    }
+
+    if (ctx->addr == BLE_MESH_ADDR_UNASSIGNED) {
+        BT_ERR("%s, Invalid DST 0x%04x", __func__, ctx->addr);
+        return -EINVAL;
+    }
 
     if (!need_ack) {
         /* If this is an unack message, send it directly. */
         return bt_mesh_model_send(model, ctx, msg, cb, cb_data);
     }
 
-    if (bt_mesh_client_check_node_in_list(&internal->queue, ctx->addr)) {
-        BT_ERR("%s, Busy sending message to DST 0x%04x", __func__, ctx->addr);
-        err = -EBUSY;
-    } else {
-        /* Don't forget to free the node in the timeout (timer_handler) function. */
-        node = (bt_mesh_client_node_t *)bt_mesh_calloc(sizeof(bt_mesh_client_node_t));
-        if (!node) {
-            BT_ERR("%s, Failed to allocate memory", __func__);
-            return -ENOMEM;
-        }
-        memcpy(&node->ctx, ctx, sizeof(struct bt_mesh_msg_ctx));
-        node->ctx.model = model;
-        node->opcode = opcode;
-        if ((node->op_pending = bt_mesh_client_get_status_op(cli->op_pair, cli->op_pair_size, opcode)) == 0) {
-            BT_ERR("%s, Not found the status opcode in the op_pair list", __func__);
-            bt_mesh_free(node);
-            return -EINVAL;
-        }
-
-        s32_t time = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
-
-        if ((err = bt_mesh_model_send(model, ctx, msg, cb, cb_data)) != 0) {
-            bt_mesh_free(node);
-        } else {
-            bt_mesh_list_lock();
-            sys_slist_append(&internal->queue, &node->client_node);
-            bt_mesh_list_unlock();
-            k_delayed_work_init(&node->timer, timer_handler);
-            k_delayed_work_submit(&node->timer, time);
-        }
+    if (!BLE_MESH_ADDR_IS_UNICAST(ctx->addr)) {
+        /* If an acknowledged message is not sent to a unicast address,
+         * for example to a group/virtual address, then all the
+         * corresponding responses will be treated as publish messages.
+         * And no timeout will be used for the message.
+         */
+        return bt_mesh_model_send(model, ctx, msg, cb, cb_data);
     }
 
-    return err;
+    if (!timer_handler) {
+        BT_ERR("%s, Invalid timeout handler", __func__);
+        return -EINVAL;
+    }
+
+    if (bt_mesh_client_check_node_in_list(&internal->queue, ctx->addr)) {
+        BT_ERR("%s, Busy sending message to DST 0x%04x", __func__, ctx->addr);
+        return -EBUSY;
+    }
+
+    /* Don't forget to free the node in the timeout (timer_handler) function. */
+    node = (bt_mesh_client_node_t *)bt_mesh_calloc(sizeof(bt_mesh_client_node_t));
+    if (!node) {
+        BT_ERR("%s, Failed to allocate memory", __func__);
+        return -ENOMEM;
+    }
+
+    memcpy(&node->ctx, ctx, sizeof(struct bt_mesh_msg_ctx));
+    node->ctx.model = model;
+    node->opcode = opcode;
+    node->op_pending = bt_mesh_client_get_status_op(client->op_pair, client->op_pair_size, opcode);
+    if (node->op_pending == 0U) {
+        BT_ERR("%s, Not found the status opcode in the op_pair list", __func__);
+        bt_mesh_free(node);
+        return -EINVAL;
+    }
+
+    s32_t time = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
+
+    err = bt_mesh_model_send(model, ctx, msg, cb, cb_data);
+    if (err) {
+        bt_mesh_free(node);
+        return err;
+    }
+
+    bt_mesh_list_lock();
+    sys_slist_append(&internal->queue, &node->client_node);
+    bt_mesh_list_unlock();
+
+    k_delayed_work_init(&node->timer, timer_handler);
+    k_delayed_work_submit(&node->timer, time);
+
+    return 0;
 }
 
 static bt_mesh_mutex_t client_model_lock;
