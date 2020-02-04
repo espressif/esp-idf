@@ -13,6 +13,9 @@
 // limitations under the License.
 #ifndef _SOC_RTC_CNTL_STRUCT_H_
 #define _SOC_RTC_CNTL_STRUCT_H_
+
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -556,15 +559,6 @@ typedef volatile struct {
     uint32_t swd_wprotect;                           /*swd write protect*/
     union {
         struct {
-            uint32_t reserved0: 28;
-            uint32_t ent_tsens:  1;                      /*ENT_TSENS*/
-            uint32_t ent_rtc:    1;                      /*ENT_RTC*/
-            uint32_t dtest_rtc:  2;
-        };
-        uint32_t val;
-    } test_mux;
-    union {
-        struct {
             uint32_t reserved0:         20;
             uint32_t appcpu_c1:          6;              /*{reg_sw_stall_appcpu_c1[5:0]   reg_sw_stall_appcpu_c0[1:0]} == 0x86 will stall APP CPU*/
             uint32_t procpu_c1:          6;
@@ -656,7 +650,8 @@ typedef volatile struct {
     } ext_wakeup1_status;
     union {
         struct {
-            uint32_t reserved0:                 4;
+            uint32_t out2_ena:                  1;       /*enable brown_out2 to start chip reset*/
+            uint32_t reserved1:                 3;
             uint32_t int_wait:                 10;       /*brown out interrupt wait cycles*/
             uint32_t close_flash_ena:           1;       /*enable close flash when brown out happens*/
             uint32_t pd_rf_ena:                 1;       /*enable power down RF when brown out happens*/
