@@ -1,0 +1,7 @@
+# Override some defaults so BT stack is enabled
+# by default in this example
+CONFIG_BT_ENABLED=y
+
+# Override some defaults of ESP BLE Mesh
+CONFIG_BLE_MESH=y
+CONFIG_BLE_MESH_FAST_PROV=y

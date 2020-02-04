@@ -279,6 +279,88 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/stack/smp/smp_l2c.c"
                    "bluedroid/stack/smp/smp_main.c"
                    "bluedroid/stack/smp/smp_utils.c")
+
+        if(CONFIG_BLE_MESH)
+            list(APPEND COMPONENT_ADD_INCLUDEDIRS bluedroid/osi/include)
+        endif()
+
+    endif()
+
+    if(CONFIG_BLE_MESH)
+        list(APPEND COMPONENT_ADD_INCLUDEDIRS
+                    "esp_ble_mesh/mesh_common/include"
+                    "esp_ble_mesh/mesh_core"
+                    "esp_ble_mesh/mesh_core/include"
+                    "esp_ble_mesh/mesh_core/storage"
+                    "esp_ble_mesh/btc/include"
+                    "esp_ble_mesh/mesh_models/common/include"
+                    "esp_ble_mesh/mesh_models/client/include"
+                    "esp_ble_mesh/mesh_models/server/include"
+                    "esp_ble_mesh/api/core/include"
+                    "esp_ble_mesh/api/models/include"
+                    "esp_ble_mesh/api")
+
+        list(APPEND COMPONENT_SRCS
+                    "esp_ble_mesh/api/core/esp_ble_mesh_common_api.c"
+                    "esp_ble_mesh/api/core/esp_ble_mesh_local_data_operation_api.c"
+                    "esp_ble_mesh/api/core/esp_ble_mesh_low_power_api.c"
+                    "esp_ble_mesh/api/core/esp_ble_mesh_networking_api.c"
+                    "esp_ble_mesh/api/core/esp_ble_mesh_provisioning_api.c"
+                    "esp_ble_mesh/api/core/esp_ble_mesh_proxy_api.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_config_model_api.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_generic_model_api.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_health_model_api.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_lighting_model_api.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_sensor_model_api.c"
+                    "esp_ble_mesh/api/models/esp_ble_mesh_time_scene_model_api.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_config_model.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_generic_model.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_health_model.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_lighting_model.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_prov.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_sensor_model.c"
+                    "esp_ble_mesh/btc/btc_ble_mesh_time_scene_model.c"
+                    "esp_ble_mesh/mesh_common/mesh_aes_encrypt.c"
+                    "esp_ble_mesh/mesh_common/mesh_atomic.c"
+                    "esp_ble_mesh/mesh_common/mesh_buf.c"
+                    "esp_ble_mesh/mesh_common/mesh_common.c"
+                    "esp_ble_mesh/mesh_common/mesh_kernel.c"
+                    "esp_ble_mesh/mesh_common/mesh_util.c"
+                    "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c"
+                    "esp_ble_mesh/mesh_core/storage/settings_nvs.c"
+                    "esp_ble_mesh/mesh_core/access.c"
+                    "esp_ble_mesh/mesh_core/adv.c"
+                    "esp_ble_mesh/mesh_core/beacon.c"
+                    "esp_ble_mesh/mesh_core/cfg_cli.c"
+                    "esp_ble_mesh/mesh_core/cfg_srv.c"
+                    "esp_ble_mesh/mesh_core/crypto.c"
+                    "esp_ble_mesh/mesh_core/friend.c"
+                    "esp_ble_mesh/mesh_core/health_cli.c"
+                    "esp_ble_mesh/mesh_core/health_srv.c"
+                    "esp_ble_mesh/mesh_core/lpn.c"
+                    "esp_ble_mesh/mesh_core/main.c"
+                    "esp_ble_mesh/mesh_core/net.c"
+                    "esp_ble_mesh/mesh_core/prov.c"
+                    "esp_ble_mesh/mesh_core/provisioner_main.c"
+                    "esp_ble_mesh/mesh_core/provisioner_prov.c"
+                    "esp_ble_mesh/mesh_core/proxy_client.c"
+                    "esp_ble_mesh/mesh_core/proxy_server.c"
+                    "esp_ble_mesh/mesh_core/settings.c"
+                    "esp_ble_mesh/mesh_core/test.c"
+                    "esp_ble_mesh/mesh_core/transport.c"
+                    "esp_ble_mesh/mesh_models/client/client_common.c"
+                    "esp_ble_mesh/mesh_models/client/generic_client.c"
+                    "esp_ble_mesh/mesh_models/client/lighting_client.c"
+                    "esp_ble_mesh/mesh_models/client/sensor_client.c"
+                    "esp_ble_mesh/mesh_models/client/time_scene_client.c"
+                    "esp_ble_mesh/mesh_models/server/device_property.c"
+                    "esp_ble_mesh/mesh_models/server/generic_server.c"
+                    "esp_ble_mesh/mesh_models/server/lighting_server.c"
+                    "esp_ble_mesh/mesh_models/server/sensor_server.c"
+                    "esp_ble_mesh/mesh_models/server/server_common.c"
+                    "esp_ble_mesh/mesh_models/server/state_binding.c"
+                    "esp_ble_mesh/mesh_models/server/state_transition.c"
+                    "esp_ble_mesh/mesh_models/server/time_scene_server.c")
     endif()
 endif()
 
