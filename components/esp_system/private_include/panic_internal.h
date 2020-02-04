@@ -16,7 +16,11 @@
 
 #include <stdint.h>
 
+#include "port/panic_funcs.h"
+
 #include "sdkconfig.h"
+
+extern bool g_panic_abort;
 
 // Function to print longer amounts of information such as the details
 // and backtrace field of panic_info_t. These functions should limit themselves

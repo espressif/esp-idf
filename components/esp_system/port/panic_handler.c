@@ -233,6 +233,15 @@ static void print_registers(const void *f, int core)
     }
 }
 
+static void print_state_for_core(const void *f, int core)
+{
+    if (!g_panic_abort) {
+        print_registers(f, core);
+        panic_print_str("\r\n");
+    }
+    print_backtrace(f, core);
+}
+
 static void print_state(const void* f)
 {
 #if !CONFIG_FREERTOS_UNICORE
@@ -241,9 +250,8 @@ static void print_state(const void* f)
     int err_core = 0;
 #endif
 
-    print_registers(f, err_core);
-    panic_print_str("\r\n");
-    print_backtrace(f, err_core);
+    print_state_for_core(f, err_core);
+
     panic_print_str("\r\n");
 
 #if !CONFIG_FREERTOS_UNICORE
@@ -251,10 +259,8 @@ static void print_state(const void* f)
     for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
         // `f` is the frame for the offending core, see note above.
         if (err_core != i && xt_exc_frames[i] != NULL) {
+            print_state_for_core(xt_exc_frames[i], i);
             panic_print_str("\r\n");
-            print_registers(xt_exc_frames[i], i);
-            panic_print_str("\r\n");
-            print_backtrace(xt_exc_frames[i], i);
         }
     }
 #endif

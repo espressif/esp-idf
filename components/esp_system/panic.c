@@ -41,6 +41,7 @@
 #endif
 
 #include "panic_internal.h"
+#include "port/panic_funcs.h"
 
 #include "sdkconfig.h"
 
@@ -50,8 +51,8 @@
 #define APPTRACE_ONPANIC_HOST_FLUSH_TMO   (1000*CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO)
 #endif
 
-static bool s_abort = false;
-static char *s_abort_details = NULL;
+bool g_panic_abort = false;
+static char *s_panic_abort_details = NULL;
 
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
@@ -144,7 +145,7 @@ static inline void disable_all_wdts(void)
 
 static void print_abort_details(const void *f)
 {
-    panic_print_str(s_abort_details);
+    panic_print_str(s_panic_abort_details);
 }
 
 // Control arrives from chip-specific panic handler, environment prepared for
@@ -153,10 +154,9 @@ static void print_abort_details(const void *f)
 void esp_panic_handler(panic_info_t *info)
 {
     // If the exception was due to an abort, override some of the panic info
-    if (s_abort) {
+    if (g_panic_abort) {
         info->description = NULL;
-        info->details = s_abort_details ? print_abort_details : NULL;
-        info->state = NULL;                             // do not display state, since it is not a 'real' crash
+        info->details = s_panic_abort_details ? print_abort_details : NULL;
         info->reason = "SoftwareAbort";
         info->exception = PANIC_EXCEPTION_ABORT;
     }
@@ -304,7 +304,7 @@ void esp_panic_handler(panic_info_t *info)
     }
     
     panic_print_str("Rebooting...\r\n");
-    esp_restart_noos();
+    panic_restart();
 #else
     disable_all_wdts();
     panic_print_str("CPU halted.\r\n");
@@ -315,8 +315,8 @@ void esp_panic_handler(panic_info_t *info)
 
 void __attribute__((noreturn)) panic_abort(const char *details)
 {
-    s_abort = true;
-    s_abort_details = (char*) details;
+    g_panic_abort = true;
+    s_panic_abort_details = (char*) details;
 
 #if CONFIG_APPTRACE_ENABLE
 #if CONFIG_SYSVIEW_ENABLE
