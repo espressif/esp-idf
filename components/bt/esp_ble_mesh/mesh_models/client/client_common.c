@@ -235,6 +235,27 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
     return time;
 }
 
+static void msg_send_start(u16_t duration, int err, void *cb_data)
+{
+    bt_mesh_client_node_t *node = cb_data;
+
+    BT_DBG("%s, duration %ums", __func__, duration);
+
+    if (err) {
+        if (!k_delayed_work_free(&node->timer)) {
+            bt_mesh_client_free_node(node);
+        }
+        return;
+    }
+
+    k_delayed_work_submit(&node->timer, node->timeout);
+}
+
+static const struct bt_mesh_send_cb send_cb = {
+    .start = msg_send_start,
+    .end = NULL,
+};
+
 int bt_mesh_client_send_msg(struct bt_mesh_model *model,
                             u32_t opcode,
                             struct bt_mesh_msg_ctx *ctx,
@@ -311,23 +332,26 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
         bt_mesh_free(node);
         return -EINVAL;
     }
+    node->timeout = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
 
-    s32_t time = bt_mesh_client_calc_timeout(ctx, msg, opcode, timeout ? timeout : CONFIG_BLE_MESH_CLIENT_MSG_TIMEOUT);
-
-    err = bt_mesh_model_send(model, ctx, msg, cb, cb_data);
-    if (err) {
-        bt_mesh_free(node);
-        return err;
-    }
+    k_delayed_work_init(&node->timer, timer_handler);
 
     bt_mesh_list_lock();
     sys_slist_append(&internal->queue, &node->client_node);
     bt_mesh_list_unlock();
 
-    k_delayed_work_init(&node->timer, timer_handler);
-    k_delayed_work_submit(&node->timer, time);
+    /* "bt_mesh_model_send" will post the mesh packet to the mesh adv queue.
+     * Due to the higher priority of adv_thread (than btc task), we need to
+     * send the packet after the list item "node" is initialized properly.
+     */
+    err = bt_mesh_model_send(model, ctx, msg, &send_cb, node);
+    if (err) {
+        BT_ERR("Failed to send client message 0x%08x", node->opcode);
+        k_delayed_work_free(&node->timer);
+        bt_mesh_client_free_node(node);
+    }
 
-    return 0;
+    return err;
 }
 
 static bt_mesh_mutex_t client_model_lock;
