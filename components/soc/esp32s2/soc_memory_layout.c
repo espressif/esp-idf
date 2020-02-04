@@ -109,6 +109,8 @@ const size_t soc_memory_region_count = sizeof(soc_memory_regions)/sizeof(soc_mem
 
 
 extern int _dram0_rtos_reserved_start;
+extern int _data_start, _heap_start, _iram_start, _iram_end;
+
 /* Reserved memory regions
 
    These are removed from the soc_memory_regions array when heaps are created.
@@ -116,11 +118,21 @@ extern int _dram0_rtos_reserved_start;
 //ROM data region
 SOC_RESERVE_MEMORY_REGION((intptr_t)&_dram0_rtos_reserved_start, SOC_BYTE_ACCESSIBLE_HIGH, rom_data_region);
 
-// TODO: soc_memory_layout: handle trace memory regions - IDF-750
+// Static data region. DRAM used by data+bss and possibly rodata
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_data_start, (intptr_t)&_heap_start, dram_data);
+
+// ESP32S2 has a big D/IRAM region, the part used by code is reserved
+// The address of the D/I bus are in the same order, directly shift IRAM address to get reserved DRAM address
+#define I_D_OFFSET (SOC_IRAM_LOW - SOC_DRAM_LOW)
+SOC_RESERVE_MEMORY_REGION((intptr_t)&_iram_start - I_D_OFFSET, (intptr_t)&_iram_end - I_D_OFFSET, iram_code);
 
 #ifdef CONFIG_SPIRAM
 SOC_RESERVE_MEMORY_REGION( SOC_EXTRAM_DATA_LOW, SOC_EXTRAM_DATA_HIGH, extram_data_region); //SPI RAM gets added later if needed, in spiram.c; reserve it for now
 #endif
 
-
+// Blocks 19 and 20 may be reserved for the trace memory
+#if CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM > 0
+SOC_RESERVE_MEMORY_REGION(0x3fffc000 - CONFIG_ESP32S2_TRACEMEM_RESERVE_DRAM, 0x3fffc000, trace_mem);
 #endif
+
+#endif // BOOTLOADER_BUILD

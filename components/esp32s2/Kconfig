@@ -244,6 +244,10 @@ menu "ESP32S2-specific"
         bool
         default "n"
 
+    config ESP32S2_MEMMAP_TRACEMEM_TWOBANKS
+        bool
+        default "n"
+
     config ESP32S2_TRAX
         bool "Use TRAX tracing feature"
         default "n"
