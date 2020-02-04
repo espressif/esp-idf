@@ -1143,13 +1143,33 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
     }
 }
 
+static u32_t incomplete_timeout(struct seg_rx *rx)
+{
+    u32_t timeout = 0U;
+    u8_t ttl = 0U;
+
+    if (rx->ttl == BLE_MESH_TTL_DEFAULT) {
+        ttl = bt_mesh_default_ttl_get();
+    } else {
+        ttl = rx->ttl;
+    }
+
+    /* "The incomplete timer shall be set to a minimum of 10 seconds." */
+    timeout = K_SECONDS(10);
+
+    /* The less segments being received, the shorter timeout will be used. */
+    timeout += K_MSEC(ttl * popcount(rx->block) * 100U);
+
+    return MIN(timeout, K_SECONDS(60));
+}
+
 static void seg_ack(struct k_work *work)
 {
     struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
 
     BT_DBG("rx %p", rx);
 
-    if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
+    if (k_uptime_get_32() - rx->last > incomplete_timeout(rx)) {
         BT_WARN("Incomplete timer expired");
         seg_rx_reset(rx, false);
         return;
