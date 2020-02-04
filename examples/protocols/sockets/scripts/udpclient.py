@@ -12,17 +12,19 @@ import sys
 
 # -----------  Config  ----------
 PORT = 3333
-IP_VERSION = 'IPv4'
+IP_VERSION = 'IPv6'
 IPV4 = '192.168.0.167'
-IPV6 = 'FE80::32AE:A4FF:FE80:5288'
+IPV6 = 'fe80:0000:0000:0000:260a:c4ff:fe11:a1e0%wlp1s0'
 # -------------------------------
 
 if IP_VERSION == 'IPv4':
-    host = IPV4
+    addr = (IPV4, PORT)
     family_addr = socket.AF_INET
 elif IP_VERSION == 'IPv6':
-    host = IPV6
     family_addr = socket.AF_INET6
+    for res in socket.getaddrinfo(IPV6, PORT, socket.AF_INET6,
+                                  socket.SOCK_DGRAM, socket.SOL_UDP):
+        af, socktype, proto, canonname, addr = res
 else:
     print('IP_VERSION must be IPv4 or IPv6')
     sys.exit(1)
@@ -37,7 +39,7 @@ except socket.error:
 while True:
     msg = input('Enter message to send : ')
     try:
-        sock.sendto(msg.encode(), (host, PORT))
+        sock.sendto(msg.encode(), addr)
         reply, addr = sock.recvfrom(128)
         if not reply:
             break
