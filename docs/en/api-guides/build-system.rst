@@ -41,7 +41,7 @@ Concepts
 
 - "components" are modular pieces of standalone code which are compiled into static libraries (.a files) and linked into an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. At the moment, ESP-IDF supports only one target, ``esp32``.
+- "Target" is the hardware for which an application is built. At the moment, ESP-IDF supports ``esp32`` and ``esp32s2`` targets.
 
 Some things are not part of the project:
 
@@ -69,6 +69,7 @@ The :ref:`getting started guide <get-started-configure>` contains a brief introd
 
 Type ``idf.py --help`` for a list of commands. Here are a summary of the most useful ones:
 
+- ``idf.py set-target <target>`` sets the target (chip) for which the project is built. See :ref:`selecting-idf-target`.
 - ``idf.py menuconfig`` runs the "menuconfig" tool to configure the project.
 - ``idf.py build`` will build the project found in the current directory. This can involve multiple steps:
 
@@ -947,14 +948,37 @@ The bootloader is a special "subproject" inside :idf:`/components/bootloader/sub
 
 The subproject is inserted as an external project from the top-level project, by the file :idf_file:`/components/bootloader/project_include.cmake`. The main build process runs CMake for the subproject, which includes discovering components (a subset of the main components) and generating a bootloader-specific config (derived from the main ``sdkconfig``).
 
+.. _selecting-idf-target:
+
 Selecting the Target
 ====================
 
-Currently ESP-IDF supports one target, ``esp32``. It is used by default by the build system. Developers working on adding multiple target support can change the target as follows::
+ESP-IDF supports multiple targets (chips). The identifiers used for each chip are as follows:
 
-  rm sdkconfig
-  idf.py -DIDF_TARGET=new_target reconfigure
+* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WD, ESP32-PICO-D4
+* ``esp32s2``— for ESP32-S2
 
+To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
+
+    idf.py set-target esp32s2
+
+.. important::
+
+    ``idf.py set-target`` will clear the build directory and re-generate the ``sdkconfig`` file from scratch. The old ``sdkconfig`` file will be saved as ``sdkconfig.old``.
+
+.. note::
+
+    The behavior of ``idf.py set-target`` command is equivalent to:
+
+    1. clearing the build directory (``idf.py fullclean``)
+    2. removing the sdkconfig file (``mv sdkconfig sdkconfig.old``)
+    3. configuring the project with the new target (``idf.py -DIDF_TARGET=esp32 reconfigure``)
+
+It is also possible to pass the desired ``IDF_TARGET`` as an environement variable (e.g. ``export IDF_TARGET=esp32s2``) or as a CMake variable (e.g. ``-DIDF_TARGET=esp32s2`` argument to CMake or idf.py). Setting the environment variable is a convenient method if you mostly work with one type of the chip.
+
+To specify the _default_ value of ``IDF_TARGET`` for a given project, add ``CONFIG_IDF_TARGET`` value to ``sdkconfig.defaults``. For example, ``CONFIG_IDF_TARGET="esp32s2"``. This value will be used if ``IDF_TARGET`` is not specified by other method: using an environment variable, CMake variable, or ``idf.py set-target`` command.
+
+If the target has not been set by any of these methods, the build system will default to ``esp32`` target.
 
 Writing Pure CMake Components
 =============================
