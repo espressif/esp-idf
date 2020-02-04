@@ -76,7 +76,9 @@ static int vfs_spiffs_mkdir(void* ctx, const char* name, mode_t mode);
 static int vfs_spiffs_rmdir(void* ctx, const char* name);
 static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file f);
 static time_t vfs_spiffs_get_mtime(const spiffs_stat* s);
+#ifdef CONFIG_SPIFFS_USE_MTIME
 static int vfs_spiffs_utime(void *ctx, const char *path, const struct utimbuf *times);
+#endif
 
 static esp_spiffs_t * _efs[CONFIG_SPIFFS_MAX_PARTITIONS];
 
@@ -749,9 +751,11 @@ static void vfs_spiffs_update_mtime(spiffs *fs, spiffs_file fd)
 
 static time_t vfs_spiffs_get_mtime(const spiffs_stat* s)
 {
-    spiffs_time_t t = 0;
 #ifdef CONFIG_SPIFFS_USE_MTIME
+    spiffs_time_t t = 0;
     memcpy(&t, s->meta, sizeof(t));
+#else
+    time_t t = 0;
 #endif
     return (time_t)t;
 }
