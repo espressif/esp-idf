@@ -107,7 +107,7 @@ typedef struct {
     int32_t (* _get_random)(uint8_t *buf, size_t len);
     int32_t (* _get_time)(void *t);
     unsigned long (* _random)(void);
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     uint32_t (* _slowclk_cal_get)(void);
 #endif
     void (* _log_write)(uint32_t level, const char* tag, const char* format, ...);
