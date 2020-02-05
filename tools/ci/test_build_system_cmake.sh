@@ -337,7 +337,8 @@ function run_tests()
     echo "CONFIG_IDF_TARGET=\"${other_target}\"" > sdkconfig.defaults
     idf.py reconfigure || failure "Failed to reconfigure with default target set in sdkconfig.defaults"
     grep "CONFIG_IDF_TARGET=\"${other_target}\"" sdkconfig || failure "Didn't find the expected CONFIG_IDF_TARGET value"
-    grep "CONFIG_IDF_TARGET_${other_target^^}=y" sdkconfig || failure "Didn't find CONFIG_IDF_TARGET_${other_target^^} value"
+    other_target_caps=$(tr 'a-z' 'A-Z' <<< "${other_target}")
+    grep "CONFIG_IDF_TARGET_${other_target_caps}=y" sdkconfig || failure "Didn't find CONFIG_IDF_TARGET_${other_target_caps} value"
     grep "IDF_TARGET:STRING=${other_target}" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt after fullclean and reconfigure"
     rm sdkconfig.defaults
 
@@ -348,7 +349,7 @@ function run_tests()
     export IDF_TARGET=esp32
     idf.py reconfigure || failure "Failed to reconfigure with default target set in sdkconfig.defaults and different IDF_TARGET in the environment"
     grep "CONFIG_IDF_TARGET=\"esp32\"" sdkconfig || failure "Didn't find the expected CONFIG_IDF_TARGET value"
-    grep "CONFIG_IDF_TARGET_ESP32=y" sdkconfig || failure "Didn't find CONFIG_IDF_TARGET_${other_target^^} value"
+    grep "CONFIG_IDF_TARGET_ESP32=y" sdkconfig || failure "Didn't find CONFIG_IDF_TARGET_ESP32 value"
     grep "IDF_TARGET:STRING=esp32" build/CMakeCache.txt || failure "IDF_TARGET not set in CMakeCache.txt after fullclean and reconfigure"
     rm sdkconfig.defaults
     unset IDF_TARGET
