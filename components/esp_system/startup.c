@@ -18,75 +18,77 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 
-#include "soc/rtc_wdt.h"
-
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "freertos/queue.h"
-
-#include "esp_heap_caps_init.h"
 #include "esp_system.h"
-#include "esp_flash_internal.h"
-#include "nvs_flash.h"
-#include "esp_spi_flash.h"
-#include "esp_private/crosscore_int.h"
 #include "esp_log.h"
-#include "esp_vfs_dev.h"
+#include "esp_ota_ops.h"
+
+#include "sdkconfig.h"
+
+#include "soc/rtc_wdt.h"
+#include "soc/soc_caps.h"
+
+#include "esp_system.h"
+#include "esp_log.h"
+#include "esp_heap_caps_init.h"
+#include "esp_spi_flash.h"
+#include "esp_flash_internal.h"
 #include "esp_newlib.h"
-#include "esp_int_wdt.h"
-#include "esp_task.h"
-#include "esp_task_wdt.h"
+#include "esp_vfs_dev.h"
+#include "esp_timer.h"
+#include "esp_efuse.h"
+#include "esp_flash_encrypt.h"
+
+/* Headers for other components init functions */
+#include "nvs_flash.h"
 #include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
 #include "esp_core_dump.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
 #include "esp_flash_encrypt.h"
-#include "esp_clk_internal.h"
-#include "esp_timer.h"
 #include "esp_pm.h"
-#include "esp_private/pm_impl.h"
-#include "esp_ota_ops.h"
+#include "esp_pthread.h"
 
-#include "sdkconfig.h"
-
+// [refactor-todo] make this file completely target-independent
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
-#include "esp32/dport_access.h"
+#include "esp32/spiram.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/uart.h"
-#include "esp32s2/dport_access.h"
+#include "esp32s2/spiram.h"
 #endif
+/***********************************************/
 
-#include "sys_funcs.h"
-
-#define STRINGIFY(s) STRINGIFY2(s)
-#define STRINGIFY2(s) #s
+#include "startup_internal.h"
 
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
-void start_cpu0_default(void) IRAM_ATTR __attribute__((noreturn));
-#if !CONFIG_FREERTOS_UNICORE
-void start_cpu1(void) __attribute__((weak, alias("start_cpu1_default"))) __attribute__((noreturn));
-void start_cpu1_default(void) IRAM_ATTR __attribute__((noreturn));
-#endif //!CONFIG_FREERTOS_UNICORE
+void start_cpuX(void) __attribute__((weak, alias("start_cpuX_default"))) __attribute__((noreturn));
+
+void app_mainX(void) __attribute__((weak, alias("app_mainX_default"))) __attribute__((noreturn));
 
 extern void app_main(void);
-extern esp_err_t esp_pthread_init(void);
 
-extern void (*__init_array_start)(void);
-extern void (*__init_array_end)(void);
-extern volatile int port_xSchedulerRunning[2];
+sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
+#if SOC_CPU_CORES_NUM > 1
+    [1 ... SOC_CPU_CORES_NUM - 1] = start_cpuX
+#endif
+};
+
+static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
+static volatile bool s_system_full_inited = false;
 
 static const char* TAG = "cpu_start";
 
-struct object { long placeholder[ 10 ]; };
-void __register_frame_info (const void *begin, struct object *ob);
-extern char __eh_frame[];
-
-static void do_global_ctors(void)
+static void IRAM_ATTR do_global_ctors(void)
 {
+    extern void (*__init_array_start)(void);
+    extern void (*__init_array_end)(void);
+
 #ifdef CONFIG_COMPILER_CXX_EXCEPTIONS
+    struct object { long placeholder[ 10 ]; };
+    void __register_frame_info (const void *begin, struct object *ob);
+    extern char __eh_frame[];
+
     static struct object ob;
     __register_frame_info( __eh_frame, &ob );
 #endif
@@ -97,7 +99,7 @@ static void do_global_ctors(void)
     }
 }
 
-static void do_system_init_fn(void)
+static void IRAM_ATTR do_system_init_fn(void)
 {
     extern esp_system_init_fn_t _esp_system_init_fn_array_start;
     extern esp_system_init_fn_t _esp_system_init_fn_array_end;
@@ -109,16 +111,54 @@ static void do_system_init_fn(void)
             (*(p->fn))();
         }
     }
+
+    s_system_inited[cpu_hal_get_core_id()] = true;
 }
 
-static void main_task(void* args)
+static void IRAM_ATTR app_mainX_default(void)
 {
-#if !CONFIG_FREERTOS_UNICORE
-    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
-    while (port_xSchedulerRunning[1] == 0) {
-        ;
+    while(1) {
+        cpu_hal_delay_us(UINT32_MAX);
     }
+}
+
+static void IRAM_ATTR start_cpuX_default(void)
+{
+    do_system_init_fn();
+
+    while(!s_system_full_inited) {
+        cpu_hal_delay_us(100);
+    }
+
+    app_mainX();
+}
+
+static void IRAM_ATTR do_core_init(void)
+{
+    /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
+       If the heap allocator is initialized first, it will put free memory linked list items into
+       memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
+       corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
+       works around this problem.
+       With SPI RAM enabled, there's a second reason: half of the SPI RAM will be managed by the
+       app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
+       fail initializing it properly. */
+    heap_caps_init();
+
+    esp_setup_syscall_table();
+
+    if (g_spiram_ok) {
+#if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
+        esp_err_t r=esp_spiram_add_to_heapalloc();
+        if (r != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
+            abort();
+        }
+#if CONFIG_SPIRAM_USE_MALLOC
+        heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
 #endif
+#endif
+    }
 
     // Now we have startup stack RAM available for heap, enable any DMA pool memory
 #if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
@@ -131,75 +171,80 @@ static void main_task(void* args)
     }
 #endif
 
-    //Initialize task wdt if configured to do so
-#ifdef CONFIG_ESP_TASK_WDT_PANIC
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
-#elif CONFIG_ESP_TASK_WDT
-    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+    esp_reent_init(_GLOBAL_REENT);
+
+#ifndef CONFIG_ESP_CONSOLE_UART_NONE
+    const int uart_clk_freq = APB_CLK_FREQ;
+    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
-    //Add IDLE 0 to task wdt
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
-    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
-    if(idle_0 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
-    }
-#endif
-    //Add IDLE 1 to task wdt
-#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
-    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
-    if(idle_1 != NULL){
-        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
-    }
-    esp_spiram_init_cache();
+#ifdef CONFIG_VFS_SUPPORT_IO
+    esp_vfs_dev_uart_register();
+#endif // CONFIG_VFS_SUPPORT_IO
+
+#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+    esp_reent_init(_GLOBAL_REENT);
+    const char *default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
+    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
+    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
+    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
+#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+    _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
+#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+
+#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
+    esp_flash_encryption_init_checks();
 #endif
 
-    // Now that the application is about to start, disable boot watchdog
-#ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
-    rtc_wdt_disable();
+#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
+    err = esp_efuse_disable_rom_download_mode();
+    assert(err == ESP_OK && "Failed to disable ROM download mode");
 #endif
-#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
-    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
-    if (efuse_partition) {
-        esp_efuse_init(efuse_partition->address, efuse_partition->size);
-    }
+
+#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
+    err = esp_efuse_enable_rom_secure_download_mode();
+    assert(err == ESP_OK && "Failed to enable Secure Download mode");
 #endif
-    app_main();
-    vTaskDelete(NULL);
+
+#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
+    esp_efuse_disable_basic_rom_console();
+#endif
+
+    spi_flash_init();
+    /* init default OS-aware flash access critical section */
+    spi_flash_guard_set(&g_flash_guard_default_ops);
+
+    esp_flash_app_init();
+    esp_err_t flash_ret = esp_flash_init_default_chip();
+    assert(flash_ret == ESP_OK);
 }
 
-#if !CONFIG_FREERTOS_UNICORE
-void start_cpu1_default(void)
+static void IRAM_ATTR do_secondary_init(void)
 {
-    // Wait for FreeRTOS initialization to finish on PRO CPU
-    while (port_xSchedulerRunning[0] == 0) {
-        ;
+    // The port layer transferred control to this function with other cores 'paused',
+    // resume execution so that cores might execute component initialization functions.
+    startup_resume_other_cores();
+
+    // Execute initialization functions esp_system_init_fn_t assigned to the main core. While
+    // this is happening, all other cores are executing the initialization functions
+    // assigned to them since they have been resumed already.
+    do_system_init_fn();
+
+    // Wait for all cores to finish secondary init.
+    volatile bool system_inited = false;
+
+    while(!system_inited) {
+        system_inited = true;
+        for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+            system_inited &= s_system_inited[i];
+        }
+        cpu_hal_delay_us(100);
     }
-
-#if CONFIG_APPTRACE_ENABLE
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
-#endif
-#if CONFIG_ESP_INT_WDT
-    //Initialize the interrupt watch dog for CPU1.
-    esp_int_wdt_cpu_init();
-#endif
-
-    esp_crosscore_int_init();
-    esp_dport_access_int_init();
-
-    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
-    xPortStartScheduler();
-    abort(); /* Only get to here if FreeRTOS somehow very broken */
 }
-#endif //!CONFIG_FREERTOS_UNICORE
 
-/*
- * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
- * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
- */
 void IRAM_ATTR start_cpu0_default(void)
 {
+    // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
         ESP_EARLY_LOGI(TAG, "Application information:");
@@ -221,125 +266,45 @@ void IRAM_ATTR start_cpu0_default(void)
         ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
     }
 
-    /* Initialize heap allocator */
-    heap_caps_init();
+    // Initialize core components and services.
+    do_core_init();
 
+    // Execute constructors.
+    do_global_ctors();
+
+    // Execute init functions of other components; blocks
+    // until all cores finish.
+    do_secondary_init();
+
+    // Now that the application is about to start, disable boot watchdog
+#ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
+    rtc_wdt_disable();
+#endif
+
+    // Finally, we jump to user code.
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
 
+    s_system_full_inited = true;
+
+    app_main();
+    while(1);
+}
+
+IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
+{
     esp_err_t err;
-    esp_setup_syscall_table();
 
-    if (g_spiram_ok) {
-#if CONFIG_SPIRAM_BOOT_INIT && (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-        esp_err_t r=esp_spiram_add_to_heapalloc();
-        if (r != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "External RAM could not be added to heap!");
-            abort();
-        }
-#if CONFIG_SPIRAM_USE_MALLOC
-        heap_caps_malloc_extmem_enable(CONFIG_SPIRAM_MALLOC_ALWAYSINTERNAL);
-#endif
-#endif
-    }
-
-#ifndef CONFIG_ESP_CONSOLE_UART_NONE
 #ifdef CONFIG_PM_ENABLE
     const int uart_clk_freq = REF_CLK_FREQ;
     /* When DFS is enabled, use REFTICK as UART clock source */
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
-#else
-    const int uart_clk_freq = APB_CLK_FREQ;
-#endif // CONFIG_PM_DFS_ENABLE
     uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif // CONFIG_ESP_CONSOLE_UART_NONE
 
-
-#ifdef CONFIG_VFS_SUPPORT_IO
-    esp_vfs_dev_uart_register();
-#endif // CONFIG_VFS_SUPPORT_IO
-
-#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
-    esp_reent_init(_GLOBAL_REENT);
-    const char *default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
-    _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
-    _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
-    _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
-#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
-    _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
-#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
-    // After setting _GLOBAL_REENT, ESP_LOGIx can be used instead of ESP_EARLY_LOGx.
-
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
-
-#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
-    err = esp_efuse_disable_rom_download_mode();
-    assert(err == ESP_OK && "Failed to disable ROM download mode");
-#endif
-
-#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
-    err = esp_efuse_enable_rom_secure_download_mode();
-    assert(err == ESP_OK && "Failed to enable Secure Download mode");
-#endif
-
-    esp_timer_init();
-    esp_set_time_from_rtc();
-
-#if CONFIG_APPTRACE_ENABLE
-    err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
-#endif
-
-#if CONFIG_SYSVIEW_ENABLE
-    SEGGER_SYSVIEW_Conf();
-#endif
-#if CONFIG_ESP_DEBUG_STUBS_ENABLE
     esp_dbg_stubs_init();
-#endif
 
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
-
-#if CONFIG_ESP32S2_MEMPROT_FEATURE
-#if CONFIG_ESP32S2_MEMPROT_FEATURE_LOCK
-    esp_memprot_set_prot(true, true);
-#else
-    esp_memprot_set_prot(true, false);
-#endif
-#endif
-
-    do_global_ctors();
-#if CONFIG_ESP_INT_WDT
-    esp_int_wdt_init();
-    //Initialize the interrupt watch dog for CPU0.
-    esp_int_wdt_cpu_init();
-#else
-#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
-    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
-#endif
-#endif
-
-    esp_crosscore_int_init();
-
-#ifndef CONFIG_FREERTOS_UNICORE
-    esp_dport_access_int_init();
-#endif
-
-
-    spi_flash_init();
-    /* init default OS-aware flash access critical section */
-    spi_flash_guard_set(&g_flash_guard_default_ops);
-
-    esp_flash_app_init();
-    esp_err_t flash_ret = esp_flash_init_default_chip();
-    assert(flash_ret == ESP_OK);
-
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_ESP32_ENABLE_COREDUMP
-    esp_core_dump_init();
-#endif
-#endif
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_impl_init();
@@ -354,20 +319,30 @@ void IRAM_ATTR start_cpu0_default(void)
 #endif //CONFIG_PM_ENABLE
 
 #if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_ESP32_ENABLE_COREDUMP
+    esp_core_dump_init();
+#endif
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32
 #if CONFIG_ESP32_WIFI_SW_COEXIST_ENABLE
     esp_coex_adapter_register(&g_coex_adapter_funcs);
     coex_pre_init();
 #endif
 #endif
 
-    do_system_init_fn();
+#ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
+    const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);
+    if (efuse_partition) {
+        esp_efuse_init(efuse_partition->address, efuse_partition->size);
+    }
+#endif
+}
 
-    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
-                                                ESP_TASK_MAIN_STACK, NULL,
-                                                ESP_TASK_MAIN_PRIO, NULL, 0);
-    assert(res == pdTRUE);
-
-    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
-    vTaskStartScheduler();
-    abort(); /* Only get to here if not enough free heap to start scheduler */
+IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components1, BIT(1))
+{
+#if CONFIG_APPTRACE_ENABLE
+    esp_err_t err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
+#endif
 }

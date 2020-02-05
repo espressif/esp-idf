@@ -67,10 +67,6 @@
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 #endif
 
-#if !CONFIG_FREERTOS_UNICORE
-static bool app_cpu_started = false;
-#endif //!CONFIG_FREERTOS_UNICORE
-
 extern int _bss_start;
 extern int _bss_end;
 extern int _rtc_bss_start;
@@ -91,17 +87,19 @@ extern int _iram_bss_end;
 #endif
 #endif // CONFIG_IDF_TARGET_ESP32
 
-extern void start_cpu0(void);
-#if !CONFIG_FREERTOS_UNICORE
-extern void start_cpu1(void);
-#endif //!CONFIG_FREERTOS_UNICORE
+#include "startup_internal.h"
 
-extern int _init_start;
+static volatile bool s_cpu_up[SOC_CPU_CORES_NUM] = { false };
+static volatile bool s_cpu_inited[SOC_CPU_CORES_NUM] = { false };
+static volatile bool s_resume_cores;
 
-static const char* TAG = "cpu_start";
-
-//If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
+// If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
+
+void startup_resume_other_cores(void)
+{
+    s_resume_cores = true;
+}
 
 static void intr_matrix_clear(void)
 {
@@ -112,19 +110,11 @@ static void intr_matrix_clear(void)
     for (int i = ETS_WIFI_MAC_INTR_SOURCE; i < ETS_MAX_INTR_SOURCE; i++) {
 #endif
         intr_matrix_set(0, i, ETS_INVALID_INUM);
-#if !CONFIG_FREERTOS_UNICORE
         intr_matrix_set(1, i, ETS_INVALID_INUM);
-#endif
     }
 }
 
-#if !CONFIG_FREERTOS_UNICORE
-static void wdt_reset_cpu1_info_enable(void)
-{
-    DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
-    DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
-}
-
+#if SOC_CPU_CORES_NUM > 1
 void IRAM_ATTR call_start_cpu1(void)
 {
     cpu_hal_set_vecbase(&_init_start);
@@ -142,9 +132,11 @@ void IRAM_ATTR call_start_cpu1(void)
     uart_tx_switch(CONFIG_ESP_CONSOLE_UART_NUM);
 #endif
 
-    wdt_reset_cpu1_info_enable();
+    DPORT_REG_SET_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_PDEBUG_ENABLE | DPORT_APP_CPU_RECORD_ENABLE);
+    DPORT_REG_CLR_BIT(DPORT_APP_CPU_RECORD_CTRL_REG, DPORT_APP_CPU_RECORD_ENABLE);
+
+    s_cpu_up[1] = true;
     ESP_EARLY_LOGI(TAG, "App cpu up.");
-    app_cpu_started = 1;
 
     //Take care putting stuff here: if asked, FreeRTOS will happily tell you the scheduler
     //has started, but it isn't active *on this CPU* yet.
@@ -156,7 +148,13 @@ void IRAM_ATTR call_start_cpu1(void)
 #endif
 #endif
 
-    start_cpu1();
+    s_cpu_inited[1] = true;
+
+    while(!s_resume_cores) {
+        cpu_hal_delay_us(100);
+    }
+
+    SYS_STARTUP_FN();
 }
 #endif
 
@@ -164,14 +162,9 @@ void IRAM_ATTR call_start_cpu1(void)
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
  * and the app CPU is in reset. We do have a stack, so we can do the initialization in C.
  */
-
 void IRAM_ATTR call_start_cpu0(void)
 {
-#if CONFIG_FREERTOS_UNICORE
-    RESET_REASON rst_reas[1];
-#else
-    RESET_REASON rst_reas[2];
-#endif
+    RESET_REASON rst_reas[SOC_CPU_CORES_NUM];
 
     bootloader_init_mem();
 
@@ -179,14 +172,14 @@ void IRAM_ATTR call_start_cpu0(void)
     cpu_hal_set_vecbase(&_init_start);
 
     rst_reas[0] = rtc_get_reset_reason(0);
-
-#if !CONFIG_FREERTOS_UNICORE
+#if SOC_CPU_CORES_NUM > 1
     rst_reas[1] = rtc_get_reset_reason(1);
 #endif
 
+#ifndef CONFIG_BOOTLOADER_WDT_ENABLE
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET
-#if !CONFIG_FREERTOS_UNICORE
+#if SOC_CPU_CORES_NUM > 1
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
@@ -197,6 +190,7 @@ void IRAM_ATTR call_start_cpu0(void)
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
     }
+#endif
 
     //Clear BSS. Please do not attempt to do any complex stuff (like early logging) before this.
     memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
@@ -210,7 +204,6 @@ void IRAM_ATTR call_start_cpu0(void)
     if (rst_reas[0] != DEEPSLEEP_RESET) {
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
-
 
 #if CONFIG_IDF_TARGET_ESP32S2
     /* Configure the mode of instruction cache : cache size, cache associated ways, cache line size. */
@@ -247,45 +240,45 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
+    s_cpu_up[0] = true;
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
-#ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
-    esp_flash_encryption_init_checks();
-#endif
+#if CONFIG_IDF_TARGET_ESP32
+    // If not the single core variant of ESP32 - check this since there is
+    // no separate soc_caps.h for the single core variant.
+    if (!REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+        ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
 
-#if !CONFIG_FREERTOS_UNICORE
-    if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
-        ESP_EARLY_LOGE(TAG, "Running on single core chip, but application is built with dual core support.");
-        ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
-        abort();
+        Cache_Flush(1);
+        Cache_Read_Enable(1);
+        esp_cpu_unstall(1);
+
+        // Enable clock and reset APP CPU. Note that OpenOCD may have already
+        // enabled clock and taken APP CPU out of reset. In this case don't reset
+        // APP CPU again, as that will clear the breakpoints which may have already
+        // been set.
+        if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
+            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
+            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+        }
+        ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
+
+        volatile bool cpus_up = false;
+
+        while(!cpus_up){
+            cpus_up = true;
+            for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+                cpus_up &= s_cpu_up[i];
+            }
+            cpu_hal_delay_us(100);
+        }
     }
-    // ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
-
-    //Flush and enable icache for APP CPU
-    Cache_Flush(1);
-    Cache_Read_Enable(1);
-    esp_cpu_unstall(1);
-
-    // Enable clock and reset APP CPU. Note that OpenOCD may have already
-    // enabled clock and taken APP CPU out of reset. In this case don't reset
-    // APP CPU again, as that will clear the breakpoints which may have already
-    // been set.
-    if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
-        DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
-        DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+    else {
+        s_cpu_inited[1] = true;
+        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
     }
-    ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
-
-    while (!app_cpu_started) {
-        ets_delay_us(100);
-    }
-#else
-#if CONFIG_IDF_TARGET_ESP32 // Single core chips have no 'single core mode'
-    ESP_EARLY_LOGI(TAG, "Single core mode");
-    DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-#endif
 #endif
 
 #if CONFIG_SPIRAM_MEMTEST
@@ -334,8 +327,6 @@ void IRAM_ATTR call_start_cpu0(void)
     memset(&_ext_ram_bss_start, 0, (&_ext_ram_bss_end - &_ext_ram_bss_start) * sizeof(_ext_ram_bss_start));
 #endif
 
-    ///////////////////////////////////////////////////////////////////
-
 //Enable trace memory and immediately start trace.
 #if CONFIG_ESP32_TRAX || CONFIG_ESP32S2_TRAX
 #if CONFIG_IDF_TARGET_ESP32
@@ -358,25 +349,21 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_brownout_init();
 #endif
 
-#if CONFIG_SECURE_DISABLE_ROM_DL_MODE
-    err = esp_efuse_disable_rom_download_mode();
-    assert(err == ESP_OK && "Failed to disable ROM download mode");
-#endif
-#if CONFIG_SECURE_ENABLE_SECURE_ROM_DL_MODE
-    err = esp_efuse_enable_rom_secure_download_mode();
-    assert(err == ESP_OK && "Failed to enable Secure Download mode");
-#endif
-
-#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE || CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
-    esp_efuse_disable_basic_rom_console();
-#endif
-
     rtc_gpio_force_hold_dis_all();
 
     esp_cache_err_int_init();
 
-    bootloader_flash_update_id();
+#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_ESP32S2_MEMPROT_FEATURE
+#if CONFIG_ESP32S2_MEMPROT_FEATURE_LOCK
+    esp_memprot_set_prot(true, true);
+#else
+    esp_memprot_set_prot(true, false);
+#endif
+#endif
+#endif
 
+    bootloader_flash_update_id();
 #if CONFIG_IDF_TARGET_ESP32 
 #if !CONFIG_SPIRAM_BOOT_INIT
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
@@ -403,5 +390,17 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif //!CONFIG_SPIRAM_BOOT_INIT
 #endif
 
-    start_cpu0();
+    s_cpu_inited[0] = true;
+
+    volatile bool cpus_inited = false;
+
+    while(!cpus_inited) {
+        cpus_inited = true;
+        for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+            cpus_inited &= s_cpu_inited[i];
+        }
+        cpu_hal_delay_us(100);
+    }
+
+    SYS_STARTUP_FN();
 }

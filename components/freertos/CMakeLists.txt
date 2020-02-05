@@ -62,3 +62,5 @@ set_source_files_properties(
     PROPERTIES COMPILE_DEFINITIONS
     _ESP_FREERTOS_INTERNAL
     )
+
+target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=app_main")

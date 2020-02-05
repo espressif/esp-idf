@@ -110,12 +110,23 @@
 #include "sdkconfig.h"
 #include "esp_compiler.h"
 
+#include "esp_task_wdt.h"
+#include "esp_task.h"
+
+#include "soc/soc_caps.h"
+#include "soc/efuse_reg.h"
+#include "soc/dport_access.h"
+#include "soc/dport_reg.h"
+#include "esp_int_wdt.h"
+
 /* Defined in portasm.h */
 extern void _frxt_tick_timer_init(void);
 
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
+static const char* TAG = "cpu_start"; // [refactor-todo]: might be appropriate to change in the future, but
+								// for now maintain the same log output
 
 #if CONFIG_FREERTOS_CORETIMER_0
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER0_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
@@ -123,6 +134,8 @@ extern void _xt_coproc_init(void);
 #if CONFIG_FREERTOS_CORETIMER_1
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
 #endif
+
+
 
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
@@ -434,4 +447,122 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
 		dest = strcat(dest, str[i]);
 	}
 	esp_system_abort(buf);
+}
+
+// `esp_system` calls the app entry point app_main for core 0 and app_mainX for 
+// the rest of the cores which the app normally provides for non-os builds.
+// If `freertos` is included in the build, wrap the call to app_main and provide 
+// our own definition of app_mainX so that we can do our own initializations for each
+// core and start the scheduler. 
+//
+// We now simply execute the real app_main in the context of the main task that
+// we also start.
+extern void __real_app_main(void);
+
+static void main_task(void* args)
+{
+#if !CONFIG_FREERTOS_UNICORE
+    // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
+    while (port_xSchedulerRunning[1] == 0) {
+        ;
+    }
+#endif
+
+    //Initialize task wdt if configured to do so
+#ifdef CONFIG_ESP_TASK_WDT_PANIC
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, true));
+#elif CONFIG_ESP_TASK_WDT
+    ESP_ERROR_CHECK(esp_task_wdt_init(CONFIG_ESP_TASK_WDT_TIMEOUT_S, false));
+#endif
+
+    //Add IDLE 0 to task wdt
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU0
+    TaskHandle_t idle_0 = xTaskGetIdleTaskHandleForCPU(0);
+    if(idle_0 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_0));
+    }
+#endif
+    //Add IDLE 1 to task wdt
+#ifdef CONFIG_ESP_TASK_WDT_CHECK_IDLE_TASK_CPU1
+    TaskHandle_t idle_1 = xTaskGetIdleTaskHandleForCPU(1);
+    if(idle_1 != NULL){
+        ESP_ERROR_CHECK(esp_task_wdt_add(idle_1));
+    }
+#endif
+
+    __real_app_main();
+    vTaskDelete(NULL);
+}
+
+#if !CONFIG_FREERTOS_UNICORE
+void app_mainX(void)
+{
+	if (xPortGetCoreID() >= 2) {
+		// Explicitly support only up to two cores for now.
+		abort();
+	}
+
+    // Wait for FreeRTOS initialization to finish on PRO CPU
+    while (port_xSchedulerRunning[0] == 0) {
+        ;
+    }
+
+#if CONFIG_ESP_INT_WDT
+    //Initialize the interrupt watch dog for CPU1.
+    esp_int_wdt_cpu_init();
+#endif
+
+    esp_crosscore_int_init();
+    esp_dport_access_int_init();
+
+    ESP_EARLY_LOGI(TAG, "Starting scheduler on APP CPU.");
+    xPortStartScheduler();
+    abort(); /* Only get to here if FreeRTOS somehow very broken */
+}
+#endif
+
+void __wrap_app_main(void)
+{
+#if CONFIG_ESP_INT_WDT
+    esp_int_wdt_init();
+    //Initialize the interrupt watch dog for CPU0.
+    esp_int_wdt_cpu_init();
+#else
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
+#endif
+#endif
+
+    esp_crosscore_int_init();
+
+#ifndef CONFIG_FREERTOS_UNICORE
+    esp_dport_access_int_init();
+#endif
+
+    portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
+                                                ESP_TASK_MAIN_STACK, NULL,
+                                                ESP_TASK_MAIN_PRIO, NULL, 0);
+    assert(res == pdTRUE);
+
+#if !CONFIG_FREERTOS_UNICORE
+	// Check that FreeRTOS is configured properly for the number of cores the target
+	// has at compile and build time.
+#if SOC_CPU_CORES_NUM < 2
+	#error FreeRTOS configured to run on dual core, but target only has a single core.
+#endif
+    if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+        ESP_EARLY_LOGE(TAG, "Running on single core chip, but application is built with dual core support.");
+        ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
+        abort();
+    }
+
+#else
+	#if SOC_CPU_CORES_NUM > 1 // Single core chips have no 'single core mode'
+		ESP_EARLY_LOGI(TAG, "Single core mode");
+		DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+	#endif
+#endif // !CONFIG_FREERTOS_UNICORE
+
+    ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
+    vTaskStartScheduler();
 }
