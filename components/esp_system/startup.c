@@ -97,6 +97,20 @@ static void do_global_ctors(void)
     }
 }
 
+static void do_system_init_fn(void)
+{
+    extern esp_system_init_fn_t _esp_system_init_fn_array_start;
+    extern esp_system_init_fn_t _esp_system_init_fn_array_end;
+
+    esp_system_init_fn_t *p;
+
+    for (p = &_esp_system_init_fn_array_end - 1; p >= &_esp_system_init_fn_array_start; --p) {
+        if (p->cores & BIT(cpu_hal_get_core_id())) {
+            (*(p->fn))();
+        }
+    }
+}
+
 static void main_task(void* args)
 {
 #if !CONFIG_FREERTOS_UNICORE
@@ -312,6 +326,7 @@ void IRAM_ATTR start_cpu0_default(void)
     esp_dport_access_int_init();
 #endif
 
+
     spi_flash_init();
     /* init default OS-aware flash access critical section */
     spi_flash_guard_set(&g_flash_guard_default_ops);
@@ -344,6 +359,8 @@ void IRAM_ATTR start_cpu0_default(void)
     coex_pre_init();
 #endif
 #endif
+
+    do_system_init_fn();
 
     portBASE_TYPE res = xTaskCreatePinnedToCore(&main_task, "main",
                                                 ESP_TASK_MAIN_STACK, NULL,

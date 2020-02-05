@@ -214,6 +214,10 @@ SECTIONS
     _coredump_dram_end = ABSOLUTE(.);
     
     /* should be placed after coredump mapping */
+    _esp_system_init_fn_array_start = ABSOLUTE(.);
+    KEEP (*(SORT(.esp_system_init_fn) SORT(.esp_system_init_fn.*)))
+    _esp_system_init_fn_array_end = ABSOLUTE(.);
+
     mapping[dram0_data]
 
     _data_end = ABSOLUTE(.);
