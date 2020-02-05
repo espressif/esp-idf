@@ -1,6 +1,5 @@
 
-#include "common/bt_defs.h"
-
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
 #include "osi/osi.h"

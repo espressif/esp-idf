@@ -21,7 +21,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "common/bt_trace.h"
+#include "bt_common.h"
 #include "common/bt_target.h"
 
 #define UNUSED(x)                   (void)(x)
@@ -64,31 +64,6 @@ typedef struct {
 typedef struct {
     uint8_t uu[16];
 } bt_uuid_t;
-
-/** Bluetooth Error Status */
-/** We need to build on this */
-
-/* relate to ESP_BT_STATUS_xxx in esp_bt_defs.h */
-typedef enum {
-    BT_STATUS_SUCCESS = 0,
-    BT_STATUS_FAIL,
-    BT_STATUS_NOT_READY,
-    BT_STATUS_NOMEM,
-    BT_STATUS_BUSY,
-    BT_STATUS_DONE,        /* request already completed */
-    BT_STATUS_UNSUPPORTED,
-    BT_STATUS_PARM_INVALID,
-    BT_STATUS_UNHANDLED,
-    BT_STATUS_AUTH_FAILURE,
-    BT_STATUS_RMT_DEV_DOWN,
-    BT_STATUS_AUTH_REJECTED,
-    BT_STATUS_INVALID_STATIC_RAND_ADDR,
-    BT_STATUS_PENDING,
-    BT_STATUS_UNACCEPT_CONN_INTERVAL,
-    BT_STATUS_PARAM_OUT_OF_RANGE,
-    BT_STATUS_TIMEOUT,
-    BT_STATUS_MEMORY_FULL,
-} bt_status_t;
 
 #ifndef CPU_LITTLE_ENDIAN
 #define CPU_LITTLE_ENDIAN

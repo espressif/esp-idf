@@ -16,11 +16,9 @@
  *
  ******************************************************************************/
 #include <stdint.h>
-#include "common/bt_trace.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/buffer.h"
-#include "common/bt_defs.h"
-#include "common/bt_trace.h"
 
 struct buffer_t {
     buffer_t *root;

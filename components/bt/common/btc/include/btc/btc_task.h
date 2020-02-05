@@ -16,9 +16,12 @@
 #define __BTC_TASK_H__
 
 #include <stdint.h>
-#include "common/bt_target.h"
-#include "common/bt_defs.h"
+#include "bt_common.h"
 #include "osi/thread.h"
+
+#if CONFIG_BLUEDROID_ENABLED
+#include "common/bt_target.h"
+#endif
 
 typedef struct btc_msg {
     uint8_t sig;    //event signal

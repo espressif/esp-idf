@@ -16,8 +16,7 @@
  *
  ******************************************************************************/
 
-#include "common/bt_defs.h"
-#include "common/bt_trace.h"
+#include "bt_common.h"
 #include "osi/list.h"
 #include "osi/hash_map.h"
 #include "osi/allocator.h"

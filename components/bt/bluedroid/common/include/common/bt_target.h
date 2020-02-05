@@ -20,6 +20,8 @@
 #ifndef BT_TARGET_H
 #define BT_TARGET_H
 
+#include "bt_common.h"
+
 #ifndef BUILDCFG
 #define BUILDCFG
 #endif
@@ -347,10 +349,6 @@
 
 #ifndef BTA_AV_CO_CP_SCMS_T
 #define BTA_AV_CO_CP_SCMS_T  FALSE//FALSE
-#endif
-
-#ifndef QUEUE_CONGEST_SIZE
-#define  QUEUE_CONGEST_SIZE    40
 #endif
 
 #ifndef CONFIG_BLE_HOST_QUEUE_CONGESTION_CHECK

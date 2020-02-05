@@ -16,7 +16,7 @@
 #include "esp_bt_device.h"
 #endif
 
-#ifdef CONFIG_BT_NIMBLE_ENABLED
+#ifdef CONFIG_NIMBLE_ENABLED
 #include "esp_nimble_hci.h"
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
@@ -71,7 +71,7 @@ esp_err_t bluetooth_init(void)
 
 #endif
 
-#ifdef CONFIG_BT_NIMBLE_ENABLED
+#ifdef CONFIG_NIMBLE_ENABLED
 static SemaphoreHandle_t mesh_sem;
 static uint8_t own_addr_type;
 void ble_store_config_init(void);

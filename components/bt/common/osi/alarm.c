@@ -18,8 +18,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include "common/bt_defs.h"
-#include "common/bt_trace.h"
 #include "osi/alarm.h"
 #include "osi/allocator.h"
 #include "osi/list.h"
@@ -27,6 +25,7 @@
 #include "btc/btc_task.h"
 #include "btc/btc_alarm.h"
 #include "osi/mutex.h"
+#include "bt_common.h"
 
 typedef struct alarm_t {
     /* timer id point to here */
@@ -251,12 +250,12 @@ end:
 
 osi_alarm_err_t osi_alarm_set(osi_alarm_t *alarm, period_ms_t timeout)
 {
-    return alarm_set(alarm, timeout, false);
+    return alarm_set(alarm, timeout, FALSE);
 }
 
 osi_alarm_err_t osi_alarm_set_periodic(osi_alarm_t *alarm, period_ms_t period)
 {
-    return alarm_set(alarm, period, true);
+    return alarm_set(alarm, period, TRUE);
 }
 
 osi_alarm_err_t osi_alarm_cancel(osi_alarm_t *alarm)

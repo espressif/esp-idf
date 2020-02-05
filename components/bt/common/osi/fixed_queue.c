@@ -16,12 +16,10 @@
  *
  ******************************************************************************/
 
-#include "common/bt_defs.h"
 #include "osi/allocator.h"
 #include "osi/fixed_queue.h"
 #include "osi/list.h"
 #include "osi/osi.h"
-#include "common/bt_trace.h"
 #include "osi/mutex.h"
 #include "osi/semaphore.h"
 

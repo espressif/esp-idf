@@ -12,17 +12,39 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef __BTC_MANAGE_H__
-#define __BTC_MANAGE_H__
 
-#include "bta/bta_api.h"
 #include "btc/btc_task.h"
-#include "esp_bt_defs.h"
+#include "osi/thread.h"
 
-/* reset gatt callback table */
-void esp_profile_cb_reset(void);
+static void *btc_profile_cb_tab[BTC_PID_NUM] = {};
 
-int btc_profile_cb_set(btc_pid_t profile_id, void *cb);
-void *btc_profile_cb_get(btc_pid_t profile_id);
+void esp_profile_cb_reset(void)
+{
+    int i;
 
-#endif /* __BTC_MANAGE_H__ */
+    for (i = 0; i < BTC_PID_NUM; i++) {
+        btc_profile_cb_tab[i] = NULL;
+    }
+}
+
+int btc_profile_cb_set(btc_pid_t profile_id, void *cb)
+{
+    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
+        return -1;
+    }
+
+    btc_profile_cb_tab[profile_id] = cb;
+
+    return 0;
+}
+
+void *btc_profile_cb_get(btc_pid_t profile_id)
+{
+    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
+        return NULL;
+    }
+
+    return btc_profile_cb_tab[profile_id];
+}
+
+

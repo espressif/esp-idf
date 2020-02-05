@@ -12,42 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
 #include "btc/btc_task.h"
-#include "common/bt_trace.h"
-#include "osi/thread.h"
-#include "esp_bt_defs.h"
-#include "esp_gatt_defs.h"
+#include "btc/btc_alarm.h"
+#include "esp_log.h"
 
-static void *btc_profile_cb_tab[BTC_PID_NUM] = {};
-
-void esp_profile_cb_reset(void)
+void btc_alarm_handler(btc_msg_t *msg)
 {
-    int i;
+    btc_alarm_args_t *arg = (btc_alarm_args_t *)msg->arg;
 
-    for (i = 0; i < BTC_PID_NUM; i++) {
-        btc_profile_cb_tab[i] = NULL;
+    BTC_TRACE_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+
+    if (arg->cb) {
+        arg->cb(arg->cb_data);
     }
 }
-
-int btc_profile_cb_set(btc_pid_t profile_id, void *cb)
-{
-    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
-        return -1;
-    }
-
-    btc_profile_cb_tab[profile_id] = cb;
-
-    return 0;
-}
-
-void *btc_profile_cb_get(btc_pid_t profile_id)
-{
-    if (profile_id < 0 || profile_id >= BTC_PID_NUM) {
-        return NULL;
-    }
-
-    return btc_profile_cb_tab[profile_id];
-}
-
-

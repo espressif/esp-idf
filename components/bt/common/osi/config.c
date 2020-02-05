@@ -23,10 +23,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/config.h"
 #include "osi/list.h"
-#include "common/bt_trace.h"
 
 #define CONFIG_FILE_MAX_SIZE             (1536)//1.5k
 #define CONFIG_FILE_DEFAULE_LENGTH       (2048)
