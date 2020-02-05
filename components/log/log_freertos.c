@@ -99,7 +99,8 @@ uint32_t esp_log_timestamp(void)
     if (base == 0 && xPortGetCoreID() == 0) {
         base = esp_log_early_timestamp();
     }
-    return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+    TickType_t tick_count = xPortInIsrContext() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
+    return base + tick_count * (1000 / configTICK_RATE_HZ);
 }
 
 /* FIXME: define an API for getting the timestamp in soc/hal */
