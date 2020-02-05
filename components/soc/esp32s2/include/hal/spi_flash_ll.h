@@ -83,7 +83,7 @@ typedef union  {
 #define spi_flash_ll_set_mosi_bitlen(dev, bitlen)            spimem_flash_ll_set_mosi_bitlen((spi_mem_dev_t*)dev, bitlen)
 #define spi_flash_ll_set_command8(dev, cmd)                  spimem_flash_ll_set_command8((spi_mem_dev_t*)dev, cmd)
 #define spi_flash_ll_set_addr_bitlen(dev, bitlen)            spimem_flash_ll_set_addr_bitlen((spi_mem_dev_t*)dev, bitlen)
-#define spi_flash_ll_get_addr_bitlen(dev)                    spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
+#define spi_flash_ll_get_addr_bitlen(dev)                    spimem_flash_ll_get_addr_bitlen((spi_mem_dev_t*) dev)
 #define spi_flash_ll_set_address(dev, addr)                  spimem_flash_ll_set_address((spi_mem_dev_t*)dev, addr)
 #define spi_flash_ll_set_usr_address(dev, addr, bitlen)      spimem_flash_ll_set_address((spi_mem_dev_t*)dev, addr)
 #define spi_flash_ll_set_dummy(dev, dummy)                   spimem_flash_ll_set_dummy((spi_mem_dev_t*)dev, dummy)

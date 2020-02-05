@@ -93,7 +93,8 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_driver_t *host, spi_flash_
 esp_err_t spi_flash_hal_read(spi_flash_host_driver_t *host, void *buffer, uint32_t address, uint32_t read_len)
 {
     spi_dev_t *dev = get_spi_dev(host);
-    spi_flash_ll_set_usr_address(dev, address, spi_flash_ll_get_addr_bitlen(dev));
+    int bitlen = spi_flash_ll_get_addr_bitlen(dev);
+    spi_flash_ll_set_usr_address(dev, address << (bitlen - 24), bitlen);
     spi_flash_ll_set_miso_bitlen(dev, read_len * 8);
     spi_flash_ll_user_start(dev);
     host->poll_cmd_done(host);
