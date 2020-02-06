@@ -25,16 +25,15 @@ def setup(app):
     rev = get_github_rev()
 
     # links to files or folders on the GitHub
-    baseurl = 'https://github.com/espressif/esp-idf'
-    app.add_role('idf', autolink('{}/tree/{}/%s'.format(baseurl, rev)))
-    app.add_role('idf_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))
-    app.add_role('idf_raw', autolink('{}/raw/{}/%s'.format(baseurl, rev)))
-    app.add_role('component', autolink('{}/tree/{}/components/%s'.format(baseurl, rev)))
-    app.add_role('component_file', autolink('{}/blob/{}/components/%s'.format(baseurl, rev)))
-    app.add_role('component_raw', autolink('{}/raw/{}/components/%s'.format(baseurl, rev)))
-    app.add_role('example', autolink('{}/tree/{}/examples/%s'.format(baseurl, rev)))
-    app.add_role('example_file', autolink('{}/blob/{}/examples/%s'.format(baseurl, rev)))
-    app.add_role('example_raw', autolink('{}/raw/{}/examples/%s'.format(baseurl, rev)))
+    app.add_role('idf', github_link('tree', rev, '/', app.config))
+    app.add_role('idf_file', github_link('blob', rev, '/', app.config))
+    app.add_role('idf_raw', github_link('raw', rev, '/', app.config))
+    app.add_role('component', github_link('tree', rev, '/components/', app.config))
+    app.add_role('component_file', github_link('blob', rev, '/components/', app.config))
+    app.add_role('component_raw', github_link('raw', rev, '/components/', app.config))
+    app.add_role('example', github_link('tree', rev, '/examples/', app.config))
+    app.add_role('example_file', github_link('blob', rev, '/examples/', app.config))
+    app.add_role('example_raw', github_link('raw', rev, '/examples/', app.config))
 
     # link to the current documentation file in specific language version
     on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
@@ -49,21 +48,72 @@ def setup(app):
 
     app.add_role('link_to_translation', crosslink('%s../../%s/{}/%s.html'.format(tag_rev)))
 
-    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
 
 
-def autolink(pattern):
+def github_link(link_type, rev, root_path, app_config):
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
-        m = re.search('(.*)\s*<(.*)>', text)  # noqa: W605 - regular expression
+        msgs = []
+
+        def warning(msg):
+            system_msg = inliner.reporter.warning(msg)
+            system_msg.line = lineno
+            msgs.append(system_msg)
+
+        BASE_URL = 'https://github.com/espressif/esp-idf'
+
+        # search for a named link (:label<path>) with descriptive label vs a plain URL
+        m = re.search(r'(.*)\s*<(.*)>', text)
         if m:
             link_text = m.group(1)
             link = m.group(2)
         else:
             link_text = text
             link = text
-        url = pattern % (link,)
+
+        rel_path = root_path + link
+        abs_path = os.path.join(app_config.idf_path, rel_path.lstrip('/'))
+        line_no = None
+        url = BASE_URL + link_type + rel_path
+
+        if '#L' in abs_path:
+            # drop any URL line number from the file, line numbers take the form #Lnnn or #Lnnn-Lnnn for a range
+            abs_path, line_no = abs_path.split('#L')
+            line_no = re.search(r'^(\d+)(?:-L(\d+))?', line_no)
+            if line_no is None:
+                warning("Line number anchor in URL %s doesn't seem to be valid" % link)
+            else:
+                line_no = tuple(int(l) for l in line_no.groups() if l)  # tuple of (nnn,) or (nnn, NNN) for ranges
+        elif '#' in abs_path:  # drop any other anchor from the line
+            abs_path = abs_path.split('#')[0]
+            warning("URL %s seems to contain an unusable anchor after the #, only line numbers are supported" % link)
+
+        is_dir = (link_type == 'tree')
+
+        if not os.path.exists(abs_path):
+            warning("IDF path %s does not appear to exist (absolute path %s)" % (rel_path, abs_path))
+        elif is_dir and not os.path.isdir(abs_path):
+            # note these "wrong type" warnings are not strictly needed  as GitHub will apply a redirect,
+            # but the may become important in the future (plus make for cleaner links)
+            warning("IDF path %s is not a directory but role :%s: is for linking to a directory, try :%s_file:" % (rel_path, name, name))
+        elif not is_dir and os.path.isdir(abs_path):
+            warning("IDF path %s is a directory but role :%s: is for linking to a file" % (rel_path, name))
+
+        # check the line number is valid
+        if line_no:
+            if is_dir:
+                warning("URL %s contains a line number anchor but role :%s: is for linking to a directory" % (rel_path, name, name))
+            elif os.path.exists(abs_path) and not os.path.isdir(abs_path):
+                with open(abs_path, "r") as f:
+                    lines = len(f.readlines())
+                if any(True for l in line_no if l > lines):
+                    warning("URL %s specifies a range larger than file (file has %d lines)" % (rel_path, lines))
+
+            if tuple(sorted(line_no)) != line_no:  # second line number comes before first one!
+                warning("URL %s specifies a backwards line number range" % rel_path)
+
         node = nodes.reference(rawtext, link_text, refuri=url, **options)
-        return [node], []
+        return [node], msgs
     return role
 
 
