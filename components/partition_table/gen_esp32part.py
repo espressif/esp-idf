@@ -160,7 +160,7 @@ class PartitionTable(list):
             subtype = SUBTYPES[int(ptype)][subtype]
         except KeyError:
             try:
-                ptype = int(ptype, 0)
+                subtype = int(subtype, 0)
             except TypeError:
                 pass
 
