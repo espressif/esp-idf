@@ -43,6 +43,9 @@ if [ -z ${CI_NODE_INDEX} ]; then
     echo "Assuming CI_NODE_INDEX=${CI_NODE_INDEX}"
 fi
 
+export EXTRA_CFLAGS="${PEDANTIC_CFLAGS:-}"
+export EXTRA_CXXFLAGS="${PEDANTIC_CXXFLAGS:-}"
+
 set -o nounset # Exit if variable not set.
 
 export REALPATH=realpath
