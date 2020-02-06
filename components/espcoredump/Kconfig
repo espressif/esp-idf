@@ -28,10 +28,8 @@ menu "Core dump"
             Select the data format for core dump.
         config ESP32_COREDUMP_DATA_FORMAT_BIN
             bool "Binary format"
-            select ESP32_ENABLE_COREDUMP
         config ESP32_COREDUMP_DATA_FORMAT_ELF
             bool "ELF format"
-            select ESP32_ENABLE_COREDUMP
     endchoice
 
     choice ESP32_COREDUMP_CHECKSUM
@@ -42,10 +40,8 @@ menu "Core dump"
             Select the integrity check for the core dump.
         config ESP32_COREDUMP_CHECKSUM_CRC32
             bool "Use CRC32 for integrity verification"
-            select ESP32_ENABLE_COREDUMP
         config ESP32_COREDUMP_CHECKSUM_SHA256
             bool "Use SHA256 for integrity verification"
-            select ESP32_ENABLE_COREDUMP
             depends on ESP32_COREDUMP_DATA_FORMAT_ELF
     endchoice
 
@@ -79,6 +75,20 @@ menu "Core dump"
             the stack of crashed task/ISR, otherwise special stack will be allocated.
             To ensure that core dump itself will not overflow task/ISR stack set this to the value above 800.
             NOTE: It eats DRAM.
+
+    choice ESP32_CORE_DUMP_DECODE
+        prompt "Handling of UART core dumps in IDF Monitor"
+        depends on ESP32_ENABLE_COREDUMP_TO_UART
+        config ESP32_CORE_DUMP_DECODE_INFO
+            bool "Decode and show summary (info_corefile)"
+        config ESP32_CORE_DUMP_DECODE_DISABLE
+            bool "Don't decode"
+    endchoice
+
+    config ESP32_CORE_DUMP_DECODE
+        string
+        default "disable" if ESP32_CORE_DUMP_DECODE_DISABLE
+        default "info" if ESP32_CORE_DUMP_DECODE_INFO
 
 endmenu
 

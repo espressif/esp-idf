@@ -134,7 +134,12 @@ simple_monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 
 PRINT_FILTER ?=
 
-MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_SDK_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)"
+MONITOR_CORE_DUMP_DECODE ?=
+ifdef CONFIG_ESP32_CORE_DUMP_DECODE
+MONITOR_CORE_DUMP_DECODE = --decode-coredumps $(CONFIG_ESP32_CORE_DUMP_DECODE)
+endif
+
+MONITOR_OPTS := --baud $(MONITORBAUD) --port $(ESPPORT) --toolchain-prefix $(CONFIG_SDK_TOOLPREFIX) --make "$(MAKE)" --print_filter "$(PRINT_FILTER)" $(MONITOR_CORE_DUMP_DECODE)
 
 monitor: $(call prereq_if_explicit,%flash) | check_python_dependencies
 	$(summary) MONITOR
