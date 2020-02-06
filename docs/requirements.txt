@@ -8,5 +8,6 @@ sphinxcontrib-blockdiag>=1.5.5, <2.0.0
 sphinxcontrib-seqdiag>=0.8.5, <2.0.0
 sphinxcontrib-actdiag>=0.8.5, <2.0.0
 sphinxcontrib-nwdiag>=0.9.5, <2.0.0
+nwdiag==1.0.4
 recommonmark
 future>=0.16.0 # for ../tools/gen_esp_err_to_name.py
