@@ -15,17 +15,10 @@
 #ifndef _ESP_NETIF_DEFAULTS_H
 #define _ESP_NETIF_DEFAULTS_H
 
+#include "esp_compiler.h"
+
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-//
-// Designated initializers work differently under C++ and C compiler
-//
-#ifdef __cplusplus
-#define _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(item) .item = { },
-#else
-#define _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(item)
 #endif
 
 //
@@ -35,8 +28,8 @@ extern "C" {
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_STA() \
     {   \
         .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(mac) \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(ip_info) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_STA_GOT_IP, \
         .lost_ip_event = IP_EVENT_STA_LOST_IP, \
         .if_key = "WIFI_STA_DEF", \
@@ -47,7 +40,7 @@ extern "C" {
 #define ESP_NETIF_INHERENT_DEFAULT_WIFI_AP() \
     {   \
         .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP), \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
         .ip_info = &_g_esp_netif_soft_ap_ip, \
         .get_ip_event = 0, \
         .lost_ip_event = 0, \
@@ -59,8 +52,8 @@ extern "C" {
 #define ESP_NETIF_INHERENT_DEFAULT_ETH() \
     {   \
         .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(mac) \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(ip_info) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_ETH_GOT_IP, \
         .lost_ip_event = 0, \
         .if_key = "ETH_DEF", \
@@ -71,8 +64,8 @@ extern "C" {
 #define ESP_NETIF_INHERENT_DEFAULT_PPP() \
     {   \
         .flags = ESP_NETIF_FLAG_IS_PPP, \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(mac) \
-        _ESP_NETIF_EMPTY_AGGREGATE_MEMBER(ip_info) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
         .get_ip_event = IP_EVENT_PPP_GOT_IP,    \
         .lost_ip_event = IP_EVENT_PPP_LOST_IP,  \
         .if_key = "PPP_DEF",    \
@@ -159,7 +152,7 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
 //
 // Include default common configs inherent to esp-netif
 //  - These inherent configs are defined in esp_netif_defaults.c and describe
-//    common behavioural patters for common interfaces such as STA, AP, ETH
+//    common behavioural patterns for common interfaces such as STA, AP, ETH, PPP
 //
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
