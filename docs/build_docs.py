@@ -11,6 +11,7 @@
 #
 from __future__ import print_function
 import argparse
+import locale
 import math
 import multiprocessing
 import os
@@ -49,6 +50,14 @@ def main():
                                ])
     except subprocess.CalledProcessError:
         raise SystemExit(2)  # stdout will already have these errors
+
+    # This is not the only way to make sure that all files opened by Python are treated as UTF-8, but the other way is passing encoding='utf-8' to all open()
+    # functions and this way makes Python 2 compatibility really tough if there is any code that assumes text files contain strings (kconfiglib assumes this).
+    # The reason for that is that you need to import io.open() to support the encoding argument on Python 2, and this function always uses Py2's unicode
+    # type not the str type.
+    if 'UTF-8' not in locale.getlocale():
+        raise RuntimeError("build_docs.py requires the default locale's encoding to be UTF-8. " +
+                           "Setting environment variable LC_ALL=C.UTF-8 when running build_docs.py may be enough to fix this.")
 
     parser = argparse.ArgumentParser(description='build_docs.py: Build IDF docs', prog='build_docs.py')
 
