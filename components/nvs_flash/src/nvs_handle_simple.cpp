@@ -56,14 +56,14 @@ esp_err_t NVSHandleSimple::get_string(const char *key, char* out_str, size_t len
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
-    return ESP_FAIL;
+    return mStoragePtr->readItem(mNsIndex, nvs::ItemType::SZ, key, out_str, len);
 }
 
 esp_err_t NVSHandleSimple::get_blob(const char *key, void* out_blob, size_t len)
 {
     if (!valid) return ESP_ERR_NVS_INVALID_HANDLE;
 
-    return ESP_FAIL;
+    return mStoragePtr->readItem(mNsIndex, nvs::ItemType::BLOB, key, out_blob, len);
 }
 
 esp_err_t NVSHandleSimple::get_item_size(ItemType datatype, const char *key, size_t &size)
