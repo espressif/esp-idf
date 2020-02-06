@@ -798,3 +798,13 @@ TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", 
     printf("alarm_reg = 0x%x, count_reg 0x%x\n", alarm_reg, count_reg);
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
+
+TEST_CASE("Test esp_timer_impl_set_alarm when the counter is near an overflow value", "[esp_timer]")
+{
+    for (int i = 0; i < 1024; ++i) {
+        uint32_t count_reg = 0xeffffe00 + i;
+        REG_WRITE(FRC_TIMER_LOAD_REG(1), count_reg);
+        printf("%d) count_reg = 0x%x\n", i, count_reg);
+        esp_timer_impl_set_alarm(1); // timestamp is expired
+    }
+}
