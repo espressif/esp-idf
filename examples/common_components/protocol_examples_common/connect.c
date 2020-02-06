@@ -73,6 +73,8 @@ static void on_got_ipv6(void *arg, esp_event_base_t event_base,
     ESP_LOGI(TAG, "Got IPv6 event!");
     memcpy(&s_ipv6_addr, &event->ip6_info.ip, sizeof(s_ipv6_addr));
     xEventGroupSetBits(s_connect_event_group, GOT_IPV6_BIT);
+    ESP_LOGI(TAG, "IPv6 address: " IPV6STR ", index: %d, type: %d", IPV62STR(s_ipv6_addr), event->ip_index, esp_ip6_get_addr_type(&s_ipv6_addr));
+
 }
 
 #endif // CONFIG_EXAMPLE_CONNECT_IPV6

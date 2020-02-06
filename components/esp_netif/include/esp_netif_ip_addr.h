@@ -99,6 +99,24 @@ typedef struct _ip_addr {
     } u_addr;
     uint8_t type;
 } esp_ip_addr_t;
+ 
+typedef enum {
+    ESP_IP6_ADDR_IS_UNKNOWN,
+    ESP_IP6_ADDR_IS_GLOBAL,
+    ESP_IP6_ADDR_IS_LINK_LOCAL,
+    ESP_IP6_ADDR_IS_SITE_LOCAL,
+    ESP_IP6_ADDR_IS_UNIQUE_LOCAL,
+    ESP_IP6_ADDR_IS_IPV4_MAPPED_IPV6
+} esp_ip6_addr_type_t;
+
+/**
+ * @brief  Get the IPv6 address type
+ *
+ * @param[in]  ip6_addr IPv6 type
+ *
+ * @return IPv6 type in form of enum esp_ip6_addr_type_t
+ */
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr);
 
 #ifdef __cplusplus
 }
