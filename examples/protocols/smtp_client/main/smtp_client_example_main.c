@@ -497,7 +497,7 @@ exit:
     vTaskDelete(NULL);
 }
 
-void app_main()
+void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
