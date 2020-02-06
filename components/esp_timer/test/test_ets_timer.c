@@ -3,11 +3,15 @@
 #include <time.h>
 #include <sys/time.h>
 #include "unity.h"
-#include "esp32/rom/ets_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_spi_flash.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
+#endif
 
 TEST_CASE("ets_timer produces correct delay", "[ets_timer]")
 {

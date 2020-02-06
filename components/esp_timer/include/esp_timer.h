@@ -226,7 +226,6 @@ int64_t esp_timer_get_next_alarm(void);
  */
 esp_err_t esp_timer_dump(FILE* stream);
 
-
 #ifdef __cplusplus
 }
 #endif

@@ -7,4 +7,4 @@ idf_component_register(SRCS "src/httpd_main.c"
                     INCLUDE_DIRS "include"
                     PRIV_INCLUDE_DIRS "src/port/esp32" "src/util"
                     REQUIRES nghttp # for http_parser.h
-                    PRIV_REQUIRES lwip) 
+                    PRIV_REQUIRES lwip esp_timer) 

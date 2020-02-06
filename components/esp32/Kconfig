@@ -454,8 +454,7 @@ menu "ESP32-specific"
             When brownout reset occurs, reduce PHY TX power to keep the code running
 
             # Note about the use of "FRC1" name: currently FRC1 timer is not used for
-            # high resolution timekeeping anymore. Instead the esp_timer API, implemented
-            # using FRC2 timer, is used.
+            # high resolution timekeeping anymore. Instead the esp_timer API is used.
             # FRC1 name in the option name is kept for compatibility.
     choice ESP32_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
@@ -732,7 +731,7 @@ menu "Power Management"
 
     config PM_USE_RTC_TIMER_REF
         bool "Use RTC timer to prevent time drift (EXPERIMENTAL)"
-        depends on PM_ENABLE && (ESP32_TIME_SYSCALL_USE_RTC || ESP32_TIME_SYSCALL_USE_RTC_FRC1)
+        depends on PM_ENABLE && ESP_TIMER_IMPL_FRC2 && (ESP32_TIME_SYSCALL_USE_RTC || ESP32_TIME_SYSCALL_USE_RTC_FRC1)
         default n
         help
             When APB clock frequency changes, high-resolution timer (esp_timer)

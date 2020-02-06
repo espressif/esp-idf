@@ -59,6 +59,7 @@ typedef enum {
     PERIPH_WIFI_BT_COMMON_MODULE,
     PERIPH_BT_BASEBAND_MODULE,
     PERIPH_BT_LC_MODULE,
+    PERIPH_SYSTIMER_MODULE,
 } periph_module_t;
 
 typedef enum {

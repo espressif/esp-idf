@@ -90,7 +90,7 @@ set(srcs "port/os_xtensa.c"
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include port/include include/esp_supplicant
                     PRIV_INCLUDE_DIRS src
-                    PRIV_REQUIRES mbedtls)
+                    PRIV_REQUIRES mbedtls esp_timer)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE

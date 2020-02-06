@@ -31,7 +31,6 @@
 #include "freertos/xtensa_api.h"
 #include "sdkconfig.h"
 #include "esp_timer.h"
-#include "esp_private/esp_timer_impl.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32S2

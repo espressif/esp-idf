@@ -18,16 +18,16 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
-#include "esp_timer.h"
 #include "esp_task.h"
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
+#include "esp_timer.h"
+#include "esp_timer_impl.h"
 #include "sdkconfig.h"
 
-#include "esp_private/esp_timer_impl.h"
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1

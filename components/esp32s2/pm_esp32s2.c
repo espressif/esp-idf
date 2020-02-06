@@ -33,7 +33,7 @@
 
 #include "esp_private/pm_impl.h"
 #include "esp_private/pm_trace.h"
-#include "esp_private/esp_timer_impl.h"
+#include "esp_private/esp_timer_private.h"
 #include "esp32s2/pm.h"
 
 /* CCOMPARE update timeout, in CPU cycles. Any value above ~600 cycles will work
@@ -306,7 +306,7 @@ static void IRAM_ATTR on_freq_update(uint32_t old_ticks_per_us, uint32_t ticks_p
     uint32_t apb_ticks_per_us = MIN(ticks_per_us, 80);
     /* Update APB frequency value used by the timer */
     if (old_apb_ticks_per_us != apb_ticks_per_us) {
-        esp_timer_impl_update_apb_freq(apb_ticks_per_us);
+        esp_timer_private_update_apb_freq(apb_ticks_per_us);
     }
 
     /* Calculate new tick divisor */

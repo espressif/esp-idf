@@ -13,7 +13,6 @@ if(IDF_TARGET STREQUAL "esp32s2")
 
     add_dependencies(${COMPONENT_LIB} esp32s2_test_logo)
 
-    idf_build_set_property(COMPILE_DEFINITIONS "-DESP_TIMER_DYNAMIC_OVERFLOW_VAL" APPEND)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_test_dport_xt_highint5")
 endif()
 
