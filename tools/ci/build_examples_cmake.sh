@@ -44,6 +44,9 @@ if [ -z ${CI_NODE_INDEX} ]; then
 fi
 
 
+export EXTRA_CFLAGS="${PEDANTIC_CFLAGS:-}"
+export EXTRA_CXXFLAGS="${PEDANTIC_CXXFLAGS:-}"
+
 set -o nounset # Exit if variable not set.
 
 export REALPATH=realpath
