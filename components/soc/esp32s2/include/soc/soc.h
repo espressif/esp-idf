@@ -72,6 +72,7 @@
 #define DR_REG_TIMERGROUP0_BASE                 0x3f41F000
 #define DR_REG_TIMERGROUP1_BASE                 0x3f420000
 #define DR_REG_RTC_SLOWMEM_BASE                 0x3f421000
+#define DR_REG_SYSTIMER_BASE                    0x3f423000
 #define DR_REG_SPI2_BASE                        0x3f424000
 #define DR_REG_SPI3_BASE                        0x3f425000
 #define DR_REG_SYSCON_BASE                      0x3f426000

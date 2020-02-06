@@ -1,2 +1,2 @@
-TEST_COMPONENTS=freertos esp32s2 driver heap pthread soc spi_flash vfs
+TEST_COMPONENTS=freertos esp32s2 esp_timer driver heap pthread soc spi_flash vfs
 CONFIG_IDF_TARGET="esp32s2"

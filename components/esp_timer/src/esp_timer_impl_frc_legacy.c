@@ -13,15 +13,15 @@
 // limitations under the License.
 
 #include "sys/param.h"
-#include "esp_err.h"
+#include "esp_timer_impl.h"
 #include "esp_timer.h"
+#include "esp_err.h"
 #include "esp_system.h"
 #include "esp_task.h"
 #include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_log.h"
 #include "esp32/clk.h"
-#include "esp_private/esp_timer_impl.h"
 #include "soc/frc_timer_reg.h"
 #include "soc/rtc.h"
 #include "freertos/FreeRTOS.h"
@@ -29,7 +29,7 @@
 #include "freertos/semphr.h"
 
 /**
- * @file esp_timer_esp32.c
+ * @file esp_timer_frc.c
  * @brief Implementation of chip-specific part of esp_timer
  *
  * This implementation uses FRC2 (legacy) timer of the ESP32. This timer is
@@ -415,3 +415,18 @@ void esp_timer_impl_set_overflow_val(uint32_t overflow_val)
     esp_timer_impl_update_apb_freq(esp_clk_apb_freq() / 1000000);
 }
 #endif // ESP_TIMER_DYNAMIC_OVERFLOW_VAL
+
+uint64_t esp_timer_impl_get_counter_reg(void)
+{
+    return (uint64_t)REG_READ(FRC_TIMER_COUNT_REG(1));
+}
+
+uint64_t esp_timer_impl_get_alarm_reg(void)
+{
+    return (uint64_t)REG_READ(FRC_TIMER_ALARM_REG(1));
+}
+
+void esp_timer_private_update_apb_freq(uint32_t apb_ticks_per_us) __attribute__((alias("esp_timer_impl_update_apb_freq")));
+void esp_timer_private_advance(int64_t time_us) __attribute__((alias("esp_timer_impl_advance")));
+void esp_timer_private_lock(void) __attribute__((alias("esp_timer_impl_lock")));
+void esp_timer_private_unlock(void) __attribute__((alias("esp_timer_impl_unlock")));

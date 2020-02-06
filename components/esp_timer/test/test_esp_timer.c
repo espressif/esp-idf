@@ -3,21 +3,23 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/param.h>
+#include "esp_timer.h"
+#include "esp_timer_impl.h"
 #include "unity.h"
 #include "soc/frc_timer_reg.h"
-#include "esp_timer.h"
+#include "soc/timer_group_reg.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "test_utils.h"
-#include "esp_private/esp_timer_impl.h"
 #include "esp_freertos_hooks.h"
 
 #ifdef CONFIG_ESP_TIMER_PROFILING
 #define WITH_PROFILING 1
 #endif
 
+#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
 extern uint32_t esp_timer_impl_get_overflow_val(void);
 extern void esp_timer_impl_set_overflow_val(uint32_t overflow_val);
 
@@ -37,6 +39,17 @@ static void teardown_overflow(void)
 {
     esp_timer_impl_set_overflow_val(s_old_overflow_val);
 }
+#else
+
+static void setup_overflow(void)
+{
+}
+
+static void teardown_overflow(void)
+{
+}
+
+#endif // CONFIG_ESP_TIMER_IMPL_FRC2
 
 TEST_CASE("esp_timer orders timers correctly", "[esp_timer]")
 {
@@ -595,15 +608,13 @@ TEST_CASE("Can delete timer from a separate task, triggered from callback", "[es
 
 TEST_CASE("esp_timer_impl_advance moves time base correctly", "[esp_timer]")
 {
-    ref_clock_init();
     int64_t t0 = esp_timer_get_time();
     const int64_t diff_us = 1000000;
     esp_timer_impl_advance(diff_us);
     int64_t t1 = esp_timer_get_time();
     int64_t t_delta = t1 - t0;
-    printf("diff_us=%lld t1-t0=%lld\n", diff_us, t_delta);
+    printf("diff_us=%lld t0=%lld t1=%lld t1-t0=%lld\n", diff_us, t0, t1, t_delta);
     TEST_ASSERT_INT_WITHIN(1000, diff_us, (int) t_delta);
-    ref_clock_deinit();
 }
 
 
@@ -821,19 +832,26 @@ TEST_CASE("esp_timer_impl_set_alarm and using start_once do not lead that the Sy
 
 TEST_CASE("Test case when esp_timer_impl_set_alarm needs set timer < now_time", "[esp_timer]")
 {
+#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
     REG_WRITE(FRC_TIMER_LOAD_REG(1), 0);
+#endif
     esp_timer_impl_advance(50331648); // 0xefffffff/80 = 50331647
 
     ets_delay_us(2);
 
     portDISABLE_INTERRUPTS();
     esp_timer_impl_set_alarm(50331647);
-    uint32_t alarm_reg = REG_READ(FRC_TIMER_ALARM_REG(1));
-    uint32_t count_reg = REG_READ(FRC_TIMER_COUNT_REG(1));
+    uint64_t alarm_reg = esp_timer_impl_get_alarm_reg();
+    uint64_t count_reg = esp_timer_impl_get_counter_reg();
     portENABLE_INTERRUPTS();
 
+#ifdef CONFIG_ESP_TIMER_IMPL_FRC2
     const uint32_t offset = 80 * 2; // s_timer_ticks_per_us
-    printf("alarm_reg = 0x%x, count_reg 0x%x\n", alarm_reg, count_reg);
+#else
+    const uint32_t offset = 2;
+#endif
+
+    printf("alarm_reg = 0x%llx, count_reg 0x%llx\n", alarm_reg, count_reg);
     TEST_ASSERT(alarm_reg <= (count_reg + offset));
 }
 

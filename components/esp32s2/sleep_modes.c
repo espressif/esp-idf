@@ -17,7 +17,7 @@
 #include <sys/param.h>
 #include "esp_attr.h"
 #include "esp_sleep.h"
-#include "esp_private/esp_timer_impl.h"
+#include "esp_private/esp_timer_private.h"
 #include "esp_log.h"
 #include "esp32s2/clk.h"
 #include "esp_newlib.h"
@@ -266,11 +266,11 @@ esp_err_t esp_light_sleep_start(void)
 {
     static portMUX_TYPE light_sleep_lock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL(&light_sleep_lock);
-    /* We will be calling esp_timer_impl_advance inside DPORT access critical
+    /* We will be calling esp_timer_private_advance inside DPORT access critical
      * section. Make sure the code on the other CPU is not holding esp_timer
      * lock, otherwise there will be deadlock.
      */
-    esp_timer_impl_lock();
+    esp_timer_private_lock();
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
     uint64_t frc_time_at_start = esp_timer_get_time();
     DPORT_STALL_OTHER_CPU_START();
@@ -331,11 +331,11 @@ esp_err_t esp_light_sleep_start(void)
      * monotonic.
      */
     if (time_diff > 0) {
-        esp_timer_impl_advance(time_diff);
+        esp_timer_private_advance(time_diff);
     }
     esp_set_time_from_rtc();
 
-    esp_timer_impl_unlock();
+    esp_timer_private_unlock();
     DPORT_STALL_OTHER_CPU_END();
     if (!wdt_was_enabled) {
         rtc_wdt_disable();

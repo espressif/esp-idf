@@ -539,7 +539,7 @@ endif()
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
                 PRIV_INCLUDE_DIRS "${priv_include_dirs}"
-                REQUIRES nvs_flash soc)
+                REQUIRES nvs_flash soc esp_timer)
 
 if(CONFIG_BT_ENABLED)
     target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-implicit-fallthrough -Wno-unused-const-variable)

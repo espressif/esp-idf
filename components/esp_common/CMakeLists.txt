@@ -9,8 +9,6 @@ else()
     set(srcs "src/brownout.c"
              "src/dbg_stubs.c"
              "src/esp_err_to_name.c"
-             "src/esp_timer.c"
-             "src/ets_timer_legacy.c"
              "src/freertos_hooks.c"
              "src/mac_addr.c"
              "src/pm_locks.c"
@@ -24,7 +22,7 @@ else()
 
     idf_component_register(SRCS "${srcs}"
                            INCLUDE_DIRS include
-                           REQUIRES ${target}
+                           REQUIRES ${target} esp_timer
                            PRIV_REQUIRES soc)
 
     set_source_files_properties(

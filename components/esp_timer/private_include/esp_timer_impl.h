@@ -15,7 +15,7 @@
 #pragma once
 
 /**
- * @file esp_private/esp_timer_impl.h
+ * @file private_include/esp_timer_impl.h
  *
  * @brief Interface between common and platform-specific parts of esp_timer.
  *
@@ -99,3 +99,21 @@ void esp_timer_impl_lock(void);
  * @brief counterpart of esp_timer_impl_lock
  */
 void esp_timer_impl_unlock(void);
+
+/**
+ * @brief Get counting register
+ *
+ * Bit depth dependents on implementation and can be 32-bit or 64-bit.
+ *
+ * @return the value of the counting register
+ */
+uint64_t esp_timer_impl_get_counter_reg(void);
+
+/**
+ * @brief Get alarm register
+ *
+ * Bit depth dependents on implementation and can be 32-bit or 64-bit.
+ *
+ * @return the value of the alarm register
+ */
+uint64_t esp_timer_impl_get_alarm_reg(void);

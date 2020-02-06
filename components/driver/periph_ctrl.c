@@ -69,6 +69,8 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
 #elif CONFIG_IDF_TARGET_ESP32S2
         case PERIPH_USB_MODULE:
             return DPORT_USB_CLK_EN;
+        case PERIPH_SYSTIMER_MODULE:
+            return DPORT_SYSTIMER_CLK_EN;
 #endif
         case PERIPH_I2C0_MODULE:
             return DPORT_I2C_EXT0_CLK_EN;
@@ -171,6 +173,8 @@ static uint32_t get_rst_en_mask(periph_module_t periph, bool enable)
 #elif CONFIG_IDF_TARGET_ESP32S2
         case PERIPH_USB_MODULE:
             return DPORT_USB_RST;
+        case PERIPH_SYSTIMER_MODULE:
+            return DPORT_SYSTIMER_RST;
 #endif
         case PERIPH_I2C0_MODULE:
             return DPORT_I2C_EXT0_RST;

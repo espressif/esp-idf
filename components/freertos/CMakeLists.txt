@@ -40,7 +40,7 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS ${include_dirs}
                     PRIV_INCLUDE_DIRS  ${private_include_dirs} 
                     LDFRAGMENTS linker.lf
-                    REQUIRES app_trace
+                    REQUIRES app_trace esp_timer
                     PRIV_REQUIRES soc)
     
 idf_component_get_property(COMPONENT_DIR freertos COMPONENT_DIR)
