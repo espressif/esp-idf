@@ -169,7 +169,8 @@ esp_err_t esp_eth_driver_install(const esp_eth_config_t *config, esp_eth_handle_
     esp_eth_mac_t *mac = config->mac;
     esp_eth_phy_t *phy = config->phy;
     ETH_CHECK(mac && phy, "can't set eth->mac or eth->phy to null", err, ESP_ERR_INVALID_ARG);
-    esp_eth_driver_t *eth_driver = calloc(1, sizeof(esp_eth_driver_t));
+    // eth_driver contains an atomic variable, which should not be put in PSRAM
+    esp_eth_driver_t *eth_driver = heap_caps_calloc(1, sizeof(esp_eth_driver_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ETH_CHECK(eth_driver, "request memory for eth_driver failed", err, ESP_ERR_NO_MEM);
     atomic_init(&eth_driver->ref_count, 1);
     eth_driver->mac = mac;
@@ -275,6 +276,8 @@ esp_err_t esp_eth_transmit(esp_eth_handle_t hdl, uint8_t *buf, uint32_t length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
+    ETH_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
     esp_eth_mac_t *mac = eth_driver->mac;
     return mac->transmit(mac, buf, length);
@@ -286,6 +289,8 @@ esp_err_t esp_eth_receive(esp_eth_handle_t hdl, uint8_t *buf, uint32_t *length)
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
+    ETH_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
+    ETH_CHECK(*length > 60, "length can't be less than 60", err, ESP_ERR_INVALID_ARG);
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
     esp_eth_mac_t *mac = eth_driver->mac;
     return mac->receive(mac, buf, length);

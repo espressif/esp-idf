@@ -214,12 +214,8 @@ static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
 {
     esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    MAC_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
-    MAC_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
-    /* Check if the descriptor is owned by the Ethernet DMA (when 1) or CPU (when 0) */
-    MAC_CHECK(emac_hal_get_tx_desc_owner(&emac->hal) == EMAC_DMADESC_OWNER_CPU,
-              "CPU doesn't own the Tx Descriptor", err, ESP_ERR_INVALID_STATE);
-    emac_hal_transmit_frame(&emac->hal, buf, length);
+    uint32_t sent_len = emac_hal_transmit_frame(&emac->hal, buf, length);
+    MAC_CHECK(sent_len == length, "insufficient TX buffer size", err, ESP_ERR_INVALID_SIZE);
     return ESP_OK;
 err:
     return ret;
@@ -228,20 +224,17 @@ err:
 static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
 {
     esp_err_t ret = ESP_OK;
+    uint32_t expected_len = *length;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
-    uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, *length, &emac->frames_remain);
+    uint32_t receive_len = emac_hal_receive_frame(&emac->hal, buf, expected_len, &emac->frames_remain);
     /* we need to check the return value in case the buffer size is not enough */
-    if (*length < receive_len) {
-        ESP_LOGE(TAG, "buffer size too small");
-        /* tell upper layer the size we need */
-        *length = receive_len;
-        ret = ESP_ERR_INVALID_SIZE;
-        goto err;
-    }
+    ESP_LOGD(TAG, "receive len= %d", receive_len);
+    MAC_CHECK(expected_len >= receive_len, "received buffer longer than expected", err, ESP_ERR_INVALID_SIZE);
     *length = receive_len;
     return ESP_OK;
 err:
+    *length = expected_len;
     return ret;
 }
 
@@ -255,8 +248,10 @@ static void emac_esp32_rx_task(void *arg)
         ulTaskNotifyTake(pdFALSE, portMAX_DELAY);
         do {
             length = ETH_MAX_PACKET_SIZE;
-            buffer = (uint8_t *)malloc(length);
-            if (emac_esp32_receive(&emac->parent, buffer, &length) == ESP_OK) {
+            buffer = malloc(length);
+            if (!buffer) {
+                ESP_LOGE(TAG, "no mem for receive buffer");
+            } else if (emac_esp32_receive(&emac->parent, buffer, &length) == ESP_OK) {
                 /* pass the buffer to stack (e.g. TCP/IP layer) */
                 if (length) {
                     emac->eth->stack_input(emac->eth, buffer, length);
@@ -291,9 +286,9 @@ static esp_err_t emac_esp32_init(esp_eth_mac_t *mac)
     esp_eth_mediator_t *eth = emac->eth;
     /* enable peripheral clock */
     periph_module_enable(PERIPH_EMAC_MODULE);
-    /* enable clock, config gpio, etc */
+    /* init clock, config gpio, etc */
     emac_hal_lowlevel_init(&emac->hal);
-    /* init gpio used by gpio */
+    /* init gpio used by smi interface */
     emac_esp32_init_smi_gpio(emac);
     MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
     /* software reset */
@@ -363,6 +358,7 @@ static esp_err_t emac_esp32_del(esp_eth_mac_t *mac)
     return ESP_OK;
 }
 
+// To achieve a better performance, we put the ISR always in IRAM
 IRAM_ATTR void emac_esp32_isr_handler(void *args)
 {
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
@@ -376,11 +372,16 @@ IRAM_ATTR void emac_esp32_isr_handler(void *args)
 
 esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
 {
+    esp_err_t ret_code = ESP_OK;
     esp_eth_mac_t *ret = NULL;
     void *descriptors = NULL;
     emac_esp32_t *emac = NULL;
     MAC_CHECK(config, "can't set mac config to null", err, NULL);
-    emac = calloc(1, sizeof(emac_esp32_t));
+    if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
+        emac = heap_caps_calloc(1, sizeof(emac_esp32_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    } else {
+        emac = calloc(1, sizeof(emac_esp32_t));
+    }
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
     /* alloc memory for ethernet dma descriptor */
     uint32_t desc_size = CONFIG_ETH_DMA_RX_BUFFER_NUM * sizeof(eth_dma_rx_descriptor_t) +
@@ -421,9 +422,14 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_mac_config_t *config)
     emac->parent.transmit = emac_esp32_transmit;
     emac->parent.receive = emac_esp32_receive;
     /* Interrupt configuration */
-    MAC_CHECK(esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM, emac_esp32_isr_handler,
-                             &emac->hal, &(emac->intr_hdl)) == ESP_OK,
-              "alloc emac interrupt failed", err, NULL);
+    if (config->flags & ETH_MAC_FLAG_WORK_WITH_CACHE_DISABLE) {
+        ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, ESP_INTR_FLAG_IRAM,
+                                  emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
+    } else {
+        ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, 0,
+                                  emac_esp32_isr_handler, &emac->hal, &(emac->intr_hdl));
+    }
+    MAC_CHECK(ret_code == ESP_OK, "alloc emac interrupt failed", err, NULL);
 #ifdef CONFIG_PM_ENABLE
     MAC_CHECK(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock) == ESP_OK,
               "create pm lock failed", err, NULL);
