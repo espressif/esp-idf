@@ -5,6 +5,9 @@
 #if __has_include("soc/soc.h")
 #include "soc/soc.h"
 #endif
+#if __has_include("esp_ds.h")
+#include "esp_ds.h"
+#endif
 #if __has_include("esp_efuse.h")
 #include "esp_efuse.h"
 #endif
@@ -676,6 +679,23 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   endif
 #   ifdef      ESP_ERR_HTTPD_TASK
     ERR_TBL_IT(ESP_ERR_HTTPD_TASK),                             /* 45064 0xb008 Failed to launch server task/thread */
+#   endif
+    // components/esp32s2/include/esp_ds.h
+#   ifdef      ESP_ERR_HW_CRYPTO_DS_BASE
+    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_BASE),                      /* 49152 0xc000 Starting number of HW cryptography
+                                                                                module error codes */
+#   endif
+#   ifdef      ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL
+    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_HMAC_FAIL),                 /* 49153 0xc001 HMAC peripheral problem */
+#   endif
+#   ifdef      ESP_ERR_HW_CRYPTO_DS_INVALID_KEY
+    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_INVALID_KEY),               /* 49154 0xc002 */
+#   endif
+#   ifdef      ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST
+    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_INVALID_DIGEST),            /* 49156 0xc004 */
+#   endif
+#   ifdef      ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING
+    ERR_TBL_IT(ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING),           /* 49157 0xc005 */
 #   endif
 };
 #endif //CONFIG_ESP_ERR_TO_NAME_LOOKUP
