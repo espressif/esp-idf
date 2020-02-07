@@ -308,6 +308,12 @@ test_app_test_001:
     - ESP32
     - test_jtag_arm
 
+test_app_test_002:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - Example_WIFI
+
 example_test_011:
   extends: .example_debug_template
   tags:

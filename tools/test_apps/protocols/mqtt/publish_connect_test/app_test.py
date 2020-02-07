@@ -130,7 +130,7 @@ class TlsServer:
             self.shutdown.set()
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_custom_test(env_tag="Example_WIFI", group="test-apps")
 def test_examples_protocol_mqtt_publish_connect(env, extra_data):
     """
     steps:
@@ -138,7 +138,7 @@ def test_examples_protocol_mqtt_publish_connect(env, extra_data):
       2. connect to uri specified in the config
       3. send and receive data
     """
-    dut1 = env.get_dut("mqtt_publish_connect_test", "examples/protocols/mqtt/publish_connect_test", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut("mqtt_publish_connect_test", "tools/test_apps/protocols/mqtt/publish_connect_test", dut_class=ttfw_idf.ESP32DUT)
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_publish_connect_test.bin")
     bin_size = os.path.getsize(binary_file)
