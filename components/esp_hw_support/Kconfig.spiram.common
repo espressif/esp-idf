@@ -101,3 +101,11 @@ config SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         linker fragment scheme `extram_bss`.
 
         Note that the variables placed in SPIRAM using EXT_RAM_ATTR will be zero initialized.
+
+config SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+    bool "Enable placement of noinit segments in external memory"
+    default n
+    depends on SPIRAM
+    help
+        If enabled, noinit variables can be placed in PSRAM using EXT_RAM_NOINIT_ATTR.
+        If disabled, EXT_RAM_NOINIT_ATTR will act like __NOINIT_ATTR.
