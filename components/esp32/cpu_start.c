@@ -100,6 +100,10 @@ extern int _rtc_bss_end;
 extern int _ext_ram_bss_start;
 extern int _ext_ram_bss_end;
 #endif
+#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+extern int _ext_ram_noinit_start;
+extern int _ext_ram_noinit_end;
+#endif
 extern int _init_start;
 extern void (*__init_array_start)(void);
 extern void (*__init_array_end)(void);
@@ -238,7 +242,11 @@ void IRAM_ATTR call_start_cpu0(void)
 
 #if CONFIG_SPIRAM_MEMTEST
     if (s_spiram_okay) {
-        bool ext_ram_ok=esp_spiram_test();
+#if CONFIG_SPIRAM_ALLOW_NOINIT_EXTERNAL_MEMORY
+        bool ext_ram_ok=esp_spiram_test(&_ext_ram_noinit_start, &_ext_ram_noinit_end);
+#else
+        bool ext_ram_ok=esp_spiram_test(0, 0);
+#endif
         if (!ext_ram_ok) {
             ESP_EARLY_LOGE(TAG, "External RAM failed memory test!");
             abort();
