@@ -527,7 +527,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 3.2 Why is the Wi-Fi throughput so low when Wi-Fi and ESP-BLE-MESH coexist?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The `ESP32-DevKitC <../../hw-reference/get-started-devkitc>`_ board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
+    The `ESP32-DevKitC <../../hw-reference/esp32/get-started-devkitc>`_ board without PSRAM can run properly but the throughput of it is low since it has no PSRAM. When Bluetooth and Wi-Fi coexist, the throughput of ESP32-DevKitC with PSRAM can be stabilized to more than 1Mbps.
 
     And some configurations in menuconfig shall be enabled to support PSRAM.
 
@@ -647,8 +647,8 @@ You can find meaning of errors or warnings when they appear at the bottom of ESP
 
     The examples use :cpp:func:`ESP_LOG_BUFFER_HEX` to print the message context while the ESP-BLE-MESH protocol stack uses :cpp:func:`bt_hex`.
 
-7.2 Which API can be used to restart ESP32?
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+7.2 Which API can be used to restart {IDF_TARGET_NAME}?
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     The API :cpp:func:`esp_restart`.
 

@@ -1,29 +1,38 @@
 UART
 ====
 
+{IDF_TARGET_UART_NUM:default = "UART1", esp32 = "UART2", esp32s2 = "UART1"}
+
 Overview
 --------
 
 A Universal Asynchronous Receiver/Transmitter (UART) is a hardware feature that handles communication (i.e., timing requirements and data framing) using widely-adapted asynchronous serial communication interfaces, such as RS232, RS422, RS485. A UART provides a widely adopted and cheap method to realize full-duplex or half-duplex data exchange among different devices.
 
-The ESP32 chip has three UART controllers (UART0, UART1, and UART2) that feature an identical set of registers for ease of programming and flexibility. Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association protocols (IrDA).
+.. only:: esp32
 
+    The ESP32 chip has three UART controllers (UART0, UART1, and UART2) that feature an identical set of registers for ease of programming and flexibility. 
+
+.. only:: esp32s2
+
+    The ESP32-S2 chip has two UART controllers (UART0 and UART1) that feature an identical set of registers for ease of programming and flexibility. 
+
+Each UART controller is independently configurable with parameters such as baud rate, data bit length, bit ordering, number of stop bits, parity bit etc. All the controllers are compatible with UART-enabled devices from various manufacturers and can also support Infrared Data Association protocols (IrDA).
 
 Functional Overview
 -------------------
 
-The following overview describes how to establish communication between an ESP32 and other UART devices using the functions and data types of the UART driver. The overview reflects a typical programming workflow and is broken down into the sections provided below:
+The following overview describes how to establish communication between an {IDF_TARGET_NAME} and other UART devices using the functions and data types of the UART driver. The overview reflects a typical programming workflow and is broken down into the sections provided below:
 
 1. :ref:`uart-api-setting-communication-parameters` - Setting baud rate, data bits, stop bits, etc.
 2. :ref:`uart-api-setting-communication-pins` - Assigning pins for connection to a device.
-3. :ref:`uart-api-driver-installation` - Allocating ESP32's resources for the UART driver.
+3. :ref:`uart-api-driver-installation` - Allocating {IDF_TARGET_NAME}'s resources for the UART driver.
 4. :ref:`uart-api-running-uart-communication` - Sending / receiving data
 5. :ref:`uart-api-using-interrupts` - Triggering interrupts on specific communication events
 6. :ref:`uart-api-deleting-driver` - Freeing allocated resources if a UART communication is no longer required
 
 Steps 1 to 3 comprise the configuration stage. Step 4 is where the UART starts operating. Steps 5 and 6 are optional.
 
-The UART driver's functions identify each of the three UART controllers using :cpp:type:`uart_port_t`. This identification is needed for all the following function calls.
+The UART driver's functions identify each of the UART controllers using :cpp:type:`uart_port_t`. This identification is needed for all the following function calls.
 
 
 .. _uart-api-setting-communication-parameters:
@@ -41,7 +50,7 @@ Call the function :cpp:func:`uart_param_config` and pass to it a :cpp:type:`uart
 
 .. code-block:: c
 
-    const int uart_num = UART_NUM_2;
+    const int uart_num = {IDF_TARGET_UART_NUM};
     uart_config_t uart_config = {
         .baud_rate = 115200,
         .data_bits = UART_DATA_8_BITS,
@@ -92,8 +101,19 @@ The same macro should be specified for pins that will not be used.
 
 .. code-block:: c
 
-    // Set UART pins(TX: IO16 (UART2 default), RX: IO17 (UART2 default), RTS: IO18, CTS: IO19)
-    ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
+.. only:: esp32
+
+    ::
+
+        // Set UART pins(TX: IO16 (UART2 default), RX: IO17 (UART2 default), RTS: IO18, CTS: IO19)
+        ESP_ERROR_CHECK(uart_set_pin(UART_NUM_2, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 18, 19));
+
+.. only:: esp32s2
+
+    ::
+
+        // Set UART pins(TX: IO17 (UART1 default), RX: IO18 (UART1 default), RTS: IO19, CTS: IO20)
+        ESP_ERROR_CHECK(uart_set_pin(UART_NUM_1, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE, 19, 20));
 
 
 .. _uart-api-driver-installation:
@@ -108,7 +128,7 @@ Once the communication pins are set, install the driver by calling :cpp:func:`ua
 - Event queue handle and size
 - Flags to allocate an interrupt
 
-The function will allocate the required ESP32 resources for the UART driver.
+The function will allocate the required internal resources for the UART driver.
 
 .. code-block:: c
 
@@ -116,7 +136,7 @@ The function will allocate the required ESP32 resources for the UART driver.
     const int uart_buffer_size = (1024 * 2);
     QueueHandle_t uart_queue;
     // Install UART driver using an event queue here
-    ESP_ERROR_CHECK(uart_driver_install(UART_NUM_2, uart_buffer_size, \
+    ESP_ERROR_CHECK(uart_driver_install({IDF_TARGET_UART_NUM}, uart_buffer_size, \
                                             uart_buffer_size, 10, &uart_queue, 0));
 
 Once this step is complete, you can connect the external UART device and check the communication.
@@ -181,7 +201,7 @@ Once the data is received by the UART and saved in the Rx FIFO buffer, it needs 
 .. code-block:: c
 
     // Read data from UART.
-    const int uart_num = UART_NUM_2;
+    const int uart_num = {IDF_TARGET_UART_NUM};
     uint8_t data[128];
     int length = 0;
     ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, (size_t*)&length));
@@ -212,7 +232,7 @@ The UART controller supports a number of communication modes. A mode can be sele
 Using Interrupts
 ^^^^^^^^^^^^^^^^
 
-There are many interrupts that can be generated following specific UART states or detected errors. The full list of available interrupts is provided in `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=342>`_ (PDF). You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively. The mask of all interrupts is available as :c:macro:`UART_INTR_MASK`.
+There are many interrupts that can be generated following specific UART states or detected errors. The full list of available interrupts is provided  `{IDF_TARGET_NAME} Technical Reference Manual <{IDF_TARGET_TRM_EN_URL}>`_ (PDF).. You can enable or disable specific interrupts by calling :cpp:func:`uart_enable_intr_mask` or :cpp:func:`uart_disable_intr_mask` respectively. The mask of all interrupts is available as :c:macro:`UART_INTR_MASK`.
 
 By default, the :cpp:func:`uart_driver_install` function installs the driver's internal interrupt handler to manage the Tx and Rx ring buffers and provides high-level API functions like events (see below). It is also possible to register a lower level interrupt handler instead using :cpp:func:`uart_isr_register`, and to free it again using :cpp:func:`uart_isr_free`. Some UART driver functions which use the Tx and Rx ring buffers, events, etc. will not automatically work in this case - it is necessary to handle the interrupts directly in the ISR. Inside the custom handler implementation, clear the interrupt status bits using :cpp:func:`uart_clear_intr_status`.
 
@@ -251,19 +271,19 @@ Overview of RS485 specific communication options
 
 .. note::
 
-    The following section will use ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` to refer to UART register fields/bits. To find more information on a specific option bit, open `Register Summary in the ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=344>`_ (PDF), use the register name to navigate to the register description and then find the field/bit.
+    The following section will use ``[UART_REGISTER_NAME].[UART_FIELD_BIT]`` to refer to UART register fields/bits. To find more information on a specific option bit, open the Register Summary section of the SoC Technical Reference Manual. Use the register name to navigate to the register description and then find the field/bit.
 
 - ``UART_RS485_CONF_REG.UART_RS485_EN``: setting this bit enables RS485 communication mode support.
 - ``UART_RS485_CONF_REG.UART_RS485TX_RX_EN``: if this bit is set, the transmitter's output signal loops back to the receiver's input signal.
 - ``UART_RS485_CONF_REG.UART_RS485RXBY_TX_EN``: if this bit is set, the transmitter will still be sending data if the receiver is busy (remove collisions automatically by hardware).
 
-The ESP32's RS485 UART hardware can detect signal collisions during transmission of a datagram and generate the interrupt ``UART_RS485_CLASH_INT`` if this interrupt is enabled. The term collision means that a transmitted datagram is not equal to the one received on the other end. Data collisions are usually associated with the presence of other active devices on the bus or might occur due to bus errors.
+The {IDF_TARGET_NAME}'s RS485 UART hardware can detect signal collisions during transmission of a datagram and generate the interrupt ``UART_RS485_CLASH_INT`` if this interrupt is enabled. The term collision means that a transmitted datagram is not equal to the one received on the other end. Data collisions are usually associated with the presence of other active devices on the bus or might occur due to bus errors.
 
 The collision detection feature allows handling collisions when their interrupts are activated and triggered. The interrupts ``UART_RS485_FRM_ERR_INT`` and ``UART_RS485_PARITY_ERR_INT`` can be used with the collision detection feature to control frame errors and parity bit errors accordingly in RS485 mode. This functionality is supported in the UART driver and can be used by selecting the :cpp:enumerator:`UART_MODE_RS485_APP_CTRL` mode (see the function :cpp:func:`uart_set_mode`).
 
 The collision detection feature can work with circuit A and circuit C (see Section `Interface Connection Options`_). In the case of using circuit A or B, the RTS pin connected to the DE pin of the bus driver should be controlled by the user application. Use the function :cpp:func:`uart_get_collision_flag` to check if the collision detection flag has been raised.
 
-The ESP32's UART controllers themselves do not support half-duplex communication as they cannot provide automatic control of the RTS pin connected to the ~RE/DE input of RS485 bus driver. However, half-duplex communication can be achieved via software control of the RTS pin by the UART driver. This can be enabled by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode when calling :cpp:func:`uart_set_mode`.
+The {IDF_TARGET_NAME} UART controllers themselves do not support half-duplex communication as they cannot provide automatic control of the RTS pin connected to the ~RE/DE input of RS485 bus driver. However, half-duplex communication can be achieved via software control of the RTS pin by the UART driver. This can be enabled by selecting the :cpp:enumerator:`UART_MODE_RS485_HALF_DUPLEX` mode when calling :cpp:func:`uart_set_mode`.
 
 Once the host starts writing data to the Tx FIFO buffer, the UART driver automatically asserts the RTS pin (logic 1); once the last bit of the data has been transmitted, the driver de-asserts the RTS pin (logic 0). To use this mode, the software would have to disable the hardware flow control function. This mode works with all the used circuits shown below.
 
@@ -271,7 +291,7 @@ Once the host starts writing data to the Tx FIFO buffer, the UART driver automat
 Interface Connection Options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This section provides example schematics to demonstrate the basic aspects of ESP32's RS485 interface connection.
+This section provides example schematics to demonstrate the basic aspects of {IDF_TARGET_NAME}'s RS485 interface connection.
 
 .. note::
 
@@ -291,7 +311,7 @@ Circuit A: Collision Detection Circuit
          RXD <------| R             |
                     |              B|----------<> B
          TXD ------>| D    ADM483   |
- ESP32              |               |     RS485 bus side
+ ESP                |               |     RS485 bus side
          RTS ------>| DE            |
                     |              A|----------<> A
                +----| /RE           |
@@ -299,11 +319,12 @@ Circuit A: Collision Detection Circuit
                |            |
               GND          GND
 
-This circuit is preferable because it allows for collision detection and is quite simple at the same time. The receiver in the line driver is constantly enabled, which allows the UART to monitor the RS485 bus. Echo suppression is performed by the ESP32 hardware when the bit ``UART_RS485_CONF_REG.UART_RS485TX_RX_EN`` is enabled.
+This circuit is preferable because it allows for collision detection and is quite simple at the same time. The receiver in the line driver is constantly enabled, which allows the UART to monitor the RS485 bus. Echo suppression is performed by the UART peripheral when the bit ``UART_RS485_CONF_REG.UART_RS485TX_RX_EN`` is enabled.
 
 
 Circuit B: Manual Switching Transmitter/Receiver Without Collision Detection
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 
 .. code-block:: none
 
@@ -313,7 +334,7 @@ Circuit B: Manual Switching Transmitter/Receiver Without Collision Detection
          RXD <------| R             |
                     |              B|-----------<> B
          TXD ------>| D    ADM483   |
- ESP32              |               |     RS485 bus side
+ ESP                |               |     RS485 bus side
          RTS --+--->| DE            |
                |    |              A|-----------<> A
                +----| /RE           |
@@ -371,7 +392,7 @@ The table below describes the code examples available in the directory :example:
    * - :example:`peripherals/uart/uart_select`
      - Using synchronous I/O multiplexing for UART file descriptors.
    * - :example:`peripherals/uart/uart_echo_rs485`
-     - Setting up UART driver to communicate over RS485 interface in half-duplex mode. This example is similar to :example:`peripherals/uart/uart_echo` but allows communication through an RS485 interface chip connected to ESP32 pins.
+     - Setting up UART driver to communicate over RS485 interface in half-duplex mode. This example is similar to :example:`peripherals/uart/uart_echo` but allows communication through an RS485 interface chip connected to {IDF_TARGET_NAME} pins.
    * - :example:`peripherals/uart/nmea0183_parser`
      - Obtaining GPS information by parsing NMEA0183 statements received from GPS via the UART peripheral.
 
@@ -379,7 +400,7 @@ The table below describes the code examples available in the directory :example:
 API Reference
 -------------
 
-.. include:: /_build/inc/uart.inc
+.. include-build-file:: inc/uart.inc
 
 
 GPIO Lookup Macros
@@ -395,5 +416,5 @@ The UART peripherals have dedicated IO_MUX pins to which they are connected dire
 2. :c:macro:`UART_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when connected to the UART peripheral via IO_MUX (this is UART_NUM_0)
 3. :c:macro:`UART_CTS_GPIO19_DIRECT_CHANNEL` returns the UART number of GPIO 19 when used as the UART CTS pin via IO_MUX (this is UART_NUM_0). Similar to the above macro but specifies the pin function which is also part of the IO_MUX assignment.
 
-.. include:: /_build/inc/uart_channel.inc
+.. include-build-file:: inc/uart_channel.inc
 

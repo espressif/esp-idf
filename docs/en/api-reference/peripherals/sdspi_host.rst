@@ -4,11 +4,15 @@ SD SPI Host Driver
 Overview
 --------
 
-The SD SPI host driver allows using the SPI2 (HSPI) or SPI3 (VSPI) controller for communication with SD cards. This driver's naming pattern was adopted from the :doc:`SDMMC Host <sdmmc_host>` driver due to their similarity. Likewise, the APIs of both drivers are also very similar.
+The SD SPI host driver allows using the SPI2 (HSPI) or SPI3 (VSPI) controller for communication with SD cards.
+
+.. only:: esp32
+
+    This driver's naming pattern was adopted from the :doc:`SDMMC Host <sdmmc_host>` driver due to their similarity. Likewise, the APIs of both drivers are also very similar.
 
 The SD SPI host driver has the following modes:
 
-- **SPI mode**: offers lower throughput but makes pin selection more flexible. With the help of the GPIO matrix, an SPI peripheral's signals can be routed to any ESP32 pin.
+- **SPI mode**: offers lower throughput but makes pin selection more flexible. With the help of the GPIO matrix, an SPI peripheral's signals can be routed to any {IDF_TARGET_NAME} pin.
 - **1-bit SD mode**: offers higher throughput but requires routing the signals through their dedicated IO_MUX pins only.
 
 The SD SPI driver uses software-controlled CS signal.
@@ -32,7 +36,7 @@ Only the following driver's API functions are normally used by most applications
 Other functions are mostly used by the protocol level SD/SDIO/MMC driver via function pointers in the :cpp:type:`sdmmc_host_t` structure. For more details, see :doc:`the SD/SDIO/MMC Driver <../storage/sdmmc>`.
 
 .. note::
-    
+
     SD over SPI does not support speeds above :c:macro:`SDMMC_FREQ_DEFAULT` due to the limitations of the SPI driver.
 
 
@@ -47,4 +51,4 @@ Other functions are mostly used by the protocol level SD/SDIO/MMC driver via fun
 API Reference
 -------------
 
-.. include:: /_build/inc/sdspi_host.inc
+.. include-build-file:: inc/sdspi_host.inc

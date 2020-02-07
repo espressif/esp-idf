@@ -14,11 +14,11 @@ Built on top of Zephyr Bluetooth Mesh stack, the ESP-BLE-MESH implementation sup
 
 Please see the :doc:`ble-mesh-architecture` for information about the implementation of ESP-BLE-MESH architecture and :doc:`ESP-BLE-MESH API Reference <../../api-reference/bluetooth/esp-ble-mesh>` for information about respective API.
 
-ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.1, users can refer `here <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ for the certification details of ESP-BLE-MESH. 
+ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.1, users can refer `here <https://launchstudio.bluetooth.com/ListingDetails/94304>`_ for the certification details of ESP-BLE-MESH.
 
 .. note::
 
-  If you are looking for Wi-Fi based implementation of mesh for ESP32, please check another product by Espressif called ESP-MESH. For more information and documentation see :doc:`ESP-MESH <../../api-reference/network/esp_mesh>`.
+  If you are looking for Wi-Fi based implementation of mesh for {IDF_TARGET_NAME}, please check another product by Espressif called ESP-MESH. For more information and documentation see :doc:`ESP-MESH <../../api-reference/network/esp_mesh>`.
 
 
 .. _getting-started-with-ble-mesh:
@@ -26,7 +26,7 @@ ESP-BLE-MESH is implemented and certified based on the latest Mesh Profile v1.0.
 Getting Started with ESP-BLE-MESH
 =================================
 
-This section is intended to help you get started with ESP-BLE-MESH for the hardware based on the ESP32 chip by Espressif.
+This section is intended to help you get started with ESP-BLE-MESH for the hardware based on the {IDF_TARGET_NAME} chip by Espressif.
 
 We are going to demonstrate process of setting and operation of a small ESP-BLE-MESH network of three nodes. This process will cover device provisioning and node configuration, and then sending on/off commands to Generic OnOff Server Models on specific nodes.
 
@@ -38,14 +38,14 @@ What You Need
 
 Hardware:
 
-* Three ESP32 boards, see :ref:`options <get-started-ble-mesh-check-hardware>`.
+* Three {IDF_TARGET_NAME} boards, see :ref:`options <get-started-ble-mesh-check-hardware>`.
 * USB cables to connect the boards.
 * Computer configured with ESP-IDF.
 * Mobile phone or tablet running Android or iOS.
 
 Software:
 
-* Example application :example:`bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server` code to load to the ESP32 boards.
+* Example application :example:`bluetooth/esp_ble_mesh/ble_mesh_node/onoff_server` code to load to the ${IDF_TARGET_NAME} boards.
 * Mobile App: **nRF Mesh** for Android or iOS. Optionally you can use some other Apps:
 
     - `EspBleMesh <https://github.com/EspressifApp/EspBLEMeshForAndroid/releases/tag/v1.0.0>`_ Android App
@@ -219,7 +219,7 @@ ESP-BLE-MESH Examples
 
 * ESP-BLE-MESH Fast Provisioning - :example:`Client <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client/tutorial/BLE_Mesh_Fast_Prov_Client_Example_Walkthrough.md>` and :example:`Server <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server/tutorial/BLE_Mesh_Fast_Prov_Server_Example_Walkthrough.md>` - this example is used for showing how fast provisioning can be used in order to create a mesh network. It takes no more than 60 seconds to provision 100 devices, see :example:`example client code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_client>` and :example:`example server code <bluetooth/esp_ble_mesh/ble_mesh_fast_provision/ble_mesh_fast_prov_server>`.
 
-* :example:`ESP-BLE-MESH and Wi-Fi Coexistence <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - an example that demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of ESP32. Simply put, users can use the Wi-Fi while operating Bluetooth, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`.
+* :example:`ESP-BLE-MESH and Wi-Fi Coexistence <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist/tutorial/BLE_Mesh_WiFi_Coexist_Example_Walkthrough.md>` - an example that demonstrates the Wi-Fi and Bluetooth (BLE/BR/EDR) coexistence feature of {IDF_TARGET_NAME}. Simply put, users can use the Wi-Fi while operating Bluetooth, see :example:`example code <bluetooth/esp_ble_mesh/ble_mesh_wifi_coexist>`.
 
 * ESP-BLE-MESH Node Console - an example that implements BLE Mesh node basic features. Within this example a node can be scanned and provisioned by Provisioner and reply to get/set message from Provisioner, see :example:`example node code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_node>` and :example:`example Provisioner code <bluetooth/esp_ble_mesh/ble_mesh_console/ble_mesh_provisioner>`.
 

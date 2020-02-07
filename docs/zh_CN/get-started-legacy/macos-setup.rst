@@ -19,7 +19,7 @@ Mac OS 平台工具链的标准设置（传统 GNU Make）
 工具链设置
 ==========
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 Mac OS 版本的 ESP32 工具链可以从以下地址下载：
 
@@ -27,7 +27,7 @@ Mac OS 版本的 ESP32 工具链可以从以下地址下载：
 
 下载压缩文件之后，解压到 ``~/esp`` 目录中:
 
-.. include:: /_build/inc/unpack-code-osx.inc
+.. include-build-file:: inc/unpack-code-osx.inc
 
 .. _setup-macos-toolchain-add-it-to-path-legacy:
 

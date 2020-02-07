@@ -51,22 +51,22 @@ esp_err_t touch_pad_sw_start(void);
  *                    sleep_cycle decide the interval between each measurement.
  *                    t_sleep = sleep_cycle / (RTC_SLOW_CLK frequency).
  *                    The approximate frequency value of RTC_SLOW_CLK can be obtained using rtc_clk_slow_freq_get_hz function.
- * @param meas_timers The times of charge and discharge in each measure process of touch channels.
- *                    The timer frequency is 8Mhz. Range: 0 ~ 0xffff.
- *                    Recommended typical value: Modify this value to make the measurement time around 1ms.
+ * @param meas_time The time of charge and discharge in each measure process of touch channels.
+ *                  The timer frequency is 8Mhz. Range: 0 ~ 0xffff.
+ *                  Recommended typical value: Modify this value to make the measurement time around 1ms.
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_times);
+esp_err_t touch_pad_set_meas_time(uint16_t sleep_cycle, uint16_t meas_time);
 
 /**
  * @brief Get touch sensor times of charge and discharge and sleep time
  * @param sleep_cycle  Pointer to accept sleep cycle number
- * @param meas_times Pointer to accept measurement times count.
+ * @param meas_time Pointer to accept measurement time count.
  * @return
  *      - ESP_OK on success
  */
-esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_times);
+esp_err_t touch_pad_get_meas_time(uint16_t *sleep_cycle, uint16_t *meas_time);
 
 /**
  * @brief Set connection type of touch channel in idle status.
@@ -196,7 +196,7 @@ uint32_t touch_pad_read_intr_status_mask(void);
 
 /**
  * @brief Enable touch sensor interrupt by bitmask.
- * @param type interrupt type
+ * @param int_mask Pad mask to enable interrupts
  * @return
  *      - ESP_OK on success
  */
@@ -204,7 +204,7 @@ esp_err_t touch_pad_intr_enable(touch_pad_intr_mask_t int_mask);
 
 /**
  * @brief Disable touch sensor interrupt by bitmask.
- * @param type interrupt type
+ * @param int_mask Pad mask to disable interrupts
  * @return
  *      - ESP_OK on success
  */
@@ -215,12 +215,13 @@ esp_err_t touch_pad_intr_disable(touch_pad_intr_mask_t int_mask);
  *          The handler will be attached to the same CPU core that this function is running on.
  * @param fn  Pointer to ISR handler
  * @param arg  Parameter for ISR
+ * @param int_mask Initial pad mask to enable interrupt for
  * @return
  *     - ESP_OK Success ;
  *     - ESP_ERR_INVALID_ARG GPIO error
  *     - ESP_ERR_NO_MEM No memory
  */
-esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg, touch_pad_intr_mask_t intr_mask);
+esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg, touch_pad_intr_mask_t int_mask);
 
 /**
  * @brief get raw data of touch sensor.
@@ -239,7 +240,7 @@ esp_err_t touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw_data);
  * @brief get baseline of touch sensor.
  * @note After initialization, the baseline value is the maximum during the first measurement period.
  * @param touch_num touch pad index
- * @param touch_value pointer to accept touch sensor value
+ * @param basedata pointer to accept touch sensor baseline value
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG Touch channel 0 havent this parameter.
@@ -331,7 +332,7 @@ esp_err_t touch_pad_denoise_disable(void);
 
 /**
  * @brief Get denoise measure value (TOUCH_PAD_NUM0).
- * @param denoise value of denoise
+ * @param data Pointer to receive denoise value
  * @return
  *     - ESP_OK Success
  */
@@ -405,7 +406,7 @@ esp_err_t touch_pad_proximity_get_config(touch_pad_proximity_t *proximity);
  * @brief Get measure count of proximity channel.
  *        The proximity sensor measurement is the accumulation of touch channel measurements.
  * @param touch_num touch pad index
- * @param proximity parameter of proximity
+ * @param cnt Pointer to receive proximity channel measurement count
  * @return
  *     - ESP_OK Success
  *     - ESP_ERR_INVALID_ARG parameter is NULL

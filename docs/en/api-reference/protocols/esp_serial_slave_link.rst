@@ -150,5 +150,5 @@ Please refer to the specific example README.md for details.
 API Reference
 -------------
 
-.. include:: /_build/inc/essl.inc
-.. include:: /_build/inc/essl_sdio.inc
+.. include-build-file:: inc/essl.inc
+.. include-build-file:: inc/essl_sdio.inc

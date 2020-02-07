@@ -21,14 +21,14 @@ Doxygen 会解析代码，提取命令和后续文本，生成代码文档。
 .. image:: ../../_static/doc-code-documentation-inline.png
     :align: center
     :alt: 内联代码样本文档
- 
+
 Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵活。请参考数据丰富、条理清晰的 `Doxygen 手册 <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_ 熟悉 Doxygen 特性。
 
 
 为什么需要 Doxygen?
 --------------------
 
-使用 Doxygen 的最终目的是确保所有代码编写风格一致，以便在代码变更时使用 `Sphinx <http://www.sphinx-doc.org/>`_ 和 `Breathe <https://breathe.readthedocs.io/>`_ 等工具协助筹备、自动更新 API 文档。 
+使用 Doxygen 的最终目的是确保所有代码编写风格一致，以便在代码变更时使用 `Sphinx <http://www.sphinx-doc.org/>`_ 和 `Breathe <https://breathe.readthedocs.io/>`_ 等工具协助筹备、自动更新 API 文档。
 
 使用这类工具时，上文代码渲染后呈现效果如下：
 
@@ -57,7 +57,7 @@ Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵
     .. image:: ../../_static/doc-code-void-function.png
         :align: center
         :alt: 隐式内联函数样本文档及渲染后的效果
- 
+
 5. 为 ``define``、``struct`` 和 ``enum`` 的成员编写文档时，请在每一项后添加注释，如下所示。
 
     .. image:: ../../_static/doc-code-member.png
@@ -74,7 +74,7 @@ Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵
     *    - ESP_ERR_NVS_NOT_FOUND if the requested key doesn't exist
     *    - other error codes from the underlying storage driver
     *
- 
+
 7. 头文件的功能概览和库文件应当存在同一个项目库之下，放入单独的 ``README.rst`` 文件。如果目录下包含不同 API 的头文件，应将文件命名为 ``apiname-readme.rst``。
 
 
@@ -117,7 +117,7 @@ Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵
      */
     void  first_similar_function (void);
     void second_similar_function (void);
-    /**@}*/ 
+    /**@}*/
 
    示例请参照 :component_file:`nvs_flash/include/nvs.h`。
 
@@ -126,14 +126,14 @@ Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵
 5. 使用 markdown 增强文档可读性，添加页眉、链接、表格及更多内容。 ::
 
     *
-    * [ESP32 技术参考手册](https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf)
+    * [{IDF_TARGET_NAME} 技术参考手册]({IDF_TARGET_TRM_CN_URL})
     *
 
 .. note::
 
     代码片段、注释、链接等内容如没有附在所述对象对应的注释块中，将不会添加到文档中。
 
-6. 准备一个或更多完整的代码示例和描述，将描述放入单独的 ``README.md`` 文件中，置于 :idf:`examples` 目录的特定文件夹中。 
+6. 准备一个或更多完整的代码示例和描述，将描述放入单独的 ``README.md`` 文件中，置于 :idf:`examples` 目录的特定文件夹中。
 
 .. _link-custom-roles:
 
@@ -198,7 +198,7 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 * `活动图 <http://blockdiag.com/en/actdiag/index.html>`_
 * `逻辑网络图 <http://blockdiag.com/en/nwdiag/index.html>`_
 
-使用该工具包，可以将简单的文本（与 graphviz 的 DOT 格式类似）转换成美观的图片。图中内容自动排版。图标代码之后会转换为 ".png" 图片，在后台添加进 **Sphinx** 文档中。 
+使用该工具包，可以将简单的文本（与 graphviz 的 DOT 格式类似）转换成美观的图片。图中内容自动排版。图标代码之后会转换为 ".png" 图片，在后台添加进 **Sphinx** 文档中。
 
 要查看图表的渲染效果，可使用线上的 `interactive shell`_ 即时显示生成的图片。
 
@@ -262,10 +262,10 @@ Sphinx 新手怎么办
 3. 想要查看在上传至 GitHub 前文档如何生成、呈现，有两种方式：
 
     * 安装`Sphinx <http://www.sphinx-doc.org/>`_、 `Breathe <https://breathe.readthedocs.io/>`_、 `Blockdiag <http://blockdiag.com/en/index.html>`_ 和 `Doxygen <https://www.stack.nl/~dimitri/doxygen/>`_ 本地生成文档，具体可查看下文。
-   
+
     * 在 `Read the Docs <https://readthedocs.org/>`_ 建立账号，在云端生成文档。 Read the Docs 免费提供文档生成和存储，且速度快、质量高。
 
-4. 在生成文档前预览，可使用 `Sublime Text <https://www.sublimetext.com/>`_ 编辑器和 `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ 插件。 
+4. 在生成文档前预览，可使用 `Sublime Text <https://www.sublimetext.com/>`_ 编辑器和 `OmniMarkupPreviewer <https://github.com/timonwong/OmniMarkupPreviewer>`_ 插件。
 
 
 .. _setup-for-building-documentation:
@@ -291,7 +291,7 @@ Doxygen 的安装取决于操作系统：
 
 **Linux**
 
-::  
+::
 
 	sudo apt-get install doxygen
 
@@ -348,7 +348,7 @@ Doxygen 的安装取决于操作系统：
 
     make html
 
-这一步骤需要几分钟时间。完成后，文档会放置在 ``~/esp/esp-idf/docs/en/_build/html`` 文件夹下。您可以在网页浏览器中打开 ``index.html`` 查看。 
+这一步骤需要几分钟时间。完成后，文档会放置在 ``~/esp/esp-idf/docs/en/_build/html`` 文件夹下。您可以在网页浏览器中打开 ``index.html`` 查看。
 
 
 大功告成

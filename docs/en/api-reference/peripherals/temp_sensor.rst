@@ -4,8 +4,9 @@ ESP32-S2 Temperature Sensor
 Overview
 --------
 
-The ESP32-S2 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.  
-The conversion relationship is the first columns of the table below. Among them, offset = 0 is the main measurement option, and other values are extended measurement options.  
+The ESP32-S2 has a built-in temperature sensor. The temperature sensor module contains an 8-bit Sigma-Delta ADC and a temperature offset DAC.
+
+The conversion relationship is the first columns of the table below. Among them, offset = 0 is the main measurement option, and other values are extended measurement options.
 
 +--------+------------------------+------------------------+
 | offset | measure range(Celsius) | measure error(Celsius) |
@@ -29,4 +30,4 @@ Temperature sensor reading example: :example:`peripherals/temp_sensor`.
 API Reference - Normal Temp Sensor
 ----------------------------------
 
-.. include:: /_build/inc/temp_sensor.inc
+.. include-build-file:: inc/temp_sensor.inc

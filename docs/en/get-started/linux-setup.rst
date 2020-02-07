@@ -30,7 +30,7 @@ Additional Tips
 Permission issues /dev/ttyUSB0
 ------------------------------
 
-With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the ESP32. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
+With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
 
 Next Steps
 ==========
@@ -44,7 +44,7 @@ Related Documents
 .. toctree::
     :maxdepth: 1
 
-    linux-setup-scratch
+    :esp32: linux-setup-scratch
 
 
 .. _AUR: https://wiki.archlinux.org/index.php/Arch_User_Repository

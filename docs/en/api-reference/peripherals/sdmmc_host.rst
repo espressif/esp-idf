@@ -11,38 +11,38 @@ ESP32's SDMMC host peripheral has two slots:
 
 Pin mappings of these slots are given in the table below.
 
-    +--------+-------------+-------------+
-    | Signal | Slot 0      | Slot 1      |
-    +========+=============+=============+
-    | CMD    | GPIO11      | GPIO15      |
-    +--------+-------------+-------------+
-    | CLK    | GPIO6       | GPIO14      |
-    +--------+-------------+-------------+
-    | D0     | GPIO7       | GPIO2       |
-    +--------+-------------+-------------+
-    | D1     | GPIO8       | GPIO4       |
-    +--------+-------------+-------------+
-    | D2     | GPIO9       | GPIO12      |
-    +--------+-------------+-------------+
-    | D3     | GPIO10      | GPIO13      |
-    +--------+-------------+-------------+
-    | D4     | GPIO16      |             |
-    +--------+-------------+-------------+
-    | D5     | GPIO17      |             |
-    +--------+-------------+-------------+
-    | D6     | GPIO5       |             |
-    +--------+-------------+-------------+
-    | D7     | GPIO18      |             |
-    +--------+-------------+-------------+
-    | CD     | any input via GPIO matrix |
-    +--------+---------------------------+
-    | WP     | any input via GPIO matrix |
-    +--------+---------------------------+
++--------+-------------+-------------+
+| Signal | Slot 0      | Slot 1      |
++========+=============+=============+
+| CMD    | GPIO11      | GPIO15      |
++--------+-------------+-------------+
+| CLK    | GPIO6       | GPIO14      |
++--------+-------------+-------------+
+| D0     | GPIO7       | GPIO2       |
++--------+-------------+-------------+
+| D1     | GPIO8       | GPIO4       |
++--------+-------------+-------------+
+| D2     | GPIO9       | GPIO12      |
++--------+-------------+-------------+
+| D3     | GPIO10      | GPIO13      |
++--------+-------------+-------------+
+| D4     | GPIO16      |             |
++--------+-------------+-------------+
+| D5     | GPIO17      |             |
++--------+-------------+-------------+
+| D6     | GPIO5       |             |
++--------+-------------+-------------+
+| D7     | GPIO18      |             |
++--------+-------------+-------------+
+| CD     | any input via GPIO matrix |
++--------+---------------------------+
+| WP     | any input via GPIO matrix |
++--------+---------------------------+
 
 The Card Detect and Write Protect signals can be routed to arbitrary pins using the GPIO matrix. To reserve the pins, set the ``gpio_cd`` and ``gpio_wp`` members of the :cpp:class:`sdmmc_slot_config_t` structure before calling :cpp:func:`sdmmc_host_init_slot`. Please note that it is not advised to specify a Card Detect pin when working with SDIO cards, because the card detect signal in ESP32 can also trigger SDIO slave interrupt.
 
 .. warning::
-    
+
     Pins used by Slot 0 (``HS1_*``) are also used to connect the SPI flash chip in ESP32-WROOM and ESP32-WROVER modules. These pins cannot be shared between an SD card and SPI flash. If you need to use Slot 0, connect SPI flash to different pins and set eFuses accordingly.
 
 
@@ -74,7 +74,7 @@ Other functions, such as the ones given below, will be called by the SD/MMC prot
 
 - :cpp:func:`sdmmc_host_set_bus_width`
 - :cpp:func:`sdmmc_host_set_card_clk`
-- :cpp:func:`sdmmc_host_do_transaction` 
+- :cpp:func:`sdmmc_host_do_transaction`
 
 
 Configuring Bus Width and Frequency
@@ -106,4 +106,4 @@ See :doc:`sd_pullup_requirements` for pullup support and compatibilities of modu
 API Reference
 -------------
 
-.. include:: /_build/inc/sdmmc_host.inc
+.. include-build-file:: inc/sdmmc_host.inc

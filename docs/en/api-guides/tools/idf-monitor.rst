@@ -89,11 +89,11 @@ IDF Monitor adds more details to the dump::
     0x400dbf56: still_dont_crash at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:47
     0x400dbf5e: dont_crash at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:42
     0x400dbf82: app_main at /home/gus/esp/32/idf/examples/get-started/hello_world/main/./hello_world_main.c:33
-    0x400d071d: main_task at /home/gus/esp/32/idf/components/esp32/./cpu_start.c:254
+    0x400d071d: main_task at /home/gus/esp/32/idf/components/{IDF_TARGET_PATH_NAME}/./cpu_start.c:254
 
 To decode each address, IDF Monitor runs the following command in the background::
 
-  xtensa-esp32-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
+  xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-addr2line -pfiaC -e build/PROJECT.elf ADDRESS
 
 
 Launching GDB with GDBStub
@@ -103,13 +103,13 @@ By default, if esp-idf crashes, the panic handler prints relevant registers and 
 
 Optionally, the panic handler can be configured to run GDBStub, the tool which can communicate with  GDB_ project debugger. GDBStub allows to read memory, examine call stack frames and variables, etc. It is not as versatile as JTAG debugging, but this method does not require any special hardware.
 
-To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP32_PANIC` to ``Invoke GDBStub``.
+To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC` to ``Invoke GDBStub``.
 
 In this case, if the panic handler is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
 
 In the background, IDF Monitor runs the following command::
 
-  xtensa-esp32-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf
+  xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gdb -ex "set serial baud BAUD" -ex "target remote PORT" -ex interrupt build/PROJECT.elf :idf_target:`Hello NAME chip`
 
 
 Output Filtering
@@ -128,7 +128,7 @@ For example, ``PRINT_FILTER="tag1:W"`` matches and prints only the outputs writt
    which can be useful for adjusting the filtering options without
    recompiling the application.
 
-Your app tags must not contain spaces, asterisks ``*``, 
+Your app tags must not contain spaces, asterisks ``*``,
 and semicolons ``:`` to be compatible with the output filtering feature.
 
 If the last line of the output in your app is not followed by a carriage return, the output filtering might get confused, i.e., the monitor starts to print the line and later finds out that the line should not have been written. This is a known issue and can be avoided by always adding a carriage return (especially when no output follows immediately afterwards).

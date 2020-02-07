@@ -12,8 +12,8 @@ mDNS 是一种组播 UDP 服务，用来提供本地网络服务和主机发现�
 mDNS 属性
 ^^^^^^^^^
 
-    * ``hostname``：设备会去响应的主机名，如果没有设置，会根据设备的网络接口名定义 ``hostname`` 。例如，``my-esp32`` 会被解析为 ``my-esp32.local``。
-    * ``default_instance``：默认实例名（即易记的设备名），例如 ``Jhon's ESP32 Thing``。如果没有设置，将会使用 ``hostname``。
+    * ``hostname``：设备会去响应的主机名，如果没有设置，会根据设备的网络接口名定义 ``hostname`` 。例如，``my-{IDF_TARGET_PATH_NAME}`` 会被解析为 ``my-{IDF_TARGET_PATH_NAME}.local``。
+    * ``default_instance``：默认实例名（即易记的设备名），例如 ``Jhon's {IDF_TARGET_NAME} Thing``。如果没有设置，将会使用 ``hostname``。
 
 以下为 STA 接口启动 mDNS 服务并设置 ``hostname`` 和 ``default_instance`` 的示例方法：
 
@@ -29,11 +29,11 @@ mDNS 属性
             printf("MDNS Init failed: %d\n", err);
             return;
         }
-    
+
         // 设置 hostname
-        mdns_hostname_set("my-esp32");
+        mdns_hostname_set("my-{IDF_TARGET_PATH_NAME}");
         // 设置默认实例
-        mdns_instance_name_set("Jhon's ESP32 Thing");
+        mdns_instance_name_set("Jhon's {IDF_TARGET_NAME} Thing");
     }
 
 mDNS 服务
@@ -41,7 +41,7 @@ mDNS 服务
 
 mDNS 可以广播设备能够提供的网络服务的相关信息，每个服务会由以下属性构成。
 
-    * ``instance_name``：实例名（即易记的服务名），例如 ``Jhon's ESP32 Web Server``。如果没有定义，会使用 ``default_instance``。
+    * ``instance_name``：实例名（即易记的服务名），例如 ``Jhon's {IDF_TARGET_NAME} Web Server``。如果没有定义，会使用 ``default_instance``。
     * ``service_type``：（必需）服务类型，以下划线为前缀，`这里 <http://www.dns-sd.org/serviceTypes.html>`_ 列出了常见的类型。
     * ``proto``：（必需）服务运行所依赖的协议，以下划线为前缀，例如 ``_tcp`` 或者 ``_udp``。
     * ``port``：（必需）服务运行所用的端口号。
@@ -55,19 +55,19 @@ mDNS 可以广播设备能够提供的网络服务的相关信息，每个服务
         mdns_service_add(NULL, "_http", "_tcp", 80, NULL, 0);
         mdns_service_add(NULL, "_arduino", "_tcp", 3232, NULL, 0);
         mdns_service_add(NULL, "_myservice", "_udp", 1234, NULL, 0);
-        
+
         // 注意：必须先添加服务，然后才能设置其属性
         // web 服务器使用自定义的实例名
-        mdns_service_instance_name_set("_http", "_tcp", "Jhon's ESP32 Web Server");
+        mdns_service_instance_name_set("_http", "_tcp", "Jhon's {IDF_TARGET_NAME} Web Server");
 
         mdns_txt_item_t serviceTxtData[3] = {
-            {"board","esp32"},
+            {"board","{IDF_TARGET_PATH_NAME}"},
             {"u","user"},
             {"p","password"}
         };
         // 设置服务的文本数据（会释放并替换当前数据）
         mdns_service_txt_set("_http", "_tcp", serviceTxtData, 3);
-        
+
         // 修改服务端口号
         mdns_service_port_set("_myservice", "_udp", 4321);
     }
@@ -161,9 +161,9 @@ mDNS 提供查询服务和解析主机 IP/IPv6 地址的方法。
 使用上述方法的示例::
 
     void my_app_some_method(){
-        // 搜索 esp32-mdns.local
-        resolve_mdns_host("esp32-mdns");
-        
+        // 搜索 {IDF_TARGET_PATH_NAME}-mdns.local
+        resolve_mdns_host("{IDF_TARGET_PATH_NAME}-mdns");
+
         // 搜索 HTTP 服务器
         find_mdns_service("_http", "_tcp");
         // 或者搜索文件服务器
@@ -184,6 +184,6 @@ mDNS 提供查询服务和解析主机 IP/IPv6 地址的方法。
 API 参考
 --------
 
-.. include:: /_build/inc/mdns.inc
+.. include-build-file:: inc/mdns.inc
 
 

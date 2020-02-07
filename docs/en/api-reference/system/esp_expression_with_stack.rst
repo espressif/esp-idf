@@ -51,6 +51,6 @@ The usage may looks like the code below:
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_expression_with_stack.inc
+.. include-build-file:: inc/esp_expression_with_stack.inc
 
 

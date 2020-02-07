@@ -332,5 +332,5 @@ ESP-IDF 包含以下 ESP-MESH 示例项目：
 API 参考
 --------------
 
-.. include:: /_build/inc/esp_mesh.inc
+.. include-build-file:: inc/esp_mesh.inc
 

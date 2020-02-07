@@ -138,4 +138,4 @@ Although the methods above are recommended for ESP-IDF users, they are not a mus
 List of IDF Tools
 -----------------
 
-.. include:: /_build/inc/idf-tools-inc.rst
+.. include-build-file:: idf-tools-inc.rst

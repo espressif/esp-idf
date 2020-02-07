@@ -16,7 +16,7 @@
     ESP-MQTT <mqtt>
     Modbus slave <modbus>
     Local Control <esp_local_ctrl>
-    ESP Serial Slave Link <esp_serial_slave_link>
+    :esp32: ESP Serial Slave Link <esp_serial_slave_link>
 
 此 API 部分的示例代码在 ESP-IDF 示例工程的 :example:`protocols` 目录下提供。
 

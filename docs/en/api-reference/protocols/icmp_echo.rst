@@ -117,6 +117,6 @@ ICMP echo example: :example:`protocols/icmp_echo`
 API Reference
 -------------
 
-.. include:: /_build/inc/ping_sock.inc
+.. include-build-file:: inc/ping_sock.inc
 
 

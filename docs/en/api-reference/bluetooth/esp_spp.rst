@@ -18,5 +18,5 @@ Check :example:`bluetooth/bluedroid/classic_bt` folder in ESP-IDF examples, whic
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_spp_api.inc
+.. include-build-file:: inc/esp_spp_api.inc
 

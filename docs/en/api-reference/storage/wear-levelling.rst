@@ -30,5 +30,5 @@ Functions
 Mid level API Reference
 -----------------------
 
-.. include:: /_build/inc/wear_levelling.inc
+.. include-build-file:: inc/wear_levelling.inc
 

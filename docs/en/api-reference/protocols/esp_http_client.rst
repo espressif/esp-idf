@@ -188,4 +188,4 @@ HTTP Client example: :example:`protocols/esp_http_client`.
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_http_client.inc
+.. include-build-file:: inc/esp_http_client.inc

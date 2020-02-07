@@ -85,7 +85,7 @@ Subsequent sections contain the list of available ESP-IDF options, automatically
 By convention, all option names are upper case with underscores. When Kconfig generates sdkconfig and sdkconfig.h files, option names are prefixed with ``CONFIG_``. So if an option ``ENABLE_FOO`` is defined in a Kconfig file and selected in menuconfig, then sdkconfig and sdkconfig.h files will have ``CONFIG_ENABLE_FOO`` defined. In this reference, option names are also prefixed with ``CONFIG_``, same as in the source code.
 
 
-.. include:: /_build/inc/kconfig.inc
+.. include-build-file:: inc/kconfig.inc
 
 Customisations
 ==============

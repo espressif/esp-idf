@@ -6,8 +6,8 @@ ULP 协处理器编程
 .. toctree::
    :maxdepth: 1
 
-    ESP32 指令集参考 <ulp_instruction_set>
-    ESP32-S2 指令集参考 <ulps2_instruction_set>
+    :esp32: 指令集参考 <ulp_instruction_set>
+    :esp32s2: 指令集参考 <ulps2_instruction_set>
     使用宏进行编程（遗留） <ulp_macros>
 
 
@@ -20,7 +20,9 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 如果你已经按照 :doc:`快速入门指南 <../../get-started/index>` 中的介绍安装好了 ESP-IDF 及其 CMake 构建系统，那么 ULP 工具链已经被默认安装到了你的开发环境中。
 
-如果你的 ESP-IDF 仍在使用传统的基于 GNU Make 的构建系统，请参考 :doc:`ulp-legacy` 一文中的说明，完成工具链的安装。
+.. only:: esp32
+
+    如果你的 ESP-IDF 仍在使用传统的基于 GNU Make 的构建系统，请参考 :doc:`ulp-legacy` 一文中的说明，完成工具链的安装。
 
 
 编译 ULP 代码
@@ -30,7 +32,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 
 1. 用汇编语言编写的 ULP 代码必须导入到一个或多个 `.S` 扩展文件中，且这些文件必须放在组件目录中一个独立的目录中，例如 `ulp/`。
 
-.. note: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``xtensa-esp32-elf-as`` 汇编器。但这并不适用于 ULP 程序集文件，因此体现这种区别最简单的方式就是将 ULP 程序集文件放到单独的目录中。同样，ULP 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP 程序集源文件。
+.. note: 在注册组件（通过 ``idf_component_register``）时，不应将该目录添加到 ``SRC_DIRS`` 参数中。因为 ESP-IDF 构建系统将基于文件扩展名编译在 ``SRC_DIRS`` 中搜索到的文件。对于 ``.S`` 文件，使用的是 ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-as`` 汇编器。但这并不适用于 ULP 程序集文件，因此体现这种区别最简单的方式就是将 ULP 程序集文件放到单独的目录中。同样，ULP 程序集源文件也 **不应该** 添加到 ``SRCS`` 中。请参考如下步骤，查看如何正确添加 ULP 程序集源文件。
 
 
 2. 注册后从组件 CMakeLists.txt 中调用 ``ulp_embed_binary`` 示例如下::
@@ -51,9 +53,9 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
     在内部，构建系统将按照以下步骤编译 ULP 程序：
 
     1. **通过 C 预处理器运行每个程序集文件 (foo.S)。** 此步骤在组件编译目录中生成预处理的程序集文件 (foo.ulp.S)，同时生成依赖文件 (foo.ulp.d)。
-    
+
     2. **通过汇编器运行预处理过的汇编源码。** 此步骤会生成目标文件 (foo.ulp.o) 和清单 (foo.ulp.lst)。清单文件仅用于调试，不用于编译进程的后续步骤。
-    
+
     3. **通过 C 预处理器运行链接器脚本模板。** 模板位于 ``components/ulp/ld`` 目录中。
 
     4. **将目标文件链接到 ELF 输出文件** (``ulp_app_name.elf``)。此步骤生成的.map 文件 (``ulp_app_name.map``) 默认用于调试。

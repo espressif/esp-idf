@@ -30,18 +30,18 @@ Flash 操作完成后，CPU A 上的函数将设置另一标志位，即 ``s_fla
 SPI Flash API 参考
 -------------------------
 
-.. include:: /_build/inc/esp_flash_spi_init.inc
-.. include:: /_build/inc/esp_flash.inc
-.. include:: /_build/inc/spi_flash_types.inc
+.. include-build-file:: inc/esp_flash_spi_init.inc
+.. include-build-file:: inc/esp_flash.inc
+.. include-build-file:: inc/spi_flash_types.inc
 
 分区表 API 参考
 -------------------------------
 
-.. include:: /_build/inc/esp_partition.inc
+.. include-build-file:: inc/esp_partition.inc
 
 Flash 加密 API 参考
 -----------------------------
 
-.. include:: /_build/inc/esp_flash_encrypt.inc
+.. include-build-file:: inc/esp_flash_encrypt.inc
 
 

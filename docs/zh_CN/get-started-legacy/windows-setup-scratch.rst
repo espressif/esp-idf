@@ -80,7 +80,7 @@ HTTP 代理
 其他设置：下载工具链
 ============================================
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 如果您已经安装了 MSYS2，或者想要以不同的方式执行操作，您可以在此处下载工具链：
 

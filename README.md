@@ -2,8 +2,6 @@
 
 * [中文版](./README_CN.md)
 
-[![Documentation Status](https://readthedocs.com/projects/espressif-esp-idf/badge/?version=latest)](https://docs.espressif.com/projects/esp-idf/en/latest/?badge=latest)
-
 ESP-IDF is the official development framework for the [ESP32](https://espressif.com/en/products/hardware/esp32/overview) chip.
 
 # Developing With ESP-IDF
@@ -14,6 +12,8 @@ See setup guides for detailed instructions to set up the ESP-IDF:
 
 * [Getting Started Guide for the stable ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
 * [Getting Started Guide for the latest (master branch) ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/)
+
+*Note: ESP-IDF Programmers Guide is in the process of transitioning to a new documentation host. Master branch ("latest") docs will not be updated from 2020-02-05 for approximately two weeks. This note will be removed once the master branch docs are updating again. Other branch & release docs continue to update as normal.*
 
 ### Non-GitHub forks
 

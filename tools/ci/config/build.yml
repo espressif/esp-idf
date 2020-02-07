@@ -186,25 +186,16 @@ build_examples_cmake_esp32s2:
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
-build_docs:
+.build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2-d4034371
   tags:
     - build_docs
   artifacts:
     when: always
     paths:
-      # English version of documentation
-      - docs/en/doxygen-warning-log.txt
-      - docs/en/sphinx-warning-log.txt
-      - docs/en/sphinx-warning-log-sanitized.txt
-      - docs/en/_build/html
-      - docs/sphinx-err-*
-      # Chinese version of documentation
-      - docs/zh_CN/doxygen-warning-log.txt
-      - docs/zh_CN/sphinx-warning-log.txt
-      - docs/zh_CN/sphinx-warning-log-sanitized.txt
-      - docs/zh_CN/_build/html
+      - docs/_build/*/*/*.txt
+      - docs/_build/*/*/html/*
     expire_in: 4 days
   only:
     variables:
@@ -212,17 +203,34 @@ build_docs:
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_BUILD_DOCS
       - $BOT_LABEL_REGULAR_TEST
+  dependencies: []
   script:
     - cd docs
-    - ./check_lang_folder_sync.sh
-    - cd en
-    - make gh-linkcheck
-    - make html
-    - ../check_doc_warnings.sh
-    - cd ../zh_CN
-    - make gh-linkcheck
-    - make html
-    - ../check_doc_warnings.sh
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT build
+
+build_docs_en_esp32:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "en"
+    DOCTGT: "esp32"
+
+build_docs_en_esp32s2:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "en"
+    DOCTGT: "esp32s2"
+
+build_docs_zh_CN_esp32:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "zh_CN"
+    DOCTGT: "esp32"
+
+build_docs_zh_CN_esp32s2:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "zh_CN"
+    DOCTGT: "esp32s2"
 
 test_build_system:
   extends: .build_template

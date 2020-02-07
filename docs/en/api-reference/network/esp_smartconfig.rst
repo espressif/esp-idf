@@ -6,4 +6,4 @@ SmartConfig
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_smartconfig.inc
+.. include-build-file:: inc/esp_smartconfig.inc

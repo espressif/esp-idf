@@ -158,4 +158,4 @@ The following events may be posted by the MQTT client:
 API Reference
 -------------
 
-.. include:: /_build/inc/mqtt_client.inc
+.. include-build-file:: inc/mqtt_client.inc

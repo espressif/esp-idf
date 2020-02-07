@@ -172,4 +172,5 @@ LED PWM 改变占空比和渐变控制的实例请参照 :example:`peripherals/l
 API 参考
 -------------
 
-.. include:: /_build/inc/ledc.inc
+.. include-build-file:: inc/ledc.inc
+

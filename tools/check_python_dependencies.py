@@ -16,6 +16,7 @@
 
 import argparse
 import os
+import re
 import sys
 
 try:
@@ -38,10 +39,12 @@ def escape_backslash(path):
 if __name__ == "__main__":
     idf_path = os.getenv("IDF_PATH")
 
+    default_requirements_path = os.path.join(idf_path, 'requirements.txt')
+
     parser = argparse.ArgumentParser(description='ESP32 Python package dependency checker')
     parser.add_argument('--requirements', '-r',
                         help='Path to the requrements file',
-                        default=os.path.join(idf_path, 'requirements.txt'))
+                        default=default_requirements_path)
     args = parser.parse_args()
 
     not_satisfied = []
@@ -52,6 +55,8 @@ if __name__ == "__main__":
             # adjustments for options which we use.
             if line.startswith('file://'):
                 line = os.path.basename(line)
+            if line.startswith('-e') and '#egg=' in line:  # version control URLs, take the egg= part at the end only
+                line = re.search(r'#egg=([^\s]+)', line).group(1)
             try:
                 pkg_resources.require(line)
             except Exception:
@@ -61,7 +66,10 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        if os.environ.get('IDF_PYTHON_ENV_PATH'):
+        if os.path.realpath(args.requirements) != os.path.realpath(default_requirements_path):
+            # we're using this script to check non-default requirements.txt, so tell the user to run pip
+            print('Please check the documentation for the feature you are using, or run "%s -m pip install -r %s"' % (sys.executable, args.requirements))
+        elif os.environ.get('IDF_PYTHON_ENV_PATH'):
             # We are running inside a private virtual environment under IDF_TOOLS_PATH,
             # ask the user to run install.bat again.
             if sys.platform == "win32" and not os.environ.get("MSYSTEM"):

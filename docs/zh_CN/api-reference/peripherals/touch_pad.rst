@@ -10,7 +10,7 @@
 
 ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵或滑条等方式组合使用，从而覆盖更大触感区域及更多触感点。触摸传感由有限状态机 (FSM) 硬件控制，由软件或专用硬件计时器发起。
 
-如需了解触摸传感器设计、操作及其控制寄存器等相关信息，请参考《`ESP32 技术参考手册 <https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_cn.pdf>`_》(PDF)，您也可以在《ESP32 技术参考手册》中查看这一子系统是如何运行的。
+如需了解触摸传感器设计、操作及其控制寄存器等相关信息，请参考《`{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_》(PDF)，您也可以在《ESP32 技术参考手册》中查看这一子系统是如何运行的。
 
 请参考 `触摸传感器应用方案简介 <https://github.com/espressif/esp-iot-solution/blob/master/documents/touch_pad_solution/touch_sensor_design_cn.md>`_，查看触摸传感器设计详情和固件开发指南。如果不想亲自在多种配置环境下测试触摸传感器，请查看 `ESP32 触摸功能开发套件 <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_cn.md>`_。
 
@@ -81,7 +81,7 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 
 .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
     :align: center
-    :alt: Touch Pad - relationship between measurement parameters 
+    :alt: Touch Pad - relationship between measurement parameters
     :figclass: align-center
 
     触摸板 - 测量参数之间的关系
@@ -115,7 +115,7 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 
 在对触摸监测启用中断之前，请先设置一个触摸监测阈值。然后使用 `触摸状态测量`_ 中所述的函数读取并显示触摸和释放触摸板时测得的结果。如果测量中存在噪声且相对电容变化较小，请使用滤波器。您也可以根据应用程序和环境条件，测试温度和电源电压变化对测量值的影响。
 
-确定监测阈值后就可以在初始化时调用 :cpp:func:`touch_pad_config` 设置此阈值，或在运行时调用 :cpp:func:`touch_pad_set_thresh` 设置此阈值。 
+确定监测阈值后就可以在初始化时调用 :cpp:func:`touch_pad_config` 设置此阈值，或在运行时调用 :cpp:func:`touch_pad_set_thresh` 设置此阈值。
 
 下一步就是设置如何触发中断。您可以设置在阈值以下或以上触发中断，具体触发模式由函数 :cpp:func:`touch_pad_set_trigger_mode` 设置。
 
@@ -135,7 +135,7 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 从睡眠模式唤醒
 ^^^^^^^^^^^^^^^^^^^^^^
 
-如果使用触摸板中断将芯片从睡眠模式唤醒，您可以选择配置一些触摸板，例如 SET1 或 SET1 和 SET2，触摸这些触摸板将触发中断并唤醒芯片。请调用 :cpp:func:`touch_pad_set_trigger_source` 实现上述操作。 
+如果使用触摸板中断将芯片从睡眠模式唤醒，您可以选择配置一些触摸板，例如 SET1 或 SET1 和 SET2，触摸这些触摸板将触发中断并唤醒芯片。请调用 :cpp:func:`touch_pad_set_trigger_source` 实现上述操作。
 
 您可以使用以下函数管理 'SET' 中触摸板所需的位模式配置：
 
@@ -156,7 +156,8 @@ ESP32 可支持最多 10 个电容式触摸板/GPIO，触摸板可以以矩阵�
 API 参考
 -------------
 
-.. include:: /_build/inc/touch_pad.inc
+.. include-build-file:: inc/touch_sensor.inc
+.. include-build-file:: inc/touch_sensor_common.inc
 
 GPIO 宏查找表
 ^^^^^^^^^^^^^^^^^^
@@ -165,4 +166,6 @@ GPIO 宏查找表
 1. ``TOUCH_PAD_NUM5_GPIO_NUM`` 定义了通道 5 的 GPIO（即 GPIO 12）；
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` 定义了 GPIO 4 的通道（即通道 0）。
 
-.. include:: /_build/inc/touch_sensor_channel.inc
+
+.. include-build-file:: inc/touch_sensor_channel.inc
+.. include-build-file:: inc/touch_sensor_types.inc

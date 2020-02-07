@@ -2,7 +2,7 @@
 #
 # Build will fail if sphinx-warning-log.txt contains any lines
 # which are not in this file. Lines are pre-sanitized by
-# check_doc_warnings.sh to remove formatting, paths and line numbers.
+# `build_docs.py build` to remove formatting, paths and line numbers.
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
@@ -40,6 +40,12 @@ ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t
 ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
 ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+
+
+# This seems like a bug, as the field are ::model_id and ::vnd::model_id
+esp_ble_mesh_defs.inc:line: WARNING: Duplicate declaration, uint16_t esp_ble_mesh_model::model_id
+
+
 #
 # Issue present only when building on msys2 / mingw32 START >>>
 #
@@ -75,63 +81,6 @@ If type alias or template alias:
   Invalid definition: Expected identifier in nested name, got keyword: void [error at 4]
     void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     ----^
-
-mcpwm.inc:line: WARNING: Error when parsing function declaration.
-If the function has no return type:
-  Error in declarator or parameters and qualifiers
-  Invalid definition: Expected identifier in nested name. [error at 31]
-    _Static_assert(MCPWM_UNIT_MAX, "MCPWM unit number not equal to chip capabilities")
-    -------------------------------^
-If the function has a return type:
-  Error in declarator
-  If pointer to member declarator:
-    Invalid definition: Expected identifier in nested name. [error at 14]
-      _Static_assert(MCPWM_UNIT_MAX, "MCPWM unit number not equal to chip capabilities")
-      --------------^
-  If declId, parameters, and qualifiers:
-    Invalid definition: Expected identifier in nested name. [error at 14]
-      _Static_assert(MCPWM_UNIT_MAX, "MCPWM unit number not equal to chip capabilities")
-      --------------^
-  If parenthesis in noptr-declarator:
-    Error in declarator or parameters and qualifiers
-    If pointer to member declarator:
-      Invalid definition: Expected '::' in pointer to member (function). [error at 29]
-        _Static_assert(MCPWM_UNIT_MAX, "MCPWM unit number not equal to chip capabilities")
-        -----------------------------^
-    If declarator-id:
-      Invalid definition: Expecting "(" in parameters_and_qualifiers. [error at 29]
-        _Static_assert(MCPWM_UNIT_MAX, "MCPWM unit number not equal to chip capabilities")
-        -----------------------------^
-mcpwm.inc:line: WARNING: Error when parsing function declaration.
-If the function has no return type:
-  Error in declarator or parameters and qualifiers
-  Invalid definition: Expected identifier in nested name, got keyword: sizeof [error at 21]
-    _Static_assert(sizeof( ulp_insn_t ), "ULP coprocessor instruction size should be 4 bytes")
-    ---------------------^
-If the function has a return type:
-  Error in declarator
-  If pointer to member declarator:
-    Invalid definition: Expected identifier in nested name. [error at 14]
-      _Static_assert(sizeof( ulp_insn_t ), "ULP coprocessor instruction size should be 4 bytes")
-      --------------^
-  If declId, parameters, and qualifiers:
-    Invalid definition: Expected identifier in nested name. [error at 14]
-      _Static_assert(sizeof( ulp_insn_t ), "ULP coprocessor instruction size should be 4 bytes")
-      --------------^
-  If parenthesis in noptr-declarator:
-    Error in declarator or parameters and qualifiers
-    If pointer to member declarator:
-      Invalid definition: Expected identifier in nested name, got keyword: sizeof [error at 21]
-        _Static_assert(sizeof( ulp_insn_t ), "ULP coprocessor instruction size should be 4 bytes")
-        ---------------------^
-    If declarator-id:
-      Invalid definition: Expected identifier in nested name, got keyword: sizeof [error at 21]
-        _Static_assert(sizeof( ulp_insn_t ), "ULP coprocessor instruction size should be 4 bytes")
-        ---------------------^
-mcpwm.inc:line: WARNING: doxygenfunction: Unable to resolve multiple matches for function "_Static_assert" with arguments () in doxygen xml output for project "esp32-idf" from directory: xml_in/.
-Potential matches:
-    - _Static_assert(MCPWM_UNIT_MAX, "MCPWM unit number not equal to chip capabilities")
-    - _Static_assert(sizeof( ulp_insn_t ), "ULP coprocessor instruction size should be 4 bytes")
 
 #
 # Issue present only when building on msys2 / mingw32 END <<<

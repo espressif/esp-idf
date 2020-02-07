@@ -168,10 +168,10 @@ configured with default settings, which as a consequence, means that:
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_netif.inc
+.. include-build-file:: inc/esp_netif.inc
 
 
 WiFi default API reference
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. include:: /_build/inc/esp_wifi_default.inc
+.. include-build-file:: inc/esp_wifi_default.inc

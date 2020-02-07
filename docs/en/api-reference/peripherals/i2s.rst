@@ -6,7 +6,13 @@ Overview
 
 I2S (Inter-IC Sound) is a serial, synchronous communication protocol that is usually used for transmitting audio data between two digital audio devices.
 
-ESP32 integrates two I2S controllers, referred to as I2S0 and I2S1, both of which can be used for streaming audio and video digital data.
+.. only:: esp32
+
+    {IDF_TARGET_NAME} contains two I2S peripherals. These peripherals can be configured to input and output sample data via the I2S driver.
+
+.. only:: esp32s2
+
+    {IDF_TARGET_NAME} contains one I2S peripheral. These peripherals can be configured to input and output sample data via the I2S driver.
 
 An I2S bus consists of the following lines:
 
@@ -30,7 +36,9 @@ The I2S peripherals also support LCD mode for communicating data over a parallel
 - Camera slave receiving mode
 - ADC/DAC mode
 
-For more information, see the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=306>`_.
+.. only:: esp32
+
+    For more information, see the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=306>`_.
 
 .. note::
 
@@ -198,7 +206,7 @@ Configuring I2S to use internal DAC for analog output
         i2s_set_pin(i2s_num, NULL); //for internal DAC, this will enable both of the internal channels
     
         //You can call i2s_set_dac_mode to set built-in DAC output mode.
-        //i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN); 
+        //i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
 
         i2s_set_sample_rates(i2s_num, 22050); //set sample rates
 
@@ -208,5 +216,5 @@ Configuring I2S to use internal DAC for analog output
 API Reference
 -------------
 
-.. include:: /_build/inc/i2s.inc
+.. include-build-file:: inc/i2s.inc
 

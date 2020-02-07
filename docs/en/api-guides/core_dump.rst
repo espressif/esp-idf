@@ -1,8 +1,14 @@
-ESP32 Core Dump
-===============
+Core Dump
+=========
 
 Overview
 --------
+
+.. only:: esp32s2
+
+    .. note::
+
+        The python utility does not currently support ESP32-S2
 
 ESP-IDF provides support to generate core dumps on unrecoverable software errors. This useful technique allows post-mortem analysis of software state at the moment of failure.
 Upon the crash system enters panic state, prints some information and halts or reboots depending configuration. User can choose to generate core dump in order to analyse

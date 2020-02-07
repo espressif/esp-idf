@@ -10,6 +10,6 @@
 API 参考
 -------------
 
-.. include:: /_build/inc/esp_vfs.inc
+.. include-build-file:: inc/esp_vfs.inc
 
-.. include:: /_build/inc/esp_vfs_dev.inc
+.. include-build-file:: inc/esp_vfs_dev.inc

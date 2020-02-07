@@ -75,7 +75,7 @@ API Reference
 
     5. To show contents of ``*.inc`` file in documentation, include it as follows::
 
-       .. include:: /_build/inc/esp_wifi.inc
+       .. include-build-file:: inc/esp_wifi.inc
 
        For example see :idf_file:`docs/en/api-reference/wifi/esp_wifi.rst`
     

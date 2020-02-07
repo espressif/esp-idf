@@ -5,7 +5,7 @@ Partition Tables
 Overview
 --------
 
-A single ESP32's flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
+A single {IDF_TARGET_NAME}'s flash can contain multiple apps, as well as many different kinds of data (calibration data, filesystems, parameter storage, etc). For this reason a partition table is flashed to (:ref:`default offset <CONFIG_PARTITION_TABLE_OFFSET>`) 0x8000 in the flash.
 
 Partition table length is 0xC00 bytes (maximum 95 partition table entries). An MD5 checksum, which is used for checking the integrity of the partition table, is appended after the table data. If the partition table is signed due to `secure boot`, the signature is appended after the partition table.
 
@@ -23,7 +23,7 @@ Built-in Partition Tables
 
 Here is the summary printed for the "Single factory app, no OTA" configuration::
 
-  # Espressif ESP32 Partition Table
+  # Espressif ESP Partition Table
   # Name,   Type, SubType, Offset,  Size, Flags
   nvs,      data, nvs,     0x9000,  0x6000,
   phy_init, data, phy,     0xf000,  0x1000,
@@ -34,7 +34,7 @@ Here is the summary printed for the "Single factory app, no OTA" configuration::
 
 Here is the summary printed for the "Factory app, two OTA definitions" configuration::
 
-  # Espressif ESP32 Partition Table
+  # Espressif ESP Partition Table
   # Name,   Type, SubType, Offset,  Size, Flags
   nvs,      data, nvs,     0x9000,  0x4000,
   otadata,  data, ota,     0xd000,  0x2000,
@@ -69,7 +69,7 @@ The CSV format is the same format as printed in the summaries shown above. Howev
 Name field
 ~~~~~~~~~~
 
-Name field can be any meaningful name. It is not significant to the ESP32. Names longer than 16 characters will be truncated.
+Name field can be any meaningful name. It is not significant to the {IDF_TARGET_NAME}. Names longer than 16 characters will be truncated.
 
 Type field
 ~~~~~~~~~~
@@ -136,7 +136,7 @@ Only one flag is currently supported, ``encrypted``. If this field is set to ``e
 Generating Binary Partition Table
 ---------------------------------
 
-The partition table which is flashed to the ESP32 is in a binary format, not CSV. The tool :component_file:`partition_table/gen_esp32part.py` is used to convert between CSV and binary formats.
+The partition table which is flashed to the {IDF_TARGET_NAME} is in a binary format, not CSV. The tool :component_file:`partition_table/gen_esp32part.py` is used to convert between CSV and binary formats.
 
 If you configure the partition table CSV name in the project configuration (``idf.py menuconfig``) and then build the project or run ``idf.py partition_table``, this conversion is done as part of the build process.
 

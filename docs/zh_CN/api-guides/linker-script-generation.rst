@@ -5,7 +5,7 @@
 概述
 ----
 
-ESP32 的代码和数据可以存放在多个 :ref:`内存区域 <memory-layout>`。通常，代码和只读数据存放在 flash 区域，可写数据存放在内存中。我们经常需要更改代码或者数据的默认映射区域，例如为了提高性能，将关键部分的代码和只读数据放置到内存中，或者将代码、数据和只读数据存放到 RTC 内存中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 :doc:`ULP 协处理器 <ulp>` 中使用。
+{IDF_TARGET_NAME} 的代码和数据可以存放在多个 :ref:`内存区域 <memory-layout>`。通常，代码和只读数据存放在 flash 区域，可写数据存放在内存中。我们经常需要更改代码或者数据的默认映射区域，例如为了提高性能，将关键部分的代码和只读数据放置到内存中，或者将代码、数据和只读数据存放到 RTC 内存中以便在 :doc:`唤醒桩 <deep-sleep-stub>` 和 :doc:`ULP 协处理器 <ulp>` 中使用。
 
 IDF 的链接脚本生成机制允许用户在组件级别定义代码和数据的存放区域。组件通过 :ref:`链接片段文件 <ldgen-fragment-files>` 描述如何映射目标文件的输入段（甚至可以是某个具体的函数或者数据）。在构建应用程序时，链接片段文件会被收集、解析并处理，然后扩充到 :ref:`链接脚本模板 <ldgen-script-templates>` 中形成最终的链接脚本文件，该链接脚本会被用于链接最终的二进制应用程序。
 
@@ -99,8 +99,8 @@ CMake
     [mapping]
     archive: libcomponent.a
     entries:
-        object1:function1 (noflash) 
-        object2:function2 (rtc) 
+        object1:function1 (noflash)
+        object2:function2 (rtc)
 
 ``object1.o`` 和 ``object2.o`` 的剩余函数以及整个 ``object3.o`` 目标文件会被存放到默认区域。指定数据存放区域的方法很类似，仅需将 ``：`` 之后的函数名，替换为变量名即可。
 
@@ -179,7 +179,7 @@ CMake
     else if CONFIG_PERFORMANCE_LEVEL == 1
         only place object1.o in RAM
     else
-        place entire libcomponent.a in RTC memory 
+        place entire libcomponent.a in RTC memory
 
 条件测试还支持 :ref:`其他操作 <ldgen-condition-entries>`。
 
@@ -220,7 +220,7 @@ CMake
 I. sections 片段
 """"""""""""""""
 
-sections 片段定义了 GCC 编译器输出的目标文件段的列表，可以是默认的段（比如 ``.text`` 段、``.data`` 段），也可以是用户通过 ``__attribute__`` 关键字自定义的段。 
+sections 片段定义了 GCC 编译器输出的目标文件段的列表，可以是默认的段（比如 ``.text`` 段、``.data`` 段），也可以是用户通过 ``__attribute__`` 关键字自定义的段。
 
 此外，用户还可以在某类段后增加一个 ``+``，表示囊括列表中的“所有这类段”和“所有以这类段开头的段”。相较于显式地罗列所有的段，我们更推荐使用这种方式。
 
@@ -257,7 +257,7 @@ sections 片段定义了 GCC 编译器输出的目标文件段的列表，可以
 II. scheme 片段
 """""""""""""""
 
-scheme 片段定义了为每个 sections 指定的 ``target``。 
+scheme 片段定义了为每个 sections 指定的 ``target``。
 
 **语法**
 
@@ -288,11 +288,11 @@ scheme 片段定义了为每个 sections 指定的 ``target``。
 
     *(.literal .literal.* .text .text.*)
 
-此后，这些生成的 catch-all 规则将用于未指定映射规则的情况。 
+此后，这些生成的 catch-all 规则将用于未指定映射规则的情况。
 
 .. note::
 
-    ``default`` scheme 是在 :component:`esp32/ld/esp32_fragments.lf` 文件中定义的，此外，快速上手指南中提到的内置 ``noflash`` scheme 片段和 ``rtc`` scheme 片段也是在这个文件中定义的。
+    ``default`` scheme 是在 :component:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf` 文件中定义的，此外，快速上手指南中提到的内置 ``noflash`` scheme 片段和 ``rtc`` scheme 片段也是在这个文件中定义的。
 
 .. _ldgen-mapping-fragment :
 
@@ -337,7 +337,7 @@ mapping 片段的映射条目共有三种类型，分别为：
     ``Type III``
         指定了 ``*``，也就是指定了归档文件中所有目标文件。
 
-接下来，让我们通过展开一个 ``Type II`` 映射条目，更好地理解映射条目的含义。最初： 
+接下来，让我们通过展开一个 ``Type II`` 映射条目，更好地理解映射条目的含义。最初：
 
 .. code-block:: none
 
@@ -347,8 +347,8 @@ mapping 片段的映射条目共有三种类型，分别为：
 
 .. code-block:: none
 
-    object (sections -> target, 
-            sections -> target, 
+    object (sections -> target,
+            sections -> target,
             ...)
 
 然后再根据条目定义，将这个 sections 片段展开：
@@ -358,11 +358,11 @@ mapping 片段的映射条目共有三种类型，分别为：
     object (.section,
             .section,
             ... -> target, # 根据目标文件将这里所列出的所有段放在该目标位置
-            
+
             .section,
             .section,
-            ... -> target, # 同样的方法指定其他段 
-            
+            ... -> target, # 同样的方法指定其他段
+
             ...)           # 直至所有段均已展开
 
 .. _ldgen-type1-limitations :
@@ -395,11 +395,11 @@ mapping 片段的映射条目共有三种类型，分别为：
     [mapping:lwip]
     archive: liblwip.a
     entries:
-        : LWIP_IRAM_OPTIMIZATION = y         # 如果 CONFIG_LWIP_IRAM_OPTIMIZATION 在 sdkconfig 中被定义为 'y' 
+        : LWIP_IRAM_OPTIMIZATION = y         # 如果 CONFIG_LWIP_IRAM_OPTIMIZATION 在 sdkconfig 中被定义为 'y'
         ip4:ip4_route_src_hook (noflash)     # 将 ip4.o:ip4_route_src_hook，ip4.o:ip4_route_src 和
         ip4:ip4_route_src (noflash)          # ip4.o:ip4_route 映射到 noflash scheme
         ip4:ip4_route (noflash)              # 该 scheme 会将他们存放到 RAM 中
-        
+
         : default                            # 否则不使用特殊的映射规则
 
 .. _ldgen-script-templates :
@@ -491,7 +491,7 @@ mapping 片段的映射条目共有三种类型，分别为：
 
 链接脚本模板
 ^^^^^^^^^^^^
-目前使用的链接脚本模板是 :component:`esp32/ld/esp32.project.ld.in`，仅用于应用程序的构建，生成的链接脚本文件将放在同一组件的构建目录下。值得注意的是，修改此链接描述文件模板会触发应用程序的二进制文件的重新链接。
+目前使用的链接脚本模板是 :component:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，仅用于应用程序的构建，生成的链接脚本文件将放在同一组件的构建目录下。值得注意的是，修改此链接描述文件模板会触发应用程序的二进制文件的重新链接。
 
 链接片段文件
 ^^^^^^^^^^^^

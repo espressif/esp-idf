@@ -325,7 +325,15 @@ IP layer features
 Limitations
 ^^^^^^^^^^^
 
-- Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This is a limitation of buffer sizes in the lower layer network interface drivers. If all driver transmit buffers are full then UDP transmission will fail. Applications sending a high volume of UDP datagrams who don't wish for any to be dropped by the sender should check for this error code and re-send the datagram after a short delay. Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
+- Calling ``send()`` or ``sendto()`` repeatedly on a UDP socket may eventually fail with ``errno`` equal to ``ENOMEM``. This is a limitation of buffer sizes in the lower layer network interface drivers. If all driver transmit buffers are full then UDP transmission will fail. Applications sending a high volume of UDP datagrams who don't wish for any to be dropped by the sender should check for this error code and re-send the datagram after a short delay.
+
+.. only::esp32
+
+    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` or :ref:`Ethernet <CONFIG_ETH_DMA_TX_BUFFER_NUM>` project configuration (as applicable) may also help.
+
+.. only::esp32s2
+
+    Increasing the number of TX buffers in the :ref:`Wi-Fi <CONFIG_ESP32_WIFI_TX_BUFFER>` project configuration may also help.
 
 Performance Optimization
 ------------------------

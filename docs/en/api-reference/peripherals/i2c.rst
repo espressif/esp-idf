@@ -8,7 +8,7 @@ I2C is a serial, synchronous, half-duplex communication protocol that allows co-
 
 With such advantages as simplicity and low manufacturing cost, I2C is mostly used for communication of low-speed peripheral devices over short distances (within one foot).
 
-ESP32 has two I2C controllers (also referred to as ports) which are responsible for handling communications on two I2C buses. Each I2C controller can operate as master or slave. As an example, one controller can act as a master and the other as a slave at the same time.
+{IDF_TARGET_NAME} has two I2C controllers (also referred to as ports) which are responsible for handling communications on two I2C buses. Each I2C controller can operate as master or slave. As an example, one controller can act as a master and the other as a slave at the same time.
 
 
 Driver Features
@@ -50,7 +50,7 @@ To establish I2C communication, start by configuring the driver. This is done by
 - Configure **communication pins**
 
     - Assign GPIO pins for SDA and SCL signals
-    - Set whether to enable ESP32's internal pull-ups
+    - Set whether to enable {IDF_TARGET_NAME}'s internal pull-ups
 
 - (Master only) Set I2C **clock speed**
 - (Slave only) Configure the following
@@ -81,9 +81,9 @@ After the I2C driver is configured, install it by calling the function :cpp:func
 Communication as Master
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-After installing the I2C driver, ESP32 is ready to communicate with other I2C devices.
+After installing the I2C driver, {IDF_TARGET_NAME} is ready to communicate with other I2C devices.
 
-ESP32's I2C controller operating as master is responsible for establishing communication with I2C slave devices and sending commands to trigger a slave to action, for example, to take a measurement and send the readings back to the master.
+{IDF_TARGET_NAME}'s I2C controller operating as master is responsible for establishing communication with I2C slave devices and sending commands to trigger a slave to action, for example, to take a measurement and send the readings back to the master.
 
 For better process organization, the driver provides a container, called a "command link", that should be populated with a sequence of commands and then passed to the I2C controller for execution.
 
@@ -155,7 +155,7 @@ Likewise, the command link to read from the slave looks as follows:
 Communication as Slave
 ^^^^^^^^^^^^^^^^^^^^^^
 
-After installing the I2C driver, ESP32 is ready to communicate with other I2C devices.
+After installing the I2C driver, {IDF_TARGET_NAME} is ready to communicate with other I2C devices.
 
 The API provides the following functions for slaves
 
@@ -175,10 +175,9 @@ A code example showing how to use these functions can be found in :example:`peri
 Interrupt Handling
 ^^^^^^^^^^^^^^^^^^
 
-During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to the `ESP32 Technical Reference Manual <https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf#page=292>`_ for the description of interrupts triggered by the I2C controller.
+During driver installation, an interrupt handler is installed by default. However, you can register your own interrupt handler instead of the default one by calling the function :cpp:func:`i2c_isr_register`. When implementing your own interrupt handler, refer to the `{IDF_TARGET_NAME} Technical Reference Manual (PDF) <{IDF_TARGET_TRM_EN_URL}>`_ for the description of interrupts triggered by the I2C controller.
 
 To delete an interrupt handler, call :cpp:func:`i2c_isr_free`.
-
 
 .. _i2c-api-customized-configuration:
 
@@ -217,7 +216,7 @@ You can also select different pins for SDA and SCL signals and alter the configu
 
 .. note::
 
-    ESP32's internal pull-ups are in the range of tens of kOhm, which is, in most cases, insufficient for use as I2C pull-ups. Users are advised to use external pull-ups with values described in the `I2C specification <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_.
+    {IDF_TARGET_NAME}'s internal pull-ups are in the range of tens of kOhm, which is, in most cases, insufficient for use as I2C pull-ups. Users are advised to use external pull-ups with values described in the `I2C specification <https://www.nxp.com/docs/en/user-guide/UM10204.pdf>`_.
 
 
 .. _i2c-api-error-handling:
@@ -249,4 +248,4 @@ I2C master and slave example: :example:`peripherals/i2c`.
 API Reference
 -------------
 
-.. include:: /_build/inc/i2c.inc
+.. include-build-file:: inc/i2c.inc

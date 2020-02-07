@@ -16,8 +16,8 @@ System API
     Heap Memory Allocation <mem_alloc>
     Heap Memory Debugging <heap_debug>
     High Resolution Timer <esp_timer>
-    Himem (large external SPI RAM) API <himem>
-    Inter-Processor Call <ipc>
+    :esp32: Himem (large external SPI RAM) API <himem>
+    :esp32: Inter-Processor Call <ipc>
     Call function with external stack <esp_expression_with_stack>
     Interrupt Allocation <intr_alloc>
     Logging <log>

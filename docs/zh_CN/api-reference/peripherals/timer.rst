@@ -104,4 +104,4 @@ ESP32 芯片提供两组硬件定时器，每组包含两个通用硬件定时�
 API 参考
 -------------
 
-.. include:: /_build/inc/timer.inc
+.. include-build-file:: inc/timer.inc

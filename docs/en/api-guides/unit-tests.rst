@@ -1,5 +1,5 @@
-Unit Testing in ESP32
-=============================
+Unit Testing in {IDF_TARGET_NAME}
+=================================
 :link_to_translation:`zh_CN:[中文]`
 
 ESP-IDF comes with a unit test application that is based on the Unity - unit test framework. Unit tests are integrated in the ESP-IDF repository and are placed in the ``test`` subdirectories of each component respectively.
@@ -98,7 +98,7 @@ Once the signal is sent from DUT2, you need to press "Enter" on DUT1, then DUT1 
 Multi-stage Test Cases
 -----------------------
 
-The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset. 
+The normal test cases are expected to finish without reset (or only need to check if reset happens). Sometimes we expect to run some specific tests after certain kinds of reset.
 For example, we expect to test if the reset reason is correct after a wakeup from deep sleep. We need to create a deep-sleep reset first and then check the reset reason.
 To support this, we can define multi-stage test cases, to group a set of test functions::
 
@@ -114,7 +114,7 @@ To support this, we can define multi-stage test cases, to group a set of test fu
         TEST_ASSERT(reason == DEEPSLEEP_RESET);
     }
 
-    TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[esp32]", trigger_deepsleep, check_deepsleep_reset_reason);
+    TEST_CASE_MULTIPLE_STAGES("reset reason check for deepsleep", "[{IDF_TARGET_PATH_NAME}]", trigger_deepsleep, check_deepsleep_reset_reason);
 
 Multi-stage test cases present a group of test functions to users. It needs user interactions (select cases and select different stages) to run the case.
 
@@ -130,19 +130,19 @@ Change into ``tools/unit-test-app`` directory to configure and build it:
 * ``idf.py menuconfig`` - configure unit test app.
 
 * ``idf.py -T all build`` - build unit test app with tests for each component having tests in the ``test`` subdirectory.
-* ``idf.py -T xxx build`` - build unit test app with tests for specific components. 
+* ``idf.py -T xxx build`` - build unit test app with tests for specific components.
 * ``idf.py -T all -E xxxbuild`` - build unit test app with all unit tests, except for unit tests of some components. (For instance: ``idf.py -T all -E ulp mbedtls build`` - build all unit tests exludes ``ulp`` and ``mbedtls`` components).
 
 When the build finishes, it will print instructions for flashing the chip. You can simply run ``idf.py flash`` to flash all build output.
 
-You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing. 
+You can also run ``idf.py -T all flash`` or ``idf.py -T xxx flash`` to build and flash. Everything needed will be rebuilt automatically before flashing.
 
 Use menuconfig to set the serial port for flashing.
 
 Running Unit Tests
 ------------------
 
-After flashing reset the ESP32 and it will boot the unit test app.
+After flashing reset the {IDF_TARGET_NAME} and it will boot the unit test app.
 
 When unit test app is idle, press "Enter" will make it print test menu with all available tests::
 
@@ -168,7 +168,7 @@ When unit test app is idle, press "Enter" will make it print test menu with all 
     (17)    "SPI Master no response when switch from host1 (HSPI) to host2 (VSPI)" [spi]
     (18)    "SPI Master DMA test, TX and RX in different regions" [spi]
     (19)    "SPI Master DMA test: length, start, not aligned" [spi]
-    (20)    "reset reason check for deepsleep" [esp32][test_env=UT_T2_1][multi_stage]
+    (20)    "reset reason check for deepsleep" [{IDF_TARGET_PATH_NAME}][test_env=UT_T2_1][multi_stage]
             (1)     "trigger_deepsleep"
             (2)     "check_deepsleep_reset_reason"
 
@@ -176,7 +176,7 @@ The normal case will print the case name and description. Master-slave cases wil
 
 Test cases can be run by inputting one of the following:
 
-- Test case name in quotation marks to run a single test case 
+- Test case name in quotation marks to run a single test case
 
 - Test case index to run a single test case
 
@@ -223,8 +223,8 @@ between runs and between different builds. A technique for eliminating for some 
 variability is to place code and data in instruction or data RAM (IRAM/DRAM), respectively. The CPU can access IRAM and DRAM directly, eliminating the cache out of the equation.
 However, this might not always be viable as the size of IRAM and DRAM is limited.
 
-The cache compensated timer is an alternative to placing the code/data to be benchmarked in IRAM/DRAM. This timer uses the processor's internal event counters in order to determine the amount 
-of time spent on waiting for code/data in case of a cache miss, then subtract that from the recorded wall time. 
+The cache compensated timer is an alternative to placing the code/data to be benchmarked in IRAM/DRAM. This timer uses the processor's internal event counters in order to determine the amount
+of time spent on waiting for code/data in case of a cache miss, then subtract that from the recorded wall time.
 
   .. code-block:: c
 
