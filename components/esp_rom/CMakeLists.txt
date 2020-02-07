@@ -30,10 +30,12 @@ else() # Regular app build
                 # Instead, those functions can be used from the toolchain by ESP-IDF.
                 target_linker_script(${COMPONENT_LIB} INTERFACE "esp32/ld/esp32.rom.newlib-funcs-time.ld")
             endif()
-        endif()
 
-        if(CONFIG_NEWLIB_NANO_FORMAT)
-            list(APPEND scripts "esp32/ld/esp32.rom.newlib-nano.ld")
+            # Include in newlib nano from ROM only if SPIRAM cache workaround is disabled
+            if(CONFIG_NEWLIB_NANO_FORMAT)
+                list(APPEND scripts "esp32/ld/esp32.rom.newlib-nano.ld")
+            endif()
+
         endif()
 
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
