@@ -30,34 +30,29 @@
 #include <sys/lock.h>
 
 #include "esp_log.h"
+#include "esp_crypto_lock.h"
+#include "esp32s2/rom/cache.h"
+#include "esp32s2/rom/lldesc.h"
 #include "esp32s2/rom/ets_sys.h"
+#include "soc/crypto_dma_reg.h"
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_reg.h"
-
-#include "esp32s2/rom/cache.h"
-
 #include "soc/cache_memory.h"
+#include "soc/periph_defs.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "esp32s2/sha.h"
-#include "esp32s2/crypto_dma.h"
-#include "esp32s2/rom/lldesc.h"
-#include "soc/periph_defs.h"
-#include "soc/crypto_dma_reg.h"
 #include "driver/periph_ctrl.h"
 #include "sys/param.h"
 
+#include "esp32s2/sha.h"
 
 /* Max amount of bytes in a single DMA operation is 4095,
    for SHA this means that the biggest safe amount of bytes is
    31 blocks of 128 bytes = 3968
 */
 #define SHA_DMA_MAX_BYTES 3968
-
-/* Lock for SHA engine */
-static _lock_t s_sha_lock;
 
 const static char *TAG = "esp-sha";
 
@@ -103,9 +98,7 @@ inline static size_t state_length(esp_sha_type type)
 /* Enable SHA peripheral and then lock it */
 void esp_sha_acquire_hardware()
 {
-    /* Need to lock DMA since it is shared with AES block */
-    _lock_acquire(&crypto_dma_lock);
-    _lock_acquire(&s_sha_lock);
+    esp_crypto_lock_acquire();
 
     /* Enable SHA and DMA hardware */
     periph_module_enable(PERIPH_SHA_DMA_MODULE);
@@ -120,12 +113,8 @@ void esp_sha_release_hardware()
     /* Disable SHA and DMA hardware */
     periph_module_disable(PERIPH_SHA_DMA_MODULE);
 
-    /* Need to lock DMA since it is shared with AES block */
-    _lock_release(&s_sha_lock);
-    _lock_release(&crypto_dma_lock);
-
+    esp_crypto_lock_release();
 }
-
 
 /* Busy wait until SHA is idle */
 static void esp_sha_wait_idle(void)
@@ -133,7 +122,6 @@ static void esp_sha_wait_idle(void)
     while (DPORT_REG_READ(SHA_BUSY_REG) != 0) {
     }
 }
-
 
 void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 {
