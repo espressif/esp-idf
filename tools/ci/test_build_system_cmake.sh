@@ -650,14 +650,17 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     idf.py bootloader || failure "Failed to build bootloader"
     bin_header_match build/bootloader/bootloader.bin "0210"
     # Change to 4MB
+    sleep 1 # delay here to make sure sdkconfig modification time is different
     echo "CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y" > sdkconfig
     idf.py bootloader || failure "Failed to build bootloader"
     bin_header_match build/bootloader/bootloader.bin "0220"
     # Change to QIO, bootloader should still be DIO (will change to QIO in 2nd stage bootloader)
+    sleep 1 # delay here to make sure sdkconfig modification time is different
     echo "CONFIG_FLASHMODE_QIO=y" > sdkconfig
     idf.py bootloader || failure "Failed to build bootloader"
     bin_header_match build/bootloader/bootloader.bin "0210"
     # Change to 80 MHz
+    sleep 1 # delay here to make sure sdkconfig modification time is different
     echo "CONFIG_ESPTOOLPY_FLASHFREQ_80M=y" > sdkconfig
     idf.py bootloader || failure "Failed to build bootloader"
     bin_header_match build/bootloader/bootloader.bin "021f"
