@@ -83,6 +83,29 @@
     # run test
     - python Runner.py $TEST_CASE_PATH -c $CONFIG_FILE -e $ENV_FILE
 
+.test_app_template:
+  extends: .example_test_template
+  stage: target_test
+  dependencies:
+    - assign_test
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      - schedules
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_CUSTOM_TEST
+      - $BOT_LABEL_EXAMPLE_TEST
+  variables:
+    TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
+    TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
+    CONFIG_FILE_PATH: "${CI_PROJECT_DIR}/tools/test_apps/test_configs"
+    LOG_PATH: "$CI_PROJECT_DIR/TEST_LOGS"
+    ENV_FILE: "$CI_PROJECT_DIR/ci-test-runner-configs/$CI_RUNNER_DESCRIPTION/EnvConfig.yml"
+
 .unit_test_template:
   extends: .example_test_template
   stage: target_test
@@ -278,6 +301,12 @@ example_test_010:
   tags:
     - ESP32
     - Example_ExtFlash
+
+test_app_test_001:
+  extends: .test_app_template
+  tags:
+    - ESP32
+    - test_jtag_arm
 
 example_test_011:
   extends: .example_debug_template

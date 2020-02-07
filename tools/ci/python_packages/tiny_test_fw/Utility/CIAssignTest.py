@@ -148,6 +148,7 @@ class AssignTest(object):
 
     def __init__(self, test_case_path, ci_config_file, case_group=Group):
         self.test_case_path = test_case_path
+        self.test_case_file_pattern = None
         self.test_cases = []
         self.jobs = self._parse_gitlab_ci_config(ci_config_file)
         self.case_group = case_group
@@ -177,7 +178,7 @@ class AssignTest(object):
         job_list.sort(key=lambda x: x["name"])
         return job_list
 
-    def _search_cases(self, test_case_path, case_filter=None):
+    def _search_cases(self, test_case_path, case_filter=None, test_case_file_pattern=None):
         """
         :param test_case_path: path contains test case folder
         :param case_filter: filter for test cases. the filter to use is default filter updated with case_filter param.
@@ -186,7 +187,7 @@ class AssignTest(object):
         _case_filter = self.DEFAULT_FILTER.copy()
         if case_filter:
             _case_filter.update(case_filter)
-        test_methods = SearchCases.Search.search_test_cases(test_case_path)
+        test_methods = SearchCases.Search.search_test_cases(test_case_path, test_case_file_pattern)
         return CaseConfig.filter_test_cases(test_methods, _case_filter)
 
     def _group_cases(self):
@@ -276,7 +277,7 @@ class AssignTest(object):
         failed_to_assign = []
         assigned_groups = []
         case_filter = self._apply_bot_filter()
-        self.test_cases = self._search_cases(self.test_case_path, case_filter)
+        self.test_cases = self._search_cases(self.test_case_path, case_filter, self.test_case_file_pattern)
         self._apply_bot_test_count()
         test_groups = self._group_cases()
 

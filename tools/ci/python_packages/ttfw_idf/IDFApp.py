@@ -310,7 +310,7 @@ class Example(IDFApp):
         """
         return [os.path.join(self.binary_path, "..", "sdkconfig")]
 
-    def _try_get_binary_from_local_fs(self, app_path, config_name=None, target=None):
+    def _try_get_binary_from_local_fs(self, app_path, config_name=None, target=None, local_build_dir="build_examples"):
         # build folder of example path
         path = os.path.join(self.idf_path, app_path, "build")
         if os.path.exists(path):
@@ -327,7 +327,7 @@ class Example(IDFApp):
         # (see tools/ci/build_examples_cmake.sh)
         # For example: $IDF_PATH/build_examples/examples_get-started_blink/default/esp32
         app_path_underscored = app_path.replace(os.path.sep, "_")
-        example_path = os.path.join(self.idf_path, "build_examples")
+        example_path = os.path.join(self.idf_path, local_build_dir)
         for dirpath in os.listdir(example_path):
             if os.path.basename(dirpath) == app_path_underscored:
                 path = os.path.join(example_path, dirpath, config_name, target, "build")
@@ -341,7 +341,8 @@ class Example(IDFApp):
         if path:
             return path
         else:
-            artifacts = Artifacts(self.idf_path, CIAssignExampleTest.ARTIFACT_INDEX_FILE,
+            artifacts = Artifacts(self.idf_path,
+                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.ExampleGroup),
                                   app_path, config_name, target)
             path = artifacts.download_artifacts()
             if path:
@@ -369,7 +370,8 @@ class LoadableElfExample(Example):
         if path:
             return path
         else:
-            artifacts = Artifacts(self.idf_path, CIAssignExampleTest.ARTIFACT_INDEX_FILE,
+            artifacts = Artifacts(self.idf_path,
+                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.ExampleGroup),
                                   app_path, config_name, target)
             path = artifacts.download_artifact_files(self.app_files)
             if path:
@@ -400,6 +402,22 @@ class UT(IDFApp):
             return path
 
         raise OSError("Failed to get unit-test-app binary path")
+
+
+class TestApp(Example):
+    def get_binary_path(self, app_path, config_name=None, target=None):
+        path = self._try_get_binary_from_local_fs(app_path, config_name, target, local_build_dir="build_test_apps")
+        if path:
+            return path
+        else:
+            artifacts = Artifacts(self.idf_path,
+                                  CIAssignExampleTest.get_artifact_index_file(case_group=CIAssignExampleTest.TestAppsGroup),
+                                  app_path, config_name, target)
+            path = artifacts.download_artifacts()
+            if path:
+                return os.path.join(self.idf_path, path)
+            else:
+                raise OSError("Failed to find example binary")
 
 
 class SSC(IDFApp):

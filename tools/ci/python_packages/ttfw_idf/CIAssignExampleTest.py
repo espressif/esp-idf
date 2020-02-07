@@ -25,25 +25,34 @@ import json
 import gitlab_api
 from tiny_test_fw.Utility import CIAssignTest
 
-
-EXAMPLE_BUILD_JOB_NAMES = ["build_examples_cmake_esp32", "build_examples_cmake_esp32s2"]
 IDF_PATH_FROM_ENV = os.getenv("IDF_PATH")
-if IDF_PATH_FROM_ENV:
-    ARTIFACT_INDEX_FILE = os.path.join(IDF_PATH_FROM_ENV,
-                                       "build_examples", "artifact_index.json")
-else:
-    ARTIFACT_INDEX_FILE = "artifact_index.json"
 
 
 class ExampleGroup(CIAssignTest.Group):
     SORT_KEYS = CI_JOB_MATCH_KEYS = ["env_tag", "chip"]
+    BUILD_LOCAL_DIR = "build_examples"
+    BUILD_JOB_NAMES = ["build_examples_cmake_esp32", "build_examples_cmake_esp32s2"]
+
+
+class TestAppsGroup(ExampleGroup):
+    BUILD_LOCAL_DIR = "build_test_apps"
+    BUILD_JOB_NAMES = ["build_test_apps_esp32", "build_test_apps_esp32s2"]
 
 
 class CIExampleAssignTest(CIAssignTest.AssignTest):
     CI_TEST_JOB_PATTERN = re.compile(r"^example_test_.+")
 
 
-def create_artifact_index_file(project_id=None, pipeline_id=None):
+def get_artifact_index_file(case_group=ExampleGroup):
+    if IDF_PATH_FROM_ENV:
+        artifact_index_file = os.path.join(IDF_PATH_FROM_ENV,
+                                           case_group.BUILD_LOCAL_DIR, "artifact_index.json")
+    else:
+        artifact_index_file = "artifact_index.json"
+    return artifact_index_file
+
+
+def create_artifact_index_file(project_id=None, pipeline_id=None, case_group=ExampleGroup):
     if project_id is None:
         project_id = os.getenv("CI_PROJECT_ID")
     if pipeline_id is None:
@@ -52,9 +61,10 @@ def create_artifact_index_file(project_id=None, pipeline_id=None):
     artifact_index_list = []
 
     def format_build_log_path():
-        return "build_examples/list_job_{}.json".format(job_info["parallel_num"])
+        parallel = job_info["parallel_num"]    # Could be None if "parallel_num" not defined for the job
+        return "{}/list_job_{}.json".format(case_group.BUILD_LOCAL_DIR, parallel or 1)
 
-    for build_job_name in EXAMPLE_BUILD_JOB_NAMES:
+    for build_job_name in case_group.BUILD_JOB_NAMES:
         job_info_list = gitlab_inst.find_job_id(build_job_name, pipeline_id=pipeline_id)
         for job_info in job_info_list:
             raw_data = gitlab_inst.download_artifact(job_info["id"], [format_build_log_path()])[0]
@@ -62,13 +72,14 @@ def create_artifact_index_file(project_id=None, pipeline_id=None):
             for build_info in build_info_list:
                 build_info["ci_job_id"] = job_info["id"]
                 artifact_index_list.append(build_info)
+    artifact_index_file = get_artifact_index_file(case_group=case_group)
     try:
-        os.makedirs(os.path.dirname(ARTIFACT_INDEX_FILE))
+        os.makedirs(os.path.dirname(artifact_index_file))
     except OSError:
         # already created
         pass
 
-    with open(ARTIFACT_INDEX_FILE, "w") as f:
+    with open(artifact_index_file, "w") as f:
         json.dump(artifact_index_list, f)
 
 
@@ -82,9 +93,22 @@ if __name__ == '__main__':
                         help="output path of config files")
     parser.add_argument("--pipeline_id", "-p", type=int, default=None,
                         help="pipeline_id")
+    parser.add_argument("--job-prefix",
+                        help="prefix of the test job name in CI yml file")
+    parser.add_argument("--test-case-file-pattern",
+                        help="file name pattern used to find Python test case files")
+    parser.add_argument('--custom-group',
+                        help='select custom-group for the test cases, if other than ExampleTest',
+                        choices=['example','test-apps'], default='example')
+
     args = parser.parse_args()
 
-    assign_test = CIExampleAssignTest(args.test_case, args.ci_config_file, case_group=ExampleGroup)
+    if args.job_prefix:
+        CIExampleAssignTest.CI_TEST_JOB_PATTERN = re.compile(r"^{}.+".format(args.job_prefix))
+
+    case_group = ExampleGroup if args.custom_group == 'example' else TestAppsGroup
+
+    assign_test = CIExampleAssignTest(args.test_case, args.ci_config_file, case_group=case_group)
     assign_test.assign_cases()
     assign_test.output_configs(args.output_path)
-    create_artifact_index_file()
+    create_artifact_index_file(case_group=case_group)
