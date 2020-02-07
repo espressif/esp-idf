@@ -7,6 +7,7 @@
 # Then emits the new 'idf-info' event which has information read from IDF
 # build system, that other extensions can use to generate relevant data.
 import os.path
+import shutil
 import sys
 import subprocess
 import json
@@ -61,15 +62,19 @@ def generate_idf_info(app, config):
               "-B",
               cmake_build_dir,
               "-C",
-              project_path]
-    if not os.path.exists(os.path.join(cmake_build_dir, "CMakeCache.txt")):
-        # if build directory not created yet, run a reconfigure pass over it
-        print("Starting new dummy IDF project... w")
-        subprocess.check_call(idf_py + ["set-target", app.config.idf_target])
-    else:
-        print("Re-running CMake on the existing IDF project in {}".format(cmake_build_dir))
+              project_path,
+              "-D",
+              "SDKCONFIG={}".format(os.path.join(build_dir, "dummy_project_sdkconfig"))
+              ]
 
+    # force a clean idf.py build w/ new sdkconfig each time
+    # (not much slower than 'reconfigure', avoids any potential config & build versioning problems
+    shutil.rmtree(cmake_build_dir, ignore_errors=True)
+    print("Starting new dummy IDF project... ")
+    subprocess.check_call(idf_py + ["set-target", app.config.idf_target])
+    print("Running CMake on dummy project...")
     subprocess.check_call(idf_py + ["reconfigure"])
+
     with open(os.path.join(cmake_build_dir, "project_description.json")) as f:
         project_description = json.load(f)
     if project_description["target"] != app.config.idf_target:
