@@ -71,6 +71,26 @@ IP_VERSION = 'IPv4'
 IPV4 = '192.168.0.167'
 IPV6 = 'FE80::32AE:A4FF:FE80:5288'
 ```
+### Note about IPv6 addresses
+
+Examples are configured to obtain multiple IPv6 addresses. The actual behavior may differ depending on the local network, typically the ESP gets assigned these two addresses
+
+* Local Link address
+
+* Unique Local address
+
+The value and type of the IPv6 address is displayed in the terminal, for example:
+
+Please make sure that when using the Local Link address, an interface id is included in the configuration:
+
+* In the embedded code
+```
+    dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(esp_netif_instance);
+```
+* On the host
+
+   - Interface name suffix is present when passing the address as a string, for example `fe80::260a:XXX:XXX:XXX%en0`
+   - The interface id is present when passing the endpoint as tupple, for example `socket.connect(('fd00::260a:XXXX:XXXX:XXXX', 3333, 0, 3))`
 
 ## Hardware Required
 
