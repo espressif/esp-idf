@@ -67,7 +67,7 @@ typedef volatile struct {
                 uint32_t val;
             } duty_rd;
         } channel[8];
-    } channel_group[1];                                /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
+    } channel_group[1];  /* single channel group, low speed mode only */
     struct {
         struct {
             union {
@@ -90,7 +90,7 @@ typedef volatile struct {
                 uint32_t val;
             } value;
         } timer[4];
-    } timer_group[1];                                    /*two channel groups : 0: high-speed channels; 1: low-speed channels*/
+    } timer_group[1];  /* single channel group, low speed mode only */
     union {
         struct {
             uint32_t lstimer0_ovf:                1;
