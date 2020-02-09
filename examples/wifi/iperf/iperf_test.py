@@ -305,7 +305,7 @@ class IperfTestUtility(object):
         except subprocess.CalledProcessError:
             pass
         self.dut.write("restart")
-        self.dut.expect("esp32>")
+        self.dut.expect("iperf>")
         self.dut.write("scan {}".format(self.ap_ssid))
         for _ in range(SCAN_RETRY_COUNT):
             try:
@@ -431,7 +431,7 @@ class IperfTestUtility(object):
         :return: True or False
         """
         self.dut.write("restart")
-        self.dut.expect("esp32>")
+        self.dut.expect("iperf>")
         for _ in range(WAIT_AP_POWER_ON_TIMEOUT // SCAN_TIMEOUT):
             try:
                 self.dut.write("scan {}".format(self.ap_ssid))
@@ -477,7 +477,7 @@ def test_wifi_throughput_with_different_configs(env, extra_data):
         dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
                           app_config_name=config_name)
         dut.start_app()
-        dut.expect("esp32>")
+        dut.expect("iperf>")
 
         # 3. run test for each required att value
         test_result[config_name] = {
@@ -533,7 +533,7 @@ def test_wifi_throughput_vs_rssi(env, extra_data):
     dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
                       app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
-    dut.expect("esp32>")
+    dut.expect("iperf>")
 
     # 2. run test for each required att value
     for ap_info in ap_list:
@@ -580,7 +580,7 @@ def test_wifi_throughput_basic(env, extra_data):
     dut = env.get_dut("iperf", "examples/wifi/iperf", dut_class=ttfw_idf.ESP32DUT,
                       app_config_name=BEST_PERFORMANCE_CONFIG)
     dut.start_app()
-    dut.expect("esp32>")
+    dut.expect("iperf>")
 
     # 2. preparing
     test_result = {
