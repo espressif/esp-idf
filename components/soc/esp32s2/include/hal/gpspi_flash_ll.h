@@ -282,6 +282,17 @@ static inline void gpspi_flash_ll_set_command8(spi_dev_t *dev, uint8_t command)
 }
 
 /**
+ * Get the address length that is set in register, in bits.
+ * 
+ * @param dev Beginning address of the peripheral registers.
+ * 
+ */ 
+static inline int gpspi_flash_ll_get_addr_bitlen(spi_dev_t *dev)
+{
+    return dev->user.usr_addr ? dev->user1.usr_addr_bitlen + 1 : 0;
+}
+
+/**
  * Set the address length to send, in bits. Should be called before commands that requires the address e.g. erase sector, read, write...
  *
  * @param dev Beginning address of the peripheral registers.
@@ -291,6 +302,17 @@ static inline void gpspi_flash_ll_set_addr_bitlen(spi_dev_t *dev, uint32_t bitle
 {
     dev->user1.usr_addr_bitlen = (bitlen - 1);
     dev->user.usr_addr = bitlen ? 1 : 0;
+}
+
+/**
+ * Set the address to send in user mode. Should be called before commands that requires the address e.g. erase sector, read, write...
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param addr Address to send
+ */
+static inline void gpspi_flash_ll_set_usr_address(spi_dev_t *dev, uint32_t addr, uint32_t bitlen)
+{
+    dev->addr = (addr << (32 - bitlen));
 }
 
 /**
@@ -314,5 +336,19 @@ static inline void gpspi_flash_ll_set_dummy(spi_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
     dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+}
+
+/**
+ * Set D/Q output level during dummy phase
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param out_en whether to enable IO output for dummy phase
+ * @param out_level dummy output level 
+ */
+static inline void gpspi_flash_ll_set_dummy_out(spi_dev_t *dev, uint32_t out_en, uint32_t out_lev)
+{
+    dev->ctrl.dummy_out = out_en;
+    dev->ctrl.q_pol = out_lev;
+    dev->ctrl.d_pol = out_lev;
 }
 
