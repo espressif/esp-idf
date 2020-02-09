@@ -31,8 +31,7 @@ typedef volatile struct {
                 uint32_t carrier_eff_en:     1;
                 uint32_t carrier_en:         1;
                 uint32_t carrier_out_lv:     1;
-                uint32_t mem_pd:             1;
-                uint32_t clk_en:             1;
+                uint32_t reserved30:         2;
             };
             uint32_t val;
         } conf0;
@@ -52,8 +51,7 @@ typedef volatile struct {
                 uint32_t idle_out_lv:           1;
                 uint32_t idle_out_en:           1;
                 uint32_t tx_stop:               1;
-                uint32_t carrier_per:           5;
-                uint32_t reserved26:            6;
+                uint32_t reserved21:           11;
             };
             uint32_t val;
         } conf1;
@@ -105,7 +103,11 @@ typedef volatile struct {
             uint32_t ch1_tx_loop:              1;
             uint32_t ch2_tx_loop:              1;
             uint32_t ch3_tx_loop:              1;
-            uint32_t reserved20:              12;
+            uint32_t ch0_rx_thr_event:         1;
+            uint32_t ch1_rx_thr_event:         1;
+            uint32_t ch2_rx_thr_event:         1;
+            uint32_t ch3_rx_thr_event:         1;
+            uint32_t reserved24:               8;
         };
         uint32_t val;
     } int_raw;
@@ -131,7 +133,11 @@ typedef volatile struct {
             uint32_t ch1_tx_loop:             1;
             uint32_t ch2_tx_loop:             1;
             uint32_t ch3_tx_loop:             1;
-            uint32_t reserved20:             12;
+            uint32_t ch0_rx_thr_event:        1;
+            uint32_t ch1_rx_thr_event:        1;
+            uint32_t ch2_rx_thr_event:        1;
+            uint32_t ch3_rx_thr_event:        1;
+            uint32_t reserved24:              8;
         };
         uint32_t val;
     } int_st;
@@ -157,7 +163,11 @@ typedef volatile struct {
             uint32_t ch1_tx_loop:              1;
             uint32_t ch2_tx_loop:              1;
             uint32_t ch3_tx_loop:              1;
-            uint32_t reserved20:              12;
+            uint32_t ch0_rx_thr_event:         1;
+            uint32_t ch1_rx_thr_event:         1;
+            uint32_t ch2_rx_thr_event:         1;
+            uint32_t ch3_rx_thr_event:         1;
+            uint32_t reserved24:               8;
         };
         uint32_t val;
     } int_ena;
@@ -183,7 +193,11 @@ typedef volatile struct {
             uint32_t ch1_tx_loop:              1;
             uint32_t ch2_tx_loop:              1;
             uint32_t ch3_tx_loop:              1;
-            uint32_t reserved20:              12;
+            uint32_t ch0_rx_thr_event:         1;
+            uint32_t ch1_rx_thr_event:         1;
+            uint32_t ch2_rx_thr_event:         1;
+            uint32_t ch3_rx_thr_event:         1;
+            uint32_t reserved24:               8;
         };
         uint32_t val;
     } int_clr;
@@ -200,15 +214,20 @@ typedef volatile struct {
             uint32_t tx_loop_num:         10;
             uint32_t tx_loop_cnt_en:       1;
             uint32_t loop_count_reset:     1;
-            uint32_t reserved21:          11;
+            uint32_t rx_lim:               9;
+            uint32_t reserved30:           2;
         };
         uint32_t val;
     } tx_lim_ch[4];
     union {
         struct {
-            uint32_t fifo_mask:      1;
-            uint32_t mem_tx_wrap_en: 1;
-            uint32_t reserved2:     30;
+            uint32_t fifo_mask:        1;
+            uint32_t mem_tx_wrap_en:   1;
+            uint32_t mem_clk_force_on: 1;
+            uint32_t mem_force_pd:     1;
+            uint32_t mem_force_pu:     1;
+            uint32_t reserved5:       26;
+            uint32_t clk_en:           1;
         };
         uint32_t val;
     } apb_conf;
@@ -235,64 +254,15 @@ typedef volatile struct {
     } ref_cnt_rst;
     union {
         struct {
-            uint32_t carrier_low_num_ch0: 15;
-            uint32_t carrier_high_num_ch0:15;
-            uint32_t reserved30:           2;
+            uint32_t carrier_low_thres_ch: 16;
+            uint32_t carrier_high_thres_ch:16;
         };
         uint32_t val;
-    } ch0_rx_carrier_st;
-    union {
-        struct {
-            uint32_t carrier_low_thres_ch0: 16;
-            uint32_t carrier_high_thres_ch0:16;
-        };
-        uint32_t val;
-    } ch0_rx_carrier_rm;
-    union {
-        struct {
-            uint32_t carrier_low_num_ch1: 15;
-            uint32_t carrier_high_num_ch1:15;
-            uint32_t reserved30:           2;
-        };
-        uint32_t val;
-    } ch1_rx_carrier_st;
-    union {
-        struct {
-            uint32_t carrier_low_thres_ch1: 16;
-            uint32_t carrier_high_thres_ch1:16;
-        };
-        uint32_t val;
-    } ch1_rx_carrier_rm;
-    union {
-        struct {
-            uint32_t carrier_low_num_ch2: 15;
-            uint32_t carrier_high_num_ch2:15;
-            uint32_t reserved30:           2;
-        };
-        uint32_t val;
-    } ch2_rx_carrier_st;
-    union {
-        struct {
-            uint32_t carrier_low_thres_ch2: 16;
-            uint32_t carrier_high_thres_ch2:16;
-        };
-        uint32_t val;
-    } ch2_rx_carrier_rm;
-    union {
-        struct {
-            uint32_t carrier_low_num_ch3: 15;
-            uint32_t carrier_high_num_ch3:15;
-            uint32_t reserved30:           2;
-        };
-        uint32_t val;
-    } ch3_rx_carrier_st;
-    union {
-        struct {
-            uint32_t carrier_low_thres_ch3: 16;
-            uint32_t carrier_high_thres_ch3:16;
-        };
-        uint32_t val;
-    } ch3_rx_carrier_rm;
+    } ch_rx_carrier_rm[4];
+    uint32_t reserved_9c;
+    uint32_t reserved_a0;
+    uint32_t reserved_a4;
+    uint32_t reserved_a8;
     uint32_t reserved_ac;
     uint32_t reserved_b0;
     uint32_t reserved_b4;

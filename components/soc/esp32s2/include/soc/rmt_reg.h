@@ -780,6 +780,30 @@ extern "C" {
 #define RMT_APB_MEM_WADDR_CH3_S  0
 
 #define RMT_INT_RAW_REG          (DR_REG_RMT_BASE + 0x0050)
+/* RMT_CH3_RX_THR_EVENT_INT_RAW : RO ;bitpos:[23] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH3_RX_THR_EVENT_INT_RAW  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_RAW_M  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_RAW_V  0x1
+#define RMT_CH3_RX_THR_EVENT_INT_RAW_S  23
+/* RMT_CH2_RX_THR_EVENT_INT_RAW : RO ;bitpos:[22] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH2_RX_THR_EVENT_INT_RAW  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_RAW_M  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_RAW_V  0x1
+#define RMT_CH2_RX_THR_EVENT_INT_RAW_S  22
+/* RMT_CH1_RX_THR_EVENT_INT_RAW : RO ;bitpos:[21] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH1_RX_THR_EVENT_INT_RAW  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_RAW_M  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_RAW_V  0x1
+#define RMT_CH1_RX_THR_EVENT_INT_RAW_S  21
+/* RMT_CH0_RX_THR_EVENT_INT_RAW : RO ;bitpos:[20] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH0_RX_THR_EVENT_INT_RAW  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_RAW_M  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_RAW_V  0x1
+#define RMT_CH0_RX_THR_EVENT_INT_RAW_S  20
 /* RMT_CH3_TX_LOOP_INT_RAW : RO ;bitpos:[19] ;default: 1'b0 ; */
 /*description: */
 #define RMT_CH3_TX_LOOP_INT_RAW  (BIT(19))
@@ -902,6 +926,30 @@ extern "C" {
 #define RMT_CH0_TX_END_INT_RAW_S  0
 
 #define RMT_INT_ST_REG          (DR_REG_RMT_BASE + 0x0054)
+/* RMT_CH3_RX_THR_EVENT_INT_ST : RO ;bitpos:[23] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH3_RX_THR_EVENT_INT_ST  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_ST_M  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_ST_V  0x1
+#define RMT_CH3_RX_THR_EVENT_INT_ST_S  23
+/* RMT_CH2_RX_THR_EVENT_INT_ST : RO ;bitpos:[22] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH2_RX_THR_EVENT_INT_ST  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_ST_M  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_ST_V  0x1
+#define RMT_CH2_RX_THR_EVENT_INT_ST_S  22
+/* RMT_CH1_RX_THR_EVENT_INT_ST : RO ;bitpos:[21] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH1_RX_THR_EVENT_INT_ST  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_ST_M  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_ST_V  0x1
+#define RMT_CH1_RX_THR_EVENT_INT_ST_S  21
+/* RMT_CH0_RX_THR_EVENT_INT_ST : RO ;bitpos:[20] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH0_RX_THR_EVENT_INT_ST  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_ST_M  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_ST_V  0x1
+#define RMT_CH0_RX_THR_EVENT_INT_ST_S  20
 /* RMT_CH3_TX_LOOP_INT_ST : RO ;bitpos:[19] ;default: 1'b0 ; */
 /*description: */
 #define RMT_CH3_TX_LOOP_INT_ST  (BIT(19))
@@ -1024,6 +1072,30 @@ extern "C" {
 #define RMT_CH0_TX_END_INT_ST_S  0
 
 #define RMT_INT_ENA_REG          (DR_REG_RMT_BASE + 0x0058)
+/* RMT_CH3_RX_THR_EVENT_INT_ENA : R/W ;bitpos:[23] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH3_RX_THR_EVENT_INT_ENA  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_ENA_M  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_ENA_V  0x1
+#define RMT_CH3_RX_THR_EVENT_INT_ENA_S  23
+/* RMT_CH2_RX_THR_EVENT_INT_ENA : R/W ;bitpos:[22] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH2_RX_THR_EVENT_INT_ENA  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_ENA_M  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_ENA_V  0x1
+#define RMT_CH2_RX_THR_EVENT_INT_ENA_S  22
+/* RMT_CH1_RX_THR_EVENT_INT_ENA : R/W ;bitpos:[21] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH1_RX_THR_EVENT_INT_ENA  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_ENA_M  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_ENA_V  0x1
+#define RMT_CH1_RX_THR_EVENT_INT_ENA_S  21
+/* RMT_CH0_RX_THR_EVENT_INT_ENA : R/W ;bitpos:[20] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH0_RX_THR_EVENT_INT_ENA  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_ENA_M  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_ENA_V  0x1
+#define RMT_CH0_RX_THR_EVENT_INT_ENA_S  20
 /* RMT_CH3_TX_LOOP_INT_ENA : R/W ;bitpos:[19] ;default: 1'b0 ; */
 /*description: */
 #define RMT_CH3_TX_LOOP_INT_ENA  (BIT(19))
@@ -1146,6 +1218,30 @@ extern "C" {
 #define RMT_CH0_TX_END_INT_ENA_S  0
 
 #define RMT_INT_CLR_REG          (DR_REG_RMT_BASE + 0x005c)
+/* RMT_CH3_RX_THR_EVENT_INT_CLR : WO ;bitpos:[23] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH3_RX_THR_EVENT_INT_CLR  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_CLR_M  (BIT(23))
+#define RMT_CH3_RX_THR_EVENT_INT_CLR_V  0x1
+#define RMT_CH3_RX_THR_EVENT_INT_CLR_S  23
+/* RMT_CH2_RX_THR_EVENT_INT_CLR : WO ;bitpos:[22] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH2_RX_THR_EVENT_INT_CLR  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_CLR_M  (BIT(22))
+#define RMT_CH2_RX_THR_EVENT_INT_CLR_V  0x1
+#define RMT_CH2_RX_THR_EVENT_INT_CLR_S  22
+/* RMT_CH1_RX_THR_EVENT_INT_CLR : WO ;bitpos:[21] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH1_RX_THR_EVENT_INT_CLR  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_CLR_M  (BIT(21))
+#define RMT_CH1_RX_THR_EVENT_INT_CLR_V  0x1
+#define RMT_CH1_RX_THR_EVENT_INT_CLR_S  21
+/* RMT_CH0_RX_THR_EVENT_INT_CLR : WO ;bitpos:[20] ;default: 1'b0 ; */
+/*description: */
+#define RMT_CH0_RX_THR_EVENT_INT_CLR  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_CLR_M  (BIT(20))
+#define RMT_CH0_RX_THR_EVENT_INT_CLR_V  0x1
+#define RMT_CH0_RX_THR_EVENT_INT_CLR_S  20
 /* RMT_CH3_TX_LOOP_INT_CLR : WO ;bitpos:[19] ;default: 1'b0 ; */
 /*description: */
 #define RMT_CH3_TX_LOOP_INT_CLR  (BIT(19))
@@ -1324,6 +1420,12 @@ extern "C" {
 #define RMT_CARRIER_LOW_CH3_S  0
 
 #define RMT_CH0_TX_LIM_REG          (DR_REG_RMT_BASE + 0x0070)
+/* RMT_RX_LIM_CH0 : R/W ;bitpos:[29:21] ;default: 9'h80 ; */
+/*description: */
+#define RMT_RX_LIM_CH0  0x000001FF
+#define RMT_RX_LIM_CH0_M  ((RMT_RX_LIM_CH0_V)<<(RMT_RX_LIM_CH0_S))
+#define RMT_RX_LIM_CH0_V  0x1FF
+#define RMT_RX_LIM_CH0_S  21
 /* RMT_LOOP_COUNT_RESET_CH0 : WO ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define RMT_LOOP_COUNT_RESET_CH0  (BIT(20))
@@ -1350,6 +1452,12 @@ extern "C" {
 #define RMT_TX_LIM_CH0_S  0
 
 #define RMT_CH1_TX_LIM_REG          (DR_REG_RMT_BASE + 0x0074)
+/* RMT_RX_LIM_CH1 : R/W ;bitpos:[29:21] ;default: 9'h80 ; */
+/*description: */
+#define RMT_RX_LIM_CH1  0x000001FF
+#define RMT_RX_LIM_CH1_M  ((RMT_RX_LIM_CH1_V)<<(RMT_RX_LIM_CH1_S))
+#define RMT_RX_LIM_CH1_V  0x1FF
+#define RMT_RX_LIM_CH1_S  21
 /* RMT_LOOP_COUNT_RESET_CH1 : WO ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define RMT_LOOP_COUNT_RESET_CH1  (BIT(20))
@@ -1376,6 +1484,12 @@ extern "C" {
 #define RMT_TX_LIM_CH1_S  0
 
 #define RMT_CH2_TX_LIM_REG          (DR_REG_RMT_BASE + 0x0078)
+/* RMT_RX_LIM_CH2 : R/W ;bitpos:[29:21] ;default: 9'h80 ; */
+/*description: */
+#define RMT_RX_LIM_CH2  0x000001FF
+#define RMT_RX_LIM_CH2_M  ((RMT_RX_LIM_CH2_V)<<(RMT_RX_LIM_CH2_S))
+#define RMT_RX_LIM_CH2_V  0x1FF
+#define RMT_RX_LIM_CH2_S  21
 /* RMT_LOOP_COUNT_RESET_CH2 : WO ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define RMT_LOOP_COUNT_RESET_CH2  (BIT(20))
@@ -1402,6 +1516,12 @@ extern "C" {
 #define RMT_TX_LIM_CH2_S  0
 
 #define RMT_CH3_TX_LIM_REG          (DR_REG_RMT_BASE + 0x007c)
+/* RMT_RX_LIM_CH3 : R/W ;bitpos:[29:21] ;default: 9'h80 ; */
+/*description: */
+#define RMT_RX_LIM_CH3  0x000001FF
+#define RMT_RX_LIM_CH3_M  ((RMT_RX_LIM_CH3_V)<<(RMT_RX_LIM_CH3_S))
+#define RMT_RX_LIM_CH3_V  0x1FF
+#define RMT_RX_LIM_CH3_S  21
 /* RMT_LOOP_COUNT_RESET_CH3 : WO ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define RMT_LOOP_COUNT_RESET_CH3  (BIT(20))
@@ -1580,7 +1700,7 @@ extern "C" {
 #define RMT_CARRIER_LOW_THRES_CH3_S  0
 
 #define RMT_DATE_REG          (DR_REG_RMT_BASE + 0x0fc)
-/* RMT_DATE : R/W ;bitpos:[31:0] ;default: 32'h19040200 ; */
+/* RMT_DATE : R/W ;bitpos:[31:0] ;default: 32'h19080700 ; */
 /*description: */
 #define RMT_DATE  0xFFFFFFFF
 #define RMT_DATE_M  ((RMT_DATE_V)<<(RMT_DATE_S))
