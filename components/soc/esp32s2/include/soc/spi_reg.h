@@ -19,7 +19,7 @@
 extern "C" {
 #endif
 #include "soc.h"
-#define REG_SPI_BASE(i)     (DR_REG_SPI2_BASE + (i - 2) * 0x1000)
+#define REG_SPI_BASE(i)     (DR_REG_SPI2_BASE + (((i)>3) ? (((i-2)* 0x1000) + 0x10000) : ((i - 2)* 0x1000 )))
 
 #define SPI_CMD_REG(i)          (REG_SPI_BASE(i) + 0x000)
 /* SPI_USR : R/W ;bitpos:[24] ;default: 1'b0 ; */
@@ -29,7 +29,7 @@ extern "C" {
 #define SPI_USR_M  (BIT(24))
 #define SPI_USR_V  0x1
 #define SPI_USR_S  24
-/* SPI_CONF_BITLEN : R/W ;bitpos:[22:0] ;default: 23'd104 ; */
+/* SPI_CONF_BITLEN : R/W ;bitpos:[22:0] ;default: 23'd0 ; */
 /*description: Define the spi_clk cycles of  SPI_CONF state. Can be configured in CONF state.*/
 #define SPI_CONF_BITLEN  0x007FFFFF
 #define SPI_CONF_BITLEN_M  ((SPI_CONF_BITLEN_V)<<(SPI_CONF_BITLEN_S))
@@ -216,8 +216,8 @@ extern "C" {
 #define SPI_CS_HOLD_TIME_M  ((SPI_CS_HOLD_TIME_V)<<(SPI_CS_HOLD_TIME_S))
 #define SPI_CS_HOLD_TIME_V  0x1FFF
 #define SPI_CS_HOLD_TIME_S  13
-/* SPI_CS_SETUP_TIME : R/W ;bitpos:[12:0] ;default: 13'h1 ; */
-/*description: (cycles-1) of prepare phase by spi clock this bits are combined
+/* SPI_CS_SETUP_TIME : R/W ;bitpos:[12:0] ;default: 13'h0 ; */
+/*description: (cycles+1) of prepare phase by spi clock this bits are combined
  with spi_cs_setup bit. Can be configured in CONF state.*/
 #define SPI_CS_SETUP_TIME  0x00001FFF
 #define SPI_CS_SETUP_TIME_M  ((SPI_CS_SETUP_TIME_V)<<(SPI_CS_SETUP_TIME_S))
@@ -430,14 +430,14 @@ extern "C" {
 #define SPI_RSCK_I_EDGE_M  (BIT(8))
 #define SPI_RSCK_I_EDGE_V  0x1
 #define SPI_RSCK_I_EDGE_S  8
-/* SPI_CS_SETUP : R/W ;bitpos:[7] ;default: 1'b0 ; */
+/* SPI_CS_SETUP : R/W ;bitpos:[7] ;default: 1'b1 ; */
 /*description: spi cs is enable when spi is in  prepare  phase. 1: enable 0:
  disable. Can be configured in CONF state.*/
 #define SPI_CS_SETUP  (BIT(7))
 #define SPI_CS_SETUP_M  (BIT(7))
 #define SPI_CS_SETUP_V  0x1
 #define SPI_CS_SETUP_S  7
-/* SPI_CS_HOLD : R/W ;bitpos:[6] ;default: 1'b0 ; */
+/* SPI_CS_HOLD : R/W ;bitpos:[6] ;default: 1'b1 ; */
 /*description: spi cs keep low when spi is in  done  phase. 1: enable 0: disable.
  Can be configured in CONF state.*/
 #define SPI_CS_HOLD  (BIT(6))
@@ -451,6 +451,20 @@ extern "C" {
 #define SPI_TSCK_I_EDGE_M  (BIT(5))
 #define SPI_TSCK_I_EDGE_V  0x1
 #define SPI_TSCK_I_EDGE_S  5
+/* SPI_OPI_MODE : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/*description: Just for master mode. 1: spi controller is in OPI mode (all in
+ 8-b-m). 0: others. Can be configured in CONF state.*/
+#define SPI_OPI_MODE  (BIT(4))
+#define SPI_OPI_MODE_M  (BIT(4))
+#define SPI_OPI_MODE_V  0x1
+#define SPI_OPI_MODE_S  4
+/* SPI_QPI_MODE : R/W ;bitpos:[3] ;default: 1'b0 ; */
+/*description: Both for master mode and slave mode. 1: spi controller is in
+ QPI mode. 0: others. Can be configured in CONF state.*/
+#define SPI_QPI_MODE  (BIT(3))
+#define SPI_QPI_MODE_M  (BIT(3))
+#define SPI_QPI_MODE_V  0x1
+#define SPI_QPI_MODE_S  3
 /* SPI_DOUTDIN : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set the bit to enable full duplex communication. 1: enable 0:
  disable. Can be configured in CONF state.*/
@@ -508,23 +522,7 @@ extern "C" {
 #define SPI_USR_MISO_DBITLEN_V  0x7FFFFF
 #define SPI_USR_MISO_DBITLEN_S  0
 
-#define SPI_SLV_WR_STATUS_REG(i)          (REG_SPI_BASE(i) + 0x02C)
-/* SPI_OPI_MODE : R/W ;bitpos:[1] ;default: 1'b0 ; */
-/*description: Just for master mode. 1: spi controller is in OPI mode (all in
- 8-b-m). 0: others. Can be configured in CONF state.*/
-#define SPI_OPI_MODE  (BIT(1))
-#define SPI_OPI_MODE_M  (BIT(1))
-#define SPI_OPI_MODE_V  0x1
-#define SPI_OPI_MODE_S  1
-/* SPI_QPI_MODE : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: Both for master mode and slave mode. 1: spi controller is in
- QPI mode. 0: others. Can be configured in CONF state.*/
-#define SPI_QPI_MODE  (BIT(0))
-#define SPI_QPI_MODE_M  (BIT(0))
-#define SPI_QPI_MODE_V  0x1
-#define SPI_QPI_MODE_S  0
-
-#define SPI_MISC_REG(i)          (REG_SPI_BASE(i) + 0x030)
+#define SPI_MISC_REG(i)          (REG_SPI_BASE(i) + 0x02C)
 /* SPI_QUAD_DIN_PIN_SWAP : R/W ;bitpos:[31] ;default: 1'h0 ; */
 /*description: 1:  spi quad input swap enable  0:  spi quad input swap disable.
  Can be configured in CONF state.*/
@@ -592,8 +590,35 @@ extern "C" {
 #define SPI_CD_DATA_SET_M  (BIT(20))
 #define SPI_CD_DATA_SET_V  0x1
 #define SPI_CD_DATA_SET_S  20
+/* SPI_CMD_DTR_EN : R/W ;bitpos:[19] ;default: 1'b0 ; */
+/*description: 1: SPI clk and data of SPI_SEND_CMD state are in DTR mode  including
+ master 1/2/4/8-bm. Can be configured in CONF state.*/
+#define SPI_CMD_DTR_EN  (BIT(19))
+#define SPI_CMD_DTR_EN_M  (BIT(19))
+#define SPI_CMD_DTR_EN_V  0x1
+#define SPI_CMD_DTR_EN_S  19
+/* SPI_ADDR_DTR_EN : R/W ;bitpos:[18] ;default: 1'b0 ; */
+/*description: 1: SPI clk and data of SPI_SEND_ADDR state are in DTR mode  including
+ master 1/2/4/8-bm. Can be configured in CONF state.*/
+#define SPI_ADDR_DTR_EN  (BIT(18))
+#define SPI_ADDR_DTR_EN_M  (BIT(18))
+#define SPI_ADDR_DTR_EN_V  0x1
+#define SPI_ADDR_DTR_EN_S  18
+/* SPI_DATA_DTR_EN : R/W ;bitpos:[17] ;default: 1'b0 ; */
+/*description: 1: SPI clk and data of SPI_DOUT and SPI_DIN state are in DTR
+ mode  including master 1/2/4/8-bm. Can be configured in CONF state.*/
+#define SPI_DATA_DTR_EN  (BIT(17))
+#define SPI_DATA_DTR_EN_M  (BIT(17))
+#define SPI_DATA_DTR_EN_V  0x1
+#define SPI_DATA_DTR_EN_S  17
+/* SPI_CLK_DATA_DTR_EN : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: 1: SPI master DTR mode is applied to SPI clk  data and spi_dqs*/
+#define SPI_CLK_DATA_DTR_EN  (BIT(16))
+#define SPI_CLK_DATA_DTR_EN_M  (BIT(16))
+#define SPI_CLK_DATA_DTR_EN_V  0x1
+#define SPI_CLK_DATA_DTR_EN_S  16
 /* SPI_MASTER_CS_POL : R/W ;bitpos:[12:7] ;default: 6'b0 ; */
-/*description: In the master mode the bits are the polarity of spi cs line 
+/*description: In the master mode the bits are the polarity of spi cs line
  the value is equivalent to spi_cs ^ spi_master_cs_pol. Can be configured in CONF state.*/
 #define SPI_MASTER_CS_POL  0x0000003F
 #define SPI_MASTER_CS_POL_M  ((SPI_MASTER_CS_POL_V)<<(SPI_MASTER_CS_POL_S))
@@ -647,7 +672,7 @@ extern "C" {
 #define SPI_CS0_DIS_V  0x1
 #define SPI_CS0_DIS_S  0
 
-#define SPI_SLAVE_REG(i)          (REG_SPI_BASE(i) + 0x034)
+#define SPI_SLAVE_REG(i)          (REG_SPI_BASE(i) + 0x030)
 /* SPI_SOFT_RESET : R/W ;bitpos:[31] ;default: 1'b0 ; */
 /*description: Software reset enable  reset the spi clock line cs line and data
  lines. Can be configured in CONF state.*/
@@ -656,8 +681,7 @@ extern "C" {
 #define SPI_SOFT_RESET_V  0x1
 #define SPI_SOFT_RESET_S  31
 /* SPI_SLAVE_MODE : R/W ;bitpos:[30] ;default: 1'b0 ; */
-/*description: Set SPI work mode. 1: slave mode 0: master mode. Can be configured
- in CONF state.*/
+/*description: Set SPI work mode. 1: slave mode 0: master mode.*/
 #define SPI_SLAVE_MODE  (BIT(30))
 #define SPI_SLAVE_MODE_M  (BIT(30))
 #define SPI_SLAVE_MODE_V  0x1
@@ -732,7 +756,7 @@ extern "C" {
 #define SPI_TRANS_DONE_V  0x1
 #define SPI_TRANS_DONE_S  4
 
-#define SPI_SLAVE1_REG(i)          (REG_SPI_BASE(i) + 0x038)
+#define SPI_SLAVE1_REG(i)          (REG_SPI_BASE(i) + 0x034)
 /* SPI_SLV_LAST_ADDR : R/W ;bitpos:[31:24] ;default: 8'd0 ; */
 /*description: In the slave mode it is the value of address.*/
 #define SPI_SLV_LAST_ADDR  0x000000FF
@@ -752,31 +776,40 @@ extern "C" {
 #define SPI_SLV_WR_DMA_DONE_M  (BIT(15))
 #define SPI_SLV_WR_DMA_DONE_V  0x1
 #define SPI_SLV_WR_DMA_DONE_S  15
-/* SPI_SLV_CMD_ERR : R/W ;bitpos:[14] ;default: 1'b0 ; */
+/* SPI_SLV_CMD_ERR : RO ;bitpos:[14] ;default: 1'b0 ; */
 /*description: 1: The command value of the last SPI transfer is not supported
  by SPI slave. 0: The command value is supported or no command value is received.*/
 #define SPI_SLV_CMD_ERR  (BIT(14))
 #define SPI_SLV_CMD_ERR_M  (BIT(14))
 #define SPI_SLV_CMD_ERR_V  0x1
 #define SPI_SLV_CMD_ERR_S  14
-/* SPI_SLV_ADDR_ERR : R/W ;bitpos:[13] ;default: 1'b0 ; */
+/* SPI_SLV_ADDR_ERR : RO ;bitpos:[13] ;default: 1'b0 ; */
 /*description: 1: The address value of the last SPI transfer is not supported
  by SPI slave. 0: The address value is supported or no address value is received.*/
 #define SPI_SLV_ADDR_ERR  (BIT(13))
 #define SPI_SLV_ADDR_ERR_M  (BIT(13))
 #define SPI_SLV_ADDR_ERR_V  0x1
 #define SPI_SLV_ADDR_ERR_S  13
+/* SPI_SLV_NO_QPI_EN : R/W ;bitpos:[12] ;default: 1'b0 ; */
+/*description: 1: spi slave QPI mode is not supported. 0: spi slave QPI mode is supported.*/
+#define SPI_SLV_NO_QPI_EN  (BIT(12))
+#define SPI_SLV_NO_QPI_EN_M  (BIT(12))
+#define SPI_SLV_NO_QPI_EN_V  0x1
+#define SPI_SLV_NO_QPI_EN_S  12
+/* SPI_SLV_CMD_ERR_CLR : R/W ;bitpos:[11] ;default: 1'b0 ; */
+/*description: 1: Clear spi_slv_cmd_err. 0: not valid.  Can be changed by CONF_buf.*/
+#define SPI_SLV_CMD_ERR_CLR  (BIT(11))
+#define SPI_SLV_CMD_ERR_CLR_M  (BIT(11))
+#define SPI_SLV_CMD_ERR_CLR_V  0x1
+#define SPI_SLV_CMD_ERR_CLR_S  11
+/* SPI_SLV_ADDR_ERR_CLR : R/W ;bitpos:[10] ;default: 1'b0 ; */
+/*description: 1: Clear spi_slv_addr_err. 0: not valid. Can be changed by CONF_buf.*/
+#define SPI_SLV_ADDR_ERR_CLR  (BIT(10))
+#define SPI_SLV_ADDR_ERR_CLR_M  (BIT(10))
+#define SPI_SLV_ADDR_ERR_CLR_V  0x1
+#define SPI_SLV_ADDR_ERR_CLR_S  10
 
-#define SPI_SLAVE2_REG(i)          (REG_SPI_BASE(i) + 0x03C)
-/* SPI_SLV_RD_DMA_DONE : R/W ;bitpos:[8] ;default: 1'b0 ; */
-/*description: The interrupt raw bit for the completion of Rd-DMA operation
- in the slave mode.  Can not be changed by CONF_buf.*/
-#define SPI_SLV_RD_DMA_DONE  (BIT(8))
-#define SPI_SLV_RD_DMA_DONE_M  (BIT(8))
-#define SPI_SLV_RD_DMA_DONE_V  0x1
-#define SPI_SLV_RD_DMA_DONE_S  8
-
-#define SPI_SLV_WRBUF_DLEN_REG(i)          (REG_SPI_BASE(i) + 0x040)
+#define SPI_SLV_WRBUF_DLEN_REG(i)          (REG_SPI_BASE(i) + 0x038)
 /* SPI_CONF_BASE_BITLEN : R/W ;bitpos:[31:25] ;default: 7'd108 ; */
 /*description: The basic spi_clk cycles of CONF state. The real cycle length
  of CONF state  if spi_usr_conf is enabled  is spi_conf_base_bitlen[6:0] + spi_conf_bitlen[23:0].*/
@@ -792,7 +825,7 @@ extern "C" {
 #define SPI_SLV_WR_BUF_DONE_V  0x1
 #define SPI_SLV_WR_BUF_DONE_S  24
 
-#define SPI_SLV_RDBUF_DLEN_REG(i)          (REG_SPI_BASE(i) + 0x044)
+#define SPI_SLV_RDBUF_DLEN_REG(i)          (REG_SPI_BASE(i) + 0x03C)
 /* SPI_SEG_MAGIC_ERR : R/W ;bitpos:[25] ;default: 1'b0 ; */
 /*description: 1: The recent magic value in CONF buffer is not right in master
  DMA seg-trans mode. 0: others.*/
@@ -815,19 +848,26 @@ extern "C" {
 #define SPI_SLV_DMA_RD_BYTELEN_V  0xFFFFF
 #define SPI_SLV_DMA_RD_BYTELEN_S  0
 
-#define SPI_SLV_RD_BYTE_REG(i)          (REG_SPI_BASE(i) + 0x048)
+#define SPI_SLV_RD_BYTE_REG(i)          (REG_SPI_BASE(i) + 0x040)
 /* SPI_USR_CONF : R/W ;bitpos:[31] ;default: 1'b0 ; */
-/*description: 1: Enable the DMA CONF phase of current seg-trans operation 
+/*description: 1: Enable the DMA CONF phase of current seg-trans operation
  which means seg-trans will start. 0: This is not seg-trans mode.*/
 #define SPI_USR_CONF  (BIT(31))
 #define SPI_USR_CONF_M  (BIT(31))
 #define SPI_USR_CONF_V  0x1
 #define SPI_USR_CONF_S  31
-/* SPI_DMA_SEG_MAGIC_VALUE : R/W ;bitpos:[29:24] ;default: 6'd23 ; */
+/* SPI_SLV_RD_DMA_DONE : R/W ;bitpos:[30] ;default: 1'b0 ; */
+/*description: The interrupt raw bit for the completion of Rd-DMA operation
+ in the slave mode.  Can not be changed by CONF_buf.*/
+#define SPI_SLV_RD_DMA_DONE  (BIT(30))
+#define SPI_SLV_RD_DMA_DONE_M  (BIT(30))
+#define SPI_SLV_RD_DMA_DONE_V  0x1
+#define SPI_SLV_RD_DMA_DONE_S  30
+/* SPI_DMA_SEG_MAGIC_VALUE : R/W ;bitpos:[27:24] ;default: 4'd10 ; */
 /*description: The magic value of BM table in master DMA seg-trans.*/
-#define SPI_DMA_SEG_MAGIC_VALUE  0x0000003F
+#define SPI_DMA_SEG_MAGIC_VALUE  0x0000000F
 #define SPI_DMA_SEG_MAGIC_VALUE_M  ((SPI_DMA_SEG_MAGIC_VALUE_V)<<(SPI_DMA_SEG_MAGIC_VALUE_S))
-#define SPI_DMA_SEG_MAGIC_VALUE_V  0x3F
+#define SPI_DMA_SEG_MAGIC_VALUE_V  0xF
 #define SPI_DMA_SEG_MAGIC_VALUE_S  24
 /* SPI_SLV_WRBUF_BYTELEN_EN : R/W ;bitpos:[23] ;default: 1'b0 ; */
 /*description: 1: spi_slv_data_bytelen stores data byte length of master-write-to-slave
@@ -865,7 +905,7 @@ extern "C" {
 #define SPI_SLV_DATA_BYTELEN_V  0xFFFFF
 #define SPI_SLV_DATA_BYTELEN_S  0
 
-#define SPI_FSM_REG(i)          (REG_SPI_BASE(i) + 0x050)
+#define SPI_FSM_REG(i)          (REG_SPI_BASE(i) + 0x044)
 /* SPI_MST_DMA_RD_BYTELEN : R/W ;bitpos:[31:12] ;default: 20'h0 ; */
 /*description: Define the master DMA read byte length in non seg-trans or seg-trans
  mode. Invalid when spi_rx_eof_en is 0. Can be configured in CONF state..*/
@@ -881,7 +921,7 @@ extern "C" {
 #define SPI_ST_V  0xF
 #define SPI_ST_S  0
 
-#define SPI_HOLD_REG(i)          (REG_SPI_BASE(i) + 0x054)
+#define SPI_HOLD_REG(i)          (REG_SPI_BASE(i) + 0x048)
 /* SPI_DMA_SEG_TRANS_DONE : R/W ;bitpos:[7] ;default: 1'b0 ; */
 /*description: 1:  spi master DMA full-duplex/half-duplex seg-trans ends or
  slave half-duplex seg-trans ends. And data has been pushed to corresponding memory.  0:  seg-trans is not ended or not occurred.  Can not be changed by CONF_buf.*/
@@ -918,27 +958,20 @@ extern "C" {
 #define SPI_INT_HOLD_ENA_V  0x3
 #define SPI_INT_HOLD_ENA_S  0
 
-#define SPI_DMA_CONF_REG(i)          (REG_SPI_BASE(i) + 0x058)
+#define SPI_DMA_CONF_REG(i)          (REG_SPI_BASE(i) + 0x04C)
+/* SPI_DMA_SEG_TRANS_CLR : R/W ;bitpos:[28] ;default: 1'b0 ; */
+/*description: 1: End slave seg-trans  which acts as 0x05 command. 2 or more
+ end seg-trans signals will induce error in DMA RX.*/
+#define SPI_DMA_SEG_TRANS_CLR  (BIT(28))
+#define SPI_DMA_SEG_TRANS_CLR_M  (BIT(28))
+#define SPI_DMA_SEG_TRANS_CLR_V  0x1
+#define SPI_DMA_SEG_TRANS_CLR_S  28
 /* SPI_EXT_MEM_BK_SIZE : R/W ;bitpos:[27:26] ;default: 2'd0 ; */
 /*description: Select the external memory block size.*/
 #define SPI_EXT_MEM_BK_SIZE  0x00000003
 #define SPI_EXT_MEM_BK_SIZE_M  ((SPI_EXT_MEM_BK_SIZE_V)<<(SPI_EXT_MEM_BK_SIZE_S))
 #define SPI_EXT_MEM_BK_SIZE_V  0x3
 #define SPI_EXT_MEM_BK_SIZE_S  26
-/* SPI_DMA_OUTFIFO_EMPTY_ERR : R/W ;bitpos:[25] ;default: 1'b0 ; */
-/*description: 1:spi_dma_outfifo_empty and spi_pop_data_prep are valid  which
- means that there is no data to pop but pop is valid.  0: Others.  Can not be changed by CONF_buf.*/
-#define SPI_DMA_OUTFIFO_EMPTY_ERR  (BIT(25))
-#define SPI_DMA_OUTFIFO_EMPTY_ERR_M  (BIT(25))
-#define SPI_DMA_OUTFIFO_EMPTY_ERR_V  0x1
-#define SPI_DMA_OUTFIFO_EMPTY_ERR_S  25
-/* SPI_DMA_INFIFO_FULL_ERR : R/W ;bitpos:[24] ;default: 1'b0 ; */
-/*description: 1:spi_dma_infifo_full and spi_push_data_prep are valid  which
- means that DMA Rx buffer is full but push is valid.  0: Others.  Can not be changed by CONF_buf.*/
-#define SPI_DMA_INFIFO_FULL_ERR  (BIT(24))
-#define SPI_DMA_INFIFO_FULL_ERR_M  (BIT(24))
-#define SPI_DMA_INFIFO_FULL_ERR_V  0x1
-#define SPI_DMA_INFIFO_FULL_ERR_S  24
 /* SPI_DMA_OUTFIFO_EMPTY_CLR : R/W ;bitpos:[23] ;default: 1'b0 ; */
 /*description: 1:Clear spi_dma_outfifo_empty_vld. 0: Do not control it.*/
 #define SPI_DMA_OUTFIFO_EMPTY_CLR  (BIT(23))
@@ -1077,7 +1110,7 @@ extern "C" {
 #define SPI_IN_RST_V  0x1
 #define SPI_IN_RST_S  2
 
-#define SPI_DMA_OUT_LINK_REG(i)          (REG_SPI_BASE(i) + 0x05C)
+#define SPI_DMA_OUT_LINK_REG(i)          (REG_SPI_BASE(i) + 0x050)
 /* SPI_DMA_TX_ENA : R/W ;bitpos:[31] ;default: 1'b0 ; */
 /*description: spi dma write data status bit.*/
 #define SPI_DMA_TX_ENA  (BIT(31))
@@ -1109,7 +1142,7 @@ extern "C" {
 #define SPI_OUTLINK_ADDR_V  0xFFFFF
 #define SPI_OUTLINK_ADDR_S  0
 
-#define SPI_DMA_IN_LINK_REG(i)          (REG_SPI_BASE(i) + 0x060)
+#define SPI_DMA_IN_LINK_REG(i)          (REG_SPI_BASE(i) + 0x054)
 /* SPI_DMA_RX_ENA : R/W ;bitpos:[31] ;default: 1'b0 ; */
 /*description: spi dma read data status bit.*/
 #define SPI_DMA_RX_ENA  (BIT(31))
@@ -1148,7 +1181,49 @@ extern "C" {
 #define SPI_INLINK_ADDR_V  0xFFFFF
 #define SPI_INLINK_ADDR_S  0
 
-#define SPI_DMA_INT_ENA_REG(i)          (REG_SPI_BASE(i) + 0x064)
+#define SPI_DMA_INT_ENA_REG(i)          (REG_SPI_BASE(i) + 0x058)
+/* SPI_SLV_CMDA_INT_ENA : R/W ;bitpos:[15] ;default: 1'b0 ; */
+/*description: The enable bit for SPI slave CMDA interrupt.*/
+#define SPI_SLV_CMDA_INT_ENA  (BIT(15))
+#define SPI_SLV_CMDA_INT_ENA_M  (BIT(15))
+#define SPI_SLV_CMDA_INT_ENA_V  0x1
+#define SPI_SLV_CMDA_INT_ENA_S  15
+/* SPI_SLV_CMD9_INT_ENA : R/W ;bitpos:[14] ;default: 1'b0 ; */
+/*description: The enable bit for SPI slave CMD9 interrupt.*/
+#define SPI_SLV_CMD9_INT_ENA  (BIT(14))
+#define SPI_SLV_CMD9_INT_ENA_M  (BIT(14))
+#define SPI_SLV_CMD9_INT_ENA_V  0x1
+#define SPI_SLV_CMD9_INT_ENA_S  14
+/* SPI_SLV_CMD8_INT_ENA : R/W ;bitpos:[13] ;default: 1'b0 ; */
+/*description: The enable bit for SPI slave CMD8 interrupt.*/
+#define SPI_SLV_CMD8_INT_ENA  (BIT(13))
+#define SPI_SLV_CMD8_INT_ENA_M  (BIT(13))
+#define SPI_SLV_CMD8_INT_ENA_V  0x1
+#define SPI_SLV_CMD8_INT_ENA_S  13
+/* SPI_SLV_CMD7_INT_ENA : R/W ;bitpos:[12] ;default: 1'b0 ; */
+/*description: The enable bit for SPI slave CMD7 interrupt.*/
+#define SPI_SLV_CMD7_INT_ENA  (BIT(12))
+#define SPI_SLV_CMD7_INT_ENA_M  (BIT(12))
+#define SPI_SLV_CMD7_INT_ENA_V  0x1
+#define SPI_SLV_CMD7_INT_ENA_S  12
+/* SPI_SLV_CMD6_INT_ENA : R/W ;bitpos:[11] ;default: 1'b0 ; */
+/*description: The enable bit for SPI slave CMD6 interrupt.*/
+#define SPI_SLV_CMD6_INT_ENA  (BIT(11))
+#define SPI_SLV_CMD6_INT_ENA_M  (BIT(11))
+#define SPI_SLV_CMD6_INT_ENA_V  0x1
+#define SPI_SLV_CMD6_INT_ENA_S  11
+/* SPI_OUTFIFO_EMPTY_ERR_INT_ENA : R/W ;bitpos:[10] ;default: 1'b0 ; */
+/*description: The enable bit for outfifo empty error interrupt.*/
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ENA  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ENA_M  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ENA_V  0x1
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ENA_S  10
+/* SPI_INFIFO_FULL_ERR_INT_ENA : R/W ;bitpos:[9] ;default: 1'b0 ; */
+/*description: The enable bit for infifo full error interrupt.*/
+#define SPI_INFIFO_FULL_ERR_INT_ENA  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_ENA_M  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_ENA_V  0x1
+#define SPI_INFIFO_FULL_ERR_INT_ENA_S  9
 /* SPI_OUT_TOTAL_EOF_INT_ENA : R/W ;bitpos:[8] ;default: 1'b0 ; */
 /*description: The enable bit for sending all the packets to host done. Can
  be configured in CONF state.*/
@@ -1210,7 +1285,51 @@ extern "C" {
 #define SPI_INLINK_DSCR_EMPTY_INT_ENA_V  0x1
 #define SPI_INLINK_DSCR_EMPTY_INT_ENA_S  0
 
-#define SPI_DMA_INT_RAW_REG(i)          (REG_SPI_BASE(i) + 0x068)
+#define SPI_DMA_INT_RAW_REG(i)          (REG_SPI_BASE(i) + 0x05C)
+/* SPI_SLV_CMDA_INT_RAW : R/W ;bitpos:[15] ;default: 1'b0 ; */
+/*description: The raw bit for SPI slave CMDA interrupt.*/
+#define SPI_SLV_CMDA_INT_RAW  (BIT(15))
+#define SPI_SLV_CMDA_INT_RAW_M  (BIT(15))
+#define SPI_SLV_CMDA_INT_RAW_V  0x1
+#define SPI_SLV_CMDA_INT_RAW_S  15
+/* SPI_SLV_CMD9_INT_RAW : R/W ;bitpos:[14] ;default: 1'b0 ; */
+/*description: The raw bit for SPI slave CMD9 interrupt.*/
+#define SPI_SLV_CMD9_INT_RAW  (BIT(14))
+#define SPI_SLV_CMD9_INT_RAW_M  (BIT(14))
+#define SPI_SLV_CMD9_INT_RAW_V  0x1
+#define SPI_SLV_CMD9_INT_RAW_S  14
+/* SPI_SLV_CMD8_INT_RAW : R/W ;bitpos:[13] ;default: 1'b0 ; */
+/*description: The raw bit for SPI slave CMD8 interrupt.*/
+#define SPI_SLV_CMD8_INT_RAW  (BIT(13))
+#define SPI_SLV_CMD8_INT_RAW_M  (BIT(13))
+#define SPI_SLV_CMD8_INT_RAW_V  0x1
+#define SPI_SLV_CMD8_INT_RAW_S  13
+/* SPI_SLV_CMD7_INT_RAW : R/W ;bitpos:[12] ;default: 1'b0 ; */
+/*description: The raw bit for SPI slave CMD7 interrupt.*/
+#define SPI_SLV_CMD7_INT_RAW  (BIT(12))
+#define SPI_SLV_CMD7_INT_RAW_M  (BIT(12))
+#define SPI_SLV_CMD7_INT_RAW_V  0x1
+#define SPI_SLV_CMD7_INT_RAW_S  12
+/* SPI_SLV_CMD6_INT_RAW : R/W ;bitpos:[11] ;default: 1'b0 ; */
+/*description: The raw bit for SPI slave CMD6 interrupt.*/
+#define SPI_SLV_CMD6_INT_RAW  (BIT(11))
+#define SPI_SLV_CMD6_INT_RAW_M  (BIT(11))
+#define SPI_SLV_CMD6_INT_RAW_V  0x1
+#define SPI_SLV_CMD6_INT_RAW_S  11
+/* SPI_OUTFIFO_EMPTY_ERR_INT_RAW : RO ;bitpos:[10] ;default: 1'b0 ; */
+/*description: 1:spi_dma_outfifo_empty and spi_pop_data_prep are valid  which
+ means that there is no data to pop but pop is valid.  0: Others.  Can not be changed by CONF_buf.*/
+#define SPI_OUTFIFO_EMPTY_ERR_INT_RAW  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_RAW_M  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_RAW_V  0x1
+#define SPI_OUTFIFO_EMPTY_ERR_INT_RAW_S  10
+/* SPI_INFIFO_FULL_ERR_INT_RAW : RO ;bitpos:[9] ;default: 1'b0 ; */
+/*description: 1:spi_dma_infifo_full and spi_push_data_prep are valid  which
+ means that DMA Rx buffer is full but push is valid.  0: Others.  Can not be changed by CONF_buf.*/
+#define SPI_INFIFO_FULL_ERR_INT_RAW  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_RAW_M  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_RAW_V  0x1
+#define SPI_INFIFO_FULL_ERR_INT_RAW_S  9
 /* SPI_OUT_TOTAL_EOF_INT_RAW : RO ;bitpos:[8] ;default: 1'b0 ; */
 /*description: The raw bit for sending all the packets to host done. Can be
  configured in CONF state.*/
@@ -1271,7 +1390,49 @@ extern "C" {
 #define SPI_INLINK_DSCR_EMPTY_INT_RAW_V  0x1
 #define SPI_INLINK_DSCR_EMPTY_INT_RAW_S  0
 
-#define SPI_DMA_INT_ST_REG(i)          (REG_SPI_BASE(i) + 0x06C)
+#define SPI_DMA_INT_ST_REG(i)          (REG_SPI_BASE(i) + 0x060)
+/* SPI_SLV_CMDA_INT_ST : R/W ;bitpos:[15] ;default: 1'b0 ; */
+/*description: The status bit for SPI slave CMDA interrupt.*/
+#define SPI_SLV_CMDA_INT_ST  (BIT(15))
+#define SPI_SLV_CMDA_INT_ST_M  (BIT(15))
+#define SPI_SLV_CMDA_INT_ST_V  0x1
+#define SPI_SLV_CMDA_INT_ST_S  15
+/* SPI_SLV_CMD9_INT_ST : R/W ;bitpos:[14] ;default: 1'b0 ; */
+/*description: The status bit for SPI slave CMD9 interrupt.*/
+#define SPI_SLV_CMD9_INT_ST  (BIT(14))
+#define SPI_SLV_CMD9_INT_ST_M  (BIT(14))
+#define SPI_SLV_CMD9_INT_ST_V  0x1
+#define SPI_SLV_CMD9_INT_ST_S  14
+/* SPI_SLV_CMD8_INT_ST : R/W ;bitpos:[13] ;default: 1'b0 ; */
+/*description: The status bit for SPI slave CMD8 interrupt.*/
+#define SPI_SLV_CMD8_INT_ST  (BIT(13))
+#define SPI_SLV_CMD8_INT_ST_M  (BIT(13))
+#define SPI_SLV_CMD8_INT_ST_V  0x1
+#define SPI_SLV_CMD8_INT_ST_S  13
+/* SPI_SLV_CMD7_INT_ST : R/W ;bitpos:[12] ;default: 1'b0 ; */
+/*description: The status bit for SPI slave CMD7 interrupt.*/
+#define SPI_SLV_CMD7_INT_ST  (BIT(12))
+#define SPI_SLV_CMD7_INT_ST_M  (BIT(12))
+#define SPI_SLV_CMD7_INT_ST_V  0x1
+#define SPI_SLV_CMD7_INT_ST_S  12
+/* SPI_SLV_CMD6_INT_ST : R/W ;bitpos:[11] ;default: 1'b0 ; */
+/*description: The status bit for SPI slave CMD6 interrupt.*/
+#define SPI_SLV_CMD6_INT_ST  (BIT(11))
+#define SPI_SLV_CMD6_INT_ST_M  (BIT(11))
+#define SPI_SLV_CMD6_INT_ST_V  0x1
+#define SPI_SLV_CMD6_INT_ST_S  11
+/* SPI_OUTFIFO_EMPTY_ERR_INT_ST : RO ;bitpos:[10] ;default: 1'b0 ; */
+/*description: The status bit for outfifo empty error.*/
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ST  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ST_M  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ST_V  0x1
+#define SPI_OUTFIFO_EMPTY_ERR_INT_ST_S  10
+/* SPI_INFIFO_FULL_ERR_INT_ST : RO ;bitpos:[9] ;default: 1'b0 ; */
+/*description: The status bit for infifo full error.*/
+#define SPI_INFIFO_FULL_ERR_INT_ST  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_ST_M  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_ST_V  0x1
+#define SPI_INFIFO_FULL_ERR_INT_ST_S  9
 /* SPI_OUT_TOTAL_EOF_INT_ST : RO ;bitpos:[8] ;default: 1'b0 ; */
 /*description: The status bit for sending all the packets to host done.*/
 #define SPI_OUT_TOTAL_EOF_INT_ST  (BIT(8))
@@ -1327,7 +1488,50 @@ extern "C" {
 #define SPI_INLINK_DSCR_EMPTY_INT_ST_V  0x1
 #define SPI_INLINK_DSCR_EMPTY_INT_ST_S  0
 
-#define SPI_DMA_INT_CLR_REG(i)          (REG_SPI_BASE(i) + 0x070)
+#define SPI_DMA_INT_CLR_REG(i)          (REG_SPI_BASE(i) + 0x064)
+/* SPI_SLV_CMDA_INT_CLR : R/W ;bitpos:[15] ;default: 1'b0 ; */
+/*description: The clear bit for SPI slave CMDA interrupt.*/
+#define SPI_SLV_CMDA_INT_CLR  (BIT(15))
+#define SPI_SLV_CMDA_INT_CLR_M  (BIT(15))
+#define SPI_SLV_CMDA_INT_CLR_V  0x1
+#define SPI_SLV_CMDA_INT_CLR_S  15
+/* SPI_SLV_CMD9_INT_CLR : R/W ;bitpos:[14] ;default: 1'b0 ; */
+/*description: The clear bit for SPI slave CMD9 interrupt.*/
+#define SPI_SLV_CMD9_INT_CLR  (BIT(14))
+#define SPI_SLV_CMD9_INT_CLR_M  (BIT(14))
+#define SPI_SLV_CMD9_INT_CLR_V  0x1
+#define SPI_SLV_CMD9_INT_CLR_S  14
+/* SPI_SLV_CMD8_INT_CLR : R/W ;bitpos:[13] ;default: 1'b0 ; */
+/*description: The clear bit for SPI slave CMD8 interrupt.*/
+#define SPI_SLV_CMD8_INT_CLR  (BIT(13))
+#define SPI_SLV_CMD8_INT_CLR_M  (BIT(13))
+#define SPI_SLV_CMD8_INT_CLR_V  0x1
+#define SPI_SLV_CMD8_INT_CLR_S  13
+/* SPI_SLV_CMD7_INT_CLR : R/W ;bitpos:[12] ;default: 1'b0 ; */
+/*description: The clear bit for SPI slave CMD7 interrupt.*/
+#define SPI_SLV_CMD7_INT_CLR  (BIT(12))
+#define SPI_SLV_CMD7_INT_CLR_M  (BIT(12))
+#define SPI_SLV_CMD7_INT_CLR_V  0x1
+#define SPI_SLV_CMD7_INT_CLR_S  12
+/* SPI_SLV_CMD6_INT_CLR : R/W ;bitpos:[11] ;default: 1'b0 ; */
+/*description: The clear bit for SPI slave CMD6 interrupt.*/
+#define SPI_SLV_CMD6_INT_CLR  (BIT(11))
+#define SPI_SLV_CMD6_INT_CLR_M  (BIT(11))
+#define SPI_SLV_CMD6_INT_CLR_V  0x1
+#define SPI_SLV_CMD6_INT_CLR_S  11
+/* SPI_OUTFIFO_EMPTY_ERR_INT_CLR : R/W ;bitpos:[10] ;default: 1'b0 ; */
+/*description: 1: Clear spi_dma_outfifo_empty_err signal. 0: not valid. Can
+ be changed by CONF_buf.*/
+#define SPI_OUTFIFO_EMPTY_ERR_INT_CLR  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_CLR_M  (BIT(10))
+#define SPI_OUTFIFO_EMPTY_ERR_INT_CLR_V  0x1
+#define SPI_OUTFIFO_EMPTY_ERR_INT_CLR_S  10
+/* SPI_INFIFO_FULL_ERR_INT_CLR : R/W ;bitpos:[9] ;default: 1'b0 ; */
+/*description: 1: Clear spi_dma_infifo_full_err. 0: not valid. Can be changed by CONF_buf.*/
+#define SPI_INFIFO_FULL_ERR_INT_CLR  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_CLR_M  (BIT(9))
+#define SPI_INFIFO_FULL_ERR_INT_CLR_V  0x1
+#define SPI_INFIFO_FULL_ERR_INT_CLR_S  9
 /* SPI_OUT_TOTAL_EOF_INT_CLR : R/W ;bitpos:[8] ;default: 1'b0 ; */
 /*description: The clear bit for sending all the packets to host done. Can be
  configured in CONF state.*/
@@ -1389,7 +1593,7 @@ extern "C" {
 #define SPI_INLINK_DSCR_EMPTY_INT_CLR_V  0x1
 #define SPI_INLINK_DSCR_EMPTY_INT_CLR_S  0
 
-#define SPI_IN_ERR_EOF_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x074)
+#define SPI_IN_ERR_EOF_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x068)
 /* SPI_DMA_IN_ERR_EOF_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The inlink descriptor address when spi dma produce receiving error.*/
 #define SPI_DMA_IN_ERR_EOF_DES_ADDR  0xFFFFFFFF
@@ -1397,7 +1601,7 @@ extern "C" {
 #define SPI_DMA_IN_ERR_EOF_DES_ADDR_V  0xFFFFFFFF
 #define SPI_DMA_IN_ERR_EOF_DES_ADDR_S  0
 
-#define SPI_IN_SUC_EOF_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x078)
+#define SPI_IN_SUC_EOF_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x06C)
 /* SPI_DMA_IN_SUC_EOF_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The last inlink descriptor address when spi dma produce from_suc_eof.*/
 #define SPI_DMA_IN_SUC_EOF_DES_ADDR  0xFFFFFFFF
@@ -1405,7 +1609,7 @@ extern "C" {
 #define SPI_DMA_IN_SUC_EOF_DES_ADDR_V  0xFFFFFFFF
 #define SPI_DMA_IN_SUC_EOF_DES_ADDR_S  0
 
-#define SPI_INLINK_DSCR_REG(i)          (REG_SPI_BASE(i) + 0x07C)
+#define SPI_INLINK_DSCR_REG(i)          (REG_SPI_BASE(i) + 0x070)
 /* SPI_DMA_INLINK_DSCR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The content of current in descriptor pointer.*/
 #define SPI_DMA_INLINK_DSCR  0xFFFFFFFF
@@ -1413,7 +1617,7 @@ extern "C" {
 #define SPI_DMA_INLINK_DSCR_V  0xFFFFFFFF
 #define SPI_DMA_INLINK_DSCR_S  0
 
-#define SPI_INLINK_DSCR_BF0_REG(i)          (REG_SPI_BASE(i) + 0x080)
+#define SPI_INLINK_DSCR_BF0_REG(i)          (REG_SPI_BASE(i) + 0x074)
 /* SPI_DMA_INLINK_DSCR_BF0 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The content of next in descriptor pointer.*/
 #define SPI_DMA_INLINK_DSCR_BF0  0xFFFFFFFF
@@ -1421,7 +1625,7 @@ extern "C" {
 #define SPI_DMA_INLINK_DSCR_BF0_V  0xFFFFFFFF
 #define SPI_DMA_INLINK_DSCR_BF0_S  0
 
-#define SPI_INLINK_DSCR_BF1_REG(i)          (REG_SPI_BASE(i) + 0x084)
+#define SPI_INLINK_DSCR_BF1_REG(i)          (REG_SPI_BASE(i) + 0x078)
 /* SPI_DMA_INLINK_DSCR_BF1 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The content of current in descriptor data buffer pointer.*/
 #define SPI_DMA_INLINK_DSCR_BF1  0xFFFFFFFF
@@ -1429,7 +1633,7 @@ extern "C" {
 #define SPI_DMA_INLINK_DSCR_BF1_V  0xFFFFFFFF
 #define SPI_DMA_INLINK_DSCR_BF1_S  0
 
-#define SPI_OUT_EOF_BFR_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x088)
+#define SPI_OUT_EOF_BFR_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x07C)
 /* SPI_DMA_OUT_EOF_BFR_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The address of buffer relative to the outlink descriptor that produce eof.*/
 #define SPI_DMA_OUT_EOF_BFR_DES_ADDR  0xFFFFFFFF
@@ -1437,7 +1641,7 @@ extern "C" {
 #define SPI_DMA_OUT_EOF_BFR_DES_ADDR_V  0xFFFFFFFF
 #define SPI_DMA_OUT_EOF_BFR_DES_ADDR_S  0
 
-#define SPI_OUT_EOF_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x08C)
+#define SPI_OUT_EOF_DES_ADDR_REG(i)          (REG_SPI_BASE(i) + 0x080)
 /* SPI_DMA_OUT_EOF_DES_ADDR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The last outlink descriptor address when spi dma produce to_eof.*/
 #define SPI_DMA_OUT_EOF_DES_ADDR  0xFFFFFFFF
@@ -1445,7 +1649,7 @@ extern "C" {
 #define SPI_DMA_OUT_EOF_DES_ADDR_V  0xFFFFFFFF
 #define SPI_DMA_OUT_EOF_DES_ADDR_S  0
 
-#define SPI_OUTLINK_DSCR_REG(i)          (REG_SPI_BASE(i) + 0x090)
+#define SPI_OUTLINK_DSCR_REG(i)          (REG_SPI_BASE(i) + 0x084)
 /* SPI_DMA_OUTLINK_DSCR : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The content of current out descriptor pointer.*/
 #define SPI_DMA_OUTLINK_DSCR  0xFFFFFFFF
@@ -1453,7 +1657,7 @@ extern "C" {
 #define SPI_DMA_OUTLINK_DSCR_V  0xFFFFFFFF
 #define SPI_DMA_OUTLINK_DSCR_S  0
 
-#define SPI_OUTLINK_DSCR_BF0_REG(i)          (REG_SPI_BASE(i) + 0x094)
+#define SPI_OUTLINK_DSCR_BF0_REG(i)          (REG_SPI_BASE(i) + 0x088)
 /* SPI_DMA_OUTLINK_DSCR_BF0 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The content of next out descriptor pointer.*/
 #define SPI_DMA_OUTLINK_DSCR_BF0  0xFFFFFFFF
@@ -1461,7 +1665,7 @@ extern "C" {
 #define SPI_DMA_OUTLINK_DSCR_BF0_V  0xFFFFFFFF
 #define SPI_DMA_OUTLINK_DSCR_BF0_S  0
 
-#define SPI_OUTLINK_DSCR_BF1_REG(i)          (REG_SPI_BASE(i) + 0x098)
+#define SPI_OUTLINK_DSCR_BF1_REG(i)          (REG_SPI_BASE(i) + 0x08C)
 /* SPI_DMA_OUTLINK_DSCR_BF1 : RO ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: The content of current out descriptor data buffer pointer.*/
 #define SPI_DMA_OUTLINK_DSCR_BF1  0xFFFFFFFF
@@ -1469,7 +1673,7 @@ extern "C" {
 #define SPI_DMA_OUTLINK_DSCR_BF1_V  0xFFFFFFFF
 #define SPI_DMA_OUTLINK_DSCR_BF1_S  0
 
-#define SPI_DMA_OUTSTATUS_REG(i)          (REG_SPI_BASE(i) + 0x09C)
+#define SPI_DMA_OUTSTATUS_REG(i)          (REG_SPI_BASE(i) + 0x090)
 /* SPI_DMA_OUTFIFO_EMPTY : RO ;bitpos:[31] ;default: 1'b1 ; */
 /*description: SPI dma outfifo is empty.*/
 #define SPI_DMA_OUTFIFO_EMPTY  (BIT(31))
@@ -1507,7 +1711,7 @@ extern "C" {
 #define SPI_DMA_OUTDSCR_ADDR_V  0x3FFFF
 #define SPI_DMA_OUTDSCR_ADDR_S  0
 
-#define SPI_DMA_INSTATUS_REG(i)          (REG_SPI_BASE(i) + 0x0A0)
+#define SPI_DMA_INSTATUS_REG(i)          (REG_SPI_BASE(i) + 0x094)
 /* SPI_DMA_INFIFO_EMPTY : RO ;bitpos:[31] ;default: 1'b1 ; */
 /*description: SPI dma infifo is empty.*/
 #define SPI_DMA_INFIFO_EMPTY  (BIT(31))
@@ -1545,7 +1749,7 @@ extern "C" {
 #define SPI_DMA_INDSCR_ADDR_V  0x3FFFF
 #define SPI_DMA_INDSCR_ADDR_S  0
 
-#define SPI_W0_REG(i)          (REG_SPI_BASE(i) + 0x0A4)
+#define SPI_W0_REG(i)          (REG_SPI_BASE(i) + 0x098)
 /* SPI_BUF0 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF0  0xFFFFFFFF
@@ -1553,7 +1757,7 @@ extern "C" {
 #define SPI_BUF0_V  0xFFFFFFFF
 #define SPI_BUF0_S  0
 
-#define SPI_W1_REG(i)          (REG_SPI_BASE(i) + 0x0A8)
+#define SPI_W1_REG(i)          (REG_SPI_BASE(i) + 0x09C)
 /* SPI_BUF1 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF1  0xFFFFFFFF
@@ -1561,7 +1765,7 @@ extern "C" {
 #define SPI_BUF1_V  0xFFFFFFFF
 #define SPI_BUF1_S  0
 
-#define SPI_W2_REG(i)          (REG_SPI_BASE(i) + 0x0AC)
+#define SPI_W2_REG(i)          (REG_SPI_BASE(i) + 0x0A0)
 /* SPI_BUF2 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF2  0xFFFFFFFF
@@ -1569,7 +1773,7 @@ extern "C" {
 #define SPI_BUF2_V  0xFFFFFFFF
 #define SPI_BUF2_S  0
 
-#define SPI_W3_REG(i)          (REG_SPI_BASE(i) + 0x0B0)
+#define SPI_W3_REG(i)          (REG_SPI_BASE(i) + 0x0A4)
 /* SPI_BUF3 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF3  0xFFFFFFFF
@@ -1577,7 +1781,7 @@ extern "C" {
 #define SPI_BUF3_V  0xFFFFFFFF
 #define SPI_BUF3_S  0
 
-#define SPI_W4_REG(i)          (REG_SPI_BASE(i) + 0x0B4)
+#define SPI_W4_REG(i)          (REG_SPI_BASE(i) + 0x0A8)
 /* SPI_BUF4 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF4  0xFFFFFFFF
@@ -1585,7 +1789,7 @@ extern "C" {
 #define SPI_BUF4_V  0xFFFFFFFF
 #define SPI_BUF4_S  0
 
-#define SPI_W5_REG(i)          (REG_SPI_BASE(i) + 0x0B8)
+#define SPI_W5_REG(i)          (REG_SPI_BASE(i) + 0x0AC)
 /* SPI_BUF5 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF5  0xFFFFFFFF
@@ -1593,7 +1797,7 @@ extern "C" {
 #define SPI_BUF5_V  0xFFFFFFFF
 #define SPI_BUF5_S  0
 
-#define SPI_W6_REG(i)          (REG_SPI_BASE(i) + 0x0BC)
+#define SPI_W6_REG(i)          (REG_SPI_BASE(i) + 0x0B0)
 /* SPI_BUF6 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF6  0xFFFFFFFF
@@ -1601,7 +1805,7 @@ extern "C" {
 #define SPI_BUF6_V  0xFFFFFFFF
 #define SPI_BUF6_S  0
 
-#define SPI_W7_REG(i)          (REG_SPI_BASE(i) + 0x0C0)
+#define SPI_W7_REG(i)          (REG_SPI_BASE(i) + 0x0B4)
 /* SPI_BUF7 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF7  0xFFFFFFFF
@@ -1609,7 +1813,7 @@ extern "C" {
 #define SPI_BUF7_V  0xFFFFFFFF
 #define SPI_BUF7_S  0
 
-#define SPI_W8_REG(i)          (REG_SPI_BASE(i) + 0x0C4)
+#define SPI_W8_REG(i)          (REG_SPI_BASE(i) + 0x0B8)
 /* SPI_BUF8 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF8  0xFFFFFFFF
@@ -1617,7 +1821,7 @@ extern "C" {
 #define SPI_BUF8_V  0xFFFFFFFF
 #define SPI_BUF8_S  0
 
-#define SPI_W9_REG(i)          (REG_SPI_BASE(i) + 0x0C8)
+#define SPI_W9_REG(i)          (REG_SPI_BASE(i) + 0x0BC)
 /* SPI_BUF9 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF9  0xFFFFFFFF
@@ -1625,7 +1829,7 @@ extern "C" {
 #define SPI_BUF9_V  0xFFFFFFFF
 #define SPI_BUF9_S  0
 
-#define SPI_W10_REG(i)          (REG_SPI_BASE(i) + 0x0CC)
+#define SPI_W10_REG(i)          (REG_SPI_BASE(i) + 0x0C0)
 /* SPI_BUF10 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF10  0xFFFFFFFF
@@ -1633,7 +1837,7 @@ extern "C" {
 #define SPI_BUF10_V  0xFFFFFFFF
 #define SPI_BUF10_S  0
 
-#define SPI_W11_REG(i)          (REG_SPI_BASE(i) + 0x0D0)
+#define SPI_W11_REG(i)          (REG_SPI_BASE(i) + 0x0C4)
 /* SPI_BUF11 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF11  0xFFFFFFFF
@@ -1641,7 +1845,7 @@ extern "C" {
 #define SPI_BUF11_V  0xFFFFFFFF
 #define SPI_BUF11_S  0
 
-#define SPI_W12_REG(i)          (REG_SPI_BASE(i) + 0x0D4)
+#define SPI_W12_REG(i)          (REG_SPI_BASE(i) + 0x0C8)
 /* SPI_BUF12 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF12  0xFFFFFFFF
@@ -1649,7 +1853,7 @@ extern "C" {
 #define SPI_BUF12_V  0xFFFFFFFF
 #define SPI_BUF12_S  0
 
-#define SPI_W13_REG(i)          (REG_SPI_BASE(i) + 0x0D8)
+#define SPI_W13_REG(i)          (REG_SPI_BASE(i) + 0x0CC)
 /* SPI_BUF13 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF13  0xFFFFFFFF
@@ -1657,7 +1861,7 @@ extern "C" {
 #define SPI_BUF13_V  0xFFFFFFFF
 #define SPI_BUF13_S  0
 
-#define SPI_W14_REG(i)          (REG_SPI_BASE(i) + 0x0DC)
+#define SPI_W14_REG(i)          (REG_SPI_BASE(i) + 0x0D0)
 /* SPI_BUF14 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF14  0xFFFFFFFF
@@ -1665,7 +1869,7 @@ extern "C" {
 #define SPI_BUF14_V  0xFFFFFFFF
 #define SPI_BUF14_S  0
 
-#define SPI_W15_REG(i)          (REG_SPI_BASE(i) + 0x0E0)
+#define SPI_W15_REG(i)          (REG_SPI_BASE(i) + 0x0D4)
 /* SPI_BUF15 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF15  0xFFFFFFFF
@@ -1673,7 +1877,7 @@ extern "C" {
 #define SPI_BUF15_V  0xFFFFFFFF
 #define SPI_BUF15_S  0
 
-#define SPI_W16_REG(i)          (REG_SPI_BASE(i) + 0x0E4)
+#define SPI_W16_REG(i)          (REG_SPI_BASE(i) + 0x0D8)
 /* SPI_BUF16 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF16  0xFFFFFFFF
@@ -1681,7 +1885,7 @@ extern "C" {
 #define SPI_BUF16_V  0xFFFFFFFF
 #define SPI_BUF16_S  0
 
-#define SPI_W17_REG(i)          (REG_SPI_BASE(i) + 0x0E8)
+#define SPI_W17_REG(i)          (REG_SPI_BASE(i) + 0x0DC)
 /* SPI_BUF17 : R/W ;bitpos:[31:0] ;default: 32'b0 ; */
 /*description: data buffer*/
 #define SPI_BUF17  0xFFFFFFFF
@@ -1689,7 +1893,7 @@ extern "C" {
 #define SPI_BUF17_V  0xFFFFFFFF
 #define SPI_BUF17_S  0
 
-#define SPI_DIN_MODE_REG(i)          (REG_SPI_BASE(i) + 0x0EC)
+#define SPI_DIN_MODE_REG(i)          (REG_SPI_BASE(i) + 0x0E0)
 /* SPI_TIMING_CLK_ENA : R/W ;bitpos:[24] ;default: 1'b0 ; */
 /*description: 1:enable hclk in spi_timing.v.  0: disable it. Can be configured in CONF state.*/
 #define SPI_TIMING_CLK_ENA  (BIT(24))
@@ -1753,7 +1957,7 @@ extern "C" {
 #define SPI_DIN0_MODE_V  0x7
 #define SPI_DIN0_MODE_S  0
 
-#define SPI_DIN_NUM_REG(i)          (REG_SPI_BASE(i) + 0x0F0)
+#define SPI_DIN_NUM_REG(i)          (REG_SPI_BASE(i) + 0x0E4)
 /* SPI_DIN7_NUM : R/W ;bitpos:[15:14] ;default: 2'h0 ; */
 /*description: the input signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ...  Can be configured in CONF state.*/
@@ -1811,7 +2015,7 @@ extern "C" {
 #define SPI_DIN0_NUM_V  0x3
 #define SPI_DIN0_NUM_S  0
 
-#define SPI_DOUT_MODE_REG(i)          (REG_SPI_BASE(i) + 0x0F4)
+#define SPI_DOUT_MODE_REG(i)          (REG_SPI_BASE(i) + 0x0E8)
 /* SPI_DOUT7_MODE : R/W ;bitpos:[23:21] ;default: 3'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk. Can be configured in CONF state.*/
@@ -1869,7 +2073,7 @@ extern "C" {
 #define SPI_DOUT0_MODE_V  0x7
 #define SPI_DOUT0_MODE_S  0
 
-#define SPI_DOUT_NUM_REG(i)          (REG_SPI_BASE(i) + 0x0F8)
+#define SPI_DOUT_NUM_REG(i)          (REG_SPI_BASE(i) + 0x0EC)
 /* SPI_DOUT7_NUM : R/W ;bitpos:[15:14] ;default: 2'h0 ; */
 /*description: the output signals are delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ... Can be configured in CONF state.*/
@@ -1927,14 +2131,14 @@ extern "C" {
 #define SPI_DOUT0_NUM_V  0x3
 #define SPI_DOUT0_NUM_S  0
 
-#define SPI_LCD_CTRL_REG(i)          (REG_SPI_BASE(i) + 0x0FC)
-/* SPI_LCD_SRGB_MODE_EN : R/W ;bitpos:[31] ;default: 1'b0 ; */
+#define SPI_LCD_CTRL_REG(i)          (REG_SPI_BASE(i) + 0x0F0)
+/* SPI_LCD_MODE_EN : R/W ;bitpos:[31] ;default: 1'b0 ; */
 /*description: 1: Enable LCD mode output vsync  hsync  de. 0: Disable. Can be
  configured in CONF state.*/
-#define SPI_LCD_SRGB_MODE_EN  (BIT(31))
-#define SPI_LCD_SRGB_MODE_EN_M  (BIT(31))
-#define SPI_LCD_SRGB_MODE_EN_V  0x1
-#define SPI_LCD_SRGB_MODE_EN_S  31
+#define SPI_LCD_MODE_EN  (BIT(31))
+#define SPI_LCD_MODE_EN_M  (BIT(31))
+#define SPI_LCD_MODE_EN_V  0x1
+#define SPI_LCD_MODE_EN_S  31
 /* SPI_LCD_VT_HEIGHT : R/W ;bitpos:[30:21] ;default: 10'd0 ; */
 /*description: It is the vertical total height of a frame. Can be configured in CONF state.*/
 #define SPI_LCD_VT_HEIGHT  0x000003FF
@@ -1955,7 +2159,7 @@ extern "C" {
 #define SPI_LCD_HB_FRONT_V  0x7FF
 #define SPI_LCD_HB_FRONT_S  0
 
-#define SPI_LCD_CTRL1_REG(i)          (REG_SPI_BASE(i) + 0x0100)
+#define SPI_LCD_CTRL1_REG(i)          (REG_SPI_BASE(i) + 0x0F4)
 /* SPI_LCD_HT_WIDTH : R/W ;bitpos:[31:20] ;default: 12'd0 ; */
 /*description: It is the horizontal total width of a frame. Can be configured in CONF state.*/
 #define SPI_LCD_HT_WIDTH  0x00000FFF
@@ -1976,49 +2180,55 @@ extern "C" {
 #define SPI_LCD_VB_FRONT_V  0xFF
 #define SPI_LCD_VB_FRONT_S  0
 
-#define SPI_LCD_CTRL2_REG(i)          (REG_SPI_BASE(i) + 0x0104)
+#define SPI_LCD_CTRL2_REG(i)          (REG_SPI_BASE(i) + 0x0F8)
 /* SPI_LCD_HSYNC_POSITION : R/W ;bitpos:[31:24] ;default: 8'd0 ; */
-/*description: It is the position of spi_hsync_out active pulse in a line. Can
- be configured in CONF state.*/
+/*description: It is the position of spi_hsync active pulse in a line. Can be
+ configured in CONF state.*/
 #define SPI_LCD_HSYNC_POSITION  0x000000FF
 #define SPI_LCD_HSYNC_POSITION_M  ((SPI_LCD_HSYNC_POSITION_V)<<(SPI_LCD_HSYNC_POSITION_S))
 #define SPI_LCD_HSYNC_POSITION_V  0xFF
 #define SPI_LCD_HSYNC_POSITION_S  24
 /* SPI_HSYNC_IDLE_POL : R/W ;bitpos:[23] ;default: 1'd0 ; */
-/*description: It is the idle value of spi_hsync_out. Can be configured in CONF state.*/
+/*description: It is the idle value of spi_hsync. Can be configured in CONF state.*/
 #define SPI_HSYNC_IDLE_POL  (BIT(23))
 #define SPI_HSYNC_IDLE_POL_M  (BIT(23))
 #define SPI_HSYNC_IDLE_POL_V  0x1
 #define SPI_HSYNC_IDLE_POL_S  23
-/* SPI_LCD_HSYNC_WIDTH : R/W ;bitpos:[22:16] ;default: 7'd0 ; */
-/*description: It is the position of spi_hsync_out active pulse in a line. Can
- be configured in CONF state.*/
+/* SPI_LCD_HSYNC_WIDTH : R/W ;bitpos:[22:16] ;default: 7'd1 ; */
+/*description: It is the position of spi_hsync active pulse in a line. Can be
+ configured in CONF state.*/
 #define SPI_LCD_HSYNC_WIDTH  0x0000007F
 #define SPI_LCD_HSYNC_WIDTH_M  ((SPI_LCD_HSYNC_WIDTH_V)<<(SPI_LCD_HSYNC_WIDTH_S))
 #define SPI_LCD_HSYNC_WIDTH_V  0x7F
 #define SPI_LCD_HSYNC_WIDTH_S  16
-/* SPI_LCD_VSYNC_POSITION : R/W ;bitpos:[15:8] ;default: 8'd0 ; */
-/*description: It is the position of spi_vsync_out active pulse in a line. Can
- be configured in CONF state.*/
-#define SPI_LCD_VSYNC_POSITION  0x000000FF
-#define SPI_LCD_VSYNC_POSITION_M  ((SPI_LCD_VSYNC_POSITION_V)<<(SPI_LCD_VSYNC_POSITION_S))
-#define SPI_LCD_VSYNC_POSITION_V  0xFF
-#define SPI_LCD_VSYNC_POSITION_S  8
 /* SPI_VSYNC_IDLE_POL : R/W ;bitpos:[7] ;default: 1'd0 ; */
-/*description: It is the idle value of spi_vsync_out. Can be configured in CONF state.*/
+/*description: It is the idle value of spi_vsync. Can be configured in CONF state.*/
 #define SPI_VSYNC_IDLE_POL  (BIT(7))
 #define SPI_VSYNC_IDLE_POL_M  (BIT(7))
 #define SPI_VSYNC_IDLE_POL_V  0x1
 #define SPI_VSYNC_IDLE_POL_S  7
-/* SPI_LCD_VSYNC_WIDTH : R/W ;bitpos:[6:0] ;default: 7'd0 ; */
-/*description: It is the position of spi_vsync_out active pulse in a line. Can
- be configured in CONF state.*/
+/* SPI_LCD_VSYNC_WIDTH : R/W ;bitpos:[6:0] ;default: 7'd1 ; */
+/*description: It is the position of spi_vsync active pulse in a line. Can be
+ configured in CONF state.*/
 #define SPI_LCD_VSYNC_WIDTH  0x0000007F
 #define SPI_LCD_VSYNC_WIDTH_M  ((SPI_LCD_VSYNC_WIDTH_V)<<(SPI_LCD_VSYNC_WIDTH_S))
 #define SPI_LCD_VSYNC_WIDTH_V  0x7F
 #define SPI_LCD_VSYNC_WIDTH_S  0
 
-#define SPI_LCD_D_MODE_REG(i)          (REG_SPI_BASE(i) + 0x108)
+#define SPI_LCD_D_MODE_REG(i)          (REG_SPI_BASE(i) + 0x0FC)
+/* SPI_HS_BLANK_EN : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: 1: The pulse of spi_hsync is out in vertical blanking lines in
+ seg-trans or one trans. 0: spi_hsync pulse is valid only in active region lines in seg-trans.*/
+#define SPI_HS_BLANK_EN  (BIT(16))
+#define SPI_HS_BLANK_EN_M  (BIT(16))
+#define SPI_HS_BLANK_EN_V  0x1
+#define SPI_HS_BLANK_EN_S  16
+/* SPI_DE_IDLE_POL : R/W ;bitpos:[15] ;default: 1'd0 ; */
+/*description: It is the idle value of spi_de.*/
+#define SPI_DE_IDLE_POL  (BIT(15))
+#define SPI_DE_IDLE_POL_M  (BIT(15))
+#define SPI_DE_IDLE_POL_V  0x1
+#define SPI_DE_IDLE_POL_S  15
 /* SPI_D_VSYNC_MODE : R/W ;bitpos:[14:12] ;default: 3'h0 ; */
 /*description: the output spi_vsync is delayed by system clock cycles  0: output
  without delayed  1: output with the posedge of clk_apb 2 output with the negedge of clk_apb  3: output with the spi_clk. Can be configured in CONF state.*/
@@ -2055,7 +2265,7 @@ extern "C" {
 #define SPI_D_DQS_MODE_V  0x7
 #define SPI_D_DQS_MODE_S  0
 
-#define SPI_LCD_D_NUM_REG(i)          (REG_SPI_BASE(i) + 0x10C)
+#define SPI_LCD_D_NUM_REG(i)          (REG_SPI_BASE(i) + 0x100)
 /* SPI_D_VSYNC_NUM : R/W ;bitpos:[9:8] ;default: 2'h0 ; */
 /*description: the output spi_vsync is delayed by system clock cycles  0: delayed
  by 1 cycle  1: delayed by 2 cycles ... Can be configured in CONF state.*/
@@ -2093,7 +2303,7 @@ extern "C" {
 #define SPI_D_DQS_NUM_S  0
 
 #define SPI_DATE_REG(i)          (REG_SPI_BASE(i) + 0x3FC)
-/* SPI_DATE : RW ;bitpos:[27:0] ;default: 28'h1902200 ; */
+/* SPI_DATE : RW ;bitpos:[27:0] ;default: 28'h1907240 ; */
 /*description: SPI register version.*/
 #define SPI_DATE  0x0FFFFFFF
 #define SPI_DATE_M  ((SPI_DATE_V)<<(SPI_DATE_S))

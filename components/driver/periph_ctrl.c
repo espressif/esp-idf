@@ -112,8 +112,6 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
             return DPORT_SPI2_CLK_EN;
         case PERIPH_HSPI_MODULE:
             return DPORT_SPI3_CLK_EN;
-        case PERIPH_VSPI_MODULE:
-            return DPORT_SPI4_CLK_EN;
         case PERIPH_SPI2_DMA_MODULE:
             return DPORT_SPI2_DMA_CLK_EN;
         case PERIPH_SPI3_DMA_MODULE:
@@ -216,8 +214,6 @@ static uint32_t get_rst_en_mask(periph_module_t periph, bool enable)
             return DPORT_SPI2_RST;
         case PERIPH_HSPI_MODULE:
             return DPORT_SPI3_RST;
-        case PERIPH_VSPI_MODULE:
-            return DPORT_SPI4_RST;
         case PERIPH_SPI2_DMA_MODULE:
             return DPORT_SPI2_DMA_RST;
         case PERIPH_SPI3_DMA_MODULE:
@@ -293,13 +289,9 @@ static uint32_t get_clk_en_reg(periph_module_t periph)
 #if CONFIG_IDF_TARGET_ESP32
     if (periph == PERIPH_AES_MODULE || periph == PERIPH_SHA_MODULE || periph == PERIPH_RSA_MODULE) {
         return DPORT_PERI_CLK_EN_REG;
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if(periph == PERIPH_SPI_SHARED_DMA_MODULE) {
-        return DPORT_PERIP_CLK_EN1_REG;
-    }
+    } else
 #endif
-    else {
+    {
         return is_wifi_clk_peripheral(periph) ? DPORT_WIFI_CLK_EN_REG : DPORT_PERIP_CLK_EN_REG;
     }
 }
@@ -309,13 +301,9 @@ static uint32_t get_rst_en_reg(periph_module_t periph)
 #if CONFIG_IDF_TARGET_ESP32
     if (periph == PERIPH_AES_MODULE || periph == PERIPH_SHA_MODULE || periph == PERIPH_RSA_MODULE) {
         return DPORT_PERI_RST_EN_REG;
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2
-    if(periph == PERIPH_SPI_SHARED_DMA_MODULE){
-        return DPORT_PERIP_CLK_EN1_REG;
-    }
+    } else
 #endif
-    else {
+    {
         return is_wifi_clk_peripheral(periph) ? DPORT_CORE_RST_EN_REG : DPORT_PERIP_RST_EN_REG;
     }
 }

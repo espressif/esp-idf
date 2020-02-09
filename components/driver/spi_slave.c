@@ -41,7 +41,7 @@ static const char *SPI_TAG = "spi_slave";
         return (ret_val); \
     }
 
-#define VALID_HOST(x) (x>SPI_HOST && x<=VSPI_HOST)
+#define VALID_HOST(x) (x > SPI1_HOST && x <= SPI3_HOST)
 
 #ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define SPI_SLAVE_ISR_ATTR IRAM_ATTR

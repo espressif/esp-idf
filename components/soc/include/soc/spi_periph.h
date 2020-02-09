@@ -59,9 +59,7 @@ typedef struct {
     const uint8_t spics_out[3];     // /CS GPIO output mux signals
     const uint8_t spics_in;
     const uint8_t spidqs_out;
-    const uint8_t spidqs_in;
     const uint8_t spicd_out;
-    const uint8_t spicd_in;
     const uint8_t spiclk_iomux_pin;    //IO pins of IO_MUX muxed signals
     const uint8_t spid_iomux_pin;
     const uint8_t spiq_iomux_pin;

@@ -20,7 +20,7 @@
 */
 const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
     {
-        .spiclk_out = SPICLK_OUT_IDX,
+        .spiclk_out = SPICLK_OUT_MUX_IDX,
         .spiclk_in = 0,/* SPI clock is not an input signal*/
         .spid_out = SPID_OUT_IDX,
         .spiq_out = SPIQ_OUT_IDX,
@@ -39,13 +39,12 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spihd_iomux_pin = SPI_IOMUX_PIN_NUM_HD,
         .spics0_iomux_pin = SPI_IOMUX_PIN_NUM_CS,
         .irq = ETS_SPI1_INTR_SOURCE,
-        //TODO: SPI1 do not have DMA
-        /*.irq_dma = ETS_SPI1_DMA_INTR_SOURCE,*/
+        .irq_dma = -1,
         .module = PERIPH_SPI_MODULE,
         .hw = (spi_dev_t *) &SPIMEM1,
         .func = SPI_FUNC_NUM,
     }, {
-        .spiclk_out = FSPICLK_OUT_IDX,
+        .spiclk_out = FSPICLK_OUT_MUX_IDX,
         .spiclk_in = FSPICLK_IN_IDX,
         .spid_out = FSPID_OUT_IDX,
         .spiq_out = FSPIQ_OUT_IDX,

@@ -109,7 +109,8 @@ static bool card_missing(int slot)
 /// Check if slot number is within bounds
 static bool is_valid_slot(int slot)
 {
-    return slot == VSPI_HOST || slot == HSPI_HOST;
+    //SPI1 is not supported yet
+    return slot == SPI2_HOST || slot == SPI3_HOST;
 }
 
 static spi_device_handle_t spi_handle(int slot)

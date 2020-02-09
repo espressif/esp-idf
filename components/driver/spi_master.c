@@ -209,6 +209,11 @@ static const char *SPI_TAG = "spi_master";
 
 static void spi_intr(void *arg);
 
+static inline bool is_valid_host(spi_host_device_t host)
+{
+    return host >= SPI1_HOST && host <= SPI3_HOST;
+}
+
 esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan)
 {
     bool spi_chan_claimed, dma_chan_claimed;
@@ -217,7 +222,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus
     /* ToDo: remove this when we have flash operations cooperating with this */
     SPI_CHECK(host!=SPI_HOST, "SPI1 is not supported", ESP_ERR_NOT_SUPPORTED);
 
-    SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
 #ifdef CONFIG_IDF_TARGET_ESP32
     SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -321,7 +326,7 @@ cleanup:
 esp_err_t spi_bus_free(spi_host_device_t host)
 {
     int x;
-    SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not in use", ESP_ERR_INVALID_STATE);
     for (x=0; x<NO_CS; x++) {
         SPI_CHECK(atomic_load(&spihost[host]->device[x])==NULL, "not all CSses freed", ESP_ERR_INVALID_STATE);
@@ -370,7 +375,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_
     int freecs;
     int duty_cycle;
 
-    SPI_CHECK(host>=SPI_HOST && host<=VSPI_HOST, "invalid host", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
     SPI_CHECK(spihost[host]!=NULL, "host not initialized", ESP_ERR_INVALID_STATE);
     SPI_CHECK(dev_config->spics_io_num < 0 || GPIO_IS_VALID_OUTPUT_GPIO(dev_config->spics_io_num), "spics pin invalid", ESP_ERR_INVALID_ARG);
     SPI_CHECK(dev_config->clock_speed_hz > 0, "invalid sclk speed", ESP_ERR_INVALID_ARG);

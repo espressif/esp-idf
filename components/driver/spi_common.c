@@ -110,8 +110,6 @@ static inline uint32_t get_dma_periph(int dma_chan)
         return PERIPH_SPI2_DMA_MODULE;
     } else if (dma_chan==2) {
         return PERIPH_SPI3_DMA_MODULE;
-    } else if (dma_chan==3) {
-        return PERIPH_SPI_SHARED_DMA_MODULE;
     } else {
         abort();
         return -1;
@@ -140,8 +138,6 @@ bool spicommon_dma_chan_claim (int dma_chan)
         periph_module_enable(PERIPH_SPI2_DMA_MODULE);
     } else if (dma_chan==2) {
         periph_module_enable(PERIPH_SPI3_DMA_MODULE);
-    } else if (dma_chan==3) {
-        periph_module_enable(PERIPH_SPI_SHARED_DMA_MODULE);
     }
 #endif
     portEXIT_CRITICAL(&spi_dma_spinlock);
@@ -172,8 +168,6 @@ bool spicommon_dma_chan_free(int dma_chan)
         periph_module_disable(PERIPH_SPI2_DMA_MODULE);
     } else if (dma_chan==2) {
         periph_module_disable(PERIPH_SPI3_DMA_MODULE);
-    } else if (dma_chan==3) {
-        periph_module_disable(PERIPH_SPI_SHARED_DMA_MODULE);
     }
 #endif
     portEXIT_CRITICAL(&spi_dma_spinlock);
