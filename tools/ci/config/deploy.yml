@@ -74,6 +74,7 @@ push_to_github:
   cd docs/_build/$DOCLANG/$DOCTGT
   mv html $GIT_VER
   tar czf $GIT_VER.tar.gz $GIT_VER
+  ssh $DOCS_SERVER -x "mkdir -p $DOCS_PATH/$DOCLANG/$DOCTGT"
   scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/$DOCLANG/$DOCTGT
   ssh $DOCS_SERVER -x "cd $DOCS_PATH/$DOCLANG/$DOCTGT && tar xzf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
   cd -
