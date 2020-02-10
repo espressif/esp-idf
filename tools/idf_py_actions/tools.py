@@ -77,6 +77,13 @@ def run_tool(tool_name, args, cwd, env=dict()):
     env_copy = dict(os.environ)
     env_copy.update(env)
 
+    if sys.version_info[0] < 3:
+        # The subprocess lib cannot accept environment variables as "unicode". Convert to str.
+        # This encoding step is required only in Python 2.
+        for (key, val) in env_copy.items():
+            if not isinstance(val, str):
+                env_copy[key] = val.encode(sys.getfilesystemencoding() or 'utf-8')
+
     try:
         # Note: we explicitly pass in os.environ here, as we may have set IDF_PATH there during startup
         subprocess.check_call(args, env=env_copy, cwd=cwd)
