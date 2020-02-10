@@ -43,6 +43,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include "esp_err.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,13 +66,10 @@ typedef void (*esp_timer_cb_t)(void* arg);
  */
 typedef enum {
     ESP_TIMER_TASK,     //!< Callback is called from timer task
-
-    /* Not supported for now, provision to allow callbacks to run directly
-     * from an ISR:
-
-        ESP_TIMER_ISR,      //!< Callback is called from timer ISR
-
-     */
+#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+    ESP_TIMER_ISR,      //!< Callback is called from timer ISR
+#endif
+    ESP_TIMER_MAX,      //!< Count of the methods for dispatching timer callback
 } esp_timer_dispatch_t;
 
 /**
@@ -227,6 +225,16 @@ int64_t esp_timer_get_next_alarm(void);
  *      - ESP_ERR_NO_MEM if can not allocate temporary buffer for the output
  */
 esp_err_t esp_timer_dump(FILE* stream);
+
+#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+/**
+ * @brief Requests a context switch from a timer callback function.
+ *
+ * This only works for a timer that has an ISR dispatch method.
+ * The context switch will be called after all ISR dispatch timers have been processed.
+ */
+void esp_timer_isr_dispatch_need_yield(void);
+#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
 
 #ifdef __cplusplus
 }

@@ -15,6 +15,8 @@
 #include "esp_freertos_hooks.h"
 #include "esp_rom_sys.h"
 
+#define SEC  (1000000)
+
 #if CONFIG_ESP_TIMER_IMPL_FRC2
 #include "soc/frc_timer_reg.h"
 #endif
@@ -916,3 +918,236 @@ TEST_CASE("Test a latency between a call of callback and real event", "[esp_time
     TEST_ESP_OK(esp_timer_stop(periodic_timer));
     TEST_ESP_OK(esp_timer_delete(periodic_timer));
 }
+
+#ifdef CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD
+static int64_t old_time[2];
+
+static void timer_isr_callback(void* arg)
+{
+    int num_timer = *((int*)arg);
+    int64_t now = esp_timer_get_time();
+    int64_t dt = now - old_time[num_timer];
+    old_time[num_timer] = now;
+    if (num_timer == 1) {
+        esp_rom_printf("(%lld): \t\t\t\t timer ISR, dt: %lld us\n", now, dt);
+        assert(xPortInIsrContext());
+    } else {
+        esp_rom_printf("(%lld): timer TASK, dt: %lld us\n", now, dt);
+        assert(!xPortInIsrContext());
+    }
+}
+
+TEST_CASE("Test ESP_TIMER_ISR dispatch method", "[esp_timer]")
+{
+    TEST_ESP_OK(esp_timer_dump(stdout));
+    int timer[2]= {1, 2};
+    const esp_timer_create_args_t periodic_timer1_args = {
+        .callback = &timer_isr_callback,
+        .dispatch_method = ESP_TIMER_ISR,
+        .arg = &timer[0],
+        .name = "ISR",
+    };
+
+    esp_timer_handle_t periodic_timer1;
+    TEST_ESP_OK(esp_timer_create(&periodic_timer1_args, &periodic_timer1));
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer1, 400000));
+
+    const esp_timer_create_args_t periodic_timer2_args = {
+        .callback = &timer_isr_callback,
+        .dispatch_method = ESP_TIMER_TASK,
+        .arg = &timer[1],
+        .name = "TASK",
+    };
+
+    esp_timer_handle_t periodic_timer2;
+    TEST_ESP_OK(esp_timer_create(&periodic_timer2_args, &periodic_timer2));
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer2, 500000));
+
+    printf("timers created\n");
+
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+    TEST_ESP_OK(esp_timer_stop(periodic_timer1));
+    TEST_ESP_OK(esp_timer_stop(periodic_timer2));
+
+    TEST_ESP_OK(esp_timer_dump(stdout));
+
+    TEST_ESP_OK(esp_timer_delete(periodic_timer1));
+    TEST_ESP_OK(esp_timer_delete(periodic_timer2));
+    printf("timers deleted\n");
+    TEST_ESP_OK(esp_timer_dump(stdout));
+}
+
+static void dump_task(void* arg)
+{
+    bool* stop_dump_task = (bool*) arg;
+    while (*stop_dump_task == false) {
+        TEST_ESP_OK(esp_timer_dump(NULL));
+    }
+    vTaskDelete(NULL);
+}
+
+static void isr_callback(void* arg)
+{
+    assert(xPortInIsrContext());
+}
+
+static void task_callback(void* arg)
+{
+    assert(!xPortInIsrContext());
+}
+
+TEST_CASE("Test ESP_TIMER_ISR dispatch method is not blocked", "[esp_timer]")
+{
+    const esp_timer_create_args_t periodic_timer1_args = {
+        .callback = &isr_callback,
+        .dispatch_method = ESP_TIMER_ISR,
+        .arg = NULL,
+        .name = "ISR",
+    };
+
+    esp_timer_handle_t periodic_timer1;
+    TEST_ESP_OK(esp_timer_create(&periodic_timer1_args, &periodic_timer1));
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer1, 500));
+
+    const esp_timer_create_args_t periodic_timer2_args = {
+        .callback = &task_callback,
+        .dispatch_method = ESP_TIMER_TASK,
+        .arg = NULL,
+        .name = "TASK",
+    };
+
+    esp_timer_handle_t periodic_timer2;
+    TEST_ESP_OK(esp_timer_create(&periodic_timer2_args, &periodic_timer2));
+    TEST_ESP_OK(esp_timer_start_periodic(periodic_timer2, 5000));
+    printf("timers created\n");
+
+    bool stop_dump_task = false;
+    xTaskCreatePinnedToCore(&dump_task, "dump", 4096, &stop_dump_task, UNITY_FREERTOS_PRIORITY, NULL, 0);
+    vTaskDelay(10 * 1000 / portTICK_PERIOD_MS);
+    stop_dump_task = true;
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+
+    TEST_ESP_OK(esp_timer_stop(periodic_timer1));
+    TEST_ESP_OK(esp_timer_stop(periodic_timer2));
+
+    TEST_ESP_OK(esp_timer_dump(stdout));
+
+    TEST_ESP_OK(esp_timer_delete(periodic_timer1));
+    TEST_ESP_OK(esp_timer_delete(periodic_timer2));
+    printf("timer deleted\n");
+}
+
+static void isr_callback1(void* arg)
+{
+    assert(xPortInIsrContext());
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    esp_rom_printf("isr_callback1: timer ISR\n");
+    SemaphoreHandle_t done = *(SemaphoreHandle_t*) arg;
+    xSemaphoreGiveFromISR(done, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken) {
+        esp_timer_isr_dispatch_need_yield();
+    }
+}
+
+static void task_callback1(void* arg)
+{
+    assert(0);
+}
+
+TEST_CASE("Test ESP_TIMER_ISR, stop API cleans alarm reg if TASK timer list is empty", "[esp_timer]")
+{
+    SemaphoreHandle_t done = xSemaphoreCreateBinary();
+    const esp_timer_create_args_t timer1_args = {
+        .callback = &isr_callback1,
+        .dispatch_method = ESP_TIMER_ISR,
+        .arg = &done,
+        .name = "ISR",
+    };
+
+    esp_timer_handle_t timer1;
+    TEST_ESP_OK(esp_timer_create(&timer1_args, &timer1));
+    TEST_ESP_OK(esp_timer_start_periodic(timer1, 5 * SEC));
+
+    const esp_timer_create_args_t timer2_args = {
+        .callback = &task_callback1,
+        .dispatch_method = ESP_TIMER_TASK,
+        .arg = NULL,
+        .name = "TASK",
+    };
+
+    esp_timer_handle_t timer2;
+    TEST_ESP_OK(esp_timer_create(&timer2_args, &timer2));
+    TEST_ESP_OK(esp_timer_start_once(timer2, 3 * SEC));
+    printf("timers created\n");
+
+    printf("stop timer2\n");
+    TEST_ESP_OK(esp_timer_stop(timer2));
+
+    TEST_ASSERT(xSemaphoreTake(done, 6 * 1000 / portTICK_PERIOD_MS));
+
+    printf("stop timer1\n");
+    TEST_ESP_OK(esp_timer_stop(timer1));
+
+    TEST_ESP_OK(esp_timer_dump(stdout));
+
+    TEST_ESP_OK(esp_timer_delete(timer1));
+    TEST_ESP_OK(esp_timer_delete(timer2));
+    vSemaphoreDelete(done);
+    printf("timer deleted\n");
+}
+
+static void isr_callback2(void* arg)
+{
+    assert(0);
+}
+
+static void task_callback2(void* arg)
+{
+    assert(!xPortInIsrContext());
+    esp_rom_printf("task_callback2: timer TASK\n");
+    SemaphoreHandle_t done = *(SemaphoreHandle_t*) arg;
+    xSemaphoreGive(done);
+}
+
+TEST_CASE("Test ESP_TIMER_ISR, stop API cleans alarm reg if ISR timer list is empty", "[esp_timer]")
+{
+    SemaphoreHandle_t done = xSemaphoreCreateBinary();
+    const esp_timer_create_args_t timer1_args = {
+        .callback = &isr_callback2,
+        .dispatch_method = ESP_TIMER_ISR,
+        .arg = NULL,
+        .name = "ISR",
+    };
+
+    esp_timer_handle_t timer1;
+    TEST_ESP_OK(esp_timer_create(&timer1_args, &timer1));
+    TEST_ESP_OK(esp_timer_start_once(timer1, 3 * SEC));
+
+    const esp_timer_create_args_t timer2_args = {
+        .callback = &task_callback2,
+        .dispatch_method = ESP_TIMER_TASK,
+        .arg = &done,
+        .name = "TASK",
+    };
+
+    esp_timer_handle_t timer2;
+    TEST_ESP_OK(esp_timer_create(&timer2_args, &timer2));
+    TEST_ESP_OK(esp_timer_start_periodic(timer2, 5 * SEC));
+    printf("timers created\n");
+
+    printf("stop timer1\n");
+    TEST_ESP_OK(esp_timer_stop(timer1));
+
+    TEST_ASSERT(xSemaphoreTake(done, 6 * 1000 / portTICK_PERIOD_MS));
+
+    printf("stop timer2\n");
+    TEST_ESP_OK(esp_timer_stop(timer2));
+
+    TEST_ESP_OK(esp_timer_dump(stdout));
+
+    TEST_ESP_OK(esp_timer_delete(timer1));
+    TEST_ESP_OK(esp_timer_delete(timer2));
+    vSemaphoreDelete(done);
+    printf("timer deleted\n");
+}
+#endif // CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD

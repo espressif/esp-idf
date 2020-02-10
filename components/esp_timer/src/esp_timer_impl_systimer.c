@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "sys/param.h"
 #include "esp_timer_impl.h"
 #include "esp_err.h"
 #include "esp_timer.h"
@@ -73,11 +74,21 @@ int64_t IRAM_ATTR esp_timer_impl_get_time(void)
 
 int64_t esp_timer_get_time(void) __attribute__((alias("esp_timer_impl_get_time")));
 
+void IRAM_ATTR esp_timer_impl_set_alarm_id(uint64_t timestamp, unsigned alarm_id)
+{
+    static uint64_t timestamp_id[2] = { UINT64_MAX, UINT64_MAX };
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
+    timestamp_id[alarm_id] = timestamp;
+    timestamp = MIN(timestamp_id[0], timestamp_id[1]);
+    if (timestamp != UINT64_MAX) {
+        systimer_hal_set_alarm_target(SYSTIMER_ALARM_2, timestamp);
+    }
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+}
+
 void IRAM_ATTR esp_timer_impl_set_alarm(uint64_t timestamp)
 {
-    portENTER_CRITICAL_SAFE(&s_time_update_lock);
-    systimer_hal_set_alarm_target(SYSTIMER_ALARM_2, timestamp);
-    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
+    esp_timer_impl_set_alarm_id(timestamp, 0);
 }
 
 static void IRAM_ATTR timer_alarm_isr(void *arg)

@@ -11,6 +11,8 @@ Although FreeRTOS provides software timers, these timers have a few limitations:
 
 Hardware timers are free from both of the limitations, but often they are less convenient to use. For example, application components may need timer events to fire at certain times in the future, but the hardware timer only contains one "compare" value used for interrupt generation. This means that some facility needs to be built on top of the hardware timer to manage the list of pending events can dispatch the callbacks for these events as corresponding hardware interrupts happen.
 
+An interrupt level of the handler depends on the :ref:`CONFIG_ESP_TIMER_INTERRUPT_LEVEL` option. It allows to set this: 1, 2 or 3 level (by default 1). Raising the level, the interrupt handler can reduce the timer processing delay.
+
 ``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and 64-bit range.
 
 Internally, ``esp_timer`` uses a 64-bit hardware timer :ref:`CONFIG_ESP_TIMER_IMPL`:
@@ -21,11 +23,16 @@ Internally, ``esp_timer`` uses a 64-bit hardware timer :ref:`CONFIG_ESP_TIMER_IM
 
 .. note: The FRC2 is a legacy option for ESP32 until v4.2, a 32-bit hardware timer was used. Starting at v4.2, use the new LAC timer option instead, it has a simpler implementation, and has smaller run time overhead because software handling of timer overflow is not needed.
 
-Timer callbacks are dispatched from a high-priority ``esp_timer`` task. Because all the callbacks are dispatched from the same task, it is recommended to only do the minimal possible amount of work from the callback itself, posting an event to a lower priority task using a queue instead.
+Timer callbacks can dispatched by two methods:
 
-.. note: Provisions are made to dispatch some simple callbacks directly from the interrupt handler, if needed. However this option is not implemented at the moment.
+- ``ESP_TIMER_TASK``
+- ``ESP_TIMER_ISR``. Available only if :ref:`CONFIG_ESP_TIMER_SUPPORTS_ISR_DISPATCH_METHOD` is enabled (by default disabled).
+
+``ESP_TIMER_TASK``. Timer callbacks are dispatched from a high-priority ``esp_timer`` task. Because all the callbacks are dispatched from the same task, it is recommended to only do the minimal possible amount of work from the callback itself, posting an event to a lower priority task using a queue instead.
 
 If other tasks with priority higher than ``esp_timer`` are running, callback dispatching will be delayed until ``esp_timer`` task has a chance to run. For example, this will happen if a SPI Flash operation is in progress.
+
+``ESP_TIMER_ISR``. Timer callbacks are dispatched directly from the timer interrupt handler. This method is useful for some simple callbacks which aim for lower latency.
 
 Creating and starting a timer, and dispatching the callback takes some time. Therefore there is a lower limit to the timeout value of one-shot ``esp_timer``. If :cpp:func:`esp_timer_start_once` is called with a timeout value less than 20us, the callback will be dispatched only after approximately 20us.
 
@@ -46,6 +53,14 @@ The timer can be started in one-shot mode or in periodic mode.
 - To start the timer in periodic mode, call :cpp:func:`esp_timer_start_periodic`, passing the period with which the callback should be called. The timer keeps running until :cpp:func:`esp_timer_stop` is called.
 
 Note that the timer must not be running when :cpp:func:`esp_timer_start_once` or :cpp:func:`esp_timer_start_periodic` is called. To restart a running timer, call :cpp:func:`esp_timer_stop` first, then call one of the start functions.
+
+Callback functions
+------------------
+
+.. note: Keep the callback functions as short as possible otherwise it will affect all timers.
+
+Timer callbacks which are processed by ``ESP_TIMER_ISR`` method should not have inside the context switch call - ``portYIELD_FROM_ISR()`` instead of this use the :cpp:func:`esp_timer_isr_dispatch_need_yield` function.
+The context switch will be done after all ISR dispatch timers have been processed, if required by the system.
 
 esp_timer during the light sleep
 --------------------------------
