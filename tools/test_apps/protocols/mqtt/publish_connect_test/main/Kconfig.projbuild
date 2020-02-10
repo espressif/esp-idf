@@ -47,4 +47,39 @@ menu "Example Configuration"
         bool
         default y if EXAMPLE_BROKER_CERTIFICATE_OVERRIDE != ""
 
+    config EXAMPLE_CONNECT_CASE_NO_CERT
+        # Note: All the below config values (EXAMPLE_CONNECT_CASE...) are hidden and
+        # used to give symbolic names to test cases, which are then referenced from both
+        # the embedded C code as well as the test counterpart in python
+        int
+        default 1
+
+    config EXAMPLE_CONNECT_CASE_SERVER_CERT
+        int
+        default 2
+
+    config EXAMPLE_CONNECT_CASE_MUTUAL_AUTH
+        int
+        default 3
+
+    config EXAMPLE_CONNECT_CASE_INVALID_SERVER_CERT
+        int
+        default 4
+
+    config EXAMPLE_CONNECT_CASE_SERVER_DER_CERT
+        int
+        default 5
+
+    config EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_KEY_PWD
+        int
+        default 6
+
+    config EXAMPLE_CONNECT_CASE_MUTUAL_AUTH_BAD_CRT
+        int
+        default 7
+
+    config EXAMPLE_CONNECT_CASE_NO_CERT_ALPN
+        int
+        default 8
+
 endmenu
