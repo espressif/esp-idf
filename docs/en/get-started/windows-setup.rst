@@ -28,7 +28,7 @@ ESP-IDF Tools Installer
 
 The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.2.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
 The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
 
