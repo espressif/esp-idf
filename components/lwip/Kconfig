@@ -4,7 +4,8 @@ menu "LWIP"
         string "Local netif hostname"
         default 'espressif'
         help
-            The name this device will report to other devices on the network
+            The default name this device will report to other devices on the network.
+            Could be updated at runtime with esp_netif_set_hostname()
 
     config LWIP_DNS_SUPPORT_MDNS_QUERIES
         bool "Enable mDNS queries in resolving host name"

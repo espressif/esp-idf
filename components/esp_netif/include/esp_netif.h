@@ -277,6 +277,10 @@ esp_err_t esp_netif_get_mac(esp_netif_t *esp_netif, uint8_t mac[]);
 /**
  * @brief  Set the hostname of an interface
  *
+ * The configured hostname overrides the default configuration value CONFIG_LWIP_LOCAL_HOSTNAME.
+ * Please note that when the hostname is altered after interface started/connected the changes
+ * would only be reflected once the interface restarts/reconnects
+ *
  * @param[in]  esp_netif Handle to esp-netif instance
  * @param[in]   hostname New hostname for the interface. Maximum length 32 bytes.
  *
