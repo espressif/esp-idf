@@ -386,6 +386,7 @@ extern void esp_vApplicationTickHook( void );
 
 void _xt_coproc_release(volatile void * coproc_sa_base);
 void vApplicationSleep( TickType_t xExpectedIdleTime );
+void vPortSetStackWatchpoint( void* pxStackStart );
 
 #define portSUPPRESS_TICKS_AND_SLEEP( idleTime ) vApplicationSleep( idleTime )
 
