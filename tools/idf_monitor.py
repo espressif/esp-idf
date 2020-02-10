@@ -696,7 +696,7 @@ def main():
         '--baud', '-b',
         help='Serial port baud rate',
         type=int,
-        default=os.environ.get('MONITOR_BAUD', 115200))
+        default=os.getenv('IDF_MONITOR_BAUD', os.getenv('MONITORBAUD', 115200)))
 
     parser.add_argument(
         '--make', '-m',
