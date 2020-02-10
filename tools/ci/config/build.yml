@@ -231,7 +231,7 @@ build_test_apps_esp32s2:
 
 .build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2-d4034371
+  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
   tags:
     - build_docs
   artifacts:
