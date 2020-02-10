@@ -6,7 +6,7 @@
 # Includes information which is not shown in "xtensa-esp32-elf-size",
 # or easy to parse from "xtensa-esp32-elf-objdump" or raw map files.
 #
-# Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+# Copyright 2017-2020 Espressif Systems (Shanghai) PTE LTD
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import division
+from future.utils import iteritems
 import argparse
 import collections
 import json
@@ -33,6 +34,126 @@ import sys
 DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 GLOBAL_JSON_INDENT = 4
 GLOBAL_JSON_SEPARATORS = (',', ': ')
+
+
+class MemRegions(object):
+    (DRAM_ID, IRAM_ID, DIRAM_ID) = range(3)
+
+    @staticmethod
+    def get_mem_regions(target):
+        # The target specific memory structure is deduced from soc_memory_types defined in
+        # $IDF_PATH/components/soc/**/soc_memory_layout.c files.
+
+        # The order of variables in the tuple is the same as in the soc_memory_layout.c files
+        MemRegDef = collections.namedtuple('MemRegDef', ['primary_addr', 'length', 'type', 'secondary_addr'])
+
+        if target == 'esp32':
+            return sorted([
+                # TODO comment this
+                MemRegDef(0x3FFAE000, 17 * 0x2000 + 2 * 0x8000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFAE000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFB0000, 0x8000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFB8000, 0x8000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFC0000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFC2000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFC4000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFC6000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFC8000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFCA000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFCC000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFCE000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFD0000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFD2000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFD4000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFD6000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFD8000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFDA000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFDC000, 0x2000, MemRegions.DRAM_ID, 0),
+                # MemRegDef(0x3FFDE000, 0x2000, MemRegions.DRAM_ID, 0),
+                #
+                MemRegDef(0x3FFE0000, 4 * 0x4000 + 2 * 0x8000, MemRegions.DIRAM_ID, 0x400BC000),
+                # MemRegDef(0x3FFE0000, 0x4000, MemRegions.DIRAM_ID, 0x400BC000),
+                # MemRegDef(0x3FFE4000, 0x4000, MemRegions.DIRAM_ID, 0x400B8000),
+                # MemRegDef(0x3FFE8000, 0x8000, MemRegions.DIRAM_ID, 0x400B0000),
+                # MemRegDef(0x3FFF0000, 0x8000, MemRegions.DIRAM_ID, 0x400A8000),
+                # MemRegDef(0x3FFF8000, 0x4000, MemRegions.DIRAM_ID, 0x400A4000),
+                # MemRegDef(0x3FFFC000, 0x4000, MemRegions.DIRAM_ID, 0x400A0000),
+                #
+                MemRegDef(0x40070000, 2 * 0x8000 + 16 * 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40070000, 0x8000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40078000, 0x8000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40080000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40082000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40084000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40086000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40088000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x4008A000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x4008C000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x4008E000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40090000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40092000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40094000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40096000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x40098000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x4009A000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x4009C000, 0x2000, MemRegions.IRAM_ID, 0),
+                # MemRegDef(0x4009E000, 0x2000, MemRegions.IRAM_ID, 0),
+            ])
+        elif target == 'esp32s2':
+            return sorted([
+                # The following one memory region is defined instead of defining all 3 + 11 individually because their
+                # type (MemRegions.DIRAM_ID) is the same
+                MemRegDef(0x3FFB2000, 3 * 0x2000 + 11 * 0x4000, MemRegions.DIRAM_ID, 0x40022000),
+                # MemRegDef(0x3FFB2000, 0x2000, MemRegions.DIRAM_ID, 0x40022000),
+                # MemRegDef(0x3FFB4000, 0x2000, MemRegions.DIRAM_ID, 0x40024000),
+                # MemRegDef(0x3FFB6000, 0x2000, MemRegions.DIRAM_ID, 0x40026000),
+                # MemRegDef(0x3FFB8000, 0x4000, MemRegions.DIRAM_ID, 0x40028000),
+                # MemRegDef(0x3FFBC000, 0x4000, MemRegions.DIRAM_ID, 0x4002C000),
+                # MemRegDef(0x3FFC0000, 0x4000, MemRegions.DIRAM_ID, 0x40030000),
+                # MemRegDef(0x3FFC4000, 0x4000, MemRegions.DIRAM_ID, 0x40034000),
+                # MemRegDef(0x3FFC8000, 0x4000, MemRegions.DIRAM_ID, 0x40038000),
+                # MemRegDef(0x3FFCC000, 0x4000, MemRegions.DIRAM_ID, 0x4003C000),
+                # MemRegDef(0x3FFD0000, 0x4000, MemRegions.DIRAM_ID, 0x40040000),
+                # MemRegDef(0x3FFD4000, 0x4000, MemRegions.DIRAM_ID, 0x40044000),
+                # MemRegDef(0x3FFD8000, 0x4000, MemRegions.DIRAM_ID, 0x40048000),
+                # MemRegDef(0x3FFDC000, 0x4000, MemRegions.DIRAM_ID, 0x4004C000),
+                # MemRegDef(0x3FFE0000, 0x4000, MemRegions.DIRAM_ID, 0x40050000),
+                #
+                # 2nd stage bootloader iram_loader_seg starts at block 15. Therefore, the following blocks are not
+                # defined here and will not be counted in the total amount of available space
+                # MemRegDef(0x3FFE4000, 0x4000, MemRegions.DIRAM_ID, 0x40054000),
+                # MemRegDef(0x3FFE8000, 0x4000, MemRegions.DIRAM_ID, 0x40058000),
+                # MemRegDef(0x3FFEC000, 0x4000, MemRegions.DIRAM_ID, 0x4005C000),
+                # MemRegDef(0x3FFF0000, 0x4000, MemRegions.DIRAM_ID, 0x40060000),
+                # MemRegDef(0x3FFF4000, 0x4000, MemRegions.DIRAM_ID, 0x40064000),
+                # MemRegDef(0x3FFF8000, 0x4000, MemRegions.DIRAM_ID, 0x40068000),
+                # MemRegDef(0x3FFFC000, 0x4000, MemRegions.DIRAM_ID, 0x4006C000),
+                # Note the type of the last block which is in contrast with soc_memory_layout.c. It is used for
+                # startup stack therefore the type is D/IRAM (from the perspective of idf_size) and not DRAM.
+            ])
+        else:
+            return None
+
+    def __init__(self, target):
+        self.chip_mem_regions = self.get_mem_regions(target)
+        if not self.chip_mem_regions:
+            raise RuntimeError('Target {} is not implemented in idf_size'.format(target))
+
+    def _address_in_range(address, length, reg_address, reg_length):
+        return address >= reg_address and (address - reg_address) <= (reg_length - length)
+
+    def get_names(self, dictionary, region_id):
+        result = []
+        # TODO alebo origin a length
+        for m in self.chip_mem_regions:
+            result.append([n for (n, c) in iteritems(dictionary) if (self._address_in_range(c.address, c.size,
+                                                                     m.primary_addr, m.length) or
+                                                                     (m.type == self.DIRAM_ID and
+                                                                      self._address_in_range(c.address,
+                                                                                             c.size,
+                                                                                             m.secondary_addr,
+                                                                                             m.length)))])
+        return result
 
 
 def scan_to_header(f, header_line):
@@ -171,9 +292,10 @@ def sizes_by_key(sections, key):
 
 
 def main():
-    parser = argparse.ArgumentParser("idf_size - a tool to print IDF elf file sizes")
+    parser = argparse.ArgumentParser(description="idf_size - a tool to print size information from an IDF MAP file")
 
     parser.add_argument(
+        # FIXME: toolchain is not used
         '--toolchain-prefix',
         help="Triplet prefix to add before objdump executable",
         default=DEFAULT_TOOLCHAIN_PREFIX)
@@ -197,6 +319,9 @@ def main():
         '--files', help='Print per-file sizes', action='store_true')
 
     parser.add_argument(
+        '--target', help='Set target chip', default='esp32')
+
+    parser.add_argument(
         '-o',
         '--output-file',
         type=argparse.FileType('w'),
@@ -205,24 +330,26 @@ def main():
 
     args = parser.parse_args()
 
+    mem_regions = MemRegions(args.target)
+
     output = ""
 
     memory_config, sections = load_map_data(args.map_file)
     if not args.json or not (args.archives or args.files or args.archive_details):
-        output += get_summary(memory_config, sections, args.json)
+        output += get_summary(mem_regions, memory_config, sections, args.json)
 
     if args.archives:
-        output += get_detailed_sizes(sections, "archive", "Archive File", args.json)
+        output += get_detailed_sizes(mem_regions, sections, "archive", "Archive File", args.json)
     if args.files:
-        output += get_detailed_sizes(sections, "file", "Object File", args.json)
+        output += get_detailed_sizes(mem_regions, sections, "file", "Object File", args.json)
 
     if args.archive_details:
-        output += get_archive_symbols(sections, args.archive_details, args.json)
+        output += get_archive_symbols(mem_regions, sections, args.archive_details, args.json)
 
     args.output_file.write(output)
 
 
-def get_summary(memory_config, sections, as_json=False):
+def get_summary(mem_regions, memory_config, sections, as_json=False):
     def get_size(section):
         try:
             return sections[section]["size"]
@@ -278,19 +405,20 @@ def get_summary(memory_config, sections, as_json=False):
     return output
 
 
-def get_detailed_sizes(sections, key, header, as_json=False):
+def get_detailed_sizes(mem_regions, sections, key, header, as_json=False):
     sizes = sizes_by_key(sections, key)
 
     result = {}
     for k in sizes:
         v = sizes[k]
-        result[k] = collections.OrderedDict()
-        result[k]["data"] = v.get(".dram0.data", 0)
-        result[k]["bss"] = v.get(".dram0.bss", 0)
-        result[k]["iram"] = sum(t for (s,t) in v.items() if s.startswith(".iram0"))
-        result[k]["flash_text"] = v.get(".flash.text", 0)
-        result[k]["flash_rodata"] = v.get(".flash.rodata", 0)
-        result[k]["total"] = sum(result[k].values())
+        r = collections.OrderedDict()
+        r["data"] = v.get(".dram0.data", 0)
+        r["bss"] = v.get(".dram0.bss", 0)
+        r["iram"] = sum(t for (s,t) in v.items() if s.startswith(".iram0"))
+        r["flash_text"] = v.get(".flash.text", 0)
+        r["flash_rodata"] = v.get(".flash.rodata", 0)
+        r["total"] = sum(r.values())
+        result[k] = r
 
     def return_total_size(elem):
         val = elem[1]
@@ -333,7 +461,7 @@ def get_detailed_sizes(sections, key, header, as_json=False):
     return output
 
 
-def get_archive_symbols(sections, archive, as_json=False):
+def get_archive_symbols(mem_regions, sections, archive, as_json=False):
     interested_sections = [".dram0.data", ".dram0.bss", ".iram0.text", ".iram0.vectors", ".flash.text", ".flash.rodata"]
     result = {}
     for t in interested_sections:
