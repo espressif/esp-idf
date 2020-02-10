@@ -64,7 +64,7 @@ typedef struct {
 
 static inline bool dm9051_lock(emac_dm9051_t *emac)
 {
-    return xSemaphoreTake(emac->spi_lock, DM9051_SPI_LOCK_TIMEOUT_MS) == pdTRUE;
+    return xSemaphoreTake(emac->spi_lock, pdMS_TO_TICKS(DM9051_SPI_LOCK_TIMEOUT_MS)) == pdTRUE;
 }
 
 static inline bool dm9051_unlock(emac_dm9051_t *emac)
@@ -543,9 +543,11 @@ static esp_err_t emac_dm9051_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
     switch (speed) {
     case ETH_SPEED_10M:
         MAC_CHECK(nsr & NSR_SPEED, "phy speed is not at 10Mbps", err, ESP_ERR_INVALID_STATE);
+        ESP_LOGD(TAG, "working in 10Mbps");
         break;
     case ETH_SPEED_100M:
         MAC_CHECK(!(nsr & NSR_SPEED), "phy speed is not at 100Mbps", err, ESP_ERR_INVALID_STATE);
+        ESP_LOGD(TAG, "working in 100Mbps");
         break;
     default:
         MAC_CHECK(false, "unknown speed", err, ESP_ERR_INVALID_ARG);
@@ -564,9 +566,11 @@ static esp_err_t emac_dm9051_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
     MAC_CHECK(dm9051_register_read(emac, DM9051_NCR, &ncr) == ESP_OK, "read NCR failed", err, ESP_FAIL);
     switch (duplex) {
     case ETH_DUPLEX_HALF:
+        ESP_LOGD(TAG, "working in half duplex");
         MAC_CHECK(!(ncr & NCR_FDX), "phy is not at half duplex", err, ESP_ERR_INVALID_STATE);
         break;
     case ETH_DUPLEX_FULL:
+        ESP_LOGD(TAG, "working in full duplex");
         MAC_CHECK(ncr & NCR_FDX, "phy is not at full duplex", err, ESP_ERR_INVALID_STATE);
         break;
     default:

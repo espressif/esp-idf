@@ -18,7 +18,8 @@ menu "Example Configuration"
             select ETH_USE_SPI_ETHERNET
             select ETH_SPI_ETHERNET_DM9051
             help
-                Select external SPI-Ethernet module.
+                Select external SPI-Ethernet module (DM9051).
+
     endchoice
 
     if EXAMPLE_USE_INTERNAL_ETHERNET
@@ -72,7 +73,7 @@ menu "Example Configuration"
             range 0 2
             default 1
             help
-                Set the SPI host used to communicate with DM9051.
+                Set the SPI host used to communicate with the SPI Ethernet Controller.
 
         config EXAMPLE_DM9051_SCLK_GPIO
             int "SPI SCLK GPIO number"
@@ -104,7 +105,7 @@ menu "Example Configuration"
 
         config EXAMPLE_DM9051_SPI_CLOCK_MHZ
             int "SPI clock speed (MHz)"
-            range 20 80
+            range 5 80
             default 20
             help
                 Set the clock speed (MHz) of SPI interface.

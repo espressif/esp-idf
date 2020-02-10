@@ -114,11 +114,10 @@ menu "Ethernet"
     if ETH_USE_SPI_ETHERNET
         config ETH_SPI_ETHERNET_DM9051
             bool "Use DM9051"
-            default y
             help
                 DM9051 is a fast Ethernet controller with an SPI interface.
                 It's also integrated with a 10/100M PHY and MAC.
-                Set true to enable DM9051 driver.
+                Select to enable DM9051 driver.
     endif
 
     menuconfig ETH_USE_OPENETH
