@@ -666,7 +666,7 @@ By default, ``idf.py`` passes the ``--warn-uninitialized`` flag to CMake_ so it 
 
 If you don't want this behaviour, it can be disabled by passing ``--no-warnings`` to ``idf.py``.
 
-Browse the :idf_file:`/tools/cmake/project.cmake` file and supporting functions in :idf_file:`/tools/cmake/idf_functions.cmake` for more details.
+Browse the :idf_file:`/tools/cmake/project.cmake` file and supporting functions in :idf:`/tools/cmake/` for more details.
 
 .. _gnu-make-to-cmake:
 

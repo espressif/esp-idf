@@ -6,8 +6,9 @@ Ethernet
 Application Example
 -------------------
 
--   Ethernet basic example: :example:`ethernet/ethernet`.
+-   Ethernet basic example: :example:`ethernet/basic`.
 -   Ethernet iperf example: :example:`ethernet/iperf`.
+-   Ethernet to Wi-Fi AP "router": :example:`ethernet/eth2ap`.
 
 Ethernet Driver Model
 ---------------------

@@ -359,7 +359,7 @@ Move on to the next section only if you have successfully completed all the abov
 Configure and Load the Ethernet Example
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After setting up the development environment and testing the board, you can configure and flash the :example:`ethernet/ethernet` example. This example has been created for testing Ethernet functionality. It supports different PHY, including **IP101GRI** installed on :ref:`get-started-esp32-ethernet-kit-v1.1`.
+After setting up the development environment and testing the board, you can configure and flash the :example:`ethernet/basic` example. This example has been created for testing Ethernet functionality. It supports different PHY, including **IP101GRI** installed on :ref:`get-started-esp32-ethernet-kit-v1.1`.
 
 
 Summary of Changes from ESP32-Ethernet-Kit V1.0

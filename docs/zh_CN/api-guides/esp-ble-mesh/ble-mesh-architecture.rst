@@ -262,7 +262,7 @@ ESP-BLE-MESH 架构采用分层的方式进行设计，数据包的处理所经�
     - 功能
   * - :component_file:`prov.c <bt/esp_ble_mesh/mesh_core/prov.c>`
     - BLE Mesh 节点配网 (PB-ADV & PB-GATT)
-  * - :component_file:`proxy.c <bt/esp_ble_mesh/mesh_core/proxy.c>`
+  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/mesh_core/proxy_client.c>`
     - BLE Mesh 节点代理相关功能
   * - :component_file:`beacon.c <bt/esp_ble_mesh/mesh_core/beacon.c>`
     - 用于处理 BLE Mesh Beacon 的 API
@@ -277,7 +277,7 @@ ESP-BLE-MESH 架构采用分层的方式进行设计，数据包的处理所经�
     - 功能
   * - :component_file:`provisioner_prov.c <bt/esp_ble_mesh/mesh_core/provisioner_prov.c>`
     - BLE Mesh Provisioner 配置入网 (PB-ADV & PB-GATT)
-  * - :component_file:`provisioner_proxy.c <bt/esp_ble_mesh/mesh_core/provisioner_proxy.c>`
+  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
     - BLE Mesh 代理客户端相关功能
   * - :component_file:`provisioner_beacon.c <bt/esp_ble_mesh/mesh_core/provisioner_beacon.c>`
     - BLE Mesh Provisioner 接收 Unprovisioned Device Beacon
@@ -315,7 +315,7 @@ Mesh Models 用于实现节点中所包含的模型的具体功能。服务器�
 2.2 Mesh Bearers 实现
 ^^^^^^^^^^^^^^^^^^^^^
 
-Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议栈需要移植到其它平台时，用户只需要修改 :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/mesh_bearer_adapt.c>` 就能移植成功。
+Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议栈需要移植到其它平台时，用户只需要修改 :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c>` 就能移植成功。
 
 .. list-table:: 表 2.5  Mesh Bearers 文件描述
   :widths: 40 150
@@ -323,12 +323,12 @@ Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议�
 
   * - 文件
     - 功能
-  * - :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/mesh_bearer_adapt.c>`
+  * - :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c>`
     - BLE Mesh 承载层适配文件。此文件提供用于接收和发送 BLE Mesh ADV 和 GATT 相关数据包的接口。
 
 .. note::
 
-  :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/mesh_bearer_adapt.c>` 是对 Mesh 网络框架中 ``Advertising Bearer`` 和 ``GATT Bearer`` 的实现。
+  :component_file:`mesh_bearer_adapt.c <bt/esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c>` 是对 Mesh 网络框架中 ``Advertising Bearer`` 和 ``GATT Bearer`` 的实现。
 
 2.3 Mesh Applications 实现
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -378,11 +378,11 @@ Mesh Bearers 在实现时充分考虑了可移植性。当 ESP-BLE-MESH 协议�
     - BLE Mesh 好友功能
   * - :component_file:`net.c <bt/esp_ble_mesh/mesh_core/net.c>`
     - BLE Mesh 中继功能、网络创建、网络索引更新程序、网络索引恢复程序、秘钥更新程序相关功能
-  * - :component_file:`proxy.c <bt/esp_ble_mesh/mesh_core/proxy.c>`
+  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/mesh_core/proxy_client.c>`
     - BLE Mesh 代理服务器相关功能
-  * - :component_file:`provisioner_proxy.c <bt/esp_ble_mesh/mesh_core/provisioner_proxy.c>`
+  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
     - BLE Mesh 代理客户端相关功能
   * - :component_file:`settings.c <bt/esp_ble_mesh/mesh_core/settings.c>`
     - BLE Mesh 节点 NVS 存储器功能
-  * - :component_file:`mesh_main.c <bt/esp_ble_mesh/mesh_core/mesh_main.c>`
+  * - :component_file:`main.c <bt/esp_ble_mesh/mesh_core/main.c>`
     - BLE Mesh 节点移除相关功能

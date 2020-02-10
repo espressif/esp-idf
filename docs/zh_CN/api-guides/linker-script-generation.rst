@@ -292,7 +292,7 @@ scheme 片段定义了为每个 sections 指定的 ``target``。
 
 .. note::
 
-    ``default`` scheme 是在 :component:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf` 文件中定义的，此外，快速上手指南中提到的内置 ``noflash`` scheme 片段和 ``rtc`` scheme 片段也是在这个文件中定义的。
+    ``default`` scheme 是在 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf` 文件中定义的，此外，快速上手指南中提到的内置 ``noflash`` scheme 片段和 ``rtc`` scheme 片段也是在这个文件中定义的。
 
 .. _ldgen-mapping-fragment :
 
@@ -491,7 +491,7 @@ mapping 片段的映射条目共有三种类型，分别为：
 
 链接脚本模板
 ^^^^^^^^^^^^
-目前使用的链接脚本模板是 :component:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，仅用于应用程序的构建，生成的链接脚本文件将放在同一组件的构建目录下。值得注意的是，修改此链接描述文件模板会触发应用程序的二进制文件的重新链接。
+目前使用的链接脚本模板是 :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`，仅用于应用程序的构建，生成的链接脚本文件将放在同一组件的构建目录下。值得注意的是，修改此链接描述文件模板会触发应用程序的二进制文件的重新链接。
 
 链接片段文件
 ^^^^^^^^^^^^

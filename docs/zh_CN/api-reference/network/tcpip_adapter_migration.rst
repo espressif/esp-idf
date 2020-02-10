@@ -32,9 +32,9 @@ TCP/IP 适配器静态定义了三个接口：
 。
 请参阅这三个接口的初始化代码示例：
 
-- Wi-Fi Station: :example:`wifi/getting_started/station/main/station_example_main.c`
-- Wi-Fi AP: :example:`wifi/getting_started/softAP/main/softap_example_main.c`
-- 以太网: :example:`ethernet/basic/main/ethernet_example_main.c`
+- Wi-Fi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
+- Wi-Fi AP: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
+- 以太网: :example_file:`ethernet/basic/main/ethernet_example_main.c`
 
 
 更换其他 tcpip_adapter API

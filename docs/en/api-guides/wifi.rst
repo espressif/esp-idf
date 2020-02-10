@@ -1486,7 +1486,7 @@ The table below shows the best throughput results we got in Espressif's lab and 
 | TCP TX               |   20 MBit/sec   | 50 MBit/sec     | iperf example | 05838641     |
 +----------------------+-----------------+-----------------+---------------+--------------+
 
-When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.99`
+When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.ci.99`
 
 Wi-Fi 80211 Packet Send
 ---------------------------

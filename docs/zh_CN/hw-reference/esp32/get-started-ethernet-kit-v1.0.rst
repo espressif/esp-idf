@@ -350,7 +350,7 @@ ESP32-Ethernet-Kit 上电前，请首先确认开发板完好无损。
 配置与加载以太网示例
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/ethernet` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`ESP32-Ethernet-Kit V1.0 开发板 <get-started-esp32-ethernet-kit-b-v1.0>` 使用的 **IP101GRI**。
+在完成开发环境设置和开发板测试后，您可以配置并烧录 :example:`ethernet/basic` 示例。本示例专门用于测试以太网功能，支持不同 PHY，包括 :ref:`ESP32-Ethernet-Kit V1.0 开发板 <get-started-esp32-ethernet-kit-b-v1.0>` 使用的 **IP101GRI**。
 
 
 相关文档

@@ -31,9 +31,9 @@ Network interface instance shall be explicitly constructed for the :doc:`/api-re
 For example initialization code for WiFi has to explicitly call ``esp_netif_create_default_wifi_sta();`` or ``esp_netif_create_default_wifi_ap();`` after the TCP/IP stack and the event loop have been initialized.
 Please consult an example initialization code for these three interfaces:
 
-- WiFi Station: :example:`wifi/getting_started/station/main/station_example_main.c`
-- WiFi Access Point: :example:`wifi/getting_started/softAP/main/softap_example_main.c`
-- Ethernet: :example:`ethernet/basic/main/ethernet_example_main.c`
+- WiFi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
+- WiFi Access Point: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
+- Ethernet: :example_file:`ethernet/basic/main/ethernet_example_main.c`
 
 
 Replacing other tcpip_adapter API

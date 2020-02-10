@@ -91,7 +91,7 @@ Registration of the interrupt handler for a specific timer or a timer group can 
 To enable interrupts for a timer group, call :cpp:func:`timer_group_intr_enable`, for a specific timer call :cpp:func:`timer_enable_intr`.
 To disable interrupts for a timer group, call :cpp:func:`timer_group_intr_disable`, for a specified timer, call :cpp:func:`timer_disable_intr`.
 
-When handling an interrupt within an interrupt serivce routine (ISR), the interrupt status bit needs to be explicitly cleared. To do that, set the ``TIMERGN.{IDF_TARGET_INT_CLR_REG}.tM`` structure, defined in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/timer_group_struct.h`. In this structure, ``N`` is the timer group number [0, 1], ``M`` is the timer number [0, 1]. For example, to clear an interrupt status bit for the timer 1 in the timer group 0, call the following::
+When handling an interrupt within an interrupt serivce routine (ISR), the interrupt status bit needs to be explicitly cleared. To do that, set the ``TIMERGN.{IDF_TARGET_INT_CLR_REG}.tM`` structure, defined in :component_file:`soc/soc/{IDF_TARGET_PATH_NAME}/include/soc/timer_group_struct.h`. In this structure, ``N`` is the timer group number [0, 1], ``M`` is the timer number [0, 1]. For example, to clear an interrupt status bit for the timer 1 in the timer group 0, call the following::
 
     TIMERG0.{IDF_TARGET_INT_CLR_REG}.t1 = 1
 

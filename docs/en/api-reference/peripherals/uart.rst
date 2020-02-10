@@ -238,7 +238,7 @@ By default, the :cpp:func:`uart_driver_install` function installs the driver's i
 
 The API provides a convenient way to handle specific interrupts discussed in this document by wrapping them into dedicated functions:
 
-- **Event detection**: There are several events defined in :cpp:type:`uart_event_type_t` that may be reported to a user application using the FreeRTOS queue functionality. You can enable this functionality when calling :cpp:func:`uart_driver_install` described in :ref:`uart-api-driver-installation`. An example of using Event detection can be found in :example:`peripherals/uart_events`.
+- **Event detection**: There are several events defined in :cpp:type:`uart_event_type_t` that may be reported to a user application using the FreeRTOS queue functionality. You can enable this functionality when calling :cpp:func:`uart_driver_install` described in :ref:`uart-api-driver-installation`. An example of using Event detection can be found in :example:`peripherals/uart/uart_events`.
 
 - **FIFO space threshold or transmission timeout reached**: The Tx and Rx FIFO buffers can trigger an interrupt when they are filled with a specific number of characters, or on a timeout of sending or receiving data. To use these interrupts, do the following:
 

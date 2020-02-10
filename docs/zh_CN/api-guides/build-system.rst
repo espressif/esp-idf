@@ -480,7 +480,7 @@ project 函数
 - 将最终的应用程序可执行文件添加到构建系统中。
 - 返回并为组件之间指定依赖关系（将每个组件的公共头文件目录添加到其他组件中）。
 
-更多详细信息请参阅 :idf_file:`/tools/cmake/project.cmake` 文件和 :idf_file:`/tools/cmake/idf_functions.cmake` 文件。
+更多详细信息请参阅 :idf_file:`/tools/cmake/project.cmake` 文件。
 
 CMake 调试
 ----------
@@ -859,45 +859,6 @@ CMake 在许多开源的 C/C++ 项目中广泛使用，用户可以在自己的�
 =================================
 
 ESP-IDF 提供了一个模板 CMake 项目，可以基于此轻松创建应用程序。然而在有些情况下，用户可能已有一个现成的 CMake 项目，或者想自己创建一个 CMake 项目，此时就希望将 IDF 中的组件以库的形式链接到用户目标（库/可执行文件）。
-
-.. highlight:: cmake
-
-使用 :idf_file:`tools/cmake/idf_functions.cmake` 中提供的 ``idf_import_components`` 和 ``idf_link_components`` 函数可以实现上述功能，例如::
-
-    cmake_minimum_required(VERSION 3.5)
-    project(my_custom_app C)
-
-    # 源文件 main.c 包含有 app_main() 函数的定义
-    add_executable(${CMAKE_PROJECT_NAME}.elf main.c)
-
-    # 提供 idf_import_components 及 idf_link_components 函数
-    include($ENV{IDF_PATH}/tools/cmake/idf_functions.cmake)
-
-    # 为 idf_import_components 做一些配置
-    # 使能创建构件（不是每个项目都必须）
-    set(IDF_BUILD_ARTIFACTS ON)
-    set(IDF_PROJECT_EXECUTABLE ${CMAKE_PROJECT_NAME}.elf)
-    set(IDF_BUILD_ARTIFACTS_DIR ${CMAKE_BINARY_DIR})
-
-    # idf_import_components 封装了 add_subdirectory()，为组件创建库目标，然后使用给定的变量接收“返回”的库目标。
-    # 在本例中，返回的库目标被保存在“component”变量中。
-    idf_import_components(components $ENV{IDF_PATH} esp-idf)
-
-    # idf_link_components 封装了 target_link_libraries()，将被 idf_import_components 处理过的组件链接到目标
-    idf_link_components(${CMAKE_PROJECT_NAME}.elf "${components}")
-
-上述代码片段导入了 ESP-IDF 目录下的所有组件，并使用了 KConfig 中的默认值，同时还允许创建其它一些构件（比如分区表、包含项目信息的 json 文件、引导程序等）。除此以外，用户还可以设置其它的构建参数，其完整列表如下：
-
-- ``IDF_BUILD_ARTIFACTS``：构建工件，例如引导加载程序、分区表二进制文件、分区二进制数据、将二进制文件烧录到目标芯片时所需的包含项目信息的 json 文件等。同时需要设置 ``IDF_PROJECT_EXECUTABLE`` 和 ``IDF_BUILD_ARTIFACTS_DIR`` 变量。
-- ``IDF_PROJECT_EXECUTABLE``：最终可执行文件的名称。某些工件在创建的时候需要此参数。
-- ``IDF_BUILD_ARTIFACTS_DIR``：创建的构件被存放的位置。
-- ``IDF_EXTRA_COMPONENTS_DIR``：在 :idf:`默认组件目录 <components>` 之外的组件搜索路径。
-- ``IDF_COMPONENTS``：要导入的组件列表，设置此变量可以精简导入的组件，仅导入需要的组件，加快构建的速度。如果没有设置该变量，将会导入默认组件目录以及 ``IDF_EXTRA_COMPONENTS_DIR`` （如果设置了该变量）中找到的所有组件。请注意，该列表中组件的依赖组件（除了 ``IDF_COMPONENT_REQUIRES_COMMON`` 之外）也会被加入到构建之中。
-- ``IDF_COMPONENT_REQUIRES_COMMON``：通用组件依赖列表。无论 ``IDF_COMPONENTS`` 的值是什么，此列表中的组件及其依赖组件都会被导入到构建中。默认情况下，此变量被设置为核心“系统”组件的最小集合。
-- ``IDF_SDKCONFIG_DEFAULTS``：配置文件的覆盖路径，如果未设置，组件将会使用默认的配置选项来构建。
-- ``IDF_BUILD_TESTS``：在构建中包含组件的测试。默认情况下，所有的组件测试都会被包含。组件测试可通过 ``IDF_TEST_COMPONENTS`` 和 ``IDF_TEST_EXCLUDE_COMPONENTS`` 进行过滤。
-- ``IDF_TEST_COMPONENTS``：如果设置了 ``IDF_BUILD_TESTS``，构建中只会包含此列表中的组件测试。如果没有设置 ``IDF_BUILD_TESTS``，请忽略此项。
-- ``IDF_TEST_EXCLUDE_COMPONENTS``：如果设置了 ``IDF_BUILD_TESTS``，此列表中的组件测试将不会包含在构建中。如果没有设置 ``IDF_BUILD_TESTS``，请忽略此项。该变量的优先级高于 ``IDF_TEST_COMPONENTS``，这意味着，即使 ``IDF_TEST_COMPONENTS`` 中也存在此列表中的组件测试，它也不会被包含到构建之中。
 
 :example:`build_system/cmake/idf_as_lib` 中的示例演示了如何在自定义的 CMake 项目创建一个类似于 :example:`Hello World <get-started/hello_world>` 的应用程序。
 
