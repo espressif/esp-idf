@@ -18,6 +18,7 @@ set(SOC_SRCS    "adc_periph.c"
                 "i2s_periph.c"
                 "i2c_periph.c"
                 "uart_periph.c"
+                "usb_periph.c"
                 "touch_sensor_hal.c"
                 "touch_sensor_periph.c")
 

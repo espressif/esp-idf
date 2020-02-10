@@ -46,7 +46,8 @@ if(IDF_TARGET STREQUAL "esp32")
 endif()
 
 if(IDF_TARGET STREQUAL "esp32s2")
-    list(APPEND srcs "src/hal/spi_flash_hal_gpspi.c")
+    list(APPEND srcs    "src/hal/spi_flash_hal_gpspi.c"
+                        "esp32s2/hal/usb_hal.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"
