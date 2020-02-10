@@ -222,8 +222,9 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
     REG_WRITE(LOAD_REG, 1);
     REG_SET_BIT(INT_CLR_REG, TIMG_LACT_INT_CLR);
 
+    const int interrupt_lvl = (1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK;
     esp_err_t err = esp_intr_alloc(INTR_SOURCE_LACT,
-            ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM,
+            ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | interrupt_lvl,
             &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
 
     if (err != ESP_OK) {

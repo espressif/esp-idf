@@ -360,8 +360,9 @@ esp_err_t esp_timer_impl_init(intr_handler_t alarm_handler)
 {
     s_alarm_handler = alarm_handler;
 
+    const int interrupt_lvl = (1 << CONFIG_ESP_TIMER_INTERRUPT_LEVEL) & ESP_INTR_FLAG_LEVELMASK;
     esp_err_t err = esp_intr_alloc(ETS_TIMER2_INTR_SOURCE,
-            ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM,
+            ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM | interrupt_lvl,
             &timer_alarm_isr, NULL, &s_timer_interrupt_handle);
 
     if (err != ESP_OK) {
