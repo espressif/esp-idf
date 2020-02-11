@@ -618,9 +618,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         rtc_clk_bbpll_disable();
     }
     if (config->source == RTC_CPU_FREQ_SRC_XTAL) {
-        if (config->div > 1) {
             rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
-        }
     } else if (config->source == RTC_CPU_FREQ_SRC_PLL) {
         rtc_clk_bbpll_enable();
         rtc_clk_wait_for_slow_cycle();
