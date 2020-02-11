@@ -28,7 +28,7 @@ ESP-IDF 工具安装器
 
 要安装 ESP-IDF 必备工具，最简易的方式是下载 ESP-IDF 工具安装器，地址如下：
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.2.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
 本安装器可为您安装所需的交叉编译器、OpenOCD、cmake_ 和 Ninja_ 编译工具，以及一款 mconf-idf_ 配置工具。此外，本安装器还可在有需要时下载、运行 Python_ 3.7 和 `Git For Windows` 的安装器。
 

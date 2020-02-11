@@ -87,7 +87,7 @@ begin
   CmdLine := GitExecutablePath + ' -C ' + Path + ' submodule foreach git repack -d -a'
   DoCmdlineInstall('Finishing ESP-IDF installation', 'Re-packing the submodules', CmdLine);
 
-  FindFileRecusive(Path + '\.git', 'alternates', @RemoveAlternatesFile);
+  FindFileRecursive(Path + '\.git', 'alternates', @RemoveAlternatesFile);
 end;
 
 { Run git reset --hard in the repo and in the submodules, to fix the newlines. }
@@ -122,7 +122,6 @@ var
   IDFTempPath: String;
   IDFPath: String;
   NeedToClone: Boolean;
-  Res: Boolean;
 
 begin
   IDFPath := IDFDownloadPath;
@@ -168,7 +167,7 @@ begin
       GitRepoDissociate(IDFPath);
 
   end else begin
-    Log('Moving ' + IDFTempPath + ' to ' + IDFPath);
+    Log('Copying ' + IDFTempPath + ' to ' + IDFPath);
     if DirExists(IDFPath) then
     begin
       if not DirIsEmpty(IDFPath) then
@@ -176,25 +175,33 @@ begin
         MsgBox('Destination directory exists and is not empty: ' + IDFPath, mbError, MB_OK);
         RaiseException('Failed to copy ESP-IDF')
       end;
-
-      Res := RemoveDir(IDFPath);
-      if not Res then
-      begin
-        MsgBox('Failed to remove destination directory: ' + IDFPath, mbError, MB_OK);
-        RaiseException('Failed to copy ESP-IDF')
-      end;
     end;
-    Res := RenameFile(IDFTempPath, IDFPath);
-    if not Res then
-    begin
-      MsgBox('Failed to copy ESP-IDF to the destination directory: ' + IDFPath, mbError, MB_OK);
-      RaiseException('Failed to copy ESP-IDF');
-    end;
+    { If cmd.exe command argument starts with a quote, the first and last quote chars in the command
+      will be removed by cmd.exe.
+      Keys explanation: /s+/e includes all subdirectories, /i assumes that destination is a directory,
+      /h copies hidden files, /q disables file name logging (making copying faster!)
+    }
+    CmdLine := ExpandConstant('cmd.exe /c ""xcopy" /s /e /i /h /q "' + IDFTempPath + '" "' + IDFPath + '""');
+    DoCmdlineInstall('Extracting ESP-IDF', 'Copying ESP-IDF into the destination directory', CmdLine);
     GitRepoFixNewlines(IDFPath);
+    DelTree(IDFTempPath, True, True, True);
   end;
 end;
 
 { ------------------------------ IDF Tools setup, Python environment setup ------------------------------ }
+
+function UseBundledIDFToolsPy(Version: String) : Boolean;
+begin
+  Result := False;
+  { Use bundled copy of idf_tools.py, as the copy shipped with these IDF versions can not work due to 
+    the --no-site-packages bug.
+  }
+  if (Version = 'v4.0') or (Version = 'v3.3.1') then
+  begin
+    Log('UseBundledIDFToolsPy: version=' + Version + ', using bundled idf_tools.py');
+    Result := True;
+  end;
+end;
 
 procedure IDFToolsSetup();
 var
@@ -202,20 +209,34 @@ var
   IDFPath: String;
   IDFToolsPyPath: String;
   IDFToolsPyCmd: String;
+  BundledIDFToolsPyPath: String;
+  JSONArg: String;
 begin
   IDFPath := GetIDFPath('');
   IDFToolsPyPath := IDFPath + '\tools\idf_tools.py';
+  BundledIDFToolsPyPath := ExpandConstant('{app}\idf_tools_fallback.py');
+  JSONArg := '';
+
   if FileExists(IDFToolsPyPath) then
   begin
     Log('idf_tools.py exists in IDF directory');
-    IDFToolsPyCmd := PythonExecutablePath + ' ' + IDFToolsPyPath;
+    if UseBundledIDFToolsPy(IDFDownloadVersion) then
+    begin
+      Log('Using the bundled idf_tools.py copy');
+      IDFToolsPyCmd := BundledIDFToolsPyPath;
+    end else begin
+      IDFToolsPyCmd := IDFToolsPyPath;
+    end;
   end else begin
     Log('idf_tools.py does not exist in IDF directory, using a fallback version');
-    IDFToolsPyCmd := ExpandConstant(PythonExecutablePath
-                                    + ' "{app}\idf_tools_fallback.py"'
-                                    + ' --idf-path ' + IDFPath
-                                    + ' --tools "{app}\tools_fallback.json"');
+    IDFToolsPyCmd := BundledIDFToolsPyPath;
+    JSONArg := ExpandConstant('--tools "{app}\tools_fallback.json"');
   end;
+
+  { IDFPath not quoted, as it can not contain spaces }
+  IDFToolsPyCmd := PythonExecutablePath + ' "' + IDFToolsPyCmd + '" --idf-path ' + IDFPath + JSONArg;
+
+  SetEnvironmentVariable('PYTHONUNBUFFERED', '1')
 
   Log('idf_tools.py command: ' + IDFToolsPyCmd);
   CmdLine := IDFToolsPyCmd + ' install';
