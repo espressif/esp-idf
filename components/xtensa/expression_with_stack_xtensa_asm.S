@@ -26,14 +26,14 @@
 esp_switch_stack_enter:
 
     #ifndef __XTENSA_CALL0_ABI__
-        entry   sp, 0x10
-        mov   a4, a1
-        s32i   a4, a3, 0 /* on a3 there is a safe place to save the current stack */
-        l32i   a4, a2, 0 /* obtains the user allocated stack buffer */
-        mov   a1, a4     /* sp register now contains caller specified stack */
-        retw
+    entry   sp, 0x10
+    mov   a4, a1
+    s32i   a4, a3, 0 /* on a3 there is a safe place to save the current stack */
+    l32i   a4, a2, 0 /* obtains the user allocated stack buffer */
+    mov   a1, a4     /* sp register now contains caller specified stack */
+    retw
     #else 
-        #error "this code is written for Window ABI"
+    #error "this code is written for Window ABI"
     #endif
 
 /**
@@ -45,17 +45,12 @@ esp_switch_stack_enter:
 esp_switch_stack_exit:
 
     #ifndef __XTENSA_CALL0_ABI__
-        entry   sp, 0x10
+    entry   sp, 0x10
 
-#if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK        
-        movi a6, 2
-        movi a4, esp_clear_watchpoint
-        callx4 a4 /* clear the watchpoint before releasing stack */
-#endif
+    l32i a4, a2, 0  /* recover the original task stack */
+    mov a1, a4      /* put it on sp register again */
+    retw
 
-        l32i a4, a2, 0  /* recover the original task stack */
-        mov a1, a4      /* put it on sp register again */
-        retw
     #else 
-        #error "this code is written for Window ABI"
+    #error "this code is written for Window ABI"
     #endif

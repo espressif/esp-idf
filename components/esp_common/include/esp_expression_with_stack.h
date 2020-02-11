@@ -15,6 +15,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "freertos/task.h"
 #include "esp_debug_helpers.h"
 #include "esp_log.h"
 
@@ -42,6 +43,10 @@ extern "C" {
         expression;                                                                 \
     }                                                                               \
     esp_switch_stack_exit(&backup);                                                 \
+    StaticTask_t *current = (StaticTask_t *)xTaskGetCurrentTaskHandle();            \
+    /* pxDummy6 is the stack base of current thread defined in TCB_t */             \
+    /* place the watchpoint on current task stack after function execution*/        \
+    vPortSetStackWatchpoint(current->pxDummy6);                                     \
     xSemaphoreGive(lock);                                                           \
 })
 

@@ -19,7 +19,8 @@
 StackType_t * esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
 {
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    int watchpoint_place = (((int)stack + 31) & ~31);
+    esp_clear_watchpoint(1);
+    uint32_t watchpoint_place = ((uint32_t)stack + 32) & 0x1f ;
 #endif    
     StackType_t *top_of_stack =  (StackType_t *)&stack[0] +                  
             ((stack_size * sizeof(StackType_t)) / sizeof(StackType_t));
@@ -35,7 +36,7 @@ StackType_t * esp_switch_stack_setup(StackType_t *stack, size_t stack_size)
     frame->a1 = (UBaseType_t)top_of_stack;
 
 #if CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK
-    esp_set_watchpoint(2, (char*)watchpoint_place, 32, ESP_WATCHPOINT_STORE);    
+    esp_set_watchpoint(1, (uint8_t *)watchpoint_place, 32, ESP_WATCHPOINT_STORE);    
 #endif
 
     return top_of_stack;           
