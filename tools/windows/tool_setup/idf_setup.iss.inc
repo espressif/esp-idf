@@ -236,6 +236,8 @@ begin
   { IDFPath not quoted, as it can not contain spaces }
   IDFToolsPyCmd := PythonExecutablePath + ' "' + IDFToolsPyCmd + '" --idf-path ' + IDFPath + JSONArg;
 
+  SetEnvironmentVariable('PYTHONUNBUFFERED', '1')
+
   Log('idf_tools.py command: ' + IDFToolsPyCmd);
   CmdLine := IDFToolsPyCmd + ' install';
   Log('Installing tools:' + CmdLine);
