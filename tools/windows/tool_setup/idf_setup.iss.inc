@@ -190,26 +190,51 @@ end;
 
 { ------------------------------ IDF Tools setup, Python environment setup ------------------------------ }
 
+function UseBundledIDFToolsPy(Version: String) : Boolean;
+begin
+  Result := False;
+  { Use bundled copy of idf_tools.py, as the copy shipped with these IDF versions can not work due to 
+    the --no-site-packages bug.
+  }
+  if (Version = 'v4.0') or (Version = 'v3.3.1') then
+  begin
+    Log('UseBundledIDFToolsPy: version=' + Version + ', using bundled idf_tools.py');
+    Result := True;
+  end;
+end;
+
 procedure IDFToolsSetup();
 var
   CmdLine: String;
   IDFPath: String;
   IDFToolsPyPath: String;
   IDFToolsPyCmd: String;
+  BundledIDFToolsPyPath: String;
+  JSONArg: String;
 begin
   IDFPath := GetIDFPath('');
   IDFToolsPyPath := IDFPath + '\tools\idf_tools.py';
+  BundledIDFToolsPyPath := ExpandConstant('{app}\idf_tools_fallback.py');
+  JSONArg := '';
+
   if FileExists(IDFToolsPyPath) then
   begin
     Log('idf_tools.py exists in IDF directory');
-    IDFToolsPyCmd := PythonExecutablePath + ' ' + IDFToolsPyPath;
+    if UseBundledIDFToolsPy(IDFDownloadVersion) then
+    begin
+      Log('Using the bundled idf_tools.py copy');
+      IDFToolsPyCmd := BundledIDFToolsPyPath;
+    end else begin
+      IDFToolsPyCmd := IDFToolsPyPath;
+    end;
   end else begin
     Log('idf_tools.py does not exist in IDF directory, using a fallback version');
-    IDFToolsPyCmd := ExpandConstant(PythonExecutablePath
-                                    + ' "{app}\idf_tools_fallback.py"'
-                                    + ' --idf-path ' + IDFPath
-                                    + ' --tools "{app}\tools_fallback.json"');
+    IDFToolsPyCmd := BundledIDFToolsPyPath;
+    JSONArg := ExpandConstant('--tools "{app}\tools_fallback.json"');
   end;
+
+  { IDFPath not quoted, as it can not contain spaces }
+  IDFToolsPyCmd := PythonExecutablePath + ' "' + IDFToolsPyCmd + '" --idf-path ' + IDFPath + JSONArg;
 
   Log('idf_tools.py command: ' + IDFToolsPyCmd);
   CmdLine := IDFToolsPyCmd + ' install';
