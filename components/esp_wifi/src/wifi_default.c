@@ -272,22 +272,23 @@ static esp_err_t create_and_attach(wifi_interface_t wifi_if, esp_netif_t* esp_ne
     return esp_netif_attach(esp_netif, driver);
 }
 
-esp_err_t esp_netif_attach_wifi_station(esp_netif_t *esp_netif)
+static inline esp_err_t esp_netif_attach_wifi(esp_netif_t *esp_netif, wifi_interface_t wifi_if)
 {
-    if (esp_netif == NULL) {
+    if (esp_netif == NULL || (wifi_if != WIFI_IF_STA && wifi_if != WIFI_IF_AP)) {
         return ESP_ERR_INVALID_ARG;
     }
-    s_wifi_netifs[WIFI_IF_STA] = esp_netif;
-    return create_and_attach(WIFI_IF_STA, esp_netif);
+    s_wifi_netifs[wifi_if] = esp_netif;
+    return create_and_attach(wifi_if, esp_netif);
+}
+
+esp_err_t esp_netif_attach_wifi_station(esp_netif_t *esp_netif)
+{
+    return esp_netif_attach_wifi(esp_netif, WIFI_IF_STA);
 }
 
 esp_err_t esp_netif_attach_wifi_ap(esp_netif_t *esp_netif)
 {
-    if (esp_netif == NULL) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    s_wifi_netifs[WIFI_IF_AP] = esp_netif;
-    return create_and_attach(WIFI_IF_AP, esp_netif);
+    return esp_netif_attach_wifi(esp_netif, WIFI_IF_AP);
 }
 
 
@@ -318,6 +319,28 @@ esp_netif_t* esp_netif_create_default_wifi_sta(void)
     assert(netif);
     esp_netif_attach_wifi_station(netif);
     esp_wifi_set_default_wifi_sta_handlers();
+    return netif;
+}
+
+/**
+ * @brief User init custom wifi interface
+ */
+esp_netif_t* esp_netif_create_wifi(wifi_interface_t wifi_if, esp_netif_inherent_config_t *esp_netif_config)
+{
+    esp_netif_config_t cfg = {
+        .base = esp_netif_config
+    };
+    if (wifi_if == WIFI_IF_STA) {
+        cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_STA;
+    } else if (wifi_if == WIFI_IF_AP) {
+        cfg.stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP;
+    } else {
+        return NULL;
+    }
+
+    esp_netif_t *netif = esp_netif_new(&cfg);
+    assert(netif);
+    esp_netif_attach_wifi(netif, wifi_if);
     return netif;
 }
 

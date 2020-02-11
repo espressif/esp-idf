@@ -15,6 +15,8 @@
 #ifndef _ESP_NETIF_DEFAULTS_H
 #define _ESP_NETIF_DEFAULTS_H
 
+#include "esp_compiler.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,6 +24,54 @@ extern "C" {
 //
 // Macros to assemble master configs with partial configs from netif, stack and driver
 //
+
+#define ESP_NETIF_INHERENT_DEFAULT_WIFI_STA() \
+    {   \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = IP_EVENT_STA_GOT_IP, \
+        .lost_ip_event = IP_EVENT_STA_LOST_IP, \
+        .if_key = "WIFI_STA_DEF", \
+        .if_desc = "sta", \
+        .route_prio = 100 \
+     }  \
+
+#define ESP_NETIF_INHERENT_DEFAULT_WIFI_AP() \
+    {   \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_SERVER | ESP_NETIF_FLAG_AUTOUP), \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        .ip_info = &_g_esp_netif_soft_ap_ip, \
+        .get_ip_event = 0, \
+        .lost_ip_event = 0, \
+        .if_key = "WIFI_AP_DEF", \
+        .if_desc = "ap", \
+        .route_prio = 10 \
+    };
+
+#define ESP_NETIF_INHERENT_DEFAULT_ETH() \
+    {   \
+        .flags = (esp_netif_flags_t)(ESP_NETIF_DHCP_CLIENT | ESP_NETIF_FLAG_GARP | ESP_NETIF_FLAG_EVENT_IP_MODIFIED), \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = IP_EVENT_ETH_GOT_IP, \
+        .lost_ip_event = 0, \
+        .if_key = "ETH_DEF", \
+        .if_desc = "eth", \
+        .route_prio = 50 \
+    };
+
+#define ESP_NETIF_INHERENT_DEFAULT_PPP() \
+    {   \
+        .flags = ESP_NETIF_FLAG_IS_PPP, \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(mac) \
+        ESP_COMPILER_DESIGNATED_INIT_AGGREGATE_TYPE_EMPTY(ip_info) \
+        .get_ip_event = IP_EVENT_PPP_GOT_IP,    \
+        .lost_ip_event = IP_EVENT_PPP_LOST_IP,  \
+        .if_key = "PPP_DEF",    \
+        .if_desc = "ppp",   \
+        .route_prio = 128   \
+};
 
 /**
  * @brief  Default configuration reference of ethernet interface
@@ -37,7 +87,7 @@ extern "C" {
  * @brief  Default configuration reference of WIFI AP
  */
 #define ESP_NETIF_DEFAULT_WIFI_AP()                  \
-{                                                    \
+    {                                                \
         .base = ESP_NETIF_BASE_DEFAULT_WIFI_AP,      \
         .driver = NULL,                              \
         .stack = ESP_NETIF_NETSTACK_DEFAULT_WIFI_AP, \
@@ -102,12 +152,14 @@ extern const esp_netif_netstack_config_t *_g_esp_netif_netstack_default_ppp;
 //
 // Include default common configs inherent to esp-netif
 //  - These inherent configs are defined in esp_netif_defaults.c and describe
-//    common behavioural patters for common interfaces such as STA, AP, ETH
+//    common behavioural patterns for common interfaces such as STA, AP, ETH, PPP
 //
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_sta_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ap_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_eth_config;
 extern const esp_netif_inherent_config_t _g_esp_netif_inherent_ppp_config;
+
+extern const esp_netif_ip_info_t _g_esp_netif_soft_ap_ip;
 
 #ifdef __cplusplus
 }
