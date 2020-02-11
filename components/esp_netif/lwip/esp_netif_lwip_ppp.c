@@ -248,7 +248,7 @@ esp_err_t esp_netif_ppp_set_auth(esp_netif_t *netif, esp_netif_auth_type_t autht
 
 void esp_netif_ppp_set_default_netif(lwip_ppp_ctx_t* ppp_ctx)
 {
-    pppapi_set_default(ppp_ctx->ppp);
+    ppp_set_default(ppp_ctx->ppp);
 }
 
 lwip_ppp_ctx_t* esp_netif_new_ppp(esp_netif_t *esp_netif, const esp_netif_netstack_config_t *esp_netif_stack_config)
