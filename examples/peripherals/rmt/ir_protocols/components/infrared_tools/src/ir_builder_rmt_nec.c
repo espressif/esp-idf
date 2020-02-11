@@ -102,10 +102,10 @@ static esp_err_t nec_build_frame(ir_builder_t *builder, uint32_t address, uint32
     if (!nec_builder->flags & IR_TOOLS_FLAGS_PROTO_EXT) {
         uint8_t low_byte = address & 0xFF;
         uint8_t high_byte = (address >> 8) & 0xFF;
-        NEC_CHECK(low_byte == ~high_byte, "address not match standard NEC protocol", err, ESP_ERR_INVALID_ARG);
+        NEC_CHECK(low_byte == (~high_byte & 0xFF), "address not match standard NEC protocol", err, ESP_ERR_INVALID_ARG);
         low_byte = command & 0xFF;
         high_byte = (command >> 8) & 0xFF;
-        NEC_CHECK(low_byte == ~high_byte, "command not match standard NEC protocol", err, ESP_ERR_INVALID_ARG);
+        NEC_CHECK(low_byte == (~high_byte & 0xFF), "command not match standard NEC protocol", err, ESP_ERR_INVALID_ARG);
     }
     builder->make_head(builder);
     // LSB -> MSB
