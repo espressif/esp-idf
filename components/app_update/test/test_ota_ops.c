@@ -84,7 +84,7 @@ TEST_CASE("esp_ota_get_next_update_partition logic", "[ota]")
     TEST_ASSERT_EQUAL_PTR(ota_0, p);
 }
 
-TEST_CASE("esp_ota_get_partition_description ", "[ota]")
+TEST_CASE("esp_ota_get_partition_description", "[ota]")
 {
     const esp_partition_t *running = esp_ota_get_running_partition();
     TEST_ASSERT_NOT_NULL(running);
