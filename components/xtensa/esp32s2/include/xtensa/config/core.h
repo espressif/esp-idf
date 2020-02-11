@@ -64,6 +64,10 @@
 #endif
 #endif /*_ASMLANGUAGE or __ASSEMBLER__*/
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 /*----------------------------------------------------------------------
 				GENERAL
@@ -1403,6 +1407,9 @@ extern const unsigned int  XCJOIN(Xthal_cp_mask_,XCHAL_CP7_IDENT);
 # define XCHAL_HW_RELEASE_MAJOR_AT(major)		XCHAL_HW_RELEASE_AT(major,0)
 #endif
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /*XTENSA_CONFIG_CORE_H*/
 

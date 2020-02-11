@@ -12,8 +12,6 @@ components/freertos/xtensa/include/freertos/*
 
 components/log/include/esp_log_internal.h
 
-components/soc/esp32/include/hal/*
-components/soc/esp32/include/soc/*
 components/soc/include/hal/*
 components/soc/include/soc/*
 

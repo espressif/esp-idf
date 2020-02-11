@@ -25,10 +25,8 @@
 #include "hal/touch_sensor_ll.h"
 #include "hal/touch_sensor_types.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32
-#include "hal/touch_sensor_hal_esp32.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "hal/touch_sensor_hal_esp32s2.h"
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 typedef struct {
@@ -225,3 +223,7 @@ void touch_hal_deinit(void);
  * Configure touch sensor for each channel.
  */
 void touch_hal_config(touch_pad_t touch_num);
+
+#ifdef __cplusplus
+}
+#endif

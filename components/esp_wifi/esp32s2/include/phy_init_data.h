@@ -17,6 +17,10 @@
 #include "esp_phy_init.h"
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // constrain a value between 'low' and 'high', inclusive
 #define LIMIT(val, low, high) ((val < low) ? low : (val > high) ? high : val)
 
@@ -143,6 +147,10 @@ static const esp_phy_init_data_t phy_init_data= { {
 } };
 
 static const char phy_init_magic_post[] = PHY_INIT_MAGIC;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* PHY_INIT_DATA_H */
 

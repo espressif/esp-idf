@@ -16,6 +16,14 @@
 #ifndef __ESP_BROWNOUT_H
 #define __ESP_BROWNOUT_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void esp_brownout_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

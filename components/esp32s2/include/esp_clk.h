@@ -14,6 +14,10 @@
 
 #pragma once
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file esp_clk.h
  *
@@ -73,3 +77,7 @@ int esp_clk_apb_freq(void);
  * @return Value or RTC counter, expressed in microseconds
  */
 uint64_t esp_clk_rtc_time(void);
+
+#ifdef __cplusplus
+}
+#endif
