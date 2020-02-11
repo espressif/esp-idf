@@ -156,6 +156,17 @@ typedef struct {
 typedef intr_handle_t uart_isr_handle_t;
 
 /**
+ * @brief Checks whether the driver is installed or not
+ *
+ * @param uart_num UART port number, the max port number is (UART_NUM_MAX -1).
+ *
+ * @return
+ *     - true  driver is installed
+ *     - false driver is not installed
+ */
+bool uart_is_driver_installed(uart_port_t uart_num);
+
+/**
  * @brief Set UART data bits.
  *
  * @param uart_num UART_NUM_0, UART_NUM_1 or UART_NUM_2

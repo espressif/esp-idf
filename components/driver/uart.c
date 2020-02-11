@@ -1485,6 +1485,11 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     return ESP_OK;
 }
 
+bool uart_is_driver_installed(uart_port_t uart_num)
+{
+    return uart_num < UART_NUM_MAX && (p_uart_obj[uart_num] != NULL);
+}
+
 void uart_set_select_notif_callback(uart_port_t uart_num, uart_select_notif_callback_t uart_select_notif_callback)
 {
     if (uart_num < UART_NUM_MAX && p_uart_obj[uart_num]) {
