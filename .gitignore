@@ -27,13 +27,7 @@ examples/**/sdkconfig.old
 examples/**/build
 
 # Doc build artifacts
-docs/*/_build/
-docs/*/doxygen-warning-log.txt
-docs/*/sphinx-warning-log.txt
-docs/*/sphinx-warning-log-sanitized.txt
-docs/*/xml/
-docs/*/xml_in/
-docs/*/man/
+docs/_build/
 docs/doxygen_sqlite3.db
 
 # Downloaded font files

@@ -64,11 +64,12 @@ def generate_doxygen(app, project_description):
 
     # Call Doxygen to get XML files from the header files
     print("Calling Doxygen to generate latest XML files")
-    doxy_env = {
+    doxy_env = os.environ
+    doxy_env.update({
         "ENV_DOXYGEN_DEFINES": " ".join(defines),
         "IDF_PATH": app.config.idf_path,
         "IDF_TARGET": app.config.idf_target,
-    }
+    })
     doxyfile = os.path.join(app.config.docs_root, "Doxyfile")
     print("Running doxygen with doxyfile {}".format(doxyfile))
     # note: run Doxygen in the build directory, so the xml & xml_in files end up in there
