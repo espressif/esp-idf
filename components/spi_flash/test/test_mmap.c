@@ -349,6 +349,7 @@ TEST_CASE("flash_mmap can mmap after get enough free MMU pages", "[spi_flash][mm
     TEST_ASSERT_EQUAL_PTR(NULL, spi_flash_phys2cache(start, SPI_FLASH_MMAP_DATA));
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
 {
     uint8_t buf[64];
@@ -381,6 +382,7 @@ TEST_CASE("phys2cache/cache2phys basic checks", "[spi_flash][mmap]")
     spi_flash_read_maybe_encrypted(phys, buf, sizeof(constant_data));
     TEST_ASSERT_EQUAL_HEX8_ARRAY(constant_data, buf, sizeof(constant_data));
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 TEST_CASE("mmap consistent with phys2cache/cache2phys", "[spi_flash][mmap]")
 {

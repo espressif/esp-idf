@@ -63,6 +63,7 @@ TEST_CASE("esp_netif: create and delete multiple netifs", "[esp_netif][leaks=0]"
 
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("esp_netif: test dhcp client state transitions for wifi station", "[esp_netif]")
 {
     // init default wifi netif
@@ -189,6 +190,7 @@ TEST_CASE("esp_netif: test dhcp state transitions for mesh netifs", "[esp_netif]
     TEST_ASSERT(esp_wifi_deinit() == ESP_OK);
     nvs_flash_deinit();
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 TEST_CASE("esp_netif: create custom wifi interfaces", "[esp_netif][leaks=0]")
 {

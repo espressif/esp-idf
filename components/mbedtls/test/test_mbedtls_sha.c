@@ -164,6 +164,7 @@ void tskRunSHASelftests(void *param)
     vTaskDelete(NULL);
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(2, 0);
@@ -179,6 +180,7 @@ TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
     }
     vSemaphoreDelete(done_sem);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 TEST_CASE("mbedtls SHA512 clone", "[mbedtls]")
 {
