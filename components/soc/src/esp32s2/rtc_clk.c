@@ -57,6 +57,8 @@ void rtc_clk_32k_enable_internal(x32k_config_t cfg)
 void rtc_clk_32k_enable(bool enable)
 {
     if (enable) {
+        SET_PERI_REG_MASK(RTC_IO_XTAL_32P_PAD_REG, RTC_IO_X32P_MUX_SEL);
+        SET_PERI_REG_MASK(RTC_IO_XTAL_32N_PAD_REG, RTC_IO_X32N_MUX_SEL);
         x32k_config_t cfg = X32K_CONFIG_DEFAULT();
         rtc_clk_32k_enable_internal(cfg);
     } else {
@@ -65,8 +67,22 @@ void rtc_clk_32k_enable(bool enable)
     }
 }
 
+void rtc_clk_32k_enable_external(void)
+{
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32P_PAD_REG, RTC_IO_X32P_MUX_SEL);
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32N_PAD_REG, RTC_IO_X32N_MUX_SEL);
+    /* TODO: external 32k source may need different settings */
+    x32k_config_t cfg = X32K_CONFIG_DEFAULT();
+    rtc_clk_32k_enable_internal(cfg);
+}
+
 void rtc_clk_32k_bootstrap(uint32_t cycle)
 {
+    /* No special bootstrapping needed for ESP32-S2, 'cycle' argument is to keep the signature
+     * same as for the ESP32. Just enable the XTAL here.
+     */
+    (void) cycle;
+    rtc_clk_32k_enable(true);
 }
 
 bool rtc_clk_32k_enabled(void)
@@ -76,11 +92,8 @@ bool rtc_clk_32k_enabled(void)
     bool xtal_xpd_sw = (xtal_conf & RTC_CNTL_XTAL32K_XPD_FORCE) >> RTC_CNTL_XTAL32K_XPD_FORCE_S;
     /* If xtal xpd software control is on */
     bool xtal_xpd_st = (xtal_conf & RTC_CNTL_XPD_XTAL_32K) >> RTC_CNTL_XPD_XTAL_32K_S;
-    if (xtal_xpd_sw & !xtal_xpd_st) {
-        return false;
-    } else {
-        return true;
-    }
+    bool disabled = xtal_xpd_sw && !xtal_xpd_st;
+    return !disabled;
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)

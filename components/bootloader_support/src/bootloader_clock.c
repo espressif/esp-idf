@@ -54,9 +54,8 @@ void bootloader_clock_configure(void)
     rtc_clk_config_t clk_cfg = RTC_CLK_CONFIG_DEFAULT();
 #if CONFIG_IDF_TARGET_ESP32
     clk_cfg.xtal_freq = CONFIG_ESP32_XTAL_FREQ;
-#elif CONFIG_IDF_TARGET_ESP32S2
-    clk_cfg.xtal_freq = RTC_XTAL_FREQ_40M;
 #endif
+    /* ESP32-S2 doesn't have XTAL_FREQ choice, always 40MHz */
     clk_cfg.cpu_freq_mhz = cpu_freq_mhz;
     clk_cfg.slow_freq = rtc_clk_slow_freq_get();
     clk_cfg.fast_freq = rtc_clk_fast_freq_get();
@@ -66,9 +65,18 @@ void bootloader_clock_configure(void)
      * part of the start up time by enabling 32k XTAL early.
      * App startup code will wait until the oscillator has started up.
      */
-#ifdef CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
+
+    /* TODO: move the clock option into esp_system, so that this doesn't have
+     * to continue:
+     */
+#if CONFIG_ESP32_RTC_CLK_SRC_EXT_CRYS
     if (!rtc_clk_32k_enabled()) {
         rtc_clk_32k_bootstrap(CONFIG_ESP32_RTC_XTAL_BOOTSTRAP_CYCLES);
+    }
+#endif
+#if CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
+    if (!rtc_clk_32k_enabled()) {
+        rtc_clk_32k_bootstrap(0);
     }
 #endif
 }
