@@ -172,8 +172,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     }
 
     // Save current frequency and switch to XTAL
-    rtc_cpu_freq_t cpu_freq = rtc_clk_cpu_freq_get();
-    rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
+    // Save current frequency and switch to XTAL
+    rtc_cpu_freq_config_t cpu_freq_config;
+    rtc_clk_cpu_freq_get_config(&cpu_freq_config);
+    rtc_clk_cpu_freq_set_xtal();
 
     // Configure pins for external wakeup
     if (s_config.wakeup_triggers & RTC_EXT0_TRIG_EN) {
@@ -199,7 +201,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     uint32_t result = rtc_sleep_start(s_config.wakeup_triggers, 0, 1);
 
     // Restore CPU frequency
-    rtc_clk_cpu_freq_set(cpu_freq);
+    rtc_clk_cpu_freq_set_config(&cpu_freq_config);
 
     // re-enable UART output
     resume_uarts();

@@ -86,35 +86,22 @@ void esp_clk_init(void)
     rtc_wdt_protect_on();
 #endif
 
-    uint32_t freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
-    rtc_cpu_freq_t freq = RTC_CPU_FREQ_80M;
-    switch (freq_mhz) {
-    case 240:
-        freq = RTC_CPU_FREQ_240M;
-        break;
-    case 160:
-        freq = RTC_CPU_FREQ_160M;
-        break;
-    case 80:
-        freq = RTC_CPU_FREQ_80M;
-        break;
-    default:
-        freq_mhz = 80;
-        freq = RTC_CPU_FREQ_80M;
-        break;
-    }
+    rtc_cpu_freq_config_t old_config, new_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+    const uint32_t old_freq_mhz = old_config.freq_mhz;
+    const uint32_t new_freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
+
+    bool res = rtc_clk_cpu_freq_mhz_to_config(new_freq_mhz, &new_config);
+    assert(res);
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
-    uint32_t freq_before = rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ ;
-
-    rtc_clk_cpu_freq_set(freq);
+    rtc_clk_cpu_freq_set_config(&new_config);
 
     // Re calculate the ccount to make time calculation correct.
-    uint32_t freq_after = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
-    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
+    XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
 }
 
 int IRAM_ATTR esp_clk_cpu_freq(void)
