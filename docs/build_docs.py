@@ -95,6 +95,8 @@ def main():
         targets = [args.target]
 
     if args.action == "build" or args.action is None:
+        if args.action is None:
+            args.check_warnings_only = False
         sys.exit(action_build(args))
 
     if args.action == "linkcheck":
