@@ -440,7 +440,7 @@ struct esp_ble_mesh_model {
     /** Model ID */
     union {
         const uint16_t model_id; /*!< 16-bit model identifier */
-        struct esp_ble_mesh_vnd_struct {
+        struct {
             uint16_t company_id; /*!< 16-bit company identifier */
             uint16_t model_id; /*!< 16-bit model identifier */
         } vnd; /*!< Structure encapsulating a model ID with a company ID */
