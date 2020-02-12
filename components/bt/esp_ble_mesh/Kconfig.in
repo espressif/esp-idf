@@ -75,7 +75,7 @@ if BLE_MESH
             help
                 This option specifies how many devices can be provisioned by a Provisioner.
                 This value indicates the maximum number of unprovisioned devices which can be
-                provisioned by a Provisioner. For instance，if the value is 6, it means the
+                provisioned by a Provisioner. For instance, if the value is 6, it means the
                 Provisioner can provision up to 6 unprovisioned devices.
                 Theoretically a Provisioner without the limitation of its memory can provision
                 up to 32766 unprovisioned devices, here we limit the maximum number to 100
