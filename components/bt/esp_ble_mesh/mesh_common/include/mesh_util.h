@@ -400,14 +400,17 @@ int _compare(const uint8_t *a, const uint8_t *b, size_t size);
  */
 static inline void sys_memcpy_swap(void *dst, const void *src, size_t length)
 {
-    __ASSERT(((src < dst && (src + length) <= dst) ||
-              (src > dst && (dst + length) <= src)),
-             "Source and destination buffers must not overlap");
+    u8_t *pdst = (u8_t *)dst;
+    const u8_t *psrc = (const u8_t *)src;
 
-    src += length - 1;
+    __ASSERT(((psrc < pdst && (psrc + length) <= pdst) ||
+            (psrc > pdst && (pdst + length) <= psrc)),
+            "Source and destination buffers must not overlap");
+
+    psrc += length - 1;
 
     for (; length > 0; length--) {
-        *((u8_t *)dst++) = *((u8_t *)src--);
+        *pdst++ = *psrc--;
     }
 }
 
