@@ -158,6 +158,8 @@ def write_cmake(config, filename):
             if sym._write_to_conf:
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == "n":
                     val = ""  # write unset values as empty variables
+                elif sym.orig_type == kconfiglib.STRING:
+                    val = kconfiglib.escape(val)
                 write("set({}{} \"{}\")\n".format(
                     prefix, sym.name, val))
         config.walk_menu(write_node)
