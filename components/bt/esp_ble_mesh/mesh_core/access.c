@@ -722,13 +722,13 @@ static bool model_has_key(struct bt_mesh_model *mod, u16_t key)
 }
 
 static const struct bt_mesh_model_op *find_op(struct bt_mesh_model *models,
-        u8_t model_count, u16_t dst,
+        u16_t model_idx, u8_t model_count, u16_t dst,
         u16_t app_idx, u32_t opcode,
         struct bt_mesh_model **model)
 {
     int i;
 
-    for (i = 0; i < model_count; i++) {
+    for (i = model_idx; i < model_count; i++) {
         const struct bt_mesh_model_op *op;
 
         *model = &models[i];
@@ -812,6 +812,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
     const struct bt_mesh_model_op *op = NULL;
     u32_t opcode = 0U;
     u8_t count = 0U;
+    u16_t idx = 0U;
     int i;
 
     BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x", rx->ctx.app_idx,
@@ -852,7 +853,8 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             count = elem->vnd_model_count;
         }
 
-        op = find_op(models, count, rx->ctx.recv_dst, rx->ctx.app_idx,
+again:
+        op = find_op(models, idx, count, rx->ctx.recv_dst, rx->ctx.app_idx,
                      opcode, &model);
         if (op) {
             struct net_buf_simple_state state;
@@ -887,6 +889,15 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
             op->func(model, &rx->ctx, buf);
             net_buf_simple_restore(buf, &state);
 
+            /* Check if other vendor models within the same element use
+             * the same opcode.
+             */
+            if (opcode >= 0x10000) {
+                idx = model->model_idx + 1U;
+                if (idx < count) {
+                    goto again;
+                }
+            }
         } else {
             BT_DBG("No OpCode 0x%08x for elem %d", opcode, i);
         }
