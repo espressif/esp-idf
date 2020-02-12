@@ -93,7 +93,6 @@ static i2c_config_t i2c_slave_init(void)
 
 TEST_CASE("I2C i2c_set_pin() fails if sda and scl gpios are same", "[i2c]")
 {
-    // master test
     TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, i2c_set_pin(0, 0, 0, true, true , I2C_MODE_SLAVE));
 }
 
