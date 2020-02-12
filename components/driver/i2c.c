@@ -61,6 +61,7 @@ static const char* I2C_TAG = "i2c";
 #define I2C_MODE_ERR_STR               "i2c mode error"
 #define I2C_SDA_IO_ERR_STR             "sda gpio number error"
 #define I2C_SCL_IO_ERR_STR             "scl gpio number error"
+#define I2C_SCL_SDA_EQUAL_ERR_STR      "scl and sda gpio numbers are the same"
 #define I2C_CMD_LINK_INIT_ERR_STR      "i2c command link error"
 #define I2C_GPIO_PULLUP_ERR_STR        "this i2c pin does not support internal pull-up"
 #define I2C_ACK_TYPE_ERR_STR           "i2c ack type error"
@@ -440,7 +441,7 @@ static void IRAM_ATTR i2c_isr_handler_default(void *arg)
             i2c_master_cmd_begin_static(i2c_num);
         } else if(evt_type == I2C_INTR_EVENT_TOUT) {
             p_i2c_obj[i2c_num]->status = I2C_STATUS_TIMEOUT;
-            i2c_master_cmd_begin_static(i2c_num); 
+            i2c_master_cmd_begin_static(i2c_num);
         } else if (evt_type == I2C_INTR_EVENT_ARBIT_LOST) {
             p_i2c_obj[i2c_num]->status = I2C_STATUS_TIMEOUT;
             i2c_master_cmd_begin_static(i2c_num);
@@ -766,6 +767,7 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
     I2C_CHECK(scl_io_num < 0 ||
                (scl_pullup_en == GPIO_PULLUP_ENABLE && GPIO_IS_VALID_OUTPUT_GPIO(scl_io_num)) ||
                scl_pullup_en == GPIO_PULLUP_DISABLE, I2C_GPIO_PULLUP_ERR_STR, ESP_ERR_INVALID_ARG);
+    I2C_CHECK((sda_io_num != scl_io_num), I2C_SCL_SDA_EQUAL_ERR_STR, ESP_ERR_INVALID_ARG);
 
     int sda_in_sig, sda_out_sig, scl_in_sig, scl_out_sig;
     sda_out_sig = i2c_periph_signal[i2c_num].sda_out_sig;
@@ -1022,7 +1024,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num)
         return;
     } else if (p_i2c->status == I2C_STATUS_DONE) {
         return;
-    } 
+    }
 
     if (p_i2c->cmd_link.head == NULL) {
         p_i2c->cmd_link.cur = NULL;
@@ -1211,7 +1213,7 @@ esp_err_t i2c_master_cmd_begin(i2c_port_t i2c_num, i2c_cmd_handle_t cmd_handle, 
     return ret;
 }
 
-int i2c_slave_write_buffer(i2c_port_t i2c_num, uint8_t* data, int size, TickType_t ticks_to_wait)
+int i2c_slave_write_buffer(i2c_port_t i2c_num, const uint8_t* data, int size, TickType_t ticks_to_wait)
 {
     I2C_CHECK(( i2c_num < I2C_NUM_MAX ), I2C_NUM_ERROR_STR, ESP_FAIL);
     I2C_CHECK(p_i2c_obj[i2c_num] != NULL, I2C_DRIVER_ERR_STR, ESP_FAIL);
