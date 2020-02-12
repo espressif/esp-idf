@@ -22,12 +22,12 @@
  * Feel free to change when debugging.
  */
 static const int DRAM_ATTR s_trace_io[] = {
-        BIT(4),  BIT(5),  // ESP_PM_TRACE_IDLE
-        BIT(16), BIT(17), // ESP_PM_TRACE_TICK
-        BIT(18), BIT(18), // ESP_PM_TRACE_FREQ_SWITCH
-        BIT(19), BIT(19), // ESP_PM_TRACE_CCOMPARE_UPDATE
-        BIT(25), BIT(26), // ESP_PM_TRACE_ISR_HOOK
-        BIT(27), BIT(27), // ESP_PM_TRACE_SLEEP
+        BIT(2), 0, // ESP_PM_TRACE_IDLE
+        BIT(3), 0, // ESP_PM_TRACE_TICK
+        BIT(4), 0, // ESP_PM_TRACE_FREQ_SWITCH
+        BIT(5), 0, // ESP_PM_TRACE_CCOMPARE_UPDATE
+        BIT(6), 0, // ESP_PM_TRACE_ISR_HOOK
+        BIT(7), 0, // ESP_PM_TRACE_SLEEP
 };
 
 void esp_pm_trace_init(void)
