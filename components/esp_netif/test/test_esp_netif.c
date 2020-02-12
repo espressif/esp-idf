@@ -225,3 +225,31 @@ TEST_CASE("esp_netif: create custom wifi interfaces", "[esp_netif][leaks=0]")
     esp_netif_destroy(sta);
 }
 
+
+TEST_CASE("esp_netif: get/set hostname", "[esp_netif]")
+{
+    const char *hostname;
+    esp_netif_config_t cfg = ESP_NETIF_DEFAULT_WIFI_STA();
+
+    test_case_uses_tcpip();
+    esp_netif_t *esp_netif = esp_netif_new(&cfg);
+
+    // specific hostname not set yet, get_hostname should fail
+    TEST_ASSERT_NOT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+
+    TEST_ASSERT_NOT_NULL(esp_netif);
+    esp_netif_attach_wifi_station(esp_netif);
+
+    esp_netif_action_start(esp_netif, NULL, 0, NULL);
+
+    // specific hostname not set yet, but if started, get_hostname to return default config value
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+    TEST_ASSERT_EQUAL_STRING(hostname, CONFIG_LWIP_LOCAL_HOSTNAME);
+
+    // specific hostname set and get
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_set_hostname(esp_netif, "new_name"));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_netif_get_hostname(esp_netif, &hostname));
+    TEST_ASSERT_EQUAL_STRING(hostname, "new_name");
+
+    esp_netif_destroy(esp_netif);
+}

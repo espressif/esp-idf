@@ -219,7 +219,9 @@ wlanif_init(struct netif *netif)
   /* Initialize interface hostname */
 
 #if ESP_LWIP
-  netif->hostname = CONFIG_LWIP_LOCAL_HOSTNAME;
+  if (esp_netif_get_hostname(esp_netif_get_handle_from_netif_impl(netif), &netif->hostname) != ESP_OK) {
+    netif->hostname = CONFIG_LWIP_LOCAL_HOSTNAME;
+  }
 #else
   netif->hostname = "lwip";
 #endif

@@ -1048,11 +1048,11 @@ esp_err_t esp_netif_get_hostname(esp_netif_t *esp_netif, const char **hostname)
 #if LWIP_NETIF_HOSTNAME
     struct netif *p_netif = esp_netif->lwip_netif;
 
-    if (p_netif != NULL) {
+    if (p_netif != NULL && p_netif->hostname != NULL) {
         *hostname = p_netif->hostname;
         return ESP_OK;
     } else {
-        return ESP_ERR_ESP_NETIF_INVALID_PARAMS;
+        return ESP_ERR_ESP_NETIF_IF_NOT_READY;
     }
 #else
     return ESP_ERR_ESP_NETIF_IF_NOT_READY;
