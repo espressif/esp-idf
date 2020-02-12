@@ -417,6 +417,8 @@ def write_cmake(deprecated_options, config, filename):
                 val = sym.str_value
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == "n":
                     val = ""  # write unset values as empty variables
+                elif sym.orig_type == kconfiglib.STRING:
+                    val = kconfiglib.escape(val)
                 write("set({}{} \"{}\")\n".format(
                     prefix, sym.name, val))
 
