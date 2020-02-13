@@ -38,6 +38,19 @@
  */
 uint32_t rtc_clk_cal_internal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 {
+    /* On ESP32S2, choosing RTC_CAL_RTC_MUX results in calibration of
+     * the 90k RTC clock regardless of the currenlty selected SLOW_CLK.
+     * On the ESP32, it used the currently selected SLOW_CLK.
+     * The following code emulates ESP32 behavior:
+     */
+    if (cal_clk == RTC_CAL_RTC_MUX) {
+        rtc_slow_freq_t slow_freq = rtc_clk_slow_freq_get();
+        if (slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
+            cal_clk = RTC_CAL_32K_XTAL;
+        } else if (slow_freq == RTC_SLOW_FREQ_8MD256) {
+            cal_clk = RTC_CAL_8MD256;
+        }
+    }
     /* Enable requested clock (150k clock is always on) */
     int dig_32k_xtal_state = REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_DIG_XTAL32K_EN);
     if (cal_clk == RTC_CAL_32K_XTAL && !dig_32k_xtal_state) {
