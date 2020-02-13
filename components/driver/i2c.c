@@ -302,8 +302,13 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     i2c_hw_enable(i2c_num);
     //Disable I2C interrupt.
     i2c_hal_disable_intr_mask(&(i2c_context[i2c_num].hal), I2C_INTR_MASK);
+    i2c_hal_clr_intsts_mask(&(i2c_context[i2c_num].hal), I2C_INTR_MASK);
     //hook isr handler
     i2c_isr_register(i2c_num, i2c_isr_handler_default, p_i2c_obj[i2c_num], intr_alloc_flags, &p_i2c_obj[i2c_num]->intr_handle);
+    //Enable I2C slave rx interrupt
+    if (mode == I2C_MODE_SLAVE) {
+        i2c_hal_enable_slave_rx_it(&(i2c_context[i2c_num].hal));
+    }
     return ESP_OK;
 
     err:
@@ -605,7 +610,6 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t* i2c_conf)
         //set timing for data
         i2c_hal_set_sda_timing(&(i2c_context[i2c_num].hal), I2C_SLAVE_SDA_SAMPLE_DEFAULT, I2C_SLAVE_SDA_HOLD_DEFAULT);
         i2c_hal_set_tout(&(i2c_context[i2c_num].hal), I2C_SLAVE_TIMEOUT_DEFAULT);
-        i2c_hal_enable_slave_tx_it(&(i2c_context[i2c_num].hal));
         i2c_hal_enable_slave_rx_it(&(i2c_context[i2c_num].hal));
     } else {
         i2c_hal_master_init(&(i2c_context[i2c_num].hal), i2c_num);
@@ -785,22 +789,17 @@ esp_err_t i2c_set_pin(i2c_port_t i2c_num, int sda_io_num, int scl_io_num, bool s
         gpio_matrix_out(sda_io_num, sda_out_sig, 0, 0);
         gpio_matrix_in(sda_io_num, sda_in_sig, 0);
     }
-
     if (scl_io_num >= 0) {
         gpio_set_level(scl_io_num, I2C_IO_INIT_LEVEL);
         PIN_FUNC_SELECT(GPIO_PIN_MUX_REG[scl_io_num], PIN_FUNC_GPIO);
-        if (mode == I2C_MODE_MASTER) {
-            gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
-            gpio_matrix_out(scl_io_num, scl_out_sig, 0, 0);
-        } else {
-            gpio_set_direction(scl_io_num, GPIO_MODE_INPUT);
-        }
+        gpio_set_direction(scl_io_num, GPIO_MODE_INPUT_OUTPUT_OD);
+        gpio_matrix_out(scl_io_num, scl_out_sig, 0, 0);
+        gpio_matrix_in(scl_io_num, scl_in_sig, 0);
         if (scl_pullup_en == GPIO_PULLUP_ENABLE) {
             gpio_set_pull_mode(scl_io_num, GPIO_PULLUP_ONLY);
         } else {
             gpio_set_pull_mode(scl_io_num, GPIO_FLOATING);
         }
-        gpio_matrix_in(scl_io_num, scl_in_sig, 0);
     }
 #if !I2C_SUPPORT_HW_CLR_BUS
     i2c_context[i2c_num].scl_io_num = scl_io_num;

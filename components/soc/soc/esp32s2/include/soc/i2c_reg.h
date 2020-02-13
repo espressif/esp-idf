@@ -1,9 +1,9 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-//
+
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -76,12 +76,12 @@ extern "C" {
 #define I2C_MS_MODE_M  (BIT(4))
 #define I2C_MS_MODE_V  0x1
 #define I2C_MS_MODE_S  4
-/* I2C_ACK_LEVEL : R/W ;bitpos:[3] ;default: 1'b1 ; */
+/* I2C_RX_FULL_ACK_LEVEL : R/W ;bitpos:[3] ;default: 1'b1 ; */
 /*description: */
-#define I2C_ACK_LEVEL  (BIT(3))
-#define I2C_ACK_LEVEL_M  (BIT(3))
-#define I2C_ACK_LEVEL_V  0x1
-#define I2C_ACK_LEVEL_S  3
+#define I2C_RX_FULL_ACK_LEVEL  (BIT(3))
+#define I2C_RX_FULL_ACK_LEVEL_M  (BIT(3))
+#define I2C_RX_FULL_ACK_LEVEL_V  0x1
+#define I2C_RX_FULL_ACK_LEVEL_S  3
 /* I2C_SAMPLE_SCL_LEVEL : R/W ;bitpos:[2] ;default: 1'b0 ; */
 /*description: */
 #define I2C_SAMPLE_SCL_LEVEL  (BIT(2))
@@ -120,6 +120,12 @@ extern "C" {
 #define I2C_TXFIFO_CNT_M  ((I2C_TXFIFO_CNT_V)<<(I2C_TXFIFO_CNT_S))
 #define I2C_TXFIFO_CNT_V  0x3F
 #define I2C_TXFIFO_CNT_S  18
+/* I2C_STRETCH_CAUSE : RO ;bitpos:[15:14] ;default: 2'b0 ; */
+/*description: */
+#define I2C_STRETCH_CAUSE  0x00000003
+#define I2C_STRETCH_CAUSE_M  ((I2C_STRETCH_CAUSE_V)<<(I2C_STRETCH_CAUSE_S))
+#define I2C_STRETCH_CAUSE_V  0x3
+#define I2C_STRETCH_CAUSE_S  14
 /* I2C_RXFIFO_CNT : RO ;bitpos:[13:8] ;default: 6'b0 ; */
 /*description: */
 #define I2C_RXFIFO_CNT  0x0000003F
@@ -162,12 +168,12 @@ extern "C" {
 #define I2C_SLAVE_RW_M  (BIT(1))
 #define I2C_SLAVE_RW_V  0x1
 #define I2C_SLAVE_RW_S  1
-/* I2C_ACK_REC : RO ;bitpos:[0] ;default: 1'b0 ; */
+/* I2C_RESP_REC : RO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */
-#define I2C_ACK_REC  (BIT(0))
-#define I2C_ACK_REC_M  (BIT(0))
-#define I2C_ACK_REC_V  0x1
-#define I2C_ACK_REC_S  0
+#define I2C_RESP_REC  (BIT(0))
+#define I2C_RESP_REC_M  (BIT(0))
+#define I2C_RESP_REC_V  0x1
+#define I2C_RESP_REC_S  0
 
 #define I2C_TO_REG(i)          (REG_I2C_BASE(i) + 0x000c)
 /* I2C_TIME_OUT_EN : R/W ;bitpos:[24] ;default: 1'b0 ; */
@@ -197,19 +203,13 @@ extern "C" {
 #define I2C_SLAVE_ADDR_V  0x7FFF
 #define I2C_SLAVE_ADDR_S  0
 
-#define I2C_RXFIFO_ST_REG(i)          (REG_I2C_BASE(i) + 0x0014)
-/* I2C_RXFIFO_INIT_WADDR : RO ;bitpos:[31:27] ;default: 5'b0 ; */
+#define I2C_FIFO_ST_REG(i)          (REG_I2C_BASE(i) + 0x0014)
+/* I2C_SLAVE_RW_POINT : RO ;bitpos:[29:22] ;default: 8'b0 ; */
 /*description: */
-#define I2C_RXFIFO_INIT_WADDR  0x0000001F
-#define I2C_RXFIFO_INIT_WADDR_M  ((I2C_RXFIFO_INIT_WADDR_V)<<(I2C_RXFIFO_INIT_WADDR_S))
-#define I2C_RXFIFO_INIT_WADDR_V  0x1F
-#define I2C_RXFIFO_INIT_WADDR_S  27
-/* I2C_TXFIFO_INIT_RADDR : RO ;bitpos:[26:22] ;default: 5'b0 ; */
-/*description: */
-#define I2C_TXFIFO_INIT_RADDR  0x0000001F
-#define I2C_TXFIFO_INIT_RADDR_M  ((I2C_TXFIFO_INIT_RADDR_V)<<(I2C_TXFIFO_INIT_RADDR_S))
-#define I2C_TXFIFO_INIT_RADDR_V  0x1F
-#define I2C_TXFIFO_INIT_RADDR_S  22
+#define I2C_SLAVE_RW_POINT  0x000000FF
+#define I2C_SLAVE_RW_POINT_M  ((I2C_SLAVE_RW_POINT_V)<<(I2C_SLAVE_RW_POINT_S))
+#define I2C_SLAVE_RW_POINT_V  0xFF
+#define I2C_SLAVE_RW_POINT_S  22
 /* I2C_TX_UPDATE : WO ;bitpos:[21] ;default: 1'b0 ; */
 /*description: */
 #define I2C_TX_UPDATE  (BIT(21))
@@ -248,6 +248,12 @@ extern "C" {
 #define I2C_RXFIFO_START_ADDR_S  0
 
 #define I2C_FIFO_CONF_REG(i)          (REG_I2C_BASE(i) + 0x0018)
+/* I2C_FIFO_PRT_EN : R/W ;bitpos:[26] ;default: 1'b1 ; */
+/*description: */
+#define I2C_FIFO_PRT_EN  (BIT(26))
+#define I2C_FIFO_PRT_EN_M  (BIT(26))
+#define I2C_FIFO_PRT_EN_V  0x1
+#define I2C_FIFO_PRT_EN_S  26
 /* I2C_NONFIFO_TX_THRES : R/W ;bitpos:[25:20] ;default: 6'h15 ; */
 /*description: */
 #define I2C_NONFIFO_TX_THRES  0x0000003F
@@ -284,20 +290,18 @@ extern "C" {
 #define I2C_NONFIFO_EN_M  (BIT(10))
 #define I2C_NONFIFO_EN_V  0x1
 #define I2C_NONFIFO_EN_S  10
-/* I2C_TXFIFO_EMPTY_THRHD : R/W ;bitpos:[9:5] ;default: 5'h4 ; */
+/* I2C_TXFIFO_WM_THRHD : R/W ;bitpos:[9:5] ;default: 5'h4 ; */
 /*description: */
-#define I2C_TXFIFO_EMPTY_THRHD  0x0000001F
-#define I2C_TXFIFO_EMPTY_THRHD_M  ((I2C_TXFIFO_EMPTY_THRHD_V)<<(I2C_TXFIFO_EMPTY_THRHD_S))
-#define I2C_TXFIFO_EMPTY_THRHD_V  0x1F
-#define I2C_TXFIFO_EMPTY_THRHD_S  5
-/* I2C_RXFIFO_FULL_THRHD : R/W ;bitpos:[4:0] ;default: 5'hb ; */
+#define I2C_TXFIFO_WM_THRHD  0x0000001F
+#define I2C_TXFIFO_WM_THRHD_M  ((I2C_TXFIFO_WM_THRHD_V)<<(I2C_TXFIFO_WM_THRHD_S))
+#define I2C_TXFIFO_WM_THRHD_V  0x1F
+#define I2C_TXFIFO_WM_THRHD_S  5
+/* I2C_RXFIFO_WM_THRHD : R/W ;bitpos:[4:0] ;default: 5'hb ; */
 /*description: */
-#define I2C_RXFIFO_FULL_THRHD  0x0000001F
-#define I2C_RXFIFO_FULL_THRHD_M  ((I2C_RXFIFO_FULL_THRHD_V)<<(I2C_RXFIFO_FULL_THRHD_S))
-#define I2C_RXFIFO_FULL_THRHD_V  0x1F
-#define I2C_RXFIFO_FULL_THRHD_S  0
-
-#define I2C_DATA_APB_REG(i)      (0x60013000 + (i) * 0x14000 + 0x001c)
+#define I2C_RXFIFO_WM_THRHD  0x0000001F
+#define I2C_RXFIFO_WM_THRHD_M  ((I2C_RXFIFO_WM_THRHD_V)<<(I2C_RXFIFO_WM_THRHD_S))
+#define I2C_RXFIFO_WM_THRHD_V  0x1F
+#define I2C_RXFIFO_WM_THRHD_S  0
 
 #define I2C_DATA_REG(i)          (REG_I2C_BASE(i) + 0x001c)
 /* I2C_FIFO_RDATA : RO ;bitpos:[7:0] ;default: 8'b0 ; */
@@ -308,6 +312,12 @@ extern "C" {
 #define I2C_FIFO_RDATA_S  0
 
 #define I2C_INT_RAW_REG(i)          (REG_I2C_BASE(i) + 0x0020)
+/* I2C_SLAVE_STRETCH_INT_RAW : RO ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define I2C_SLAVE_STRETCH_INT_RAW  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_RAW_M  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_RAW_V  0x1
+#define I2C_SLAVE_STRETCH_INT_RAW_S  16
 /* I2C_DET_START_INT_RAW : RO ;bitpos:[15] ;default: 1'b0 ; */
 /*description: */
 #define I2C_DET_START_INT_RAW  (BIT(15))
@@ -326,24 +336,24 @@ extern "C" {
 #define I2C_SCL_ST_TO_INT_RAW_M  (BIT(13))
 #define I2C_SCL_ST_TO_INT_RAW_V  0x1
 #define I2C_SCL_ST_TO_INT_RAW_S  13
-/* I2C_TX_SEND_EMPTY_INT_RAW : RO ;bitpos:[12] ;default: 1'b0 ; */
+/* I2C_RXFIFO_UDF_INT_RAW : RO ;bitpos:[12] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TX_SEND_EMPTY_INT_RAW  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_RAW_M  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_RAW_V  0x1
-#define I2C_TX_SEND_EMPTY_INT_RAW_S  12
-/* I2C_RX_REC_FULL_INT_RAW : RO ;bitpos:[11] ;default: 1'b0 ; */
+#define I2C_RXFIFO_UDF_INT_RAW  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_RAW_M  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_RAW_V  0x1
+#define I2C_RXFIFO_UDF_INT_RAW_S  12
+/* I2C_TXFIFO_OVF_INT_RAW : RO ;bitpos:[11] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RX_REC_FULL_INT_RAW  (BIT(11))
-#define I2C_RX_REC_FULL_INT_RAW_M  (BIT(11))
-#define I2C_RX_REC_FULL_INT_RAW_V  0x1
-#define I2C_RX_REC_FULL_INT_RAW_S  11
-/* I2C_ACK_ERR_INT_RAW : RO ;bitpos:[10] ;default: 1'b0 ; */
+#define I2C_TXFIFO_OVF_INT_RAW  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_RAW_M  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_RAW_V  0x1
+#define I2C_TXFIFO_OVF_INT_RAW_S  11
+/* I2C_NACK_INT_RAW : RO ;bitpos:[10] ;default: 1'b0 ; */
 /*description: */
-#define I2C_ACK_ERR_INT_RAW  (BIT(10))
-#define I2C_ACK_ERR_INT_RAW_M  (BIT(10))
-#define I2C_ACK_ERR_INT_RAW_V  0x1
-#define I2C_ACK_ERR_INT_RAW_S  10
+#define I2C_NACK_INT_RAW  (BIT(10))
+#define I2C_NACK_INT_RAW_M  (BIT(10))
+#define I2C_NACK_INT_RAW_V  0x1
+#define I2C_NACK_INT_RAW_S  10
 /* I2C_TRANS_START_INT_RAW : RO ;bitpos:[9] ;default: 1'b0 ; */
 /*description: */
 #define I2C_TRANS_START_INT_RAW  (BIT(9))
@@ -362,24 +372,24 @@ extern "C" {
 #define I2C_TRANS_COMPLETE_INT_RAW_M  (BIT(7))
 #define I2C_TRANS_COMPLETE_INT_RAW_V  0x1
 #define I2C_TRANS_COMPLETE_INT_RAW_S  7
-/* I2C_MASTER_TRAN_COMP_INT_RAW : RO ;bitpos:[6] ;default: 1'b0 ; */
+/* I2C_MST_TXFIFO_UDF_INT_RAW : RO ;bitpos:[6] ;default: 1'b0 ; */
 /*description: */
-#define I2C_MASTER_TRAN_COMP_INT_RAW  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_RAW_M  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_RAW_V  0x1
-#define I2C_MASTER_TRAN_COMP_INT_RAW_S  6
+#define I2C_MST_TXFIFO_UDF_INT_RAW  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_RAW_M  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_RAW_V  0x1
+#define I2C_MST_TXFIFO_UDF_INT_RAW_S  6
 /* I2C_ARBITRATION_LOST_INT_RAW : RO ;bitpos:[5] ;default: 1'b0 ; */
 /*description: */
 #define I2C_ARBITRATION_LOST_INT_RAW  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_RAW_M  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_RAW_V  0x1
 #define I2C_ARBITRATION_LOST_INT_RAW_S  5
-/* I2C_SLAVE_TRAN_COMP_INT_RAW : RO ;bitpos:[4] ;default: 1'b0 ; */
+/* I2C_BYTE_TRANS_DONE_INT_RAW : RO ;bitpos:[4] ;default: 1'b0 ; */
 /*description: */
-#define I2C_SLAVE_TRAN_COMP_INT_RAW  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_RAW_M  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_RAW_V  0x1
-#define I2C_SLAVE_TRAN_COMP_INT_RAW_S  4
+#define I2C_BYTE_TRANS_DONE_INT_RAW  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_RAW_M  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_RAW_V  0x1
+#define I2C_BYTE_TRANS_DONE_INT_RAW_S  4
 /* I2C_END_DETECT_INT_RAW : RO ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
 #define I2C_END_DETECT_INT_RAW  (BIT(3))
@@ -392,20 +402,26 @@ extern "C" {
 #define I2C_RXFIFO_OVF_INT_RAW_M  (BIT(2))
 #define I2C_RXFIFO_OVF_INT_RAW_V  0x1
 #define I2C_RXFIFO_OVF_INT_RAW_S  2
-/* I2C_TXFIFO_EMPTY_INT_RAW : RO ;bitpos:[1] ;default: 1'b0 ; */
+/* I2C_TXFIFO_WM_INT_RAW : RO ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TXFIFO_EMPTY_INT_RAW  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_RAW_M  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_RAW_V  0x1
-#define I2C_TXFIFO_EMPTY_INT_RAW_S  1
-/* I2C_RXFIFO_FULL_INT_RAW : RO ;bitpos:[0] ;default: 1'b0 ; */
+#define I2C_TXFIFO_WM_INT_RAW  (BIT(1))
+#define I2C_TXFIFO_WM_INT_RAW_M  (BIT(1))
+#define I2C_TXFIFO_WM_INT_RAW_V  0x1
+#define I2C_TXFIFO_WM_INT_RAW_S  1
+/* I2C_RXFIFO_WM_INT_RAW : RO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RXFIFO_FULL_INT_RAW  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_RAW_M  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_RAW_V  0x1
-#define I2C_RXFIFO_FULL_INT_RAW_S  0
+#define I2C_RXFIFO_WM_INT_RAW  (BIT(0))
+#define I2C_RXFIFO_WM_INT_RAW_M  (BIT(0))
+#define I2C_RXFIFO_WM_INT_RAW_V  0x1
+#define I2C_RXFIFO_WM_INT_RAW_S  0
 
 #define I2C_INT_CLR_REG(i)          (REG_I2C_BASE(i) + 0x0024)
+/* I2C_SLAVE_STRETCH_INT_CLR : WO ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define I2C_SLAVE_STRETCH_INT_CLR  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_CLR_M  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_CLR_V  0x1
+#define I2C_SLAVE_STRETCH_INT_CLR_S  16
 /* I2C_DET_START_INT_CLR : WO ;bitpos:[15] ;default: 1'b0 ; */
 /*description: */
 #define I2C_DET_START_INT_CLR  (BIT(15))
@@ -424,24 +440,24 @@ extern "C" {
 #define I2C_SCL_ST_TO_INT_CLR_M  (BIT(13))
 #define I2C_SCL_ST_TO_INT_CLR_V  0x1
 #define I2C_SCL_ST_TO_INT_CLR_S  13
-/* I2C_TX_SEND_EMPTY_INT_CLR : WO ;bitpos:[12] ;default: 1'b0 ; */
+/* I2C_RXFIFO_UDF_INT_CLR : WO ;bitpos:[12] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TX_SEND_EMPTY_INT_CLR  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_CLR_M  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_CLR_V  0x1
-#define I2C_TX_SEND_EMPTY_INT_CLR_S  12
-/* I2C_RX_REC_FULL_INT_CLR : WO ;bitpos:[11] ;default: 1'b0 ; */
+#define I2C_RXFIFO_UDF_INT_CLR  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_CLR_M  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_CLR_V  0x1
+#define I2C_RXFIFO_UDF_INT_CLR_S  12
+/* I2C_TXFIFO_OVF_INT_CLR : WO ;bitpos:[11] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RX_REC_FULL_INT_CLR  (BIT(11))
-#define I2C_RX_REC_FULL_INT_CLR_M  (BIT(11))
-#define I2C_RX_REC_FULL_INT_CLR_V  0x1
-#define I2C_RX_REC_FULL_INT_CLR_S  11
-/* I2C_ACK_ERR_INT_CLR : WO ;bitpos:[10] ;default: 1'b0 ; */
+#define I2C_TXFIFO_OVF_INT_CLR  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_CLR_M  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_CLR_V  0x1
+#define I2C_TXFIFO_OVF_INT_CLR_S  11
+/* I2C_NACK_INT_CLR : WO ;bitpos:[10] ;default: 1'b0 ; */
 /*description: */
-#define I2C_ACK_ERR_INT_CLR  (BIT(10))
-#define I2C_ACK_ERR_INT_CLR_M  (BIT(10))
-#define I2C_ACK_ERR_INT_CLR_V  0x1
-#define I2C_ACK_ERR_INT_CLR_S  10
+#define I2C_NACK_INT_CLR  (BIT(10))
+#define I2C_NACK_INT_CLR_M  (BIT(10))
+#define I2C_NACK_INT_CLR_V  0x1
+#define I2C_NACK_INT_CLR_S  10
 /* I2C_TRANS_START_INT_CLR : WO ;bitpos:[9] ;default: 1'b0 ; */
 /*description: */
 #define I2C_TRANS_START_INT_CLR  (BIT(9))
@@ -460,24 +476,24 @@ extern "C" {
 #define I2C_TRANS_COMPLETE_INT_CLR_M  (BIT(7))
 #define I2C_TRANS_COMPLETE_INT_CLR_V  0x1
 #define I2C_TRANS_COMPLETE_INT_CLR_S  7
-/* I2C_MASTER_TRAN_COMP_INT_CLR : WO ;bitpos:[6] ;default: 1'b0 ; */
+/* I2C_MST_TXFIFO_UDF_INT_CLR : WO ;bitpos:[6] ;default: 1'b0 ; */
 /*description: */
-#define I2C_MASTER_TRAN_COMP_INT_CLR  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_CLR_M  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_CLR_V  0x1
-#define I2C_MASTER_TRAN_COMP_INT_CLR_S  6
+#define I2C_MST_TXFIFO_UDF_INT_CLR  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_CLR_M  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_CLR_V  0x1
+#define I2C_MST_TXFIFO_UDF_INT_CLR_S  6
 /* I2C_ARBITRATION_LOST_INT_CLR : WO ;bitpos:[5] ;default: 1'b0 ; */
 /*description: */
 #define I2C_ARBITRATION_LOST_INT_CLR  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_CLR_M  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_CLR_V  0x1
 #define I2C_ARBITRATION_LOST_INT_CLR_S  5
-/* I2C_SLAVE_TRAN_COMP_INT_CLR : WO ;bitpos:[4] ;default: 1'b0 ; */
+/* I2C_BYTE_TRANS_DONE_INT_CLR : WO ;bitpos:[4] ;default: 1'b0 ; */
 /*description: */
-#define I2C_SLAVE_TRAN_COMP_INT_CLR  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_CLR_M  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_CLR_V  0x1
-#define I2C_SLAVE_TRAN_COMP_INT_CLR_S  4
+#define I2C_BYTE_TRANS_DONE_INT_CLR  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_CLR_M  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_CLR_V  0x1
+#define I2C_BYTE_TRANS_DONE_INT_CLR_S  4
 /* I2C_END_DETECT_INT_CLR : WO ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
 #define I2C_END_DETECT_INT_CLR  (BIT(3))
@@ -490,20 +506,26 @@ extern "C" {
 #define I2C_RXFIFO_OVF_INT_CLR_M  (BIT(2))
 #define I2C_RXFIFO_OVF_INT_CLR_V  0x1
 #define I2C_RXFIFO_OVF_INT_CLR_S  2
-/* I2C_TXFIFO_EMPTY_INT_CLR : WO ;bitpos:[1] ;default: 1'b0 ; */
+/* I2C_TXFIFO_WM_INT_CLR : WO ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TXFIFO_EMPTY_INT_CLR  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_CLR_M  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_CLR_V  0x1
-#define I2C_TXFIFO_EMPTY_INT_CLR_S  1
-/* I2C_RXFIFO_FULL_INT_CLR : WO ;bitpos:[0] ;default: 1'b0 ; */
+#define I2C_TXFIFO_WM_INT_CLR  (BIT(1))
+#define I2C_TXFIFO_WM_INT_CLR_M  (BIT(1))
+#define I2C_TXFIFO_WM_INT_CLR_V  0x1
+#define I2C_TXFIFO_WM_INT_CLR_S  1
+/* I2C_RXFIFO_WM_INT_CLR : WO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RXFIFO_FULL_INT_CLR  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_CLR_M  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_CLR_V  0x1
-#define I2C_RXFIFO_FULL_INT_CLR_S  0
+#define I2C_RXFIFO_WM_INT_CLR  (BIT(0))
+#define I2C_RXFIFO_WM_INT_CLR_M  (BIT(0))
+#define I2C_RXFIFO_WM_INT_CLR_V  0x1
+#define I2C_RXFIFO_WM_INT_CLR_S  0
 
 #define I2C_INT_ENA_REG(i)          (REG_I2C_BASE(i) + 0x0028)
+/* I2C_SLAVE_STRETCH_INT_ENA : R/W ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define I2C_SLAVE_STRETCH_INT_ENA  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_ENA_M  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_ENA_V  0x1
+#define I2C_SLAVE_STRETCH_INT_ENA_S  16
 /* I2C_DET_START_INT_ENA : R/W ;bitpos:[15] ;default: 1'b0 ; */
 /*description: */
 #define I2C_DET_START_INT_ENA  (BIT(15))
@@ -522,24 +544,24 @@ extern "C" {
 #define I2C_SCL_ST_TO_INT_ENA_M  (BIT(13))
 #define I2C_SCL_ST_TO_INT_ENA_V  0x1
 #define I2C_SCL_ST_TO_INT_ENA_S  13
-/* I2C_TX_SEND_EMPTY_INT_ENA : R/W ;bitpos:[12] ;default: 1'b0 ; */
+/* I2C_RXFIFO_UDF_INT_ENA : R/W ;bitpos:[12] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TX_SEND_EMPTY_INT_ENA  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_ENA_M  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_ENA_V  0x1
-#define I2C_TX_SEND_EMPTY_INT_ENA_S  12
-/* I2C_RX_REC_FULL_INT_ENA : R/W ;bitpos:[11] ;default: 1'b0 ; */
+#define I2C_RXFIFO_UDF_INT_ENA  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_ENA_M  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_ENA_V  0x1
+#define I2C_RXFIFO_UDF_INT_ENA_S  12
+/* I2C_TXFIFO_OVF_INT_ENA : R/W ;bitpos:[11] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RX_REC_FULL_INT_ENA  (BIT(11))
-#define I2C_RX_REC_FULL_INT_ENA_M  (BIT(11))
-#define I2C_RX_REC_FULL_INT_ENA_V  0x1
-#define I2C_RX_REC_FULL_INT_ENA_S  11
-/* I2C_ACK_ERR_INT_ENA : R/W ;bitpos:[10] ;default: 1'b0 ; */
+#define I2C_TXFIFO_OVF_INT_ENA  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_ENA_M  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_ENA_V  0x1
+#define I2C_TXFIFO_OVF_INT_ENA_S  11
+/* I2C_NACK_INT_ENA : R/W ;bitpos:[10] ;default: 1'b0 ; */
 /*description: */
-#define I2C_ACK_ERR_INT_ENA  (BIT(10))
-#define I2C_ACK_ERR_INT_ENA_M  (BIT(10))
-#define I2C_ACK_ERR_INT_ENA_V  0x1
-#define I2C_ACK_ERR_INT_ENA_S  10
+#define I2C_NACK_INT_ENA  (BIT(10))
+#define I2C_NACK_INT_ENA_M  (BIT(10))
+#define I2C_NACK_INT_ENA_V  0x1
+#define I2C_NACK_INT_ENA_S  10
 /* I2C_TRANS_START_INT_ENA : R/W ;bitpos:[9] ;default: 1'b0 ; */
 /*description: */
 #define I2C_TRANS_START_INT_ENA  (BIT(9))
@@ -558,24 +580,24 @@ extern "C" {
 #define I2C_TRANS_COMPLETE_INT_ENA_M  (BIT(7))
 #define I2C_TRANS_COMPLETE_INT_ENA_V  0x1
 #define I2C_TRANS_COMPLETE_INT_ENA_S  7
-/* I2C_MASTER_TRAN_COMP_INT_ENA : R/W ;bitpos:[6] ;default: 1'b0 ; */
+/* I2C_MST_TXFIFO_UDF_INT_ENA : R/W ;bitpos:[6] ;default: 1'b0 ; */
 /*description: */
-#define I2C_MASTER_TRAN_COMP_INT_ENA  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_ENA_M  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_ENA_V  0x1
-#define I2C_MASTER_TRAN_COMP_INT_ENA_S  6
+#define I2C_MST_TXFIFO_UDF_INT_ENA  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_ENA_M  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_ENA_V  0x1
+#define I2C_MST_TXFIFO_UDF_INT_ENA_S  6
 /* I2C_ARBITRATION_LOST_INT_ENA : R/W ;bitpos:[5] ;default: 1'b0 ; */
 /*description: */
 #define I2C_ARBITRATION_LOST_INT_ENA  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_ENA_M  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_ENA_V  0x1
 #define I2C_ARBITRATION_LOST_INT_ENA_S  5
-/* I2C_SLAVE_TRAN_COMP_INT_ENA : R/W ;bitpos:[4] ;default: 1'b0 ; */
+/* I2C_BYTE_TRANS_DONE_INT_ENA : R/W ;bitpos:[4] ;default: 1'b0 ; */
 /*description: */
-#define I2C_SLAVE_TRAN_COMP_INT_ENA  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_ENA_M  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_ENA_V  0x1
-#define I2C_SLAVE_TRAN_COMP_INT_ENA_S  4
+#define I2C_BYTE_TRANS_DONE_INT_ENA  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_ENA_M  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_ENA_V  0x1
+#define I2C_BYTE_TRANS_DONE_INT_ENA_S  4
 /* I2C_END_DETECT_INT_ENA : R/W ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
 #define I2C_END_DETECT_INT_ENA  (BIT(3))
@@ -588,20 +610,26 @@ extern "C" {
 #define I2C_RXFIFO_OVF_INT_ENA_M  (BIT(2))
 #define I2C_RXFIFO_OVF_INT_ENA_V  0x1
 #define I2C_RXFIFO_OVF_INT_ENA_S  2
-/* I2C_TXFIFO_EMPTY_INT_ENA : R/W ;bitpos:[1] ;default: 1'b0 ; */
+/* I2C_TXFIFO_WM_INT_ENA : R/W ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TXFIFO_EMPTY_INT_ENA  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_ENA_M  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_ENA_V  0x1
-#define I2C_TXFIFO_EMPTY_INT_ENA_S  1
-/* I2C_RXFIFO_FULL_INT_ENA : R/W ;bitpos:[0] ;default: 1'b0 ; */
+#define I2C_TXFIFO_WM_INT_ENA  (BIT(1))
+#define I2C_TXFIFO_WM_INT_ENA_M  (BIT(1))
+#define I2C_TXFIFO_WM_INT_ENA_V  0x1
+#define I2C_TXFIFO_WM_INT_ENA_S  1
+/* I2C_RXFIFO_WM_INT_ENA : R/W ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RXFIFO_FULL_INT_ENA  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_ENA_M  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_ENA_V  0x1
-#define I2C_RXFIFO_FULL_INT_ENA_S  0
+#define I2C_RXFIFO_WM_INT_ENA  (BIT(0))
+#define I2C_RXFIFO_WM_INT_ENA_M  (BIT(0))
+#define I2C_RXFIFO_WM_INT_ENA_V  0x1
+#define I2C_RXFIFO_WM_INT_ENA_S  0
 
 #define I2C_INT_STATUS_REG(i)          (REG_I2C_BASE(i) + 0x002c)
+/* I2C_SLAVE_STRETCH_INT_ST : RO ;bitpos:[16] ;default: 1'b0 ; */
+/*description: */
+#define I2C_SLAVE_STRETCH_INT_ST  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_ST_M  (BIT(16))
+#define I2C_SLAVE_STRETCH_INT_ST_V  0x1
+#define I2C_SLAVE_STRETCH_INT_ST_S  16
 /* I2C_DET_START_INT_ST : RO ;bitpos:[15] ;default: 1'b0 ; */
 /*description: */
 #define I2C_DET_START_INT_ST  (BIT(15))
@@ -620,24 +648,24 @@ extern "C" {
 #define I2C_SCL_ST_TO_INT_ST_M  (BIT(13))
 #define I2C_SCL_ST_TO_INT_ST_V  0x1
 #define I2C_SCL_ST_TO_INT_ST_S  13
-/* I2C_TX_SEND_EMPTY_INT_ST : RO ;bitpos:[12] ;default: 1'b0 ; */
+/* I2C_RXFIFO_UDF_INT_ST : RO ;bitpos:[12] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TX_SEND_EMPTY_INT_ST  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_ST_M  (BIT(12))
-#define I2C_TX_SEND_EMPTY_INT_ST_V  0x1
-#define I2C_TX_SEND_EMPTY_INT_ST_S  12
-/* I2C_RX_REC_FULL_INT_ST : RO ;bitpos:[11] ;default: 1'b0 ; */
+#define I2C_RXFIFO_UDF_INT_ST  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_ST_M  (BIT(12))
+#define I2C_RXFIFO_UDF_INT_ST_V  0x1
+#define I2C_RXFIFO_UDF_INT_ST_S  12
+/* I2C_TXFIFO_OVF_INT_ST : RO ;bitpos:[11] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RX_REC_FULL_INT_ST  (BIT(11))
-#define I2C_RX_REC_FULL_INT_ST_M  (BIT(11))
-#define I2C_RX_REC_FULL_INT_ST_V  0x1
-#define I2C_RX_REC_FULL_INT_ST_S  11
-/* I2C_ACK_ERR_INT_ST : RO ;bitpos:[10] ;default: 1'b0 ; */
+#define I2C_TXFIFO_OVF_INT_ST  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_ST_M  (BIT(11))
+#define I2C_TXFIFO_OVF_INT_ST_V  0x1
+#define I2C_TXFIFO_OVF_INT_ST_S  11
+/* I2C_NACK_INT_ST : RO ;bitpos:[10] ;default: 1'b0 ; */
 /*description: */
-#define I2C_ACK_ERR_INT_ST  (BIT(10))
-#define I2C_ACK_ERR_INT_ST_M  (BIT(10))
-#define I2C_ACK_ERR_INT_ST_V  0x1
-#define I2C_ACK_ERR_INT_ST_S  10
+#define I2C_NACK_INT_ST  (BIT(10))
+#define I2C_NACK_INT_ST_M  (BIT(10))
+#define I2C_NACK_INT_ST_V  0x1
+#define I2C_NACK_INT_ST_S  10
 /* I2C_TRANS_START_INT_ST : RO ;bitpos:[9] ;default: 1'b0 ; */
 /*description: */
 #define I2C_TRANS_START_INT_ST  (BIT(9))
@@ -656,24 +684,24 @@ extern "C" {
 #define I2C_TRANS_COMPLETE_INT_ST_M  (BIT(7))
 #define I2C_TRANS_COMPLETE_INT_ST_V  0x1
 #define I2C_TRANS_COMPLETE_INT_ST_S  7
-/* I2C_MASTER_TRAN_COMP_INT_ST : RO ;bitpos:[6] ;default: 1'b0 ; */
+/* I2C_MST_TXFIFO_UDF_INT_ST : RO ;bitpos:[6] ;default: 1'b0 ; */
 /*description: */
-#define I2C_MASTER_TRAN_COMP_INT_ST  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_ST_M  (BIT(6))
-#define I2C_MASTER_TRAN_COMP_INT_ST_V  0x1
-#define I2C_MASTER_TRAN_COMP_INT_ST_S  6
+#define I2C_MST_TXFIFO_UDF_INT_ST  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_ST_M  (BIT(6))
+#define I2C_MST_TXFIFO_UDF_INT_ST_V  0x1
+#define I2C_MST_TXFIFO_UDF_INT_ST_S  6
 /* I2C_ARBITRATION_LOST_INT_ST : RO ;bitpos:[5] ;default: 1'b0 ; */
 /*description: */
 #define I2C_ARBITRATION_LOST_INT_ST  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_ST_M  (BIT(5))
 #define I2C_ARBITRATION_LOST_INT_ST_V  0x1
 #define I2C_ARBITRATION_LOST_INT_ST_S  5
-/* I2C_SLAVE_TRAN_COMP_INT_ST : RO ;bitpos:[4] ;default: 1'b0 ; */
+/* I2C_BYTE_TRANS_DONE_INT_ST : RO ;bitpos:[4] ;default: 1'b0 ; */
 /*description: */
-#define I2C_SLAVE_TRAN_COMP_INT_ST  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_ST_M  (BIT(4))
-#define I2C_SLAVE_TRAN_COMP_INT_ST_V  0x1
-#define I2C_SLAVE_TRAN_COMP_INT_ST_S  4
+#define I2C_BYTE_TRANS_DONE_INT_ST  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_ST_M  (BIT(4))
+#define I2C_BYTE_TRANS_DONE_INT_ST_V  0x1
+#define I2C_BYTE_TRANS_DONE_INT_ST_S  4
 /* I2C_END_DETECT_INT_ST : RO ;bitpos:[3] ;default: 1'b0 ; */
 /*description: */
 #define I2C_END_DETECT_INT_ST  (BIT(3))
@@ -686,18 +714,18 @@ extern "C" {
 #define I2C_RXFIFO_OVF_INT_ST_M  (BIT(2))
 #define I2C_RXFIFO_OVF_INT_ST_V  0x1
 #define I2C_RXFIFO_OVF_INT_ST_S  2
-/* I2C_TXFIFO_EMPTY_INT_ST : RO ;bitpos:[1] ;default: 1'b0 ; */
+/* I2C_TXFIFO_WM_INT_ST : RO ;bitpos:[1] ;default: 1'b0 ; */
 /*description: */
-#define I2C_TXFIFO_EMPTY_INT_ST  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_ST_M  (BIT(1))
-#define I2C_TXFIFO_EMPTY_INT_ST_V  0x1
-#define I2C_TXFIFO_EMPTY_INT_ST_S  1
-/* I2C_RXFIFO_FULL_INT_ST : RO ;bitpos:[0] ;default: 1'b0 ; */
+#define I2C_TXFIFO_WM_INT_ST  (BIT(1))
+#define I2C_TXFIFO_WM_INT_ST_M  (BIT(1))
+#define I2C_TXFIFO_WM_INT_ST_V  0x1
+#define I2C_TXFIFO_WM_INT_ST_S  1
+/* I2C_RXFIFO_WM_INT_ST : RO ;bitpos:[0] ;default: 1'b0 ; */
 /*description: */
-#define I2C_RXFIFO_FULL_INT_ST  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_ST_M  (BIT(0))
-#define I2C_RXFIFO_FULL_INT_ST_V  0x1
-#define I2C_RXFIFO_FULL_INT_ST_S  0
+#define I2C_RXFIFO_WM_INT_ST  (BIT(0))
+#define I2C_RXFIFO_WM_INT_ST_M  (BIT(0))
+#define I2C_RXFIFO_WM_INT_ST_V  0x1
+#define I2C_RXFIFO_WM_INT_ST_S  0
 
 #define I2C_SDA_HOLD_REG(i)          (REG_I2C_BASE(i) + 0x0030)
 /* I2C_SDA_HOLD_TIME : R/W ;bitpos:[9:0] ;default: 10'b0 ; */
@@ -762,31 +790,31 @@ extern "C" {
 #define I2C_SCL_STOP_SETUP_TIME_S  0
 
 #define I2C_SCL_FILTER_CFG_REG(i)          (REG_I2C_BASE(i) + 0x0050)
-/* I2C_SCL_FILTER_EN : R/W ;bitpos:[3] ;default: 1'b1 ; */
+/* I2C_SCL_FILTER_EN : R/W ;bitpos:[4] ;default: 1'b1 ; */
 /*description: */
-#define I2C_SCL_FILTER_EN  (BIT(3))
-#define I2C_SCL_FILTER_EN_M  (BIT(3))
+#define I2C_SCL_FILTER_EN  (BIT(4))
+#define I2C_SCL_FILTER_EN_M  (BIT(4))
 #define I2C_SCL_FILTER_EN_V  0x1
-#define I2C_SCL_FILTER_EN_S  3
-/* I2C_SCL_FILTER_THRES : R/W ;bitpos:[2:0] ;default: 3'b0 ; */
+#define I2C_SCL_FILTER_EN_S  4
+/* I2C_SCL_FILTER_THRES : R/W ;bitpos:[3:0] ;default: 4'b0 ; */
 /*description: */
-#define I2C_SCL_FILTER_THRES  0x00000007
+#define I2C_SCL_FILTER_THRES  0x0000000F
 #define I2C_SCL_FILTER_THRES_M  ((I2C_SCL_FILTER_THRES_V)<<(I2C_SCL_FILTER_THRES_S))
-#define I2C_SCL_FILTER_THRES_V  0x7
+#define I2C_SCL_FILTER_THRES_V  0xF
 #define I2C_SCL_FILTER_THRES_S  0
 
 #define I2C_SDA_FILTER_CFG_REG(i)          (REG_I2C_BASE(i) + 0x0054)
-/* I2C_SDA_FILTER_EN : R/W ;bitpos:[3] ;default: 1'b1 ; */
+/* I2C_SDA_FILTER_EN : R/W ;bitpos:[4] ;default: 1'b1 ; */
 /*description: */
-#define I2C_SDA_FILTER_EN  (BIT(3))
-#define I2C_SDA_FILTER_EN_M  (BIT(3))
+#define I2C_SDA_FILTER_EN  (BIT(4))
+#define I2C_SDA_FILTER_EN_M  (BIT(4))
 #define I2C_SDA_FILTER_EN_V  0x1
-#define I2C_SDA_FILTER_EN_S  3
-/* I2C_SDA_FILTER_THRES : R/W ;bitpos:[2:0] ;default: 3'b0 ; */
+#define I2C_SDA_FILTER_EN_S  4
+/* I2C_SDA_FILTER_THRES : R/W ;bitpos:[3:0] ;default: 4'b0 ; */
 /*description: */
-#define I2C_SDA_FILTER_THRES  0x00000007
+#define I2C_SDA_FILTER_THRES  0x0000000F
 #define I2C_SDA_FILTER_THRES_M  ((I2C_SDA_FILTER_THRES_V)<<(I2C_SDA_FILTER_THRES_S))
-#define I2C_SDA_FILTER_THRES_V  0x7
+#define I2C_SDA_FILTER_THRES_V  0xF
 #define I2C_SDA_FILTER_THRES_S  0
 
 #define I2C_COMD0_REG(i)          (REG_I2C_BASE(i) + 0x0058)
@@ -1055,15 +1083,37 @@ extern "C" {
 #define I2C_SCL_RST_SLV_EN_V  0x1
 #define I2C_SCL_RST_SLV_EN_S  0
 
+#define I2C_SCL_STRETCH_CONF_REG(i)          (REG_I2C_BASE(i) + 0x00a4)
+/* I2C_SLAVE_SCL_STRETCH_CLR : WO ;bitpos:[11] ;default: 1'b0 ; */
+/*description: */
+#define I2C_SLAVE_SCL_STRETCH_CLR  (BIT(11))
+#define I2C_SLAVE_SCL_STRETCH_CLR_M  (BIT(11))
+#define I2C_SLAVE_SCL_STRETCH_CLR_V  0x1
+#define I2C_SLAVE_SCL_STRETCH_CLR_S  11
+/* I2C_SLAVE_SCL_STRETCH_EN : R/W ;bitpos:[10] ;default: 1'b0 ; */
+/*description: */
+#define I2C_SLAVE_SCL_STRETCH_EN  (BIT(10))
+#define I2C_SLAVE_SCL_STRETCH_EN_M  (BIT(10))
+#define I2C_SLAVE_SCL_STRETCH_EN_V  0x1
+#define I2C_SLAVE_SCL_STRETCH_EN_S  10
+/* I2C_STRETCH_PROTECT_NUM : R/W ;bitpos:[9:0] ;default: 10'b0 ; */
+/*description: */
+#define I2C_STRETCH_PROTECT_NUM  0x000003FF
+#define I2C_STRETCH_PROTECT_NUM_M  ((I2C_STRETCH_PROTECT_NUM_V)<<(I2C_STRETCH_PROTECT_NUM_S))
+#define I2C_STRETCH_PROTECT_NUM_V  0x3FF
+#define I2C_STRETCH_PROTECT_NUM_S  0
+
 #define I2C_DATE_REG(i)          (REG_I2C_BASE(i) + 0x00F8)
-/* I2C_DATE : R/W ;bitpos:[31:0] ;default: 32'h18073100 ; */
+/* I2C_DATE : R/W ;bitpos:[31:0] ;default: 32'h19052000 ; */
 /*description: */
 #define I2C_DATE  0xFFFFFFFF
 #define I2C_DATE_M  ((I2C_DATE_V)<<(I2C_DATE_S))
 #define I2C_DATE_V  0xFFFFFFFF
 #define I2C_DATE_S  0
 
-#define I2C_FIFO_START_ADDR_REG(i)          (REG_I2C_BASE(i) + 0x0100)
+#define I2C_TXFIFO_START_ADDR_REG(i)          (REG_I2C_BASE(i) + 0x0100)
+
+#define I2C_RXFIFO_START_ADDR_REG(i)          (REG_I2C_BASE(i) + 0x0180)
 
 #ifdef __cplusplus
 }
@@ -1072,5 +1122,4 @@ extern "C" {
 
 
 #endif /*_SOC_I2C_REG_H_ */
-
 
