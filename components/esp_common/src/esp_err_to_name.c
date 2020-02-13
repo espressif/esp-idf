@@ -355,6 +355,12 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WIFI_STOP_STATE
     ERR_TBL_IT(ESP_ERR_WIFI_STOP_STATE),                        /* 12308 0x3014 Returned when WiFi is stopping */
 #   endif
+#   ifdef      ESP_ERR_WIFI_NOT_ASSOC
+    ERR_TBL_IT(ESP_ERR_WIFI_NOT_ASSOC),                         /* 12309 0x3015 The WiFi connection is not associated */
+#   endif
+#   ifdef      ESP_ERR_WIFI_TX_DISALLOW
+    ERR_TBL_IT(ESP_ERR_WIFI_TX_DISALLOW),                       /* 12310 0x3016 The WiFi TX is disallowed */
+#   endif
     // components/wpa_supplicant/include/esp_supplicant/esp_wps.h
 #   ifdef      ESP_ERR_WIFI_REGISTRAR
     ERR_TBL_IT(ESP_ERR_WIFI_REGISTRAR),                         /* 12339 0x3033 WPS registrar is not supported */
