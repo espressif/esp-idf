@@ -130,6 +130,7 @@ typedef struct {
 #define SDMMC_HOST_FLAG_8BIT    BIT(2)      /*!< host supports 8-line MMC protocol */
 #define SDMMC_HOST_FLAG_SPI     BIT(3)      /*!< host supports SPI protocol */
 #define SDMMC_HOST_FLAG_DDR     BIT(4)      /*!< host supports DDR mode for SD/MMC */
+#define SDMMC_HOST_FLAG_DEINIT_ARG BIT(5)      /*!< host `deinit` function called with the slot argument */
     int slot;                   /*!< slot number, to be passed to host functions */
     int max_freq_khz;           /*!< max frequency supported by the host */
 #define SDMMC_FREQ_DEFAULT      20000       /*!< SD/MMC Default speed (limited by clock divider) */
@@ -144,7 +145,10 @@ typedef struct {
     esp_err_t (*set_bus_ddr_mode)(int slot, bool ddr_enable); /*!< host function to set DDR mode */
     esp_err_t (*set_card_clk)(int slot, uint32_t freq_khz); /*!< host function to set card clock frequency */
     esp_err_t (*do_transaction)(int slot, sdmmc_command_t* cmdinfo);    /*!< host function to do a transaction */
-    esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */
+    union {
+        esp_err_t (*deinit)(void);  /*!< host function to deinitialize the driver */
+        esp_err_t (*deinit_p)(int slot);  /*!< host function to deinitialize the driver, called with the `slot` */
+    };
     esp_err_t (*io_int_enable)(int slot); /*!< Host function to enable SDIO interrupt line */
     esp_err_t (*io_int_wait)(int slot, TickType_t timeout_ticks); /*!< Host function to wait for SDIO interrupt line to be active */
     int command_timeout_ms;     /*!< timeout, in milliseconds, of a single command. Set to 0 to use the default value. */

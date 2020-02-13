@@ -17,6 +17,10 @@
 
 #include <stdint.h>
 
+#define ESP_ROM_HAS_CRC8LE      1
+#define ESP_ROM_HAS_CRC16LE     1
+#define ESP_ROM_HAS_CRC32LE     1
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -51,19 +55,6 @@ extern "C" {
 uint32_t crc32_le(uint32_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief Crc32 value that is in big endian.
-  *
-  * @param  uint32_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint32_t crc32_be(uint32_t crc, uint8_t const *buf, uint32_t len);
-
-/**
   * @brief Crc16 value that is in little endian.
   *
   * @param  uint16_t crc : init crc value, use 0 at the first use.
@@ -77,19 +68,6 @@ uint32_t crc32_be(uint32_t crc, uint8_t const *buf, uint32_t len);
 uint16_t crc16_le(uint16_t crc, uint8_t const *buf, uint32_t len);
 
 /**
-  * @brief Crc16 value that is in big endian.
-  *
-  * @param  uint16_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint16_t crc16_be(uint16_t crc, uint8_t const *buf, uint32_t len);
-
-/**
   * @brief Crc8 value that is in little endian.
   *
   * @param  uint8_t crc : init crc value, use 0 at the first use.
@@ -101,19 +79,6 @@ uint16_t crc16_be(uint16_t crc, uint8_t const *buf, uint32_t len);
   * @return None
   */
 uint8_t crc8_le(uint8_t crc, uint8_t const *buf, uint32_t len);
-
-/**
-  * @brief Crc8 value that is in big endian.
-  *
-  * @param  uint32_t crc : init crc value, use 0 at the first use.
-  *
-  * @param  uint8_t const *buf : buffer to start calculate crc.
-  *
-  * @param  uint32_t len : buffer length in byte.
-  *
-  * @return None
-  */
-uint8_t crc8_be(uint8_t crc, uint8_t const *buf, uint32_t len);
 
 /**
   * @}

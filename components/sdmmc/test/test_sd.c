@@ -43,6 +43,8 @@
 #define SD_TEST_BOARD_VSEL_3V3      1
 #define SD_TEST_BOARD_VSEL_1V8      0
 
+#define TEST_SDSPI_DMACHAN 1
+
 /* time to wait for reset / power-on */
 #define SD_TEST_BOARD_PWR_RST_DELAY_MS  5
 #define SD_TEST_BOARD_PWR_ON_DELAY_MS   50
@@ -161,7 +163,57 @@ TEST_CASE("probe SD, slot 0, 1-bit", "[sd][test_env=UT_T1_SDCARD][ignore]")
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 //No runners
+static void test_sdspi_init_bus(spi_host_device_t host, int mosi_pin, int miso_pin, int clk_pin, int dma_chan)
+{
+    spi_bus_config_t bus_config = {
+        .mosi_io_num = mosi_pin,
+        .miso_io_num = miso_pin,
+        .sclk_io_num = clk_pin,
+        .quadwp_io_num = -1,
+        .quadhd_io_num = -1,
+    };
+    esp_err_t err = spi_bus_initialize(host, &bus_config, dma_chan);
+    TEST_ESP_OK(err);
+}
+
+static void test_sdspi_deinit_bus(spi_host_device_t host)
+{
+    esp_err_t err = spi_bus_free(host);
+    TEST_ESP_OK(err);
+}
+
+static void probe_core(int slot)
+{
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    config.slot = slot;
+
+    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
+    TEST_ASSERT_NOT_NULL(card);
+
+    TEST_ESP_OK(sdmmc_card_init(&config, card));
+    sdmmc_card_print_info(stdout, card);
+    free(card);
+}
+
 static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int pin_cs)
+{
+    sd_test_board_power_on();
+
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.gpio_cs = pin_cs;
+    test_sdspi_init_bus(dev_config.host_id, pin_mosi, pin_miso, pin_sck, TEST_SDSPI_DMACHAN);
+    TEST_ESP_OK(sdspi_host_init());
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    probe_core(handle);
+
+    TEST_ESP_OK(sdspi_host_deinit());
+    test_sdspi_deinit_bus(dev_config.host_id);
+    sd_test_board_power_off();
+}
+
+static void probe_spi_legacy(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int pin_cs)
 {
     sd_test_board_power_on();
     sdmmc_host_t config = SDSPI_HOST_DEFAULT();
@@ -173,23 +225,23 @@ static void probe_spi(int freq_khz, int pin_miso, int pin_mosi, int pin_sck, int
 
     TEST_ESP_OK(sdspi_host_init());
     TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
-    sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
-    TEST_ASSERT_NOT_NULL(card);
-    TEST_ESP_OK(sdmmc_card_init(&config, card));
-    sdmmc_card_print_info(stdout, card);
+
+    probe_core(config.slot);
+
     TEST_ESP_OK(sdspi_host_deinit());
-    free(card);
     sd_test_board_power_off();
 }
 
 TEST_CASE("probe SD in SPI mode, slot 1", "[sd][test_env=UT_T1_SPIMODE]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
+    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 2, 15, 14, 13);
 }
 
 TEST_CASE("probe SD in SPI mode, slot 0", "[sd][test_env=UT_T1_SDCARD][ignore]")
 {
     probe_spi(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
+    probe_spi_legacy(SDMMC_FREQ_DEFAULT, 7, 11, 6, 10);
 }
 
 #endif //DISABLED(ESP32S2)
@@ -327,16 +379,23 @@ TEST_CASE("SDMMC read/write test (eMMC slot 0, 8 line)", "[sd][test_env=EMMC]")
 TEST_CASE("SDMMC read/write test (SD slot 1, in SPI mode)", "[sdspi][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
+
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
     TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    config.slot = handle;
+
     sdmmc_card_t* card = malloc(sizeof(sdmmc_card_t));
     TEST_ASSERT_NOT_NULL(card);
     TEST_ESP_OK(sdmmc_card_init(&config, card));
     read_write_test(card);
-    free(card);
     TEST_ESP_OK(sdspi_host_deinit());
+    free(card);
+    test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
 #endif //DISABLED_FOR_TARGETS(ESP32S2)
@@ -427,15 +486,21 @@ TEST_CASE("CD input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 TEST_CASE("CD input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_cd = CD_WP_TEST_GPIO;
+
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.gpio_cd = CD_WP_TEST_GPIO;
+    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
     TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    config.slot = handle;
 
     test_cd_input(CD_WP_TEST_GPIO, &config);
 
     TEST_ESP_OK(sdspi_host_deinit());
+    test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
 #endif //DISABLED_FOR_TARGETS(ESP32S2)
@@ -495,15 +560,22 @@ TEST_CASE("WP input works in SD mode", "[sd][test_env=UT_T1_SDMODE]")
 TEST_CASE("WP input works in SPI mode", "[sd][test_env=UT_T1_SPIMODE]")
 {
     sd_test_board_power_on();
-    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
-    sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-    slot_config.gpio_wp = CD_WP_TEST_GPIO;
+
+    sdspi_dev_handle_t handle;
+    sdspi_device_config_t dev_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+    dev_config.gpio_wp = CD_WP_TEST_GPIO;
+    test_sdspi_init_bus(dev_config.host_id, GPIO_NUM_15, GPIO_NUM_2, GPIO_NUM_14, TEST_SDSPI_DMACHAN);
+
     TEST_ESP_OK(sdspi_host_init());
-    TEST_ESP_OK(sdspi_host_init_slot(config.slot, &slot_config));
+    TEST_ESP_OK(sdspi_host_init_device(&dev_config, &handle));
+
+    sdmmc_host_t config = SDSPI_HOST_DEFAULT();
+    config.slot = handle;
 
     test_wp_input(CD_WP_TEST_GPIO, &config);
 
     TEST_ESP_OK(sdspi_host_deinit());
+    test_sdspi_deinit_bus(dev_config.host_id);
     sd_test_board_power_off();
 }
 #endif //DISABLED_FOR_TARGETS(ESP32S2)

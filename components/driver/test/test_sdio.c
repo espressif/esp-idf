@@ -18,6 +18,7 @@
 #include "test_utils.h"
 #include "param_test.h"
 #include "esp_log.h"
+#include "driver/spi_common.h"
 
 #if defined(SOC_SDMMC_HOST_SUPPORTED) && defined(SOC_SDIO_SLAVE_SUPPORTED)
 #include "driver/sdio_slave.h"
@@ -33,6 +34,9 @@
 //the test should run accross the boundary, i.e. over 0x100000 bytes.
 //TEST_CNT > 512
 #define TEST_CNT                10000
+
+#define TEST_SDSPI_HOST         HSPI_HOST
+#define TEST_SDSPI_DMACHAN      1
 
 #define TEST_RESET_DATA_LEN 10
 
@@ -154,6 +158,7 @@ static void init_essl(essl_handle_t *out_handle, const sdio_test_config_t *conf)
 {
     sdmmc_host_t config;
     esp_err_t err;
+    spi_bus_config_t bus_config;
     /* Probe */
 
     switch (conf->sdio_mode) {
@@ -172,24 +177,34 @@ static void init_essl(essl_handle_t *out_handle, const sdio_test_config_t *conf)
         init_sdmmc_host();
         break;
     case SDIO_SPI:
-        config = (sdmmc_host_t)SDSPI_HOST_DEFAULT();
+        bus_config = (spi_bus_config_t) {
+            .mosi_io_num = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CMD,
+            .miso_io_num = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D0,
+            .sclk_io_num = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CLK,
+            .quadwp_io_num = -1,
+            .quadhd_io_num = -1,
+        };
+        err = spi_bus_initialize(TEST_SDSPI_HOST, &bus_config, TEST_SDSPI_DMACHAN);
+        TEST_ESP_OK(err);
 
-        sdspi_slot_config_t slot_config = SDSPI_SLOT_CONFIG_DEFAULT();
-        slot_config.gpio_miso = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D0;
-        slot_config.gpio_mosi = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CMD;
-        slot_config.gpio_sck  = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_CLK;
-        slot_config.gpio_cs   = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D3;
-        slot_config.gpio_int = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D1;
+        sdspi_device_config_t device_config = SDSPI_DEVICE_CONFIG_DEFAULT();
+        device_config.host_id = TEST_SDSPI_HOST;
+        device_config.gpio_cs = SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D3;
+        device_config.gpio_int= SDIO_SLAVE_SLOT1_IOMUX_PIN_NUM_D1;
 
         err = gpio_install_isr_service(0);
         TEST_ASSERT(err == ESP_OK || err == ESP_ERR_INVALID_STATE);
 
+        sdspi_dev_handle_t sdspi_handle;
         err = sdspi_host_init();
         TEST_ESP_OK(err);
-
-        err = sdspi_host_init_slot(HSPI_HOST, &slot_config);
+        err = sdspi_host_init_device(&device_config, &sdspi_handle);
         TEST_ESP_OK(err);
+
         ESP_LOGI(MASTER_TAG, "Probe using SPI...\n");
+
+        config = (sdmmc_host_t)SDSPI_HOST_DEFAULT();
+        config.slot = sdspi_handle;
         break;
     }
 
@@ -223,6 +238,9 @@ static void deinit_essl(essl_handle_t handle, const sdio_test_config_t *conf)
         gpio_uninstall_isr_service();
 
         err = sdspi_host_deinit();
+        TEST_ESP_OK(err);
+
+        err = spi_bus_free(TEST_SDSPI_HOST);
         TEST_ESP_OK(err);
     } else {
         err = sdmmc_host_deinit();
