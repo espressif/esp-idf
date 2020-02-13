@@ -789,12 +789,10 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
         return err;
     }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
-        if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-                bt_mesh_proxy_relay(&buf->b, dst)) {
-            send_cb_finalize(cb, cb_data);
-            return 0;
-        }
+    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
+        bt_mesh_proxy_relay(&buf->b, dst)) {
+        send_cb_finalize(cb, cb_data);
+        return 0;
     }
 
     bt_mesh_adv_send(buf, cb, cb_data);
@@ -935,8 +933,9 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 #endif
 
     /* Deliver to local network interface if necessary */
-    if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
-            bt_mesh_elem_find(tx->ctx->addr)) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() &&
+        (bt_mesh_fixed_group_match(tx->ctx->addr) ||
+            bt_mesh_elem_find(tx->ctx->addr))) {
         if (cb && cb->start) {
             cb->start(0, 0, cb_data);
         }
@@ -1122,18 +1121,14 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
             continue;
         }
 
-#if CONFIG_BLE_MESH_NODE
-        if (bt_mesh_is_provisioned()) {
 #if (defined(CONFIG_BLE_MESH_LOW_POWER) || defined(CONFIG_BLE_MESH_FRIEND))
-            if (!friend_decrypt(sub, data, data_len, rx, buf)) {
-                rx->friend_cred = 1;
-                rx->ctx.net_idx = sub->net_idx;
-                rx->sub = sub;
-                return true;
-            }
-#endif
+        if (!friend_decrypt(sub, data, data_len, rx, buf)) {
+            rx->friend_cred = 1;
+            rx->ctx.net_idx = sub->net_idx;
+            rx->sub = sub;
+            return true;
         }
-#endif /* CONFIG_BLE_MESH_NODE */
+#endif
 
         if (NID(data) == sub->keys[0].nid &&
                 !net_decrypt(sub, sub->keys[0].enc, sub->keys[0].privacy,
@@ -1308,6 +1303,17 @@ done:
 
 #endif /* CONFIG_BLE_MESH_NODE */
 
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+                              struct bt_mesh_net_rx *rx)
+{
+    rx->old_iv = (IVI(buf->data) != (bt_mesh.iv_index & 0x01));
+    rx->ctl = CTL(buf->data);
+    rx->ctx.recv_ttl = TTL(buf->data);
+    rx->seq = SEQ(buf->data);
+    rx->ctx.addr = SRC(buf->data);
+    rx->ctx.recv_dst = DST(buf->data);
+}
+
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
                        struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 {
@@ -1398,7 +1404,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
                       enum bt_mesh_net_if net_if)
 {
     NET_BUF_SIMPLE_DEFINE(buf, 29);
-    struct bt_mesh_net_rx rx = { .rssi = rssi };
+    struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
     struct net_buf_simple_state state;
 
     BT_DBG("rssi %d net_if %u", rssi, net_if);

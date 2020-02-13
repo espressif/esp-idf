@@ -324,7 +324,7 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
         .criteria    = LPN_CRITERIA,
         .recv_delay  = LPN_RECV_DELAY,
         .poll_to     = LPN_POLL_TO,
-        .prev_addr   = lpn->old_friend,
+        .prev_addr   = sys_cpu_to_be16(lpn->old_friend),
         .num_elem    = comp->elem_count,
         .lpn_counter = sys_cpu_to_be16(lpn->counter),
     };

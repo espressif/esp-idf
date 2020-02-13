@@ -28,6 +28,7 @@
 #include "adv.h"
 #include "net.h"
 #include "access.h"
+#include "friend.h"
 
 #include "provisioner_prov.h"
 #include "proxy_client.h"
@@ -140,6 +141,10 @@ int provisioner_node_reset(int node_index)
                 rpl->src < node->unicast_addr + node->element_num) {
             memset(rpl, 0, sizeof(struct bt_mesh_rpl));
         }
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        bt_mesh_friend_remove_lpn(node->unicast_addr);
     }
 
     osi_free(mesh_nodes[node_index]);

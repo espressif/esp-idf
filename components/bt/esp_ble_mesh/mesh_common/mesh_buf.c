@@ -31,6 +31,12 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
     return buf;
 }
 
+void net_buf_simple_clone(const struct net_buf_simple *original,
+                          struct net_buf_simple *clone)
+{
+    memcpy(clone, original, sizeof(struct net_buf_simple));
+}
+
 void *net_buf_simple_add(struct net_buf_simple *buf, size_t len)
 {
     u8_t *tail = net_buf_simple_tail(buf);
@@ -448,3 +454,142 @@ struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, s32_t timeout)
     return net_buf_alloc_len(pool, fixed->data_size, timeout);
 }
 #endif
+
+struct net_buf *net_buf_frag_last(struct net_buf *buf)
+{
+    NET_BUF_ASSERT(buf);
+
+    while (buf->frags) {
+        buf = buf->frags;
+    }
+
+    return buf;
+}
+
+void net_buf_frag_insert(struct net_buf *parent, struct net_buf *frag)
+{
+    NET_BUF_ASSERT(parent);
+    NET_BUF_ASSERT(frag);
+
+    if (parent->frags) {
+        net_buf_frag_last(frag)->frags = parent->frags;
+    }
+    /* Take ownership of the fragment reference */
+    parent->frags = frag;
+}
+
+struct net_buf *net_buf_frag_add(struct net_buf *head, struct net_buf *frag)
+{
+    NET_BUF_ASSERT(frag);
+
+    if (!head) {
+        return net_buf_ref(frag);
+    }
+
+    net_buf_frag_insert(net_buf_frag_last(head), frag);
+
+    return head;
+}
+
+#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
+                                       struct net_buf *frag,
+                                       const char *func, int line)
+#else
+struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
+#endif
+{
+    struct net_buf *next_frag;
+
+    NET_BUF_ASSERT(frag);
+
+    if (parent) {
+        NET_BUF_ASSERT(parent->frags);
+        NET_BUF_ASSERT(parent->frags == frag);
+        parent->frags = frag->frags;
+    }
+
+    next_frag = frag->frags;
+
+    frag->frags = NULL;
+
+#if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
+    net_buf_unref_debug(frag, func, line);
+#else
+    net_buf_unref(frag);
+#endif
+
+    return next_frag;
+}
+
+size_t net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
+                         size_t offset, size_t len)
+{
+    struct net_buf *frag;
+    size_t to_copy;
+    size_t copied;
+
+    len = MIN(len, dst_len);
+
+    frag = src;
+
+    /* find the right fragment to start copying from */
+    while (frag && offset >= frag->len) {
+        offset -= frag->len;
+        frag = frag->frags;
+    }
+
+    /* traverse the fragment chain until len bytes are copied */
+    copied = 0;
+    while (frag && len > 0) {
+        to_copy = MIN(len, frag->len - offset);
+        memcpy((u8_t *)dst + copied, frag->data + offset, to_copy);
+
+        copied += to_copy;
+
+        /* to_copy is always <= len */
+        len -= to_copy;
+        frag = frag->frags;
+
+        /* after the first iteration, this value will be 0 */
+        offset = 0;
+    }
+
+    return copied;
+}
+
+/* This helper routine will append multiple bytes, if there is no place for
+ * the data in current fragment then create new fragment and add it to
+ * the buffer. It assumes that the buffer has at least one fragment.
+ */
+size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
+                const void *value, s32_t timeout,
+                net_buf_allocator_cb allocate_cb, void *user_data)
+{
+    struct net_buf *frag = net_buf_frag_last(buf);
+    size_t added_len = 0;
+    const u8_t *value8 = value;
+
+    do {
+        u16_t count = MIN(len, net_buf_tailroom(frag));
+
+        net_buf_add_mem(frag, value8, count);
+        len -= count;
+        added_len += count;
+        value8 += count;
+
+        if (len == 0) {
+            return added_len;
+        }
+
+        frag = allocate_cb(timeout, user_data);
+        if (!frag) {
+            return added_len;
+        }
+
+        net_buf_frag_add(buf, frag);
+    } while (1);
+
+    /* Unreachable */
+    return 0;
+}

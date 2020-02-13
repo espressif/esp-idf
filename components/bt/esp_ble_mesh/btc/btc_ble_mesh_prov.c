@@ -783,7 +783,6 @@ static void btc_ble_mesh_heartbeat_msg_recv_cb(u8_t hops, u16_t feature)
     return;
 }
 
-#if CONFIG_BLE_MESH_NODE
 #if CONFIG_BLE_MESH_LOW_POWER
 static void btc_ble_mesh_lpn_cb(u16_t friend_addr, bool established)
 {
@@ -831,7 +830,6 @@ void btc_ble_mesh_friend_cb(bool establish, u16_t lpn_addr, u8_t reason)
     return;
 }
 #endif /* CONFIG_BLE_MESH_FRIEND */
-#endif /* CONFIG_BLE_MESH_NODE */
 
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
 static void btc_ble_mesh_proxy_client_adv_recv_cb(const bt_mesh_addr_t *addr,
@@ -1507,12 +1505,6 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         arg->mesh_init.prov->link_close_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_link_close_cb;
         arg->mesh_init.prov->complete_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_complete_cb;
         arg->mesh_init.prov->reset_cb = (esp_ble_mesh_cb_t)btc_ble_mesh_reset_cb;
-#if CONFIG_BLE_MESH_LOW_POWER
-        bt_mesh_lpn_set_cb(btc_ble_mesh_lpn_cb);
-#endif /* CONFIG_BLE_MESH_LOW_POWER */
-#if CONFIG_BLE_MESH_FRIEND
-        bt_mesh_friend_set_cb(btc_ble_mesh_friend_cb);
-#endif /* CONFIG_BLE_MESH_FRIEND */
 #endif /* CONFIG_BLE_MESH_NODE */
 #if CONFIG_BLE_MESH_PROVISIONER
         arg->mesh_init.prov->provisioner_prov_read_oob_pub_key = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_prov_read_oob_pub_key_cb;
@@ -1523,6 +1515,12 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         arg->mesh_init.prov->provisioner_prov_comp = (esp_ble_mesh_cb_t)btc_ble_mesh_provisioner_prov_complete_cb;
         bt_mesh_prov_adv_pkt_cb_register(btc_ble_mesh_provisioner_recv_unprov_adv_pkt_cb);
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
+#if CONFIG_BLE_MESH_LOW_POWER
+        bt_mesh_lpn_set_cb(btc_ble_mesh_lpn_cb);
+#endif /* CONFIG_BLE_MESH_LOW_POWER */
+#if CONFIG_BLE_MESH_FRIEND
+        bt_mesh_friend_set_cb(btc_ble_mesh_friend_cb);
+#endif /* CONFIG_BLE_MESH_FRIEND */
 #if CONFIG_BLE_MESH_GATT_PROXY_CLIENT
         bt_mesh_proxy_client_set_adv_recv_cb(btc_ble_mesh_proxy_client_adv_recv_cb);
         bt_mesh_proxy_client_set_conn_cb(btc_ble_mesh_proxy_client_connect_cb);
