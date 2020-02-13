@@ -71,6 +71,9 @@ These are Sphinx extensions developed for IDF that don't rely on any IDF-docs-sp
 :idf_file:`docs/extensions/toctree_filter.py`
     Sphinx extensions overrides the ``:toctree:`` directive to allow filtering entries based on whether a tag is set, as ``:tagname: toctree_entry``. See the Python file for a more complete description.
 
+:idf_file:`docs/extensions/list_filter.py`
+    Sphinx extensions that provides a ``.. list::`` directive that allows filtering of entries in lists based on whether a tag is set, as ``:tagname: - list content``. See the Python file for a more complete description.
+
 :idf_file:`docs/extensions/html_redirects.py`
     During documentation lifetime some source files are moved between folders or renamed. This Sphinx extension adds a mechanism to redirect documentation pages that have changed URL by generating in the Sphinx output static HTML redirect pages. The script is used together with a redirection list ``html_redirect_pages``. ``conf_common.py`` builds this list from :idf_file:`docs/page_redirects.txt`
 

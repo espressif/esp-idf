@@ -53,6 +53,7 @@ extensions = ['breathe',
 
               'extensions.html_redirects',
               'extensions.toctree_filter',
+              'extensions.list_filter',
 
               'idf_extensions.include_build_file',
               'idf_extensions.link_roles',

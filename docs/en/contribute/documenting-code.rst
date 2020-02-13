@@ -267,7 +267,7 @@ Example:
 
 This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
 
-The :TARGET: role is used for excluding content from a table of content tree. For example:
+The '':TARGET:'' role is used for excluding content from a table of content tree. For example:
 
 .. code-block:: none
 
@@ -280,6 +280,18 @@ The :TARGET: role is used for excluding content from a table of content tree. Fo
 When building the documents, Sphinx will use the above mentioned directive and role to include or exclude content based on the target tag it was called with.
 
 .. note:: If excluding an entire document from the toctree based on targets, it's necessary to also update the ``exclude_patterns`` list in :idf_file:`docs/conf_common.py` to exclude the file for other targets, or a Sphinx warning "WARNING: document isn't included in any toctree" will be generated..
+
+If you need to exclude content inside a list or bullet points then this should be done by using the '':TARGET:'' role inside the ''.. list:: '' directive.
+
+.. code-block:: none
+
+    .. list::
+    
+        :esp32: - ESP32 specific content
+        :esp32s2: - ESP32 S2 specific content
+        - Common bullet point
+        - Also common bullet point
+
 
 Substitution macros
 """""""""""""""""""
