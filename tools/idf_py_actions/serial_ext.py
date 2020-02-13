@@ -6,7 +6,7 @@ import click
 
 from idf_py_actions.errors import FatalError
 from idf_py_actions.global_options import global_options
-from idf_py_actions.tools import ensure_build_directory, run_tool, run_target
+from idf_py_actions.tools import ensure_build_directory, run_tool, run_target, get_sdkconfig_value
 
 PYTHON = sys.executable
 
@@ -94,6 +94,10 @@ def action_extensions(base_actions, project_path):
 
         monitor_args += ["-b", monitor_baud]
         monitor_args += ["--toolchain-prefix", project_desc["monitor_toolprefix"]]
+
+        coredump_decode = get_sdkconfig_value(project_desc["config_file"], "CONFIG_ESP32_CORE_DUMP_DECODE")
+        if coredump_decode is not None:
+            monitor_args += ["--decode-coredumps", coredump_decode]
 
         if print_filter is not None:
             monitor_args += ["--print_filter", print_filter]
