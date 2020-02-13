@@ -77,6 +77,20 @@ menu "Bluetooth"
             default 1 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
             default 0
 
+        config BTDM_CTRL_AUTO_LATENCY
+            bool "Auto latency"
+            depends on BTDM_CTRL_MODE_BTDM
+            default n
+            help
+                BLE auto latency, used to enhance classic BT performance
+                while classic BT and BLE are enabled at the same time.
+
+        config BTDM_CTRL_AUTO_LATENCY_EFF
+            bool
+            default BTDM_CTRL_AUTO_LATENCY if BTDM_CTRL_MODE_BTDM
+            default n
+
+
         config BTDM_CTRL_BLE_MAX_CONN_EFF
             int
             default BTDM_CTRL_BLE_MAX_CONN if BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
