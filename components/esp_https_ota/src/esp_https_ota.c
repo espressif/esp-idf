@@ -70,27 +70,20 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
     }
     
     char upgrade_data_buf[DEFAULT_OTA_BUF_SIZE];
-    /*
-     * `data_read_size` holds number of bytes to be read.
-     * `bytes_read` holds number of bytes read.
-     */
-    int bytes_read = 0, data_read_size = DEFAULT_OTA_BUF_SIZE;
+    // process_again() returns true only in case of redirection.
     if (process_again(status_code)) {
-        while (data_read_size > 0) {
-            int data_read = esp_http_client_read(http_client, (upgrade_data_buf + bytes_read), data_read_size);
+        while (1) {
             /*
-             * As esp_http_client_read never returns negative error code, we rely on
-             * `errno` to check for underlying transport connectivity closure if any
+             *  In case of redirection, esp_http_client_read() is called
+             *  to clear the response buffer of http_client.
              */
-            if (errno == ENOTCONN || errno == ECONNRESET) {
-                ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
-                break;
+            int data_read = esp_http_client_read(http_client, upgrade_data_buf, DEFAULT_OTA_BUF_SIZE);
+            if (data_read < 0) {
+                ESP_LOGE(TAG, "Error: SSL data read error");
+                return ESP_FAIL;
+            } else if (data_read == 0) {
+                return ESP_OK;
             }
-            bytes_read += data_read;
-            data_read_size -= data_read;
-        }
-        if (data_read_size > 0) {
-            return ESP_FAIL;
         }
     }
     return ESP_OK;
