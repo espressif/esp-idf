@@ -50,6 +50,9 @@ uint64_t g_wifi_feature_caps =
 #if CONFIG_ESP32_WIFI_ENABLE_WPA3_SAE
     CONFIG_FEATURE_WPA3_SAE_BIT |
 #endif
+#if (CONFIG_ESP32_SPIRAM_SUPPORT | CONFIG_ESP32S2_SPIRAM_SUPPORT)
+    CONFIG_FEATURE_CACHE_TX_BUF_BIT |
+#endif
 0;
 
 static const char* TAG = "wifi_init";
