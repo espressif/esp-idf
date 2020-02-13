@@ -394,6 +394,32 @@ struct bt_mesh_adv_param {
     u16_t interval_max;
 };
 
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+enum bt_mesh_ble_adv_priority {
+    BLE_MESH_BLE_ADV_PRIO_LOW,
+    BLE_MESH_BLE_ADV_PRIO_HIGH,
+};
+
+struct bt_mesh_ble_adv_param {
+    u16_t interval;         /* Advertising interval */
+    u8_t  adv_type;         /* Advertising type */
+    u8_t  own_addr_type;    /* Own address type */
+    u8_t  peer_addr_type;   /* Peer address type */
+    u8_t  peer_addr[6];     /* Peer address */
+    u16_t duration;         /* Duration is milliseconds */
+    u16_t period;           /* Period in milliseconds */
+    u16_t count;            /* Number of advertising duration */
+    u8_t  priority:2;       /* Priority of BLE advertising packet */
+};
+
+struct bt_mesh_ble_adv_data {
+    u8_t adv_data_len;      /* Advertising data length */
+    u8_t adv_data[31];      /* Advertising data */
+    u8_t scan_rsp_data_len; /* Scan response data length */
+    u8_t scan_rsp_data[31]; /* Scan response data */
+};
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
 /* BLE Mesh scan parameters */
 struct bt_mesh_scan_param {
     /** Scan type (BLE_MESH_SCAN_ACTIVE or BLE_MESH_SCAN_PASSIVE) */
@@ -651,6 +677,11 @@ int bt_mesh_host_deinit(void);
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len);
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
+                          const struct bt_mesh_ble_adv_data *data);
+#endif
 
 int bt_le_adv_stop(void);
 
