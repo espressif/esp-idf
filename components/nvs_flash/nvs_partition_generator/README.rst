@@ -29,9 +29,10 @@ Each line of a .csv file should contain 4 parameters, separated by a comma. The 
 +-----+-----------+----------------------------------------------------------------------+-----------------------------------------------------+
 | 2   | Type      | Supported values are ``file``, ``data`` and ``namespace``.           |                                                     |
 +-----+-----------+----------------------------------------------------------------------+-----------------------------------------------------+
-| 3   | Encoding  | Supported values are: ``u8``, ``i8``, ``u16``, ``u32``,              | As of now, for the ``file`` type,                   |
-|     |           | ``i32``, ``string``, ``hex2bin``, ``base64`` and ``binary``.         | only ``hex2bin``, ``base64``, ``string``,           |
-|     |           | This specifies how actual data values are encoded in the             | and ``binary`` encoding is supported.               |
+| 3   | Encoding  | Supported values are: ``u8``, ``i8``, ``u16``, ``i16``, ``u32``,     | As of now, for the ``file`` type,                   |
+|     |           | ``i32``, ``u64``, ``i64``, ``string``, ``hex2bin``, ``base64``       | only ``hex2bin``, ``base64``, ``string``,           |
+|     |           | and ``binary``.                                                      | and ``binary`` encoding is supported.               |
+|     |           | This specifies how actual data values are encoded in the             |                                                     |
 |     |           | resulting binary file. The difference between the ``string``         |                                                     |
 |     |           | and ``binary`` encoding is that ``string`` data is terminated        |                                                     |
 |     |           | with a NULL character, whereas ``binary`` data is not.               |                                                     |
