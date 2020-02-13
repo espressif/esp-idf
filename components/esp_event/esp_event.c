@@ -66,7 +66,7 @@ static int esp_event_dump_prepare(void)
     esp_event_loop_node_t *loop_node_it;
     esp_event_base_node_t* base_node_it;
     esp_event_id_node_t* id_node_it;
-    esp_event_handler_instance_t* handler_it;
+    esp_event_handler_node_t* handler_it;
 
     // Count the number of items to be printed. This is needed to compute how much memory to reserve.
     int loops = 0, handlers = 0;
@@ -122,9 +122,9 @@ static void esp_event_loop_run_task(void* args)
     vTaskSuspend(NULL);
 }
 
-static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_instance_t *handler, esp_event_post_instance_t post)
+static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_node_t *handler, esp_event_post_instance_t post)
 {
-    ESP_LOGD(TAG, "running post %s:%d with handler %p on loop %p", post.base, post.id, handler->handler, loop);
+    ESP_LOGD(TAG, "running post %s:%d with handler %p and context %p on loop %p", post.base, post.id, handler->handler_ctx->handler, &handler->handler_ctx, loop);
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
     int64_t start, diff;
@@ -142,9 +142,9 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_i
         }
     }
 
-    (*(handler->handler))(handler->arg, post.base, post.id, data_ptr);
+    (*(handler->handler_ctx->handler))(handler->handler_ctx->arg, post.base, post.id, data_ptr);
 #else
-    (*(handler->handler))(handler->arg, post.base, post.id, post.data);
+    (*(handler->handler_ctx->handler))(handler->handler_ctx->arg, post.base, post.id, post.data);
 #endif
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
@@ -159,29 +159,38 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_i
 #endif
 }
 
-static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, esp_event_handler_t handler, void* handler_arg)
+static esp_err_t handler_instances_add(esp_event_handler_nodes_t* handlers, esp_event_handler_t event_handler, void* event_handler_arg, esp_event_handler_instance_context_t **handler_ctx, bool legacy)
 {
-    esp_event_handler_instance_t* handler_instance = calloc(1, sizeof(*handler_instance));
+    esp_event_handler_node_t *handler_instance = calloc(1, sizeof(*handler_instance));
 
-    if (!handler_instance) {
+    if (!handler_instance) return ESP_ERR_NO_MEM;
+
+    esp_event_handler_instance_context_t *context = calloc(1, sizeof(*context));
+
+    if (!context) {
+        free(handler_instance);
         return ESP_ERR_NO_MEM;
     }
 
-    handler_instance->handler = handler;
-    handler_instance->arg = handler_arg;
+    context->handler = event_handler;
+    context->arg = event_handler_arg;
+    handler_instance->handler_ctx = context;
 
     if (SLIST_EMPTY(handlers)) {
         SLIST_INSERT_HEAD(handlers, handler_instance, next);
     }
     else {
-        esp_event_handler_instance_t *it = NULL, *last = NULL;
+        esp_event_handler_node_t *it = NULL, *last = NULL;
 
         SLIST_FOREACH(it, handlers, next) {
-            if (handler == it->handler) {
-                it->arg = handler_arg;
-                ESP_LOGW(TAG, "handler already registered, overwriting");
-                free(handler_instance);
-                return ESP_OK;
+            if (legacy) {
+                if(event_handler == it->handler_ctx->handler) {
+                    it->handler_ctx->arg = event_handler_arg;
+                    ESP_LOGW(TAG, "handler already registered, overwriting");
+                    free(handler_instance);
+                    free(context);
+                    return ESP_OK;
+                }
             }
             last = it;
         }
@@ -189,13 +198,24 @@ static esp_err_t handler_instances_add(esp_event_handler_instances_t* handlers, 
         SLIST_INSERT_AFTER(last, handler_instance, next);
     }
 
+    // If the caller didn't provide the handler instance context, don't set it.
+    // It will be removed once the event loop is deleted.
+    if (handler_ctx) {
+        *handler_ctx = context;
+    }
+
     return ESP_OK;
 }
 
-static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t id, esp_event_handler_t handler, void* handler_arg)
+static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node,
+        int32_t id,
+        esp_event_handler_t event_handler,
+        void *event_handler_arg,
+        esp_event_handler_instance_context_t **handler_ctx,
+        bool legacy)
 {
     if (id == ESP_EVENT_ANY_ID) {
-        return handler_instances_add(&(base_node->handlers), handler, handler_arg);
+        return handler_instances_add(&(base_node->handlers), event_handler, event_handler_arg, handler_ctx, legacy);
     }
     else {
         esp_err_t err = ESP_OK;
@@ -220,7 +240,7 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t
 
             SLIST_INIT(&(id_node->handlers));
 
-            err = handler_instances_add(&(id_node->handlers), handler, handler_arg);
+            err = handler_instances_add(&(id_node->handlers), event_handler, event_handler_arg, handler_ctx, legacy);
 
             if (err == ESP_OK) {
                 if (!last_id_node) {
@@ -236,15 +256,21 @@ static esp_err_t base_node_add_handler(esp_event_base_node_t* base_node, int32_t
             return err;
         }
         else {
-            return handler_instances_add(&(id_node->handlers), handler, handler_arg);
+            return handler_instances_add(&(id_node->handlers), event_handler, event_handler_arg, handler_ctx, legacy);
         }
     }
 }
 
-static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node, esp_event_base_t base, int32_t id, esp_event_handler_t handler, void* handler_arg)
+static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node,
+        esp_event_base_t base,
+        int32_t id,
+        esp_event_handler_t event_handler,
+        void *event_handler_arg,
+        esp_event_handler_instance_context_t **handler_ctx,
+        bool legacy)
 {
     if (base == esp_event_any_base && id == ESP_EVENT_ANY_ID) {
-        return handler_instances_add(&(loop_node->handlers), handler, handler_arg);
+        return handler_instances_add(&(loop_node->handlers), event_handler, event_handler_arg, handler_ctx, legacy);
     }
     else {
         esp_err_t err = ESP_OK;
@@ -273,7 +299,7 @@ static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node, esp_eve
             SLIST_INIT(&(base_node->handlers));
             SLIST_INIT(&(base_node->id_nodes));
 
-            err = base_node_add_handler(base_node, id, handler, handler_arg);
+            err = base_node_add_handler(base_node, id, event_handler, event_handler_arg, handler_ctx, legacy);
 
             if (err == ESP_OK) {
                 if (!last_base_node) {
@@ -288,20 +314,30 @@ static esp_err_t loop_node_add_handler(esp_event_loop_node_t* loop_node, esp_eve
 
             return err;
         } else {
-            return base_node_add_handler(base_node, id, handler, handler_arg);
+            return base_node_add_handler(base_node, id, event_handler, event_handler_arg, handler_ctx, legacy);
         }
     }
 }
 
-static esp_err_t handler_instances_remove(esp_event_handler_instances_t* handlers, esp_event_handler_t handler)
+static esp_err_t handler_instances_remove(esp_event_handler_nodes_t* handlers, esp_event_handler_instance_context_t* handler_ctx, bool legacy)
 {
-    esp_event_handler_instance_t *it, *temp;
+    esp_event_handler_node_t *it, *temp;
 
     SLIST_FOREACH_SAFE(it, handlers, next, temp) {
-        if (it->handler == handler) {
-            SLIST_REMOVE(handlers, it, esp_event_handler_instance, next);
-            free(it);
-            return ESP_OK;
+        if (legacy) {
+            if (it->handler_ctx->handler == handler_ctx->handler) {
+                SLIST_REMOVE(handlers, it, esp_event_handler_node, next);
+                free(it->handler_ctx);
+                free(it);
+                return ESP_OK;
+            }
+        } else {
+            if (it->handler_ctx == handler_ctx) {
+                SLIST_REMOVE(handlers, it, esp_event_handler_node, next);
+                free(it->handler_ctx);
+                free(it);
+                return ESP_OK;
+            }
         }
     }
 
@@ -309,16 +345,16 @@ static esp_err_t handler_instances_remove(esp_event_handler_instances_t* handler
 }
 
 
-static esp_err_t base_node_remove_handler(esp_event_base_node_t* base_node, int32_t id, esp_event_handler_t handler)
+static esp_err_t base_node_remove_handler(esp_event_base_node_t* base_node, int32_t id, esp_event_handler_instance_context_t* handler_ctx, bool legacy)
 {
     if (id == ESP_EVENT_ANY_ID) {
-        return handler_instances_remove(&(base_node->handlers), handler);
+        return handler_instances_remove(&(base_node->handlers), handler_ctx, legacy);
     }
     else {
         esp_event_id_node_t *it, *temp;
         SLIST_FOREACH_SAFE(it, &(base_node->id_nodes), next, temp) {
             if (it->id == id) {
-                esp_err_t res = handler_instances_remove(&(it->handlers), handler);
+                esp_err_t res = handler_instances_remove(&(it->handlers), handler_ctx, legacy);
 
                 if (res == ESP_OK) {
                     if (SLIST_EMPTY(&(it->handlers))) {
@@ -334,16 +370,16 @@ static esp_err_t base_node_remove_handler(esp_event_base_node_t* base_node, int3
     return ESP_ERR_NOT_FOUND;
 }
 
-static esp_err_t loop_node_remove_handler(esp_event_loop_node_t* loop_node, esp_event_base_t base, int32_t id, esp_event_handler_t handler)
+static esp_err_t loop_node_remove_handler(esp_event_loop_node_t* loop_node, esp_event_base_t base, int32_t id, esp_event_handler_instance_context_t* handler_ctx, bool legacy)
 {
     if (base == esp_event_any_base && id == ESP_EVENT_ANY_ID) {
-        return handler_instances_remove(&(loop_node->handlers), handler);
+        return handler_instances_remove(&(loop_node->handlers), handler_ctx, legacy);
     }
     else {
         esp_event_base_node_t *it, *temp;
         SLIST_FOREACH_SAFE(it, &(loop_node->base_nodes), next, temp) {
             if (it->base == base) {
-                esp_err_t res = base_node_remove_handler(it, id, handler);
+                esp_err_t res = base_node_remove_handler(it, id, handler_ctx, legacy);
 
                 if (res == ESP_OK) {
                     if (SLIST_EMPTY(&(it->handlers)) && SLIST_EMPTY(&(it->id_nodes))) {
@@ -359,11 +395,12 @@ static esp_err_t loop_node_remove_handler(esp_event_loop_node_t* loop_node, esp_
     return ESP_ERR_NOT_FOUND;
 }
 
-static void handler_instances_remove_all(esp_event_handler_instances_t* handlers)
+static void handler_instances_remove_all(esp_event_handler_nodes_t* handlers)
 {
-    esp_event_handler_instance_t *it, *temp;
+    esp_event_handler_node_t *it, *temp;
     SLIST_FOREACH_SAFE(it, handlers, next, temp) {
-        SLIST_REMOVE(handlers, it, esp_event_handler_instance, next);
+        SLIST_REMOVE(handlers, it, esp_event_handler_node, next);
+        free(it->handler_ctx);
         free(it);
     }
 }
@@ -526,7 +563,7 @@ esp_err_t esp_event_loop_run(esp_event_loop_handle_t event_loop, TickType_t tick
 
         bool exec = false;
 
-        esp_event_handler_instance_t *handler, *temp_handler;
+        esp_event_handler_node_t *handler, *temp_handler;
         esp_event_loop_node_t *loop_node, *temp_node;
         esp_event_base_node_t *base_node, *temp_base;
         esp_event_id_node_t *id_node, *temp_id_node;
@@ -645,8 +682,9 @@ esp_err_t esp_event_loop_delete(esp_event_loop_handle_t event_loop)
     return ESP_OK;
 }
 
-esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
-                                        int32_t event_id, esp_event_handler_t event_handler, void* event_handler_arg)
+esp_err_t esp_event_handler_register_with_internal(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
+                                          int32_t event_id, esp_event_handler_t event_handler, void* event_handler_arg,
+                                          esp_event_handler_instance_context_t** handler_ctx_arg, bool legacy)
 {
     assert(event_loop);
     assert(event_handler);
@@ -687,7 +725,7 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop, es
         SLIST_INIT(&(loop_node->handlers));
         SLIST_INIT(&(loop_node->base_nodes));
 
-        err = loop_node_add_handler(loop_node, event_base, event_id, event_handler, event_handler_arg);
+        err = loop_node_add_handler(loop_node, event_base, event_id, event_handler, event_handler_arg, handler_ctx_arg, legacy);
 
         if (err == ESP_OK) {
             if (!last_loop_node) {
@@ -701,7 +739,7 @@ esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop, es
         }
     }
     else {
-        err = loop_node_add_handler(last_loop_node, event_base, event_id, event_handler, event_handler_arg);
+        err = loop_node_add_handler(last_loop_node, event_base, event_id, event_handler, event_handler_arg, handler_ctx_arg, legacy);
     }
 
 on_err:
@@ -709,11 +747,24 @@ on_err:
     return err;
 }
 
-esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
-                                            int32_t event_id, esp_event_handler_t event_handler)
+esp_err_t esp_event_handler_register_with(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
+                                        int32_t event_id, esp_event_handler_t event_handler, void* event_handler_arg)
+{
+    return esp_event_handler_register_with_internal(event_loop, event_base, event_id, event_handler, event_handler_arg, NULL, true);
+}
+
+esp_err_t esp_event_handler_instance_register_with(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
+                                          int32_t event_id, esp_event_handler_t event_handler, void* event_handler_arg,
+                                          esp_event_handler_instance_t* handler_ctx_arg)
+{
+    return esp_event_handler_register_with_internal(event_loop, event_base, event_id, event_handler, event_handler_arg, (esp_event_handler_instance_context_t**) handler_ctx_arg, false);
+}
+
+esp_err_t esp_event_handler_unregister_with_internal(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
+                                            int32_t event_id, esp_event_handler_instance_context_t* handler_ctx, bool legacy)
 {
     assert(event_loop);
-    assert(event_handler);
+    assert(handler_ctx);
 
     if (event_base == ESP_EVENT_ANY_BASE && event_id != ESP_EVENT_ANY_ID) {
         ESP_LOGE(TAG, "unregistering to any event base with specific id unsupported");
@@ -731,7 +782,7 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop, 
     esp_event_loop_node_t *it, *temp;
 
     SLIST_FOREACH_SAFE(it, &(loop->loop_nodes), next, temp) {
-        esp_err_t res = loop_node_remove_handler(it, event_base, event_id, event_handler);
+        esp_err_t res = loop_node_remove_handler(it, event_base, event_id, handler_ctx, legacy);
 
         if (res == ESP_OK && SLIST_EMPTY(&(it->base_nodes)) && SLIST_EMPTY(&(it->handlers))) {
             SLIST_REMOVE(&(loop->loop_nodes), it, esp_event_loop_node, next);
@@ -743,6 +794,24 @@ esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop, 
     xSemaphoreGiveRecursive(loop->mutex);
 
     return ESP_OK;
+}
+
+esp_err_t esp_event_handler_unregister_with(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
+                                            int32_t event_id, esp_event_handler_t event_handler)
+{
+    esp_event_handler_instance_context_t local_handler_ctx;
+    local_handler_ctx.handler = event_handler;
+    local_handler_ctx.arg = NULL;
+
+    return esp_event_handler_unregister_with_internal(event_loop, event_base, event_id, &local_handler_ctx, true);
+}
+
+esp_err_t esp_event_handler_instance_unregister_with(esp_event_loop_handle_t event_loop, esp_event_base_t event_base,
+                                            int32_t event_id, esp_event_handler_instance_t handler_ctx_arg)
+{
+    if (!handler_ctx_arg) return ESP_ERR_INVALID_ARG;
+
+    return esp_event_handler_unregister_with_internal(event_loop, event_base, event_id, (esp_event_handler_instance_context_t*) handler_ctx_arg, false);
 }
 
 esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t event_base, int32_t event_id,
@@ -879,7 +948,7 @@ esp_err_t esp_event_dump(FILE* file)
     esp_event_loop_node_t *loop_node_it;
     esp_event_base_node_t* base_node_it;
     esp_event_id_node_t* id_node_it;
-    esp_event_handler_instance_t* handler_it;
+    esp_event_handler_node_t* handler_it;
 
     // Allocate memory for printing
     int sz = esp_event_dump_prepare();
@@ -904,13 +973,13 @@ esp_err_t esp_event_dump(FILE* file)
 
         SLIST_FOREACH(loop_node_it, &(loop_it->loop_nodes), next) {
             SLIST_FOREACH(handler_it, &(loop_node_it->handlers), next) {
-                PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler, "ESP_EVENT_ANY_BASE",
+                PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler_ctx->handler, "ESP_EVENT_ANY_BASE",
                                 "ESP_EVENT_ANY_ID", handler_it->invoked, handler_it->time);
             }
 
             SLIST_FOREACH(base_node_it, &(loop_node_it->base_nodes), next) {
                 SLIST_FOREACH(handler_it, &(base_node_it->handlers), next) {
-                    PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler, base_node_it->base ,
+                    PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler_ctx->handler, base_node_it->base ,
                                     "ESP_EVENT_ANY_ID", handler_it->invoked, handler_it->time);
                 }
 
@@ -919,7 +988,7 @@ esp_err_t esp_event_dump(FILE* file)
                         memset(id_str_buf, 0, sizeof(id_str_buf));
                         snprintf(id_str_buf, sizeof(id_str_buf), "%d", id_node_it->id);
 
-                        PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler, base_node_it->base ,
+                        PRINT_DUMP_INFO(dst, sz, HANDLER_DUMP_FORMAT, handler_it->handler_ctx->handler, base_node_it->base ,
                                         id_str_buf, handler_it->invoked, handler_it->time);
                     }
                 }
