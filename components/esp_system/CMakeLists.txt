@@ -10,4 +10,7 @@ add_subdirectory(port)
 
 # Rely on user code to define app_main
 target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_main")
-target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_mainX")
+
+if (NOT CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "-u app_mainX")
+endif()

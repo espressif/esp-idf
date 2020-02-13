@@ -67,6 +67,8 @@
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 #endif
 
+#include "startup_internal.h"
+
 extern int _bss_start;
 extern int _bss_end;
 extern int _rtc_bss_start;
@@ -87,34 +89,23 @@ extern int _iram_bss_end;
 #endif
 #endif // CONFIG_IDF_TARGET_ESP32
 
-#include "startup_internal.h"
-
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static volatile bool s_cpu_up[SOC_CPU_CORES_NUM] = { false };
 static volatile bool s_cpu_inited[SOC_CPU_CORES_NUM] = { false };
+
 static volatile bool s_resume_cores;
+#endif
 
 // If CONFIG_SPIRAM_IGNORE_NOTFOUND is set and external RAM is not found or errors out on testing, this is set to false.
 bool g_spiram_ok = true;
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void)
 {
     s_resume_cores = true;
 }
 
-static void intr_matrix_clear(void)
-{
-#if CONFIG_IDF_TARGET_ESP32
-    //Clear all the interrupt matrix register
-    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i <= ETS_CACHE_IA_INTR_SOURCE; i++) {
-#elif CONFIG_IDF_TARGET_ESP32S2
-    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i < ETS_MAX_INTR_SOURCE; i++) {
-#endif
-        intr_matrix_set(0, i, ETS_INVALID_INUM);
-        intr_matrix_set(1, i, ETS_INVALID_INUM);
-    }
-}
 
-#if SOC_CPU_CORES_NUM > 1
 void IRAM_ATTR call_start_cpu1(void)
 {
     cpu_hal_set_vecbase(&_init_start);
@@ -156,7 +147,62 @@ void IRAM_ATTR call_start_cpu1(void)
 
     SYS_STARTUP_FN();
 }
+
+static void start_other_core(void)
+{
+    // If not the single core variant of ESP32 - check this since there is
+    // no separate soc_caps.h for the single core variant.
+    if (!REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
+        ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
+
+        Cache_Flush(1);
+        Cache_Read_Enable(1);
+        esp_cpu_unstall(1);
+
+        // Enable clock and reset APP CPU. Note that OpenOCD may have already
+        // enabled clock and taken APP CPU out of reset. In this case don't reset
+        // APP CPU again, as that will clear the breakpoints which may have already
+        // been set.
+        if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
+            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
+            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
+        }
+        ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
+
+        volatile bool cpus_up = false;
+
+        while(!cpus_up){
+            cpus_up = true;
+            for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
+                cpus_up &= s_cpu_up[i];
+            }
+            cpu_hal_delay_us(100);
+        }
+    }
+    else {
+        s_cpu_inited[1] = true;
+		ESP_EARLY_LOGI(TAG, "Single core mode");
+		DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
+    }
+}
+#endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+
+static void intr_matrix_clear(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    //Clear all the interrupt matrix register
+    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i <= ETS_CACHE_IA_INTR_SOURCE; i++) {
+#elif CONFIG_IDF_TARGET_ESP32S2
+    for (int i = ETS_WIFI_MAC_INTR_SOURCE; i < ETS_MAX_INTR_SOURCE; i++) {
 #endif
+        intr_matrix_set(0, i, ETS_INVALID_INUM);
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+        intr_matrix_set(1, i, ETS_INVALID_INUM);
+#endif
+    }
+}
 
 /*
  * We arrive here after the bootloader finished loading the program from flash. The hardware is mostly uninitialized,
@@ -164,7 +210,11 @@ void IRAM_ATTR call_start_cpu1(void)
  */
 void IRAM_ATTR call_start_cpu0(void)
 {
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     RESET_REASON rst_reas[SOC_CPU_CORES_NUM];
+#else
+    RESET_REASON rst_reas[1];
+#endif
 
     bootloader_init_mem();
 
@@ -172,14 +222,14 @@ void IRAM_ATTR call_start_cpu0(void)
     cpu_hal_set_vecbase(&_init_start);
 
     rst_reas[0] = rtc_get_reset_reason(0);
-#if SOC_CPU_CORES_NUM > 1
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     rst_reas[1] = rtc_get_reset_reason(1);
 #endif
 
 #ifndef CONFIG_BOOTLOADER_WDT_ENABLE
     // from panic handler we can be reset by RWDT or TG0WDT
     if (rst_reas[0] == RTCWDT_SYS_RESET || rst_reas[0] == TG0WDT_SYS_RESET
-#if SOC_CPU_CORES_NUM > 1
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
         || rst_reas[1] == RTCWDT_SYS_RESET || rst_reas[1] == TG0WDT_SYS_RESET
 #endif
     ) {
@@ -240,45 +290,13 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_up[0] = true;
+#endif
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
 
-#if CONFIG_IDF_TARGET_ESP32
-    // If not the single core variant of ESP32 - check this since there is
-    // no separate soc_caps.h for the single core variant.
-    if (!REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
-        ESP_EARLY_LOGI(TAG, "Starting app cpu, entry point is %p", call_start_cpu1);
-
-        Cache_Flush(1);
-        Cache_Read_Enable(1);
-        esp_cpu_unstall(1);
-
-        // Enable clock and reset APP CPU. Note that OpenOCD may have already
-        // enabled clock and taken APP CPU out of reset. In this case don't reset
-        // APP CPU again, as that will clear the breakpoints which may have already
-        // been set.
-        if (!DPORT_GET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN)) {
-            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_C_REG, DPORT_APPCPU_RUNSTALL);
-            DPORT_SET_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-            DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_A_REG, DPORT_APPCPU_RESETTING);
-        }
-        ets_set_appcpu_boot_addr((uint32_t)call_start_cpu1);
-
-        volatile bool cpus_up = false;
-
-        while(!cpus_up){
-            cpus_up = true;
-            for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
-                cpus_up &= s_cpu_up[i];
-            }
-            cpu_hal_delay_us(100);
-        }
-    }
-    else {
-        s_cpu_inited[1] = true;
-        DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-    }
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    start_other_core();
 #endif
 
 #if CONFIG_SPIRAM_MEMTEST
@@ -390,6 +408,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif //!CONFIG_SPIRAM_BOOT_INIT
 #endif
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_inited[0] = true;
 
     volatile bool cpus_inited = false;
@@ -401,6 +420,7 @@ void IRAM_ATTR call_start_cpu0(void)
         }
         cpu_hal_delay_us(100);
     }
+#endif
 
     SYS_STARTUP_FN();
 }

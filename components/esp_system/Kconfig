@@ -32,4 +32,10 @@ menu "ESP System Settings"
                 of the crash.
     endchoice
 
+    config ESP_SYSTEM_SINGLE_CORE_MODE
+        bool
+        default n
+        help
+            Only initialize and use the main core.
+
 endmenu  # ESP System Settings

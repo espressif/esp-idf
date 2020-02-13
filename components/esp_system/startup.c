@@ -38,7 +38,8 @@
 #include "esp_efuse.h"
 #include "esp_flash_encrypt.h"
 
-/* Headers for other components init functions */
+/***********************************************/
+// Headers for other components init functions 
 #include "nvs_flash.h"
 #include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
@@ -61,12 +62,26 @@
 
 #include "startup_internal.h"
 
+// Ensure that system configuration matches the underlying number of cores.
+// This should enable us to avoid checking for both everytime.
+#if !(SOC_CPU_CORES_NUM > 1) && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    #error "System has been configured to run on multiple cores, but target SoC only has a single core."
+#endif
+
+// App entry point for core 0
+extern void app_main(void);
+
+// Entry point for core 0 from hardware init (port layer)
 void start_cpu0(void) __attribute__((weak, alias("start_cpu0_default"))) __attribute__((noreturn));
+
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+// Entry point for core [1..X] from hardware init (port layer)
 void start_cpuX(void) __attribute__((weak, alias("start_cpuX_default"))) __attribute__((noreturn));
 
+// App entry point for core [1..X]
 void app_mainX(void) __attribute__((weak, alias("app_mainX_default"))) __attribute__((noreturn));
 
-extern void app_main(void);
+static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 
 sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 #if SOC_CPU_CORES_NUM > 1
@@ -74,8 +89,10 @@ sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM] = { [0] = start_cpu0,
 #endif
 };
 
-static volatile bool s_system_inited[SOC_CPU_CORES_NUM] = { false };
 static volatile bool s_system_full_inited = false;
+#else
+sys_startup_fn_t g_startup_fn[1] = { start_cpu0 };
+#endif
 
 static const char* TAG = "cpu_start";
 
@@ -112,9 +129,12 @@ static void IRAM_ATTR do_system_init_fn(void)
         }
     }
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_system_inited[cpu_hal_get_core_id()] = true;
+#endif
 }
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 static void IRAM_ATTR app_mainX_default(void)
 {
     while(1) {
@@ -132,6 +152,7 @@ static void IRAM_ATTR start_cpuX_default(void)
 
     app_mainX();
 }
+#endif
 
 static void IRAM_ATTR do_core_init(void)
 {
@@ -221,15 +242,18 @@ static void IRAM_ATTR do_core_init(void)
 
 static void IRAM_ATTR do_secondary_init(void)
 {
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // The port layer transferred control to this function with other cores 'paused',
     // resume execution so that cores might execute component initialization functions.
     startup_resume_other_cores();
+#endif
 
     // Execute initialization functions esp_system_init_fn_t assigned to the main core. While
     // this is happening, all other cores are executing the initialization functions
     // assigned to them since they have been resumed already.
     do_system_init_fn();
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     // Wait for all cores to finish secondary init.
     volatile bool system_inited = false;
 
@@ -240,6 +264,7 @@ static void IRAM_ATTR do_secondary_init(void)
         }
         cpu_hal_delay_us(100);
     }
+#endif
 }
 
 void IRAM_ATTR start_cpu0_default(void)
@@ -273,7 +298,7 @@ void IRAM_ATTR start_cpu0_default(void)
     do_global_ctors();
 
     // Execute init functions of other components; blocks
-    // until all cores finish.
+    // until all cores finish (when !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE).
     do_secondary_init();
 
     // Now that the application is about to start, disable boot watchdog
@@ -284,7 +309,9 @@ void IRAM_ATTR start_cpu0_default(void)
     // Finally, we jump to user code.
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
 
+#if SOC_CPU_CORES_NUM > 1 && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_system_full_inited = true;
+#endif
 
     app_main();
     while(1);
@@ -339,6 +366,7 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
 #endif
 }
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components1, BIT(1))
 {
 #if CONFIG_APPTRACE_ENABLE
@@ -346,3 +374,4 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components1, BIT(1))
     assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
 #endif
 }
+#endif

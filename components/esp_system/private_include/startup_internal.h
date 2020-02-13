@@ -19,18 +19,26 @@
 #include "soc/soc_caps.h"
 #include "hal/cpu_hal.h"
 
+#include "sdkconfig.h"
+
 extern bool g_spiram_ok; // [refactor-todo] better way to communicate this from port layer to common startup code
 
 // Port layer defines the entry point. It then transfer control to a `sys_startup_fn_t`, stored in this
 // array, one per core.
 typedef void (*sys_startup_fn_t)(void);
+
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 extern sys_startup_fn_t g_startup_fn[SOC_CPU_CORES_NUM];
+#else
+extern sys_startup_fn_t g_startup_fn[1];
+#endif
 
 // Utility to execute `sys_startup_fn_t` for the current core.
 #define SYS_STARTUP_FN()  ((*g_startup_fn[(cpu_hal_get_core_id())])())
 
+#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 void startup_resume_other_cores(void);
-void startup_core_init();
+#endif
 
 typedef struct {
   void (*fn)(void);

@@ -135,8 +135,6 @@ static const char* TAG = "cpu_start"; // [refactor-todo]: might be appropriate t
     #define SYSTICK_INTR_ID (ETS_INTERNAL_TIMER1_INTR_SOURCE+ETS_INTERNAL_INTR_SOURCE_OFF)
 #endif
 
-
-
 _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_AFFINITY value");
 
 /*-----------------------------------------------------------*/
@@ -494,11 +492,20 @@ static void main_task(void* args)
     vTaskDelete(NULL);
 }
 
+// For now, running FreeRTOS on one core and a bare metal on the other (or other OSes)
+// is not supported. For now CONFIG_FREERTOS_UNICORE and CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+// should mirror each other's values.
+//
+// And since this should be true, we can just check for CONFIG_FREERTOS_UNICORE.
+#if CONFIG_FREERTOS_UNICORE != CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+	#error "FreeRTOS and system configuration mismatch regarding the use of multiple cores."
+#endif
+
 #if !CONFIG_FREERTOS_UNICORE
 void app_mainX(void)
 {
+	// For now, we only support up to two core: 0 and 1.
 	if (xPortGetCoreID() >= 2) {
-		// Explicitly support only up to two cores for now.
 		abort();
 	}
 
@@ -544,24 +551,14 @@ void __wrap_app_main(void)
                                                 ESP_TASK_MAIN_PRIO, NULL, 0);
     assert(res == pdTRUE);
 
-#if !CONFIG_FREERTOS_UNICORE
-	// Check that FreeRTOS is configured properly for the number of cores the target
-	// has at compile and build time.
-#if SOC_CPU_CORES_NUM < 2
-	#error FreeRTOS configured to run on dual core, but target only has a single core.
-#endif
+	// ESP32 has single core variants. Check that FreeRTOS has been configured properly.
+#if CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
     if (REG_GET_BIT(EFUSE_BLK0_RDATA3_REG, EFUSE_RD_CHIP_VER_DIS_APP_CPU)) {
-        ESP_EARLY_LOGE(TAG, "Running on single core chip, but application is built with dual core support.");
+        ESP_EARLY_LOGE(TAG, "Running on single core chip, but FreeRTOS is built with dual core support.");
         ESP_EARLY_LOGE(TAG, "Please enable CONFIG_FREERTOS_UNICORE option in menuconfig.");
         abort();
     }
-
-#else
-	#if SOC_CPU_CORES_NUM > 1 // Single core chips have no 'single core mode'
-		ESP_EARLY_LOGI(TAG, "Single core mode");
-		DPORT_CLEAR_PERI_REG_MASK(DPORT_APPCPU_CTRL_B_REG, DPORT_APPCPU_CLKGATE_EN);
-	#endif
-#endif // !CONFIG_FREERTOS_UNICORE
+#endif // CONFIG_IDF_TARGET_ESP32 && !CONFIG_FREERTOS_UNICORE
 
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
