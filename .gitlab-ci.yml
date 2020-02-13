@@ -958,7 +958,7 @@ nvs_compatible_test:
 
 example_test_001:
   <<: *example_test_template
-  parallel: 2
+  parallel: 3
   tags:
     - ESP32
     - Example_WIFI
