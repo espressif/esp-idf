@@ -90,6 +90,19 @@ menu "Wi-Fi"
             layer can deliver frames faster than WiFi layer can transmit. In these cases, we may run out
             of TX buffers.
 
+    config ESP32_WIFI_CACHE_TX_BUFFER_NUM
+        int "Max number of WiFi cache TX buffers"
+        depends on (ESP32_SPIRAM_SUPPORT || ESP32S2_SPIRAM_SUPPORT)
+        range 16 128
+        default 32
+        help
+            Set the number of WiFi cache TX buffer number.
+
+            For each TX packet from uplayer, such as LWIP etc, WiFi driver needs to allocate a static TX
+            buffer and makes a copy of uplayer packet. If WiFi driver fails to allocate the static TX buffer,
+            it caches the uplayer packets to a dedicated buffer queue, this option is used to configure the
+            size of the cached TX queue.
+
     config ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
         int "Max number of WiFi dynamic TX buffers"
         depends on ESP32_WIFI_DYNAMIC_TX_BUFFER
@@ -139,8 +152,7 @@ menu "Wi-Fi"
     config ESP32_WIFI_RX_BA_WIN
         int "WiFi AMPDU RX BA window size"
         depends on ESP32_WIFI_AMPDU_RX_ENABLED
-        range 2 32 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        range 16 32 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        range 2 32
         default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
         help

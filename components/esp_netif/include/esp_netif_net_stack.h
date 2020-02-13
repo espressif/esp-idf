@@ -70,6 +70,20 @@ void* esp_netif_get_netif_impl(esp_netif_t *esp_netif);
 esp_err_t esp_netif_transmit(esp_netif_t *esp_netif, void* data, size_t len);
 
 /**
+  * @brief  Outputs packets from the TCP/IP stack to the media to be transmitted
+  *
+  * This function gets called from network stack to output packets to IO driver.
+  *
+  * @param[in]  esp_netif Handle to esp-netif instance
+  * @param[in]  data Data to be transmitted
+  * @param[in]  len Length of the data frame
+  * @param[in]  netstack_buf net stack buffer
+  *
+  * @return   ESP_OK on success, an error passed from the I/O driver otherwise
+  */
+esp_err_t esp_netif_transmit_wrap(esp_netif_t *esp_netif, void *data, size_t len, void *netstack_buf);
+
+/**
   * @brief  Free the rx buffer allocated by the media driver
   *
   * This function gets called from network stack when the rx buffer to be freed in IO driver context,
