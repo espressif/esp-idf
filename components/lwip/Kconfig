@@ -16,6 +16,16 @@ menu "LWIP"
             Please make sure you fully understand the impact of this feature before
             enabling it.
 
+    config ETHARP_SUPPORT_VLAN
+        bool "Support receiving and sending ethernet packets with VLAN header"
+        default n
+        help
+            ETHARP_SUPPORT_VLAN==1: support receiving and sending ethernet packets with
+            VLAN header. See the description of LWIP_HOOK_VLAN_CHECK and LWIP_HOOK_VLAN_SET
+            hooks to check/set VLAN headers.
+            If ETHARP_VLAN_CHECK is defined, only VLAN-traffic for this VLAN is accepted.
+            If ETHARP_VLAN_CHECK is not defined, all traffic is accepted.
+
     config LWIP_IRAM_OPTIMIZATION
         bool "Enable LWIP IRAM optimization"
         default n
