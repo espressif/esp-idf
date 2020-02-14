@@ -703,8 +703,9 @@ TEST_CASE("nvs api tests", "[nvs]")
     CHECK(0 == strcmp(buf, str));
     nvs_close(handle_1);
     nvs_close(handle_2);
-}
 
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
+}
 
 TEST_CASE("nvs iterators tests", "[nvs]")
 {
@@ -864,6 +865,8 @@ TEST_CASE("nvs iterators tests", "[nvs]")
 
     nvs_close(handle_1);
     nvs_close(handle_2);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
@@ -898,13 +901,14 @@ TEST_CASE("Iterator with not matching type iterates correctly", "[nvs]")
     it = nvs_entry_find(NVS_DEFAULT_PART_NAME, NAMESPACE, NVS_TYPE_STR);
     CHECK(it != NULL);
     nvs_release_iterator(it);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("wifi test", "[nvs]")
 {
     SpiFlashEmulator emu(10);
     emu.randomize(10);
-
 
     const uint32_t NVS_FLASH_SECTOR = 5;
     const uint32_t NVS_FLASH_SECTOR_COUNT_MIN = 3;
@@ -1039,6 +1043,7 @@ TEST_CASE("wifi test", "[nvs]")
 
     s_perf << "Time to simulate nvs init with wifi libs: " << emu.getTotalTime() << " us (" << emu.getEraseOps() << "E " << emu.getWriteOps() << "W " << emu.getReadOps() << "R " << emu.getWriteBytes() << "Wb " << emu.getReadBytes() << "Rb)" << std::endl;
 
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("writing the identical content does not write or erase", "[nvs]")
@@ -1092,6 +1097,8 @@ TEST_CASE("writing the identical content does not write or erase", "[nvs]")
     nvs_set_blob(misc_handle, "test_blob", blob, sizeof(blob));
     CHECK(emu.getWriteOps() != 0);
     CHECK(emu.getReadOps()  != 0);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("can init storage from flash with random contents", "[nvs]")
@@ -1111,6 +1118,8 @@ TEST_CASE("can init storage from flash with random contents", "[nvs]")
     if (nvs_get_u8(handle, "wifi.opmode", &opmode) != ESP_OK) {
         TEST_ESP_OK(nvs_set_u8(handle, "wifi.opmode", opmode));
     }
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 
@@ -1165,6 +1174,8 @@ TEST_CASE("nvs api tests, starting with random data in flash", "[nvs][long]")
             nvs_close(handle_2);
         }
         nvs_close(handle_1);
+
+        TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
     }
 }
 extern "C" void nvs_dump(const char *partName);
@@ -1448,6 +1459,8 @@ TEST_CASE("monkey test", "[nvs][monkey]")
     CHECK(test.doRandomThings(handle, gen, count) == ESP_OK);
 
     s_perf << "Monkey test: nErase=" << emu.getEraseOps() << " nWrite=" << emu.getWriteOps() << std::endl;
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("test recovery from sudden poweroff", "[long][nvs][recovery][monkey]")
@@ -1505,6 +1518,8 @@ TEST_CASE("test recovery from sudden poweroff", "[long][nvs][recovery][monkey]")
         }
         nvs_close(handle);
         totalOps = emu.getEraseOps() + emu.getWriteBytes() / 4;
+
+        TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
     }
 }
 TEST_CASE("test for memory leaks in open/set", "[leaks]")
@@ -1523,6 +1538,8 @@ TEST_CASE("test for memory leaks in open/set", "[leaks]")
         TEST_ESP_OK(nvs_commit(light_handle));
         nvs_close(light_handle);
     }
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("duplicate items are removed", "[nvs][dupes]")
@@ -1695,6 +1712,8 @@ TEST_CASE("read/write failure (TW8406)", "[nvs]")
         }
         nvs_close(light_handle);
     }
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
@@ -1716,6 +1735,8 @@ TEST_CASE("nvs_flash_init checks for an empty page", "[nvs]")
     // first two pages are now full, third one is writable, last two are empty
     // init should fail
     TEST_ESP_ERR( nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3), ESP_ERR_NVS_NO_FREE_PAGES );
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("multiple partitions access check", "[nvs]")
@@ -1733,6 +1754,9 @@ TEST_CASE("multiple partitions access check", "[nvs]")
     TEST_ESP_OK( nvs_get_i32(handle2, "foo", &v2));
     CHECK(v1 == 0xdeadbeef);
     CHECK(v2 == 0xcafebabe);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition("nvs1"));
+    TEST_ESP_OK(nvs_flash_deinit_partition("nvs2"));
 }
 
 TEST_CASE("nvs page selection takes into account free entries also not just erased entries", "[nvs]")
@@ -1754,6 +1778,8 @@ TEST_CASE("nvs page selection takes into account free entries also not just eras
     TEST_ESP_OK( nvs_set_blob(handle, "3a", blob, 4) );
     TEST_ESP_OK( nvs_commit(handle) );
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("calculate used and free space", "[nvs]")
@@ -1889,6 +1915,8 @@ TEST_CASE("calculate used and free space", "[nvs]")
     CHECK(stat1.used_entries == (h1_count_entries + h2_count_entries + h3_count_entries + stat1.namespace_count));
 
     nvs_close(handle_3);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Recovery from power-off when the entry being erased is not on active page", "[nvs]")
@@ -1917,6 +1945,8 @@ TEST_CASE("Recovery from power-off when the entry being erased is not on active 
     TEST_ESP_OK( nvs_get_blob(handle, "1b", blob, &read_size));
 
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Recovery from power-off when page is being freed.", "[nvs]")
@@ -1958,6 +1988,8 @@ TEST_CASE("Recovery from power-off when page is being freed.", "[nvs]")
 
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Multi-page blobs are supported", "[nvs]")
@@ -1971,6 +2003,8 @@ TEST_CASE("Multi-page blobs are supported", "[nvs]")
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, blob_size));
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Failures are handled while storing multi-page blobs", "[nvs]")
@@ -1985,6 +2019,8 @@ TEST_CASE("Failures are handled while storing multi-page blobs", "[nvs]")
     TEST_ESP_OK(nvs_set_blob(handle, "abc", blob, Page::CHUNK_MAX_SIZE*2));
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Reading multi-page blobs", "[nvs]")
@@ -2004,6 +2040,8 @@ TEST_CASE("Reading multi-page blobs", "[nvs]")
     CHECK(memcmp(blob, blob_read, blob_size) == 0);
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Modification of values for Multi-page blobs are supported", "[nvs]")
@@ -2032,6 +2070,8 @@ TEST_CASE("Modification of values for Multi-page blobs are supported", "[nvs]")
     CHECK(memcmp(blob4, blob_read, blob_size) == 0);
     TEST_ESP_OK( nvs_commit(handle) );
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Modification from single page blob to multi-page", "[nvs]")
@@ -2050,6 +2090,8 @@ TEST_CASE("Modification from single page blob to multi-page", "[nvs]")
     CHECK(memcmp(blob, blob_read, blob_size) == 0);
     TEST_ESP_OK(nvs_commit(handle) );
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Modification from  multi-page to single page", "[nvs]")
@@ -2069,6 +2111,8 @@ TEST_CASE("Modification from  multi-page to single page", "[nvs]")
     CHECK(memcmp(blob, blob_read, Page::CHUNK_MAX_SIZE) == 0);
     TEST_ESP_OK(nvs_commit(handle) );
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Multi-page blob erased using nvs_erase_key should not be found when probed for just length", "[nvs]")
@@ -2085,6 +2129,8 @@ TEST_CASE("Multi-page blob erased using nvs_erase_key should not be found when p
     TEST_ESP_ERR(nvs_get_blob(handle, "abc", NULL, &read_size), ESP_ERR_NVS_NOT_FOUND);
     TEST_ESP_OK(nvs_commit(handle));
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 
@@ -2138,6 +2184,8 @@ TEST_CASE("nvs blob fragmentation test", "[nvs]")
         TEST_ESP_OK( nvs_set_u32(h, seq_buf, i) );
     }
     free(blob);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("nvs code handles errors properly when partition is near to full", "[nvs]")
@@ -2173,6 +2221,8 @@ TEST_CASE("Check for nvs version incompatibility", "[nvs]")
     TEST_ESP_OK(p.writeItem(1, ItemType::I32, "foo", &val1, sizeof(val1)));
 
     TEST_ESP_ERR(nvs_flash_init_custom(NVS_DEFAULT_PART_NAME, 0, 3), ESP_ERR_NVS_NEW_VERSION_FOUND);
+
+    nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME);
 }
 
 TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
@@ -2218,6 +2268,7 @@ TEST_CASE("Check that NVS supports old blob format without blob index", "[nvs]")
     TEST_ESP_OK( nvs_get_blob(handle, "dummyBase64Key", buf, &buflen));
     CHECK(memcmp(buf, base64data, buflen) == 0);
 
+    TEST_ESP_OK(nvs_flash_deinit_partition("test"));
 }
 
 TEST_CASE("monkey test with old-format blob present", "[nvs][monkey]")
@@ -2308,6 +2359,8 @@ TEST_CASE("monkey test with old-format blob present", "[nvs][monkey]")
     }
 
     s_perf << "Monkey test: nErase=" << emu.getEraseOps() << " nWrite=" << emu.getWriteOps() << std::endl;
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Recovery from power-off during modification of blob present in old-format (same page)", "[nvs]")
@@ -2360,6 +2413,7 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     p2.load(0);
     TEST_ESP_ERR(p2.findItem(1, ItemType::BLOB, "singlepage"), ESP_ERR_NVS_TYPE_MISMATCH);
 
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 TEST_CASE("Recovery from power-off during modification of blob present in old-format (different page)", "[nvs]")
@@ -2416,6 +2470,8 @@ TEST_CASE("Recovery from power-off during modification of blob present in old-fo
     Page p3;
     p3.load(0);
     TEST_ESP_ERR(p3.findItem(1, ItemType::BLOB, "singlepage"), ESP_ERR_NVS_NOT_FOUND);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(NVS_DEFAULT_PART_NAME));
 }
 
 static void check_nvs_part_gen_args(char const *part_name, int size, char const *filename, bool is_encr, nvs_sec_cfg_t* xts_cfg)
@@ -2481,6 +2537,8 @@ static void check_nvs_part_gen_args(char const *part_name, int size, char const 
     file.close();
 
     nvs_close(handle);
+
+    TEST_ESP_OK(nvs_flash_deinit_partition(part_name));
 }
 
 
@@ -2520,8 +2578,6 @@ TEST_CASE("check and read data from partition generated via partition generation
     }
 
     SpiFlashEmulator emu("../nvs_partition_generator/partition_single_page.bin");
-
-    TEST_ESP_OK(nvs_flash_deinit());
 
     check_nvs_part_gen_args("test", 3, "../nvs_partition_generator/testdata/sample_singlepage_blob.bin", false, NULL);
 
@@ -2885,8 +2941,8 @@ TEST_CASE("test nvs apis with encryption enabled", "[nvs]")
     CHECK(0 == strcmp(buf, str));
     nvs_close(handle_1);
     nvs_close(handle_2);
-    TEST_ESP_OK(nvs_flash_deinit());
 
+    TEST_ESP_OK(nvs_flash_deinit());
 }
 
 TEST_CASE("test nvs apis for nvs partition generator utility with encryption enabled", "[nvs_part_gen]")
@@ -3057,7 +3113,6 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
     fclose(fp);
 
-    TEST_ESP_OK(nvs_flash_deinit());
     nvs_sec_cfg_t cfg;
 
     for(int count = 0; count < NVS_KEY_SIZE; count++) {
@@ -3125,7 +3180,6 @@ TEST_CASE("test nvs apis for nvs partition generator utility with encryption ena
 
     fclose(fp);
 
-    TEST_ESP_OK(nvs_flash_deinit());
     nvs_sec_cfg_t cfg;
 
     for(int count = 0; count < NVS_KEY_SIZE; count++) {
@@ -3224,8 +3278,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
 
     SpiFlashEmulator emu1("../../../tools/mass_mfg/host_test/bin/Test-1.bin");
 
-    TEST_ESP_OK(nvs_flash_deinit());
-
     nvs_sec_cfg_t cfg;
     for(int count = 0; count < NVS_KEY_SIZE; count++) {
         cfg.eky[count] = 0x11;
@@ -3235,8 +3287,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted.bin");
-
-    TEST_ESP_OK(nvs_flash_deinit());
 
     check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
 
@@ -3347,8 +3397,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
 
     fclose(fp);
 
-    TEST_ESP_OK(nvs_flash_deinit());
-
     nvs_sec_cfg_t cfg;
 
     for(int count = 0; count < NVS_KEY_SIZE; count++) {
@@ -3359,8 +3407,6 @@ TEST_CASE("check and read data from partition generated via manufacturing utilit
     check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "mfg_testdata/sample_multipage_blob.bin", true, &cfg);
 
     SpiFlashEmulator emu2("../nvs_partition_generator/Test-1-partition-encrypted.bin");
-
-    TEST_ESP_OK(nvs_flash_deinit());
 
     check_nvs_part_gen_args(NVS_DEFAULT_PART_NAME, 4, "testdata/sample_multipage_blob.bin", true, &cfg);
 
