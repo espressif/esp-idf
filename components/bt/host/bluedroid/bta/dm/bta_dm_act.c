@@ -766,7 +766,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
         osi_free(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec);
         p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = NULL;
     }
-    if (config_eir->eir_manufac_spec) {
+    if (config_eir->eir_manufac_spec_len > 0) {
         p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = osi_malloc(config_eir->eir_manufac_spec_len);
         if (p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec) {
             memcpy(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec, config_eir->eir_manufac_spec, config_eir->eir_manufac_spec_len);
@@ -780,7 +780,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
         osi_free(p_bta_dm_eir_cfg->bta_dm_eir_url);
         p_bta_dm_eir_cfg->bta_dm_eir_url = NULL;
     }
-    if (config_eir->eir_url) {
+    if (config_eir->eir_url_len > 0) {
         p_bta_dm_eir_cfg->bta_dm_eir_url = osi_malloc(config_eir->eir_url_len);
         if (p_bta_dm_eir_cfg->bta_dm_eir_url) {
             memcpy(p_bta_dm_eir_cfg->bta_dm_eir_url, config_eir->eir_url, config_eir->eir_url_len);
