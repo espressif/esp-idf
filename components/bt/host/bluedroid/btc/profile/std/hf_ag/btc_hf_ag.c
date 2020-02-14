@@ -461,12 +461,18 @@ static bt_status_t btc_hf_unat_response(bt_bdaddr_t *bd_addr, const char *unat)
         return BT_STATUS_FAIL;
     }
 
-    if (is_connected(NULL) && (idx != BTC_HF_INVALID_IDX))
+    if (is_connected(bd_addr) && (idx != BTC_HF_INVALID_IDX))
     {
         tBTA_AG_RES_DATA    ag_res;
         /* Format the response and send */
         memset(&ag_res, 0, sizeof(ag_res));
-        strncpy(ag_res.str, unat, BTA_AG_AT_MAX_LEN);
+        if (unat != NULL) {
+            strncpy(ag_res.str, unat, BTA_AG_AT_MAX_LEN);
+        } else {
+            ag_res.ok_flag = BTA_AG_OK_ERROR;
+            ag_res.errcode = BTA_AG_ERR_OP_NOT_SUPPORTED;
+        }
+
         BTA_AgResult(hf_local_param[idx].btc_hf_cb.handle, BTA_AG_UNAT_RES, &ag_res);
         return BT_STATUS_SUCCESS;
     }
@@ -878,6 +884,10 @@ void btc_hf_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     switch (msg->act) {
         case BTC_HF_UNAT_RESPONSE_EVT:
         {
+            if (src->unat_rep.unat == NULL) {
+                break;
+            }
+
             dst->unat_rep.unat = (char *)osi_malloc(strlen(src->unat_rep.unat)+1);
             if(dst->unat_rep.unat) {
                 memcpy(dst->unat_rep.unat, src->unat_rep.unat, strlen(src->unat_rep.unat)+1);
@@ -1066,6 +1076,7 @@ void btc_hf_call_handler(btc_msg_t *msg)
         case BTC_HF_UNAT_RESPONSE_EVT:
         {
             btc_hf_unat_response(&arg->unat_rep.remote_addr, arg->unat_rep.unat);
+            break;
         }
 
         case BTC_HF_CME_ERR_EVT:
