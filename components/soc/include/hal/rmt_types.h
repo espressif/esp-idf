@@ -18,11 +18,25 @@
 extern "C" {
 #endif
 
+#include "soc/rmt_caps.h"
+
 /**
- * @brief RMT Channel Type
- *
- */
-typedef rmt_channel_id_t rmt_channel_t;
+* @brief RMT channel ID
+*
+*/
+typedef enum {
+    RMT_CHANNEL_0,  /*!< RMT channel number 0 */
+    RMT_CHANNEL_1,  /*!< RMT channel number 1 */
+    RMT_CHANNEL_2,  /*!< RMT channel number 2 */
+    RMT_CHANNEL_3,  /*!< RMT channel number 3 */
+#if RMT_CHANNELS_NUM > 4
+    RMT_CHANNEL_4,  /*!< RMT channel number 4 */
+    RMT_CHANNEL_5,  /*!< RMT channel number 5 */
+    RMT_CHANNEL_6,  /*!< RMT channel number 6 */
+    RMT_CHANNEL_7,  /*!< RMT channel number 7 */
+#endif
+    RMT_CHANNEL_MAX /*!< Number of RMT channels */
+} rmt_channel_t;
 
 /**
  * @brief RMT Internal Memory Owner
