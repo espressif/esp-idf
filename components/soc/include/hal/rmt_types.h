@@ -53,7 +53,7 @@ typedef enum {
  *
  */
 typedef enum {
-    RMT_BASECLK_REF, /*!< RMT source clock system reference tick, 1MHz by default (not supported in this version) */
+    RMT_BASECLK_REF, /*!< RMT source clock is REF_TICK, 1MHz by default */
     RMT_BASECLK_APB, /*!< RMT source clock is APB CLK, 80Mhz by default */
     RMT_BASECLK_MAX,
 } rmt_source_clk_t;

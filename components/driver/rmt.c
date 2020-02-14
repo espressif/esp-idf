@@ -27,11 +27,6 @@
 #include "hal/rmt_hal.h"
 #include "hal/rmt_ll.h"
 
-#define RMT_SOUCCE_CLK_APB (APB_CLK_FREQ) /*!< RMT source clock is APB_CLK */
-#define RMT_SOURCE_CLK_REF (1 * 1000000)  /*!< not used yet */
-
-#define RMT_SOURCE_CLK(select) ((select == RMT_BASECLK_REF) ? (RMT_SOURCE_CLK_REF) : (RMT_SOUCCE_CLK_APB))
-
 #define RMT_CHANNEL_ERROR_STR "RMT CHANNEL ERR"
 #define RMT_ADDR_ERROR_STR "RMT ADDRESS ERR"
 #define RMT_MEM_CNT_ERROR_STR "RMT MEM BLOCK NUM ERR"
@@ -89,7 +84,8 @@ typedef struct {
     const uint8_t *sample_cur;
 } rmt_obj_t;
 
-rmt_obj_t *p_rmt_obj[RMT_CHANNEL_MAX] = {0};
+static rmt_obj_t *p_rmt_obj[RMT_CHANNEL_MAX] = {0};
+static uint32_t s_rmt_src_clock_hz[RMT_CHANNEL_MAX] = {0};
 
 // Event called when transmission is ended
 static rmt_tx_end_callback_t rmt_tx_end_callback;
@@ -425,6 +421,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     uint8_t clk_div = rmt_param->clk_div;
     uint32_t carrier_freq_hz = rmt_param->tx_config.carrier_freq_hz;
     bool carrier_en = rmt_param->tx_config.carrier_en;
+    uint32_t rmt_source_clk_hz = 0;
 
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK((mem_cnt + channel <= 8 && mem_cnt > 0), RMT_MEM_CNT_ERROR_STR, ESP_ERR_INVALID_ARG);
@@ -439,12 +436,20 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     rmt_ll_enable_mem_access(dev, true);
     rmt_ll_reset_tx_pointer(dev, channel);
     rmt_ll_reset_rx_pointer(dev, channel);
-    rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_APB); // only support APB clock for now
+    if (rmt_param->flags & RMT_CHANNEL_FLAGS_ALWAYS_ON) {
+        // clock src: REF_CLK
+        rmt_source_clk_hz = REF_CLK_FREQ;
+        rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_REF);
+    } else {
+        // clock src: APB_CLK
+        rmt_source_clk_hz = APB_CLK_FREQ;
+        rmt_ll_set_counter_clock_src(dev, channel, RMT_BASECLK_APB);
+    }
     rmt_ll_set_mem_blocks(dev, channel, mem_cnt);
     rmt_ll_set_mem_owner(dev, channel, RMT_MEM_OWNER_HW);
     RMT_EXIT_CRITICAL();
 
-    uint32_t rmt_source_clk_hz = RMT_SOURCE_CLK(RMT_BASECLK_APB);
+    s_rmt_src_clock_hz[channel] = rmt_source_clk_hz;
 
     if (mode == RMT_MODE_TX) {
         uint16_t carrier_duty_percent = rmt_param->tx_config.carrier_duty_percent;
@@ -990,7 +995,7 @@ esp_err_t rmt_get_counter_clock(rmt_channel_t channel, uint32_t *clock_hz)
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_CHECK(clock_hz, "parameter clock_hz can't be null", ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
-    *clock_hz = rmt_hal_get_counter_clock(&p_rmt_obj[channel]->hal, channel, RMT_SOURCE_CLK(RMT_BASECLK_APB));
+    *clock_hz = rmt_hal_get_counter_clock(&p_rmt_obj[channel]->hal, channel, s_rmt_src_clock_hz[channel]);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }

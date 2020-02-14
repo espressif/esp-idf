@@ -19,17 +19,16 @@
 #include "soc/rmt_periph.h"
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
-//No runners
 static const char *TAG = "RMT.test";
 
 #define RMT_RX_ACTIVE_LEVEL 1 /*!< Data bit is active high for self test mode */
 #define RMT_TX_CARRIER_EN 0   /*!< Disable carrier for self test mode  */
 
-#define RMT_TX_CHANNEL 1                                     /*!< RMT channel for transmitter */
-#define RMT_TX_GPIO_NUM 18                                   /*!< GPIO number for transmitter signal */
-#define RMT_RX_CHANNEL 0                                     /*!< RMT channel for receiver */
-#define RMT_RX_GPIO_NUM 19                                   /*!< GPIO number for receiver */
-#define RMT_CLK_DIV 100                                      /*!< RMT counter clock divider */
+#define RMT_TX_CHANNEL 1   /*!< RMT channel for transmitter */
+#define RMT_TX_GPIO_NUM 18 /*!< GPIO number for transmitter signal */
+#define RMT_RX_CHANNEL 0   /*!< RMT channel for receiver */
+#define RMT_RX_GPIO_NUM 19 /*!< GPIO number for receiver */
+#define RMT_CLK_DIV 100    /*!< RMT counter clock divider */
 #define RMT_TICK_10_US (APB_CLK_FREQ / RMT_CLK_DIV / 100000) /*!< RMT counter value for 10 us */
 
 // NEC protocol related parameters
@@ -42,10 +41,16 @@ static const char *TAG = "RMT.test";
 #define BIT_END 560                               /*!< NEC protocol end: positive 0.56ms */
 #define BIT_MARGIN 160                            /*!< NEC parse margin time */
 
-#define ITEM_DURATION(d) ((d & 0x7fff) * 10 / RMT_TICK_10_US) /*!< Parse duration time from memory register value */
-#define DATA_ITEM_NUM 34                                      /*!< NEC code item number: header + 32bit data + end */
-#define RMT_TX_DATA_NUM 50                                    /*!< NEC tx test data number */
-#define RMT_ITEM32_TIMEOUT_US 9500                            /*!< RMT receiver timeout value(us) */
+#define DATA_ITEM_NUM 34           /*!< NEC code item number: header + 32bit data + end */
+#define RMT_TX_DATA_NUM 50         /*!< NEC tx test data number */
+#define RMT_ITEM32_TIMEOUT_US 9500 /*!< RMT receiver timeout value(us) */
+
+static uint32_t s_rmt_10us_ticks = RMT_TICK_10_US;
+
+static inline uint32_t item_duration(uint32_t duration_us)
+{
+    return (duration_us & 0x7fff) * 10 / s_rmt_10us_ticks;
+}
 
 /**
  * @brief Build register value of waveform for NEC one data bit
@@ -53,9 +58,9 @@ static const char *TAG = "RMT.test";
 static inline void fill_item_level(rmt_item32_t *item, int high_us, int low_us)
 {
     item->level0 = 1;
-    item->duration0 = (high_us) / 10 * RMT_TICK_10_US;
+    item->duration0 = (high_us) / 10 * s_rmt_10us_ticks;
     item->level1 = 0;
-    item->duration1 = (low_us) / 10 * RMT_TICK_10_US;
+    item->duration1 = (low_us) / 10 * s_rmt_10us_ticks;
 }
 
 /**
@@ -95,8 +100,8 @@ static void fill_item_end(rmt_item32_t *item)
  */
 static inline bool check_in_range(int duration_ticks, int target_us, int margin_us)
 {
-    if ((ITEM_DURATION(duration_ticks) < (target_us + margin_us)) &&
-            (ITEM_DURATION(duration_ticks) > (target_us - margin_us))) {
+    if ((item_duration(duration_ticks) < (target_us + margin_us)) &&
+            (item_duration(duration_ticks) > (target_us - margin_us))) {
         return true;
     } else {
         return false;
@@ -265,7 +270,7 @@ static int get_rx_data(RingbufHandle_t rb)
 /**
  * @brief RMT transmitter initialization
  */
-static void tx_init(void)
+static void tx_init(bool always_on)
 {
     // the sender once it send something, its frq is 38kHz, and the duty cycle is 50%
     rmt_tx_config_t tx_cfg = {
@@ -285,6 +290,11 @@ static void tx_init(void)
         .tx_config = tx_cfg,
         .rmt_mode = 0,
     };
+    if (always_on) {
+        rmt_tx.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+        rmt_tx.clk_div = 10;
+        s_rmt_10us_ticks = 1; // REF_TICK / DIV / 1e5
+    }
     rmt_config(&rmt_tx);
     rmt_driver_install(rmt_tx.channel, 0, 0);
 }
@@ -292,7 +302,7 @@ static void tx_init(void)
 /**
  * @brief RMT receiver initialization
  */
-static void rx_init(void)
+static void rx_init(bool always_on)
 {
     rmt_rx_config_t rx_cfg = {
         .filter_en = true,
@@ -307,6 +317,11 @@ static void rx_init(void)
         .rmt_mode = RMT_MODE_RX,
         .rx_config = rx_cfg,
     };
+    if (always_on) {
+        rmt_rx.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+        rmt_rx.clk_div = 10;
+        s_rmt_10us_ticks = 1; // REF_TICK / DIV / 1e5
+    }
     rmt_config(&rmt_rx);
     rmt_driver_install(rmt_rx.channel, (sizeof(rmt_item32_t) * DATA_ITEM_NUM * (RMT_TX_DATA_NUM + 6)), 0);
 }
@@ -314,7 +329,7 @@ static void rx_init(void)
 //A sample case to test if sending 63 data will cause crash in error interrupt.
 TEST_CASE("RMT tx test", "[rmt][test_env=UT_T1_RMT]")
 {
-    tx_init();
+    tx_init(false);
     rmt_item32_t *items = (rmt_item32_t*)malloc(sizeof(rmt_item32_t) * 63);
     for(int i = 0; i < 63; i++) {
         items[i] = (rmt_item32_t){{{200, 1, 200, 0}}};
@@ -448,7 +463,7 @@ TEST_CASE("RMT rx set and get properties", "[rmt][test_env=UT_T1_RMT]")
     uint16_t idleThreshold;
     rmt_mem_owner_t owner;
 
-    rx_init();
+    rx_init(false);
 
     TEST_ESP_OK(rmt_get_clk_div(channel, &div_cnt));
     TEST_ESP_OK(rmt_get_mem_block_num(channel, &memNum));
@@ -486,7 +501,7 @@ TEST_CASE("RMT tx set and get properties", "[rmt][test_env=UT_T1_RMT]")
     bool loop_en;
     rmt_mem_owner_t owner;
 
-    tx_init();
+    tx_init(false);
     TEST_ESP_OK(rmt_get_clk_div(channel, &div_cnt));
     TEST_ESP_OK(rmt_get_mem_block_num(channel, &memNum));
     TEST_ESP_OK(rmt_get_tx_loop_mode(channel, &loop_en));
@@ -616,7 +631,7 @@ TEST_CASE("RMT memory block test", "[rmt][test_env=UT_T1_RMT]")
 
 TEST_CASE("RMT send waveform(logic analyzer)", "[rmt][test_env=UT_T1_RMT][ignore]")
 {
-    tx_init();
+    tx_init(false);
     rmt_item32_t items[1];
     items[0].duration0 = 300 / 10 * RMT_TICK_10_US; //300us
     items[0].level0 = 1;
@@ -629,15 +644,15 @@ TEST_CASE("RMT send waveform(logic analyzer)", "[rmt][test_env=UT_T1_RMT][ignore
     TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
 }
 
-TEST_CASE("RMT basic TX and RX", "[rmt][test_env=UT_T1_RMT]")
+static void rmt_test_tx_rx(bool always_on)
 {
-    rx_init();
+    rx_init(always_on);
     RingbufHandle_t rb = NULL;
     rmt_get_ringbuf_handle(RMT_RX_CHANNEL, &rb);
     rmt_rx_start(RMT_RX_CHANNEL, 1);
     ESP_LOGI(TAG, "Star receiving RMT data...");
 
-    tx_init();
+    tx_init(always_on);
     uint16_t cmd = 0x0;
     uint16_t addr = 0x11;
     int num_items = DATA_ITEM_NUM * RMT_TX_DATA_NUM;
@@ -658,15 +673,26 @@ TEST_CASE("RMT basic TX and RX", "[rmt][test_env=UT_T1_RMT]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
 }
 
+TEST_CASE("RMT basic TX and RX", "[rmt][test_env=UT_T1_RMT]")
+{
+    rmt_test_tx_rx(false);
+}
+
+TEST_CASE("RMT channel clock always on", "[rmt][test_env=UT_T1_RMT]")
+{
+    rmt_test_tx_rx(true);
+    s_rmt_10us_ticks = RMT_TICK_10_US; // restore default APB clock source for other tests
+}
+
 TEST_CASE("RMT TX write item wait some ticks", "[rmt][test_env=UT_T1_RMT]")
 {
-    rx_init();
+    rx_init(false);
     RingbufHandle_t rb = NULL;
     rmt_get_ringbuf_handle(RMT_RX_CHANNEL, &rb);
     rmt_rx_start(RMT_RX_CHANNEL, 1);
     ESP_LOGI(TAG, "Star receiving RMT data...");
 
-    tx_init();
+    tx_init(false);
     uint16_t cmd = 0x0;
     uint16_t addr = 0x11;
     int num_items = DATA_ITEM_NUM * RMT_TX_DATA_NUM;
@@ -691,13 +717,13 @@ TEST_CASE("RMT TX write item wait some ticks", "[rmt][test_env=UT_T1_RMT]")
 
 TEST_CASE("RMT TX stop test", "[rmt][test_env=UT_T1_RMT]")
 {
-    rx_init();
+    rx_init(false);
     RingbufHandle_t rb = NULL;
     rmt_get_ringbuf_handle(RMT_RX_CHANNEL, &rb);
     rmt_rx_start(RMT_RX_CHANNEL, 1);
     ESP_LOGI(TAG, "Star receiving RMT data...");
 
-    tx_init();
+    tx_init(false);
     uint16_t cmd = 0x0;
     uint16_t addr = 0x11;
     int num_items = DATA_ITEM_NUM * RMT_TX_DATA_NUM;
@@ -746,12 +772,12 @@ TEST_CASE("RMT loop_en test", "[rmt][test_env=UT_T1_RMT][ignore]")
     TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
 
     int rx_channel = RMT_RX_CHANNEL;
-    rx_init();
+    rx_init(false);
     RingbufHandle_t rb = NULL;
     rmt_get_ringbuf_handle(rx_channel, &rb);
     rmt_rx_start(rx_channel, 1);
     vTaskDelay(10);
-    tx_init();
+    tx_init(false);
     int tx_channel = RMT_TX_CHANNEL;
     int tx_num = RMT_TX_DATA_NUM;
 
