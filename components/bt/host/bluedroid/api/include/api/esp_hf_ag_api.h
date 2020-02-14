@@ -335,7 +335,8 @@ esp_err_t esp_bt_hf_volume_control(esp_bd_addr_t remote_bda, esp_hf_volume_contr
  *                  As a precondition to use this API, Service Level Connection shall exist between AG and HF Client.
  *
  * @param[in]       remote_addr: remote bluetooth device address
- * @param[in]       unat: AT command string from HF Client
+ * @param[in]       unat: User AT command response to HF Client.
+ *                        It will response "ERROR" by default if unat is NULL.
  * @return
  *                  - ESP_OK: disconnect request is sent to lower layer
  *                  - ESP_INVALID_STATE: if bluetooth stack is not yet enabled
