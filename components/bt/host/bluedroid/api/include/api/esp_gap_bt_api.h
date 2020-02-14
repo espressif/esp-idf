@@ -83,21 +83,23 @@ typedef struct {
 } esp_bt_gap_dev_prop_t;
 
 /// Extended Inquiry Response data type
-typedef enum {
-    ESP_BT_EIR_TYPE_FLAGS                    = 0x01,     /*!< Flag with information such as BR/EDR and LE support */
-    ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID       = 0x02,     /*!< Incomplete list of 16-bit service UUIDs */
-    ESP_BT_EIR_TYPE_CMPL_16BITS_UUID         = 0x03,     /*!< Complete list of 16-bit service UUIDs */
-    ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID       = 0x04,     /*!< Incomplete list of 32-bit service UUIDs */
-    ESP_BT_EIR_TYPE_CMPL_32BITS_UUID         = 0x05,     /*!< Complete list of 32-bit service UUIDs */
-    ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID      = 0x06,     /*!< Incomplete list of 128-bit service UUIDs */
-    ESP_BT_EIR_TYPE_CMPL_128BITS_UUID        = 0x07,     /*!< Complete list of 128-bit service UUIDs */
-    ESP_BT_EIR_TYPE_SHORT_LOCAL_NAME         = 0x08,     /*!< Shortened Local Name */
-    ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME          = 0x09,     /*!< Complete Local Name */
-    ESP_BT_EIR_TYPE_TX_POWER_LEVEL           = 0x0a,     /*!< Tx power level, value is 1 octet ranging from  -127 to 127, unit is dBm*/
-    ESP_BT_EIR_TYPE_URL                      = 0x24,     /*!< Uniform resource identifier */
-    ESP_BT_EIR_TYPE_MANU_SPECIFIC            = 0xff,     /*!< Manufacturer specific data */
-} esp_bt_eir_type_t;
-#define  ESP_BT_EIR_TYPE_MAX_NUM             12          /*!< MAX number of EIR type */
+#define ESP_BT_EIR_TYPE_FLAGS                   0x01      /*!< Flag with information such as BR/EDR and LE support */
+#define ESP_BT_EIR_TYPE_INCMPL_16BITS_UUID      0x02      /*!< Incomplete list of 16-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_CMPL_16BITS_UUID        0x03      /*!< Complete list of 16-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_INCMPL_32BITS_UUID      0x04      /*!< Incomplete list of 32-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_CMPL_32BITS_UUID        0x05      /*!< Complete list of 32-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_INCMPL_128BITS_UUID     0x06      /*!< Incomplete list of 128-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_CMPL_128BITS_UUID       0x07      /*!< Complete list of 128-bit service UUIDs */
+#define ESP_BT_EIR_TYPE_SHORT_LOCAL_NAME        0x08      /*!< Shortened Local Name */
+#define ESP_BT_EIR_TYPE_CMPL_LOCAL_NAME         0x09      /*!< Complete Local Name */
+#define ESP_BT_EIR_TYPE_TX_POWER_LEVEL          0x0a      /*!< Tx power level, value is 1 octet ranging from  -127 to 127, unit is dBm*/
+#define ESP_BT_EIR_TYPE_URL                     0x24      /*!< Uniform resource identifier */
+#define ESP_BT_EIR_TYPE_MANU_SPECIFIC           0xff      /*!< Manufacturer specific data */
+#define  ESP_BT_EIR_TYPE_MAX_NUM                12        /*!< MAX number of EIR type */
+
+typedef uint8_t esp_bt_eir_type_t;
+
+
 
 /* ESP_BT_EIR_FLAG bit definition */
 #define ESP_BT_EIR_FLAG_LIMIT_DISC         (0x01 << 0)
