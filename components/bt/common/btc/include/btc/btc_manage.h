@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef __BTC_MANAGE_H__
+#define __BTC_MANAGE_H__
+
 #include "btc/btc_task.h"
-#include "btc/btc_alarm.h"
 
-void btc_alarm_handler(btc_msg_t *msg)
-{
-    btc_alarm_args_t *arg = (btc_alarm_args_t *)msg->arg;
+/* reset gatt callback table */
+void esp_profile_cb_reset(void);
 
-    BTC_TRACE_DEBUG("%s act %d\n", __FUNCTION__, msg->act);
+int btc_profile_cb_set(btc_pid_t profile_id, void *cb);
+void *btc_profile_cb_get(btc_pid_t profile_id);
 
-    if (arg->cb) {
-        arg->cb(arg->cb_data);
-    }
-}
+#endif /* __BTC_MANAGE_H__ */

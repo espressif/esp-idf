@@ -21,7 +21,7 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 #include "esp_task.h"
-#include "common/bt_defs.h"
+#include "bt_common.h"
 
 #define portBASE_TYPE int
 
@@ -57,8 +57,6 @@ typedef enum {
     SIG_BTU_NUM,
 } SIG_BTU_t;
 
-#define TASK_PINNED_TO_CORE             (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
-
 #define HCI_HOST_TASK_PINNED_TO_CORE    (TASK_PINNED_TO_CORE)
 #define HCI_HOST_TASK_STACK_SIZE        (2048 + BT_TASK_EXTRA_STACK_SIZE)
 #define HCI_HOST_TASK_PRIO              (configMAX_PRIORITIES - 3)
@@ -76,12 +74,6 @@ typedef enum {
 #define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "btuT"
 #define BTU_QUEUE_LEN                   50
-
-#define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
-#define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
-#define BTC_TASK_NAME                   "btcT"
-#define BTC_TASK_PRIO                   (configMAX_PRIORITIES - 6)
-#define BTC_TASK_QUEUE_LEN              60
 
 #define BTC_A2DP_SINK_TASK_PINNED_TO_CORE     (TASK_PINNED_TO_CORE)
 #define BTC_A2DP_SINK_TASK_STACK_SIZE         (CONFIG_A2DP_SINK_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE) // by menuconfig

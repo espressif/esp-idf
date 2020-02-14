@@ -16,6 +16,7 @@
 #define __BTC_GAP_BT_H__
 
 #include "common/bt_target.h"
+#include "common/bt_defs.h"
 #include "esp_bt_defs.h"
 #include "esp_gap_bt_api.h"
 #include "btc/btc_task.h"

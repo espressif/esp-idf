@@ -22,10 +22,10 @@ ifeq ($(GCC_NOT_5_2_0), 1)
 CFLAGS += -Wno-implicit-fallthrough
 endif
 
-endif
-
-
 ifdef CONFIG_BLUEDROID_ENABLED
+
+COMPONENT_SRCDIRS += common/osi                                \
+                     common/btc/core
 
 COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/bta/ar/include                \
@@ -41,7 +41,6 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/device/include                \
                                 bluedroid/gki/include                   \
                                 bluedroid/hci/include                   \
-                                bluedroid/osi/include                   \
                                 bluedroid/utils/include                 \
                                 bluedroid/external/sbc/decoder/include  \
                                 bluedroid/external/sbc/encoder/include  \
@@ -69,7 +68,10 @@ COMPONENT_PRIV_INCLUDEDIRS +=   bluedroid/bta/include                   \
                                 bluedroid/stack/rfcomm/include          \
                                 bluedroid/stack/include                 \
                                 bluedroid/utils/include                 \
-                                bluedroid/common/include
+                                bluedroid/common/include                \
+                                common/btc/include 	                    \
+                                common/osi/include                      \
+                                common/include
 
 COMPONENT_ADD_INCLUDEDIRS +=    bluedroid/api/include/api
 
@@ -128,11 +130,11 @@ bluedroid/stack/smp/smp_keys.o: CFLAGS += -Wno-unused-const-variable
 endif
 
 ifdef CONFIG_BLE_MESH
-COMPONENT_ADD_INCLUDEDIRS += bluedroid/osi/include
 
+COMPONENT_ADD_INCLUDEDIRS += common/osi/include
 COMPONENT_SRCDIRS += esp_ble_mesh/mesh_core/bluedroid_host
-endif
 
+endif
 endif
 
 ifdef CONFIG_BLE_MESH
@@ -156,4 +158,19 @@ COMPONENT_SRCDIRS += esp_ble_mesh/mesh_common               \
                      esp_ble_mesh/mesh_models/server        \
                      esp_ble_mesh/api/core                  \
                      esp_ble_mesh/api/models
+endif
+
+ifdef CONFIG_NIMBLE_ENABLED
+ifdef CONFIG_BLE_MESH
+COMPONENT_PRIV_INCLUDEDIRS += common/btc/include 	\
+			      common/include
+
+COMPONENT_SRCDIRS +=           common/osi                               \
+                               common/btc/core                          \
+                               esp_ble_mesh/mesh_core/nimble_host
+
+COMPONENT_ADD_INCLUDEDIRS += common/osi/include
+endif
+endif
+
 endif

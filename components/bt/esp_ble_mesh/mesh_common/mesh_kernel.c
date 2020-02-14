@@ -14,6 +14,7 @@
 
 #include "mesh_common.h"
 #include "provisioner_prov.h"
+#include "bt_common.h"
 
 static bt_mesh_mutex_t bm_alarm_lock;
 static bt_mesh_mutex_t bm_list_lock;

@@ -19,6 +19,7 @@
 #include "device/controller.h"
 
 #include "mbedtls/aes.h"
+#include "bt_common.h"
 
 #include "mesh_hci.h"
 #include "mesh_aes_encrypt.h"

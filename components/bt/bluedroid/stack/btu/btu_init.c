@@ -240,7 +240,7 @@ UINT16 BTU_BleAclPktSize(void)
 bool BTU_check_queue_is_congest(void)
 {
     UBaseType_t wait_size = uxQueueMessagesWaiting(xBtuQueue);
-    if(wait_size >= QUEUE_CONGEST_SIZE ) {
+    if(wait_size >= BT_QUEUE_CONGEST_SIZE ) {
         return true;
     }
     return false;

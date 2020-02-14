@@ -415,6 +415,14 @@
 #define MYNEWT_VAL_BLE_HOST (1)
 #endif
 
+#ifndef MYNEWT_VAL_ESP_BLE_MESH
+#ifdef CONFIG_BLE_MESH_HCI_5_0
+#define MYNEWT_VAL_ESP_BLE_MESH (1)
+#else
+#define MYNEWT_VAL_ESP_BLE_MESH (0)
+#endif
+#endif
+
 #ifndef MYNEWT_VAL_BLE_HS_DEBUG
 #ifdef CONFIG_NIMBLE_DEBUG
 #define MYNEWT_VAL_BLE_HS_DEBUG (1)

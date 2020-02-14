@@ -16,8 +16,7 @@
  *
  ******************************************************************************/
 
-#include "common/bt_trace.h"
-
+#include "bt_common.h"
 #include "osi/allocator.h"
 #include "osi/future.h"
 #include "osi/osi.h"

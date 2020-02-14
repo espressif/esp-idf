@@ -6,6 +6,8 @@ if(CONFIG_BT_ENABLED)
     if(CONFIG_BLUEDROID_ENABLED)
 
         list(APPEND COMPONENT_PRIV_INCLUDEDIRS
+            common/btc/include
+            common/include
             bluedroid/bta/include
             bluedroid/bta/ar/include
             bluedroid/bta/av/include
@@ -18,7 +20,6 @@ if(CONFIG_BT_ENABLED)
             bluedroid/bta/sys/include
             bluedroid/device/include
             bluedroid/hci/include
-            bluedroid/osi/include
             bluedroid/external/sbc/decoder/include
             bluedroid/external/sbc/encoder/include
             bluedroid/btc/profile/esp/blufi/include
@@ -38,11 +39,29 @@ if(CONFIG_BT_ENABLED)
             bluedroid/stack/a2dp/include
             bluedroid/stack/rfcomm/include
             bluedroid/stack/include
-            bluedroid/common/include)
+            bluedroid/common/include
+            common/btc/include
+            common/include)
 
-        list(APPEND COMPONENT_ADD_INCLUDEDIRS bluedroid/api/include/api)
+        list(APPEND COMPONENT_ADD_INCLUDEDIRS bluedroid/api/include/api
+                       common/osi/include)
 
-        list(APPEND COMPONENT_SRCS "bluedroid/api/esp_a2dp_api.c"
+        list(APPEND COMPONENT_SRCS "common/btc/core/btc_alarm.c"
+                   "common/btc/core/btc_manage.c"
+                   "common/btc/core/btc_task.c"
+                   "common/osi/alarm.c"
+                   "common/osi/allocator.c"
+                   "common/osi/buffer.c"
+                   "common/osi/config.c"
+                   "common/osi/fixed_queue.c"
+                   "common/osi/future.c"
+                   "common/osi/hash_functions.c"
+                   "common/osi/hash_map.c"
+                   "common/osi/list.c"
+                   "common/osi/mutex.c"
+                   "common/osi/osi.c"
+                   "common/osi/semaphore.c"
+                   "bluedroid/api/esp_a2dp_api.c"
                    "bluedroid/api/esp_avrc_api.c"
                    "bluedroid/api/esp_blufi_api.c"
                    "bluedroid/api/esp_bt_device.c"
@@ -109,18 +128,15 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/bta/sys/bta_sys_conn.c"
                    "bluedroid/bta/sys/bta_sys_main.c"
                    "bluedroid/bta/sys/utl.c"
-                   "bluedroid/btc/core/btc_alarm.c"
                    "bluedroid/btc/core/btc_ble_storage.c"
                    "bluedroid/btc/core/btc_config.c"
                    "bluedroid/btc/core/btc_dev.c"
                    "bluedroid/btc/core/btc_dm.c"
                    "bluedroid/btc/core/btc_main.c"
-                   "bluedroid/btc/core/btc_manage.c"
                    "bluedroid/btc/core/btc_profile_queue.c"
                    "bluedroid/btc/core/btc_sec.c"
                    "bluedroid/btc/core/btc_sm.c"
                    "bluedroid/btc/core/btc_storage.c"
-                   "bluedroid/btc/core/btc_task.c"
                    "bluedroid/btc/core/btc_util.c"
                    "bluedroid/btc/profile/esp/blufi/blufi_prf.c"
                    "bluedroid/btc/profile/esp/blufi/blufi_protocol.c"
@@ -173,18 +189,6 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/hci/packet_fragmenter.c"
                    "bluedroid/main/bte_init.c"
                    "bluedroid/main/bte_main.c"
-                   "bluedroid/osi/alarm.c"
-                   "bluedroid/osi/allocator.c"
-                   "bluedroid/osi/buffer.c"
-                   "bluedroid/osi/config.c"
-                   "bluedroid/osi/fixed_queue.c"
-                   "bluedroid/osi/future.c"
-                   "bluedroid/osi/hash_functions.c"
-                   "bluedroid/osi/hash_map.c"
-                   "bluedroid/osi/list.c"
-                   "bluedroid/osi/mutex.c"
-                   "bluedroid/osi/osi.c"
-                   "bluedroid/osi/semaphore.c"
                    "bluedroid/stack/a2dp/a2d_api.c"
                    "bluedroid/stack/a2dp/a2d_sbc.c"
                    "bluedroid/stack/avct/avct_api.c"
@@ -281,7 +285,7 @@ if(CONFIG_BT_ENABLED)
                    "bluedroid/stack/smp/smp_utils.c")
 
         if(CONFIG_BLE_MESH)
-            list(APPEND COMPONENT_ADD_INCLUDEDIRS bluedroid/osi/include)
+            list(APPEND COMPONENT_SRCS "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c")
         endif()
 
     endif()
@@ -326,7 +330,6 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_common/mesh_common.c"
                     "esp_ble_mesh/mesh_common/mesh_kernel.c"
                     "esp_ble_mesh/mesh_common/mesh_util.c"
-                    "esp_ble_mesh/mesh_core/bluedroid_host/mesh_bearer_adapt.c"
                     "esp_ble_mesh/mesh_core/storage/settings_nvs.c"
                     "esp_ble_mesh/mesh_core/access.c"
                     "esp_ble_mesh/mesh_core/adv.c"
@@ -361,6 +364,35 @@ if(CONFIG_BT_ENABLED)
                     "esp_ble_mesh/mesh_models/server/state_binding.c"
                     "esp_ble_mesh/mesh_models/server/state_transition.c"
                     "esp_ble_mesh/mesh_models/server/time_scene_server.c")
+    endif()
+
+    if(CONFIG_NIMBLE_ENABLED)
+
+        if (CONFIG_BLE_MESH)
+            list(APPEND COMPONENT_PRIV_INCLUDEDIRS
+                common/btc/include
+                common/include)
+
+        list(APPEND COMPONENT_ADD_INCLUDEDIRS common/osi/include)
+
+            list(APPEND COMPONENT_SRCS "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c"
+                   "common/btc/core/btc_alarm.c"
+                   "common/btc/core/btc_manage.c"
+                   "common/btc/core/btc_task.c"
+                   "common/osi/alarm.c"
+                   "common/osi/allocator.c"
+                   "common/osi/buffer.c"
+                   "common/osi/config.c"
+                   "common/osi/fixed_queue.c"
+                   "common/osi/future.c"
+                   "common/osi/hash_functions.c"
+                   "common/osi/hash_map.c"
+                   "common/osi/list.c"
+                   "common/osi/mutex.c"
+                   "common/osi/osi.c"
+                   "common/osi/semaphore.c")
+        endif()
+
     endif()
 endif()
 

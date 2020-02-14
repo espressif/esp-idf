@@ -14,12 +14,14 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include "common/bt_target.h"
 #include "btc/btc_task.h"
-#include "common/bt_trace.h"
 #include "osi/thread.h"
-#include "common/bt_defs.h"
+#include "esp_log.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
+#include "btc/btc_alarm.h"
+#ifdef CONFIG_BLUEDROID_ENABLED
+#include "common/bt_target.h"
 #include "btc/btc_main.h"
 #include "btc/btc_dev.h"
 #include "btc_gatts.h"
@@ -28,7 +30,6 @@
 #include "btc_gap_ble.h"
 #include "btc_blufi_prf.h"
 #include "btc/btc_dm.h"
-#include "btc/btc_alarm.h"
 #include "bta/bta_gatt_api.h"
 #if CONFIG_CLASSIC_BT_ENABLED
 #include "btc/btc_profile_queue.h"
@@ -46,6 +47,7 @@
 #include "btc_hf_client.h"
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
+#endif
 
 #if CONFIG_BLE_MESH
 #include "btc_ble_mesh_prov.h"
@@ -61,6 +63,7 @@ static xTaskHandle  xBtcTaskHandle = NULL;
 static xQueueHandle xBtcQueue = 0;
 
 static btc_func_t profile_tab[BTC_PID_NUM] = {
+#ifdef CONFIG_BLUEDROID_ENABLED
     [BTC_PID_MAIN_INIT]   = {btc_main_call_handler,       NULL                    },
     [BTC_PID_DEV]         = {btc_dev_call_handler,        NULL                    },
 #if (GATTS_INCLUDED == TRUE)
@@ -79,7 +82,9 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_BLUFI]       = {btc_blufi_call_handler,      btc_blufi_cb_handler    },
 #endif  ///GATTS_INCLUDED == TRUE
     [BTC_PID_DM_SEC]      = {NULL,                        btc_dm_sec_cb_handler   },
+#endif
     [BTC_PID_ALARM]       = {btc_alarm_handler,           NULL                    },
+#ifdef CONFIG_BLUEDROID_ENABLED
 #if CONFIG_CLASSIC_BT_ENABLED
 #if (BTC_GAP_BT_INCLUDED == TRUE)
     [BTC_PID_GAP_BT]    = {btc_gap_bt_call_handler,     btc_gap_bt_cb_handler   },
@@ -96,6 +101,7 @@ static btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_HF_CLIENT]   = {btc_hf_client_call_handler,  btc_hf_client_cb_handler},
 #endif  /* #if BTC_HF_CLIENT_INCLUDED */
 #endif /* #if CONFIG_CLASSIC_BT_ENABLED */
+#endif
 #if CONFIG_BLE_MESH
     [BTC_PID_PROV]              = {btc_ble_mesh_prov_call_handler,              btc_ble_mesh_prov_cb_handler             },
     [BTC_PID_MODEL]             = {btc_ble_mesh_model_call_handler,             btc_ble_mesh_model_cb_handler            },
@@ -194,7 +200,10 @@ int btc_init(void)
     if (xBtcTaskHandle == NULL || xBtcQueue == 0){
         return BT_STATUS_NOMEM;
     }
+#ifdef CONFIG_BLUEDROID_ENABLED
     btc_gap_callback_init();
+#endif
+
 #if SCAN_QUEUE_CONGEST_CHECK
     btc_adv_list_init();
 #endif
@@ -216,7 +225,7 @@ void btc_deinit(void)
 bool btc_check_queue_is_congest(void)
 {
     UBaseType_t wait_size = uxQueueMessagesWaiting(xBtcQueue);
-    if(wait_size >= QUEUE_CONGEST_SIZE) {
+    if(wait_size >= BT_QUEUE_CONGEST_SIZE) {
         return true;
     }
     return false;

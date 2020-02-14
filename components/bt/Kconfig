@@ -1341,7 +1341,7 @@ menu Bluetooth
     config NIMBLE_MAX_CONNECTIONS
         int "Maximum number of concurrent connections"
         range 1 9
-        default 1
+        default BTDM_CONTROLLER_BLE_MAX_CONN
         depends on NIMBLE_ENABLED
         help
             Defines maximum number of concurrent BLE connections
@@ -1392,6 +1392,7 @@ menu Bluetooth
     config NIMBLE_TASK_STACK_SIZE
         int "NimBLE Host task stack size"
         depends on NIMBLE_ENABLED
+        default 5120 if BLE_MESH
         default 4096
         help
             This configures stack size of NimBLE host task

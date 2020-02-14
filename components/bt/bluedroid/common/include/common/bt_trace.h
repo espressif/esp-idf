@@ -23,38 +23,7 @@
 
 #include <stdio.h>
 #include "stack/bt_types.h"
-
-#ifndef LOG_LOCAL_LEVEL
-#ifndef BOOTLOADER_BUILD
-#define LOG_LOCAL_LEVEL  CONFIG_LOG_DEFAULT_LEVEL
-#else
-#define LOG_LOCAL_LEVEL  CONFIG_LOG_BOOTLOADER_LEVEL
-#endif
-#endif
-
-#include "esp_log.h"
-
-// Mapping between ESP_LOG_LEVEL and BT_TRACE_LEVEL
-#if (LOG_LOCAL_LEVEL >= 4)
-#define LOG_LOCAL_LEVEL_MAPPING (LOG_LOCAL_LEVEL+1)
-#else
-#define LOG_LOCAL_LEVEL_MAPPING LOG_LOCAL_LEVEL
-#endif
-
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#define BT_LOG_LEVEL_CHECK(LAYER, LEVEL) (MAX(LAYER##_INITIAL_TRACE_LEVEL, LOG_LOCAL_LEVEL_MAPPING) >= BT_TRACE_LEVEL_##LEVEL)
-
-//#define TAG		"BT"
-
-#define BT_PRINT_E(tag, format, ...)   {esp_log_write(ESP_LOG_ERROR,   tag, LOG_FORMAT(E, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
-#define BT_PRINT_W(tag, format, ...)   {esp_log_write(ESP_LOG_WARN,    tag, LOG_FORMAT(W, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
-#define BT_PRINT_I(tag, format, ...)   {esp_log_write(ESP_LOG_INFO,    tag, LOG_FORMAT(I, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
-#define BT_PRINT_D(tag, format, ...)   {esp_log_write(ESP_LOG_DEBUG,   tag, LOG_FORMAT(D, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
-#define BT_PRINT_V(tag, format, ...)   {esp_log_write(ESP_LOG_VERBOSE, tag, LOG_FORMAT(V, format), esp_log_timestamp(), tag, ##__VA_ARGS__); }
-
-#ifndef assert
-#define assert(x)   do { if (!(x)) BT_PRINT_E("bt host error %s %u\n", __FILE__, __LINE__); } while (0)
-#endif
+#include "bt_common.h"
 
 inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 {
@@ -324,18 +293,6 @@ inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t len)
 #define BTIF_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
 #endif
 
-#ifdef  CONFIG_BTC_INITIAL_TRACE_LEVEL
-#define BTC_INITIAL_TRACE_LEVEL             CONFIG_BTC_INITIAL_TRACE_LEVEL
-#else
-#define BTC_INITIAL_TRACE_LEVEL             BT_TRACE_LEVEL_WARNING
-#endif
-
-#ifdef  CONFIG_OSI_INITIAL_TRACE_LEVEL
-#define OSI_INITIAL_TRACE_LEVEL            CONFIG_OSI_INITIAL_TRACE_LEVEL
-#else
-#define OSI_INITIAL_TRACE_LEVEL            BT_TRACE_LEVEL_WARNING
-#endif
-
 #ifdef  CONFIG_BLUFI_INITIAL_TRACE_LEVEL
 #define BLUFI_INITIAL_TRACE_LEVEL            CONFIG_BLUFI_INITIAL_TRACE_LEVEL
 #else
@@ -497,22 +454,6 @@ extern UINT8 btif_trace_level;
 #define HCI_TRACE_EVENT(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(HCI,EVENT)) BT_PRINT_D("BT_HCI", fmt,## args);}
 #define HCI_TRACE_DEBUG(fmt, args...)       {if (HCI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(HCI,DEBUG)) BT_PRINT_D("BT_HCI", fmt,## args);}
 
-/* define traces for BTC */
-#define BTC_TRACE_ERROR(fmt, args...)      {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BTC, ERROR)) BT_PRINT_E("BT_BTC", fmt, ## args);}
-#define BTC_TRACE_WARNING(fmt, args...)    {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BTC, WARNING)) BT_PRINT_W("BT_BTC", fmt, ## args);}
-#define BTC_TRACE_API(fmt, args...)        {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(BTC,API)) BT_PRINT_I("BT_BTC", fmt, ## args);}
-#define BTC_TRACE_EVENT(fmt, args...)      {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(BTC,EVENT)) BT_PRINT_D("BT_BTC", fmt, ## args);}
-#define BTC_TRACE_DEBUG(fmt, args...)      {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(BTC,DEBUG)) BT_PRINT_D("BT_BTC", fmt, ## args);}
-#define BTC_TRACE_VERBOSE(fmt, args...)    {if (BTC_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(BTC,VERBOSE)) BT_PRINT_V("BT_BTC", fmt, ## args);}
-
-/* define traces for OSI */
-#define OSI_TRACE_ERROR(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(OSI, ERROR)) BT_PRINT_E("BT_OSI", fmt, ## args);}
-#define OSI_TRACE_WARNING(fmt, args...)    {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(OSI, WARNING)) BT_PRINT_W("BT_OSI", fmt, ## args);}
-#define OSI_TRACE_API(fmt, args...)        {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(OSI,API)) BT_PRINT_I("BT_OSI", fmt, ## args);}
-#define OSI_TRACE_EVENT(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(OSI,EVENT)) BT_PRINT_D("BT_OSI", fmt, ## args);}
-#define OSI_TRACE_DEBUG(fmt, args...)      {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(OSI,DEBUG)) BT_PRINT_D("BT_OSI", fmt, ## args);}
-#define OSI_TRACE_VERBOSE(fmt, args...)    {if (OSI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_VERBOSE && BT_LOG_LEVEL_CHECK(OSI,VERBOSE)) BT_PRINT_V("BT_OSI", fmt, ## args);}
-
 /* define traces for BLUFI */
 #define BLUFI_TRACE_ERROR(fmt, args...)      {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(BLUFI, ERROR)) BT_PRINT_E("BT_BLUFI", fmt, ## args);}
 #define BLUFI_TRACE_WARNING(fmt, args...)    {if (BLUFI_INITIAL_TRACE_LEVEL >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(BLUFI, WARNING)) BT_PRINT_W("BT_BLUFI", fmt, ## args);}
@@ -670,22 +611,6 @@ extern UINT8 btif_trace_level;
 #define APPL_TRACE_EVENT(fmt, args...)     
 #define APPL_TRACE_DEBUG(fmt, args...)     
 #define APPL_TRACE_VERBOSE(fmt, args...)   
-
-/* define traces for BTC */
-#define BTC_TRACE_ERROR(fmt, args...) 
-#define BTC_TRACE_WARNING(fmt, args...)
-#define BTC_TRACE_API(fmt, args...)
-#define BTC_TRACE_EVENT(fmt, args...)
-#define BTC_TRACE_DEBUG(fmt, args...)
-#define BTC_TRACE_VERBOSE(fmt, args...)
-
-/* define traces for OSI */
-#define OSI_TRACE_ERROR(fmt, args...) 
-#define OSI_TRACE_WARNING(fmt, args...)
-#define OSI_TRACE_API(fmt, args...)
-#define OSI_TRACE_EVENT(fmt, args...)
-#define OSI_TRACE_DEBUG(fmt, args...)
-#define OSI_TRACE_VERBOSE(fmt, args...)
 
 /* define traces for BLUFI */
 #define BLUFI_TRACE_ERROR(fmt, args...) 

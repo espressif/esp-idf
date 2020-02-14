@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "common/bt_defs.h"
+#include "bt_common.h"
 #include "osi/allocator.h"
 
 extern void *pvPortZalloc(size_t size);
