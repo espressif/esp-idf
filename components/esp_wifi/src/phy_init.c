@@ -765,3 +765,8 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2
+/* Just a stub to avoid SSC build failure. Need to update phylib */
+void set_cca(bool en ,uint8_t cca_thr) {}
+#endif
+

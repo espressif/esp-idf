@@ -4,27 +4,6 @@ menu "ESP32S2-specific"
     # not working so we just hide all items here
     visible if IDF_TARGET_ESP32S2
 
-    choice ESP32S2_CHIP_VERSION
-        # TODO: remove once final S2 chip is supported
-        prompt "ESP32-S2 chip version"
-        default ESP32S2_VERSION_A
-        help
-            There are three versions of ESP32-S2 chip with different Wi-Fi PHY: A, B and Marlin3.
-
-            This setting must match the chip for Wi-Fi to work correctly. You can determine
-            the chip version by reading the markings on top of the chip. It will be one of the
-            three options given here.
-
-            The Wi-Fi performance of Marlin3 is the best among the three versions of chip.
-
-        config ESP32S2_VERSION_A
-            bool "Chip7.2.2-A"
-        config ESP32S2_VERSION_B
-            bool "Chip7.2.2-B"
-        config ESP32S2_VERSION_MARLIN3
-            bool "Marlin3-B2 or Marlin3-B3"
-    endchoice
-
     choice ESP32S2_DEFAULT_CPU_FREQ_MHZ
         prompt "CPU frequency"
         default ESP32S2_DEFAULT_CPU_FREQ_160 if !IDF_ENV_FPGA

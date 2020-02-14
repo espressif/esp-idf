@@ -582,7 +582,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._get_random = os_get_random,
     ._get_time = get_time_wrapper,
     ._random = os_random,
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     ._slowclk_cal_get = esp_clk_slowclk_cal_get,
 #endif
     ._log_write = esp_log_write,
