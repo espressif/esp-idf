@@ -37,6 +37,14 @@ config LWIP_MAX_SOCKETS
         the maximum amount of sockets here. The valid value is from 1
         to 16.
 
+config LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS
+    bool "Randomize the local port for the first"
+    default y
+    help
+        LWIP_RANDOMIZE_INITIAL_LOCAL_PORTS==1: randomize the local port for the first
+        local TCP/UDP pcb (default==0). This can prevent creating predictable port
+        numbers after booting a device.
+
 config USE_ONLY_LWIP_SELECT
     bool "Support LWIP socket select() only"
     default n
