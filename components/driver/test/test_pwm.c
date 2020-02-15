@@ -314,10 +314,10 @@ static void oneshot_fault_test(mcpwm_unit_t unit, mcpwm_io_signals_t mcpwm_a, mc
     // one shot mode, it just can be triggered once
     TEST_ESP_OK(mcpwm_fault_init(unit, input_sig, fault_sig));
     TEST_ESP_OK(mcpwm_fault_set_oneshot_mode(unit, timer, fault_sig, action_a, action_b));
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(10/ portTICK_RATE_MS);
     // trigger it
     gpio_set_level(FAULT_SIG_NUM, input_sig);
-    vTaskDelay(1000 / portTICK_RATE_MS);
+    vTaskDelay(10/ portTICK_RATE_MS);
     get_action_level(input_sig, action_a, action_b, 1000, 5);
     TEST_ESP_OK(mcpwm_fault_deinit(unit, fault_sig));
 }
