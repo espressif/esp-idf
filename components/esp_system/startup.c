@@ -24,8 +24,8 @@
 
 #include "sdkconfig.h"
 
-#include "soc/rtc_wdt.h"
 #include "soc/soc_caps.h"
+#include "hal/wdt_hal.h"
 
 #include "esp_system.h"
 #include "esp_log.h"
@@ -39,7 +39,7 @@
 #include "esp_flash_encrypt.h"
 
 /***********************************************/
-// Headers for other components init functions 
+// Headers for other components init functions
 #include "nvs_flash.h"
 #include "esp_phy_init.h"
 #include "esp_coexist_internal.h"
@@ -48,6 +48,7 @@
 #include "esp_private/dbg_stubs.h"
 #include "esp_flash_encrypt.h"
 #include "esp_pm.h"
+#include "esp_private/pm_impl.h"
 #include "esp_pthread.h"
 
 // [refactor-todo] make this file completely target-independent
@@ -62,13 +63,16 @@
 #endif
 /***********************************************/
 
-#include "startup_internal.h"
+#include "esp_private/startup_internal.h"
 
 // Ensure that system configuration matches the underlying number of cores.
 // This should enable us to avoid checking for both everytime.
 #if !(SOC_CPU_CORES_NUM > 1) && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     #error "System has been configured to run on multiple cores, but target SoC only has a single core."
 #endif
+
+#define STRINGIFY(s) STRINGIFY2(s)
+#define STRINGIFY2(s) #s
 
 // App entry point for core 0
 extern void app_main(void);
@@ -167,7 +171,6 @@ static void IRAM_ATTR do_core_init(void)
        app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
        fail initializing it properly. */
     heap_caps_init();
-
     esp_setup_syscall_table();
 
     if (g_spiram_ok) {
@@ -184,27 +187,15 @@ static void IRAM_ATTR do_core_init(void)
     }
 
 #if CONFIG_ESP32_BROWNOUT_DET || CONFIG_ESP32S2_BROWNOUT_DET
-    // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) -> 
+    // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
     esp_brownout_init();
 #endif
 
-    // Now we have startup stack RAM available for heap, enable any DMA pool memory
-#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
-    if (g_spiram_ok) {
-        esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
-        if (r != ESP_OK) {
-            ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
-            abort();
-        }
-    }
-#endif
-
-    esp_reent_init(_GLOBAL_REENT);
-
-#ifndef CONFIG_ESP_CONSOLE_UART_NONE
-    const int uart_clk_freq = APB_CLK_FREQ;
-    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
+#if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE || CONFIG_ESP32S2_DISABLE_BASIC_ROM_CONSOLE
+    // [refactor-todo] leads to call chain `esp_efuse_read_field_blob` (efuse) -> `esp_efuse_utility_process` ->  `ESP_LOGX`
+    // syscall table must at least be init
+    esp_efuse_disable_basic_rom_console();
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_IO
@@ -238,6 +229,27 @@ static void IRAM_ATTR do_core_init(void)
 #if CONFIG_ESP32_DISABLE_BASIC_ROM_CONSOLE
     esp_efuse_disable_basic_rom_console();
 #endif
+
+    esp_err_t err;
+
+    esp_timer_init();
+    esp_set_time_from_rtc();
+
+    // [refactor-todo] move this to secondary init
+#if CONFIG_APPTRACE_ENABLE
+    err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on PRO CPU!");
+#endif
+#if CONFIG_SYSVIEW_ENABLE
+    SEGGER_SYSVIEW_Conf();
+#endif
+
+#if CONFIG_ESP_DEBUG_STUBS_ENABLE
+    esp_dbg_stubs_init();
+#endif
+
+    err = esp_pthread_init();
+    assert(err == ESP_OK && "Failed to init pthread module!");
 
     spi_flash_init();
     /* init default OS-aware flash access critical section */
@@ -277,6 +289,8 @@ static void IRAM_ATTR do_secondary_init(void)
 
 void IRAM_ATTR start_cpu0_default(void)
 {
+    ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
+
     // Display information about the current running image.
     if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
         const esp_app_desc_t *app_desc = esp_ota_get_app_description();
@@ -311,11 +325,11 @@ void IRAM_ATTR start_cpu0_default(void)
 
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
-    rtc_wdt_disable();
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
-
-    // Finally, we jump to user code.
-    ESP_EARLY_LOGI(TAG, "Pro cpu start user code");
 
 #if SOC_CPU_CORES_NUM > 1 && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_system_full_inited = true;
@@ -335,8 +349,6 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     CLEAR_PERI_REG_MASK(UART_CONF0_REG(CONFIG_ESP_CONSOLE_UART_NUM), UART_TICK_REF_ALWAYS_ON);
     uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif // CONFIG_ESP_CONSOLE_UART_NONE
-
-    esp_dbg_stubs_init();
 
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
@@ -373,13 +385,3 @@ IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components0, BIT(0))
     }
 #endif
 }
-
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-IRAM_ATTR ESP_SYSTEM_INIT_FN(init_components1, BIT(1))
-{
-#if CONFIG_APPTRACE_ENABLE
-    esp_err_t err = esp_apptrace_init();
-    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
-#endif
-}
-#endif

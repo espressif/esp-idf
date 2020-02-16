@@ -66,7 +66,7 @@
 #endif // CONFIG_APP_BUILD_TYPE_ELF_RAM
 #endif
 
-#include "startup_internal.h"
+#include "esp_private/startup_internal.h"
 
 extern int _bss_start;
 extern int _bss_end;
@@ -349,10 +349,10 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_IDF_TARGET_ESP32
     #if CONFIG_ESP32_TRAX_TWOBANKS
         trax_enable(TRAX_ENA_PRO_APP);
-    #else 
+    #else
         trax_enable(TRAX_ENA_PRO);
     #endif
-#elif CONFIG_IDF_TARGET_ESP32S2 
+#elif CONFIG_IDF_TARGET_ESP32S2
     trax_enable(TRAX_ENA_PRO);
 #endif
     trax_start_trace(TRAX_DOWNCOUNT_WORDS);
@@ -362,11 +362,12 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_perip_clk_init();
     intr_matrix_clear();
 
-#if CONFIG_ESP32_BROWNOUT_DET || CONFIG_ESP32S2_BROWNOUT_DET
-    esp_brownout_init();
+#ifndef CONFIG_ESP_CONSOLE_UART_NONE
+    const int uart_clk_freq = APB_CLK_FREQ;
+    uart_div_modify(CONFIG_ESP_CONSOLE_UART_NUM, (uart_clk_freq << 4) / CONFIG_ESP_CONSOLE_UART_BAUDRATE);
 #endif
 
-    rtc_gpio_force_hold_dis_all();
+    rtcio_hal_unhold_all();
 
     esp_cache_err_int_init();
 
@@ -381,7 +382,7 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     bootloader_flash_update_id();
-#if CONFIG_IDF_TARGET_ESP32 
+#if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_SPIRAM_BOOT_INIT
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     esp_image_header_t fhdr = {0};

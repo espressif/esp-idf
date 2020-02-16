@@ -103,6 +103,7 @@
 
 #include "esp_debug_helpers.h"
 #include "esp_heap_caps.h"
+#include "esp_heap_caps_init.h"
 #include "esp_private/crosscore_int.h"
 
 #include "esp_intr_alloc.h"
@@ -118,6 +119,18 @@
 #include "soc/dport_access.h"
 #include "soc/dport_reg.h"
 #include "esp_int_wdt.h"
+
+
+#include "sdkconfig.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/spiram.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/spiram.h"
+#endif
+
+#include "esp_private/startup_internal.h" // [refactor-todo] for g_spiram_ok
+#include "esp_app_trace.h" // [refactor-todo] for esp_app_trace_init
 
 /* Defined in portasm.h */
 extern void _frxt_tick_timer_init(void);
@@ -140,8 +153,8 @@ _Static_assert(tskNO_AFFINITY == CONFIG_FREERTOS_NO_AFFINITY, "incorrect tskNO_A
 /*-----------------------------------------------------------*/
 unsigned port_xSchedulerRunning[portNUM_PROCESSORS] = {0}; // Duplicate of inaccessible xSchedulerRunning; needed at startup to avoid counting nesting
 unsigned port_interruptNesting[portNUM_PROCESSORS] = {0};  // Interrupt nesting level. Increased/decreased in portasm.c, _frxt_int_enter/_frxt_int_exit
-BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};  
-BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};  
+BaseType_t port_uxCriticalNesting[portNUM_PROCESSORS] = {0};
+BaseType_t port_uxOldInterruptState[portNUM_PROCESSORS] = {0};
 /*-----------------------------------------------------------*/
 
 // User exception dispatcher when exiting
@@ -396,12 +409,12 @@ uint32_t xPortGetTickRateHz(void) {
 void __attribute__((optimize("-O3"))) vPortEnterCritical(portMUX_TYPE *mux)
 {
 	BaseType_t oldInterruptLevel = portENTER_CRITICAL_NESTED();
-	/* Interrupts may already be disabled (because we're doing this recursively) 
+	/* Interrupts may already be disabled (because we're doing this recursively)
 	* but we can't get the interrupt level after
 	* vPortCPUAquireMutex, because it also may mess with interrupts.
 	* Get it here first, then later figure out if we're nesting
 	* and save for real there.
-	*/ 
+	*/
 	vPortCPUAcquireMutex( mux );
 	BaseType_t coreID = xPortGetCoreID();
 	BaseType_t newNesting = port_uxCriticalNesting[coreID] + 1;
@@ -419,7 +432,7 @@ void __attribute__((optimize("-O3"))) vPortExitCritical(portMUX_TYPE *mux)
 	vPortCPUReleaseMutex( mux );
 	BaseType_t coreID = xPortGetCoreID();
 	BaseType_t nesting =  port_uxCriticalNesting[coreID];
-	
+
 	if(nesting > 0U)
 	{
 		nesting--;
@@ -447,11 +460,11 @@ void  __attribute__((weak)) vApplicationStackOverflowHook( TaskHandle_t xTask, c
 	esp_system_abort(buf);
 }
 
-// `esp_system` calls the app entry point app_main for core 0 and app_mainX for 
+// `esp_system` calls the app entry point app_main for core 0 and app_mainX for
 // the rest of the cores which the app normally provides for non-os builds.
-// If `freertos` is included in the build, wrap the call to app_main and provide 
+// If `freertos` is included in the build, wrap the call to app_main and provide
 // our own definition of app_mainX so that we can do our own initializations for each
-// core and start the scheduler. 
+// core and start the scheduler.
 //
 // We now simply execute the real app_main in the context of the main task that
 // we also start.
@@ -463,6 +476,20 @@ static void main_task(void* args)
     // Wait for FreeRTOS initialization to finish on APP CPU, before replacing its startup stack
     while (port_xSchedulerRunning[1] == 0) {
         ;
+    }
+#endif
+
+	// [refactor-todo] check if there is a way to move the following block to esp_system startup
+    heap_caps_enable_nonos_stack_heaps();
+
+    // Now we have startup stack RAM available for heap, enable any DMA pool memory
+#if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
+    if (g_spiram_ok) {
+        esp_err_t r = esp_spiram_reserve_dma_pool(CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL);
+        if (r != ESP_OK) {
+            ESP_EARLY_LOGE(TAG, "Could not reserve internal/DMA pool (error 0x%x)", r);
+            abort();
+        }
     }
 #endif
 
@@ -501,6 +528,8 @@ static void main_task(void* args)
 	#error "FreeRTOS and system configuration mismatch regarding the use of multiple cores."
 #endif
 
+
+
 #if !CONFIG_FREERTOS_UNICORE
 void app_mainX(void)
 {
@@ -513,6 +542,12 @@ void app_mainX(void)
     while (port_xSchedulerRunning[0] == 0) {
         ;
     }
+
+#if CONFIG_APPTRACE_ENABLE
+    // [refactor-todo] move to esp_system initialization
+    esp_err_t err = esp_apptrace_init();
+    assert(err == ESP_OK && "Failed to init apptrace module on APP CPU!");
+#endif
 
 #if CONFIG_ESP_INT_WDT
     //Initialize the interrupt watch dog for CPU1.
