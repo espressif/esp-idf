@@ -41,6 +41,7 @@ extern const uint8_t signature_verification_key_end[] asm("_binary_signature_ver
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[DIGEST_LEN];
+    uint8_t verified_digest[DIGEST_LEN];
     const esp_secure_boot_sig_block_t *sigblock;
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
@@ -57,18 +58,21 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr + length, sizeof(esp_secure_boot_sig_block_t));
         return ESP_FAIL;
     }
-    err = esp_secure_boot_verify_signature_block(sigblock, digest);
+    err = esp_secure_boot_verify_ecdsa_signature_block(sigblock, digest, verified_digest);
     bootloader_munmap(sigblock);
     return err;
 }
 
-esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
+esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
 #if !(defined(CONFIG_MBEDTLS_ECDSA_C) && defined(CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED))
     ESP_LOGE(TAG, "Signature verification requires ECDSA & SECP256R1 curve enabled");
     return ESP_ERR_NOT_SUPPORTED;
 #else
     ptrdiff_t keylen;
+
+    /* Note: in IDF app image verification we don't add any fault injection resistance, boot-time checks only */
+    memset(verified_digest, 0, DIGEST_LEN);
 
     keylen = signature_verification_key_end - signature_verification_key_start;
     if (keylen != SIGNATURE_VERIFICATION_KEYLEN) {
@@ -141,9 +145,10 @@ static const char *TAG = "secure_boot_v2";
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[DIGEST_LEN] = {0};
+    uint8_t verified_digest[DIGEST_LEN] = {0};
 
     /* Rounding off length to the upper 4k boundary */
-    int padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
+    uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
 
     esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
@@ -158,7 +163,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    err = esp_secure_boot_verify_signature_block(sig_block, digest);
+    err = esp_secure_boot_verify_rsa_signature_block(sig_block, digest, verified_digest);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
     }
@@ -166,10 +171,14 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     return err;
 }
 
-esp_err_t esp_secure_boot_verify_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest)
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     uint8_t i = 0, efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0};
     memcpy(efuse_trusted_digest, (uint8_t *) EFUSE_BLK2_RDATA0_REG, sizeof(efuse_trusted_digest));
+
+    /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
+       during boot-time verification. */
+    memset(verified_digest, 0, DIGEST_LEN);
 
     /* Generating the SHA of the public key components in the signature block */
     bootloader_sha256_handle_t sig_block_sha;

@@ -263,7 +263,7 @@ static esp_err_t secure_boot_v2_digest_generate(uint32_t flash_offset, uint32_t 
     /* Validating Signature block */
     ret = validate_signature_block(sig_block, image_digest);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "signature block validation failed %d", ret);
+        ESP_LOGE(TAG, "signature block (address 0x%x) validation failed %d", sig_block_addr, ret);
         goto done;
     }
 
@@ -329,7 +329,7 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
         && REG_READ(EFUSE_BLK2_RDATA6_REG) == 0
         && REG_READ(EFUSE_BLK2_RDATA7_REG) == 0) {
         /* Verifies the signature block appended to the image matches with the signature block of the app to be loaded */
-        ret = secure_boot_v2_digest_generate(bootloader_data.start_addr, bootloader_data.image_len, boot_pub_key_digest);
+        ret = secure_boot_v2_digest_generate(bootloader_data.start_addr, bootloader_data.image_len - SIG_BLOCK_PADDING, boot_pub_key_digest);
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "Public key digest generation failed");
             return ret;

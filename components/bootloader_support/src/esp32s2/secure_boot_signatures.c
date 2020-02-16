@@ -27,6 +27,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     ets_secure_boot_key_digests_t trusted_keys = { 0 };
     uint8_t digest[DIGEST_LEN];
+    uint8_t verified_digest[DIGEST_LEN] = { 0 }; /* Note: this function doesn't do any anti-FI checks on this buffer */
     const uint8_t *data;
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
@@ -57,14 +58,14 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     if (r == ETS_OK) {
         const ets_secure_boot_signature_t *sig = (const ets_secure_boot_signature_t *)(data + length);
         // TODO: calling this function in IDF app context is unsafe
-        r = ets_secure_boot_verify_signature(sig, digest, &trusted_keys);
+        r = ets_secure_boot_verify_signature(sig, digest, &trusted_keys, verified_digest);
     }
     bootloader_munmap(data);
 
     return (r == ETS_OK) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_secure_boot_verify_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest)
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     ets_secure_boot_key_digests_t trusted_keys;
 
@@ -74,7 +75,7 @@ esp_err_t esp_secure_boot_verify_signature_block(const ets_secure_boot_signature
     } else {
         ESP_LOGD(TAG, "Verifying with RSA-PSS...");
         // TODO: calling this function in IDF app context is unsafe
-        r = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys);
+        r = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys, verified_digest);
     }
 
     return (r == 0) ? ESP_OK : ESP_ERR_IMAGE_INVALID;

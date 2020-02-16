@@ -283,6 +283,9 @@
 #define SOC_MEM_INTERNAL_LOW        0x3FF9E000
 #define SOC_MEM_INTERNAL_HIGH       0x40072000
 
+// Start (highest address) of ROM boot stack, only relevant during early boot
+#define SOC_ROM_STACK_START         0x3fffe70c
+
 //interrupt cpu using table, Please see the core-isa.h
 /*************************************************************************************************************
  *      Intr num                Level           Type                    PRO CPU usage           APP CPU uasge
