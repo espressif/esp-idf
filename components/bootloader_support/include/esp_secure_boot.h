@@ -25,6 +25,8 @@
 #include "esp32/rom/secure_boot.h"
 #endif
 
+typedef struct ets_secure_boot_signature ets_secure_boot_signature_t;
+
 #ifdef CONFIG_SECURE_BOOT_V1_ENABLED
 #if !defined(CONFIG_SECURE_SIGNED_ON_BOOT) || !defined(CONFIG_SECURE_SIGNED_ON_UPDATE) || !defined(CONFIG_SECURE_SIGNED_APPS)
 #error "internal sdkconfig error, secure boot should always enable all signature options"
@@ -149,6 +151,9 @@ esp_err_t esp_secure_boot_v2_permanently_enable(const esp_image_metadata_t *imag
  *
  * If flash encryption is enabled, the image will be transparently decrypted while being verified.
  *
+ * @note This function doesn't have any fault injection resistance so should not be called
+ * during a secure boot itself (but can be called when verifying an update, etc.)
+ *
  * @return ESP_OK if signature is valid, ESP_ERR_INVALID_STATE if
  * signature fails, ESP_FAIL for other failures (ie can't read flash).
  */
@@ -160,22 +165,43 @@ typedef struct {
     uint8_t signature[64];
 } esp_secure_boot_sig_block_t;
 
-/** @brief Verify the secure boot signature block.
- * 
- *  For ECDSA Scheme (Secure Boot V1) - Deterministic ECDSA w/ SHA256 based on the SHA256 hash of the image.
- *  For RSA Scheme (Secure Boot V2) - RSA-PSS Verification of the SHA-256 image based on the public key 
- *  in the signature block.
+/** @brief Verify the ECDSA secure boot signature block for Secure Boot V1.
+ *
+ *  Calculates Deterministic ECDSA w/ SHA256 based on the SHA256 hash of the image. ECDSA signature
+ *  verification must be enabled in project configuration to use this function.
  *
  * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
- * @param sig_block Pointer to RSA or ECDSA signature block data
+ * @param sig_block Pointer to ECDSA signature block data
  * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ * @param verified_digest Pointer to 32 byte buffer that will receive verified digest if verification completes. (Used during bootloader implementation only, result is invalid otherwise.)
  *
  */
-#ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
-esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest);
-#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
-esp_err_t esp_secure_boot_verify_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest);
-#endif
+esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
+
+
+/** @brief Verify the RSA secure boot signature block for Secure Boot V2.
+ *
+ *  Performs RSA-PSS Verification of the SHA-256 image based on the public key
+ *  in the signature block, compared against the public key digest stored in efuse.
+ *
+ * Similar to esp_secure_boot_verify_signature(), but can be used when the digest is precalculated.
+ * @param sig_block Pointer to RSA signature block data
+ * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ * @param verified_digest Pointer to 32 byte buffer that will receive verified digest if verification completes. (Used during bootloader implementation only, result is invalid otherwise.)
+ *
+ */
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest);
+
+/** @brief Legacy ECDSA verification function
+ *
+ * @note Deprecated, call either esp_secure_boot_verify_ecdsa_signature_block() or esp_secure_boot_verify_rsa_signature_block() instead.
+ *
+ * @param sig_block Pointer to ECDSA signature block data
+ * @param image_digest Pointer to 32 byte buffer holding SHA-256 hash.
+ */
+esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
+    __attribute__((deprecated("use esp_secure_boot_verify_ecdsa_signature_block instead")));
+
 
 #define FLASH_OFFS_SECURE_BOOT_IV_DIGEST 0
 

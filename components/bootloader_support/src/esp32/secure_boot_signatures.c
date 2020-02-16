@@ -20,8 +20,9 @@
 #include "esp_image_format.h"
 #include "esp_secure_boot.h"
 #include "esp_spi_flash.h"
+#include "esp_fault.h"
 #include "esp32/rom/sha.h"
-#include "uECC.h"
+#include "uECC_verify_antifault.h"
 
 #include <sys/param.h>
 #include <string.h>
@@ -38,10 +39,11 @@ extern const uint8_t signature_verification_key_end[] asm("_binary_signature_ver
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[DIGEST_LEN];
+    uint8_t verified_digest[DIGEST_LEN] = { 0 }; /* ignored in this function */
     const esp_secure_boot_sig_block_t *sigblock;
 
     ESP_LOGD(TAG, "verifying signature src_addr 0x%x length 0x%x", src_addr, length);
-    
+
     esp_err_t err = bootloader_sha256_flash_contents(src_addr, length, digest);
     if (err != ESP_OK) {
         return err;
@@ -54,7 +56,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
     // Verify the signature
-    err = esp_secure_boot_verify_signature_block(sigblock, digest);
+    err = esp_secure_boot_verify_ecdsa_signature_block(sigblock, digest, verified_digest);
     // Unmap
     bootloader_munmap(sigblock);
 
@@ -62,6 +64,12 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 }
 
 esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest)
+{
+    uint8_t verified_digest[DIGEST_LEN] = { 0 };
+    return esp_secure_boot_verify_ecdsa_signature_block(sig_block, image_digest, verified_digest);
+}
+
+esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig_block_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
     ptrdiff_t keylen;
 
@@ -79,12 +87,14 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
     ESP_LOGD(TAG, "Verifying secure boot signature");
 
     bool is_valid;
-    is_valid = uECC_verify(signature_verification_key_start,
+    is_valid = uECC_verify_antifault(signature_verification_key_start,
                            image_digest,
                            DIGEST_LEN,
                            sig_block->signature,
-                           uECC_secp256r1());
+                           uECC_secp256r1(),
+                           verified_digest);
     ESP_LOGD(TAG, "Verification result %d", is_valid);
+
     return is_valid ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 }
 
@@ -94,6 +104,7 @@ esp_err_t esp_secure_boot_verify_signature_block(const esp_secure_boot_sig_block
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[DIGEST_LEN] = {0};
+    uint8_t verified_digest[DIGEST_LEN] = {0}; // ignored in this function
     const uint8_t *data;
 
     /* Padding to round off the input to the nearest 4k boundary */
@@ -115,7 +126,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     }
 
     const ets_secure_boot_signature_t *sig_block = (const ets_secure_boot_signature_t *)(data + padded_length);
-    err = esp_secure_boot_verify_signature_block(sig_block, digest);
+    err = esp_secure_boot_verify_rsa_signature_block(sig_block, digest, verified_digest);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
     }
@@ -124,16 +135,16 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     return err;
 }
 
-esp_err_t esp_secure_boot_verify_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest)
+esp_err_t esp_secure_boot_verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest, uint8_t *verified_digest)
 {
-    uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0}, verified_digest[DIGEST_LEN] = {0};
+    uint8_t efuse_trusted_digest[DIGEST_LEN] = {0}, sig_block_trusted_digest[DIGEST_LEN] = {0};
 
     secure_boot_v2_status_t r;
     memcpy(efuse_trusted_digest, (uint8_t *)EFUSE_BLK2_RDATA0_REG, DIGEST_LEN); /* EFUSE_BLK2_RDATA0_REG - Stores the Secure Boot Public Key Digest */
-    
+
     if (!ets_use_secure_boot_v2()) {
         ESP_LOGI(TAG, "Secure Boot EFuse bit(ABS_DONE_1) not yet programmed.");
-    
+
         /* Generating the SHA of the public key components in the signature block */
         bootloader_sha256_handle_t sig_block_sha;
         sig_block_sha = bootloader_sha256_start();
