@@ -28,7 +28,6 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/cache_err_int.h"
-#include "esp32/brownout.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/uart.h"

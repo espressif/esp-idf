@@ -54,9 +54,11 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
 #include "esp32/spiram.h"
+#include "esp32/brownout.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/uart.h"
 #include "esp32s2/spiram.h"
+#include "esp32s2/brownout.h"
 #endif
 /***********************************************/
 
@@ -180,6 +182,12 @@ static void IRAM_ATTR do_core_init(void)
 #endif
 #endif
     }
+
+#if CONFIG_ESP32_BROWNOUT_DET || CONFIG_ESP32S2_BROWNOUT_DET
+    // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) -> 
+    // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
+    esp_brownout_init();
+#endif
 
     // Now we have startup stack RAM available for heap, enable any DMA pool memory
 #if CONFIG_SPIRAM_MALLOC_RESERVE_INTERNAL
