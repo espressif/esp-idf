@@ -293,21 +293,33 @@ void slave_power_on(void)
 
 DMA_ATTR uint8_t rcv_buffer[READ_BUFFER_LEN];
 
+static esp_err_t get_intr(essl_handle_t handle, uint32_t* out_raw, uint32_t* out_st)
+{
+    esp_err_t ret = ESP_OK;
+#ifndef CONFIG_EXAMPLE_NO_INTR_LINE
+    ret = essl_wait_int(handle, 0);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+#endif
+
+    ret = essl_get_intr(handle, out_raw, out_st, TIMEOUT_MAX);
+    if (ret != ESP_OK) return ret;
+    ret = essl_clear_intr(handle, *out_raw, TIMEOUT_MAX);
+    if (ret != ESP_OK) return ret;
+    ESP_LOGD(TAG, "intr: %08X", *out_raw);
+    return ESP_OK;
+}
+
 //try to get an interrupt from the slave and handle it, return if none.
 esp_err_t process_event(essl_handle_t handle)
 {
-    esp_err_t ret = essl_wait_int(handle, 0);
+    uint32_t intr_raw, intr_st;
+    esp_err_t ret = get_intr(handle, &intr_raw, &intr_st);
     if (ret == ESP_ERR_TIMEOUT) {
         return ret;
     }
     ESP_ERROR_CHECK(ret);
-
-    uint32_t intr_raw, intr_st;
-    ret = essl_get_intr(handle, &intr_raw, &intr_st, TIMEOUT_MAX);
-    ESP_ERROR_CHECK(ret);
-    ret = essl_clear_intr(handle, intr_raw, TIMEOUT_MAX);
-    ESP_ERROR_CHECK(ret);
-    ESP_LOGD(TAG, "intr: %08X", intr_raw);
 
     for (int i = 0; i < 8; i++) {
         if (intr_raw & BIT(i)) {
