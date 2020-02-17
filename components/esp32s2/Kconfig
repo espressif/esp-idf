@@ -461,7 +461,7 @@ menu "ESP32S2-specific"
     config ESP32S2_RTC_CLK_CAL_CYCLES
         int "Number of cycles for RTC_SLOW_CLK calibration"
         default 3000 if ESP32S2_RTC_CLK_SRC_EXT_CRYS
-        default 1024 if ESP32S2_RTC_CLK_SRC_INT_RC
+        default 576 if ESP32S2_RTC_CLK_SRC_INT_RC
         range 0 125000
         help
             When the startup code initializes RTC_SLOW_CLK, it can perform
