@@ -38,6 +38,49 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
 #endif /* CONFIG_ESP_TLS_SERVER */
 
+typedef enum x509_file_type {
+    FILE_TYPE_CA_CERT = 0, /* CA certificate to authenticate entity at other end */
+    FILE_TYPE_SELF_CERT, /* Self certificate of the entity */
+    FILE_TYPE_SELF_KEY, /* Private key in the self cert-key pair */
+} x509_file_type_t;
+
+/* Checks whether the certificate provided is in pem format or not */
+static esp_err_t esp_load_wolfssl_verify_buffer(esp_tls_t *tls, const unsigned char *cert_buf, unsigned int cert_len, x509_file_type_t type, int *err_ret)
+{
+    int wolf_fileformat = WOLFSSL_FILETYPE_DEFAULT;
+    if (type == FILE_TYPE_SELF_KEY) {
+        if (cert_buf[cert_len - 1] == '\0' && strstr( (const char *) cert_buf, "-----BEGIN " )) {
+            wolf_fileformat = WOLFSSL_FILETYPE_PEM;
+        } else {
+            wolf_fileformat = WOLFSSL_FILETYPE_ASN1;
+        }
+        if ((*err_ret = wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
+            return ESP_OK;
+        }
+        return ESP_FAIL;
+    } else {
+        if (cert_buf[cert_len - 1] == '\0' && strstr( (const char *) cert_buf, "-----BEGIN CERTIFICATE-----" )) {
+            wolf_fileformat = WOLFSSL_FILETYPE_PEM;
+        } else {
+            wolf_fileformat = WOLFSSL_FILETYPE_ASN1;
+        }
+        if (type == FILE_TYPE_SELF_CERT) {
+            if ((*err_ret = wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
+                return ESP_OK;
+            }
+            return ESP_FAIL;
+        } else if (type == FILE_TYPE_CA_CERT) {
+            if ((*err_ret = wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cert_buf, cert_len, wolf_fileformat)) == WOLFSSL_SUCCESS) {
+                return ESP_OK;
+            }
+            return ESP_FAIL;
+        } else {
+            /* Wrong file type provided */
+            return ESP_FAIL;
+        }
+    }
+}
+
 esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const void *cfg, esp_tls_t *tls)
 {
 #ifdef CONFIG_ESP_DEBUG_WOLFSSL
@@ -71,9 +114,13 @@ esp_err_t esp_create_wolfssl_handle(const char *hostname, size_t hostlen, const 
             goto exit;
         }
 #else
-        ESP_LOGE(TAG, "ESP_TLS_SERVER Not enabled in Kconfig");
+        ESP_LOGE(TAG, "ESP_TLS_SERVER Not enabled in menuconfig");
         goto exit;
 #endif
+    }
+    else {
+        ESP_LOGE(TAG, "tls->role is not valid");
+        goto exit;
     }
 
     return ESP_OK;
@@ -109,12 +156,14 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     }
 
     if (cfg->use_global_ca_store == true) {
-        if(wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, global_cacert, global_cacert_pem_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        if ((esp_load_wolfssl_verify_buffer(tls, global_cacert, global_cacert_pem_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
     } else if (cfg->cacert_buf != NULL) {
-        if (wolfSSL_CTX_load_verify_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->cacert_buf, cfg->cacert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        if ((esp_load_wolfssl_verify_buffer(tls, cfg->cacert_buf, cfg->cacert_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
@@ -126,11 +175,13 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
     }
 
     if (cfg->clientcert_buf != NULL && cfg->clientkey_buf != NULL) {
-        if (wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->clientcert_buf, cfg->clientcert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        if ((esp_load_wolfssl_verify_buffer(tls,cfg->clientcert_buf, cfg->clientcert_bytes, FILE_TYPE_SELF_CERT, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
-        };
-        if (wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->clientkey_buf, cfg->clientkey_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
-            return ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED;
+        }
+        if ((esp_load_wolfssl_verify_buffer(tls,cfg->clientkey_buf, cfg->clientkey_bytes, FILE_TYPE_SELF_KEY, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading private key verify buffer, returned %d", ret);
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
     } else if (cfg->clientcert_buf != NULL || cfg->clientkey_buf != NULL) {
         ESP_LOGE(TAG, "You have to provide both clientcert_buf and clientkey_buf for mutual authentication\n\n");
@@ -196,7 +247,8 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     }
 
     if (cfg->cacert_buf != NULL) {
-        if (wolfSSL_CTX_load_verify_buffer((WOLFSSL_CTX *)tls->priv_ctx, cfg->cacert_buf, cfg->cacert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        if ((esp_load_wolfssl_verify_buffer(tls,cfg->cacert_buf, cfg->cacert_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER | WOLFSSL_VERIFY_FAIL_IF_NO_PEER_CERT, NULL);
@@ -207,11 +259,13 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     }
 
     if (cfg->servercert_buf != NULL && cfg->serverkey_buf != NULL) {
-        if(wolfSSL_CTX_use_certificate_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->servercert_buf, cfg->servercert_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
+        if ((esp_load_wolfssl_verify_buffer(tls,cfg->servercert_buf, cfg->servercert_bytes, FILE_TYPE_SELF_CERT, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
             return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
-        if(wolfSSL_CTX_use_PrivateKey_buffer( (WOLFSSL_CTX *)tls->priv_ctx, cfg->serverkey_buf, cfg->serverkey_bytes, WOLFSSL_FILETYPE_PEM) != WOLFSSL_SUCCESS) {
-            return ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED;
+        if ((esp_load_wolfssl_verify_buffer(tls,cfg->serverkey_buf, cfg->serverkey_bytes, FILE_TYPE_SELF_KEY, &ret)) != ESP_OK) {
+            ESP_LOGE(TAG, "Error in loading private key verify buffer, returned %d", ret);
+            return ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED;
         }
     } else {
         ESP_LOGE(TAG, "You have to provide both servercert_buf and serverkey_buf for https_server\n\n");
@@ -322,7 +376,9 @@ void esp_wolfssl_cleanup(esp_tls_t *tls)
     }
     wolfSSL_shutdown( (WOLFSSL *)tls->priv_ssl);
     wolfSSL_free( (WOLFSSL *)tls->priv_ssl);
+    tls->priv_ssl = NULL;
     wolfSSL_CTX_free( (WOLFSSL_CTX *)tls->priv_ctx);
+    tls->priv_ctx = NULL;
     wolfSSL_Cleanup();
 }
 
@@ -367,8 +423,8 @@ void esp_wolfssl_server_session_delete(esp_tls_t *tls)
         esp_wolfssl_cleanup(tls);
         free(tls);
     }
-};
-#endif /* ! CONFIG_ESP_TLS_SERVER */
+}
+#endif /* CONFIG_ESP_TLS_SERVER */
 
 esp_err_t esp_wolfssl_init_global_ca_store(void)
 {
