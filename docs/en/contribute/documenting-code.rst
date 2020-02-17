@@ -303,8 +303,6 @@ This extension also supports markup for defining a local (for a single .rst-file
 
 {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2beta="IO5"} will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2beta.
 
-.. note:: Due to limitations in Sphinx processing, these substitutions are not applied to any document that is included via the ``.. include::` directive. In these cases it's necessary to use the ``only`` blocks and write per-target sections instead. Unfortunately this includes any document which is not yet translated, as the ``zh_CN`` version will include the ``en`` version.
-
 Put it all together
 -------------------
 
