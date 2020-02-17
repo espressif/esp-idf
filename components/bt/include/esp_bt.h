@@ -115,7 +115,7 @@ the adv packet will be discarded until the memory is restored. */
     .hci_uart_no = BT_HCI_UART_NO_DEFAULT,                                 \
     .hci_uart_baudrate = BT_HCI_UART_BAUDRATE_DEFAULT,                     \
     .scan_duplicate_mode = SCAN_DUPLICATE_MODE,                            \
-    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                     \
+    .scan_duplicate_type = SCAN_DUPLICATE_TYPE_VALUE,                      \
     .normal_adv_size = NORMAL_SCAN_DUPLICATE_CACHE_SIZE,                   \
     .mesh_adv_size = MESH_DUPLICATE_SCAN_CACHE_SIZE,                       \
     .send_adv_reserved_size = SCAN_SEND_ADV_RESERVED_SIZE,                 \
@@ -124,8 +124,8 @@ the adv packet will be discarded until the memory is restored. */
     .ble_max_conn = CONFIG_BTDM_CONTROLLER_BLE_MAX_CONN_EFF,               \
     .bt_max_acl_conn = CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_ACL_CONN_EFF,     \
     .bt_sco_datapath = CONFIG_BTDM_CONTROLLER_BR_EDR_SCO_DATA_PATH_EFF,    \
+    .auto_latency = BTDM_CONTROLLER_AUTO_LATENCY_EFF,                      \
     .bt_max_sync_conn = CONFIG_BTDM_CONTROLLER_BR_EDR_MAX_SYNC_CONN_EFF,   \
-    .auto_latency = BTDM_CONTROLLER_AUTO_LATENCY_EFF,                            \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 };
 
