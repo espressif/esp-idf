@@ -153,25 +153,31 @@ static esp_tls_cfg_server_t *create_secure_context(const struct httpd_ssl_config
     if (!cfg) {
         return NULL;
     }
-    cfg->cacert_buf = (unsigned char *)malloc(config->cacert_len);
-    if (!cfg->cacert_buf) {
-        free(cfg);
-        return NULL;
+/* cacert = CA which signs client cert, or client cert itself , which is mapped to client_verify_cert_pem */
+    if(config->client_verify_cert_pem != NULL) {
+        cfg->cacert_buf = (unsigned char *)malloc(config->client_verify_cert_len);
+        if (!cfg->cacert_buf) {
+            ESP_LOGE(TAG, "Could not allocate memory");
+            free(cfg);
+            return NULL;
+        }
+        memcpy((char *)cfg->cacert_buf, config->client_verify_cert_pem, config->client_verify_cert_len);
+        cfg->cacert_bytes = config->client_verify_cert_len;
     }
-    memcpy((char *)cfg->cacert_buf, config->cacert_pem, config->cacert_len);
-    cfg->cacert_bytes = config->cacert_len;
-
+/* servercert = cert of server itself ( in our case it is mapped to cacert in https_server example) */
     cfg->servercert_buf = (unsigned char *)malloc(config->cacert_len);
     if (!cfg->servercert_buf) {
+        ESP_LOGE(TAG, "Could not allocate memory");
         free((void *)cfg->cacert_buf);
         free(cfg);
         return NULL;
     }
-    memcpy((char *)cfg->servercert_buf, config->servercert_pem, config->servercert_len);
+    memcpy((char *)cfg->servercert_buf, config->cacert_pem, config->cacert_len);
     cfg->servercert_bytes = config->cacert_len;
 
     cfg->serverkey_buf = (unsigned char *)malloc(config->prvtkey_len);
     if (!cfg->serverkey_buf) {
+        ESP_LOGE(TAG, "Could not allocate memory");
         free((void *)cfg->servercert_buf);
         free((void *)cfg->cacert_buf);
         free(cfg);
