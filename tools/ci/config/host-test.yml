@@ -205,7 +205,7 @@ test_idf_tools:
   extends: .host_test_template
   script:
     # Remove Xtensa and ULP toolchains from the PATH, tests will expect a clean environment
-    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif${CUSTOM_TOOLCHAIN_PATH:+\|${CUSTOM_TOOLCHAIN_PATH}}" | tr "\n" ":"); echo ${p%:})
+    - export PATH=$(p=$(echo $PATH | tr ":" "\n" | grep -v "/root/.espressif/tools\|/opt/espressif" | tr "\n" ":"); echo ${p%:})
     - cd ${IDF_PATH}/tools/test_idf_tools
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_idf_tools.py
 
