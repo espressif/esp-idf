@@ -20,7 +20,7 @@ extern "C"
 #ifndef __ASSEMBLER__
 
 #include "esp_err.h"
-
+#include "soc/soc.h"
 
 /**
  * @brief If an OCD is connected over JTAG. set breakpoint 0 to the given function 
@@ -66,7 +66,9 @@ void esp_clear_watchpoint(int no);
  */
 static inline bool esp_stack_ptr_is_sane(uint32_t sp)
 {
-	return !(sp < 0x3ffae010UL || sp > 0x3ffffff0UL || ((sp & 0xf) != 0));
+#define stack_in_dram(sp)   (!(((sp) < (SOC_DRAM_LOW + 0x10)) || ((sp) > (SOC_DRAM_HIGH - 0x10))))
+#define stack_in_extram(sp) (!(((sp) < (SOC_EXTRAM_DATA_LOW + 0x10)) || ((sp) > (SOC_EXTRAM_DATA_HIGH - 0x10))))
+    return ((stack_in_dram(sp) || stack_in_extram(sp)) && ((sp & 0xf) == 0));
 }
 #endif
 
