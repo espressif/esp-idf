@@ -34,6 +34,10 @@
 
 #endif
 
+#if !defined(ADV_TASK_CORE)
+#define ADV_TASK_CORE TASK_PINNED_TO_CORE
+#endif
+
 #define BLE_MESH_GAP_ADV_MAX_LEN    31
 
 #define BLE_MESH_GATT_DEF_MTU_SIZE  23
