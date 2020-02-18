@@ -154,9 +154,10 @@ def update_exclude_patterns(tags):
             exclude_patterns.append(e)
 
     if "esp32s2" not in tags:
-        # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
+        # Exclude ESP32-S2-only document pages so they aren't found in the initial search for .rst files
         # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['hw-reference/esp32s2/**',
+        for e in ['esp32s2.rst',
+                  'hw-reference/esp32s2/**',
                   'api-guides/ulps2_instruction_set.rst',
                   'api-reference/peripherals/temp_sensor.rst']:
             exclude_patterns.append(e)

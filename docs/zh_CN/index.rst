@@ -39,10 +39,10 @@ ESP-IDF 编程指南
 .. toctree::
    :hidden:
 
+   :esp32s2: ESP32-S2 预览 <esp32s2>
    快速入门 <get-started/index>
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
-   ESP32-S2 预览 <esp32s2>
    API 指南 <api-guides/index>
    Libraries and Frameworks <libraries-and-frameworks/index>
    贡献代码 <contribute/index>

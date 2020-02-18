@@ -960,7 +960,7 @@ Selecting the Target
 
 ESP-IDF supports multiple targets (chips). The identifiers used for each chip are as follows:
 
-* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WD, ESP32-PICO-D4
+* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WDH, ESP32-PICO-D4
 * ``esp32s2``— for ESP32-S2
 
 To select the target before building the project, use ``idf.py set-target <target>`` command, for example::

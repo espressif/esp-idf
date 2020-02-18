@@ -47,10 +47,10 @@ This is the documentation for Espressif IoT Development Framework (`esp-idf <htt
 .. toctree::
    :hidden:
 
+   :esp32s2: ESP32-S2 Preview Support <esp32s2>
    Get Started <get-started/index>
    API Reference <api-reference/index>
    H/W Reference <hw-reference/index>
-   ESP32-S2 Preview Support <esp32s2>
    API Guides <api-guides/index>
    Libraries and Frameworks <libraries-and-frameworks/index>
    Contribute <contribute/index>
