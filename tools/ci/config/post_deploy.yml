@@ -1,6 +1,6 @@
 .check_doc_links_template: &check_doc_links_template
   stage: post_deploy
-  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags: [ "build", "amd64", "internet" ]
   only:
     - master

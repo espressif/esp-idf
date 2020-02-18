@@ -70,63 +70,32 @@ push_to_github:
     - git remote add github git@github.com:espressif/esp-idf.git
     - tools/ci/push_to_github.sh
 
-.upload_doc_archive: &upload_doc_archive |
-  cd docs/_build/$DOCLANG/$DOCTGT
-  mv html $DOCTGT
-  tar czf $DOCTGT.tar.gz $DOCTGT
-  # arrange for URL format language/version/target
-  ssh $DOCS_SERVER -x "mkdir -p $DOCS_PATH/$DOCLANG/$GIT_VER"
-  scp $DOCTGT.tar.gz $DOCS_SERVER:$DOCS_PATH/$DOCLANG/$GIT_VER"
-  ssh $DOCS_SERVER -x "cd $DOCS_PATH/$DOCLANG/$GIT_VER && tar xzf ${DOCTGT}.tar.gz && rm -f ../latest && ln -s . ../latest"
-  cd -
-
-deploy_docs:
+.deploy_docs_template:
+  extends: .before_script_lesser
   stage: deploy
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - deploy
     - shiny
-  only:
-    refs:
-      - master
-      - /^release\/v/
-      - /^v\d+\.\d+(\.\d+)?($|-)/
-      - triggers
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD_DOCS
   dependencies:
     - build_docs_en_esp32
     - build_docs_en_esp32s2
     - build_docs_zh_CN_esp32
     - build_docs_zh_CN_esp32s2
-  extends: .before_script_lesser
+  variables:
+    DOCS_BUILD_DIR: "${IDF_PATH}/docs/_build/"
+    PYTHONUNBUFFERED: 1
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
-    - echo -n $DOCS_DEPLOY_KEY > ~/.ssh/id_rsa_base64
+    - echo -n $DOCS_DEPLOY_PRIVATEKEY > ~/.ssh/id_rsa_base64
     - base64 --decode --ignore-garbage ~/.ssh/id_rsa_base64 > ~/.ssh/id_rsa
     - chmod 600 ~/.ssh/id_rsa
-    - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
+    - echo -e "Host $DOCS_DEPLOY_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_DEPLOY_SERVER_USER\n" >> ~/.ssh/config
     - export GIT_VER=$(git describe --always)
 
-    - DOCLANG=en; DOCTGT=esp32
-    - *upload_doc_archive
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ${IDF_PATH}/tools/ci/deploy_docs.py
 
-    - DOCLANG=en; DOCTGT=esp32s2
-    - *upload_doc_archive
-
-    - DOCLANG=zh_CN; DOCTGT=esp32
-    - *upload_doc_archive
-
-    - DOCLANG=zh_CN; DOCTGT=esp32s2
-    - *upload_doc_archive
-
-    # log link to doc URLs
-    - echo "[document $TYPE][en][esp32] $DOCS_URL_BASE/en/${GIT_VER}/esp32/index.html"
-    - echo "[document $TYPE][en][esp32s2] $DOCS_URL_BASE/en/${GIT_VER}/esp32s2/index.html"
-    - echo "[document $TYPE][zh_CN][esp32] $DOCS_URL_BASE/zh_CN/${GIT_VER}/esp32/index.html"
-    - echo "[document $TYPE][zh_CN][esp32s2] $DOCS_URL_BASE/zh_CN/${GIT_VER}/esp32s2/index.html"
 
 # deploys docs to CI_DOCKER_REGISTRY webserver, for internal review
 deploy_docs_preview:
@@ -139,26 +108,29 @@ deploy_docs_preview:
       - $BOT_LABEL_BUILD_DOCS
   variables:
     TYPE: "preview"
-    # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_PATH for preview server so we keep them
-    DOCS_DEPLOY_KEY: "$DOCS_DEPLOY_KEY"
-    DOCS_SERVER: "$DOCS_SERVER"
-    DOCS_PATH: "$DOCS_PATH"
-    DOCS_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
+    # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
+    DOCS_DEPLOY_PRIVATEKEY: "$DOCS_DEPLOY_KEY"
+    DOCS_DEPLOY_SERVER: "$DOCS_SERVER"
+    DOCS_DEPLOY_SERVER_USER: "$DOCS_SERVER_USER"
+    DOCS_DEPLOY_PATH: "$DOCS_PATH"
+    DOCS_DEPLOY_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
 
 # deploy docs to production webserver
 deploy_docs_production:
   extends: .deploy_docs_template
   only:
     refs:
+      # The DOCS_PROD_* variables used by this job are "Protected" so these branches must all be marked "Protected" in Gitlab settings
       - master
       - /^release\/v/
       - /^v\d+\.\d+(\.\d+)?($|-)/
   variables:
     TYPE: "preview"
-    DOCS_DEPLOY_KEY: "WIP"
-    DOCS_SERVER: "WIP"
-    DOCS_PATH: "WIP"
-    DOCS_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
+    DOCS_DEPLOY_PRIVATEKEY: "$DOCS_PROD_DEPLOY_KEY"
+    DOCS_DEPLOY_SERVER: "$DOCS_PROD_SERVER"
+    DOCS_DEPLOY_SERVER_USER: "$DOCS_PROD_SERVER_USER"
+    DOCS_DEPLOY_PATH: "$DOCS_PROD_PATH"
+    DOCS_DEPLOY_URL_BASE: "https://docs.espressif.com/projects/esp-idf"
 
 deploy_test_result:
   stage: deploy

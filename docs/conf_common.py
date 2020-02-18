@@ -21,6 +21,7 @@ import os
 import os.path
 import re
 import subprocess
+from sanitize_version import sanitize_version
 from idf_extensions.util import download_file_if_missing
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
@@ -107,17 +108,7 @@ version = subprocess.check_output(['git', 'describe']).strip().decode('utf-8')
 
 # The 'release' version is the same as version for non-CI builds, but for CI
 # builds on a branch then it's replaced with the branch name
-try:
-    # default to using the Gitlab CI branch or tag if one is present
-    release = os.environ['CI_COMMIT_REF_NAME']
-
-    # emulate RTD's naming scheme for branches, master->latest, etc
-    release = release.replace('/', '-')
-    if release == "master":
-        release = "latest"
-except KeyError:
-    # otherwise, fall back to the full git version (no branch info)
-    release = version
+release = sanitize_version(version)
 
 print('Version: {0}  Release: {1}'.format(version, release))
 

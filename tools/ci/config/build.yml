@@ -232,7 +232,7 @@ build_test_apps_esp32s2:
 
 .build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - build_docs
   artifacts:
