@@ -327,10 +327,6 @@ void __attribute__((noreturn)) panic_abort(const char *details)
 #endif
 #endif
 
-    while (1) {
-        if (esp_cpu_in_ocd_debug_mode()) {
-            cpu_hal_break();
-        }
-        *((int *) 0) = 0; // should be an invalid operation on targets
-    }
+    *((int *) 0) = 0; // should be an invalid operation on targets
+    while(1);
 }
