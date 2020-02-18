@@ -623,6 +623,12 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable);
  */
 #define touch_hal_sleep_read_baseline(baseline) touch_ll_sleep_read_baseline(baseline)
 
+#define touch_hal_sleep_read_smooth(smooth_data) touch_ll_sleep_read_smooth(smooth_data)
+
+#define touch_hal_sleep_read_data(raw_data) touch_ll_sleep_read_data(raw_data)
+
+#define touch_hal_sleep_reset_baseline() touch_ll_sleep_reset_baseline()
+
 /**
  * Read smooth data of touch sensor for sleep pad.
  */
