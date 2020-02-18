@@ -13,13 +13,14 @@
 #include "esp_log.h"
 
 #define TOUCH_BUTTON_NUM    14
+#define TOUCH_CHANGE_CONFIG 0
 
-static const char * TAG = "touch read";
+static const char *TAG = "touch read";
 static const touch_pad_t button[TOUCH_BUTTON_NUM] = {
     TOUCH_PAD_NUM1,
     TOUCH_PAD_NUM2,
     TOUCH_PAD_NUM3,
-    TOUCH_PAD_NUM4, 
+    TOUCH_PAD_NUM4,
     TOUCH_PAD_NUM5,
     TOUCH_PAD_NUM6,
     TOUCH_PAD_NUM7,
@@ -39,7 +40,7 @@ static const touch_pad_t button[TOUCH_BUTTON_NUM] = {
 static void tp_example_read_task(void *pvParameter)
 {
     uint32_t touch_value;
-    
+
     /* Wait touch sensor init done */
     vTaskDelay(100 / portTICK_RATE_MS);
     printf("Touch Sensor read, the output format is: \nTouchpad num:[raw data]\n\n");
@@ -61,20 +62,20 @@ void app_main(void)
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
         touch_pad_config(button[i]);
     }
-#if 0
+#if TOUCH_CHANGE_CONFIG
     /* If you want change the touch sensor default setting, please write here(after initialize). There are examples: */
     touch_pad_set_meas_time(TOUCH_PAD_SLEEP_CYCLE_DEFAULT, TOUCH_PAD_SLEEP_CYCLE_DEFAULT);
     touch_pad_set_voltage(TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD, TOUCH_PAD_LOW_VOLTAGE_THRESHOLD, TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
-    touch_pad_set_inactive_connect(TOUCH_PAD_INACTIVE_CONNECT_DEFAULT);
+    touch_pad_set_idle_channel_connect(TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT);
     for (int i = 0; i < TOUCH_BUTTON_NUM; i++) {
         touch_pad_set_cnt_mode(i, TOUCH_PAD_SLOPE_DEFAULT, TOUCH_PAD_TIE_OPT_DEFAULT);
     }
 #endif
     /* Denoise setting at TouchSensor 0. */
     touch_pad_denoise_t denoise = {
-            /* The bits to be cancelled are determined according to the noise level. */
-            .grade = TOUCH_PAD_DENOISE_BIT4,    
-            .cap_level = TOUCH_PAD_DENOISE_CAP_L7,
+        /* The bits to be cancelled are determined according to the noise level. */
+        .grade = TOUCH_PAD_DENOISE_BIT4,
+        .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
     touch_pad_denoise_set_config(&denoise);
     touch_pad_denoise_enable();
@@ -83,7 +84,7 @@ void app_main(void)
     /* Enable touch sensor clock. Work mode is "timer trigger". */
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_fsm_start();
-    
+
     /* Start task to read values by pads. */
     xTaskCreate(&tp_example_read_task, "touch_pad_read_task", 2048, NULL, 5, NULL);
 }

@@ -60,7 +60,7 @@ static SemaphoreHandle_t rtc_tsens_mux = NULL;
 
 esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 {
-    SENS.sar_tctrl.tsens_dac = dac_offset[tsens.dac_offset].set_val;
+    // SENS.sar_tctrl.tsens_dac = dac_offset[tsens.dac_offset].set_val; // TODO: others MR resolve it.
     SENS.sar_tctrl.tsens_clk_div = tsens.clk_div;
     SENS.sar_tctrl.tsens_power_up_force = 1;
     SENS.sar_tctrl2.tsens_xpd_wait = TSENS_XPD_WAIT_DEFAULT;
@@ -77,7 +77,7 @@ esp_err_t temp_sensor_set_config(temp_sensor_config_t tsens)
 esp_err_t temp_sensor_get_config(temp_sensor_config_t *tsens)
 {
     TSENS_CHECK(tsens != NULL, ESP_ERR_INVALID_ARG);
-    tsens->dac_offset = SENS.sar_tctrl.tsens_dac;
+    // tsens->dac_offset = SENS.sar_tctrl.tsens_dac; // TODO: others MR resolve it.
     for(int i=TSENS_DAC_L0; i<TSENS_DAC_MAX; i++) {
         if(tsens->dac_offset == dac_offset[i].set_val) {
             tsens->dac_offset = dac_offset[i].index;

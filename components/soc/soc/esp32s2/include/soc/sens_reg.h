@@ -44,18 +44,6 @@ extern "C" {
 #define SENS_SAR1_CLK_GATED_M  (BIT(18))
 #define SENS_SAR1_CLK_GATED_V  0x1
 #define SENS_SAR1_CLK_GATED_S  18
-/* SENS_SAR1_SAMPLE_BIT : R/W ;bitpos:[17:16] ;default: 2'd3 ; */
-/*description: 00: for 9-bit width*/
-#define SENS_SAR1_SAMPLE_BIT  0x00000003
-#define SENS_SAR1_SAMPLE_BIT_M  ((SENS_SAR1_SAMPLE_BIT_V)<<(SENS_SAR1_SAMPLE_BIT_S))
-#define SENS_SAR1_SAMPLE_BIT_V  0x3
-#define SENS_SAR1_SAMPLE_BIT_S  16
-/* SENS_SAR1_SAMPLE_CYCLE : R/W ;bitpos:[15:8] ;default: 8'd9 ; */
-/*description: sample cycles for SAR ADC1*/
-#define SENS_SAR1_SAMPLE_CYCLE  0x000000FF
-#define SENS_SAR1_SAMPLE_CYCLE_M  ((SENS_SAR1_SAMPLE_CYCLE_V)<<(SENS_SAR1_SAMPLE_CYCLE_S))
-#define SENS_SAR1_SAMPLE_CYCLE_V  0xFF
-#define SENS_SAR1_SAMPLE_CYCLE_S  8
 /* SENS_SAR1_CLK_DIV : R/W ;bitpos:[7:0] ;default: 8'd2 ; */
 /*description: clock divider*/
 #define SENS_SAR1_CLK_DIV  0x000000FF
@@ -99,18 +87,18 @@ extern "C" {
 #define SENS_FORCE_XPD_AMP_FSM 0 // Use FSM to control power down
 #define SENS_FORCE_XPD_AMP_PD  2 // Force power down
 #define SENS_FORCE_XPD_AMP_PU  3 // Force power up
-/* SENS_SAR1_STOP : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: stop SAR ADC1 conversion*/
-#define SENS_SAR1_STOP  (BIT(2))
-#define SENS_SAR1_STOP_M  (BIT(2))
-#define SENS_SAR1_STOP_V  0x1
-#define SENS_SAR1_STOP_S  2
-/* SENS_SAR1_BIT_WIDTH : R/W ;bitpos:[1:0] ;default: 2'b11 ; */
-/*description: 00: 9 bit*/
-#define SENS_SAR1_BIT_WIDTH  0x00000003
-#define SENS_SAR1_BIT_WIDTH_M  ((SENS_SAR1_BIT_WIDTH_V)<<(SENS_SAR1_BIT_WIDTH_S))
-#define SENS_SAR1_BIT_WIDTH_V  0x3
-#define SENS_SAR1_BIT_WIDTH_S  0
+/* SENS_RTC_CLKGATE_EN : R/W ;bitpos:[23] ;default: 1'b0 ; */
+/*description: */
+#define SENS_RTC_CLKGATE_EN  (BIT(23))
+#define SENS_RTC_CLKGATE_EN_M  (BIT(23))
+#define SENS_RTC_CLKGATE_EN_V  0x1
+#define SENS_RTC_CLKGATE_EN_S  23
+/* SENS_RTC_RESET : R/W ;bitpos:[22] ;default: 1'b0 ; */
+/*description: */
+#define SENS_RTC_RESET  (BIT(22))
+#define SENS_RTC_RESET_M  (BIT(22))
+#define SENS_RTC_RESET_V  0x1
+#define SENS_RTC_RESET_S  22
 
 #define SENS_SAR_MEAS1_CTRL2_REG          (DR_REG_SENS_BASE + 0x000c)
 /* SENS_SAR1_EN_PAD_FORCE : R/W ;bitpos:[31] ;default: 1'b0 ; */
@@ -299,18 +287,12 @@ extern "C" {
 #define SENS_SAR2_CLK_GATED_M  (BIT(18))
 #define SENS_SAR2_CLK_GATED_V  0x1
 #define SENS_SAR2_CLK_GATED_S  18
-/* SENS_SAR2_SAMPLE_BIT : R/W ;bitpos:[17:16] ;default: 2'd3 ; */
-/*description: 00: for 9-bit width*/
-#define SENS_SAR2_SAMPLE_BIT  0x00000003
-#define SENS_SAR2_SAMPLE_BIT_M  ((SENS_SAR2_SAMPLE_BIT_V)<<(SENS_SAR2_SAMPLE_BIT_S))
-#define SENS_SAR2_SAMPLE_BIT_V  0x3
-#define SENS_SAR2_SAMPLE_BIT_S  16
-/* SENS_SAR2_SAMPLE_CYCLE : R/W ;bitpos:[15:8] ;default: 8'd9 ; */
-/*description: sample cycles for SAR ADC2*/
-#define SENS_SAR2_SAMPLE_CYCLE  0x000000FF
-#define SENS_SAR2_SAMPLE_CYCLE_M  ((SENS_SAR2_SAMPLE_CYCLE_V)<<(SENS_SAR2_SAMPLE_CYCLE_S))
-#define SENS_SAR2_SAMPLE_CYCLE_V  0xFF
-#define SENS_SAR2_SAMPLE_CYCLE_S  8
+/* SENS_SAR2_WAIT_ARB_CYCLE : R/W ;bitpos:[17:16] ;default: 2'b1 ; */
+/*description: wait arbit stable after sar_done*/
+#define SENS_SAR2_WAIT_ARB_CYCLE  0x00000003
+#define SENS_SAR2_WAIT_ARB_CYCLE_M  ((SENS_SAR2_WAIT_ARB_CYCLE_V)<<(SENS_SAR2_WAIT_ARB_CYCLE_S))
+#define SENS_SAR2_WAIT_ARB_CYCLE_V  0x3
+#define SENS_SAR2_WAIT_ARB_CYCLE_S  16
 /* SENS_SAR2_CLK_DIV : R/W ;bitpos:[7:0] ;default: 8'd2 ; */
 /*description: clock divider*/
 #define SENS_SAR2_CLK_DIV  0x000000FF
@@ -369,18 +351,12 @@ extern "C" {
 #define SENS_SAR2_PWDET_CAL_EN_M  (BIT(3))
 #define SENS_SAR2_PWDET_CAL_EN_V  0x1
 #define SENS_SAR2_PWDET_CAL_EN_S  3
-/* SENS_SAR2_STOP : R/W ;bitpos:[2] ;default: 1'b0 ; */
-/*description: stop SAR ADC2 conversion*/
-#define SENS_SAR2_STOP  (BIT(2))
-#define SENS_SAR2_STOP_M  (BIT(2))
-#define SENS_SAR2_STOP_V  0x1
-#define SENS_SAR2_STOP_S  2
-/* SENS_SAR2_BIT_WIDTH : R/W ;bitpos:[1:0] ;default: 2'b11 ; */
-/*description: 00: 9 bit*/
-#define SENS_SAR2_BIT_WIDTH  0x00000003
-#define SENS_SAR2_BIT_WIDTH_M  ((SENS_SAR2_BIT_WIDTH_V)<<(SENS_SAR2_BIT_WIDTH_S))
-#define SENS_SAR2_BIT_WIDTH_V  0x3
-#define SENS_SAR2_BIT_WIDTH_S  0
+/* SENS_SAR2_CNTL_STATE : RO ;bitpos:[2:0] ;default: 3'b0 ; */
+/*description: saradc2_cntl_fsm*/
+#define SENS_SAR2_CNTL_STATE  0x00000007
+#define SENS_SAR2_CNTL_STATE_M  ((SENS_SAR2_CNTL_STATE_V)<<(SENS_SAR2_CNTL_STATE_S))
+#define SENS_SAR2_CNTL_STATE_V  0x7
+#define SENS_SAR2_CNTL_STATE_S  0
 
 #define SENS_SAR_MEAS2_CTRL2_REG          (DR_REG_SENS_BASE + 0x0030)
 /* SENS_SAR2_EN_PAD_FORCE : R/W ;bitpos:[31] ;default: 1'b0 ; */
@@ -459,19 +435,6 @@ extern "C" {
 #define SENS_FORCE_XPD_SAR_FSM 0 // Use FSM to control power down
 #define SENS_FORCE_XPD_SAR_PD  2 // Force power down
 #define SENS_FORCE_XPD_SAR_PU  3 // Force power up
-/* SENS_SAR1_DREF : R/W ;bitpos:[28:26] ;default: 3'd0 ; */
-/*description: Adjust saradc1 offset*/
-#define SENS_SAR1_DREF  0x00000007
-#define SENS_SAR1_DREF_M  ((SENS_SAR1_DREF_V)<<(SENS_SAR1_DREF_S))
-#define SENS_SAR1_DREF_V  0x7
-#define SENS_SAR1_DREF_S  26
-/* SENS_SAR2_DREF : R/W ;bitpos:[25:23] ;default: 3'd0 ; */
-/*description: Adjust saradc2 offset*/
-#define SENS_SAR2_DREF  0x00000007
-#define SENS_SAR2_DREF_M  ((SENS_SAR2_DREF_V)<<(SENS_SAR2_DREF_S))
-#define SENS_SAR2_DREF_V  0x7
-#define SENS_SAR2_DREF_S  23
-
 #define SENS_SAR_SLAVE_ADDR1_REG          (DR_REG_SENS_BASE + 0x0040)
 /* SENS_MEAS_STATUS : RO ;bitpos:[29:22] ;default: 8'h0 ; */
 /*description: */
@@ -535,26 +498,6 @@ extern "C" {
 #define SENS_I2C_SLAVE_ADDR7_S  0
 
 #define SENS_SAR_TSENS_CTRL_REG          (DR_REG_SENS_BASE + 0x0050)
-/* SENS_TSENS_DAC : R/W ;bitpos:[31:28] ;default: 4'hF ; */
-/*description: Temperature sensor offset dac. 15 for 0 offset  5 for -2  7 for
- -1  11 for 1  10 for 2*/
-#define SENS_TSENS_DAC  0x0000000F
-#define SENS_TSENS_DAC_M  ((SENS_TSENS_DAC_V)<<(SENS_TSENS_DAC_S))
-#define SENS_TSENS_DAC_V  0xF
-#define SENS_TSENS_DAC_S  28
-/* SENS_TSENS_DIV_CHOP : R/W ;bitpos:[27:26] ;default: 2'b10 ; */
-/*description: 0 for steady phase 0  1 for steady phase 1  2 for chopping with
- ½ frequency of TSENS_CK  3 for chopping with ¼*/
-#define SENS_TSENS_DIV_CHOP  0x00000003
-#define SENS_TSENS_DIV_CHOP_M  ((SENS_TSENS_DIV_CHOP_V)<<(SENS_TSENS_DIV_CHOP_S))
-#define SENS_TSENS_DIV_CHOP_V  0x3
-#define SENS_TSENS_DIV_CHOP_S  26
-/* SENS_TSENS_DIZ : R/W ;bitpos:[25] ;default: 1'b0 ; */
-/*description: ADC input short*/
-#define SENS_TSENS_DIZ  (BIT(25))
-#define SENS_TSENS_DIZ_M  (BIT(25))
-#define SENS_TSENS_DIZ_V  0x1
-#define SENS_TSENS_DIZ_S  25
 /* SENS_TSENS_DUMP_OUT : R/W ;bitpos:[24] ;default: 1'b0 ; */
 /*description: temperature sensor dump out*/
 #define SENS_TSENS_DUMP_OUT  (BIT(24))
@@ -675,6 +618,24 @@ extern "C" {
 #define SENS_TOUCH_APPROACH_PAD2_M  ((SENS_TOUCH_APPROACH_PAD2_V)<<(SENS_TOUCH_APPROACH_PAD2_S))
 #define SENS_TOUCH_APPROACH_PAD2_V  0xF
 #define SENS_TOUCH_APPROACH_PAD2_S  20
+/* SENS_TOUCH_UNIT_END : RO ;bitpos:[19] ;default: 1'd0 ; */
+/*description: touch_unit_done*/
+#define SENS_TOUCH_UNIT_END  (BIT(19))
+#define SENS_TOUCH_UNIT_END_M  (BIT(19))
+#define SENS_TOUCH_UNIT_END_V  0x1
+#define SENS_TOUCH_UNIT_END_S  19
+/* SENS_TOUCH_DENOISE_END : RO ;bitpos:[18] ;default: 1'd0 ; */
+/*description: touch_denoise_done*/
+#define SENS_TOUCH_DENOISE_END  (BIT(18))
+#define SENS_TOUCH_DENOISE_END_M  (BIT(18))
+#define SENS_TOUCH_DENOISE_END_V  0x1
+#define SENS_TOUCH_DENOISE_END_S  18
+/* SENS_TOUCH_DATA_SEL : R/W ;bitpos:[17:16] ;default: 2'd0 ; */
+/*description: 3: smooth data 2: baseline 1 0: raw_data*/
+#define SENS_TOUCH_DATA_SEL  0x00000003
+#define SENS_TOUCH_DATA_SEL_M  ((SENS_TOUCH_DATA_SEL_V)<<(SENS_TOUCH_DATA_SEL_S))
+#define SENS_TOUCH_DATA_SEL_V  0x3
+#define SENS_TOUCH_DATA_SEL_S  16
 /* SENS_TOUCH_STATUS_CLR : WO ;bitpos:[15] ;default: 1'd0 ; */
 /*description: clear all touch active status*/
 #define SENS_TOUCH_STATUS_CLR  (BIT(15))
@@ -800,126 +761,6 @@ extern "C" {
 #define SENS_TOUCH_OUT_TH14_V  0x3FFFFF
 #define SENS_TOUCH_OUT_TH14_S  0
 
-#define SENS_SAR_TOUCH_OUT0_REG          (DR_REG_SENS_BASE + 0x0098)
-/* SENS_TOUCH_MEAS_OUT0 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 0*/
-#define SENS_TOUCH_MEAS_OUT0  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT0_M  ((SENS_TOUCH_MEAS_OUT0_V)<<(SENS_TOUCH_MEAS_OUT0_S))
-#define SENS_TOUCH_MEAS_OUT0_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT0_S  0
-
-#define SENS_SAR_TOUCH_OUT1_REG          (DR_REG_SENS_BASE + 0x009c)
-/* SENS_TOUCH_MEAS_OUT1 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 1*/
-#define SENS_TOUCH_MEAS_OUT1  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT1_M  ((SENS_TOUCH_MEAS_OUT1_V)<<(SENS_TOUCH_MEAS_OUT1_S))
-#define SENS_TOUCH_MEAS_OUT1_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT1_S  0
-
-#define SENS_SAR_TOUCH_OUT2_REG          (DR_REG_SENS_BASE + 0x00a0)
-/* SENS_TOUCH_MEAS_OUT2 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 2*/
-#define SENS_TOUCH_MEAS_OUT2  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT2_M  ((SENS_TOUCH_MEAS_OUT2_V)<<(SENS_TOUCH_MEAS_OUT2_S))
-#define SENS_TOUCH_MEAS_OUT2_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT2_S  0
-
-#define SENS_SAR_TOUCH_OUT3_REG          (DR_REG_SENS_BASE + 0x00a4)
-/* SENS_TOUCH_MEAS_OUT3 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 3*/
-#define SENS_TOUCH_MEAS_OUT3  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT3_M  ((SENS_TOUCH_MEAS_OUT3_V)<<(SENS_TOUCH_MEAS_OUT3_S))
-#define SENS_TOUCH_MEAS_OUT3_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT3_S  0
-
-#define SENS_SAR_TOUCH_OUT4_REG          (DR_REG_SENS_BASE + 0x00a8)
-/* SENS_TOUCH_MEAS_OUT4 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 4*/
-#define SENS_TOUCH_MEAS_OUT4  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT4_M  ((SENS_TOUCH_MEAS_OUT4_V)<<(SENS_TOUCH_MEAS_OUT4_S))
-#define SENS_TOUCH_MEAS_OUT4_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT4_S  0
-
-#define SENS_SAR_TOUCH_OUT5_REG          (DR_REG_SENS_BASE + 0x00ac)
-/* SENS_TOUCH_MEAS_OUT5 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 5*/
-#define SENS_TOUCH_MEAS_OUT5  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT5_M  ((SENS_TOUCH_MEAS_OUT5_V)<<(SENS_TOUCH_MEAS_OUT5_S))
-#define SENS_TOUCH_MEAS_OUT5_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT5_S  0
-
-#define SENS_SAR_TOUCH_OUT6_REG          (DR_REG_SENS_BASE + 0x00b0)
-/* SENS_TOUCH_MEAS_OUT6 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 6*/
-#define SENS_TOUCH_MEAS_OUT6  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT6_M  ((SENS_TOUCH_MEAS_OUT6_V)<<(SENS_TOUCH_MEAS_OUT6_S))
-#define SENS_TOUCH_MEAS_OUT6_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT6_S  0
-
-#define SENS_SAR_TOUCH_OUT7_REG          (DR_REG_SENS_BASE + 0x00b4)
-/* SENS_TOUCH_MEAS_OUT7 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 7*/
-#define SENS_TOUCH_MEAS_OUT7  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT7_M  ((SENS_TOUCH_MEAS_OUT7_V)<<(SENS_TOUCH_MEAS_OUT7_S))
-#define SENS_TOUCH_MEAS_OUT7_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT7_S  0
-
-#define SENS_SAR_TOUCH_OUT8_REG          (DR_REG_SENS_BASE + 0x00b8)
-/* SENS_TOUCH_MEAS_OUT8 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 8*/
-#define SENS_TOUCH_MEAS_OUT8  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT8_M  ((SENS_TOUCH_MEAS_OUT8_V)<<(SENS_TOUCH_MEAS_OUT8_S))
-#define SENS_TOUCH_MEAS_OUT8_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT8_S  0
-
-#define SENS_SAR_TOUCH_OUT9_REG          (DR_REG_SENS_BASE + 0x00bc)
-/* SENS_TOUCH_MEAS_OUT9 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 9*/
-#define SENS_TOUCH_MEAS_OUT9  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT9_M  ((SENS_TOUCH_MEAS_OUT9_V)<<(SENS_TOUCH_MEAS_OUT9_S))
-#define SENS_TOUCH_MEAS_OUT9_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT9_S  0
-
-#define SENS_SAR_TOUCH_OUT10_REG          (DR_REG_SENS_BASE + 0x00c0)
-/* SENS_TOUCH_MEAS_OUT10 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 10*/
-#define SENS_TOUCH_MEAS_OUT10  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT10_M  ((SENS_TOUCH_MEAS_OUT10_V)<<(SENS_TOUCH_MEAS_OUT10_S))
-#define SENS_TOUCH_MEAS_OUT10_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT10_S  0
-
-#define SENS_SAR_TOUCH_OUT11_REG          (DR_REG_SENS_BASE + 0x00c4)
-/* SENS_TOUCH_MEAS_OUT11 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 11*/
-#define SENS_TOUCH_MEAS_OUT11  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT11_M  ((SENS_TOUCH_MEAS_OUT11_V)<<(SENS_TOUCH_MEAS_OUT11_S))
-#define SENS_TOUCH_MEAS_OUT11_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT11_S  0
-
-#define SENS_SAR_TOUCH_OUT12_REG          (DR_REG_SENS_BASE + 0x00c8)
-/* SENS_TOUCH_MEAS_OUT12 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 12*/
-#define SENS_TOUCH_MEAS_OUT12  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT12_M  ((SENS_TOUCH_MEAS_OUT12_V)<<(SENS_TOUCH_MEAS_OUT12_S))
-#define SENS_TOUCH_MEAS_OUT12_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT12_S  0
-
-#define SENS_SAR_TOUCH_OUT13_REG          (DR_REG_SENS_BASE + 0x00cc)
-/* SENS_TOUCH_MEAS_OUT13 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 13*/
-#define SENS_TOUCH_MEAS_OUT13  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT13_M  ((SENS_TOUCH_MEAS_OUT13_V)<<(SENS_TOUCH_MEAS_OUT13_S))
-#define SENS_TOUCH_MEAS_OUT13_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT13_S  0
-
-#define SENS_SAR_TOUCH_OUT14_REG          (DR_REG_SENS_BASE + 0x00d0)
-/* SENS_TOUCH_MEAS_OUT14 : RO ;bitpos:[21:0] ;default: 22'h0 ; */
-/*description: the counter for touch pad 14*/
-#define SENS_TOUCH_MEAS_OUT14  0x003FFFFF
-#define SENS_TOUCH_MEAS_OUT14_M  ((SENS_TOUCH_MEAS_OUT14_V)<<(SENS_TOUCH_MEAS_OUT14_S))
-#define SENS_TOUCH_MEAS_OUT14_V  0x3FFFFF
-#define SENS_TOUCH_MEAS_OUT14_S  0
-
 #define SENS_SAR_TOUCH_CHN_ST_REG          (DR_REG_SENS_BASE + 0x00d4)
 /* SENS_TOUCH_MEAS_DONE : RO ;bitpos:[31] ;default: 1'b0 ; */
 /*description: */
@@ -961,12 +802,12 @@ extern "C" {
 #define SENS_TOUCH_PAD1_DEBOUNCE_M  ((SENS_TOUCH_PAD1_DEBOUNCE_V)<<(SENS_TOUCH_PAD1_DEBOUNCE_S))
 #define SENS_TOUCH_PAD1_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD1_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD1_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD1_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD1_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD1_BASELINE_M  ((SENS_TOUCH_PAD1_BASELINE_V)<<(SENS_TOUCH_PAD1_BASELINE_S))
-#define SENS_TOUCH_PAD1_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD1_BASELINE_S  0
+#define SENS_TOUCH_PAD1_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD1_DATA_M  ((SENS_TOUCH_PAD1_DATA_V)<<(SENS_TOUCH_PAD1_DATA_S))
+#define SENS_TOUCH_PAD1_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD1_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS2_REG          (DR_REG_SENS_BASE + 0x00e0)
 /* SENS_TOUCH_PAD2_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -975,12 +816,12 @@ extern "C" {
 #define SENS_TOUCH_PAD2_DEBOUNCE_M  ((SENS_TOUCH_PAD2_DEBOUNCE_V)<<(SENS_TOUCH_PAD2_DEBOUNCE_S))
 #define SENS_TOUCH_PAD2_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD2_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD2_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD2_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD2_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD2_BASELINE_M  ((SENS_TOUCH_PAD2_BASELINE_V)<<(SENS_TOUCH_PAD2_BASELINE_S))
-#define SENS_TOUCH_PAD2_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD2_BASELINE_S  0
+#define SENS_TOUCH_PAD2_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD2_DATA_M  ((SENS_TOUCH_PAD2_DATA_V)<<(SENS_TOUCH_PAD2_DATA_S))
+#define SENS_TOUCH_PAD2_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD2_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS3_REG          (DR_REG_SENS_BASE + 0x00e4)
 /* SENS_TOUCH_PAD3_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -989,12 +830,12 @@ extern "C" {
 #define SENS_TOUCH_PAD3_DEBOUNCE_M  ((SENS_TOUCH_PAD3_DEBOUNCE_V)<<(SENS_TOUCH_PAD3_DEBOUNCE_S))
 #define SENS_TOUCH_PAD3_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD3_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD3_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD3_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD3_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD3_BASELINE_M  ((SENS_TOUCH_PAD3_BASELINE_V)<<(SENS_TOUCH_PAD3_BASELINE_S))
-#define SENS_TOUCH_PAD3_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD3_BASELINE_S  0
+#define SENS_TOUCH_PAD3_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD3_DATA_M  ((SENS_TOUCH_PAD3_DATA_V)<<(SENS_TOUCH_PAD3_DATA_S))
+#define SENS_TOUCH_PAD3_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD3_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS4_REG          (DR_REG_SENS_BASE + 0x00e8)
 /* SENS_TOUCH_PAD4_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1003,12 +844,12 @@ extern "C" {
 #define SENS_TOUCH_PAD4_DEBOUNCE_M  ((SENS_TOUCH_PAD4_DEBOUNCE_V)<<(SENS_TOUCH_PAD4_DEBOUNCE_S))
 #define SENS_TOUCH_PAD4_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD4_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD4_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD4_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD4_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD4_BASELINE_M  ((SENS_TOUCH_PAD4_BASELINE_V)<<(SENS_TOUCH_PAD4_BASELINE_S))
-#define SENS_TOUCH_PAD4_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD4_BASELINE_S  0
+#define SENS_TOUCH_PAD4_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD4_DATA_M  ((SENS_TOUCH_PAD4_DATA_V)<<(SENS_TOUCH_PAD4_DATA_S))
+#define SENS_TOUCH_PAD4_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD4_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS5_REG          (DR_REG_SENS_BASE + 0x00ec)
 /* SENS_TOUCH_PAD5_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1017,12 +858,12 @@ extern "C" {
 #define SENS_TOUCH_PAD5_DEBOUNCE_M  ((SENS_TOUCH_PAD5_DEBOUNCE_V)<<(SENS_TOUCH_PAD5_DEBOUNCE_S))
 #define SENS_TOUCH_PAD5_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD5_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD5_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD5_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD5_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD5_BASELINE_M  ((SENS_TOUCH_PAD5_BASELINE_V)<<(SENS_TOUCH_PAD5_BASELINE_S))
-#define SENS_TOUCH_PAD5_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD5_BASELINE_S  0
+#define SENS_TOUCH_PAD5_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD5_DATA_M  ((SENS_TOUCH_PAD5_DATA_V)<<(SENS_TOUCH_PAD5_DATA_S))
+#define SENS_TOUCH_PAD5_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD5_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS6_REG          (DR_REG_SENS_BASE + 0x00f0)
 /* SENS_TOUCH_PAD6_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1031,12 +872,12 @@ extern "C" {
 #define SENS_TOUCH_PAD6_DEBOUNCE_M  ((SENS_TOUCH_PAD6_DEBOUNCE_V)<<(SENS_TOUCH_PAD6_DEBOUNCE_S))
 #define SENS_TOUCH_PAD6_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD6_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD6_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD6_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD6_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD6_BASELINE_M  ((SENS_TOUCH_PAD6_BASELINE_V)<<(SENS_TOUCH_PAD6_BASELINE_S))
-#define SENS_TOUCH_PAD6_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD6_BASELINE_S  0
+#define SENS_TOUCH_PAD6_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD6_DATA_M  ((SENS_TOUCH_PAD6_DATA_V)<<(SENS_TOUCH_PAD6_DATA_S))
+#define SENS_TOUCH_PAD6_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD6_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS7_REG          (DR_REG_SENS_BASE + 0x00f4)
 /* SENS_TOUCH_PAD7_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1045,12 +886,12 @@ extern "C" {
 #define SENS_TOUCH_PAD7_DEBOUNCE_M  ((SENS_TOUCH_PAD7_DEBOUNCE_V)<<(SENS_TOUCH_PAD7_DEBOUNCE_S))
 #define SENS_TOUCH_PAD7_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD7_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD7_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD7_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD7_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD7_BASELINE_M  ((SENS_TOUCH_PAD7_BASELINE_V)<<(SENS_TOUCH_PAD7_BASELINE_S))
-#define SENS_TOUCH_PAD7_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD7_BASELINE_S  0
+#define SENS_TOUCH_PAD7_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD7_DATA_M  ((SENS_TOUCH_PAD7_DATA_V)<<(SENS_TOUCH_PAD7_DATA_S))
+#define SENS_TOUCH_PAD7_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD7_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS8_REG          (DR_REG_SENS_BASE + 0x00f8)
 /* SENS_TOUCH_PAD8_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1059,12 +900,12 @@ extern "C" {
 #define SENS_TOUCH_PAD8_DEBOUNCE_M  ((SENS_TOUCH_PAD8_DEBOUNCE_V)<<(SENS_TOUCH_PAD8_DEBOUNCE_S))
 #define SENS_TOUCH_PAD8_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD8_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD8_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD8_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD8_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD8_BASELINE_M  ((SENS_TOUCH_PAD8_BASELINE_V)<<(SENS_TOUCH_PAD8_BASELINE_S))
-#define SENS_TOUCH_PAD8_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD8_BASELINE_S  0
+#define SENS_TOUCH_PAD8_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD8_DATA_M  ((SENS_TOUCH_PAD8_DATA_V)<<(SENS_TOUCH_PAD8_DATA_S))
+#define SENS_TOUCH_PAD8_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD8_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS9_REG          (DR_REG_SENS_BASE + 0x00fc)
 /* SENS_TOUCH_PAD9_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1073,12 +914,12 @@ extern "C" {
 #define SENS_TOUCH_PAD9_DEBOUNCE_M  ((SENS_TOUCH_PAD9_DEBOUNCE_V)<<(SENS_TOUCH_PAD9_DEBOUNCE_S))
 #define SENS_TOUCH_PAD9_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD9_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD9_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD9_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD9_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD9_BASELINE_M  ((SENS_TOUCH_PAD9_BASELINE_V)<<(SENS_TOUCH_PAD9_BASELINE_S))
-#define SENS_TOUCH_PAD9_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD9_BASELINE_S  0
+#define SENS_TOUCH_PAD9_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD9_DATA_M  ((SENS_TOUCH_PAD9_DATA_V)<<(SENS_TOUCH_PAD9_DATA_S))
+#define SENS_TOUCH_PAD9_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD9_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS10_REG          (DR_REG_SENS_BASE + 0x0100)
 /* SENS_TOUCH_PAD10_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1087,12 +928,12 @@ extern "C" {
 #define SENS_TOUCH_PAD10_DEBOUNCE_M  ((SENS_TOUCH_PAD10_DEBOUNCE_V)<<(SENS_TOUCH_PAD10_DEBOUNCE_S))
 #define SENS_TOUCH_PAD10_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD10_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD10_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD10_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD10_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD10_BASELINE_M  ((SENS_TOUCH_PAD10_BASELINE_V)<<(SENS_TOUCH_PAD10_BASELINE_S))
-#define SENS_TOUCH_PAD10_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD10_BASELINE_S  0
+#define SENS_TOUCH_PAD10_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD10_DATA_M  ((SENS_TOUCH_PAD10_DATA_V)<<(SENS_TOUCH_PAD10_DATA_S))
+#define SENS_TOUCH_PAD10_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD10_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS11_REG          (DR_REG_SENS_BASE + 0x0104)
 /* SENS_TOUCH_PAD11_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1101,12 +942,12 @@ extern "C" {
 #define SENS_TOUCH_PAD11_DEBOUNCE_M  ((SENS_TOUCH_PAD11_DEBOUNCE_V)<<(SENS_TOUCH_PAD11_DEBOUNCE_S))
 #define SENS_TOUCH_PAD11_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD11_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD11_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD11_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD11_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD11_BASELINE_M  ((SENS_TOUCH_PAD11_BASELINE_V)<<(SENS_TOUCH_PAD11_BASELINE_S))
-#define SENS_TOUCH_PAD11_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD11_BASELINE_S  0
+#define SENS_TOUCH_PAD11_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD11_DATA_M  ((SENS_TOUCH_PAD11_DATA_V)<<(SENS_TOUCH_PAD11_DATA_S))
+#define SENS_TOUCH_PAD11_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD11_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS12_REG          (DR_REG_SENS_BASE + 0x0108)
 /* SENS_TOUCH_PAD12_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1115,12 +956,12 @@ extern "C" {
 #define SENS_TOUCH_PAD12_DEBOUNCE_M  ((SENS_TOUCH_PAD12_DEBOUNCE_V)<<(SENS_TOUCH_PAD12_DEBOUNCE_S))
 #define SENS_TOUCH_PAD12_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD12_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD12_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD12_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD12_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD12_BASELINE_M  ((SENS_TOUCH_PAD12_BASELINE_V)<<(SENS_TOUCH_PAD12_BASELINE_S))
-#define SENS_TOUCH_PAD12_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD12_BASELINE_S  0
+#define SENS_TOUCH_PAD12_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD12_DATA_M  ((SENS_TOUCH_PAD12_DATA_V)<<(SENS_TOUCH_PAD12_DATA_S))
+#define SENS_TOUCH_PAD12_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD12_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS13_REG          (DR_REG_SENS_BASE + 0x010c)
 /* SENS_TOUCH_PAD13_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1129,12 +970,12 @@ extern "C" {
 #define SENS_TOUCH_PAD13_DEBOUNCE_M  ((SENS_TOUCH_PAD13_DEBOUNCE_V)<<(SENS_TOUCH_PAD13_DEBOUNCE_S))
 #define SENS_TOUCH_PAD13_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD13_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD13_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD13_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD13_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD13_BASELINE_M  ((SENS_TOUCH_PAD13_BASELINE_V)<<(SENS_TOUCH_PAD13_BASELINE_S))
-#define SENS_TOUCH_PAD13_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD13_BASELINE_S  0
+#define SENS_TOUCH_PAD13_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD13_DATA_M  ((SENS_TOUCH_PAD13_DATA_V)<<(SENS_TOUCH_PAD13_DATA_S))
+#define SENS_TOUCH_PAD13_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD13_DATA_S  0
 
 #define SENS_SAR_TOUCH_STATUS14_REG          (DR_REG_SENS_BASE + 0x0110)
 /* SENS_TOUCH_PAD14_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
@@ -1143,28 +984,28 @@ extern "C" {
 #define SENS_TOUCH_PAD14_DEBOUNCE_M  ((SENS_TOUCH_PAD14_DEBOUNCE_V)<<(SENS_TOUCH_PAD14_DEBOUNCE_S))
 #define SENS_TOUCH_PAD14_DEBOUNCE_V  0x7
 #define SENS_TOUCH_PAD14_DEBOUNCE_S  29
-/* SENS_TOUCH_PAD14_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_PAD14_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_PAD14_BASELINE  0x003FFFFF
-#define SENS_TOUCH_PAD14_BASELINE_M  ((SENS_TOUCH_PAD14_BASELINE_V)<<(SENS_TOUCH_PAD14_BASELINE_S))
-#define SENS_TOUCH_PAD14_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_PAD14_BASELINE_S  0
+#define SENS_TOUCH_PAD14_DATA  0x003FFFFF
+#define SENS_TOUCH_PAD14_DATA_M  ((SENS_TOUCH_PAD14_DATA_V)<<(SENS_TOUCH_PAD14_DATA_S))
+#define SENS_TOUCH_PAD14_DATA_V  0x3FFFFF
+#define SENS_TOUCH_PAD14_DATA_S  0
 
-#define SENS_SAR_TOUCH_STATUS15_REG          (DR_REG_SENS_BASE + 0x0114)
+#define SENS_SAR_TOUCH_SLP_STATUS_REG          (DR_REG_SENS_BASE + 0x0114)
 /* SENS_TOUCH_SLP_DEBOUNCE : RO ;bitpos:[31:29] ;default: 3'd0 ; */
 /*description: */
 #define SENS_TOUCH_SLP_DEBOUNCE  0x00000007
 #define SENS_TOUCH_SLP_DEBOUNCE_M  ((SENS_TOUCH_SLP_DEBOUNCE_V)<<(SENS_TOUCH_SLP_DEBOUNCE_S))
 #define SENS_TOUCH_SLP_DEBOUNCE_V  0x7
 #define SENS_TOUCH_SLP_DEBOUNCE_S  29
-/* SENS_TOUCH_SLP_BASELINE : RO ;bitpos:[21:0] ;default: 22'h0 ; */
+/* SENS_TOUCH_SLP_DATA : RO ;bitpos:[21:0] ;default: 22'h0 ; */
 /*description: */
-#define SENS_TOUCH_SLP_BASELINE  0x003FFFFF
-#define SENS_TOUCH_SLP_BASELINE_M  ((SENS_TOUCH_SLP_BASELINE_V)<<(SENS_TOUCH_SLP_BASELINE_S))
-#define SENS_TOUCH_SLP_BASELINE_V  0x3FFFFF
-#define SENS_TOUCH_SLP_BASELINE_S  0
+#define SENS_TOUCH_SLP_DATA  0x003FFFFF
+#define SENS_TOUCH_SLP_DATA_M  ((SENS_TOUCH_SLP_DATA_V)<<(SENS_TOUCH_SLP_DATA_S))
+#define SENS_TOUCH_SLP_DATA_V  0x3FFFFF
+#define SENS_TOUCH_SLP_DATA_S  0
 
-#define SENS_SAR_TOUCH_STATUS16_REG          (DR_REG_SENS_BASE + 0x0118)
+#define SENS_SAR_TOUCH_APPR_STATUS_REG          (DR_REG_SENS_BASE + 0x0118)
 /* SENS_TOUCH_SLP_APPROACH_CNT : RO ;bitpos:[31:24] ;default: 8'd0 ; */
 /*description: */
 #define SENS_TOUCH_SLP_APPROACH_CNT  0x000000FF
@@ -1191,6 +1032,18 @@ extern "C" {
 #define SENS_TOUCH_APPROACH_PAD2_CNT_S  0
 
 #define SENS_SAR_DAC_CTRL1_REG          (DR_REG_SENS_BASE + 0x011c)
+/* SENS_DAC_CLKGATE_EN : R/W ;bitpos:[27] ;default: 1'b0 ; */
+/*description: */
+#define SENS_DAC_CLKGATE_EN  (BIT(27))
+#define SENS_DAC_CLKGATE_EN_M  (BIT(27))
+#define SENS_DAC_CLKGATE_EN_V  0x1
+#define SENS_DAC_CLKGATE_EN_S  27
+/* SENS_DAC_RESET : R/W ;bitpos:[26] ;default: 1'b0 ; */
+/*description: */
+#define SENS_DAC_RESET  (BIT(26))
+#define SENS_DAC_RESET_M  (BIT(26))
+#define SENS_DAC_RESET_V  0x1
+#define SENS_DAC_RESET_S  26
 /* SENS_DAC_CLK_INV : R/W ;bitpos:[25] ;default: 1'b0 ; */
 /*description: 1: invert PDAC_CLK*/
 #define SENS_DAC_CLK_INV  (BIT(25))
@@ -1614,8 +1467,22 @@ extern "C" {
 #define SENS_SAR_NOUSE_V  0xFFFFFFFF
 #define SENS_SAR_NOUSE_S  0
 
-#define SENS_SARDATE_REG          (DR_REG_SENS_BASE + 0x0144)
-/* SENS_SAR_DATE : R/W ;bitpos:[27:0] ;default: 28'h1809210 ; */
+#define SENS_SAR_IO_MUX_CONF_REG          (DR_REG_SENS_BASE + 0x0144)
+/* SENS_IOMUX_CLK_GATE_EN : R/W ;bitpos:[31] ;default: 1'd0 ; */
+/*description: */
+#define SENS_IOMUX_CLK_GATE_EN  (BIT(31))
+#define SENS_IOMUX_CLK_GATE_EN_M  (BIT(31))
+#define SENS_IOMUX_CLK_GATE_EN_V  0x1
+#define SENS_IOMUX_CLK_GATE_EN_S  31
+/* SENS_IOMUX_RESET : R/W ;bitpos:[30] ;default: 1'b0 ; */
+/*description: */
+#define SENS_IOMUX_RESET  (BIT(30))
+#define SENS_IOMUX_RESET_M  (BIT(30))
+#define SENS_IOMUX_RESET_V  0x1
+#define SENS_IOMUX_RESET_S  30
+
+#define SENS_SARDATE_REG          (DR_REG_SENS_BASE + 0x0148)
+/* SENS_SAR_DATE : R/W ;bitpos:[27:0] ;default: 28'h1906140 ; */
 /*description: */
 #define SENS_SAR_DATE  0x0FFFFFFF
 #define SENS_SAR_DATE_M  ((SENS_SAR_DATE_V)<<(SENS_SAR_DATE_S))

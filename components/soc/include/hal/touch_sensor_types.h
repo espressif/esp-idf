@@ -1,4 +1,4 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 #include "soc/touch_sensor_caps.h"
 #include "sdkconfig.h"
+#include "esp_attr.h"
 
 /** Touch pad channel */
 typedef enum {
@@ -117,7 +118,7 @@ typedef enum {
 #define TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD    (TOUCH_HVOLT_2V7)
 #define TOUCH_PAD_LOW_VOLTAGE_THRESHOLD     (TOUCH_LVOLT_0V5)
 #define TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD   (TOUCH_HVOLT_ATTEN_0V5)
-#define TOUCH_PAD_INACTIVE_CONNECT_DEFAULT  (TOUCH_PAD_CONN_GND)
+#define TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT   (TOUCH_PAD_CONN_GND)
 #define TOUCH_PAD_THRESHOLD_MAX             (SOC_TOUCH_PAD_THRESHOLD_MAX) /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -147,20 +148,19 @@ typedef enum {
 #ifdef CONFIG_IDF_TARGET_ESP32S2
 
 typedef enum {
-    TOUCH_PAD_INTR_DONE = 0,    /*!<Each enabled channel measure done */
-    TOUCH_PAD_INTR_ACTIVE = 1,  /*!<Each enabled channel be touched */
-    TOUCH_PAD_INTR_INACTIVE = 2,/*!<Each enabled channel be released */
-    TOUCH_PAD_INTR_ALL,         /*!<All touch interrupt measure done & touched & released */
-    TOUCH_PAD_INTR_MAX
-} touch_pad_intr_type_t;
-
-typedef enum {
-    TOUCH_PAD_INTR_MASK_DONE = BIT(0),      /*!<Each enabled channel measure done */
-    TOUCH_PAD_INTR_MASK_ACTIVE = BIT(1),    /*!<Each enabled channel be touched */
-    TOUCH_PAD_INTR_MASK_INACTIVE = BIT(2),  /*!<Each enabled channel be released */
-    TOUCH_PAD_INTR_MASK_ALL = BIT(2) | BIT(1) | BIT(0), /*!<All touch interrupt measure done & touched & released */
+    TOUCH_PAD_INTR_MASK_DONE = BIT(0),      /*!<Measurement done for one of the enabled channels. */
+    TOUCH_PAD_INTR_MASK_ACTIVE = BIT(1),    /*!<Active for one of the enabled channels. */
+    TOUCH_PAD_INTR_MASK_INACTIVE = BIT(2),  /*!<Inactive for one of the enabled channels. */
+    TOUCH_PAD_INTR_MASK_SCAN_DONE = BIT(3), /*!<Measurement done for all the enabled channels. */
+    TOUCH_PAD_INTR_MASK_TIMEOUT = BIT(4),   /*!<Timeout for one of the enabled channels. */
     TOUCH_PAD_INTR_MASK_MAX
+#define TOUCH_PAD_INTR_MASK_ALL (TOUCH_PAD_INTR_MASK_TIMEOUT    \
+                                | TOUCH_PAD_INTR_MASK_SCAN_DONE \
+                                | TOUCH_PAD_INTR_MASK_INACTIVE  \
+                                | TOUCH_PAD_INTR_MASK_ACTIVE    \
+                                | TOUCH_PAD_INTR_MASK_DONE) /*!<All touch interrupt type enable. */
 } touch_pad_intr_mask_t;
+FLAG_ATTR(touch_pad_intr_mask_t)
 
 typedef enum {
     TOUCH_PAD_DENOISE_BIT12 = 0,    /*!<Denoise range is 12bit */
@@ -171,15 +171,15 @@ typedef enum {
 } touch_pad_denoise_grade_t;
 
 typedef enum {
-    TOUCH_PAD_DENOISE_CAP_L0 = 0,   /*!<Denoise channel internal reference capacitance is 0pf */
-    TOUCH_PAD_DENOISE_CAP_L1 = 4,   /*!<Denoise channel internal reference capacitance is 1.4pf */
-    TOUCH_PAD_DENOISE_CAP_L2 = 2,   /*!<Denoise channel internal reference capacitance is 2.8pf */
-    TOUCH_PAD_DENOISE_CAP_L3 = 6,   /*!<Denoise channel internal reference capacitance is 4.2pf */
-    TOUCH_PAD_DENOISE_CAP_L4 = 1,   /*!<Denoise channel internal reference capacitance is 5.6pf */
-    TOUCH_PAD_DENOISE_CAP_L5 = 5,   /*!<Denoise channel internal reference capacitance is 7.0pf */
-    TOUCH_PAD_DENOISE_CAP_L6 = 3,   /*!<Denoise channel internal reference capacitance is 8.4pf */
-    TOUCH_PAD_DENOISE_CAP_L7 = 7,   /*!<Denoise channel internal reference capacitance is 9.8pf */
-    TOUCH_PAD_DENOISE_CAP_MAX
+    TOUCH_PAD_DENOISE_CAP_L0 = 0,   /*!<Denoise channel internal reference capacitance is 5pf */
+    TOUCH_PAD_DENOISE_CAP_L1 = 1,   /*!<Denoise channel internal reference capacitance is 6.4pf */
+    TOUCH_PAD_DENOISE_CAP_L2 = 2,   /*!<Denoise channel internal reference capacitance is 7.8pf */
+    TOUCH_PAD_DENOISE_CAP_L3 = 3,   /*!<Denoise channel internal reference capacitance is 9.2pf */
+    TOUCH_PAD_DENOISE_CAP_L4 = 4,   /*!<Denoise channel internal reference capacitance is 10.6pf */
+    TOUCH_PAD_DENOISE_CAP_L5 = 5,   /*!<Denoise channel internal reference capacitance is 12.0pf */
+    TOUCH_PAD_DENOISE_CAP_L6 = 6,   /*!<Denoise channel internal reference capacitance is 13.4pf */
+    TOUCH_PAD_DENOISE_CAP_L7 = 7,   /*!<Denoise channel internal reference capacitance is 14.8pf */
+    TOUCH_PAD_DENOISE_CAP_MAX = 8
 } touch_pad_denoise_cap_t;
 
 /** Touch sensor denoise configuration */
@@ -187,6 +187,8 @@ typedef struct touch_pad_denoise {
     touch_pad_denoise_grade_t grade;    /*!<Select denoise range of denoise channel.
                                             Determined by measuring the noise amplitude of the denoise channel. */
     touch_pad_denoise_cap_t cap_level;  /*!<Select internal reference capacitance of denoise channel.
+                                            Ensure that the denoise readings are closest to the readings of the channel being measured.
+                                            Use `touch_pad_denoise_read_data` to get the reading of denoise channel.
                                             The equivalent capacitance of the shielded channel can be calculated
                                             from the reading of denoise channel. */
 } touch_pad_denoise_t;
@@ -206,18 +208,13 @@ typedef enum {
 /** Touch sensor waterproof configuration */
 typedef struct touch_pad_waterproof {
     touch_pad_t guard_ring_pad;             /*!<Waterproof. Select touch channel use for guard pad */
-    touch_pad_shield_driver_t shield_driver;/*!<Waterproof. Select max equivalent capacitance for sheild pad
+    touch_pad_shield_driver_t shield_driver;/*!<Waterproof. Select max equivalent capacitance for shield pad
                                                 Config the Touch14 to the touch sensor and compare the measured
                                                 reading to the Touch0 reading to estimate the equivalent capacitance.*/
 } touch_pad_waterproof_t;
 
 /** Touch sensor proximity detection configuration */
-typedef struct touch_pad_proximity {
-    touch_pad_t select_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM];  /*!<Set touch channel number for proximity pad.
-                                                                  If clear the proximity channel, point this pad to `TOUCH_PAD_NUM0` */
-    uint32_t meas_num;                                        /*!<Set cumulative times of measurements for proximity pad */
 #define TOUCH_PROXIMITY_MEAS_NUM_MAX (0xFF)
-} touch_pad_proximity_t;
 
 /** Touch channel idle state configuration */
 typedef enum {
@@ -226,37 +223,62 @@ typedef enum {
     TOUCH_PAD_CONN_MAX
 } touch_pad_conn_type_t;
 
+/**
+ * @brief Touch channel IIR filter coefficient configuration.
+ * @note On ESP32S2. There is an error in the IIR calculation. The magnitude of the error is twice the filter coefficient.
+ *       So please select a smaller filter coefficient on the basis of meeting the filtering requirements.
+ *       Recommended filter coefficient selection `IIR_16`.
+ */
 typedef enum {
-    TOUCH_PAD_FILTER_IIR_2 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 2 */
-    TOUCH_PAD_FILTER_IIR_4,     /*!<The filter mode is first-order IIR filter. The coefficient is 4 */
-    TOUCH_PAD_FILTER_IIR_8,     /*!<The filter mode is first-order IIR filter. The coefficient is 8 */
+    TOUCH_PAD_FILTER_IIR_4 = 0, /*!<The filter mode is first-order IIR filter. The coefficient is 4. */
+    TOUCH_PAD_FILTER_IIR_8,     /*!<The filter mode is first-order IIR filter. The coefficient is 8. */
+    TOUCH_PAD_FILTER_IIR_16,    /*!<The filter mode is first-order IIR filter. The coefficient is 16 (Typical value). */
+    TOUCH_PAD_FILTER_IIR_32,    /*!<The filter mode is first-order IIR filter. The coefficient is 32. */
+    TOUCH_PAD_FILTER_IIR_64,    /*!<The filter mode is first-order IIR filter. The coefficient is 64. */
+    TOUCH_PAD_FILTER_IIR_128,   /*!<The filter mode is first-order IIR filter. The coefficient is 128. */
+    TOUCH_PAD_FILTER_IIR_256,   /*!<The filter mode is first-order IIR filter. The coefficient is 256. */
     TOUCH_PAD_FILTER_JITTER,    /*!<The filter mode is jitter filter */
     TOUCH_PAD_FILTER_MAX
 } touch_filter_mode_t;
+
+/**
+ * @brief Level of filter applied on the original data against large noise interference.
+ * @note On ESP32S2. There is an error in the IIR calculation. The magnitude of the error is twice the filter coefficient.
+ *       So please select a smaller filter coefficient on the basis of meeting the filtering requirements.
+ *       Recommended filter coefficient selection `IIR_2`.
+ */
+typedef enum {
+    TOUCH_PAD_SMOOTH_OFF   = 0, /*!<No filtering of raw data. */
+    TOUCH_PAD_SMOOTH_IIR_2 = 1, /*!<Filter the raw data. The coefficient is 2 (Typical value). */
+    TOUCH_PAD_SMOOTH_IIR_4 = 2, /*!<Filter the raw data. The coefficient is 4. */
+    TOUCH_PAD_SMOOTH_IIR_8 = 3, /*!<Filter the raw data. The coefficient is 8. */
+    TOUCH_PAD_SMOOTH_MAX,
+} touch_smooth_mode_t;
 
 /** Touch sensor filter configuration */
 typedef struct touch_filter_config {
     touch_filter_mode_t mode;   /*!<Set filter mode. The input to the filter is raw data and the output is the baseline value.
                                     Larger filter coefficients increase the stability of the baseline. */
-    uint32_t debounce_cnt;       /*!<Set debounce count, such as `n`. If the measured values continue to exceed
-                                    the threshold for `n` times, it is determined that the touch sensor state changes.
+    uint32_t debounce_cnt;      /*!<Set debounce count, such as `n`. If the measured values continue to exceed
+                                    the threshold for `n+1` times, the touch sensor state changes.
                                     Range: 0 ~ 7 */
-    uint32_t hysteresis_thr;     /*!<Hysteresis threshold coefficient. hysteresis = hysteresis_thr * touch_threshold.
+    uint32_t hysteresis_thr;    /*!<Hysteresis threshold coefficient. hysteresis = hysteresis coefficient * touch threshold.
                                     If (raw data - baseline) > (touch threshold + hysteresis), the touch channel be touched.
                                     If (raw data - baseline) < (touch threshold - hysteresis), the touch channel be released.
-                                    Range: 0 ~ 3. The coefficient is 0: 1/8;  1: 3/32;  2: 1/16;  3: 1/32 */
-    uint32_t noise_thr;          /*!<Noise threshold coefficient. noise = noise_thr * touch threshold.
+                                    Range: 0 ~ 3. The coefficient is 0: 4/32;  1: 3/32;  2: 2/32;  3: OFF */
+    uint32_t noise_thr;         /*!<Noise threshold coefficient. noise = noise coefficient * touch threshold.
                                     If (raw data - baseline) > (noise), the baseline stop updating.
                                     If (raw data - baseline) < (noise), the baseline start updating.
-                                    Range: 0 ~ 3. The coefficient is 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8; */
-    uint32_t noise_neg_thr;      /*!<Negative noise threshold coefficient. negative noise = noise_neg_thr * touch threshold.
+                                    Range: 0 ~ 3. The coefficient is 0: 4/8;  1: 3/8;   2: 2/8;   3: 1; */
+    uint32_t noise_neg_thr;     /*!<Negative noise threshold coefficient. negative noise = noise coefficient * touch threshold.
                                     If (baseline - raw data) > (negative noise), the baseline restart reset process(refer to `baseline_reset`).
                                     If (baseline - raw data) < (negative noise), the baseline stop reset process(refer to `baseline_reset`).
-                                    Range: 0 ~ 3. The coefficient is 0: 1/2;  1: 3/8;   2: 1/4;   3: 1/8; */
-    uint32_t neg_noise_limit;    /*!<Set the cumulative number of baseline reset processes. such as `n`. If the measured values continue to exceed
-                                    the negative noise threshold for `n` times, the baseline reset to raw data.
+                                    Range: 0 ~ 3. The coefficient is 0: 4/8;  1: 3/8;   2: 2/8;   3: 1/8; */
+    uint32_t neg_noise_limit;   /*!<Set the cumulative number of baseline reset processes. such as `n`. If the measured values continue to exceed
+                                    the negative noise threshold for `n+1` times, the baseline reset to raw data.
                                     Range: 0 ~ 15 */
-    uint32_t jitter_step;        /*!<Set jitter filter step size. Range: 0 ~ 15 */
+    uint32_t jitter_step;       /*!<Set jitter filter step size. Range: 0 ~ 15 */
+    touch_smooth_mode_t smh_lvl;/*!<Level of filter applied on the original data against large noise interference. */
 #define TOUCH_DEBOUNCE_CNT_MAX      (7)
 #define TOUCH_HYSTERESIS_THR_MAX    (3)
 #define TOUCH_NOISE_THR_MAX         (3)
@@ -269,8 +291,6 @@ typedef struct touch_filter_config {
 typedef struct {
     touch_pad_t touch_num;          /*!<Set touch channel number for sleep pad.
                                         Only one touch sensor channel is supported in deep sleep mode. */
-    uint32_t sleep_pad_threshold;   /*!<Set the trigger threshold of touch sensor in deep sleep.
-                                        The threshold at sleep is the same as the threshold before sleep. */
     bool en_proximity;              /*!<enable proximity function for sleep pad */
 } touch_pad_sleep_channel_t;
 

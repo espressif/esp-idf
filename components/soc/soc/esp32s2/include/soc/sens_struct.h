@@ -20,24 +20,23 @@ extern "C" {
 typedef volatile struct {
     union {
         struct {
-            uint32_t sar1_clk_div:      8;                  /*clock divider*/
-            uint32_t sar1_sample_cycle: 8;                  /*sample cycles for SAR ADC1*/
-            uint32_t sar1_sample_bit:   2;                  /*00: for 9-bit width*/
-            uint32_t sar1_clk_gated:    1;
-            uint32_t sar1_sample_num:   8;
-            uint32_t reserved27:        1;
-            uint32_t sar1_data_inv:     1;                  /*Invert SAR ADC1 data*/
-            uint32_t sar1_int_en:       1;                  /*enable saradc1 to send out interrupt*/
-            uint32_t reserved30:        2;
+            uint32_t sar1_clk_div:    8;                    /*clock divider*/
+            uint32_t reserved8:      10;
+            uint32_t sar1_clk_gated:  1;
+            uint32_t sar1_sample_num: 8;
+            uint32_t reserved27:      1;
+            uint32_t sar1_data_inv:   1;                    /*Invert SAR ADC1 data*/
+            uint32_t sar1_int_en:     1;                    /*enable saradc1 to send out interrupt*/
+            uint32_t reserved30:      2;
         };
         uint32_t val;
     } sar_reader1_ctrl;
     uint32_t sar_reader1_status;                            /**/
     union {
         struct {
-            uint32_t sar1_bit_width:          2;            /*00: 9 bit*/
-            uint32_t sar1_stop:               1;            /*stop SAR ADC1 conversion*/
-            uint32_t reserved3:              21;
+            uint32_t reserved0:              22;
+            uint32_t rtc_saradc_reset:        1;
+            uint32_t rtc_saradc_clkgate_en:   1;
             uint32_t force_xpd_amp:           2;
             uint32_t amp_rst_fb_force:        2;
             uint32_t amp_short_ref_force:     2;
@@ -100,23 +99,22 @@ typedef volatile struct {
     } sar_amp_ctrl3;
     union {
         struct {
-            uint32_t sar2_clk_div:      8;                  /*clock divider*/
-            uint32_t sar2_sample_cycle: 8;                  /*sample cycles for SAR ADC2*/
-            uint32_t sar2_sample_bit:   2;                  /*00: for 9-bit width*/
-            uint32_t sar2_clk_gated:    1;
-            uint32_t sar2_sample_num:   8;
-            uint32_t reserved27:        2;
-            uint32_t sar2_data_inv:     1;                  /*Invert SAR ADC2 data*/
-            uint32_t sar2_int_en:       1;                  /*enable saradc2 to send out interrupt*/
-            uint32_t reserved31:        1;
+            uint32_t sar2_clk_div:        8;                /*clock divider*/
+            uint32_t reserved8:           8;
+            uint32_t sar2_wait_arb_cycle: 2;                /*wait arbit stable after sar_done*/
+            uint32_t sar2_clk_gated:      1;
+            uint32_t sar2_sample_num:     8;
+            uint32_t reserved27:          2;
+            uint32_t sar2_data_inv:       1;                /*Invert SAR ADC2 data*/
+            uint32_t sar2_int_en:         1;                /*enable saradc2 to send out interrupt*/
+            uint32_t reserved31:          1;
         };
         uint32_t val;
     } sar_reader2_ctrl;
     uint32_t sar_reader2_status;                            /**/
     union {
         struct {
-            uint32_t sar2_bit_width:    2;                  /*00: 9 bit*/
-            uint32_t sar2_stop:         1;                  /*stop SAR ADC2 conversion*/
+            uint32_t sar2_cntl_state:   3;                  /*saradc2_cntl_fsm*/
             uint32_t sar2_pwdet_cal_en: 1;                  /*rtc control pwdet enable*/
             uint32_t sar2_pkdet_cal_en: 1;                  /*rtc control pkdet enable*/
             uint32_t sar2_en_test:      1;                  /*SAR2_EN_TEST*/
@@ -149,9 +147,7 @@ typedef volatile struct {
     uint32_t sar_atten2;                                    /*2-bit attenuation for each pad*/
     union {
         struct {
-            uint32_t reserved0:    23;
-            uint32_t sar2_dref:     3;                      /*Adjust saradc2 offset*/
-            uint32_t sar1_dref:     3;                      /*Adjust saradc1 offset*/
+            uint32_t reserved0:    29;
             uint32_t force_xpd_sar: 2;
             uint32_t sarclk_en:     1;
         };
@@ -201,9 +197,7 @@ typedef volatile struct {
             uint32_t tsens_power_up:       1;               /*temperature sensor power up*/
             uint32_t tsens_power_up_force: 1;               /*1: dump out & power up controlled by SW*/
             uint32_t tsens_dump_out:       1;               /*temperature sensor dump out*/
-            uint32_t tsens_diz:            1;               /*ADC input short*/
-            uint32_t tsens_div_chop:       2;               /*0 for steady phase 0  1 for steady phase 1  2 for chopping with ½ frequency of TSENS_CK  3 for chopping with ¼*/
-            uint32_t tsens_dac:            4;               /*Temperature sensor offset dac. 15 for 0 offset  5 for -2  7 for -1  11 for 1  10 for 2*/
+            uint32_t reserved25:           7;
         };
         uint32_t val;
     } sar_tctrl;
@@ -231,7 +225,9 @@ typedef volatile struct {
         struct {
             uint32_t touch_outen:        15;                /*touch controller output enable*/
             uint32_t touch_status_clr:    1;                /*clear all touch active status*/
-            uint32_t reserved16:          4;
+            uint32_t touch_data_sel:      2;                /*3: smooth data 2: baseline 1 0: raw_data*/
+            uint32_t touch_denoise_end:   1;                /*touch_denoise_done*/
+            uint32_t touch_unit_end:      1;                /*touch_unit_done*/
             uint32_t touch_approach_pad2: 4;                /*indicate which pad is approach pad2*/
             uint32_t touch_approach_pad1: 4;                /*indicate which pad is approach pad1*/
             uint32_t touch_approach_pad0: 4;                /*indicate which pad is approach pad0*/
@@ -245,13 +241,21 @@ typedef volatile struct {
         };
         uint32_t val;
     } touch_thresh[14];
-    union {
-        struct {
-            uint32_t meas_out:            22;                    /*the counter for touch pad 1*/
-            uint32_t reserved22:     10;
-        };
-        uint32_t val;
-    } touch_meas[15];
+    uint32_t reserved_98;
+    uint32_t reserved_9c;
+    uint32_t reserved_a0;
+    uint32_t reserved_a4;
+    uint32_t reserved_a8;
+    uint32_t reserved_ac;
+    uint32_t reserved_b0;
+    uint32_t reserved_b4;
+    uint32_t reserved_b8;
+    uint32_t reserved_bc;
+    uint32_t reserved_c0;
+    uint32_t reserved_c4;
+    uint32_t reserved_c8;
+    uint32_t reserved_cc;
+    uint32_t reserved_d0;
     union {
         struct {
             uint32_t touch_pad_active: 15;                  /*touch active status*/
@@ -271,12 +275,20 @@ typedef volatile struct {
     } sar_touch_status0;
     union {
         struct {
-            uint32_t touch_pad_baseline: 22;
+            uint32_t touch_pad_data: 22;
             uint32_t reserved22:          7;
             uint32_t touch_pad_debounce:  3;
         };
         uint32_t val;
     } sar_touch_status[14];
+    union {
+        struct {
+            uint32_t touch_slp_data:    22;
+            uint32_t reserved22:         7;
+            uint32_t touch_slp_debounce: 3;
+        };
+        uint32_t val;
+    } sar_touch_slp_status;
     union {
         struct {
             uint32_t touch_approach_pad2_cnt: 8;
@@ -285,7 +297,7 @@ typedef volatile struct {
             uint32_t touch_slp_approach_cnt:  8;
         };
         uint32_t val;
-    } sar_touch_status16;
+    } sar_touch_appr_status;
     union {
         struct {
             uint32_t sw_fstep:          16;                 /*frequency step for CW generator*/
@@ -295,7 +307,9 @@ typedef volatile struct {
             uint32_t dac_clk_force_low:  1;                 /*1: force PDAC_CLK to low*/
             uint32_t dac_clk_force_high: 1;                 /*1: force PDAC_CLK to high*/
             uint32_t dac_clk_inv:        1;                 /*1: invert PDAC_CLK*/
-            uint32_t reserved26:         6;
+            uint32_t dac_reset:          1;
+            uint32_t dac_clkgate_en:     1;
+            uint32_t reserved28:         4;
         };
         uint32_t val;
     } sar_dac_ctrl1;
@@ -407,6 +421,14 @@ typedef volatile struct {
         uint32_t val;
     } sar_hall_ctrl;
     uint32_t sar_nouse;                                     /**/
+    union {
+        struct {
+            uint32_t reserved0:        30;
+            uint32_t iomux_reset:       1;
+            uint32_t iomux_clk_gate_en: 1;
+        };
+        uint32_t val;
+    } sar_io_mux_conf;
     union {
         struct {
             uint32_t sar_date:  28;

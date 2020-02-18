@@ -458,7 +458,7 @@ static inline void touch_ll_clear_trigger_status_mask(void)
 /**
  * To enable touch pad interrupt.
  */
-static inline void touch_ll_enable_interrupt(void)
+static inline void touch_ll_intr_enable(void)
 {
     RTCCNTL.int_ena.rtc_touch = 1;
 }
@@ -466,9 +466,17 @@ static inline void touch_ll_enable_interrupt(void)
 /**
  * To disable touch pad interrupt.
  */
-static inline void touch_ll_disable_interrupt(void)
+static inline void touch_ll_intr_disable(void)
 {
     RTCCNTL.int_ena.rtc_touch = 0;
+}
+
+/**
+ * To clear touch pad interrupt.
+ */
+static inline void touch_ll_intr_clear(void)
+{
+    RTCCNTL.int_clr.rtc_touch = 1;
 }
 
 /**

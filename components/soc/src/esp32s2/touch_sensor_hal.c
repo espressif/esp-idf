@@ -19,7 +19,7 @@
 
 void touch_hal_init(void)
 {
-    touch_ll_intr_disable(TOUCH_PAD_INTR_ALL);
+    touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_ALL);
     touch_ll_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
     touch_ll_clear_trigger_status_mask();
     touch_ll_set_meas_times(TOUCH_PAD_MEASURE_CYCLE_DEFAULT);
@@ -27,14 +27,31 @@ void touch_hal_init(void)
     touch_ll_set_voltage_high(TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD);
     touch_ll_set_voltage_low(TOUCH_PAD_LOW_VOLTAGE_THRESHOLD);
     touch_ll_set_voltage_attenuation(TOUCH_PAD_ATTEN_VOLTAGE_THRESHOLD);
-    touch_ll_set_inactive_connect(TOUCH_PAD_INACTIVE_CONNECT_DEFAULT);
+    touch_ll_set_idle_channel_connect(TOUCH_PAD_IDLE_CH_CONNECT_DEFAULT);
+    /* Clear touch channels to initialize the channel value (baseline, raw_data).
+     * Note: Should call it after enable clock gate. */
+    touch_ll_clkgate(true);  // Enable clock gate for touch sensor.
+    touch_ll_filter_reset_baseline(TOUCH_PAD_MAX);
+    touch_ll_sleep_reset_baseline();
 }
 
 void touch_hal_deinit(void)
 {
-    touch_hal_stop_fsm();
-    touch_hal_clear_trigger_status_mask();
-    touch_ll_intr_disable(TOUCH_PAD_INTR_ALL);
+    touch_ll_filter_reset_baseline(TOUCH_PAD_MAX);
+    touch_ll_sleep_reset_baseline();
+    touch_ll_stop_fsm();
+    touch_ll_clkgate(false);
+    touch_ll_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    touch_ll_clear_trigger_status_mask();
+    touch_ll_intr_disable(TOUCH_PAD_INTR_MASK_ALL);
+    touch_ll_timeout_disable();
+    touch_ll_waterproof_disable();
+    touch_ll_denoise_disable();
+    touch_pad_t prox_pad[SOC_TOUCH_PROXIMITY_CHANNEL_NUM] = {[0 ... (SOC_TOUCH_PROXIMITY_CHANNEL_NUM - 1)] = 0};
+    touch_ll_proximity_set_channel_num((const touch_pad_t *)prox_pad);
+    touch_ll_sleep_set_channel_num(0);
+    touch_ll_sleep_disable_approach();
+    touch_ll_reset();   // Reset the touch sensor FSM.
 }
 
 void touch_hal_filter_set_config(const touch_filter_config_t *filter_info)
@@ -46,6 +63,7 @@ void touch_hal_filter_set_config(const touch_filter_config_t *filter_info)
     touch_ll_filter_set_neg_noise_thres(filter_info->noise_neg_thr);
     touch_ll_filter_set_baseline_reset(filter_info->neg_noise_limit);
     touch_ll_filter_set_jitter_step(filter_info->jitter_step);
+    touch_ll_filter_set_smooth_mode(filter_info->smh_lvl);
 }
 
 void touch_hal_filter_get_config(touch_filter_config_t *filter_info)
@@ -57,6 +75,7 @@ void touch_hal_filter_get_config(touch_filter_config_t *filter_info)
     touch_ll_filter_get_neg_noise_thres(&filter_info->noise_neg_thr);
     touch_ll_filter_get_baseline_reset(&filter_info->neg_noise_limit);
     touch_ll_filter_get_jitter_step(&filter_info->jitter_step);
+    touch_ll_filter_get_smooth_mode(&filter_info->smh_lvl);
 }
 
 void touch_hal_denoise_set_config(const touch_pad_denoise_t *denoise)
@@ -95,25 +114,51 @@ void touch_hal_waterproof_enable(void)
     touch_ll_waterproof_enable();
 }
 
-void touch_hal_proximity_set_config(const touch_pad_proximity_t *proximity)
+bool touch_hal_enable_proximity(touch_pad_t touch_num, bool enabled)
 {
-    touch_ll_proximity_set_channel_num(proximity->select_pad);
-    touch_ll_proximity_set_meas_times(proximity->meas_num);
-}
-
-void touch_hal_proximity_get_config(touch_pad_proximity_t *proximity)
-{
-    touch_ll_proximity_get_channel_num(proximity->select_pad);
-    touch_ll_proximity_get_meas_times(&proximity->meas_num);
-}
-
-void touch_hal_sleep_channel_config(const touch_pad_sleep_channel_t *slp_config)
-{
-    touch_ll_sleep_set_channel_num(slp_config->touch_num);
-    touch_ll_sleep_set_threshold(slp_config->sleep_pad_threshold);
-    if (slp_config->en_proximity) {
-        touch_ll_sleep_enable_approach();
+    int i = 0;
+    touch_pad_t ch_num[SOC_TOUCH_PROXIMITY_CHANNEL_NUM] = {0};
+    touch_ll_proximity_get_channel_num(ch_num);
+    if (enabled) {
+        for (i = 0; i < SOC_TOUCH_PROXIMITY_CHANNEL_NUM; i++) {
+            if (ch_num[i] == TOUCH_PAD_NUM0 || ch_num[i] >= TOUCH_PAD_MAX || ch_num[i] == touch_num) {
+                ch_num[i] = touch_num;
+                break;
+            }
+        }
+        if (i == SOC_TOUCH_PROXIMITY_CHANNEL_NUM) {
+            return false;
+        }
     } else {
-        touch_ll_sleep_disable_approach();
+        for (i = 0; i < SOC_TOUCH_PROXIMITY_CHANNEL_NUM; i++) {
+            if (ch_num[i] == touch_num) {
+                ch_num[i] = TOUCH_PAD_NUM0;
+                break;
+            }
+        }
+    }
+    touch_ll_proximity_set_channel_num(ch_num);
+    return true;
+}
+
+void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable)
+{
+    if (enable) {
+        touch_ll_sleep_set_channel_num(pad_num);
+        touch_ll_sleep_set_threshold(SOC_TOUCH_PAD_THRESHOLD_MAX);
+        /* Default change touch dbias to self-dbias to save power.
+        Measuring the sleep pad threshold after `sleep_channel_set_config`. */
+        touch_ll_sleep_low_power(true);
+        touch_ll_sleep_reset_baseline();
+    } else {
+        touch_ll_sleep_set_channel_num(TOUCH_PAD_NUM0);
     }
 }
+
+void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config)
+{
+    touch_ll_sleep_get_channel_num(&slp_config->touch_num);
+    slp_config->en_proximity = touch_ll_sleep_get_approach_status();
+}
+
+

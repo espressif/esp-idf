@@ -96,6 +96,7 @@ static uint32_t get_power_down_flags(void);
 static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 static void timer_wakeup_prepare(void);
+static void touch_wakeup_prepare(void);
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
@@ -187,6 +188,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
         // no-op for esp32s2
+    }
+    // Enable Touch wakeup
+    if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
+        touch_wakeup_prepare();
     }
 
     // Enter sleep
@@ -408,6 +413,17 @@ static void timer_wakeup_prepare(void)
     SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
 }
 
+/* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
+static void touch_wakeup_prepare(void)
+{
+    touch_pad_sleep_channel_t slp_config;
+    touch_pad_fsm_stop();
+    touch_pad_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    touch_pad_sleep_channel_get_info(&slp_config);
+    touch_pad_set_channel_mask(BIT(slp_config.touch_num));
+    touch_pad_fsm_start();
+}
+
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
     if (s_config.wakeup_triggers & (RTC_EXT0_TRIG_EN)) {
@@ -571,7 +587,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
 
-    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
+    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_SLP_WAKEUP_CAUSE_REG, RTC_CNTL_WAKEUP_CAUSE);
     if (wakeup_cause & RTC_EXT0_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_EXT0;
     } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {

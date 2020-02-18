@@ -27,15 +27,16 @@ typedef volatile struct {
     } scl_low;
     union {
         struct {
-            uint32_t sda_force_out: 1;              /*1=push pull  0=open drain*/
-            uint32_t scl_force_out: 1;              /*1=push pull  0=open drain*/
-            uint32_t ms_mode:       1;              /*1=master  0=slave*/
-            uint32_t trans_start:   1;              /*force start*/
-            uint32_t tx_lsb_first:  1;              /*transit lsb first*/
-            uint32_t rx_lsb_first:  1;              /*receive lsb first*/
-            uint32_t reserved6:    24;
-            uint32_t i2c_reset:     1;              /*rtc i2c sw reset*/
-            uint32_t i2cclk_en:     1;              /*rtc i2c reg clk gating*/
+            uint32_t sda_force_out:        1;       /*1=push pull  0=open drain*/
+            uint32_t scl_force_out:        1;       /*1=push pull  0=open drain*/
+            uint32_t ms_mode:              1;       /*1=master  0=slave*/
+            uint32_t trans_start:          1;       /*force start*/
+            uint32_t tx_lsb_first:         1;       /*transit lsb first*/
+            uint32_t rx_lsb_first:         1;       /*receive lsb first*/
+            uint32_t reserved6:           23;
+            uint32_t i2c_ctrl_clk_gate_en: 1;
+            uint32_t i2c_reset:            1;       /*rtc i2c sw reset*/
+            uint32_t i2cclk_en:            1;       /*rtc i2c reg clk gating*/
         };
         uint32_t val;
     } ctrl;
