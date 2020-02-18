@@ -307,8 +307,8 @@ TEST_CASE("(SD) opendir, readdir, rewinddir, seekdir work as expected using UTF-
 
 #endif  //SDMMC HOST SUPPORTED
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2BETA)
-
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+//no runners
 static void sdspi_speed_test(void *buf, size_t buf_size, size_t file_size, bool write);
 
 TEST_CASE("(SDSPI) write/read speed test", "[fatfs][sd][test_env=UT_T1_SPIMODE][timeout=60]")

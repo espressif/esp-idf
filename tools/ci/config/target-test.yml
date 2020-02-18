@@ -493,9 +493,23 @@ UT_034:
     - ESP32_IDF
     - UT_T1_ESP_FLASH
 
-UT_035:
+.unit_test_s2_template:
   extends: .unit_test_template
-  parallel: 24
+  only:
+    refs:
+      # Due to lack of runners, the tests are only done by manual trigger
+      # - master
+      # - /^release\/v/
+      # - /^v\d+\.\d+(\.\d+)?($|-)/
+      - triggers
+      # - schedules
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_UNIT_TEST_S2
+
+UT_035:
+  extends: .unit_test_s2_template
+  parallel: 26
   tags:
     - ESP32S2_IDF
     - UT_T1_1

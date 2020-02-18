@@ -14,7 +14,6 @@
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
 
-static const char* TAG = "test_wifi";
 
 #define DEFAULT_SSID "TEST_SSID"
 #define DEFAULT_PWD "TEST_PASS"
@@ -24,6 +23,8 @@ static const char* TAG = "test_wifi";
 
 #define EVENT_HANDLER_FLAG_DO_NOT_AUTO_RECONNECT 0x00000001
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+static const char* TAG = "test_wifi";
 static uint32_t wifi_event_handler_flag;
 
 static EventGroupHandle_t wifi_events;
@@ -168,8 +169,6 @@ TEST_CASE("wifi stop and deinit","[wifi]")
 
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
-
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 static void start_wifi_as_softap(void)
 {
@@ -343,4 +342,4 @@ static void test_wifi_connection_softap(void)
 
 TEST_CASE_MULTIPLE_DEVICES("test wifi retain connection for 60s", "[wifi][test_env=UT_T2_1][timeout=90]", test_wifi_connection_sta, test_wifi_connection_softap);
 
-#endif
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)

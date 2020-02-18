@@ -31,6 +31,9 @@
 #define HIGHEST_LIMIT 10000
 #define LOWEST_LIMIT -10000
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+//no runners
+
 // use PCNT to test the waveform of LEDC
 static int16_t wave_count(int last_time)
 {
@@ -539,4 +542,4 @@ TEST_CASE("LEDC memory test", "[ledc][test_env=UT_T1_LEDC]")
     TEST_ESP_OK(ledc_stop(test_speed_mode, LEDC_CHANNEL_0, 0));
 }
 
-
+#endif  //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)

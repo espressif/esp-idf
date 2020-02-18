@@ -30,6 +30,8 @@
 
 #define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static size_t start;
 
 static void setup_tests(void)
@@ -138,6 +140,7 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
     }
 #endif
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
