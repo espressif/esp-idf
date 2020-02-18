@@ -775,6 +775,7 @@ esp_err_t tcpip_adapter_get_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_
 
     dns_param.dns_type =  type;
     dns_param.dns_info =  dns;
+    const ip_addr_t*  dns_ip = NULL;
     
     TCPIP_ADAPTER_IPC_CALL(tcpip_if, type,  0, &dns_param, tcpip_adapter_get_dns_info_api);
     if (!dns) {
@@ -793,7 +794,10 @@ esp_err_t tcpip_adapter_get_dns_info(tcpip_adapter_if_t tcpip_if, tcpip_adapter_
     }
 
     if (tcpip_if == TCPIP_ADAPTER_IF_STA || tcpip_if == TCPIP_ADAPTER_IF_ETH) {
-        dns->ip = dns_getserver(type);
+        dns_ip = dns_getserver(type);
+        if (dns_ip != NULL) {
+            dns->ip = *dns_ip;
+        }
     } else {
         dns->ip.u_addr.ip4 = dhcps_dns_getserver();
     }

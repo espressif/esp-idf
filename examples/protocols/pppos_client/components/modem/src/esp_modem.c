@@ -454,6 +454,7 @@ esp_err_t esp_modem_remove_event_handler(modem_dte_t *dte, esp_event_handler_t h
 static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
 {
     struct netif *pppif = ppp_netif(pcb);
+    const ip_addr_t *dest_ip = NULL;
     modem_dte_t *dte = (modem_dte_t *)(ctx);
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
     ppp_client_ip_info_t ipinfo = {0};
@@ -462,8 +463,15 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
         ipinfo.ip = pppif->ip_addr.u_addr.ip4;
         ipinfo.gw = pppif->gw.u_addr.ip4;
         ipinfo.netmask = pppif->netmask.u_addr.ip4;
-        ipinfo.ns1 = dns_getserver(0).u_addr.ip4;
-        ipinfo.ns2 = dns_getserver(1).u_addr.ip4;
+        dest_ip = dns_getserver(0);
+        if(dest_ip != NULL) {
+          ipinfo.ns1 = dest_ip->u_addr.ip4;
+        }
+        dest_ip = dns_getserver(1);
+        if(dest_ip != NULL) {
+          ipinfo.ns2 = dest_ip->u_addr.ip4;
+        }
+
         esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, MODEM_EVENT_PPP_CONNECT, &ipinfo, sizeof(ipinfo), 0);
         break;
     case PPPERR_PARAM:
