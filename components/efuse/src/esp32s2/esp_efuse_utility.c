@@ -63,48 +63,8 @@ const esp_efuse_range_addr_t range_write_addr_blocks[] = {
 // Update Efuse timing configuration
 static esp_err_t esp_efuse_set_timing(void)
 {
-    uint32_t clock = esp_clk_apb_freq();
-    // ets_efuse_set_timing(clock);
-    uint32_t clk_div, power_on;
-    //uint32_t power_off; // Support for 7.2.3 chip
-    uint32_t tsup_a = 1, thp_a = 1, tpgm, tpgm_inact;
-    uint32_t tsur_a = 1, thr_a = 1, trd;
-    if (clock == 20000000 || clock == 5000000 || clock == 10000000) {
-        clk_div = 0x28;
-        power_on = 0x2880;
-        //power_off = 0x40;
-        tpgm = 0xc8;
-        tpgm_inact = 1;
-        trd = 1;
-    } else if (clock == 40000000) {
-        clk_div = 0x50;
-        power_on = 0x5100;
-        //power_off = 0x80;
-        tpgm = 0x190;
-        tpgm_inact = 2;
-        trd = 2;
-    } else  if (clock == 80000000) {
-        clk_div = 0xa0;
-        power_on = 0xa200;
-        //power_off = 0x100;
-        tpgm = 0x320;
-        tpgm_inact = 3;
-        trd = 3;
-    } else {
-        ESP_LOGE(TAG, "Efuse does not support this %d Hz APB clock", clock);
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    REG_SET_FIELD(EFUSE_DAC_CONF_REG, EFUSE_DAC_CLK_DIV, clk_div);
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF0_REG, EFUSE_TPGM, tpgm);
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF0_REG, EFUSE_TPGM_INACTIVE, tpgm_inact);
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF0_REG, EFUSE_THP_A, thp_a);
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF1_REG, EFUSE_PWR_ON_NUM, power_on);
-    REG_SET_FIELD(EFUSE_WR_TIM_CONF1_REG, EFUSE_TSUP_A, tsup_a);
-    //REG_SET_FIELD(EFUSE_WR_TIM_CONF2_REG, EFUSE_PWR_OFF_NUM, power_off);
-    REG_SET_FIELD(EFUSE_RD_TIM_CONF_REG, EFUSE_TSUR_A, tsur_a);
-    REG_SET_FIELD(EFUSE_RD_TIM_CONF_REG, EFUSE_TRD, trd);
-    REG_SET_FIELD(EFUSE_RD_TIM_CONF_REG, EFUSE_THR_A, thr_a);
-    return ESP_OK;
+    uint32_t clock_hz = esp_clk_apb_freq();
+    return ets_efuse_set_timing(clock_hz) ? ESP_FAIL : ESP_OK;
 }
 #endif // ifndef CONFIG_EFUSE_VIRTUAL
 
