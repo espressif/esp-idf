@@ -25,25 +25,22 @@
 
 #if SOC_CPU_CORES_NUM > 1
 
-esp_err_t soc_hal_stall_core(int core)
+void soc_hal_stall_core(int core)
 {
     CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_stall_core(core);
-    return ESP_OK;
 }
 
-esp_err_t soc_hal_unstall_core(int core)
+void soc_hal_unstall_core(int core)
 {
     CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_unstall_core(core);
-    return ESP_OK;
 }
 
 #endif // SOC_CPU_CORES_NUM > 1
 
-esp_err_t soc_hal_reset_core(int core)
+void soc_hal_reset_core(int core)
 {
     CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_reset_core(core);
-    return ESP_OK;
 }

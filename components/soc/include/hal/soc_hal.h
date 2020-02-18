@@ -48,11 +48,8 @@ extern "C" {
  * ESP_ERR_INVALID_STATE.
  *
  * @param core core to stall [0..SOC_CPU_CORES_NUM - 1]
- *
- * @return ESP_ERR_INVALID_ARG core argument invalid
- * @return ESP_OK success
  */
-esp_err_t soc_hal_stall_core(int core);
+void soc_hal_stall_core(int core);
 
 /**
  * Unstall the specified CPU core.
@@ -61,11 +58,8 @@ esp_err_t soc_hal_stall_core(int core);
  * ESP_ERR_INVALID_STATE.
  *
  * @param core core to unstall [0..SOC_CPU_CORES_NUM - 1]
- *
- * @return ESP_ERR_INVALID_ARG core argument invalid
- * @return ESP_OK success
  */
-esp_err_t soc_hal_unstall_core(int core);
+void soc_hal_unstall_core(int core);
 
 #endif // SOC_CPU_CORES_NUM > 1
 
@@ -73,11 +67,8 @@ esp_err_t soc_hal_unstall_core(int core);
  * Reset the specified core.
  *
  * @param core core to reset [0..SOC_CPU_CORES_NUM - 1]
- *
- * @return ESP_ERR_INVALID_ARG core argument invalid
- * @return ESP_OK success
  */
-esp_err_t soc_hal_reset_core(int core);
+void soc_hal_reset_core(int core);
 
 #ifdef __cplusplus
 }
