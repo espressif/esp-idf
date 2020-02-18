@@ -78,6 +78,14 @@ Same as for CMake, except that the build command is different::
 
     If the ``sdkconfig`` file does not exist, the default behavior of GNU Make build system is to open the menuconfig UI. This may be not desired in automated build environments. To ensure that the ``sdkconfig`` file exists, ``defconfig`` target is added before ``all``.
 
+If you intend to build the same project repeatedly, you may bind the ``tools/kconfig`` directory of ESP-IDF to a named volume. This will prevent Kconfig tools, located in ESP-IDF directory, from being rebuilt, causing a rebuild of the rest of the project::
+
+    docker run --rm -v $PWD:/project -v kconfig:/opt/esp/idf/tools/kconfig -w /project espressif/idf make defconfig all -j4
+
+If you need clean up the ``kconfig`` volume, run ``docker volume rm kconfig``.
+
+Binding the ``tools/kconfig`` directory to a volume is not necessary when using the CMake build system.
+
 Using the image interactively
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
