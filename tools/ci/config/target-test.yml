@@ -331,6 +331,7 @@ UT_022:
 
 UT_023:
   extends: .unit_test_template
+  parallel: 2
   tags:
     - ESP32_IDF
     - UT_T1_MCPWM
