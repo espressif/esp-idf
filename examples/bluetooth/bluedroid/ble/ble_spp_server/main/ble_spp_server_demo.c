@@ -28,7 +28,7 @@
 #define SPP_PROFILE_NUM             1
 #define SPP_PROFILE_APP_IDX         0
 #define ESP_SPP_APP_ID              0x56
-#define SAMPLE_DEVICE_NAME          "ESP_SPP_SERVER"
+#define SAMPLE_DEVICE_NAME          "ESP_SPP_SERVER"    //The Device Name Characteristics in GAP
 #define SPP_SVC_INST_ID	            0
 
 /// SPP Service
@@ -44,9 +44,12 @@ static const uint16_t spp_service_uuid = 0xABF0;
 #endif
 
 static const uint8_t spp_adv_data[23] = {
+    /* Flags */
     0x02,0x01,0x06,
+    /* Complete List of 16-bit Service Class UUIDs */
     0x03,0x03,0xF0,0xAB,
-    0x0F,0x09,0x45,0x53,0x50,0x5f,0x53,0x50,0x50,0x5f,0x53,0x45,0x52,0x56,0x45,0x52
+    /* Complete Local Name in advertising */
+    0x0F,0x09, 'E', 'S', 'P', '_', 'S', 'P', 'P', '_', 'S', 'E', 'R','V', 'E', 'R'
 };
 
 static uint16_t spp_mtu_size = 23;
