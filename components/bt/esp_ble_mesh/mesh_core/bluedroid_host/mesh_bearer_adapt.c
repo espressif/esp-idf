@@ -1301,8 +1301,8 @@ static void bt_mesh_bta_gattc_cb(tBTA_GATTC_EVT event, tBTA_GATTC *p_data)
             tBT_UUID char_uuid = {0};
             tBTA_GATT_STATUS status;
             tBTA_GATT_UNFMT write;
-            int count = 0;
-            int num = 0;
+            u16_t count = 0;
+            u16_t num = 0;
 
             /* Get the characteristic num within Mesh Provisioning/Proxy Service */
             BTA_GATTC_GetDBSizeByType(p_data->search_cmpl.conn_id, BTGATT_DB_CHARACTERISTIC,

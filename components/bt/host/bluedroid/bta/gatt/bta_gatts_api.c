@@ -76,7 +76,7 @@ void BTA_GATTS_Disable(void)
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTS module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_cback - pointer to the application callback function.
 **
 ** Returns          None
@@ -347,7 +347,7 @@ void  BTA_GATTS_DeleteService(UINT16 service_id)
 ** Description      This function is called to start a service.
 **
 ** Parameters       service_id: the service ID to be started.
-**                  sup_transport: supported trasnport.
+**                  sup_transport: supported transport.
 **
 ** Returns          None.
 **

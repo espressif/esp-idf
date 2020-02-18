@@ -389,7 +389,7 @@ bool config_save(const config_t *config, const char *filename)
     const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
     char *keyname = osi_calloc(keyname_bufsz);
     int config_size = get_config_size(config);
-    char *buf = osi_calloc(config_size + 100);
+    char *buf = osi_calloc(config_size);
     if (!line || !buf || !keyname) {
         err_code |= 0x01;
         goto error;
@@ -414,8 +414,8 @@ bool config_save(const config_t *config, const char *filename)
             err_code |= 0x10;
             goto error;
         }
-        if(w_cnt_total + w_cnt > config_size + 100) {
-            OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size (config_size = %d).", __func__, (w_cnt + w_cnt_total),config_size);
+        if(w_cnt_total + w_cnt > config_size) {
+            OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size (config_size = %d).", __func__, (w_cnt + w_cnt_total), config_size);
             err_code |= 0x20;
             goto error;
         }
@@ -432,8 +432,8 @@ bool config_save(const config_t *config, const char *filename)
                 err_code |= 0x10;
                 goto error;
             }
-            if(w_cnt_total + w_cnt > config_size + 100) {
-                OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size.(config_size = %d)", __func__, w_cnt + w_cnt_total,config_size);
+            if(w_cnt_total + w_cnt > config_size) {
+                OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size.(config_size = %d)", __func__, (w_cnt + w_cnt_total), config_size);
                 err_code |= 0x20;
                 goto error;
             }
@@ -544,7 +544,10 @@ static void config_parse(nvs_handle_t fp, config_t *config)
     const size_t keyname_bufsz = sizeof(CONFIG_KEY) + 5 + 1; // including log10(sizeof(i))
     char *keyname = osi_calloc(keyname_bufsz);
     int buf_size = get_config_size_from_flash(fp);
-    char *buf = osi_calloc(buf_size + 100);
+    char *buf = osi_calloc(buf_size);
+    if(buf_size == 0) { //First use nvs
+        goto error;
+    }
     if (!line || !section || !buf || !keyname) {
         err_code |= 0x01;
         goto error;
