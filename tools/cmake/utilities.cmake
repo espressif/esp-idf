@@ -303,3 +303,16 @@ function(file_generate output)
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         APPEND PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${output}")
 endfunction()
+
+# add_subdirectory_if_exists
+#
+# Like add_subdirectory, but only proceeds if the given source directory exists.
+function(add_subdirectory_if_exists source_dir)
+    get_filename_component(abs_dir "${source_dir}"
+        ABSOLUTE BASE_DIR "${CMAKE_CURRENT_LIST_DIR}")
+    if(EXISTS "${abs_dir}")
+        add_subdirectory("${source_dir}" ${ARGN})
+    else()
+        message(STATUS "Subdirectory '${abs_dir}' does not exist, skipped.")
+    endif()
+endfunction()
