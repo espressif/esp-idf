@@ -821,7 +821,6 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
     if (p_data->set_visibility.pair_mode != BTA_DM_IGNORE || p_data->set_visibility.conn_paired_only != BTA_DM_IGNORE) {
         BTM_SetPairableMode((BOOLEAN)(!(bta_dm_cb.disable_pair_mode)), bta_dm_cb.conn_paired_only);
     }
-
 }
 
 /*******************************************************************************
@@ -3230,6 +3229,7 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data)
             p_msg->transport = p_data->conn.transport;
             p_msg->handle = p_data->conn.handle;
 #endif
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_ACL_CONNECTED);
             break;
         case BTM_BL_DISCN_EVT:
             bdcpy(p_msg->bd_addr, p_data->discn.p_bda);
@@ -3237,6 +3237,7 @@ static void bta_dm_bl_change_cback (tBTM_BL_EVENT_DATA *p_data)
             p_msg->transport = p_data->discn.transport;
             p_msg->handle = p_data->discn.handle;
 #endif
+            BTA_DmCoexEventTrigger(BTA_COEX_EVT_ACL_DISCONNECTED);
             break;
         case BTM_BL_UPDATE_EVT:
             p_msg->busy_level = p_data->update.busy_level;
