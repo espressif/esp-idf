@@ -42,7 +42,7 @@ To compile the ULP code as part of the component, the following steps must be ta
     set(ulp_s_sources ulp/ulp_assembly_source_file.S)
     set(ulp_exp_dep_srcs "ulp_c_source_file.c")
 
-    ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
+    ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
 
  The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here will also be used by other generated artifacts
  such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP assembly source files.

@@ -44,7 +44,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
     set(ulp_s_sources ulp/ulp_assembly_source_file.S)
     set(ulp_exp_dep_srcs "ulp_c_source_file.c")
 
-    ulp_embed_binary(${ulp_app_name} ${ulp_s_sources} ${ulp_exp_dep_srcs})
+    ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
 
  上述第一个参数到 ``ulp_embed_binary`` 为 ULP 二进制文件命名。此名称也用于生成的其他文件，如：ELF 文件、.map 文件、头文件和链接器导出文件。第二个参数设置 ULP 程序集源文件。最后，第三个参数设置组件源文件列表，其中包括被生成的头文件。此列表用以建立正确的依赖项，并确保在构建过程会先生成再编译包含头文件的源文件。请参考下文，查看为 ULP 应用程序生成的头文件等相关概念。
 
