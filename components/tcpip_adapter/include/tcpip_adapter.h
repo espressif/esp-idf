@@ -406,6 +406,21 @@ esp_err_t tcpip_adapter_create_ip6_linklocal(tcpip_adapter_if_t tcpip_if);
  */
 esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6);
 
+/**
+ * @brief  Get interface global IPv6 address
+ *
+ * If the specified interface is up and a preferred global IPv6 address
+ * has been created for the interface, return a copy of it.
+ *
+ * @param[in]  tcpip_if Interface to get global IPv6 address
+ * @param[out] if_ip6 IPv6 information will be returned in this argument if successful.
+ *
+ * @return
+ *      - ESP_OK
+ *      - ESP_FAIL If interface is down, does not have a global IPv6 address.
+ */
+esp_err_t tcpip_adapter_get_ip6_global(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6);
+
 #if 0
 esp_err_t tcpip_adapter_get_mac(tcpip_adapter_if_t tcpip_if, uint8_t *mac);
 
