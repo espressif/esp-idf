@@ -112,7 +112,7 @@ static void transport_simple_ble_read(esp_gatts_cb_event_t event, esp_gatt_if_t 
 
     ESP_LOGD(TAG, "Inside read w/ session - %d on param %d %d",
              param->read.conn_id, param->read.handle, read_len);
-    if (!read_len) {
+    if (!read_len && !param->read.offset) {
         ESP_LOGD(TAG, "Reading attr value first time");
         status = esp_ble_gatts_get_attr_value(param->read.handle, &read_len,  &read_buf);
     } else {
