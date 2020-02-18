@@ -427,7 +427,7 @@ will be generated for the target ``flash_text``.
 These catch-all rules then effectively serve as fallback rules for those whose mappings were not specified.
 
 
-The ``default scheme`` is defined in :component:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are
+The ``default scheme`` is defined in :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}_fragments.lf`. The ``noflash`` and ``rtc`` scheme fragments which are
 built-in schemes referenced in the quick start guide are also defined in this file.
 
 
@@ -589,5 +589,5 @@ Then the corresponding excerpt from the generated linker script will be as follo
     it too is placed wherever ``iram0_text`` is referenced by a marker. Since it is a rule generated from the default scheme, it comes first
     among all other rules collected under the same target name.
 
-    The linker script template currently used is :component:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`, specified by the ``{IDF_TARGET_PATH_NAME}`` component; the
+    The linker script template currently used is :component_file:`{IDF_TARGET_PATH_NAME}/ld/{IDF_TARGET_PATH_NAME}.project.ld.in`, specified by the ``{IDF_TARGET_PATH_NAME}`` component; the
     generated output script is put under its build directory.

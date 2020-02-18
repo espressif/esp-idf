@@ -82,7 +82,7 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 
 请参考以下示例，查看如何使用 VFS 文件描述符调用 :cpp:func:`select`：
 
-- :example:`peripherals/uart_select`
+- :example:`peripherals/uart/uart_select`
 - :example:`system/select`
 
 如果 :cpp:func:`select` 用于套接字文件描述符，您可以启用 :envvar:`CONFIG_LWIP_USE_ONLY_LWIP_SELECT` 选项来减少代码量，提高性能。
@@ -158,7 +158,7 @@ VFS 还为输入和输出提供换行符转换功能（可选）。多数应用�
 
     fprintf(__getreent()->_stderr, "42\n");
 
-其中 ``__getreent()`` 函数将为每个任务返回一个指向 ``struct _reent`` 的指针 (:component_file:`newlib/include/sys/reent.h#L370-L417`)。每个任务的 TCB 均拥有一个 ``struct _reent`` 结构体，任务初始化后，``struct _reent`` 结构体中的 ``_stdin``、``_stdout`` 和 ``_stderr`` 将会被赋予 ``_GLOBAL_REENT`` 中 ``_stdin``、 ``_stdout`` 和 ``_stderr`` 的值，``_GLOBAL_REENT`` 即为 FreeRTOS 启动之前所用结构体。 
+其中 ``__getreent()`` 函数将为每个任务返回一个指向 ``struct _reent`` 的指针。每个任务的 TCB 均拥有一个 ``struct _reent`` 结构体，任务初始化后，``struct _reent`` 结构体中的 ``_stdin``、``_stdout`` 和 ``_stderr`` 将会被赋予 ``_GLOBAL_REENT`` 中 ``_stdin``、 ``_stdout`` 和 ``_stderr`` 的值，``_GLOBAL_REENT`` 即为 FreeRTOS 启动之前所用结构体。 
 
 这样设计带来的结果是：
 

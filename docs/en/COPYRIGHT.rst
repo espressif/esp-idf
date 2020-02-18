@@ -17,11 +17,11 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`Newlib <newlib>` is licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB<newlib/COPYING.NEWLIB>`.
 
-* :component:`Xtensa header files<esp32/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
+* :component:`Xtensa header files<xtensa/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
 * Original parts of FreeRTOS_ (components/freertos) are Copyright (C) 2015 Real Time Engineers Ltd and is licensed under the GNU General Public License V2 with the FreeRTOS Linking Exception, as described in :component_file:`license.txt<freertos/license.txt>`.
 
-* Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/COPYING>`.
+* Original parts of LWIP_ (components/lwip) are Copyright (C) 2001, 2002 Swedish Institute of Computer Science and are licensed under the BSD License as described in :component_file:`COPYING file<lwip/lwip/COPYING>`.
 
 * `wpa_supplicant`_ Copyright (c) 2003-2005 Jouni Malinen and licensed under the BSD license.
 
@@ -58,7 +58,7 @@ These third party libraries can be included into the application (firmware) prod
 * :component:`Asio <asio>`, Copyright (c) 2003-2018 Christopher M. Kohlhoff is licensed under the Boost Software License.
 
 * :component:`ESP-MQTT <mqtt>` MQTT Package (contiki-mqtt) - Copyright (c) 2014, Stephen Robinson, MQTT-ESP - Tuan PM <tuanpm at live dot com> is licensed under Apache License 2.0.
-* :component:`BLE Mesh <bt/ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
+* :component:`BLE Mesh <bt/esp_ble_mesh>` is adapted from Zephyr Project, Copyright (c) 2017-2018 Intel Corporation and licensed under Apache License 2.0
 
 * `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0.
 
@@ -72,9 +72,9 @@ This is the list of licenses for tools included in this repository, which are us
 
 * :idf:`KConfig <tools/kconfig>` is Copyright (C) 2002 Roman Zippel and others, and is licensed under the GNU General Public License V2.
 
-* :idf:`Kconfiglib <tools/kconfig_new/kconfiglib.py>` is Copyright (C) 2011-2019, Ulf Magnusson, and is licensed under the ISC License.
+* :idf_file:`Kconfiglib <tools/kconfig_new/kconfiglib.py>` is Copyright (C) 2011-2019, Ulf Magnusson, and is licensed under the ISC License.
 
-* :idf:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
+* :idf_file:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
 
 
 ROM Source Code Copyrights

@@ -6,7 +6,7 @@
 应用示例
 -------------------
 
-- 以太网基本示例：:example:`ethernet/ethernet`.
+- 以太网基本示例：:example:`ethernet/basic`.
 - 以太网 iperf 示例：:example:`ethernet/iperf`.
 
 以太网驱动程序模型

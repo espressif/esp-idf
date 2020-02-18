@@ -141,9 +141,9 @@ ESP-NETIF programmer's manual
 
 Please refer to the example section for basic initialization of default interfaces:
 
-- WiFi Station: :example:`wifi/getting_started/station/main/station_example_main.c`
-- WiFi Access Point: :example:`wifi/getting_started/softAP/main/softap_example_main.c`
-- Ethernet: :example:`ethernet/basic/main/ethernet_example_main.c`
+- WiFi Station: :example_file:`wifi/getting_started/station/main/station_example_main.c`
+- WiFi Access Point: :example_file:`wifi/getting_started/softAP/main/softap_example_main.c`
+- Ethernet: :example_file:`ethernet/basic/main/ethernet_example_main.c`
 
 For more specific cases please consult this guide: :doc:`/api-reference/network/esp_netif_driver`.
 

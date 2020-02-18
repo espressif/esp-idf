@@ -153,7 +153,7 @@ and :cpp:func:`xTaskCreateStatic` have led to the addition of
 :cpp:func:`xTaskCreatePinnedToCore` and :cpp:func:`xTaskCreateStaticPinnedToCore` in
 ESP-IDF FreeRTOS (see :ref:`backported-features`).
 
-For more details see :component_file:`freertos/task.c`
+For more details see :component_file:`freertos/tasks.c`
 
 The ESP-IDF FreeRTOS task creation functions are nearly identical to their 
 vanilla counterparts with the exception of the extra parameter known as 
@@ -397,8 +397,8 @@ The ESP-IDF FreeRTOS critical section functions have been modified as follows…
    section functions (``port*_CRITICAL`` in Non-ISR and ``port*_CRITICAL_ISR`` in ISR)
    in order to be in compliance with Vanilla FreeRTOS.
 
-For more details see :component_file:`freertos/include/freertos/portmacro.h` 
-and :component_file:`freertos/task.c`
+For more details see :component_file:`soc/include/soc/spinlock.h`
+and :component_file:`freertos/tasks.c`
 
 It should be noted that when modifying vanilla FreeRTOS code to be ESP-IDF 
 FreeRTOS compatible, it is trivial to modify the type of critical section 
@@ -495,12 +495,22 @@ The ESP-IDF FreeRTOS can be configured in the project configuration menu
 highlights some of the ESP-IDF FreeRTOS configuration options. For a full list of
 ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
 
-:ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
-on **PRO_CPU**. Note that this is **not equivalent to running vanilla
-FreeRTOS**. Behaviors of multiple components in ESP-IDF will be modified such
-as :component_file:`{IDF_TARGET_PATH_NAME}/cpu_start.c`. For more details regarding the
-effects of running ESP-IDF FreeRTOS on a single core, search for
-occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+.. only:: esp32
+
+    :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
+    on **PRO_CPU**. Note that this is **not equivalent to running vanilla
+    FreeRTOS**. Behaviors of multiple components in ESP-IDF will be modified such
+    as :component_file:`esp32/cpu_start.c`. For more details regarding the
+    effects of running ESP-IDF FreeRTOS on a single core, search for
+    occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+
+.. only:: esp32s2
+
+    As ESP32-S2 is a single core SoC, the config item :ref:`CONFIG_FREERTOS_UNICORE` is
+    always set. This means ESP-IDF only runs on the single CPU. Note that this is **not
+    equivalent to running vanilla FreeRTOS**. Behaviors of multiple components in ESP-IDF
+    will be modified. For more details regarding the effects of running ESP-IDF FreeRTOS
+    on a single core, search for occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
 
 :ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` will define the
 number of Thread Local Storage Pointers each task will have in ESP-IDF

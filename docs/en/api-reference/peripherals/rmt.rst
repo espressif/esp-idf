@@ -159,7 +159,7 @@ Now, depending on how the channel is configured, we are ready to either `Transmi
 Transmit Data
 -------------
 
-Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`, see :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
+Before being able to transmit some RMT pulses, we need to define the pulse pattern. The minimum pattern recognized by the RMT controller, later called an 'item', is provided in a structure :cpp:type:`rmt_item32_t`. Each item consists of two pairs of two values. The first value in a pair describes the signal duration in ticks and is 15 bits long, the second provides the signal level (high or low) and is contained in a single bit. A block of couple of items and the structure of an item is presented below.
 
 .. packetdiag::
     :caption: Structure of RMT items (L - signal level)
@@ -256,7 +256,13 @@ The RMT controller triggers interrupts on four specific events describes below. 
 
 Setting or clearing an interrupt enable mask for specific channels and events may be also done by calling :cpp:func:`rmt_set_intr_enable_mask` or :cpp:func:`rmt_clr_intr_enable_mask`.
 
-When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
+.. only:: esp32
+
+    When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/soc/esp32/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
+
+.. only:: esp32s2
+
+    When servicing an interrupt within an ISR, the interrupt need to explicitly cleared. To do so, set specific bits described as ``RMT.int_clr.val.chN_event_name`` and defined as a ``volatile struct`` in :component_file:`soc/soc/esp32s2/include/soc/rmt_struct.h`, where N is the RMT channel number [0, n] and the ``event_name`` is one of four events described above.
 
 If you do not need an ISR anymore, you can deregister it by calling a function :cpp:func:`rmt_isr_deregister`.
 

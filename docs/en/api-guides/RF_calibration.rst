@@ -41,14 +41,20 @@ If you use the default method of RF calibration, there are two ways to add the f
 
 No calibration
 ---------------
-No calibration method is only used when {IDF_TARGET_NAME} wakes up from deep sleep.
+No calibration method is only used when the device wakes up from deep sleep.
 
 PHY initialization data
 -----------------------
 The PHY initialization data is used for RF calibration.
 There are two ways to get the PHY initialization data.
 
-One is the default initialization data which is located in the header file :idf_file:`components/esp_wifi/{IDF_TARGET_PATH_NAME}/include/phy_init_data.h`.
+.. only:: esp32
+
+    One is the default initialization data which is located in the header file :idf_file:`components/esp_wifi/esp32/include/phy_init_data.h`.
+
+.. only:: esp32s2
+
+    One is the default initialization data which is located in the header file :idf_file:`components/esp_wifi/esp32s2/include/phy_init_data.h`.
 
 It is embedded into the application binary after compiling and then stored into read-only memory (DROM).
 To use the default initialization data, please go to ``menuconfig`` and disable :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION`.
