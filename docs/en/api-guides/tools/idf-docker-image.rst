@@ -57,13 +57,11 @@ The above command explained:
 - ``espressif/idf``: uses Docker image ``espressif/idf`` with tag ``latest`` (implicitly added by Docker when no tag is specified)
 - ``idf.py build``: runs this command inside the container
 
-To build with a specific docker image tag, specify it as ``espressif/idf:TAG``::
+To build with a specific docker image tag, specify it as ``espressif/idf:TAG``, for example::
 
-    docker run --rm -v $PWD:/project -w /project espressif/idf:v4.0 idf.py build
+    docker run --rm -v $PWD:/project -w /project espressif/idf:release-v4.0 idf.py build
 
-.. note::
-
-    At the time of writing, v4.0 release of ESP-IDF does not exist, yet, so the above command will not work. You can check the up-to-date list of available tags at https://hub.docker.com/r/espressif/idf/tags.
+You can check the up-to-date list of available tags at https://hub.docker.com/r/espressif/idf/tags.
 
 
 Building a project with GNU Make
