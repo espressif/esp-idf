@@ -122,6 +122,20 @@ menu "LWIP"
         help
             Enabling this option allows reassemblying incoming fragmented IP packets.
 
+    config LWIP_IP_FORWARD
+        bool "Enable IP forwarding"
+        default n
+        help
+            Enabling this option allows packets forwarding across multiple interfaces.
+
+    config LWIP_IPV4_NAPT
+        bool "Enable NAT (new/experimental)"
+        depends on LWIP_IP_FORWARD
+        select LWIP_L2_TO_L3_COPY
+        default n
+        help
+            Enabling this option allows Network Address and Port Translation.
+
     config LWIP_STATS
         bool "Enable LWIP statistics"
         default n
