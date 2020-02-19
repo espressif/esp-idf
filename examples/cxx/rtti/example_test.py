@@ -5,7 +5,7 @@ import ttfw_idf
 
 @ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_cpp_rtti_example(env, extra_data):
-    dut = env.get_dut('cpp_rtti', 'examples/system/cpp_rtti', dut_class=ttfw_idf.ESP32DUT)
+    dut = env.get_dut('cpp_rtti', 'examples/cxx/rtti', dut_class=ttfw_idf.ESP32DUT)
     dut.start_app()
 
     dut.expect('Type name of std::cout is: std::ostream')
