@@ -654,6 +654,7 @@ PROVIDE ( ld_acl_rx_sync = 0x4002fbec );
 PROVIDE ( ld_acl_rx_sync2 = 0x4002fd8c );
 PROVIDE ( ld_acl_rx_no_sync = 0x4002fe78 );
 PROVIDE ( ld_acl_clk_isr = 0x40030cf8 );
+PROVIDE ( ld_acl_rsw_frm_cbk = 0x40033bb0 );
 PROVIDE ( ld_sco_modify = 0x40031778 );
 PROVIDE ( lm_cmd_cmp_send = 0x40051838 );
 PROVIDE ( ld_sco_frm_cbk = 0x400349dc );
