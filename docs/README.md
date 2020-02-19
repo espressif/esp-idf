@@ -13,15 +13,8 @@ Use actual documentation generated within about 20 minutes on each commit:
 
 The above URLs are all for the master branch latest version. Click the drop-down in the bottom left to choose a stable version or to download a PDF.
 
-
 # Building Documentation
 
-* Documentation build requres Python 3 and will not work with Python 2
-* Install dependencies for ESP-IDF as per the Getting Started guide
-* Install documentation Python depdendencies, ie `pip install -r $IDF_PATH/docs/requirements.txt`
-* Run `./build_docs.py build` to build docs for all supported Language & Target combinations, or `./build_docs.py -t esp32 -l en build` to build docs for a single supported language & target combination only.
+The documentation build requirements Python 3 and running the wrapper `./build_docs.py` tool. Running `./build_docs.py --help` will give a summary of available options.
 
-See [Documenting Code](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/documenting-code.rst) for more information.
-
-Available languages are `en` and `zh_CN`, targets are any target supported by ESP-IDF - for example `esp32` or `esp32s2`.
-
+See [Documenting Code](https://docs.espressif.com/projects/esp-idf/en/latest/contribute/documenting-code.html) in the ESP-IDF Programming Guide for full information about setting up to build the docs, and how to use the `./build_docs.py` tool.

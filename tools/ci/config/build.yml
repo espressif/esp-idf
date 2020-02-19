@@ -250,6 +250,7 @@ build_test_apps_esp32s2:
   dependencies: []
   script:
     - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT build
 
 build_docs_en_esp32:

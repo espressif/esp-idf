@@ -361,16 +361,19 @@ You can setup environment to build documentation locally on your PC by installin
 1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
 3. Breathe - https://github.com/michaeljones/breathe#breathe
-4. Document theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
+4. Document theme "sphinx_idf_theme" - https://github.com/rtfd/sphinx_idf_theme
 5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
-The package "sphinx_rtd_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ documentation like on the "Read the Docs" hosting site.
+The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
 
-Do not worry about being confronted with several packages to install. Besides Doxygen, all remaining packages are written in Python. Therefore installation of all of them is combined into one simple step.
+Do not worry about being confronted with several packages to install. Besides Doxygen and sphinx_idf_theme, all remaining packages are written in pure Python. Therefore installation of all of them is combined into one simple step.
 
 .. important:: Docs building now supports Python 3 only. Python 2 installations will not work.
+
+Doxygen
+@@@@@@@
 
 Installation of Doxygen is OS dependent:
 
@@ -413,6 +416,26 @@ Installation of Doxygen is OS dependent:
         Check the log on the screen that ``mingw-w64-i686-python-pillow-4.3.0-1`` or newer is installed. Previous versions of *pillow* will not work.
 
     A downside of Windows installation is that fonts of the `blockdiag pictures <add-illustrations>` do not render correctly, you will see some random characters instead. Until this issue is fixed, you can use the `interactive shell`_ to see how the complete picture looks like.
+
+sphinx_idf_theme
+@@@@@@@@@@@@@@@@
+
+The ``sphinx_idf_theme`` needs a mixture of Python and JavaScript in order to build. So currently it's necessary install `node.js <https://nodejs.org/en/download/>` in order to build it locally.
+
+::
+   cd ~/esp
+   git clone https://github.com/espressif/sphinx_idf_theme.git
+   cd sphinx_idf_theme
+   npm install
+   python setup.py build
+   python setup.py install
+
+This is a temporary inconvenience. We plan to provide a way to install ``sphinx_idf_theme`` as a prebuilt package, soon.
+
+
+Remaining applications
+@@@@@@@@@@@@@@@@@@@@@@
+
 
 All remaining applications are `Python <https://www.python.org/>`_ packages and you can install them in one step as follows:
 

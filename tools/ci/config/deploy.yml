@@ -72,11 +72,12 @@ push_to_github:
 
 .upload_doc_archive: &upload_doc_archive |
   cd docs/_build/$DOCLANG/$DOCTGT
-  mv html $GIT_VER
-  tar czf $GIT_VER.tar.gz $GIT_VER
-  ssh $DOCS_SERVER -x "mkdir -p $DOCS_PATH/$DOCLANG/$DOCTGT"
-  scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/$DOCLANG/$DOCTGT
-  ssh $DOCS_SERVER -x "cd $DOCS_PATH/$DOCLANG/$DOCTGT && tar xzf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+  mv html $DOCTGT
+  tar czf $DOCTGT.tar.gz $DOCTGT
+  # arrange for URL format language/version/target
+  ssh $DOCS_SERVER -x "mkdir -p $DOCS_PATH/$DOCLANG/$GIT_VER"
+  scp $DOCTGT.tar.gz $DOCS_SERVER:$DOCS_PATH/$DOCLANG/$GIT_VER"
+  ssh $DOCS_SERVER -x "cd $DOCS_PATH/$DOCLANG/$GIT_VER && tar xzf ${DOCTGT}.tar.gz && rm -f ../latest && ln -s . ../latest"
   cd -
 
 deploy_docs:
@@ -121,11 +122,43 @@ deploy_docs:
     - DOCLANG=zh_CN; DOCTGT=esp32s2
     - *upload_doc_archive
 
-    # add link to preview doc
-    - echo "[document preview][en][esp32] https://$CI_DOCKER_REGISTRY/docs/esp-idf/en/esp32/${GIT_VER}/index.html"
-    - echo "[document preview][en][esp32s2] https://$CI_DOCKER_REGISTRY/docs/esp-idf/en/esp32s2/${GIT_VER}/index.html"
-    - echo "[document preview][zh_CN][esp32] https://$CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/esp32/${GIT_VER}/index.html"
-    - echo "[document preview][zh_CN][esp32s2] https://$CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/esp32s2/${GIT_VER}/index.html"
+    # log link to doc URLs
+    - echo "[document $TYPE][en][esp32] $DOCS_URL_BASE/en/${GIT_VER}/esp32/index.html"
+    - echo "[document $TYPE][en][esp32s2] $DOCS_URL_BASE/en/${GIT_VER}/esp32s2/index.html"
+    - echo "[document $TYPE][zh_CN][esp32] $DOCS_URL_BASE/zh_CN/${GIT_VER}/esp32/index.html"
+    - echo "[document $TYPE][zh_CN][esp32s2] $DOCS_URL_BASE/zh_CN/${GIT_VER}/esp32s2/index.html"
+
+# deploys docs to CI_DOCKER_REGISTRY webserver, for internal review
+deploy_docs_preview:
+  extends: .deploy_docs_template
+  only:
+    refs:
+      - triggers
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD_DOCS
+  variables:
+    TYPE: "preview"
+    # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_PATH for preview server so we keep them
+    DOCS_DEPLOY_KEY: "$DOCS_DEPLOY_KEY"
+    DOCS_SERVER: "$DOCS_SERVER"
+    DOCS_PATH: "$DOCS_PATH"
+    DOCS_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
+
+# deploy docs to production webserver
+deploy_docs_production:
+  extends: .deploy_docs_template
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+  variables:
+    TYPE: "preview"
+    DOCS_DEPLOY_KEY: "WIP"
+    DOCS_SERVER: "WIP"
+    DOCS_PATH: "WIP"
+    DOCS_URL_BASE: "https://$CI_DOCKER_REGISTRY/docs/esp-idf"
 
 deploy_test_result:
   stage: deploy
