@@ -87,8 +87,9 @@ typedef struct {
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
-    void (* _periph_module_enable)(uint32_t periph);
-    void (* _periph_module_disable)(uint32_t periph);
+    void (* _wifi_reset_mac)(void);
+    void (* _wifi_clock_enable)(void);
+    void (* _wifi_clock_disable)(void);
     int64_t (* _esp_timer_get_time)(void);
     int32_t (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
     int32_t (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
