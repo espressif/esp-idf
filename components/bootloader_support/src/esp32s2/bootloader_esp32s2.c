@@ -15,6 +15,7 @@
 #include "sdkconfig.h"
 #include "bootloader_common.h"
 #include "soc/efuse_reg.h"
+#include "soc/gpio_periph.h"
 #include "soc/gpio_sig_map.h"
 #include "soc/io_mux_reg.h"
 #include "esp32s2/rom/efuse.h"
@@ -237,15 +238,15 @@ static void bootloader_init_uart_console(void)
     uart_tx_switch(uart_num);
     // If console is attached to UART1 or if non-default pins are used,
     // need to reconfigure pins using GPIO matrix
-    if (uart_num != 0 || uart_tx_gpio != 1 || uart_rx_gpio != 3) {
-        // Change pin mode for GPIO1/3 from UART to GPIO
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_GPIO3);
-        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_GPIO1);
+    if (uart_num != 0 || uart_tx_gpio != 43 || uart_rx_gpio != 44) {
+        // Change pin mode UART to GPIO
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0RXD_U, FUNC_U0RXD_GPIO44);
+        PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_U0TXD_GPIO43);
         // Route GPIO signals to/from pins
         // (arrays should be optimized away by the compiler)
-        const uint32_t tx_idx_list[3] = {U0TXD_OUT_IDX, U1TXD_OUT_IDX, U2TXD_OUT_IDX};
-        const uint32_t rx_idx_list[3] = {U0RXD_IN_IDX, U1RXD_IN_IDX, U2RXD_IN_IDX};
-        const uint32_t uart_reset[3] = {DPORT_UART_RST, DPORT_UART1_RST, DPORT_UART2_RST};
+        const uint32_t tx_idx_list[2] = {U0TXD_OUT_IDX, U1TXD_OUT_IDX};
+        const uint32_t rx_idx_list[2] = {U0RXD_IN_IDX, U1RXD_IN_IDX};
+        const uint32_t uart_reset[2] = {DPORT_UART_RST, DPORT_UART1_RST};
         const uint32_t tx_idx = tx_idx_list[uart_num];
         const uint32_t rx_idx = rx_idx_list[uart_num];
 
