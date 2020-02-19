@@ -24,6 +24,8 @@ extern "C" {
 
 #define SC_ACK_TOUCH_SERVER_PORT         18266      /*!< ESP touch UDP port of server on cellphone */
 #define SC_ACK_AIRKISS_SERVER_PORT       10000      /*!< Airkiss UDP port of server on cellphone */
+#define SC_ACK_AIRKISS_DEVICE_PORT       10001      /*!< Airkiss UDP port of server on device */
+#define SC_ACK_AIRKISS_TIMEOUT           1500       /*!< Airkiss read data timeout millisecond */
 
 #define SC_ACK_TOUCH_LEN                 11         /*!< Length of ESP touch ACK context */
 #define SC_ACK_AIRKISS_LEN               7          /*!< Length of Airkiss ACK context */
