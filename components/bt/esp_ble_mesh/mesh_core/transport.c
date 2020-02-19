@@ -1584,6 +1584,50 @@ void bt_mesh_tx_reset(void)
     }
 }
 
+#if CONFIG_BLE_MESH_PROVISIONER
+void bt_mesh_rx_reset_single(u16_t src)
+{
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
+        return;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
+        struct seg_rx *rx = &seg_rx[i];
+        if (src == rx->src) {
+            seg_rx_reset(rx, true);
+        }
+    }
+
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
+        struct bt_mesh_rpl *rpl = &bt_mesh.rpl[i];
+        if (src == rpl->src) {
+            memset(rpl, 0, sizeof(struct bt_mesh_rpl));
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+                bt_mesh_clear_rpl_single(src);
+            }
+        }
+    }
+}
+
+void bt_mesh_tx_reset_single(u16_t dst)
+{
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
+        return;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
+        struct seg_tx *tx = &seg_tx[i];
+        if (dst == tx->dst) {
+            seg_tx_reset(tx);
+        }
+    }
+}
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
+
 void bt_mesh_trans_init(void)
 {
     int i;
