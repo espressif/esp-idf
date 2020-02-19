@@ -239,7 +239,7 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
          * As esp_http_client_read never returns negative error code, we rely on
          * `errno` to check for underlying transport connectivity closure if any
          */
-        if (errno == ENOTCONN || errno == ECONNRESET) {
+        if (errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED) {
             ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
             break;
         }
@@ -301,7 +301,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                  * an ENOTCONN or ECONNRESET, failure is returned. We close with success
                  * if complete data has been received.
                  */
-                if ((errno == ENOTCONN || errno == ECONNRESET) && !is_recv_complete) {
+                if ((errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED) && !is_recv_complete) {
                     ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
                     return ESP_FAIL;
                 } else if (!is_recv_complete) {
