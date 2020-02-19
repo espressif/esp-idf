@@ -44,10 +44,29 @@
 
 #define MHZ (1000000)
 
-static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk);
+/* Lower threshold for a reasonably-looking calibration value for a 32k XTAL.
+ * The ideal value (assuming 32768 Hz frequency) is 1000000/32768*(2**19) = 16*10^6.
+ */
+#define MIN_32K_XTAL_CAL_VAL  15000000L
 
-// g_ticks_us defined in ROMs for PRO CPU
-extern uint32_t g_ticks_per_us_pro;
+/* Indicates that this 32k oscillator gets input from external oscillator, rather
+ * than a crystal.
+ */
+#define EXT_OSC_FLAG    BIT(3)
+
+/* This is almost the same as rtc_slow_freq_t, except that we define
+ * an extra enum member for the external 32k oscillator.
+ * For convenience, lower 2 bits should correspond to rtc_slow_freq_t values.
+ */
+typedef enum {
+    SLOW_CLK_RTC = RTC_SLOW_FREQ_RTC,           //!< Internal 90 kHz RC oscillator
+    SLOW_CLK_32K_XTAL = RTC_SLOW_FREQ_32K_XTAL, //!< External 32 kHz XTAL
+    SLOW_CLK_8MD256 = RTC_SLOW_FREQ_8MD256,     //!< Internal 8 MHz RC oscillator, divided by 256
+    SLOW_CLK_32K_EXT_OSC = RTC_SLOW_FREQ_32K_XTAL | EXT_OSC_FLAG //!< External 32k oscillator connected to 32K_XP pin
+} slow_clk_sel_t;
+
+static void select_rtc_slow_clk(slow_clk_sel_t slow_clk);
+
 static const char *TAG = "clk";
 
 
@@ -72,8 +91,12 @@ void esp_clk_init(void)
     rtc_wdt_protect_on();
 #endif
 
-#ifdef CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS
-    select_rtc_slow_clk(RTC_SLOW_FREQ_32K_XTAL);
+#if defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
+    select_rtc_slow_clk(SLOW_CLK_32K_XTAL);
+#elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_OSC)
+    select_rtc_slow_clk(SLOW_CLK_32K_EXT_OSC);
+#elif defined(CONFIG_ESP32S2_RTC_CLK_SRC_INT_8MD256)
+    select_rtc_slow_clk(SLOW_CLK_8MD256);
 #else
     select_rtc_slow_clk(RTC_SLOW_FREQ_RTC);
 #endif
@@ -86,61 +109,49 @@ void esp_clk_init(void)
     rtc_wdt_protect_on();
 #endif
 
-    uint32_t freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
-    rtc_cpu_freq_t freq = RTC_CPU_FREQ_80M;
-    switch (freq_mhz) {
-    case 240:
-        freq = RTC_CPU_FREQ_240M;
-        break;
-    case 160:
-        freq = RTC_CPU_FREQ_160M;
-        break;
-    case 80:
-        freq = RTC_CPU_FREQ_80M;
-        break;
-    default:
-        freq_mhz = 80;
-        freq = RTC_CPU_FREQ_80M;
-        break;
-    }
+    rtc_cpu_freq_config_t old_config, new_config;
+    rtc_clk_cpu_freq_get_config(&old_config);
+    const uint32_t old_freq_mhz = old_config.freq_mhz;
+    const uint32_t new_freq_mhz = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
+
+    bool res = rtc_clk_cpu_freq_mhz_to_config(new_freq_mhz, &new_config);
+    assert(res);
 
     // Wait for UART TX to finish, otherwise some UART output will be lost
     // when switching APB frequency
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
 
-    uint32_t freq_before = rtc_clk_cpu_freq_value(rtc_clk_cpu_freq_get()) / MHZ ;
-
-    rtc_clk_cpu_freq_set(freq);
+    rtc_clk_cpu_freq_set_config(&new_config);
 
     // Re calculate the ccount to make time calculation correct.
-    uint32_t freq_after = CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ;
-    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
+    XTHAL_SET_CCOUNT( (uint64_t)XTHAL_GET_CCOUNT() * new_freq_mhz / old_freq_mhz );
 }
 
 int IRAM_ATTR esp_clk_cpu_freq(void)
 {
-    return g_ticks_per_us_pro * 1000000;
+    return ets_get_cpu_frequency() * 1000000;
 }
 
 int IRAM_ATTR esp_clk_apb_freq(void)
 {
-    return MIN(g_ticks_per_us_pro, 80) * 1000000;
+    return MIN(ets_get_cpu_frequency(), 80) * 1000000;
 }
 
-void IRAM_ATTR ets_update_cpu_frequency(uint32_t ticks_per_us)
+static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
 {
-    /* Update scale factors used by ets_delay_us */
-    g_ticks_per_us_pro = ticks_per_us;
-}
-
-static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
-{
+    rtc_slow_freq_t rtc_slow_freq = slow_clk & RTC_CNTL_ANA_CLK_RTC_SEL_V;
     uint32_t cal_val = 0;
-    uint32_t wait = 0;
-    const uint32_t warning_timeout = 3 /* sec */ * 32768 /* Hz */ / (2 * SLOW_CLK_CAL_CYCLES);
-    bool changing_clock_to_150k = false;
+    /* number of times to repeat 32k XTAL calibration
+     * before giving up and switching to the internal RC
+     */
+#ifdef CONFIG_IDF_TARGET_ESP32
+    int retry_32k_xtal = 1;     /* don't change the behavior for the ESP32 */
+#else
+    int retry_32k_xtal = 3;
+#endif
+
     do {
-        if (slow_clk == RTC_SLOW_FREQ_32K_XTAL) {
+        if (rtc_slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
             /* 32k XTAL oscillator needs to be enabled and running before it can
              * be used. Hardware doesn't have a direct way of checking if the
              * oscillator is running. Here we use rtc_clk_cal function to count
@@ -149,22 +160,26 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
              * will time out, returning 0.
              */
             ESP_EARLY_LOGD(TAG, "waiting for 32k oscillator to start up");
-            rtc_clk_32k_enable(true);
-            cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
-            if (cal_val == 0 || cal_val < 15000000L) {
-                ESP_EARLY_LOGE(TAG, "RTC: Not found External 32 kHz XTAL. Switching to Internal 150 kHz RC chain");
-                slow_clk = RTC_SLOW_FREQ_RTC;
-                changing_clock_to_150k = true;
+            if (slow_clk == SLOW_CLK_32K_XTAL) {
+                rtc_clk_32k_enable(true);
+            } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
+                rtc_clk_32k_enable_external();
             }
+            // When SLOW_CLK_CAL_CYCLES is set to 0, clock calibration will not be performed at startup.
+            if (SLOW_CLK_CAL_CYCLES > 0) {
+                cal_val = rtc_clk_cal(RTC_CAL_32K_XTAL, SLOW_CLK_CAL_CYCLES);
+                if (cal_val == 0 || cal_val < MIN_32K_XTAL_CAL_VAL) {
+                    if (retry_32k_xtal-- > 0) {
+                        continue;
+                    }
+                    ESP_EARLY_LOGW(TAG, "32 kHz XTAL not found, switching to internal 90 kHz oscillator");
+                    rtc_slow_freq = RTC_SLOW_FREQ_RTC;
+                }
+            }
+        } else if (rtc_slow_freq == RTC_SLOW_FREQ_8MD256) {
+            rtc_clk_8m_enable(true, true);
         }
-        rtc_clk_slow_freq_set(slow_clk);
-        if (changing_clock_to_150k == true && wait > 1) {
-            // This helps when there are errors when switching the clock from External 32 kHz XTAL to Internal 150 kHz RC chain.
-            rtc_clk_32k_enable(false);
-            uint32_t min_bootstrap = 5; // Min bootstrapping for continue switching the clock.
-            rtc_clk_32k_bootstrap(min_bootstrap);
-            rtc_clk_32k_enable(true);
-        }
+        rtc_clk_slow_freq_set(rtc_slow_freq);
 
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
@@ -174,9 +189,6 @@ static void select_rtc_slow_clk(rtc_slow_freq_t slow_clk)
         } else {
             const uint64_t cal_dividend = (1ULL << RTC_CLK_CAL_FRACT) * 1000000ULL;
             cal_val = (uint32_t) (cal_dividend / rtc_clk_slow_freq_get_hz());
-        }
-        if (++wait % warning_timeout == 0) {
-            ESP_EARLY_LOGW(TAG, "still waiting for source selection RTC");
         }
     } while (cal_val == 0);
     ESP_EARLY_LOGD(TAG, "RTC_SLOW_CLK calibration value: %d", cal_val);

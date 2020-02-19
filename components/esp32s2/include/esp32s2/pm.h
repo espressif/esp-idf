@@ -31,10 +31,10 @@ extern "C" {
  * Pass a pointer to this structure as an argument to esp_pm_configure function.
  */
 typedef struct {
-    rtc_cpu_freq_t max_cpu_freq;    /*!< Maximum CPU frequency to use */
-    rtc_cpu_freq_t min_cpu_freq;    /*!< Minimum CPU frequency to use when no frequency locks are taken */
+    int max_freq_mhz;   /*!< Maximum CPU frequency, in MHz */
+    int min_freq_mhz;   /*!< Minimum CPU frequency to use when no locks are taken, in MHz */
     bool light_sleep_enable;        /*!< Enter light sleep when no locks are taken */
-} esp_pm_config_esp32_t;
+} esp_pm_config_esp32s2_t;
 
 
 #ifdef __cplusplus

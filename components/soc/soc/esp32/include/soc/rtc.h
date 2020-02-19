@@ -130,7 +130,7 @@ typedef enum {
  */
 typedef struct rtc_clk_config_s {
     rtc_xtal_freq_t xtal_freq : 8;      //!< Main XTAL frequency
-    rtc_cpu_freq_t cpu_freq_mhz : 10;   //!< CPU frequency to set, in MHz
+    uint32_t cpu_freq_mhz : 10;         //!< CPU frequency to set, in MHz
     rtc_fast_freq_t fast_freq : 1;      //!< RTC_FAST_CLK frequency to set
     rtc_slow_freq_t slow_freq : 2;      //!< RTC_SLOW_CLK frequency to set
     uint32_t clk_8m_div : 3;            //!< RTC 8M clock divider (division is by clk_8m_div+1, i.e. 0 means 8MHz frequency)

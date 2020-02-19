@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
+#include <stdlib.h>
 #include "sdkconfig.h"
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
@@ -30,21 +31,19 @@
 #include "soc/syscon_reg.h"
 #include "i2c_rtc_clk.h"
 #include "soc_log.h"
+#include "rtc_clk_common.h"
 #include "sdkconfig.h"
 #include "xtensa/core-macros.h"
 
 static const char *TAG = "rtc_clk";
 
-/* PLL currently enabled, if any */
-typedef enum {
-    RTC_PLL_NONE,
-    RTC_PLL_320M,
-    RTC_PLL_480M
-} rtc_pll_t;
-static rtc_pll_t s_cur_pll = RTC_PLL_NONE;
+#define RTC_PLL_FREQ_320M   320
+#define RTC_PLL_FREQ_480M   480
 
-/* Current CPU frequency; saved in a variable for faster freq. switching */
-static rtc_cpu_freq_t s_cur_freq = RTC_CPU_FREQ_XTAL;
+// Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
+static int s_cur_pll_freq;
+
+static void rtc_clk_cpu_freq_to_8m(void);
 
 void rtc_clk_32k_enable_internal(x32k_config_t cfg)
 {
@@ -58,6 +57,8 @@ void rtc_clk_32k_enable_internal(x32k_config_t cfg)
 void rtc_clk_32k_enable(bool enable)
 {
     if (enable) {
+        SET_PERI_REG_MASK(RTC_IO_XTAL_32P_PAD_REG, RTC_IO_X32P_MUX_SEL);
+        SET_PERI_REG_MASK(RTC_IO_XTAL_32N_PAD_REG, RTC_IO_X32N_MUX_SEL);
         x32k_config_t cfg = X32K_CONFIG_DEFAULT();
         rtc_clk_32k_enable_internal(cfg);
     } else {
@@ -66,8 +67,22 @@ void rtc_clk_32k_enable(bool enable)
     }
 }
 
+void rtc_clk_32k_enable_external(void)
+{
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32P_PAD_REG, RTC_IO_X32P_MUX_SEL);
+    SET_PERI_REG_MASK(RTC_IO_XTAL_32N_PAD_REG, RTC_IO_X32N_MUX_SEL);
+    /* TODO: external 32k source may need different settings */
+    x32k_config_t cfg = X32K_CONFIG_DEFAULT();
+    rtc_clk_32k_enable_internal(cfg);
+}
+
 void rtc_clk_32k_bootstrap(uint32_t cycle)
 {
+    /* No special bootstrapping needed for ESP32-S2, 'cycle' argument is to keep the signature
+     * same as for the ESP32. Just enable the XTAL here.
+     */
+    (void) cycle;
+    rtc_clk_32k_enable(true);
 }
 
 bool rtc_clk_32k_enabled(void)
@@ -77,11 +92,8 @@ bool rtc_clk_32k_enabled(void)
     bool xtal_xpd_sw = (xtal_conf & RTC_CNTL_XTAL32K_XPD_FORCE) >> RTC_CNTL_XTAL32K_XPD_FORCE_S;
     /* If xtal xpd software control is on */
     bool xtal_xpd_st = (xtal_conf & RTC_CNTL_XPD_XTAL_32K) >> RTC_CNTL_XPD_XTAL_32K_S;
-    if (xtal_xpd_sw & !xtal_xpd_st) {
-        return false;
-    } else {
-        return true;
-    }
+    bool disabled = xtal_xpd_sw && !xtal_xpd_st;
+    return !disabled;
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
@@ -120,25 +132,7 @@ void rtc_clk_apll_enable(bool enable, uint32_t sdm0, uint32_t sdm1, uint32_t sdm
     REG_SET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD, enable ? 0 : 1);
     REG_SET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PU, enable ? 1 : 0);
 
-    /* BIAS I2C not exist any more, but not sure how to get the same effect yet...
-     * if (!enable &&
-     *   REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL) != DPORT_SOC_CLK_SEL_PLL) {
-     *   REG_SET_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PD);
-     * } else {
-     *   REG_CLR_BIT(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PD);
-     * }
-     */
-
     if (enable) {
-        /* no need to differentiate ECO chip any more
-        uint8_t sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV1;
-        uint32_t is_rev0 = (GET_PERI_REG_BITS2(EFUSE_BLK0_RDATA3_REG, 1, 15) == 0);
-        if (is_rev0) {
-            sdm0 = 0;
-            sdm1 = 0;
-            sdm_stop_val_2 = APLL_SDM_STOP_VAL_2_REV0;
-        }
-        */
         I2C_WRITEREG_MASK_RTC(I2C_APLL, I2C_APLL_DSDM2, sdm2);
         I2C_WRITEREG_MASK_RTC(I2C_APLL, I2C_APLL_DSDM0, sdm0);
         I2C_WRITEREG_MASK_RTC(I2C_APLL, I2C_APLL_DSDM1, sdm1);
@@ -226,17 +220,20 @@ rtc_fast_freq_t rtc_clk_fast_freq_get(void)
     return REG_GET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_FAST_CLK_RTC_SEL);
 }
 
-/* In 7.2.2, cpu can run at 80M/160M/240M if PLL is 480M
- * pll can run 80M/160M is PLL is 320M
- */
-#define DR_REG_I2C_MST_BASE             0x3f40E000
-#define I2C_MST_ANA_STATE_REG           (DR_REG_I2C_MST_BASE + 0x040)
-#define I2C_MST_BBPLL_CAL_END           (BIT(24))
-#define I2C_MST_BBPLL_CAL_END_M         (BIT(24))
-#define I2C_MST_BBPLL_CAL_END_V         0x1
-#define I2C_MST_BBPLL_CAL_END_S         24
+static void rtc_clk_bbpll_disable(void)
+{
+    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PD |
+                      RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
+    s_cur_pll_freq = 0;
+}
 
-void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
+static void rtc_clk_bbpll_enable(void)
+{
+    CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BB_I2C_FORCE_PD |
+                        RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
+}
+
+void rtc_clk_bbpll_configure(rtc_xtal_freq_t xtal_freq, int pll_freq)
 {
     uint8_t div_ref;
     uint8_t div7_0;
@@ -247,11 +244,8 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
 
     assert(xtal_freq == RTC_XTAL_FREQ_40M);
 
-    if (pll_freq == RTC_PLL_480M) {
-        /* Raise the voltage, if needed */
-        /* move to 240M logic */
-        //REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-        /* Set this register to let digital know pll is 480M */
+    if (pll_freq == RTC_PLL_FREQ_480M) {
+        /* Clear this register to let the digital part know 480M PLL is used */
         SET_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_PLL_FREQ_SEL);
         /* Configure 480M PLL */
         div_ref = 0;
@@ -262,11 +256,9 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
         dcur = 4;
         I2C_WRITEREG_RTC(I2C_BBPLL, I2C_BBPLL_MODE_HF, 0x6B);
     } else {
-        /* Raise the voltage */
-        //REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
-        //ets_delay_us(DELAY_PLL_DBIAS_RAISE);
+        /* Clear this register to let the digital part know 320M PLL is used */
         CLEAR_PERI_REG_MASK(DPORT_CPU_PER_CONF_REG, DPORT_PLL_FREQ_SEL);
-        /* Configure 480M PLL */
+        /* Configure 320M PLL */
         div_ref = 0;
         div7_0 = 4;
         dr1 = 0;
@@ -295,280 +287,213 @@ void rtc_clk_bbpll_set(rtc_xtal_freq_t xtal_freq, rtc_pll_t pll_freq)
         }
         if (ext_cap == 15) {
             SOC_LOGE(TAG, "BBPLL SOFTWARE CAL FAIL");
+            abort();
         }
     }
-
-    /* this delay is replaced by polling Pll calibration end flag
-     * uint32_t delay_pll_en = (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_RTC) ?
-     *       DELAY_PLL_ENABLE_WITH_150K : DELAY_PLL_ENABLE_WITH_32K;
-     * ets_delay_us(delay_pll_en);
-     */
-    /* this calibration didn't work on 480M
-    need to test exact delay according to 320M
-    while (!GET_PERI_REG_MASK(I2C_MST_ANA_STATE_REG, I2C_MST_BBPLL_CAL_END)) {
-        ets_delay_us(1);
-    }
-    */
-}
-
-/**
- * Switch to XTAL frequency. Does not disable the PLL.
- */
-static void rtc_clk_cpu_freq_to_xtal(void)
-{
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    ets_update_cpu_frequency(xtal_freq);
-    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
-    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, 0);
-    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, 0);
-    /* Why we need to do this ? */
-    //DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0); // clear DPORT_CPUPERIOD_SEL
-
-    rtc_clk_apb_freq_update(xtal_freq * MHZ);
-    s_cur_freq = RTC_CPU_FREQ_XTAL;
-    s_cur_pll  = RTC_PLL_NONE;
+   s_cur_pll_freq = pll_freq;
 }
 
 /**
  * Switch to one of PLL-based frequencies. Current frequency can be XTAL or PLL.
  * PLL must already be enabled.
- * If switching between frequencies derived from different PLLs (320M and 480M),
- * fall back to rtc_clk_cpu_freq_set.
  * @param cpu_freq new CPU frequency
  */
-static void rtc_clk_cpu_freq_to_pll(rtc_cpu_freq_t cpu_freq)
+static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
-    int freq = 0;
-    if ((s_cur_pll == RTC_PLL_NONE) || ((s_cur_pll == RTC_PLL_320M) && (cpu_freq == RTC_CPU_FREQ_240M))) {
-        /*
-         * if switch from non-pll or switch from PLL 320M to 480M
-         * need to switch PLLs, fall back to full implementation
-         */
-        rtc_clk_cpu_freq_set(cpu_freq);
-        return;
+    int dbias = DIG_DBIAS_80M_160M;
+    int per_conf = DPORT_CPUPERIOD_SEL_80;
+    if (cpu_freq_mhz == 80) {
+        /* nothing to do */
+    } else if (cpu_freq_mhz == 160) {
+        per_conf = DPORT_CPUPERIOD_SEL_160;
+    } else if (cpu_freq_mhz == 240) {
+        dbias = DIG_DBIAS_240M;
+        per_conf = DPORT_CPUPERIOD_SEL_240;
+    } else {
+        SOC_LOGE(TAG, "invalid frequency");
+        abort();
     }
-
-    if ((cpu_freq == RTC_CPU_FREQ_80M) || (cpu_freq == RTC_CPU_320M_80M)) {
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 0);
-        freq = 80;
-    } else if ((cpu_freq == RTC_CPU_FREQ_160M) || (cpu_freq == RTC_CPU_320M_160M)) {
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 1);
-        freq = 160;
-    } else if (cpu_freq == RTC_CPU_FREQ_240M) {
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
-        DPORT_REG_WRITE(DPORT_CPU_PER_CONF_REG, 2);
-        freq = 240;
-    }
-    // REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
-    rtc_clk_apb_freq_update(80 * MHZ);
-    ets_update_cpu_frequency(freq);
-    s_cur_freq = cpu_freq;
-}
-
-void rtc_clk_cpu_freq_set_fast(rtc_cpu_freq_t cpu_freq)
-{
-    if (cpu_freq == s_cur_freq) {
-        return;
-    } else if (cpu_freq == RTC_CPU_FREQ_2M || s_cur_freq == RTC_CPU_FREQ_2M) {
-        /* fall back to full implementation if switch to/from 2M is needed */
-        rtc_clk_cpu_freq_set(cpu_freq);
-    } else if (cpu_freq == RTC_CPU_FREQ_XTAL) {
-        rtc_clk_cpu_freq_to_xtal();
-    } else if (cpu_freq > RTC_CPU_FREQ_XTAL) {
-        rtc_clk_cpu_freq_to_pll(cpu_freq);
-        /* Not neccessary any more */
-        //rtc_clk_wait_for_slow_cycle();
-    }
-}
-
-void rtc_clk_cpu_freq_set(rtc_cpu_freq_t cpu_freq)
-{
-    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
-    /* Switch CPU to XTAL frequency first */
-    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
-    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, 0);
+    REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, per_conf);
     REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, 0);
-    ets_update_cpu_frequency(xtal_freq);
-    /* Frequency switch is synchronized to SLOW_CLK cycle. Wait until the switch
-     * is complete before disabling the PLL.
-     */
-    /* register SOC_CLK_SEL is moved to APB domain, so this delay is not neccessary any more */
-    //rtc_clk_wait_for_slow_cycle();
+    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
+    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_PLL);
+    rtc_clk_apb_freq_update(80 * MHZ);
+    ets_update_cpu_frequency(cpu_freq_mhz);
+}
 
-    DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
+bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* out_config)
+{
+    uint32_t source_freq_mhz;
+    rtc_cpu_freq_src_t source;
+    uint32_t divider;
+    uint32_t real_freq_mhz;
 
-    /* BBPLL force power down won't affect force power up setting */
-    SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
-                      RTC_CNTL_BB_I2C_FORCE_PD | RTC_CNTL_BBPLL_FORCE_PD |
-                      RTC_CNTL_BBPLL_I2C_FORCE_PD);
-    s_cur_pll = RTC_PLL_NONE;
-    rtc_clk_apb_freq_update(xtal_freq * MHZ);
+    uint32_t xtal_freq = (uint32_t) rtc_clk_xtal_freq_get();
+    if (freq_mhz <= xtal_freq) {
+        divider = xtal_freq / freq_mhz;
+        real_freq_mhz = (xtal_freq + divider / 2) / divider; /* round */
+        if (real_freq_mhz != freq_mhz) {
+            // no suitable divider
+            return false;
+        }
 
-    /* is APLL under force power down? */
-    /* may need equivalent function
-    uint32_t apll_fpd = REG_GET_FIELD(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_PLLA_FORCE_PD);
-
-     * if (apll_fpd) {
-     *   SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_BIAS_I2C_FORCE_PD);
-     * }
-    */
-
-    /* now switch to the desired frequency */
-    if (cpu_freq == RTC_CPU_FREQ_XTAL) {
-        /* already at XTAL, nothing to do */
-    } else if (cpu_freq == RTC_CPU_FREQ_2M) {
-        /* set up divider to produce 2MHz from XTAL */
-        REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, (xtal_freq / 2) - 1);
-        ets_update_cpu_frequency(2);
-        rtc_clk_apb_freq_update(2 * MHZ);
-        /* lower the voltage */
-        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_2M);
+        source_freq_mhz = xtal_freq;
+        source = RTC_CPU_FREQ_SRC_XTAL;
+    } else if (freq_mhz == 80) {
+        real_freq_mhz = freq_mhz;
+        source = RTC_CPU_FREQ_SRC_PLL;
+        source_freq_mhz = RTC_PLL_FREQ_480M;
+        divider = 6;
+    } else if (freq_mhz == 160) {
+        real_freq_mhz = freq_mhz;
+        source = RTC_CPU_FREQ_SRC_PLL;
+        source_freq_mhz = RTC_PLL_FREQ_480M;
+        divider = 3;
+    } else if (freq_mhz == 240) {
+        real_freq_mhz = freq_mhz;
+        source = RTC_CPU_FREQ_SRC_PLL;
+        source_freq_mhz = RTC_PLL_FREQ_480M;
+        divider = 2;
     } else {
-        /* use PLL as clock source */
-        CLEAR_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG,
-                            RTC_CNTL_BB_I2C_FORCE_PD |
-                            RTC_CNTL_BBPLL_FORCE_PD | RTC_CNTL_BBPLL_I2C_FORCE_PD);
-        if (cpu_freq > RTC_CPU_FREQ_2M) {
-            rtc_clk_bbpll_set(xtal_freq, RTC_PLL_320M);
-            s_cur_pll = RTC_PLL_320M;
-        } else {
-            rtc_clk_bbpll_set(xtal_freq, RTC_PLL_480M);
-            s_cur_pll = RTC_PLL_480M;
-        }
-
-        if ((cpu_freq == RTC_CPU_FREQ_80M) || (cpu_freq == RTC_CPU_320M_80M)) {
-            REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 0);
-            ets_update_cpu_frequency(80);
-        } else if ((cpu_freq == RTC_CPU_FREQ_160M) || (cpu_freq == RTC_CPU_320M_160M)) {
-            REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_80M_160M);
-            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 1);
-            ets_update_cpu_frequency(160);
-        } else if (cpu_freq == RTC_CPU_FREQ_240M) {
-            REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_240M);
-            DPORT_REG_SET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL, 2);
-            ets_update_cpu_frequency(240);
-        }
-        REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, 1);
-        //rtc_clk_wait_for_slow_cycle();
-        rtc_clk_apb_freq_update(80 * MHZ);
-    }
-    s_cur_freq = cpu_freq;
-}
-
-rtc_cpu_freq_t rtc_clk_cpu_freq_get(void)
-{
-    uint32_t soc_clk_sel = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL);
-    switch (soc_clk_sel) {
-    case 0: {
-        uint32_t pre_div = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT);
-        if (pre_div == 0) {
-            return RTC_CPU_FREQ_XTAL;
-        } else if (pre_div == 1) {
-            return RTC_CPU_FREQ_XTAL_DIV2;
-        } else if (pre_div == rtc_clk_xtal_freq_get() / 2 - 1) {
-            return RTC_CPU_FREQ_2M;
-        } else {
-            assert(false && "unsupported frequency");
-        }
-        break;
-    }
-    case 1: {
-        uint32_t cpuperiod_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
-        uint32_t pllfreq_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_PLL_FREQ_SEL);
-        if (cpuperiod_sel == 0) {
-            if (pllfreq_sel == 1) {
-                return RTC_CPU_FREQ_80M;
-            } else {
-                return RTC_CPU_320M_80M;
-            }
-        } else if (cpuperiod_sel == 1) {
-            if (pllfreq_sel == 1) {
-                return RTC_CPU_FREQ_160M;
-            } else {
-                return RTC_CPU_320M_160M;
-            }
-        } else if (cpuperiod_sel == 2) {
-            return RTC_CPU_FREQ_240M;
-        } else {
-            assert(false && "unsupported frequency");
-        }
-        break;
-    }
-    case 2:
-    case 3:
-    default:
-        assert(false && "unsupported frequency");
-    }
-    return 0;
-}
-
-uint32_t rtc_clk_cpu_freq_value(rtc_cpu_freq_t cpu_freq)
-{
-    switch (cpu_freq) {
-    case RTC_CPU_FREQ_XTAL:
-        return ((uint32_t) rtc_clk_xtal_freq_get()) * MHZ;
-    case RTC_CPU_FREQ_XTAL_DIV2:
-        return ((uint32_t) rtc_clk_xtal_freq_get()) / 2 * MHZ;
-    case RTC_CPU_FREQ_2M:
-        return 2 * MHZ;
-    case RTC_CPU_FREQ_80M:
-        return 80 * MHZ;
-    case RTC_CPU_FREQ_160M:
-        return 160 * MHZ;
-    case RTC_CPU_FREQ_240M:
-        return 240 * MHZ;
-    case RTC_CPU_320M_80M:
-        return 80 * MHZ;
-    case RTC_CPU_320M_160M:
-        return 160 * MHZ;
-    default:
-        assert(false && "invalid rtc_cpu_freq_t value");
-        return 0;
-    }
-}
-
-bool rtc_clk_cpu_freq_from_mhz(int mhz, rtc_cpu_freq_t *out_val)
-{
-    if (mhz == 240) {
-        *out_val = RTC_CPU_FREQ_240M;
-    } else if (mhz == 160) {
-        *out_val = RTC_CPU_FREQ_160M;
-    } else if (mhz == 80) {
-        *out_val = RTC_CPU_FREQ_80M;
-    } else if (mhz == (int) rtc_clk_xtal_freq_get()) {
-        *out_val = RTC_CPU_FREQ_XTAL;
-    } else if (mhz == (int) rtc_clk_xtal_freq_get() / 2) {
-        *out_val = RTC_CPU_FREQ_XTAL_DIV2;
-    } else if (mhz == 2) {
-        *out_val = RTC_CPU_FREQ_2M;
-    } else {
+        // unsupported frequency
         return false;
     }
+    *out_config = (rtc_cpu_freq_config_t) {
+        .source = source,
+        .div = divider,
+        .source_freq_mhz = source_freq_mhz,
+        .freq_mhz = real_freq_mhz
+    };
     return true;
 }
 
-/* Values of RTC_XTAL_FREQ_REG and RTC_APB_FREQ_REG are stored as two copies in
- * lower and upper 16-bit halves. These are the routines to work with such a
- * representation.
+void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
+{
+    rtc_xtal_freq_t xtal_freq = rtc_clk_xtal_freq_get();
+    uint32_t soc_clk_sel = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL);
+    if (soc_clk_sel != DPORT_SOC_CLK_SEL_XTAL) {
+        rtc_clk_cpu_freq_to_xtal(xtal_freq, 1);
+    }
+    if (soc_clk_sel == DPORT_SOC_CLK_SEL_PLL) {
+        rtc_clk_bbpll_disable();
+    }
+    if (config->source == RTC_CPU_FREQ_SRC_XTAL) {
+        if (config->div > 1) {
+            rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
+        }
+    } else if (config->source == RTC_CPU_FREQ_SRC_PLL) {
+        rtc_clk_bbpll_enable();
+        rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
+        rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
+    } else if (config->source == RTC_CPU_FREQ_SRC_8M) {
+        rtc_clk_cpu_freq_to_8m();
+    }
+}
+
+void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* out_config)
+{
+    rtc_cpu_freq_src_t source;
+    uint32_t source_freq_mhz;
+    uint32_t div;
+    uint32_t freq_mhz;
+    uint32_t soc_clk_sel = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL);
+    switch (soc_clk_sel) {
+        case DPORT_SOC_CLK_SEL_XTAL: {
+            source = RTC_CPU_FREQ_SRC_XTAL;
+            div = REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT) + 1;
+            source_freq_mhz = (uint32_t) rtc_clk_xtal_freq_get();
+            freq_mhz = source_freq_mhz / div;
+        }
+        break;
+        case DPORT_SOC_CLK_SEL_PLL: {
+            source = RTC_CPU_FREQ_SRC_PLL;
+            uint32_t cpuperiod_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_CPUPERIOD_SEL);
+            uint32_t pllfreq_sel = DPORT_REG_GET_FIELD(DPORT_CPU_PER_CONF_REG, DPORT_PLL_FREQ_SEL);
+            source_freq_mhz = (pllfreq_sel) ? RTC_PLL_FREQ_480M : RTC_PLL_FREQ_320M;
+            if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_80) {
+                div = (source_freq_mhz == RTC_PLL_FREQ_480M) ? 6 : 4;
+                freq_mhz = 80;
+            } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_160) {
+                div = (source_freq_mhz == RTC_PLL_FREQ_480M) ? 3 : 2;
+                div = 3;
+                freq_mhz = 160;
+            } else if (cpuperiod_sel == DPORT_CPUPERIOD_SEL_240) {
+                div = 2;
+                freq_mhz = 240;
+            } else {
+                SOC_LOGE(TAG, "unsupported frequency configuration");
+                abort();
+            }
+            break;
+        }
+        case DPORT_SOC_CLK_SEL_8M:
+            source = RTC_CPU_FREQ_SRC_8M;
+            source_freq_mhz = 8;
+            div = 1;
+            freq_mhz = source_freq_mhz;
+            break;
+        case DPORT_SOC_CLK_SEL_APLL:
+        default:
+            SOC_LOGE(TAG, "unsupported frequency configuration");
+            abort();
+    }
+    *out_config = (rtc_cpu_freq_config_t) {
+        .source = source,
+        .source_freq_mhz = source_freq_mhz,
+        .div = div,
+        .freq_mhz = freq_mhz
+    };
+}
+
+void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t* config)
+{
+    if (config->source == RTC_CPU_FREQ_SRC_XTAL) {
+        rtc_clk_cpu_freq_to_xtal(config->freq_mhz, config->div);
+    } else if (config->source == RTC_CPU_FREQ_SRC_PLL &&
+            s_cur_pll_freq == config->source_freq_mhz) {
+        rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
+    } else {
+        /* fallback */
+        rtc_clk_cpu_freq_set_config(config);
+    }
+}
+
+void rtc_clk_cpu_freq_set_xtal(void)
+{
+    int freq_mhz = (int) rtc_clk_xtal_freq_get();
+
+    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+    rtc_clk_bbpll_disable();
+}
+
+/**
+ * Switch to XTAL frequency. Does not disable the PLL.
  */
-static bool clk_val_is_valid(uint32_t val)
+void rtc_clk_cpu_freq_to_xtal(int freq, int div)
 {
-    return (val & 0xffff) == ((val >> 16) & 0xffff) &&
-           val != 0 &&
-           val != UINT32_MAX;
+    ets_update_cpu_frequency(freq);
+    /* Set divider from XTAL to APB clock. Need to set divider to 1 (reg. value 0) first. */
+    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, 0);
+    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, div - 1);
+    /* no need to adjust the REF_TICK */
+    /* switch clock source */
+    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_XTAL);
+    rtc_clk_apb_freq_update(freq * MHZ);
+    /* lower the voltage */
+    if (freq <= 2) {
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_2M);
+    } else {
+        REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
+    }
 }
 
-static uint32_t reg_val_to_clk_val(uint32_t val)
+static void rtc_clk_cpu_freq_to_8m(void)
 {
-    return val & UINT16_MAX;
-}
-
-static uint32_t clk_val_to_reg_val(uint32_t val)
-{
-    return (val & UINT16_MAX) | ((val & UINT16_MAX) << 16);
+    ets_update_cpu_frequency(8);
+    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
+    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_PRE_DIV_CNT, 0);
+    REG_SET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL, DPORT_SOC_CLK_SEL_8M);
+    rtc_clk_apb_freq_update(RTC_FAST_CLK_FREQ_8M);
 }
 
 rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
@@ -612,66 +537,6 @@ void rtc_clk_8m_divider_set(uint32_t div)
     CLEAR_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL_VLD);
     REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL, div);
     SET_PERI_REG_MASK(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DIV_SEL_VLD);
-}
-
-void rtc_clk_init(rtc_clk_config_t cfg)
-{
-    rtc_cpu_freq_t cpu_source_before = rtc_clk_cpu_freq_get();
-    /* If we get a TG WDT system reset while running at 240MHz,
-     * DPORT_CPUPERIOD_SEL register will be reset to 0 resulting in 120MHz
-     * APB and CPU frequencies after reset. This will cause issues with XTAL
-     * frequency estimation, so we switch to XTAL frequency first.
-     *
-     * Ideally we would only do this if SYSCON_SOC_CLK_SEL == PLL and
-     * PLL is configured for 480M, but it takes less time to switch to 40M and
-     * run the following code than querying the PLL does.
-     */
-    if (REG_GET_FIELD(DPORT_SYSCLK_CONF_REG, DPORT_SOC_CLK_SEL) == 1) {
-        rtc_clk_cpu_freq_set(RTC_CPU_FREQ_XTAL);
-    }
-
-    /* Set tuning parameters for 8M and 150k clocks.
-     * Note: this doesn't attempt to set the clocks to precise frequencies.
-     * Instead, we calibrate these clocks against XTAL frequency later, when necessary.
-     * - SCK_DCAP value controls tuning of 150k clock.
-     *   The higher the value of DCAP is, the lower is the frequency.
-     * - CK8M_DFREQ value controls tuning of 8M clock.
-     *   CLK_8M_DFREQ constant gives the best temperature characteristics.
-     */
-    REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_SCK_DCAP, cfg.slow_clk_dcap);
-    REG_SET_FIELD(RTC_CNTL_CLK_CONF_REG, RTC_CNTL_CK8M_DFREQ, cfg.clk_8m_dfreq);
-
-    /* Configure 150k clock division */
-    rtc_clk_divider_set(cfg.clk_rtc_clk_div);
-    /* Configure 8M clock division */
-    rtc_clk_8m_divider_set(cfg.clk_8m_clk_div);
-
-    /* Enable the internal bus used to configure PLLs */
-    SET_PERI_REG_BITS(ANA_CONFIG_REG, ANA_CONFIG_M, ANA_CONFIG_M, ANA_CONFIG_S);
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, I2C_APLL_M | I2C_BBPLL_M);
-
-    rtc_xtal_freq_t xtal_freq = cfg.xtal_freq;
-    uart_tx_wait_idle(0);
-    rtc_clk_xtal_freq_update(xtal_freq);
-    rtc_clk_apb_freq_update(xtal_freq * MHZ);
-    /* Set CPU frequency */
-    rtc_clk_cpu_freq_set(cfg.cpu_freq);
-
-    /* Re-calculate the ccount to make time calculation correct. */
-    uint32_t freq_before = rtc_clk_cpu_freq_value(cpu_source_before) / MHZ;
-    uint32_t freq_after = rtc_clk_cpu_freq_value(cfg.cpu_freq) / MHZ;
-    XTHAL_SET_CCOUNT( XTHAL_GET_CCOUNT() * freq_after / freq_before );
-
-    /* Slow & fast clocks setup */
-    if (cfg.slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
-        rtc_clk_32k_enable(true);
-    }
-    if (cfg.fast_freq == RTC_FAST_FREQ_8M) {
-        bool need_8md256 = cfg.slow_freq == RTC_SLOW_FREQ_8MD256;
-        rtc_clk_8m_enable(true, need_8md256);
-    }
-    rtc_clk_fast_freq_set(cfg.fast_freq);
-    rtc_clk_slow_freq_set(cfg.slow_freq);
 }
 
 /* Name used in libphy.a:phy_chip_v7.o
