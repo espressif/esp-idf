@@ -3,7 +3,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
-
+//
 //     http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
@@ -13,44 +13,23 @@
 // limitations under the License.
 
 #include <stdio.h>
-#include "soc/dport_reg.h"
-#include "sdkconfig.h"
-#include "esp_err.h"
-#include "eri.h"
-#include "xtensa-debug-module.h"
-#include "trax.h"
 #include "esp_log.h"
+#include "esp_err.h"
+#include "xtensa-debug-module.h"
+#include "eri.h"
+#include "trax.h"
+#include "sdkconfig.h"
 
-#define TRACEMEM_MUX_PROBLK0_APPBLK1    0
-#define TRACEMEM_MUX_BLK0_ONLY          1
-#define TRACEMEM_MUX_BLK1_ONLY          2
-#define TRACEMEM_MUX_PROBLK1_APPBLK0    3
+#if defined(CONFIG_ESP32_TRAX) || defined(CONFIG_ESP32S2_TRAX)
+#define WITH_TRAX 1
+#endif
 
 static const char* TAG = "trax";
-
-int trax_enable(trax_ena_select_t which) 
-{
-#if !CONFIG_ESP32_TRAX
-    ESP_LOGE(TAG, "Trax_enable called, but trax is disabled in menuconfig!");
-    return ESP_ERR_NO_MEM;
-#endif
-#if !CONFIG_ESP32_TRAX_TWOBANKS
-    if (which == TRAX_ENA_PRO_APP || which == TRAX_ENA_PRO_APP_SWAP) return ESP_ERR_NO_MEM;
-#endif
-    if (which == TRAX_ENA_PRO_APP || which == TRAX_ENA_PRO_APP_SWAP) {
-        DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, (which == TRAX_ENA_PRO_APP_SWAP)?TRACEMEM_MUX_PROBLK1_APPBLK0:TRACEMEM_MUX_PROBLK0_APPBLK1);
-    } else {
-        DPORT_WRITE_PERI_REG(DPORT_TRACEMEM_MUX_MODE_REG, TRACEMEM_MUX_BLK0_ONLY);
-    }
-    DPORT_WRITE_PERI_REG(DPORT_PRO_TRACEMEM_ENA_REG, (which == TRAX_ENA_PRO_APP || which == TRAX_ENA_PRO_APP_SWAP || which == TRAX_ENA_PRO));
-    DPORT_WRITE_PERI_REG(DPORT_APP_TRACEMEM_ENA_REG, (which == TRAX_ENA_PRO_APP || which == TRAX_ENA_PRO_APP_SWAP || which == TRAX_ENA_APP));
-    return ESP_OK;
-}
 
 
 int trax_start_trace(trax_downcount_unit_t units_until_stop) 
 {
-#if !CONFIG_ESP32_TRAX
+#if !WITH_TRAX
     ESP_LOGE(TAG, "Trax_start_trace called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
@@ -74,7 +53,7 @@ int trax_start_trace(trax_downcount_unit_t units_until_stop)
 
 int trax_trigger_traceend_after_delay(int delay) 
 {
-#if !CONFIG_ESP32_TRAX
+#if !WITH_TRAX
     ESP_LOGE(TAG, "Trax_trigger_traceend_after_delay called, but trax is disabled in menuconfig!");
     return ESP_ERR_NO_MEM;
 #endif
