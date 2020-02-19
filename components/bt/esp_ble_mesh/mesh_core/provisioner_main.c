@@ -21,6 +21,7 @@
 #include "access.h"
 #include "settings.h"
 #include "friend.h"
+#include "transport.h"
 #include "mesh_common.h"
 #include "proxy_client.h"
 #include "provisioner_prov.h"
@@ -380,7 +381,6 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const u8_t uuid[16
 static int provisioner_remove_node(u16_t index, bool erase)
 {
     struct bt_mesh_node *node = NULL;
-    struct bt_mesh_rpl *rpl = NULL;
     bool is_prov = false;
     int i;
 
@@ -398,17 +398,12 @@ static int provisioner_remove_node(u16_t index, bool erase)
     /* Reset corresponding network cache when reset the node */
     bt_mesh_msg_cache_clear(node->unicast_addr, node->element_num);
 
-    /* Reset corresponding rpl when removing the node */
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
-        rpl = &bt_mesh.rpl[i];
-        if (rpl->src >= node->unicast_addr &&
-                rpl->src < node->unicast_addr + node->element_num) {
-            memset(rpl, 0, sizeof(struct bt_mesh_rpl));
-
-            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
-                bt_mesh_clear_rpl_single(node->unicast_addr);
-            }
-        }
+    /* Reset corresponding transport info when removing the node */
+    for (i = 0; i < node->element_num; i++) {
+        bt_mesh_rx_reset_single(node->unicast_addr + i);
+    }
+    for (i = 0; i < node->element_num; i++) {
+        bt_mesh_tx_reset_single(node->unicast_addr + i);
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
