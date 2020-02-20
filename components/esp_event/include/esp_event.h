@@ -296,7 +296,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop,
            address - memory address of the event loop
            name - name of the event loop, 'none' if no dedicated task
            total_recieved - number of successfully posted events
-           total_dropped - number of events unsucessfully posted due to queue being full
+           total_dropped - number of events unsuccessfully posted due to queue being full
 
    handler
        format: address ev:base,id inv:total_invoked run:total_runtime

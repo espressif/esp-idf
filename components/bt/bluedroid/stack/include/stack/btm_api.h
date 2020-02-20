@@ -1558,7 +1558,7 @@ typedef void (tBTM_MKEY_CALLBACK) (BD_ADDR bd_addr, UINT8 status, UINT8 key_flag
 **              optional data passed in by BTM_SetEncryption
 **              tBTM_STATUS - result of the operation
 */
-typedef void (tBTM_SEC_CBACK) (BD_ADDR bd_addr, tBT_TRANSPORT trasnport,
+typedef void (tBTM_SEC_CBACK) (BD_ADDR bd_addr, tBT_TRANSPORT transport,
                                void *p_ref_data, tBTM_STATUS result);
 
 /* Bond Cancel complete. Parameters are

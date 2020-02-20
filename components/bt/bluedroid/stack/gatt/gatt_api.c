@@ -80,7 +80,7 @@ UINT8 GATT_SetTraceLevel (UINT8 new_level)
 **
 ** Parameter        p_hndl_range:   pointer to allocated handles information
 **
-** Returns          TRUE if handle range is added sucessfully; otherwise FALSE.
+** Returns          TRUE if handle range is added successfully; otherwise FALSE.
 **
 *******************************************************************************/
 
@@ -382,7 +382,7 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
     GATT_TRACE_DEBUG ("GATTS_DeleteService");
 
     if (p_reg == NULL) {
-        GATT_TRACE_ERROR ("Applicaiton not foud");
+        GATT_TRACE_ERROR ("Application not found");
         return (FALSE);
     }
     p_app_uuid128 = &p_reg->app_uuid128;
@@ -434,7 +434,7 @@ BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid, UINT16 svc_
 **                  p_cback       : application service callback functions.
 **                  sup_transport : supported transport(s) for this primary service
 **
-** return           GATT_SUCCESS if sucessfully started; otherwise error code.
+** return           GATT_SUCCESS if successfully started; otherwise error code.
 **
 *******************************************************************************/
 tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
@@ -454,7 +454,7 @@ tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
 
     if (p_reg == NULL) {
         /* Not found  */
-        GATT_TRACE_ERROR ("Applicaiton not found ");
+        GATT_TRACE_ERROR ("Application not found ");
         return GATT_NOT_FOUND;
     }
 
@@ -562,7 +562,7 @@ void GATTS_StopService (UINT16 service_handle)
 **                  val_len: Length of the indicated attribute value.
 **                  p_val: Pointer to the indicated attribute value data.
 **
-** Returns          GATT_SUCCESS if sucessfully sent or queued; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent or queued; otherwise error code.
 **
 *******************************************************************************/
 tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, UINT16 val_len, UINT8 *p_val)
@@ -629,7 +629,7 @@ tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,  UINT16 attr_handle, U
 **                  val_len: Length of the indicated attribute value.
 **                  p_val: Pointer to the indicated attribute value data.
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 *******************************************************************************/
 tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
@@ -677,7 +677,7 @@ tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
 **                  status: response status
 **                  p_msg: pointer to message parameters structure.
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 *******************************************************************************/
 tGATT_STATUS GATTS_SendRsp (UINT16 conn_id,  UINT32 trans_id,
@@ -1054,7 +1054,7 @@ tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type, tGATT_VALUE *p_
 **                  the server.
 **
 ** Parameters       conn_id: connection identifier.
-**                  is_execute - to execute or cancel the prepare write requet(s)
+**                  is_execute - to execute or cancel the prepare write request(s)
 **
 ** Returns          GATT_SUCCESS if command started successfully.
 **
@@ -1232,7 +1232,7 @@ tGATT_IF GATT_Register (tBT_UUID *p_app_uuid128, tGATT_CBACK *p_cb_info)
 **
 ** Description      This function deregistered the application from GATT.
 **
-** Parameters       gatt_if: applicaiton interface.
+** Parameters       gatt_if: application interface.
 **
 ** Returns          None.
 **
@@ -1309,7 +1309,7 @@ void GATT_Deregister (tGATT_IF gatt_if)
 **                  callbacks for registered interface.  Function may call back
 **                  with connection status and queued notifications
 **
-** Parameter        gatt_if: applicaiton interface.
+** Parameter        gatt_if: application interface.
 **
 ** Returns          None.
 **
@@ -1342,13 +1342,13 @@ void GATT_StartIf (tGATT_IF gatt_if)
 **
 ** Function         GATT_Connect
 **
-** Description      This function initiate a connecttion to a remote device on GATT
+** Description      This function initiate a connection to a remote device on GATT
 **                  channel.
 **
-** Parameters       gatt_if: applicaiton interface
+** Parameters       gatt_if: application interface
 **                  bd_addr: peer device address.
 **                  bd_addr_type: peer device address type.
-**                  is_direct: is a direct conenection or a background auto connection
+**                  is_direct: is a direct connection or a background auto connection
 **
 ** Returns          TRUE if connection started; FALSE if connection start failure.
 **
@@ -1532,10 +1532,10 @@ tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr)
 **                  interface
 **
 ** Parameters        conn_id: connection id  (input)
-**                   p_gatt_if: applicaiton interface (output)
+**                   p_gatt_if: application interface (output)
 **                   bd_addr: peer device address. (output)
 **
-** Returns          TRUE the ligical link information is found for conn_id
+** Returns          TRUE the logical link information is found for conn_id
 **
 *******************************************************************************/
 BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if, BD_ADDR bd_addr,
@@ -1567,7 +1567,7 @@ BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if, BD_ADDR bd_
 ** Description      This function find the conn_id if the logical link for BD address
 **                  and applciation interface is connected
 **
-** Parameters        gatt_if: applicaiton interface (input)
+** Parameters        gatt_if: application interface (input)
 **                   bd_addr: peer device address. (input)
 **                   p_conn_id: connection id  (output)
 **                   transport: transport option
@@ -1599,7 +1599,7 @@ BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr, UINT16 *p_c
 ** Description      This function start or stop LE advertisement and listen for
 **                  connection.
 **
-** Parameters       gatt_if: applicaiton interface
+** Parameters       gatt_if: application interface
 **                  p_bd_addr: listen for specific address connection, or NULL for
 **                             listen to all device connection.
 **                  start: start or stop listening.

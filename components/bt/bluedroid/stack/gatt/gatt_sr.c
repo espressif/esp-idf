@@ -669,7 +669,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp (BT_HDR *p_msg, tGATT_TCB *p_
 ** Description      fill the find information response information in the given
 **                  buffer.
 **
-** Returns          TRUE: if data filled sucessfully.
+** Returns          TRUE: if data filled successfully.
 **                  FALSE: packet full, or format mismatch.
 **
 *******************************************************************************/
@@ -962,7 +962,7 @@ static void gatts_process_mtu_req (tGATT_TCB *p_tcb, UINT16 len, UINT8 *p_data)
         if ((p_buf = attp_build_sr_msg(p_tcb, GATT_RSP_MTU, (tGATT_SR_MSG *) &p_tcb->payload_size)) != NULL) {
             attp_send_sr_msg (p_tcb, p_buf);
 
-            /* Notify all registered applicaiton with new MTU size. Us a transaction ID */
+            /* Notify all registered application with new MTU size. Us a transaction ID */
             /* of 0, as no response is allowed from applcations                    */
 
             for (i = 0; i < GATT_MAX_APPS; i ++) {

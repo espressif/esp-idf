@@ -181,7 +181,7 @@ set in the ``send_queue_size``. All the buffers are restricted to be no larger t
 mode several buffers can be sent in one transfer, each buffer is still counted as one in the queue.
 
 The application can call ``sdio_slave_transmit`` to send packets. In this case the function returns when the transfer
-is sucessfully done, so the queue is not fully used. When higher effeciency is required, the application can use the
+is successfully done, so the queue is not fully used. When higher effeciency is required, the application can use the
 following functions instead:
 
 1. Pass buffer information (address, length, as well as an ``arg`` indicating the buffer) to ``sdio_slave_send_queue``.

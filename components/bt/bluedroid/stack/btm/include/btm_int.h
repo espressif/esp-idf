@@ -1106,7 +1106,7 @@ void  btm_sec_link_key_notification (UINT8 *p_bda, UINT8 *p_link_key, UINT8 key_
 void  btm_sec_link_key_request (UINT8 *p_bda);
 void  btm_sec_pin_code_request (UINT8 *p_bda);
 void  btm_sec_update_clock_offset (UINT16 handle, UINT16 clock_offset);
-void  btm_sec_dev_rec_cback_event (tBTM_SEC_DEV_REC *p_dev_rec, UINT8 res, BOOLEAN is_le_trasnport);
+void  btm_sec_dev_rec_cback_event (tBTM_SEC_DEV_REC *p_dev_rec, UINT8 res, BOOLEAN is_le_transport);
 void btm_sec_set_peer_sec_caps (tACL_CONN *p_acl_cb, tBTM_SEC_DEV_REC *p_dev_rec);
 
 #if BLE_INCLUDED == TRUE

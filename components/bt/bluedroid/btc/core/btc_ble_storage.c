@@ -80,7 +80,7 @@ static void _btc_storage_save(void)
             //delete device info
             string_to_bdaddr(need_remove_section, &bd_addr);
             BTM_SecDeleteDevice(bd_addr.address, BT_TRANSPORT_LE);
-            //delet config info
+            //delete config info
             if(btc_config_remove_section(need_remove_section)) {
                 BTIF_TRACE_WARNING("exceeded the maximum nubmer of bonded devices, delete the last device info : %s", need_remove_section);
             }
@@ -898,7 +898,7 @@ bt_status_t btc_storage_get_bonded_ble_devices_list(esp_ble_bond_dev_t *bond_dev
             bond_dev->bond_key.pid_key.addr_type = pid_key->addr_type;
             memcpy(&bond_dev->bond_key.pid_key.static_addr, pid_key->static_addr, ESP_BD_ADDR_LEN);
         }
-        //serch for the next bond device
+        //search for the next bond device
         bond_dev++;
     }
     btc_config_unlock();
