@@ -339,7 +339,8 @@ uint32_t IRAM_ATTR esp_log_timestamp()
     if (base == 0 && xPortGetCoreID() == 0) {
         base = esp_log_early_timestamp();
     }
-    return base + xTaskGetTickCount() * (1000 / configTICK_RATE_HZ);
+    TickType_t tick_count = xPortInIsrContext() ? xTaskGetTickCountFromISR() : xTaskGetTickCount();
+    return base + tick_count * (1000 / configTICK_RATE_HZ);
 }
 
 #else
