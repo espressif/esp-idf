@@ -131,17 +131,19 @@ size_t fixed_queue_capacity(fixed_queue_t *queue)
 
 void fixed_queue_enqueue(fixed_queue_t *queue, void *data)
 {
+    bool status=false; //Flag whether enqueued success
+
     assert(queue != NULL);
     assert(data != NULL);
 
     osi_sem_take(&queue->enqueue_sem, OSI_SEM_MAX_TIMEOUT);
 
     osi_mutex_lock(&queue->lock, OSI_MUTEX_MAX_TIMEOUT);
-
-    list_append(queue->list, data);
+    status = list_append(queue->list, data); //Check whether enqueued success
     osi_mutex_unlock(&queue->lock);
 
-    osi_sem_give(&queue->dequeue_sem);
+    if(status == true)
+        osi_sem_give(&queue->dequeue_sem);
 }
 
 void *fixed_queue_dequeue(fixed_queue_t *queue)
