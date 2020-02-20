@@ -24,15 +24,22 @@
 #include "esp_log.h"
 #include "nvs_flash.h"
 #include "esp_bt.h"
-
 #include "esp_gap_ble_api.h"
 #include "esp_gatts_api.h"
 #include "esp_bt_defs.h"
 #include "esp_bt_main.h"
-#include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
 
 #include "sdkconfig.h"
+
+/**********************************************************
+ * Thread/Task reference
+ **********************************************************/
+#ifdef CONFIG_BLUEDROID_PINNED_TO_CORE
+#define BLUETOOTH_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#else
+#define BLUETOOTH_TASK_PINNED_TO_CORE              (0)
+#endif
 
 #define SECOND_TO_USECOND          1000000
 
@@ -53,7 +60,7 @@ static uint64_t start_time = 0;
 static uint64_t current_time = 0;
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
-static bool is_connecet = false;
+static bool is_connect = false;
 ///Declare the static function
 static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param);
 
@@ -522,7 +529,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
     case ESP_GATTS_STOP_EVT:
         break;
     case ESP_GATTS_CONNECT_EVT: {
-        is_connecet = true;
+        is_connect = true;
         esp_ble_conn_update_params_t conn_params = {0};
         memcpy(conn_params.bda, param->connect.remote_bda, sizeof(esp_bd_addr_t));
         /* For the IOS system, please reference the apple official documents about the ble connection parameters restrictions. */
@@ -540,7 +547,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     }
     case ESP_GATTS_DISCONNECT_EVT:
-        is_connecet = false;
+        is_connect = false;
         ESP_LOGI(GATTS_TAG, "ESP_GATTS_DISCONNECT_EVT");
         esp_ble_gap_start_advertising(&adv_params);
         break;
@@ -611,15 +618,22 @@ void throughput_server_task(void *param)
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
 
     while(1) {
-#if (CONFIG_GATTS_NOTIFY_THROUGHPUT) 
+#if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
         if (!can_send_notify) {
             int res = xSemaphoreTake(gatts_semaphore, portMAX_DELAY);
             assert(res == pdTRUE);
         } else {
-            if (is_connecet) {
-                esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
-                                            gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                            sizeof(indicate_data), indicate_data, false);
+            if (is_connect) {
+                int free_buff_num = esp_ble_get_sendable_packets_num();
+                if(free_buff_num > 0) {
+                    for( ; free_buff_num > 0; free_buff_num--) {
+                        esp_ble_gatts_send_indicate(gl_profile_tab[PROFILE_A_APP_ID].gatts_if, gl_profile_tab[PROFILE_A_APP_ID].conn_id,
+                                                    gl_profile_tab[PROFILE_A_APP_ID].char_handle,
+                                                    sizeof(indicate_data), indicate_data, false);
+                    }
+                } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
+                    vTaskDelay( 10 / portTICK_PERIOD_MS );
+                }
             }
         }
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
@@ -630,10 +644,10 @@ void throughput_server_task(void *param)
         if (start_time) {
             current_time = esp_timer_get_time();
             bit_rate = write_len * SECOND_TO_USECOND / (current_time - start_time);
-            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = %d Btye/s, = %d bit/s, time = %ds", 
+            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = %d Byte/s, = %d bit/s, time = %ds",
                      bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
         } else {
-            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = 0 Btye/s, = 0 bit/s");
+            ESP_LOGI(GATTS_TAG, "GATTC write Bit rate = 0 Byte/s, = 0 bit/s");
         }
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
@@ -695,12 +709,13 @@ void app_main()
     
     esp_err_t local_mtu_ret = esp_ble_gatt_set_local_mtu(517);
     if (local_mtu_ret){
-        ESP_LOGE(GATTS_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
+        ESP_LOGE(GATTS_TAG, "set local MTU failed, error code = %x", local_mtu_ret);
     }
-
-    xTaskCreate(&throughput_server_task, "throughput_server_task", 4048, NULL, 15, NULL);
+    // The task is only created on the CPU core that Bluetooth is working on,
+    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
+    xTaskCreatePinnedToCore(&throughput_server_task, "throughput_server_task", 4096, NULL, 15, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
-    gatts_semaphore = xSemaphoreCreateMutex();
+    gatts_semaphore = xSemaphoreCreateBinary();
     if (!gatts_semaphore) {
         ESP_LOGE(GATTS_TAG, "%s, init fail, the gatts semaphore create fail.", __func__);
         return;

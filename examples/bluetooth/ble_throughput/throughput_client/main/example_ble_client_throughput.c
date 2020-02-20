@@ -30,6 +30,15 @@
 #include "freertos/semphr.h"
 #include "freertos/task.h"
 
+/**********************************************************
+ * Thread/Task reference
+ **********************************************************/
+#ifdef CONFIG_BLUEDROID_PINNED_TO_CORE
+#define BLUETOOTH_TASK_PINNED_TO_CORE              (CONFIG_BLUEDROID_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BLUEDROID_PINNED_TO_CORE : tskNO_AFFINITY)
+#else
+#define BLUETOOTH_TASK_PINNED_TO_CORE              (0)
+#endif
+
 #define GATTC_TAG "GATTC_DEMO"
 #define REMOTE_SERVICE_UUID        0x00FF
 #define REMOTE_NOTIFY_CHAR_UUID    0xFF01
@@ -58,7 +67,7 @@ static SemaphoreHandle_t gattc_semaphore;
 uint8_t write_data[GATTC_WRITE_LEN] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0e, 0x0f};
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
 
-static bool is_connecet = false;
+static bool is_connect = false;
 
 /* Declare static functions */
 static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
@@ -141,7 +150,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         }
         break;
     case ESP_GATTC_CONNECT_EVT: {
-        is_connecet = true;
+        is_connect = true;
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT conn_id %d, if %d", p_data->connect.conn_id, gattc_if);
         gl_profile_tab[PROFILE_A_APP_ID].conn_id = p_data->connect.conn_id;
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, p_data->connect.remote_bda, sizeof(esp_bd_addr_t));
@@ -331,7 +340,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         ESP_LOGI(GATTC_TAG, "write char success ");
         break;
     case ESP_GATTC_DISCONNECT_EVT:
-        is_connecet = false;
+        is_connect = false;
         get_server = false;
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
         start = false;
@@ -477,15 +486,15 @@ static void throughput_client_task(void *param)
     while(1) {
 #if (CONFIG_GATTS_NOTIFY_THROUGHPUT)
         vTaskDelay(2000 / portTICK_PERIOD_MS);
-        if(is_connecet){
+        if(is_connect){
             uint32_t bit_rate = 0;
             if (start_time) {
                 current_time = esp_timer_get_time();
                 bit_rate = notify_len * SECOND_TO_USECOND / (current_time - start_time);
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %d Btye/s, = %d bit/s, time = %ds", 
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = %d Byte/s, = %d bit/s, time = %ds",
                         bit_rate, bit_rate<<3, (int)((current_time - start_time) / SECOND_TO_USECOND));
             } else {
-                ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Btye/s, = 0 bit/s");
+                ESP_LOGI(GATTC_TAG, "Notify Bit rate = 0 Byte/s, = 0 bit/s");
             }
         }
 #endif /* #if (CONFIG_GATTS_NOTIFY_THROUGHPUT) */
@@ -494,15 +503,22 @@ static void throughput_client_task(void *param)
                 int res = xSemaphoreTake(gattc_semaphore, portMAX_DELAY);
                 assert(res == pdTRUE);
             } else {
-                if (is_connecet) {
-                    // the app data set to 490 just for divided into two packages to send in the low layer
-                    // when the packet length set to 251.
-                    esp_ble_gattc_write_char(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, 
-                                             gl_profile_tab[PROFILE_A_APP_ID].conn_id, 
-                                             gl_profile_tab[PROFILE_A_APP_ID].char_handle,
-                                             sizeof(write_data), write_data, 
-                                             ESP_GATT_WRITE_TYPE_NO_RSP,
-                                             ESP_GATT_AUTH_REQ_NONE);
+                if (is_connect) {
+                    int free_buff_num = esp_ble_get_sendable_packets_num();
+                    if(free_buff_num > 0) {
+                        for( ; free_buff_num > 0; free_buff_num--) {
+                            // the app data set to 490 just for divided into two packages to send in the low layer
+                            // when the packet length set to 251.
+                            esp_ble_gattc_write_char(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                                            gl_profile_tab[PROFILE_A_APP_ID].conn_id,
+                                                            gl_profile_tab[PROFILE_A_APP_ID].char_handle,
+                                                            sizeof(write_data), write_data,
+                                                            ESP_GATT_WRITE_TYPE_NO_RSP,
+                                                            ESP_GATT_AUTH_REQ_NONE);
+                        }
+                    } else { //Add the vTaskDelay to prevent this task from consuming the CPU all the time, causing low-priority tasks to not be executed at all.
+                        vTaskDelay( 10 / portTICK_PERIOD_MS );
+                    }
                 }
             }
 #endif /* #if (CONFIG_GATTC_WRITE_THROUGHPUT) */
@@ -518,7 +534,7 @@ void app_main()
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
-    ESP_ERROR_CHECK( ret );
+    ESP_ERROR_CHECK(ret);
 
     ESP_ERROR_CHECK(esp_bt_controller_mem_release(ESP_BT_MODE_CLASSIC_BT));
 
@@ -570,10 +586,12 @@ void app_main()
     if (local_mtu_ret){
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
+    // The task is only created on the CPU core that Bluetooth is working on,
+    // preventing the sending task from using the un-updated Bluetooth state on another CPU.
+    xTaskCreatePinnedToCore(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL, BLUETOOTH_TASK_PINNED_TO_CORE);
 
-    xTaskCreate(&throughput_client_task, "throughput_client_task", 4096, NULL, 10, NULL);
 #if (CONFIG_GATTC_WRITE_THROUGHPUT)
-    gattc_semaphore = xSemaphoreCreateMutex();
+    gattc_semaphore = xSemaphoreCreateBinary();
     if (!gattc_semaphore) {
         ESP_LOGE(GATTC_TAG, "%s, init fail, the gattc semaphore create fail.", __func__);
         return;
