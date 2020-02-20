@@ -237,6 +237,7 @@ static inline void rtcio_ll_force_hold_enable(int rtcio_num)
 static inline void rtcio_ll_force_hold_disable(int rtcio_num)
 {
     REG_CLR_BIT(RTC_CNTL_HOLD_FORCE_REG, rtc_io_desc[rtcio_num].hold_force);
+    REG_CLR_BIT(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].hold);
 }
 
 /**
