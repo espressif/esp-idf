@@ -759,7 +759,6 @@
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
 #define ESP_DNS                         1
-#define ESP_IPV6_AUTOCONFIG             1
 #define ESP_PERF                        0
 #define ESP_IP4_ATON                    1
 #define ESP_LIGHT_SLEEP                 1
@@ -774,6 +773,10 @@
 #define ESP_HAS_SELECT                  1
 #define ESP_AUTO_RECV                   1
 #define ESP_GRATUITOUS_ARP              CONFIG_ESP_GRATUITOUS_ARP
+
+#ifdef CONFIG_LWIP_IPV6_AUTOCONFIG
+#define ESP_IPV6_AUTOCONFIG             CONFIG_LWIP_IPV6_AUTOCONFIG
+#endif
 
 #if CONFIG_LWIP_IRAM_OPTIMIZATION
 #define ESP_IRAM_ATTR                   IRAM_ATTR
