@@ -334,7 +334,7 @@ menu "Bluetooth"
 
         config BTDM_CTRL_FULL_SCAN_SUPPORTED
             bool "BLE full scan feature supported"
-            depends on BTDM_CONTROLLER_MODE_BLE_ONLY || BTDM_CONTROLLER_MODE_BTDM
+            depends on BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
             default y
             help
                 The full scan function is mainly used to provide BLE scan performance.
