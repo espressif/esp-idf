@@ -30,6 +30,12 @@ macro(project name)
         endforeach()
     endif()
 
+    if(NOT MAIN_SRCS)
+        list(APPEND IDF_EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/main")
+    endif()
+
+    list(APPEND IDF_EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/components")
+
     if(EXTRA_COMPONENT_DIRS)
         spaces2list(EXTRA_COMPONENT_DIRS)
 
@@ -37,12 +43,6 @@ macro(project name)
             get_filename_component(component_dir ${component_dir} ABSOLUTE BASE_DIR ${CMAKE_SOURCE_DIR})
             list(APPEND IDF_EXTRA_COMPONENT_DIRS "${component_dir}")
         endforeach()
-    endif()
-
-    list(APPEND IDF_EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/components")
-
-    if(NOT MAIN_SRCS)
-        list(APPEND IDF_EXTRA_COMPONENT_DIRS "${CMAKE_SOURCE_DIR}/main")
     endif()
 
     if(COMPONENTS)
