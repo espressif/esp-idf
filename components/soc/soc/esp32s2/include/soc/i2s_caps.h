@@ -25,5 +25,6 @@
 // ESP32-S2 have 2 I2S
 #define SOC_I2S_NUM            (1)
 
-#define I2S_SUPPORTS_PDM       (0) // ESP32-S2 don't support PDM
-#define I2S_SUPPORTS_DMA_EQUAL (1) // ESP32-S2 need dma equal
+#define SOC_I2S_SUPPORTS_PDM       (0) // ESP32-S2 don't support PDM
+#define SOC_I2S_SUPPORTS_DMA_EQUAL (1) // ESP32-S2 need dma equal
+#define SOC_I2S_SUPPORTS_ADC_DAC   (0) // ESP32-S2 don't support ADC and DAC

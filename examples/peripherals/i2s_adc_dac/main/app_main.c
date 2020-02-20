@@ -9,9 +9,7 @@
 #include "driver/i2s.h"
 #include "driver/adc.h"
 #include "audio_example_file.h"
-#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp_adc_cal.h"
-#endif
 
 static const char* TAG = "ad/da";
 #define V_REF   1100
@@ -272,17 +270,11 @@ void adc_read_task(void* arg)
 {
     adc1_config_width(ADC_WIDTH_12Bit);
     adc1_config_channel_atten(ADC1_TEST_CHANNEL, ADC_ATTEN_11db);
-#ifdef CONFIG_IDF_TARGET_ESP32
     esp_adc_cal_characteristics_t characteristics;
     esp_adc_cal_characterize(ADC_UNIT_1, ADC_ATTEN_DB_11, ADC_WIDTH_BIT_12, V_REF, &characteristics);
-#endif
     while(1) {
         uint32_t voltage;
-#ifdef CONFIG_IDF_TARGET_ESP32
         esp_adc_cal_get_voltage(ADC1_TEST_CHANNEL, &characteristics, &voltage);
-#else
-        voltage = adc1_get_raw(ADC1_TEST_CHANNEL) * (3300.0 / 4095); // At 11 dB attenuation the maximum voltage is limited by VDD_A(3300 mV), not the full scale voltage.
-#endif
         ESP_LOGI(TAG, "%d mV", voltage);
         vTaskDelay(200 / portTICK_RATE_MS);
     }

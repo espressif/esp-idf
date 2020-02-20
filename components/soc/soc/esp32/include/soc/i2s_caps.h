@@ -28,8 +28,9 @@ extern "C" {
 // ESP32 have 2 I2S
 #define SOC_I2S_NUM            (2)
 
-#define I2S_SUPPORTS_PDM       (1) // ESP32 support PDM
-#define I2S_SUPPORTS_DMA_EQUAL (0) // ESP32 don't support dma equal
+#define SOC_I2S_SUPPORTS_PDM       (1) // ESP32 support PDM
+#define SOC_I2S_SUPPORTS_DMA_EQUAL (0) // ESP32 don't support dma equal
+#define SOC_I2S_SUPPORTS_ADC_DAC   (1) // ESP32 support ADC and DAC
 
 #ifdef __cplusplus
 }

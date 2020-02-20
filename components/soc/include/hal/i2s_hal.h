@@ -158,7 +158,7 @@ void i2s_hal_set_rx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_
  */
 void i2s_hal_set_in_link(i2s_hal_context_t *hal, uint32_t rx_eof_num, uint32_t addr);
 
-#if I2S_SUPPORTS_PDM
+#if SOC_I2S_SUPPORTS_PDM
 /**
  * @brief Get I2S tx pdm
  *
@@ -248,7 +248,7 @@ void i2s_hal_stop_tx(i2s_hal_context_t *hal);
  */
 void i2s_hal_stop_rx(i2s_hal_context_t *hal);
 
-#if I2S_SUPPORTS_PDM
+#if SOC_I2S_SUPPORTS_PDM
 /**
  * @brief Set I2S pdm rx down sample
  *

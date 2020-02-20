@@ -32,7 +32,7 @@ void i2s_hal_set_tx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_
         i2s_ll_set_tx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 2 : 3);
     }
     i2s_ll_set_tx_chan_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-#if I2S_SUPPORTS_DMA_EQUAL
+#if SOC_I2S_SUPPORTS_DMA_EQUAL
     i2s_ll_set_tx_dma_equal(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
 #endif
 }
@@ -45,7 +45,7 @@ void i2s_hal_set_rx_mode(i2s_hal_context_t *hal, i2s_channel_t ch, i2s_bits_per_
         i2s_ll_set_rx_fifo_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 2 : 3);
     }
     i2s_ll_set_rx_chan_mod(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
-#if I2S_SUPPORTS_DMA_EQUAL
+#if SOC_I2S_SUPPORTS_DMA_EQUAL
     i2s_ll_set_rx_dma_equal(hal->dev, (ch == I2S_CHANNEL_STEREO) ? 0 : 1);
 #endif
 }
@@ -56,7 +56,7 @@ void i2s_hal_set_in_link(i2s_hal_context_t *hal, uint32_t bytes_num, uint32_t ad
     i2s_ll_set_rx_eof_num(hal->dev, bytes_num);
 }
 
-#if I2S_SUPPORTS_PDM
+#if SOC_I2S_SUPPORTS_PDM
 void i2s_hal_get_tx_pdm(i2s_hal_context_t *hal, int *fp, int *fs)
 {
     i2s_ll_get_tx_pdm_fp(hal->dev, (uint32_t *)fp);
@@ -129,7 +129,7 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_config_t *i2s_config
 
     i2s_ll_set_lcd_en(hal->dev, 0);
     i2s_ll_set_camera_en(hal->dev, 0);
-#if I2S_SUPPORTS_PDM
+#if SOC_I2S_SUPPORTS_PDM
     i2s_ll_set_pcm2pdm_conv_en(hal->dev, 0);
     i2s_ll_set_pdm2pcm_conv_en(hal->dev, 0);
 #endif
@@ -172,13 +172,15 @@ void i2s_hal_config_param(i2s_hal_context_t *hal, const i2s_config_t *i2s_config
         }
     }
 
+#if SOC_I2S_SUPPORTS_ADC_DAC
     if (i2s_config->mode & (I2S_MODE_DAC_BUILT_IN | I2S_MODE_ADC_BUILT_IN)) {
         i2s_ll_set_lcd_en(hal->dev, 1);
         i2s_ll_set_tx_right_first(hal->dev, 1);
         i2s_ll_set_camera_en(hal->dev, 0);
     }
+#endif
 
-#if I2S_SUPPORTS_PDM
+#if SOC_I2S_SUPPORTS_PDM
     if (i2s_config->mode & I2S_MODE_PDM) {
         i2s_ll_set_rx_fifo_mod_force_en(hal->dev, 1);
         i2s_ll_set_tx_fifo_mod_force_en(hal->dev, 1);
