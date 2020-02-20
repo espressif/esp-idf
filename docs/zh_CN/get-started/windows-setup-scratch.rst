@@ -33,10 +33,9 @@ Ninja 编译工具
 适用于 Windows 平台的 Ninja 下载文件是一个 .zip 文件，包含一个 ``ninja.exe`` 文件。将其解压到目录，并 `添加到你的路径 <add-directory-windows-path>`_ （或者选择你的路径中已有的目录）。
 
 
-Python 2.x
-^^^^^^^^^^
+Python
+^^^^^^
 
-下载并运行适用于 Windows 安装器的最新版 `Python`_ 2.7。 
 
 Python 安装的“自定义”那一步提供了一份选项列表，最后一个选项是 "Add python.exe to Path"（添加 python.exe 到路径中），更改该选项，选择 "Will be installed"（将会安装）。
 

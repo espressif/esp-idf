@@ -179,9 +179,9 @@ ESP-IDF 所需 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您可
 
 .. note::
 
-    请注意查询您所使用的 Python 解释器的版本（运行命令 ``python --version``），并根据查询结果将上方命令中的 ``python`` 替换为 ``python2``, ``python2.7``，例如： :: 
+    请注意查询您所使用的 Python 解释器的版本（运行命令 ``python --version``），并根据查询结果将上方命令中的 ``python`` 替换为 ``python3``, ``python3.7``，例如::
 
-        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
+        python3 -m pip install --user -r $IDF_PATH/requirements.txt
 
 
 .. _get-started-start-project-legacy:
@@ -278,10 +278,6 @@ Windows 操作系统
 * ``空格``、``Y 键``或``N 键``：使能/禁用 ``[*]`` 配置选项
 * ``英文问号`` ：调出有关高亮选项的帮助菜单
 * ``/ 键``：寻找配置项目
-
-.. note::
-
-    如果您是 **Arch Linux** 用户，请前往 ``SDK tool configuration``，并将 ``Python 2 interpreter`` 的名称从 ``python`` 替换为 ``python2``。
 
 .. attention::
 
