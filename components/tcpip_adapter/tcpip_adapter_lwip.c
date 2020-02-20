@@ -532,6 +532,29 @@ esp_err_t tcpip_adapter_get_ip6_linklocal(tcpip_adapter_if_t tcpip_if, ip6_addr_
     return ESP_OK;
 }
 
+esp_err_t tcpip_adapter_get_ip6_global(tcpip_adapter_if_t tcpip_if, ip6_addr_t *if_ip6)
+{
+    ESP_LOGD(TAG, "%s esp-netif:%p", __func__, esp_netif);
+
+    if (tcpip_if >=TCPIP_ADAPTER_IF_MAX || if_ip6 == NULL) {
+        return ESP_ERR_TCPIP_ADAPTER_INVALID_PARAMS;
+    }
+
+    int i;
+    struct netif *p_netif = esp_netif[tcpip_if];
+
+    if (p_netif != NULL && netif_is_up(p_netif)) {
+        for (i = 1; i < LWIP_IPV6_NUM_ADDRESSES; i++) {
+            if (ip6_addr_ispreferred(netif_ip6_addr_state(p_netif, i))) {
+                memcpy(if_ip6, &p_netif->ip6_addr[i], sizeof(ip6_addr_t));
+                return ESP_OK;
+            }
+        }
+    }
+
+    return ESP_FAIL;
+}
+
 #if 0
 esp_err_t tcpip_adapter_get_mac(tcpip_adapter_if_t tcpip_if, uint8_t mac[6])
 {
