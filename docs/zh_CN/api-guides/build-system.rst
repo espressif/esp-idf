@@ -915,47 +915,7 @@ JSON 配置服务器
 
 您可以通过 ``idf.py confserver`` 或 ``ninja confserver`` 从项目中运行 ``confserver.py``，也可以使用不同的构建生成器来触发类似的目标。
 
-配置服务器会向 stderr 输出方便阅读的错误和警告信息，向 stdout 输出 JSON 文件。启动时，配置服务器将以 JSON 字典的形式输出系统中每个配置项的完整值，以及范围受限的值的可用范围。``sdkconfig.json`` 中包含有相同的信息::
-
-    {"version": 1, "values": { "ITEM": "value", "ITEM_2": 1024, "ITEM_3": false }, "ranges" : { "ITEM_2" : [ 0, 32768 ] } }
-
-配置服务器仅发送可见的配置项，其它不可见的或者被禁用的配置项可从 ``kconfig_menus.json`` 静态文件中解析得到，此文件还包含菜单结构和其它元数据（描述、类型、范围等）。
-
-然后配置服务器将等待客户端的输入，客户端会发起请求，要求更改一个或多个配置项的值，内容的格式是个 JSON 对象，后面跟一个换行符::
-
-    {"version": "1", "set": {"SOME_NAME": false, "OTHER_NAME": true } }
-
-配置服务器将解析此请求，更新 ``sdkconfig`` 文件，并返回完整的变更列表::
-
-    {"version": 1, "values": {"SOME_NAME": false, "OTHER_NAME": true , "DEPENDS_ON_SOME_NAME": null}}
-
-当前不可见或者禁用的配置项会返回 ``null``，任何新的可见配置项则会返回其当前新的可见值。
-
-如果配置项的取值范围因另一个值的变化发生了改变，那么配置服务器会发送::
-
-    {"version": 1, "values": {"OTHER_NAME": true }, "ranges" : { "HAS_RANGE" : [ 3, 4 ] } }
-
-如果传递的数据无效，那么 JSON 对象中会有 ``error`` 字段::
-
-    {"version": 1, "values": {}, "error": ["The following config symbol(s) were not visible so were not updated: NOT_VISIBLE_ITEM"]}
-
-默认情况下，变更后的配置不会被写进 sdkconfig 文件。更改的内容在发出 “save” 命令之前会先储存在内存中::
-
-    {"version": 1, "save": null }
-
-若要从已保存的文件中重新加载配置值，并丢弃内存中的任何更改，可以发送 “load” 命令::
-
-    {"version": 1, "load": null }
-
-“load” 和 “save” 的值可以是新的路径名，也可以设置为 "null" 用以加载/保存之前使用的路径名。
-
-配置服务器对 “load” 命令的响应始终是完整的配置值和取值范围的集合，这与服务器初始启动阶段的响应相同。
-
-“load”、“set” 和 “save” 的任意组合可以在一条单独的命令中发送出去，服务器按照组合中的顺序执行命令。因此，可以使用一条命令实现从文件中加载配置，更新配置值，然后将其保存到文件中。
-
-.. Note:: 配置服务器不会自动加载外部对 ``sdkconfig`` 文件的任何更改。如果文件被外部编辑，则需要发送 “load” 命令或重启服务器。
-
-.. Note:: ``sdkconfig`` 文件更新后，配置服务器不会重新运行 CMake 来生成其它的构建文件和元数据文件。这些文件会在下一次运行 ``CMake`` 或 ``idf.py`` 时自动生成。
+有关 confserver.py 的更多信息，请参阅 :idf_file:`tools/kconfig_new/README.md`
 
 .. _gnu-make-to:
 

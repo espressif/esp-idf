@@ -1381,47 +1381,7 @@ A tool called ``confserver.py`` is provided to allow IDEs to easily integrate wi
 
 You can run ``confserver.py`` from a project via ``idf.py confserver`` or ``ninja confserver``, or a similar target triggered from a different build generator.
 
-The config server outputs human-readable errors and warnings on stderr and JSON on stdout. On startup, it will output the full values of each configuration item in the system as a JSON dictionary, and the available ranges for values which are range constrained. The same information is contained in ``sdkconfig.json``::
-
-  {"version": 1, "values": { "ITEM": "value", "ITEM_2": 1024, "ITEM_3": false }, "ranges" : { "ITEM_2" : [ 0, 32768 ] } }
-
-Only visible configuration items are sent. Invisible/disabled items can be parsed from the static ``kconfig_menus.json`` file which also contains the menu structure and other metadata (descriptions, types, ranges, etc.)
-
-The Configuration Server will then wait for input from the client. The client passes a request to change one or more values, as a JSON object followed by a newline::
-
-   {"version": "1", "set": {"SOME_NAME": false, "OTHER_NAME": true } }
-
-The Configuration Server will parse this request, update the project ``sdkconfig`` file, and return a full list of changes::
-
-   {"version": 1, "values": {"SOME_NAME": false, "OTHER_NAME": true , "DEPENDS_ON_SOME_NAME": null}}
-
-Items which are now invisible/disabled will return value ``null``. Any item which is newly visible will return its newly visible current value.
-
-If the range of a config item changes, due to conditional range depending on another value, then this is also sent::
-
-   {"version": 1, "values": {"OTHER_NAME": true }, "ranges" : { "HAS_RANGE" : [ 3, 4 ] } }
-
-If invalid data is passed, an "error" field is present on the object::
-
-    {"version": 1, "values": {}, "error": ["The following config symbol(s) were not visible so were not updated: NOT_VISIBLE_ITEM"]}
-
-By default, no config changes are written to the sdkconfig file. Changes are held in memory until a "save" command is sent::
-
-    {"version": 1, "save": null }
-
-To reload the config values from a saved file, discarding any changes in memory, a "load" command can be sent::
-
-    {"version": 1, "load": null }
-
-The value for both "load" and "save" can be a new pathname, or "null" to load/save the previous pathname.
-
-The response to a "load" command is always the full set of config values and ranges, the same as when the server is initially started.
-
-Any combination of "load", "set", and "save" can be sent in a single command and commands are executed in that order. Therefore it's possible to load config from a file, set some config item values and then save to a file in a single command.
-
-.. note:: The configuration server does not automatically load any changes which are applied externally to the ``sdkconfig`` file. Send a "load" command or restart the server if the file is externally edited.
-
-.. note:: The configuration server does not re-run CMake to regenerate other build files or metadata files after ``sdkconfig`` is updated. This will happen automatically the next time ``CMake`` or ``idf.py`` is run.
+For more information about ``confserver.py``, see :idf_file:`tools/kconfig_new/README.md`.
 
 Build System Internals
 =======================
