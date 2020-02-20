@@ -180,10 +180,10 @@ The python packages required by ESP-IDF are located in ``IDF_PATH/requirements.t
 .. note::
 
     Please check the version of the Python interpreter that you will be using with ESP-IDF. For this, run
-    the command ``python --version`` and depending on the result, you might want to use ``python2``, ``python2.7``
+    the command ``python --version`` and depending on the result, you might want to use ``python3``, ``python3.7``
     or similar instead of just ``python``, e.g.::
 
-        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
+        python3 -m pip install --user -r $IDF_PATH/requirements.txt
 
 
 .. _get-started-start-project-legacy:
@@ -282,10 +282,6 @@ To navigate and use ``menuconfig``, press the following keys:
 * ``Space``, or ``Y`` and ``N`` keys to enable (Yes) and disable (No) configuration items with checkboxes "``[*]``"
 * ``?`` while highlighting a configuration item to display help about that item
 * ``/`` to find configuration items
-
-.. note::
-
-    If you are **Arch Linux** user, navigate to ``SDK tool configuration`` and change the name of ``Python 2 interpreter`` from ``python`` to ``python2``.
 
 .. attention::
 

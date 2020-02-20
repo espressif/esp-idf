@@ -20,7 +20,7 @@ Linux 平台工具链的标准设置（传统 GNU Make）
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python2-pyserial python2-cryptography python2-future python2-pyparsing python2-pyelftools
+    sudo pacman -S --needed gcc git make flex bison gperf python-pyserial python-cryptography python-future python-pyparsing python-pyelftools
 
 .. note::
 
