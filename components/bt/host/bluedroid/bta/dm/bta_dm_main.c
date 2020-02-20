@@ -417,14 +417,8 @@ void BTA_DmCoexEventTrigger(uint32_t event)
     case BTA_COEX_EVT_SNIFF_EXIT:
     case BTA_COEX_EVT_A2DP_PAUSED_ENTER:
     case BTA_COEX_EVT_A2DP_PAUSED_EXIT:
-        break;
     case BTA_COEX_EVT_ACL_CONNECTED:
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
-        break;
     case BTA_COEX_EVT_ACL_DISCONNECTED:
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
-        esp_coex_status_bit_clear(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_PAUSED);
         break;
     case BTA_COEX_EVT_STREAMING_STARTED:
         esp_coex_status_bit_set(ESP_COEX_ST_TYPE_BT, ESP_COEX_BT_ST_A2DP_STREAMING);
