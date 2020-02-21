@@ -65,7 +65,8 @@ esp_err_t IRAM_ATTR esp_set_watchpoint(int no, void *adr, int size, int flags)
         return ESP_ERR_INVALID_ARG;
     }
 
-    return cpu_hal_set_watchpoint(no, adr, size, trigger);
+    cpu_hal_set_watchpoint(no, adr, size, trigger);
+    return ESP_OK;
 }
 
 void IRAM_ATTR esp_clear_watchpoint(int no)

@@ -28,11 +28,8 @@ extern "C" {
  * @param id index to the region table; on targets not SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED,
  * the region divisions is predefined in hardware which is likely reflected in LL implementation.
  * @param access type of access allowed
- * 
- * @return ESP_OK success
- * @return others fail
  */
-esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access);
+void mpu_hal_set_region_access(int id, mpu_access_t access);
 
 #ifdef __cplusplus
 }

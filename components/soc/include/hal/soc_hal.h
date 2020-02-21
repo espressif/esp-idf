@@ -17,8 +17,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "hal/cpu_hal.h"
 #include "soc/soc_caps.h"
+#include "hal/cpu_hal.h"
+#include "hal/soc_ll.h"
 
 #include "esp_err.h"
 
@@ -27,7 +28,6 @@ extern "C" {
 #endif
 
 #if SOC_CPU_CORES_NUM > 1
-
 // Utility functions for multicore targets
 #define __SOC_HAL_PERFORM_ON_OTHER_CORES(action)    { \
                                                         for (int i = 0, cur = cpu_hal_get_core_id(); i < SOC_CPU_CORES_NUM; i++) { \
@@ -68,7 +68,7 @@ void soc_hal_unstall_core(int core);
  *
  * @param core core to reset [0..SOC_CPU_CORES_NUM - 1]
  */
-void soc_hal_reset_core(int core);
+#define soc_hal_reset_core(core)         soc_ll_reset_core((core))
 
 #ifdef __cplusplus
 }

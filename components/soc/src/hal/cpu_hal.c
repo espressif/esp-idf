@@ -22,33 +22,21 @@
 
 #include "soc/cpu_caps.h"
 
-#define CHECK(cond)         {  if (!(cond)) abort(); }
-
 #if SOC_CPU_BREAKPOINTS_NUM > 0
-esp_err_t cpu_hal_set_breakpoint(int id, const void* addr)
+void cpu_hal_set_breakpoint(int id, const void* addr)
 {
-    CHECK(id < SOC_CPU_BREAKPOINTS_NUM && id >= 0);
     cpu_ll_set_breakpoint(id, cpu_ll_ptr_to_pc(addr));
-    return ESP_OK;
 }
 
-esp_err_t cpu_hal_clear_breakpoint(int id)
+void cpu_hal_clear_breakpoint(int id)
 {
-    CHECK(id < SOC_CPU_BREAKPOINTS_NUM && id >= 0);
     cpu_ll_clear_breakpoint(id);
-    return ESP_OK;
 }
 #endif // SOC_CPU_BREAKPOINTS_NUM > 0
 
 #if SOC_CPU_WATCHPOINTS_NUM > 0
-esp_err_t cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger)
+void cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger)
 {
-    CHECK(id < SOC_CPU_WATCHPOINTS_NUM && id >= 0);
-    CHECK(size <= SOC_CPU_WATCHPOINT_SIZE);
-    CHECK(trigger == WATCHPOINT_TRIGGER_ON_RO || 
-           trigger == WATCHPOINT_TRIGGER_ON_WO ||
-           trigger == WATCHPOINT_TRIGGER_ON_RW);
-
     bool on_read = false, on_write = false;
 
     if (trigger == WATCHPOINT_TRIGGER_ON_RO) {
@@ -60,14 +48,10 @@ esp_err_t cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoi
     }
 
     cpu_ll_set_watchpoint(id, addr, size, on_read, on_write);
-
-    return ESP_OK;
 }
 
-esp_err_t cpu_hal_clear_watchpoint(int id)
+void cpu_hal_clear_watchpoint(int id)
 {
-    CHECK(id < SOC_CPU_WATCHPOINTS_NUM && id >= 0);
     cpu_ll_clear_watchpoint(id);
-    return ESP_OK;
 }
 #endif // SOC_CPU_WATCHPOINTS_NUM > 0

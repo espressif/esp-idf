@@ -21,26 +21,14 @@
 #include "hal/soc_ll.h"
 #include "soc/soc_caps.h"
 
-#define CHECK(cond)         {  if (!(cond)) abort(); }
-
 #if SOC_CPU_CORES_NUM > 1
-
 void soc_hal_stall_core(int core)
 {
-    CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_stall_core(core);
 }
 
 void soc_hal_unstall_core(int core)
 {
-    CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
     soc_ll_unstall_core(core);
 }
-
 #endif // SOC_CPU_CORES_NUM > 1
-
-void soc_hal_reset_core(int core)
-{
-    CHECK(core < SOC_CPU_CORES_NUM && core >= 0);
-    soc_ll_reset_core(core);
-}

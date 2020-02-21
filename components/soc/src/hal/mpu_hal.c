@@ -23,23 +23,8 @@
 
 #include "soc/mpu_caps.h"
 
-#define CHECK(cond)         {  if (!(cond)) abort(); }
-
-esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access)
+void mpu_hal_set_region_access(int id, mpu_access_t access)
 {
-    CHECK(id < SOC_MPU_REGIONS_MAX_NUM && id >= 0);
-    CHECK(
-#if SOC_MPU_REGION_RO_SUPPORTED
-           access == MPU_REGION_RO ||
-#endif
-#if SOC_MPU_REGION_WO_SUPPORTED
-           access == MPU_REGION_WO ||
-#endif
-           access == MPU_REGION_RW ||
-           access == MPU_REGION_X  ||
-           access == MPU_REGION_RWX ||
-           access == MPU_REGION_ILLEGAL);
-
     uint32_t addr = cpu_ll_id_to_addr(id);
 
     switch (access)
@@ -66,6 +51,4 @@ esp_err_t mpu_hal_set_region_access(int id, mpu_access_t access)
         default:
             break;
     }
-
-    return ESP_OK;
 }

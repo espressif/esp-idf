@@ -76,21 +76,15 @@ extern "C" {
  *
  * @param id breakpoint to set [0..SOC_CPU_BREAKPOINTS_NUM - 1]
  * @param addr address to set a breakpoint on
- * 
- * @return ESP_OK success
- * @return others fail
  */
-esp_err_t cpu_hal_set_breakpoint(int id, const void* addr);
+void cpu_hal_set_breakpoint(int id, const void* addr);
 
 /**
  * Clear and disable breakpoint.
  *
  * @param id breakpoint to clear [0..SOC_CPU_BREAKPOINTS_NUM - 1]
- *
- * @return ESP_OK success
- * @return others fail
  */
-esp_err_t cpu_hal_clear_breakpoint(int id);
+void cpu_hal_clear_breakpoint(int id);
 
 #endif // SOC_CPU_BREAKPOINTS_NUM > 0
 
@@ -103,21 +97,15 @@ esp_err_t cpu_hal_clear_breakpoint(int id);
  * @param addr starting address
  * @param size number of bytes from starting address to watch
  * @param trigger operation on specified memory range that triggers the watchpoint (read, write, read/write)
- * 
- * @return ESP_OK success
- * @return others fail
  */
-esp_err_t cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger);
+void cpu_hal_set_watchpoint(int id, const void* addr, size_t size, watchpoint_trigger_t trigger);
 
 /**
  * Clear and disable watchpoint.
  *
  * @param id watchpoint to clear [0..SOC_CPU_WATCHPOINTS_NUM - 1]
- * 
- * @return ESP_OK success
- * @return others fail
  */
-esp_err_t cpu_hal_clear_watchpoint(int id);
+void cpu_hal_clear_watchpoint(int id);
 
 #endif // SOC_CPU_WATCHPOINTS_NUM > 0
 
