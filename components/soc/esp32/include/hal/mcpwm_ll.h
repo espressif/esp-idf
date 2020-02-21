@@ -152,7 +152,7 @@ static inline void mcpwm_ll_timer_stop(mcpwm_dev_t *mcpwm, int timer)
 static inline void mcpwm_ll_timer_set_period(mcpwm_dev_t *mcpwm, int timer, uint32_t period)
 {
 
-    mcpwm->timer[timer].period.period = period;
+    mcpwm->timer[timer].period.period = period - 1;
     mcpwm->timer[timer].period.upmethod = 0;
 }
 
@@ -165,7 +165,7 @@ static inline void mcpwm_ll_timer_set_period(mcpwm_dev_t *mcpwm, int timer, uint
  */
 static inline uint32_t mcpwm_ll_timer_get_period(mcpwm_dev_t *mcpwm, int timer)
 {
-    return mcpwm->timer[timer].period.period;
+    return mcpwm->timer[timer].period.period + 1;
 }
 
 /********************* Sync *******************/
