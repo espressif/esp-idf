@@ -512,12 +512,12 @@ extern const tBTA_GATTC_SERVICE* bta_gattc_get_service_for_handle(UINT16 conn_id
 tBTA_GATTC_CHARACTERISTIC*  bta_gattc_get_characteristic_srcb(tBTA_GATTC_SERV *p_srcb, UINT16 handle);
 extern tBTA_GATTC_CHARACTERISTIC* bta_gattc_get_characteristic(UINT16 conn_id, UINT16 handle);
 extern tBTA_GATTC_DESCRIPTOR* bta_gattc_get_descriptor(UINT16 conn_id, UINT16 handle);
-extern void bta_gattc_get_db_size_handle(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, int *count);
+extern void bta_gattc_get_db_size_handle(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, UINT16 *count);
 extern void bta_gattc_get_db_size_with_type_handle(UINT16 conn_id, bt_gatt_db_attribute_type_t type,
-                                                   UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, int *count);
+                                                   UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, UINT16 *count);
 extern void bta_gattc_get_service_with_uuid(UINT16 conn_id, tBT_UUID *svc_uuid,
                                             btgatt_db_element_t **svc_db,
-                                            int *count);
+                                            UINT16 *count);
 
 extern void bta_gattc_get_db_with_opration(UINT16 conn_id,
                                                       bt_gatt_get_db_op_t op,
@@ -527,9 +527,9 @@ extern void bta_gattc_get_db_with_opration(UINT16 conn_id,
                                                       tBT_UUID *descr_uuid,
                                                       UINT16 start_handle, UINT16 end_handle,
                                                       btgatt_db_element_t **char_db,
-                                                      int *count);
+                                                      UINT16 *count);
 
-extern void bta_gattc_get_gatt_db(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, btgatt_db_element_t **db, int *count);
+extern void bta_gattc_get_gatt_db(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, btgatt_db_element_t **db, UINT16 *count);
 
 extern tBTA_GATT_STATUS bta_gattc_init_cache(tBTA_GATTC_SERV *p_srvc_cb);
 extern void bta_gattc_rebuild_cache(tBTA_GATTC_SERV *p_srcv, UINT16 num_attr, tBTA_GATTC_NV_ATTR *attr);

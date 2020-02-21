@@ -389,7 +389,13 @@ static void btc_gatts_act_create_attr_tab(esp_gatts_attr_db_t *gatts_attr_db,
             case ESP_GATT_UUID_CHAR_AGG_FORMAT:
             case ESP_GATT_UUID_CHAR_VALID_RANGE:
             case ESP_GATT_UUID_EXT_RPT_REF_DESCR:
-            case ESP_GATT_UUID_RPT_REF_DESCR:{
+            case ESP_GATT_UUID_RPT_REF_DESCR:
+            case ESP_GATT_UUID_NUM_DIGITALS_DESCR:
+            case ESP_GATT_UUID_VALUE_TRIGGER_DESCR:
+            case ESP_GATT_UUID_ENV_SENSING_CONFIG_DESCR:
+            case ESP_GATT_UUID_ENV_SENSING_MEASUREMENT_DESCR:
+            case ESP_GATT_UUID_ENV_SENSING_TRIGGER_DESCR:
+            case ESP_GATT_UUID_TIME_TRIGGER_DESCR: {
                 uint16_t svc_hal = btc_creat_tab_env.svc_start_hdl;
                 tBT_UUID bta_char_uuid;
                 esp_bt_uuid_t uuid_temp;
@@ -449,7 +455,7 @@ static esp_gatt_status_t btc_gatts_check_valid_attr_tab(esp_gatts_attr_db_t *gat
             case ESP_GATT_UUID_PRI_SERVICE:
             case ESP_GATT_UUID_SEC_SERVICE:
                 if (++svc_num > 1) {
-                    BTC_TRACE_ERROR("Each service table can only created one primary service or secondly service.");
+                    BTC_TRACE_ERROR("Each service table can only created one primary service or secondary service.");
                     return ESP_GATT_ERROR;
                 }
                 break;
