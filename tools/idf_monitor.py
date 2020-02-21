@@ -931,7 +931,13 @@ def main():
 
     args = parser.parse_args()
 
-    if args.port.startswith("/dev/tty."):
+    # GDB uses CreateFile to open COM port, which requires the COM name to be r'\\.\COMx' if the COM
+    # number is larger than 10
+    if os.name == 'nt' and args.port.startswith("COM"):
+        args.port = args.port.replace('COM', r'\\.\COM')
+        yellow_print("--- WARNING: GDB cannot open serial ports accessed as COMx")
+        yellow_print("--- Using %s instead..." % args.port)
+    elif args.port.startswith("/dev/tty."):
         args.port = args.port.replace("/dev/tty.", "/dev/cu.")
         yellow_print("--- WARNING: Serial ports accessed as /dev/tty.* will hang gdb if launched.")
         yellow_print("--- Using %s instead..." % args.port)
