@@ -34,9 +34,6 @@ idf_build_get_property(build_dir BUILD_DIR)
 
 # ToDo: Rename esp32s2beta to esp32s2 next time update wifi lib
 set(target_name "${idf_target}")
-if(idf_target STREQUAL "esp32s2")
-    set(target_name "esp32s2beta")
-endif()
 target_link_libraries(${COMPONENT_LIB} PUBLIC "-L ${CMAKE_CURRENT_SOURCE_DIR}/lib/${target_name}")
 
 if(link_binary_libs)
