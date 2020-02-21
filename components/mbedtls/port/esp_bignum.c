@@ -509,6 +509,9 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
         return ret;
     }
 
+    /* Grow Z to result size early, avoid interim allocations */
+    MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, z_words) );
+
     /* If either factor is over 2048 bits, we can't use the standard hardware multiplier
        (it assumes result is double longest factor, and result is max 4096 bits.)
 
@@ -552,8 +555,6 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     DPORT_REG_WRITE(RSA_MULT_MODE_REG, ((hw_words * 2) / 16) + 7);
 
     start_op(RSA_MULT_START_REG);
-
-    MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, z_words) );
 
     wait_op_complete(RSA_MULT_START_REG);
 
@@ -660,9 +661,6 @@ static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbe
         .s = Y->s
     };
     mbedtls_mpi_init(&Ztemp);
-
-    /* Grow Z to result size early, avoid interim allocations */
-    mbedtls_mpi_grow(Z, z_words);
 
     /* Get result Ztemp = Yp * X (need temporary variable Ztemp) */
     MBEDTLS_MPI_CHK( mbedtls_mpi_mul_mpi(&Ztemp, X, &Yp) );
