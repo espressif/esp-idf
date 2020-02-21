@@ -111,7 +111,7 @@ typedef UINT8 tGATT_STATUS;
 #define  GATT_SIGN_CMD_WRITE                 0xD2 /* changed in V4.0 1101-0010 (signed write)  see write cmd above*/
 #define  GATT_OP_CODE_MAX                    GATT_HANDLE_VALUE_CONF + 1 /* 0x1E = 30 + 1 = 31*/
 
-#define  GATT_COMMAND_FLAG                   0x40 /* Command Flag: set to one means commond */
+#define  GATT_COMMAND_FLAG                   0x40 /* Command Flag: set to one means command */
 
 #define  GATT_HANDLE_IS_VALID(x) ((x) != 0)
 
@@ -131,7 +131,7 @@ typedef UINT16 tGATT_DISCONN_REASON;
 #define GATT_MAX_MTU_SIZE                   517
 #endif
 
-/* max legth of an attribute value
+/* max length of an attribute value
 */
 #ifndef GATT_MAX_ATTR_LEN
 #define GATT_MAX_ATTR_LEN                   600
@@ -247,7 +247,7 @@ typedef UINT8 tGATT_FORMAT;
 /* Characteristic Presentation Format Descriptor value
 */
 typedef struct {
-    UINT16              unit;       /* as UUIUD defined by SIG */
+    UINT16              unit;        /* as UUID defined by SIG */
     UINT16              descr;       /* as UUID as defined by SIG */
     tGATT_FORMAT        format;
     INT8                exp;
@@ -317,7 +317,7 @@ typedef UINT8 tGATT_AUTH_REQ;
 typedef struct {
     UINT16          conn_id;
     UINT16          handle;     /* attribute handle */
-    UINT16          offset;     /* attribute value offset, if no offfset is needed for the command, ignore it */
+    UINT16          offset;     /* attribute value offset, if no offset is needed for the command, ignore it */
     UINT16          len;        /* length of attribute value */
     tGATT_AUTH_REQ  auth_req;   /*  authentication request */
     UINT8           value[GATT_MAX_ATTR_LEN];  /* the actual attribute value */
@@ -368,7 +368,7 @@ typedef struct {
 /* write request data */
 typedef struct {
     UINT16          handle;     /* attribute handle */
-    UINT16          offset;     /* attribute value offset, if no offfset is needed for the command, ignore it */
+    UINT16          offset;     /* attribute value offset, if no offset is needed for the command, ignore it */
     UINT16          len;        /* length of attribute value */
     UINT8           value[GATT_MAX_ATTR_LEN];  /* the actual attribute value */
     BOOLEAN         need_rsp;   /* need write response */
@@ -468,7 +468,7 @@ typedef struct {
 */
 typedef union {
     tGATT_READ_BY_TYPE   service;
-    tGATT_READ_BY_TYPE   char_type;        /* characterisitc type */
+    tGATT_READ_BY_TYPE   char_type;        /* characteristic type */
     tGATT_READ_MULTI     read_multiple;
     tGATT_READ_BY_HANDLE by_handle;
     tGATT_READ_PARTIAL   partial;
@@ -505,7 +505,7 @@ typedef UINT8 tGATTC_OPTYPE;
 /* characteristic declaration
 */
 typedef struct {
-    tGATT_CHAR_PROP       char_prop;   /* characterisitc properties */
+    tGATT_CHAR_PROP       char_prop;   /* characteristic properties */
     UINT16                val_handle;  /* characteristic value attribute handle */
     tBT_UUID              char_uuid;   /* characteristic UUID type */
 } tGATT_CHAR_DCLR_VAL;
@@ -639,7 +639,7 @@ typedef struct {
     tGATTS_HNDL_RANGE   *p_new_srv_start;
 } tGATTS_PENDING_NEW_SRV_START;
 
-/* Attibute server handle ranges NV storage callback functions
+/* Attribute server handle ranges NV storage callback functions
 */
 typedef void  (tGATTS_NV_SAVE_CBACK)(BOOLEAN is_saved, tGATTS_HNDL_RANGE *p_hndl_range);
 typedef BOOLEAN  (tGATTS_NV_SRV_CHG_CBACK)(tGATTS_SRV_CHG_CMD cmd, tGATTS_SRV_CHG_REQ *p_req,
@@ -688,7 +688,7 @@ extern UINT8 GATT_SetTraceLevel (UINT8 new_level);
 **
 ** Parameter        p_hndl_range:   pointer to allocated handles information
 **
-** Returns          TRUE if handle range is added sucessfully; otherwise FALSE.
+** Returns          TRUE if handle range is added successfully; otherwise FALSE.
 **
 *******************************************************************************/
 
@@ -724,7 +724,7 @@ extern BOOLEAN  GATTS_NVRegister (tGATT_APPL_INFO *p_cb_info);
 **                  num_handles   : number of handles needed by the service.
 **                  is_pri        : is a primary service or not.
 **
-** Returns          service handle if sucessful, otherwise 0.
+** Returns          service handle if successful, otherwise 0.
 **
 *******************************************************************************/
 extern UINT16 GATTS_CreateService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
@@ -819,7 +819,7 @@ extern BOOLEAN GATTS_DeleteService (tGATT_IF gatt_if, tBT_UUID *p_svc_uuid,
 **                  p_cback       : application service callback functions.
 **                  sup_transport : supported transport(s) for this primary service
 **
-** return           GATT_SUCCESS if sucessfully started; otherwise error code.
+** return           GATT_SUCCESS if successfully started; otherwise error code.
 **
 *******************************************************************************/
 extern tGATT_STATUS GATTS_StartService (tGATT_IF gatt_if, UINT16 service_handle,
@@ -851,7 +851,7 @@ extern void GATTS_StopService (UINT16 service_handle);
 **                  val_len: Length of the indicated attribute value.
 **                  p_val: Pointer to the indicated attribute value data.
 **
-** Returns          GATT_SUCCESS if sucessfully sent or queued; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent or queued; otherwise error code.
 **
 *******************************************************************************/
 extern  tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,
@@ -869,7 +869,7 @@ extern  tGATT_STATUS GATTS_HandleValueIndication (UINT16 conn_id,
 **                  val_len: Length of the indicated attribute value.
 **                  p_val: Pointer to the indicated attribute value data.
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 *******************************************************************************/
 extern  tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_handle,
@@ -887,7 +887,7 @@ extern  tGATT_STATUS GATTS_HandleValueNotification (UINT16 conn_id, UINT16 attr_
 **                  status: response status
 **                  p_msg: pointer to message parameters structure.
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 *******************************************************************************/
 extern  tGATT_STATUS GATTS_SendRsp (UINT16 conn_id,  UINT32 trans_id,
@@ -904,7 +904,7 @@ extern  tGATT_STATUS GATTS_SendRsp (UINT16 conn_id,  UINT32 trans_id,
 **                      length: the attribute length
 **                      value: the value to be set to the attribute in the database
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 *******************************************************************************/
 tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *value);
@@ -920,7 +920,7 @@ tGATT_STATUS GATTS_SetAttributeValue(UINT16 attr_handle, UINT16 length, UINT8 *v
 **                      length:the attribute value length in the database
 **                      value: the attribute value out put
 **
-** Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+** Returns          GATT_SUCCESS if successfully sent; otherwise error code.
 **
 *******************************************************************************/
 tGATT_STATUS GATTS_GetAttributeValue(UINT16 attr_handle, UINT16 *length, UINT8 **value);
@@ -1005,7 +1005,7 @@ extern tGATT_STATUS GATTC_Write (UINT16 conn_id, tGATT_WRITE_TYPE type,
 **                  the server.
 **
 ** Parameters       conn_id: connection identifier.
-**                  is_execute - to execute or cancel the prepare write requet(s)
+**                  is_execute - to execute or cancel the prepare write request(s)
 **
 ** Returns          GATT_SUCCESS if command started successfully.
 **
@@ -1037,7 +1037,7 @@ extern tGATT_STATUS GATTC_SendHandleValueConfirm (UINT16 conn_id, UINT16 handle)
 **
 ** Parameter        bd_addr:   target device bd address.
 **                  idle_tout: timeout value in seconds.
-**                  transport: trasnport option.
+**                  transport: transport option.
 **
 ** Returns          void
 **
@@ -1067,7 +1067,7 @@ extern  tGATT_IF GATT_Register (tBT_UUID *p_app_uuid128, tGATT_CBACK *p_cb_info)
 **
 ** Description      This function deregistered the application from GATT.
 **
-** Parameters       gatt_if: applicaiton interface.
+** Parameters       gatt_if: application interface.
 **
 ** Returns          None.
 **
@@ -1082,7 +1082,7 @@ extern void GATT_Deregister (tGATT_IF gatt_if);
 **                  callbacks for registered interface.  Function may call back
 **                  with connection status and queued notifications
 **
-** Parameter        gatt_if: applicaiton interface.
+** Parameter        gatt_if: application interface.
 **
 ** Returns          None
 **
@@ -1093,13 +1093,13 @@ extern  void GATT_StartIf (tGATT_IF gatt_if);
 **
 ** Function         GATT_Connect
 **
-** Description      This function initiate a connecttion to a remote device on GATT
+** Description      This function initiate a connection to a remote device on GATT
 **                  channel.
 **
-** Parameters       gatt_if: applicaiton interface
+** Parameters       gatt_if: application interface
 **                  bd_addr: peer device address.
 **                  bd_addr_type: peer device address type.
-**                  is_direct: is a direct conenection or a background auto connection
+**                  is_direct: is a direct connection or a background auto connection
 **                  transport : Physical transport for GATT connection (BR/EDR or LE)
 **
 ** Returns          TRUE if connection started; FALSE if connection start failure.
@@ -1119,7 +1119,7 @@ extern BOOLEAN GATT_Connect (tGATT_IF gatt_if, BD_ADDR bd_addr, tBLE_ADDR_TYPE b
 ** Parameters       gatt_if: client interface. If 0 used as unconditionally disconnect,
 **                          typically used for direct connection cancellation.
 **                  bd_addr: peer device address.
-**                  is_direct: is a direct conenection or a background auto connection
+**                  is_direct: is a direct connection or a background auto connection
 **
 ** Returns          TRUE if connection started; FALSE if connection start failure.
 **
@@ -1158,15 +1158,15 @@ extern tGATT_STATUS GATT_SendServiceChangeIndication (BD_ADDR bd_addr);
 **
 ** Function         GATT_GetConnectionInfor
 **
-** Description      This function use conn_id to find its associated BD address and applciation
+** Description      This function use conn_id to find its associated BD address and application
 **                  interface
 **
 ** Parameters        conn_id: connection id  (input)
-**                   p_gatt_if: applicaiton interface (output)
+**                   p_gatt_if: application interface (output)
 **                   bd_addr: peer device address. (output)
 **                   transport :  physical transport of the GATT connection (BR/EDR or LE)
 **
-** Returns          TRUE the ligical link information is found for conn_id
+** Returns          TRUE the logical link information is found for conn_id
 **
 *******************************************************************************/
 extern BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if,
@@ -1178,14 +1178,14 @@ extern BOOLEAN GATT_GetConnectionInfor(UINT16 conn_id, tGATT_IF *p_gatt_if,
 ** Function         GATT_GetConnIdIfConnected
 **
 ** Description      This function find the conn_id if the logical link for BD address
-**                  and applciation interface is connected
+**                  and application interface is connected
 **
-** Parameters        gatt_if: applicaiton interface (input)
+** Parameters        gatt_if: application interface (input)
 **                   bd_addr: peer device address. (input)
 **                   p_conn_id: connection id  (output)
 **                   transport :  physical transport of the GATT connection (BR/EDR or LE)
 **
-** Returns          TRUE the ligical link is connected
+** Returns          TRUE the logical link is connected
 **
 *******************************************************************************/
 extern BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
@@ -1199,10 +1199,10 @@ extern BOOLEAN GATT_GetConnIdIfConnected(tGATT_IF gatt_if, BD_ADDR bd_addr,
 ** Description      This function start or stop LE advertisement and listen for
 **                  connection.
 **
-** Parameters       gatt_if: applicaiton interface
+** Parameters       gatt_if: application interface
 **                  p_bd_addr: listen for specific address connection, or NULL for
 **                             listen to all device connection.
-**                  start: is a direct conenection or a background auto connection
+**                  start: is a direct connection or a background auto connection
 **
 ** Returns          TRUE if advertisement is started; FALSE if adv start failure.
 **

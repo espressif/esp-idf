@@ -1887,7 +1887,7 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB *p_tcb )
 **
 ** Function         gatt_sr_update_cback_cnt
 **
-** Description    Update the teh applicaiton callback count
+** Description    Update the teh application callback count
 **
 ** Returns           None
 **
@@ -1977,7 +1977,7 @@ BOOLEAN gatt_cancel_open(tGATT_IF gatt_if, BD_ADDR bda)
 **
 ** Function         gatt_find_app_hold_link
 **
-** Description      find the applicaiton that is holding the specified link
+** Description      find the application that is holding the specified link
 **
 ** Returns         Boolean
 **
@@ -2002,7 +2002,7 @@ BOOLEAN gatt_find_app_hold_link(tGATT_TCB *p_tcb, UINT8 start_idx, UINT8 *p_foun
 **
 ** Function         gatt_find_specific_app_in_hold_link
 **
-** Description      find the specific applicaiton that is holding the specified link
+** Description      find the specific application that is holding the specified link
 **
 ** Returns         Boolean
 **
