@@ -39,4 +39,25 @@ menu "HTTP Server"
             Enabling this will log discarded binary HTTP request data at Debug level.
             For large content data this may not be desirable as it will clutter the log.
 
+    config HTTPD_AUTH_SUPPORT
+        bool "HTTP authentication support"
+        default y
+        help
+            This enables http authentication support with included basic auth.
+            User may provide its own authentication function.
+            User must provide UserPassFn in URI object and may provide special
+            UserAuthFn for other than basic auth function.
+
+    config HTTPD_AUTH_MAX_USER_LENGTH
+        int "Max HTTP auth user name length"
+        default 32
+        help
+            Maximum length of user names.
+
+    config HTTPD_AUTH_MAX_PASSWORD_LENGTH
+        int "Max HTTP auth password length"
+        default 32
+        help
+            Maximum length of passwords.
+
 endmenu
