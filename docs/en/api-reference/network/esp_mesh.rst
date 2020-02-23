@@ -13,7 +13,7 @@ This is a programming guide for ESP-MESH, including the API reference and coding
 
 5. :ref:`mesh-api-reference`
 
-For documentation regarding the ESP-MESH protocol, please see the :doc:`ESP-MESH API Guide<../../api-guides/mesh>`.
+For documentation regarding the ESP-MESH protocol, please see the :doc:`ESP-MESH API Guide<../../api-guides/mesh>`. For more information about ESP-MESH Development Framework, please see `ESP-MESH Development Framework <https://github.com/espressif/esp-mdf>`_.
 
 
 .. ---------------------- ESP-MESH Programming Model --------------------------
@@ -51,7 +51,7 @@ An application interfaces with ESP-MESH via **ESP-MESH Events**. Since ESP-MESH 
 
     ESP-MESH System Events Delivery
 
-The :cpp:type:`mesh_event_id_t` defines all possible ESP-MESH events and can indicate events such as the connection/disconnection of parent/child. Before ESP-MESH events can be used, the application must register a **Mesh Events handler** via :cpp:func:`esp_event_handler_register` to the default event task. Should contain handlers for each event relevant to the application.
+The :cpp:type:`mesh_event_id_t` defines all possible ESP-MESH events and can indicate events such as the connection/disconnection of parent/child. Before ESP-MESH events can be used, the application must register a **Mesh Events handler** via :cpp:func:`esp_event_handler_register` to the default event task. The Mesh Events handler that is registered contain handlers for each ESP-MESH event relevant to the application.
 
 Typical use cases of mesh events include using events such as :cpp:enumerator:`MESH_EVENT_PARENT_CONNECTED` and :cpp:enumerator:`MESH_EVENT_CHILD_CONNECTED` to indicate when a node can begin transmitting data upstream and downstream respectively. Likewise, :cpp:enumerator:`IP_EVENT_STA_GOT_IP` and :cpp:enumerator:`IP_EVENT_STA_LOST_IP` can be used to indicate when the root node can and cannot transmit data to the external IP network.
 
@@ -208,13 +208,13 @@ After starting ESP-MESH, the application should check for ESP-MESH events to det
 Self Organized Networking
 -------------------------
 
-Self organized networking is a feature of ESP-MESH where nodes can autonomously scan/select/connect/reconnect to other nodes and routers. This feature allows an ESP-MESH network to operate with high degree of autonomy by making the network robust to dynamic network topologies and conditions. With self organized networking enabled, nodes in an ESP-MESH network are able to carryout the following actions without autonomously:
+Self organized networking is a feature of ESP-MESH where nodes can autonomously scan/select/connect/reconnect to other nodes and routers. This feature allows an ESP-MESH network to operate with high degree of autonomy by making the network robust to dynamic network topologies and conditions. With self organized networking enabled, nodes in an ESP-MESH network are able to carry out the following actions without autonomously:
 
 - Selection or election of the root node (see **Automatic Root Node Selection** in :ref:`mesh-building-a-network`)
 - Selection of a preferred parent node (see **Parent Node Selection** in :ref:`mesh-building-a-network`)
 - Automatic reconnection upon detecting a disconnection (see **Intermediate Parent Node Failure** in :ref:`mesh-managing-a-network`)
 
-When self organized networking is enabled, the ESP-MESH stack will internally make calls to Wi-Fi driver APIs. Therefore, **the application layer should not make any calls to Wi-Fi driver APIs whilst self organized networking is enabled as doing so would risk interfering with ESP-MESH**.
+When self organized networking is enabled, the ESP-MESH stack will internally make calls to Wi-Fi APIs. Therefore, **the application layer should not make any calls to Wi-Fi APIs whilst self organized networking is enabled as doing so would risk interfering with ESP-MESH**.
 
 Toggling Self Organized Networking
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -275,12 +275,12 @@ The following code snipping demonstrates how to enable self organized networking
     esp_mesh_connect();
 
 
-Calling Wi-Fi Driver API
-^^^^^^^^^^^^^^^^^^^^^^^^
+Calling Wi-Fi API
+^^^^^^^^^^^^^^^^^
 
-There can be instances in which an application may want to directly call Wi-Fi driver API whilst using ESP-MESH. For example, an application may want to manually scan for neighboring APs. However, **self organized networking must be disabled before the application calls any Wi-Fi driver APIs**. This will prevent the ESP-MESH stack from attempting to call any Wi-Fi driver APIs and potentially interfering with the application's calls.
+There can be instances in which an application may want to directly call Wi-Fi API whilst using ESP-MESH. For example, an application may want to manually scan for neighboring APs. However, **self organized networking must be disabled before the application calls any Wi-Fi APIs**. This will prevent the ESP-MESH stack from attempting to call any Wi-Fi APIs and potentially interfering with the application's calls.
 
-Therefore, application calls to Wi-Fi driver APIs should be placed in between calls of :cpp:func:`esp_mesh_set_self_organized` which disable and enable self organized networking. The following code snippet demonstrates how an application can safely call :cpp:func:`esp_wifi_scan_start` whilst using ESP-MESH.
+Therefore, application calls to Wi-Fi APIs should be placed in between calls of :cpp:func:`esp_mesh_set_self_organized` which disable and enable self organized networking. The following code snippet demonstrates how an application can safely call :cpp:func:`esp_wifi_scan_start` whilst using ESP-MESH.
 
 .. code-block:: c
 
@@ -320,7 +320,7 @@ Application Examples
 
 ESP-IDF contains these ESP-MESH example projects:
 
-:example:`The Internal Communication Example<mesh/internal_communication>` demonstrates how to setup a ESP-MESH network and have the root node send a data packet to every node within the network.
+:example:`The Internal Communication Example<mesh/internal_communication>` demonstrates how to set up a ESP-MESH network and have the root node send a data packet to every node within the network.
 
 :example:`The Manual Networking Example<mesh/manual_networking>` demonstrates how to use ESP-MESH without the self-organizing features. This example shows how to program a node to manually scan for a list of potential parent nodes and select a parent node based on custom criteria.
 
@@ -332,4 +332,4 @@ ESP-IDF contains these ESP-MESH example projects:
 API Reference
 --------------
 
-.. include:: /_build/inc/esp_mesh.inc
+.. include-build-file:: inc/esp_mesh.inc

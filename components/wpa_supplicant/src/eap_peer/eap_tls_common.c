@@ -1038,7 +1038,9 @@ get_defaults:
 int eap_peer_tls_phase2_nak(struct eap_method_type *types, size_t num_types,
 			    struct eap_hdr *hdr, struct wpabuf **resp)
 {
+#ifdef DEBUG_PRINT
 	u8 *pos = (u8 *) (hdr + 1);
+#endif
 	size_t i;
 
 	/* TODO: add support for expanded Nak */

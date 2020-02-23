@@ -15,6 +15,6 @@
 #ifndef INET_H_
 #define INET_H_
 
-#include "../../../lwip/src/include/lwip/inet.h"
+#include "lwip/inet.h"
 
 #endif /* INET_H_ */

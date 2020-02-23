@@ -125,30 +125,80 @@ If you want to reproduce locally, you need to:
 3. Run the failed case on your board (refer to Running Unit Tests section).
     * There're some special UT cases (multiple stages case, multiple devices cases) which requires user interaction:
         * You can refer to [unit test document](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/unit-tests.html#running-unit-tests) to run test manually.
-        * Or, you can use `tools/unit-test-app/unit_test.py` to run the test cases:
-            * read document of tiny-test-fw, set correct `TEST_FW_PATH` and `IDF_PATH`
-            * run `unit_test.py` (see examples below)
-    * You can also use  `tools/tiny-test-fw/Runner.py` to run test cases (it will be the same as what Runner do). Please use `python Runner.py -c $CONFIG_FILE $IDF_PATH/tools/unit-test-app` command, where `CONFIG_FILE` is a YAML file with same name with CI job in `components/idf_test/unit_test/CIConfigs` (artifacts, need to be download from `assign_test` job).
+        * Or, you can use `tools/unit-test-app/unit_test.py` to run the test cases (see below)
 
 ## Running unit tests on local machine by `unit_test.py`
 
-A couple of examples follow for running unit tests on local machine.
+First, install Python dependencies and export the Python path where the IDF CI Python modules are found:
 
 ```bash
-# run a simple unit test
-./unit_test.py "UART can do select()"
-# repeat the tests two times
-./unit_test.py -r 2 "UART can do select()"
-# use custom environment config file
-./unit_test.py -e /tmp/EnvConfigTemplate.yml "UART can do select()"
-# use custom application binary
-./unit_test.py -b /tmp/app.bin "UART can do select()"
-# run a list of unit tests
-./unit_test.py "UART can do select()" "concurent selects work"
-# add some options for unit tests
-./unit_test.py "UART can do select()",timeout:10 "concurent selects work",config:release,env_tag:UT_T2_1
-# run a multi stage test (type of test and child case numbers are autodetected)
-./unit_test.py "check a time after wakeup from deep sleep"
-# run a list of different unit tests (one simple and one multi stage test)
-./unit_test.py "concurent selects work" "NOINIT attributes behavior"
+pip install -r $IDF_PATH/tools/ci/python_packages/tiny_test_fw/requirements.txt
+export PYTHONPATH=$IDF_PATH/tools/ci/python_packages
 ```
+
+Change to the unit test app directory, configure the app as needed and build it in the default "build" directory. For example:
+
+```bash
+cd $IDF_PATH/tools/unit-test-app
+idf.py ut-apply-config-psram
+idf.py build -T vfs
+```
+
+(Instead of these steps, you can do whatever is needed to configure & build a unit test app with the tests and config that you need.)
+
+### run a single test case by name
+
+```bash
+
+./unit_test.py "UART can do select()"
+```
+
+unit_test.py script will flash the unit test binary from the (default) build directory, then run the test case.
+
+### Run a single test case twice
+
+```bash
+./unit_test.py -r 2 "UART can do select()"
+```
+
+### run multiple unit test cases
+
+```bash
+./unit_test.py "UART can do select()" "concurrent selects work"
+```
+
+### run a multi-stage test (type of test and child case numbers are autodetected)
+
+```bash
+./unit_test.py "check a time after wakeup from deep sleep"
+```
+
+### run a list of different unit tests (one simple and one multi-stage test)
+
+```bash
+./unit_test.py "concurrent selects work" "check a time after wakeup from deep sleep"
+```
+
+### Use custom environment config file
+
+```bash
+./unit_test.py -e /tmp/EnvConfigTemplate.yml "UART can do select()"
+```
+
+Note: No sample YAML file is currently available.
+
+### use custom application binary
+
+```bash
+./unit_test.py -b /tmp/app.bin "UART can do select()"
+```
+
+Note: This option doesn't currently work without an EnvConfigTemplate also supplied, use the default unit-test-app binaries only.
+
+### add some options for unit tests
+
+```bash
+./unit_test.py "UART can do select()",timeout:10 "concurrent selects work",config:release,env_tag:UT_T2_1
+```
+
+Note: Setting the `config` and `env_tag` values doesn't significantly change anything but the console log output, the same binary is used.

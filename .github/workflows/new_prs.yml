@@ -1,0 +1,24 @@
+name: Sync remain PRs to Jira
+
+# This workflow will be triggered every hour, to sync remaining PRs (i.e. PRs with zero comment) to Jira project
+# Note that, PRs can also get synced when new PR comment is created
+on:
+  schedule:
+    - cron: "0 * * * *"
+
+jobs:
+  sync_prs_to_jira:
+    name: Sync PRs to Jira
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Sync PRs to Jira project
+        uses: espressif/github-actions/sync_issues_to_jira@master
+        with:
+          cron_job: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JIRA_PASS: ${{ secrets.JIRA_PASS }}
+          JIRA_PROJECT: IDFGH
+          JIRA_URL: ${{ secrets.JIRA_URL }}
+          JIRA_USER: ${{ secrets.JIRA_USER }}

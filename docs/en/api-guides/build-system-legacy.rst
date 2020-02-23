@@ -22,7 +22,7 @@ Overview
 An ESP-IDF project can be seen as an amalgamation of a number of components.
 For example, for a webserver that shows the current humidity, there could be:
 
-- The ESP32 base libraries (libc, rom bindings etc)
+- The {IDF_TARGET_NAME} base libraries (libc, rom bindings etc)
 - The Wi-Fi drivers
 - A TCP/IP stack
 - The FreeRTOS operating system
@@ -107,7 +107,7 @@ Minimal Example Makefile
 ::
 
    PROJECT_NAME := myProject
-   
+
    include $(IDF_PATH)/make/project.mk
 
 
@@ -150,10 +150,10 @@ Running the ``make list-components`` target dumps many of these variables and ca
 Multiple components with the same name
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-When esp-idf is collecting all the components to compile, it will do this in the order specified by ``COMPONENT_DIRS``; by default, this means the 
+When esp-idf is collecting all the components to compile, it will do this in the order specified by ``COMPONENT_DIRS``; by default, this means the
 idf components first, the project components second and optionally the components in ``EXTRA_COMPONENT_DIRS`` last. If two or more of these directories
-contain component subdirectories with the same name, the component in the last place searched is used. This allows, for example, overriding esp-idf components 
-with a modified version by simply copying the component from the esp-idf component directory to the project component tree and then modifying it there. 
+contain component subdirectories with the same name, the component in the last place searched is used. This allows, for example, overriding esp-idf components
+with a modified version by simply copying the component from the esp-idf component directory to the project component tree and then modifying it there.
 If used in this way, the esp-idf directory itself can remain untouched.
 
 Minimal Component Makefile
@@ -191,9 +191,10 @@ The following variables are set at the project level, but exported for use in th
 - ``HOSTCC``, ``HOSTLD``, ``HOSTAR``: Full names of each tool from the host native toolchain.
 - ``IDF_VER``: ESP-IDF version, retrieved from either ``$(IDF_PATH)/version.txt`` file (if present) else using git command ``git describe``. Recommended format here is single liner that specifies major IDF release version, e.g. ``v2.0`` for a tagged release or ``v2.0-275-g0efaa4f`` for an arbitrary commit. Application can make use of this by calling :cpp:func:`esp_get_idf_version`.
 - ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: Components of ESP-IDF version, to be used in conditional expressions. Note that this information is less precise than that provided by ``IDF_VER`` variable. ``v4.0-dev-*``, ``v4.0-beta1``, ``v4.0-rc1`` and ``v4.0`` will all have the same values of ``ESP_IDF_VERSION_*`` variables, but different ``IDF_VER`` values.
-- ``PROJECT_VER``: Project version. 
+- ``PROJECT_VER``: Project version.
 
-  * If ``PROJECT_VER`` variable is set in project Makefile file, its value will be used.
+  * If :ref:`CONFIG_APP_PROJECT_VER_FROM_CONFIG` option is set, the value of :ref:`CONFIG_APP_PROJECT_VER` will be used.
+  * Else, if ``PROJECT_VER`` variable is set in project Makefile file, its value will be used.
   * Else, if the ``$PROJECT_PATH/version.txt`` exists, its contents will be used as ``PROJECT_VER``.
   * Else, if the project is located inside a Git repository, the output of git describe will be used.
   * Otherwise, ``PROJECT_VER`` will be "1".
@@ -284,7 +285,7 @@ The following variables can be set inside ``component.mk`` to control the build 
   settings. Component-specific additions can be made via ``CXXFLAGS
   +=``. It is also possible (although not recommended) to override
   this variable completely for a component.
-- ``COMPONENT_ADD_LDFRAGMENTS``: Paths to linker fragment files for the linker 
+- ``COMPONENT_ADD_LDFRAGMENTS``: Paths to linker fragment files for the linker
   script generation functionality. See :doc:`Linker Script Generation <linker-script-generation>`.
 
 To apply compilation flags to a single source file, you can add a variable override as a target, ie::
@@ -325,7 +326,7 @@ Top Level: Project Makefile
 - ``project.mk`` fills in default project-level make variables and includes make variables from the project configuration. If the generated makefile containing project configuration is out of date, then it is regenerated (via targets in ``project_config.mk``) and then the make process restarts from the top.
 - ``project.mk`` builds a list of components to build, based on the default component directories or a custom list of components set in `optional project variables`.
 - Each component can set some `optional project-wide component variables`_. These are included via generated makefiles named ``component_project_vars.mk`` - there is one per component. These generated makefiles are included into ``project.mk``. If any are missing or out of date, they are regenerated (via a recursive make call to the component makefile) and then the make process restarts from the top.
-- `Makefile.projbuild` files from components are included into the make process, to add extra targets or configuration. 
+- `Makefile.projbuild` files from components are included into the make process, to add extra targets or configuration.
 - By default, the project makefile also generates top-level build & clean targets for each component and sets up `app` and `clean` targets to invoke all of these sub-targets.
 - In order to compile each component, a recursive make is performed for the component makefile.
 
@@ -483,11 +484,11 @@ has the compile_only_if and compile_only_if_not macros:
     $(call compile_only_if,$(CONFIG_FOO_ENABLE_BAR),bar.o)
 
 
-As can be seen in the example, the ``compile_only_if`` macro takes a condition and a 
+As can be seen in the example, the ``compile_only_if`` macro takes a condition and a
 list of object files as parameters. If the condition is true (in this case: if the
 BAR feature is enabled in menuconfig) the object files (in this case: bar.o) will
-always be compiled. The opposite goes as well: if the condition is not true, bar.o 
-will never be compiled. ``compile_only_if_not`` does the opposite: compile if the 
+always be compiled. The opposite goes as well: if the condition is not true, bar.o
+will never be compiled. ``compile_only_if_not`` does the opposite: compile if the
 condition is false, not compile if the condition is true.
 
 This can also be used to select or stub out an implementation, as such:
@@ -522,12 +523,12 @@ This can also be used to select or stub out an implementation, as such:
     $(call compile_only_if,$(or $(CONFIG_ENABLE_LCD_CONSOLE),$(CONFIG_ENABLE_LCD_PLOT)), font.o)
 
 Note the use of the Make 'or' function to include the font file. Other substitution functions,
-like 'and' and 'if' will also work here. Variables that do not come from menuconfig can also 
-be used: ESP-IDF uses the default Make policy of judging a variable which is empty or contains 
+like 'and' and 'if' will also work here. Variables that do not come from menuconfig can also
+be used: ESP-IDF uses the default Make policy of judging a variable which is empty or contains
 only whitespace to be false while a variable with any non-whitespace in it is true.
 
 (Note: Older versions of this document advised conditionally adding object file names to
-``COMPONENT_OBJS``. While this still is possible, this will only work when all object 
+``COMPONENT_OBJS``. While this still is possible, this will only work when all object
 files for a component are named explicitely, and will not clean up deselected object files
 in a ``make clean`` pass.)
 
@@ -595,8 +596,8 @@ For an example of using this technique, see :example:`protocols/https_request` -
 Code and Data Placements
 ------------------------
 
-ESP-IDF has a feature called linker script generation that enables components to define where its code and data will be placed in memory through 
-linker fragment files. These files are processed by the build system, and is used to augment the linker script used for linking 
+ESP-IDF has a feature called linker script generation that enables components to define where its code and data will be placed in memory through
+linker fragment files. These files are processed by the build system, and is used to augment the linker script used for linking
 app binary. See :doc:`Linker Script Generation <linker-script-generation>` for a quick start guide as well as a detailed discussion
 of the mechanism.
 

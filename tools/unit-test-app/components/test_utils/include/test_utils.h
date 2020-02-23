@@ -26,15 +26,36 @@
 /* These macros should only be used with ESP-IDF.
  * To use performance check, we need to first define pass standard in idf_performance.h.
  */
+
+//macros call this to expand an argument instead of directly converting into str
+#define PERFORMANCE_STR(s)   #s
+//macros call this to contact strings after expanding them
+#define PERFORMANCE_CON(a, b) _PERFORMANCE_CON(a, b)
+#define _PERFORMANCE_CON(a, b) a##b
+
 #define TEST_PERFORMANCE_LESS_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["#name"]: "value_fmt"\n", value); \
-    TEST_ASSERT(value < IDF_PERFORMANCE_MAX_##name); \
+    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value < PERFORMANCE_CON(IDF_PERFORMANCE_MAX_, name)); \
 } while(0)
 
 #define TEST_PERFORMANCE_GREATER_THAN(name, value_fmt, value)  do { \
-    printf("[Performance]["#name"]: "value_fmt"\n", value); \
-    TEST_ASSERT(value > IDF_PERFORMANCE_MIN_##name); \
+    printf("[Performance]["PERFORMANCE_STR(name)"]: "value_fmt"\n", value); \
+    TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
+
+//Add more targets here, and corresponding performance requirements for that target in idf_performance.h
+#ifdef CONFIG_IDF_TARGET_ESP32
+#define PERFORMANCE_TARGET_SUFFIX       _ESP32
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define PERFORMANCE_TARGET_SUFFIX       _ESP32S2
+#else
+#error target surfix not defined!
+#endif
+
+
+#define TEST_TARGET_PERFORMANCE_LESS_THAN(name, value_fmt, value) TEST_PERFORMANCE_LESS_THAN(PERFORMANCE_CON(name, PERFORMANCE_TARGET_SUFFIX), value_fmt, value)
+
+#define TEST_TARGET_PERFORMANCE_GREATER_THAN(name, value_fmt, value) TEST_PERFORMANCE_GREATER_THAN(PERFORMANCE_CON(name, PERFORMANCE_TARGET_SUFFIX), value_fmt, value)
 
 
 /* @brief macro to print IDF performance

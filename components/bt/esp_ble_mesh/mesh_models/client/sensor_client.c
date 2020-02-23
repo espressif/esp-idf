@@ -95,7 +95,7 @@ static void timeout_handler(struct k_work *work)
         node = CONTAINER_OF(work, bt_mesh_client_node_t, timer.work);
         if (node) {
             bt_mesh_sensor_client_cb_evt_to_btc(node->opcode,
-                BTC_BLE_MESH_EVT_SENSOR_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
+                                                BTC_BLE_MESH_EVT_SENSOR_CLIENT_TIMEOUT, node->ctx.model, &node->ctx, NULL, 0);
             // Don't forget to release the node at the end.
             bt_mesh_client_free_node(node);
         }
@@ -604,19 +604,22 @@ int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary)
         return -EINVAL;
     }
 
-    /* TODO: call osi_free() when deinit function is invoked*/
-    internal = osi_calloc(sizeof(sensor_internal_data_t));
-    if (!internal) {
-        BT_ERR("%s, Failed to allocate memory", __func__);
-        return -ENOMEM;
+    if (!client->internal_data) {
+        internal = osi_calloc(sizeof(sensor_internal_data_t));
+        if (!internal) {
+            BT_ERR("%s, Failed to allocate memory", __func__);
+            return -ENOMEM;
+        }
+
+        sys_slist_init(&internal->queue);
+
+        client->model = model;
+        client->op_pair_size = ARRAY_SIZE(sensor_op_pair);
+        client->op_pair = sensor_op_pair;
+        client->internal_data = internal;
+    } else {
+        bt_mesh_client_clear_list(client->internal_data);
     }
-
-    sys_slist_init(&internal->queue);
-
-    client->model = model;
-    client->op_pair_size = ARRAY_SIZE(sensor_op_pair);
-    client->op_pair = sensor_op_pair;
-    client->internal_data = internal;
 
     bt_mesh_sensor_client_mutex_new();
 

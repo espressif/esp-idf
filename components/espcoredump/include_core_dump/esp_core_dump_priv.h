@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,10 +14,18 @@
 #ifndef ESP_CORE_DUMP_H_
 #define ESP_CORE_DUMP_H_
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "sdkconfig.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "esp_err.h"
+#include "esp_attr.h"
 #include "esp_log.h"
+#include "sdkconfig.h"
+#if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+// TODO: move this to portable part of the code
+#include "mbedtls/sha256.h"
+#endif
 
 #define ESP_COREDUMP_LOG( level, format, ... )  if (LOG_LOCAL_LEVEL >= level)   { ets_printf(DRAM_STR(format), esp_log_early_timestamp(), (const char *)TAG, ##__VA_ARGS__); }
 #define ESP_COREDUMP_LOGE( format, ... )  ESP_COREDUMP_LOG(ESP_LOG_ERROR, LOG_FORMAT(E, format), ##__VA_ARGS__)
@@ -33,18 +41,56 @@
 #endif
 
 #define COREDUMP_MAX_TASK_STACK_SIZE        (64*1024)
-#define COREDUMP_VERSION                    1
+// COREDUMP_VERSION_CHIP is defined in ports
+#define COREDUMP_VERSION_MAKE(_maj_, _min_)    ((((COREDUMP_VERSION_CHIP)&0xFFFF) << 16) | (((_maj_)&0xFF) << 8) | (((_min_)&0xFF) << 0))
+#define COREDUMP_VERSION_BIN                0
+#define COREDUMP_VERSION_ELF                1
+// legacy bin coredumps (before IDF v4.1) has version set to 1
+#define COREDUMP_VERSION_BIN_LEGACY         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 1) // -> 0x0001
+#define COREDUMP_VERSION_BIN_CURRENT        COREDUMP_VERSION_MAKE(COREDUMP_VERSION_BIN, 2) // -> 0x0002
+#define COREDUMP_VERSION_ELF_CRC32          COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 0) // -> 0x0100
+#define COREDUMP_VERSION_ELF_SHA256         COREDUMP_VERSION_MAKE(COREDUMP_VERSION_ELF, 1) // -> 0x0101
+#define COREDUMP_CURR_TASK_MARKER           0xDEADBEEF
+#define COREDUMP_CURR_TASK_NOT_FOUND        -1
 
-typedef uint32_t core_dump_crc_t;
-
-#if CONFIG_ESP32_ENABLE_COREDUMP
+#if CONFIG_ESP32_COREDUMP_DATA_FORMAT_ELF
+#if CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+#define COREDUMP_VERSION                    COREDUMP_VERSION_ELF_CRC32
+#elif CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+#define COREDUMP_VERSION                    COREDUMP_VERSION_ELF_SHA256
+#define COREDUMP_SHA256_LEN                 32
+#endif
+#else
+#define COREDUMP_VERSION                    COREDUMP_VERSION_BIN_CURRENT
+#endif
 
 typedef esp_err_t (*esp_core_dump_write_prepare_t)(void *priv, uint32_t *data_len);
 typedef esp_err_t (*esp_core_dump_write_start_t)(void *priv);
 typedef esp_err_t (*esp_core_dump_write_end_t)(void *priv);
 typedef esp_err_t (*esp_core_dump_flash_write_data_t)(void *priv, void * data, uint32_t data_len);
 
-/** core dump emitter control structure */
+typedef uint32_t core_dump_crc_t;
+
+typedef struct _core_dump_write_data_t
+{
+    // TODO: move flash related data to flash-specific code
+    uint32_t                off; // current offset in partition
+    union
+    {
+        uint8_t    data8[4];
+        uint32_t   data32;
+    }                       cached_data;
+    uint8_t                 cached_bytes;
+#if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+    // TODO: move this to portable part of the code
+    mbedtls_sha256_context  ctx;
+    char                    sha_output[COREDUMP_SHA256_LEN];
+#elif CONFIG_ESP32_COREDUMP_CHECKSUM_CRC32
+    core_dump_crc_t         crc; // CRC of dumped data
+#endif
+} core_dump_write_data_t;
+
+// core dump emitter control structure
 typedef struct _core_dump_write_config_t
 {
     // this function is called before core dump data writing
@@ -69,37 +115,34 @@ typedef struct _core_dump_header_t
     uint32_t version;   // core dump struct version
     uint32_t tasks_num; // number of tasks
     uint32_t tcb_sz;    // size of TCB
+    uint32_t mem_segs_num; // number of memory segments
 } core_dump_header_t;
 
 /** core dump task data header */
 typedef struct _core_dump_task_header_t
 {
-    void *   tcb_addr;    // TCB address
+    void*    tcb_addr;    // TCB address
     uint32_t stack_start; // stack start address
     uint32_t stack_end;   // stack end address
 } core_dump_task_header_t;
 
-#if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
+/** core dump memory segment header */
+typedef struct _core_dump_mem_seg_header_t
+{
+    uint32_t start; // memory region start address
+    uint32_t size;  // memory region size
+} core_dump_mem_seg_header_t;
 
 //  Core dump flash init function
 void esp_core_dump_flash_init(void);
 
-#endif
-
 // Common core dump write function
 void esp_core_dump_write(void *frame, core_dump_write_config_t *write_cfg);
 
-// Gets RTOS tasks snapshot
-uint32_t esp_core_dump_get_tasks_snapshot(core_dump_task_header_t* const tasks,
-                        const uint32_t snapshot_size, uint32_t* const tcb_sz);
+#include "esp_core_dump_port.h"
 
-// Checks TCB consistency
-bool esp_tcb_addr_is_sane(uint32_t addr, uint32_t sz);
-
-bool esp_core_dump_process_tcb(void *frame, core_dump_task_header_t *task_snaphort, uint32_t tcb_sz);
-
-bool esp_core_dump_process_stack(core_dump_task_header_t* task_snaphort, uint32_t *length);
-
+#ifdef __cplusplus
+}
 #endif
 
 #endif

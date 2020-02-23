@@ -103,6 +103,23 @@ typedef enum {
 esp_err_t esp_wifi_init_internal(const wifi_init_config_t *config);
 
 /**
+ * @brief Deinitialize Wi-Fi Driver
+ *     Free resource for WiFi driver, such as WiFi control structure, RX/TX buffer,
+ *     WiFi NVS structure among others.
+ *
+ * For the most part, you need not call this function directly. It gets called
+ * from esp_wifi_deinit().
+ *
+ * This function may be called, if you call esp_wifi_init_internal to initialize
+ * WiFi driver.
+ *
+ * @return
+ *    - ESP_OK: succeed
+ *    - others: refer to error code esp_err.h
+ */
+esp_err_t esp_wifi_deinit_internal(void);
+
+/**
   * @brief  get whether the wifi driver is allowed to transmit data or not
   *
   * @return
@@ -359,6 +376,43 @@ esp_err_t esp_wifi_internal_get_log(wifi_log_level_t *log_level, uint32_t *log_m
   *    - others: failed
   */
 esp_err_t esp_wifi_internal_ioctl(int cmd, wifi_ioctl_config_t *cfg);
+
+/**
+  * @brief     Get the user-configured channel info 
+  *
+  * @param     ifx : WiFi interface 
+  * @param     primary : store the configured primary channel 
+  * @param     second : store the configured second channel
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_config_channel(wifi_interface_t ifx, uint8_t *primary, uint8_t *second);
+
+/**
+  * @brief     Get the negotiated channel info after WiFi connection established 
+  *
+  * @param     ifx : WiFi interface 
+  * @param     aid : the connection number when a STA connects to the softAP    
+  * @param     primary : store the negotiated primary channel 
+  * @param     second : store the negotiated second channel
+  * @attention the aid param is only works when the ESP32 in softAP/softAP+STA mode 
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_negotiated_channel(wifi_interface_t ifx, uint8_t aid, uint8_t *primary, uint8_t *second);
+
+/**
+  * @brief     Get the negotiated bandwidth info after WiFi connection established 
+  *
+  * @param     ifx : WiFi interface 
+  * @param     bw : store the negotiated bandwidth 
+  *
+  * @return    
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_get_negotiated_bandwidth(wifi_interface_t ifx, uint8_t aid, uint8_t *bw);
 
 #ifdef __cplusplus
 }

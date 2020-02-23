@@ -15,6 +15,7 @@ set(srcs
     "lwip/src/api/api_lib.c"
     "lwip/src/api/api_msg.c"
     "lwip/src/api/err.c"
+    "lwip/src/api/if_api.c"
     "lwip/src/api/netbuf.c"
     "lwip/src/api/netdb.c"
     "lwip/src/api/netifapi.c"
@@ -88,7 +89,6 @@ set(srcs
     "port/esp32/debug/lwip_debug.c"
     "port/esp32/freertos/sys_arch.c"
     "port/esp32/netif/dhcp_state.c"
-    "port/esp32/netif/nettestif.c"
     "port/esp32/netif/wlanif.c")
 
 if(CONFIG_LWIP_PPP_SUPPORT)
@@ -133,20 +133,25 @@ idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
                     LDFRAGMENTS linker.lf
                     REQUIRES vfs esp_wifi
-                    PRIV_REQUIRES ${priv_requires} esp_eth tcpip_adapter nvs_flash)
+                    PRIV_REQUIRES esp_eth esp_netif tcpip_adapter nvs_flash)
 
 # lots of LWIP source files evaluate macros that check address of stack variables
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-address)
 
-if(GCC_NOT_5_2_0)
-    set_source_files_properties(
-        lwip/src/netif/ppp/ppp.c
-        PROPERTIES COMPILE_FLAGS
-        -Wno-uninitialized
-        )
-    set_source_files_properties(
-        lwip/src/netif/ppp/pppos.c
-        PROPERTIES COMPILE_FLAGS
-        -Wno-implicit-fallthrough
-        )
-endif()
+set_source_files_properties(
+    lwip/src/netif/ppp/ppp.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-uninitialized
+    )
+set_source_files_properties(
+    lwip/src/netif/ppp/pppos.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-implicit-fallthrough
+    )
+# "comparison is always false due to limited range of data type" warning
+# when setting CONFIG_LWIP_TCP_WND_DEFAULT to 65535
+set_source_files_properties(
+    lwip/src/core/tcp.c
+    PROPERTIES COMPILE_FLAGS
+    -Wno-type-limits
+)

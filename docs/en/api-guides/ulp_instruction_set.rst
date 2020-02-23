@@ -1,7 +1,7 @@
-ULP coprocessor instruction set
-===============================
+ESP32 ULP coprocessor instruction set
+=====================================
 
-This document provides details about the instructions used by ESP32 ULP coprocessor assembler.
+This document provides details about the instructions used by {IDF_TARGET_NAME} ULP coprocessor assembler.
 
 ULP coprocessor has 4 16-bit general purpose registers, labeled R0, R1, R2, R3. It also has an 8-bit counter register (stage_cnt) which can be used to implement loops. Stage count regiter is accessed using special instructions.
 
@@ -13,7 +13,7 @@ The instruction syntax is case insensitive. Upper and lower case letters can be 
 
 Note about addressing
 ---------------------
-ESP32 ULP coprocessor's JUMP, ST, LD instructions which take register as an argument (jump address, store/load base address) expect the argument to be expressed in 32-bit words.
+{IDF_TARGET_NAME} ULP coprocessor's JUMP, ST, LD instructions which take register as an argument (jump address, store/load base address) expect the argument to be expressed in 32-bit words.
 
 Consider the following example program::
 
@@ -160,9 +160,9 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Examples**::
 
   1:         SUB R1, R2, R3             //R1 = R2 - R3
-  
+
   2:         sub R1, R2, 0x1234         //R1 = R2 - 0x1234
-  
+
   3:         .set value1, 0x03          //constant value1=0x03
              SUB R1, R2, value1         //R1 = R2 - value1
   4:         .global label              //declaration of variable label
@@ -211,7 +211,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Syntax**
   **OR** *Rdst, Rsrc1, Rsrc2*
- 
+
   **OR** *Rdst, Rsrc1, imm*
 
 **Operands**
@@ -222,12 +222,12 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Cycles**
   2 cycles to execute, 4 cycles to fetch next instruction
- 
+
 **Description**
   The instruction does logical OR of a source register and another source register or 16-bit signed value and stores result to the destination register.
 
 **Examples**::
- 
+
   1:       OR R1, R2, R3           //R1 = R2 \| R3
 
   2:       OR R1, R2, 0x1234       //R1 = R2 \| 0x1234
@@ -255,7 +255,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
   - *Rsrc1* - Register R[0..3]
   - *Rsrc2* - Register R[0..3]
   - *Imm* - 16-bit signed value
- 
+
 **Cycles**
   2 cycles to execute, 4 cycles to fetch next instruction
 
@@ -373,7 +373,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Examples**::
 
   1:        ST  R1, R2, 0x12        //MEM[R2+0x12] = R1
-  
+
   2:        .data                   //Data section definition
     Addr1:  .word     123           // Define label Addr1 16 bit
             .set      offs, 0x00    // Define constant offs
@@ -392,9 +392,9 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Operands**
    *Rdst*  – Register R[0..3], destination
-   
+
    *Rsrc* – Register R[0..3], holds address of destination, in 32-bit words
-   
+
    *Offset* – 10-bit signed value, offset in bytes
 
 **Cycles**
@@ -478,12 +478,35 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    - *Step*          – relative shift from current position, in bytes
    - *Threshold*     – threshold value for branch condition
    - *Condition*:
-      - *GE* (greater or equal) – jump if value in R0 >= threshold 
-
+      - *EQ* (equal) – jump if value in R0 == threshold
       - *LT* (less than) – jump if value in R0 < threshold
+      - *LE* (less or equal) – jump if value in R0 <= threshold
+      - *GT* (greater than) – jump if value in R0 > threshold
+      - *GE* (greater or equal) – jump if value in R0 >= threshold
+
 
 **Cycles**
-  2 cycles to execute, 2 cycles to fetch next instruction
+  Conditions *LT*, *GE*, *LE* and *GT*: 2 cycles to execute, 2 cycles to fetch next instruction
+
+  Conditions *LE* and *GT* are implemented in the assembler using one **JUMPR** instructions::
+
+    // JUMPR target, threshold, GT is implemented as:
+
+             JUMPR target, threshold+1, GE
+
+    // JUMPR target, threshold, LE is implemented as:
+    
+             JUMPR target, threshold + 1, LT
+
+  Conditions *EQ* is implemented in the assembler using two **JUMPR** instructions::
+
+    // JUMPR target, threshold, EQ is implemented as:
+    
+             JUMPR next, threshold + 1, GE
+             JUMPR target, threshold, GE
+    next:
+
+  Therefore the execution time will depend on the branches taken: either 2 cycles to execute + 2 cycles to fetch, or 4 cycles to execute + 4 cycles to fetch.
 
 **Description**
    The instruction makes a jump to a relative address if condition is true. Condition is the result of comparison of R0 register value and the threshold value.
@@ -528,7 +551,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
     next:
 
     // JUMPS target, threshold, GT is implemented as:
-    
+
              JUMPS next, threshold, LE
              JUMPS target, threshold, GE
     next:

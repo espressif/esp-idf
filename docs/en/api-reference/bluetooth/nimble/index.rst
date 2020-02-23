@@ -3,7 +3,7 @@ NimBLE-based host APIs
 Overview
 ========
 
-Apache MyNewt NimBLE is a highly configurable and BT SIG qualifiable BLE stack providing both host and controller functionalities. ESP-IDF supports NimBLE host stack which is specifically ported for ESP32 platform and FreeRTOS. The underlying controller is still the same (as in case of Bluedroid) providing VHCI interface. Refer to  `NimBLE user guide <http://mynewt.apache.org/latest/network/docs/index.html#>`_ for a complete list of features and additional information on NimBLE stack. Most features of NimBLE including BLE Mesh are supported by ESP-IDF. The porting layer is kept cleaner by maintaining all the existing APIs of NimBLE along with a single ESP-NimBLE API for initialization, making it simpler for the application developers.
+Apache MyNewt NimBLE is a highly configurable and BT SIG qualifiable BLE stack providing both host and controller functionalities. ESP-IDF supports NimBLE host stack which is specifically ported for ESP32 platform and FreeRTOS. The underlying controller is still the same (as in case of Bluedroid) providing VHCI interface. Refer to  `NimBLE user guide <http://mynewt.apache.org/latest/network/index.html#>`_ for a complete list of features and additional information on NimBLE stack. Most features of NimBLE including BLE Mesh are supported by ESP-IDF. The porting layer is kept cleaner by maintaining all the existing APIs of NimBLE along with a single ESP-NimBLE API for initialization, making it simpler for the application developers.
 
 Architecture
 ============
@@ -36,9 +36,9 @@ Typical programming sequence with NimBLE stack consists of the following steps:
     * Perform application specific tasks/initialization
     * Run the thread for host stack using ``nimble_port_freertos_init``
 
-This documentation does not cover NimBLE APIs. Refer to `NimBLE tutorial <https://mynewt.apache.org/latest/network/docs/index.html#ble-user-guide>`_ for more details on the programming sequence/NimBLE APIs for different scenarios.
+This documentation does not cover NimBLE APIs. Refer to `NimBLE tutorial <https://mynewt.apache.org/latest/network/index.html#ble-user-guide>`_ for more details on the programming sequence/NimBLE APIs for different scenarios.
 
 API Reference
 =============
 
-.. include:: /_build/inc/esp_nimble_hci.inc
+.. include-build-file:: inc/esp_nimble_hci.inc

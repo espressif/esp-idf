@@ -39,6 +39,15 @@ menu "FreeRTOS"
 
     endchoice
 
+    config FREERTOS_OPTIMIZED_SCHEDULER
+        bool "Enable FreeRTOS pĺatform optimized scheduler"
+        depends on FREERTOS_UNICORE
+        default y
+        help
+            On most platforms there are instructions can speedup the ready task
+            searching. Enabling this option the FreeRTOS with this instructions
+            support will be built.
+
     config FREERTOS_HZ
         int "Tick rate (Hz)"
         range 1 1000
@@ -380,35 +389,6 @@ menu "FreeRTOS"
             FreeRTOS will enter light sleep mode if no tasks need to run for this number
             of ticks.
 
-    menuconfig FREERTOS_DEBUG_INTERNALS
-        bool "Debug FreeRTOS internals"
-        default n
-        help
-            Enable this option to show the menu with internal FreeRTOS debugging features.
-            This option does not change any code by itself, it just shows/hides some options.
-
-    if FREERTOS_DEBUG_INTERNALS
-
-        config FREERTOS_PORTMUX_DEBUG
-            bool "Debug portMUX portENTER_CRITICAL/portEXIT_CRITICAL"
-            depends on FREERTOS_DEBUG_INTERNALS
-            default n
-            help
-                If enabled, debug information (including integrity checks) will be printed
-                to UART for the port-specific MUX implementation.
-
-        if !FREERTOS_UNICORE
-            config FREERTOS_PORTMUX_DEBUG_RECURSIVE
-                bool "Debug portMUX Recursion"
-                depends on FREERTOS_PORTMUX_DEBUG
-                default n
-                help
-                    If enabled, additional debug information will be printed for recursive
-                    portMUX usage.
-        endif #FREERTOS_UNICORE
-
-    endif # FREERTOS_DEBUG_INTERNALS
-
     config FREERTOS_TASK_FUNCTION_WRAPPER
         bool "Enclose all task functions in a wrapper function"
         depends on COMPILER_OPTIMIZATION_DEFAULT
@@ -434,5 +414,18 @@ menu "FreeRTOS"
             If enabled, context of port*_CRITICAL calls (ISR or Non-ISR)
             would be checked to be in compliance with Vanilla FreeRTOS.
             e.g Calling port*_CRITICAL from ISR context would cause assert failure
+
+    config FREERTOS_DEBUG_OCDAWARE
+        bool
+        help
+            Hidden option, gets selected by CONFIG_ESPxx_DEBUG_OCDAWARE
+
+    config FREERTOS_FPU_IN_ISR
+        bool "Allow use of float inside Level 1 ISR (EXPERIMENTAL)"
+        depends on IDF_TARGET_ESP32
+        default n
+        help
+            When enabled, the usage of float type is allowed inside Level 1
+            ISRs.
 
 endmenu

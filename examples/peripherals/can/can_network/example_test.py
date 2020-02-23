@@ -1,19 +1,9 @@
 # Need Python 3 string formatting functions
 from __future__ import print_function
 
-import os
-import sys
 from threading import Thread
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    # The test cause is dependent on the Tiny Test Framework. Ensure the
-    # `TEST_FW_PATH` environment variable is set to `$IDF_PATH/tools/tiny-test-fw`
-    test_fw_path = os.getenv("TEST_FW_PATH")
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+
+import ttfw_idf
 
 # Define tuple of strings to expect for each DUT.
 master_expect = ("CAN Master: Driver installed", "CAN Master: Driver uninstalled")
@@ -37,13 +27,16 @@ def dut_thread_callback(**kwargs):
     result[0] = True
 
 
-@IDF.idf_example_test(env_tag='Example_CAN2', ignore=True)
+@ttfw_idf.idf_example_test(env_tag='Example_CAN2')
 def test_can_network_example(env, extra_data):
 
     # Get device under test. "dut1", "dut2", and "dut3" must be properly defined in EnvConfig
-    dut_master = env.get_dut("dut1", "examples/peripherals/can/can_network/can_network_master", dut_class=ESP32DUT)
-    dut_slave = env.get_dut("dut2", "examples/peripherals/can/can_network/can_network_slave", dut_class=ESP32DUT)
-    dut_listen_only = env.get_dut("dut3", "examples/peripherals/can/can_network/can_network_listen_only", dut_class=ESP32DUT)
+    dut_master = env.get_dut("dut1", "examples/peripherals/can/can_network/can_network_master",
+                             dut_class=ttfw_idf.ESP32DUT)
+    dut_slave = env.get_dut("dut2", "examples/peripherals/can/can_network/can_network_slave",
+                            dut_class=ttfw_idf.ESP32DUT)
+    dut_listen_only = env.get_dut("dut3", "examples/peripherals/can/can_network/can_network_listen_only",
+                                  dut_class=ttfw_idf.ESP32DUT)
 
     # Flash app onto each DUT, each DUT is reset again at the start of each thread
     dut_master.start_app()

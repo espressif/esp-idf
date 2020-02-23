@@ -30,12 +30,17 @@ extern "C" {
         }
 
 /**
- * @brief      Convert milliseconds to timeval struct
+ * @brief      Convert milliseconds to timeval struct for valid timeouts, otherwise
+ *             (if "wait forever" requested by timeout_ms=-1) timeval structure is not updated and NULL returned
  *
- * @param[in]  timeout_ms  The timeout milliseconds
- * @param[out] tv          Timeval struct
+ * @param[in]  timeout_ms  The timeout value in milliseconds or -1 to waiting forever
+ * @param[out] tv          Pointer to timeval struct
+ *
+ * @return
+ * - NULL if timeout_ms=-1 (wait forever)
+ * - pointer to the updated timeval structure (provided as "tv" argument) with recalculated timeout value
  */
-void esp_transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv);
+struct timeval* esp_transport_utils_ms_to_timeval(int timeout_ms, struct timeval *tv);
 
 
 #ifdef __cplusplus

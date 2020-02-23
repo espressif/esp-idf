@@ -40,7 +40,7 @@ typedef enum {
 #define FOUR_UNIVERSAL_MAC_ADDR 4
 #if CONFIG_IDF_TARGET_ESP32
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_ESP32_UNIVERSAL_MAC_ADDRESSES
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
 #define UNIVERSAL_MAC_ADDR_NUM CONFIG_ESP32S2_UNIVERSAL_MAC_ADDRESSES
 #endif
 /** @endcond */
@@ -161,11 +161,17 @@ void esp_fill_random(void *buf, size_t len);
   * address with the MAC address which is stored in BLK3 of EFUSE or external storage before initializing
   * WiFi/BT/Ethernet.
   *
+  * @note Base MAC must be a unicast MAC (least significant bit of first byte must be zero).
+  *
+  * @note If not using a valid OUI, set the "locally administered" bit
+  *       (bit value 0x02 in the first byte) to avoid collisions.
+  *
   * @param  mac  base MAC address, length: 6 bytes.
   *
   * @return ESP_OK on success
+  *         ESP_ERR_INVALID_ARG If mac is NULL or is not a unicast MAC
   */
-esp_err_t esp_base_mac_addr_set(uint8_t *mac);
+esp_err_t esp_base_mac_addr_set(const uint8_t *mac);
 
 /**
   * @brief  Return base MAC address which is set using esp_base_mac_addr_set.
@@ -237,7 +243,7 @@ esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac)
  */
 typedef enum {
     CHIP_ESP32  = 1, //!< ESP32
-    CHIP_ESP32S2BETA = 2, //!< ESP32-S2 Beta
+    CHIP_ESP32S2 = 2, //!< ESP32-S2
 } esp_chip_model_t;
 
 /* Chip feature flags, used in esp_chip_info_t */

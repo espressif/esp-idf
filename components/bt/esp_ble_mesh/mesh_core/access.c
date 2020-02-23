@@ -27,13 +27,18 @@
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-
 #include "mesh_common.h"
+#include "provisioner_main.h"
+
 #include "generic_client.h"
 #include "sensor_client.h"
 #include "time_scene_client.h"
 #include "lighting_client.h"
-#include "provisioner_main.h"
+
+#include "generic_server.h"
+#include "sensor_server.h"
+#include "time_scene_server.h"
+#include "lighting_server.h"
 
 #define BLE_MESH_SDU_MAX_LEN    384
 
@@ -103,6 +108,41 @@ static const struct {
 #if defined(CONFIG_BLE_MESH_LIGHT_LC_CLI)
     { BLE_MESH_MODEL_ID_LIGHT_LC_CLI, bt_mesh_light_lc_cli_init },
 #endif
+    { BLE_MESH_MODEL_ID_GEN_ONOFF_SRV,             bt_mesh_gen_onoff_srv_init             },
+    { BLE_MESH_MODEL_ID_GEN_LEVEL_SRV,             bt_mesh_gen_level_srv_init             },
+    { BLE_MESH_MODEL_ID_GEN_DEF_TRANS_TIME_SRV,    bt_mesh_gen_def_trans_time_srv_init    },
+    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SRV,       bt_mesh_gen_power_onoff_srv_init       },
+    { BLE_MESH_MODEL_ID_GEN_POWER_ONOFF_SETUP_SRV, bt_mesh_gen_power_onoff_setup_srv_init },
+    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SRV,       bt_mesh_gen_power_level_srv_init       },
+    { BLE_MESH_MODEL_ID_GEN_POWER_LEVEL_SETUP_SRV, bt_mesh_gen_power_level_setup_srv_init },
+    { BLE_MESH_MODEL_ID_GEN_BATTERY_SRV,           bt_mesh_gen_battery_srv_init           },
+    { BLE_MESH_MODEL_ID_GEN_LOCATION_SRV,          bt_mesh_gen_location_srv_init          },
+    { BLE_MESH_MODEL_ID_GEN_LOCATION_SETUP_SRV,    bt_mesh_gen_location_setup_srv_init    },
+    { BLE_MESH_MODEL_ID_GEN_USER_PROP_SRV,         bt_mesh_gen_user_prop_srv_init         },
+    { BLE_MESH_MODEL_ID_GEN_ADMIN_PROP_SRV,        bt_mesh_gen_admin_prop_srv_init        },
+    { BLE_MESH_MODEL_ID_GEN_MANUFACTURER_PROP_SRV, bt_mesh_gen_manu_prop_srv_init         },
+    { BLE_MESH_MODEL_ID_GEN_CLIENT_PROP_SRV,       bt_mesh_gen_client_prop_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SRV,       bt_mesh_light_lightness_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_LIGHTNESS_SETUP_SRV, bt_mesh_light_lightness_setup_srv_init },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_SRV,             bt_mesh_light_ctl_srv_init             },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_SETUP_SRV,       bt_mesh_light_ctl_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_CTL_TEMP_SRV,        bt_mesh_light_ctl_temp_srv_init        },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_SRV,             bt_mesh_light_hsl_srv_init             },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_HUE_SRV,         bt_mesh_light_hsl_hue_srv_init         },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_SAT_SRV,         bt_mesh_light_hsl_sat_srv_init         },
+    { BLE_MESH_MODEL_ID_LIGHT_HSL_SETUP_SRV,       bt_mesh_light_hsl_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_XYL_SRV,             bt_mesh_light_xyl_srv_init             },
+    { BLE_MESH_MODEL_ID_LIGHT_XYL_SETUP_SRV,       bt_mesh_light_xyl_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_LIGHT_LC_SRV,              bt_mesh_light_lc_srv_init              },
+    { BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV,        bt_mesh_light_lc_setup_srv_init        },
+    { BLE_MESH_MODEL_ID_TIME_SRV,                  bt_mesh_time_srv_init                  },
+    { BLE_MESH_MODEL_ID_TIME_SETUP_SRV,            bt_mesh_time_setup_srv_init            },
+    { BLE_MESH_MODEL_ID_SCENE_SRV,                 bt_mesh_scene_srv_init                 },
+    { BLE_MESH_MODEL_ID_SCENE_SETUP_SRV,           bt_mesh_scene_setup_srv_init           },
+    { BLE_MESH_MODEL_ID_SCHEDULER_SRV,             bt_mesh_scheduler_srv_init             },
+    { BLE_MESH_MODEL_ID_SCHEDULER_SETUP_SRV,       bt_mesh_scheduler_setup_srv_init       },
+    { BLE_MESH_MODEL_ID_SENSOR_SRV,                bt_mesh_sensor_srv_init                },
+    { BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV,          bt_mesh_sensor_setup_srv_init          },
 };
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
@@ -187,7 +227,7 @@ static s32_t next_period(struct bt_mesh_model *mod)
 
     BT_DBG("Publishing took %ums", elapsed);
 
-    if (elapsed > period) {
+    if (elapsed >= period) {
         BT_WARN("Publication sending took longer than the period");
         /* Return smallest positive number since 0 means disabled */
         return K_MSEC(1);
@@ -683,7 +723,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
             if (buf->len < op->min_len) {
                 BT_ERR("%s, Too short message for OpCode 0x%08x",
-                      __func__, opcode);
+                       __func__, opcode);
                 continue;
             }
 
@@ -721,21 +761,21 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
 {
     net_buf_simple_init(msg, 0);
 
-    if (opcode < 0x100) {
-        /* 1-byte OpCode */
+    switch (BLE_MESH_MODEL_OP_LEN(opcode)) {
+    case 1:
         net_buf_simple_add_u8(msg, opcode);
-        return;
-    }
-
-    if (opcode < 0x10000) {
-        /* 2-byte OpCode */
+        break;
+    case 2:
         net_buf_simple_add_be16(msg, opcode);
-        return;
+        break;
+    case 3:
+        net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
+        net_buf_simple_add_le16(msg, opcode & 0xffff);
+        break;
+    default:
+        BT_WARN("Unknown opcode format");
+        break;
     }
-
-    /* 3-byte OpCode */
-    net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
-    net_buf_simple_add_le16(msg, opcode & 0xffff);
 }
 
 static bool ready_to_send(u8_t role, u16_t dst)

@@ -63,7 +63,9 @@ enum {
     WPA2_AUTH_PSK       = 0x05,
     WPA_AUTH_CCKM       = 0x06,
     WPA2_AUTH_CCKM      = 0x07,
-    WPA2_AUTH_INVALID   = 0x08,
+    WPA2_AUTH_PSK_SHA256= 0x08,
+    WPA3_AUTH_PSK       = 0x09,
+    WPA2_AUTH_INVALID   = 0x0a,
 };
 
 typedef enum {
@@ -105,7 +107,7 @@ typedef struct {
 } wifi_wpa_ie_t;
 
 struct wpa_funcs {
-    void (*wpa_sta_init)(void);
+    bool (*wpa_sta_init)(void);
     bool (*wpa_sta_deinit)(void);
     void (*wpa_sta_connect)(uint8_t *bssid);
     int (*wpa_sta_rx_eapol)(u8 *src_addr, u8 *buf, u32 len);
@@ -120,6 +122,8 @@ struct wpa_funcs {
     int (*wpa_parse_wpa_ie)(const u8 *wpa_ie, size_t wpa_ie_len, wifi_wpa_ie_t *data);
     int (*wpa_config_bss)(u8 *bssid);
     int (*wpa_michael_mic_failure)(u16 is_unicast);
+    uint8_t *(*wpa3_build_sae_msg)(uint8_t *bssid, uint32_t type, size_t *len);
+    int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type);
 };
 
 struct wpa2_funcs {
@@ -163,6 +167,13 @@ typedef struct {
     uint32_t arg_size;
 } wifi_ipc_config_t;
 
+#define WPA_IGTK_LEN 16
+typedef struct {
+    uint8_t keyid[2];
+    uint8_t pn[6];
+    uint8_t igtk[WPA_IGTK_LEN];
+} wifi_wpa_igtk_t;
+
 uint8_t *esp_wifi_ap_get_prof_pmk_internal(void);
 struct wifi_ssid *esp_wifi_ap_get_prof_ap_ssid_internal(void);
 uint8_t esp_wifi_ap_get_prof_authmode_internal(void);
@@ -201,6 +212,7 @@ int esp_wifi_ipc_internal(wifi_ipc_config_t *cfg, bool sync);
 int esp_wifi_register_wpa2_cb_internal(struct wpa2_funcs *cb);
 int esp_wifi_unregister_wpa2_cb_internal(void);
 bool esp_wifi_sta_prof_is_wpa2_internal(void);
+bool esp_wifi_sta_prof_is_wpa3_internal(void);
 esp_err_t esp_wifi_sta_wpa2_ent_disable_internal(wifi_wpa2_param_t *param);
 esp_err_t esp_wifi_sta_wpa2_ent_enable_internal(wifi_wpa2_param_t *param);
 esp_err_t esp_wifi_set_wpa2_ent_state_internal(wpa2_ent_eap_state_t state);
@@ -217,5 +229,8 @@ esp_err_t esp_wifi_internal_supplicant_header_md5_check(const char *md5);
 int esp_wifi_sta_update_ap_info_internal(void);
 uint8_t *esp_wifi_sta_get_ap_info_prof_pmk_internal(void);
 esp_err_t esp_wifi_set_wps_start_flag_internal(bool start);
+uint16_t esp_wifi_sta_pmf_enabled(void);
+wifi_cipher_type_t esp_wifi_sta_get_mgmt_group_cipher(void);
+int esp_wifi_set_igtk_internal(uint8_t if_index, const wifi_wpa_igtk_t *igtk);
 
 #endif /* _ESP_WIFI_DRIVER_H_ */

@@ -24,11 +24,11 @@
 #include "bootloader_util.h"
 #include "bootloader_common.h"
 #if CONFIG_IDF_TARGET_ESP32
-#include <esp32/rom/rtc.h>
-#include <esp32/rom/secure_boot.h>
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include <esp32s2beta/rom/rtc.h>
-#include <esp32s2beta/rom/secure_boot.h>
+#include "esp32/rom/rtc.h"
+#include "esp32/rom/secure_boot.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/rtc.h"
+#include "esp32s2/rom/secure_boot.h"
 #endif
 
 /* Checking signatures as part of verifying images is necessary:
@@ -107,7 +107,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     bool do_verify = (mode == ESP_IMAGE_LOAD) || (mode == ESP_IMAGE_VERIFY) || (mode == ESP_IMAGE_VERIFY_SILENT);
 #else
     bool do_load   = false; // Can't load the image in app mode
-    bool do_verify = true;	// In app mode is avalible only verify mode
+    bool do_verify = true;  // In app mode is available only verify mode
 #endif
     bool silent    = (mode == ESP_IMAGE_VERIFY_SILENT);
     esp_err_t err = ESP_OK;
@@ -198,13 +198,13 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
         }
 
         /* For secure boot on ESP32, we don't calculate SHA or verify signautre on bootloaders.
-           For ESP32S2, we do verify signature on botoloaders which includes the SHA calculation.
+           For ESP32S2, we do verify signature on bootloader which includes the SHA calculation.
 
            (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
            esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
         */
         bool verify_sha;
-#if defined(CONFIG_SECURE_BOOT_ENABLED) && defined(CONFIG_IDF_TARGET_ESP32S2BETA)
+#if CONFIG_SECURE_BOOT_ENABLED && CONFIG_IDF_TARGET_ESP32S2
         verify_sha = true;
 #else // ESP32, or ESP32S2 without secure boot enabled
         verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
@@ -222,6 +222,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             // No secure boot, but SHA-256 can be appended for basic corruption detection
             if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
                 err = verify_simple_hash(sha_handle, data);
+                sha_handle = NULL; // calling verify_simple_hash finishes sha_handle
             }
 #endif // SECURE_BOOT_CHECK_SIGNATURE
         } else { // verify_sha
@@ -229,18 +230,19 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             if (sha_handle != NULL) {
                 bootloader_sha256_finish(sha_handle, NULL);
             }
-
-            if (data->image.hash_appended) {
-                const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
-                if (hash == NULL) {
-                    err = ESP_FAIL;
-                    goto err;
-                }
-                memcpy(data->image_digest, hash, HASH_LEN);
-                bootloader_munmap(hash);
-            }
             sha_handle = NULL;
-        } // verify_sha
+        } //verify_sha
+
+        // Separately, if there's a hash appended to the image then copy it out to the data->image_digest field
+        if (data->image.hash_appended) {
+            const void *hash = bootloader_mmap(data->start_addr + data->image_len - HASH_LEN, HASH_LEN);
+            if (hash == NULL) {
+                err = ESP_FAIL;
+                goto err;
+            }
+            memcpy(data->image_digest, hash, HASH_LEN);
+            bootloader_munmap(hash);
+        }
     } // do_verify
 
     if (err != ESP_OK) {
@@ -310,9 +312,6 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
         }
         err = ESP_ERR_IMAGE_INVALID;
     }
-    if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
-        err = ESP_ERR_IMAGE_INVALID;
-    }
     if (!silent) {
         if (image->spi_mode > ESP_IMAGE_SPI_MODE_SLOW_READ) {
             ESP_LOGW(TAG, "image at 0x%x has invalid SPI mode %d", src_addr, image->spi_mode);
@@ -324,6 +323,16 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
             ESP_LOGW(TAG, "image at 0x%x has invalid SPI size %d", src_addr, image->spi_size);
         }
     }
+
+    if (err == ESP_OK) {
+        // Checking the chip revision header *will* print a bunch of other info
+        // regardless of silent setting as this may be important, but don't bother checking it
+        // if it looks like the app partition is erased or otherwise garbage
+        if (bootloader_common_check_chip_validity(image, ESP_IMAGE_APPLICATION) != ESP_OK) {
+            err = ESP_ERR_IMAGE_INVALID;
+        }
+    }
+
     return err;
 }
 
@@ -369,7 +378,7 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
 #ifdef BOOTLOADER_BUILD
     /* Before loading segment, check it doesn't clobber bootloader RAM. */
-    if (do_load) {
+    if (do_load && data_len > 0) {
         const intptr_t load_end = load_addr + data_len;
         if (load_end < (intptr_t) SOC_DRAM_HIGH) {
             /* Writing to DRAM */
@@ -629,7 +638,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(simple_hash);
     }
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     // Pad to 4096 byte sector boundary
     if (end % FLASH_SECTOR_SIZE != 0) {
         uint32_t pad_len = FLASH_SECTOR_SIZE - (end % FLASH_SECTOR_SIZE);
@@ -668,7 +677,7 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         return ESP_ERR_IMAGE_INVALID;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
     // Adjust image length result to include the appended signature
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
 #endif

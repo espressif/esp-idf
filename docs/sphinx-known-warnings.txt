@@ -2,7 +2,7 @@
 #
 # Build will fail if sphinx-warning-log.txt contains any lines
 # which are not in this file. Lines are pre-sanitized by
-# check_doc_warnings.sh to remove formatting, paths and line numbers.
+# `build_docs.py build` to remove formatting, paths and line numbers.
 #
 # Warnings in this file must be in the same overall order as the log file.
 #
@@ -33,13 +33,19 @@ esp_bt_defs.inc:line: WARNING: Invalid definition: Expected identifier in nested
 #       sphinx==1.8.4
 #       breathe==4.11.1
 #
-ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
-ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
-ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
 ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
 ulp-legacy.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
+ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_load_binary(uint32_t load_addr, const uint8_t * program_binary, size_t program_size)
+ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+ulp.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_set_wakeup_period(size_t period_index, uint32_t period_us)
 README.rst:line: WARNING: Duplicate declaration, esp_err_t ulp_run(uint32_t entry_point)
+
+
+# This seems like a bug, as the field are ::model_id and ::vnd::model_id
+esp_ble_mesh_defs.inc:line: WARNING: Duplicate declaration, uint16_t esp_ble_mesh_model::model_id
+
+
 #
 # Issue present only when building on msys2 / mingw32 START >>>
 #
@@ -75,6 +81,7 @@ If type alias or template alias:
   Invalid definition: Expected identifier in nested name, got keyword: void [error at 4]
     void() esp_spp_cb_t(esp_spp_cb_event_t event, esp_spp_cb_param_t *param)
     ----^
+
 #
 # Issue present only when building on msys2 / mingw32 END <<<
 #

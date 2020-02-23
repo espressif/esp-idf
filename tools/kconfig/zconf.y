@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 #include "lkc.h"
+#include "expand_env.h"
 
 #define printd(mask, fmt...) if (cdebug & (mask)) printf(fmt)
 
@@ -202,6 +203,14 @@ config_option: T_PROMPT prompt if_expr T_EOL
 
 config_option: T_DEFAULT expr if_expr T_EOL
 {
+	if ($2 && $2->type == E_SYMBOL) {
+		char *str = expand_environment($2->left.sym->name, zconf_curname(), zconf_lineno());
+		if (strcmp($2->left.sym->name, str) != 0) {
+			$2->left.sym->name = realloc($2->left.sym->name, strlen(str) + 1);
+			strncpy($2->left.sym->name, str, strlen(str) + 1);
+		}
+		free_expanded(str);
+	}
 	menu_add_expr(P_DEFAULT, $2, $3);
 	if ($1->stype != S_UNKNOWN)
 		menu_set_type($1->stype);

@@ -16,6 +16,7 @@
 #include <sys/cdefs.h>
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_eth.h"
 #include "esp_system.h"
@@ -24,6 +25,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "dm9051.h"
 #include "sdkconfig.h"
 
 static const char *TAG = "emac_dm9051";
@@ -41,145 +43,6 @@ static const char *TAG = "emac_dm9051";
 #define DM9051_SPI_LOCK_TIMEOUT_MS (50)
 #define DM9051_PHY_OPERATION_TIMEOUT_US (1000)
 
-/**
- * @brief Registers in DM9051
- *
- */
-#define DM9051_NCR (0x00)     // Network Control Register
-#define DM9051_NSR (0x01)     // Network Status Register
-#define DM9051_TCR (0x02)     // Tx Control Register
-#define DM9051_TSR1 (0x03)    // Tx Status Register I
-#define DM9051_TSR2 (0x04)    // Tx Status Register II
-#define DM9051_RCR (0x05)     // Rx Control Register
-#define DM9051_RSR (0x06)     // Rx Status Register
-#define DM9051_ROCR (0x07)    // Receive Overflow Counter Register
-#define DM9051_BPTR (0x08)    // Back Pressure Threshold Register
-#define DM9051_FCTR (0x09)    // Flow Control Threshold Register
-#define DM9051_FCR (0x0A)     // Rx/Tx Flow Control Register
-#define DM9051_EPCR (0x0B)    // EEPROM & PHY Control Register
-#define DM9051_EPAR (0x0C)    // EEPROM & PHY Address Register
-#define DM9051_EPDRL (0x0D)   // EEPROM & PHY Data Register Low
-#define DM9051_EPDRH (0x0E)   // EEPROM & PHY Data Register High
-#define DM9051_WCR (0x0F)     // Wake Up Control Register
-#define DM9051_PAR (0x10)     // Physical Address Register
-#define DM9051_MAR (0x16)     // Multicast Address Hash Table Register
-#define DM9051_GPCR (0x1E)    // General Purpose Control Register
-#define DM9051_GPR (0x1F)     // General Purpose Register
-#define DM9051_TRPAL (0x22)   // Tx Memory Read Pointer Address Low Byte
-#define DM9051_TRPAH (0x23)   // Tx Memory Read Pointer Address High Byte
-#define DM9051_RWPAL (0x24)   // Rx Memory Read Pointer Address Low Byte
-#define DM9051_RWPAH (0x25)   // Rx Memory Read Pointer Address High Byte
-#define DM9051_VIDL (0x28)    // Vendor ID Low Byte
-#define DM9051_VIDH (0x29)    // Vendor ID High Byte
-#define DM9051_PIDL (0x2A)    // Product ID Low Byte
-#define DM9051_PIDH (0x2B)    // Product ID High Byte
-#define DM9051_CHIPR (0x2C)   // CHIP Revision
-#define DM9051_TCR2 (0x2D)    // Transmit Control Register 2
-#define DM9051_ATCR (0x30)    // Auto-Transmit Control Register
-#define DM9051_TCSCR (0x31)   // Transmit Check Sum Control Register
-#define DM9051_RCSCSR (0x32)  // Receive Check Sum Control Status Register
-#define DM9051_SBCR (0x38)    // SPI Bus Control Register
-#define DM9051_INTCR (0x39)   // INT Pin Control Register
-#define DM9051_PPCSR (0x3D)   // Pause Packet Control Status Register
-#define DM9051_EEE_IN (0x3E)  // IEEE 802.3az Enter Counter Register
-#define DM9051_EEE_OUT (0x3F) // IEEE 802.3az Leave Counter Register
-#define DM9051_ALNCR (0x4A)   // SPI Byte Align Error Counter Register
-#define DM9051_RLENCR (0x52)  // Rx Packet Length Control Register
-#define DM9051_BCASTCR (0x53) // RX Broadcast Control Register
-#define DM9051_INTCKCR (0x54) // INT Pin Clock Output Control Register
-#define DM9051_MPTRCR (0x55)  // Memory Pointer Control Register
-#define DM9051_MLEDCR (0x57)  // More LED Control Register
-#define DM9051_MEMSCR (0x59)  // Memory Control Register
-#define DM9051_TMEMR (0x5A)   // Transmit Memory Size Register
-#define DM9051_MBSR (0x5D)    // Memory BIST Status Register
-#define DM9051_MRCMDX (0x70)  // Memory Data Pre-Fetch Read Command Without Address Increment Register
-#define DM9051_MRCMDX1 (0x71) // Memory Read Command Without Pre-Fetch and Without Address Increment Register
-#define DM9051_MRCMD (0x72)   // Memory Data Read Command With Address Increment Register
-#define DM9051_SDR_DLY (0x73) // SPI Data Read Delay Counter Register
-#define DM9051_MRRL (0x74)    // Memory Data Read Address Register Low Byte
-#define DM9051_MRRH (0x75)    // Memory Data Read Address Register High Byte
-#define DM9051_MWCMDX (0x76)  // Memory Data Write Command Without Address Increment Register
-#define DM9051_MWCMD (0x78)   // Memory Data Write Command With Address Increment Register
-#define DM9051_MWRL (0x7A)    // Memory Data Write Address Register Low Byte
-#define DM9051_MWRH (0x7B)    // Memory Data Write Address Register High Byte
-#define DM9051_TXPLL (0x7C)   // TX Packet Length Low Byte Register
-#define DM9051_TXPLH (0x7D)   // TX Packet Length High Byte Register
-#define DM9051_ISR (0x7E)     // Interrupt Status Register
-#define DM9051_IMR (0x7F)     // Interrupt Mask Register
-
-/**
- * @brief status and flag of DM9051 specific registers
- *
- */
-#define DM9051_SPI_RD (0) // Burst Read Command
-#define DM9051_SPI_WR (1) // Burst Write Command
-
-#define NCR_WAKEEN (1 << 6) // Enable Wakeup Function
-#define NCR_FDX (1 << 3)    // Duplex Mode of the Internal PHY
-#define NCR_RST (1 << 0)    // Software Reset and Auto-Clear after 10us
-
-#define NSR_SPEED (1 << 7)  // Speed of Internal PHY
-#define NSR_LINKST (1 << 6) // Link Status of Internal PHY
-#define NSR_WAKEST (1 << 5) // Wakeup Event Status
-#define NSR_TX2END (1 << 3) // TX Packet Index II Complete Status
-#define NSR_TX1END (1 << 2) // TX Packet Index I Complete Status
-#define NSR_RXOV (1 << 1)   // RX Memory Overflow Status
-#define NSR_RXRDY (1 << 0)  // RX Packet Ready
-
-#define TCR_TXREQ (1 << 0) // TX Request. Auto-Clear after Sending Completely
-
-#define RCR_WTDIS (1 << 6)    // Watchdog Timer Disable
-#define RCR_DIS_LONG (1 << 5) // Discard Long Packet
-#define RCR_DIS_CRC (1 << 4)  // Discard CRC Error Packet
-#define RCR_ALL (1 << 3)      // Receive All Multicast
-#define RCR_RUNT (1 << 2)     // Receive Runt Packet
-#define RCR_PRMSC (1 << 1)    // Promiscuous Mode
-#define RCR_RXEN (1 << 0)     // RX Enable
-
-#define RSR_RF (1 << 7)   // Runt Frame
-#define RSR_MF (1 << 6)   // Multicast Frame
-#define RSR_LCS (1 << 5)  // Late Collision Seen
-#define RSR_RWTO (1 << 4) // Receive Watchdog Time-Out
-#define RSR_PLE (1 << 3)  // Physical Layer Error
-#define RSR_AE (1 << 2)   //  Alignment Error
-#define RSR_CE (1 << 1)   // CRC Error
-#define RSR_FOE (1 << 0)  // RX Memory Overflow Error
-
-#define FCR_FLOW_ENABLE (0x39) // Enable Flow Control
-
-#define EPCR_REEP (1 << 5)  // Reload EEPROM
-#define EPCR_WEP (1 << 4)   // Write EEPROM Enable
-#define EPCR_EPOS (1 << 3)  // EEPROM or PHY Operation Select
-#define EPCR_ERPRR (1 << 2) // EEPROM Read or PHY Register Read Command
-#define EPCR_ERPRW (1 << 1) // EEPROM Write or PHY Register Write Command
-#define EPCR_ERRE (1 << 0)  // EEPROM Access Status or PHY Access Status
-
-#define TCR2_RLCP (1 << 6) // Retry Late Collision Packet
-
-#define ATCR_AUTO_TX (1 << 7) // Auto-Transmit Control
-
-#define TCSCR_UDPCSE (1 << 2) // UDP CheckSum Generation
-#define TCSCR_TCPCSE (1 << 1) // TCP CheckSum Generation
-#define TCSCR_IPCSE (1 << 0)  // IPv4 CheckSum Generation
-
-#define MPTRCR_RST_TX (1 << 1) // Reset TX Memory Pointer
-#define MPTRCR_RST_RX (1 << 0) // Reset RX Memory Pointer
-
-#define ISR_LNKCHGS (1 << 5) // Link Status Change
-#define ISR_ROO (1 << 3)     // Receive Overflow Counter Overflow
-#define ISR_ROS (1 << 2)     // Receive Overflow
-#define ISR_PT (1 << 1)      // Packet Transmitted
-#define ISR_PR (1 << 0)      // Packet Received
-#define ISR_CLR_STATUS (ISR_LNKCHGS | ISR_ROO | ISR_ROS | ISR_PT | ISR_PR)
-
-#define IMR_PAR (1 << 7)     // Pointer Auto-Return Mode
-#define IMR_LNKCHGI (1 << 5) // Enable Link Status Change Interrupt
-#define IMR_ROOI (1 << 3)    // Enable Receive Overflow Counter Overflow Interrupt
-#define IMR_ROI (1 << 2)     // Enable Receive Overflow Interrupt
-#define IMR_PTI (1 << 1)     // Enable Packet Transmitted Interrupt
-#define IMR_PRI (1 << 0)     // Enable Packet Received Interrupt
-#define IMR_ALL (IMR_PAR | IMR_LNKCHGI | IMR_ROOI | IMR_ROI | IMR_PTI | IMR_PRI)
-
 typedef struct {
     uint8_t flag;
     uint8_t status;
@@ -194,13 +57,14 @@ typedef struct {
     SemaphoreHandle_t spi_lock;
     TaskHandle_t rx_task_hdl;
     uint32_t sw_reset_timeout_ms;
+    int int_gpio_num;
     uint8_t addr[6];
     bool packets_remain;
 } emac_dm9051_t;
 
 static inline bool dm9051_lock(emac_dm9051_t *emac)
 {
-    return xSemaphoreTake(emac->spi_lock, DM9051_SPI_LOCK_TIMEOUT_MS) == pdTRUE;
+    return xSemaphoreTake(emac->spi_lock, pdMS_TO_TICKS(DM9051_SPI_LOCK_TIMEOUT_MS)) == pdTRUE;
 }
 
 static inline bool dm9051_unlock(emac_dm9051_t *emac)
@@ -506,7 +370,7 @@ err:
     return ret;
 }
 
-static void dm9051_isr_handler(void *arg)
+IRAM_ATTR static void dm9051_isr_handler(void *arg)
 {
     emac_dm9051_t *emac = (emac_dm9051_t *)arg;
     BaseType_t high_task_wakeup = pdFALSE;
@@ -533,8 +397,10 @@ static void emac_dm9051_task(void *arg)
         if (status & ISR_PR) {
             do {
                 length = ETH_MAX_PACKET_SIZE;
-                buffer = (uint8_t *)heap_caps_malloc(length, MALLOC_CAP_DMA);
-                if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
+                buffer = heap_caps_malloc(length, MALLOC_CAP_DMA);
+                if (!buffer) {
+                    ESP_LOGE(TAG, "no mem for receive buffer");
+                } else if (emac->parent.receive(&emac->parent, buffer, &length) == ESP_OK) {
                     /* pass the buffer to stack (e.g. TCP/IP layer) */
                     if (length) {
                         emac->eth->stack_input(emac->eth, buffer, length);
@@ -677,9 +543,11 @@ static esp_err_t emac_dm9051_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
     switch (speed) {
     case ETH_SPEED_10M:
         MAC_CHECK(nsr & NSR_SPEED, "phy speed is not at 10Mbps", err, ESP_ERR_INVALID_STATE);
+        ESP_LOGD(TAG, "working in 10Mbps");
         break;
     case ETH_SPEED_100M:
         MAC_CHECK(!(nsr & NSR_SPEED), "phy speed is not at 100Mbps", err, ESP_ERR_INVALID_STATE);
+        ESP_LOGD(TAG, "working in 100Mbps");
         break;
     default:
         MAC_CHECK(false, "unknown speed", err, ESP_ERR_INVALID_ARG);
@@ -698,9 +566,11 @@ static esp_err_t emac_dm9051_set_duplex(esp_eth_mac_t *mac, eth_duplex_t duplex)
     MAC_CHECK(dm9051_register_read(emac, DM9051_NCR, &ncr) == ESP_OK, "read NCR failed", err, ESP_FAIL);
     switch (duplex) {
     case ETH_DUPLEX_HALF:
+        ESP_LOGD(TAG, "working in half duplex");
         MAC_CHECK(!(ncr & NCR_FDX), "phy is not at half duplex", err, ESP_ERR_INVALID_STATE);
         break;
     case ETH_DUPLEX_FULL:
+        ESP_LOGD(TAG, "working in full duplex");
         MAC_CHECK(ncr & NCR_FDX, "phy is not at full duplex", err, ESP_ERR_INVALID_STATE);
         break;
     default:
@@ -733,8 +603,6 @@ static esp_err_t emac_dm9051_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    MAC_CHECK(buf, "can't set buf to null", err, ESP_ERR_INVALID_ARG);
-    MAC_CHECK(length, "buf length can't be zero", err, ESP_ERR_INVALID_ARG);
     /* Check if last transmit complete */
     uint8_t tcr = 0;
     MAC_CHECK(dm9051_register_read(emac, DM9051_TCR, &tcr) == ESP_OK, "read TCR failed", err, ESP_FAIL);
@@ -756,7 +624,6 @@ static esp_err_t emac_dm9051_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
 {
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
-    MAC_CHECK(buf && length, "can't set buf and length to null", err, ESP_ERR_INVALID_ARG);
     uint8_t rxbyte = 0;
     uint16_t rx_len = 0;
     __attribute__((aligned(4))) dm9051_rx_header_t header; // SPI driver needs the rx buffer 4 byte align
@@ -806,13 +673,12 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     esp_err_t ret = ESP_OK;
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
-    /* init gpio used by spi-ethernet interrupt */
-    gpio_pad_select_gpio(CONFIG_ETH_DM9051_INT_GPIO);
-    gpio_set_direction(CONFIG_ETH_DM9051_INT_GPIO, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(CONFIG_ETH_DM9051_INT_GPIO, GPIO_PULLDOWN_ONLY);
-    gpio_set_intr_type(CONFIG_ETH_DM9051_INT_GPIO, GPIO_INTR_POSEDGE);
-    gpio_intr_enable(CONFIG_ETH_DM9051_INT_GPIO);
-    gpio_isr_handler_add(CONFIG_ETH_DM9051_INT_GPIO, dm9051_isr_handler, emac);
+    gpio_pad_select_gpio(emac->int_gpio_num);
+    gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
+    gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
+    gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
+    gpio_intr_enable(emac->int_gpio_num);
+    gpio_isr_handler_add(emac->int_gpio_num, dm9051_isr_handler, emac);
     MAC_CHECK(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL) == ESP_OK, "lowlevel init failed", err, ESP_FAIL);
     /* reset dm9051 */
     MAC_CHECK(dm9051_reset(emac) == ESP_OK, "reset dm9051 failed", err, ESP_FAIL);
@@ -826,8 +692,8 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     MAC_CHECK(dm9051_get_mac_addr(emac) == ESP_OK, "fetch ethernet mac address failed", err, ESP_FAIL);
     return ESP_OK;
 err:
-    gpio_isr_handler_remove(CONFIG_ETH_DM9051_INT_GPIO);
-    gpio_reset_pin(CONFIG_ETH_DM9051_INT_GPIO);
+    gpio_isr_handler_remove(emac->int_gpio_num);
+    gpio_reset_pin(emac->int_gpio_num);
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ret;
 }
@@ -837,8 +703,8 @@ static esp_err_t emac_dm9051_deinit(esp_eth_mac_t *mac)
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     dm9051_stop(emac);
-    gpio_isr_handler_remove(CONFIG_ETH_DM9051_INT_GPIO);
-    gpio_reset_pin(CONFIG_ETH_DM9051_INT_GPIO);
+    gpio_isr_handler_remove(emac->int_gpio_num);
+    gpio_reset_pin(emac->int_gpio_num);
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ESP_OK;
 }
@@ -860,8 +726,11 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     MAC_CHECK(mac_config, "can't set mac config to null", err, NULL);
     emac = calloc(1, sizeof(emac_dm9051_t));
     MAC_CHECK(emac, "calloc emac failed", err, NULL);
+    /* dm9051 receive is driven by interrupt only for now*/
+    MAC_CHECK(dm9051_config->int_gpio_num >= 0, "error interrupt gpio number", err, NULL);
     /* bind methods and attributes */
     emac->sw_reset_timeout_ms = mac_config->sw_reset_timeout_ms;
+    emac->int_gpio_num = dm9051_config->int_gpio_num;
     emac->spi_hdl = dm9051_config->spi_hdl;
     emac->parent.set_mediator = emac_dm9051_set_mediator;
     emac->parent.init = emac_dm9051_init;

@@ -26,7 +26,12 @@
 #include "nimble/nimble_port.h"
 #include "nimble/nimble_port_freertos.h"
 #include "esp_nimble_hci.h"
+#include "esp_nimble_mem.h"
 #include "esp_bt.h"
+#include "freertos/semphr.h"
+#include "esp_compiler.h"
+
+#define NIMBLE_VHCI_TIMEOUT_MS  2000
 
 static ble_hci_trans_rx_cmd_fn *ble_hci_rx_cmd_hs_cb;
 static void *ble_hci_rx_cmd_hs_arg;
@@ -45,28 +50,22 @@ static struct os_mempool_ext ble_hci_acl_pool;
         + BLE_MBUF_MEMBLOCK_OVERHEAD \
         + BLE_HCI_DATA_HDR_SZ, OS_ALIGNMENT)
 
-static os_membuf_t ble_hci_acl_buf[
-    OS_MEMPOOL_SIZE(MYNEWT_VAL(BLE_ACL_BUF_COUNT),
-                    ACL_BLOCK_SIZE)];
+static os_membuf_t *ble_hci_acl_buf;
 
 static struct os_mempool ble_hci_cmd_pool;
-static os_membuf_t ble_hci_cmd_buf[
-    OS_MEMPOOL_SIZE(1, BLE_HCI_TRANS_CMD_SZ)
-];
+static os_membuf_t *ble_hci_cmd_buf;
 
 static struct os_mempool ble_hci_evt_hi_pool;
-static os_membuf_t ble_hci_evt_hi_buf[
-    OS_MEMPOOL_SIZE(MYNEWT_VAL(BLE_HCI_EVT_HI_BUF_COUNT),
-                    MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE))
-];
+static os_membuf_t *ble_hci_evt_hi_buf;
 
 static struct os_mempool ble_hci_evt_lo_pool;
-static os_membuf_t ble_hci_evt_lo_buf[
-    OS_MEMPOOL_SIZE(MYNEWT_VAL(BLE_HCI_EVT_LO_BUF_COUNT),
-                    MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE))
-];
+static os_membuf_t *ble_hci_evt_lo_buf;
 
+static SemaphoreHandle_t vhci_send_sem;
 const static char *TAG = "NimBLE";
+
+int os_msys_buf_alloc(void);
+void os_msys_buf_free(void);
 
 void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
                      void *cmd_arg,
@@ -83,18 +82,23 @@ void ble_hci_trans_cfg_hs(ble_hci_trans_rx_cmd_fn *cmd_cb,
 int ble_hci_trans_hs_cmd_tx(uint8_t *cmd)
 {
     uint16_t len;
+    uint8_t rc = 0;
 
     assert(cmd != NULL);
     *cmd = BLE_HCI_UART_H4_CMD;
     len = BLE_HCI_CMD_HDR_LEN + cmd[3] + 1;
     if (!esp_vhci_host_check_send_available()) {
-        ESP_LOGE(TAG, "Controller not ready to receive packets from host at this time, try again after sometime");
-        return BLE_HS_EAGAIN;
+        ESP_LOGD(TAG, "Controller not ready to receive packets");
     }
-    esp_vhci_host_send_packet(cmd, len);
+
+    if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
+        esp_vhci_host_send_packet(cmd, len);
+    } else {
+        rc = BLE_HS_ETIMEOUT_HCI;
+    }
 
     ble_hci_trans_buf_free(cmd);
-    return 0;
+    return rc;
 }
 
 int ble_hci_trans_ll_evt_tx(uint8_t *hci_ev)
@@ -110,7 +114,7 @@ int ble_hci_trans_ll_evt_tx(uint8_t *hci_ev)
 int ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
 {
     uint16_t len = 0;
-    uint8_t data[MYNEWT_VAL(BLE_ACL_BUF_SIZE) + 1];
+    uint8_t data[MYNEWT_VAL(BLE_ACL_BUF_SIZE) + 1], rc = 0;
     /* If this packet is zero length, just free it */
     if (OS_MBUF_PKTLEN(om) == 0) {
         os_mbuf_free_chain(om);
@@ -120,18 +124,21 @@ int ble_hci_trans_hs_acl_tx(struct os_mbuf *om)
     len++;
 
     if (!esp_vhci_host_check_send_available()) {
-        ESP_LOGE(TAG, "Controller not ready to receive packets from host at this time, try again after sometime");
-        return BLE_HS_EAGAIN;
+        ESP_LOGD(TAG, "Controller not ready to receive packets");
     }
 
     os_mbuf_copydata(om, 0, OS_MBUF_PKTLEN(om), &data[1]);
     len += OS_MBUF_PKTLEN(om);
 
-    esp_vhci_host_send_packet(data, len);
+    if (xSemaphoreTake(vhci_send_sem, NIMBLE_VHCI_TIMEOUT_MS / portTICK_PERIOD_MS) == pdTRUE) {
+        esp_vhci_host_send_packet(data, len);
+    } else {
+        rc = BLE_HS_ETIMEOUT_HCI;
+    }
 
     os_mbuf_free_chain(om);
 
-    return 0;
+    return rc;
 }
 
 int ble_hci_trans_ll_acl_tx(struct os_mbuf *om)
@@ -316,6 +323,9 @@ static void ble_hci_transport_init(void)
  */
 static void controller_rcv_pkt_ready(void)
 {
+    if (vhci_send_sem) {
+        xSemaphoreGive(vhci_send_sem);
+    }
 }
 
 /*
@@ -358,21 +368,80 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
     return 0;
 }
 
-static esp_vhci_host_callback_t vhci_host_cb = {
-    controller_rcv_pkt_ready,
-    host_rcv_pkt
+static const esp_vhci_host_callback_t vhci_host_cb = {
+    .notify_host_send_available = controller_rcv_pkt_ready,
+    .notify_host_recv = host_rcv_pkt,
 };
+
+static void ble_buf_free(void)
+{
+    os_msys_buf_free();
+
+    nimble_platform_mem_free(ble_hci_evt_hi_buf);
+    ble_hci_evt_hi_buf = NULL;
+    nimble_platform_mem_free(ble_hci_evt_lo_buf);
+    ble_hci_evt_lo_buf = NULL;
+    nimble_platform_mem_free(ble_hci_cmd_buf);
+    ble_hci_cmd_buf = NULL;
+    nimble_platform_mem_free(ble_hci_acl_buf);
+    ble_hci_acl_buf = NULL;
+}
+
+static esp_err_t ble_buf_alloc(void)
+{
+    if (os_msys_buf_alloc()) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    ble_hci_evt_hi_buf = (os_membuf_t *) nimble_platform_mem_calloc(1,
+        (sizeof(os_membuf_t) * OS_MEMPOOL_SIZE(MYNEWT_VAL(BLE_HCI_EVT_HI_BUF_COUNT),
+        MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE))));
+
+    ble_hci_evt_lo_buf = (os_membuf_t *) nimble_platform_mem_calloc(1,
+        (sizeof(os_membuf_t) * OS_MEMPOOL_SIZE(MYNEWT_VAL(BLE_HCI_EVT_LO_BUF_COUNT),
+        MYNEWT_VAL(BLE_HCI_EVT_BUF_SIZE))));
+
+    ble_hci_cmd_buf = (os_membuf_t *) nimble_platform_mem_calloc(1,
+        (sizeof(os_membuf_t) * OS_MEMPOOL_SIZE(1, BLE_HCI_TRANS_CMD_SZ)));
+
+    ble_hci_acl_buf = (os_membuf_t *) nimble_platform_mem_calloc(1,
+        (sizeof(os_membuf_t) * OS_MEMPOOL_SIZE(MYNEWT_VAL(BLE_ACL_BUF_COUNT),
+        ACL_BLOCK_SIZE)));
+
+    if (!ble_hci_evt_hi_buf || !ble_hci_evt_lo_buf || !ble_hci_cmd_buf || !ble_hci_acl_buf) {
+        ble_buf_free();
+        return ESP_ERR_NO_MEM;
+    }
+    return ESP_OK;
+}
 
 esp_err_t esp_nimble_hci_init(void)
 {
     esp_err_t ret;
+
+    ret = ble_buf_alloc();
+    if (ret != ESP_OK) {
+        goto err;
+    }
     if ((ret = esp_vhci_host_register_callback(&vhci_host_cb)) != ESP_OK) {
-        return ret;
+        goto err;
     }
 
     ble_hci_transport_init();
 
-    return ESP_OK;
+    vhci_send_sem = xSemaphoreCreateBinary();
+    if (vhci_send_sem == NULL) {
+        ret = ESP_ERR_NO_MEM;
+        goto err;
+    }
+
+    xSemaphoreGive(vhci_send_sem);
+
+    return ret;
+err:
+    ble_buf_free();
+    return ret;
+
 }
 
 esp_err_t esp_nimble_hci_and_controller_init(void)
@@ -414,7 +483,21 @@ static esp_err_t ble_hci_transport_deinit(void)
 
 esp_err_t esp_nimble_hci_deinit(void)
 {
-    return ble_hci_transport_deinit();
+    if (vhci_send_sem) {
+        /* Dummy take & give semaphore before deleting */
+        xSemaphoreTake(vhci_send_sem, portMAX_DELAY);
+        xSemaphoreGive(vhci_send_sem);
+        vSemaphoreDelete(vhci_send_sem);
+        vhci_send_sem = NULL;
+    }
+    esp_err_t ret = ble_hci_transport_deinit();
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ble_buf_free();
+
+    return ESP_OK;
 }
 
 esp_err_t esp_nimble_hci_and_controller_deinit(void)

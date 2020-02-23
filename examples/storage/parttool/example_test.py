@@ -3,19 +3,12 @@ import os
 import sys
 import subprocess
 
-try:
-    import IDF
-    from IDF.IDFDUT import ESP32DUT
-except ImportError:
-    test_fw_path = os.getenv('TEST_FW_PATH')
-    if test_fw_path and test_fw_path not in sys.path:
-        sys.path.insert(0, test_fw_path)
-    import IDF
+import ttfw_idf
 
 
-@IDF.idf_example_test(env_tag='Example_WIFI')
+@ttfw_idf.idf_example_test(env_tag='Example_WIFI')
 def test_examples_parttool(env, extra_data):
-    dut = env.get_dut('parttool', 'examples/storage/parttool', dut_class=ESP32DUT)
+    dut = env.get_dut('parttool', 'examples/storage/parttool', dut_class=ttfw_idf.ESP32DUT)
     dut.start_app(False)
 
     # Verify factory firmware

@@ -7,7 +7,7 @@ Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feat
 
 .. important::
 
-    Enabling secure boot limits your options for further updates of your ESP32. Make sure to read this document throughly and understand the implications of enabling secure boot.
+    Enabling secure boot limits your options for further updates of your {IDF_TARGET_NAME}. Make sure to read this document throughly and understand the implications of enabling secure boot.
 
 Background
 ----------
@@ -49,7 +49,17 @@ The following keys are used by the secure boot process:
 
 - "secure bootloader key" is a 256-bit AES key that is stored in Efuse block 2. The bootloader can generate this key itself from the internal hardware random number generator, the user does not need to supply it (it is optionally possible to supply this key, see :ref:`secure-boot-reflashable`). The Efuse holding this key is read & write protected (preventing software access) before secure boot is enabled.
 
-  - By default, the Efuse Block 2 Coding Scheme is "None" and a 256 bit key is stored in this block. On some ESP32s, the Coding Scheme is set to 3/4 Encoding (CODING_SCHEME efuse has value 1) and a 192 bit key must be stored in this block. See ESP32 Technical Reference Manual section 20.3.1.3 *System Parameter coding_scheme* for more details. The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`details<secure-bootloader-digest-algorithm>`).
+  - By default, the Efuse Block 2 Coding Scheme is "None" and a 256 bit key is stored in this block. On some {IDF_TARGET_NAME}s, the Coding Scheme is set to 3/4 Encoding (CODING_SCHEME efuse has value 1) and a 192 bit key must be stored in this block.
+
+  .. only:: esp32
+
+    See ESP32 Technical Reference Manual section 20.3.1.3 *System Parameter coding_scheme* for more details.
+
+  .. only:: esp32s2
+
+    See ESP32-S2 Technical Reference Manual for more details.
+
+  The algorithm operates on a 256 bit key in all cases, 192 bit keys are extended by repeating some bits (:ref:`details<secure-bootloader-digest-algorithm>`).
 
 - "secure boot signing key" is a standard ECDSA public/private key pair (see :ref:`secure-boot-image-signing-algorithm`) in PEM format.
 
@@ -64,7 +74,7 @@ Bootloader Size
 
 When secure boot is enabled the bootloader app binary ``bootloader.bin`` may exceed the default bootloader size limit. This is especially likely if flash encryption is enabled as well. The default size limit is 0x7000 (28672) bytes (partition table offset 0x8000 - bootloader offset 0x1000).
 
-If the bootloader becomes too large, the ESP32 will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
+If the bootloader becomes too large, the {IDF_TARGET_NAME} will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
 
 Options to work around this are:
 
@@ -100,11 +110,11 @@ How To Enable Secure Boot
 
 .. note:: ``idf.py flash`` doesn't flash the bootloader if secure boot is enabled.
 
-8. Reset the ESP32 and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the ESP32 to verify that secure boot is enabled and no errors have occurred due to the build configuration.
+8. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
 .. note:: Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
 
-.. note:: If the ESP32 is reset or powered down during the first boot, it will start the process again on the next boot.
+.. note:: If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
 9. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed (using the secure bootloader key) and then the software bootloader will verify the signed partition table and app image (using the public key portion of the secure boot signing key).
 
@@ -117,7 +127,7 @@ Configuration "Secure Boot: One-Time Flash" is the recommended configuration for
 
 However, an alternative mode :ref:`Secure Boot: Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` is also available. This mode allows you to supply a binary key file that is used for the secure bootloader key. As you have the key file, you can generate new bootloader images and secure boot digests for them.
 
-In the esp-idf build process, this 256-bit key file is derived from the app signing key generated during the generate_signing_key step above. The private key's SHA-256 digest is used as the secure bootloader key (as-is for Coding Scheme None, or truncate to 192 bytes for 3/4 Encoding). This is a convenience so you only need to generate/protect a single private key.
+In the esp-idf build process, this 256-bit key file is derived from the ECDSA app signing key generated by the user (see the :ref:`secure-boot-generate-key` step below). This private key's SHA-256 digest is used as the secure bootloader key in efuse (as-is for Coding Scheme None, or truncate to 192 bytes for 3/4 Encoding). This is a convenience so you only need to generate/protect a single private key.
 
 .. note:: Although it's possible, we strongly recommend not generating one secure boot key and flashing it to every device in a production environment. The "One-Time Flash" option is recommended for production environments.
 
@@ -194,7 +204,7 @@ The following sections contain low-level reference descriptions of various secur
 Secure Boot Hardware Support
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The first stage of secure boot verification (checking the software bootloader) is done via hardware. The ESP32's Secure Boot support hardware can perform three basic operations:
+The first stage of secure boot verification (checking the software bootloader) is done via hardware. The {IDF_TARGET_NAME}'s Secure Boot support hardware can perform three basic operations:
 
 1. Generate a random sequence of bytes from a hardware random number generator.
 

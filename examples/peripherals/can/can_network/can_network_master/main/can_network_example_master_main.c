@@ -67,11 +67,11 @@ static const can_filter_config_t f_config = CAN_FILTER_CONFIG_ACCEPT_ALL();
 static const can_general_config_t g_config = CAN_GENERAL_CONFIG_DEFAULT(TX_GPIO_NUM, RX_GPIO_NUM, CAN_MODE_NORMAL);
 
 static const can_message_t ping_message = {.identifier = ID_MASTER_PING, .data_length_code = 0,
-                                           .flags = CAN_MSG_FLAG_SS,  .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                           .ss = 1, .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
 static const can_message_t start_message = {.identifier = ID_MASTER_START_CMD, .data_length_code = 0,
-                                            .flags = CAN_MSG_FLAG_NONE, .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                            .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
 static const can_message_t stop_message = {.identifier = ID_MASTER_STOP_CMD, .data_length_code = 0,
-                                           .flags = CAN_MSG_FLAG_NONE, .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
+                                           .data = {0, 0 , 0 , 0 ,0 ,0 ,0 ,0}};
 
 static QueueHandle_t tx_task_queue;
 static QueueHandle_t rx_task_queue;

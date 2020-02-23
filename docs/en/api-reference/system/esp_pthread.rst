@@ -13,43 +13,48 @@ This module offers Espressif specific extensions to the pthread library that can
 
 Example to tune the stack size of the pthread:
 
-.. highlight:: c
+.. code-block:: c
 
-::
-   
-   main()
-   {
-       pthread_t t1;
+    void * thread_func(void * p)
+    {
+        printf("In thread_func\n");
+        return NULL;
+    }
 
-       esp_pthread_cfg_t cfg = esp_create_default_pthread_config();
-       cfg.stack_size = (4 * 1024);
-       esp_pthread_set_cfg(&cfg);
+    void app_main(void)
+    {
+        pthread_t t1;
 
-       pthread_create(&t1, NULL, thread_func);
-   }
+        esp_pthread_cfg_t cfg = esp_create_default_pthread_config();
+        cfg.stack_size = (4 * 1024);
+        esp_pthread_set_cfg(&cfg);
+
+        pthread_create(&t1, NULL, thread_func);
+    }
 
 The API can also be used for inheriting the settings across threads. For example:
 
-.. highlight:: c
+.. code-block:: c
+       
+    void * my_thread2(void * p)
+    {   
+        /* This thread will inherit the stack size of 4K */
+        printf("In my_thread2\n");
 
-::
-   
-   void * my_thread2(void * p)
-   {
-         /* This thread will inherit the stack size of 4K */
-         printf("In my_thread2\n");
-   }
+        return NULL;
+    }
 
-   void * my_thread1(void * p)
-   {
-         printf("In my_thread1\n");
-	 pthread_t t2;
-	 pthread_create(&t2, NULL, my_thread2);
-   }
+    void * my_thread1(void * p)
+    {
+        printf("In my_thread1\n");
+        pthread_t t2;
+        pthread_create(&t2, NULL, my_thread2);
 
-   main()
-   {
+        return NULL;
+    }
 
+    void app_main(void)
+    {
         pthread_t t1;
 
         esp_pthread_cfg_t cfg = esp_create_default_pthread_config();
@@ -58,10 +63,10 @@ The API can also be used for inheriting the settings across threads. For example
         esp_pthread_set_cfg(&cfg);
 
         pthread_create(&t1, NULL, my_thread1);
-   }
+    }
 
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_pthread.inc
+.. include-build-file:: inc/esp_pthread.inc
 

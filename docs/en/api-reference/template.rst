@@ -5,7 +5,7 @@ API Documentation Template
 
     *INSTRUCTIONS*
 
-    1. Use this file (:idf_file:`docs/api-reference/template.rst`) as a template to document API.
+    1. Use this file (:idf_file:`docs/en/api-reference/template.rst`) as a template to document API.
     2. Change the file name to the name of the header file that represents documented API.
     3. Include respective files with descriptions from the API folder using ``..include::``
 
@@ -61,9 +61,9 @@ API Reference
 
     1. This repository provides for automatic update of API reference documentation using :doc:`code markup retrieved by Doxygen from header files <../contribute/documenting-code>`.
     
-    2. Update is done on each documentation build by invoking script :idf_file:`docs/gen-dxd.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/Doxyfile`. 
-    
-    3. Each line of the ``INPUT`` statement  (other than a comment that begins with ``##``) contains a path to header file ``*.h`` that will be used to generate corresponding ``*.inc`` files::
+    1. Update is done on each documentation build by invoking Sphinx extension :idf_file:`docs/idf_extensions/run_doxygen.py` for all header files listed in the ``INPUT`` statement of :idf_file:`docs/Doxyfile`. 
+
+    1. Each line of the ``INPUT`` statement  (other than a comment that begins with ``##``) contains a path to header file ``*.h`` that will be used to generate corresponding ``*.inc`` files::
 
         ##
         ## Wi-Fi - API Reference
@@ -71,15 +71,17 @@ API Reference
         ../components/esp32/include/esp_wifi.h \
         ../components/esp32/include/esp_smartconfig.h \
 
-    4. The ``*.inc`` files contain formatted reference of API members generated automatically on each documentation build. All ``*.inc`` files are placed in Sphinx ``_build`` directory. To see directives generated for e.g. ``esp_wifi.h``, run ``python gen-dxd.py esp32/include/esp_wifi.h``.
+    1. When the headers are expanded, any macros defined by default in ``sdkconfig.h`` as well as any macros defined in SOC-specific ``include/soc/*_caps.h`` headers will be expanded. This allows the headers to include/exclude material based on the ``IDF_TARGET`` value.
 
-    5. To show contents of ``*.inc`` file in documentation, include it as follows::
+    1. The ``*.inc`` files contain formatted reference of API members generated automatically on each documentation build. All ``*.inc`` files are placed in Sphinx ``_build`` directory. To see directives generated for e.g. ``esp_wifi.h``, run ``python gen-dxd.py esp32/include/esp_wifi.h``.
 
-       .. include:: /_build/inc/esp_wifi.inc
+    1. To show contents of ``*.inc`` file in documentation, include it as follows::
 
-       For example see :idf_file:`docs/en/api-reference/wifi/esp_wifi.rst`
+       .. include-build-file:: inc/esp_wifi.inc
+
+       For example see :idf_file:`docs/en/api-reference/network/esp_wifi.rst`
     
-    6. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/en/api-guides/ulp.rst` for example.
+    1. Optionally, rather that using ``*.inc`` files, you may want to describe API in you own way. See :idf_file:`docs/en/api-guides/ulp.rst` for example.
 
        Below is the list of common ``.. doxygen...::`` directives:
 
@@ -96,6 +98,6 @@ API Reference
 
        * :component_file:`path_to/header_file.h`
 
-    7. In any case, to generate API reference, the file :idf_file:`docs/Doxyfile` should be updated with paths to ``*.h`` headers that are being documented.
+    1. In any case, to generate API reference, the file :idf_file:`docs/Doxyfile` should be updated with paths to ``*.h`` headers that are being documented.
     
-    8. When changes are committed and documentation is build, check how this section has been rendered. :doc:`Correct annotations <../contribute/documenting-code>` in respective header files, if required.
+    1. When changes are committed and documentation is build, check how this section has been rendered. :doc:`Correct annotations <../contribute/documenting-code>` in respective header files, if required.

@@ -1,8 +1,8 @@
 Wi-Fi Driver
 =============
 
-ESP32 Wi-Fi Feature List
--------------------------
+{IDF_TARGET_NAME} Wi-Fi Feature List
+------------------------------------
 - Support Station-only mode, AP-only mode, Station/AP-coexistence mode
 - Support IEEE-802.11B, IEEE-802.11G, IEEE802.11N and APIs to configure the protocol mode
 - Support WPA/WPA2/WPA2-Enterprise and WPS
@@ -21,7 +21,7 @@ How To Write a Wi-Fi Application
 
 Preparation
 +++++++++++
-Generally, the most effective way to begin your own Wi-Fi application is to select an example which is similar to your own application, and port the useful part into your project. It is not a MUST but it is strongly recommended that you take some time to read this article first, especially if you want to program a robust Wi-Fi application. This article is supplementary to the Wi-Fi APIs/Examples. It describes the principles of using the Wi-Fi APIs, the limitations of the current Wi-Fi API implementation, and the most common pitfalls in using Wi-Fi. This article also reveals some design details of the Wi-Fi driver. We recommend that you become familiar at least with the following sections: <`ESP32 Wi-Fi API Error Code`_>, <`ESP32 Wi-Fi Programming Model`_>, and <`ESP32 Wi-Fi Event Description`_>.
+Generally, the most effective way to begin your own Wi-Fi application is to select an example which is similar to your own application, and port the useful part into your project. It is not a MUST but it is strongly recommended that you take some time to read this article first, especially if you want to program a robust Wi-Fi application. This article is supplementary to the Wi-Fi APIs/Examples. It describes the principles of using the Wi-Fi APIs, the limitations of the current Wi-Fi API implementation, and the most common pitfalls in using Wi-Fi. This article also reveals some design details of the Wi-Fi driver. We recommend that you become familiar at least with the following sections: <`{IDF_TARGET_NAME} Wi-Fi API Error Code`_>, <`{IDF_TARGET_NAME} Wi-Fi Programming Model`_>, and <`{IDF_TARGET_NAME} Wi-Fi Event Description`_>.
 
 Setting Wi-Fi Compile-time Options
 ++++++++++++++++++++++++++++++++++++
@@ -29,28 +29,28 @@ Refer to <`Wi-Fi Menuconfig`_>
 
 Init Wi-Fi
 +++++++++++
-Refer to <`ESP32 Wi-Fi Station General Scenario`_>, <`ESP32 Wi-Fi AP General Scenario`_>.
+Refer to <`{IDF_TARGET_NAME} Wi-Fi Station General Scenario`_>, <`{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_>.
 
 Start/Connect Wi-Fi
 ++++++++++++++++++++
-Refer to <`ESP32 Wi-Fi Station General Scenario`_>, <`ESP32 Wi-Fi AP General Scenario`_>.
+Refer to <`{IDF_TARGET_NAME} Wi-Fi Station General Scenario`_>, <`{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_>.
 
 Event-Handling
 ++++++++++++++
-Generally, it is easy to write code in "sunny-day" scenarios, such as <`WIFI_EVENT_STA_START`_>, <`WIFI_EVENT_STA_CONNECTED`_> etc. The hard part is to write routines in "rainy-day" scenarios, such as <`WIFI_EVENT_STA_DISCONNECTED`_> etc. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to <`ESP32 Wi-Fi Event Description`_>, <`ESP32 Wi-Fi Station General Scenario`_>, <`ESP32 Wi-Fi AP General Scenario`_>. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
+Generally, it is easy to write code in "sunny-day" scenarios, such as <`WIFI_EVENT_STA_START`_>, <`WIFI_EVENT_STA_CONNECTED`_> etc. The hard part is to write routines in "rainy-day" scenarios, such as <`WIFI_EVENT_STA_DISCONNECTED`_> etc. Good handling of "rainy-day" scenarios is fundamental to robust Wi-Fi applications. Refer to <`{IDF_TARGET_NAME} Wi-Fi Event Description`_>, <`{IDF_TARGET_NAME} Wi-Fi Station General Scenario`_>, <`{IDF_TARGET_NAME} Wi-Fi AP General Scenario`_>. See also :doc:`an overview of event handling in ESP-IDF<event-handling>`.
 
-Write Error-Recovery Routines Correctly at All Times 
+Write Error-Recovery Routines Correctly at All Times
 ++++++++++++++++++++++++++++++++++++++++++++++++++++
-Just like the handling of "rainy-day" scenarios, a good error-recovery routine is also fundamental to robust Wi-Fi applications. Refer to <`ESP32 Wi-Fi API Error Code`_>
+Just like the handling of "rainy-day" scenarios, a good error-recovery routine is also fundamental to robust Wi-Fi applications. Refer to <`{IDF_TARGET_NAME} Wi-Fi API Error Code`_>
 
 
-ESP32 Wi-Fi API Error Code
----------------------------
-All of the ESP32 Wi-Fi APIs have well-defined return values, namely, the error code. The error code can be categorized into:
+{IDF_TARGET_NAME} Wi-Fi API Error Code
+--------------------------------------
+All of the {IDF_TARGET_NAME} Wi-Fi APIs have well-defined return values, namely, the error code. The error code can be categorized into:
  - No errors, e.g. ESP_OK means that the API returns successfully
  - Recoverable errors, such as ESP_ERR_NO_MEM, etc.
- - Non-recoverable, non-critical errors 
- - Non-recoverable, critical errors 
+ - Non-recoverable, non-critical errors
+ - Non-recoverable, critical errors
 
 Whether the error is critical or not depends on the API and the application scenario, and it is defined by the API user.
 
@@ -63,8 +63,8 @@ Whether the error is critical or not depends on the API and the application scen
 In esp_err.h, ESP_ERROR_CHECK checks the return values. It is a rather commonplace error-handling code and can be used
 as the default error-handling code in the application development phase. However, we strongly recommend that API users write their own error-handling code.
 
-ESP32 Wi-Fi API Parameter Initialization
-------------------------------------------
+{IDF_TARGET_NAME} Wi-Fi API Parameter Initialization
+----------------------------------------------------
 
 When initializing struct parameters for the API, one of two approaches should be followed:
 - explicitly set all fields of the parameter or
@@ -74,9 +74,9 @@ Initializing or getting the entire structure is very important because most of t
 
 .. _wifi-programming-model:
 
-ESP32 Wi-Fi Programming Model
------------------------------
-The ESP32 Wi-Fi programming model is depicted as follows:
+{IDF_TARGET_NAME} Wi-Fi Programming Model
+-----------------------------------------
+The {IDF_TARGET_NAME} Wi-Fi programming model is depicted as follows:
 
 .. blockdiag::
     :caption: Wi-Fi Programming Model
@@ -122,10 +122,10 @@ The ESP32 Wi-Fi programming model is depicted as follows:
 
 The Wi-Fi driver can be considered a black box that knows nothing about high-layer code, such as the TCP/IP stack, application task, event task, etc. The application task (code) generally calls :doc:`Wi-Fi driver APIs <../api-reference/network/esp_wifi>` to initialize Wi-Fi and handles Wi-Fi events when necessary. Wi-Fi driver receives API calls, handles them, and post events to the application.
 
-Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`tcpip_adapter component <../api-reference/network/tcpip_adapter>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, tcpip_adapter will automatically start the DHCP client.
+Wi-Fi event handling is based on the :doc:`esp_event library <../api-reference/system/esp_event>`. Events are sent by the Wi-Fi driver to the :ref:`default event loop <esp-event-default-loops>`. Application may handle these events in callbacks registered using :cpp:func:`esp_event_handler_register`. Wi-Fi events are also handled by :doc:`esp_netif component <../api-reference/network/esp_netif>` to provide a set of default behaviors. For example, when Wi-Fi station connects to an AP, esp_netif will automatically start the DHCP client (by default).
 
-ESP32 Wi-Fi Event Description
-------------------------------------
+{IDF_TARGET_NAME} Wi-Fi Event Description
+-----------------------------------------
 
 WIFI_EVENT_WIFI_READY
 ++++++++++++++++++++++++++++++++++++
@@ -137,15 +137,15 @@ The scan-done event is triggered by esp_wifi_scan_start() and will arise in the 
 
   - The scan is completed, e.g., the target AP is found successfully, or all channels have been scanned.
   - The scan is stopped by esp_wifi_scan_stop().
-  - The esp_wifi_scan_start() is called before the scan is completed. A new scan will override the current scan and a scan-done event will be generated.  
+  - The esp_wifi_scan_start() is called before the scan is completed. A new scan will override the current scan and a scan-done event will be generated.
 
 The scan-done event will not arise in the following scenarios:
 
   - It is a blocked scan.
   - The scan is caused by esp_wifi_connect().
 
-Upon receiving this event, the event task does nothing. The application event callback needs to call esp_wifi_scan_get_ap_num() and esp_wifi_scan_get_ap_records() to fetch the scanned AP list and trigger the Wi-Fi driver to free the internal memory which is allocated during the scan **(do not forget to do this)**! 
-Refer to 'ESP32 Wi-Fi Scan' for a more detailed description.
+Upon receiving this event, the event task does nothing. The application event callback needs to call esp_wifi_scan_get_ap_num() and esp_wifi_scan_get_ap_records() to fetch the scanned AP list and trigger the Wi-Fi driver to free the internal memory which is allocated during the scan **(do not forget to do this)**!
+Refer to '{IDF_TARGET_NAME} Wi-Fi Scan' for a more detailed description.
 
 WIFI_EVENT_STA_START
 ++++++++++++++++++++++++++++++++++++
@@ -158,14 +158,14 @@ If esp_wifi_stop() returns ESP_OK and the current Wi-Fi mode is Station or AP+St
 WIFI_EVENT_STA_CONNECTED
 ++++++++++++++++++++++++++++++++++++
 If esp_wifi_connect() returns ESP_OK and the station successfully connects to the target AP, the connection event will arise. Upon receiving this event, the event task starts the DHCP client and begins the DHCP process of getting the IP address. Then, the Wi-Fi driver is ready for sending and receiving data. This moment is good for beginning the application work, provided that the application does not depend on LwIP, namely the IP address. However, if the application is LwIP-based, then you need to wait until the *got ip* event comes in.
-  
+
 WIFI_EVENT_STA_DISCONNECTED
 ++++++++++++++++++++++++++++++++++++
 This event can be generated in the following scenarios:
 
   - When esp_wifi_disconnect(), or esp_wifi_stop(), or esp_wifi_deinit(), or esp_wifi_restart() is called and the station is already connected to the AP.
   - When esp_wifi_connect() is called, but the Wi-Fi driver fails to set up a connection with the AP due to certain reasons, e.g. the scan fails to find the target AP, authentication times out, etc. If there are more than one AP with the same SSID, the disconnected event is raised after the station fails to connect all of the found APs.
-  - When the Wi-Fi connection is disrupted because of specific reasons, e.g., the station continuously loses N beacons, the AP kicks off the station, the AP's authentication mode is changed, etc. 
+  - When the Wi-Fi connection is disrupted because of specific reasons, e.g., the station continuously loses N beacons, the AP kicks off the station, the AP's authentication mode is changed, etc.
 
 Upon receiving this event, the default behavior of the event task is:
 - Shuts down the station's LwIP netif.
@@ -180,7 +180,7 @@ Another thing deserves our attention is that the default behavior of LwIP is to 
 - Five seconds later, the Wi-Fi connection is restored because esp_wifi_connect() is called in the application event callback function. **Moreover, the station connects to the same AP and gets the same IPV4 address as before**.
 - Sixty seconds later, when the application sends out data with the keep-alive socket, the socket returns an error and the application closes the socket and re-creates it when necessary.
 
-In above scenario, ideally, the application sockets and the network layer should not be affected, since the Wi-Fi connection only fails temporarily and recovers very quickly. The application can enable "Keep TCP connections when IP changed" via LwIP menuconfig. 
+In above scenario, ideally, the application sockets and the network layer should not be affected, since the Wi-Fi connection only fails temporarily and recovers very quickly. The application can enable "Keep TCP connections when IP changed" via LwIP menuconfig.
 
 WIFI_EVENT_STA_AUTHMODE_CHANGE
 ++++++++++++++++++++++++++++++++++++
@@ -202,13 +202,13 @@ The socket is based on the IPV4 address, which means that, if the IPV4 changes, 
 
 IP_EVENT_GOT_IP6
 ++++++++++++++++++++++++++++++++++++
-This event arises when the IPV6 SLAAC support auto-configures an address for the ESP32, or when this address changes. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
+This event arises when the IPV6 SLAAC support auto-configures an address for the {IDF_TARGET_NAME}, or when this address changes. The event means that everything is ready and the application can begin its tasks (e.g., creating sockets).
 
 IP_STA_LOST_IP
 ++++++++++++++++++++++++++++++++++++
 This event arises when the IPV4 address become invalid.
 
-IP_STA_LOST_IP doesn't arise immediately after the WiFi disconnects, instead it starts an IPV4 address lost timer, if the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP doesn't happen. Otherwise, the event arises when IPV4 address lost timer expires. 
+IP_STA_LOST_IP doesn't arise immediately after the WiFi disconnects, instead it starts an IPV4 address lost timer, if the IPV4 address is got before ip lost timer expires, IP_EVENT_STA_LOST_IP doesn't happen. Otherwise, the event arises when IPV4 address lost timer expires.
 
 Generally the application don't need to care about this event, it is just a debug event to let the application know that the IPV4 address is lost.
 
@@ -222,7 +222,7 @@ Similar to <`WIFI_EVENT_STA_STOP`_>.
 
 WIFI_EVENT_AP_STACONNECTED
 ++++++++++++++++++++++++++++++++++++
-Every time a station is connected to ESP32 AP, the <`WIFI_EVENT_AP_STACONNECTED`_> will arise. Upon receiving this event, the event task will do nothing, and the application callback can also ignore it. However, you may want to do something, for example, to get the info of the connected STA, etc.
+Every time a station is connected to {IDF_TARGET_NAME} AP, the <`WIFI_EVENT_AP_STACONNECTED`_> will arise. Upon receiving this event, the event task will do nothing, and the application callback can also ignore it. However, you may want to do something, for example, to get the info of the connected STA, etc.
 
 WIFI_EVENT_AP_STADISCONNECTED
 ++++++++++++++++++++++++++++++++++++
@@ -240,8 +240,8 @@ WIFI_EVENT_AP_PROBEREQRECVED
 This event is disabled by default. The application can enable it via API esp_wifi_set_event_mask().
 When this event is enabled, it will be raised each time the AP receives a probe request.
 
-ESP32 Wi-Fi Station General Scenario
----------------------------------------
+{IDF_TARGET_NAME} Wi-Fi Station General Scenario
+------------------------------------------------
 Below is a "big scenario" which describes some small scenarios in Station mode:
 
 .. seqdiag::
@@ -255,9 +255,9 @@ Below is a "big scenario" which describes some small scenarios in Station mode:
         edge_length = 140;
         span_height = 5;
         default_shape = roundedbox;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
-        MAIN_TASK  [label = "Main\ntask"]; 
+        MAIN_TASK  [label = "Main\ntask"];
         APP_TASK   [label = "App\ntask"];
         EVENT_TASK [label = "Event\ntask"];
         LwIP_TASK  [label = "LwIP\ntask"];
@@ -300,19 +300,21 @@ Below is a "big scenario" which describes some small scenarios in Station mode:
 
 1. Wi-Fi/LwIP Init Phase
 ++++++++++++++++++++++++++++++
- - s1.1: The main task calls tcpip_adapter_init() to create an LwIP core task and initialize LwIP-related work.
+ - s1.1: The main task calls esp_netif_init() to create an LwIP core task and initialize LwIP-related work.
 
- - s1.2: The main task calls esp_event_loop_init() to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task. 
+ - s1.2: The main task calls esp_event_loop_init() to create a system Event task and initialize an application event's callback function. In the scenario above, the application event's callback function does nothing but relaying the event to the application task.
 
- - s1.3: The main task calls esp_wifi_init() to create the Wi-Fi driver task and initialize the Wi-Fi driver.
+ - s1.3: The main task calls esp_netif_create_default_wifi_ap() or esp_netif_create_default_wifi_sta() to create default network interface instance binding station or AP with TCP/IP stack.
 
- - s1.4: The main task calls OS API to create the application task.
+ - s1.4: The main task calls esp_wifi_init() to create the Wi-Fi driver task and initialize the Wi-Fi driver.
 
-Step 1.1~1.4 is a recommended sequence that initializes a Wi-Fi-/LwIP-based application. However, it is **NOT** a must-follow sequence, which means that you can create the application task in step 1.1 and put all other initializations in the application task. Moreover, you may not want to create the application task in the initialization phase if the application task depends on the sockets. Rather, you can defer the task creation until the IP is obtained.
+ - s1.5: The main task calls OS API to create the application task.
+
+Step 1.1~1.5 is a recommended sequence that initializes a Wi-Fi-/LwIP-based application. However, it is **NOT** a must-follow sequence, which means that you can create the application task in step 1.1 and put all other initializations in the application task. Moreover, you may not want to create the application task in the initialization phase if the application task depends on the sockets. Rather, you can defer the task creation until the IP is obtained.
 
 2. Wi-Fi Configuration Phase
 +++++++++++++++++++++++++++++++
-Once the Wi-Fi driver is initialized, you can start configuring the Wi-Fi driver. In this scenario, the mode is Station, so you may need to call esp_wifi_set_mode(WIFI_MODE_STA) to configure the Wi-Fi mode as Station. You can call other esp_wifi_set_xxx APIs to configure more settings, such as the protocol mode, country code, bandwidth, etc. Refer to <`ESP32 Wi-Fi Configuration`_>.
+Once the Wi-Fi driver is initialized, you can start configuring the Wi-Fi driver. In this scenario, the mode is Station, so you may need to call esp_wifi_set_mode(WIFI_MODE_STA) to configure the Wi-Fi mode as Station. You can call other esp_wifi_set_xxx APIs to configure more settings, such as the protocol mode, country code, bandwidth, etc. Refer to <`{IDF_TARGET_NAME} Wi-Fi Configuration`_>.
 
 Generally, we configure the Wi-Fi driver before setting up the Wi-Fi connection, but this is **NOT** mandatory, which means that you can configure the Wi-Fi connection anytime, provided that the Wi-Fi driver is initialized successfully. However, if the configuration does not need to change after the Wi-Fi connection is set up, you should configure the Wi-Fi driver at this stage, because the configuration APIs (such as esp_wifi_set_protocol) will cause the Wi-Fi to reconnect, which may not be desirable.
 
@@ -323,12 +325,12 @@ If the Wi-Fi NVS flash is enabled by menuconfig, all Wi-Fi configuration in this
  - s3.1: Call esp_wifi_start to start the Wi-Fi driver.
  - s3.2: The Wi-Fi driver posts <`WIFI_EVENT_STA_START`_> to the event task; then, the event task will do some common things and will call the application event callback function.
  - s3.3: The application event callback function relays the <`WIFI_EVENT_STA_START`_> to the application task. We recommend that you call esp_wifi_connect(). However, you can also call esp_wifi_connect() in other phrases after the <`WIFI_EVENT_STA_START`_> arises.
- 
+
 4. Wi-Fi Connect Phase
 +++++++++++++++++++++++++++++++++
  - s4.1: Once esp_wifi_connect() is called, the Wi-Fi driver will start the internal scan/connection process.
 
- - s4.2: If the internal scan/connection process is successful, the <`WIFI_EVENT_STA_CONNECTED`_> will be generated. In the event task, it starts the DHCP client, which will finally trigger the DHCP process. 
+ - s4.2: If the internal scan/connection process is successful, the <`WIFI_EVENT_STA_CONNECTED`_> will be generated. In the event task, it starts the DHCP client, which will finally trigger the DHCP process.
 
  - s4.3: In the above-mentioned scenario, the application event callback will relay the event to the application task. Generally, the application needs to do nothing, and you can do whatever you want, e.g., print a log, etc.
 
@@ -345,7 +347,7 @@ In step 4.2, the Wi-Fi connection may fail because, for example, the password is
 +++++++++++++++++++++++++++++++++
  - s6.1: When the Wi-Fi connection is disrupted, e.g. because the AP is powered off, the RSSI is poor, etc., <`WIFI_EVENT_STA_DISCONNECTED`_> will arise. This event may also arise in phase 3. Here, the event task will notify the LwIP task to clear/remove all UDP/TCP connections. Then, all application sockets will be in a wrong status. In other words, no socket can work properly when this event happens.
  - s6.2: In the scenario described above, the application event callback function relays <`WIFI_EVENT_STA_DISCONNECTED`_> to the application task. We recommend that esp_wifi_connect() be called to reconnect the Wi-Fi, close all sockets and re-create them if necessary. Refer to <`WIFI_EVENT_STA_DISCONNECTED`_>.
-       
+
 7. Wi-Fi IP Change Phase
 ++++++++++++++++++++++++++++++++++
 
@@ -361,7 +363,7 @@ In step 4.2, the Wi-Fi connection may fail because, for example, the password is
  - s8.3: Call esp_wifi_deinit() to unload the Wi-Fi driver.
 
 
-ESP32 Wi-Fi AP General Scenario
+{IDF_TARGET_NAME} Wi-Fi AP General Scenario
 ---------------------------------------------
 Below is a "big scenario" which describes some small scenarios in AP mode:
 
@@ -376,9 +378,9 @@ Below is a "big scenario" which describes some small scenarios in AP mode:
         edge_length = 140;
         span_height = 5;
         default_shape = roundedbox;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
-        MAIN_TASK  [label = "Main\ntask"]; 
+        MAIN_TASK  [label = "Main\ntask"];
         APP_TASK   [label = "App\ntask"];
         EVENT_TASK [label = "Event\ntask"];
         LwIP_TASK  [label = "LwIP\ntask"];
@@ -409,46 +411,46 @@ Below is a "big scenario" which describes some small scenarios in AP mode:
     }
 
 
-ESP32 Wi-Fi Scan
-------------------------
+{IDF_TARGET_NAME} Wi-Fi Scan
+----------------------------
 
 Currently, the esp_wifi_scan_start() API is supported only in Station or Station+AP mode.
 
-Scan Type 
+Scan Type
 +++++++++++++++++++++++++
 
 +------------------+--------------------------------------------------------------+
-| Mode             | Description                                                  |    
+| Mode             | Description                                                  |
 +==================+==============================================================+
 | Active Scan      | Scan by sending a probe request.                             |
-|                  | The default scan is an active scan.                          |    
-|                  |                                                              |    
+|                  | The default scan is an active scan.                          |
+|                  |                                                              |
 +------------------+--------------------------------------------------------------+
 | Passive Scan     | No probe request is sent out. Just switch to the specific    |
-|                  | channel and wait for a beacon.                               |    
+|                  | channel and wait for a beacon.                               |
 |                  | Application can enable it via the scan_type field of         |
-|                  | wifi_scan_config_t.                                          |    
-|                  |                                                              |    
+|                  | wifi_scan_config_t.                                          |
+|                  |                                                              |
 +------------------+--------------------------------------------------------------+
 | Foreground Scan  | This scan is applicable when there is no Wi-Fi connection    |
 |                  | in Station mode. Foreground or background scanning is        |
-|                  | controlled by the Wi-Fi driver and cannot be configured by   |    
-|                  | the application.                                             |    
+|                  | controlled by the Wi-Fi driver and cannot be configured by   |
+|                  | the application.                                             |
 +------------------+--------------------------------------------------------------+
 | Background Scan  | This scan is applicable when there is a Wi-Fi connection in  |
-|                  | Station mode or in Station+AP mode.                          |    
+|                  | Station mode or in Station+AP mode.                          |
 |                  | Whether it is a foreground scan or background scan depends on|
-|                  | the Wi-Fi driver and cannot be configured by the application.|    
-|                  |                                                              |    
+|                  | the Wi-Fi driver and cannot be configured by the application.|
+|                  |                                                              |
 +------------------+--------------------------------------------------------------+
-| All-Channel Scan | It scans all of the channels.                                |    
+| All-Channel Scan | It scans all of the channels.                                |
 |                  | If the channel field of wifi_scan_config_t is set to 0, it is|
 |                  | an all-channel scan.                                         |
 |                  |                                                              |
 +------------------+--------------------------------------------------------------+
 | Specific Channel | It scans specific channels only.                             |
 |     Scan         | If the channel field of wifi_scan_config_t set to 1, it is a |
-|                  | specific-channel scan.                                       |    
+|                  | specific-channel scan.                                       |
 |                  |                                                              |
 +------------------+--------------------------------------------------------------+
 
@@ -531,7 +533,7 @@ Scenario:
         edge_length = 160;
         span_height = 5;
         default_shape = roundedbox;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
         APP_TASK   [label = "App\ntask"];
         EVENT_TASK [label = "Event\ntask"];
@@ -548,7 +550,7 @@ Scenario:
     }
 
 
-The scenario above describes an all-channel, foreground scan. The foreground scan can only occur in Station mode where the station does not connect to any AP. Whether it is a foreground or background scan is totally determined by the Wi-Fi driver, and cannot be configured by the application. 
+The scenario above describes an all-channel, foreground scan. The foreground scan can only occur in Station mode where the station does not connect to any AP. Whether it is a foreground or background scan is totally determined by the Wi-Fi driver, and cannot be configured by the application.
 
 Detailed scenario description:
 
@@ -587,7 +589,7 @@ Scenario:
         edge_length = 160;
         span_height = 5;
         default_shape = roundedbox;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
         APP_TASK   [label = "App\ntask"];
         EVENT_TASK [label = "Event\ntask"];
@@ -623,7 +625,7 @@ Scenario:
         edge_length = 160;
         span_height = 5;
         default_shape = roundedbox;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
         APP_TASK   [label = "App\ntask"];
         EVENT_TASK [label = "Event\ntask"];
@@ -660,7 +662,7 @@ If the block parameter of esp_wifi_scan_start() is true, then the scan is a bloc
 
 Parallel Scan
 +++++++++++++
-Two application tasks may call esp_wifi_scan_start() at the same time, or the same application task calls esp_wifi_scan_start() before it gets a scan-done event. Both scenarios can happen. **However, the Wi-Fi driver does not support multiple concurrent scans adequately. As a result, concurrent scans should be avoided.** Support for concurrent scan will be enhanced in future releases, as the ESP32's Wi-Fi functionality improves continuously.
+Two application tasks may call esp_wifi_scan_start() at the same time, or the same application task calls esp_wifi_scan_start() before it gets a scan-done event. Both scenarios can happen. **However, the Wi-Fi driver does not support multiple concurrent scans adequately. As a result, concurrent scans should be avoided.** Support for concurrent scan will be enhanced in future releases, as the {IDF_TARGET_NAME}'s Wi-Fi functionality improves continuously.
 
 Scan When Wi-Fi Is Connecting
 +++++++++++++++++++++++++++++++
@@ -679,10 +681,10 @@ In above scenario the scan will never succeed because the connecting is in proce
 
 The application can define its own reconnect strategy to avoid the scan starve to death. Refer to <`Wi-Fi Reconnect`_>.
 
-ESP32 Wi-Fi Station Connecting Scenario
-----------------------------------------
+{IDF_TARGET_NAME} Wi-Fi Station Connecting Scenario
+---------------------------------------------------
 
-This scenario only depicts the case when there is only one target AP are found in scan phase, for the scenario that more than one AP with the same SSID are found, refer to <`ESP32 Wi-Fi Station Connecting When Multiple APs Are Found`_>.
+This scenario only depicts the case when there is only one target AP are found in scan phase, for the scenario that more than one AP with the same SSID are found, refer to <`{IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found`_>.
 
 Generally, the application does not need to care about the connecting process. Below is a brief introduction to the process for those who are really interested.
 
@@ -699,7 +701,7 @@ Scenario:
         edge_length = 160;
         span_height = 5;
         default_shape = roundedbox;
-        default_fontsize = 12; 
+        default_fontsize = 12;
 
         EVENT_TASK  [label = "Event\ntask"];
         WIFI_TASK   [label = "Wi-Fi\ntask"];
@@ -735,13 +737,13 @@ Scan Phase
 +++++++++++++++++++++
 
  - s1.1, The Wi-Fi driver begins scanning in "Wi-Fi Connect". Refer to <`Scan in Wi-Fi Connect`_> for more details.
- - s1.2, If the scan fails to find the target AP, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_NO_AP_FOUND. Refer to <`Wi-Fi Reason Code`_>. 
+ - s1.2, If the scan fails to find the target AP, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_NO_AP_FOUND. Refer to <`Wi-Fi Reason Code`_>.
 
 Auth Phase
 +++++++++++++++++++++
 
  - s2.1, The authentication request packet is sent and the auth timer is enabled.
- - s2.2, If the authentication response packet is not received before the authentication timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_AUTH_EXPIRE. Refer to <`Wi-Fi Reason Code`_>. 
+ - s2.2, If the authentication response packet is not received before the authentication timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_AUTH_EXPIRE. Refer to <`Wi-Fi Reason Code`_>.
  - s2.3, The auth-response packet is received and the auth-timer is stopped.
  - s2.4, The AP rejects authentication in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is WIFI_REASON_AUTH_FAIL or the reasons specified by the AP. Refer to <`Wi-Fi Reason Code`_>.
 
@@ -751,22 +753,22 @@ Association Phase
  - s3.1, The association request is sent and the association timer is enabled.
  - s3.2, If the association response is not received before the association timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>.
  - s3.3, The association response is received and the association timer is stopped.
- - s3.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>. 
+ - s3.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises, while the reason-code is the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>.
 
 
 Four-way Handshake Phase
 ++++++++++++++++++++++++++
 
  - s4.1, The four-way handshake is sent out and the association timer is enabled.
- - s4.2, If the association response is not received before the association timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>. 
+ - s4.2, If the association response is not received before the association timer times out, <`WIFI_EVENT_STA_DISCONNECTED`_> will arise and the reason-code will be WIFI_REASON_ASSOC_EXPIRE. Refer to <`Wi-Fi Reason Code`_>.
  - s4.3, The association response is received and the association timer is stopped.
- - s4.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises and the reason-code will be the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>. 
+ - s4.4, The AP rejects the association in the response and <`WIFI_EVENT_STA_DISCONNECTED`_> arises and the reason-code will be the one specified in the association response. Refer to <`Wi-Fi Reason Code`_>.
 
 
 Wi-Fi Reason Code
 +++++++++++++++++++++
 
-The table below shows the reason-code defined in ESP32. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 8.4.1.7 of ieee802.11-2012. (For more information, refer to the standard mentioned above.) The last column is a description of the reason.
+The table below shows the reason-code defined in {IDF_TARGET_NAME}. The first column is the macro name defined in esp_wifi_types.h. The common prefix *WIFI_REASON* is removed, which means that *UNSPECIFIED* actually stands for *WIFI_REASON_UNSPECIFIED* and so on. The second column is the value of the reason. The third column is the standard value to which this reason is mapped in section 8.4.1.7 of ieee802.11-2012. (For more information, refer to the standard mentioned above.) The last column is a description of the reason.
 
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | Reason code               | Value |Mapped To| Description                                                 |
@@ -777,12 +779,12 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | AUTH_EXPIRE               |   2   |    2    | The previous authentication is no longer valid.             |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - auth is timed out                                        |
 |                           |       |         |  - the reason is received from the AP.                      |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
+|                           |       |         | For the ESP AP, this reason is reported when:               |
 |                           |       |         |                                                             |
 |                           |       |         |  - the AP has not received any packets from the station     |
 |                           |       |         |    in the past five minutes.                                |
@@ -793,18 +795,18 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 | AUTH_LEAVE                |   3   |    3    | De-authenticated, because the sending STA is                |
 |                           |       |         | leaving (or has left).                                      |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | ASSOC_EXPIRE              |   4   |    4    | Disassociated due to inactivity.                            |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP AP, this reason is reported when:               |
 |                           |       |         |                                                             |
 |                           |       |         |  - the AP has not received any packets from the             |
 |                           |       |         |    station in the past five minutes.                        |
@@ -815,111 +817,111 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 | ASSOC_TOOMANY             |   5   |    5    | Disassociated, because the AP is unable to handle           |
 |                           |       |         | all currently associated STAs at the same time.             |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP AP, this reason is reported when:               |
 |                           |       |         |                                                             |
 |                           |       |         |  - the stations associated with the AP reach the            |
 |                           |       |         |    maximum number that the AP can support.                  |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | NOT_AUTHED                |   6   |    6    | Class-2 frame received from a non-authenticated STA.        |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP AP, this reason is reported when:               |
+|                           |       |         |                                                             |
 |                           |       |         |  - the AP receives a packet with data from a                |
 |                           |       |         |    non-authenticated station.                               |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | NOT_ASSOCED               |   7   |    7    | Class-3 frame received from a non-associated STA.           |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP AP, this reason is reported when:               |
+|                           |       |         |                                                             |
 |                           |       |         |  - the AP receives a packet with data from a                |
 |                           |       |         |    non-associated station.                                  |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | ASSOC_LEAVE               |   8   |    8    | Disassociated, because the sending STA is leaving (or has   |
 |                           |       |         | left) BSS.                                                  |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |  - the station is disconnected by esp_wifi_disconnect() and |
 |                           |       |         |    other APIs.                                              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | ASSOC_NOT_AUTHED          |   9   |    9    | STA requesting (re)association is not authenticated by the  |
 |                           |       |         | responding STA.                                             |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP AP, this reason is reported when:               |
+|                           |       |         |                                                             |
 |                           |       |         |  - the AP receives packets with data from an                |
 |                           |       |         |    associated, yet not authenticated, station.              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | DISASSOC_PWRCAP_BAD       |   10  |    10   | Disassociated, because the information in the Power         |
 |                           |       |         | Capability element is unacceptable.                         |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | DISASSOC_SUPCHAN_BAD      |   11  |    11   | Disassociated, because the information in the Supported     |
 |                           |       |         | Channels element is unacceptable.                           |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | IE_INVALID                |   13  |    13   | Invalid element, i.e. an element whose content does not meet|
 |                           |       |         | the specifications of the Standard in Clause 8.             |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP                               |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP AP, this reason is reported when:               |
+|                           |       |         |                                                             |
 |                           |       |         |  - the AP parses a wrong WPA or RSN IE.                     |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | MIC_FAILURE               |   14  |    14   | Message integrity code (MIC) failure.                       |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
-| 4WAY_HANDSHAKE_TIMEOUT    |   15  |    15   | Four-way handshake times out. For legacy reasons, in ESP32  |
+| 4WAY_HANDSHAKE_TIMEOUT    |   15  |    15   | Four-way handshake times out. For legacy reasons, in ESP    |
 |                           |       |         | this reason-code is replaced with                           |
 |                           |       |         | WIFI_REASON_HANDSHAKE_TIMEOUT.                              |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - the handshake times out                                  |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | GROUP_KEY_UPDATE_TIMEOUT  |   16  |    16   | Group-Key Handshake times out.                              |
-|                           |       |         |                                                             | 
-|                           |       |         | For the ESP32 station, this reason is reported when:        |
+|                           |       |         |                                                             |
+|                           |       |         | For the ESP station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
@@ -927,7 +929,7 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 | IE_IN_4WAY_DIFFERS        |   17  |    17   | The element in the four-way handshake is different from the |
 |                           |       |         | (Re-)Association Request/Probe and Response/Beacon frame.   |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 station, this reason is reported when:        |
+|                           |       |         | For the ESP station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |  - the station finds that the four-way handshake IE differs |
@@ -937,59 +939,59 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | GROUP_CIPHER_INVALID      |   18  |    18   | Invalid group cipher.                                       |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | PAIRWISE_CIPHER_INVALID   |   19  |    19   | Invalid pairwise cipher.                                    |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | AKMP_INVALID              |   20  |    20   | Invalid AKMP.                                               |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | UNSUPP_RSN_IE_VERSION     |   21  |    21   | Unsupported RSNE version.                                   |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | INVALID_RSN_IE_CAP        |   22  |    22   | Invalid RSNE capabilities.                                  |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | 802_1X_AUTH_FAILED        |   23  |    23   | IEEE 802.1X. authentication failed.                         |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
+|                           |       |         | For the ESP Station, this reason is reported when:          |
 |                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 AP, this reason is reported when:             |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP AP, this reason is reported when:               |
+|                           |       |         |                                                             |
 |                           |       |         |  - 802.1 x authentication fails.                            |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | CIPHER_SUITE_REJECTED     |   24  |    24   | Cipher suite rejected due to security policies.             |
 |                           |       |         |                                                             |
-|                           |       |         | For the ESP32 Station, this reason is reported when:        |
-|                           |       |         |                                                             | 
+|                           |       |         | For the ESP Station, this reason is reported when:          |
+|                           |       |         |                                                             |
 |                           |       |         |  - it is received from the AP.                              |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | BEACON_TIMEOUT            |  200  |reserved | Espressif-specific Wi-Fi reason-code: when the station      |
-|                           |       |         | loses N beacons continuously, it will disrupt the connection| 
+|                           |       |         | loses N beacons continuously, it will disrupt the connection|
 |                           |       |         | and report this reason.                                     |
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
@@ -1003,7 +1005,7 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | ASSOC_FAIL                |  203  |reserved | Espressif-specific Wi-Fi reason-code: the association       |
 |                           |       |         | fails, but not because of ASSOC_EXPIRE or ASSOC_TOOMANY.    |
-|                           |       |         |                                                             | 
+|                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 | HANDSHAKE_TIMEOUT         |  204  |reserved | Espressif-specific Wi-Fi reason-code: the                   |
 |                           |       |         | handshake fails for the same reason as that in              |
@@ -1011,10 +1013,10 @@ The table below shows the reason-code defined in ESP32. The first column is the 
 |                           |       |         |                                                             |
 +---------------------------+-------+---------+-------------------------------------------------------------+
 
-ESP32 Wi-Fi Station Connecting When Multiple APs Are Found
----------------------------------------------------------------
+{IDF_TARGET_NAME} Wi-Fi Station Connecting When Multiple APs Are Found
+----------------------------------------------------------------------
 
-This scenario is similar as <`ESP32 Wi-Fi Station Connecting Scenario`_>, the difference is the station will not raise the event <`WIFI_EVENT_STA_DISCONNECTED`_> unless it fails to connect all of the found APs.
+This scenario is similar as <`{IDF_TARGET_NAME} Wi-Fi Station Connecting Scenario`_>, the difference is the station will not raise the event <`WIFI_EVENT_STA_DISCONNECTED`_> unless it fails to connect all of the found APs.
 
 
 Wi-Fi Reconnect
@@ -1031,12 +1033,12 @@ Another thing we need to consider is the reconnect may not connect the same AP i
 Wi-Fi Beacon Timeout
 ---------------------------
 
-The beacon timeout mechanism is used by ESP32 station to detect whether the AP is alive or not. If the station continuously loses 60 beacons of the connected AP, the beacon timeout happens. 
+The beacon timeout mechanism is used by {IDF_TARGET_NAME} station to detect whether the AP is alive or not. If the station continuously loses 60 beacons of the connected AP, the beacon timeout happens.
 
 After the beacon timeout happens, the station sends 5 probe requests to AP, it disconnects the AP and raises the event <`WIFI_EVENT_STA_DISCONNECTED`_> if still no probe response or beacon is received from AP.
 
-ESP32 Wi-Fi Configuration
----------------------------
+{IDF_TARGET_NAME} Wi-Fi Configuration
+-------------------------------------
 
 All configurations will be stored into flash when the Wi-Fi NVS is enabled; otherwise, refer to <`Wi-Fi NVS Flash`_>.
 
@@ -1052,7 +1054,7 @@ Call esp_wifi_set_mode() to set the Wi-Fi mode.
 |                  | station and AP interfaces are not initialized for            |
 |                  | RX/TX Wi-Fi data. Generally, this mode is used for Sniffer,  |
 |                  | or when you only want to stop both the STA and the AP        |
-|                  | without calling esp_wifi_deinit() to unload the whole Wi-Fi  | 
+|                  | without calling esp_wifi_deinit() to unload the whole Wi-Fi  |
 |                  | driver.                                                      |
 +------------------+--------------------------------------------------------------+
 | WIFI_MODE_STA    | Station mode: in this mode, esp_wifi_start() will init the   |
@@ -1069,8 +1071,8 @@ Call esp_wifi_set_mode() to set the Wi-Fi mode.
 | WIFI_MODE_APSTA  | Station-AP coexistence mode: in this mode, esp_wifi_start()  |
 |                  | will simultaneously init both the station and the AP.        |
 |                  | This is done in station mode and AP mode. Please note        |
-|                  | that the channel of the external AP, which the ESP32 Station |
-|                  | is connected to, has higher priority over the ESP32 AP       |
+|                  | that the channel of the external AP, which the ESP Station   |
+|                  | is connected to, has higher priority over the ESP AP         |
 |                  | channel.                                                     |
 +------------------+--------------------------------------------------------------+
 
@@ -1167,7 +1169,7 @@ API esp_wifi_set_config() can be used to configure the AP. The table below descr
 |                  | sure the channel is within the required range.               |
 |                  | For more details, refer to <`Wi-Fi Country Code`_>.          |
 +------------------+--------------------------------------------------------------+
-| authmode         | Auth mode of ESP32 AP; currently, ESP32 Wi-Fi does not       |
+| authmode         | Auth mode of ESP AP; currently, ESP Wi-Fi does not           |
 |                  | support AUTH_WEP. If the authmode is an invalid value,       |
 |                  | AP defaults the value to WIFI_AUTH_OPEN.                     |
 |                  |                                                              |
@@ -1176,7 +1178,7 @@ API esp_wifi_set_config() can be used to configure the AP. The table below descr
 |                  | otherwise, it does broadcast the SSID.                       |
 |                  |                                                              |
 +------------------+--------------------------------------------------------------+
-| max_connection   | Currently, ESP32 Wi-Fi supports up to 10 Wi-Fi connections.  |
+| max_connection   | Currently, ESP Wi-Fi supports up to 10 Wi-Fi connections.    |
 |                  | If max_connection > 10, AP defaults the value to 10.         |
 |                  |                                                              |
 +------------------+--------------------------------------------------------------+
@@ -1217,18 +1219,18 @@ Currently, the IDF supports the following protocol modes:
 |                    | **This mode is an Espressif-patented mode which can achieve|
 |                    | a one-kilometer line of sight range. Please, make sure both|
 |                    | the station and the AP are connected to an                 |
-|                    | ESP32 device**                                             |
+|                    | ESP device**                                               |
 +--------------------+------------------------------------------------------------+
 
 Long Range (LR)
 +++++++++++++++++++++++++
 
-Long Range (LR) mode is an Espressif-patented Wi-Fi mode which can achieve a one-kilometer line of sight range. It has better reception sensitivity, stronger anti-interference ability and longer transmission distance than the traditional 802.11B mode. 
+Long Range (LR) mode is an Espressif-patented Wi-Fi mode which can achieve a one-kilometer line of sight range. It has better reception sensitivity, stronger anti-interference ability and longer transmission distance than the traditional 802.11B mode.
 
 LR Compitability
 *************************
 
-Since LR is Espressif unique Wi-Fi mode, only ESP32 devices can transmit and receive the LR data. In other words, the ESP32 device should NOT transmit the data in LR data rate if the connected device doesn't support LR. The application can achieve this by configuring suitable Wi-Fi mode. If the negotiated mode supports LR, the ESP32 may transmit data in LR rate, otherwise, ESP32 will transmit all data in traditional Wi-Fi data rate.
+Since LR is Espressif unique Wi-Fi mode, only {IDF_TARGET_NAME} devices can transmit and receive the LR data. In other words, the {IDF_TARGET_NAME} device should NOT transmit the data in LR data rate if the connected device doesn't support LR. The application can achieve this by configuring suitable Wi-Fi mode. If the negotiated mode supports LR, the {IDF_TARGET_NAME} may transmit data in LR rate, otherwise, {IDF_TARGET_NAME} will transmit all data in traditional Wi-Fi data rate.
 
 Following table depicts the Wi-Fi mode negotiation:
 
@@ -1253,11 +1255,11 @@ Following table depicts the Wi-Fi mode negotiation:
 In above table, the row is the Wi-Fi mode of AP and the column is the Wi-Fi mode of station. The "-" indicates Wi-Fi mode of the AP and station are not compatible.
 
 According to the table, we can conclude that:
- - For LR enabled in ESP32 AP, it's incompatible with traditional 802.11 mode because the beacon is sent in LR mode.
- - For LR enabled in ESP32 station and the mode is NOT LR only mode, it's compatible with traditional 802.11 mode.
- - If both station and AP are ESP32 devices and both of them enable LR mode, the negotiated mode supports LR.
+ - For LR enabled in {IDF_TARGET_NAME} AP, it's incompatible with traditional 802.11 mode because the beacon is sent in LR mode.
+ - For LR enabled in {IDF_TARGET_NAME} station and the mode is NOT LR only mode, it's compatible with traditional 802.11 mode.
+ - If both station and AP are {IDF_TARGET_NAME} devices and both of them enable LR mode, the negotiated mode supports LR.
 
-If the negotiated Wi-Fi mode supports both traditional 802.11 mode and LR mode, it's the WiFi driver's responsibility to automatically select the best data rate in different Wi-Fi mode and the application don't need to care about it. 
+If the negotiated Wi-Fi mode supports both traditional 802.11 mode and LR mode, it's the WiFi driver's responsibility to automatically select the best data rate in different Wi-Fi mode and the application don't need to care about it.
 
 LR Impacts to Traditional Wi-Fi device
 ***************************************
@@ -1282,7 +1284,7 @@ When to Use LR
 *************************
 
 The general conditions for using LR are:
- - Both the AP and station are ESP32 devices.
+ - Both the AP and station are devices.
  - Long distance WiFi connection and data transmission is required.
  - Data throughput requirements are very small, such as remote device control, etc.
 
@@ -1385,23 +1387,58 @@ Following table depicts which country info is used in different WiFi Mode and di
 Home Channel
 *************************
 
-In AP mode, the home channel is defined as that of the AP channel. In Station mode, the home channel is defined as the channel of the AP to which the station is connected. In Station+AP mode, the home channel of AP and station must be the same. If the home channels of Station and AP are different, the station's home channel is always in priority. Take the following as an example: at the beginning, the AP is on channel 6, then the station connects to an AP whose channel is 9. Since the station's home channel has a higher priority, the AP needs to switch its channel from 6 to 9 to make sure that both station and AP have the same home channel. While switching channel, the ESP32 in SoftAP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Stations that support channel switching will transition smoothly whereas stations who do not will disconnect and reconnect to the SoftAP.
+In AP mode, the home channel is defined as that of the AP channel. In Station mode, the home channel is defined as the channel of the AP to which the station is connected. In Station+AP mode, the home channel of AP and station must be the same. If the home channels of Station and AP are different, the station's home channel is always in priority. Take the following as an example: at the beginning, the AP is on channel 6, then the station connects to an AP whose channel is 9. Since the station's home channel has a higher priority, the AP needs to switch its channel from 6 to 9 to make sure that both station and AP have the same home channel. While switching channel, the {IDF_TARGET_NAME} in SoftAP mode will notify the connected stations about the channel migration using a Channel Switch Announcement (CSA). Stations that support channel switching will transition smoothly whereas stations who do not will disconnect and reconnect to the SoftAP.
 
 
 Wi-Fi Vendor IE Configuration
 +++++++++++++++++++++++++++++++++++
 
-By default, all Wi-Fi management frames are processed by the Wi-Fi driver, and the application does not need to care about them. Some applications, however, may have to handle the beacon, probe request, probe response and other management frames. For example, if you insert some vendor-specific IE into the management frames, it is only the management frames which contain this vendor-specific IE that will be processed. In ESP32, esp_wifi_set_vendor_ie() and esp_wifi_set_vendor_ie_cb() are responsible for this kind of tasks.
+By default, all Wi-Fi management frames are processed by the Wi-Fi driver, and the application does not need to care about them. Some applications, however, may have to handle the beacon, probe request, probe response and other management frames. For example, if you insert some vendor-specific IE into the management frames, it is only the management frames which contain this vendor-specific IE that will be processed. In {IDF_TARGET_NAME}, esp_wifi_set_vendor_ie() and esp_wifi_set_vendor_ie_cb() are responsible for this kind of tasks.
 
-ESP32 Wi-Fi Power-saving Mode
------------------------------------
+Wi-Fi Security
+-------------------------------
+
+In addition to traditional security methods (WEP/WPA-TKIP/WPA2-CCMP), {IDF_TARGET_NAME} Wi-Fi now supports state-of-the-art security protocols, namely Protected Management Frames based on 802.11w standard and Wi-Fi Protected Access 3 (WPA3-Personal). Together, PMF and WPA3 provide better privacy and robustness against known attacks in traditional modes.
+
+Protected Management Frames (PMF)
+++++++++++++++++++++++++++++++++++
+
+In Wi-Fi, management frames such as beacons, probes, (de)authentication, (dis)association are used by non-AP stations to scan and connect to an AP. Unlike data frames, these frames are sent unencrypted.
+An attacker can use eavesdropping and packet injection to send spoofed (de)authentication/(dis)association frames at the right time, leading to following attacks in case of unprotected management frame exchanges.
+
+ - DOS attack on one or all clients in the range of the attacker.
+ - Tearing down existing association on AP side by sending association request.
+ - Forcing a client to perform 4-way handshake again in case PSK is compromised in order to get PTK.
+ - Getting SSID of hidden network from association request.
+ - Launching man-in-the-middle attack by forcing clients to deauth from legitimate AP and associating to a rogue one.
+
+PMF provides protection against these attacks by encrypting unicast management frames and providing integrity checks for broadcast management frames. These include deauthentication, disassociation and robust management frames. It also provides Secure Association (SA) teardown mechanism to prevent spoofed association/authentication frames from disconnecting already connected clients.
+
+{IDF_TARGET_NAME} supports the following three modes of operation with respect to PMF.
+
+ - PMF not supported: In this mode, {IDF_TARGET_NAME} indicates to AP that it is not capable of supporting management protection during association. In effect, security in this mode will be equivalent to that in traditional mode.
+ - PMF capable, but not required: In this mode, {IDF_TARGET_NAME} indicates to AP that it is capable of supporting PMF. The management protection will be used if AP mandates PMF or is at least capable of supporting PMF.
+ - PMF capable and required: In this mode, {IDF_TARGET_NAME} will only connect to AP, if AP supports PMF. If not, {IDF_TARGET_NAME} will refuse to connect to the AP.
+
+:cpp:func:`esp_wifi_set_config` can be used to configure PMF mode by setting appropriate flags in `pmf_cfg` parameter. Currently, PMF is supported only in Station mode.
+
+
+WPA3-Personal
++++++++++++++++++++++++++++++++++
+
+Wi-Fi Protected Access-3 (WPA3) is a set of enhancements to Wi-Fi access security intended to replace the current WPA2 standard. In order to provide more robust authentication, WPA3 uses Simultaneous Authentication of Equals (SAE), which is password-authenticated key agreement method based on Diffie-Hellman key exchange. Unlike WPA2, the technology is resistant to offline-dictionary attack, where the attacker attempts to determine shared password based on captured 4-way handshake without any further network interaction. WPA3 also provides forward secrecy, which means the captured data cannot be decrypted even if password is compromised after data transmission. Please refer to `Security <https://www.wi-fi.org/discover-wi-fi/security>`_ section of Wi-Fi Alliance's official website for further details.
+
+In order to enable WPA3-Personal, "Enable WPA3-Personal" should be selected in menuconfig. If enabled, {IDF_TARGET_NAME} uses SAE for authentication if supported by the AP. Since PMF is a mandatory requirement for WPA3, PMF capability should be at least set to "PMF capable, but not required" for {IDF_TARGET_NAME} to use WPA3 mode. Application developers need not worry about the underlying security mode as highest available is chosen from security standpoint. Note that Wi-Fi stack size requirement will increase approximately by 3k when WPA3 is used. Currently, WPA3 is supported only in Station mode.
+
+{IDF_TARGET_NAME} Wi-Fi Power-saving Mode
+-----------------------------------------
 
 Station Sleep
 ++++++++++++++++++++++
 
-Currently, ESP32 Wi-Fi supports the Modem-sleep mode which refers to the legacy power-saving mode in the IEEE 802.11 protocol. Modem-sleep mode works in Station-only mode and the station must connect to the AP first. If the Modem-sleep mode is enabled, station will switch between active and sleep state periodically. In sleep state, RF, PHY and BB are turned off in order to reduce power consumption. Station can keep connection with AP in modem-sleep mode.
+Currently, {IDF_TARGET_NAME} Wi-Fi supports the Modem-sleep mode which refers to the legacy power-saving mode in the IEEE 802.11 protocol. Modem-sleep mode works in Station-only mode and the station must connect to the AP first. If the Modem-sleep mode is enabled, station will switch between active and sleep state periodically. In sleep state, RF, PHY and BB are turned off in order to reduce power consumption. Station can keep connection with AP in modem-sleep mode.
 
-Modem-sleep mode includes minimum and maximum power save modes. In minimum power save mode, station wakes up every DTIM to receive beacon. Broadcast data will not be lost because it is transmitted after DTIM. However, it can not save much more power if DTIM is short for DTIM is determined by AP. 
+Modem-sleep mode includes minimum and maximum power save modes. In minimum power save mode, station wakes up every DTIM to receive beacon. Broadcast data will not be lost because it is transmitted after DTIM. However, it can not save much more power if DTIM is short for DTIM is determined by AP.
 
 In maximum power save mode, station wakes up every listen interval to receive beacon. This listen interval can be set longer than the AP DTIM period. Broadcast data may be lost because station may be in sleep state at DTIM time. If listen interval is longer, more power is saved but broadcast data is more easy to lose. Listen interval can be configured by calling API :cpp:func:`esp_wifi_set_config` before connecting to AP.
 
@@ -1414,20 +1451,20 @@ The default Modem-sleep mode is WIFI_PS_MIN_MODEM.
 AP Sleep
 +++++++++++++++++++++++++++++++
 
-Currently ESP32 AP doesn't support all of the power save feature defined in Wi-Fi specification. To be specific, the AP only caches unicast data for the stations connect to this AP, but doesn't cache the multicast data for the stations. If stations connected to the ESP32 AP are power save enabled, they may experience multicast packet loss.
+Currently {IDF_TARGET_NAME} AP doesn't support all of the power save feature defined in Wi-Fi specification. To be specific, the AP only caches unicast data for the stations connect to this AP, but doesn't cache the multicast data for the stations. If stations connected to the {IDF_TARGET_NAME} AP are power save enabled, they may experience multicast packet loss.
 
-In future, all power save features will be supported on ESP32 AP.
+In future, all power save features will be supported on {IDF_TARGET_NAME} AP.
 
-ESP32 Wi-Fi Connect Crypto
------------------------------------
-Now ESP32 have two group crypto functions can be used when do wifi connect, one is the original functions, the other is optimized by ESP hardware:
+{IDF_TARGET_NAME} Wi-Fi Connect Crypto
+--------------------------------------
+Now {IDF_TARGET_NAME} have two group crypto functions can be used when do wifi connect, one is the original functions, the other is optimized by ESP hardware:
 1. Original functions which is the source code used in the folder components/wpa_supplicant/src/crypto function;
 2. The optimized functions is in the folder components/wpa_supplicant/src/fast_crypto, these function used the hardware crypto to make it faster than origin one, the type of function's name add `fast_` to distinguish with the original one. For example, the API aes_wrap() is used to encrypt frame information when do 4 way handshake, the fast_aes_wrap() has the same result but can be faster.
 
-Two groups of crypto function can be used when register in the wpa_crypto_funcs_t, wpa2_crypto_funcs_t and wps_crypto_funcs_t structure, also we have given the recommend functions to register in the 
-fast_crypto_ops.c, you can register the function as the way you need, however what should make action is that the crypto_hash_xxx function and crypto_cipher_xxx function need to register with the same function to operation. For example, if you register crypto_hash_init() function to initialize the esp_crypto_hash structure, you need use the crypto_hash_update() and crypto_hash_finish() function to finish the operation, rather than fast_crypto_hash_update() or fast_crypto_hash_finish(). 
+Two groups of crypto function can be used when register in the wpa_crypto_funcs_t, wpa2_crypto_funcs_t and wps_crypto_funcs_t structure, also we have given the recommend functions to register in the
+fast_crypto_ops.c, you can register the function as the way you need, however what should make action is that the crypto_hash_xxx function and crypto_cipher_xxx function need to register with the same function to operation. For example, if you register crypto_hash_init() function to initialize the esp_crypto_hash structure, you need use the crypto_hash_update() and crypto_hash_finish() function to finish the operation, rather than fast_crypto_hash_update() or fast_crypto_hash_finish().
 
-ESP32 Wi-Fi Throughput
+{IDF_TARGET_NAME} Wi-Fi Throughput
 -----------------------------------
 
 The table below shows the best throughput results we got in Espressif's lab and in a shield box.
@@ -1449,7 +1486,7 @@ The table below shows the best throughput results we got in Espressif's lab and 
 | TCP TX               |   20 MBit/sec   | 50 MBit/sec     | iperf example | 05838641     |
 +----------------------+-----------------+-----------------+---------------+--------------+
 
-When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.99`
+When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.ci.99`
 
 Wi-Fi 80211 Packet Send
 ---------------------------
@@ -1467,7 +1504,7 @@ Preconditions of Using esp_wifi_80211_tx
 ++++++++++++++++++++++++++++++++++++++++++++
 
  - The Wi-Fi mode is Station, or AP, or Station+AP.
- - Either esp_wifi_set_promiscuous(true), or esp_wifi_start(), or both of these APIs return ESP_OK. This is because we need to make sure that Wi-Fi hardware is initialized before esp_wifi_80211_tx() is called. In ESP32, both esp_wifi_set_promiscuous(true) and esp_wifi_start() can trigger the initialization of Wi-Fi hardware.
+ - Either esp_wifi_set_promiscuous(true), or esp_wifi_start(), or both of these APIs return ESP_OK. This is because we need to make sure that Wi-Fi hardware is initialized before esp_wifi_80211_tx() is called. In {IDF_TARGET_NAME}, both esp_wifi_set_promiscuous(true) and esp_wifi_start() can trigger the initialization of Wi-Fi hardware.
  - The parameters of esp_wifi_80211_tx are hereby correctly provided.
 
 Data rate
@@ -1496,7 +1533,7 @@ Theoretically, if we do not consider the side-effects the API imposes on the Wi-
 |                             | with the same MAC/BSSID.                          |
 |                             |                                                   |
 |                             | Side-effect example#1                             |
-|                             | The application calls esp_wifi_80211_tx to send   | 
+|                             | The application calls esp_wifi_80211_tx to send   |
 |                             | a beacon with BSSID == mac_x in AP mode, but      |
 |                             | the mac_x is not the MAC of the AP interface.     |
 |                             | Moreover, there is another AP, say                |
@@ -1599,9 +1636,9 @@ The Wi-Fi multiple antennas selecting can be depicted as following picture::
                    |__________|
 
 
-ESP32 supports up to sixteen antennas through external antenna switch. The antenna switch can be controlled by up to four address pins - antenna_select[0:3]. Different input value of antenna_select[0:3] means selecting different antenna. E.g. the value '0b1011' means the antenna 11 is selected. The default value of antenna_select[3:0] is '0b0000', it means the antenna 0 is selected by default.
+{IDF_TARGET_NAME} supports up to sixteen antennas through external antenna switch. The antenna switch can be controlled by up to four address pins - antenna_select[0:3]. Different input value of antenna_select[0:3] means selecting different antenna. E.g. the value '0b1011' means the antenna 11 is selected. The default value of antenna_select[3:0] is '0b0000', it means the antenna 0 is selected by default.
 
-Up to four GPIOs are connected to the four active high antenna_select pins. ESP32 can select the antenna by control the GPIO[0:3]. The API :cpp:func:`esp_wifi_set_ant_gpio()` is used to configure which GPIOs are connected to antenna_selects. If GPIO[x] is connected to antenna_select[x], then gpio_config->gpio_cfg[x].gpio_select should be set to 1 and gpio_config->gpio_cfg[x].gpio_num should be provided. 
+Up to four GPIOs are connected to the four active high antenna_select pins. {IDF_TARGET_NAME} can select the antenna by control the GPIO[0:3]. The API :cpp:func:`esp_wifi_set_ant_gpio()` is used to configure which GPIOs are connected to antenna_selects. If GPIO[x] is connected to antenna_select[x], then gpio_config->gpio_cfg[x].gpio_select should be set to 1 and gpio_config->gpio_cfg[x].gpio_num should be provided.
 
 Although up to sixteen anteenas are supported, only one or two antennas can be simultaneously enabled for RX/TX. The API :cpp:func:`esp_wifi_set_ant()` is used to configure which antennas are enabled.
 
@@ -1642,7 +1679,7 @@ Generally, following steps can be taken to configure the multiple antennas:
 Wi-Fi Channel State Information
 ------------------------------------
 
-Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In ESP32, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. There are up to three fields of channel frequency responses according to the type of received packet. They are legacy long training field (LLTF), high throughput LTF (HT-LTF) and space time block code HT-LTF (STBC-HT-LTF). For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI is shown in the following table.
+Channel state information (CSI) refers to the channel information of a Wi-Fi connection. In {IDF_TARGET_NAME}, this information consists of channel frequency responses of sub-carriers and is estimated when packets are received from the transmitter. Each channel frequency response of sub-carrier is recorded by two bytes of signed characters. The first one is imaginary part and the second one is real part. There are up to three fields of channel frequency responses according to the type of received packet. They are legacy long training field (LLTF), high throughput LTF (HT-LTF) and space time block code HT-LTF (STBC-HT-LTF). For different types of packets which are received on channels with different state, the sub-carrier index and total bytes of signed characters of CSI is shown in the following table.
 
 +-------------+--------------------+-----------------------------------------+--------------------------------------------------------+----------------------------------------------------------+
 | channel     | secondary channel  |                   none                  |                           below                        |                            above                         |
@@ -1662,21 +1699,21 @@ Channel state information (CSI) refers to the channel information of a Wi-Fi con
 | total bytes                      |     128     |     256     |     384     |    128   |    256   | 380  |      384    |      612    |    128   |    256   |   376  |      384    |      612    |
 +----------------------------------+-------------+-------------+-------------+----------+----------+------+-------------+-------------+----------+----------+--------+-------------+-------------+
 
-All of the information in the table can be found in the structure wifi_csi_info_t. 
+All of the information in the table can be found in the structure wifi_csi_info_t.
 
-    - Secondary channel refers to secondary_channel field of rx_ctrl field. 
-    - Signal mode of packet refers to sig_mode field of rx_ctrl field. 
-    - Channel bandwidth refers to cwb field of rx_ctrl field. 
-    - STBC refers to stbc field of rx_ctrl field. 
-    - Total bytes refers to len field. 
-    - The CSI data corresponding to each Long Training Field(LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 LTFs may not be present, depending on the channel and packet information (see above). 
-    - If first_word_invalid field of wifi_csi_info_t is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in ESP32. 
+    - Secondary channel refers to secondary_channel field of rx_ctrl field.
+    - Signal mode of packet refers to sig_mode field of rx_ctrl field.
+    - Channel bandwidth refers to cwb field of rx_ctrl field.
+    - STBC refers to stbc field of rx_ctrl field.
+    - Total bytes refers to len field.
+    - The CSI data corresponding to each Long Training Field(LTF) type is stored in a buffer starting from the buf field. Each item is stored as two bytes: imaginary part followed by real part. The order of each item is the same as the sub-carrier in the table. The order of LTF is: LLTF, HT-LTF, STBC-HT-LTF. However all 3 LTFs may not be present, depending on the channel and packet information (see above).
+    - If first_word_invalid field of wifi_csi_info_t is true, it means that the first four bytes of CSI data is invalid due to a hardware limitation in {IDF_TARGET_NAME}.
     - More information like RSSI, noise floor of RF, receiving time and antenna is in the rx_ctrl field.
 
 .. note::
 
     - For STBC packet, CSI is provided for every space-time stream without CSD (cyclic shift delay). As each cyclic shift on the additional chains shall be -200ns, only the CSD angle of first space-time stream is recorded in sub-carrier 0 of HT-LTF and STBC-HT-LTF for there is no channel frequency response in sub-carrier 0. CSD[10:0] is 11 bits, ranging from -pi to pi.
-    - If LLTF, HT-LTF or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition above/HT/40MHz/STBC, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244, the result is aligned to four bytes and the last two bytes is invalid). 
+    - If LLTF, HT-LTF or STBC-HT-LTF is not enabled by calling API :cpp:func:`esp_wifi_set_csi_config`, the total bytes of CSI data will be fewer than that in the table. For example, if LLTF and HT-LTF is not enabled and STBC-HT-LTF is enabled, when a packet is received with the condition above/HT/40MHz/STBC, the total bytes of CSI data is 244 ((61 + 60) * 2 + 2 = 244, the result is aligned to four bytes and the last two bytes is invalid).
 
 Wi-Fi Channel State Information Configure
 -------------------------------------------
@@ -1693,24 +1730,24 @@ The CSI receiving callback function runs from Wi-Fi task. So, do not do lengthy 
 Wi-Fi HT20/40
 -------------------------
 
-ESP32 supports Wi-Fi bandwidth HT20 or HT40, it doesn't support HT20/40 coexist. `esp_wifi_set_bandwidth` can be used to change the default bandwidth of station or AP. The default bandwidth for ESP32 station and AP is HT40. 
+{IDF_TARGET_NAME} supports Wi-Fi bandwidth HT20 or HT40, it doesn't support HT20/40 coexist. `esp_wifi_set_bandwidth` can be used to change the default bandwidth of station or AP. The default bandwidth for {IDF_TARGET_NAME} station and AP is HT40.
 
 In station mode, the actual bandwidth is firstly negotiated during the Wi-Fi connection. It is HT40 only if both the station and the connected AP support HT40, otherwise it's HT20. If the bandwidth of connected AP is changes, the actual bandwidth is negotiated again without Wi-Fi disconnecting.
 
 Similarly, in AP mode, the actual bandwidth is negotiated between AP and the stations that connect to the AP. It's HT40 if the AP and one of the stations support HT40, otherwise it's HT20.
 
-In station/AP coexist mode, the station/AP can configure HT20/40 seperately. If both station and AP are negotiated to HT40, the HT40 channel should be the channel of station because the station always has higher priority than AP in ESP32. E.g. the configured bandwidth of AP is HT40, the configured primary channel is 6 and the configured secondary channel is 10. The station is connected to an router whose primary channel is 6 and secondary channel is 2, then the actual channel of AP is changed to primary 6 and secondary 2 automatically.
+In station/AP coexist mode, the station/AP can configure HT20/40 seperately. If both station and AP are negotiated to HT40, the HT40 channel should be the channel of station because the station always has higher priority than AP in {IDF_TARGET_NAME}. E.g. the configured bandwidth of AP is HT40, the configured primary channel is 6 and the configured secondary channel is 10. The station is connected to an router whose primary channel is 6 and secondary channel is 2, then the actual channel of AP is changed to primary 6 and secondary 2 automatically.
 
-Theoretically the HT40 can gain better throughput because the maximum raw physicial (PHY) data rate for HT40 is 150Mbps while it's 72Mbps for HT20. However, if the device is used in some special environment, e.g. there are too many other Wi-Fi devices around the ESP32 device, the performance of HT40 may be degraded. So if the applications need to support same or similar scenarios, it's recommended that the bandwidth is always configured to HT20.
+Theoretically the HT40 can gain better throughput because the maximum raw physicial (PHY) data rate for HT40 is 150Mbps while it's 72Mbps for HT20. However, if the device is used in some special environment, e.g. there are too many other Wi-Fi devices around the {IDF_TARGET_NAME} device, the performance of HT40 may be degraded. So if the applications need to support same or similar scenarios, it's recommended that the bandwidth is always configured to HT20.
 
 Wi-Fi QoS
 -------------------------
 
-ESP32 supports all the mandatory features required in WFA Wi-Fi QoS Certification.
+{IDF_TARGET_NAME} supports all the mandatory features required in WFA Wi-Fi QoS Certification.
 
 Four ACs(Access Category) are defined in Wi-Fi specification, each AC has a its own priority to access the Wi-Fi channel. Moreover a map rule is defined to map the QoS priority of other protocol, such as 802.11D or TCP/IP precedence to Wi-Fi AC.
 
-Below is a table describes how the IP Precedences are mapped to Wi-Fi ACs in ESP32, it also indicates whether the AMPDU is supported for this AC. The table is sorted with priority descending order, namely, the AC_VO has highest priority.
+Below is a table describes how the IP Precedences are mapped to Wi-Fi ACs in {IDF_TARGET_NAME}, it also indicates whether the AMPDU is supported for this AC. The table is sorted with priority descending order, namely, the AC_VO has highest priority.
 
 +------------------+------------------------+-----------------+
 | IP Precedence    | Wi-Fi AC               |  Support AMPDU? |
@@ -1739,17 +1776,19 @@ Theoretically the higher priority AC has better performance than the low priorit
 Wi-Fi AMSDU
 -------------------------
 
-ESP32 supports receiving AMSDU but doesn't support transmitting AMSDU. The transmitting AMSDU is not necessary since ESP32 has transmitting AMPDU.
+{IDF_TARGET_NAME} supports receiving AMSDU but doesn't support transmitting AMSDU. The transmitting AMSDU is not necessary since {IDF_TARGET_NAME} has transmitting AMPDU.
 
 Wi-Fi Fragment
 -------------------------
 
-ESP32 supports Wi-Fi receiving fragment, but doesn't support Wi-Fi transmitting fragment. The Wi-Fi transmitting fragment will be supported in future release.
+{IDF_TARGET_NAME} supports Wi-Fi receiving fragment, but doesn't support Wi-Fi transmitting fragment. The Wi-Fi transmitting fragment will be supported in future release.
 
 WPS Enrolle
 -------------------------
 
-ESP32 supports WPS enrollee feature in Wi-Fi mode WIFI_MODE_STA or WIFI_MODE_APSTA. Currently ESP32 supports WPS enrollee type PBC and PIN.
+{IDF_TARGET_NAME} supports WPS enrollee feature in Wi-Fi mode WIFI_MODE_STA or WIFI_MODE_APSTA. Currently {IDF_TARGET_NAME} supports WPS enrollee type PBC and PIN.
+
+.. _wifi-buffer-usage:
 
 Wi-Fi Buffer Usage
 --------------------------
@@ -1760,11 +1799,11 @@ Why Buffer Configuration Is Important
 +++++++++++++++++++++++++++++++++++++++
 
 In order to get a robust, high-performance system, we need to consider the memory usage/configuration very carefully, because:
- - the available memory in ESP32 is limited.
+ - the available memory in {IDF_TARGET_NAME} is limited.
  - currently, the default type of buffer in LwIP and Wi-Fi drivers is "dynamic", **which means that both the LwIP and Wi-Fi share memory with the application**. Programmers should always keep this in mind; otherwise, they will face a memory issue, such as "running out of heap memory".
- - it is very dangerous to run out of heap memory, as this will cause ESP32 an "undefined behavior". Thus, enough heap memory should be reserved for the application, so that it never runs out of it.
+ - it is very dangerous to run out of heap memory, as this will cause {IDF_TARGET_NAME} an "undefined behavior". Thus, enough heap memory should be reserved for the application, so that it never runs out of it.
  - the Wi-Fi throughput heavily depends on memory-related configurations, such as the TCP window size, Wi-Fi RX/TX dynamic buffer number, etc.
- - the peak heap memory that the ESP32 LwIP/Wi-Fi may consume depends on a number of factors, such as the maximum TCP/UDP connections that the application may have, etc.
+ - the peak heap memory that the {IDF_TARGET_NAME} LwIP/Wi-Fi may consume depends on a number of factors, such as the maximum TCP/UDP connections that the application may have, etc.
  - the total memory that the application requires is also an important factor when considering memory configuration.
 
 Due to these reasons, there is not a good-for-all application configuration. Rather, we have to consider memory configurations separately for every different application.
@@ -1772,26 +1811,9 @@ Due to these reasons, there is not a good-for-all application configuration. Rat
 Dynamic vs. Static Buffer
 ++++++++++++++++++++++++++++++
 
-The default type of buffer in LwIP and Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in LwIP/Wi-Fi.
+The default type of buffer in Wi-Fi drivers is "dynamic". Most of the time the dynamic buffer can significantly save memory. However, it makes the application programming a little more difficult, because in this case the application needs to consider memory usage in Wi-Fi.
 
-
-Peak LwIP Dynamic Buffer
-++++++++++++++++++++++++++++++
-
-The default type of LwIP buffer is "dynamic", and this section considers the dynamic buffer only.
-The peak heap memory that LwIP consumes is the **theoretically-maximum memory** that the LwIP driver consumes. Generally, the peak heap memory that the LwIP consumes depends on:
-
- - the memory required to create a UDP connection: lwip_udp_conn
- - the memory required to create a TCP connection: lwip_tcp_conn
- - the number of UDP connections that the application has: lwip_udp_con_num
- - the number of TCP connections that the application has: lwip_tcp_con_num
- - the TCP TX window size: lwip_tcp_tx_win_size
- - the TCP RX window size: lwip_tcp_rx_win_size
-
-**So, the peak heap memory that the LwIP consumes can be calculated with the following formula:**
-  lwip_dynamic_peek_memory =  (lwip_udp_con_num * lwip_udp_conn)  + (lwip_tcp_con_num * (lwip_tcp_tx_win_size + lwip_tcp_rx_win_size + lwip_tcp_conn))
-
-Some TCP-based applications need only one TCP connection. However, they may choose to close this TCP connection and create a new one when an error (such as a sending failure) occurs. This may result in multiple TCP connections existing in the system simultaneously, because it may take a long time for a TCP connection to close, according to the TCP state machine (refer to RFC793).
+lwIP also allocates buffers at the TCP/IP layer, and this buffer allocation is also dynamic. See :ref:`lwIP documentation section about memory use and performance<lwip-ram-usage>`.
 
 Peak Wi-Fi Dynamic Buffer
 ++++++++++++++++++++++++++++++
@@ -1805,9 +1827,9 @@ The peak heap memory that Wi-Fi consumes is the **theoretically-maximum memory**
  - the maximum packet size that the Wi-Fi driver can send: wifi_tx_pkt_size_max
 
 So, the peak memory that the Wi-Fi driver consumes can be calculated with the following formula:
-  wifi_dynamic_peek_memory = (wifi_rx_dynamic_buf_num * wifi_rx_pkt_size_max) + (wifi_tx_dynamic_buf_num * wifi_tx_pkt_size_max) 
-  
-Generally, we do not need to care about the dynamic tx long buffers and dynamic tx long long buffers, because they are management frames which only have a small impact on the system. 
+  wifi_dynamic_peek_memory = (wifi_rx_dynamic_buf_num * wifi_rx_pkt_size_max) + (wifi_tx_dynamic_buf_num * wifi_tx_pkt_size_max)
+
+Generally, we do not need to care about the dynamic tx long buffers and dynamic tx long long buffers, because they are management frames which only have a small impact on the system.
 
 Wi-Fi Menuconfig
 -----------------------
@@ -1831,13 +1853,13 @@ If you are going to modify the default number or type of buffer, it would be hel
         default_shape = roundedbox;
 
         # labels of diagram nodes
-        APPL_TASK [label="Application\n task", fontsize=12];  
-        LwIP_TASK [label="LwIP\n task", fontsize=12];  
+        APPL_TASK [label="Application\n task", fontsize=12];
+        LwIP_TASK [label="LwIP\n task", fontsize=12];
         WIFI_TASK [label="Wi-Fi\n task", fontsize=12];
 
         # labels of description nodes
-        APPL_DESC [label="1> User data", width=120, height=25, shape=note, color=yellow];  
-        LwIP_DESC [label="2> Pbuf", width=120, height=25, shape=note, color=yellow];  
+        APPL_DESC [label="1> User data", width=120, height=25, shape=note, color=yellow];
+        LwIP_DESC [label="2> Pbuf", width=120, height=25, shape=note, color=yellow];
         WIFI_DESC [label="3> Dynamic (Static)\n TX Buffer", width=150, height=40, shape=note, color=yellow];
 
         # node connections
@@ -1867,14 +1889,14 @@ The following diagram shows how buffer is allocated/freed in the RX direction:
         default_shape = roundedbox;
 
         # labels of diagram nodes
-        APPL_TASK [label="Application\n task", fontsize=12];  
-        LwIP_TASK [label="LwIP\n task", fontsize=12];  
+        APPL_TASK [label="Application\n task", fontsize=12];
+        LwIP_TASK [label="LwIP\n task", fontsize=12];
         WIFI_TASK [label="Wi-Fi\n task", fontsize=12];
         WIFI_INTR [label="Wi-Fi\n interrupt", fontsize=12];
 
         # labels of description nodes
-        APPL_DESC [label="4> User\n Data Buffer", height=40, shape=note, color=yellow];  
-        LwIP_DESC [label="3> Pbuf", height=40, shape=note, color=yellow];  
+        APPL_DESC [label="4> User\n Data Buffer", height=40, shape=note, color=yellow];
+        LwIP_DESC [label="3> Pbuf", height=40, shape=note, color=yellow];
         WIFI_DESC [label="2> Dynamic\n RX Buffer", height=40, shape=note, color=yellow];
         INTR_DESC [label="1> Static\n RX Buffer", height=40, shape=note, color=yellow];
 
@@ -1918,7 +1940,7 @@ The diagram shows the configuration of the Wi-Fi internal buffer.
 +------------------+------------+------------+--------------+---------------------------------------+
 | Dynamic RX Buffer| Dynamic    | 32         | Yes          | The buffer length is variable and it  |
 |                  |            |            |              | depends on the received frames'       |
-|                  |            |            |              | length. When the Wi-Fi driver receives| 
+|                  |            |            |              | length. When the Wi-Fi driver receives|
 |                  |            |            |              | a frame from the 'Hardware Rx Buffer',|
 |                  |            |            |              | the 'Dynamic Rx Buffer' needs to be   |
 |                  |            |            |              | allocated from the heap. The number of|
@@ -1941,7 +1963,7 @@ The diagram shows the configuration of the Wi-Fi internal buffer.
 |                  |            | 1600Bytes  |              | initialized in esp_wifi_init() and    |
 |                  |            |            |              | freed in esp_wifi_deinit().           |
 |                  |            |            |              | When the upper-layer (LwIP) sends     |
-|                  |            |            |              | packets to the Wi-Fi driver, it       | 
+|                  |            |            |              | packets to the Wi-Fi driver, it       |
 |                  |            |            |              | firstly allocates a 'Static TX Buffer'|
 |                  |            |            |              | and makes a copy of the upper-layer   |
 |                  |            |            |              | buffer.                               |
@@ -1969,10 +1991,10 @@ Wi-Fi NVS Flash
 +++++++++++++++++++++
 If the Wi-Fi NVS flash is enabled, all Wi-Fi configurations set via the Wi-Fi APIs will be stored into flash, and the Wi-Fi driver will start up with these configurations next time it powers on/reboots. However, the application can choose to disable the Wi-Fi NVS flash if it does not need to store the configurations into persistent memory, or has its own persistent storage, or simply due to debugging reasons, etc.
 
-Wi-Fi AMPDU 
+Wi-Fi AMPDU
 +++++++++++++++++++++++++++
 
-ESP32 supports both receiving and transmitting AMPDU, the AMPDU can greatly improve the Wi-Fi throughput.
+{IDF_TARGET_NAME} supports both receiving and transmitting AMPDU, the AMPDU can greatly improve the Wi-Fi throughput.
 
 Generally, the AMPDU should be enabled. Disabling AMPDU is usually for debugging purposes.
 
@@ -1985,4 +2007,4 @@ Please refer to a separate document with :doc:`wireshark-user-guide`.
     :hidden:
 
     wireshark-user-guide
-    
+

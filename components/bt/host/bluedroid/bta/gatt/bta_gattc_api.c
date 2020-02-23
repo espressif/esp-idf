@@ -76,7 +76,7 @@ void BTA_GATTC_Disable(void)
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTC module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_client_cb - pointer to the application callback function.
 **
 ** Returns          None
@@ -338,13 +338,13 @@ const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(UINT16 conn_id, UINT16 hand
 }
 
 void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid,
-                                  btgatt_db_element_t **db, int *count)
+                                  btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_service_with_uuid(conn_id, svc_uuid, db, count);
 }
 
 void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                          btgatt_db_element_t **db, int *count)
+                          btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_ALL_CHAR,
@@ -359,7 +359,7 @@ void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle
 }
 
 void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
-                                btgatt_db_element_t **db, int *count)
+                                btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_ALL_DESCRI,
@@ -374,7 +374,7 @@ void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
 }
 
 void BTA_GATTC_GetCharByUUID(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, tBT_UUID char_uuid,
-                             btgatt_db_element_t **db, int *count)
+                             btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_CHAR_BY_UUID,
@@ -390,7 +390,7 @@ void BTA_GATTC_GetCharByUUID(UINT16 conn_id, UINT16 start_handle, UINT16 end_han
 
 void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t end_handle,
                               tBT_UUID char_uuid, tBT_UUID descr_uuid,
-                              btgatt_db_element_t **db, int *count)
+                              btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_DESCRI_BY_UUID,
@@ -405,7 +405,7 @@ void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t en
 }
 
 void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID descr_uuid,
-                                    btgatt_db_element_t **db, int *count)
+                                    btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_DESCRI_BY_HANDLE,
@@ -420,7 +420,7 @@ void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID
 }
 
 void BTA_GATTC_GetIncludeService(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                                 tBT_UUID *incl_uuid, btgatt_db_element_t **db, int *count)
+                                 tBT_UUID *incl_uuid, btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_db_with_opration(conn_id,
                                    GATT_OP_GET_INCLUDE_SVC,
@@ -434,13 +434,13 @@ void BTA_GATTC_GetIncludeService(UINT16 conn_id, UINT16 start_handle, UINT16 end
                                    count);
 }
 
-void BTA_GATTC_GetDBSize(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, int *count)
+void BTA_GATTC_GetDBSize(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, UINT16 *count)
 {
     bta_gattc_get_db_size_handle(conn_id, start_handle, end_handle, count);
 }
 
 void BTA_GATTC_GetDBSizeByType(UINT16 conn_id, bt_gatt_db_attribute_type_t type,
-                               UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, int *count)
+                               UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, UINT16 *count)
 {
     bta_gattc_get_db_size_with_type_handle(conn_id, type, start_handle, end_handle, char_handle, count);
 }
@@ -459,7 +459,7 @@ void BTA_GATTC_GetDBSizeByType(UINT16 conn_id, bt_gatt_db_attribute_type_t type,
 **
 *******************************************************************************/
 void  BTA_GATTC_GetGattDb(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                          btgatt_db_element_t **db, int *count)
+                          btgatt_db_element_t **db, UINT16 *count)
 {
     bta_gattc_get_gatt_db(conn_id, start_handle, end_handle, db, count);
 }

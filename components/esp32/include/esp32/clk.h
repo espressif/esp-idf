@@ -15,6 +15,10 @@
 #pragma once
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @file esp32/clk.h
  *
@@ -85,3 +89,7 @@ int esp_clk_xtal_freq(void);
  * @return Value or RTC counter, expressed in microseconds
  */
 uint64_t esp_clk_rtc_time(void);
+
+#ifdef __cplusplus
+}
+#endif

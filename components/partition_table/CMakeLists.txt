@@ -16,7 +16,7 @@ else()
     set(final_partition_target "build_partition_table")
 endif()
 
-if(CONFIG_PARTITION_TABLE_MD5)
+if(NOT CONFIG_PARTITION_TABLE_MD5)
     set(md5_opt --disable-md5sum)
 endif()
 
@@ -74,11 +74,12 @@ if(CONFIG_SECURE_SIGNED_APPS)
     endif()
 endif()
 
-# Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build
-# the list of esptool write arguments for flashing
-set_property(GLOBAL APPEND_STRING PROPERTY
-    ESPTOOL_WRITE_FLASH_ARGS
-    "${PARTITION_TABLE_OFFSET}  ${build_dir}/partition_table/${final_partition_bin} ")
+idf_component_get_property(main_args esptool_py FLASH_ARGS)
+idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
 
-esptool_py_flash_project_args(partition_table ${PARTITION_TABLE_OFFSET}
-                              ${build_dir}/partition_table/partition-table.bin FLASH_IN_PROJECT)
+esptool_py_flash_target(partition_table-flash "${main_args}" "${sub_args}")
+esptool_py_flash_target_image(partition_table-flash partition_table "${PARTITION_TABLE_OFFSET}"
+                                      "${build_dir}/partition_table/partition-table.bin")
+esptool_py_flash_target_image(flash partition_table "${PARTITION_TABLE_OFFSET}"
+                                      "${build_dir}/partition_table/partition-table.bin")
+

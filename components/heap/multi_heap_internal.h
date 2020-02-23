@@ -23,6 +23,7 @@ typedef const struct heap_block *multi_heap_block_handle_t;
 
    If heap poisoning is enabled, wrapper functions call each of these.
 */
+
 void *multi_heap_malloc_impl(multi_heap_handle_t heap, size_t size);
 void multi_heap_free_impl(multi_heap_handle_t heap, void *p);
 void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size);

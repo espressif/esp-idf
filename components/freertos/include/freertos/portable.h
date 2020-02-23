@@ -93,7 +93,7 @@ did not result in a portmacro.h header file being included - and it should be
 included here.  In this case the path to the correct portmacro.h header file
 must be set in the compiler's include path. */
 #ifndef portENTER_CRITICAL
-	#include "portmacro.h"
+	#include "freertos/portmacro.h"
 #endif
 
 #if portBYTE_ALIGNMENT == 8
@@ -180,12 +180,6 @@ void vPortYieldOtherCore( BaseType_t coreid) PRIVILEGED_FUNCTION;
 void vPortSetStackWatchpoint( void* pxStackStart );
 
 /*
- * Returns true if the current core is in ISR context; low prio ISR, med prio ISR or timer tick ISR. High prio ISRs
- * aren't detected here, but they normally cannot call C code, so that should not be an issue anyway.
- */
-BaseType_t xPortInIsrContext(void);
-
-/*
  * This function will be called in High prio ISRs. Returns true if the current core was in ISR context
  * before calling into high prio ISR context.
  */
@@ -239,7 +233,12 @@ static inline bool IRAM_ATTR xPortCanYield(void)
 }
 #endif
 
-void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set);
+static inline void uxPortCompareSetExtram(volatile uint32_t *addr, uint32_t compare, uint32_t *set) 
+{
+#if defined(CONFIG_ESP32_SPIRAM_SUPPORT)    
+    compare_and_set_extram(addr, compare, set);
+#endif    
+}
 
 #endif /* PORTABLE_H */
 

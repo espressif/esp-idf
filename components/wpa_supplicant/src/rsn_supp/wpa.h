@@ -19,12 +19,13 @@
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
-#else
-#include "esp32s2beta/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
 #endif
 #include "utils/common.h"
 #include "common/defs.h"
 #include "common/wpa_common.h"
+#include "esp_wifi_types.h"
 #include "esp_wifi_crypto_types.h"
 #include "wpa_i.h"
 
@@ -34,6 +35,7 @@
 struct wpa_sm;
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
+bool wpa_sta_is_cur_pmksa_set(void);
 bool wpa_sta_in_4way_handshake(void);
 
 #define WPA_ASSERT  assert
@@ -109,7 +111,7 @@ struct l2_ethhdr {
  * handler if send_eapol() is used.
  */
 
-#define KEYENTRY_TABLE_MAP(key_entry_valid)  ((key_entry_valid)%5) 
+#define KEYENTRY_TABLE_MAP(key_entry_valid)  ((key_entry_valid)%5)
 
 void pp_michael_mic_failure(u16 isunicast);
 
@@ -126,6 +128,10 @@ bool wpa_hook_deinit(void);
 char * dup_binstr(const void *src, size_t len);
 
 int wpa_michael_mic_failure(u16 isunicast);
+
+wifi_cipher_type_t cipher_type_map_supp_to_public(uint32_t wpa_cipher);
+
+uint32_t cipher_type_map_supp_to_public(wifi_cipher_type_t cipher);
 
 #endif /* WPA_H */
 

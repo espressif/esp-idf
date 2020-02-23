@@ -38,6 +38,6 @@ IPC, especially when attempting to take a mutex within the function.
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_ipc.inc
+.. include-build-file:: inc/esp_ipc.inc
 
 

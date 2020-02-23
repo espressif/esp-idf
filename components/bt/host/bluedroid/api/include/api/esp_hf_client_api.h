@@ -248,7 +248,7 @@ typedef union {
         const char *number;                      /*!< phone number corresponding to the last voice tag in the HF */
     } binp;                                      /*!< HF callback param of ESP_HF_CLIENT_BINP_EVT */
 
-} esp_hf_client_cb_param_t;
+} esp_hf_client_cb_param_t;                      /*!< HFP client callback parameters */
 
 /**
  * @brief           HFP client incoming data callback function, the callback is useful in case of

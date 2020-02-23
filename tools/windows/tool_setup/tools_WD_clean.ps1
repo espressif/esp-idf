@@ -15,152 +15,158 @@
 
 Param
 (
-	[String]$RmExclPath,
-	[String]$logFile
+  [String]$RmExclPath,
+  [String]$logFile
 )
-
-Import-Module Defender
 
 function Check-Command($cmdname)
 {
-    return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
+  return [bool](Get-Command -Name $cmdname -ErrorAction SilentlyContinue)
 }
 
 function Log-Msg($msg, $logF = $null)
 {
-	if( ![string]::IsNullOrEmpty($logF) ) { Write-Output $msg *>> $logF } 
-	else { Write-Output $msg }
-	[Console]::Out.Flush()
+  if( ![string]::IsNullOrEmpty($logF) ) { Write-Output $msg *>> $logF }
+  else { Write-Output $msg }
+  [Console]::Out.Flush()
 }
 
+$retVal = 1
 
 Try
-{	
-	#self-elevation support
-	$myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
-	$myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
-	$adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
+{ 
 
-	if( -not $myWindowsPrincipal.IsInRole($adminRole) ) { 
-	   
-		 $params = ""
-		 foreach($key in $PSBoundParameters.keys) {
-			 $params = -join( $params, "-", $key, " `"", $PSBoundParameters[$key], "`"" )
-		 }
-		
-		#running elevated and logFile not set
-		if( [string]::IsNullOrEmpty($logFile) ) {
-			$tempFileName = Get-Date -UFormat "%Y%m%d%H%M%s"
-			$lf = Join-Path -Path $env:TEMP -ChildPath "WDEspLog$tempFileName.log"
-			#Write-Output "Logfile: $lf"
-		}
-		
-		$newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell"
-		$newProcess.Arguments = "-ExecutionPolicy ByPass -File " + $script:MyInvocation.MyCommand.Definition + " " + $params + " -logFile $lf"
-		$newProcess.Verb = "RunAs"
-		$newProcess.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-		
-		$proc = [System.Diagnostics.Process]::Start($newProcess)
-		$proc.WaitForExit()
+  Import-Module Defender
 
-		if (Test-Path -Path $lf ) {
-			foreach($line in Get-Content $lf) {
-				Log-Msg -msg $line
-			}
-			Remove-Item $lf
-		}
-		
-		#Write-Output "Process finished with code " $proc.ExitCode	
-		exit $proc.ExitCode
-	}
+  #self-elevation support
+  $myWindowsID=[System.Security.Principal.WindowsIdentity]::GetCurrent()
+  $myWindowsPrincipal=new-object System.Security.Principal.WindowsPrincipal($myWindowsID)
+  $adminRole=[System.Security.Principal.WindowsBuiltInRole]::Administrator
 
-	Log-Msg -msg "Getting Windows Defender process exclusions..." -logF $logFile
-	
-	$Preferences = Get-MpPreference
+  if( -not $myWindowsPrincipal.IsInRole($adminRole) ) { 
 
-	#ExclusionProcess	
-	$cnt = $Preferences.ExclusionProcess.Count
-	$cntRemoved = 0
-	$cntRemovedTotal = 0
-	$cntMissed = 0
-	$cntMissedTotal = 0
+    $params = ""
+    foreach($key in $PSBoundParameters.keys) {
+      $params = -join( $params, "-", $key, " `"", $PSBoundParameters[$key], "`"" )
+    }
 
-	$bRmPath = ![string]::IsNullOrEmpty($RmExclPath)
-	if( $bRmPath ) { Log-Msg -msg "Exclusion path: $RmExclPath" -logF $logFile }
+    #running elevated and logFile not set
+    if( [string]::IsNullOrEmpty($logFile) ) {
+      $tempFileName = Get-Date -UFormat "%Y%m%d%H%M%s"
+      $lf = Join-Path -Path $env:TEMP -ChildPath "WDEspLog$tempFileName.log"
+    }
 
-	Log-Msg -msg " Found total $cnt of ExclusionProcess items" -logF $logFile
+    $newProcess = new-object System.Diagnostics.ProcessStartInfo "PowerShell"
+    $newProcess.Arguments = "-ExecutionPolicy ByPass -File " + $script:MyInvocation.MyCommand.Definition + " " + $params + " -logFile $lf"
+    $newProcess.Verb = "RunAs"
+    $newProcess.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+    
+    $proc = [System.Diagnostics.Process]::Start($newProcess)
+    $proc.WaitForExit()
 
-	foreach( $pref in $Preferences.ExclusionProcess ) {	
+    if (Test-Path -Path $lf ) {
+      foreach($line in Get-Content $lf) {
+        Log-Msg -msg $line
+      }
+      Remove-Item $lf
+    }
 
-		if( $bRmPath ) { $bGoAhead = $pref.Contains($RmExclPath) }
-		else { $bGoAhead = $true }
-		
-		if( $bGoAhead ) {
-			Log-Msg -msg "  removing $pref" -logF $logFile
-			Try 
-			{ 
-				Remove-MpPreference -ExclusionProcess $pref
-				$cntRemoved++
-			} 
-			Catch 
-			{
-				if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
-				Write-Error -Exception $_.Exception
-				$cntMissed++
-			}
-		}
-	}
-	
-	if( $cntMissed -eq 0 ) { Log-Msg -msg " $cntRemoved relevant items removed from ExclusionProcess list" -logF $logFile }
-	else { Log-Msg -msg " WARNING: Only $cntRemoved out of $(cntRemoved+cntMissed) relevant items removed from ExclusionProcess list" -logF $logFile }
+    exit $proc.ExitCode
+  }
 
-	#ExclusionPath
-	$cnt = $Preferences.ExclusionPath.Count
-	$cntRemovedTotal = $cntRemoved
-	$cntRemoved = 0	
-	$cntMissedTotal = $cntMissed
-	$cntMissed = 0
+  Log-Msg -msg "Getting Windows Defender process exclusions..." -logF $logFile
 
-	Log-Msg -msg " Found total $cnt of ExclusionPath items" -logF $logFile
+  $Preferences = Get-MpPreference
 
-	foreach( $pref in $Preferences.ExclusionPath ) {
+  #ExclusionProcess
+  $cnt = $Preferences.ExclusionProcess.Count
+  $cntRemoved = 0
+  $cntRemovedTotal = 0
+  $cntMissed = 0
+  $cntMissedTotal = 0
 
-		if( $bRmPath ) { $bGoAhead = $pref.Contains($RmExclPath) }
-		else { $bGoAhead = $true }
-		
-		if( $bGoAhead ) {
-			Log-Msg -msg "  removing $pref" -logF $logFile
-			Try 
-			{ 
-				Remove-MpPreference -ExclusionPath $pref
-				$cntRemoved++
-			} 
-			Catch 
-			{
-				if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
-				Write-Error -Exception $_.Exception
-				$cntMissed++
-			}				
-		}
-	}
+  $bRmPath = ![string]::IsNullOrEmpty($RmExclPath)
+  if( $bRmPath ) { Log-Msg -msg "Exclusion path: $RmExclPath" -logF $logFile }
 
-	if( $cntMissed -eq 0 ) { Log-Msg -msg " $cntRemoved relevant items removed from ExclusionPath list" -logF $logFile }
-	else { Log-Msg -msg " WARNING: Only $cntRemoved out of $(cntRemoved+cntMissed) relevant items removed from ExclusionPath list" -logF $logFile }
+  Log-Msg -msg " Found total $cnt of ExclusionProcess items" -logF $logFile
 
-	#TOTAL
-	$cntRemovedTotal += $cntRemoved
-	$cntMissedTotal += $cntMissed
-	
-	Log-Msg -msg "============================" -logF $logFile
-	if( $cntMissedTotal -eq 0 ) { Log-Msg -msg "OK: Processed all $cntRemovedTotal items" -logF $logFile }
-	else { Log-Msg -msg "WARNING: Processed only $cntRemovedTotal out of $(cntRemovedTotal+cntMissedTotal) relevat items" -logF $logFile }
+  foreach( $pref in $Preferences.ExclusionProcess ) { 
 
-	Log-Msg -msg  "`nDone" -logF $logFile
+    if( $bRmPath ) { $bGoAhead = $pref.Contains($RmExclPath) }
+    else { $bGoAhead = $true }
+
+    if( $bGoAhead ) {
+      Log-Msg -msg "  removing $pref" -logF $logFile
+      Try 
+      {
+        Remove-MpPreference -ExclusionProcess $pref
+        $cntRemoved++
+      }
+      Catch 
+      {
+        if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
+        Write-Error -Exception $_.Exception
+        $cntMissed++
+      }
+    }
+  }
+
+  if( $cntMissed -eq 0 ) { Log-Msg -msg " $cntRemoved relevant items removed from ExclusionProcess list" -logF $logFile }
+  else { Log-Msg -msg " WARNING: Only $cntRemoved out of $(cntRemoved+cntMissed) relevant items removed from ExclusionProcess list" -logF $logFile }
+
+  #ExclusionPath
+  $cnt = $Preferences.ExclusionPath.Count
+  $cntRemovedTotal = $cntRemoved
+  $cntRemoved = 0 
+  $cntMissedTotal = $cntMissed
+  $cntMissed = 0
+
+  Log-Msg -msg " Found total $cnt of ExclusionPath items" -logF $logFile
+
+  foreach( $pref in $Preferences.ExclusionPath ) {
+
+    if( $bRmPath ) { $bGoAhead = $pref.Contains($RmExclPath) }
+    else { $bGoAhead = $true }
+
+    if( $bGoAhead ) {
+      Log-Msg -msg "  removing $pref" -logF $logFile
+      Try 
+      {
+        Remove-MpPreference -ExclusionPath $pref
+        $cntRemoved++
+      } 
+      Catch
+      {
+        if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
+        Write-Error -Exception $_.Exception
+        $cntMissed++
+      }
+    }
+  }
+
+  if( $cntMissed -eq 0 ) { Log-Msg -msg " $cntRemoved relevant items removed from ExclusionPath list" -logF $logFile }
+  else { Log-Msg -msg " WARNING: Only $cntRemoved out of $(cntRemoved+cntMissed) relevant items removed from ExclusionPath list" -logF $logFile }
+
+  #TOTAL
+  $cntRemovedTotal += $cntRemoved
+  $cntMissedTotal += $cntMissed
+
+  Log-Msg -msg "============================" -logF $logFile
+  if( $cntMissedTotal -eq 0 ) { Log-Msg -msg "OK: Processed all $cntRemovedTotal items" -logF $logFile }
+  else { Log-Msg -msg "WARNING: Processed only $cntRemovedTotal out of $(cntRemovedTotal+cntMissedTotal) relevat items" -logF $logFile }
+
+  Log-Msg -msg  "`nDone" -logF $logFile
+
+  $retVal = 0
 }
 Catch
 {
-	if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
-	Write-Error -Exception $_.Exception
-	exit -1
+  if( ![string]::IsNullOrEmpty($logFile) ) { Write-Error -Exception $_.Exception *>> $logFile }
+  Write-Error -Exception $_.Exception
+  [Environment]::Exit($retVal)
+}
+Finally
+{
+  [Environment]::Exit($retVal)
 }
 

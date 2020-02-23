@@ -40,6 +40,9 @@ To run the example and collect trace data:
     ```
     xtensa-esp32-elf-gdb -x gdbinit build/sysview_tracing_heap_log.elf
     ```
+
+    **Note**: if running the example on ESP32-S2, modify the command name in gdbinit file from `esp32 sysview` to `esp32_s2 sysview`, and run `xtensa-esp32s2-elf-gdb` instead of `xtensa-esp32-elf-gdb`.
+
 2. When program stops at `heap_trace_stop`  quit GDB.
 
 3. Open trace data file in SystemView tool.
@@ -53,100 +56,121 @@ To run the example and collect trace data:
 Since SystemView tool is mostly intended for OS level analysis. It allows just to inspect custom events' timestamps and parameters. So it can require some efforts to analyse heap operations flow. IDF provides special script to make the life a bit more easy. This script parses SystemView trace file sand reports detected memory leaks. The script also prints found log messages. To run it type the following from the project root directory:
 
 ```
-$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p /tmp/heap_log.svdat build/sysview_tracing_heap_log.elf
+$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b build/sysview_tracing_heap_log.elf /tmp/heap_log.svdat
 ```
 
 Below is the sample scripts output.
 
 ```
-Parse trace from '/tmp/heap_log.svdat'...
-Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
-Process events from '['/tmp/heap_log.svdat']'...
-[0.002244575] HEAP: Allocated 1 bytes @ 0x3ffaffd8 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002272225] HEAP: Allocated 8 bytes @ 0x3ffaff6c from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:85
+/home/user/projects/esp/esp-idf/components/esp32/cpu_start.c:570
 
-[0.002258425] HEAP: Allocated 2 bytes @ 0x3ffaffe0 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:48
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002307300] HEAP: Allocated 2500 bytes @ 0x3ffb580c from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:804
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:84 (discriminator 2)
 
-[0.002405000] LOG: I (264) example: Task[0x3ffb6cf4]: allocated 2 bytes @ 0x3ffaffe0
-[0.002553425] LOG: I (265) example: Task[0x3ffb7660]: free memory @ 0x3ffaffe0
-[0.002563725] HEAP: Freed bytes @ 0x3ffaffe0 from task "free" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:31 (discriminator 9)
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002323775] HEAP: Allocated 356 bytes @ 0x3ffb61d4 from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:809
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:84 (discriminator 2)
 
-[0.002782950] HEAP: Freed bytes @ 0x3ffb40b8 from task "main" on core 0 by:
-/home/user/projects/esp/esp-idf/components/freertos/tasks.c:4590
-/home/user/projects/esp/esp-idf/components/freertos/tasks.c:4590
+[0.002427700] HEAP: Allocated 120 bytes @ 0x3ffaff78 from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:46
 
-[0.002798700] HEAP: Freed bytes @ 0x3ffb50bc from task "main" on core 0 by:
-/home/user/projects/esp/esp-idf/components/freertos/tasks.c:4590
-/home/user/projects/esp/esp-idf/components/freertos/tasks.c:4590
+[0.002471225] HEAP: Allocated 2500 bytes @ 0x3ffb633c from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:804
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:55
 
-[0.102436025] HEAP: Allocated 2 bytes @ 0x3ffaffe0 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002487725] HEAP: Allocated 356 bytes @ 0x3ffb6d04 from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:809
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:55
 
-[0.102449800] HEAP: Allocated 4 bytes @ 0x3ffaffe8 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:48
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002569725] HEAP: Allocated 2 bytes @ 0x3ffafff4 from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:59
+/home/user/projects/esp/esp-idf/components/freertos/port.c:145
 
-[0.102536400] LOG: I (365) example: Task[0x3ffb6cf4]: allocated 4 bytes @ 0x3ffaffe8
-[0.102655625] LOG: I (365) example: Task[0x3ffb7660]: free memory @ 0x3ffaffe8
-[0.102666150] HEAP: Freed bytes @ 0x3ffaffe8 from task "free" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:31 (discriminator 9)
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002835275] LOG: I (298) example: Task[0x3ffb61d4]: allocated 2 bytes @ 0x3ffafff4
+[0.002974600] LOG: I (299) example: Task[0x3ffb6d04]: free memory @ 0x3ffafff4
 
-[0.202436200] HEAP: Allocated 3 bytes @ 0x3ffaffe8 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+....
 
-[0.202451725] HEAP: Allocated 6 bytes @ 0x3ffafff0 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:48
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[2.942891550] LOG: I (3239) example: Task[0x3ffb7840]: allocated 396 bytes @ 0x3ffb9d08
+[2.943024150] LOG: I (3239) example: Task[0x3ffb6d04]: free memory @ 0x3ffb9c3c
+[2.943035600] HEAP: Freed bytes @ 0x3ffb9c3c from task "free0" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:24 (discriminator 9)
+/home/user/projects/esp/esp-idf/components/freertos/port.c:145
 
-[0.202538225] LOG: I (465) example: Task[0x3ffb6cf4]: allocated 6 bytes @ 0x3ffafff0
-[0.202654475] LOG: I (465) example: Task[0x3ffb7660]: free memory @ 0x3ffafff0
-[0.202667075] HEAP: Freed bytes @ 0x3ffafff0 from task "free" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:31 (discriminator 9)
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[2.943212125] LOG: I (3239) example: Task[0x3ffb83ec]: free memory @ 0x3ffb9d08
+[2.943223500] HEAP: Freed bytes @ 0x3ffb9d08 from task "free1" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:24 (discriminator 9)
+/home/user/projects/esp/esp-idf/components/freertos/port.c:145
 
-[0.302436000] HEAP: Allocated 4 bytes @ 0x3ffafff0 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[2.943649025] HEAP: Allocated 594 bytes @ 0x3ffb9c3c from task "alloc2" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:59
+/home/user/projects/esp/esp-idf/components/freertos/port.c:145
 
-[0.302451475] HEAP: Allocated 8 bytes @ 0x3ffb40b8 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:48
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[2.943734250] LOG: I (3240) example: Task[0x3ffb8f28]: allocated 594 bytes @ 0x3ffb9c3c
+[2.943867850] LOG: I (3240) example: Task[0x3ffb9ad4]: free memory @ 0x3ffb9c3c
+[2.943879200] HEAP: Freed bytes @ 0x3ffb9c3c from task "free2" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:24 (discriminator 9)
+/home/user/projects/esp/esp-idf/components/freertos/port.c:145
 
-[0.302540900] LOG: I (565) example: Task[0x3ffb6cf4]: allocated 8 bytes @ 0x3ffb40b8
-[0.302657050] LOG: I (565) example: Task[0x3ffb7660]: free memory @ 0x3ffb40b8
-[0.302667500] HEAP: Freed bytes @ 0x3ffb40b8 from task "free" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:31 (discriminator 9)
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
-
-Processing completed.
-Processed 1027 events
+[2.972813425] LOG: I (3269) example: Got notify val 2
+[2.972870400] LOG: I (3269) example: Wait notify 1
+[2.972932800] LOG: I (3269) example: Got notify val 1
+[2.972989825] LOG: I (3269) example: Wait notify 2
+[2.973756125] LOG: I (3270) example: Got notify val 1
+Processed 13467 events
 =============== LOG TRACE REPORT ===============
-Processed 8 log messages.
+Processed 600 log messages.
 =============== HEAP TRACE REPORT ===============
-Processed 14 heap events.
-[0.002244575] HEAP: Allocated 1 bytes @ 0x3ffaffd8 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+Processed 612 heap events.
+[0.002272225] HEAP: Allocated 8 bytes @ 0x3ffaff6c from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:85
+/home/user/projects/esp/esp-idf/components/esp32/cpu_start.c:570
 
-[0.102436025] HEAP: Allocated 2 bytes @ 0x3ffaffe0 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002307300] HEAP: Allocated 2500 bytes @ 0x3ffb580c from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:804
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:84 (discriminator 2)
 
-[0.202436200] HEAP: Allocated 3 bytes @ 0x3ffaffe8 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002323775] HEAP: Allocated 356 bytes @ 0x3ffb61d4 from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:809
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:84 (discriminator 2)
 
-[0.302436000] HEAP: Allocated 4 bytes @ 0x3ffafff0 from task "alloc" on core 0 by:
-/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/main/sysview_heap_log.c:47
-/home/user/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+[0.002427700] HEAP: Allocated 120 bytes @ 0x3ffaff78 from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:46
 
-Found 10 leaked bytes in 4 blocks.
+[0.002471225] HEAP: Allocated 2500 bytes @ 0x3ffb633c from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:804
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:55
+
+[0.002487725] HEAP: Allocated 356 bytes @ 0x3ffb6d04 from task "alloc0" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:809
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:55
+
+[0.003102175] HEAP: Allocated 8 bytes @ 0x3ffb6e6c from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:85
+/home/user/projects/esp/esp-idf/components/esp32/cpu_start.c:570
+
+....
+
+[0.003713175] HEAP: Allocated 356 bytes @ 0x3ffb8f28 from task "main" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:809
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:84 (discriminator 2)
+
+[0.003814375] HEAP: Allocated 120 bytes @ 0x3ffb9090 from task "alloc2" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:46
+
+[0.003845875] HEAP: Allocated 2500 bytes @ 0x3ffb910c from task "alloc2" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:804
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:55
+
+[0.003862350] HEAP: Allocated 356 bytes @ 0x3ffb9ad4 from task "alloc2" on core 0 by:
+/home/user/projects/esp/esp-idf/components/freertos/tasks.c:809
+/home/user/projects/esp/esp-idf/examples/system/sysview_tracing_heap_log/build/../main/sysview_heap_log.c:55
+
+Found 17520 leaked bytes in 18 blocks.
 ```

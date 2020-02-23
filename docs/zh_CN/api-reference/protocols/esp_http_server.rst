@@ -151,4 +151,4 @@ HTTP 服务器具有长连接的功能，允许重复使用同一个连接（会
 API 参考
 --------
 
-.. include:: /_build/inc/esp_http_server.inc
+.. include-build-file:: inc/esp_http_server.inc

@@ -1,0 +1,42 @@
+.check_doc_links_template: &check_doc_links_template
+  stage: post_deploy
+  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
+  tags: [ "build", "amd64", "internet" ]
+  only:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  artifacts:
+    when: always
+    paths:
+      - docs/_build/*/*/*.txt
+    expire_in: 1 week
+  allow_failure: true
+  dependencies: []
+  script:
+    - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT linkcheck
+
+check_doc_links_en_esp32:
+  extends: .check_doc_links_template
+  variables:
+    DOCLANG: "en"
+    DOCTGT: "esp32"
+
+check_doc_links_en_esp32s2:
+  extends: .check_doc_links_template
+  variables:
+    DOCLANG: "en"
+    DOCTGT: "esp32s2"
+
+check_doc_links_zh_CN_esp32:
+  extends: .check_doc_links_template
+  variables:
+    DOCLANG: "zh_CN"
+    DOCTGT: "esp32"
+
+check_doc_links_zh_CN_esp32s2:
+  extends: .check_doc_links_template
+  variables:
+    DOCLANG: "zh_CN"
+    DOCTGT: "esp32s2"

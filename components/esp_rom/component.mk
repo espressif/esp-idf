@@ -10,15 +10,13 @@ LINKER_SCRIPTS += esp32.rom.ld \
 #workaround is not enabled.
 ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
 LINKER_SCRIPTS += esp32.rom.newlib-funcs.ld
-endif
 
+# Include in newlib nano from ROM only if SPIRAM cache workaround is disabled
 ifdef CONFIG_NEWLIB_NANO_FORMAT
 LINKER_SCRIPTS += esp32.rom.newlib-nano.ld
 endif
 
-ifneq ($(GCC_NOT_5_2_0), 1)
-LINKER_SCRIPTS += esp32.rom.newlib-locale.ld
-endif
+endif #CONFIG_SPIRAM_CACHE_WORKAROUND
 
 ifndef CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 LINKER_SCRIPTS += esp32.rom.spiflash.ld

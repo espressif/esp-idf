@@ -28,6 +28,7 @@ void bt_mesh_store_cfg(void);
 void bt_mesh_store_mod_bind(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_sub(struct bt_mesh_model *mod);
 void bt_mesh_store_mod_pub(struct bt_mesh_model *mod);
+void bt_mesh_store_label(void);
 
 void bt_mesh_clear_net(void);
 void bt_mesh_clear_subnet(struct bt_mesh_subnet *sub);

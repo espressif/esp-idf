@@ -4,76 +4,80 @@ ESP-IDF FreeRTOS SMP Changes
 Overview
 --------
 
-The vanilla FreeRTOS is designed to run on a single core. However the ESP32 is 
-dual core containing a Protocol CPU (known as **CPU 0** or **PRO_CPU**) and an 
-Application CPU (known as **CPU 1** or **APP_CPU**). The two cores are 
-identical in practice and share the same memory. This allows the two cores to 
-run tasks interchangeably between them.
+.. only:: esp32
 
-The ESP-IDF FreeRTOS is a modified version of vanilla FreeRTOS which supports 
-symmetric multiprocessing (SMP). ESP-IDF FreeRTOS is based on the Xtensa port 
-of FreeRTOS v8.2.0. This guide outlines the major differences between vanilla 
-FreeRTOS and ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be 
+  The vanilla FreeRTOS is designed to run on a single core. However the ESP32 is
+  dual core containing a Protocol CPU (known as **CPU 0** or **PRO_CPU**) and an
+  Application CPU (known as **CPU 1** or **APP_CPU**). The two cores are
+  identical in practice and share the same memory. This allows the two cores to
+  run tasks interchangeably between them.
+
+The ESP-IDF FreeRTOS is a modified version of vanilla FreeRTOS which supports
+symmetric multiprocessing (SMP). ESP-IDF FreeRTOS is based on the Xtensa port
+of FreeRTOS v8.2.0. This guide outlines the major differences between vanilla
+FreeRTOS and ESP-IDF FreeRTOS. The API reference for vanilla FreeRTOS can be
 found via http://www.freertos.org/a00106.html
 
 For information regarding features that are exclusive to ESP-IDF FreeRTOS,
 see :doc:`ESP-IDF FreeRTOS Additions<../api-reference/system/freertos_additions>`.
 
-:ref:`backported-features`: Although ESP-IDF FreeRTOS is based on the Xtensa 
+:ref:`backported-features`: Although ESP-IDF FreeRTOS is based on the Xtensa
 port of FreeRTOS v8.2.0, a number of FreeRTOS v9.0.0 features have been backported
 to ESP-IDF.
 
-:ref:`tasks-and-task-creation`: Use :cpp:func:`xTaskCreatePinnedToCore` or 
-:cpp:func:`xTaskCreateStaticPinnedToCore` to create tasks in ESP-IDF FreeRTOS. The 
-last parameter of the two functions is ``xCoreID``. This parameter specifies 
-which core the task is pinned to. Acceptable values are ``0`` for **PRO_CPU**, 
-``1`` for **APP_CPU**, or ``tskNO_AFFINITY`` which allows the task to run on
-both.
+.. only:: esp32
 
-:ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler will skip tasks when 
-implementing Round-Robin scheduling between multiple tasks in the Ready state 
-that are of the same priority. To avoid this behavior, ensure that those tasks either 
-enter a blocked state, or are distributed across a wider range of priorities.
+  :ref:`tasks-and-task-creation`: Use :cpp:func:`xTaskCreatePinnedToCore` or
+  :cpp:func:`xTaskCreateStaticPinnedToCore` to create tasks in ESP-IDF FreeRTOS. The
+  last parameter of the two functions is ``xCoreID``. This parameter specifies
+  which core the task is pinned to. Acceptable values are ``0`` for **PRO_CPU**,
+  ``1`` for **APP_CPU**, or ``tskNO_AFFINITY`` which allows the task to run on
+  both.
 
-:ref:`scheduler-suspension`: Suspending the scheduler in ESP-IDF FreeRTOS will only 
-affect the scheduler on the the calling core. In other words, calling 
-:cpp:func:`vTaskSuspendAll` on **PRO_CPU** will not prevent **APP_CPU** from scheduling, and
-vice versa. Use critical sections or semaphores instead for simultaneous
-access protection.
+  :ref:`round-robin-scheduling`: The ESP-IDF FreeRTOS scheduler will skip tasks when
+  implementing Round-Robin scheduling between multiple tasks in the Ready state
+  that are of the same priority. To avoid this behavior, ensure that those tasks either
+  enter a blocked state, or are distributed across a wider range of priorities.
 
-:ref:`tick-interrupt-synchronicity`: Tick interrupts of **PRO_CPU** and **APP_CPU** 
-are not synchronized. Do not expect to use :cpp:func:`vTaskDelay` or 
-:cpp:func:`vTaskDelayUntil` as an accurate method of synchronizing task execution 
-between the two cores. Use a counting semaphore instead as their context 
-switches are not tied to tick interrupts due to preemption.
+  :ref:`scheduler-suspension`: Suspending the scheduler in ESP-IDF FreeRTOS will only
+  affect the scheduler on the the calling core. In other words, calling
+  :cpp:func:`vTaskSuspendAll` on **PRO_CPU** will not prevent **APP_CPU** from scheduling, and
+  vice versa. Use critical sections or semaphores instead for simultaneous
+  access protection.
 
-:ref:`critical-sections`: In ESP-IDF FreeRTOS, critical sections are implemented using
-mutexes. Entering critical sections involve taking a mutex, then disabling the 
-scheduler and interrupts of the calling core. However the other core is left 
-unaffected. If the other core attemps to take same mutex, it will spin until
-the calling core has released the mutex by exiting the critical section.
+  :ref:`tick-interrupt-synchronicity`: Tick interrupts of **PRO_CPU** and **APP_CPU**
+  are not synchronized. Do not expect to use :cpp:func:`vTaskDelay` or
+  :cpp:func:`vTaskDelayUntil` as an accurate method of synchronizing task execution
+  between the two cores. Use a counting semaphore instead as their context
+  switches are not tied to tick interrupts due to preemption.
 
-:ref:`floating-points`: The ESP32 supports hardware acceleration of single
-precision floating point arithmetic (``float``). However the use of hardware
-acceleration leads to some behavioral restrictions in ESP-IDF FreeRTOS.
-Therefore, tasks that utilize ``float`` will automatically be pinned to a core if 
-not done so already. Furthermore, ``float`` cannot be used in interrupt service 
-routines.
+  :ref:`critical-sections`: In ESP-IDF FreeRTOS, critical sections are implemented using
+  mutexes. Entering critical sections involve taking a mutex, then disabling the
+  scheduler and interrupts of the calling core. However the other core is left
+  unaffected. If the other core attemps to take same mutex, it will spin until
+  the calling core has released the mutex by exiting the critical section.
 
-:ref:`task-deletion`: Task deletion behavior has been backported from FreeRTOS 
-v9.0.0 and modified to be SMP compatible. Task memory will be freed immediately 
-when :cpp:func:`vTaskDelete` is called to delete a task that is not currently running 
-and not pinned to the other core. Otherwise, freeing of task memory will still 
+  :ref:`floating-points`: The {IDF_TARGET_NAME} supports hardware acceleration of single
+  precision floating point arithmetic (``float``). However the use of hardware
+  acceleration leads to some behavioral restrictions in ESP-IDF FreeRTOS.
+  Therefore, tasks that utilize ``float`` will automatically be pinned to a core if
+  not done so already. Furthermore, ``float`` cannot be used in interrupt service
+  routines.
+
+`Task Deletion`_: Task deletion behavior has been backported from FreeRTOS
+v9.0.0 and modified to be SMP compatible. Task memory will be freed immediately
+when :cpp:func:`vTaskDelete` is called to delete a task that is not currently running
+and not pinned to the other core. Otherwise, freeing of task memory will still
 be delegated to the Idle Task.
 
-:ref:`deletion-callbacks`: ESP-IDF FreeRTOS has backported the Thread Local 
+:ref:`deletion-callbacks`: ESP-IDF FreeRTOS has backported the Thread Local
 Storage Pointers (TLSP) feature. However the extra feature of Deletion Callbacks has been
 added. Deletion callbacks are called automatically during task deletion and are
-used to free memory pointed to by TLSP. Call 
+used to free memory pointed to by TLSP. Call
 :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback()` to set TLSP and Deletion
 Callbacks.
 
-:ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be 
+:ref:`esp-idf-freertos-configuration`: Several aspects of ESP-IDF FreeRTOS can be
 set in the project configuration (``idf.py menuconfig``) such as running ESP-IDF in
 Unicore (single core) Mode, or configuring the number of Thread Local Storage Pointers
 each task will have.
@@ -89,9 +93,9 @@ The following features have been backported from FreeRTOS v9.0.0 to ESP-IDF.
 Static Alocation
 ^^^^^^^^^^^^^^^^^
 
-This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The 
+This feature has been backported from FreeRTOS v9.0.0 to ESP-IDF. The
 :ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` option must be enabled in `menuconfig`
-in order for static allocation functions to be available. Once enabled, the 
+in order for static allocation functions to be available. Once enabled, the
 following functions can be called...
 
  - :cpp:func:`xTaskCreateStatic` (see :ref:`backporting-notes` below)
@@ -119,19 +123,21 @@ Other Features
 Backporting Notes
 ^^^^^^^^^^^^^^^^^
 
-**1)** :cpp:func:`xTaskCreateStatic` has been made SMP compatible in a similar 
-fashion to :cpp:func:`xTaskCreate` (see :ref:`tasks-and-task-creation`). Therefore 
+**1)** :cpp:func:`xTaskCreateStatic` has been made SMP compatible in a similar
+fashion to :cpp:func:`xTaskCreate` (see :ref:`tasks-and-task-creation`). Therefore
 :cpp:func:`xTaskCreateStaticPinnedToCore` can also be called.
 
-**2)** Although vanilla FreeRTOS allows the Timer feature's daemon task to 
-be statically allocated, the daemon task is always dynamically allocated in 
-ESP-IDF. Therefore ``vApplicationGetTimerTaskMemory`` **does not** need to be 
+**2)** Although vanilla FreeRTOS allows the Timer feature's daemon task to
+be statically allocated, the daemon task is always dynamically allocated in
+ESP-IDF. Therefore ``vApplicationGetTimerTaskMemory`` **does not** need to be
 defined when using statically allocated timers in ESP-IDF FreeRTOS.
 
 **3)** The Thread Local Storage Pointer feature has been modified in ESP-IDF
 FreeRTOS to include Deletion Callbacks (see :ref:`deletion-callbacks`). Therefore
-the function :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback` can also be 
+the function :cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback` can also be
 called.
+
+
 
 
 .. _tasks-and-task-creation:
@@ -139,15 +145,15 @@ called.
 Tasks and Task Creation
 -----------------------
 
-Tasks in ESP-IDF FreeRTOS are designed to run on a particular core, therefore 
-two new task creation functions have been added to ESP-IDF FreeRTOS by 
-appending ``PinnedToCore`` to the names of the task creation functions in 
+Tasks in ESP-IDF FreeRTOS are designed to run on a particular core, therefore
+two new task creation functions have been added to ESP-IDF FreeRTOS by
+appending ``PinnedToCore`` to the names of the task creation functions in
 vanilla FreeRTOS. The vanilla FreeRTOS functions of :cpp:func:`xTaskCreate`
-and :cpp:func:`xTaskCreateStatic` have led to the addition of 
-:cpp:func:`xTaskCreatePinnedToCore` and :cpp:func:`xTaskCreateStaticPinnedToCore` in 
+and :cpp:func:`xTaskCreateStatic` have led to the addition of
+:cpp:func:`xTaskCreatePinnedToCore` and :cpp:func:`xTaskCreateStaticPinnedToCore` in
 ESP-IDF FreeRTOS (see :ref:`backported-features`).
 
-For more details see :component_file:`freertos/task.c`
+For more details see :component_file:`freertos/tasks.c`
 
 The ESP-IDF FreeRTOS task creation functions are nearly identical to their 
 vanilla counterparts with the exception of the extra parameter known as 
@@ -349,21 +355,29 @@ context switches and servicing of ISRs during a critical section. Therefore,
 critical sections are used as a valid protection method against simultaneous 
 access in vanilla FreeRTOS.
 
-On the other hand, the ESP32 has no hardware method for cores to disable each 
-other’s interrupts. Calling ``portDISABLE_INTERRUPTS()`` will have no effect on 
-the interrupts of the other core. Therefore, disabling interrupts is **NOT** 
-a valid protection method against simultaneous access to shared data as it 
-leaves the other core free to access the data even if the current core has 
-disabled its own interrupts. 
+.. only:: esp32
 
-For this reason, ESP-IDF FreeRTOS implements critical sections using mutexes, 
-and calls to enter or exit a critical must provide a mutex that is associated 
-with a shared resource requiring access protection. When entering a critical 
-section in ESP-IDF FreeRTOS, the calling core will disable its scheduler and 
-interrupts similar to the vanilla FreeRTOS implementation. However, the calling 
-core will also take the mutex whilst the other core is left unaffected during 
-the critical section. If the other core attempts to take the same mutex, it 
-will spin until the mutex is released. Therefore, the ESP-IDF FreeRTOS 
+    On the other hand, the ESP32 has no hardware method for cores to disable each 
+    other’s interrupts. Calling ``portDISABLE_INTERRUPTS()`` will have no effect on 
+    the interrupts of the other core. Therefore, disabling interrupts is **NOT** 
+    a valid protection method against simultaneous access to shared data as it 
+    leaves the other core free to access the data even if the current core has 
+    disabled its own interrupts.
+
+.. only:: esp32s2
+
+   ESP-IDF contains some modifications to work with dual core concurrency,
+   and the dual core API is used even on a single core only chip.
+
+For this reason, ESP-IDF FreeRTOS implements critical sections using special mutexes,
+referred by portMUX_Type objects on top of specific spinlock component 
+and calls to enter or exit a critical must provide a spinlock object that 
+is associated with a shared resource requiring access protection. 
+When entering a critical section in ESP-IDF FreeRTOS, the calling core will disable
+its scheduler and interrupts similar to the vanilla FreeRTOS implementation. However, 
+the calling core will also take the locks whilst the other core is left unaffected during 
+the critical section. If the other core attempts to take the spinlock, it 
+will spin until the lock is released. Therefore, the ESP-IDF FreeRTOS 
 implementation of critical sections allows a core to have protected access to a
 shared resource without disabling the other core. The other core will only be 
 affected if it tries to concurrently access the same resource.
@@ -383,55 +397,52 @@ The ESP-IDF FreeRTOS critical section functions have been modified as follows…
    section functions (``port*_CRITICAL`` in Non-ISR and ``port*_CRITICAL_ISR`` in ISR)
    in order to be in compliance with Vanilla FreeRTOS.
 
-For more details see :component_file:`freertos/include/freertos/portmacro.h` 
-and :component_file:`freertos/task.c`
+For more details see :component_file:`soc/include/soc/spinlock.h`
+and :component_file:`freertos/tasks.c`
 
 It should be noted that when modifying vanilla FreeRTOS code to be ESP-IDF 
 FreeRTOS compatible, it is trivial to modify the type of critical section 
 called as they are all defined to call the same function. As long as the same 
-mutex is provided upon entering and exiting, the type of call should not 
+spinlock is provided upon entering and exiting, the type of call should not 
 matter.
 
 
-.. _floating-points:
+.. only:: esp32
 
-Floating Point Aritmetic
-------------------------
+    .. _floating-points:
 
-The ESP32 supports hardware acceleration of single precision floating point
-arithmetic (``float``) via Floating Point Units (FPU, also known as coprocessors) 
-attached to each core. The use of the FPUs imposes some behavioral restrictions 
-on ESP-IDF FreeRTOS.
+    Floating Point Arithmetic
+    -------------------------
 
-ESP-IDF FreeRTOS implements Lazy Context Switching for FPUs. In other words,
-the state of a core's FPU registers are not immediately saved when a context 
-switch occurs. Therefore, tasks that utilize ``float`` must be pinned to a
-particular core upon creation. If not, ESP-IDF FreeRTOS will automatically pin
-the task in question to whichever core the task was running on upon the task's 
-first use of ``float``. Likewise due to Lazy Context Switching, interrupt service 
-routines must also not use ``float``.
+    ESP-IDF FreeRTOS implements Lazy Context Switching for FPUs. In other words,
+    the state of a core's FPU registers are not immediately saved when a context 
+    switch occurs. Therefore, tasks that utilize ``float`` must be pinned to a
+    particular core upon creation. If not, ESP-IDF FreeRTOS will automatically pin
+    the task in question to whichever core the task was running on upon the task's 
+    first use of ``float``. Likewise due to Lazy Context Switching, only interrupt
+    service routines of lowest priority (that is it the Level 1) can use ``float``, 
+    higher priority interrupts do not support FPU usage.
 
-ESP32 does not support hardware acceleration for double precision floating point
-arithmetic (``double``). Instead ``double`` is implemented via software hence the 
-behavioral restrictions with regards to ``float`` do not apply to ``double``. Note
-that due to the lack of hardware acceleration, ``double`` operations may consume
-significantly larger amount of CPU time in comparison to ``float``.
-
+    ESP32 does not support hardware acceleration for double precision floating point
+    arithmetic (``double``). Instead ``double`` is implemented via software hence the 
+    behavioral restrictions with regards to ``float`` do not apply to ``double``. Note
+    that due to the lack of hardware acceleration, ``double`` operations may consume
+    significantly larger amount of CPU time in comparison to ``float``.
 
 .. _task-deletion:
 
 Task Deletion
 -------------
 
-FreeRTOS task deletion prior to v9.0.0 delegated the freeing of task memory 
+FreeRTOS task deletion prior to v9.0.0 delegated the freeing of task memory
 entirely to the Idle Task. Currently, the freeing of task memory will occur
-immediately (within :cpp:func:`vTaskDelete`) if the task being deleted is not currently 
-running or is not pinned to the other core (with respect to the core 
+immediately (within :cpp:func:`vTaskDelete`) if the task being deleted is not currently
+running or is not pinned to the other core (with respect to the core
 :cpp:func:`vTaskDelete` is called on). TLSP deletion callbacks will also run immediately
 if the same conditions are met.
 
-However, calling :cpp:func:`vTaskDelete` to delete a task that is either currently 
-running or pinned to the other core will still result in the freeing of memory 
+However, calling :cpp:func:`vTaskDelete` to delete a task that is either currently
+running or pinned to the other core will still result in the freeing of memory
 being delegated to the Idle Task.
 
 
@@ -440,32 +451,32 @@ being delegated to the Idle Task.
 Thread Local Storage Pointers & Deletion Callbacks
 --------------------------------------------------
 
-Thread Local Storage Pointers (TLSP) are pointers stored directly in the TCB. 
-TLSP allow each task to have its own unique set of pointers to data structures. 
-However task deletion behavior in vanilla FreeRTOS does not automatically 
+Thread Local Storage Pointers (TLSP) are pointers stored directly in the TCB.
+TLSP allow each task to have its own unique set of pointers to data structures.
+However task deletion behavior in vanilla FreeRTOS does not automatically
 free the memory pointed to by TLSP. Therefore if the memory pointed to by
-TLSP is not explicitly freed by the user before task deletion, memory leak will 
+TLSP is not explicitly freed by the user before task deletion, memory leak will
 occur.
 
-ESP-IDF FreeRTOS provides the added feature of Deletion Callbacks. Deletion 
+ESP-IDF FreeRTOS provides the added feature of Deletion Callbacks. Deletion
 Callbacks are called automatically during task deletion to free memory pointed
 to by TLSP. Each TLSP can have its own Deletion Callback. Note that due to the
-to :ref:`task-deletion` behavior, there can be instances where Deletion 
+to `Task Deletion`_ behavior, there can be instances where Deletion
 Callbacks are called in the context of the Idle Tasks. Therefore Deletion
 Callbacks **should never attempt to block** and critical sections should be kept
 as short as possible to minimize priority inversion.
 
 Deletion callbacks are of type
 ``void (*TlsDeleteCallbackFunction_t)( int, void * )`` where the first parameter
-is the index number of the associated TLSP, and the second parameter is the 
+is the index number of the associated TLSP, and the second parameter is the
 TLSP itself.
 
-Deletion callbacks are set alongside TLSP by calling 
-:cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`. Calling the vanilla 
+Deletion callbacks are set alongside TLSP by calling
+:cpp:func:`vTaskSetThreadLocalStoragePointerAndDelCallback`. Calling the vanilla
 FreeRTOS function :cpp:func:`vTaskSetThreadLocalStoragePointer` will simply set the
 TLSP's associated Deletion Callback to `NULL` meaning that no callback will be
 called for that TLSP during task deletion. If a deletion callback is `NULL`,
-users should manually free the memory pointed to by the associated TLSP before 
+users should manually free the memory pointed to by the associated TLSP before
 task deletion in order to avoid memory leak.
 
 :ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` in menuconfig can be used
@@ -484,28 +495,38 @@ The ESP-IDF FreeRTOS can be configured in the project configuration menu
 highlights some of the ESP-IDF FreeRTOS configuration options. For a full list of
 ESP-IDF FreeRTOS configurations, see :doc:`FreeRTOS <../api-reference/kconfig>`
 
-:ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
-on **PRO_CPU**. Note that this is **not equivalent to running vanilla 
-FreeRTOS**. Behaviors of multiple components in ESP-IDF will be modified such 
-as :component_file:`esp32/cpu_start.c`. For more details regarding the 
-effects of running ESP-IDF FreeRTOS on a single core, search for 
-occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
-    
-:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` will define the 
-number of Thread Local Storage Pointers each task will have in ESP-IDF 
+.. only:: esp32
+
+    :ref:`CONFIG_FREERTOS_UNICORE` will run ESP-IDF FreeRTOS only
+    on **PRO_CPU**. Note that this is **not equivalent to running vanilla
+    FreeRTOS**. Behaviors of multiple components in ESP-IDF will be modified such
+    as :component_file:`esp32/cpu_start.c`. For more details regarding the
+    effects of running ESP-IDF FreeRTOS on a single core, search for
+    occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+
+.. only:: esp32s2
+
+    As ESP32-S2 is a single core SoC, the config item :ref:`CONFIG_FREERTOS_UNICORE` is
+    always set. This means ESP-IDF only runs on the single CPU. Note that this is **not
+    equivalent to running vanilla FreeRTOS**. Behaviors of multiple components in ESP-IDF
+    will be modified. For more details regarding the effects of running ESP-IDF FreeRTOS
+    on a single core, search for occurences of ``CONFIG_FREERTOS_UNICORE`` in the ESP-IDF components.
+
+:ref:`CONFIG_FREERTOS_THREAD_LOCAL_STORAGE_POINTERS` will define the
+number of Thread Local Storage Pointers each task will have in ESP-IDF
 FreeRTOS.
 
 :ref:`CONFIG_FREERTOS_SUPPORT_STATIC_ALLOCATION` will enable the backported
 functionality of :cpp:func:`xTaskCreateStaticPinnedToCore` in ESP-IDF FreeRTOS
-    
+
 :ref:`CONFIG_FREERTOS_ASSERT_ON_UNTESTED_FUNCTION` will trigger a halt in
 particular functions in ESP-IDF FreeRTOS which have not been fully tested
 in an SMP context.
 
-:ref:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions 
-within a wrapper function. In the case that a task function mistakenly returns 
-(i.e. does not call :cpp:func:`vTaskDelete`), the call flow will return to the 
-wrapper function. The wrapper function will then log an error and abort the 
+:ref:`CONFIG_FREERTOS_TASK_FUNCTION_WRAPPER` will enclose all task functions
+within a wrapper function. In the case that a task function mistakenly returns
+(i.e. does not call :cpp:func:`vTaskDelete`), the call flow will return to the
+wrapper function. The wrapper function will then log an error and abort the
 application, as illustrated below::
 
     E (25) FreeRTOS: FreeRTOS task should not return. Aborting now!

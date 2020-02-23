@@ -166,9 +166,9 @@ For complete example see :example:`provisioning/ble_prov`
 API Reference
 -------------
 
-.. include:: /_build/inc/protocomm.inc
-.. include:: /_build/inc/protocomm_security.inc
-.. include:: /_build/inc/protocomm_security0.inc
-.. include:: /_build/inc/protocomm_security1.inc
-.. include:: /_build/inc/protocomm_httpd.inc
-.. include:: /_build/inc/protocomm_ble.inc
+.. include-build-file:: inc/protocomm.inc
+.. include-build-file:: inc/protocomm_security.inc
+.. include-build-file:: inc/protocomm_security0.inc
+.. include-build-file:: inc/protocomm_security1.inc
+.. include-build-file:: inc/protocomm_httpd.inc
+.. include-build-file:: inc/protocomm_ble.inc

@@ -1,14 +1,16 @@
 include(ExternalProject)
 
 function(__kconfig_init)
+    if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "FreeBSD")
+        set(MAKE_COMMMAND "gmake")
+    else()
+        set(MAKE_COMMMAND "make")
+    endif()
+
     idf_build_get_property(idf_path IDF_PATH)
-    if(CMAKE_HOST_WIN32)
+    if(CMAKE_HOST_WIN32 AND DEFINED ENV{MSYSTEM})
         # Prefer a prebuilt mconf-idf on Windows
-        if(DEFINED ENV{MSYSTEM})
-            find_program(WINPTY winpty)
-        else()
-            unset(WINPTY CACHE)  # in case previous CMake run was in a tty and this one is not
-        endif()
+        find_program(WINPTY winpty)
         unset(MCONF CACHE)  # needed when MSYS and CMD is intermixed (cache could contain an incompatible path)
         find_program(MCONF mconf-idf)
 
@@ -26,9 +28,38 @@ function(__kconfig_init)
             find_program(NATIVE_GCC gcc)
             if(NOT NATIVE_GCC)
                 message(FATAL_ERROR
-                    "Windows requires a prebuilt mconf-idf for your platform "
-                    "on the PATH, or an MSYS2 version of gcc on the PATH to build mconf-idf. "
+                    "Windows requires an MSYS2 version of gcc on the PATH to build mconf-idf. "
                     "Consult the setup docs for ESP-IDF on Windows.")
+            else()
+                # Use the existing Makefile to build mconf (out of tree) when needed
+                #
+                set(MCONF ${CMAKE_BINARY_DIR}/kconfig_bin/mconf-idf)
+                set(src_path ${idf_path}/tools/kconfig)
+
+                # note: we preemptively remove any build files from the src dir
+                # as we're building out of tree, but don't want build system to
+                # #include any from there that were previously build with/for make
+                externalproject_add(mconf-idf
+                    SOURCE_DIR ${src_path}
+                    CONFIGURE_COMMAND ""
+                    BINARY_DIR "${CMAKE_BINARY_DIR}/kconfig_bin"
+                    BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
+                    COMMAND ${MAKE_COMMMAND} -f ${src_path}/Makefile mconf-idf
+                    BUILD_BYPRODUCTS ${MCONF}
+                    INSTALL_COMMAND ""
+                    EXCLUDE_FROM_ALL 1
+                    )
+
+                file(GLOB mconf_srcfiles ${src_path}/*.c)
+                list(REMOVE_ITEM mconf_srcfiles "${src_path}/zconf.lex.c" "${src_path}/zconf.hash.c")
+                externalproject_add_stepdependencies(mconf-idf build
+                    ${mconf_srcfiles}
+                    ${src_path}/Makefile
+                    ${CMAKE_CURRENT_LIST_FILE})
+                unset(mconf_srcfiles)
+                unset(src_path)
+
+                set(menuconfig_depends DEPENDS mconf-idf)
             endif()
         else()
             execute_process(COMMAND "${MCONF}" -v
@@ -53,47 +84,9 @@ function(__kconfig_init)
                 set(MCONF "\"${WINPTY}\" \"${MCONF}\"")
             endif()
         endif()
+        idf_build_set_property(__MCONF ${MCONF})
+        idf_build_set_property(__MENUCONFIG_DEPENDS "${menuconfig_depends}")
     endif()
-    if(${CMAKE_HOST_SYSTEM_NAME} MATCHES "FreeBSD")
-        set(MAKE_COMMMAND "gmake")
-    else()
-        set(MAKE_COMMMAND "make")
-    endif()
-
-    if(NOT MCONF)
-        # Use the existing Makefile to build mconf (out of tree) when needed
-        #
-        set(MCONF ${CMAKE_BINARY_DIR}/kconfig_bin/mconf-idf)
-        set(src_path ${idf_path}/tools/kconfig)
-
-        # note: we preemptively remove any build files from the src dir
-        # as we're building out of tree, but don't want build system to
-        # #include any from there that were previously build with/for make
-        externalproject_add(mconf-idf
-            SOURCE_DIR ${src_path}
-            CONFIGURE_COMMAND ""
-            BINARY_DIR "${CMAKE_BINARY_DIR}/kconfig_bin"
-            BUILD_COMMAND rm -f ${src_path}/zconf.lex.c ${src_path}/zconf.hash.c
-            COMMAND ${MAKE_COMMMAND} -f ${src_path}/Makefile mconf-idf
-            BUILD_BYPRODUCTS ${MCONF}
-            INSTALL_COMMAND ""
-            EXCLUDE_FROM_ALL 1
-            )
-
-        file(GLOB mconf_srcfiles ${src_path}/*.c)
-        list(REMOVE_ITEM mconf_srcfiles "${src_path}/zconf.lex.c" "${src_path}/zconf.hash.c")
-        externalproject_add_stepdependencies(mconf-idf build
-            ${mconf_srcfiles}
-            ${src_path}/Makefile
-            ${CMAKE_CURRENT_LIST_FILE})
-        unset(mconf_srcfiles)
-        unset(src_path)
-
-        set(menuconfig_depends DEPENDS mconf-idf)
-    endif()
-
-    idf_build_set_property(__MCONF ${MCONF})
-    idf_build_set_property(__MENUCONFIG_DEPENDS "${menuconfig_depends}")
 
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_set_property(__ROOT_KCONFIG ${idf_path}/Kconfig)
@@ -152,6 +145,11 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     string(REPLACE ";" " " kconfig_projbuilds "${kconfig_projbuilds}")
     string(REPLACE ";" " " sdkconfig_renames "${sdkconfig_renames}")
 
+    # These are the paths for files which will contain the generated "source" lines for COMPONENT_KCONFIGS and
+    # COMPONENT_KCONFIGS_PROJBUILD
+    set(kconfigs_projbuild_path "${CMAKE_CURRENT_BINARY_DIR}/kconfigs_projbuild.in")
+    set(kconfigs_path "${CMAKE_CURRENT_BINARY_DIR}/kconfigs.in")
+
     # Place config-related environment arguments into config.env file
     # to work around command line length limits for execute_process
     # on Windows & CMake < 3.11
@@ -160,16 +158,26 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(CONFIG_ENV_PATH ${config_env_path})
 
     if(sdkconfig_defaults)
-        set(defaults_arg --defaults "${sdkconfig_defaults}")
+        foreach(sdkconfig_default ${sdkconfig_defaults})
+            list(APPEND defaults_arg --defaults "${sdkconfig_default}")
+        endforeach()
     endif()
 
-    if(EXISTS "${sdkconfig_defaults}.${idf_target}")
-        list(APPEND defaults_arg --defaults "${sdkconfig_defaults}.${idf_target}")
+    if(sdkconfig_defaults)
+        foreach(sdkconfig_default ${sdkconfig_defaults})
+            if(EXISTS "${sdkconfig_default}.${idf_target}")
+                list(APPEND defaults_arg --defaults "${sdkconfig_default}.${idf_target}")
+            endif()
+        endforeach()
     endif()
 
     idf_build_get_property(root_kconfig __ROOT_KCONFIG)
     idf_build_get_property(root_sdkconfig_rename __ROOT_SDKCONFIG_RENAME)
     idf_build_get_property(python PYTHON)
+
+    set(prepare_kconfig_files_command
+        ${python} ${idf_path}/tools/kconfig_new/prepare_kconfig_files.py
+        --env-file ${config_env_path})
 
     set(confgen_basecommand
         ${python} ${idf_path}/tools/kconfig_new/confgen.py
@@ -192,6 +200,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(output_sdkconfig __OUTPUT_SDKCONFIG)
     if(output_sdkconfig)
         execute_process(
+            COMMAND ${prepare_kconfig_files_command})
+        execute_process(
             COMMAND ${confgen_basecommand}
             --output header ${sdkconfig_header}
             --output cmake ${sdkconfig_cmake}
@@ -200,6 +210,8 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
             --output config ${sdkconfig}
             RESULT_VARIABLE config_result)
     else()
+        execute_process(
+            COMMAND ${prepare_kconfig_files_command})
         execute_process(
             COMMAND ${confgen_basecommand}
             --output header ${sdkconfig_header}
@@ -237,23 +249,33 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_set_property(SDKCONFIG_JSON_MENUS ${sdkconfig_json_menus})
     idf_build_set_property(CONFIG_DIR ${config_dir})
 
-    idf_build_get_property(menuconfig_depends __MENUCONFIG_DEPENDS)
+    if(CMAKE_HOST_WIN32 AND DEFINED ENV{MSYSTEM})
+        idf_build_get_property(menuconfig_depends __MENUCONFIG_DEPENDS)
+        idf_build_get_property(mconf __MCONF)
 
-    idf_build_get_property(mconf __MCONF)
+        set(MENUCONFIG_CMD ${mconf})
+    else()
+        set(MENUCONFIG_CMD ${python} ${idf_path}/tools/kconfig_new/menuconfig.py)
+        set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
+    endif()
 
-    # Generate the menuconfig target (uses C-based mconf-idf tool, either prebuilt or via mconf-idf target above)
+    # Generate the menuconfig target
     add_custom_target(menuconfig
         ${menuconfig_depends}
         # create any missing config file, with defaults if necessary
-        COMMAND ${confgen_basecommand} --env "IDF_TARGET=${idf_target}" --output config ${sdkconfig}
+        COMMAND ${prepare_kconfig_files_command}
+        COMMAND ${confgen_basecommand}
+        --env "IDF_TARGET=${idf_target}"
+        --dont-write-deprecated
+        --output config ${sdkconfig}
+        COMMAND ${TERM_CHECK_CMD}
         COMMAND ${CMAKE_COMMAND} -E env
-        "COMPONENT_KCONFIGS=${kconfigs}"
-        "COMPONENT_KCONFIGS_PROJBUILD=${kconfig_projbuilds}"
+        "COMPONENT_KCONFIGS_SOURCE_FILE=${kconfigs_path}"
+        "COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE=${kconfigs_projbuild_path}"
         "IDF_CMAKE=y"
-        "IDF_TARGET=${IDF_TARGET}"
         "KCONFIG_CONFIG=${sdkconfig}"
         "IDF_TARGET=${idf_target}"
-        ${mconf} ${root_kconfig}
+        ${MENUCONFIG_CMD} ${root_kconfig}
         # VERBATIM cannot be used here because it cannot handle ${mconf}="winpty mconf-idf" and the escaping must be
         # done manually
         USES_TERMINAL
@@ -264,6 +286,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     # Custom target to run confserver.py from the build tool
     add_custom_target(confserver
+        COMMAND ${prepare_kconfig_files_command}
         COMMAND ${PYTHON} ${IDF_PATH}/tools/kconfig_new/confserver.py
         --env-file ${config_env_path}
         --kconfig ${IDF_PATH}/Kconfig

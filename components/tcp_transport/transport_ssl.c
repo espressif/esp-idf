@@ -71,7 +71,7 @@ static int ssl_connect(esp_transport_handle_t t, const char *host, int port, int
     ssl->cfg.timeout_ms = timeout_ms;
     ssl->ssl_initialized = true;
     ssl->tls = esp_tls_init();
-    if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) < 0) {
+    if (esp_tls_conn_new_sync(host, strlen(host), port, &ssl->cfg, ssl->tls) <= 0) {
         ESP_LOGE(TAG, "Failed to open a new connection");
         esp_transport_set_errors(t, ssl->tls->error_handle);
         esp_tls_conn_delete(ssl->tls);
@@ -86,16 +86,15 @@ static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     int ret = -1;
+    struct timeval timeout;
     fd_set readset;
     fd_set errset;
     FD_ZERO(&readset);
     FD_ZERO(&errset);
     FD_SET(ssl->tls->sockfd, &readset);
     FD_SET(ssl->tls->sockfd, &errset);
-    struct timeval timeout;
-    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
 
-    ret = select(ssl->tls->sockfd + 1, &readset, NULL, &errset, &timeout);
+    ret = select(ssl->tls->sockfd + 1, &readset, NULL, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
     if (ret > 0 && FD_ISSET(ssl->tls->sockfd, &errset)) {
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
@@ -110,15 +109,14 @@ static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     int ret = -1;
+    struct timeval timeout;
     fd_set writeset;
     fd_set errset;
     FD_ZERO(&writeset);
     FD_ZERO(&errset);
     FD_SET(ssl->tls->sockfd, &writeset);
     FD_SET(ssl->tls->sockfd, &errset);
-    struct timeval timeout;
-    esp_transport_utils_ms_to_timeval(timeout_ms, &timeout);
-    ret = select(ssl->tls->sockfd + 1, NULL, &writeset, &errset, &timeout);
+    ret = select(ssl->tls->sockfd + 1, NULL, &writeset, &errset, esp_transport_utils_ms_to_timeval(timeout_ms, &timeout));
     if (ret > 0 && FD_ISSET(ssl->tls->sockfd, &errset)) {
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
@@ -247,12 +245,29 @@ void esp_transport_ssl_set_client_key_data(esp_transport_handle_t t, const char 
     }
 }
 
+void esp_transport_ssl_set_client_key_password(esp_transport_handle_t t, const char *password, int password_len)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.clientkey_password = (void *)password;
+        ssl->cfg.clientkey_password_len = password_len;
+    }
+}
+
 void esp_transport_ssl_set_client_key_data_der(esp_transport_handle_t t, const char *data, int len)
 {
     transport_ssl_t *ssl = esp_transport_get_context_data(t);
     if (t && ssl) {
         ssl->cfg.clientkey_buf = (void *)data;
         ssl->cfg.clientkey_bytes = len;
+    }
+}
+
+void esp_transport_ssl_set_alpn_protocol(esp_transport_handle_t t, const char **alpn_protos)
+{
+    transport_ssl_t *ssl = esp_transport_get_context_data(t);
+    if (t && ssl) {
+        ssl->cfg.alpn_protos = alpn_protos;
     }
 }
 

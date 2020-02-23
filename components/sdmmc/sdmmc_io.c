@@ -17,6 +17,7 @@
 
 #include "sdmmc_common.h"
 #include "esp_attr.h"
+#include "esp_compiler.h"
 
 
 #define CIS_TUPLE(NAME)  (cis_tuple_t) {.code=CISTPL_CODE_##NAME, .name=#NAME, .func=&cis_tuple_func_default, }
@@ -235,7 +236,7 @@ esp_err_t sdmmc_io_read_byte(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, uint8_t *out_byte)
 {
     esp_err_t ret = sdmmc_io_rw_direct(card, function, addr, SD_ARG_CMD52_READ, out_byte);
-    if (ret != ESP_OK) {
+    if (unlikely(ret != ESP_OK)) {
         ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (read 0x%x) returned 0x%x", __func__, addr, ret);
     }
     return ret;
@@ -247,7 +248,7 @@ esp_err_t sdmmc_io_write_byte(sdmmc_card_t* card, uint32_t function,
     uint8_t tmp_byte = in_byte;
     esp_err_t ret = sdmmc_io_rw_direct(card, function, addr,
             SD_ARG_CMD52_WRITE | SD_ARG_CMD52_EXCHANGE, &tmp_byte);
-    if (ret != ESP_OK) {
+    if (unlikely(ret != ESP_OK)) {
         ESP_LOGE(TAG, "%s: sdmmc_io_rw_direct (write 0x%x) returned 0x%x", __func__, addr, ret);
         return ret;
     }
@@ -323,7 +324,7 @@ esp_err_t sdmmc_io_read_bytes(sdmmc_card_t* card, uint32_t function,
         esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
                 SD_ARG_CMD53_READ | SD_ARG_CMD53_INCREMENT,
                 pc_dst, will_transfer);
-        if (err != ESP_OK) {
+        if (unlikely(err != ESP_OK)) {
             return err;
         }
         pc_dst += will_transfer;
@@ -346,7 +347,7 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
         esp_err_t err = sdmmc_io_rw_extended(card, function, addr,
                 SD_ARG_CMD53_WRITE | SD_ARG_CMD53_INCREMENT,
                 (void*) pc_src, will_transfer);
-        if (err != ESP_OK) {
+        if (unlikely(err != ESP_OK)) {
             return err;
         }
         pc_src += will_transfer;
@@ -359,7 +360,7 @@ esp_err_t sdmmc_io_write_bytes(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, void* dst, size_t size)
 {
-    if (size % 4 != 0) {
+    if (unlikely(size % 4 != 0)) {
         return ESP_ERR_INVALID_SIZE;
     }
     return sdmmc_io_rw_extended(card, function, addr,
@@ -370,7 +371,7 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
 esp_err_t sdmmc_io_write_blocks(sdmmc_card_t* card, uint32_t function,
         uint32_t addr, const void* src, size_t size)
 {
-    if (size % 4 != 0) {
+    if (unlikely(size % 4 != 0)) {
         return ESP_ERR_INVALID_SIZE;
     }
     return sdmmc_io_rw_extended(card, function, addr,

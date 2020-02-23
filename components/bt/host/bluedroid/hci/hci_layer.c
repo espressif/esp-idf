@@ -299,7 +299,7 @@ static void event_command_ready(fixed_queue_t *queue)
 
     wait_entry = fixed_queue_dequeue(queue, FIXED_QUEUE_MAX_TIMEOUT);
 
-    if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE 
+    if(wait_entry->opcode == HCI_HOST_NUM_PACKETS_DONE
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     || wait_entry->opcode == HCI_VENDOR_BLE_ADV_REPORT_FLOW_CONTROL
 #endif

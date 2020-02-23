@@ -48,7 +48,11 @@ static void modbus_slave_task(void *pvParameters)
         // Check if stack started then poll for data
         if (status & MB_EVENT_STACK_STARTED) {
             (void)eMBPoll(); // allow stack to process data
-            (void)xMBPortSerialTxPoll(); // Send response buffer if ready
+            // Send response buffer
+            BOOL xSentState = xMBPortSerialTxPoll();
+            if (xSentState) {
+                (void)xMBPortEventPost( EV_FRAME_SENT );
+            }
         }
     }
 }
@@ -95,10 +99,6 @@ static esp_err_t mbc_serial_slave_start(void)
                          (eMBParity)mbs_opts->mbs_comm.parity);
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack initialization failure, eMBInit() returns (0x%x).", status);
-#ifdef CONFIG_FMB_CONTROLLER_SLAVE_ID_SUPPORT
-    status = eMBSetSlaveID(MB_SLAVE_ID_SHORT, TRUE, (UCHAR*)mb_slave_id, sizeof(mb_slave_id));
-    MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE, "mb stack set slave ID failure.");
-#endif
     status = eMBEnable();
     MB_SLAVE_CHECK((status == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack set slave ID failure, eMBEnable() returned (0x%x).", (uint32_t)status);
@@ -133,7 +133,7 @@ static esp_err_t mbc_serial_slave_destroy(void)
     MB_SLAVE_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     free(mbs_interface_ptr);
-
+    mbs_interface_ptr = NULL;
     return ESP_OK;
 }
 

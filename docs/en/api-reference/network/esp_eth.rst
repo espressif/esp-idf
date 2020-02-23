@@ -1,11 +1,14 @@
 Ethernet
 ========
 
+:link_to_translation:`zh_CN:[中文]`
+
 Application Example
 -------------------
 
--   Ethernet basic example: :example:`ethernet/ethernet`.
+-   Ethernet basic example: :example:`ethernet/basic`.
 -   Ethernet iperf example: :example:`ethernet/iperf`.
+-   Ethernet to Wi-Fi AP "router": :example:`ethernet/eth2ap`.
 
 Ethernet Driver Model
 ---------------------
@@ -35,19 +38,24 @@ Ethernet PHY Common Registers
 API Reference - Driver Model
 ----------------------------
 
-.. include:: /_build/inc/esp_eth.inc
+.. include-build-file:: inc/esp_eth.inc
 
 API Reference - Common Interface
 --------------------------------
 
-.. include:: /_build/inc/esp_eth_com.inc
+.. include-build-file:: inc/esp_eth_com.inc
 
 API Reference - MAC Interface
 -----------------------------
 
-.. include:: /_build/inc/esp_eth_mac.inc
+.. include-build-file:: inc/esp_eth_mac.inc
 
 API Reference - PHY Interface
 -----------------------------
 
-.. include:: /_build/inc/esp_eth_phy.inc
+.. include-build-file:: inc/esp_eth_phy.inc
+
+API Reference - Glue for esp_netif
+----------------------------------
+
+.. include-build-file:: inc/esp_eth_netif_glue.inc

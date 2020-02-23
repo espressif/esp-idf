@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 #include "soc/gpio_periph.h"
 #include "driver/gpio.h"
 #include "esp_core_dump_priv.h"
+// TODO: move chip dependent part to portable code
 #if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/crc.h"
 #include "esp32/clk.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/clk.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/crc.h"
+#include "esp32s2/clk.h"
 #endif
 
 const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_uart";
@@ -54,22 +57,49 @@ static void esp_core_dump_b64_encode(const uint8_t *src, uint32_t src_len, uint8
 static esp_err_t esp_core_dump_uart_write_start(void *priv)
 {
     esp_err_t err = ESP_OK;
+    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
+    esp_core_dump_checksum_init(wr_data);
     ets_printf(DRAM_STR("================= CORE DUMP START =================\r\n"));
     return err;
+}
+
+static esp_err_t esp_core_dump_uart_write_prepare(void *priv, uint32_t *data_len)
+{
+    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
+    uint32_t cs_len;
+    cs_len = esp_core_dump_checksum_finish(wr_data, NULL);
+    *data_len += cs_len;
+    return ESP_OK;
 }
 
 static esp_err_t esp_core_dump_uart_write_end(void *priv)
 {
     esp_err_t err = ESP_OK;
+    char buf[64 + 4];
+    void* cs_addr = NULL;
+    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
+    if (wr_data) {
+        size_t cs_len = esp_core_dump_checksum_finish(wr_data, &cs_addr);
+        wr_data->off += cs_len;
+        esp_core_dump_b64_encode((const uint8_t *)cs_addr, cs_len, (uint8_t*)&buf[0]);
+        ets_printf(DRAM_STR("%s\r\n"), buf);
+    }
     ets_printf(DRAM_STR("================= CORE DUMP END =================\r\n"));
+#if CONFIG_ESP32_COREDUMP_CHECKSUM_SHA256
+    if (cs_addr) {
+        esp_core_dump_print_sha256(DRAM_STR("Coredump SHA256"), (uint8_t*)(cs_addr));
+    }
+#endif
     return err;
 }
 
 static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t data_len)
 {
     esp_err_t err = ESP_OK;
-    char buf[64 + 4], *addr = data;
+    char buf[64 + 4];
+    char *addr = data;
     char *end = addr + data_len;
+    core_dump_write_data_t *wr_data = (core_dump_write_data_t *)priv;
 
     while (addr < end) {
         size_t len = end - addr;
@@ -82,6 +112,10 @@ static esp_err_t esp_core_dump_uart_write_data(void *priv, void * data, uint32_t
         ets_printf(DRAM_STR("%s\r\n"), buf);
     }
 
+    if (wr_data) {
+        wr_data->off += data_len;
+        esp_core_dump_checksum_update(wr_data, data, data_len);
+    }
     return err;
 }
 
@@ -99,16 +133,18 @@ static int esp_core_dump_uart_get_char(void) {
 void esp_core_dump_to_uart(XtExcFrame *frame)
 {
     core_dump_write_config_t wr_cfg;
+    core_dump_write_data_t wr_data;
     uint32_t tm_end, tm_cur;
     int ch;
 
     memset(&wr_cfg, 0, sizeof(wr_cfg));
-    wr_cfg.prepare = NULL;
+    wr_cfg.prepare = esp_core_dump_uart_write_prepare;
     wr_cfg.start = esp_core_dump_uart_write_start;
     wr_cfg.end = esp_core_dump_uart_write_end;
     wr_cfg.write = esp_core_dump_uart_write_data;
-    wr_cfg.priv = NULL;
+    wr_cfg.priv = (void*)&wr_data;
 
+    // TODO: move chip dependent code to portable part
     //Make sure txd/rxd are enabled
     // use direct reg access instead of gpio_pullup_dis which can cause exception when flash cache is disabled
     REG_CLR_BIT(GPIO_PIN_REG_1, FUN_PU);
@@ -129,5 +165,10 @@ void esp_core_dump_to_uart(XtExcFrame *frame)
     ESP_COREDUMP_LOGI("Print core dump to uart...");
     esp_core_dump_write((void*)frame, &wr_cfg);
     ESP_COREDUMP_LOGI("Core dump has been written to uart.");
+}
+
+void esp_core_dump_init(void)
+{
+    ESP_COREDUMP_LOGI("Init core dump to UART");
 }
 #endif

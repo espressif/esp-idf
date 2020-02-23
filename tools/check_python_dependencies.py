@@ -16,6 +16,7 @@
 
 import argparse
 import os
+import re
 import sys
 
 try:
@@ -35,26 +36,27 @@ def escape_backslash(path):
         return path
 
 
-def is_virtualenv():
-    """Detects if current python is inside virtualenv, pyvenv (python 3.4-3.5) or venv"""
-
-    return (hasattr(sys, 'real_prefix') or
-            (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix))
-
-
 if __name__ == "__main__":
     idf_path = os.getenv("IDF_PATH")
+
+    default_requirements_path = os.path.join(idf_path, 'requirements.txt')
 
     parser = argparse.ArgumentParser(description='ESP32 Python package dependency checker')
     parser.add_argument('--requirements', '-r',
                         help='Path to the requrements file',
-                        default=os.path.join(idf_path, 'requirements.txt'))
+                        default=default_requirements_path)
     args = parser.parse_args()
 
     not_satisfied = []
     with open(args.requirements) as f:
         for line in f:
             line = line.strip()
+            # pkg_resources.require() cannot handle the full requirements file syntax so we need to make
+            # adjustments for options which we use.
+            if line.startswith('file://'):
+                line = os.path.basename(line)
+            if line.startswith('-e') and '#egg=' in line:  # version control URLs, take the egg= part at the end only
+                line = re.search(r'#egg=([^\s]+)', line).group(1)
             try:
                 pkg_resources.require(line)
             except Exception:
@@ -64,7 +66,10 @@ if __name__ == "__main__":
         print('The following Python requirements are not satisfied:')
         for requirement in not_satisfied:
             print(requirement)
-        if os.environ.get('IDF_PYTHON_ENV_PATH'):
+        if os.path.realpath(args.requirements) != os.path.realpath(default_requirements_path):
+            # we're using this script to check non-default requirements.txt, so tell the user to run pip
+            print('Please check the documentation for the feature you are using, or run "%s -m pip install -r %s"' % (sys.executable, args.requirements))
+        elif os.environ.get('IDF_PYTHON_ENV_PATH'):
             # We are running inside a private virtual environment under IDF_TOOLS_PATH,
             # ask the user to run install.bat again.
             if sys.platform == "win32" and not os.environ.get("MSYSTEM"):
@@ -93,12 +98,8 @@ if __name__ == "__main__":
                     print("pacman -S mingw-w64-i686-python{}-setuptools".format(sys.version_info[0],))
                     continue
         else:
-            print('Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required'
-                  ' packages.')
-        print('Alternatively, you can run "{} -m pip install {}-r {}" for resolving the issue.'
-              ''.format(escape_backslash(sys.executable),
-                        '' if is_virtualenv() else '--user ',
-                        escape_backslash(args.requirements)))
+            print('Please follow the instructions found in the "Set up the tools" section of '
+                  'ESP-IDF Getting Started Guide')
         sys.exit(1)
 
     print('Python requirements from {} are satisfied.'.format(args.requirements))

@@ -16,10 +16,10 @@
 #define _DRIVER_SDIO_SLAVE_H_
 
 #include "freertos/FreeRTOS.h"
-#include "freertos/portmacro.h"
 #include "esp_err.h"
 #include "sys/queue.h"
 
+#include "hal/sdio_slave_types.h"
 #include "soc/sdio_slave_periph.h"
 
 #ifdef __cplusplus
@@ -30,36 +30,6 @@ extern "C" {
 
 typedef void(*sdio_event_cb_t)(uint8_t event);
 
-/// Mask of interrupts sending to the host.
-typedef enum {
-    SDIO_SLAVE_HOSTINT_SEND_NEW_PACKET =  HOST_SLC0_RX_NEW_PACKET_INT_ENA,  ///< New packet available
-    SDIO_SLAVE_HOSTINT_RECV_OVF        =  HOST_SLC0_TX_OVF_INT_ENA,         ///< Slave receive buffer overflow
-    SDIO_SLAVE_HOSTINT_SEND_UDF        =  HOST_SLC0_RX_UDF_INT_ENA,         ///< Slave sending buffer underflow (this case only happen when the host do not request for packet according to the packet len).
-    SDIO_SLAVE_HOSTINT_BIT7            =  HOST_SLC0_TOHOST_BIT7_INT_ENA,    ///< General purpose interrupt bits that can be used by the user.
-    SDIO_SLAVE_HOSTINT_BIT6            =  HOST_SLC0_TOHOST_BIT6_INT_ENA,
-    SDIO_SLAVE_HOSTINT_BIT5            =  HOST_SLC0_TOHOST_BIT5_INT_ENA,
-    SDIO_SLAVE_HOSTINT_BIT4            =  HOST_SLC0_TOHOST_BIT4_INT_ENA,
-    SDIO_SLAVE_HOSTINT_BIT3            =  HOST_SLC0_TOHOST_BIT3_INT_ENA,
-    SDIO_SLAVE_HOSTINT_BIT2            =  HOST_SLC0_TOHOST_BIT2_INT_ENA,
-    SDIO_SLAVE_HOSTINT_BIT1            =  HOST_SLC0_TOHOST_BIT1_INT_ENA,
-    SDIO_SLAVE_HOSTINT_BIT0            =  HOST_SLC0_TOHOST_BIT0_INT_ENA,
-} sdio_slave_hostint_t;
-
-/// Timing of SDIO slave
-typedef enum {
-    SDIO_SLAVE_TIMING_PSEND_PSAMPLE = 0,/**< Send at posedge, and sample at posedge. Default value for HS mode.
-                                         *   Normally there's no problem using this to work in DS mode.
-                                         */
-    SDIO_SLAVE_TIMING_NSEND_PSAMPLE    ,///< Send at negedge, and sample at posedge. Default value for DS mode and below.
-    SDIO_SLAVE_TIMING_PSEND_NSAMPLE,    ///< Send at posedge, and sample at negedge
-    SDIO_SLAVE_TIMING_NSEND_NSAMPLE,    ///< Send at negedge, and sample at negedge
-} sdio_slave_timing_t;
-
-/// Configuration of SDIO slave mode
-typedef enum {
-    SDIO_SLAVE_SEND_STREAM = 0, ///< Stream mode, all packets to send will be combined as one if possible
-    SDIO_SLAVE_SEND_PACKET = 1, ///< Packet mode, one packets will be sent one after another (only increase packet_len if last packet sent).
-} sdio_slave_sending_mode_t;
 
 /// Configuration of SDIO slave
 typedef struct {
@@ -267,9 +237,9 @@ sdio_slave_hostint_t sdio_slave_get_host_intena(void);
 
 /** Set the interrupt enable for host.
  *
- * @param ena Enable mask for host interrupt.
+ * @param mask Enable mask for host interrupt.
  */
-void sdio_slave_set_host_intena(sdio_slave_hostint_t ena);
+void sdio_slave_set_host_intena(sdio_slave_hostint_t mask);
 
 /** Interrupt the host by general purpose interrupt.
  *
@@ -285,7 +255,7 @@ esp_err_t sdio_slave_send_host_int(uint8_t pos);
  *
  * @param mask Interrupt bits to clear, by bit mask.
  */
-void sdio_slave_clear_host_int(uint8_t mask);
+void sdio_slave_clear_host_int(sdio_slave_hostint_t mask);
 
 /** Wait for general purpose interrupt from host.
  *

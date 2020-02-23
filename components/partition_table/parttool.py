@@ -93,10 +93,14 @@ class ParttoolTarget():
         self.esptool_erase_args = parse_esptool_args(esptool_erase_args)
 
         if partition_table_file:
-            try:
-                with open(partition_table_file, "rb") as f:
+            partition_table = None
+            with open(partition_table_file, "rb") as f:
+                input_is_binary = (f.read(2) == gen.PartitionDefinition.MAGIC_BYTES)
+                f.seek(0)
+                if input_is_binary:
                     partition_table = gen.PartitionTable.from_binary(f.read())
-            except (gen.InputError, IOError, TypeError):
+
+            if partition_table is None:
                 with open(partition_table_file, "r") as f:
                     f.seek(0)
                     partition_table = gen.PartitionTable.from_csv(f.read())
@@ -331,7 +335,11 @@ def main():
         except Exception:
             sys.exit(2)
     else:
-        op(**common_args)
+        try:
+            op(**common_args)
+        except gen.InputError as e:
+            print(e, file=sys.stderr)
+            sys.exit(2)
 
 
 if __name__ == '__main__':

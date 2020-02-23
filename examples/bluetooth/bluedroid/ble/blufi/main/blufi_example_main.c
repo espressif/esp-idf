@@ -86,6 +86,7 @@ const int CONNECTED_BIT = BIT0;
 
 /* store the station info for send back to phone */
 static bool gl_sta_connected = false;
+static bool ble_is_connected = false;
 static uint8_t gl_sta_bssid[6];
 static uint8_t gl_sta_ssid[32];
 static int gl_sta_ssid_len;
@@ -111,7 +112,11 @@ static void ip_event_handler(void* arg, esp_event_base_t event_base,
         info.sta_bssid_set = true;
         info.sta_ssid = gl_sta_ssid;
         info.sta_ssid_len = gl_sta_ssid_len;
-        esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
+        if (ble_is_connected == true) {
+            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, &info);
+        } else {
+            BLUFI_INFO("BLUFI BLE is not connected yet\n");
+        }
         break;
     }
     default:
@@ -151,10 +156,14 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
         esp_wifi_get_mode(&mode);
 
         /* TODO: get config or information of softap, then set to report extra_info */
-        if (gl_sta_connected) {  
-            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
+        if (ble_is_connected == true) {
+            if (gl_sta_connected) {  
+                esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_SUCCESS, 0, NULL);
+            } else {
+                esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
+            }
         } else {
-            esp_blufi_send_wifi_conn_report(mode, ESP_BLUFI_STA_CONN_FAIL, 0, NULL);
+            BLUFI_INFO("BLUFI BLE is not connected yet\n");
         }
         break;
     case WIFI_EVENT_SCAN_DONE: {
@@ -183,7 +192,13 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
             blufi_ap_list[i].rssi = ap_list[i].rssi;
             memcpy(blufi_ap_list[i].ssid, ap_list[i].ssid, sizeof(ap_list[i].ssid));
         }
-        esp_blufi_send_wifi_list(apCount, blufi_ap_list);
+        
+        if (ble_is_connected == true) {
+            esp_blufi_send_wifi_list(apCount, blufi_ap_list);
+        } else {
+            BLUFI_INFO("BLUFI BLE is not connected yet\n");
+        }
+
         esp_wifi_scan_stop();
         free(ap_list);
         free(blufi_ap_list);
@@ -197,15 +212,16 @@ static void wifi_event_handler(void* arg, esp_event_base_t event_base,
 
 static void initialise_wifi(void)
 {
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     wifi_event_group = xEventGroupCreate();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &wifi_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &ip_event_handler, NULL));
 
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK( esp_wifi_init(&cfg) );
-    ESP_ERROR_CHECK( esp_wifi_set_storage(WIFI_STORAGE_RAM) );
     ESP_ERROR_CHECK( esp_wifi_set_mode(WIFI_MODE_STA) );
     ESP_ERROR_CHECK( esp_wifi_start() );
 }
@@ -234,6 +250,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         break;
     case ESP_BLUFI_EVENT_BLE_CONNECT:
         BLUFI_INFO("BLUFI ble connect\n");
+        ble_is_connected = true;
         server_if = param->connect.server_if;
         conn_id = param->connect.conn_id;
         esp_ble_gap_stop_advertising();
@@ -241,6 +258,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         break;
     case ESP_BLUFI_EVENT_BLE_DISCONNECT:
         BLUFI_INFO("BLUFI ble disconnect\n");
+        ble_is_connected = false;
         blufi_security_deinit();
         esp_ble_gap_start_advertising(&example_adv_params);
         break;
@@ -270,7 +288,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
 
         esp_wifi_get_mode(&mode);
 
-        if (gl_sta_connected ) {  
+        if (gl_sta_connected) {  
             memset(&info, 0, sizeof(esp_blufi_extra_info_t));
             memcpy(info.sta_bssid, gl_sta_bssid, 6);
             info.sta_bssid_set = true;

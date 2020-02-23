@@ -66,5 +66,5 @@ Simple WebSocket example that uses esp_websocket_client to establish a websocket
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_websocket_client.inc
+.. include-build-file:: inc/esp_websocket_client.inc
 

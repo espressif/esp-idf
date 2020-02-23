@@ -72,7 +72,7 @@ esp_err_t esp_ble_mesh_node_prov_disable(esp_ble_mesh_prov_bearer_t bearers);
  * @return       ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_node_set_oob_pub_key(uint8_t pub_key_x[32], uint8_t pub_key_y[32],
-                uint8_t private_key[32]);
+        uint8_t private_key[32]);
 
 /**
  * @brief        Provide provisioning input OOB number.
@@ -124,7 +124,7 @@ esp_err_t esp_ble_mesh_set_unprovisioned_device_name(const char *name);
  * @return       ESP_OK on success or error code otherwise.
  */
 esp_err_t esp_ble_mesh_provisioner_read_oob_pub_key(uint8_t link_idx, uint8_t pub_key_x[32],
-            uint8_t pub_key_y[32]);
+        uint8_t pub_key_y[32]);
 
 /**
  * @brief        Provide provisioning input OOB string.

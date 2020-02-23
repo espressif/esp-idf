@@ -59,7 +59,7 @@ Pins in use. The SPI Master can use the GPIO mux, so feel free to change these i
 #define RCV_HOST    HSPI_HOST
 #define DMA_CHAN    2
 
-#elif defined CONFIG_IDF_TARGET_ESP32S2BETA
+#elif defined CONFIG_IDF_TARGET_ESP32S2
 #define RCV_HOST    SPI2_HOST
 #define DMA_CHAN    RCV_HOST
 

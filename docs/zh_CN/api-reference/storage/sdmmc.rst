@@ -8,7 +8,7 @@ SD/SDIO/MMC 驱动程序
 
 SD/SDIO/MMC 驱动是一种基于 SDMMC 和 SD SPI 主机驱动的协议级驱动程序，目前已支持 SD 存储器、SDIO 卡和 eMMC 芯片。
 
-SDMMC 主机驱动和 SD SPI 主机驱动（:component:`driver/include/driver/sdmmc_host.h`）为以下功能提供 API：
+SDMMC 主机驱动和 SD SPI 主机驱动（:component_file:`driver/include/driver/sdmmc_host.h`）为以下功能提供 API：
 
 - 发送命令至从设备
 - 接收和发送数据
@@ -16,7 +16,11 @@ SDMMC 主机驱动和 SD SPI 主机驱动（:component:`driver/include/driver/sd
 
 初始化函数及配置函数：
 
-- 如需初始化和配置 SDMMC 主机，请参阅 :doc:`SDMMC 主机 API <../peripherals/sdmmc_host>`
+.. only:: esp32
+
+    - 如需初始化和配置 SDMMC 主机，请参阅 :doc:`SDMMC 主机 API <../peripherals/sdmmc_host>`
+
+
 - 如需初始化和配置 SD SPI 主机，请参阅 :doc:`SD SPI 主机 API <../peripherals/sdspi_host>`
 
 本文档中所述的 SDMMC 协议层仅处理 SD 协议相关事项，例如卡初始化和数据传输命令。
@@ -92,6 +96,6 @@ SDIO 卡初始化和检测过程与 SD 存储卡相同，唯一的区别是 SDIO
 API 参考
 -------------
 
-.. include:: /_build/inc/sdmmc_cmd.inc
+.. include-build-file:: inc/sdmmc_cmd.inc
 
-.. include:: /_build/inc/sdmmc_types.inc
+.. include-build-file:: inc/sdmmc_types.inc

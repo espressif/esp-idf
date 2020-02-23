@@ -4,48 +4,58 @@
 
 :link_to_translation:`en:[English]`
 
-本文档旨在指导用户搭建 ESP32 硬件开发的软件环境，通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 ESP32 开发板等步骤。
+本文档旨在指导用户搭建 {IDF_TARGET_NAME} 硬件开发的软件环境，通过一个简单的示例展示如何使用 ESP-IDF (Espressif IoT Development Framework) 配置菜单，并编译、下载固件至 {IDF_TARGET_NAME} 开发板等步骤。
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 概述
 ============
 
-ESP32 SoC 芯片支持以下功能：
+.. only:esp32
 
-* 2.4 GHz Wi-Fi
-* 蓝牙 4.2
-* 高性能双核
-* 超低功耗协处理器
-* 多种外设
+    ESP32 SoC 芯片支持以下功能：
 
-ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
+    * 2.4 GHz Wi-Fi
+    * 蓝牙 4.2
+    * 高性能双核
+    * 超低功耗协处理器
+    * 多种外设
 
-乐鑫为用户提供完整的软、硬件资源，进行 ESP32 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
+.. only:esp32s2
+
+    ESP32-S2 SoC 芯片支持以下功能：
+
+    * 2.4 GHz Wi-Fi
+    * 超低功耗协处理器
+    * 多种外设
+
+{IDF_TARGET_NAME} 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、稳定性、通用性和可靠性，适用于各种应用场景和不同功耗需求。
+
+乐鑫为用户提供完整的软、硬件资源，进行 {IDF_TARGET_NAME} 硬件设备的开发。其中，乐鑫的软件开发环境 ESP-IDF 旨在协助用户快速开发物联网 (IoT) 应用，可满足用户对 Wi-Fi、蓝牙、低功耗等方面的要求。
 
 准备工作
 =============
 
 硬件：
 
-* 一款 **ESP32** 开发板
+* 一款 **{IDF_TARGET_NAME}** 开发板
 * **USB 数据线**  (A 转 Micro-B)
 * PC（Windows、Linux 或 Mac OS）
 
 软件：
 
-* 设置 **工具链**，用于编译 ESP32 代码；
-* **编译工具** —— CMake 和 Ninja 编译工具，用于编译 ESP32 **应用程序**；
-* 获取 **ESP-IDF** 软件开发框架。该框架已经基本包含 ESP32 使用的 API（软件库和源代码）和运行 **工具链** 的脚本；
+* 设置 **工具链**，用于编译 {IDF_TARGET_NAME} 代码；
+* **编译工具** —— CMake 和 Ninja 编译工具，用于编译 {IDF_TARGET_NAME} **应用程序**；
+* 获取 **ESP-IDF** 软件开发框架。该框架已经基本包含 {IDF_TARGET_NAME} 使用的 API（软件库和源代码）和运行 **工具链** 的脚本；
 * 安装 C 语言编程（**工程**）的 **文本编辑器**，例如 `Eclipse <https://www.eclipse.org/>`_。
 
 
 .. figure:: ../../_static/what-you-need.png
     :align: center
-    :alt: ESP32 应用程序开发
+    :alt: {IDF_TARGET_NAME} 应用程序开发
     :figclass: align-center
 
-    ESP32 应用程序开发
+    {IDF_TARGET_NAME} 应用程序开发
 
 
 开发板简介
@@ -53,13 +63,15 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 
 请点击下方连接，了解有关具体开发板的详细信息。
 
-.. toctree::
-    :maxdepth: 1
+.. only:: esp32
 
-    ESP32-DevKitC <../hw-reference/get-started-devkitc>
-    ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
-    ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
-    ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-DevKitC <../hw-reference/esp32/get-started-devkitc>
+        ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
+        ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
+        ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
 
 
 .. _get-started-step-by-step:
@@ -127,7 +139,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
 第二步：获取 ESP-IDF
 =================================
 
-在围绕 ESP32 构建应用程序之前，请先获取乐鑫提供的软件库文件 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_。
+在围绕 {IDF_TARGET_NAME} 构建应用程序之前，请先获取乐鑫提供的软件库文件 `ESP-IDF 仓库 <https://github.com/espressif/esp-idf>`_。
 
 获取 ESP-IDF 的本地副本：打开终端，切换到您要保存 ESP-IDF 的工作目录，使用 ``git clone`` 命令克隆远程仓库。针对不同操作系统的详细步骤，请见下文。
 
@@ -140,7 +152,7 @@ Linux 和 MacOS 操作系统
 
 打开终端，后运行以下命令：
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF 将下载至 ``~/esp/esp-idf``。
 
@@ -238,7 +250,7 @@ Linux 和 MacOS 操作系统
 第五步：开始创建工程
 ========================================
 
-现在，您可以开始准备开发 ESP32 应用程序了。您可以从 ESP-IDF 中 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程开始。
+现在，您可以开始准备开发 {IDF_TARGET_NAME} 应用程序了。您可以从 ESP-IDF 中 :idf:`examples` 目录下的 :example:`get-started/hello_world` 工程开始。
 
 将 :example:`get-started/hello_world` 复制至您本地的 ``~/esp`` 目录下：
 
@@ -269,7 +281,7 @@ ESP-IDF 的 :idf:`examples` 目录下有一系列示例工程，都可以按照�
 第六步：连接设备
 ==========================================
 
-现在，请将您的 ESP32 开发板连接到 PC，并查看开发板使用的串口。
+现在，请将您的 {IDF_TARGET_NAME} 开发板连接到 PC，并查看开发板使用的串口。
 
 通常，串口在不同操作系统下显示的名称有所不同：
 
@@ -328,9 +340,11 @@ Windows 操作系统
 * ``英文问号`` （查询配置选项）：调出有关该选项的帮助菜单
 * ``/ 键``：寻找配置工程
 
-.. attention::
+.. only:: esp32
 
-    如果您使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
+    .. attention::
+
+        如果您使用的是 ESP32-DevKitC（板载 ESP32-SOLO-1 模组），请在烧写示例程序前，前往 ``menuconfig`` 中使能单核模式（:ref:`CONFIG_FREERTOS_UNICORE`）。
 
 .. _get-started-build:
 
@@ -371,11 +385,11 @@ Windows 操作系统
 第九步：烧录到设备
 =============================
 
-请使用以下命令，将刚刚生成的二进制文件烧录至您的 ESP32 开发板：
+请使用以下命令，将刚刚生成的二进制文件烧录至您的 {IDF_TARGET_NAME} 开发板：
 
     ``idf.py -p PORT [-b BAUD] flash``
 
-请将 PORT 替换为 ESP32 开发板的串口名称，具体可见 :ref:`get-started-connect`。
+请将 PORT 替换为 {IDF_TARGET_NAME} 开发板的串口名称，具体可见 :ref:`get-started-connect`。
 
 您还可以将 BAUD 替换为您希望的烧录波特率。默认波特率为 ``460800``。
 
@@ -392,8 +406,8 @@ Windows 操作系统
     esptool.py -b 460800 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x1000 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 hello-world.bin
     esptool.py v2.3.1
     Connecting....
-    Detecting chip type... ESP32
-    Chip is ESP32D0WDQ6 (revision 1)
+    Detecting chip type... {IDF_TARGET_NAME}
+    Chip is {IDF_TARGET_NAME}D0WDQ6 (revision 1)
     Features: WiFi, BT, Dual Core
     Uploading stub...
     Running stub...
@@ -457,19 +471,21 @@ Windows 操作系统
 
 您可使用快捷键 ``Ctrl+]``，退出 IDF 监视器。
 
-如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（见下），很有可能是因为您的开发板采用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
+.. only:: esp32
 
-.. figure:: ../../_static/get-started-garbled-output.png
-    :align: center
-    :alt: 乱码输出
-    :figclass: align-center
+    如果 IDF 监视器在烧录后很快发生错误，或打印信息全是乱码（见下），很有可能是因为您的开发板采用了 26 MHz 晶振，而 ESP-IDF 默认支持大多数开发板使用的 40 MHz 晶振。
 
-此时，您可以：
+    .. figure:: ../../_static/get-started-garbled-output.png
+        :align: center
+        :alt: 乱码输出
+        :figclass: align-center
 
-1. 退出监视器。
-2. 打开 :ref:`menuconfig <get-started-configure>`。
-3. 进入 ``Component config`` --> ``ESP32-specific`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 设置为 26 MHz。
-4. 然后，请重新 :ref:`编译和烧录 <get-started-flash>` 应用程序。
+    此时，您可以：
+
+    1. 退出监视器。
+    2. 打开 :ref:`menuconfig <get-started-configure>`。
+    3. 进入 ``Component config`` --> ``ESP32-specific`` --> ``Main XTAL frequency`` 进行配置，将 :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` 设置为 26 MHz。
+    4. 然后，请重新 :ref:`编译和烧录 <get-started-flash>` 应用程序。
 
 .. note::
 
@@ -482,14 +498,14 @@ Windows 操作系统
 - 请前往 :doc:`IDF 监视器 <../api-guides/tools/idf-monitor>`，了解更多使用 IDF 监视器的快捷键和其他详情。
 - 请前往 :ref:`idf.py`，查看更多 ``idf.py`` 命令和选项。
 
-**恭喜，您已完成 ESP32 的入门学习！**
+**恭喜，您已完成 {IDF_TARGET_NAME} 的入门学习！**
 
 现在，您可以尝试一些其他 :idf:`examples`，或者直接开发自己的应用程序。
 
 更新 ESP-IDF
 ================
 
-乐鑫会不时推出更新版本的 ESP-IDF，修复 bug 或提出新的特性。因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。 
+乐鑫会不时推出更新版本的 ESP-IDF，修复 bug 或提出新的特性。因此，您在使用时，也应注意更新您本地的版本。最简单的方法是：直接删除您本地的 ``esp-idf`` 文件夹，然后按照 :ref:`get-started-get-esp-idf` 中的指示，重新完成克隆。
 
 此外，您可以仅更新变更部分。具体方式，请前往 :ref:`更新 <updating>` 章节查看。
 
@@ -507,7 +523,7 @@ Windows 操作系统
     eclipse-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
-    ../get-started-legacy/index
+    :esp32: ../get-started-legacy/index
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

@@ -16,7 +16,7 @@
 
 - Ubuntu and Debian::
 
-    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools
+    sudo apt-get install gcc git wget make libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-cryptography python-future python-pyparsing python-pyelftools libffi-dev libssl-dev
 
 - Arch::
 
@@ -58,7 +58,7 @@
 
 - 下载并编译 ``crosstool-NG`` ：
 
-  .. include:: /_build/inc/scratch-build-code.inc
+  .. include-build-file:: inc/scratch-build-code.inc
 
 - 编译工具链::
 

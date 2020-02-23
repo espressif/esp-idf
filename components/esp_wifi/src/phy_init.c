@@ -38,9 +38,9 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/ets_sys.h"
-#include "esp32s2beta/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/rtc.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -56,6 +56,14 @@ static uint32_t s_module_phy_rf_init = 0;
 
 /* Whether modem sleep is turned on */
 static volatile bool s_is_phy_rf_en = false;
+
+#if CONFIG_IDF_TARGET_ESP32
+/* Whether WiFi/BT common clock enabled reference */
+static volatile int32_t s_common_clock_enable_ref = 0;
+
+/* PHY spinlock mux */
+static portMUX_TYPE s_phy_spin_lock = portMUX_INITIALIZER_UNLOCKED;
+#endif
 
 /* Bit mask of modules needing to enter modem sleep mode */
 static uint32_t s_modem_sleep_module_enter = 0;
@@ -75,14 +83,28 @@ static _lock_t s_modem_sleep_lock;
 static int64_t s_phy_rf_en_ts = 0;
 #endif
 
+static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
+
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
-    return portENTER_CRITICAL_NESTED();
+    if (xPortInIsrContext()) {
+        portENTER_CRITICAL_ISR(&s_phy_int_mux);
+
+    } else {
+        portENTER_CRITICAL(&s_phy_int_mux);
+    }
+    // Interrupt level will be stored in current tcb, so always return zero.
+    return 0;
 }
 
 void IRAM_ATTR phy_exit_critical(uint32_t level)
 {
-    portEXIT_CRITICAL_NESTED(level);
+    // Param level don't need any more, ignore it.
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(&s_phy_int_mux);
+    } else {
+        portEXIT_CRITICAL(&s_phy_int_mux);
+    }
 }
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -108,7 +130,64 @@ static inline void phy_update_wifi_mac_time(bool en_clock_stopped, int64_t now)
         }
     }
 }
+
+IRAM_ATTR static inline void phy_spin_lock(void)
+{
+    if (xPortInIsrContext()) {
+        portENTER_CRITICAL_ISR(&s_phy_spin_lock);
+    } else {
+        portENTER_CRITICAL(&s_phy_spin_lock);
+    }
+}
+
+IRAM_ATTR static inline void phy_spin_unlock(void)
+{
+    if (xPortInIsrContext()) {
+        portEXIT_CRITICAL_ISR(&s_phy_spin_lock);
+    } else {
+        portEXIT_CRITICAL(&s_phy_spin_lock);
+    }
+}
 #endif
+
+IRAM_ATTR void esp_phy_common_clock_enable(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    phy_spin_lock();
+
+    if (s_common_clock_enable_ref == 0) {
+        // Enable WiFi/BT common clock
+        periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
+    }
+
+    s_common_clock_enable_ref++;
+    phy_spin_unlock();
+#else
+    periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
+#endif
+}
+
+IRAM_ATTR void esp_phy_common_clock_disable(void)
+{
+#if CONFIG_IDF_TARGET_ESP32
+    phy_spin_lock();
+
+    if (s_common_clock_enable_ref > 0) {
+        s_common_clock_enable_ref --;
+
+        if (s_common_clock_enable_ref == 0) {
+            // Disable WiFi/BT common clock
+            periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
+        }
+    } else {
+        abort();
+    }
+
+    phy_spin_unlock();
+#else
+    periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
+#endif
+}
 
 esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibration_mode_t mode,
                           esp_phy_calibration_data_t* calibration_data, phy_rf_module_t module)
@@ -159,11 +238,10 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
             // Update WiFi MAC time before WiFi/BT common clock is enabled
             phy_update_wifi_mac_time(false, s_phy_rf_en_ts);
 #endif
-            // Enable WiFi/BT common peripheral clock
-            periph_module_enable(PERIPH_WIFI_BT_COMMON_MODULE);
+            esp_phy_common_clock_enable();
             phy_set_wifi_mode_only(0);
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
             if (module == PHY_MODEM_MODULE) {
                 phy_wakeup_init();
             }
@@ -189,7 +267,6 @@ esp_err_t esp_phy_rf_init(const esp_phy_init_data_t* init_data, esp_phy_calibrat
         uint32_t phy_bt_wifi_mask = BIT(PHY_BT_MODULE) | BIT(PHY_WIFI_MODULE);
         if ((s_module_phy_rf_init & phy_bt_wifi_mask) == phy_bt_wifi_mask) { //both wifi & bt enabled
             coex_init();
-            coex_preference_set(CONFIG_ESP32_WIFI_SW_COEXIST_PREFERENCE_VALUE);
             coex_resume();
         }
     }
@@ -255,7 +332,7 @@ esp_err_t esp_phy_rf_deinit(phy_rf_module_t module)
             phy_update_wifi_mac_time(true, esp_timer_get_time());
 #endif
             // Disable WiFi/BT common peripheral clock. Do not disable clock for hardware RNG
-            periph_module_disable(PERIPH_WIFI_BT_COMMON_MODULE);
+            esp_phy_common_clock_disable();
         }
     }
 
@@ -604,7 +681,7 @@ static esp_err_t store_cal_data_to_nvs_handle(nvs_handle_t handle,
 }
 
 #if CONFIG_ESP32_REDUCE_PHY_TX_POWER
-// TODO: fix the esp_phy_reduce_tx_power unused warning for esp32s2beta - IDF-759
+// TODO: fix the esp_phy_reduce_tx_power unused warning for esp32s2 - IDF-759
 static void __attribute((unused)) esp_phy_reduce_tx_power(esp_phy_init_data_t* init_data)
 {
     uint8_t i;
@@ -687,4 +764,9 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
 
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2
+/* Just a stub to avoid SSC build failure. Need to update phylib */
+void set_cca(bool en ,uint8_t cca_thr) {}
+#endif
 

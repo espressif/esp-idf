@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-TEST_CASE_ESP32("Capabilities allocator test", "[heap]")
+TEST_CASE("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
     int x;
@@ -24,7 +24,7 @@ TEST_CASE_ESP32("Capabilities allocator test", "[heap]")
     free8start = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     free32start = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     printf("Free 8bit-capable memory (start): %dK, 32-bit capable memory %dK\n", free8start, free32start);
-    TEST_ASSERT(free32start>free8start);
+    TEST_ASSERT(free32start >= free8start);
 
     printf("Allocating 10K of 8-bit capable RAM\n");
     m1= heap_caps_malloc(10*1024, MALLOC_CAP_8BIT);
@@ -44,39 +44,60 @@ TEST_CASE_ESP32("Capabilities allocator test", "[heap]")
     size_t free_iram = heap_caps_get_free_size(MALLOC_CAP_INTERNAL) -
                            heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
     size_t alloc32 = MIN(free_iram / 2, 10*1024) & (~3);
-    printf("Freeing; allocating %u bytes of 32K-capable RAM\n", alloc32);
-    m1 = heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
-    printf("--> %p\n", m1);
-    //Check that we got IRAM back
-    TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
-    free8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
-    free32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
-    printf("Free 8bit-capable memory (after 32-bit): %dK, 32-bit capable memory %dK\n", free8, free32);
-    //Only 32-bit should have gone down by alloc32: 32-bit isn't necessarily 8bit capable
-    TEST_ASSERT(free32<(free32start-alloc32));
-    TEST_ASSERT(free8==free8start);
-    free(m1);
+    if(free_iram) {
+        printf("Freeing; allocating %u bytes of 32K-capable RAM\n", alloc32);
+        m1 = heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
+        printf("--> %p\n", m1);
+        //Check that we got IRAM back
+        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        free8 = heap_caps_get_free_size(MALLOC_CAP_8BIT);
+        free32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+        printf("Free 8bit-capable memory (after 32-bit): %dK, 32-bit capable memory %dK\n", free8, free32);
+        //Only 32-bit should have gone down by alloc32: 32-bit isn't necessarily 8bit capable
+        TEST_ASSERT(free32<(free32start-alloc32));
+        TEST_ASSERT(free8==free8start);
+        free(m1);
+    } else {
+        printf("This platform has no 32-bit only capable RAM, jumping to next test \n");
+    }
 
     printf("Allocating impossible caps\n");
     m1= heap_caps_malloc(10*1024, MALLOC_CAP_8BIT|MALLOC_CAP_EXEC);
     printf("--> %p\n", m1);
     TEST_ASSERT(m1==NULL);
-    printf("Testing changeover iram -> dram");
-    // priorities will exhaust IRAM first, then start allocating from DRAM
-    for (x=0; x<10; x++) {
-        m2[x]= heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
-        printf("--> %p\n", m2[x]);
+
+    if(free_iram) {
+        printf("Testing changeover iram -> dram");
+        // priorities will exhaust IRAM first, then start allocating from DRAM
+        for (x=0; x<10; x++) {
+            m2[x]= heap_caps_malloc(alloc32, MALLOC_CAP_32BIT);
+            printf("--> %p\n", m2[x]);
+        }
+        TEST_ASSERT((((int)m2[0])&0xFF000000)==0x40000000);
+        TEST_ASSERT((((int)m2[9])&0xFF000000)==0x3F000000);
+
+    } else {
+        printf("This platform has no IRAM-only so changeover will never occur, jumping to next test\n");
     }
-    TEST_ASSERT((((int)m2[0])&0xFF000000)==0x40000000);
-    TEST_ASSERT((((int)m2[9])&0xFF000000)==0x3F000000);
+
     printf("Test if allocating executable code still gives IRAM, even with dedicated IRAM region depleted\n");
-    // (the allocation should come from D/IRAM)
-    free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
-    m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
-    printf("--> %p\n", m1);
-    TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+    if(free_iram) {
+        // (the allocation should come from D/IRAM)
+        free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
+        m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
+        printf("--> %p\n", m1);
+        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+        for (x=0; x<10; x++) free(m2[x]);
+
+    } else {
+        // (the allocation should come from D/IRAM)
+        free_iram = heap_caps_get_free_size(MALLOC_CAP_EXEC);
+        m1= heap_caps_malloc(MIN(free_iram / 2, 10*1024), MALLOC_CAP_EXEC);
+        printf("--> %p\n", m1);
+        TEST_ASSERT((((int)m1)&0xFF000000)==0x40000000);
+    }
+
     free(m1);
-    for (x=0; x<10; x++) free(m2[x]);
     printf("Done.\n");
 }
 

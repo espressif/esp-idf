@@ -1,10 +1,21 @@
 menu "Modbus configuration"
 
+    config FMB_COMM_MODE_RTU_EN
+        bool "Enable Modbus stack support for RTU mode"
+        default y
+        help
+                Enable RTU Modbus communication mode option for Modbus serial stack.
+
+    config FMB_COMM_MODE_ASCII_EN
+        bool "Enable Modbus stack support for ASCII mode"
+        default y
+        help
+                Enable ASCII Modbus communication mode option for Modbus serial stack.
+
     config FMB_MASTER_TIMEOUT_MS_RESPOND
         int "Slave respond timeout (Milliseconds)"
         default 150
         range 50 400
-
         help
                 If master sends a frame which is not broadcast, it has to wait sometime for slave response.
                 if slave is not respond in this time, the master will process timeout error.
@@ -13,7 +24,6 @@ menu "Modbus configuration"
         int "Slave conversion delay (Milliseconds)"
         default 200
         range 50 400
-
         help
                 If master sends a broadcast frame, it has to wait conversion time to delay,
                 then master can send next frame.
@@ -42,6 +52,23 @@ menu "Modbus configuration"
                 Modbus serial task RX and TX buffer size for UART driver initialization.
                 This buffer is used for modbus frame transfer. The Modbus protocol maximum
                 frame size is 256 bytes. Bigger size can be used for non standard implementations.
+
+    config FMB_SERIAL_ASCII_BITS_PER_SYMB
+        int "Number of data bits per ASCII character"
+        default 8
+        range 7 8
+        depends on FMB_COMM_MODE_ASCII_EN
+        help
+                This option defines the number of data bits per ASCII character.
+
+    config FMB_SERIAL_ASCII_TIMEOUT_RESPOND_MS
+        int "Response timeout for ASCII communication mode (ms)"
+        default 1000
+        range 300 2000
+        depends on FMB_COMM_MODE_ASCII_EN
+        help
+                This option defines response timeout of slave in milliseconds for ASCII communication mode.
+                Thus the timeout will expire and allow the master’s program to handle the error.
 
     config FMB_SERIAL_TASK_PRIO
         int "Modbus serial task priority"
@@ -113,7 +140,7 @@ menu "Modbus configuration"
         range 0 1
         default 0
         help
-            Modbus Timer group number that is used for timeout measurement.
+                Modbus Timer group number that is used for timeout measurement.
 
     config FMB_TIMER_INDEX
         int "Modbus Timer index in the group"
@@ -121,5 +148,17 @@ menu "Modbus configuration"
         default 0
         help
                 Modbus Timer Index in the group that is used for timeout measurement.
+
+    config FMB_TIMER_ISR_IN_IRAM
+        bool "Place timer interrupt handler into IRAM"
+        default n
+        select UART_ISR_IN_IRAM
+        help
+                This option places Modbus timer IRQ handler into IRAM.
+                This allows to avoid delays related to processing of non-IRAM-safe interrupts
+                during a flash write operation (NVS updating a value, or some other
+                flash API which has to perform an read/write operation and disable CPU cache).
+                This option has dependency with the UART_ISR_IN_IRAM option which places UART interrupt
+                handler into IRAM to prevent delays related to processing of UART events.
 
 endmenu

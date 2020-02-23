@@ -117,6 +117,7 @@ esp_err_t sdmmc_init_io_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card);
+esp_err_t sdmmc_init_mmc_check_csd(sdmmc_card_t* card);
 
 /* Various helper functions */
 static inline bool host_is_spi(const sdmmc_card_t* card)

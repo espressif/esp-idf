@@ -46,7 +46,7 @@ NVS 的操作对象为键值对，其中键是 ASCII 字符串，当前支持最
 命名空间
 ^^^^^^^^^^
 
-为了减少不同组件之间键名的潜在冲突，NVS 将每个键值对分配给一个命名空间。命名空间的命名规则遵循键名的命名规则，即最多可占 15 个字符。命名空间的名称在调用 ``nvs_open`` 或 ``nvs_open_from_part`` 中指定，调用后将返回一个不透明句柄，用于后续调用 ``nvs_read_*``、``nvs_write_*`` 和 ``nvs_commit`` 函数。这样，一个句柄关联一个命名空间，键名便不会与其他命名空间中相同键名冲突。请注意，不同 NVS 分区中具有相同名称的命名空间将被视为不同的命名空间。
+为了减少不同组件之间键名的潜在冲突，NVS 将每个键值对分配给一个命名空间。命名空间的命名规则遵循键名的命名规则，即最多可占 15 个字符。命名空间的名称在调用 ``nvs_open`` 或 ``nvs_open_from_part`` 中指定，调用后将返回一个不透明句柄，用于后续调用 ``nvs_get_*``、``nvs_set_*`` 和 ``nvs_commit`` 函数。这样，一个句柄关联一个命名空间，键名便不会与其他命名空间中相同键名冲突。请注意，不同 NVS 分区中具有相同名称的命名空间将被视为不同的命名空间。
 
 
 安全性、篡改性及鲁棒性
@@ -277,7 +277,7 @@ NVS 密钥分区
 加密读取/写入
 ^^^^^^^^^^^^^^^^^^^^
 
-``nvs_read_*`` 和 ``nvs_write_*`` 等 NVS API 函数同样可以对 NVS 加密分区执行读写操作。但用于初始化 NVS 非加密分区和加密分区的 API 则有所不同：初始化 NVS 非加密分区可以使用 ``nvs_flash_init`` 和 ``nvs_flash_init_partition``，但初始化 NVS 加密分区则需调用 ``nvs_flash_secure_init`` 和 ``nvs_flash_secure_init_partition``。上述 API 函数所需的 ``nvs_sec_cfg_t`` 结构可使用 ``nvs_flash_generate_keys`` 或者 ``nvs_flash_read_security_cfg`` 进行填充。
+``nvs_get_*`` 和 ``nvs_set_*`` 等 NVS API 函数同样可以对 NVS 加密分区执行读写操作。但用于初始化 NVS 非加密分区和加密分区的 API 则有所不同：初始化 NVS 非加密分区可以使用 ``nvs_flash_init`` 和 ``nvs_flash_init_partition``，但初始化 NVS 加密分区则需调用 ``nvs_flash_secure_init`` 和 ``nvs_flash_secure_init_partition``。上述 API 函数所需的 ``nvs_sec_cfg_t`` 结构可使用 ``nvs_flash_generate_keys`` 或者 ``nvs_flash_read_security_cfg`` 进行填充。
 
 应用程序如需在加密状态下执行 NVS 读写操作，应遵循以下步骤：
 
@@ -285,7 +285,7 @@ NVS 密钥分区
     2. 使用 ``nvs_flash_read_security_cfg`` 或 ``nvs_flash_generate_keys`` API 填充 ``nvs_sec_cfg_t`` 结构；
     3. 使用 ``nvs_flash_secure_init`` 或 ``nvs_flash_secure_init_partition`` API 初始化 NVS flash 分区；
     4. 使用 ``nvs_open`` 或 ``nvs_open_from_part`` API 打开命名空间；
-    5. 使用 ``nvs_read_*`` 或 ``nvs_write_*`` API 执行 NVS 读取/写入操作；
+    5. 使用 ``nvs_get_*`` 或 ``nvs_set_*`` API 执行 NVS 读取/写入操作；
     6. 使用 ``nvs_flash_deinit`` API 释放已初始化的 NVS 分区。
 
 NVS 迭代器

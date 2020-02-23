@@ -94,7 +94,7 @@ To run the example and find out the reason of the problem:
 
     ```
     cd ~/esp/openocd-esp32
-    bin/openocd -s share/openocd/scripts -f interface/ftdi/esp32_devkitj_v1.cfg -f board/esp-wroom-32.cfg
+    bin/openocd -s share/openocd/scripts -f board/esp32-wrover-kit-3.3v.cfg
     ```
 NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181105` or later.
 
@@ -119,11 +119,15 @@ NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20181
 
     Using this file GDB will connect to the target, reset it, and start tracing when it hit breakpoint at `app_main`. Trace data will be saved to `/tmp/sysview_example.svdat`.
 
+    **Note:** if running the example on ESP32-S2, modify the command name in gdbinit file from `esp32 sysview` to `esp32_s2 sysview`.
+
 6.  Run GDB using the following command from the project root directory:
 
     ```
     xtensa-esp32-elf-gdb -x gdbinit build/sysview_tracing.elf
-    ``` 
+    ```
+
+    **Note:** Replace `xtensa-esp32-elf-gdb` with `xtensa-esp32s2-elf-gdb` if running the example on ESP32-S2.
 
 7.  When program prints the last message, interrupt its execution (e.g. by pressing `CTRL+C`) and type the following command in GDB console to stop tracing:
 

@@ -4,18 +4,22 @@ Standard Setup of Toolchain for Windows
 
 :link_to_translation:`zh_CN:[中文]`
 
-.. note::
-      Currently only 64-bit versions of Windows are supported. 32-bit Windows can use the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>`.
+.. only:: esp32
+
+    .. note::
+        Currently only 64-bit versions of Windows are supported. 32-bit Windows can use the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>`.
 
 Introduction
 ============
 
-ESP-IDF requires some prerequisite tools to be installed so you can build firmware for the ESP32. The prerequisite tools include Python, Git, cross-compilers, menuconfig tool, CMake and Ninja build tools.
+ESP-IDF requires some prerequisite tools to be installed so you can build firmware for supported chips. The prerequisite tools include Python, Git, cross-compilers, CMake and Ninja build tools.
 
 For this Getting Started we're going to use the Command Prompt, but after ESP-IDF is installed you can use :doc:`Eclipse <eclipse-setup>` or another graphical IDE with CMake support instead.
 
-.. note::
-   Previous versions of ESP-IDF used the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>` and MSYS2_ Unix compatibility environment. This is no longer required, ESP-IDF can be used from the Windows Command Prompt.
+.. only:: esp32
+
+    .. note::
+        Previous versions of ESP-IDF used the :doc:`Legacy GNU Make Build System<../get-started-legacy/windows-setup>` and MSYS2_ Unix compatibility environment. This is no longer required, ESP-IDF can be used from the Windows Command Prompt.
 
 .. _get-started-windows-tools-installer:
 
@@ -24,9 +28,9 @@ ESP-IDF Tools Installer
 
 The easiest way to install ESP-IDF's prerequisites is to download the ESP-IDF Tools installer from this URL:
 
-https://dl.espressif.com/dl/esp-idf-tools-setup-2.1.exe
+https://dl.espressif.com/dl/esp-idf-tools-setup-2.3.exe
 
-The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool, and a configuration tool called mconf-idf_. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
+The installer includes the cross-compilers, OpenOCD, cmake_ and Ninja_ build tool. The installer can also download and run installers for Python_ 3.7 and `Git For Windows`_ if they are not already installed on the computer.
 
 The installer also offers to download one of the ESP-IDF release versions.
 
@@ -64,5 +68,4 @@ For advanced users who want to customize the install process:
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/
 .. _Git for Windows: https://gitforwindows.org/
-.. _mconf-idf: https://github.com/espressif/kconfig-frontends/releases/
 .. _Github Desktop: https://desktop.github.com/

@@ -18,8 +18,8 @@
 #include "soc/efuse_periph.h"
 
 #include "sdkconfig.h"
-#if CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/efuse.h"
+#if CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
 #endif
 
 #ifdef CONFIG_SECURE_BOOT_ENABLED
@@ -48,7 +48,7 @@ static inline bool esp_secure_boot_enabled(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
     return REG_READ(EFUSE_BLK0_RDATA6_REG) & EFUSE_RD_ABS_DONE_0;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     return ets_efuse_secure_boot_enabled();
 #endif
 }

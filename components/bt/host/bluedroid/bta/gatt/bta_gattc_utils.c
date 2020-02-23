@@ -598,6 +598,30 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV *p_srcb, UINT16 conn_id,
 
 /*******************************************************************************
 **
+** Function         bta_gattc_clear_notif_registration_by_bda
+**
+** Description      Clear up the notification registration information by BD_ADDR.
+**
+**
+** Returns          None.
+**
+*******************************************************************************/
+void bta_gattc_clear_notif_registration_by_bda(tBTA_GATTC_RCB *p_clrcb, BD_ADDR remote_bda)
+{
+    if(p_clrcb == NULL) {
+        return;
+    }
+    for (uint8_t i = 0 ; i < BTA_GATTC_NOTIF_REG_MAX; i ++) {
+        if (p_clrcb->notif_reg[i].in_use &&
+            !bdcmp(p_clrcb->notif_reg[i].remote_bda, remote_bda))
+        {
+            memset(&p_clrcb->notif_reg[i], 0, sizeof(tBTA_GATTC_NOTIF_REG));
+        }
+    }
+}
+
+/*******************************************************************************
+**
 ** Function         bta_gattc_mark_bg_conn
 **
 ** Description      mark background connection status when a bg connection is initiated

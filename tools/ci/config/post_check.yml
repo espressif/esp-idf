@@ -1,0 +1,66 @@
+# copy from .gitlab-ci.yml as anchor is not global
+.show_submodule_urls: &show_submodule_urls |
+  git config --get-regexp '^submodule\..*\.url$' || true
+
+check_submodule_sync:
+  extends: .check_job_template
+  stage: post_check
+  tags:
+    - github_sync
+  retry: 2
+  variables:
+    GIT_STRATEGY: clone
+    SUBMODULES_TO_FETCH: "none"
+    PUBLIC_IDF_URL: "https://github.com/espressif/esp-idf.git"
+  before_script: []
+  after_script: []
+  script:
+    - git submodule deinit --force .
+    # setting the default remote URL to the public one, to resolve relative location URLs
+    - git config remote.origin.url ${PUBLIC_IDF_URL}
+    # check if all submodules are correctly synced to public repostory
+    - git submodule init
+    - *show_submodule_urls
+    - git submodule update --recursive
+    - echo "IDF was cloned from ${PUBLIC_IDF_URL} completely"
+
+check_ut_cmake_make:
+  extends: .check_job_template_with_filter
+  stage: post_check
+  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  tags:
+    - build
+  except:
+    - master
+    - /^release\/v/
+    - /^v\d+\.\d+(\.\d+)?($|-)/
+  dependencies: []
+  script:
+    - tools/ci/check_ut_cmake_make.sh
+
+check_artifacts_expire_time:
+  extends: .check_job_template
+  stage: post_check
+  script:
+    # check if we have set expire time for all artifacts
+    - python tools/ci/check_artifacts_expire_time.py
+
+check_pipeline_triggered_by_label:
+  extends: .check_job_template
+  stage: post_check
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL
+  script:
+    # If the pipeline is triggered with label, the pipeline will only succeeded if "regular_test" label is added.
+    # We want to make sure some jobs are always executed to detect regression.
+    - test "$BOT_LABEL_REGULAR_TEST" = "true" || { echo "CI can only pass if 'regular_test' label is included"; exit -1; }
+
+check_commit_msg:
+  extends: .check_job_template
+  stage: post_check
+  script:
+    - git status
+    - git log -n10 --oneline
+    # commit start with "WIP: " need to be squashed before merge
+    - 'git log --pretty=%s master.. -- | grep "^WIP: " && exit 1 || exit 0'

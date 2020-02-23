@@ -67,6 +67,7 @@ if(CONFIG_SECURE_SIGNED_APPS)
 
         set(SECURE_BOOT_SIGNING_KEY ${secure_boot_signing_key}) # needed by some other components
         set(sign_key_arg "-DSECURE_BOOT_SIGNING_KEY=${secure_boot_signing_key}")
+        set(ver_key_arg)
 
         add_dependencies(gen_secure_boot_keys gen_secure_boot_signing_key)
     else()
@@ -87,16 +88,21 @@ if(CONFIG_SECURE_SIGNED_APPS)
             add_custom_target(gen_secure_boot_verification_key)
         endif()
 
+        set(sign_key_arg)
         set(ver_key_arg "-DSECURE_BOOT_VERIFICATION_KEY=${secure_boot_verification_key}")
 
         add_dependencies(gen_secure_boot_keys gen_secure_boot_verification_key)
     endif()
+else()
+    set(sign_key_arg)
+    set(ver_key_arg)
 endif()
 
 idf_build_get_property(idf_path IDF_PATH)
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(sdkconfig SDKCONFIG)
 idf_build_get_property(python PYTHON)
+idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
 externalproject_add(bootloader
     SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
@@ -109,6 +115,7 @@ externalproject_add(bootloader
                 # the bootloader common component requirements depends on this and
                 # config variables are not available before project() call.
                 -DLEGACY_INCLUDE_COMMON_HEADERS=${CONFIG_LEGACY_INCLUDE_COMMON_HEADERS}
+                ${extra_cmake_args}
     INSTALL_COMMAND ""
     BUILD_ALWAYS 1  # no easy way around this...
     BUILD_BYPRODUCTS ${bootloader_binary_files}

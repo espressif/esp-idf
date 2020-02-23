@@ -131,9 +131,8 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_AES
         bool "Enable hardware AES acceleration"
-        depends on IDF_TARGET_ESP32
-        # ToDo: remove once hardware AES acceleration is supported on esp32s2
         default y
+        depends on !IDF_TARGET_ESP32S2
         help
             Enable hardware accelerated AES encryption & decryption.
 
@@ -142,7 +141,8 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
-        default n
+        default y
+        depends on !IDF_TARGET_ESP32S2
         help
             Enable hardware accelerated multiple precision integer operations.
 
@@ -151,19 +151,10 @@ menu "mbedTLS"
 
             These operations are used by RSA.
 
-    config MBEDTLS_MPI_USE_INTERRUPT
-        bool "Use interrupt for MPI operations"
-        depends on MBEDTLS_HARDWARE_MPI
-        default n
-        help
-            Use an interrupt to coordinate MPI operations.
-
-            This allows other code to run on the CPU while an MPI operation is pending.
-            Otherwise the CPU busy-waits.
-
     config MBEDTLS_HARDWARE_SHA
         bool "Enable hardware SHA acceleration"
-        default n
+        default y
+        depends on !IDF_TARGET_ESP32S2
         help
             Enable hardware accelerated SHA1, SHA256, SHA384 & SHA512 in mbedTLS.
 
@@ -610,5 +601,17 @@ menu "mbedTLS"
             Disabling this option saves some code size.
 
             # end of Elliptic Curve options
+
+    menuconfig MBEDTLS_SECURITY_RISKS
+        bool "Show configurations with potential security risks"
+        default n
+
+    config MBEDTLS_ALLOW_UNSUPPORTED_CRITICAL_EXT
+        bool "X.509 CRT parsing with unsupported critical extensions"
+        depends on MBEDTLS_SECURITY_RISKS
+        default n
+        help
+            Allow the X.509 certificate parser to load certificates
+            with unsupported critical extensions
 
 endmenu  # mbedTLS

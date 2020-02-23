@@ -16,28 +16,35 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 - RTOS 可以要求 CPU 在有任务准备开始运行时以最高配置频率工作。
 - 一些外设可能需要中断才能启用，因此其驱动也会要求禁用 Light-sleep 模式。
 
-因为请求较高的 APB 频率或 CPU 频率，以及禁用 Light-sleep 模式会增加功耗，请将组件使用的电源管理锁降到最少。 
+因为请求较高的 APB 频率或 CPU 频率，以及禁用 Light-sleep 模式会增加功耗，请将组件使用的电源管理锁降到最少。
 
 电源管理配置
 -------------
 
-编译时可使用 :ref:`CONFIG_PM_ENABLE` 选项启用电源管理功能。 
+编译时可使用 :ref:`CONFIG_PM_ENABLE` 选项启用电源管理功能。
 
 启用电源管理功能将会增加中断延迟。额外延迟与多个因素有关，例如：CPU 频率、单/双核模式、是否需要进行频率切换等。CPU 频率为 240 MHz 且未启用频率调节时，最小额外延迟为 0.2 us；如果启用频率调节，且在中断入口将频率由 40 MHz 调节至 80 MHz，则最大额外延迟为 40 us。
 
 应用程序可以通过调用 :cpp:func:`esp_pm_configure` 函数启用动态调频 (DFS) 功能和自动 Light-sleep 模式。此函数的参数为 :cpp:class:`esp_pm_config_esp32_t`，定义了频率调节的相关设置。在此参数结构中，需要初始化下面三个字段：
 
-- ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ`。  
-- ``min_freq_mhz``：最小 CPU 频率 (MHz)，即仅获取 ``ESP_PM_APB_FREQ_MAX`` 锁后所使用的频率。该字段可设置为晶振 (XTAL) 频率值，或者 XTAL 频率值除以整数。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。 
+- ``max_freq_mhz``：最大 CPU 频率 (MHz)，即获取 ``ESP_PM_CPU_FREQ_MAX`` 锁后所使用的频率。该字段通常设置为 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ`。
 
-- ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。 
+- ``min_freq_mhz``：最小 CPU 频率 (MHz)，即仅获取 ``ESP_PM_APB_FREQ_MAX`` 锁后所使用的频率。该字段可设置为晶振 (XTAL) 频率值，或者 XTAL 频率值除以整数。注意，10 MHz 是生成 1 MHz 的 REF_TICK 默认时钟所需的最小频率。
 
-或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。 
+- ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。
+
+.. only:: esp32
+
+    或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
+
+.. only:: esp32s2
+
+    或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
 
 .. note::
 
   1. 自动 Light-sleep 模式基于 FreeRTOS Tickless Idle 功能，因此如果在 menuconfig 中没有启用 :ref:`CONFIG_FREERTOS_USE_TICKLESS_IDLE` 选项，在请求自动 Light-sleep 时，:cpp:func:`esp_pm_configure` 将会返回 `ESP_ERR_NOT_SUPPORTED` 错误。
-  2. 在 Light-sleep 状态下，外设设有时钟门控，不会产生来自 GPIO 和内部外设的中断。:doc:`sleep_modes` 文档中所提到的唤醒源可用于从 Light-sleep 状态触发唤醒。例如，EXT0 和 EXT1 唤醒源就可以通过 GPIO 唤醒芯片。  
+  2. 在 Light-sleep 状态下，外设设有时钟门控，不会产生来自 GPIO 和内部外设的中断。:doc:`sleep_modes` 文档中所提到的唤醒源可用于从 Light-sleep 状态触发唤醒。例如，EXT0 和 EXT1 唤醒源就可以通过 GPIO 唤醒芯片。
 
 电源管理锁
 ----------------------
@@ -58,37 +65,9 @@ ESP32 支持下表中所述的三种电源管理锁。
 ``ESP_PM_NO_LIGHT_SLEEP``     禁止自动切换至 Light-sleep 模式。
 ============================  ======================================================
 
+.. only:: esp32
 
-电源管理算法
---------------------------------
-
-下表列出了启用动态调频时如何切换 CPU 频率和 APB 频率。您可以使用 :cpp:func:`esp_pm_configure` 或者 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 指定 CPU 最大频率。
-
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| CPU 最高频率 | 电源管理锁获取情况                                      | CPU 频率和 APB 频率                                |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| 240 MHz      | 获取 ``ESP_PM_CPU_FREQ_MAX`` 或 ``ESP_PM_APB_FREQ_MAX`` | CPU: 240 MHz APB: 80 MHz                           |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 无                                                      | 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值 |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| 160 MHz      | 获取 ``ESP_PM_CPU_FREQ_MAX``                            | CPU: 160 MHz APB: 80 MHz                           |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 获取 ``ESP_PM_CPU_FREQ_MAX``，                          | CPU: 80 MHz APB: 80 MHz                            |
-|              | 未获取 ``ESP_PM_APB_FREQ_MAX``                          |                                                    |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 无                                                      | 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值 |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-| 80 MHz       | 获取 ``ESP_PM_CPU_FREQ_MAX`` 或 ``ESP_PM_APB_FREQ_MAX`` | CPU: 80 MHz APB: 80 MHz                            |
-+              +---------------------------------------------------------+----------------------------------------------------+
-| \            | 无                                                      | 使用 :cpp:func:`esp_pm_configure` 为二者设置最小值 |
-+--------------+---------------------------------------------------------+----------------------------------------------------+
-
-如果没有获取任何管理锁，调用 :cpp:func:`esp_pm_configure` 将启动 Light-sleep 模式。 Light-sleep 模式持续时间由以下因素决定：
-
-- 处于阻塞状态的 FreeRTOS 任务数（有限超时）
-- :doc:`高分辨率定时器 <esp_timer>` API 注册的计数器数量
-
-您也可以设置 Light-sleep 模式在最近事件（任务解除阻塞，或计时器超时）之前持续多久才唤醒芯片。
+   .. include:: ../../../en/api-reference/system/inc/power_management_esp32.rst
 
 动态调频和外设驱动
 ------------------------------------------------
@@ -97,7 +76,7 @@ ESP32 支持下表中所述的三种电源管理锁。
 
 下面的外设不受 APB 频率变更的影响：
 
-- **UART**：如果 REF_TICK 用作时钟源，则 UART 不受 APB 频率变更影响。请查看 :cpp:class:`uart_config_t` 中的 `use_ref_tick`。 
+- **UART**：如果 REF_TICK 用作时钟源，则 UART 不受 APB 频率变更影响。请查看 :cpp:class:`uart_config_t` 中的 `use_ref_tick`。
 - **LEDC**：如果 REF_TICK 用作时钟源，则 LEDC 不受 APB 频率变更影响。请查看 :cpp:func:`ledc_timer_config` 函数。
 - **RMT**：如果 REF_TICK 用作时钟源，则 RMT 不受 APB 频率变更影响。此驱动程序尚不支持 REF_TICK，但可以清除相应通道的 ``RMT_REF_ALWAYS_ON_CHx`` 位来启用该功能。
 
@@ -111,22 +90,33 @@ ESP32 支持下表中所述的三种电源管理锁。
 启用以下驱动程序时，将占用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 
 - **SPI slave**：从调用 :cpp:func:`spi_slave_initialize` 至 :cpp:func:`spi_slave_free` 期间。
-- **Ethernet**：从调用 :cpp:func:`esp_eth_enable` 至 :cpp:func:`esp_eth_disable` 期间。
+- **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
 - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
-- **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
-- **CAN**：从调用 :cpp:func:`can_driver_install` 至 :cpp:func:`can_driver_uninstall` 期间。 
+- **CAN**：从调用 :cpp:func:`can_driver_install` 至 :cpp:func:`can_driver_uninstall` 期间。
+
+.. only:: esp32
+
+    - **Bluetooth**：从调用 :cpp:func:`esp_bt_controller_enable` 至 :cpp:func:`esp_bt_controller_disable` 期间。如果启用了蓝牙调制解调器，广播关闭时将释放此管理锁。但依然占用 ``ESP_PM_NO_LIGHT_SLEEP`` 锁。
 
 以下外设驱动程序无法感知动态调频，应用程序需自己获取/释放管理锁：
 
-- MCPWM
-- PCNT
-- Sigma-delta
-- Timer Group
+.. only:: esp32
+
+    - PCNT
+    - Sigma-delta
+    - Timer group
+    - MCPWM
+
+.. only:: esp32s2
+
+    - PCNT
+    - Sigma-delta
+    - Timer group
 
 
 API 参考
 -------------
 
-.. include:: /_build/inc/esp_pm.inc
-.. include:: /_build/inc/pm.inc
+.. include-build-file:: inc/esp_pm.inc
+.. include-build-file:: inc/pm.inc
 

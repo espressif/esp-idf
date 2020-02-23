@@ -3,14 +3,19 @@ set(srcs "port/os_xtensa.c"
     "src/ap/ieee802_1x.c"
     "src/ap/wpa_auth.c"
     "src/ap/wpa_auth_ie.c"
+    "src/common/sae.c"
     "src/common/wpa_common.c"
     "src/crypto/aes-cbc.c"
+    "src/crypto/aes-ccm.c"
     "src/crypto/aes-internal-dec.c"
     "src/crypto/aes-internal-enc.c"
     "src/crypto/aes-internal.c"
+    "src/crypto/aes-omac1.c"
     "src/crypto/aes-unwrap.c"
     "src/crypto/aes-wrap.c"
+    "src/crypto/aes-omac1.c"
     "src/crypto/bignum.c"
+    "src/crypto/ccmp.c"
     "src/crypto/crypto_mbedtls.c"
     "src/crypto/crypto_ops.c"
     "src/crypto/crypto_internal-cipher.c"
@@ -45,6 +50,8 @@ set(srcs "port/os_xtensa.c"
     "src/esp_supplicant/esp_wpa_main.c"
     "src/esp_supplicant/esp_wpas_glue.c"
     "src/esp_supplicant/esp_wps.c"
+    "src/esp_supplicant/esp_wpa3.c"
+    "src/rsn_supp/pmksa_cache.c"
     "src/rsn_supp/wpa.c"
     "src/rsn_supp/wpa_ie.c"
     "src/tls/asn1.c"
@@ -83,7 +90,7 @@ set(srcs "port/os_xtensa.c"
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS include port/include include/esp_supplicant
                     PRIV_INCLUDE_DIRS src
-                    PRIV_REQUIRES mbedtls)
+                    PRIV_REQUIRES mbedtls esp_timer)
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-strict-aliasing)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE
@@ -102,4 +109,6 @@ target_compile_definitions(${COMPONENT_LIB} PRIVATE
     ESPRESSIF_USE
     ESP32_WORKAROUND
     CONFIG_ECC
+    CONFIG_IEEE80211W
+    CONFIG_WPA3_SAE
     )

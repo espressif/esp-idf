@@ -1,11 +1,12 @@
 stages:
+  - pre_check
   - build
   - assign_test
   - host_test
   - target_test
-  - check
-  - deploy
   - post_check
+  - deploy
+  - post_deploy
 
 variables:
 # System environment
@@ -15,27 +16,30 @@ variables:
 
 # GitLab-CI environment
 
-  # more attempts for more robust
-  GET_SOURCES_ATTEMPTS: "10"
-  ARTIFACT_DOWNLOAD_ATTEMPTS: "10"
+  # XXX_ATTEMPTS variables (https://docs.gitlab.com/ce/ci/yaml/README.html#job-stages-attempts) are not defined here.
+  # Use values from  "CI / CD Settings" - "Variables".
 
   # GIT_STRATEGY is not defined here.
   # Use an option from  "CI / CD Settings" - "General pipelines".
 
-  # "normal" strategy for fetching only top-level submodules since nothing requires the sub-submodules code for building IDF.
-  # If the "recursive" strategy is used we have a problem with using relative URLs for sub-submodules.
-  GIT_SUBMODULE_STRATEGY: normal
+  # we will download archive for each submodule instead of clone.
+  # we don't do "recursive" when fetch submodule as they're not used in CI now.
+  GIT_SUBMODULE_STRATEGY: none
+  SUBMODULE_FETCH_TOOL: "tools/ci/ci_fetch_submodule.py"
+  # by default we will fetch all submodules
+  # jobs can overwrite this variable to only fetch submodules they required
+  # set to "none" if don't need to fetch submodules
+  SUBMODULES_TO_FETCH: "all"
+  # tell build system do not check submodule update as we download archive instead of clone
+  IDF_SKIP_CHECK_SUBMODULES: 1
 
   UNIT_TEST_BUILD_SYSTEM: cmake
   EXAMPLE_TEST_BUILD_SYSTEM: cmake
-# IDF environment
-
   IDF_PATH: "$CI_PROJECT_DIR"
   BATCH_BUILD: "1"
   V: "0"
   APPLY_BOT_FILTER_SCRIPT: "$CI_PROJECT_DIR/tools/ci/apply_bot_filter.py"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
-  CUSTOM_TOOLCHAIN_PATH: "/opt/xtensa-custom"
 
 # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
@@ -43,40 +47,23 @@ variables:
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/tools/ci/config/target-test.yml"
 
 
+
 # before each job, we need to check if this job is filtered by bot stage/job filter
 .apply_bot_filter: &apply_bot_filter
   python $APPLY_BOT_FILTER_SCRIPT || exit 0
 
-.setup_custom_toolchain: &setup_custom_toolchain |
-  if [ "$IDF_XTENSA_TOOLCHAIN_URL" ] ; then
-  echo "Use a custom toolchain: ${IDF_XTENSA_TOOLCHAIN_URL:-Unknown}"
-  rm -rf "$CUSTOM_TOOLCHAIN_PATH" &&
-  mkdir -p -v "$CUSTOM_TOOLCHAIN_PATH" &&
-  pushd "$CUSTOM_TOOLCHAIN_PATH" &&
-  curl -sSL -o xtensa-custom.xxx "$IDF_XTENSA_TOOLCHAIN_URL" &&
-  ls -l xtensa-custom.xxx &&
-  tar xf xtensa-custom.xxx --strip-components 1 &&
-  ls -l . &&
-  popd
-  PATH=$CUSTOM_TOOLCHAIN_PATH/bin:$PATH
-  export PATH
-  fi
-
-.cleanup_custom_toolchain: &cleanup_custom_toolchain |
-  echo "Cleaning up $CUSTOM_TOOLCHAIN_PATH"
-  rm -rf "$CUSTOM_TOOLCHAIN_PATH"
-
 .setup_tools_unless_target_test: &setup_tools_unless_target_test |
+  if [[ -n "$IDF_DONT_USE_MIRRORS" ]]; then
+  export IDF_MIRROR_PREFIX_MAP=
+  fi
   if [[ "$SETUP_TOOLS" == "1" || "$CI_JOB_STAGE" != "target_test" ]]; then
   tools/idf_tools.py --non-interactive install && eval "$(tools/idf_tools.py --non-interactive export)" || exit 1
   fi
 
-.show_submodule_urls: &show_submodule_urls |
-  git config --get-regexp '^submodule\..*\.url$' || true
+.fetch_submodules: &fetch_submodules |
+  python $SUBMODULE_FETCH_TOOL -s $SUBMODULES_TO_FETCH
 
 before_script:
-  - echo "Running common script"
-  - *show_submodule_urls
   - source tools/ci/setup_python.sh
   # apply bot filter in before script
   - *apply_bot_filter
@@ -89,10 +76,9 @@ before_script:
   - echo -e "Host gitlab.espressif.cn\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config
   # Set some options and environment for CI
   - source tools/ci/configure_ci_environment.sh
-
   - *setup_tools_unless_target_test
 
-  - *setup_custom_toolchain
+  - *fetch_submodules
 
 # used for check scripts which we want to run unconditionally
 .before_script_lesser_nofilter:
@@ -102,7 +88,6 @@ before_script:
     - echo "Not setting up GitLab key, not fetching submodules, not applying bot filter"
     - source tools/ci/setup_python.sh
     - source tools/ci/configure_ci_environment.sh
-    - *setup_custom_toolchain
 
 # used for everything else where we want to do no prep, except for bot filter
 .before_script_lesser:
@@ -114,13 +99,9 @@ before_script:
     # apply bot filter in before script
     - *apply_bot_filter
     - source tools/ci/configure_ci_environment.sh
-    - *setup_custom_toolchain
-
-after_script:
-  - *cleanup_custom_toolchain
 
 .check_job_template:
-  stage: check
+  stage: pre_check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
@@ -128,17 +109,29 @@ after_script:
   extends: .before_script_lesser_nofilter
 
 .check_job_template_with_filter:
-  stage: check
+  stage: pre_check
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - host_test
   dependencies: []
-  extends: .before_script_lesser_nofilter
+  extends: .before_script_lesser
+
+.macos_build_template:
+  stage: build
+  tags:
+    - macos_shell
+  dependencies: []
+  before_script:
+    - *apply_bot_filter
+    - *setup_tools_unless_target_test
+    - source tools/ci/configure_ci_environment.sh
 
 include:
+  - '/tools/ci/config/pre_check.yml'
   - '/tools/ci/config/build.yml'
   - '/tools/ci/config/assign-test.yml'
   - '/tools/ci/config/host-test.yml'
   - '/tools/ci/config/target-test.yml'
-  - '/tools/ci/config/check.yml'
+  - '/tools/ci/config/post_check.yml'
   - '/tools/ci/config/deploy.yml'
+  - '/tools/ci/config/post_deploy.yml'

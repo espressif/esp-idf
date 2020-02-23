@@ -21,11 +21,11 @@
 #include "esp32/rom/spi_flash.h"
 #include "esp32/rom/crc.h"
 #include "esp32/rom/gpio.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/spi_flash.h"
-#include "esp32s2beta/rom/crc.h"
-#include "esp32s2beta/rom/ets_sys.h"
-#include "esp32s2beta/rom/gpio.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/spi_flash.h"
+#include "esp32s2/rom/crc.h"
+#include "esp32s2/rom/ets_sys.h"
+#include "esp32s2/rom/gpio.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "bootloader_flash.h"
@@ -293,9 +293,16 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         ESP_LOGE(TAG, "can't run on lower chip revision, expected %d, found %d", revision, img_hdr->min_chip_rev);
         err = ESP_FAIL;
     } else if (revision != img_hdr->min_chip_rev) {
+#ifdef BOOTLOADER_BUILD
         ESP_LOGI(TAG, "chip revision: %d, min. %s chip revision: %d", revision, type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
+#endif
     }
     return err;
+}
+
+RESET_REASON bootloader_common_get_reset_reason(int cpu_no)
+{
+    return rtc_get_reset_reason(cpu_no);
 }
 
 #if defined( CONFIG_BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP ) || defined( CONFIG_BOOTLOADER_CUSTOM_RESERVE_RTC )

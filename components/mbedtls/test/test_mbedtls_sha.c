@@ -15,7 +15,7 @@
 #include "sdkconfig.h"
 #include "test_apb_dport_access.h"
 
-TEST_CASE_ESP32("mbedtls SHA self-tests", "[mbedtls]")
+TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
     start_apb_access_loop();
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
@@ -121,7 +121,7 @@ static void tskRunSHA256Test(void *pvParameters)
 
 #define SHA_TASK_STACK_SIZE (10*1024)
 
-TEST_CASE_ESP32("mbedtls SHA multithreading", "[mbedtls]")
+TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(4, 0);
     xTaskCreate(tskRunSHA1Test, "SHA1Task1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
@@ -164,13 +164,14 @@ void tskRunSHASelftests(void *param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE_ESP32("mbedtls SHA self-tests multithreaded", "[mbedtls]")
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+TEST_CASE("mbedtls SHA self-tests multithreaded", "[mbedtls]")
 {
     done_sem = xSemaphoreCreateCounting(2, 0);
     xTaskCreate(tskRunSHASelftests, "SHASelftests1", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
     xTaskCreate(tskRunSHASelftests, "SHASelftests2", SHA_TASK_STACK_SIZE, NULL, 3, NULL);
 
-    const int TIMEOUT_MS = 20000;
+    const int TIMEOUT_MS = 40000;
 
     for(int i = 0; i < 2; i++) {
         if(!xSemaphoreTake(done_sem, TIMEOUT_MS/portTICK_PERIOD_MS)) {
@@ -179,8 +180,9 @@ TEST_CASE_ESP32("mbedtls SHA self-tests multithreaded", "[mbedtls]")
     }
     vSemaphoreDelete(done_sem);
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
-TEST_CASE_ESP32("mbedtls SHA512 clone", "[mbedtls]")
+TEST_CASE("mbedtls SHA512 clone", "[mbedtls]")
 {
     mbedtls_sha512_context ctx;
     mbedtls_sha512_context clone;
@@ -205,7 +207,7 @@ TEST_CASE_ESP32("mbedtls SHA512 clone", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha512_thousand_bs, sha512, 64, "SHA512 cloned calculation");
 }
 
-TEST_CASE_ESP32("mbedtls SHA384 clone", "[mbedtls]")
+TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
 {
     mbedtls_sha512_context ctx;
     mbedtls_sha512_context clone;
@@ -231,7 +233,7 @@ TEST_CASE_ESP32("mbedtls SHA384 clone", "[mbedtls]")
 }
 
 
-TEST_CASE_ESP32("mbedtls SHA256 clone", "[mbedtls]")
+TEST_CASE("mbedtls SHA256 clone", "[mbedtls]")
 {
     mbedtls_sha256_context ctx;
     mbedtls_sha256_context clone;
@@ -256,6 +258,7 @@ TEST_CASE_ESP32("mbedtls SHA256 clone", "[mbedtls]")
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, sha256, 32, "SHA256 cloned calculation");
 }
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 typedef struct {
     mbedtls_sha256_context ctx;
     uint8_t result[32];
@@ -276,7 +279,8 @@ static void tskFinaliseSha(void *v_param)
     vTaskDelete(NULL);
 }
 
-TEST_CASE_ESP32("mbedtls SHA session passed between tasks" , "[mbedtls]")
+// No concurrent SHA sessions in esp32s2, only has one engine
+TEST_CASE("mbedtls SHA session passed between tasks" , "[mbedtls]")
 {
     finalise_sha_param_t param = { 0 };
 
@@ -299,3 +303,4 @@ TEST_CASE_ESP32("mbedtls SHA session passed between tasks" , "[mbedtls]")
     TEST_ASSERT_EQUAL(0, param.ret);
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha256_thousand_as, param.result, 32, "SHA256 result from other task");
 }
+#endif

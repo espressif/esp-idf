@@ -1,4 +1,5 @@
 menu "Bluetooth"
+    visible if IDF_TARGET_ESP32
 
     config BT_ENABLED
         bool "Bluetooth"
@@ -77,6 +78,20 @@ menu "Bluetooth"
             default 0 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_HCI
             default 1 if BTDM_CTRL_BR_EDR_SCO_DATA_PATH_PCM
             default 0
+
+        config BTDM_CTRL_AUTO_LATENCY
+            bool "Auto latency"
+            depends on BTDM_CTRL_MODE_BTDM
+            default n
+            help
+                BLE auto latency, used to enhance classic BT performance
+                while classic BT and BLE are enabled at the same time.
+
+        config BTDM_CTRL_AUTO_LATENCY_EFF
+            bool
+            default BTDM_CTRL_AUTO_LATENCY if BTDM_CTRL_MODE_BTDM
+            default n
+
 
         config BTDM_CTRL_BLE_MAX_CONN_EFF
             int
@@ -319,8 +334,8 @@ menu "Bluetooth"
 
         config BTDM_CTRL_FULL_SCAN_SUPPORTED
             bool "BLE full scan feature supported"
-            depends on BTDM_CTRL_MODE_BLE_ONLY
-            default n
+            depends on BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM
+            default y
             help
                 The full scan function is mainly used to provide BLE scan performance.
                 This is required for scenes with high scan performance requirements, such as BLE Mesh scenes.
@@ -394,6 +409,13 @@ menu "Bluetooth"
             help
                 This option is recommended for BLE only usecases to save on memory
 
+        config BT_CONTROLLER_ONLY
+            bool "Controller Only"
+            help
+                This option is recommended when you want to communicate directly with the
+                controller (without any host) or when you are using any other host stack
+                not supported by Espressif (not mentioned here).
+
     endchoice
 
     menu "Bluedroid Options"
@@ -411,6 +433,7 @@ endmenu
 
 menuconfig BLE_MESH
     bool "ESP BLE Mesh Support"
+    depends on BT_ENABLED
     help
         This option enables ESP BLE Mesh support. The specific features that are
         available may depend on other features that have been enabled in the

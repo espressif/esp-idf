@@ -8,6 +8,8 @@
 #include <esp_spi_flash.h>
 #include <esp_attr.h>
 #include <esp_flash_encrypt.h>
+#include <string.h>
+
 
 #ifdef CONFIG_SECURE_FLASH_ENC_ENABLED
 
@@ -159,6 +161,72 @@ static void verify_erased_flash(size_t offset, size_t length)
         sprintf(message, "unerased flash @ 0x%08x", offset + i);
         TEST_ASSERT_EQUAL_HEX_MESSAGE(0xFF, readback[i], message);
     }
+}
+
+TEST_CASE("test read & write random encrypted data", "[flash_encryption][test_env=UT_T1_FlashEncryption]")
+{
+    const int MAX_LEN = 192;
+    //buffer to hold the read data
+    WORD_ALIGNED_ATTR uint8_t buffer_to_write[MAX_LEN+4];
+    //test with unaligned buffer
+    uint8_t* data_buf = &buffer_to_write[3];
+
+    setup_tests();
+
+    esp_err_t err = spi_flash_erase_sector(start / SPI_FLASH_SEC_SIZE);
+    TEST_ESP_OK(err);
+
+    //initialize the buffer to compare
+    uint8_t *cmp_buf = heap_caps_malloc(SPI_FLASH_SEC_SIZE, MALLOC_CAP_32BIT | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    assert(((intptr_t)cmp_buf % 4) == 0);
+    err = spi_flash_read_encrypted(start, cmp_buf, SPI_FLASH_SEC_SIZE);
+    TEST_ESP_OK(err);
+
+    srand(789);
+
+    uint32_t offset = 0;
+    do {
+        //the encrypted write only works at 16-byte boundary
+        int skip = (rand() % 4) * 16;
+        int len = ((rand() % (MAX_LEN/16)) + 1) * 16;
+
+        for (int i = 0; i < MAX_LEN; i++) {
+            data_buf[i] = rand();
+        }
+
+        offset += skip;
+        if (offset + len > SPI_FLASH_SEC_SIZE) {
+            if (offset > SPI_FLASH_SEC_SIZE) {
+                break;
+            }
+            len = SPI_FLASH_SEC_SIZE - offset;
+        }
+
+        printf("write %d bytes to 0x%08x...\n", len, start + offset);
+        err = spi_flash_write_encrypted(start + offset, data_buf, len);
+        TEST_ESP_OK(err);
+
+        memcpy(cmp_buf + offset, data_buf, len);
+        offset += len;
+    } while (offset < SPI_FLASH_SEC_SIZE);
+
+    offset = 0;
+    do {
+        int len = ((rand() % (MAX_LEN/16)) + 1) * 16;
+        if (offset + len > SPI_FLASH_SEC_SIZE) {
+            len = SPI_FLASH_SEC_SIZE - offset;
+        }
+
+        err = spi_flash_read_encrypted(start + offset, data_buf, len);
+        TEST_ESP_OK(err);
+
+        printf("compare %d bytes at 0x%08x...\n", len, start + offset);
+
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(cmp_buf + offset, data_buf, len);
+        offset += len;
+    } while (offset < SPI_FLASH_SEC_SIZE);
+
+    free(cmp_buf);
 }
 
 #endif // CONFIG_SECURE_FLASH_ENC_ENABLED

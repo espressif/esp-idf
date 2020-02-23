@@ -21,8 +21,8 @@
 static const char TAG[] = "chip_generic";
 
 #define SPI_FLASH_GENERIC_CHIP_ERASE_TIMEOUT 4000
-#define SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT 500
-#define SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT 1000
+#define SPI_FLASH_GENERIC_SECTOR_ERASE_TIMEOUT 500  //according to GD25Q127 + 100ms
+#define SPI_FLASH_GENERIC_BLOCK_ERASE_TIMEOUT 1300  //according to GD25Q127 + 100ms
 
 #define DEFAULT_IDLE_TIMEOUT 200
 #define DEFAULT_PAGE_PROGRAM_TIMEOUT 500
@@ -140,7 +140,12 @@ esp_err_t spi_flash_chip_generic_read(esp_flash_t *chip, void *buffer, uint32_t 
 {
     esp_err_t err = ESP_OK;
     // Configure the host, and return
-    spi_flash_chip_generic_config_host_io_mode(chip);
+    err = spi_flash_chip_generic_config_host_io_mode(chip);
+
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        ESP_LOGE(TAG, "configure host io mode failed - unsupported");
+        return err;
+    }
 
     while (err == ESP_OK && length > 0) {
         uint32_t read_len = MIN(length, chip->host->max_read_bytes);
@@ -282,34 +287,34 @@ esp_err_t spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip)
     switch (chip->read_mode) {
     case SPI_FLASH_QIO:
         //for QIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
-        addr_bitlen = 32;
-        dummy_cyclelen_base = 4;
+        addr_bitlen = SPI_FLASH_QIO_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_QIO_DUMMY_BITLEN;
         read_command = CMD_FASTRD_QIO;
         break;
     case SPI_FLASH_QOUT:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 8;
+        addr_bitlen = SPI_FLASH_QOUT_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_QOUT_DUMMY_BITLEN;
         read_command = CMD_FASTRD_QUAD;
         break;
     case SPI_FLASH_DIO:
         //for DIO mode, the 4 bit right after the address are used for continuous mode, should be set to 0 to avoid that.
-        addr_bitlen = 28;
-        dummy_cyclelen_base = 2;
+        addr_bitlen = SPI_FLASH_DIO_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_DIO_DUMMY_BITLEN;
         read_command = CMD_FASTRD_DIO;
         break;
     case SPI_FLASH_DOUT:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 8;
+        addr_bitlen = SPI_FLASH_DOUT_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_DOUT_DUMMY_BITLEN;
         read_command = CMD_FASTRD_DUAL;
         break;
     case SPI_FLASH_FASTRD:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 8;
+        addr_bitlen = SPI_FLASH_FASTRD_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_FASTRD_DUMMY_BITLEN;
         read_command = CMD_FASTRD;
         break;
     case SPI_FLASH_SLOWRD:
-        addr_bitlen = 24;
-        dummy_cyclelen_base = 0;
+        addr_bitlen = SPI_FLASH_SLOWRD_ADDR_BITLEN;
+        dummy_cyclelen_base = SPI_FLASH_SLOWRD_DUMMY_BITLEN;
         read_command = CMD_READ;
         break;
     default:
@@ -386,14 +391,14 @@ const spi_flash_chip_t esp_flash_chip_generic = {
 
 static esp_err_t spi_flash_common_read_qe_sr(esp_flash_t *chip, uint8_t qe_rdsr_command, uint8_t qe_sr_bitwidth, uint32_t *sr)
 {
+    uint32_t sr_buf = 0;
     spi_flash_trans_t t = {
         .command = qe_rdsr_command,
-        .mosi_data = 0,
-        .mosi_len = 0,
-        .miso_len = qe_sr_bitwidth,
+        .miso_data = (uint8_t*) &sr_buf,
+        .miso_len = qe_sr_bitwidth / 8,
     };
     esp_err_t ret = chip->host->common_command(chip->host, &t);
-    *sr = t.miso_data[0];
+    *sr = sr_buf;
     return ret;
 }
 
@@ -401,8 +406,8 @@ static esp_err_t spi_flash_common_write_qe_sr(esp_flash_t *chip, uint8_t qe_wrsr
 {
     spi_flash_trans_t t = {
         .command = qe_wrsr_command,
-        .mosi_data = qe,
-        .mosi_len = qe_sr_bitwidth,
+        .mosi_data = ((uint8_t*) &qe),
+        .mosi_len = qe_sr_bitwidth / 8,
         .miso_len = 0,
     };
     return chip->host->common_command(chip->host, &t);

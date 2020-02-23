@@ -20,7 +20,7 @@
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "protocol_examples_common.h"
 
 #include "lwip/sockets.h"
@@ -37,10 +37,10 @@ static void openssl_example_task(void *p)
     struct sockaddr_in sock_addr;
     struct hostent *hp;
     struct ip4_addr *ip4_addr;
-    
+
     int recv_bytes = 0;
     char recv_buf[OPENSSL_EXAMPLE_RECV_BUF_LEN];
-    
+
     const char send_data[] = OPENSSL_EXAMPLE_REQUEST;
     const int send_bytes = sizeof(send_data);
 
@@ -134,7 +134,7 @@ static void openssl_example_task(void *p)
         recv_bytes += ret;
         ESP_LOGI(TAG, "%s", recv_buf);
     } while (1);
-    
+
     ESP_LOGI(TAG, "totally read %d bytes data from %s ......", recv_bytes, OPENSSL_EXAMPLE_TARGET_NAME);
 
 failed5:
@@ -172,9 +172,8 @@ static void openssl_example_client_init(void)
 
 void app_main(void)
 {
-    ESP_ERROR_CHECK( nvs_flash_init() );
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

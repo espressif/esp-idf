@@ -18,7 +18,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include "sdkconfig.h"
-#include "freertos/FreeRTOSConfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
@@ -143,7 +142,7 @@ static void task_wdt_isr(void *arg)
     timer_ll_wdt_feed(&TIMERG0);
     timer_ll_wdt_set_protect(&TIMERG0, true);
     //Acknowledge interrupt
-    timer_group_clr_intr_sta_in_isr(TIMER_GROUP_0, TIMER_INTR_WDT);
+    timer_ll_wdt_clear_intr_status(&TIMERG0);
     //We are taking a spinlock while doing I/O (ESP_EARLY_LOGE) here. Normally, that is a pretty
     //bad thing, possibly (temporarily) hanging up the 2nd core and stopping FreeRTOS. In this case,
     //something bad already happened and reporting this is considered more important

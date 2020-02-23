@@ -564,7 +564,7 @@ static void handle_rc_attributes_rsp (tAVRC_MSG_VENDOR *vendor_msg)
 
         btc_avrc_ct_cb_to_app(ESP_AVRC_CT_METADATA_RSP_EVT, &param[i]);
 
-        attr_index += (int) vendor_msg->p_vendor_data[7 + attr_index] + 8;
+        attr_index += attr_length + 8;
     }
 }
 

@@ -91,4 +91,4 @@ SSL/TLS libraries and with all respective configurations set to default.
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_tls.inc
+.. include-build-file:: inc/esp_tls.inc

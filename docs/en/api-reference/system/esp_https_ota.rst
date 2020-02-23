@@ -37,4 +37,4 @@ For additional security, signature of OTA firmware images can be verified. For t
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_https_ota.inc
+.. include-build-file:: inc/esp_https_ota.inc

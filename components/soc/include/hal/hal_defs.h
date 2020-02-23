@@ -26,3 +26,5 @@
 #define HAL_LOGI(...)    ESP_LOGI(__VA_ARGS__)
 #define HAL_LOGD(...)    ESP_LOGD(__VA_ARGS__)
 #define HAL_LOGV(...)    ESP_LOGV(__VA_ARGS__)
+
+#define STATIC_HAL_REG_CHECK(TAG, ENUM, VAL) _Static_assert((ENUM) == (VAL), #TAG" "#ENUM" definition no longer matches register value")

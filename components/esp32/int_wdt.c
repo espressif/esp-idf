@@ -93,8 +93,8 @@ void esp_int_wdt_init(void) {
     timer_ll_wdt_feed(&TIMERG1);
     timer_ll_wdt_set_protect(&TIMERG1, true);
 
-    timer_ll_intr_status_clear(&TIMERG1, TIMER_INTR_WDT);
-    timer_group_intr_enable(TIMER_GROUP_1, TIMER_INTR_WDT);
+    timer_ll_wdt_clear_intr_status(&TIMERG1);
+    timer_ll_wdt_enable_intr(&TIMERG1);
 }
 
 void esp_int_wdt_cpu_init(void)

@@ -5,7 +5,7 @@ Application Level Tracing library
 Overview
 --------
 
-IDF provides useful feature for program behavior analysis: application level tracing. It is implemented in the corresponding library and can be enabled in menuconfig. This feature allows to transfer arbitrary data between host and ESP32 via JTAG interface with small overhead on program execution.
+IDF provides useful feature for program behavior analysis: application level tracing. It is implemented in the corresponding library and can be enabled in menuconfig. This feature allows to transfer arbitrary data between host and {IDF_TARGET_NAME} via JTAG interface with small overhead on program execution.
 
 Developers can use this library to send application specific state of execution to the host and receive commands or other type of info in the opposite direction at runtime. The main use cases of this library are:
 
@@ -31,7 +31,7 @@ The library supports two modes of operation:
 
 **Post-mortem mode**. This is the default mode. The mode does not need interaction with the host side. In this mode tracing module does not check whether host has read all the data from *HW UP BUFFER* buffer and overwrites old data with the new ones. This mode is useful when only the latest trace data are interesting to the user, e.g. for analyzing program's behavior just before the crash. Host can read the data later on upon user request, e.g. via special OpenOCD command in case of working via JTAG interface.
 
-**Streaming mode.** Tracing module enters this mode when host connects to ESP32. In this mode before writing new data to *HW UP BUFFER* tracing module checks that there is enough space in it and if necessary waits for the host to read data and free enough memory. Maximum waiting time is controlled via timeout values passed by users to corresponding API routines. So when application tries to write data to trace buffer using finite value of the maximum waiting time it is possible situation that this data will be dropped. Especially this is true for tracing from time critical code (ISRs, OS scheduler code etc.) when infinite timeouts can lead to system malfunction. In order to avoid loss of such critical data developers can enable additional data buffering via menuconfig option :ref:`CONFIG_ESP32_APPTRACE_PENDING_DATA_SIZE_MAX`. This macro specifies the size of data which can be buffered in above conditions. The option can also help to overcome situation when data transfer to the host is temporarily slowed down, e.g due to USB bus congestions etc. But it will not help when average bitrate of trace data stream exceeds HW interface capabilities.
+**Streaming mode.** Tracing module enters this mode when host connects to {IDF_TARGET_NAME}. In this mode before writing new data to *HW UP BUFFER* tracing module checks that there is enough space in it and if necessary waits for the host to read data and free enough memory. Maximum waiting time is controlled via timeout values passed by users to corresponding API routines. So when application tries to write data to trace buffer using finite value of the maximum waiting time it is possible situation that this data will be dropped. Especially this is true for tracing from time critical code (ISRs, OS scheduler code etc.) when infinite timeouts can lead to system malfunction. In order to avoid loss of such critical data developers can enable additional data buffering via menuconfig option :ref:`CONFIG_APPTRACE_PENDING_DATA_SIZE_MAX`. This macro specifies the size of data which can be buffered in above conditions. The option can also help to overcome situation when data transfer to the host is temporarily slowed down, e.g due to USB bus congestions etc. But it will not help when average bitrate of trace data stream exceeds HW interface capabilities.
 
 
 Configuration Options and Dependencies
@@ -40,7 +40,7 @@ Configuration Options and Dependencies
 Using of this feature depends on two components:
 
 1. **Host side:** Application tracing is done over JTAG, so it needs OpenOCD to be set up and running on host machine. For instructions on how to set it up, please see :doc:`JTAG Debugging <../api-guides/jtag-debugging/index>` for details.
-2. **Target side:** Application tracing functionality can be enabled in menuconfig. *Component config > Application Level Tracing* menu allows selecting destination for the trace data (HW interface for transport). Choosing any of the destinations automatically enables ``CONFIG_ESP32_APPTRACE_ENABLE`` option.
+2. **Target side:** Application tracing functionality can be enabled in menuconfig. *Component config > Application Level Tracing* menu allows selecting destination for the trace data (HW interface for transport). Choosing any of the destinations automatically enables ``CONFIG_APPTRACE_ENABLE`` option.
 
 .. note::
 
@@ -48,14 +48,14 @@ Using of this feature depends on two components:
 
 There are two additional menuconfig options not mentioned above:
 
-1.  *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_ESP32_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In that mode trace data are exposed to the host in 16 KB blocks. In post-mortem mode when one block is filled it is exposed to the host and the previous one becomes unavailable. In other words trace data are overwritten in 16 KB granularity. On panic the latest data from the current input block are exposed to host and host can read them for post-analysis. System panic may occur when very small amount of data are not exposed to the host yet. In this case the previous 16 KB of collected data will be lost and host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of panic. For example user can decide that it needs not less then 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic they will not be flushed and will not overwrite previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
-2.  *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and controls the maximum time tracing module will wait for the host to read the last data in case of panic.
+1.  *Threshold for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH`). This option is necessary due to the nature of working over JTAG. In that mode trace data are exposed to the host in 16 KB blocks. In post-mortem mode when one block is filled it is exposed to the host and the previous one becomes unavailable. In other words trace data are overwritten in 16 KB granularity. On panic the latest data from the current input block are exposed to host and host can read them for post-analysis. System panic may occur when very small amount of data are not exposed to the host yet. In this case the previous 16 KB of collected data will be lost and host will see the latest, but very small piece of the trace. It can be insufficient to diagnose the problem. This menuconfig option allows avoiding such situations. It controls the threshold for flushing data in case of panic. For example user can decide that it needs not less then 512 bytes of the recent trace data, so if there is less then 512 bytes of pending data at the moment of panic they will not be flushed and will not overwrite previous 16 KB. The option is only meaningful in post-mortem mode and when working over JTAG.
+2.  *Timeout for flushing last trace data to host on panic* (:ref:`CONFIG_APPTRACE_ONPANIC_HOST_FLUSH_TMO`). The option is only meaningful in streaming mode and controls the maximum time tracing module will wait for the host to read the last data in case of panic.
 
 
 How to use this library
 -----------------------
 
-This library provides API for transferring arbitrary data between host and ESP32. When enabled in menuconfig target application tracing module is initialized automatically at the system startup, so all what the user needs to do is to call corresponding API to send, receive or flush the data.
+This library provides API for transferring arbitrary data between host and {IDF_TARGET_NAME}. When enabled in menuconfig target application tracing module is initialized automatically at the system startup, so all what the user needs to do is to call corresponding API to send, receive or flush the data.
 
 .. _app_trace-application-specific-tracing:
 
@@ -192,7 +192,7 @@ Start command syntax:
 ``outfile``
     Path to file to save data from both CPUs. This argument should have the following format: ``file://path/to/file``.
 ``poll_period``
-    Data polling period (in ms) for available trace data. If greater than 0 then command runs in non-blocking mode. By default 1 ms.  
+    Data polling period (in ms) for available trace data. If greater than 0 then command runs in non-blocking mode. By default 1 ms.
 ``trace_size``
     Maximum size of data to collect (in bytes). Tracing is stopped after specified amount of data is received. By default -1 (trace size stop trigger is disabled).
 ``stop_tmo``
@@ -216,7 +216,7 @@ Command usage examples:
 
         esp32 apptrace start file://trace.log 1 2048 5 0 0
 
-    The tracing data will be retrieved and saved in non-blocking mode. This process will stop automatically after 2048 bytes are collected, or if no data are available for more than 5 seconds. 
+    The tracing data will be retrieved and saved in non-blocking mode. This process will stop automatically after 2048 bytes are collected, or if no data are available for more than 5 seconds.
 
     .. note::
 
@@ -326,7 +326,7 @@ How To Use It
 
 Support for this feature is enabled by *Component config > Application Level Tracing > FreeRTOS SystemView Tracing* (:ref:`CONFIG_SYSVIEW_ENABLE`) menuconfig option. There are several other options enabled under the same menu:
 
-1. *ESP32 timer to use as SystemView timestamp source* (:ref:`CONFIG_SYSVIEW_TS_SOURCE`) selects the source of timestamps for SystemView events. In single core mode timestamps are generated using ESP32 internal cycle counter running at maximum 240 Mhz (~4 ns granularity). In dual-core mode external timer working at 40 Mhz is used, so timestamp granularity is 25 ns.
+1. {IDF_TARGET_NAME} timer to use as SystemView timestamp source: (:ref:`CONFIG_SYSVIEW_TS_SOURCE`) selects the source of timestamps for SystemView events. In single core mode timestamps are generated using {IDF_TARGET_NAME} internal cycle counter running at maximum 240 Mhz (~4 ns granularity). In dual-core mode external timer working at 40 Mhz is used, so timestamp granularity is 25 ns.
 2. Individually enabled or disabled collection of SystemView events (``CONFIG_SYSVIEW_EVT_XXX``):
 
     - Trace Buffer Overflow Event
@@ -340,7 +340,7 @@ Support for this feature is enabled by *Component config > Application Level Tra
     - Task Create Event
     - Task Terminate Event
     - System Idle Event
-    - Timer Enter Event 
+    - Timer Enter Event
     - Timer Exit Event
 
 IDF has all the code required to produce SystemView compatible traces, so user can just configure necessary project options (see above), build, download the image to target and use OpenOCD to collect data as described in the previous sections.
@@ -371,7 +371,7 @@ Start command syntax:
 ``outfile2``
     Path to file to save data from APP CPU. This argument should have the following format: ``file://path/to/file``.
 ``poll_period``
-    Data polling period (in ms) for available trace data. If greater then 0 then command runs in non-blocking mode. By default 1 ms.  
+    Data polling period (in ms) for available trace data. If greater then 0 then command runs in non-blocking mode. By default 1 ms.
 ``trace_size``
     Maximum size of data to collect (in bytes). Tracing is stopped after specified amount of data is received. By default -1 (trace size stop trigger is disabled).
 ``stop_tmo``
@@ -405,7 +405,7 @@ Command usage examples:
 Data Visualization
 """"""""""""""""""
 
-After trace data are collected user can use special tool to visualize the results and inspect behavior of the program. Unfortunately SystemView does not support tracing from multiple cores. So when tracing from ESP32 working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool. 
+After trace data are collected user can use special tool to visualize the results and inspect behavior of the program. Unfortunately SystemView does not support tracing from multiple cores. So when tracing from {IDF_TARGET_NAME} working in dual-core mode two files are generated: one for PRO CPU and another one for APP CPU. User can load every file into separate instance of the tool.
 
 It is uneasy and awkward to analyze data for every core in separate instance of the tool. Fortunately there is Eclipse plugin called *Impulse* which can load several trace files and makes it possible to inspect events from both cores in one view. Also this plugin has no limitation of 1,000,000 events as compared to free version of SystemView.
 
@@ -487,8 +487,8 @@ Project Configuration
 
 Before building a project with source code coverage, ensure that the following project configuration options are enabled by running ``idf.py menuconfig`` (or ``make menuconfig`` if using the legacy Make build system).
 
-- Enable the application tracing module by choosing *Trace Memory* for the  :ref:`CONFIG_ESP32_APPTRACE_DESTINATION` option.
-- Enable Gcov to host via the :ref:`CONFIG_ESP32_GCOV_ENABLE`
+- Enable the application tracing module by choosing *Trace Memory* for the  :ref:`CONFIG_APPTRACE_DESTINATION` option.
+- Enable Gcov to host via the :ref:`CONFIG_APPTRACE_GCOV_ENABLE`
 
 .. _app_trace-gcov-dumping-data:
 
@@ -501,7 +501,7 @@ The dumping of coverage data is done via OpenOCD (see :doc:`JTAG Debugging <../a
 
 When the target dumps code coverage data, the ``.gcda`` files are stored in the project's build directory. For example, if ``gcov_example_main.c`` of the ``main`` component was compiled with the ``--coverage`` option, then dumping the code coverage data would generate a ``gcov_example_main.gcda`` in ``build/esp-idf/main/CMakeFiles/__idf_main.dir/gcov_example_main.c.gcda`` (or ``build/main/gcov_example_main.gcda`` if using the legacy Make build system). Note that the ``.gcno`` files produced during compilation are also placed in the same directory.
 
-The dumping of code coverage data can be done multiple times throughout an application's life time. Each dump will simply update the ``.gcda`` file with the newest code coverage information. Code coverage data is accumulative, thus the newest data will contain the total execution count of each code path over the application's entire lifetime. 
+The dumping of code coverage data can be done multiple times throughout an application's life time. Each dump will simply update the ``.gcda`` file with the newest code coverage information. Code coverage data is accumulative, thus the newest data will contain the total execution count of each code path over the application's entire lifetime.
 
 ESP-IDF supports two methods of dumping code coverage data form the target to the host:
 
@@ -511,15 +511,12 @@ ESP-IDF supports two methods of dumping code coverage data form the target to th
 Instant Run-Time Dump
 ~~~~~~~~~~~~~~~~~~~~~
 
-An Instant Run-Time Dump is triggered by calling the ``esp32 gcov`` OpenOCD command (via a telnet session). Once called, OpenOCD will immediately preempt the ESP32's current state and execute a builtin IDF Gcov debug stub function. The debug stub function will handle the dumping of data to the Host. Upon completion, the ESP32 will resume it's current state.
-
-.. note::
-    Due to the use of the debug stub function, the OpenOCD Debug Stub option must be enabled in project configuration. The option can be found under ``Component config -> ESP32-specific -> OpenOCD debug stubs``.
+An Instant Run-Time Dump is triggered by calling the ``esp32 gcov`` OpenOCD command (via a telnet session). Once called, OpenOCD will immediately preempt the {IDF_TARGET_NAME}'s current state and execute a builtin IDF Gcov debug stub function. The debug stub function will handle the dumping of data to the Host. Upon completion, the {IDF_TARGET_NAME} will resume it's current state.
 
 Hard-coded Dump
 ~~~~~~~~~~~~~~~
 
-A Hard-coded Dump is triggered by the application itself by calling :cpp:func:`esp_gcov_dump` from somewhere within the application. When called, the application will halt and wait for OpenOCD to connect and retrieve the code coverage data. Once :cpp:func:`esp_gcov_dump` is called, the Host must execute the ``esp32 gcov dump`` OpenOCD command (via a telnet session). The ``esp32 gcov dump`` command will cause OpenOCD to connect to the ESP32, retrieve the code coverage data, then disconnect from the ESP32 thus allowing the application to resume. Hard-coded Dumps can also be triggered multiple times throughout an application's lifetime.
+A Hard-coded Dump is triggered by the application itself by calling :cpp:func:`esp_gcov_dump` from somewhere within the application. When called, the application will halt and wait for OpenOCD to connect and retrieve the code coverage data. Once :cpp:func:`esp_gcov_dump` is called, the Host must execute the ``esp32 gcov dump`` OpenOCD command (via a telnet session). The ``esp32 gcov dump`` command will cause OpenOCD to connect to the {IDF_TARGET_NAME}, retrieve the code coverage data, then disconnect from the {IDF_TARGET_NAME} thus allowing the application to resume. Hard-coded Dumps can also be triggered multiple times throughout an application's lifetime.
 
 Hard-coded dumps are useful if code coverage data is required at certain points of an application's lifetime by placing :cpp:func:`esp_gcov_dump` where necessary (e.g., after application initialization, during each iteration of an application's main loop).
 

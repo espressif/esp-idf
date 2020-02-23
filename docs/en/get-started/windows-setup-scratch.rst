@@ -24,13 +24,13 @@ Get ESP-IDF
 
 Open Command Prompt and run the following commands:
 
-.. include:: /_build/inc/git-clone-windows.inc
+.. include-build-file:: inc/git-clone-windows.inc
 
 ESP-IDF will be downloaded into ``%userprofile%\esp\esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
@@ -72,28 +72,21 @@ Once Python is installed, open a Windows Command Prompt from the Start menu and 
 
   pip install --user pyserial
 
-MConf for IDF
-^^^^^^^^^^^^^
-
-Download the configuration tool mconf-idf from the `kconfig-frontends releases page`_. This is the ``mconf`` configuration tool with some minor customizations for ESP-IDF.
-
-This tool will also need to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>`.
-
 Toolchain Setup
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 Download the precompiled Windows toolchain:
 
 |download_link_win32|
 
-Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-esp32-elf``.
+Unzip the zip file to ``C:\Program Files`` (or some other location). The zip file contains a single directory ``xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``.
 
-Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-esp32-elf\bin``.
+Next, the ``bin`` subdirectory of this directory must be :ref:`added to your Path <add-directory-windows-path>`. For example, the directory to add may be ``C:\Program Files\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin``.
 
 .. note::
-   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-esp32-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
+   If you already have the MSYS2 environment (for use with the "GNU Make" build system) installed, you can skip the separate download and add the directory ``C:\msys32\opt\xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf\bin`` to the Path instead, as the toolchain is included in the MSYS2 environment.
 
 
 .. _add-directory-windows-path:

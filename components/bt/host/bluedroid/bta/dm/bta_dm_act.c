@@ -680,6 +680,77 @@ void bta_dm_set_afh_channels (tBTA_DM_MSG *p_data)
 #endif /// CLASSIC_BT_INCLUDED
 }
 
+#if (SDP_INCLUDED == TRUE)
+/*******************************************************************************
+**
+** Function         bta_dm_read_remote_device_name
+**
+** Description      Initiate to get remote device name
+**
+** Returns          TRUE if started to get remote name
+**
+*******************************************************************************/
+static BOOLEAN bta_dm_read_remote_device_name (BD_ADDR bd_addr, tBT_TRANSPORT transport)
+{
+    tBTM_STATUS  btm_status;
+
+    APPL_TRACE_DEBUG("bta_dm_read_remote_device_name");
+
+    bdcpy(bta_dm_search_cb.peer_bdaddr, bd_addr);
+    bta_dm_search_cb.peer_name[0] = 0;
+
+    btm_status = BTM_ReadRemoteDeviceName (bta_dm_search_cb.peer_bdaddr,
+                                           (tBTM_CMPL_CB *) bta_dm_remname_cback,
+                                           transport);
+
+    if ( btm_status == BTM_CMD_STARTED ) {
+        APPL_TRACE_DEBUG("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName is started");
+
+        return (TRUE);
+    } else if ( btm_status == BTM_BUSY ) {
+        APPL_TRACE_DEBUG("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName is busy");
+
+        /* Remote name discovery is on going now so BTM cannot notify through "bta_dm_remname_cback" */
+        /* adding callback to get notified that current reading remore name done */
+        BTM_SecAddRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+
+        return (TRUE);
+    } else {
+        APPL_TRACE_WARNING("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName returns 0x%02X", btm_status);
+
+        return (FALSE);
+    }
+}
+
+/*******************************************************************************
+**
+** Function         bta_dm_read_rmt_name
+**
+** Description      Initiate to get remote device name
+**
+** Returns          TRUE if started to get remote name
+**
+*******************************************************************************/
+void bta_dm_read_rmt_name(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_DEBUG("%s",__func__);
+    bdcpy(bta_dm_search_cb.peer_bdaddr, p_data->get_rmt_name.rmt_addr);
+    bta_dm_search_cb.peer_name[0] = 0;
+
+    tBTM_STATUS  btm_status = BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
+                                                       (tBTM_CMPL_CB *) p_data->get_rmt_name.rmt_name_cb,
+                                                       bta_dm_search_cb.transport);
+
+    if (btm_status == BTM_CMD_STARTED) {
+        BTM_TRACE_DEBUG("%s: BTM_ReadRemoteDeviceName is started",__func__);
+    } else if (btm_status == BTM_BUSY) {
+        BTM_TRACE_DEBUG("%s: BTM_ReadRemoteDeviceName is busy",__func__);
+    } else {
+        BTM_TRACE_WARNING("%s: BTM_ReadRemoteDeviceName returns 0x%02X",__func__, btm_status);
+    }
+}
+#endif  ///SDP_INCLUDED == TRUE
+
 void bta_dm_config_eir (tBTA_DM_MSG *p_data)
 {
     tBTA_DM_API_CONFIG_EIR *config_eir = &p_data->config_eir;
@@ -695,7 +766,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
         osi_free(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec);
         p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = NULL;
     }
-    if (config_eir->eir_manufac_spec) {
+    if (config_eir->eir_manufac_spec_len > 0) {
         p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec = osi_malloc(config_eir->eir_manufac_spec_len);
         if (p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec) {
             memcpy(p_bta_dm_eir_cfg->bta_dm_eir_manufac_spec, config_eir->eir_manufac_spec, config_eir->eir_manufac_spec_len);
@@ -709,7 +780,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
         osi_free(p_bta_dm_eir_cfg->bta_dm_eir_url);
         p_bta_dm_eir_cfg->bta_dm_eir_url = NULL;
     }
-    if (config_eir->eir_url) {
+    if (config_eir->eir_url_len > 0) {
         p_bta_dm_eir_cfg->bta_dm_eir_url = osi_malloc(config_eir->eir_url_len);
         if (p_bta_dm_eir_cfg->bta_dm_eir_url) {
             memcpy(p_bta_dm_eir_cfg->bta_dm_eir_url, config_eir->eir_url, config_eir->eir_url_len);
@@ -724,7 +795,7 @@ void bta_dm_config_eir (tBTA_DM_MSG *p_data)
 
 /*******************************************************************************
 **
-** Function         bta_dm_set_afh_channels
+** Function         bta_dm_ble_set_channels
 **
 ** Description      Sets AFH channels
 **
@@ -1658,49 +1729,6 @@ void bta_dm_di_disc (tBTA_DM_MSG *p_data)
         p_msg->hdr.layer_specific   = BTA_DM_API_DI_DISCOVER_EVT;
         p_data->hdr.offset          = result;
         bta_sys_sendmsg(p_msg);
-    }
-}
-#endif  ///SDP_INCLUDED == TRUE
-
-/*******************************************************************************
-**
-** Function         bta_dm_read_remote_device_name
-**
-** Description      Initiate to get remote device name
-**
-** Returns          TRUE if started to get remote name
-**
-*******************************************************************************/
-#if (SDP_INCLUDED == TRUE)
-static BOOLEAN bta_dm_read_remote_device_name (BD_ADDR bd_addr, tBT_TRANSPORT transport)
-{
-    tBTM_STATUS  btm_status;
-
-    APPL_TRACE_DEBUG("bta_dm_read_remote_device_name");
-
-    bdcpy(bta_dm_search_cb.peer_bdaddr, bd_addr);
-    bta_dm_search_cb.peer_name[0] = 0;
-
-    btm_status = BTM_ReadRemoteDeviceName (bta_dm_search_cb.peer_bdaddr,
-                                           (tBTM_CMPL_CB *) bta_dm_remname_cback,
-                                           transport);
-
-    if ( btm_status == BTM_CMD_STARTED ) {
-        APPL_TRACE_DEBUG("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName is started");
-
-        return (TRUE);
-    } else if ( btm_status == BTM_BUSY ) {
-        APPL_TRACE_DEBUG("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName is busy");
-
-        /* Remote name discovery is on going now so BTM cannot notify through "bta_dm_remname_cback" */
-        /* adding callback to get notified that current reading remore name done */
-        BTM_SecAddRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
-
-        return (TRUE);
-    } else {
-        APPL_TRACE_WARNING("bta_dm_read_remote_device_name: BTM_ReadRemoteDeviceName returns 0x%02X", btm_status);
-
-        return (FALSE);
     }
 }
 #endif  ///SDP_INCLUDED == TRUE
@@ -2775,7 +2803,6 @@ static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name)
 
     APPL_TRACE_DEBUG("bta_dm_remname_cback len = %d name=<%s>", p_remote_name->length,
                      p_remote_name->remote_bd_name);
-
     /* remote name discovery is done but it could be failed */
     bta_dm_search_cb.name_discover_done = TRUE;
     BCM_STRNCPY_S((char *)bta_dm_search_cb.peer_name, sizeof(BD_NAME), (char *)p_remote_name->remote_bd_name, (BD_NAME_LEN));
@@ -2798,7 +2825,6 @@ static void bta_dm_remname_cback (tBTM_REMOTE_DEV_NAME *p_remote_name)
 
         p_msg->hdr.event = BTA_DM_REMT_NAME_EVT;
         bta_sys_sendmsg(p_msg);
-
     }
 }
 
@@ -4848,6 +4874,9 @@ void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data)
                              p_data->ble_set_conn_params.conn_int_max,
                              p_data->ble_set_conn_params.slave_latency,
                              p_data->ble_set_conn_params.supervision_tout);
+
+    BTM_BleConfigConnParams(p_data->ble_set_conn_params.conn_int_min, p_data->ble_set_conn_params.conn_int_max,
+            p_data->ble_set_conn_params.slave_latency, p_data->ble_set_conn_params.supervision_tout);
 }
 
 /*******************************************************************************
@@ -4932,6 +4961,9 @@ void bta_dm_ble_update_conn_params (tBTA_DM_MSG *p_data)
                                   p_data->ble_update_conn_params.latency,
                                   p_data->ble_update_conn_params.timeout)) {
         APPL_TRACE_ERROR("Update connection parameters failed!");
+    } else {
+        BTM_BleConfigConnParams(p_data->ble_update_conn_params.min_int, p_data->ble_update_conn_params.max_int,
+            p_data->ble_update_conn_params.latency, p_data->ble_update_conn_params.timeout);
     }
 }
 /*******************************************************************************

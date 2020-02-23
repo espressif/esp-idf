@@ -6,7 +6,7 @@ API Reference
 .. toctree::
     :maxdepth: 2
 
-    Bluetooth <bluetooth/index>
+    :esp32: Bluetooth <bluetooth/index>
     Networking <network/index>
     Peripherals <peripherals/index>
     Protocols <protocols/index>

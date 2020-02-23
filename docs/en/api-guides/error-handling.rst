@@ -120,5 +120,5 @@ Enabling exception handling normally increases application binary size by a few 
 
 If an exception is thrown, but there is no ``catch`` block, the program will be terminated by ``abort`` function, and backtrace will be printed. See :doc:`Fatal Errors <fatal-errors>` for more information about backtraces.
 
-See :example:`system/cpp_exceptions` for an example of C++ exception handling.
+See :example:`cxx/exceptions` for an example of C++ exception handling.
 

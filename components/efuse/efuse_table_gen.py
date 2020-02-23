@@ -354,7 +354,7 @@ class FuseDefinition(object):
             if strval not in ["EFUSE_BLK0", "EFUSE_BLK1", "EFUSE_BLK2", "EFUSE_BLK3"]:
                 raise InputError("Field 'efuse_block' should be one of EFUSE_BLK0..EFUSE_BLK3")
 
-        if idf_target == "esp32s2beta":
+        if idf_target == "esp32s2":
             if strval not in ["EFUSE_BLK0", "EFUSE_BLK1", "EFUSE_BLK2", "EFUSE_BLK3", "EFUSE_BLK4",
                               "EFUSE_BLK5", "EFUSE_BLK6", "EFUSE_BLK7", "EFUSE_BLK8", "EFUSE_BLK9",
                               "EFUSE_BLK10"]:
@@ -463,7 +463,7 @@ def main():
     global idf_target
 
     parser = argparse.ArgumentParser(description='ESP32 eFuse Manager')
-    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32','esp32s2beta'], default='esp32')
+    parser.add_argument('--idf_target', '-t', help='Target chip type', choices=['esp32','esp32s2'], default='esp32')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--debug', help='Create header file with debug info', default=False, action="store_false")
     parser.add_argument('--info', help='Print info about range of used bits', default=False, action="store_true")

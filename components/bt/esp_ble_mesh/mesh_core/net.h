@@ -67,7 +67,7 @@ struct bt_mesh_subnet {
         u8_t nid;           /* NID */
         u8_t enc[16];       /* EncKey */
         u8_t net_id[8];     /* Network ID */
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
         u8_t identity[16];  /* IdentityKey */
 #endif
         u8_t privacy[16];   /* PrivacyKey */
@@ -224,6 +224,7 @@ enum {
     BLE_MESH_HB_PUB_PENDING,
     BLE_MESH_CFG_PENDING,
     BLE_MESH_MOD_PENDING,
+    BLE_MESH_VA_PENDING,
 
     /* Don't touch - intentionally last */
     BLE_MESH_FLAG_COUNT,
@@ -296,7 +297,6 @@ struct bt_mesh_net_rx {
            local_match: 1, /* Matched a local element */
            friend_match: 1; /* Matched an LPN we're friends for */
     u16_t  msg_cache_idx;  /* Index of entry in message cache */
-    s8_t   rssi;
 };
 
 /* Encoding context for Network/Transport data */
@@ -366,6 +366,8 @@ u32_t bt_mesh_next_seq(void);
 void bt_mesh_net_start(void);
 
 void bt_mesh_net_init(void);
+void bt_mesh_net_header_parse(struct net_buf_simple *buf,
+                              struct bt_mesh_net_rx *rx);
 
 /* Friendship Credential Management */
 struct friend_cred {
@@ -393,7 +395,7 @@ void friend_cred_clear(struct friend_cred *cred);
 int friend_cred_del(u16_t net_idx, u16_t addr);
 
 static inline void send_cb_finalize(const struct bt_mesh_send_cb *cb,
-                    void *cb_data)
+                                    void *cb_data)
 {
     if (!cb) {
         return;

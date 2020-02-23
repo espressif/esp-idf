@@ -11,14 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <esp_types.h>
+#include "esp_types.h"
+#include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/xtensa_api.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
 #include "driver/periph_ctrl.h"
-#include "sdkconfig.h"
 
 static portMUX_TYPE periph_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
@@ -66,9 +66,11 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
 #if CONFIG_IDF_TARGET_ESP32
         case PERIPH_UART2_MODULE:
             return DPORT_UART2_CLK_EN;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         case PERIPH_USB_MODULE:
             return DPORT_USB_CLK_EN;
+        case PERIPH_SYSTIMER_MODULE:
+            return DPORT_SYSTIMER_CLK_EN;
 #endif
         case PERIPH_I2C0_MODULE:
             return DPORT_I2C_EXT0_CLK_EN;
@@ -105,19 +107,15 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
             return DPORT_SPI3_CLK_EN;
         case PERIPH_SPI_DMA_MODULE:
             return DPORT_SPI_DMA_CLK_EN;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         case PERIPH_FSPI_MODULE:
             return DPORT_SPI2_CLK_EN;
         case PERIPH_HSPI_MODULE:
             return DPORT_SPI3_CLK_EN;
-        case PERIPH_VSPI_MODULE:
-            return DPORT_SPI4_CLK_EN;
         case PERIPH_SPI2_DMA_MODULE:
             return DPORT_SPI2_DMA_CLK_EN;
         case PERIPH_SPI3_DMA_MODULE:
             return DPORT_SPI3_DMA_CLK_EN;
-        case PERIPH_SPI_SHARED_DMA_MODULE:
-            return DPORT_SPI_SHARED_DMA_CLK_EN;
 #endif
         case PERIPH_SDMMC_MODULE:
             return DPORT_WIFI_CLK_SDIO_HOST_EN;
@@ -132,7 +130,7 @@ static uint32_t get_clk_en_mask(periph_module_t periph)
         case PERIPH_WIFI_MODULE:
 #if CONFIG_IDF_TARGET_ESP32
             return DPORT_WIFI_CLK_WIFI_EN_M;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
             return 0;
 #endif
         case PERIPH_BT_MODULE:
@@ -170,9 +168,11 @@ static uint32_t get_rst_en_mask(periph_module_t periph, bool enable)
 #if CONFIG_IDF_TARGET_ESP32
         case PERIPH_UART2_MODULE:
             return DPORT_UART2_RST;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         case PERIPH_USB_MODULE:
             return DPORT_USB_RST;
+        case PERIPH_SYSTIMER_MODULE:
+            return DPORT_SYSTIMER_RST;
 #endif
         case PERIPH_I2C0_MODULE:
             return DPORT_I2C_EXT0_RST;
@@ -209,19 +209,15 @@ static uint32_t get_rst_en_mask(periph_module_t periph, bool enable)
             return DPORT_SPI3_RST;
         case PERIPH_SPI_DMA_MODULE:
             return DPORT_SPI_DMA_RST;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
         case PERIPH_FSPI_MODULE:
             return DPORT_SPI2_RST;
         case PERIPH_HSPI_MODULE:
             return DPORT_SPI3_RST;
-        case PERIPH_VSPI_MODULE:
-            return DPORT_SPI4_RST;
         case PERIPH_SPI2_DMA_MODULE:
             return DPORT_SPI2_DMA_RST;
         case PERIPH_SPI3_DMA_MODULE:
             return DPORT_SPI3_DMA_RST;
-        case PERIPH_SPI_SHARED_DMA_MODULE:
-            return DPORT_SPI_SHARED_DMA_RST;
 #endif
         case PERIPH_SDMMC_MODULE:
             return DPORT_SDIO_HOST_RST;
@@ -293,13 +289,9 @@ static uint32_t get_clk_en_reg(periph_module_t periph)
 #if CONFIG_IDF_TARGET_ESP32
     if (periph == PERIPH_AES_MODULE || periph == PERIPH_SHA_MODULE || periph == PERIPH_RSA_MODULE) {
         return DPORT_PERI_CLK_EN_REG;
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-    if(periph == PERIPH_SPI_SHARED_DMA_MODULE) {
-        return DPORT_PERIP_CLK_EN1_REG;
-    }
+    } else
 #endif
-    else {
+    {
         return is_wifi_clk_peripheral(periph) ? DPORT_WIFI_CLK_EN_REG : DPORT_PERIP_CLK_EN_REG;
     }
 }
@@ -309,13 +301,9 @@ static uint32_t get_rst_en_reg(periph_module_t periph)
 #if CONFIG_IDF_TARGET_ESP32
     if (periph == PERIPH_AES_MODULE || periph == PERIPH_SHA_MODULE || periph == PERIPH_RSA_MODULE) {
         return DPORT_PERI_RST_EN_REG;
-    }
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-    if(periph == PERIPH_SPI_SHARED_DMA_MODULE){
-        return DPORT_PERIP_CLK_EN1_REG;
-    }
+    } else
 #endif
-    else {
+    {
         return is_wifi_clk_peripheral(periph) ? DPORT_CORE_RST_EN_REG : DPORT_PERIP_RST_EN_REG;
     }
 }

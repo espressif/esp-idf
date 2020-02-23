@@ -11,6 +11,7 @@
 #include "soc/rtc.h"
 #include "esp_system.h"
 #include "test_utils.h"
+#include "esp_log.h"
 
 #if portNUM_PROCESSORS == 2
 
@@ -420,3 +421,92 @@ TEST_CASE("test posix_timers clock_... functions", "[newlib]")
 {
     test_posix_timers_clock();
 }
+
+#ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+#include <string.h>
+
+static struct timeval get_time(const char *desc, char *buffer)
+{
+    struct timeval timestamp;
+    gettimeofday(&timestamp, NULL);
+    struct tm* tm_info = localtime(&timestamp.tv_sec);
+    strftime(buffer, 32, "%c", tm_info);
+    ESP_LOGI("TAG", "%s: %016llX (%s)", desc, timestamp.tv_sec, buffer);
+    return timestamp;
+}
+
+TEST_CASE("test time_t wide 64 bits", "[newlib]")
+{
+    static char buffer[32];
+    ESP_LOGI("TAG", "sizeof(time_t): %d (%d-bit)", sizeof(time_t), sizeof(time_t)*8);
+    TEST_ASSERT_EQUAL(8, sizeof(time_t));
+
+    struct tm tm = {4, 14, 3, 19, 0, 138, 0, 0, 0};
+    struct timeval timestamp = { mktime(&tm), 0 };
+    ESP_LOGI("TAG", "timestamp: %016llX", timestamp.tv_sec);
+    settimeofday(&timestamp, NULL);
+    get_time("Set time", buffer);
+
+    while (timestamp.tv_sec < 0x80000003LL) {
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+        timestamp = get_time("Time now", buffer);
+    }
+    TEST_ASSERT_EQUAL_MEMORY("Tue Jan 19 03:14:11 2038", buffer, strlen(buffer));
+}
+
+TEST_CASE("test time functions wide 64 bits", "[newlib]")
+{
+    static char origin_buffer[32];
+    char strftime_buf[64];
+
+    int year = 2018;
+    struct tm tm = {0, 14, 3, 19, 0, year - 1900, 0, 0, 0};
+    time_t t = mktime(&tm);
+    while (year < 2119) {
+        struct timeval timestamp = { t, 0 };
+        ESP_LOGI("TAG", "year: %d", year);
+        settimeofday(&timestamp, NULL);
+        get_time("Time now", origin_buffer);
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+        t += 86400 * 366;
+        struct tm timeinfo = { 0 };
+        time_t now;
+        time(&now);
+        localtime_r(&now, &timeinfo);
+
+        time_t t = mktime(&timeinfo);
+        ESP_LOGI("TAG", "Test mktime(). Time: %016llX", t);
+        TEST_ASSERT_EQUAL(timestamp.tv_sec, t);
+        // mktime() has error in newlib-3.0.0. It fixed in newlib-3.0.0.20180720
+        TEST_ASSERT_EQUAL((timestamp.tv_sec >> 32), (t >> 32));
+
+        strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+        ESP_LOGI("TAG", "Test time() and localtime_r(). Time: %s", strftime_buf);
+        TEST_ASSERT_EQUAL(timeinfo.tm_year, year - 1900);
+        TEST_ASSERT_EQUAL_MEMORY(origin_buffer, strftime_buf, strlen(origin_buffer));
+
+        struct tm *tm2 = localtime(&now);
+        strftime(strftime_buf, sizeof(strftime_buf), "%c", tm2);
+        ESP_LOGI("TAG", "Test localtime(). Time: %s", strftime_buf);
+        TEST_ASSERT_EQUAL(tm2->tm_year, year - 1900);
+        TEST_ASSERT_EQUAL_MEMORY(origin_buffer, strftime_buf, strlen(origin_buffer));
+
+        struct tm *gm = gmtime(&now);
+        strftime(strftime_buf, sizeof(strftime_buf), "%c", gm);
+        ESP_LOGI("TAG", "Test gmtime(). Time: %s", strftime_buf);
+        TEST_ASSERT_EQUAL_MEMORY(origin_buffer, strftime_buf, strlen(origin_buffer));
+
+        const char* time_str1 = ctime(&now);
+        ESP_LOGI("TAG", "Test ctime(). Time: %s", time_str1);
+        TEST_ASSERT_EQUAL_MEMORY(origin_buffer, time_str1, strlen(origin_buffer));
+
+        const char* time_str2 = asctime(&timeinfo);
+        ESP_LOGI("TAG", "Test asctime(). Time: %s", time_str2);
+        TEST_ASSERT_EQUAL_MEMORY(origin_buffer, time_str2, strlen(origin_buffer));
+
+        printf("\n");
+        ++year;
+    }
+}
+
+#endif // CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS

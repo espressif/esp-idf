@@ -29,9 +29,16 @@ project(bootloader)
 idf_build_set_property(COMPILE_DEFINITIONS "-DBOOTLOADER_BUILD=1" APPEND)
 idf_build_set_property(COMPILE_OPTIONS "-fno-stack-protector" APPEND)
 
+idf_component_get_property(main_args esptool_py FLASH_ARGS)
+idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+
+# String for printing flash command
+string(REPLACE ";" " " esptoolpy_write_flash
+    "${ESPTOOLPY} --port=(PORT) --baud=(BAUD) ${main_args} "
+    "write_flash ${sub_args}")
+
 string(REPLACE ";" " " espsecurepy "${ESPSECUREPY}")
 string(REPLACE ";" " " espefusepy "${ESPEFUSEPY}")
-set(esptoolpy_write_flash "${ESPTOOLPY_WRITE_FLASH_STR}")
 
 if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     if(CONFIG_SECURE_BOOTLOADER_KEY_ENCODING_192BIT)
@@ -75,7 +82,8 @@ if(CONFIG_SECURE_BOOTLOADER_REFLASHABLE)
     add_custom_command(OUTPUT "${bootloader_digest_bin}"
         COMMAND ${CMAKE_COMMAND} -E echo "DIGEST ${bootloader_digest_bin}"
         COMMAND ${ESPSECUREPY} digest_secure_bootloader --keyfile "${secure_bootloader_key}"
-            -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
+        -o "${bootloader_digest_bin}" "${CMAKE_BINARY_DIR}/bootloader.bin"
+        MAIN_DEPENDENCY "${CMAKE_BINARY_DIR}/.bin_timestamp"
         DEPENDS gen_secure_bootloader_key gen_project_binary
         VERBATIM)
 

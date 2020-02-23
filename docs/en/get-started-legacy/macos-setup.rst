@@ -19,7 +19,7 @@ Install Prerequisites
 Toolchain Setup
 ===============
 
-.. include:: /_build/inc/download-links.inc
+.. include-build-file:: inc/download-links.inc
 
 ESP32 toolchain for macOS is available for download from Espressif website:
 
@@ -27,7 +27,7 @@ ESP32 toolchain for macOS is available for download from Espressif website:
 
 Download this file, then extract it in ``~/esp`` directory:
 
-.. include:: /_build/inc/unpack-code-osx.inc
+.. include-build-file:: inc/unpack-code-osx.inc
 
 .. _setup-macos-toolchain-add-it-to-path-legacy:
 

@@ -19,7 +19,7 @@
 
 #include "esp_err.h"
 #include "esp_wifi_types.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 
 #ifdef __cplusplus
 extern "C" {

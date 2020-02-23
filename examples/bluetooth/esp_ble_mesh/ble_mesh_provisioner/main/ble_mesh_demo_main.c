@@ -73,7 +73,7 @@ static esp_ble_mesh_cfg_srv_t config_server = {
 #else
     .friend_state = ESP_BLE_MESH_FRIEND_NOT_SUPPORTED,
 #endif
-#if defined(CONFIG_BLE_MESH_GATT_PROXY)
+#if defined(CONFIG_BLE_MESH_GATT_PROXY_SERVER)
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_ENABLED,
 #else
     .gatt_proxy = ESP_BLE_MESH_GATT_PROXY_NOT_SUPPORTED,
@@ -113,8 +113,8 @@ static esp_ble_mesh_prov_t provision = {
     .iv_index            = 0x00,
 };
 
-static esp_err_t esp_ble_mesh_store_node_info(const uint8_t uuid[16], uint16_t unicast,
-        uint8_t elem_num, uint8_t onoff_state)
+static esp_err_t example_ble_mesh_store_node_info(const uint8_t uuid[16], uint16_t unicast,
+                                                  uint8_t elem_num, uint8_t onoff_state)
 {
     int i;
 
@@ -146,7 +146,7 @@ static esp_err_t esp_ble_mesh_store_node_info(const uint8_t uuid[16], uint16_t u
     return ESP_FAIL;
 }
 
-static esp_ble_mesh_node_info_t *esp_ble_mesh_get_node_info(uint16_t unicast)
+static esp_ble_mesh_node_info_t *example_ble_mesh_get_node_info(uint16_t unicast)
 {
     int i;
 
@@ -164,9 +164,9 @@ static esp_ble_mesh_node_info_t *esp_ble_mesh_get_node_info(uint16_t unicast)
     return NULL;
 }
 
-static esp_err_t esp_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *common,
-        esp_ble_mesh_node_info_t *node,
-        esp_ble_mesh_model_t *model, uint32_t opcode)
+static esp_err_t example_ble_mesh_set_msg_common(esp_ble_mesh_client_common_param_t *common,
+                                                 esp_ble_mesh_node_info_t *node,
+                                                 esp_ble_mesh_model_t *model, uint32_t opcode)
 {
     if (!common || !node || !model) {
         return ESP_ERR_INVALID_ARG;
@@ -205,19 +205,19 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
         return ESP_FAIL;
     }
 
-    err = esp_ble_mesh_store_node_info(uuid, unicast, elem_num, LED_OFF);
+    err = example_ble_mesh_store_node_info(uuid, unicast, elem_num, LED_OFF);
     if (err) {
         ESP_LOGE(TAG, "%s: Store node info failed", __func__);
         return ESP_FAIL;
     }
 
-    node = esp_ble_mesh_get_node_info(unicast);
+    node = example_ble_mesh_get_node_info(unicast);
     if (!node) {
         ESP_LOGE(TAG, "%s: Get node info failed", __func__);
         return ESP_FAIL;
     }
 
-    esp_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET);
+    example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET);
     get_state.comp_data_get.page = COMP_DATA_PAGE_0;
     err = esp_ble_mesh_config_client_get_state(&common, &get_state);
     if (err) {
@@ -271,8 +271,8 @@ static void recv_unprov_adv_pkt(uint8_t dev_uuid[16], uint8_t addr[BD_ADDR_LEN],
     return;
 }
 
-static void esp_ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event,
-                                 esp_ble_mesh_prov_cb_param_t *param)
+static void example_ble_mesh_provisioning_cb(esp_ble_mesh_prov_cb_event_t event,
+                                             esp_ble_mesh_prov_cb_param_t *param)
 {
     switch (event) {
     case ESP_BLE_MESH_PROVISIONER_PROV_ENABLE_COMP_EVT:
@@ -341,23 +341,8 @@ static void esp_ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event,
     return;
 }
 
-static void esp_ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event,
-                                  esp_ble_mesh_model_cb_param_t *param)
-{
-    switch (event) {
-    case ESP_BLE_MESH_MODEL_OPERATION_EVT:
-        break;
-    case ESP_BLE_MESH_MODEL_SEND_COMP_EVT:
-        break;
-    case ESP_BLE_MESH_MODEL_PUBLISH_COMP_EVT:
-        break;
-    default:
-        break;
-    }
-}
-
-static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t event,
-        esp_ble_mesh_cfg_client_cb_param_t *param)
+static void example_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t event,
+                                              esp_ble_mesh_cfg_client_cb_param_t *param)
 {
     esp_ble_mesh_client_common_param_t common = {0};
     esp_ble_mesh_node_info_t *node = NULL;
@@ -376,7 +361,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
         return;
     }
 
-    node = esp_ble_mesh_get_node_info(addr);
+    node = example_ble_mesh_get_node_info(addr);
     if (!node) {
         ESP_LOGE(TAG, "%s: Get node info failed", __func__);
         return;
@@ -389,7 +374,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
             ESP_LOGI(TAG, "composition data %s", bt_hex(param->status_cb.comp_data_status.composition_data->data,
                      param->status_cb.comp_data_status.composition_data->len));
             esp_ble_mesh_cfg_client_set_state_t set_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD);
+            example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD);
             set_state.app_key_add.net_idx = prov_key.net_idx;
             set_state.app_key_add.app_idx = prov_key.app_idx;
             memcpy(set_state.app_key_add.app_key, prov_key.app_key, 16);
@@ -408,7 +393,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
         switch (opcode) {
         case ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD: {
             esp_ble_mesh_cfg_client_set_state_t set_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
+            example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
             set_state.model_app_bind.element_addr = node->unicast;
             set_state.model_app_bind.model_app_idx = prov_key.app_idx;
             set_state.model_app_bind.model_id = ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV;
@@ -422,7 +407,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
         }
         case ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND: {
             esp_ble_mesh_generic_client_get_state_t get_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET);
+            example_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET);
             err = esp_ble_mesh_generic_client_get_state(&common, &get_state);
             if (err) {
                 ESP_LOGE(TAG, "%s: Generic OnOff Get failed", __func__);
@@ -450,7 +435,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
         switch (opcode) {
         case ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET: {
             esp_ble_mesh_cfg_client_get_state_t get_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET);
+            example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET);
             get_state.comp_data_get.page = COMP_DATA_PAGE_0;
             err = esp_ble_mesh_config_client_get_state(&common, &get_state);
             if (err) {
@@ -461,7 +446,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
         }
         case ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD: {
             esp_ble_mesh_cfg_client_set_state_t set_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD);
+            example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_APP_KEY_ADD);
             set_state.app_key_add.net_idx = prov_key.net_idx;
             set_state.app_key_add.app_idx = prov_key.app_idx;
             memcpy(set_state.app_key_add.app_key, prov_key.app_key, 16);
@@ -474,7 +459,7 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
         }
         case ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND: {
             esp_ble_mesh_cfg_client_set_state_t set_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
+            example_ble_mesh_set_msg_common(&common, node, config_client.model, ESP_BLE_MESH_MODEL_OP_MODEL_APP_BIND);
             set_state.model_app_bind.element_addr = node->unicast;
             set_state.model_app_bind.model_app_idx = prov_key.app_idx;
             set_state.model_app_bind.model_id = ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV;
@@ -496,8 +481,8 @@ static void esp_ble_mesh_config_client_cb(esp_ble_mesh_cfg_client_cb_event_t eve
     }
 }
 
-static void esp_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_t event,
-        esp_ble_mesh_generic_client_cb_param_t *param)
+static void example_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_t event,
+                                               esp_ble_mesh_generic_client_cb_param_t *param)
 {
     esp_ble_mesh_client_common_param_t common = {0};
     esp_ble_mesh_node_info_t *node = NULL;
@@ -516,7 +501,7 @@ static void esp_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_
         return;
     }
 
-    node = esp_ble_mesh_get_node_info(addr);
+    node = example_ble_mesh_get_node_info(addr);
     if (!node) {
         ESP_LOGE(TAG, "%s: Get node info failed", __func__);
         return;
@@ -530,7 +515,7 @@ static void esp_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_
             node->onoff = param->status_cb.onoff_status.present_onoff;
             ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET onoff: 0x%02x", node->onoff);
             /* After Generic OnOff Status for Generic OnOff Get is received, Generic OnOff Set will be sent */
-            esp_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET);
+            example_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET);
             set_state.onoff_set.op_en = false;
             set_state.onoff_set.onoff = !node->onoff;
             set_state.onoff_set.tid = 0;
@@ -562,7 +547,7 @@ static void esp_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_
         switch (opcode) {
         case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET: {
             esp_ble_mesh_generic_client_get_state_t get_state = {0};
-            esp_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET);
+            example_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET);
             err = esp_ble_mesh_generic_client_get_state(&common, &get_state);
             if (err) {
                 ESP_LOGE(TAG, "%s: Generic OnOff Get failed", __func__);
@@ -574,7 +559,7 @@ static void esp_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_
             esp_ble_mesh_generic_client_set_state_t set_state = {0};
             node->onoff = param->status_cb.onoff_status.present_onoff;
             ESP_LOGI(TAG, "ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET onoff: 0x%02x", node->onoff);
-            esp_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET);
+            example_ble_mesh_set_msg_common(&common, node, onoff_client.model, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET);
             set_state.onoff_set.op_en = false;
             set_state.onoff_set.onoff = !node->onoff;
             set_state.onoff_set.tid = 0;
@@ -595,19 +580,18 @@ static void esp_ble_mesh_generic_client_cb(esp_ble_mesh_generic_client_cb_event_
     }
 }
 
-static int ble_mesh_init(void)
+static esp_err_t ble_mesh_init(void)
 {
     uint8_t match[2] = {0xdd, 0xdd};
-    int err = 0;
+    esp_err_t err;
 
     prov_key.net_idx = ESP_BLE_MESH_KEY_PRIMARY;
     prov_key.app_idx = APP_KEY_IDX;
     memset(prov_key.app_key, APP_KEY_OCTET, sizeof(prov_key.app_key));
 
-    esp_ble_mesh_register_prov_callback(esp_ble_mesh_prov_cb);
-    esp_ble_mesh_register_custom_model_callback(esp_ble_mesh_model_cb);
-    esp_ble_mesh_register_config_client_callback(esp_ble_mesh_config_client_cb);
-    esp_ble_mesh_register_generic_client_callback(esp_ble_mesh_generic_client_cb);
+    esp_ble_mesh_register_prov_callback(example_ble_mesh_provisioning_cb);
+    esp_ble_mesh_register_config_client_callback(example_ble_mesh_config_client_cb);
+    esp_ble_mesh_register_generic_client_callback(example_ble_mesh_generic_client_cb);
 
 
     err = esp_ble_mesh_init(&provision, &composition);
@@ -629,7 +613,7 @@ static int ble_mesh_init(void)
 
 void app_main(void)
 {
-    int err;
+    esp_err_t err;
 
     ESP_LOGI(TAG, "Initializing...");
 

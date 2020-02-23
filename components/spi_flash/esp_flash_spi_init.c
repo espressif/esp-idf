@@ -50,6 +50,7 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 #define DEFAULT_FLASH_MODE SPI_FLASH_FASTRD
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32
 #define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
     .host_id = SPI_HOST,\
     .speed = DEFAULT_FLASH_SPEED, \
@@ -57,6 +58,16 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
     .iomux = false, \
     .input_delay_ns = 0,\
 }
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/efuse.h"
+#define ESP_FLASH_HOST_CONFIG_DEFAULT()  (memspi_host_config_t){ \
+    .host_id = SPI_HOST,\
+    .speed = DEFAULT_FLASH_SPEED, \
+    .cs_num = 0, \
+    .iomux = true, \
+    .input_delay_ns = 0,\
+}
+#endif
 
 
 esp_flash_t *esp_flash_default_chip = NULL;
@@ -70,17 +81,15 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     int cs_io_num = config->cs_io_num;
     int spics_in = spi_periph_signal[config->host_id].spics_in;
     int spics_out = spi_periph_signal[config->host_id].spics_out[config->cs_id];
+    int spics_func = spi_periph_signal[config->host_id].func;
     uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
 
     //To avoid the panic caused by flash data line conflicts during cs line
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
     if (use_iomux) {
-        GPIO.func_in_sel_cfg[spics_in].sig_in_sel = 0;
-        PIN_INPUT_ENABLE(iomux_reg);
-        GPIO.func_out_sel_cfg[spics_out].oen_sel = 0;
-        GPIO.func_out_sel_cfg[spics_out].oen_inv_sel = false;
-        PIN_FUNC_SELECT(iomux_reg, 1);
+        gpio_iomux_in(cs_io_num, spics_in);
+        gpio_iomux_out(cs_io_num, spics_func, false);
     } else {
         PIN_INPUT_ENABLE(iomux_reg);
         if (cs_io_num < 32) {
@@ -183,6 +192,12 @@ static DRAM_ATTR esp_flash_t default_chip = {
 esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
+
+    #ifdef CONFIG_IDF_TARGET_ESP32S2 
+    // For esp32s2 spi IOs are configured as from IO MUX by default
+    cfg.iomux = ets_efuse_get_spiconfig() == 0 ?  true : false;
+    #endif
+
     //the host is already initialized, only do init for the data and load it to the host
     spi_flash_hal_init(&default_driver_data, &cfg);
     default_chip.host->driver_data = &default_driver_data;

@@ -1,11 +1,11 @@
 SPI Master Driver
 =================
 
-SPI Master driver is a program that controls ESP32's SPI peripherals while they function as masters.
+SPI Master driver is a program that controls {IDF_TARGET_NAME}'s SPI peripherals while they function as masters.
 
 
-Overview of ESP32's SPI peripherals
------------------------------------
+Overview of {IDF_TARGET_NAME}'s SPI peripherals
+-----------------------------------------------
 
 ESP32 integrates four SPI peripherals.
 
@@ -48,7 +48,7 @@ The SPI master driver governs communications of Hosts with Devices. The driver s
 
 .. warning::
 
-    The SPI master driver has the concept of multiple Devices connected to a single bus (sharing a single ESP32 SPI peripheral). As long as each Device is accessed by only one task, the driver is thread safe. However, if multiple tasks try to access the same SPI Device, the driver is **not thread-safe**. In this case, it is recommended to either:
+    The SPI master driver has the concept of multiple Devices connected to a single bus (sharing a single {IDF_TARGET_NAME} SPI peripheral). As long as each Device is accessed by only one task, the driver is thread safe. However, if multiple tasks try to access the same SPI Device, the driver is **not thread-safe**. In this case, it is recommended to either:
 
     - Refactor your application so that each SPI peripheral is only accessed by a single task at a time.
     - Add a mutex lock around the shared Device using :c:macro:`xSemaphoreCreateMutex`.
@@ -154,12 +154,12 @@ Driver Usage
    Organize the Driver Usage into subsections that will reflect the general usage experience of the users, e.g.,
 
    Configuration
-   
+
    Add stuff about the configuration API here, and the various options in configuration (e.g., configure for interrupt vs. polling), and optional configuration
 
    Transactions
-   
-   Describe how to execute a normal transaction (i.e., where data is larger than 32 bits). Describe how to configure between big and little-endian. 
+
+   Describe how to execute a normal transaction (i.e., where data is larger than 32 bits). Describe how to configure between big and little-endian.
 
    - Add subsub section on how to optimize when transmitting less than 32 bits
    - Add subsub section on how to transmit mixed transactions to the same device
@@ -195,11 +195,11 @@ When the transaction data size is equal to or less than 32 bits, it will be sub-
 Transactions with Integers Other Than ``uint8_t``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-An SPI Host reads and writes data into memory byte by byte. By default, data is sent with the most significant bit (MSB) first, as LSB first used in rare cases. If a value less than 8 bits needs to be sent, the bits should be written into memory in the MSB first manner. 
+An SPI Host reads and writes data into memory byte by byte. By default, data is sent with the most significant bit (MSB) first, as LSB first used in rare cases. If a value less than 8 bits needs to be sent, the bits should be written into memory in the MSB first manner.
 
 For example, if ``0b00010`` needs to be sent, it should be written into a ``uint8_t`` variable, and the length for reading should be set to 5 bits. The Device will still receive 8 bits with 3 additional "random" bits, so the reading must be performed correctly.
 
-On top of that, ESP32 is a little-endian chip, which means that the least significant byte of ``uint16_t`` and ``uint32_t`` variables is stored at the smallest address. Hence, if ``uint16_t`` is stored in memory, bits [7:0] are sent first, followed by bits [15:8].
+On top of that, {IDF_TARGET_NAME} is a little-endian chip, which means that the least significant byte of ``uint16_t`` and ``uint32_t`` variables is stored at the smallest address. Hence, if ``uint16_t`` is stored in memory, bits [7:0] are sent first, followed by bits [15:8].
 
 For cases when the data to be transmitted has the size differing from ``uint8_t`` arrays, the following macros can be used to transform data to the format that can be sent by the SPI driver directly:
 
@@ -222,42 +222,43 @@ In-flight polling transactions are disturbed by the ISR operation to accommodate
 
 To have better control of the calling sequence of functions, send mixed transactions to the same Device only within a single task.
 
+.. only:: esp32
 
-GPIO Matrix and IO_MUX
-----------------------
+    GPIO Matrix and IO_MUX
+    ----------------------
 
-Most of ESP32's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
+    Most of ESP32's peripheral signals have direct connection to their dedicated IO_MUX pins. However, the signals can also be routed to any other available pins using the less direct GPIO matrix. If at least one signal is routed through the GPIO matrix, then all signals will be routed through it.
 
-The GPIO matrix introduces flexibility of routing but also brings the following disadvantages:
+    The GPIO matrix introduces flexibility of routing but also brings the following disadvantages:
 
-- Increases the input delay of the MISO signal, which makes MISO setup time violations more likely. If SPI needs to operate at high speeds, use dedicated IO_MUX pins.
-- Allows signals with clock frequencies only up to 40 MHz, as opposed to 80 MHz if IO_MUX pins are used.
+    - Increases the input delay of the MISO signal, which makes MISO setup time violations more likely. If SPI needs to operate at high speeds, use dedicated IO_MUX pins.
+    - Allows signals with clock frequencies only up to 40 MHz, as opposed to 80 MHz if IO_MUX pins are used.
 
-.. note::
+    .. note::
 
-    For more details about the influence of the MISO input delay on the maximum clock frequency, see :ref:`timing_considerations`.
+        For more details about the influence of the MISO input delay on the maximum clock frequency, see :ref:`timing_considerations`.
 
-The IO_MUX pins for SPI buses are given below.
+    The IO_MUX pins for SPI buses are given below.
 
-+----------+------+------+
-| Pin Name | SPI2 | SPI3 |
-+          +------+------+
-|          | GPIO Number |
-+==========+======+======+
-| CS0*     | 15   | 5    |
-+----------+------+------+
-| SCLK     | 14   | 18   |
-+----------+------+------+
-| MISO     | 12   | 19   |
-+----------+------+------+
-| MOSI     | 13   | 23   |
-+----------+------+------+
-| QUADWP   | 2    | 22   |
-+----------+------+------+
-| QUADHD   | 4    | 21   |
-+----------+------+------+
+    +----------+------+------+
+    | Pin Name | SPI2 | SPI3 |
+    +          +------+------+
+    |          | GPIO Number |
+    +==========+======+======+
+    | CS0*     | 15   | 5    |
+    +----------+------+------+
+    | SCLK     | 14   | 18   |
+    +----------+------+------+
+    | MISO     | 12   | 19   |
+    +----------+------+------+
+    | MOSI     | 13   | 23   |
+    +----------+------+------+
+    | QUADWP   | 2    | 22   |
+    +----------+------+------+
+    | QUADHD   | 4    | 21   |
+    +----------+------+------+
 
-* Only the first Device attached to the bus can use the CS0 pin.
+    * Only the first Device attached to the bus can use the CS0 pin.
 
 
 .. _speed_considerations:
@@ -429,21 +430,23 @@ Corresponding frequency limits for different Devices with different *input delay
 Known Issues
 ------------
 
-1. Half-duplex transactions are not compatible with DMA when both writing and reading phases are used.
+.. only:: esp32
 
-   If such transactions are required, you have to use one of the alternative solutions:
+    1. Half-duplex transactions are not compatible with DMA when both writing and reading phases are used.
 
-   1. Use full-duplex transactions instead.
-   2. Disable DMA by setting the bus initialization function's last parameter to 0 as follows:
-      ``ret=spi_bus_initialize(VSPI_HOST, &buscfg, 0);``
+        If such transactions are required, you have to use one of the alternative solutions:
 
-      This can prohibit you from transmitting and receiving data longer than 64 bytes.
-   3. Try using the command and address fields to replace the write phase.
+        1. Use full-duplex transactions instead.
+        2. Disable DMA by setting the bus initialization function's last parameter to 0 as follows:
+            ``ret=spi_bus_initialize(VSPI_HOST, &buscfg, 0);``
 
-2. Full-duplex transactions are not compatible with the *dummy bit workaround*, hence the frequency is limited. See :ref:`dummy
-   bit speed-up workaround <dummy_bit_workaround>`.
+        This can prohibit you from transmitting and receiving data longer than 64 bytes.
+        3. Try using the command and address fields to replace the write phase.
 
-3. ``cs_ena_pretrans`` is not compatible with the command and address phases of full-duplex transactions.
+    2. Full-duplex transactions are not compatible with the *dummy bit workaround*, hence the frequency is limited. See :ref:`dummy
+    bit speed-up workaround <dummy_bit_workaround>`.
+
+    3. ``cs_ena_pretrans`` is not compatible with the command and address phases of full-duplex transactions.
 
 
 Application Example
@@ -455,12 +458,12 @@ The code example for displaying graphics on an ESP32-WROVER-KIT's 320x240 LCD sc
 API Reference - SPI Common
 --------------------------
 
-.. include:: /_build/inc/spi_types.inc
-.. include:: /_build/inc/spi_common.inc
+.. include-build-file:: inc/spi_types.inc
+.. include-build-file:: inc/spi_common.inc
 
 
 API Reference - SPI Master
 --------------------------
 
-.. include:: /_build/inc/spi_master.inc
+.. include-build-file:: inc/spi_master.inc
 

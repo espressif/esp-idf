@@ -5,13 +5,13 @@
 概述
 ----
 
-每片 ESP32 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储器数据等）。因此，我们需要引入分区表的概念。
+每片 {IDF_TARGET_NAME} 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储器数据等）。因此，我们需要引入分区表的概念。
 
-具体来说，ESP32 在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。该分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot>` 功能，则该分区表后还会保存签名信息。
+具体来说，{IDF_TARGET_NAME} 在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。该分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot>` 功能，则该分区表后还会保存签名信息。
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
-在使用分区表时，最简单的方法就是用 `idf.py menuconfig` 选择一张预定义的分区表：
+在使用分区表时，最简单的方法就是打开项目配置菜单（``idf.py menuconfig``），并在 :ref:`CONFIG_PARTITION_TABLE_TYPE` 下选择一张预定义的分区表：
 
 -  "Single factory app, no OTA"
 -  "Factory app, two OTA definitions"
@@ -24,7 +24,7 @@
 以下是 "Single factory app, no OTA" 选项的分区表信息摘要：
 
 
-   # Espressif ESP32 Partition Table
+   # Espressif {IDF_TARGET_NAME} Partition Table
    # Name,   Type, SubType, Offset,  Size,   Flags
    nvs,      data, nvs,     0x9000,  0x6000,
    phy_init, data, phy,     0xf000,  0x1000,
@@ -35,7 +35,7 @@
 
 以下是 "Factory app, two OTA definitions" 选项的分区表信息摘要：
 
-   # Espressif ESP32 Partition Table
+   # Espressif {IDF_TARGET_NAME} Partition Table
    # Name,   Type, SubType, Offset,   Size,   Flags
    nvs,      data, nvs,     0x9000,   0x4000,
    otadata,  data, ota,     0xd000,   0x2000,
@@ -70,7 +70,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
 Name 字段
 ~~~~~~~~~
 
-Name 字段可以是任何有意义的名称，但不能超过 16 个字符（之后的内容将被截断）。该字段对 ESP32 并不是特别重要。
+Name 字段可以是任何有意义的名称，但不能超过 16 个字符（之后的内容将被截断）。该字段对 {IDF_TARGET_NAME} 并不是特别重要。
 
 Type 字段
 ~~~~~~~~~
@@ -86,7 +86,7 @@ SubType 字段
 ~~~~~~~~~~~~
 
 SubType 字段长度为 8 bit，内容与具体 Type 有关。目前，esp-idf 仅仅规定了 “app” 和 “data” 两种子类型。
-   
+
 * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 factory (0)，ota_0 (0x10) ... ota_15 (0x1F) 或者 test (0x20)。
 
    -  factory (0) 是默认的 app 分区。Bootloader 将默认加在该应用程序。但如果存在类型为 data/ota 分区，则 Bootloader 将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
@@ -95,14 +95,14 @@ SubType 字段长度为 8 bit，内容与具体 Type 有关。目前，esp-idf �
 
    -  ota_0 (0x10) ... ota_15 (0x1F) 为 OTA 应用程序分区，Bootloader 将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（ota_0 和 ota_1）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>` 。
    -  test (0x2) 为预留 app 子类型，用于工厂测试过程。注意，目前，esp-idf 并不支持这种子类型。
-   
+
 * 当 Type 定义为 ``data`` 时，SubType 字段可以指定为 ota (0)，phy (1)，nvs (2) 或者 nvs_keys (4)。
 
    -  ota (0) 即 :ref:`OTA 数据分区 <ota_data_partition>` ，用于存储当前所选的 OTA 应用程序的信息。这个分区的大小需要设定为 0x2000。更多详细信息，请参考 :doc:`OTA 文档 <../api-reference/system/ota>` 。
    -  phy (1) 分区用于存放 PHY 初始化数据，从而保证可以为每个设备单独配置 PHY，而非必须采用固件中的统一 PHY 初始化数据。
- 
+
       -  默认配置下，phy 分区并不启用，而是直接将 phy 初始化数据编译至应用程序中，从而节省分区表空间（直接将此分区删掉）。
-      -  如果需要从此分区加载 phy 初始化数据，请运行 ``idf.py menuconfig``，并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
+      -  如果需要从此分区加载 phy 初始化数据，请打开项目配置菜单（``idf.py menuconfig``），并且使能 :ref:`CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION` 选项。此时，您还需要手动将 phy 初始化数据烧至设备 flash（esp-idf 编译系统并不会自动完成该操作）。
    -  nvs (2) 是专门给 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 使用的分区。
 
       -  用于存储每台设备的 PHY 校准数据（注意，并不是 PHY 初始化数据）。
@@ -133,7 +133,7 @@ Flags 字段
 
 当前仅支持 ``encrypted`` 标记。如果 Flags 字段设置为 ``encrypted``，且已启用 :doc:`Flash Encryption </security/flash-encryption>` 功能，则该分区将会被加密。
 
-.. note:: 
+.. note::
 
    ``app`` 分区始终会被加密，不管 Flags 字段是否设置。
 
@@ -142,7 +142,7 @@ Flags 字段
 
 烧写到 ESP32 中的分区表采用二进制格式，而不是 CSV 文件本身。此时，:component_file:`partition_table/gen_esp32part.py` 工具可以实现 CSV 和二进制文件之间的转换。
 
-如果您在 ``idf.py menuconfig`` 指定了分区表 CSV 文件的名称，然后执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
+如果您在项目配置菜单（``idf.py menuconfig``）中设置了分区表 CSV 文件的名称，然后构建项目获执行 ``idf.py partition_table``。这时，转换将在编译过程中自动完成。
 
 手动将 CSV 文件转换为二进制文件:
 
@@ -171,7 +171,7 @@ MD5 校验和
 
 在执行 ``idf.py partition_table`` 命令时，手动烧写分区表的命令也将打印在终端上。
 
-.. note:: 
+.. note::
 
    分区表的更新并不会擦除根据之前分区表存储的数据。此时，您可以使用 ``idf.py erase_flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
 

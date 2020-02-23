@@ -10,3 +10,4 @@ file(MD5 ${esp_supplicant_dir}/src/esp_supplicant/esp_wifi_driver.h WIFI_SUPPLIC
 string(SUBSTRING "${WIFI_SUPPLICANT_MD5}" 0 7 WIFI_SUPPLICANT_MD5)
 
 add_definitions(-DWIFI_SUPPLICANT_MD5=\"${WIFI_SUPPLICANT_MD5}\")
+add_definitions(-DCONFIG_WPA3_SAE)

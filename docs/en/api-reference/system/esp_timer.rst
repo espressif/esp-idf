@@ -11,7 +11,15 @@ Although FreeRTOS provides software timers, these timers have a few limitations:
 
 Hardware timers are free from both of the limitations, but often they are less convenient to use. For example, application components may need timer events to fire at certain times in the future, but the hardware timer only contains one "compare" value used for interrupt generation. This means that some facility needs to be built on top of the hardware timer to manage the list of pending events can dispatch the callbacks for these events as corresponding hardware interrupts happen.
 
-``esp_timer`` set of APIs provide such facility. Internally, ``esp_timer`` uses a 32-bit hardware timer (FRC1, "legacy" timer). ``esp_timer`` provides one-shot and periodic timers, microsecond time resolution, and 64-bit range.
+``esp_timer`` set of APIs provides one-shot and periodic timers, microsecond time resolution, and 64-bit range.
+
+Internally, ``esp_timer`` uses a 64-bit hardware timer :ref:`CONFIG_ESP_TIMER_IMPL`:
+
+- LAC timer (ESP32)
+- (legacy) FRC2 timer (ESP32)
+- SYSTIMER for (ESP32-S2)
+
+.. note: The FRC2 is a legacy option for ESP32 until v4.2, a 32-bit hardware timer was used. Starting at v4.2, use the new LAC timer option instead, it has a simpler implementation, and has smaller run time overhead because software handling of timer overflow is not needed.
 
 Timer callbacks are dispatched from a high-priority ``esp_timer`` task. Because all the callbacks are dispatched from the same task, it is recommended to only do the minimal possible amount of work from the callback itself, posting an event to a lower priority task using a queue instead.
 
@@ -58,6 +66,6 @@ The following example illustrates usage of ``esp_timer`` APIs: :example:`system/
 API Reference
 -------------
 
-.. include:: /_build/inc/esp_timer.inc
+.. include-build-file:: inc/esp_timer.inc
 
 

@@ -13,7 +13,7 @@
  *        here until we have a proper configuration-independent header file.
  */
 
-/* $Id: //depot/rel/Eaglenest/Xtensa/OS/include/xtensa/coreasm.h#3 $ */
+/* $Id: //depot/rel/Foxhill/dot.9/Xtensa/OS/include/xtensa/coreasm.h#1 $ */
 
 /*
  * Copyright (c) 2000-2014 Tensilica Inc.
@@ -302,7 +302,7 @@
 #if XCHAL_HAVE_OLD_EXC_ARCH || XCHAL_HAVE_INTERRUPTS
 	rsil	\ar, \newlevel
 #else
-	rsr	\ar, PS
+	rsr.ps	\ar
 #endif
 	.endm	// crsil
 
@@ -358,7 +358,7 @@
  *  the call to the spilling function.
  *
  *  Example usage:
- *	
+ *
  *		.text
  *		.align	4
  *		.global	some_function
@@ -558,7 +558,7 @@
  *  macro implements version of beqi for arbitrary 32-bit immediate value
  *
  *     beqi32 ax, ay, imm32, label
- * 
+ *
  *  Compares value in register ax with imm32 value and jumps to label if
  *  equal. Clobbers register ay if needed
  *
@@ -573,7 +573,7 @@
         .ifeq (\imm)		// 0 ?
 		beqz	\ax, \label
         .else
-		//  We could also handle immediates 10,12,16,32,64,128,256 
+		//  We could also handle immediates 10,12,16,32,64,128,256
 		//  but it would be a long macro...
 		movi	\ay, \imm
 		beq	\ax, \ay, \label
@@ -602,6 +602,18 @@
 	.endm
 
 /*----------------------------------------------------------------------
+ *  isync_return_nop
+ *
+ *  This macro should be used instead of isync_retw_nop in code that is
+ *  intended to run on both the windowed and call0 ABIs
+ */
+        .macro  isync_return_nop
+#ifdef __XTENSA_WINDOWED_ABI__
+        isync_retw_nop
+#endif
+        .endm
+
+/*----------------------------------------------------------------------
  *  isync_erratum453
  *
  *  This macro must be invoked at certain points in the code,
@@ -615,20 +627,90 @@
 	.endm
 
 
+/*----------------------------------------------------------------------
+ *  readsr
+ *
+ *  wrapper for 'rsr' that constructs register names that involve levels
+ *  e.g. EPCn etc. Use like so:
+ *      readsr epc XCHAL_DEBUGLEVEL a2
+ */
+	.macro	readsr  reg suf ar
+	rsr.\reg\suf	\ar
+	.endm
+
+/*----------------------------------------------------------------------
+ *  writesr
+ *
+ *  wrapper for 'wsr' that constructs register names that involve levels
+ *  e.g. EPCn etc. Use like so:
+ *      writesr epc XCHAL_DEBUGLEVEL a2
+ */
+	.macro	writesr  reg suf ar
+	wsr.\reg\suf	\ar
+	.endm
+
+/*----------------------------------------------------------------------
+ *  xchgsr
+ *
+ *  wrapper for 'xsr' that constructs register names that involve levels
+ *  e.g. EPCn etc. Use like so:
+ *      xchgsr epc XCHAL_DEBUGLEVEL a2
+ */
+	.macro	xchgsr  reg suf ar
+	xsr.\reg\suf	\ar
+	.endm
+
+/*----------------------------------------------------------------------
+ * INDEX_SR
+ *
+ * indexing wrapper for rsr/wsr/xsr that constructs register names from
+ * the provided base name and the current index. Use like so:
+ *     .set _idx, 0
+ *     INDEX_SR rsr.ccompare a2
+ *
+ * this yields: rsr.ccompare0 a2
+ */
+	.macro	INDEX_SR  instr ar
+.ifeq (_idx)
+	&instr&0	\ar
+.endif
+.ifeq (_idx-1)
+	&instr&1	\ar
+.endif
+.ifeq (_idx-2)
+	&instr&2	\ar
+.endif
+.ifeq (_idx-3)
+	&instr&3	\ar
+.endif
+.ifeq (_idx-4)
+	&instr&4	\ar
+.endif
+.ifeq (_idx-5)
+	&instr&5	\ar
+.endif
+.ifeq (_idx-6)
+	&instr&6	\ar
+.endif
+.ifeq (_idx-7)
+	&instr&7	\ar
+.endif
+	.endm
+
 
 /*----------------------------------------------------------------------
  *  abs
  *
  *  implements abs on machines that do not have it configured
  */
-	
+
 #if !XCHAL_HAVE_ABS
 	.macro abs arr, ars
 	.ifc \arr, \ars
 	//src equal dest is less efficient
 	bgez \arr, 1f
 	neg \arr, \arr
-1:	
+1:
 	.else
 	neg \arr, \ars
 	movgez \arr, \ars, \ars
@@ -639,9 +721,9 @@
 
 /*----------------------------------------------------------------------
  *  addx2
- *  
+ *
  *  implements addx2 on machines that do not have it configured
- *     
+ *
  */
 
 #if !XCHAL_HAVE_ADDX
@@ -663,14 +745,14 @@
 	.endif
 	.endm
 #endif /* !XCHAL_HAVE_ADDX */
-	
+
 /*----------------------------------------------------------------------
  *  addx4
- * 
+ *
  *  implements addx4 on machines that do not have it configured
  *
  */
-	
+
 #if !XCHAL_HAVE_ADDX
 	.macro addx4 arr, ars, art
 	.ifc \arr, \art
@@ -696,9 +778,9 @@
 
 /*----------------------------------------------------------------------
  *  addx8
- * 
+ *
  *  implements addx8 on machines that do not have it configured
- * 
+ *
  */
 
 #if !XCHAL_HAVE_ADDX
@@ -731,7 +813,7 @@
 
 /*----------------------------------------------------------------------
  *  rfe_rfue
- * 
+ *
  *  Maps to RFUE on XEA1, and RFE on XEA2.  No mapping on XEAX.
  */
 
@@ -744,11 +826,11 @@
 	rfe
 	.endm
 #endif
- 
+
 
 /*----------------------------------------------------------------------
  *  abi_entry
- * 
+ *
  *  Generate proper function entry sequence for the current ABI
  *  (windowed or call0).  Takes care of allocating stack space (up to 1kB)
  *  and saving the return PC, if necessary.  The corresponding abi_return
@@ -850,6 +932,7 @@
 	.endif
 	abi_entry_size	\locsize, \callsize
 #if XCHAL_HAVE_WINDOWED && !__XTENSA_CALL0_ABI__
+# define ABI_ENTRY_MINSIZE	3	/* size of abi_entry (no arguments) instructions in bytes */
 	.ifgt	.locsz - 32760	/* .locsz > 32760 (ENTRY's max range)? */
 	/*  Funky computation to try to have assembler use addmi efficiently if possible:  */
 	entry	sp, 0x7F00 + (.locsz & 0xF0)
@@ -859,6 +942,7 @@
 	entry	sp, .locsz
 	.endif
 #else
+# define ABI_ENTRY_MINSIZE	0	/* size of abi_entry (no arguments) instructions in bytes */
 	.if	.locsz
 	 .ifle	.locsz - 128	/* if locsz <= 128 */
 	addi	sp, sp, -.locsz
@@ -882,7 +966,7 @@
 
 /*----------------------------------------------------------------------
  *  abi_return
- * 
+ *
  *  Generate proper function exit sequence for the current ABI
  *  (windowed or call0).  Takes care of freeing stack space and
  *  restoring the return PC, if necessary.
@@ -934,6 +1018,42 @@
 #endif
 	.endm
 
+/*
+ * These macros are internal, subject to change, and should not be used in
+ * any new code.
+ */
+
+#define _GBL(x)    .global x
+#define _TYP(x)    .type x,@function
+#define _ALN(x)    .align x
+#define _SIZ(x)    .size x, . - x
+#define _MKEND(x)  .purgem endfunc ; .macro endfunc ; _SIZ(x) ; .purgem endfunc ; .macro endfunc ; .endm ; .endm
+#define _SYMT(x)   _GBL(x); _MKEND(x); _TYP(x); _ALN(4); x:
+#define _SYM2(x)   _GBL(x); _TYP(x); x:
+#define _SYM(x)   _GBL(x); _MKEND(x); _ALN(4); x:
+.macro endfunc ; .endm
+
+/*
+ * the DECLFUNC() macro provides a mechanism for implementing both the
+ * standard and _nw interface with a single copy of the code.
+ *
+ * For Call0 ABI there is one function definition which is labeled with
+ * both the xthal_..._nw and xthal_... symbols.
+ *
+ * For windowed ABI, two compilations are involved (one with the __NW_FUNCTION__
+ * symbol defined) resulting in two separate functions (the _nw one without
+ * the window adjustments).
+*/
+
+#if defined(__NW_FUNCTION__)
+# define DECLFUNC(x) _SYMT(x ## _nw)
+#else
+# if defined (__XTENSA_CALL0_ABI__)
+#  define DECLFUNC(x)  _SYMT(x); _SYM2(x ## _nw)
+# else
+#  define DECLFUNC(x)  _SYMT(x)
+# endif
+#endif
 
 #endif /*XTENSA_COREASM_H*/
 

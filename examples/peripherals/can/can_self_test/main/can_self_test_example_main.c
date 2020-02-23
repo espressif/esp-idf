@@ -57,7 +57,7 @@ static SemaphoreHandle_t done_sem;
 
 static void can_transmit_task(void *arg)
 {
-    can_message_t tx_msg = {.data_length_code = 1, .identifier = MSG_ID, .flags = CAN_MSG_FLAG_SELF};
+    can_message_t tx_msg = {.data_length_code = 1, .identifier = MSG_ID, .self = 1};
     for (int iter = 0; iter < NO_OF_ITERS; iter++) {
         xSemaphoreTake(tx_sem, portMAX_DELAY);
         for (int i = 0; i < NO_OF_MSGS; i++) {
@@ -73,6 +73,7 @@ static void can_transmit_task(void *arg)
 static void can_receive_task(void *arg)
 {
     can_message_t rx_message;
+
     for (int iter = 0; iter < NO_OF_ITERS; iter++) {
         xSemaphoreTake(rx_sem, portMAX_DELAY);
         for (int i = 0; i < NO_OF_MSGS; i++) {

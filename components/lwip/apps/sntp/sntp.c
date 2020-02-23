@@ -18,12 +18,14 @@
 #include <sys/time.h>
 #include "esp_log.h"
 #include "sntp.h"
+#include "lwip/apps/sntp.h"
 
 static const char *TAG = "sntp";
 
 static volatile sntp_sync_mode_t sntp_sync_mode = SNTP_SYNC_MODE_IMMED;
 static volatile sntp_sync_status_t sntp_sync_status = SNTP_SYNC_STATUS_RESET;
 static sntp_sync_time_cb_t time_sync_notification_cb = NULL;
+static uint32_t s_sync_interval = CONFIG_LWIP_SNTP_UPDATE_DELAY;
 
 inline void sntp_set_sync_status(sntp_sync_status_t sync_status)
 {
@@ -90,4 +92,28 @@ sntp_sync_status_t sntp_get_sync_status(void)
         }
     }
     return ret_sync_status;
+}
+
+void sntp_set_sync_interval(uint32_t interval_ms)
+{
+    if (interval_ms < 15000) {
+        // SNTPv4 RFC 4330 enforces a minimum update time of 15 seconds
+        interval_ms = 15000;
+    }
+    s_sync_interval = interval_ms;
+}
+
+uint32_t sntp_get_sync_interval(void)
+{
+    return s_sync_interval;
+}
+
+bool sntp_restart(void)
+{
+    if (sntp_enabled()) {
+        sntp_stop();
+        sntp_init();
+        return true;
+    }
+    return false;
 }

@@ -1,3 +1,3 @@
-idf_component_register(SRCS "event_handlers.c" "tcpip_adapter_lwip.c"
+idf_component_register(SRCS "tcpip_adapter_compat.c"
                     INCLUDE_DIRS include
-                    REQUIRES lwip esp_eth)
+                    REQUIRES esp_netif)

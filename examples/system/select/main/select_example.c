@@ -18,7 +18,7 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "driver/uart.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "lwip/sockets.h"
 #include "lwip/netdb.h"
 
@@ -43,7 +43,7 @@ static void socket_init(void)
     int err;
     struct sockaddr_in saddr = { 0 };
 
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
 
     err = getaddrinfo("localhost", "80", &hints, &res);
 
@@ -86,7 +86,6 @@ static void uart1_deinit(void)
     close(uart_fd);
     uart_fd = -1;
     uart_driver_delete(UART_NUM_1);
-    UART1.conf0.loopback = 0;
 }
 
 static void uart1_init(void)
@@ -96,11 +95,12 @@ static void uart1_init(void)
         .data_bits = UART_DATA_8_BITS,
         .parity    = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
-        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_APB,
     };
-    uart_param_config(UART_NUM_1, &uart_config);
     uart_driver_install(UART_NUM_1, 256, 0, 0, NULL, 0);
-    UART1.conf0.loopback = 1;
+    uart_param_config(UART_NUM_1, &uart_config);
+    uart_set_loop_back(UART_NUM_1, true);
 
     if ((uart_fd = open("/dev/uart/1", O_RDWR | O_NONBLOCK)) == -1) {
         ESP_LOGE(TAG, "Cannot open UART1");

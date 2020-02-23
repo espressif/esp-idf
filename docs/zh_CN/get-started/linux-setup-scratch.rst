@@ -17,7 +17,7 @@
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-click python-cryptography python-future python-pyparsing python-pyelftools cmake ninja-build ccache
+    sudo apt-get install git wget libncurses-dev flex bison gperf python python-pip python-setuptools python-serial python-click python-cryptography python-future python-pyparsing python-pyelftools cmake ninja-build ccache libffi-dev libssl-dev
 
 - Arch::
 
@@ -58,15 +58,17 @@
 
 下载并编译 ``crosstool-NG`` ：
 
-.. include:: /_build/inc/scratch-build-code.inc
+.. include-build-file:: inc/scratch-build-code.inc
 
 编译工具链::
 
-    ./ct-ng xtensa-esp32-elf
+    ./ct-ng xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
     ./ct-ng build
-    chmod -R u+w builds/xtensa-esp32-elf
+    chmod -R u+w builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf
 
-编译得到的工具链会被保存到 ``~/esp/crosstool-NG/builds/xtensa-esp32-elf``。请按照 :ref:`标准设置指南 <setup-linux-toolchain-add-it-to-path-legacy>` 的介绍，将工具链添加到 ``PATH``。
+.. only:: esp32
+
+    编译得到的工具链会被保存到 ``~/esp/crosstool-NG/builds/xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf``。请按照 :ref:`标准设置指南 <setup-linux-toolchain-add-it-to-path-legacy>` 的介绍，将工具链添加到 ``PATH``。
 
 
 后续步骤

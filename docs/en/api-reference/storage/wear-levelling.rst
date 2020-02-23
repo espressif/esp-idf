@@ -9,7 +9,7 @@ See also
 Application Example
 -------------------
 
-An example which combines the wear levelling driver with the FATFS library is provided in the :example:`storage/wear_levelling` directory. This example initializes the wear levelling driver, mounts FATFS partition, as well as writes and reads data from it using POSIX and C library APIs. See the :example:`storage/wear_levelling/README.md` file for more information.
+An example which combines the wear levelling driver with the FATFS library is provided in the :example:`storage/wear_levelling` directory. This example initializes the wear levelling driver, mounts FATFS partition, as well as writes and reads data from it using POSIX and C library APIs. See the :example_file:`storage/wear_levelling/README.md` file for more information.
 
 High level API Reference
 ------------------------
@@ -17,7 +17,7 @@ High level API Reference
 Header Files
 ^^^^^^^^^^^^
 
-* :component_file:`fatfs/src/esp_vfs_fat.h`
+* :component_file:`fatfs/vfs/esp_vfs_fat.h`
 
 Functions
 ^^^^^^^^^
@@ -30,5 +30,5 @@ Functions
 Mid level API Reference
 -----------------------
 
-.. include:: /_build/inc/wear_levelling.inc
+.. include-build-file:: inc/wear_levelling.inc
 

@@ -7,19 +7,21 @@
    CONDITIONS OF ANY KIND, either express or implied.
 */
 #include "sdkconfig.h"
-#include "driver/sdmmc_host.h"
 #include "driver/gpio.h"
 #include "esp_vfs_semihost.h"
 #include "esp_vfs_fat.h"
 #include "esp_spiffs.h"
 #include "sdmmc_cmd.h"
 #include "nvs_flash.h"
-#include "tcpip_adapter.h"
+#include "esp_netif.h"
 #include "esp_event.h"
 #include "esp_log.h"
 #include "mdns.h"
 #include "lwip/apps/netbiosns.h"
 #include "protocol_examples_common.h"
+#if CONFIG_EXAMPLE_WEB_DEPLOY_SD
+#include "driver/sdmmc_host.h"
+#endif
 
 #define MDNS_INSTANCE "esp home web server"
 
@@ -124,7 +126,7 @@ esp_err_t init_fs(void)
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     initialise_mdns();
     netbiosns_init();

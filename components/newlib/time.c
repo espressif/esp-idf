@@ -37,10 +37,16 @@
 #include "esp32/rom/ets_sys.h"
 #include "esp32/clk.h"
 #include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/clk.h"
-#include "esp32s2beta/rom/rtc.h"
-#include "esp32s2beta/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/clk.h"
+#include "esp32s2/rom/rtc.h"
+#include "esp32s2/rom/ets_sys.h"
+#endif
+
+#ifdef CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+_Static_assert(sizeof(time_t) == 8, "The toolchain does not support time_t wide 64-bits");
+#else
+_Static_assert(sizeof(time_t) == 4, "The toolchain supports time_t wide 64-bits. Please enable CONFIG_SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS.");
 #endif
 
 #if defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32_TIME_SYSCALL_USE_RTC_FRC1 ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC ) || defined( CONFIG_ESP32S2_TIME_SYSCALL_USE_RTC_FRC1 )

@@ -5,7 +5,7 @@
 #include <idp.iss>
 
 #define MyAppName "ESP-IDF Tools"
-#define MyAppVersion "2.1"
+#define MyAppVersion "2.3"
 #define MyAppPublisher "Espressif Systems (Shanghai) Co. Ltd."
 #define MyAppURL "https://github.com/espressif/esp-idf"
 
@@ -73,16 +73,20 @@ Type: filesandordirs; Name: "{app}\dist"
 Type: filesandordirs; Name: "{app}\releases"
 Type: filesandordirs; Name: "{app}\tools"
 Type: filesandordirs; Name: "{app}\python_env"
+Type: files; Name: "{group}\{#IDFCmdExeShortcutFile}"
+Type: files; Name: "{autodesktop}\{#IDFCmdExeShortcutFile}"
 
 [Tasks]
-Name: createlnk; Description: "Create Desktop shortcut for ESP-IDF Tools Command Line";
-Name: wdexcl; Description: "Register ESP-IDF Tools executables as Windows Defender exclusions (improves compilation speed, requires elevation)";
+Name: createlnk; Description: "Create Start Menu shortcut for the ESP-IDF Tools Command Prompt";
+Name: createdsk; Description: "Create Desktop shortcut for the ESP-IDF Tools Command Prompt";
+; WD registration checkbox is identified by 'Windows Defender' substring anywhere in its caption, not by the position index in WizardForm.TasksList.Items
+; Please, keep this in mind when making changes to the item's description - WD checkbox is to be disabled on systems without the Windows Defender installed
+Name: wdexcl; Description: "Register the ESP-IDF Tools executables as Windows Defender exclusions (improves compilation speed, requires elevation)";
 
 [Run]
 Filename: "{app}\dist\{#PythonInstallerName}"; Parameters: "/passive PrependPath=1 InstallLauncherAllUsers=0 Include_dev=0 Include_tcltk=0 Include_launcher=0 Include_test=0 Include_doc=0"; Description: "Installing Python"; Check: PythonInstallRequired
 Filename: "{app}\dist\{#GitInstallerName}"; Parameters: "/silent /tasks="""" /norestart"; Description: "Installing Git"; Check: GitInstallRequired
 Filename: "{group}\{#IDFCmdExeShortcutFile}"; Flags: postinstall shellexec; Description: "Run ESP-IDF Command Prompt (cmd.exe)"; Check: InstallationSuccessful
-
 
 [UninstallRun]
 Filename: "powershell.exe"; \

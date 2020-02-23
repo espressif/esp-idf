@@ -725,16 +725,6 @@ int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
     return ret;
 }
 
-int __attribute__((weak)) fcntl(int fd, int cmd, ...)
-{
-    va_list args;
-    va_start(args, cmd);
-    int arg = va_arg(args, int);
-    va_end(args);
-    struct _reent* r = __getreent();
-    return _fcntl_r(r, fd, cmd, arg);
-}
-
 int ioctl(int fd, int cmd, ...)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
@@ -865,7 +855,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
 
     ESP_LOGD(TAG, "esp_vfs_select starts with nfds = %d", nfds);
     if (timeout) {
-        ESP_LOGD(TAG, "timeout is %lds + %ldus", timeout->tv_sec, timeout->tv_usec);
+        ESP_LOGD(TAG, "timeout is %lds + %ldus", (long)timeout->tv_sec, timeout->tv_usec);
     }
     esp_vfs_log_fd_set("readfds", readfds);
     esp_vfs_log_fd_set("writefds", writefds);

@@ -4,21 +4,13 @@
 #
 mainmenu "Espressif IoT Development Framework Configuration"
 
-    # Hidden option to support checking for this specific target in C code and Kconfig files
-    config IDF_TARGET_ESP32
-        bool
-        default "y" if IDF_TARGET="esp32"
-        default "n"
-
     config IDF_CMAKE
         bool
         option env="IDF_CMAKE"
 
-
-    config IDF_TARGET_ENV
-        # A proxy to get environment variable $IDF_TARGET
-        string
-        option env="IDF_TARGET"
+    config IDF_ENV_FPGA
+        # This option is for internal use only
+        bool
 
     config IDF_TARGET
         # This option records the IDF target when sdkconfig is generated the first time.
@@ -26,32 +18,28 @@ mainmenu "Espressif IoT Development Framework Configuration"
         # the build system is responsible for detecting the mismatch between
         # CONFIG_IDF_TARGET and $IDF_TARGET.
         string
-        default "IDF_TARGET_NOT_SET" if IDF_TARGET_ENV=""
-        default IDF_TARGET_ENV
+        default "$IDF_TARGET"
 
     config IDF_TARGET_ESP32
         bool
         default "y" if IDF_TARGET="esp32"
-        default "n"
 
-    config IDF_TARGET_ESP32S2BETA
+    config IDF_TARGET_ESP32S2
         bool
-        default "y" if IDF_TARGET="esp32s2beta"
-        default "n"
+        default "y" if IDF_TARGET="esp32s2"
         select FREERTOS_UNICORE
 
     config IDF_FIRMWARE_CHIP_ID
         hex
         default 0x0000 if IDF_TARGET_ESP32
-        # note: S2 beta uses Chip ID 0 still, S2 will use 0x0002
-        default 0x0000 if IDF_TARGET_ESP32S2BETA
+        default 0x0002 if IDF_TARGET_ESP32S2
         default 0xFFFF
 
     menu "SDK tool configuration"
         config SDK_TOOLPREFIX
             string "Compiler toolchain path/prefix"
             default "xtensa-esp32-elf-" if IDF_TARGET_ESP32
-            default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2BETA
+            default "xtensa-esp32s2-elf-" if IDF_TARGET_ESP32S2
             help
                 The prefix/path that is used to call the toolchain. The default setting assumes
                 a crosstool-ng gcc setup that is in your PATH.
@@ -79,6 +67,22 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 depend on undefined variables expanding to an empty string.
 
                 (Note: this option is used with the legacy GNU Make build system only.)
+
+        config SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS
+            bool "Toolchain supports time_t wide 64-bits"
+            default n
+            help
+                Enable this option in case you have a custom toolchain which supports time_t wide 64-bits.
+                This option checks time_t is 64-bits and disables ROM time functions
+                to use the time functions from the toolchain instead.
+                This option allows resolving the Y2K38 problem.
+                See "Setup Linux Toolchain from Scratch" to build
+                a custom toolchain which supports 64-bits time_t.
+
+                Note: ESP-IDF does not currently come with any pre-compiled toolchain
+                that supports 64-bit wide time_t.
+                This will change in a future major release,
+                but currently 64-bit time_t requires a custom built toolchain.
 
     endmenu  # SDK tool configuration
 
@@ -159,7 +163,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
 
     endmenu # Build type
 
-    source "$COMPONENT_KCONFIGS_PROJBUILD"
+    source "$COMPONENT_KCONFIGS_PROJBUILD_SOURCE_FILE"
 
     menu "Compiler options"
 
@@ -252,9 +256,8 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 memory for thrown exceptions when there is not enough memory on the heap.
 
         config COMPILER_CXX_RTTI
-            # Invisible option, until the toolchain with RTTI support is released.
-            # Use prompt "Enable C++ run-time type info (RTTI)" when updating.
-            bool
+            bool "Enable C++ run-time type info (RTTI)"
+            default n
             help
                 Enabling this option compiles all C++ files with RTTI support enabled.
                 This increases binary size (typically by tens of kB) but allows using
@@ -326,12 +329,12 @@ mainmenu "Espressif IoT Development Framework Configuration"
     endmenu # Compiler Options
 
     menu "Component config"
-        source "$COMPONENT_KCONFIGS"
+        source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
 
     menu "Compatibility options"
         config LEGACY_INCLUDE_COMMON_HEADERS
-            bool "Include headers accross components as before IDF v4.0"
+            bool "Include headers across components as before IDF v4.0"
             default n
             help
                 Soc, esp32, and driver components, the most common

@@ -63,6 +63,7 @@
 #include "esp_wifi_types.h"
 #include "esp_event.h"
 #include "esp_private/esp_wifi_private.h"
+#include "esp_wifi_default.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -110,6 +111,7 @@ typedef struct {
     int                    wifi_task_core_id;      /**< WiFi Task Core ID */
     int                    beacon_max_len;         /**< WiFi softAP maximum length of the beacon */
     int                    mgmt_sbuf_num;          /**< WiFi management short buffer number, the minimum value is 6, the maximum value is 32 */
+    uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
@@ -156,6 +158,7 @@ typedef struct {
 #endif
 
 extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+extern uint64_t g_wifi_feature_caps;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
 
@@ -189,6 +192,8 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #define WIFI_MGMT_SBUF_NUM 32
 #endif
 
+#define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send_internal, \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -208,6 +213,7 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .wifi_task_core_id = WIFI_TASK_CORE_ID,\
     .beacon_max_len = WIFI_SOFTAP_BEACON_MAX_LEN, \
     .mgmt_sbuf_num = WIFI_MGMT_SBUF_NUM, \
+    .feature_caps = g_wifi_feature_caps, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 
@@ -542,8 +548,10 @@ esp_err_t esp_wifi_get_bandwidth(wifi_interface_t ifx, wifi_bandwidth_t *bw);
 /**
   * @brief     Set primary/secondary channel of ESP32
   *
-  * @attention 1. This is a special API for sniffer
-  * @attention 2. This API should be called after esp_wifi_start() or esp_wifi_set_promiscuous()
+  * @attention 1. This API should be called after esp_wifi_start()
+  * @attention 2. When ESP32 is in STA mode, this API should not be called when STA is scanning or connecting to an external AP
+  * @attention 3. When ESP32 is in softAP mode, this API should not be called when softAP has connected to external STAs
+  * @attention 4. When ESP32 is in STA+softAP mode, this API should not be called when in the scenarios described above  
   *
   * @param     primary  for HT20, primary is the channel number, for HT40, primary is the primary channel
   * @param     second   for HT20, second is ignored, for HT40, second is the second channel

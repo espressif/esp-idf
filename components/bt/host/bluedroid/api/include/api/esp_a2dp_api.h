@@ -31,7 +31,8 @@ extern "C" {
 
 typedef uint8_t esp_a2d_mct_t;
 
-/// A2DP media codec capabilities union
+/** A2DP media codec capabilities union
+ */
 typedef struct {
     esp_a2d_mct_t type;                        /*!< A2DP media codec type */
 #define ESP_A2D_CIE_LEN_SBC          (4)
@@ -39,10 +40,10 @@ typedef struct {
 #define ESP_A2D_CIE_LEN_M24          (6)
 #define ESP_A2D_CIE_LEN_ATRAC        (7)
     union {
-        uint8_t sbc[ESP_A2D_CIE_LEN_SBC];
-        uint8_t m12[ESP_A2D_CIE_LEN_M12];
-        uint8_t m24[ESP_A2D_CIE_LEN_M24];
-        uint8_t atrac[ESP_A2D_CIE_LEN_ATRAC];
+        uint8_t sbc[ESP_A2D_CIE_LEN_SBC];      /*!< SBC codec capabilities */
+        uint8_t m12[ESP_A2D_CIE_LEN_M12];      /*!< MPEG-1,2 audio codec capabilities */
+        uint8_t m24[ESP_A2D_CIE_LEN_M24];      /*!< MPEG-2, 4 AAC audio codec capabilities */
+        uint8_t atrac[ESP_A2D_CIE_LEN_ATRAC];  /*!< ATRAC family codec capabilities */
     } cie;                                     /*!< A2DP codec information element */
 } __attribute__((packed)) esp_a2d_mcc_t;
 

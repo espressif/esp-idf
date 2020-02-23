@@ -151,6 +151,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
 
             if (blufi_env.prepare_buf == NULL) {
                 blufi_env.prepare_buf = osi_malloc(BLUFI_PREPAIR_BUF_MAX_SIZE);
+                blufi_env.prepare_len = 0;
                 if (blufi_env.prepare_buf == NULL) {
                     BLUFI_TRACE_ERROR("Blufi prep no mem\n");
                     status = GATT_NO_RESOURCES;
@@ -178,6 +179,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
                 if (blufi_env.prepare_buf) {
                     osi_free(blufi_env.prepare_buf);
                     blufi_env.prepare_buf = NULL;
+                    blufi_env.prepare_len = 0;
                 }
                 BLUFI_TRACE_ERROR("write data error , error code 0x%x\n", status);
                 return;
@@ -213,6 +215,7 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         if (blufi_env.prepare_buf) {
             osi_free(blufi_env.prepare_buf);
             blufi_env.prepare_buf = NULL;
+            blufi_env.prepare_len = 0;
         }
 
         break;
@@ -589,7 +592,7 @@ static void btc_blufi_wifi_conn_report(uint8_t opmode, uint8_t sta_conn_state, u
             *p++ = info->softap_max_conn_num;
         }
         if (info->softap_channel_set) {
-            *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_MAX_CONN_NUM;
+            *p++ = BLUFI_TYPE_DATA_SUBTYPE_SOFTAP_CHANNEL;
             *p++ = 1;
             *p++ = info->softap_channel;
         }

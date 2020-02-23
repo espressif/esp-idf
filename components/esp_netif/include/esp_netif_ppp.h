@@ -1,0 +1,110 @@
+// Copyright 2019 Espressif Systems (Shanghai) PTE LTD
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+#ifndef _ESP_NETIF_PPP_H_
+#define _ESP_NETIF_PPP_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/** @brief PPP event base */
+ESP_EVENT_DECLARE_BASE(NETIF_PPP_STATUS);
+
+/** @brief Configuration structure for PPP network interface
+ *
+ */
+typedef struct esp_netif_ppp_config {
+    bool ppp_phase_event_enabled;  /**< Enables events coming from PPP PHASE change */
+    bool ppp_error_event_enabled;  /**< Enables events from main PPP state machine producing errors */
+} esp_netif_ppp_config_t;
+
+/** @brief event id offset for PHASE related events
+ *
+ * All PPP related events are produced from esp-netif under `NETIF_PPP_STATUS`, this offset defines
+ * helps distinguish between error and phase events
+ */
+#define NETIF_PP_PHASE_OFFSET (0x100)
+
+/** @brief event ids for different PPP related events
+ *
+ */
+typedef enum {
+    NETIF_PPP_ERRORNONE        = 0,  /* No error. */
+    NETIF_PPP_ERRORPARAM       = 1,  /* Invalid parameter. */
+    NETIF_PPP_ERROROPEN        = 2,  /* Unable to open PPP session. */
+    NETIF_PPP_ERRORDEVICE      = 3,  /* Invalid I/O device for PPP. */
+    NETIF_PPP_ERRORALLOC       = 4,  /* Unable to allocate resources. */
+    NETIF_PPP_ERRORUSER        = 5,  /* User interrupt. */
+    NETIF_PPP_ERRORCONNECT     = 6,  /* Connection lost. */
+    NETIF_PPP_ERRORAUTHFAIL    = 7,  /* Failed authentication challenge. */
+    NETIF_PPP_ERRORPROTOCOL    = 8,  /* Failed to meet protocol. */
+    NETIF_PPP_ERRORPEERDEAD    = 9,  /* Connection timeout */
+    NETIF_PPP_ERRORIDLETIMEOUT = 10, /* Idle Timeout */
+    NETIF_PPP_ERRORCONNECTTIME = 11, /* Max connect time reached */
+    NETIF_PPP_ERRORLOOPBACK    = 12, /* Loopback detected */
+    NETIF_PPP_PHASE_DEAD         = NETIF_PP_PHASE_OFFSET +  0,
+    NETIF_PPP_PHASE_MASTER       = NETIF_PP_PHASE_OFFSET +  1,
+    NETIF_PPP_PHASE_HOLDOFF      = NETIF_PP_PHASE_OFFSET +  2,
+    NETIF_PPP_PHASE_INITIALIZE   = NETIF_PP_PHASE_OFFSET +  3,
+    NETIF_PPP_PHASE_SERIALCONN   = NETIF_PP_PHASE_OFFSET +  4,
+    NETIF_PPP_PHASE_DORMANT      = NETIF_PP_PHASE_OFFSET +  5,
+    NETIF_PPP_PHASE_ESTABLISH    = NETIF_PP_PHASE_OFFSET +  6,
+    NETIF_PPP_PHASE_AUTHENTICATE = NETIF_PP_PHASE_OFFSET +  7,
+    NETIF_PPP_PHASE_CALLBACK     = NETIF_PP_PHASE_OFFSET +  8,
+    NETIF_PPP_PHASE_NETWORK      = NETIF_PP_PHASE_OFFSET +  9,
+    NETIF_PPP_PHASE_RUNNING      = NETIF_PP_PHASE_OFFSET +  10,
+    NETIF_PPP_PHASE_TERMINATE    = NETIF_PP_PHASE_OFFSET +  11,
+    NETIF_PPP_PHASE_DISCONNECT   = NETIF_PP_PHASE_OFFSET +  12,
+} esp_netif_ppp_status_event_t;
+
+/** @brief definitions of different authorisation types
+ *
+ */
+typedef enum {
+    NETIF_PPP_AUTHTYPE_NONE =      0x00,
+    NETIF_PPP_AUTHTYPE_PAP =       0x01,
+    NETIF_PPP_AUTHTYPE_CHAP =      0x02,
+    NETIF_PPP_AUTHTYPE_MSCHAP =    0x04,
+    NETIF_PPP_AUTHTYPE_MSCHAP_V2 = 0x08,
+    NETIF_PPP_AUTHTYPE_EAP =       0x10,
+} esp_netif_auth_type_t;
+
+/** @brief Sets the auth parameters for the supplied esp-netif.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  authtype Authorisation type
+ * @param[in]  user User name
+ * @param[in]  passwd Password
+ *
+ * @return     ESP_OK on success, ESP_ERR_ESP_NETIF_INVALID_PARAMS if netif null or not PPP
+ */
+esp_err_t esp_netif_ppp_set_auth(esp_netif_t *netif, esp_netif_auth_type_t authtype, const char *user, const char *passwd);
+
+/** @brief Sets common parameters for the supplied esp-netif.
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  config Pointer to PPP netif configuration structure
+ *
+ * @return     ESP_OK on success, ESP_ERR_ESP_NETIF_INVALID_PARAMS if netif null or not PPP
+ */
+esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_config_t *config);
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //_ESP_NETIF_PPP_H_

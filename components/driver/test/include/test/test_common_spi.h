@@ -10,6 +10,7 @@
 #include "test_utils.h"
 #include <string.h>
 #include "param_test.h"
+#include "soc/io_mux_reg.h"
 
 // All the tests using the header should use this definition as much as possible,
 // so that the working host can be changed easily in the future.
@@ -30,7 +31,25 @@
 #define SLAVE_PIN_NUM_CS      VSPI_IOMUX_PIN_NUM_CS
 #define SLAVE_PIN_NUM_WP      VSPI_IOMUX_PIN_NUM_WP
 #define SLAVE_PIN_NUM_HD      VSPI_IOMUX_PIN_NUM_HD
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+
+#define SLAVE_IOMUX_PIN_MISO    VSPI_IOMUX_PIN_NUM_MISO
+#define SLAVE_IOMUX_PIN_MOSI    VSPI_IOMUX_PIN_NUM_MOSI
+#define SLAVE_IOMUX_PIN_SCLK    VSPI_IOMUX_PIN_NUM_CLK
+#define SLAVE_IOMUX_PIN_CS      VSPI_IOMUX_PIN_NUM_CS
+
+#define MASTER_IOMUX_PIN_MISO   HSPI_IOMUX_PIN_NUM_MISO
+#define MASTER_IOMUX_PIN_MOSI   HSPI_IOMUX_PIN_NUM_MOSI
+#define MASTER_IOMUX_PIN_SCLK   HSPI_IOMUX_PIN_NUM_CLK
+#define MASTER_IOMUX_PIN_CS     HSPI_IOMUX_PIN_NUM_CS
+
+#define UNCONNECTED_PIN         27
+#define INPUT_ONLY_PIN          34
+#define GPIO_DELAY              (12.5*2)
+#define ESP_SPI_SLAVE_TV        (12.5*3.5)
+#define WIRE_DELAY              12.5
+
+#elif CONFIG_IDF_TARGET_ESP32S2
+
 #define TEST_SPI_HOST   FSPI_HOST
 #define TEST_SLAVE_HOST HSPI_HOST
 
@@ -47,16 +66,35 @@
 #define SLAVE_PIN_NUM_CS      HSPI_IOMUX_PIN_NUM_CS
 #define SLAVE_PIN_NUM_WP      HSPI_IOMUX_PIN_NUM_WP
 #define SLAVE_PIN_NUM_HD      HSPI_IOMUX_PIN_NUM_HD
+
+#define SLAVE_IOMUX_PIN_MISO    -1
+#define SLAVE_IOMUX_PIN_MOSI    -1
+#define SLAVE_IOMUX_PIN_SCLK    -1
+#define SLAVE_IOMUX_PIN_CS      -1
+
+#define MASTER_IOMUX_PIN_MISO   FSPI_IOMUX_PIN_NUM_MISO
+#define MASTER_IOMUX_PIN_MOSI   FSPI_IOMUX_PIN_NUM_MOSI
+#define MASTER_IOMUX_PIN_SCLK   FSPI_IOMUX_PIN_NUM_CLK
+#define MASTER_IOMUX_PIN_CS     FSPI_IOMUX_PIN_NUM_CS
+
+#define UNCONNECTED_PIN         41
+#define INPUT_ONLY_PIN          46
+#define GPIO_DELAY              0
+#define ESP_SPI_SLAVE_TV        0
+#define WIRE_DELAY              12.5
+
 #endif
+
+#define GET_DMA_CHAN(HOST)      (HOST)
+
+#define TEST_DMA_CHAN_MASTER    GET_DMA_CHAN(TEST_SPI_HOST)
+#define TEST_DMA_CHAN_SLAVE     GET_DMA_CHAN(TEST_SLAVE_HOST)
 
 
 #define FUNC_SPI    1
-#define FUNC_GPIO   2
+#define FUNC_GPIO   PIN_FUNC_GPIO
 
 //Delay information
-#define ESP_SPI_SLAVE_TV    (12.5*3.5)
-#define GPIO_DELAY          (12.5*2)
-#define WIRE_DELAY        12.5
 #define TV_INT_CONNECT_GPIO     (ESP_SPI_SLAVE_TV+GPIO_DELAY)
 #define TV_INT_CONNECT          (ESP_SPI_SLAVE_TV)
 //when connecting to another board, the delay is usually increased by 12.5ns
@@ -71,7 +109,7 @@
 #define PSET_NAME_LEN   30  ///< length of each param set name
 
 //test low frequency, high frequency until freq limit for worst case (both GPIO)
-#define TEST_FREQ_DEFAULT(){\
+#define TEST_FREQ_DEFAULT(){    \
         1*1000*1000,            \
         SPI_MASTER_FREQ_8M ,    \
         SPI_MASTER_FREQ_9M ,    \

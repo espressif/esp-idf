@@ -14,6 +14,7 @@
 
 #define BLE_MESH_TX_SDU_MAX            (CONFIG_BLE_MESH_TX_SEG_MAX * 12)
 
+#define TRANS_SEQ_ZERO_MASK            ((u16_t)BIT_MASK(13))
 #define TRANS_CTL_OP_MASK              ((u8_t)BIT_MASK(7))
 #define TRANS_CTL_OP(data)             ((data)[0] & TRANS_CTL_OP_MASK)
 #define TRANS_CTL_HDR(op, seg)         ((op & TRANS_CTL_OP_MASK) | (seg << 7))
@@ -100,5 +101,8 @@ void bt_mesh_trans_init(void);
 void bt_mesh_rpl_clear(void);
 
 void bt_mesh_heartbeat_send(void);
+
+int bt_mesh_app_key_get(const struct bt_mesh_subnet *subnet, u16_t app_idx,
+                        const u8_t **key, u8_t *aid,  u8_t role, u16_t dst);
 
 #endif /* _TRANSPORT_H_ */

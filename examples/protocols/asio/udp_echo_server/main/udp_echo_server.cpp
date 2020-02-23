@@ -15,7 +15,6 @@
 
 #include "protocol_examples_common.h"
 #include "esp_event.h"
-#include "tcpip_adapter.h"
 #include "nvs_flash.h"
 
 
@@ -69,7 +68,7 @@ private:
 extern "C" void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
-    tcpip_adapter_init();
+    esp_netif_init();
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     /* This helper function configures Wi-Fi or Ethernet, as selected in menuconfig.

@@ -12,9 +12,9 @@
    the XTHAL_RELEASE_xxx macros (or additions made in later versions).
 
 
-   $Id: //depot/rel/Eaglenest/Xtensa/OS/target-os-src/hal.h.tpp#4 $
+   $Id: //depot/rel/Foxhill/dot.9/Xtensa/OS/target-os-src/hal.h.tpp#1 $
 
-   Copyright (c) 1999-2014 Cadence Design Systems, Inc.
+   Copyright (c) 1999-2015 Cadence Design Systems, Inc.
 
    Permission is hereby granted, free of charge, to any person obtaining
    a copy of this software and associated documentation files (the
@@ -39,7 +39,6 @@
 #ifndef XTENSA_HAL_H
 #define XTENSA_HAL_H
 
-
 /****************************************************************************
 	    Definitions Useful for Any Code, USER or PRIVILEGED
  ****************************************************************************/
@@ -58,12 +57,12 @@
  *	In the past, release and version names all matched in T####.# form,
  *	making the distinction irrelevant.  This is no longer the case.
  */
-#define XTHAL_RELEASE_MAJOR	11000
-#define XTHAL_RELEASE_MINOR	3
-#define XTHAL_RELEASE_NAME	"11.0.3"
-#define XTHAL_REL_11	1
-#define XTHAL_REL_11_0	1
-#define XTHAL_REL_11_0_3	1
+#define XTHAL_RELEASE_MAJOR	12000
+#define XTHAL_RELEASE_MINOR	9
+#define XTHAL_RELEASE_NAME	"12.0.9"
+#define XTHAL_REL_12	1
+#define XTHAL_REL_12_0	1
+#define XTHAL_REL_12_0_9	1
 
 /*  HAL version numbers (these names are for backward compatibility):  */
 #define XTHAL_MAJOR_REV		XTHAL_RELEASE_MAJOR
@@ -139,6 +138,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include <stdint.h>
+#include <stddef.h>
 
 /*----------------------------------------------------------------------
 				HAL
@@ -255,22 +257,17 @@ extern const unsigned int  Xthal_dcache_size;
 /* cache features */
 extern const unsigned char Xthal_dcache_is_writeback;
 
-/* invalidate the caches */
-
+/* cache region operations*/
 extern void xthal_icache_region_invalidate( void *addr, unsigned size );
 extern void xthal_dcache_region_invalidate( void *addr, unsigned size );
-# ifndef XTHAL_USE_CACHE_MACROS
+extern void xthal_dcache_region_writeback( void *addr, unsigned size );
+extern void xthal_dcache_region_writeback_inv( void *addr, unsigned size );
+
+#ifndef XTHAL_USE_CACHE_MACROS
+/* cache line operations*/
 extern void xthal_icache_line_invalidate(void *addr);
 extern void xthal_dcache_line_invalidate(void *addr);
-# endif
-/* write dirty data back */
-extern void xthal_dcache_region_writeback( void *addr, unsigned size );
-# ifndef XTHAL_USE_CACHE_MACROS
 extern void xthal_dcache_line_writeback(void *addr);
-# endif
-/* write dirty data back and invalidate */
-extern void xthal_dcache_region_writeback_inv( void *addr, unsigned size );
-# ifndef XTHAL_USE_CACHE_MACROS
 extern void xthal_dcache_line_writeback_inv(void *addr);
 /* sync icache and memory */
 extern void xthal_icache_sync( void );
@@ -278,14 +275,12 @@ extern void xthal_icache_sync( void );
 extern void xthal_dcache_sync( void );
 #endif
 
-/* get number of icache ways enabled */
+/* get/set number of icache ways enabled */
 extern unsigned int xthal_icache_get_ways(void);
-/* set number of icache ways enabled */
-extern void xthal_icache_set_ways(unsigned int ways);
-/* get number of dcache ways enabled */
+extern void         xthal_icache_set_ways(unsigned int ways);
+/* get/set number of dcache ways enabled */
 extern unsigned int xthal_dcache_get_ways(void);
-/* set number of dcache ways enabled */
-extern void xthal_dcache_set_ways(unsigned int ways);
+extern void         xthal_dcache_set_ways(unsigned int ways);
 
 /* coherency (low-level -- not normally called directly) */
 extern void xthal_cache_coherence_on( void );
@@ -476,7 +471,11 @@ extern void	xthal_clear_regcached_code( void );
 #define XTHAL_INTTYPE_NMI		5
 #define XTHAL_INTTYPE_WRITE_ERROR	6
 #define XTHAL_INTTYPE_PROFILING		7
-#define XTHAL_MAX_INTTYPES		8	/* number of interrupt types */
+#define XTHAL_INTTYPE_IDMA_DONE		8
+#define XTHAL_INTTYPE_IDMA_ERR		9
+#define XTHAL_INTTYPE_GS_ERR		10
+#define XTHAL_INTTYPE_SG_ERR		10	/* backward compatibility name - deprecated */
+#define XTHAL_MAX_INTTYPES		11	/* number of interrupt types */
 
 /*  Timer related:  */
 #define XTHAL_TIMER_UNCONFIGURED	-1	/* Xthal_timer_interrupt[] value for non-existent timers */
@@ -699,6 +698,9 @@ extern unsigned  xthal_get_intenable( void );
 extern void      xthal_set_intenable( unsigned );
 extern unsigned  xthal_get_interrupt( void );
 #define xthal_get_intread	xthal_get_interrupt	/* backward compatibility */
+
+/*  These two functions are deprecated. Use the newer functions
+    xthal_interrupt_trigger and xthal_interrupt_clear instead.  */
 extern void      xthal_set_intset( unsigned );
 extern void      xthal_set_intclear( unsigned );
 
@@ -751,6 +753,7 @@ extern unsigned	xthal_vpri_to_intlevel(unsigned vpri);
 extern unsigned	xthal_intlevel_to_vpri(unsigned intlevel);
 
 /*  Enables/disables given set (mask) of interrupts; returns previous enabled-mask of all ints:  */
+/*  These functions are deprecated. Use xthal_interrupt_enable and xthal_interrupt_disable instead.  */
 extern unsigned	xthal_int_enable(unsigned);
 extern unsigned	xthal_int_disable(unsigned);
 
@@ -865,26 +868,34 @@ extern void xthal_dcache_enable( void );	/* DEPRECATED */
 extern void xthal_icache_disable( void );	/* DEPRECATED */
 extern void xthal_dcache_disable( void );	/* DEPRECATED */
 
-/* invalidate the caches */
+/* whole cache operations (privileged) */
 extern void xthal_icache_all_invalidate( void );
 extern void xthal_dcache_all_invalidate( void );
-/* write dirty data back */
 extern void xthal_dcache_all_writeback( void );
-/* write dirty data back and invalidate */
 extern void xthal_dcache_all_writeback_inv( void );
+extern void xthal_icache_all_unlock( void );
+extern void xthal_dcache_all_unlock( void );
+
+/* address-range cache operations (privileged) */
 /* prefetch and lock specified memory range into cache */
 extern void xthal_icache_region_lock( void *addr, unsigned size );
 extern void xthal_dcache_region_lock( void *addr, unsigned size );
-# ifndef XTHAL_USE_CACHE_MACROS
-extern void xthal_icache_line_lock(void *addr);
-extern void xthal_dcache_line_lock(void *addr);
-# endif
 /* unlock from cache */
-extern void xthal_icache_all_unlock( void );
-extern void xthal_dcache_all_unlock( void );
 extern void xthal_icache_region_unlock( void *addr, unsigned size );
 extern void xthal_dcache_region_unlock( void *addr, unsigned size );
+
+/* huge-range cache operations (privileged) (EXPERIMENTAL) */
+extern void xthal_icache_hugerange_invalidate( void *addr, unsigned size );
+extern void xthal_icache_hugerange_unlock( void *addr, unsigned size );
+extern void xthal_dcache_hugerange_invalidate( void *addr, unsigned size );
+extern void xthal_dcache_hugerange_unlock( void *addr, unsigned size );
+extern void xthal_dcache_hugerange_writeback( void *addr, unsigned size );
+extern void xthal_dcache_hugerange_writeback_inv( void *addr, unsigned size );
+
 # ifndef XTHAL_USE_CACHE_MACROS
+/* cache line operations (privileged) */
+extern void xthal_icache_line_lock(void *addr);
+extern void xthal_dcache_line_lock(void *addr);
 extern void xthal_icache_line_unlock(void *addr);
 extern void xthal_dcache_line_unlock(void *addr);
 # endif
@@ -927,28 +938,513 @@ extern const unsigned char Xthal_dtlb_way_bits;
 extern const unsigned char Xthal_dtlb_ways;
 extern const unsigned char Xthal_dtlb_arf_ways;
 
-/*  Convert between virtual and physical addresses (through static maps only):  */
-/*** WARNING: these two functions may go away in a future release; don't depend on them! ***/
+/* Return error codes for hal functions */
+
+/* function sucessful, operation completed as expected */
+#define XTHAL_SUCCESS                                    0
+/* XTHAL_CAFLAGS_NO_PARTIAL was specified, and no full region is
+ * covered by the address range. */
+#define XTHAL_NO_REGIONS_COVERED                        -1
+/* The XTHAL_CAFLAGS_EXACT flag was given, but no exact mapping is possible. */
+#define XTHAL_INEXACT                                   -2
+/* The supplied address doesn't correspond to the start of a region. */
+#define XTHAL_INVALID_ADDRESS                           -3
+/* This functionality is not available on this architecture. */
+#define XTHAL_UNSUPPORTED                               -4
+/* Translation failed because vaddr and paddr were not aligned. */
+#define XTHAL_ADDRESS_MISALIGNED                        -5
+/* There is mapping for the supplied address. */
+#define XTHAL_NO_MAPPING                                -6
+/* The requested access rights are not supported */
+#define XTHAL_BAD_ACCESS_RIGHTS                         -7
+/* The requested memory type is not supported */
+#define XTHAL_BAD_MEMORY_TYPE                           -8
+/* The entries supplied are not properly aligned to the MPU's background map. */
+#define XTHAL_MAP_NOT_ALIGNED                           -9
+/* There are not enough MPU entries available to do the requeste mapping. */
+#define XTHAL_OUT_OF_ENTRIES                           -10
+/* The entries supplied are not properly ordered for the MPU. */
+#define XTHAL_OUT_OF_ORDER_MAP                         -11
+/* an invalid argument such as a null pointer was supplied to the function */
+#define XTHAL_INVALID                                  -12
+/* specified region is of zero size, therefore no mapping is done. */
+#define XTHAL_ZERO_SIZED_REGION                        -13
+/* specified range wraps around '0' */
+#define XTHAL_INVALID_ADDRESS_RANGE                    -14
+
+/*
+   For backward compatibility we retain the following inconsistenly named
+   constants. Do not use them as they may be removed in a future release.
+ */
+#define XCHAL_SUCCESS XTHAL_SUCCESS
+#define XCHAL_ADDRESS_MISALIGNED XTHAL_ADDRESS_MISALIGNED
+#define XCHAL_INEXACT XTHAL_INEXACT
+#define XCHAL_INVALID_ADDRESS XTHAL_INVALID_ADDRESS
+#define XCHAL_UNSUPPORTED_ON_THIS_ARCH XTHAL_UNSUPPORTED
+#define XCHAL_NO_PAGES_MAPPED XTHAL_NO_REGIONS_COVERED
+
+
+/*  Convert between virtual and physical addresses (through static maps only)
+ *  WARNING: these two functions may go away in a future release;
+ *  don't depend on them!
+*/
 extern int  xthal_static_v2p( unsigned vaddr, unsigned *paddrp );
 extern int  xthal_static_p2v( unsigned paddr, unsigned *vaddrp, unsigned cached );
 
-#define XCHAL_SUCCESS 0
-#define XCHAL_ADDRESS_MISALIGNED -1
-#define XCHAL_INEXACT -2
-#define XCHAL_INVALID_ADDRESS -3
-#define XCHAL_UNSUPPORTED_ON_THIS_ARCH -4
-#define XCHAL_NO_PAGES_MAPPED -5
-#define XTHAL_NO_MAPPING -6
-
-#define XCHAL_CA_R   (0xC0 | 0x40000000)
-#define XCHAL_CA_RX  (0xD0 | 0x40000000)
-#define XCHAL_CA_RW  (0xE0 | 0x40000000)
-#define XCHAL_CA_RWX (0xF0 | 0x40000000)
-
-extern int xthal_set_region_translation(void* vaddr, void* paddr, unsigned size, unsigned cache_atr, unsigned flags);
+extern int xthal_set_region_translation(void* vaddr, void* paddr,
+                  unsigned size, unsigned cache_atr, unsigned flags);
 extern int xthal_v2p(void*, void**, unsigned*, unsigned*);
 extern int xthal_invalidate_region(void* addr);
 extern int xthal_set_region_translation_raw(void *vaddr, void *paddr, unsigned cattr);
+
+/*------------------------------------------------------------------------
+	MPU (Memory Protection Unit)
+-------------------------------------------------------------------------*/
+
+/*
+ *  General notes on MPU (Memory Protection Unit):
+ *
+ *  The MPU supports setting the access rights (read, write, execute) as
+ *  well as the memory type (cacheablity, ...)
+ *  for regions of memory. The granularity can be as small as 32 bytes.
+ *  (XCHAL_MPU_ALIGN specifies the granularity for any specific MPU config)
+ *
+ *  The MPU doesn't support mapping between virtual and physical addresses.
+ *
+ *  The MPU contains a fixed number of map changeable forground map entries,
+ *  and a background map which is fixed at configuration time.
+ *
+ *  Each entry has a start address (up to 27 bits), valid flag,
+ *  access rights (4 bits), and memory type (9 bits);
+ *
+ */
+
+
+/*
+    MPU access rights constants:
+    Only the combinations listed below are supported by the MPU.
+*/
+
+#define XTHAL_AR_NONE    0 /* no access */
+#define XTHAL_AR_R       4 /* Kernel read, User no access*/
+#define XTHAL_AR_RX      5 /* Kernel read/execute, User no access */
+#define XTHAL_AR_RW      6 /* Kernel read/write, User no access */
+#define XTHAL_AR_RWX     7 /* Kernel read/write/execute, User no access */
+#define XTHAL_AR_Ww      8 /* Kernel write, User write */
+#define XTHAL_AR_RWrwx   9 /* Kernel read/write , User read/write/execute */
+#define XTHAL_AR_RWr    10 /* Kernel read/write, User read */
+#define XTHAL_AR_RWXrx  11 /* Kernel read/write/execute, User read/execute */
+#define XTHAL_AR_Rr     12 /* Kernel read, User read */
+#define XTHAL_AR_RXrx   13 /* Kernel read/execute, User read/execute */
+#define XTHAL_AR_RWrw   14 /* Kernel read/write, User read/write */
+#define XTHAL_AR_RWXrwx 15 /* Kernel read/write/execute,
+                                    User read/write/execute */
+
+#define XTHAL_AR_WIDTH  4  /* # bits used to encode access rights */
+
+/* If the bit XTHAL_MPU_USE_EXISTING_ACCESS_RIGHTS is set in the accessRights
+ * argument to xthal_mpu_set_region_attribute(), or to the cattr argument of
+ * xthal_set_region_attribute() then the existing access rights for the first
+ * byte of the region will be used as the access rights of the new region.
+ */
+#define XTHAL_MPU_USE_EXISTING_ACCESS_RIGHTS     0x00002000
+
+/* If the bit XTHAL_MPU_USE_EXISTING_MEMORY_TYPE is set in the memoryType
+ * argument to xthal_mpu_set_region_attribute(), or to the cattr argument of
+ * xthal_set_region_attribute() then the existing memory type for the first
+ * byte of the region will be used as the memory type of the new region.
+ */
+#define XTHAL_MPU_USE_EXISTING_MEMORY_TYPE       0x00004000
+
+/* The following groups of constants are bit-wise or'd together to specify
+ * the memory type as input to the macros and functions that accept an
+ * unencoded memory type specifier:
+ * XTHAL_ENCODE_MEMORY_TYPE, xthal_encode_memory_type,
+ * xthal_mpu_set_region_attribute(), and xthal_set_region_attribute().
+ *
+ * example:
+ * XTHAL_MEM_DEVICE | XTHAL_MEM_INTERRUPTIBLE | XTHAL_MEM_SYSTEM_SHARABLE
+ *
+ * or
+ * XTHAL_MEM_WRITEBACK |  XTHAL_MEM_INNER_SHAREABLE
+ *
+ * If it is desired to specify different attributes for the system and
+ * local cache, then macro XTHAL_MEM_PROC_CACHE is used:
+ *
+ * XTHAL_MEM_PROC_CACHE(XTHAL_MEM_WRITEBACK, XTHAL_MEM_WRITETHRU)
+ *
+ * indicates the shared cache is writeback, but the processor's local cache
+ * is writethrough.
+ *
+ */
+
+/* The following group of constants are used to specify cache attributes of
+ * an MPU entry.  If the processors local cache and the system's shared cache
+ * have the same attributes (or if there aren't distinct local and shared
+ * caches) then the constant can be used directly.  If different attributes
+ * for the shared and local caches, then use these constants as the parameters
+ * to the XTHAL_MEM_PROC_CACHE() macro.
+ */
+#define XTHAL_MEM_DEVICE                         0x00008000
+#define XTHAL_MEM_NON_CACHEABLE                  0x00090000
+#define XTHAL_MEM_WRITETHRU_NOALLOC              0x00080000
+#define XTHAL_MEM_WRITETHRU                      0x00040000
+#define XTHAL_MEM_WRITETHRU_WRITEALLOC           0x00060000
+#define XTHAL_MEM_WRITEBACK_NOALLOC              0x00050000
+#define XTHAL_MEM_WRITEBACK                      0x00070000
+
+/* Indicates a read is interruptible. Only applicable to devices */
+#define XTHAL_MEM_INTERRUPTIBLE                  0x08000000
+
+/* Indicates if writes to this memory are bufferable ... only applicable
+ * to devices, and non-cacheable memory.
+ */
+#define XTHAL_MEM_BUFFERABLE                     0x01000000
+
+/* The following group of constants indicates the scope of the sharing of
+ * the memory region. XTHAL_MEM_INNER_SHAREABLE and XTHAL_MEM_OUTER_SHARABLE are
+ * only applicable to cacheable regions. XTHAL_MEM_SYSTEM_SHAREABLE is only
+ * applicable to devices and non-cacheable regions.
+ */
+#define XTHAL_MEM_NON_SHAREABLE                  0x00000000
+#define XTHAL_MEM_INNER_SHAREABLE                0x02000000
+#define XTHAL_MEM_OUTER_SHAREABLE                0x04000000
+#define XTHAL_MEM_SYSTEM_SHAREABLE               0x06000000
+
+
+/*
+ * This macro is needed when the cache attributes are different for the shared
+ * and processor's local caches. For example:
+ *
+ * XTHAL_MEM_PROC_CACHE(XTHAL_MEM_WRITEBACK, XTHAL_MEM_NON_CACHEABLE)
+ * creates a memory type that is writeback cacheable in the system cache, and not
+ * cacheable in the processor's local cache.
+ */
+#define XTHAL_MEM_PROC_CACHE(system, processor) \
+    (((system) & 0x000f0000) | (((processor) & 0x000f0000 ) << 4) | \
+    (((system) & XTHAL_MEM_DEVICE) | ((processor) & XTHAL_MEM_DEVICE)))
+
+/*
+ * This macro converts a bit-wise combination of the XTHAL_MEM_... constants
+ * to the corresponding MPU memory type (9-bits).
+ *
+ * Unsupported combinations are mapped to the best available substitute.
+ *
+ * The same functionality plus error checking is available from
+ * xthal_encode_memory_type().
+ */
+#define XTHAL_ENCODE_MEMORY_TYPE(x) \
+    (((x) & 0xffffe000) ? \
+    (_XTHAL_MEM_IS_DEVICE((x)) ?  _XTHAL_ENCODE_DEVICE((x)) : \
+      (_XTHAL_IS_SYSTEM_NONCACHEABLE((x)) ? \
+        _XTHAL_ENCODE_SYSTEM_NONCACHEABLE((x)) : \
+        _XTHAL_ENCODE_SYSTEM_CACHEABLE((x)))) : (x))
+
+/*
+ * This structure is used to represent each MPU entry (both foreground and
+ * background). The internal representation of the structure is subject to
+ * change, so it should only be accessed by the XTHAL_MPU_ENTRY_... macros
+ * below.
+ */
+typedef struct xthal_MPU_entry
+{
+	uint32_t as;	/* virtual start address, and valid bit */
+	uint32_t at;	/* access rights, and memory type (and space for entry index) */
+} xthal_MPU_entry;
+
+extern const xthal_MPU_entry Xthal_mpu_bgmap[];
+
+
+
+
+/*
+ * XTHAL_MPU_ENTRY creates an MPU entry from its component values.  It is
+ * intended for initializing an MPU map.  Example:
+ *     const struct xthal_MPU_entry mpumap[] =
+            { XTHAL_MPU_ENTRY( 0x00000000, 1, XTHAL_AR_RWXrwx, XTHAL_MEM_WRITEBACK),
+              XTHAL_MPU_ENTRY( 0xE0000000, 1, XTHAL_AR_RWXrwx,
+              XTHAL_MEM_NON_CACHEABLE | XTHAL_MEM_BUFFERABLE),
+              XTHAL_MPU_ENTRY( 0xF0000000, 1, XTHAL_AR_RWX,
+              XTHAL_MEM_NON_CACHEABLE | XTHAL_MEM_BUFFERABLE) };
+       xthal_write_map(mpumap, sizeof(mpumap) / sizeof(struct xthal_MPU_entry));
+ *
+ */
+#define XTHAL_MPU_ENTRY(vaddr, valid, access, memtype) \
+    { (((vaddr) & 0xffffffe0) | ((valid & 0x1))), \
+    (((XTHAL_ENCODE_MEMORY_TYPE(memtype)) << 12) | (((access) & 0xf) << 8)) }
+
+/*
+ * These macros get (or set) the specified field of the MPU entry.
+ */
+#define XTHAL_MPU_ENTRY_GET_VSTARTADDR(x) ((x).as & 0xffffffe0)
+
+#define XTHAL_MPU_ENTRY_SET_VSTARTADDR(x, vaddr) (x).as = \
+    (((x).as) & 0x1) | ((vaddr) & 0xffffffe0)
+
+#define XTHAL_MPU_ENTRY_GET_VALID(x) (((x).as & 0x1))
+
+#define XTHAL_MPU_ENTRY_SET_VALID(x, valid) (x).as = \
+    (((x).as & 0xfffffffe) | ((valid) & 0x1))
+#define XTHAL_MPU_ENTRY_GET_ACCESS(x) ((((x).at) >> 8) & 0xf)
+
+#define XTHAL_MPU_ENTRY_SET_ACCESS(x, accessRights) ((x).at = \
+        ((x).at & 0xfffff0ff) | (((accessRights) & 0xf) << 8))
+
+#define XTHAL_MPU_ENTRY_GET_MEMORY_TYPE(x) ((((x).at) >> 12) & 0x1ff)
+
+#define XTHAL_MPU_ENTRY_SET_MEMORY_TYPE(x, memtype) ((x).at = \
+        ((x).at & 0xffe00fff) | (((XTHAL_ENCODE_MEMORY_TYPE(memtype)) & 0x1ff) << 12))
+
+/*
+ * These functions accept encoded access rights, and return 1 if the
+ * supplied memory type has the property specified by the function name,
+ * otherwise they return 0.
+ */
+extern int32_t xthal_is_kernel_readable(uint32_t accessRights);
+extern int32_t xthal_is_kernel_writeable(uint32_t accessRights);
+extern int32_t xthal_is_kernel_executable(uint32_t accessRights);
+extern int32_t xthal_is_user_readable(uint32_t accessRights);
+extern int32_t xthal_is_user_writeable (uint32_t accessRights);
+extern int32_t xthal_is_user_executable(uint32_t accessRights);
+
+
+/*
+ * This function converts a bit-wise combination of the XTHAL_MEM_.. constants
+ * to the corresponding MPU memory type (9-bits).
+ *
+ * If none of the XTHAL_MEM_.. bits are present in the argument, then
+ * bits 4-12 (9-bits) are returned ... this supports using an already encoded
+ * memoryType (perhaps obtained from an xthal_MPU_entry structure) as input
+ * to xthal_set_region_attribute().
+ *
+ * This function first checks that the supplied constants are a valid and
+ * supported combination.  If not, it returns XTHAL_BAD_MEMORY_TYPE.
+ */
+extern int xthal_encode_memory_type(uint32_t x);
+
+/*
+ * This function accepts a 9-bit memory type value (such as returned by
+ * XTHAL_MEM_ENTRY_GET_MEMORY_TYPE() or xthal_encode_memory_type(). They
+ * return 1 if the memoryType has the property specified in the function
+ * name and 0 otherwise.
+ */
+extern int32_t xthal_is_cacheable(uint32_t memoryType);
+extern int32_t xthal_is_writeback(uint32_t memoryType);
+extern int32_t xthal_is_device(uint32_t  memoryType);
+
+/*
+ * Copies the current MPU entry list into 'entries' which
+ * must point to available memory of at least
+ * sizeof(struct xthal_MPU_entry) * XCHAL_MPU_ENTRIES.
+ *
+ * This function returns XTHAL_SUCCESS.
+ * XTHAL_INVALID, or
+ * XTHAL_UNSUPPORTED.
+ */
+extern int32_t xthal_read_map(struct xthal_MPU_entry* entries);
+
+/*
+ * Writes the map pointed to by 'entries' to the MPU. Before updating
+ * the map, it commits any uncommitted
+ * cache writes, and invalidates the cache if necessary.
+ *
+ * This function does not check for the correctness of the map.  Generally
+ * xthal_check_map() should be called first to check the map.
+ *
+ * If n == 0 then the existing map is cleared, and no new map is written
+ * (useful for returning to reset state)
+ *
+ * If (n > 0 && n < XCHAL_MPU_ENTRIES) then a new map is written with
+ * (XCHAL_MPU_ENTRIES-n) padding entries added to ensure a properly ordered
+ * map.  The resulting foreground map will be equivalent to the map vector
+ * fg, but the position of the padding entries should not be relied upon.
+ *
+ * If n == XCHAL_MPU_ENTRIES then the complete map as specified by fg is
+ * written.
+ *
+ * The CACHEADRDIS register will be set to enable caching any 512MB region
+ * that is overlapped by an MPU region with a cacheable memory type.
+ * Caching will be disabled if none of the 512 MB region is cacheable.
+ *
+ * xthal_write_map() disables the MPU foreground map during the MPU
+ * update and relies on the background map.
+ *
+ * As a result any interrupt that does not meet the following conditions
+ * must be disabled before calling xthal_write_map():
+ *    1) All code and data needed for the interrupt must be
+ *       mapped by the background map with sufficient access rights.
+ *    2) The interrupt code must not access the MPU.
+ *
+ */
+extern void xthal_write_map(const struct xthal_MPU_entry* entries, uint32_t n);
+
+/*
+ * Checks if entry vector 'entries' of length 'n' is a valid MPU access map.
+ * Returns:
+ *    XTHAL_SUCCESS if valid,
+ *    XTHAL_OUT_OF_ENTRIES
+ *    XTHAL_MAP_NOT_ALIGNED,
+ *    XTHAL_BAD_ACCESS_RIGHTS,
+ *    XTHAL_OUT_OF_ORDER_MAP, or
+ *    XTHAL_UNSUPPORTED if config doesn't have an MPU.
+ */
+extern int xthal_check_map(const struct xthal_MPU_entry* entries, uint32_t n);
+
+/*
+ * Returns the MPU entry that maps 'vaddr'. If 'infgmap' is non-NULL then
+ * *infgmap is set to 1 if 'vaddr' is mapped by the foreground map, and
+ * *infgmap is set to 0 if 'vaddr' is mapped by the background map.
+ */
+extern struct xthal_MPU_entry xthal_get_entry_for_address(void* vaddr,
+	int32_t* infgmap);
+
+/*
+ * Scans the supplied MPU map and returns a value suitable for writing to
+ * the CACHEADRDIS register:
+ * Bits 0-7    -> 1 if there are no cacheable areas in the corresponding 512MB
+ * region and 0 otherwise.
+ * Bits 8-31   -> undefined.
+ * This function can accept a partial memory map in the same manner
+ * xthal_write_map() does, */
+extern uint32_t
+xthal_calc_cacheadrdis(const struct xthal_MPU_entry* e, uint32_t n);
+
+/*
+ * This function is intended as an MPU specific version of
+ * xthal_set_region_attributes(). xthal_set_region_attributes() calls
+ * this function for MPU configurations.
+ *
+ * This function sets the attributes for the region [vaddr, vaddr+size)
+ * in the MPU.
+ *
+ * Depending on the state of the MPU this function will require from
+ * 0 to 3 unused MPU entries.
+ *
+ * This function typically will move, add, and subtract entries from
+ * the MPU map during execution, so that the resulting map may
+ * be quite different than when the function was called.
+ *
+ * This function does make the following guarantees:
+ *    1) The MPU access map remains in a valid state at all times
+ *       during its execution.
+ *    2) At all points during (and after) completion the memoryType
+ *       and accessRights remain the same for all addresses
+ *       that are not in the range [vaddr, vaddr+size).
+ *    3) If XTHAL_SUCCESS is returned, then the range
+ *       [vaddr, vaddr+size) will have the accessRights and memoryType
+ *       specified.
+ *    4) The CACHEADRDIS register will be set to enable caching any 512MB region
+ *       that is overlapped by an MPU region with a cacheable memory type.
+ *       Caching will be disabled if none of the 512 MB region is cacheable.
+ *
+ * The accessRights parameter should be either a 4-bit value corresponding
+ * to an MPU access mode (as defined by the XTHAL_AR_.. constants), or
+ * XTHAL_MPU_USE_EXISTING_ACCESS_RIGHTS.
+ *
+ * The memoryType parameter should be either a bit-wise or-ing of XTHAL_MEM_..
+ * constants that represent a valid MPU memoryType, a 9-bit MPU memoryType
+ * value, or XTHAL_MPU_USE_EXISTING_MEMORY_TYPE.
+ *
+ * In addition to the error codes that xthal_set_region_attribute()
+ * returns, this function can also return: XTHAL_BAD_ACCESS_RIGHTS
+ * (if the access rights bits map to an unsupported combination), or
+ * XTHAL_OUT_OF_MAP_ENTRIES (if there are not enough unused MPU entries)
+ *
+ * If this function is called with an invalid MPU map, then this function
+ * will return one of the codes that is returned by xthal_check_map().
+ *
+ * The flag, XTHAL_CAFLAG_EXPAND, is not supported
+ *
+ */
+
+extern int xthal_mpu_set_region_attribute(void* vaddr, size_t size,
+	int32_t accessRights, int32_t memoryType, uint32_t flags);
+
+/* The following are internal implementation macros.  These should not
+ * be directly used except by the hal code and headers.
+*/
+
+/*
+ * Layout of the MPU specifier for: XTHAL_ENCODE_MEMORY_TYPE(),
+ * xthal_encode_memory_type(), xthal_set_region_attribute(),
+ * and xthal_mpu_set_region_attribute(). THIS IS SUBJECT TO CHANGE:
+ *
+ * Bits 0-3  - reserved for pass through of accessRights
+ * Bits 4-12 - reserved for pass through of memoryType bits
+ * Bit  13   - indicates to use existing access rights of region
+ * Bit  14   - indicates to use existing memory type of region
+ * Bit  15   - indicates device
+ * Bit  16-19- system cache properties
+ * Bit  20-23- local cache properties
+ * Bit  24   - indicates bufferable
+ * Bit  25-26- encodes shareability (1=inner, 2=outer, 3=system)
+ * Bit  27   - indicates interruptible
+ * Bits 28-31- reserved for future use
+ */
+#define _XTHAL_SYSTEM_CACHE_BITS 0x000f0000
+#define _XTHAL_LOCAL_CACHE_BITS 0x00f00000
+#define _XTHAL_MEM_SYSTEM_RWC_MASK 0x00070000
+#define _XTHAL_MEM_LOCAL_RWC_MASK  0x00700000
+#define _XTHAL_SHIFT_RWC 16
+
+#define _XTHAL_MEM_ANY_SHAREABLE(x) (((x) & XTHAL_MEM_SYSTEM_SHAREABLE) ? 1 : 0)
+
+#define _XTHAL_MEM_INNER_SHAREABLE(x) ((((x) & XTHAL_MEM_SYSTEM_SHAREABLE) \
+        == XTHAL_MEM_INNER_SHAREABLE) ? 1 : 0)
+
+#define _XTHAL_MEM_IS_BUFFERABLE(x) (((x) & XTHAL_MEM_BUFFERABLE) ? 1 : 0)
+
+#define _XTHAL_MEM_IS_DEVICE(x) (((x) & XTHAL_MEM_DEVICE) ? 1 : 0)
+
+#define _XTHAL_NON_CACHEABLE_DOMAIN(x) \
+    (_XTHAL_MEM_IS_DEVICE(x) || _XTHAL_MEM_ANY_SHAREABLE(x)? 0x3 : 0)
+
+#define _XTHAL_CACHEABLE_DOMAIN(x)  (_XTHAL_MEM_ANY_SHAREABLE(x) ? \
+        0x3 : 0x1)
+
+#define _XTHAL_MEM_CACHE_MASK(x) ((x) & _XTHAL_SYSTEM_CACHE_BITS)
+
+#define _XTHAL_IS_SYSTEM_NONCACHEABLE(x) \
+        (((_XTHAL_MEM_CACHE_MASK(x) & XTHAL_MEM_NON_CACHEABLE) == \
+                XTHAL_MEM_NON_CACHEABLE) ? 1 : 0)
+
+#define _XTHAL_ENCODE_DEVICE(x) \
+         (((((x) & XTHAL_MEM_INTERRUPTIBLE) ? 1 : 0) << 3) | \
+         (_XTHAL_NON_CACHEABLE_DOMAIN(x) << 1) | _XTHAL_MEM_IS_BUFFERABLE(x))
+
+#define _XTHAL_ENCODE_SYSTEM_NONCACHEABLE(x) \
+        (0x18 | (_XTHAL_NON_CACHEABLE_DOMAIN(x) << 1) \
+                | _XTHAL_MEM_IS_BUFFERABLE(x))
+
+#define _XTHAL_ENCODE_SYSTEM_CACHEABLE(x) \
+        (((((((x) & _XTHAL_LOCAL_CACHE_BITS) >> 4) & XTHAL_MEM_NON_CACHEABLE) == \
+                XTHAL_MEM_NON_CACHEABLE) ? 1 : 0) ? \
+         (_XTHAL_CACHEABLE_DOMAIN(x) << 4) : \
+         _XTHAL_ENCODE_SYSTEM_CACHEABLE_LOCAL_CACHEABLE(x)) | \
+         ((_XTHAL_MEM_INNER_SHAREABLE(x) << 3) | \
+                  (_XTHAL_MEM_CACHE_MASK(x) & _XTHAL_MEM_SYSTEM_RWC_MASK) \
+                  >> _XTHAL_SHIFT_RWC)
+
+#define _XTHAL_ENCODE_SYSTEM_CACHEABLE_LOCAL_CACHEABLE(x) \
+        ((_XTHAL_CACHEABLE_DOMAIN(x) << 7) | (((((x) & _XTHAL_LOCAL_CACHE_BITS) ? \
+                ((x) & _XTHAL_LOCAL_CACHE_BITS) : \
+                (_XTHAL_MEM_CACHE_MASK(x) << 4)) \
+        & (_XTHAL_MEM_LOCAL_RWC_MASK)) >> _XTHAL_SHIFT_RWC ))
+
+/* End of internal macros */
+
+/* The functions and constants below here have been deprecated.*/
+#define XTHAL_MEM_NON_CACHED                     XTHAL_MEM_NON_CACHEABLE
+#define XTHAL_MEM_NON_SHARED                     XTHAL_MEM_NON_SHAREABLE
+#define XTHAL_MEM_INNER_SHARED                   XTHAL_MEM_INNER_SHAREABLE
+#define XTHAL_MEM_OUTER_SHARED                   XTHAL_MEM_OUTER_SHAREABLE
+#define XTHAL_MEM_SYSTEM_SHARED                  XTHAL_MEM_SYSTEM_SHAREABLE
+#define XTHAL_MEM_SW_SHAREABLE 0
+
+#define xthal_is_cached(memoryType) (xthal_is_cacheable((memoryType)))
+extern int32_t xthal_read_background_map(struct xthal_MPU_entry* entries);
+
+/* end deprecated functions and constants */
 
 #ifdef __cplusplus
 }
@@ -968,18 +1464,6 @@ extern int xthal_set_region_translation_raw(void *vaddr, void *paddr, unsigned c
 #if !defined(_ASMLANGUAGE) && !defined(_NOCLANGUAGE) && !defined(__ASSEMBLER__)
 #ifdef __cplusplus
 extern "C" {
-#endif
-
-#ifdef INCLUDE_DEPRECATED_HAL_CODE
-extern const unsigned char Xthal_have_old_exc_arch;
-extern const unsigned char Xthal_have_mmu;
-extern const unsigned int  Xthal_num_regs;
-extern const unsigned char Xthal_num_iroms;
-extern const unsigned char Xthal_num_irams;
-extern const unsigned char Xthal_num_droms;
-extern const unsigned char Xthal_num_drams;
-extern const unsigned int  Xthal_configid0;
-extern const unsigned int  Xthal_configid1;
 #endif
 
 #ifdef INCLUDE_DEPRECATED_HAL_DEBUG_CODE

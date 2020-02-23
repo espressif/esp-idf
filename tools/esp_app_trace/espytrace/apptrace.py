@@ -1,3 +1,4 @@
+import sys
 import os
 try:
     from urlparse import urlparse
@@ -14,6 +15,13 @@ import subprocess
 import os.path
 import elftools.elf.elffile as elffile
 import elftools.elf.constants as elfconst
+
+
+def clock():
+    if sys.version_info >= (3, 3):
+        return time.process_time()
+    else:
+        return time.clock()
 
 
 def addr2line(toolchain, elf_path, addr):
@@ -170,12 +178,12 @@ class FileReader(Reader):
             see Reader.read()
         """
         data = b''
-        start_tm = time.clock()
+        start_tm = clock()
         while not self.need_stop:
             data += self.trace_file.read(sz - len(data))
             if len(data) == sz:
                 break
-            if self.timeout != -1 and time.clock() >= start_tm + self.timeout:
+            if self.timeout != -1 and clock() >= start_tm + self.timeout:
                 raise ReaderTimeoutError(self.timeout, sz)
         if self.need_stop:
             raise ReaderShutdownRequest()
@@ -197,12 +205,12 @@ class FileReader(Reader):
             see Reader.read()
         """
         line = ''
-        start_tm = time.clock()
+        start_tm = clock()
         while not self.need_stop:
             line += self.trace_file.readline().decode("utf-8")
             if line.endswith(linesep):
                 break
-            if self.timeout != -1 and time.clock() >= start_tm + self.timeout:
+            if self.timeout != -1 and clock() >= start_tm + self.timeout:
                 raise ReaderTimeoutError(self.timeout, 1)
         if self.need_stop:
             raise ReaderShutdownRequest()
@@ -213,12 +221,12 @@ class FileReader(Reader):
             see Reader.read()
         """
         cur_pos = self.trace_file.tell()
-        start_tm = time.clock()
+        start_tm = clock()
         while not self.need_stop:
             file_sz = os.path.getsize(self.trace_file_path)
             if file_sz - cur_pos >= sz:
                 break
-            if self.timeout != -1 and time.clock() >= start_tm + self.timeout:
+            if self.timeout != -1 and clock() >= start_tm + self.timeout:
                 raise ReaderTimeoutError(self.timeout, sz)
         if self.need_stop:
             raise ReaderShutdownRequest()
@@ -349,6 +357,34 @@ def reader_create(trc_src, tmo):
     if url.scheme == 'udp':
         return UDPReader(url.hostname, url.port, tmo)
     return None
+
+
+class TraceEvent:
+    """
+        Base class for all trace events.
+    """
+    def __init__(self, name, core_id, evt_id):
+        self.name = name
+        self.ctx_name = 'None'
+        self.in_irq = False
+        self.core_id = core_id
+        self.id = evt_id
+        self.ts = 0
+        self.params = {}
+
+    @property
+    def ctx_desc(self):
+        if self.in_irq:
+            return 'IRQ "%s"' % self.ctx_name
+        return 'task "%s"' % self.ctx_name
+
+    def to_jsonable(self):
+        res = self.__dict__
+        params = {}
+        for p in self.params:
+            params.update(self.params[p].to_jsonable())
+        res['params'] = params
+        return res
 
 
 class TraceDataProcessor:
@@ -593,66 +629,63 @@ class HeapTraceEvent:
     """
         Heap trace event.
     """
-    def __init__(self, ctx_name, in_irq, core_id, ts, alloc, size, addr, callers, toolchain='', elf_path=''):
+    def __init__(self, trace_event, alloc, toolchain='', elf_path=''):
         """
             Constructor.
 
             Parameters
             ----------
-            ctx_name : string
-                name of event context (task or IRQ name)
-            in_irq : bool
-                True if event has been generated in IRQ context, otherwise False
-            core_id : int
-                core which generated the event
-            ts : float
-                event timestamp
+            sys_view_event : TraceEvent
+                trace event object related to this heap event
             alloc : bool
                 True for allocation event, otherwise False
-            size : int
-                size of allocation; has no meaning for de-allocation event
-            addr : int
-                address of allocation/de-allocation
-            callers : list
-                list of callers (callstack) for event
             toolchain_pref : string
                 toolchain prefix to retrieve source line locations using addresses
             elf_path : string
                 path to ELF file to retrieve format strings for log messages
         """
-        self.ctx_name = ctx_name
-        self.in_irq = in_irq
-        self.core_id = core_id
-        self.ts = ts
+        self.trace_event = trace_event
         self.alloc = alloc
-        self.size = size
-        self.addr = addr
-        self.callers = callers
         self.toolchain = toolchain
         self.elf_path = elf_path
+        if self.alloc:
+            self.size = self.trace_event.params['size'].value
+        else:
+            self.size = None
+
+    @property
+    def addr(self):
+        return self.trace_event.params['addr'].value
+
+    @property
+    def callers(self):
+        return self.trace_event.params['callers'].value
 
     def __repr__(self):
         if len(self.toolchain) and len(self.elf_path):
             callers = os.linesep
-            for addr in self.callers:
+            for addr in self.trace_event.params['callers'].value:
+                if addr == 0:
+                    break
                 callers += '{}'.format(addr2line(self.toolchain, self.elf_path, addr))
         else:
             callers = ''
-            for addr in self.callers:
+            for addr in self.trace_event.params['callers'].value:
+                if addr == 0:
+                    break
                 if len(callers):
                     callers += ':'
                 callers += '0x{:x}'.format(addr)
-        if self.in_irq:
-            ctx_desc = 'IRQ "%s"' % self.ctx_name
-        else:
-            ctx_desc = 'task "%s"' % self.ctx_name
         if self.alloc:
-            return "[{:.9f}] HEAP: Allocated {:d} bytes @ 0x{:x} from {} on core {:d} by: {}".format(self.ts, self.size,
-                                                                                                     self.addr, ctx_desc,
-                                                                                                     self.core_id, callers)
+            return "[{:.9f}] HEAP: Allocated {:d} bytes @ 0x{:x} from {} on core {:d} by: {}".format(self.trace_event.ts,
+                                                                                                     self.size, self.addr,
+                                                                                                     self.trace_event.ctx_desc,
+                                                                                                     self.trace_event.core_id,
+                                                                                                     callers)
         else:
-            return "[{:.9f}] HEAP: Freed bytes @ 0x{:x} from {} on core {:d} by: {}".format(self.ts, self.addr, ctx_desc,
-                                                                                            self.core_id, callers)
+            return "[{:.9f}] HEAP: Freed bytes @ 0x{:x} from {} on core {:d} by: {}".format(self.trace_event.ts,
+                                                                                            self.addr, self.trace_event.ctx_desc,
+                                                                                            self.trace_event.core_id, callers)
 
 
 class BaseHeapTraceDataProcessorImpl:

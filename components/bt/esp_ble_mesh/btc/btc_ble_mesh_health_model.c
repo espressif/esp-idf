@@ -229,12 +229,17 @@ static void btc_ble_mesh_health_client_callback(esp_ble_mesh_health_client_cb_pa
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_HEALTH_CLIENT)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_HEALTH_CLIENT;
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_health_client_cb_param_t), btc_ble_mesh_health_client_copy_req_data);
+                         sizeof(esp_ble_mesh_health_client_cb_param_t), btc_ble_mesh_health_client_copy_req_data);
 }
 
 void bt_mesh_health_client_cb_evt_to_btc(u32_t opcode, u8_t evt_type,
@@ -302,7 +307,7 @@ void btc_ble_mesh_health_publish_callback(u32_t opcode,
     }
 
     bt_mesh_health_client_cb_evt_to_btc(opcode,
-        BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
+                                        BTC_BLE_MESH_EVT_HEALTH_CLIENT_PUBLISH, model, ctx, buf->data, buf->len);
     return;
 }
 
@@ -415,7 +420,7 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg)
             break;
         }
         btc_ble_mesh_health_client_get_state(arg->health_client_get_state.params,
-            arg->health_client_get_state.get_state, &cb);
+                                             arg->health_client_get_state.get_state, &cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_health_client_callback(&cb, ESP_BLE_MESH_HEALTH_CLIENT_GET_STATE_EVT);
@@ -431,7 +436,7 @@ void btc_ble_mesh_health_client_call_handler(btc_msg_t *msg)
             break;
         }
         btc_ble_mesh_health_client_set_state(arg->health_client_set_state.params,
-            arg->health_client_set_state.set_state, &cb);
+                                             arg->health_client_set_state.set_state, &cb);
         if (cb.error_code) {
             /* If send failed, callback error_code to app layer immediately */
             btc_ble_mesh_health_client_callback(&cb, ESP_BLE_MESH_HEALTH_CLIENT_SET_STATE_EVT);
@@ -517,7 +522,7 @@ static void btc_ble_mesh_health_server_copy_req_data(btc_msg_t *msg, void *p_des
     }
 
     switch (msg->act) {
-    case ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMPLETE_EVT:
+    case ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMP_EVT:
         break;
     default:
         break;
@@ -532,7 +537,7 @@ static void btc_ble_mesh_health_server_free_req_data(btc_msg_t *msg)
     }
 
     switch (msg->act) {
-    case ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMPLETE_EVT:
+    case ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMP_EVT:
         break;
     default:
         break;
@@ -545,17 +550,22 @@ static void btc_ble_mesh_health_server_callback(esp_ble_mesh_health_server_cb_pa
 
     LOG_DEBUG("%s", __func__);
 
+    /* If corresponding callback is not registered, event will not be posted. */
+    if (!btc_profile_cb_get(BTC_PID_HEALTH_SERVER)) {
+        return;
+    }
+
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_HEALTH_SERVER;
     msg.act = act;
 
     btc_transfer_context(&msg, cb_params,
-        sizeof(esp_ble_mesh_health_server_cb_param_t), btc_ble_mesh_health_server_copy_req_data);
+                         sizeof(esp_ble_mesh_health_server_cb_param_t), btc_ble_mesh_health_server_copy_req_data);
 }
 
 void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg)
 {
-    esp_ble_mesh_health_server_cb_param_t health_server_cb = {0};
+    esp_ble_mesh_health_server_cb_param_t param = {0};
     btc_ble_mesh_health_server_args_t *arg = NULL;
 
     if (!msg || !msg->arg) {
@@ -567,10 +577,10 @@ void btc_ble_mesh_health_server_call_handler(btc_msg_t *msg)
 
     switch (msg->act) {
     case BTC_BLE_MESH_ACT_HEALTH_SERVER_FAULT_UPDATE:
-        health_server_cb.error_code =
-            bt_mesh_fault_update((struct bt_mesh_elem *)arg->fault_update.element);
-        btc_ble_mesh_health_server_callback(
-            &health_server_cb, ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMPLETE_EVT);
+        param.fault_update_comp.element = arg->health_fault_update.element;
+        param.fault_update_comp.error_code =
+            bt_mesh_fault_update((struct bt_mesh_elem *)arg->health_fault_update.element);
+        btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_FAULT_UPDATE_COMP_EVT);
         break;
     default:
         break;
@@ -599,4 +609,44 @@ void btc_ble_mesh_health_server_cb_handler(btc_msg_t *msg)
 
     btc_ble_mesh_health_server_free_req_data(msg);
     return;
+}
+
+void btc_ble_mesh_health_server_fault_clear(struct bt_mesh_model *model, u16_t company_id)
+{
+    esp_ble_mesh_health_server_cb_param_t param = {0};
+
+    param.fault_clear.model = (esp_ble_mesh_model_t *)model;
+    param.fault_clear.company_id = company_id;
+
+    btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_FAULT_CLEAR_EVT);
+}
+
+void btc_ble_mesh_health_server_fault_test(struct bt_mesh_model *model, u8_t test_id, u16_t company_id)
+{
+    esp_ble_mesh_health_server_cb_param_t param = {0};
+
+    param.fault_test.model = (esp_ble_mesh_model_t *)model;
+    param.fault_test.test_id = test_id;
+    param.fault_test.company_id = company_id;
+
+    btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_FAULT_TEST_EVT);
+}
+
+void btc_ble_mesh_health_server_attention_on(struct bt_mesh_model *model, u8_t time)
+{
+    esp_ble_mesh_health_server_cb_param_t param = {0};
+
+    param.attention_on.model = (esp_ble_mesh_model_t *)model;
+    param.attention_on.time = time;
+
+    btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_ON_EVT);
+}
+
+void btc_ble_mesh_health_server_attention_off(struct bt_mesh_model *model)
+{
+    esp_ble_mesh_health_server_cb_param_t param = {0};
+
+    param.attention_off.model = (esp_ble_mesh_model_t *)model;
+
+    btc_ble_mesh_health_server_callback(&param, ESP_BLE_MESH_HEALTH_SERVER_ATTENTION_OFF_EVT);
 }

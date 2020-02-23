@@ -41,7 +41,7 @@ static const char *SPI_TAG = "spi_slave";
         return (ret_val); \
     }
 
-#define VALID_HOST(x) (x>SPI_HOST && x<=VSPI_HOST)
+#define VALID_HOST(x) (x > SPI1_HOST && x <= SPI3_HOST)
 
 #ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
 #define SPI_SLAVE_ISR_ATTR IRAM_ATTR
@@ -105,7 +105,7 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     SPI_CHECK(VALID_HOST(host), "invalid host", ESP_ERR_INVALID_ARG);
 #if defined(CONFIG_IDF_TARGET_ESP32)
     SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
-#elif defined(CONFIG_IDF_TARGET_ESP32S2BETA)
+#elif defined(CONFIG_IDF_TARGET_ESP32S2)
     SPI_CHECK( dma_chan == 0 || dma_chan == host, "invalid dma channel", ESP_ERR_INVALID_ARG );
 #endif
     SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
@@ -218,7 +218,7 @@ cleanup:
     free(spihost[host]);
     spihost[host] = NULL;
     spicommon_periph_free(host);
-    spicommon_dma_chan_free(dma_chan);
+    if (dma_chan != 0) spicommon_dma_chan_free(dma_chan);
     return ret;
 }
 

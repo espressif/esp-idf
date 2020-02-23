@@ -30,6 +30,8 @@
 
 #define MIN_BLOCK_SIZE  12
 /* Base offset in flash for tests. */
+
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static size_t start;
 
 static void setup_tests(void)
@@ -138,7 +140,9 @@ TEST_CASE("Test spi_flash_read", "[spi_flash][esp_flash]")
     }
 #endif
 }
+#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
+#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
 {
     char src_buf[64], dst_gold[64];
@@ -168,7 +172,7 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     TEST_ASSERT_EQUAL_INT(cmp_or_dump(dst_buf, dst_gold, sizeof(dst_buf)), 0);
 }
 
-TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
+TEST_CASE("Test spi_flash_write", "[spi_flash][esp_flash]")
 {
     setup_tests();
 #if CONFIG_SPI_FLASH_MINIMAL_TEST
@@ -215,7 +219,7 @@ TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
      * NB: At the moment these only support aligned addresses, because memcpy
      * is not aware of the 32-but load requirements for these regions.
      */
-#ifdef CONFIG_IDF_TARGET_ESP32S2BETA
+#ifdef CONFIG_IDF_TARGET_ESP32S2
 #define TEST_SOC_IROM_ADDR              (SOC_IROM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK0_ADDR   (SOC_IRAM_LOW)
 #define TEST_SOC_CACHE_RAM_BANK1_ADDR   (SOC_IRAM_LOW + 0x2000)
@@ -239,6 +243,7 @@ TEST_CASE_ESP32("Test spi_flash_write", "[spi_flash][esp_flash]")
     ESP_ERROR_CHECK(spi_flash_write(start, (char *) 0x40080000, 16));
 #endif
 }
+#endif
 
 #ifdef CONFIG_SPIRAM
 

@@ -14,7 +14,7 @@
     paths:
       - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
-    expire_in: 3 days
+    expire_in: 4 days
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -22,73 +22,7 @@
       - $BOT_LABEL_UNIT_TEST
       - $BOT_LABEL_REGULAR_TEST
 
-
-.build_with_make_and_cmake: &build_with_make_and_cmake |
-  echo -e "section_end:"`date +%s`":build_script\r\e[0Ksection_start:"`date +%s`":build_make\r\e[0KBuild with Make"
-  make defconfig
-  make all
-  make clean
-  echo -e "section_end:"`date +%s`":build_make\r\e[0Ksection_start:"`date +%s`":build_cmake\r\e[0KBuild with CMake"
-  rm -rf build sdkconfig
-  idf.py build
-  echo -e "section_end:"`date +%s`":build_cmake\r\e[0Ksection_start:"`date +%s`":build_script\r\e[0K"
-
-build_template_app:
-  stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
-  tags:
-    - build
-  variables:
-    BATCH_BUILD: "1"
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-  script:
-    # Set the variable for 'esp-idf-template' testing
-    - ESP_IDF_TEMPLATE_GIT=${ESP_IDF_TEMPLATE_GIT:-"https://github.com/espressif/esp-idf-template.git"}
-    - git clone ${ESP_IDF_TEMPLATE_GIT}
-    # Try to use the same branch name for esp-idf-template that we're
-    # using on esp-idf. If it doesn't exist then just stick to the default branch
-    - python $CHECKOUT_REF_SCRIPT esp-idf-template esp-idf-template
-    - cd esp-idf-template
-    - export PATH="$IDF_PATH/tools:$PATH"
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-
-    # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
-    - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > sdkconfig.defaults
-    - *build_with_make_and_cmake
-
-    # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
-    - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > sdkconfig.defaults
-    - *build_with_make_and_cmake
-
-    # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
-    - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" > sdkconfig.defaults
-    - *build_with_make_and_cmake
-
-    # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
-    - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > sdkconfig.defaults
-    - *build_with_make_and_cmake
-
-    # Same as above, but also disable assertions.
-    - echo "CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_DISABLE=y" >> sdkconfig.defaults
-    # Don't error out on -Wunused, when assertions are disabled
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS/-Werror=unused-variable -Werror=unused-but-set-variable -Werror=unused-function/}
-    - *build_with_make_and_cmake
-    - export EXTRA_CFLAGS=${PEDANTIC_CFLAGS}
-    - export EXTRA_CXXFLAGS=${PEDANTIC_CXXFLAGS}
-
-    # Check if there are any stray printf/ets_printf references in WiFi libs
-    - pushd ../components/esp_wifi/lib_esp32
-    - test $(xtensa-esp32-elf-nm *.a | grep -w printf | wc -l) -eq 0
-    - test $(xtensa-esp32-elf-nm *.a | grep -w ets_printf | wc -l) -eq 0
-    - popd
-
-build_ssc:
+.build_ssc_template:
   extends: .build_template
   parallel: 3
   artifacts:
@@ -96,7 +30,7 @@ build_ssc:
       - SSC/ssc_bin
     expire_in: 1 week
   variables:
-    SSC_CONFIG_FOLDER: "$CI_PROJECT_DIR/SSC/configs/ESP32_IDF"
+    TARGET_NAME: "ESP32"
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -107,7 +41,18 @@ build_ssc:
     - git clone $SSC_REPOSITORY
     - python $CHECKOUT_REF_SCRIPT SSC SSC
     - cd SSC
-    - MAKEFLAGS= ./ci_build_ssc.sh
+    - MAKEFLAGS= ./ci_build_ssc.sh $TARGET_NAME
+
+build_ssc_esp32:
+  extends: .build_ssc_template
+  variables:
+    TARGET_NAME: "ESP32"
+
+build_ssc_esp32s2:
+  extends: .build_ssc_template
+  parallel: 2
+  variables:
+    TARGET_NAME: "ESP32S2"
 
 build_esp_idf_tests_make:
   extends: .build_esp_idf_unit_test_template
@@ -157,7 +102,7 @@ build_examples_make:
       - build_examples/*/*/*/build/bootloader/*.bin
       - build_examples/*/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
-    expire_in: 3 days
+    expire_in: 4 days
   variables:
     LOG_PATH: "$CI_PROJECT_DIR/log_examples_make"
   only:
@@ -193,21 +138,24 @@ build_examples_make:
 # same as above, but for CMake
 .build_examples_cmake: &build_examples_cmake
   extends: .build_template
-  parallel: 5
+  parallel: 8
   artifacts:
     when: always
     paths:
-      - build_examples/*/*/*/*/build/*.bin
-      - build_examples/*/*/*/*/sdkconfig
-      - build_examples/*/*/*/*/build/*.elf
-      - build_examples/*/*/*/*/build/*.map
-      - build_examples/*/*/*/*/build/flasher_args.json
-      - build_examples/*/*/*/*/build/bootloader/*.bin
-      - build_examples/*/*/*/*/build/partition_table/*.bin
+      - build_examples/list.json
+      - build_examples/list_job_*.json
+      - build_examples/*/*/*/sdkconfig
+      - build_examples/*/*/*/build/*.bin
+      - build_examples/*/*/*/build/*.elf
+      - build_examples/*/*/*/build/*.map
+      - build_examples/*/*/*/build/flasher_args.json
+      - build_examples/*/*/*/build/bootloader/*.bin
+      - build_examples/*/*/*/build/partition_table/*.bin
       - $LOG_PATH
-    expire_in: 3 days
+    expire_in: 4 days
   variables:
-    LOG_PATH: "$CI_PROJECT_DIR/log_examples_cmake"
+    LOG_PATH: "$CI_PROJECT_DIR/log_examples"
+    BUILD_PATH: "$CI_PROJECT_DIR/build_examples"
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
@@ -218,10 +166,7 @@ build_examples_make:
   script:
     # it's not possible to build 100% out-of-tree and have the "artifacts"
     # mechanism work, but this is the next best thing
-    - rm -rf build_examples
-    - mkdir build_examples
-    - cd build_examples
-    # build some of examples
+    - mkdir -p ${BUILD_PATH}
     - mkdir -p ${LOG_PATH}
     - ${IDF_PATH}/tools/ci/build_examples_cmake.sh
     # Check if the tests demand CMake built binaries. If not, delete them
@@ -237,58 +182,98 @@ build_examples_cmake_esp32:
 build_examples_cmake_esp32s2:
   extends: .build_examples_cmake
   variables:
-    IDF_TARGET: esp32s2beta
+    IDF_TARGET: esp32s2
+
+.build_test_apps: &build_test_apps
+  extends: .build_template
+  stage: build
+  artifacts:
+    when: always
+    paths:
+      - build_test_apps/list.json
+      - build_test_apps/list_job_*.json
+      - build_test_apps/*/*/*/build/*.bin
+      - build_test_apps/*/*/*/sdkconfig
+      - build_test_apps/*/*/*/build/*.elf
+      - build_test_apps/*/*/*/build/*.map
+      - build_test_apps/*/*/*/build/flasher_args.json
+      - build_test_apps/*/*/*/build/bootloader/*.bin
+      - build_test_apps/*/*/*/build/partition_table/*.bin
+      - $LOG_PATH
+    expire_in: 3 days
+  variables:
+    LOG_PATH: "$CI_PROJECT_DIR/log_test_apps"
+    BUILD_PATH: "$CI_PROJECT_DIR/build_test_apps"
+  only:
+    variables:
+      - $BOT_TRIGGER_WITH_LABEL == null
+      - $BOT_LABEL_BUILD
+      - $BOT_LABEL_INTEGRATION_TEST
+      - $BOT_LABEL_REGULAR_TEST
+      - $BOT_LABEL_WEEKEND_TEST
+  script:
+    - mkdir -p ${BUILD_PATH}
+    - mkdir -p ${LOG_PATH}
+    - ${IDF_PATH}/tools/ci/build_test_apps.sh
+
+build_test_apps_esp32:
+  extends: .build_test_apps
+  variables:
+    IDF_TARGET: esp32
+
+build_test_apps_esp32s2:
+  extends: .build_test_apps
+  variables:
+    IDF_TARGET: esp32s2
+
 
 # If you want to add new build example jobs, please add it into dependencies of `.example_test_template`
 
-build_docs:
+.build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
+  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
   tags:
     - build_docs
   artifacts:
     when: always
     paths:
-      # English version of documentation
-      - docs/en/doxygen-warning-log.txt
-      - docs/en/sphinx-warning-log.txt
-      - docs/en/sphinx-warning-log-sanitized.txt
-      - docs/en/_build/html
-      - docs/sphinx-err-*
-      # Chinese version of documentation
-      - docs/zh_CN/doxygen-warning-log.txt
-      - docs/zh_CN/sphinx-warning-log.txt
-      - docs/zh_CN/sphinx-warning-log-sanitized.txt
-      - docs/zh_CN/_build/html
-    expire_in: 3 days
+      - docs/_build/*/*/*.txt
+      - docs/_build/*/*/html/*
+    expire_in: 4 days
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_BUILD_DOCS
       - $BOT_LABEL_REGULAR_TEST
+  dependencies: []
   script:
     - cd docs
-    - ./check_lang_folder_sync.sh
-    - cd en
-    - make gh-linkcheck
-    - make html
-    - ../check_doc_warnings.sh
-    - cd ../zh_CN
-    - make gh-linkcheck
-    - make html
-    - ../check_doc_warnings.sh
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT build
 
-verify_cmake_style:
-  extends: .check_job_template
-  stage: build
-  only:
-    variables:
-      - $BOT_TRIGGER_WITH_LABEL == null
-      - $BOT_LABEL_BUILD
-      - $BOT_LABEL_REGULAR_TEST
-  script:
-    tools/cmake/run_cmake_lint.sh
+build_docs_en_esp32:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "en"
+    DOCTGT: "esp32"
+
+build_docs_en_esp32s2:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "en"
+    DOCTGT: "esp32s2"
+
+build_docs_zh_CN_esp32:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "zh_CN"
+    DOCTGT: "esp32"
+
+build_docs_zh_CN_esp32s2:
+  extends: .build_docs_template
+  variables:
+    DOCLANG: "zh_CN"
+    DOCTGT: "esp32s2"
 
 test_build_system:
   extends: .build_template
@@ -301,6 +286,27 @@ test_build_system:
 
 test_build_system_cmake:
   extends: .build_template
+  script:
+    - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
+    - rm -rf test_build_system
+    - mkdir test_build_system
+    - cd test_build_system
+    - ${IDF_PATH}/tools/ci/test_build_system_cmake.sh
+
+test_build_system_cmake_macos:
+  extends: .macos_build_template
+  only:
+    refs:
+      - master
+      - /^release\/v/
+      - /^v\d+\.\d+(\.\d+)?($|-)/
+      - schedules
+      - triggers
+      - pipelines
+      - web
+    variables:
+      - $CI_PIPELINE_SOURCE != "push" && $BOT_LABEL_MACOS_TEST != null
+      - $CI_PIPELINE_SOURCE == "push"
   script:
     - ${IDF_PATH}/tools/ci/test_configure_ci_environment.sh
     - rm -rf test_build_system
@@ -346,7 +352,7 @@ build_idf_exe:
   artifacts:
     paths:
       - tools/windows/idf_exe/build/idf-exe-v*.zip
-    expire_in: 3 days
+    expire_in: 4 days
   script:
     - cd tools/windows/idf_exe/
     - mkdir build
@@ -369,7 +375,7 @@ build_cmdlinerunner:
   artifacts:
     paths:
       - tools/windows/tool_setup/cmdlinerunner/build/cmdlinerunner.dll
-    expire_in: 3 days
+    expire_in: 4 days
   script:
     - cd tools/windows/tool_setup/cmdlinerunner
     - mkdir build

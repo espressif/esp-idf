@@ -75,6 +75,8 @@ class Page(object):
     I16  = 0x12
     U32  = 0x04
     I32  = 0x14
+    U64  = 0x08
+    I64  = 0x18
     SZ   = 0x21
     BLOB = 0x41
     BLOB_DATA = 0x42
@@ -432,12 +434,21 @@ class Page(object):
         elif encoding == "u16":
             entry_struct[1] = Page.U16
             struct.pack_into('<H', entry_struct, 24, data)
+        elif encoding == "i16":
+            entry_struct[1] = Page.I16
+            struct.pack_into('<h', entry_struct, 24, data)
         elif encoding == "u32":
             entry_struct[1] = Page.U32
             struct.pack_into('<I', entry_struct, 24, data)
         elif encoding == "i32":
             entry_struct[1] = Page.I32
             struct.pack_into('<i', entry_struct, 24, data)
+        elif encoding == "u64":
+            entry_struct[1] = Page.U64
+            struct.pack_into('<Q', entry_struct, 24, data)
+        elif encoding == "i64":
+            entry_struct[1] = Page.I64
+            struct.pack_into('<q', entry_struct, 24, data)
 
         # Compute CRC
         crc_data = bytearray(b'28')
@@ -547,7 +558,7 @@ class NVS(object):
 
         encoding = encoding.lower()
         varlen_encodings = ["string", "binary", "hex2bin", "base64"]
-        primitive_encodings = ["u8", "i8", "u16", "u32", "i32"]
+        primitive_encodings = ["u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64"]
 
         if encoding in varlen_encodings:
             try:
@@ -615,7 +626,7 @@ def write_entry(nvs_instance, key, datatype, encoding, value):
     :param nvs_instance: Instance of an NVS class returned by nvs_open()
     :param key: Key of the data
     :param datatype: Data type. Valid values are "file", "data" and "namespace"
-    :param encoding: Data encoding. Valid values are "u8", "i8", "u16", "u32", "i32", "string", "binary", "hex2bin" and "base64"
+    :param encoding: Data encoding. Valid values are "u8", "i8", "u16", "i16", "u32", "i32", "u64", "i64", "string", "binary", "hex2bin" and "base64"
     :param value: Data value in ascii encoded string format for "data" datatype and filepath for "file" datatype
     :return: None
     """

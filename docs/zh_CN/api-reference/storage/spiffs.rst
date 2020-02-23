@@ -35,11 +35,11 @@ spiffsgen.py
 
     python spiffsgen.py --help
 
-上述可选参数对应 SPIFFS 构建配置选项。若想顺利生成可用的映像，请确保使用的参数或配置与构建 SPIFFS 时所用的参数或配置相同。运行帮助命令将显示参数所对应的 SPIFFS 构建配置。如未指定参数，将使用帮助信息中的默认值。 
+上述可选参数对应 SPIFFS 构建配置选项。若想顺利生成可用的映像，请确保使用的参数或配置与构建 SPIFFS 时所用的参数或配置相同。运行帮助命令将显示参数所对应的 SPIFFS 构建配置。如未指定参数，将使用帮助信息中的默认值。
 
 映像生成后，您可以使用 ``esptool.py`` 或 ``parttool.py`` 烧录映像。
 
-您可以在命令行或脚本中手动单独调用 ``spiffsgen.py``，也可以直接从构建系统调用 ``spiffs_create_partition_image`` 来使用 ``spiffsgen.py``。  
+您可以在命令行或脚本中手动单独调用 ``spiffsgen.py``，也可以直接从构建系统调用 ``spiffs_create_partition_image`` 来使用 ``spiffsgen.py``。
 
 在 Make 构建系统中运行::
 
@@ -51,14 +51,14 @@ spiffsgen.py
 
     spiffs_create_partition_image(<partition> <base_dir> [FLASH_IN_PROJECT] [DEPENDS dep dep dep...])
 
-在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置自动传递给 ``spiffsgen.py`` 工具，确保生成的映像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 *image_size* 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 *partition* 参数，映像大小将直接从工程分区表中获取。   
+在构建系统中使用 ``spiffsgen.py`` 更为方便，构建配置自动传递给 ``spiffsgen.py`` 工具，确保生成的映像可用于构建。比如，单独调用 ``spiffsgen.py`` 时需要用到 *image_size* 参数，但在构建系统中调用 ``spiffs_create_partition_image`` 时，仅需要 *partition* 参数，映像大小将直接从工程分区表中获取。
 
 Make 构建系统和 CMake 构建系统结构有所不同，请注意以下几点：
 
 - 在 Make 构建系统中使用 ``spiffs_create_partition_image``，需从工程 Makefile 中调用；
 - 在 CMake 构建系统中使用 ``spiffs_create_partition_image``，需从组件 CMakeLists.txt 文件调用。
 
-您也可以指定 ``FLASH_IN_PROJECT``，然后使用 ``idf.py flash`` 或 ``make flash`` 将映像与应用程序二进制文件、分区表等一起自动烧录至设备，例如： 
+您也可以指定 ``FLASH_IN_PROJECT``，然后使用 ``idf.py flash`` 或 ``make flash`` 将映像与应用程序二进制文件、分区表等一起自动烧录至设备，例如：
 
 在 Make 构建系统中运行::
 
@@ -75,7 +75,7 @@ Make 构建系统和 CMake 构建系统结构有所不同，请注意以下几�
 
 在 Make 构建系统中运行::
 
-    dep: 
+    dep:
         ...
 
     SPIFFS_IMAGE_DEPENDS := dep
@@ -87,7 +87,7 @@ Make 构建系统和 CMake 构建系统结构有所不同，请注意以下几�
 
     spiffs_create_partition_image(my_spiffs_partition my_folder DEPENDS dep)
 
-请参考 :example:`examples/storage/spiffsgen>`，查看示例。 
+请参考 :example:`storage/spiffsgen`，查看示例。
 
 mkspiffs
 ^^^^^^^^^^^
@@ -107,7 +107,7 @@ mkspiffs
 
 运行以下命令，将映像烧录到 ESP32（偏移量：0x110000）::
 
-    python esptool.py --chip esp32 --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
+    python esptool.py --chip {IDF_TARGET_PATH_NAME} --port [port] --baud [baud] write_flash -z 0x110000 spiffs.bin
 
 
 选择合适的 SPIFFS 工具
@@ -139,4 +139,4 @@ mkspiffs
 高级 API 参考
 ------------------------
 
-.. include:: /_build/inc/esp_spiffs.inc
+.. include-build-file:: inc/esp_spiffs.inc

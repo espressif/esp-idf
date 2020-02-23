@@ -21,6 +21,7 @@ extern "C" {
 #include "esp_modem_dte.h"
 #include "esp_event.h"
 #include "driver/uart.h"
+#include "esp_modem_compat.h"
 
 /**
  * @brief Declare Event Base for ESP Modem
@@ -33,11 +34,9 @@ ESP_EVENT_DECLARE_BASE(ESP_MODEM_EVENT);
  *
  */
 typedef enum {
-    MODEM_EVENT_PPP_START,      /*!< ESP Modem Start PPP Session */
-    MODEM_EVENT_PPP_CONNECT,    /*!< ESP Modem Connect to PPP Server */
-    MODEM_EVENT_PPP_DISCONNECT, /*!< ESP Modem Disconnect from PPP Server */
-    MODEM_EVENT_PPP_STOP,       /*!< ESP Modem Stop PPP Session*/
-    MODEM_EVENT_UNKNOWN         /*!< ESP Modem Unknown Response */
+    ESP_MODEM_EVENT_PPP_START = 0,       /*!< ESP Modem Start PPP Session */
+    ESP_MODEM_EVENT_PPP_STOP  = 3,       /*!< ESP Modem Stop PPP Session*/
+    ESP_MODEM_EVENT_UNKNOWN   = 4        /*!< ESP Modem Unknown Response */
 } esp_modem_event_t;
 
 /**
@@ -52,6 +51,12 @@ typedef struct {
     modem_flow_ctrl_t flow_control; /*!< Flow control type */
     uint32_t baud_rate;             /*!< Communication baud rate */
 } esp_modem_dte_config_t;
+
+/**
+ * @brief Type used for reception callback
+ *
+ */
+typedef esp_err_t (*esp_modem_on_receive)(void *buffer, size_t len, void *context);
 
 /**
  * @brief ESP Modem DTE Default Configuration
@@ -87,7 +92,7 @@ modem_dte_t *esp_modem_dte_init(const esp_modem_dte_config_t *config);
  *      - ESP_ERR_NO_MEM on allocating memory for the handler failed
  *      - ESP_ERR_INVALID_ARG on invalid combination of event base and event id
  */
-esp_err_t esp_modem_add_event_handler(modem_dte_t *dte, esp_event_handler_t handler, void *handler_args);
+esp_err_t esp_modem_set_event_handler(modem_dte_t *dte, esp_event_handler_t handler, int32_t event_id, void *handler_args);
 
 /**
  * @brief Unregister event handler for ESP Modem event loop
@@ -101,18 +106,6 @@ esp_err_t esp_modem_add_event_handler(modem_dte_t *dte, esp_event_handler_t hand
 esp_err_t esp_modem_remove_event_handler(modem_dte_t *dte, esp_event_handler_t handler);
 
 /**
- * @brief PPPoS Client IP Information
- *
- */
-typedef struct {
-    ip4_addr_t ip;      /*!< IP Address */
-    ip4_addr_t netmask; /*!< Net Mask */
-    ip4_addr_t gw;      /*!< Gateway */
-    ip4_addr_t ns1;     /*!< Name Server1 */
-    ip4_addr_t ns2;     /*!< Name Server2 */
-} ppp_client_ip_info_t;
-
-/**
  * @brief Setup PPP Session
  *
  * @param dte Modem DTE object
@@ -120,7 +113,7 @@ typedef struct {
  *      - ESP_OK on success
  *      - ESP_FAIL on error
  */
-esp_err_t esp_modem_setup_ppp(modem_dte_t *dte);
+esp_err_t esp_modem_start_ppp(modem_dte_t *dte);
 
 /**
  * @brief Exit PPP Session
@@ -130,7 +123,18 @@ esp_err_t esp_modem_setup_ppp(modem_dte_t *dte);
  *      - ESP_OK on success
  *      - ESP_FAIL on error
  */
-esp_err_t esp_modem_exit_ppp(modem_dte_t *dte);
+esp_err_t esp_modem_stop_ppp(modem_dte_t *dte);
+
+/**
+ * @brief Setup on reception callback
+ *
+ * @param dte ESP Modem DTE object
+ * @param receive_cb Function pointer to the reception callback
+ * @param receive_cb_ctx Contextual pointer to be passed to the reception callback
+ *
+ * @return ESP_OK on success
+ */
+esp_err_t esp_modem_set_rx_cb(modem_dte_t *dte, esp_modem_on_receive receive_cb, void *receive_cb_ctx);
 
 #ifdef __cplusplus
 }

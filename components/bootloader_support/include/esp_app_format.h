@@ -19,6 +19,7 @@
  */
 typedef enum {
     ESP_CHIP_ID_ESP32 = 0x0000,  /*!< chip ID: ESP32 */
+    ESP_CHIP_ID_ESP32S2 = 0x0002,  /*!< chip ID: ESP32S2 */
     ESP_CHIP_ID_INVALID = 0xFFFF /*!< Invalid chip ID (we defined it to make sure the esp_chip_id_t is 2 bytes size) */
 } __attribute__((packed)) esp_chip_id_t;
 

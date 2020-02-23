@@ -4,64 +4,76 @@ Get Started
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document is intended to help you set up the software development environment for the hardware based on the ESP32 chip by Espressif.
+This document is intended to help you set up the software development environment for the hardware based on the {IDF_TARGET_NAME} chip by Espressif.
 
-After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then building, and flashing firmware onto an ESP32 board.
+After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then building, and flashing firmware onto an {IDF_TARGET_NAME} board.
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 Introduction
 ============
 
-ESP32 is a system on a chip that integrates the following features:
+.. only:: esp32
 
-* Wi-Fi (2.4 GHz band)
-* Bluetooth 4.2
-* Dual high performance cores
-* Ultra Low Power co-processor
-* Several peripherals
+    {IDF_TARGET_NAME} is a system on a chip that integrates the following features:
 
-Powered by 40 nm technology, ESP32 provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
+    * Wi-Fi (2.4 GHz band)
+    * Bluetooth 4.2
+    * Dual high performance cores
+    * Ultra Low Power co-processor
+    * Several peripherals
 
-Espressif provides basic hardware and software resources to help application developers realize their ideas using the ESP32 series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
+.. only:: esp32s2
+
+    {IDF_TARGET_NAME} is a system on a chip that integrates the following features:
+
+    * Wi-Fi (2.4 GHz band)
+    * Ultra Low Power co-processor
+    * Several peripherals
+
+Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
+
+Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
 
 What You Need
 =============
 
 Hardware:
 
-* An **ESP32** board
+* An **{IDF_TARGET_NAME}** board
 * **USB cable** - USB A / micro USB B
 * **Computer** running Windows, Linux, or macOS
 
 Software:
 
-* **Toolchain** to compile code for ESP32
-* **Build tools** - CMake and Ninja to build a full **Application** for ESP32
-* **ESP-IDF** that essentially contains API (software libraries and source code) for ESP32 and scripts to operate the **Toolchain**
+* **Toolchain** to compile code for {IDF_TARGET_NAME}
+* **Build tools** - CMake and Ninja to build a full **Application** for {IDF_TARGET_NAME}
+* **ESP-IDF** that essentially contains API (software libraries and source code) for {IDF_TARGET_NAME} and scripts to operate the **Toolchain**
 * **Text editor** to write programs (**Projects**) in C, e.g., `Eclipse <https://www.eclipse.org/>`_
 
 
 .. figure:: ../../_static/what-you-need.png
     :align: center
-    :alt: Development of applications for ESP32
+    :alt: Development of applications for {IDF_TARGET_NAME}
     :figclass: align-center
 
-    Development of applications for ESP32
+    Development of applications for {IDF_TARGET_NAME}
 
 
 Development Board Overviews
 ===========================
 
-If you have one of ESP32 development boards listed below, you can click on the link to learn more about its hardware.
+If you have one of {IDF_TARGET_NAME} development boards listed below, you can click on the link to learn more about its hardware.
 
-.. toctree::
-    :maxdepth: 1
+.. only:: esp32
 
-    ESP32-DevKitC <../hw-reference/get-started-devkitc>
-    ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
-    ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
-    ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-DevKitC <../hw-reference/esp32/get-started-devkitc>
+        ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
+        ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
+        ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
 
 
 .. _get-started-step-by-step:
@@ -128,7 +140,7 @@ Some tools need to be installed on the computer before proceeding to the next st
 Step 2. Get ESP-IDF
 ===================
 
-To build applications for the ESP32, you need the software libraries provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
+To build applications for the {IDF_TARGET_NAME}, you need the software libraries provided by Espressif in `ESP-IDF repository <https://github.com/espressif/esp-idf>`_.
 
 To get ESP-IDF, navigate to your installation directory and clone the repository with ``git clone``, following instructions below specific to your operating system.
 
@@ -141,7 +153,7 @@ Linux and macOS
 
 Open Terminal, and run the following commands:
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
@@ -239,7 +251,7 @@ You can also automate this step, making ESP-IDF tools available in every termina
 Step 5. Start a Project
 =======================
 
-Now you are ready to prepare your application for ESP32. You can start with :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
+Now you are ready to prepare your application for {IDF_TARGET_NAME}. You can start with :example:`get-started/hello_world` project from :idf:`examples` directory in IDF.
 
 Copy :example:`get-started/hello_world` to ``~/esp`` directory:
 
@@ -272,9 +284,9 @@ It is also possible to build examples in-place, without copying them first.
 Step 6. Connect Your Device
 ===========================
 
-Now connect your ESP32 board to the computer and check under what serial port the board is visible.
+Now connect your {IDF_TARGET_NAME} board to the computer and check under what serial port the board is visible.
 
-Serial ports have the following patterns in their names: 
+Serial ports have the following patterns in their names:
 
 - **Windows**: names like ``COM1``
 - **Linux**: starting with ``/dev/tty``
@@ -321,6 +333,11 @@ If the previous steps have been done correctly, the following menu appears:
 
     Project configuration - Home window
 
+.. note::
+
+    The colors of the menu could be different in your terminal. You can change the appearance with the option
+    ``--style``. Please run ``idf.py menuconfig --help`` for further information.
+
 To navigate and use ``menuconfig``, press the following keys:
 
 * Arrow keys for navigation
@@ -331,9 +348,11 @@ To navigate and use ``menuconfig``, press the following keys:
 * ``?`` while highlighting a configuration item to display help about that item
 * ``/`` to find configuration items
 
-.. attention::
+.. only:: esp32
 
-    If you use ESP32-DevKitC board with the **ESP32-SOLO-1** module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing examples.
+    .. attention::
+
+        If you use ESP32-DevKitC board with the **ESP32-SOLO-1** module, enable single core mode (:ref:`CONFIG_FREERTOS_UNICORE`) in menuconfig before flashing examples.
 
 .. _get-started-build:
 
@@ -356,12 +375,12 @@ This command will compile the application and all ESP-IDF components, then it wi
    -- Building empty aws_iot component due to configuration
    -- Component names: ...
    -- Component paths: ...
-   
+
    ... (more lines of build system output)
-   
+
    [527/527] Generating hello-world.bin
    esptool.py v2.3.1
-   
+
    Project build complete. To flash, run this command:
    ../../../components/esptool_py/esptool/esptool.py -p (PORT) -b 921600 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x10000 build/hello-world.bin  build 0x1000 build/bootloader/bootloader.bin 0x8000 build/partition_table/partition-table.bin
    or run 'idf.py -p PORT flash'
@@ -374,17 +393,17 @@ If there are no errors, the build will finish by generating the firmware binary 
 Step 9. Flash onto the Device
 =============================
 
-Flash the binaries that you just built onto your ESP32 board by running::
+Flash the binaries that you just built onto your {IDF_TARGET_NAME} board by running::
 
     idf.py -p PORT [-b BAUD] flash
 
-Replace PORT with your ESP32 board's serial port name from :ref:`get-started-connect`.
+Replace PORT with your {IDF_TARGET_NAME} board's serial port name from :ref:`get-started-connect`.
 
 You can also change the flasher baud rate by replacing BAUD with the baud rate you need. The default baud rate is ``460800``.
 
 For more information on idf.py arguments, see :ref:`idf.py`.
 
-.. note:: 
+.. note::
 
     The option ``flash`` automatically builds and flashes the project, so running ``idf.py build`` is not necessary.
 
@@ -395,8 +414,8 @@ For more information on idf.py arguments, see :ref:`idf.py`.
     esptool.py -b 460800 write_flash --flash_mode dio --flash_size detect --flash_freq 40m 0x1000 bootloader/bootloader.bin 0x8000 partition_table/partition-table.bin 0x10000 hello-world.bin
     esptool.py v2.3.1
     Connecting....
-    Detecting chip type... ESP32
-    Chip is ESP32D0WDQ6 (revision 1)
+    Detecting chip type... {IDF_TARGET_NAME}
+    Chip is {IDF_TARGET_NAME}D0WDQ6 (revision 1)
     Features: WiFi, BT, Dual Core
     Uploading stub...
     Running stub...
@@ -415,7 +434,7 @@ For more information on idf.py arguments, see :ref:`idf.py`.
     Compressed 136672 bytes to 67544...
     Wrote 136672 bytes (67544 compressed) at 0x00010000 in 1.9 seconds (effective 567.5 kbit/s)...
     Hash of data verified.
-    
+
     Leaving...
     Hard resetting via RTS pin...
 
@@ -458,19 +477,21 @@ After startup and diagnostic logs scroll up, you should see "Hello world!" print
 
 To exit IDF monitor use the shortcut ``Ctrl+]``.
 
-If IDF monitor fails shortly after the upload, or, if instead of the messages above, you see random garbage similar to what is given below, your board is likely using a 26MHz crystal. Most development board designs use 40MHz, so ESP-IDF uses this frequency as a default value.
+.. only:: esp32
 
-.. figure:: ../../_static/get-started-garbled-output.png
-    :align: center
-    :alt: Garbled output
-    :figclass: align-center
+    If IDF monitor fails shortly after the upload, or, if instead of the messages above, you see random garbage similar to what is given below, your board is likely using a 26MHz crystal. Most development board designs use 40MHz, so ESP-IDF uses this frequency as a default value.
 
-If you have such a problem, do the following:
+    .. figure:: ../../_static/get-started-garbled-output.png
+        :align: center
+        :alt: Garbled output
+        :figclass: align-center
 
-1. Exit the monitor.
-2. Go back to :ref:`menuconfig <get-started-configure>`.
-3. Go to Component config --> ESP32-specific --> Main XTAL frequency, then change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz.
-4. After that, :ref:`build and flash <get-started-flash>` the application again.
+    If you have such a problem, do the following:
+
+    1. Exit the monitor.
+    2. Go back to :ref:`menuconfig <get-started-configure>`.
+    3. Go to Component config --> ESP32-specific --> Main XTAL frequency, then change :ref:`CONFIG_ESP32_XTAL_FREQ_SEL` to 26MHz.
+    4. After that, :ref:`build and flash <get-started-flash>` the application again.
 
 .. note::
 
@@ -508,7 +529,7 @@ Related Documents
     eclipse-setup
     ../api-guides/tools/idf-monitor
     toolchain-setup-scratch
-    ../get-started-legacy/index
+    :esp32: ../get-started-legacy/index
 
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 .. _Releases page: https://github.com/espressif/esp-idf/releases

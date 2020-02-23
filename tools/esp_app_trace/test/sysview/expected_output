@@ -1,8 +1,3 @@
-Parse trace from 'cpu0.svdat'...
-Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
-Parse trace from 'cpu1.svdat'...
-Stop parsing trace. (Timeout 0.000000 sec while reading 1 bytes!)
-Process events from '['cpu0.svdat', 'cpu1.svdat']'...
 EVENT[0]: 0.000000000 - core[0].svTraceStart(10), plen 0: []
 EVENT[1]: 0.000000000 - core[1].svTraceStart(10), plen 0: []
 EVENT[2]: 0.000010950 - core[0].svInit(24), plen 14: [sys_freq: 40000000, cpu_freq: 160000000, ram_base: 1061158912, id_shift: 0]
@@ -217,20 +212,20 @@ EVENT[210]: 0.008906150 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[211]: 0.008919900 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450504, size: 64, callers: [1074601571, 1074296884]]
 [0.008919900] HEAP: Allocated 64 bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:65
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[212]: 0.008928250 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
 EVENT[213]: 0.008957950 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450572, size: 80, callers: [1074298654, 1074299267]]
 [0.008957950] HEAP: Allocated 80 bytes @ 0x3ffb8e4c from task "blink_task" on core 0 by: 
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:498
 
 EVENT[214]: 0.008967250 - core[0].xQueueGenericCreate(47), plen 3: [uxQueueLength: 1, uxItemSize: 0, ucQueueType: 4]
 EVENT[215]: 0.008977300 - core[0].xQueueGenericSend(53), plen 7: [xQueue: 12291660, pvItemToQueue: 0, xTicksToWait: 0, xCopyPosition: 0]
 EVENT[216]: 0.008984625 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450656, size: 65, callers: [1074601382, 1074296884]]
 [0.008984625] HEAP: Allocated 65 bytes @ 0x3ffb8ea0 from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:30
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[217]: 0.008995725 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
 EVENT[218]: 0.009010075 - core[1].svIsrEnter(2), plen 0: [irq_num: 5]
@@ -238,8 +233,8 @@ EVENT[219]: 0.009018025 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[220]: 0.009031900 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
 EVENT[221]: 0.009089600 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073434644, size: 80, callers: [1074298654, 1074299267]]
 [0.009089600] HEAP: Allocated 80 bytes @ 0x3ffb5014 from task "blink_task" on core 0 by: 
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:498
 
 EVENT[222]: 0.009098175 - core[1].svTaskStopReady(7), plen 0: [tid: 12294320, cause: 27]
 EVENT[223]: 0.009106300 - core[0].xQueueGenericCreate(47), plen 3: [uxQueueLength: 1, uxItemSize: 0, ucQueueType: 4]
@@ -257,7 +252,7 @@ EVENT[234]: 0.009215575 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[235]: 0.009223275 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073434728, size: 96, callers: [1074601587, 1074296884]]
 [0.009223275] HEAP: Allocated 96 bytes @ 0x3ffb5068 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:68
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[236]: 0.009231050 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
 EVENT[237]: 0.009241875 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -274,7 +269,7 @@ EVENT[247]: 0.009351425 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
 EVENT[248]: 0.009359450 - core[0].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450504, callers: [1074601600, 1074296884]]
 [0.009359450] HEAP: Freed bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:70
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[249]: 0.009367800 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[250]: 0.009378950 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -293,7 +288,7 @@ EVENT[262]: 0.009499475 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[263]: 0.009507600 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450504, size: 10, callers: [1074601615, 1074296884]]
 [0.009507600] HEAP: Allocated 10 bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:72
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[264]: 0.009515300 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
 EVENT[265]: 0.009526100 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -311,7 +306,7 @@ EVENT[276]: 0.009642300 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[277]: 0.009649475 - core[0].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450520, size: 23, callers: [1074601628, 1074296884]]
 [0.009649475] HEAP: Allocated 23 bytes @ 0x3ffb8e18 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:73
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[278]: 0.009657875 - core[1].svTaskStartExec(4), plen 0: [tid: 12294320]
 EVENT[279]: 0.009666025 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -328,7 +323,7 @@ EVENT[289]: 0.010542400 - core[1].svIsrEnter(2), plen 0: [irq_num: 31]
 EVENT[290]: 0.010550025 - core[0].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450520, callers: [1074601643, 1074296884]]
 [0.010550025] HEAP: Freed bytes @ 0x3ffb8e18 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:76
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[291]: 0.010557450 - core[1].svExitIsrToScheduler(18), plen 0: []
 EVENT[292]: 0.010569700 - core[0].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -356,7 +351,7 @@ EVENT[313]: 0.014963325 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 122916
 EVENT[314]: 0.014984150 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073434828, size: 97, callers: [1074601399, 1074296884]]
 [0.014984150] HEAP: Allocated 97 bytes @ 0x3ffb50cc from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:33
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[315]: 0.014997400 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
 EVENT[316]: 0.015031050 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -365,7 +360,7 @@ EVENT[318]: 0.017638675 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 122916
 EVENT[319]: 0.017656375 - core[1].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450656, callers: [1074601412, 1074296884]]
 [0.017656375] HEAP: Freed bytes @ 0x3ffb8ea0 from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:35
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[320]: 0.017674025 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
 EVENT[321]: 0.017701700 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -380,7 +375,7 @@ EVENT[329]: 0.019374600 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 122916
 EVENT[330]: 0.019395425 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450520, size: 11, callers: [1074601427, 1074296884]]
 [0.019395425] HEAP: Allocated 11 bytes @ 0x3ffb8e18 from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:37
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[331]: 0.019412600 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
 EVENT[332]: 0.019446250 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -389,7 +384,7 @@ EVENT[334]: 0.022065775 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 122916
 EVENT[335]: 0.022086625 - core[1].esp_sysview_heap_trace_alloc(512), plen 16: [addr: 1073450536, size: 24, callers: [1074601440, 1074296884]]
 [0.022086625] HEAP: Allocated 24 bytes @ 0x3ffb8e28 from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:38
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[336]: 0.022103925 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
 EVENT[337]: 0.022137550 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -398,7 +393,7 @@ EVENT[339]: 0.024756725 - core[1].xQueueGenericSend(53), plen 7: [xQueue: 122916
 EVENT[340]: 0.024770475 - core[1].esp_sysview_heap_trace_free(513), plen 15: [addr: 1073450536, callers: [1074601455, 1074296884]]
 [0.024770475] HEAP: Freed bytes @ 0x3ffb8e28 from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:41
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 EVENT[341]: 0.024791750 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12291660, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
 EVENT[342]: 0.024819500 - core[1].xQueueGenericReceive(49), plen 15: [xQueue: 12275732, pvBuffer: 3233808384, xTicksToWait: 4294967295, xJustPeek: 0]
@@ -417,34 +412,33 @@ EVENT[354]: 0.148825750 - core[0].vTaskDelay(34), plen 1: [xTicksToDelay: 1]
 EVENT[355]: 0.148833200 - core[0].svTaskStopReady(7), plen 0: [tid: 12291908, cause: 4]
 EVENT[356]: 0.148839250 - core[0].svTraceStop(11), plen 0: []
 EVENT[357]: 0.148839250 - core[1].svTraceStop(11), plen 0: []
-Processing completed.
 Processed 358 events
 =============== LOG TRACE REPORT ===============
 Processed 0 log messages.
 =============== HEAP TRACE REPORT ===============
 Processed 14 heap events.
 [0.008957950] HEAP: Allocated 80 bytes @ 0x3ffb8e4c from task "blink_task" on core 0 by: 
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:498
 
 [0.009089600] HEAP: Allocated 80 bytes @ 0x3ffb5014 from task "blink_task" on core 0 by: 
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
-/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:2037
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:391
+/home/alexey/projects/esp/esp-idf/components/freertos/queue.c:498
 
 [0.009223275] HEAP: Allocated 96 bytes @ 0x3ffb5068 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:68
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 [0.009507600] HEAP: Allocated 10 bytes @ 0x3ffb8e08 from task "blink_task" on core 0 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:72
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 [0.014984150] HEAP: Allocated 97 bytes @ 0x3ffb50cc from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:33
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 [0.019395425] HEAP: Allocated 11 bytes @ 0x3ffb8e18 from task "blink_task2" on core 1 by: 
 /home/alexey/projects/esp/esp-idf/examples/get-started/blink/main/blink.c:37
-/home/alexey/projects/esp/esp-idf/components/freertos/port.c:355 (discriminator 1)
+/home/alexey/projects/esp/esp-idf/components/freertos/port.c:145
 
 Found 374 leaked bytes in 6 blocks.

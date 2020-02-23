@@ -22,13 +22,14 @@
 #include "esp_vfs.h"
 #include "esp_vfs_dev.h"
 #include "esp_attr.h"
+#include "soc/uart_periph.h"
 #include "driver/uart.h"
 #include "sdkconfig.h"
 #include "driver/uart_select.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/uart.h"
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-#include "esp32s2beta/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
 #endif
 
 // TODO: make the number of UARTs chip dependent
@@ -161,7 +162,7 @@ static void uart_tx_char(int fd, int c)
     }
 #if CONFIG_IDF_TARGET_ESP32
     uart->fifo.rw_byte = c;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
+#elif CONFIG_IDF_TARGET_ESP32S2
     uart->ahb_fifo.rw_byte = c;
 #endif
 }
@@ -180,8 +181,8 @@ static int uart_rx_char(int fd)
     }
 #if CONFIG_IDF_TARGET_ESP32
     return uart->fifo.rw_byte;
-#elif CONFIG_IDF_TARGET_ESP32S2BETA
-    return uart->ahb_fifo.rw_byte;
+#elif CONFIG_IDF_TARGET_ESP32S2
+    return READ_PERI_REG(UART_FIFO_AHB_REG(fd));
 #endif
 }
 
@@ -431,6 +432,14 @@ static esp_err_t uart_start_select(int nfds, fd_set *readfds, fd_set *writefds, 
 {
     const int max_fds = MIN(nfds, UART_NUM);
     *end_select_args = NULL;
+
+    for (int i = 0; i < max_fds; ++i) {
+        if (FD_ISSET(i, readfds) || FD_ISSET(i, writefds) || FD_ISSET(i, exceptfds)) {
+            if (!uart_is_driver_installed(i)) {
+                return ESP_ERR_INVALID_STATE;
+            }
+        }
+    }
 
     uart_select_args_t *args = malloc(sizeof(uart_select_args_t));
 

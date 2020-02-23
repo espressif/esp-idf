@@ -1,10 +1,11 @@
 name: Sync issue comments to JIRA
 
+# This workflow will be triggered when new issue comment is created (including PR comments)
 on: issue_comment
 
 jobs:
-  syncToJIRA:
-    name: Sync to JIRA
+  sync_issue_comments_to_jira:
+    name: Sync Issue Comments to Jira
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master

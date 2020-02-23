@@ -105,7 +105,7 @@ typedef UINT8   tBTM_BLE_SFP;
 #endif
 
 /* adv parameter boundary values */
-#define BTM_BLE_ADV_INT_MIN            0x0020
+#define BTM_BLE_ADV_INT_MIN            0x0010
 #define BTM_BLE_ADV_INT_MAX            0x4000
 
 /* Full scan boundary values */
@@ -448,7 +448,7 @@ typedef struct {
 
 typedef struct {
     tBTM_BLE_INT_RANGE      int_range;      /* slave prefered conn interval range */
-    tBTM_BLE_MANU           *p_manu;           /* manufactuer data */
+    tBTM_BLE_MANU           *p_manu;           /* manufacturer data */
     tBTM_BLE_SERVICE        *p_services;       /* services */
     tBTM_BLE_128SERVICE     *p_services_128b;  /* 128 bits service */
     tBTM_BLE_32SERVICE      *p_service_32b;     /* 32 bits Service UUID */
@@ -732,10 +732,10 @@ typedef struct {
 
 typedef union {
     tBLE_BD_ADDR                            target_addr;
-    tBTM_BLE_PF_LOCAL_NAME_COND             local_name; /* lcoal name filtering */
-    tBTM_BLE_PF_MANU_COND                   manu_data;  /* manufactuer data filtering */
+    tBTM_BLE_PF_LOCAL_NAME_COND             local_name; /* local name filtering */
+    tBTM_BLE_PF_MANU_COND                   manu_data;  /* manufacturer data filtering */
     tBTM_BLE_PF_UUID_COND                   srvc_uuid;  /* service UUID filtering */
-    tBTM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicitated service UUID filtering */
+    tBTM_BLE_PF_UUID_COND                   solicitate_uuid;   /* solicited service UUID filtering */
     tBTM_BLE_PF_SRVC_PATTERN_COND           srvc_data;      /* service data pattern */
 } tBTM_BLE_PF_COND_PARAM;
 
@@ -1052,9 +1052,9 @@ void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
 **
 ** Function         BTM_BleObtainVendorCapabilities
 **
-** Description      This function is called to obatin vendor capabilties
+** Description      This function is called to obtain vendor capabilities
 **
-** Parameters       p_cmn_vsc_cb - Returns the vednor capabilities
+** Parameters       p_cmn_vsc_cb - Returns the vendor capabilities
 **
 ** Returns          void
 **
@@ -1720,6 +1720,20 @@ void BTM_BleConfigLocalIcon(uint16_t icon);
 
 /*******************************************************************************
 **
+** Function         BTM_BleConfigConnParams
+**
+** Description      This function is called to set the connection parameters
+**
+** Parameters       int_min:  minimum connection interval
+**                  int_max:  maximum connection interval
+**                  latency:  slave latency
+**                  timeout:  supervision timeout
+**
+*******************************************************************************/
+void BTM_BleConfigConnParams(uint16_t int_min, uint16_t int_max, uint16_t latency, uint16_t timeout);
+
+/*******************************************************************************
+**
 ** Function         BTM_BleLocalPrivacyEnabled
 **
 ** Description        Checks if local device supports private address
@@ -2104,8 +2118,8 @@ tBTM_STATUS BTM_UpdateBleDuplicateExceptionalList(uint8_t subcode, uint32_t type
 **
 ** Function         BTM_GetCurrentConnParams
 **
-** Description      This function is called to read the current connection parameters 
-**                  of the device 
+** Description      This function is called to read the current connection parameters
+**                  of the device
 **
 ** Returns          TRUE or FALSE
 **

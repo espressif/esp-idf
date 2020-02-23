@@ -4,6 +4,7 @@
   image: $CI_DOCKER_REGISTRY/esp32-ci-env
   tags:
     - deploy
+    - shiny
   script:
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -55,7 +56,6 @@ push_to_github:
     - master
     - /^release\/v/
     - /^v\d+\.\d+(\.\d+)?($|-)/
-    - feature/esp32s2beta
   when: on_success
   dependencies: []
   extends: .before_script_lesser
@@ -70,11 +70,21 @@ push_to_github:
     - git remote add github git@github.com:espressif/esp-idf.git
     - tools/ci/push_to_github.sh
 
+.upload_doc_archive: &upload_doc_archive |
+  cd docs/_build/$DOCLANG/$DOCTGT
+  mv html $GIT_VER
+  tar czf $GIT_VER.tar.gz $GIT_VER
+  ssh $DOCS_SERVER -x "mkdir -p $DOCS_PATH/$DOCLANG/$DOCTGT"
+  scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/$DOCLANG/$DOCTGT
+  ssh $DOCS_SERVER -x "cd $DOCS_PATH/$DOCLANG/$DOCTGT && tar xzf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+  cd -
+
 deploy_docs:
   stage: deploy
   image: $CI_DOCKER_REGISTRY/esp32-ci-env$BOT_DOCKER_IMAGE_TAG
   tags:
     - deploy
+    - shiny
   only:
     refs:
       - master
@@ -85,7 +95,10 @@ deploy_docs:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD_DOCS
   dependencies:
-    - build_docs
+    - build_docs_en_esp32
+    - build_docs_en_esp32s2
+    - build_docs_zh_CN_esp32
+    - build_docs_zh_CN_esp32s2
   extends: .before_script_lesser
   script:
     - mkdir -p ~/.ssh
@@ -95,19 +108,24 @@ deploy_docs:
     - chmod 600 ~/.ssh/id_rsa
     - echo -e "Host $DOCS_SERVER\n\tStrictHostKeyChecking no\n\tUser $DOCS_SERVER_USER\n" >> ~/.ssh/config
     - export GIT_VER=$(git describe --always)
-    - cd docs/en/_build/
-    - mv html $GIT_VER
-    - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/en
-    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/en && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
-    - cd ../../zh_CN/_build/
-    - mv html $GIT_VER
-    - tar czvf $GIT_VER.tar.gz $GIT_VER
-    - scp $GIT_VER.tar.gz $DOCS_SERVER:$DOCS_PATH/zh_CN
-    - ssh $DOCS_SERVER -x "cd $DOCS_PATH/zh_CN && tar xzvf $GIT_VER.tar.gz && rm -f latest && ln -s $GIT_VER latest"
+
+    - DOCLANG=en; DOCTGT=esp32
+    - *upload_doc_archive
+
+    - DOCLANG=en; DOCTGT=esp32s2
+    - *upload_doc_archive
+
+    - DOCLANG=zh_CN; DOCTGT=esp32
+    - *upload_doc_archive
+
+    - DOCLANG=zh_CN; DOCTGT=esp32s2
+    - *upload_doc_archive
+
     # add link to preview doc
-    - echo "[document preview][en] $CI_DOCKER_REGISTRY/docs/esp-idf/en/${GIT_VER}/index.html"
-    - echo "[document preview][zh_CN] $CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/${GIT_VER}/index.html"
+    - echo "[document preview][en][esp32] https://$CI_DOCKER_REGISTRY/docs/esp-idf/en/esp32/${GIT_VER}/index.html"
+    - echo "[document preview][en][esp32s2] https://$CI_DOCKER_REGISTRY/docs/esp-idf/en/esp32s2/${GIT_VER}/index.html"
+    - echo "[document preview][zh_CN][esp32] https://$CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/esp32/${GIT_VER}/index.html"
+    - echo "[document preview][zh_CN][esp32s2] https://$CI_DOCKER_REGISTRY/docs/esp-idf/zh_CN/esp32s2/${GIT_VER}/index.html"
 
 deploy_test_result:
   stage: deploy

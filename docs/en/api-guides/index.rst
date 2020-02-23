@@ -6,15 +6,15 @@ API Guides
     :maxdepth: 1
 
     Application Level Tracing <app_trace>
-    BluFi <blufi>
+    :esp32: BluFi <blufi>
     Bootloader <bootloader>
     Build System <build-system>
-    Build System (Legacy GNU Make) <build-system-legacy>
-    Console Component <console>
+    :esp32: Build System (Legacy GNU Make) <build-system-legacy>
     Deep Sleep Wake Stubs <deep-sleep-stub>
     Error Handling <error-handling>
-    ESP-MESH <mesh>
-    ESP32 Core Dump <core_dump>
+    :esp32: ESP-BLE-MESH <esp-ble-mesh/ble-mesh-index>
+    ESP-MESH (Wi-Fi) <mesh>
+    Core Dump <core_dump>
     Event Handling <event-handling>
     External SPI-connected RAM <external-ram>
     Fatal Errors <fatal-errors>
@@ -24,15 +24,15 @@ API Guides
     High Level Interrupts <hlinterrupts>
     JTAG Debugging <jtag-debugging/index>
     Linker Script Generation <linker-script-generation>
+    lwIP TCP/IP Stack <lwip>
     Partition Tables <partition-tables>
-    RF Calibration <RF_calibration>
+    :esp32: RF Calibration <RF_calibration>
     ROM debug console <romconsole>
     Secure Boot <../security/secure-boot>
     Thread Local Storage <thread-local-storage>
     Tools <tools/index>
-    ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
     ULP Coprocessor <ulp>
-    Unit Testing (Legacy GNU Make) <unit-tests-legacy>
+    :esp32: ULP Coprocessor (Legacy GNU Make) <ulp-legacy>
     Unit Testing <unit-tests>
-    LwIP <lwip>
+    :esp32: Unit Testing (Legacy GNU Make) <unit-tests-legacy>
     WiFi Driver <wifi>

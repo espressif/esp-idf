@@ -36,10 +36,8 @@
 extern BOOL xMBMasterPortSerialTxPoll(void);
 
 /*-----------------------Master mode use these variables----------------------*/
+#define MB_RESPONSE_TICS pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND)
 
-// The response time is average processing time + data transmission (higher on lower speeds)
-// ~resp_time_ms = min_pcocessing_time_ms + ((2 packets * (header_size + packet_bytes)) * 11 bits in byte * 1000 ms_in_sec) / transmit_speed))
-#define MB_RESPONSE_TIMEOUT(size) pdMS_TO_TICKS(30 + (2 * ((size << 1) + 8) * 11 * 1000 / mb_speed))
 
 static mb_master_interface_t* mbm_interface_ptr = NULL; //&default_interface_inst;
 
@@ -64,7 +62,7 @@ static void modbus_master_task(void *pvParameters)
             BOOL xSentState = xMBMasterPortSerialTxPoll();
             if (xSentState) {
                 // Let state machine know that response was transmitted out
-                (void)xMBMasterPortEventPost(EV_MASTER_FRAME_TRANSMITTED);
+                (void)xMBMasterPortEventPost(EV_MASTER_FRAME_SENT);
             }
         }
     }
@@ -140,6 +138,7 @@ static esp_err_t mbc_serial_master_destroy(void)
     MB_MASTER_CHECK((mb_error == MB_ENOERR), ESP_ERR_INVALID_STATE,
             "mb stack close failure returned (0x%x).", (uint32_t)mb_error);
     free(mbm_interface_ptr); // free the memory allocated for options
+    mbm_interface_ptr = NULL;
     return ESP_OK;
 }
 
@@ -187,11 +186,6 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
     uint8_t mb_command = request->command;
     uint16_t mb_offset = request->reg_start;
     uint16_t mb_size = request->reg_size;
-    uint32_t mb_speed = mbm_opts->mbm_comm.baudrate;
-
-    // Timeout value for packet processing
-    uint32_t timeout = 0;
-    size_t pack_length = 0;
 
     // Set the buffer for callback function processing of received data
     mbm_opts->mbm_reg_buffer_ptr = (uint8_t*)data_ptr;
@@ -201,56 +195,44 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
     switch(mb_command)
     {
         case MB_FUNC_READ_COILS:
-            pack_length = (mb_size >= 8) ? (mb_size >> 3) : 1;
-            timeout = MB_RESPONSE_TIMEOUT(pack_length);
             mb_error = eMBMasterReqReadCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                               (USHORT)mb_size , (LONG)timeout );
+                                               (USHORT)mb_size , (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_WRITE_SINGLE_COIL:
-            timeout = MB_RESPONSE_TIMEOUT(1);
             mb_error = eMBMasterReqWriteCoil((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                *(USHORT*)data_ptr, (LONG)timeout );
+                                                *(USHORT*)data_ptr, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_WRITE_MULTIPLE_COILS:
-            pack_length = (mb_size >= 8) ? (mb_size >> 3) : 1;
-            timeout = MB_RESPONSE_TIMEOUT(pack_length);
             mb_error = eMBMasterReqWriteMultipleCoils((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            (USHORT)mb_size, (UCHAR*)data_ptr, (LONG)timeout);
+                                                            (USHORT)mb_size, (UCHAR*)data_ptr, (LONG)MB_RESPONSE_TICS);
             break;
         case MB_FUNC_READ_DISCRETE_INPUTS:
-            pack_length = (mb_size >= 8) ? (mb_size >> 3) : 1;
-            timeout = MB_RESPONSE_TIMEOUT(pack_length);
             mb_error = eMBMasterReqReadDiscreteInputs((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                        (USHORT)mb_size, (LONG)timeout );
+                                                        (USHORT)mb_size, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_READ_HOLDING_REGISTER:
-            timeout = MB_RESPONSE_TIMEOUT(mb_size);
             mb_error = eMBMasterReqReadHoldingRegister((UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            (USHORT)mb_size, (LONG)timeout );
+                                                            (USHORT)mb_size, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_WRITE_REGISTER:
-            timeout = MB_RESPONSE_TIMEOUT(1);
             mb_error = eMBMasterReqWriteHoldingRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                            *(USHORT*)data_ptr, (LONG)timeout );
+                                                            *(USHORT*)data_ptr, (LONG)MB_RESPONSE_TICS );
             break;
 
         case MB_FUNC_WRITE_MULTIPLE_REGISTERS:
-            timeout = MB_RESPONSE_TIMEOUT(mb_size);
             mb_error = eMBMasterReqWriteMultipleHoldingRegister( (UCHAR)mb_slave_addr,
                                                                     (USHORT)mb_offset, (USHORT)mb_size,
-                                                                    (USHORT*)data_ptr, (LONG)timeout );
+                                                                    (USHORT*)data_ptr, (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_READWRITE_MULTIPLE_REGISTERS:
-            timeout = MB_RESPONSE_TIMEOUT(mb_size << 1);
             mb_error = eMBMasterReqReadWriteMultipleHoldingRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
                                                                        (USHORT)mb_size, (USHORT*)data_ptr,
                                                                        (USHORT)mb_offset, (USHORT)mb_size,
-                                                                       (LONG)timeout );
+                                                                       (LONG)MB_RESPONSE_TICS );
             break;
         case MB_FUNC_READ_INPUT_REGISTER:
-            timeout = MB_RESPONSE_TIMEOUT(mb_size);
             mb_error = eMBMasterReqReadInputRegister( (UCHAR)mb_slave_addr, (USHORT)mb_offset,
-                                                        (USHORT)mb_size, (LONG) timeout );
+                                                        (USHORT)mb_size, (LONG) MB_RESPONSE_TICS );
             break;
         default:
             ESP_LOGE(MB_MASTER_TAG, "%s: Incorrect function in request (%u) ",
@@ -267,18 +249,25 @@ static esp_err_t mbc_serial_master_send_request(mb_param_request_t* request, voi
             break;
 
         case MB_MRE_NO_REG:
-            error = ESP_ERR_NOT_SUPPORTED;
+            error = ESP_ERR_NOT_SUPPORTED; // Invalid register request
             break;
 
         case MB_MRE_TIMEDOUT:
-            error = ESP_ERR_TIMEOUT;
+            error = ESP_ERR_TIMEOUT; // Slave did not send response
             break;
 
         case MB_MRE_EXE_FUN:
         case MB_MRE_REV_DATA:
-            error = ESP_ERR_INVALID_RESPONSE;
+            error = ESP_ERR_INVALID_RESPONSE; // Invalid response from slave
             break;
+
+        case MB_MRE_MASTER_BUSY:
+            error = ESP_ERR_INVALID_STATE; // Master is busy (previous request is pending)
+            break;
+
         default:
+            ESP_LOGE(MB_MASTER_TAG, "%s: Incorrect return code (%x) ",
+                                                                __FUNCTION__, mb_error);
             error = ESP_FAIL;
             break;
     }

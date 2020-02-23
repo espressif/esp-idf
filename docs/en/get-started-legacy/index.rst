@@ -10,7 +10,7 @@ This document is intended to help you set up the software development environmen
 
 After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then how to build and flash firmware onto an ESP32 board.
 
-.. include:: /_build/inc/version-note.inc
+.. include-build-file:: inc/version-note.inc
 
 Introduction
 ============
@@ -59,10 +59,10 @@ If you have one of ESP32 development boards listed below, you can click on the l
 .. toctree::
     :maxdepth: 1
 
-    ESP32-DevKitC <../hw-reference/get-started-devkitc>
-    ESP-WROVER-KIT <../hw-reference/get-started-wrover-kit>
-    ESP32-PICO-KIT <../hw-reference/get-started-pico-kit>
-    ESP32-Ethernet-Kit <../hw-reference/get-started-ethernet-kit>
+    ESP32-DevKitC <../hw-reference/esp32/get-started-devkitc>
+    ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
+    ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
+    ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
 
 .. _get-started-step-by-step-legacy:
 
@@ -96,7 +96,7 @@ Step 1. Set up the Toolchain
 
 The toolchain is a set of programs for compiling code and building applications.
 
-The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow the provided instructions. 
+The quickest way to start development with ESP32 is by installing a prebuilt toolchain. Pick up your OS below and follow the provided instructions.
 
 .. toctree::
     :hidden:
@@ -142,13 +142,13 @@ To get a local copy of ESP-IDF, navigate to your installation directory and clon
 
 Open Terminal, and run the following commands:
 
-.. include:: /_build/inc/git-clone-bash.inc
+.. include-build-file:: inc/git-clone-bash.inc
 
 ESP-IDF will be downloaded into ``~/esp/esp-idf``.
 
 Consult :doc:`/versions` for information about which ESP-IDF version to use in a given situation.
 
-.. include:: /_build/inc/git-clone-notes.inc
+.. include-build-file:: inc/git-clone-notes.inc
 
 .. note::
 
@@ -179,7 +179,7 @@ The python packages required by ESP-IDF are located in ``IDF_PATH/requirements.t
 
 .. note::
 
-    Please check the version of the Python interpreter that you will be using with ESP-IDF. For this, run 
+    Please check the version of the Python interpreter that you will be using with ESP-IDF. For this, run
     the command ``python --version`` and depending on the result, you might want to use ``python2``, ``python2.7``
     or similar instead of just ``python``, e.g.::
 
@@ -226,7 +226,7 @@ Step 6. Connect Your Device
 
 Now connect your ESP32 board to the computer and check under what serial port the board is visible.
 
-Serial ports have the following patterns in their names: 
+Serial ports have the following patterns in their names:
 
 - **Windows**: names like ``COM1``
 - **Linux**: starting with ``/dev/tty``
@@ -421,9 +421,9 @@ Some environment variables can be specified whilst calling ``make`` allowing use
 +-----------------+--------------------------------------------------------------+
 
 .. note::
-    
+
     You can export environment variables (e.g. ``export ESPPORT=/dev/ttyUSB1``).
-    All subsequent calls of ``make`` within the same terminal session will use 
+    All subsequent calls of ``make`` within the same terminal session will use
     the exported value given that the variable is not simultaneously overridden.
 
 

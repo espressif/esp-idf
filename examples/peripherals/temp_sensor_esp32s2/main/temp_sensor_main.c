@@ -14,7 +14,7 @@
 
 /* Note: ESP32 don't support temperature sensor */
 
-#if CONFIG_IDF_TARGET_ESP32S2BETA
+#if CONFIG_IDF_TARGET_ESP32S2
 #include "temp_sensor.h"
 
 static const char *TAG = "TempSensor";

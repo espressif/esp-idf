@@ -6,22 +6,30 @@ Controller Area Network (CAN)
 Overview
 --------
 
-The ESP32's peripherals contains a CAN Controller that supports Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID) of the CAN2.0B specification.
+.. only:: esp32s2
 
-.. warning::
-    The ESP32 CAN controller is not compatible with CAN FD frames and will interpret such frames as errors.
+    .. note::
 
-This programming guide is split into the following sections:
+        The CAN driver is not updated for {IDF_TARGET_NAME} and is temporarily disabled.
 
-    1. :ref:`basic-can-concepts`
+.. only:: esp32
 
-    2. :ref:`signals-lines-and-transceiver`
+    The {IDF_TARGET_NAME}'s peripherals contains a CAN Controller that supports Standard Frame Format (11-bit ID) and Extended Frame Format (29-bit ID) of the CAN2.0B specification.
 
-    3. :ref:`configuration`
+    .. warning::
+        The {IDF_TARGET_NAME} CAN controller is not compatible with CAN FD frames and will interpret such frames as errors.
 
-    4. :ref:`driver-operation`
+    This programming guide is split into the following sections:
 
-    5. :ref:`examples`
+        1. :ref:`basic-can-concepts`
+
+        2. :ref:`signals-lines-and-transceiver`
+
+        3. :ref:`configuration`
+
+        4. :ref:`driver-operation`
+
+        5. :ref:`examples`
 
 
 .. --------------------------- Basic CAN Concepts ------------------------------
@@ -168,7 +176,11 @@ The operating bit rate of the CAN controller is configured using the :cpp:type:`
     2. **Timing Segment 1** consists of 1 to 16 time quanta before sample point
     3. **Timing Segment 2** consists of 1 to 8 time quanta after sample point
 
-The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the CAN controller's source clock (80 MHz APB clock). The ``brp`` can be **any even number from 2 to 128**. If the ESP32 is a revision 2 or later chip, the ``brp`` will also support **any multiple of 4 from 132 to 256**, and can be enabled by setting the :ref:`CONFIG_ESP32_REV_MIN` to revision 2 or higher.
+The **Baudrate Prescaler** is used to determine the period of each time quanta by dividing the CAN controller's source clock (80 MHz APB clock). The ``brp`` can be **any even number from 2 to 128**.
+
+.. only:: esp32
+
+    If the ESP32 is a revision 2 or later chip, the ``brp`` will also support **any multiple of 4 from 132 to 256**, and can be enabled by setting the :ref:`CONFIG_ESP32_REV_MIN` to revision 2 or higher.
 
 .. packetdiag:: ../../../_static/diagrams/can/can_bit_timing.diag
     :caption: Bit timing configuration for 500kbit/s given BRP = 8
@@ -195,9 +207,11 @@ Bit timing **macro initializers** are also available for commonly used CAN bus b
     - ``CAN_TIMING_CONFIG_800KBITS()``
     - ``CAN_TIMING_CONFIG_1MBITS()``
 
-.. note::
-    The macro initializers for 12.5K, 16K, and 20K bit rates are only available
-    for ESP32 revision 2 or later.
+.. only::esp32
+
+    .. note::
+        The macro initializers for 12.5K, 16K, and 20K bit rates are only available
+        for ESP32 revision 2 or later.
 
 Acceptance Filter
 ^^^^^^^^^^^^^^^^^
@@ -273,7 +287,7 @@ Driver States
 Message Flags
 ^^^^^^^^^^^^^
 
-The CAN driver distinguishes different types of CAN messages by using the message flags in the ``flags`` field of :cpp:type:`can_message_t`. These flags help distinguish whether a message is in standard or extended format, an RTR, and the type of transmission to use when transmitting such a message. The CAN driver supports the following flags:
+The CAN driver distinguishes different types of CAN messages by using the various bit field members of the :cpp:type:`can_message_t` structure. These bit field members help distinguish whether a message is in standard or extended format, an RTR, and the type of transmission to use when transmitting such a message. These bit field members can also be toggled using the the `flags` member of :cpp:type:`can_message_t` and the following message flags:
 
 +-------------------------------+----------------------------------------------+
 | Flag                          |  Description                                 |
@@ -286,19 +300,19 @@ The CAN driver distinguishes different types of CAN messages by using the messag
 | ``CAN_MSG_FLAG_SS``           | Transmit message using Single Shot           |
 |                               | Transmission (Message will not be            |
 |                               | retransmitted upon error or loss of          |
-|                               | arbitration)                                 |
+|                               | arbitration). Unused for received message.   |
 +-------------------------------+----------------------------------------------+
 | ``CAN_MSG_FLAG_SELF``         | Transmit message using Self Reception        |
 |                               | Request (Transmitted message will also       |
-|                               | received by the same node)                   |
+|                               | received by the same node). Unused for       |
+|                               | received message.                            |
 +-------------------------------+----------------------------------------------+
 | ``CAN_MSG_FLAG_DLC_NON_COMP`` | Message's Data length code is larger than 8. |
 |                               | This will break compliance with CAN2.0B      |
 +-------------------------------+----------------------------------------------+
-
-.. note::
-    The ``CAN_MSG_FLAG_NONE`` flag can be used for Standard Frame Format messages
-
+| ``CAN_MSG_FLAG_NONE``         | Clears all bit fields. Equivalent to a       |
+|                               | Standard Frame Format (11bit ID) Data Frame. |
++-------------------------------+----------------------------------------------+
 
 .. -------------------------------- Examples -----------------------------------
 
@@ -360,7 +374,7 @@ The following code snippet demonstrates how to transmit a message via the usage 
     //Configure message to transmit
     can_message_t message;
     message.identifier = 0xAAAA;
-    message.flags = CAN_MSG_FLAG_EXTD;
+    message.extd = 1;
     message.data_length_code = 4;
     for (int i = 0; i < 4; i++) {
         message.data[i] = 0;
@@ -394,13 +408,13 @@ The following code snippet demonstrates how to receive a message via the usage o
     }
 
     //Process received message
-    if (message.flags & CAN_MSG_FLAG_EXTD) {
+    if (message.extd) {
         printf("Message is in Extended Format\n");
     } else {
         printf("Message is in Standard Format\n");
     }
     printf("ID is %d\n", message.identifier);
-    if (!(message.flags & CAN_MSG_FLAG_RTR)) {
+    if (!(message.rtr)) {
         for (int i = 0; i < message.data_length_code; i++) {
             printf("Data byte %d = %d\n", i, message.data[i]);
         }
@@ -473,7 +487,7 @@ The following example shows how the calculate the acceptance mask given multiple
 Application Examples
 ^^^^^^^^^^^^^^^^^^^^
 
-**Network Example:** The CAN Network example demonstrates communication between two ESP32s using the CAN driver API. One CAN node acts as a network master initiate and ceasing the transfer of a data from another CAN node acting as a network slave. The example can be found via :example:`peripherals/can/can_network`.
+**Network Example:** The CAN Network example demonstrates communication between two {IDF_TARGET_NAME}s using the CAN driver API. One CAN node acts as a network master initiate and ceasing the transfer of a data from another CAN node acting as a network slave. The example can be found via :example:`peripherals/can/can_network`.
 
 **Alert and Recovery Example:** This example demonstrates how to use the CAN driver's alert and bus recovery API. The example purposely introduces errors on the CAN bus to put the CAN controller into the Bus-Off state. An alert is used to detect the Bus-Off state and trigger the bus recovery process. The example can be found via :example:`peripherals/can/can_alert_and_recovery`.
 
@@ -485,4 +499,5 @@ Application Examples
 API Reference
 -------------
 
-.. include:: /_build/inc/can.inc
+.. include-build-file:: inc/can_types.inc
+.. include-build-file:: inc/can.inc

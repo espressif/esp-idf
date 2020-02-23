@@ -18,7 +18,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <esp_err.h>
-#include "esp_spi_flash.h"
 
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 0x10000
