@@ -172,6 +172,9 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             hd->hd_calls[i]->method   = uri_handler->method;
             hd->hd_calls[i]->handler  = uri_handler->handler;
             hd->hd_calls[i]->user_ctx = uri_handler->user_ctx;
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
+#endif
             ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
             return ESP_OK;
         }
