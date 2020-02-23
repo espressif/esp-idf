@@ -172,6 +172,17 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             hd->hd_calls[i]->method   = uri_handler->method;
             hd->hd_calls[i]->handler  = uri_handler->handler;
             hd->hd_calls[i]->user_ctx = uri_handler->user_ctx;
+#ifdef CONFIG_HTTPD_AUTH_SUPPORT
+			hd->hd_calls[i]->UserPassFn = uri_handler->UserPassFn;
+			hd->hd_calls[i]->UserAuthFn = uri_handler->UserAuthFn;
+			hd->hd_calls[i]->AuthType = uri_handler->AuthType;
+			hd->hd_calls[i]->auth_realm = strdup(uri_handler->auth_realm);
+			if (hd->hd_calls[i]->auth_realm == NULL) {
+				/* Failed to allocate memory */
+				free(hd->hd_calls[i]);
+				return ESP_ERR_HTTPD_ALLOC_MEM;
+			}
+#endif            
             ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
             return ESP_OK;
         }
@@ -272,6 +283,57 @@ void httpd_unregister_all_uri_handlers(struct httpd_data *hd)
     }
 }
 
+#ifdef CONFIG_HTTPD_AUTH_SUPPORT
+int httpd_basic_auth(httpd_req_t *req, httpd_uri_t *uri){
+	const char *unauthorized = "401 Unauthorized.";
+	const char *forbidden = "403 Forbidden";
+	int no=0;
+	int r;
+	char hdr[(CONFIG_HTTPD_AUTH_MAX_USER_LENGTH+CONFIG_HTTPD_AUTH_MAX_PASSWORD_LENGTH+2)*10];
+	char userpass[CONFIG_HTTPD_AUTH_MAX_USER_LENGTH+CONFIG_HTTPD_AUTH_MAX_PASSWORD_LENGTH+2];
+	char user[CONFIG_HTTPD_AUTH_MAX_USER_LENGTH];
+	char pass[CONFIG_HTTPD_AUTH_MAX_PASSWORD_LENGTH];
+
+	r=httpd_req_get_hdr_value_str(req, "Authorization", hdr, sizeof(hdr));
+	if (r==ESP_OK && strncmp(hdr, "Basic", 5)==0) {
+		memset(&userpass,0,sizeof(userpass));
+		mbedtls_base64_decode((unsigned char*)&userpass,sizeof(userpass),(size_t*)&r,(const unsigned char*)&hdr +6,strlen(hdr)-6);
+
+		if (r<0) r=0; //just clean out string on decode error
+		userpass[r]=0; //zero-terminate user:pass string
+		ESP_LOGD(TAG,"Auth: %s\n", userpass);
+		while (uri->UserPassFn(no, (char*)&user, CONFIG_HTTPD_AUTH_MAX_USER_LENGTH, (char*)&pass, CONFIG_HTTPD_AUTH_MAX_PASSWORD_LENGTH)) {
+			//Check user/pass against auth header
+			if (strlen(userpass)==strlen(user)+strlen(pass)+1 &&
+					strncmp(userpass, user, strlen(user))==0 &&
+					userpass[strlen(user)]==':' &&
+					strcmp(userpass+strlen(user)+1, pass)==0) {
+				//Authenticated. Yay!
+				ESP_LOGD(TAG, "auth success: %d", no);
+				return no;
+			}
+			no++; //Not authenticated with this user/pass. Check next user/pass combo.
+		}
+		ESP_LOGD(TAG, "auth failed: 403 forbidden");
+		httpd_resp_set_status(req, forbidden);
+		//		httpd_resp_set_type(req, "text/html"); // is set by default
+		httpd_resp_send(req, "", 0);
+		return -3; // no matching user / pw found
+	}
+	ESP_LOGD(TAG, "auth missing: 401 unauthorized");
+	//Not authenticated. Go bug user with login screen.
+	httpd_resp_set_status(req, unauthorized);
+	//	httpd_resp_set_type(req, "text/html"); // is set by default
+	char *realm = (char*)malloc(15+strlen(uri->auth_realm));
+	sprintf(realm,"Basic realm=\"%s\"", uri->auth_realm);
+	httpd_resp_set_hdr(req,"WWW-Authenticate", realm);
+	httpd_resp_send(req, "", 0);
+	free(realm);
+	return -2;
+}
+#endif
+
+
 esp_err_t httpd_uri(struct httpd_data *hd)
 {
     httpd_uri_t            *uri = NULL;
@@ -306,7 +368,30 @@ esp_err_t httpd_uri(struct httpd_data *hd)
 
     /* Attach user context data (passed during URI registration) into request */
     req->user_ctx = uri->user_ctx;
-
+    
+#ifdef CONFIG_HTTPD_AUTH_SUPPORT
+	req->auth_user_id=-1; // set auth user to default -1 : no user got authorized
+	if (uri->UserPassFn) { // without password function nothing can be checked.
+		switch (uri->AuthType) {
+		case HTTP_AUTH_NONE:
+		default:
+			ESP_LOGI(TAG, LOG_FMT("no auth"));
+			req->auth_user_id=-1; // no auth required, meaning no user_id is authorized and no reply to client required.
+			break;
+		case HTTP_AUTH_BASIC:
+			ESP_LOGI(TAG, LOG_FMT("basic auth"));
+			req->auth_user_id = httpd_basic_auth(req, uri);
+			break;
+		case HTTP_AUTH_USER:
+			ESP_LOGI(TAG, LOG_FMT("user auth"));
+			if (uri->UserAuthFn) req->auth_user_id = uri->UserAuthFn(req,uri);
+			else req->auth_user_id = httpd_basic_auth(req,uri);
+			break;
+		}
+		ESP_LOGI(TAG, LOG_FMT("user auth id %d"), req->auth_user_id);
+	}
+	if (req->auth_user_id < -1) return ESP_OK; // response already done by auth functions, call of handler not required.
+#endif
     /* Invoke handler */
     if (uri->handler(req) != ESP_OK) {
         /* Handler returns error, this socket should be closed */
