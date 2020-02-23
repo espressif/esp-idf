@@ -66,7 +66,23 @@ initializer that should be kept in sync
 /* Symbol to be used as length parameter in httpd_resp_send APIs
  * for setting buffer length to string length */
 #define HTTPD_RESP_USE_STRLEN -1
+    
+#ifdef CONFIG_HTTPD_AUTH_SUPPORT
+typedef enum http_auth_type {
+	HTTP_AUTH_NONE=0, // no authentication required
+	HTTP_AUTH_BASIC,  // use internal basic auth function
+	HTTP_AUTH_USER    // authentication by own auth function
+} http_auth_type_t;
 
+// httpd_req_t and httpd_uri_t will reference internally to objects of own type so forward declare them
+ typedef struct httpd_req httpd_req_t;
+ typedef struct httpd_uri httpd_uri_t;
+ 
+// forward declare function templates used in httpd_uri_t
+ int (*UserPassFn)(int no, char *user, int userLen, char *pass, int passLen);
+ int (*UserAuthFn)(httpd_req_t *req, int (*UserPassFn));
+#endif
+    
 /* ************** Group: Initialization ************** */
 /** @name Initialization
  * APIs related to the Initialization of the web server
@@ -380,6 +396,18 @@ typedef struct httpd_req {
      * (by calling free_ctx or free()) only if the socket gets closed.
      */
     bool ignore_sess_ctx_changes;
+    
+#ifdef CONFIG_HTTPD_AUTH_SUPPORT	
+	/**
+	* User ID of authorized user, or reason of failed authorization
+	*
+	* >=0: ID of the user that has succesfully authenticated this request. 
+	* -3: not authenticated (i.e. wrong credentials etc.)
+	* -2: missing authentication, client asked to provide it.
+	* -1: auth not required (either HTTP_AUTH_NONE, or no UserPassFn in uri object).
+	*/
+	int auth_user_id; 
+#endif    
 } httpd_req_t;
 
 /**
@@ -399,6 +427,57 @@ typedef struct httpd_uri {
      * Pointer to user context data which will be available to handler
      */
     void *user_ctx;
+    
+#ifdef CONFIG_HTTPD_AUTH_SUPPORT	
+	/**
+	* reference to function providing user and password to auth function
+	* user_id = id for which user and password shall be returned.
+	* user = buffer to store username in.
+	* userLen = length of provided username buffer.
+	* pass = buffer to store password in.
+	* passLen = length of provided password buffer
+	* returns 1 in case valid data for user_id is provided.
+	* returns 0 in case no valid data for user_id is found.
+	
+	* example fn (template taken from libesphttpd):
+	* int myPassFn(int user_id, char *user, int userLen, char *pass, int passLen) {
+	*  if (user_id==0) {
+	* 	strcpy(user, "admin");
+	* 	strcpy(pass, "password");
+	* 	return 1;
+	* 	//Add more users this way. Check against incrementing no for each user added.
+	* 	//	} else if (user_id==1) {
+	* 	//		strcpy(user, "user1");
+	* 	//		strcpy(pass, "something");
+	* 	//		return 1;
+	*  }
+	*  return 0;
+    * }
+	*/
+	int (*UserPassFn)(int no, char *user, int userLen, char *pass, int passLen);
+	
+	/**
+	* with help of (*UserPassFn) verify if req is authorized for uri.
+	* if reference is empty only internal http basic auth can be checked.
+	* return:
+    * -3: UserPassFn did not find information for userid (no).
+	* -2: auth information provided by client but failed in validation (wrong password etc.)
+	* -1: no auth provided by client
+	* >=0: user id that is authenticated.
+	*/
+	int (*UserAuthFn)(httpd_req_t *req, httpd_uri_t *uri);
+	
+	/**
+	* AuthType to verify uri requests to.
+	* currently only HTTP_AUTH_NONE and HTTP_AUTH_BASIC are supported.
+	*/
+	http_auth_type_t AuthType;
+	
+	/**
+	* for basic auth: "something" in 'Basic realm="something"'
+	*/
+	const char* auth_realm;
+#endif	    
 } httpd_uri_t;
 
 /**
