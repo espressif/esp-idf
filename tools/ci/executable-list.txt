@@ -75,6 +75,7 @@ tools/kconfig/merge_config.sh
 tools/kconfig/streamline_config.pl
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
+tools/kconfig_new/test/confgen/test_confgen.py
 tools/kconfig_new/test/confserver/test_confserver.py
 tools/kconfig_new/test/gen_kconfig_doc/test_target_visibility.py
 tools/ldgen/ldgen.py
