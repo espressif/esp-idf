@@ -12,6 +12,10 @@ if(BOOTLOADER_BUILD)
         list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
     endif()
 
+    if(CONFIG_ESP32_REV_MIN_3)
+        list(APPEND scripts "esp32/ld/esp32.rom.eco3.ld")
+    endif()
+
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")
 else() # Regular app build
     set(scripts
@@ -48,6 +52,9 @@ else() # Regular app build
 
         list(APPEND scripts "esp32s2beta/ld/esp32s2beta.rom.newlib-funcs.ld"
                             "esp32s2beta/ld/esp32s2beta.rom.spiflash.ld")
+    endif()
+    if(CONFIG_ESP32_REV_MIN_3)
+        list(APPEND scripts "esp32/ld/esp32.rom.eco3.ld")
     endif()
 
     target_linker_script(${COMPONENT_LIB} INTERFACE "${scripts}")

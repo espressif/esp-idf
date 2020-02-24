@@ -29,22 +29,34 @@ else
 ESPTOOL_WRITE_FLASH_OPTIONS := $(ESPTOOL_FLASH_OPTIONS)
 endif
 
+ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+ESPTOOL_WRITE_FLASH_OPTIONS := --flash_mode $(ESPFLASHMODE) --flash_freq $(ESPFLASHFREQ) --flash_size keep
+endif
+
 ESPTOOL_ELF2IMAGE_OPTIONS :=
 
 ifdef CONFIG_ESP32_REV_MIN
 ESPTOOL_ELF2IMAGE_OPTIONS += --min-rev $(CONFIG_ESP32_REV_MIN)
 endif
 
-ifdef CONFIG_SECURE_BOOT_ENABLED
 ifndef CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
 ifndef IS_BOOTLOADER_BUILD
+ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 ESPTOOL_ELF2IMAGE_OPTIONS += --secure-pad
+else ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+ESPTOOL_ELF2IMAGE_OPTIONS += --secure-pad-v2
 endif
 endif
 endif
 
 ifndef IS_BOOTLOADER_BUILD
 ESPTOOL_ELF2IMAGE_OPTIONS += --elf-sha256-offset 0xb0
+endif
+
+ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+SECURE_APPS_SIGNING_SCHEME = "1"
+else ifdef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+SECURE_APPS_SIGNING_SCHEME = "2"
 endif
 
 ESPTOOLPY_WRITE_FLASH=$(ESPTOOLPY_SERIAL) write_flash $(if $(CONFIG_ESPTOOLPY_COMPRESSED),-z,-u) $(ESPTOOL_WRITE_FLASH_OPTIONS)
@@ -61,7 +73,7 @@ ifndef IS_BOOTLOADER_BUILD
 APP_BIN_UNSIGNED := $(APP_BIN:.bin=-unsigned.bin)
 
 $(APP_BIN): $(APP_BIN_UNSIGNED) $(SECURE_BOOT_SIGNING_KEY) $(SDKCONFIG_MAKEFILE)
-	$(ESPSECUREPY) sign_data --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
+	$(ESPSECUREPY) sign_data --version $(SECURE_APPS_SIGNING_SCHEME) --keyfile $(SECURE_BOOT_SIGNING_KEY) -o $@ $<
 endif
 endif
 # non-secure boot (or bootloader), both these files are the same
@@ -77,7 +89,7 @@ endif
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 encrypted-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifdef CONFIG_SECURE_BOOT
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(ESPTOOL_ALL_FLASH_ARGS)
@@ -89,7 +101,7 @@ endif
 
 flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
-ifdef CONFIG_SECURE_BOOT_ENABLED
+ifdef CONFIG_SECURE_BOOT
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
 endif
 	$(ESPTOOLPY_WRITE_FLASH) $(ESPTOOL_ALL_FLASH_ARGS)

@@ -6,7 +6,7 @@ endif()
 
 set(partition_csv "${PARTITION_CSV_PATH}")
 
-if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
+if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
     set(unsigned_partition_bin "partition-table-unsigned.bin")
     set(final_partition_bin "partition-table.bin")
     set(final_partition_target "sign_partition_table")
@@ -24,7 +24,7 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE)
     set(flashsize_opt --flash-size ${CONFIG_ESPTOOLPY_FLASHSIZE})
 endif()
 
-if(CONFIG_SECURE_BOOT_ENABLED AND NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION)
+if(CONFIG_SECURE_BOOT AND NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION)
     set(partition_secure_opt --secure)
 else()
     set(partition_secure_opt "")
@@ -52,13 +52,13 @@ else()
 endif()
 
 # Add signing steps
-if(CONFIG_SECURE_SIGNED_APPS)
+if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
         add_custom_target(gen_unsigned_partition_bin ALL DEPENDS
                         "${build_dir}/partition_table/${unsigned_partition_bin}")
 
         add_custom_command(OUTPUT "${build_dir}/partition_table/${final_partition_bin}"
-            COMMAND ${ESPSECUREPY} sign_data --keyfile "${SECURE_BOOT_SIGNING_KEY}"
+            COMMAND ${ESPSECUREPY} sign_data --version 1 --keyfile "${SECURE_BOOT_SIGNING_KEY}"
             -o "${build_dir}/partition_table/${final_partition_bin}"
             "${build_dir}/partition_table/${unsigned_partition_bin}"
             DEPENDS "${build_dir}/partition_table/${unsigned_partition_bin}"
@@ -72,6 +72,10 @@ if(CONFIG_SECURE_SIGNED_APPS)
                 "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/partition_table/${final_partition_bin}"
             VERBATIM)
     endif()
+elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+    add_custom_command(TARGET partition_table POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "Partition table built:"
+    VERBATIM)
 endif()
 
 # Use global properties ESPTOOL_WRITE_FLASH_ARGS to pass this info to build

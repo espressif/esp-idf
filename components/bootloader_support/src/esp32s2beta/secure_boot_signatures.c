@@ -37,7 +37,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     }
 
     data = bootloader_mmap(src_addr, length + sizeof(struct ets_secure_boot_sig_block));
-    if(data == NULL) {
+    if (data == NULL) {
         ESP_LOGE(TAG, "bootloader_mmap(0x%x, 0x%x) failed", src_addr, length+sizeof(ets_secure_boot_signature_t));
         return ESP_FAIL;
     }
@@ -64,18 +64,9 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
     return (r == ETS_OK) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t esp_secure_boot_verify_signature_block(uint32_t sig_block_flash_offs, const uint8_t *image_digest)
+esp_err_t esp_secure_boot_verify_signature_block(const ets_secure_boot_signature_t *sig_block, const uint8_t *image_digest)
 {
     ets_secure_boot_key_digests_t trusted_keys;
-
-    assert(sig_block_flash_offs % 4096 == 0); // TODO: enforce this in a better way
-
-    const ets_secure_boot_signature_t *sig = bootloader_mmap(sig_block_flash_offs, sizeof(ets_secure_boot_signature_t));
-
-    if (sig == NULL) {
-        ESP_LOGE(TAG, "Failed to mmap data at offset 0x%x", sig_block_flash_offs);
-        return ESP_FAIL;
-    }
 
     int r = ets_secure_boot_read_key_digests(&trusted_keys);
     if (r != 0) {
@@ -83,10 +74,8 @@ esp_err_t esp_secure_boot_verify_signature_block(uint32_t sig_block_flash_offs, 
     } else {
         ESP_LOGD(TAG, "Verifying with RSA-PSS...");
         // TODO: calling this function in IDF app context is unsafe
-        r = ets_secure_boot_verify_signature(sig, image_digest, &trusted_keys);
+        r = ets_secure_boot_verify_signature(sig_block, image_digest, &trusted_keys);
     }
-
-    bootloader_munmap(sig);
 
     return (r == 0) ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 }

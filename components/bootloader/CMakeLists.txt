@@ -6,7 +6,7 @@ if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
 endif()
 
 # When secure boot is enabled, do not flash bootloader along with invocation of `idf.py flash`
-if(NOT CONFIG_SECURE_BOOT_ENABLED)
+if(NOT CONFIG_SECURE_BOOT)
     set(flash_bootloader FLASH_IN_PROJECT)
 endif()
 
