@@ -383,21 +383,21 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "978fd9e26c2db8d33392c6daef50e9edac0a3db6680710a9f9ad47e01f3e49b7",
-            "size": 85276,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-linux64.tar.gz"
+            "sha256": "4b2ad65db438595813b981db921f675f5c775c302b34dc85710ffddf07ec9033",
+            "size": 102826,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-linux64.tar.gz"
           },
           "macos": {
-            "sha256": "9504cd1783ef3c242d06330a50d54dc8f838b605f5fc3e892c47254929f7350c",
-            "size": 91457,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-osx.tar.gz"
+            "sha256": "6cd22e2c5fc654282d26b485d9b3d68e242b09a22c2e73a253f2a4a7cfd6774c",
+            "size": 119947,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-osx.tar.gz"
           },
-          "name": "1.9.0",
+          "name": "1.10.0",
           "status": "recommended",
           "win64": {
-            "sha256": "2d70010633ddaacc3af4ffbd21e22fae90d158674a09e132e06424ba3ab036e9",
-            "size": 254497,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-win64.zip"
+            "sha256": "919fd158c16bf135e8a850bb4046ec1ce28a7439ee08b977cd0b7f6b3463d178",
+            "size": 262400,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-win64.zip"
           }
         }
       ]
