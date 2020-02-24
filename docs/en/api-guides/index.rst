@@ -29,7 +29,8 @@ API Guides
     Partition Tables <partition-tables>
     RF Calibration <RF_calibration>
     ROM debug console <romconsole>
-    Secure Boot <../security/secure-boot>
+    Secure Boot <../security/secure-boot-v1>
+    Secure Boot V2 <../security/secure-boot-v2>
     Thread Local Storage <thread-local-storage>
     Tools <tools/index>
     ULP Coprocessor <ulp>

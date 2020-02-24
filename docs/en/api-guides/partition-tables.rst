@@ -265,4 +265,4 @@ More information can be obtained by specifying `--help` as argument:
   parttool.py [subcommand] --help
 
 
-.. _secure boot: security/secure-boot.rst
+.. _secure boot: security/secure-boot-v1.rst

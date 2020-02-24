@@ -7,7 +7,7 @@
 
 每片 ESP32 的 flash 可以包含多个应用程序，以及多种不同类型的数据（例如校准数据、文件系统数据、参数存储器数据等）。因此，我们需要引入分区表的概念。
 
-具体来说，ESP32 在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。该分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot>` 功能，则该分区表后还会保存签名信息。
+具体来说，ESP32 在 flash 的 :ref:`默认偏移地址 <CONFIG_PARTITION_TABLE_OFFSET>` 0x8000 处烧写一张分区表。该分区表的长度为 0xC00 字节（最多可以保存 95 条分区表条目）。分区表数据后还保存着该表的 MD5 校验和，用于验证分区表的完整性。此外，如果芯片使能了 :doc:`安全启动 </security/secure-boot-v2>` 功能，则该分区表后还会保存签名信息。
 
 分区表中的每个条目都包括以下几个部分：Name（标签）、Type（app、data 等）、SubType 以及在 flash 中的偏移量（分区的加载地址）。
 
@@ -175,4 +175,4 @@ MD5 校验和
 
    分区表的更新并不会擦除根据之前分区表存储的数据。此时，您可以使用 ``idf.py erase_flash`` 命令或者 ``esptool.py erase_flash`` 命令来擦除 flash 中的所有内容。
 
-.. _secure boot: security/secure-boot.rst
+.. _secure boot: security/secure-boot-v1.rst

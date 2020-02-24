@@ -62,7 +62,7 @@ For more details on the type of memory segments and their address ranges, see th
  
 3. The image has a single checksum byte after the last segment. This byte is written on a sixteen byte padded boundary, so the application image might need padding.
 4. If the ``hash_appended`` field from :cpp:type:`esp_image_header_t` is set then a SHA256 checksum will be appended. The value of SHA256 is calculated on the range from first byte and up to this field. The length of this field is 32 bytes.
-5. If the options :ref:`CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT` or :ref:`CONFIG_SECURE_BOOT_ENABLED` are enabled then the application image will have additional 68 bytes for an ECDSA signature, which includes:
+5. If the options :ref:`CONFIG_SECURE_SIGNED_APPS_SCHEME` is set to ECDSA then the application image will have additional 68 bytes for an ECDSA signature, which includes:
 
  * version word (4 bytes),
  * signature data (64 bytes).

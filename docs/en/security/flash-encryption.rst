@@ -24,7 +24,7 @@ With flash encryption enabled, following kinds of flash data are encrypted by de
   - Secure boot bootloader digest (if secure boot is enabled)
   - Any partition marked with the "encrypted" flag in the partition table
 
-Flash encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However, for a secure environment both should be used simultaneously.
+Flash encryption is separate from the :doc:`Secure Boot <secure-boot-v2>` feature, and you can use flash encryption without enabling secure boot. However, for a secure environment both should be used simultaneously.
 
 .. important::
    For production use, flash encryption should be enabled in the "Release" mode only.
@@ -586,7 +586,7 @@ Flash encryption prevents plaintext readout of the encrypted flash, to protect f
 
 - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain two identical 16 byte sequences. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient). :ref:`NVS Encryption <nvs_encryption>` deals with this and is suitable for many uses.
 
-- Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot>`.
+- Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot-v2>`.
 
 .. _flash-encryption-and-secure-boot:
 
