@@ -147,6 +147,8 @@ def update_exclude_patterns(tags):
                   'api-reference/protocols/esp_serial_slave_link.rst',
                   'api-reference/system/ipc.rst',
                   'get-started-legacy/**',
+                  'security/secure-boot-v1.rst',
+                  'security/secure-boot-v2.rst',
                   'gnu-make-legacy.rst',
                   'hw-reference/esp32/**',
                   ]:

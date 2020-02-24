@@ -25,7 +25,9 @@ With flash encryption enabled, following kinds of flash data are encrypted by de
   - Secure boot bootloader digest (if secure boot is enabled)
   - Any partition marked with the "encrypted" flag in the partition table
 
-Flash encryption is separate from the :doc:`Secure Boot <secure-boot>` feature, and you can use flash encryption without enabling secure boot. However, for a secure environment both should be used simultaneously.
+.. only:: esp32
+
+    Flash encryption is separate from the :doc:`Secure Boot <secure-boot-v2>` feature, and you can use flash encryption without enabling secure boot. However, for a secure environment both should be used simultaneously.
 
 .. important::
    For production use, flash encryption should be enabled in the "Release" mode only.
@@ -130,7 +132,9 @@ As mentioned above :ref:`flash_enc_development_mode` allows user to download as 
 
 - Select appropriate Bootloader log verbosity under Bootloader config.
 
-- Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
+.. only:: esp32
+
+    - Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
 
 - Save the configuration and exit.
 
@@ -326,7 +330,9 @@ It is possible to pregenerate the flash encryption key on the host computer and 
 
 - Select appropriate Bootloader log verbosity under Bootloader config.
 
-- Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
+.. only:: esp32
+
+    - Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
 
 - Save the configuration and exit.
 
@@ -364,7 +370,9 @@ In Release mode UART bootloader can not perform flash encryption operations and 
 
 - Select appropriate Bootloader log verbosity under Bootloader config.
 
-- Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
+.. only:: esp32
+
+    - Update to the partition table offset may be required since after enabling flash encryption the size of bootloader is increased. See :ref:`secure-boot-bootloader-size`
 
 - Save the configuration and exit.
 
@@ -487,7 +495,9 @@ Key Points About Flash Encryption
 
 - If secure boot is enabled, reflashing the bootloader of an encrypted device requires a "Reflashable" secure boot digest (see :ref:`flash-encryption-and-secure-boot`).
 
-.. note:: The bootloader app binary ``bootloader.bin`` may become too large when both secure boot and flash encryption are enabled. See :ref:`secure-boot-bootloader-size`.
+.. only:: esp32
+
+    .. note:: The bootloader app binary ``bootloader.bin`` may become too large when both secure boot and flash encryption are enabled. See :ref:`secure-boot-bootloader-size`.
 
 .. important::
    Do not interrupt power to the {IDF_TARGET_NAME} while the first boot encryption pass is running. If power is interrupted, the flash contents will be corrupted and require flashing with unencrypted data again. A reflash like this will not count towards the flashing limit.
@@ -587,7 +597,9 @@ Flash encryption prevents plaintext readout of the encrypted flash, to protect f
 
 - For the same reason, an attacker can always tell when a pair of adjacent 16 byte blocks (32 byte aligned) contain two identical 16 byte sequences. Keep this in mind if storing sensitive data on the flash, design your flash storage so this doesn't happen (using a counter byte or some other non-identical value every 16 bytes is sufficient). :ref:`NVS Encryption <nvs_encryption>` deals with this and is suitable for many uses.
 
-- Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot>`.
+.. only:: esp32
+
+    - Flash encryption alone may not prevent an attacker from modifying the firmware of the device. To prevent unauthorised firmware from running on the device, use flash encryption in combination with :doc:`Secure Boot <secure-boot-v2>`.
 
 .. _flash-encryption-and-secure-boot:
 
@@ -597,8 +609,12 @@ Flash Encryption and Secure Boot
 It is recommended to use flash encryption and secure boot together. However, if Secure Boot is enabled then additional restrictions apply to reflashing the device:
 
 - :ref:`updating-encrypted-flash-ota` are not restricted (provided the new app is signed correctly with the Secure Boot signing key).
-- :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the {IDF_TARGET_NAME} (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
-- :ref:`Reflashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
+
+.. only:: esp32
+
+    - :ref:`Plaintext serial flash updates <updating-encrypted-flash-serial>` are only possible if the :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` Secure Boot mode is selected and a Secure Boot key was pre-generated and burned to the {IDF_TARGET_NAME} (refer to :ref:`Secure Boot <secure-boot-reflashable>` docs.). In this configuration, ``idf.py bootloader`` will produce a pre-digested bootloader and secure boot digest file for flashing at offset 0x0. When following the plaintext serial reflashing steps it is necessary to re-flash this file before flashing other plaintext data.
+
+    - :ref:`Reflashing via Pregenerated Flash Encryption Key <pregenerated-flash-encryption-key>` is still possible, provided the bootloader is not reflashed. Reflashing the bootloader requires the same :ref:`Reflashable <CONFIG_SECURE_BOOTLOADER_MODE>` option to be enabled in the Secure Boot config.
 
 .. _flash-encryption-advanced-features:
 

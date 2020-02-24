@@ -20,7 +20,8 @@ API 指南
    JTAG 调试 <jtag-debugging/index>
    引导加载程序 <bootloader>
    分区表 <partition-tables>
-   Secure Boot <../security/secure-boot>
+   :esp32: Secure Boot <../security/secure-boot-v1>
+   :esp32:  Secure Boot V2 <../security/secure-boot-v2>
    ULP 协处理器 <ulp>
    :esp32: ULP (传统 GNU Make) <ulp-legacy>
    单元测试 <unit-tests>

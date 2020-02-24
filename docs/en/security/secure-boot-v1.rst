@@ -1,6 +1,11 @@
 Secure Boot
 ===========
 
+.. important::
+
+    All references in this document are related to Secure Boot V1 (The AES based Secure Boot Scheme). ESP32 Revision 3 onwards, the preferred secure boot scheme is :doc:`Secure Boot V2 <secure-boot-v2>`.  
+    Please refer to Secure Boot V2 document for ESP32 Revision 3 or ESP32S2.
+
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 
 Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feature, and you can use secure boot without encrypting the flash contents. However, for a secure environment both should be used simultaneously. See :ref:`secure-boot-and-flash-encr` for more details.
@@ -133,7 +138,7 @@ In the esp-idf build process, this 256-bit key file is derived from the ECDSA ap
 
 To enable a reflashable bootloader:
 
-1. In the :ref:`project-configuration-menu`, select "Bootloader Config" -> :ref:`CONFIG_SECURE_BOOT_ENABLED` ->  :ref:`CONFIG_SECURE_BOOTLOADER_MODE` -> Reflashable.
+1. In the :ref:`project-configuration-menu`, select "Bootloader Config" -> :ref:`CONFIG_SECURE_BOOT` -> CONFIG_SECURE_BOOT_V1_ENABLED  ->  :ref:`CONFIG_SECURE_BOOTLOADER_MODE` -> Reflashable.
 
 2. If necessary, set the :ref:`CONFIG_SECURE_BOOTLOADER_KEY_ENCODING` based on the coding scheme used by the device. The coding scheme is shown in the ``Features`` line when ``esptool.py`` connects to the chip, or in the ``espefuse.py summary`` output.
 
