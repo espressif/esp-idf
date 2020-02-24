@@ -23,6 +23,7 @@ The test apps should be grouped into subdirectories by category. Categories are:
 * `protocols` contains test of protocol interactions.
 * `network` contains system network tests
 * `system` contains tests on the internal chip features, debugging and development tools.
+* `security` contains tests on the chip security features.
 
 # Test Apps local execution
 
