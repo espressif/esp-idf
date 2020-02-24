@@ -11,6 +11,10 @@ LINKER_SCRIPTS += esp32.rom.ld \
 ifndef CONFIG_SPIRAM_CACHE_WORKAROUND
 LINKER_SCRIPTS += esp32.rom.newlib-funcs.ld
 
+ifdef CONFIG_ESP32_REV_MIN_3
+LINKER_SCRIPTS += esp32.rom.eco3.ld
+endif
+
 # Include in newlib nano from ROM only if SPIRAM cache workaround is disabled
 ifdef CONFIG_NEWLIB_NANO_FORMAT
 LINKER_SCRIPTS += esp32.rom.newlib-nano.ld

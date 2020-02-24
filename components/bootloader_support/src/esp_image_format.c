@@ -55,9 +55,6 @@ static const char *TAG = "esp_image";
 /* Headroom to ensure between stack SP (at time of checking) and data loaded from flash */
 #define STACK_LOAD_HEADROOM 32768
 
-/* Mmap source address mask */
-#define MMAP_ALIGNED_MASK 0x0000FFFF
-
 #ifdef BOOTLOADER_BUILD
 /* 64 bits of random data to obfuscate loaded RAM with, until verification is complete
    (Means loaded code isn't executable until after the secure boot check.)
@@ -204,7 +201,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
            esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
         */
         bool verify_sha;
-#if CONFIG_SECURE_BOOT_ENABLED && CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_SECURE_BOOT_V2_ENABLED && CONFIG_IDF_TARGET_ESP32S2
         verify_sha = true;
 #else // ESP32, or ESP32S2 without secure boot enabled
         verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
@@ -637,26 +634,21 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_sha256_data(sha_handle, simple_hash, HASH_LEN);
         bootloader_munmap(simple_hash);
     }
-
-#if CONFIG_IDF_TARGET_ESP32S2
-    // Pad to 4096 byte sector boundary
-    if (end % FLASH_SECTOR_SIZE != 0) {
-        uint32_t pad_len = FLASH_SECTOR_SIZE - (end % FLASH_SECTOR_SIZE);
-        const void *padding = bootloader_mmap(end, pad_len);
-        bootloader_sha256_data(sha_handle, padding, pad_len);
-        bootloader_munmap(padding);
-        end += pad_len;
-    }
-#endif
-
     bootloader_sha256_finish(sha_handle, image_hash);
 
     // Log the hash for debugging
     bootloader_debug_buffer(image_hash, HASH_LEN, "Calculated secure boot hash");
 
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
     // Use hash to verify signature block
-    const esp_secure_boot_sig_block_t *sig_block = bootloader_mmap(data->start_addr + data->image_len, sizeof(esp_secure_boot_sig_block_t));
-    esp_err_t err = esp_secure_boot_verify_signature_block(sig_block, image_hash);
+    esp_err_t err = ESP_ERR_IMAGE_INVALID;
+    const void *sig_block;
+    #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+    sig_block = bootloader_mmap(data->start_addr + data->image_len, sizeof(esp_secure_boot_sig_block_t));
+    #elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+    sig_block = bootloader_mmap(end, sizeof(ets_secure_boot_signature_t));
+    #endif
+    err = esp_secure_boot_verify_signature_block(sig_block, image_hash);
     bootloader_munmap(sig_block);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure boot signature verification failed");
@@ -676,8 +668,9 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         }
         return ESP_ERR_IMAGE_INVALID;
     }
+#endif
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
     // Adjust image length result to include the appended signature
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
 #endif

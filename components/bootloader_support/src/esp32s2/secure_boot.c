@@ -15,7 +15,7 @@
 #include "esp_log.h"
 #include "esp32s2/rom/secure_boot.h"
 
-#define TAG "secure_boot"
+static const char *TAG = "secure_boot";
 
 esp_err_t esp_secure_boot_permanently_enable(void)
 {

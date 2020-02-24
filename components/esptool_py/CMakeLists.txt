@@ -29,7 +29,7 @@ if(NOT BOOTLOADER_BUILD)
     set(ESPTOOLPY_CHIP "${target}")
     set(ESPTOOLPY_WITH_STUB TRUE)
 
-    if(CONFIG_SECURE_BOOT_ENABLED OR CONFIG_SECURE_FLASH_ENC_ENABLED)
+    if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
         # If security enabled then override post flash option
         set(ESPTOOLPY_AFTER "no_reset")
     endif()

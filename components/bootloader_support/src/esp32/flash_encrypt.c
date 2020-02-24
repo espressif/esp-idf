@@ -242,7 +242,7 @@ static esp_err_t encrypt_bootloader(void)
             return err;
         }
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef CONFIG_SECURE_BOOT_V1_ENABLED
         /* If secure boot is enabled and bootloader was plaintext, also
          * need to encrypt secure boot IV+digest.
          */
