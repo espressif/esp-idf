@@ -541,8 +541,9 @@ menu "LWIP"
         default y
         help
             Enable IPV6 support in PPP for the local link between the DTE (processor) and DCE (modem).
-            There are some modems which do not support the IPV6 addressing in the local link. If at negotiation time,
-            they are requested for IPV6CP configuration exchange, they may time out the configuration for the whole link.
+            There are some modems which do not support the IPV6 addressing in the local link.
+            If they are requested for IPV6CP negotiation, they may time out.
+            This would in turn fail the configuration for the whole link.
             If your modem is not responding correctly to PPP Phase Network, try to disable IPV6 support.
 
     config LWIP_PPP_NOTIFY_PHASE_SUPPORT
