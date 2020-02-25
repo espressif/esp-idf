@@ -79,14 +79,6 @@
 #define BTDM_MIN_SLEEP_DURATION          (12) // threshold of interval in slots to allow to fall into modem sleep
 #define BTDM_MODEM_WAKE_UP_DELAY         (4)  // delay in slots of modem wake up procedure, including re-enable PHY/RF
 
-#ifdef CONFIG_PM_ENABLE
-#ifndef CONFIG_BTDM_LPCLK_SEL_MAIN_XTAL
-#define BTDM_ALLOW_LIGHT_SLEEP 1
-#else
-#define BTDM_ALLOW_LIGHT_SLEEP 0
-#endif
-#endif
-
 #define BT_DEBUG(...)
 #define BT_API_CALL_CHECK(info, api_call, ret) \
 do{\
@@ -384,16 +376,21 @@ static DRAM_ATTR portMUX_TYPE global_int_mux = portMUX_INITIALIZER_UNLOCKED;
 static DRAM_ATTR uint32_t btdm_lpcycle_us = 0;
 static DRAM_ATTR uint8_t btdm_lpcycle_us_frac = 0; // number of fractional bit for btdm_lpcycle_us
 
+#if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
+// used low power clock
+static DRAM_ATTR uint8_t btdm_lpclk_sel;
+#endif /* #ifdef CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG */
+
 #ifdef CONFIG_PM_ENABLE
 static DRAM_ATTR esp_timer_handle_t s_btdm_slp_tmr;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock;
 static DRAM_ATTR QueueHandle_t s_pm_lock_sem = NULL;
-#if !BTDM_ALLOW_LIGHT_SLEEP
+static DRAM_ATTR bool s_btdm_allow_light_sleep;
 // pm_lock to prevent light sleep when using main crystal as Bluetooth low power clock
 static DRAM_ATTR esp_pm_lock_handle_t s_light_sleep_pm_lock;
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
 static void btdm_slp_tmr_callback(void *arg);
-#endif
+#endif /* #ifdef CONFIG_PM_ENABLE */
+
 
 static inline void btdm_check_and_init_bb(void)
 {
@@ -1133,12 +1130,63 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     memset(btdm_queue_table, 0, sizeof(btdm_queue_item_t) * BTDM_MAX_QUEUE_NUM);
 #endif
 
+    btdm_controller_mem_init();
+
+    periph_module_enable(PERIPH_BT_MODULE);
+
 #ifdef CONFIG_PM_ENABLE
-#if !BTDM_ALLOW_LIGHT_SLEEP
-    if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
-        goto error;
+    s_btdm_allow_light_sleep = false;
+#endif
+
+#if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
+
+    btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+#if CONFIG_BTDM_LPCLK_SEL_EXT_32K_XTAL
+    // check whether or not EXT_CRYS is working
+    if (rtc_clk_slow_freq_get() == RTC_SLOW_FREQ_32K_XTAL) {
+        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL32K; // set default value
+#ifdef CONFIG_PM_ENABLE
+        s_btdm_allow_light_sleep = true;
+#endif
+    } else {
+        ESP_LOGW(BTDM_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock\n"
+                 "light sleep mode will not be able to apply when bluetooth is enabled");
+        btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
     }
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
+#else
+    btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
+#endif
+
+    bool select_src_ret, set_div_ret;
+    if (btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL) {
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
+        set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2 - 1);
+        assert(select_src_ret && set_div_ret);
+        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+        btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
+    } else { // btdm_lpclk_sel == BTDM_LPCLK_SEL_XTAL32K
+        select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
+        set_div_ret = btdm_lpclk_set_div(0);
+        assert(select_src_ret && set_div_ret);
+        btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+        btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
+            (1000000 >> (15 - RTC_CLK_CAL_FRACT));
+        assert(btdm_lpcycle_us != 0);
+    }
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_ORIG);
+
+#elif CONFIG_BTDM_MODEM_SLEEP_MODE_EVED
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_EVED);
+#else
+    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
+#endif
+
+#ifdef CONFIG_PM_ENABLE
+    if (!s_btdm_allow_light_sleep) {
+        if ((err = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "btLS", &s_light_sleep_pm_lock)) != ESP_OK) {
+            goto error;
+        }
+    }
     if ((err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "bt", &s_pm_lock)) != ESP_OK) {
         goto error;
     }
@@ -1156,37 +1204,6 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         err = ESP_ERR_NO_MEM;
         goto error;
     }
-#endif
-
-    btdm_controller_mem_init();
-
-    periph_module_enable(PERIPH_BT_MODULE);
-
-    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = 32 << btdm_lpcycle_us_frac;
-#if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
-    bool select_src_ret = false;
-    bool set_div_ret = false;
-#if CONFIG_BTDM_LPCLK_SEL_MAIN_XTAL
-    select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL);
-    set_div_ret = btdm_lpclk_set_div(rtc_clk_xtal_freq_get() * 2 - 1);
-    assert(select_src_ret && set_div_ret);
-    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
-#elif CONFIG_BTDM_LPCLK_SEL_EXT_32K_XTAL
-    select_src_ret = btdm_lpclk_select_src(BTDM_LPCLK_SEL_XTAL32K);
-    set_div_ret = btdm_lpclk_set_div(0);
-    assert(select_src_ret && set_div_ret);
-    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
-    btdm_lpcycle_us = (RTC_CLK_CAL_FRACT > 15) ? (1000000 << (RTC_CLK_CAL_FRACT - 15)) :
-        (1000000 >> (15 - RTC_CLK_CAL_FRACT));
-    assert(btdm_lpcycle_us != 0);
-#endif // CONFIG_BTDM_LPCLK_SEL_XX
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_ORIG);
-#elif CONFIG_BTDM_MODEM_SLEEP_MODE_EVED
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_EVED);
-#else
-    btdm_controller_set_sleep_mode(BTDM_MODEM_SLEEP_MODE_NONE);
 #endif
 
     btdm_cfg_mask = btdm_config_mask_load();
@@ -1208,12 +1225,12 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 
 error:
 #ifdef CONFIG_PM_ENABLE
-#if !BTDM_ALLOW_LIGHT_SLEEP
-    if (s_light_sleep_pm_lock != NULL) {
-        esp_pm_lock_delete(s_light_sleep_pm_lock);
-        s_light_sleep_pm_lock = NULL;
+    if (!s_btdm_allow_light_sleep) {
+        if (s_light_sleep_pm_lock != NULL) {
+            esp_pm_lock_delete(s_light_sleep_pm_lock);
+            s_light_sleep_pm_lock = NULL;
+        }
     }
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
     if (s_pm_lock != NULL) {
         esp_pm_lock_delete(s_pm_lock);
         s_pm_lock = NULL;
@@ -1241,10 +1258,10 @@ esp_err_t esp_bt_controller_deinit(void)
     periph_module_disable(PERIPH_BT_MODULE);
 
 #ifdef CONFIG_PM_ENABLE
-#if !BTDM_ALLOW_LIGHT_SLEEP
-    esp_pm_lock_delete(s_light_sleep_pm_lock);
-    s_light_sleep_pm_lock = NULL;
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
+    if (!s_btdm_allow_light_sleep) {
+        esp_pm_lock_delete(s_light_sleep_pm_lock);
+        s_light_sleep_pm_lock = NULL;
+    }
     esp_pm_lock_delete(s_pm_lock);
     s_pm_lock = NULL;
     esp_timer_stop(s_btdm_slp_tmr);
@@ -1285,9 +1302,9 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     }
 
 #ifdef CONFIG_PM_ENABLE
-#if !BTDM_ALLOW_LIGHT_SLEEP
-    esp_pm_lock_acquire(s_light_sleep_pm_lock);
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
+    if (!s_btdm_allow_light_sleep) {
+        esp_pm_lock_acquire(s_light_sleep_pm_lock);
+    }
     esp_pm_lock_acquire(s_pm_lock);
 #endif
 
@@ -1325,9 +1342,9 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
         }
         esp_phy_rf_deinit(PHY_BT_MODULE);
 #ifdef CONFIG_PM_ENABLE
-#if !BTDM_ALLOW_LIGHT_SLEEP
-        esp_pm_lock_release(s_light_sleep_pm_lock);
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
+        if (!s_btdm_allow_light_sleep) {
+            esp_pm_lock_release(s_light_sleep_pm_lock);
+        }
         esp_pm_lock_release(s_pm_lock);
 #endif
         return ESP_ERR_INVALID_STATE;
@@ -1368,9 +1385,9 @@ esp_err_t esp_bt_controller_disable(void)
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
 #ifdef CONFIG_PM_ENABLE
-#if !BTDM_ALLOW_LIGHT_SLEEP
-    esp_pm_lock_release(s_light_sleep_pm_lock);
-#endif /* #if !BTDM_ALLOW_LIGHT_SLEEP */
+    if (!s_btdm_allow_light_sleep) {
+        esp_pm_lock_release(s_light_sleep_pm_lock);
+    }
     esp_pm_lock_release(s_pm_lock);
 #endif
 
