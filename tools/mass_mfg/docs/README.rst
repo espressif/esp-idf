@@ -24,7 +24,7 @@ Prerequisites
 	-	Linux / MacOS / Windows (standard distributions)
 
 * The following packages are needed to use this utility:
-	-	Python version: 2.7 (minimum) is required. You can find it here: <https://www.python.org/downloads/>
+	-	Python: <https://www.python.org/downloads/>
 
 .. note::
 
