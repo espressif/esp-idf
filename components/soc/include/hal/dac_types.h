@@ -10,7 +10,7 @@ typedef enum {
 } dac_channel_t;
 
 /**
- * The multiple of the amplitude of the cosine wave generator. The max amplitude is VDD3P3_RTC.
+ * @brief The multiple of the amplitude of the cosine wave generator. The max amplitude is VDD3P3_RTC.
  */
 typedef enum {
     DAC_CW_SCALE_1 = 0x0,   /*!< 1/1. Default. */
@@ -20,7 +20,7 @@ typedef enum {
 } dac_cw_scale_t;
 
 /**
- * Set the phase of the cosine wave generator output.
+ * @brief Set the phase of the cosine wave generator output.
  */
 typedef enum {
     DAC_CW_PHASE_0   = 0x2, /*!< Phase shift +0° */
@@ -28,13 +28,13 @@ typedef enum {
 } dac_cw_phase_t;
 
 /**
- * Config the cosine wave generator function in DAC module.
+ * @brief Config the cosine wave generator function in DAC module.
  */
 typedef struct {
     dac_channel_t en_ch;    /*!< Enable the cosine wave generator of DAC channel. */
     dac_cw_scale_t scale;   /*!< Set the amplitude of the cosine wave generator output. */
     dac_cw_phase_t phase;   /*!< Set the phase of the cosine wave generator output. */
     uint32_t freq;          /*!< Set frequency of cosine wave generator output. Range: 130(130Hz) ~ 55000(100KHz). */
-    int8_t offset;          /*!< Set the voltage value of the DC component of the cosine wave generator output. 
+    int8_t offset;          /*!< Set the voltage value of the DC component of the cosine wave generator output.
                                  Note: Unreasonable settings can cause waveform to be oversaturated. Range: -128 ~ 127. */
 } dac_cw_config_t;

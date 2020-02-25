@@ -1,4 +1,5 @@
-set(srcs "brownout_hal.c" 
+set(srcs "adc_hal.c"
+        "brownout_hal.c"
         "rtc_clk.c"
         "rtc_clk_init.c"
         "rtc_init.c"

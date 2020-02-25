@@ -231,26 +231,6 @@ static inline void touch_ll_get_fsm_mode(touch_fsm_mode_t *mode)
     *mode = (touch_fsm_mode_t)RTCCNTL.touch_ctrl2.touch_start_force;
 }
 
-static inline void touch_ll_clk_enable(void)
-{
-    RTCCNTL.touch_ctrl2.touch_clkgate_en = 1; //enable touch clock for FSM. or force enable.
-}
-
-static inline void touch_ll_clk_disable(void)
-{
-    RTCCNTL.touch_ctrl2.touch_clkgate_en = 0; //enable touch clock for FSM. or force enable.
-}
-
-/**
- * Touch timer trigger measurement and always wait measurement done.
- * Force done for touch timer ensures that the timer always can get the measurement done signal.
- */
-static inline void touch_ll_timer_force_done(void)
-{
-    RTCCNTL.touch_ctrl2.touch_timer_force_done = TOUCH_LL_TIMER_FORCE_DONE;
-    RTCCNTL.touch_ctrl2.touch_timer_force_done = TOUCH_LL_TIMER_DONE;
-}
-
 /**
  * Enable/disable clock gate of touch sensor.
  *

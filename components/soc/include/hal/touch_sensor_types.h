@@ -290,7 +290,8 @@ typedef struct touch_filter_config {
 /** Touch sensor channel sleep configuration */
 typedef struct {
     touch_pad_t touch_num;          /*!<Set touch channel number for sleep pad.
-                                        Only one touch sensor channel is supported in deep sleep mode. */
+                                        Only one touch sensor channel is supported in deep sleep mode.
+                                        If clear the sleep channel, point this pad to `TOUCH_PAD_NUM0`  */
     bool en_proximity;              /*!<enable proximity function for sleep pad */
 } touch_pad_sleep_channel_t;
 

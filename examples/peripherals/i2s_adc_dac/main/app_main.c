@@ -11,6 +11,8 @@
 #include "audio_example_file.h"
 #include "esp_adc_cal.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+
 static const char* TAG = "ad/da";
 #define V_REF   1100
 #define ADC1_TEST_CHANNEL (ADC1_CHANNEL_7)
@@ -288,5 +290,4 @@ esp_err_t app_main(void)
     xTaskCreate(adc_read_task, "ADC read task", 2048, NULL, 5, NULL);
     return ESP_OK;
 }
-
-
+#endif

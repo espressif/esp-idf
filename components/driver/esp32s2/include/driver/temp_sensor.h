@@ -21,6 +21,9 @@
 extern "C" {
 #endif
 
+/**
+ * @brief temperature sensor range option.
+ */
 typedef enum {
     TSENS_DAC_L0 = 0, /*!< offset = -2, measure range: 50℃ ~ 125℃, error < 3℃. */
     TSENS_DAC_L1,     /*!< offset = -1, measure range: 20℃ ~ 100℃, error < 2℃. */
@@ -39,6 +42,9 @@ typedef struct {
     uint8_t clk_div;                        /*!< Default: 6 */
 } temp_sensor_config_t;
 
+/**
+ * @brief temperature sensor default setting.
+ */
 #define TSENS_CONFIG_DEFAULT() {.dac_offset = TSENS_DAC_L2, \
                                 .clk_div = 6}
 
@@ -74,7 +80,7 @@ esp_err_t temp_sensor_start(void);
 esp_err_t temp_sensor_stop(void);
 
 /**
- * @brief Read temperature sensor raw data. 
+ * @brief Read temperature sensor raw data.
  * @param tsens_out Pointer to raw data, Range: 0 ~ 255
  * @return
  *     - ESP_OK Success

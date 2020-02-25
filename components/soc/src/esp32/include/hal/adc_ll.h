@@ -9,12 +9,12 @@ extern "C" {
 #endif
 
 typedef enum {
-    ADC_DIG_FORMAT_12BIT,   /*!< ADC to I2S data format, [15:12]-channel [11:0]-12 bits ADC data.
+    ADC_DIGI_FORMAT_12BIT,   /*!< ADC to I2S data format, [15:12]-channel [11:0]-12 bits ADC data.
                                  Note: In single convert mode. */
-    ADC_DIG_FORMAT_11BIT,   /*!< ADC to I2S data format, [15]-1 [14:11]-channel [10:0]-11 bits ADC data.
+    ADC_DIGI_FORMAT_11BIT,   /*!< ADC to I2S data format, [15]-adc unit [14:11]-channel [10:0]-11 bits ADC data.
                                  Note: In multi convert mode. */
-    ADC_DIG_FORMAT_MAX,
-} adc_ll_dig_output_format_t;
+    ADC_DIGI_FORMAT_MAX,
+} adc_hal_digi_output_format_t;
 
 typedef enum {
     ADC_CONV_SINGLE_UNIT_1 = 1, /*!< SAR ADC 1*/
@@ -22,7 +22,7 @@ typedef enum {
     ADC_CONV_BOTH_UNIT     = 3, /*!< SAR ADC 1 and 2, not supported yet */
     ADC_CONV_ALTER_UNIT    = 7, /*!< SAR ADC 1 and 2 alternative mode, not supported yet */
     ADC_CONV_UNIT_MAX,
-} adc_ll_convert_mode_t;
+} adc_hal_digi_convert_mode_t;
 
 typedef enum {
     ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
@@ -47,18 +47,18 @@ typedef struct {
         };
         uint8_t val;
     };
-} adc_ll_pattern_table_t;
+} adc_hal_digi_pattern_table_t;
 
 typedef enum {
-    ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
-    ADC_POWER_SW_ON,    /*!< ADC XPD controled by SW. power on. Used for DMA mode */
-    ADC_POWER_SW_OFF,   /*!< ADC XPD controled by SW. power off. */
+    ADC_POWER_BY_FSM,   /*!< ADC XPD controlled by FSM. Used for polling mode */
+    ADC_POWER_SW_ON,    /*!< ADC XPD controlled by SW. power on. Used for DMA mode */
+    ADC_POWER_SW_OFF,   /*!< ADC XPD controlled by SW. power off. */
     ADC_POWER_MAX,      /*!< For parameter check. */
 } adc_ll_power_t;
 
 typedef enum {
-    ADC_HALL_CTRL_ULP = 0x0,/*!< Hall sensor controled by ULP */
-    ADC_HALL_CTRL_RTC = 0x1 /*!< Hall sensor controled by RTC */
+    ADC_HALL_CTRL_ULP = 0x0,/*!< Hall sensor controlled by ULP */
+    ADC_HALL_CTRL_RTC = 0x1 /*!< Hall sensor controlled by RTC */
 } adc_ll_hall_controller_t ;
 
 typedef enum {
@@ -66,7 +66,11 @@ typedef enum {
     ADC_CTRL_ULP = 1,
     ADC_CTRL_DIG = 2,
     ADC2_CTRL_PWDET = 3,
-} adc_ll_controller_t ;
+} adc_hal_controller_t ;
+
+typedef enum {
+    ADC_RTC_DATA_OK = 0,
+} adc_ll_rtc_raw_data_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -79,7 +83,7 @@ typedef enum {
  * @param start_wait Delay time after open xpd.
  * @param standby_wait Delay time to close xpd.
  */
-static inline void adc_ll_dig_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
+static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
     SYSCON.saradc_fsm.rstb_wait = rst_wait;
@@ -96,17 +100,28 @@ static inline void adc_ll_dig_set_fsm_time(uint32_t rst_wait, uint32_t start_wai
  * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
  *                     Range: 2 ~ 0xFF.
  */
-static inline void adc_ll_dig_set_sample_cycle(uint32_t sample_cycle)
+static inline void adc_ll_digi_set_sample_cycle(uint32_t sample_cycle)
 {
     SYSCON.saradc_fsm.sample_cycle = sample_cycle;
 }
 
 /**
+ * ADC module clock division factor setting. ADC clock divided from APB clock.
+ *
+ * @param div Division factor.
+ */
+static inline void adc_ll_digi_set_clk_div(uint32_t div)
+{
+    /* ADC clock divided from APB clk, e.g. 80 / 2 = 40Mhz, */
+    SYSCON.saradc_ctrl.sar_clk_div = div;
+}
+
+/**
  * Set adc output data format for digital controller.
  *
- * @param format Output data format.
+ * @param format Output data format, see ``adc_hal_digi_output_format_t``.
  */
-static inline void adc_ll_dig_set_output_format(adc_ll_dig_output_format_t format)
+static inline void adc_ll_digi_set_output_format(adc_hal_digi_output_format_t format)
 {
     SYSCON.saradc_ctrl.data_sar_sel = format;
 }
@@ -117,7 +132,7 @@ static inline void adc_ll_dig_set_output_format(adc_ll_dig_output_format_t forma
  *
  * @param meas_num Max conversion number. Range: 0 ~ 255.
  */
-static inline void adc_ll_dig_set_convert_limit_num(uint32_t meas_num)
+static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 {
     SYSCON.saradc_ctrl2.max_meas_num = meas_num;
 }
@@ -126,7 +141,7 @@ static inline void adc_ll_dig_set_convert_limit_num(uint32_t meas_num)
  * Enable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
  */
-static inline void adc_ll_dig_convert_limit_enable(void)
+static inline void adc_ll_digi_convert_limit_enable(void)
 {
     SYSCON.saradc_ctrl2.meas_num_limit = 1;
 }
@@ -135,7 +150,7 @@ static inline void adc_ll_dig_convert_limit_enable(void)
  * Disable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
  */
-static inline void adc_ll_dig_convert_limit_disable(void)
+static inline void adc_ll_digi_convert_limit_disable(void)
 {
     SYSCON.saradc_ctrl2.meas_num_limit = 0;
 }
@@ -145,9 +160,9 @@ static inline void adc_ll_dig_convert_limit_disable(void)
  *
  * @note ESP32 only support ADC1 single mode.
  *
- * @param mode Conversion mode select.
+ * @param mode Conversion mode select, see ``adc_hal_digi_convert_mode_t``.
  */
-static inline void adc_ll_dig_set_convert_mode(adc_ll_convert_mode_t mode)
+static inline void adc_ll_digi_set_convert_mode(adc_hal_digi_convert_mode_t mode)
 {
     if (mode == ADC_CONV_SINGLE_UNIT_1) {
         SYSCON.saradc_ctrl.work_mode = 0;
@@ -163,26 +178,40 @@ static inline void adc_ll_dig_set_convert_mode(adc_ll_convert_mode_t mode)
 }
 
 /**
+ * ADC module Digital output data invert or not.
+ *
+ * @prarm adc_n ADC unit.
+ */
+static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
+{
+    if (adc_n == ADC_NUM_1) {
+        SYSCON.saradc_ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_NUM_2
+        SYSCON.saradc_ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
+    }
+}
+
+/**
  * Set I2S DMA data source for digital controller.
  *
- * @param src i2s data source.
+ * @param src i2s data source, see ``adc_i2s_source_t``.
  */
-static inline void adc_ll_dig_set_data_source(adc_i2s_source_t src)
+static inline void adc_ll_digi_set_data_source(adc_i2s_source_t src)
 {
     /* 1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix */
     SYSCON.saradc_ctrl.data_to_i2s = src;
 }
 
 /**
- * Set pattern table lenth for digital controller.
+ * Set pattern table length for digital controller.
  * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
  * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
  * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 16.
  */
-static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
+static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
 {
     if (adc_n == ADC_NUM_1) {
         SYSCON.saradc_ctrl.sar1_patt_len = patt_len - 1;
@@ -197,22 +226,41 @@ static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t pat
  * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
  * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
  *
- * @prarm adc_n ADC unit.
- * @param pattern_index Items index. Range: 1 ~ 16.
- * @param pattern Stored conversion rules.
+ * @param adc_n ADC unit.
+ * @param pattern_index Items index. Range: 0 ~ 15.
+ * @param pattern Stored conversion rules, see ``adc_hal_digi_pattern_table_t``.
  */
-static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_ll_pattern_table_t pattern)
+static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_hal_digi_pattern_table_t pattern)
 {
-    const uint32_t patt_tab_idx = pattern_index / 4;
-    const uint32_t patt_shift   = (3 - (pattern_index % 4)) * 8;
-    const uint32_t patt_mask    = 0xFF << patt_shift;
-
+    uint32_t tab;
+    uint8_t index = pattern_index / 4;
+    uint8_t offset = (pattern_index % 4) * 8;
     if (adc_n == ADC_NUM_1) {
-        SYSCON.saradc_sar1_patt_tab[patt_tab_idx] &= ~patt_mask;
-        SYSCON.saradc_sar1_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;
+        tab = SYSCON.saradc_sar1_patt_tab[index];   // Read old register value
+        tab &= (~(0xFF000000 >> offset));           // clear old data
+        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        SYSCON.saradc_sar1_patt_tab[index] = tab;   // Write back
     } else { // adc_n == ADC_NUM_2
-        SYSCON.saradc_sar2_patt_tab[patt_tab_idx] &= ~patt_mask;
-        SYSCON.saradc_sar2_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;
+        tab = SYSCON.saradc_sar2_patt_tab[index];   // Read old register value
+        tab &= (~(0xFF000000 >> offset));           // clear old data
+        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        SYSCON.saradc_sar2_patt_tab[index] = tab;   // Write back
+    }
+}
+
+/**
+ * Reset the pattern table pointer, then take the measurement rule from table header in next measurement.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_digi_clear_pattern_table(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        SYSCON.saradc_ctrl.sar1_patt_p_clear = 1;
+        SYSCON.saradc_ctrl.sar1_patt_p_clear = 0;
+    } else { // adc_n == ADC_NUM_2
+        SYSCON.saradc_ctrl.sar2_patt_p_clear = 1;
+        SYSCON.saradc_ctrl.sar2_patt_p_clear = 0;
     }
 }
 
@@ -223,7 +271,7 @@ static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern
  * Set adc cct for PWDET controller.
  *
  * @note Capacitor tuning of the PA power monitor. cct set to the same value with PHY.
- * @prarm cct Range: 0 ~ 7.
+ * @param cct Range: 0 ~ 7.
  */
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
@@ -249,8 +297,8 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /**
  * Set adc output data format for RTC controller.
  *
- * @prarm adc_n ADC unit.
- * @prarm bits Output data bits width option.
+ * @param adc_n ADC unit.
+ * @param bits Output data bits width option, see ``adc_bits_width_t``.
  */
 static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_width_t bits)
 {
@@ -266,9 +314,9 @@ static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_wid
 /**
  * Enable adc channel to start convert.
  *
- * @note Only one channel can be selected for once measurement.
+ * @note Only one channel can be selected in once measurement.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
 static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
@@ -281,11 +329,28 @@ static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
 }
 
 /**
+ * Disable adc channel to start convert.
+ *
+ * @note Only one channel can be selected in once measurement.
+ *
+ * @param adc_n ADC unit.
+ * @param channel ADC channel number for each ADCn.
+ */
+static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
+{
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_meas_start1.sar1_en_pad = 0; //only one channel is selected.
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_meas_start2.sar2_en_pad = 0; //only one channel is selected.
+    }
+}
+
+/**
  * Start conversion once by software for RTC controller.
  *
  * @note It may be block to wait conversion idle for ADC1.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
 static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
@@ -303,7 +368,7 @@ static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
 /**
  * Check the conversion done flag for each ADCn for RTC controller.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @return
  *      -true  : The conversion process is finish.
  *      -false : The conversion process is not finish.
@@ -322,7 +387,7 @@ static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
 /**
  * Get the converted value for each ADCn for RTC controller.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @return
  *      - Converted value.
  */
@@ -337,13 +402,41 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
     return ret_val;
 }
 
+/**
+ * ADC module RTC output data invert or not.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
+{
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_read_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_read_ctrl2.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
+    }
+}
+
+/**
+ * Analyze whether the obtained raw data is correct.
+ *
+ * @param adc_n ADC unit.
+ * @param raw_data ADC raw data input (convert value).
+ * @return
+ *      - 0: The data is correct to use.
+ */
+static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t adc_n, uint16_t raw_data)
+{
+    /* ADC1 don't need check data */
+    return ADC_RTC_DATA_OK;
+}
+
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
 /**
  * Set ADC module power management.
  *
- * @prarm manage Set ADC power status.
+ * @param manage Set ADC power status.
  */
 static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
 {
@@ -380,14 +473,17 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
 }
 
 /**
- * ADC module clock division factor setting. ADC clock devided from APB clock.
+ * ADC SAR clock division factor setting. ADC SAR clock divided from `RTC_FAST_CLK`.
  *
- * @prarm div Division factor.
+ * @param div Division factor.
  */
-static inline void adc_ll_set_clk_div(uint32_t div)
+static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
 {
-    /* ADC clock devided from APB clk, e.g. 80 / 2 = 40Mhz, */
-    SYSCON.saradc_ctrl.sar_clk_div = div;
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_read_ctrl.sar1_clk_div = div;
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_read_ctrl2.sar2_clk_div = div;
+    }
 }
 
 /**
@@ -400,7 +496,7 @@ static inline void adc_ll_set_clk_div(uint32_t div)
  *
  * When VDD_A is 3.3V:
  *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
+ * - 0dB attenuation (ADC_ATTEN_DB_0) gives full-scale voltage 1.1V
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) gives full-scale voltage 1.5V
  * - 6dB attenuation (ADC_ATTEN_DB_6) gives full-scale voltage 2.2V
  * - 11dB attenuation (ADC_ATTEN_DB_11) gives full-scale voltage 3.9V (see note below)
@@ -412,16 +508,16 @@ static inline void adc_ll_set_clk_div(uint32_t div)
  *
  * Due to ADC characteristics, most accurate results are obtained within the following approximate voltage ranges:
  *
- * - 0dB attenuaton (ADC_ATTEN_DB_0) between 100 and 950mV
+ * - 0dB attenuation (ADC_ATTEN_DB_0) between 100 and 950mV
  * - 2.5dB attenuation (ADC_ATTEN_DB_2_5) between 100 and 1250mV
  * - 6dB attenuation (ADC_ATTEN_DB_6) between 150 to 1750mV
  * - 11dB attenuation (ADC_ATTEN_DB_11) between 150 to 2450mV
  *
  * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
  *
- * @prarm adc_n ADC unit.
- * @prarm channel ADCn channel number.
- * @prarm atten The attenuation option.
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @param atten The attenuation option.
  */
 static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
@@ -433,30 +529,18 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
 }
 
 /**
- * ADC module RTC output data invert or not.
+ * Get the attenuation of a particular channel on ADCn.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @return atten The attenuation option.
  */
-static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
+static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
 {
     if (adc_n == ADC_NUM_1) {
-        SENS.sar_read_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_NUM_2
-        SENS.sar_read_ctrl2.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
-    }
-}
-
-/**
- * ADC module Digital output data invert or not.
- *
- * @prarm adc_n ADC unit.
- */
-static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
-{
-    if (adc_n == ADC_NUM_1) {
-        SYSCON.saradc_ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_NUM_2
-        SYSCON.saradc_ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
+        return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
+    } else {
+        return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
 }
 
@@ -467,10 +551,10 @@ static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
  * Two RTC controller: Single conversion modes (Polling). For low power purpose working during deep sleep;
  * the other is dedicated for Power detect (PWDET / PKDET), Only support ADC2.
  *
- * @prarm adc_n ADC unit.
- * @prarm ctrl ADC controller.
+ * @param adc_n ADC unit.
+ * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_hal_controller_t ctrl)
 {
     if (adc_n == ADC_NUM_1) {
         switch ( ctrl ) {

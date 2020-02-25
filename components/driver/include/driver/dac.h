@@ -24,7 +24,7 @@ extern "C" {
 #include "hal/dac_types.h"
 
 /**
- * @brief Get the gpio number of a specific DAC channel.
+ * @brief Get the GPIO number of a specific DAC channel.
  *
  * @param channel Channel to get the gpio number
  * @param gpio_num output buffer to hold the gpio number

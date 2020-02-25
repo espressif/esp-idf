@@ -64,7 +64,11 @@ static void init_ulp_program(void)
     /* Note: when changing channel here, also change 'adc_channel' constant
        in adc.S */
     adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+#if CONFIG_IDF_TARGET_ESP32
     adc1_config_width(ADC_WIDTH_BIT_12);
+#elif CONFIG_IDF_TARGET_ESP32S2
+    adc1_config_width(ADC_WIDTH_BIT_13);
+#endif
     adc1_ulp_enable();
 
     /* Set low and high thresholds, approx. 1.35V - 1.75V*/

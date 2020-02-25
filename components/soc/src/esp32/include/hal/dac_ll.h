@@ -178,6 +178,7 @@ static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
 static inline void dac_ll_dma_enable(void)
 {
     SENS.sar_dac_ctrl1.dac_dig_force = 1;
+    SENS.sar_dac_ctrl1.dac_clk_inv = 1;
 }
 
 /**
@@ -186,6 +187,7 @@ static inline void dac_ll_dma_enable(void)
 static inline void dac_ll_dma_disable(void)
 {
     SENS.sar_dac_ctrl1.dac_dig_force = 0;
+    SENS.sar_dac_ctrl1.dac_clk_inv = 0;
 }
 
 

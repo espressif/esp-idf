@@ -73,13 +73,6 @@ typedef volatile struct {
     uint32_t sar2_status;                                /**/
     uint32_t sar1_patt_tab[4];                             /*item 0 ~ 3 for pattern table 1 (each item one byte)*/
     uint32_t sar2_patt_tab[4];
-    // uint32_t sar1_patt_tab2;                             /*Item 4 ~ 7 for pattern table 1 (each item one byte)*/
-    // uint32_t sar1_patt_tab3;                             /*Item 8 ~ 11 for pattern table 1 (each item one byte)*/
-    // uint32_t sar1_patt_tab4;                             /*Item 12 ~ 15 for pattern table 1 (each item one byte)*/
-    // uint32_t sar2_patt_tab1;                             /*item 0 ~ 3 for pattern table 2 (each item one byte)*/
-    // uint32_t sar2_patt_tab2;                             /*Item 4 ~ 7 for pattern table 2 (each item one byte)*/
-    // uint32_t sar2_patt_tab3;                             /*Item 8 ~ 11 for pattern table 2 (each item one byte)*/
-    // uint32_t sar2_patt_tab4;                             /*Item 12 ~ 15 for pattern table 2 (each item one byte)*/
     union {
         struct {
             uint32_t reserved0:             2;
