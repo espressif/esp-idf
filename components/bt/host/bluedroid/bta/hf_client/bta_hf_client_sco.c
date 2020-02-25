@@ -212,7 +212,7 @@ static void bta_hf_client_sco_conn_rsp(tBTM_ESCO_CONN_REQ_EVT_DATA *p_data)
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
 /*******************************************************************************
 **
-** Function         bta_ag_ci_sco_data
+** Function         bta_hf_client_ci_sco_data
 **
 ** Description      Process the SCO data ready callin event
 **
@@ -337,7 +337,7 @@ static void bta_hf_client_sco_disc_cback(UINT16 sco_idx)
 
 /*******************************************************************************
 **
-** Function         bta_hf_client_create_sco
+** Function         bta_hf_client_sco_create
 **
 ** Description
 **
