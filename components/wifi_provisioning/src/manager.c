@@ -99,8 +99,11 @@ struct wifi_prov_mgr_ctx {
     /* Pointer to proof of possession */
     protocomm_security_pop_t pop;
 
-    /* Handle to timer */
-    esp_timer_handle_t timer;
+    /* Handle for Provisioning Auto Stop timer */
+    esp_timer_handle_t autostop_timer;
+
+    /* Handle for delayed Wi-Fi connection timer */
+    esp_timer_handle_t wifi_connect_timer;
 
     /* State of Wi-Fi Station */
     wifi_prov_sta_state_t wifi_state;
@@ -566,11 +569,17 @@ static bool wifi_prov_mgr_stop_service(bool blocking)
         return false;
     }
 
-    /* Timer not needed anymore */
-    if (prov_ctx->timer) {
-        esp_timer_stop(prov_ctx->timer);
-        esp_timer_delete(prov_ctx->timer);
-        prov_ctx->timer = NULL;
+    /* Timers not needed anymore */
+    if (prov_ctx->autostop_timer) {
+        esp_timer_stop(prov_ctx->autostop_timer);
+        esp_timer_delete(prov_ctx->autostop_timer);
+        prov_ctx->autostop_timer = NULL;
+    }
+
+    if (prov_ctx->wifi_connect_timer) {
+        esp_timer_stop(prov_ctx->wifi_connect_timer);
+        esp_timer_delete(prov_ctx->wifi_connect_timer);
+        prov_ctx->wifi_connect_timer = NULL;
     }
 
     ESP_LOGD(TAG, "Stopping provisioning");
@@ -836,10 +845,11 @@ static void wifi_prov_mgr_event_handler_internal(
         prov_ctx->prov_state = WIFI_PROV_STATE_SUCCESS;
 
         /* If auto stop is enabled (default), schedule timer to
-         * stop provisioning app after 30 seconds. */
+         * stop provisioning after configured timeout. */
         if (!prov_ctx->mgr_info.capabilities.no_auto_stop) {
-            ESP_LOGD(TAG, "Starting 30s timer for stop_prov_timer_cb()");
-            esp_timer_start_once(prov_ctx->timer, 30000 * 1000U);
+            ESP_LOGD(TAG, "Starting %d sec timer for stop_prov_timer_cb()",
+                        CONFIG_WIFI_PROV_AUTOSTOP_TIMEOUT);
+            esp_timer_start_once(prov_ctx->autostop_timer, CONFIG_WIFI_PROV_AUTOSTOP_TIMEOUT * 1000000U);
         }
 
         /* Execute user registered callback handler */
@@ -1105,6 +1115,13 @@ esp_err_t wifi_prov_mgr_is_provisioned(bool *provisioned)
     return ESP_OK;
 }
 
+static void wifi_connect_timer_cb(void *arg)
+{
+    if (esp_wifi_connect() != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to connect Wi-Fi");
+    }
+}
+
 esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg)
 {
     if (!prov_ctx_lock) {
@@ -1151,14 +1168,13 @@ esp_err_t wifi_prov_mgr_configure_sta(wifi_config_t *wifi_cfg)
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_FAIL;
     }
-    /* Connect to AP */
-    if (esp_wifi_connect() != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to connect Wi-Fi");
+    /* Connect to AP after one second so that the response can
+     * be sent to the client successfully, before a channel change happens*/
+    if (esp_timer_start_once(prov_ctx->wifi_connect_timer, 1000 * 1000U) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to start Wi-Fi connect timer");
         RELEASE_LOCK(prov_ctx_lock);
         return ESP_FAIL;
     }
-    /* This delay allows channel change to complete */
-    vTaskDelay(1000 / portTICK_PERIOD_MS);
 
     /* Reset Wi-Fi station state for provisioning app */
     prov_ctx->wifi_state = WIFI_PROV_STA_CONNECTING;
@@ -1454,18 +1470,33 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     }
     prov_ctx->security = security;
 
+
+    esp_timer_create_args_t wifi_connect_timer_conf = {
+        .callback = wifi_connect_timer_cb,
+        .arg = NULL,
+        .dispatch_method = ESP_TIMER_TASK,
+        .name = "wifi_prov_connect_tm"
+    };
+    ret = esp_timer_create(&wifi_connect_timer_conf, &prov_ctx->wifi_connect_timer);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create Wi-Fi connect timer");
+        free((void *)prov_ctx->pop.data);
+        goto err;
+    }
+
     /* If auto stop on completion is enabled (default) create the stopping timer */
     if (!prov_ctx->mgr_info.capabilities.no_auto_stop) {
         /* Create timer object as a member of app data */
-        esp_timer_create_args_t timer_conf = {
+        esp_timer_create_args_t autostop_timer_conf = {
             .callback = stop_prov_timer_cb,
             .arg = NULL,
             .dispatch_method = ESP_TIMER_TASK,
-            .name = "wifi_prov_mgr_tm"
+            .name = "wifi_prov_autostop_tm"
         };
-        ret = esp_timer_create(&timer_conf, &prov_ctx->timer);
+        ret = esp_timer_create(&autostop_timer_conf, &prov_ctx->autostop_timer);
         if (ret != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to create timer");
+            ESP_LOGE(TAG, "Failed to create auto-stop timer");
+            esp_timer_delete(prov_ctx->wifi_connect_timer);
             free((void *)prov_ctx->pop.data);
             goto err;
         }
@@ -1480,7 +1511,8 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     /* Start provisioning service */
     ret = wifi_prov_mgr_start_service(service_name, service_key);
     if (ret != ESP_OK) {
-        esp_timer_delete(prov_ctx->timer);
+        esp_timer_delete(prov_ctx->autostop_timer);
+        esp_timer_delete(prov_ctx->wifi_connect_timer);
         free((void *)prov_ctx->pop.data);
     }
     ACQUIRE_LOCK(prov_ctx_lock);
