@@ -498,11 +498,13 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     uint8_t* temp_buffer = NULL;
 
     if (!direct_read) {
-        uint32_t length_to_allocate = MAX(MAX_READ_CHUNK, length);
+        uint32_t length_to_allocate = MIN(MAX_READ_CHUNK, length);
         length_to_allocate = (length_to_allocate+3)&(~3);
         temp_buffer = heap_caps_malloc(length_to_allocate, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        ESP_LOGV(TAG, "allocate temp buffer: %p", temp_buffer);
-        if (temp_buffer == NULL) return ESP_ERR_NO_MEM;
+        ESP_LOGV(TAG, "allocate temp buffer: %p (%d)", temp_buffer, length_to_allocate);
+        if (temp_buffer == NULL) {
+            return ESP_ERR_NO_MEM;
+        }
     }
 
     esp_err_t err = ESP_OK;
@@ -682,27 +684,32 @@ esp_err_t esp_flash_app_disable_protect(bool disable)
 
 #ifndef CONFIG_SPI_FLASH_USE_LEGACY_IMPL
 
+/* Translate any ESP_ERR_FLASH_xxx error code (new API) to a generic ESP_ERR_xyz error code
+ */
 static IRAM_ATTR esp_err_t spi_flash_translate_rc(esp_err_t err)
 {
     switch (err) {
         case ESP_OK:
-            return ESP_OK;
         case ESP_ERR_INVALID_ARG:
-            return ESP_ERR_INVALID_ARG;
+        case ESP_ERR_NO_MEM:
+            return err;
+
         case ESP_ERR_FLASH_NOT_INITIALISED:
         case ESP_ERR_FLASH_PROTECTED:
             return ESP_ERR_INVALID_STATE;
+
         case ESP_ERR_NOT_FOUND:
         case ESP_ERR_FLASH_UNSUPPORTED_HOST:
         case ESP_ERR_FLASH_UNSUPPORTED_CHIP:
             return ESP_ERR_NOT_SUPPORTED;
+
         case ESP_ERR_FLASH_NO_RESPONSE:
             return ESP_ERR_INVALID_RESPONSE;
+
         default:
-            ESP_EARLY_LOGE(TAG, "unexpected spi flash error code: %x", err);
+            ESP_EARLY_LOGE(TAG, "unexpected spi flash error code: 0x%x", err);
             abort();
     }
-    return ESP_OK;
 }
 
 esp_err_t IRAM_ATTR spi_flash_erase_range(uint32_t start_addr, uint32_t size)

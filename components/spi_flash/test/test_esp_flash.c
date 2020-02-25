@@ -40,17 +40,25 @@ static uint8_t sector_buf[4096];
 #define VSPI_PIN_NUM_HD     VSPI_IOMUX_PIN_NUM_HD
 #define VSPI_PIN_NUM_WP     VSPI_IOMUX_PIN_NUM_WP
 
-#define ALL_TEST_NUM (sizeof(config_list)/sizeof(flashtest_config_t))
+#define TEST_CONFIG_NUM (sizeof(config_list)/sizeof(flashtest_config_t))
+
 typedef void (*flash_test_func_t)(esp_flash_t* chip);
 
+/* Use FLASH_TEST_CASE for SPI flash tests that only use the main SPI flash chip
+*/
 #define FLASH_TEST_CASE(STR, FUNC_TO_RUN) \
-    TEST_CASE(STR, "[esp_flash]") {flash_test_func(FUNC_TO_RUN, 1);}
-#ifdef CONFIG_ESP32_SPIRAM_SUPPORT
-// These tests needs external flash, right on the place of psram
+    TEST_CASE(STR, "[esp_flash]") {flash_test_func(FUNC_TO_RUN, 1 /* first index reserved for main flash */ );}
+
+/* Use FLASH_TEST_CASE_3 for tests which also run on external flash, which sits in the place of PSRAM
+   (these tests are incompatible with PSRAM)
+
+   These tests run for all the flash chip configs shown in config_list, below (internal and external).
+ */
+#if defined(CONFIG_SPIRAM_SUPPORT)
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #else
 #define FLASH_TEST_CASE_3(STR, FUNC_TO_RUN) \
-    TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, ALL_TEST_NUM);}
+    TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 #endif
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
@@ -177,12 +185,14 @@ void teardown_test_chip(esp_flash_t* chip, spi_host_device_t host)
 static void flash_test_func(flash_test_func_t func, int test_num)
 {
     for (int i = 0; i < test_num; i++) {
+        ESP_LOGI(TAG, "Testing config %d/%d", i, test_num);
         flashtest_config_t* config = &config_list[i];
         esp_flash_t* chip;
         setup_new_chip(config, &chip);
         (*func)(chip);
         teardown_test_chip(chip, config->host_id);
     }
+    ESP_LOGI(TAG, "Completed %d configs", test_num);
 }
 
 /* ---------- Test code start ------------*/
@@ -514,7 +524,7 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
 #ifndef CONFIG_ESP32_SPIRAM_SUPPORT
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]")
 {
-    for (int i = 0; i < ALL_TEST_NUM; i++) {
+    for (int i = 0; i < TEST_CONFIG_NUM; i++) {
         test_permutations(&config_list[i]);
     }
 }
@@ -584,3 +594,34 @@ static void test_write_large_buffer(esp_flash_t *chip, const uint8_t *source, si
     write_large_buffer(chip, part, source, length);
     read_and_check(chip, part, source, length);
 }
+
+#ifdef CONFIG_SPIRAM_USE_MALLOC
+
+static void test_flash_read_large_psram_buffer(esp_flash_t *chip)
+{
+    const size_t BUF_SZ = 256 * 1024;    // Too large for internal RAM
+    const size_t INTERNAL_BUF_SZ = 1024; // Should fit in internal RAM
+    _Static_assert(BUF_SZ % INTERNAL_BUF_SZ == 0, "should be a multiple");
+    const size_t TEST_OFFS = 0x1000; // Can be any offset, really
+
+    uint8_t *buf = heap_caps_malloc(BUF_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_SPIRAM);
+    TEST_ASSERT_NOT_NULL(buf);
+
+    ESP_ERROR_CHECK( esp_flash_read(chip, buf, TEST_OFFS, BUF_SZ) );
+
+    // Read back the same into smaller internal memory buffer and check it all matches
+    uint8_t *ibuf = heap_caps_malloc(INTERNAL_BUF_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(ibuf);
+
+    for (int i = 0; i < BUF_SZ; i += INTERNAL_BUF_SZ) {
+        ESP_ERROR_CHECK( esp_flash_read(chip, ibuf, TEST_OFFS + i, INTERNAL_BUF_SZ) );
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(buf + i, ibuf, INTERNAL_BUF_SZ);
+    }
+
+    free(ibuf);
+    free(buf);
+}
+
+FLASH_TEST_CASE("esp_flash_read large PSRAM buffer", test_flash_read_large_psram_buffer);
+
+#endif
