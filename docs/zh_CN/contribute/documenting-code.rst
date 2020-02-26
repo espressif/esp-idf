@@ -323,9 +323,9 @@ Doxygen 的安装取决于操作系统：
 
         ::
 
-            $ pacman -S mingw32/mingw-w64-i686-python2-pillow
+            $ pacman -S mingw32/mingw-w64-i686-python-pillow
 
-        查看屏幕上的记录，确定 ``mingw-w64-i686-python2-pillow-4.3.0-1`` 已安装。旧版本 *pillow* 无法运行。
+        查看屏幕上的记录，确定 ``mingw-w64-i686-python-pillow-4.3.0-1`` 已安装。旧版本 *pillow* 无法运行。
 
     Windows 安装 Doxygen 的缺点是 `blockdiag pictures <add-illustrations>` 字体不能正确加载，可能会存在乱码。在此问题解决之前，您可以使用 `interactive shell`_ 查看完整图片。
 
