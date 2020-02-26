@@ -467,7 +467,7 @@ CFLAGS := $(strip \
 CXXFLAGS ?=
 EXTRA_CXXFLAGS ?=
 CXXFLAGS := $(strip \
-	-std=gnu++11 \
+	-std=gnu++17 \
 	$(OPTIMIZATION_FLAGS) $(DEBUG_FLAGS) \
 	$(COMMON_FLAGS) \
 	$(COMMON_WARNING_FLAGS) \
