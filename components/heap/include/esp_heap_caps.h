@@ -16,6 +16,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include "multi_heap.h"
+#include <sdkconfig.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +38,8 @@ extern "C" {
 #define MALLOC_CAP_SPIRAM           (1<<10) ///< Memory must be in SPI RAM
 #define MALLOC_CAP_INTERNAL         (1<<11) ///< Memory must be internal; specifically it should not disappear when flash/spiram cache is switched off
 #define MALLOC_CAP_DEFAULT          (1<<12) ///< Memory can be returned in a non-capability-specific memory allocation (e.g. malloc(), calloc()) call
+#define MALLOC_CAP_IRAM_8BIT        (1<<13) ///< Memory must be in IRAM and allow unaligned access
+
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
 /**

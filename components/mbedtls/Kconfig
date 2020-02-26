@@ -13,6 +13,7 @@ menu "mbedTLS"
               behavior in ESP-IDF
             - Custom allocation mode, by overwriting calloc()/free() using
               mbedtls_platform_set_calloc_free() function
+            - Internal IRAM memory wherever applicable else internal DRAM
 
             Recommended mode here is always internal, since that is most preferred
             from security perspective. But if application requirement does not
@@ -31,6 +32,16 @@ menu "mbedTLS"
 
         config MBEDTLS_CUSTOM_MEM_ALLOC
             bool "Custom alloc mode"
+
+        config MBEDTLS_IRAM_8BIT_MEM_ALLOC
+            bool "Internal IRAM"
+            depends on ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+            help
+                Allows to use IRAM memory region as 8bit accessible region.
+
+                TLS input and output buffers will be allocated in IRAM section which is 32bit aligned
+                memory. Every unaligned (8bit or 16bit) access will result in an exception
+                and incur penalty of certain clock cycles per unaligned read/write.
 
     endchoice #MBEDTLS_MEM_ALLOC_MODE
 

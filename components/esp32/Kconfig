@@ -700,6 +700,16 @@ menu "ESP32-specific"
             To prevent interrupting DPORT workarounds,
             need to disable interrupt with a maximum used level in the system.
 
+    config ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+        bool "Enable IRAM as 8 bit accessible memory"
+        depends on FREERTOS_UNICORE
+        help
+            If enabled, application can use IRAM as byte accessible region for storing data
+            (Note: IRAM region cannot be used as task stack)
+
+            This is possible due to handling of exceptions `LoadStoreError (3)` and `LoadStoreAlignmentError (9)`
+            Each unaligned read/write access will incur a penalty of maximum of 167 CPU cycles.
+
 endmenu  # ESP32-Specific
 
 menu "Power Management"

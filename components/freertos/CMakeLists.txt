@@ -34,6 +34,10 @@ set(private_include_dirs
     xtensa
     .)
 
+if(CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
+     list(APPEND srcs "xtensa/xtensa_loadstore_handler.S")
+ endif()
+
 # app_trace is required by FreeRTOS headers only when CONFIG_SYSVIEW_ENABLE=y,
 # but requirements can't depend on config options, so always require it.
 idf_component_register(SRCS "${srcs}"
