@@ -77,6 +77,7 @@ typedef void (*flash_test_func_t)(esp_flash_t* chip);
 // These tests needs external flash, right on the place of psram
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
 #else
+// Disabled for ESP32-S2 due to lack of runners
 #define FLASH_TEST_CASE_3(STR, FUNC_TO_RUN) \
     TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, ALL_TEST_NUM);}
 #endif
@@ -610,6 +611,7 @@ TEST_CASE("SPI flash test reading with all speed/mode permutations", "[esp_flash
 
 #ifndef CONFIG_SPIRAM_SUPPORT
 #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+// No runners
 TEST_CASE("SPI flash test reading with all speed/mode permutations, 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]")
 {
     for (int i = 0; i < ALL_TEST_NUM; i++) {
