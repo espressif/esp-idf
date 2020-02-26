@@ -611,6 +611,11 @@ _UserExceptionVector:
 --------------------------------------------------------------------------------
 */
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    .global   LoadStoreErrorHandler
+    .global   AlignmentErrorHandler
+#endif
+
     .section .iram1,"ax"
 
     #if XCHAL_HAVE_WINDOWED
@@ -632,6 +637,20 @@ _xt_to_coproc_exc:
     /* never returns here - call0 is used as a jump (see note at top) */
     #endif
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    .align      4
+_call_loadstore_handler:
+    call0   LoadStoreErrorHandler
+    /* This will return only if wrong opcode or address out of range*/
+    j       .LS_exit
+
+    .align      4
+_call_alignment_handler:
+    call0   AlignmentErrorHandler
+    /* This will return only if wrong opcode or address out of range*/
+    addi    a0, a0, 1
+    j       .LS_exit
+#endif
 
 /*
 --------------------------------------------------------------------------------
@@ -661,6 +680,15 @@ _xt_user_exc:
     #endif
     beqi    a0, EXCCAUSE_SYSCALL, _xt_to_syscall_exc
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    beqi    a0, EXCCAUSE_LOAD_STORE_ERROR, _call_loadstore_handler
+
+    addi    a0, a0, -1
+    beqi    a0, 8, _call_alignment_handler
+    addi    a0, a0, 1
+.LS_exit:
+#endif
+    
     /* Handle all other exceptions. All can have user-defined handlers. */
     /* NOTE: we'll stay on the user stack for exception handling.       */
 
