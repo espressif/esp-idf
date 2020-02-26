@@ -8,7 +8,6 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     ccache \
     check \
-    cmake \
     curl \
     flex \
     git \
@@ -53,8 +52,11 @@ RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_B
       git submodule update --init --recursive; \
     fi
 
-RUN $IDF_PATH/install.sh && \
-  rm -rf $IDF_TOOLS_PATH/dist
+# Install all the required tools, plus CMake
+RUN $IDF_PATH/tools/idf_tools.py --non-interactive install required \
+  && $IDF_PATH/tools/idf_tools.py --non-interactive install cmake \
+  && $IDF_PATH/tools/idf_tools.py --non-interactive install-python-env \
+  && rm -rf $IDF_TOOLS_PATH/dist
 
 RUN mkdir -p $HOME/.ccache && \
   touch $HOME/.ccache/ccache.conf
