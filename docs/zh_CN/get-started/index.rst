@@ -276,8 +276,6 @@ Linux 和 MacOS 操作系统
     cd ~/esp/hello_world
     idf.py menuconfig
 
-如果您的默认 Python 版本为 3.0 以上，可能需要运行  ``python2 idf.py`` 。
-
 Windows 操作系统
 ~~~~~~~~~~~~~~~~~~~~~
 
