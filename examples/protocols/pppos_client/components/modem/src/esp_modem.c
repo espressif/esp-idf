@@ -18,6 +18,7 @@
 #include "freertos/task.h"
 #include "freertos/semphr.h"
 #include "esp_modem.h"
+#include "esp_netif_ppp.h"
 #include "esp_log.h"
 #include "sdkconfig.h"
 
@@ -474,18 +475,41 @@ err:
     return ESP_FAIL;
 }
 
+static void on_netif_ppp_changed(void *arg, esp_event_base_t event_base,
+                        int32_t event_id, void *event_data) {
+    modem_dte_t *dte = (modem_dte_t *)arg;
+    modem_dce_t *dce = dte->dce;
+    esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
+
+    if(event_id == NETIF_PPP_ERRORUSER) {
+        /* Enter command mode */
+        if(dte->change_mode(dte, MODEM_COMMAND_MODE) != ESP_OK)
+            ESP_LOGW(MODEM_TAG, "enter command mode failed");
+        /* Hang up */
+        if(dce->hang_up(dce) != ESP_OK)
+            ESP_LOGW(MODEM_TAG, "hang up failed");
+
+        /* post PPP mode stopped finished event */
+        esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_PPP_STOPPED, NULL, 0, 0);
+
+        /* remove the handler from default loop */
+        esp_event_handler_unregister(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, &on_netif_ppp_changed);
+    }
+}
+
 esp_err_t esp_modem_stop_ppp(modem_dte_t *dte)
 {
     modem_dce_t *dce = dte->dce;
     MODEM_CHECK(dce, "DTE has not yet bind with DCE", err);
     esp_modem_dte_t *esp_dte = __containerof(dte, esp_modem_dte_t, parent);
 
+    /* register event for reacting to NETIF PPP status changes */
+    esp_event_loop_create_default();
+    ESP_ERROR_CHECK(esp_event_handler_register(NETIF_PPP_STATUS, ESP_EVENT_ANY_ID, &on_netif_ppp_changed, dte));
+
     /* post PPP mode stopped event */
     esp_event_post_to(esp_dte->event_loop_hdl, ESP_MODEM_EVENT, ESP_MODEM_EVENT_PPP_STOP, NULL, 0, 0);
-    /* Enter command mode */
-    MODEM_CHECK(dte->change_mode(dte, MODEM_COMMAND_MODE) == ESP_OK, "enter command mode failed", err);
-    /* Hang up */
-    MODEM_CHECK(dce->hang_up(dce) == ESP_OK, "hang up failed", err);
+
     return ESP_OK;
 err:
     return ESP_FAIL;
