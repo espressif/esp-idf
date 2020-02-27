@@ -115,6 +115,9 @@ static void modem_event_handler(void *event_handler_arg, esp_event_base_t event_
         ESP_LOGI(TAG, "Modem PPP Started");
         break;
     case ESP_MODEM_EVENT_PPP_STOP:
+        ESP_LOGI(TAG, "Modem PPP Stop Requested");
+        break;
+    case ESP_MODEM_EVENT_PPP_STOPPED:
         ESP_LOGI(TAG, "Modem PPP Stopped");
         xEventGroupSetBits(event_group, STOP_BIT);
         break;
