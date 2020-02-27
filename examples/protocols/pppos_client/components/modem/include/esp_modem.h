@@ -36,7 +36,8 @@ ESP_EVENT_DECLARE_BASE(ESP_MODEM_EVENT);
 typedef enum {
     ESP_MODEM_EVENT_PPP_START = 0,       /*!< ESP Modem Start PPP Session */
     ESP_MODEM_EVENT_PPP_STOP  = 3,       /*!< ESP Modem Stop PPP Session*/
-    ESP_MODEM_EVENT_UNKNOWN   = 4        /*!< ESP Modem Unknown Response */
+    ESP_MODEM_EVENT_UNKNOWN   = 4,       /*!< ESP Modem Unknown Response */
+    ESP_MODEM_EVENT_PPP_STOPPED          /*!< ESP Modem PPP Session completely stopped */
 } esp_modem_event_t;
 
 /**
