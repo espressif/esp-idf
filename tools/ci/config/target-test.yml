@@ -384,13 +384,6 @@ UT_008:
     - UT_T1_GPIO
     - psram
 
-UT_010:
-  extends: .unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
-    - psram
-
 UT_012:
   extends: .unit_test_template
   tags:
