@@ -698,11 +698,26 @@ static void test_write_large_buffer(esp_flash_t *chip, const uint8_t *source, si
 
 #ifdef CONFIG_SPIRAM_USE_MALLOC
 
+/* Utility: Read into a small internal RAM buffer using esp_flash_read() and compare what
+   we read with 'buffer' */
+static void s_test_compare_flash_contents_small_reads(esp_flash_t *chip, const uint8_t *buffer, size_t offs, size_t len)
+{
+    const size_t INTERNAL_BUF_SZ = 1024; // Should fit in internal RAM
+    uint8_t *ibuf = heap_caps_malloc(INTERNAL_BUF_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    TEST_ASSERT_NOT_NULL(ibuf);
+
+    for (int i = 0; i < len; i += INTERNAL_BUF_SZ) {
+        size_t to_read = MIN(INTERNAL_BUF_SZ, len - i);
+        ESP_ERROR_CHECK( esp_flash_read(chip, ibuf, offs + i, to_read) );
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(buffer + i, ibuf, to_read);
+    }
+
+    free(ibuf);
+}
+
 static void test_flash_read_large_psram_buffer(esp_flash_t *chip)
 {
     const size_t BUF_SZ = 256 * 1024;    // Too large for internal RAM
-    const size_t INTERNAL_BUF_SZ = 1024; // Should fit in internal RAM
-    _Static_assert(BUF_SZ % INTERNAL_BUF_SZ == 0, "should be a multiple");
     const size_t TEST_OFFS = 0x1000; // Can be any offset, really
 
     uint8_t *buf = heap_caps_malloc(BUF_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_SPIRAM);
@@ -711,18 +726,41 @@ static void test_flash_read_large_psram_buffer(esp_flash_t *chip)
     ESP_ERROR_CHECK( esp_flash_read(chip, buf, TEST_OFFS, BUF_SZ) );
 
     // Read back the same into smaller internal memory buffer and check it all matches
-    uint8_t *ibuf = heap_caps_malloc(INTERNAL_BUF_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
-    TEST_ASSERT_NOT_NULL(ibuf);
+    s_test_compare_flash_contents_small_reads(chip, buf, TEST_OFFS, BUF_SZ);
 
-    for (int i = 0; i < BUF_SZ; i += INTERNAL_BUF_SZ) {
-        ESP_ERROR_CHECK( esp_flash_read(chip, ibuf, TEST_OFFS + i, INTERNAL_BUF_SZ) );
-        TEST_ASSERT_EQUAL_HEX8_ARRAY(buf + i, ibuf, INTERNAL_BUF_SZ);
-    }
-
-    free(ibuf);
     free(buf);
 }
 
 FLASH_TEST_CASE("esp_flash_read large PSRAM buffer", test_flash_read_large_psram_buffer);
+
+
+/* similar to above test, but perform it under memory pressure */
+static void test_flash_read_large_psram_buffer_low_internal_mem(esp_flash_t *chip)
+{
+    const size_t BUF_SZ = 256 * 1024;    // Too large for internal RAM
+    const size_t REMAINING_INTERNAL = 1024; // Exhaust internal memory until maximum free block is less than this
+    const size_t TEST_OFFS = 0x8000;
+
+    /* Exhaust the available free internal memory */
+    test_utils_exhaust_memory_rec erec = test_utils_exhaust_memory(MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT, REMAINING_INTERNAL);
+
+    uint8_t *buf = heap_caps_malloc(BUF_SZ, MALLOC_CAP_8BIT|MALLOC_CAP_SPIRAM);
+    TEST_ASSERT_NOT_NULL(buf);
+
+    /* Calling esp_flash_read() here will need to allocate a small internal buffer,
+       so check it works. */
+    ESP_ERROR_CHECK( esp_flash_read(chip, buf, TEST_OFFS, BUF_SZ) );
+
+    test_utils_free_exhausted_memory(erec);
+
+    // Read back the same into smaller internal memory buffer and check it all matches
+    s_test_compare_flash_contents_small_reads(chip, buf, TEST_OFFS, BUF_SZ);
+
+    free(buf);
+}
+
+FLASH_TEST_CASE("esp_flash_read large PSRAM buffer low memory", test_flash_read_large_psram_buffer_low_internal_mem);
+
+
 
 #endif
