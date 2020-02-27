@@ -497,11 +497,25 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
     bool direct_read = chip->host->supports_direct_read(chip->host, buffer);
     uint8_t* temp_buffer = NULL;
 
+    //each time, we at most read this length
+    //after that, we release the lock to allow some other operations
+    size_t read_chunk_size = MIN(MAX_READ_CHUNK, length);
+
     if (!direct_read) {
-        uint32_t length_to_allocate = MIN(MAX_READ_CHUNK, length);
-        length_to_allocate = (length_to_allocate+3)&(~3);
-        temp_buffer = heap_caps_malloc(length_to_allocate, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-        ESP_LOGV(TAG, "allocate temp buffer: %p (%d)", temp_buffer, length_to_allocate);
+        /* Allocate temporary internal buffer to use for the actual read. If the preferred size
+           doesn't fit in free internal memory, allocate the largest available free block.
+
+           (May need to shrink read_chunk_size and retry due to race conditions with other tasks
+           also allocating from the heap.)
+        */
+        unsigned retries = 5;
+        while(temp_buffer == NULL && retries--) {
+            read_chunk_size = MIN(read_chunk_size, heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT));
+            read_chunk_size = (read_chunk_size + 3) & ~3;
+            temp_buffer = heap_caps_malloc(read_chunk_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        }
+        ESP_LOGV(TAG, "allocate temp buffer: %p (%d)", temp_buffer, read_chunk_size);
+
         if (temp_buffer == NULL) {
             return ESP_ERR_NO_MEM;
         }
@@ -516,9 +530,9 @@ esp_err_t IRAM_ATTR esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t add
         }
         //if required (dma buffer allocated), read to the buffer instead of the original buffer
         uint8_t* buffer_to_read = (temp_buffer)? temp_buffer : buffer;
-        //each time, we at most read this length
-        //after that, we release the lock to allow some other operations
-        uint32_t length_to_read = MIN(MAX_READ_CHUNK, length);
+
+        // Length we will read this iteration is either the chunk size or the remaining length, whichever is smaller
+        size_t length_to_read = MIN(read_chunk_size, length);
 
         if (err == ESP_OK) {
             err = chip->chip_drv->read(chip, buffer_to_read, address, length_to_read);
