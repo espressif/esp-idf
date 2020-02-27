@@ -495,7 +495,7 @@ UT_034:
       # - /^release\/v/
       # - /^v\d+\.\d+(\.\d+)?($|-)/
       - triggers
-      # - schedules
+      - schedules
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_UNIT_TEST_S2
