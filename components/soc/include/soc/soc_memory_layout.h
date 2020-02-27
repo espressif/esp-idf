@@ -213,9 +213,47 @@ inline static bool IRAM_ATTR esp_ptr_in_diram_iram(const void *p) {
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
 }
 
+inline static bool IRAM_ATTR esp_ptr_in_rtc_iram_fast(const void *p) {
+    return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_rtc_dram_fast(const void *p) {
+    return ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
+}
+
+inline static bool IRAM_ATTR esp_ptr_in_rtc_slow(const void *p) {
+    return ((intptr_t)p >= SOC_RTC_DATA_LOW && (intptr_t)p < SOC_RTC_DATA_HIGH);
+}
+
+/* Convert a D/IRAM DRAM pointer to equivalent word address in IRAM
+
+   - Address must be word aligned
+   - Address must pass esp_ptr_in_diram_dram() test, or result will be invalid pointer
+*/
+inline static void * IRAM_ATTR esp_ptr_diram_dram_to_iram(const void *p) {
+#if SOC_DIRAM_INVERTED
+    return (void *) ( SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - (intptr_t)p) - 4);
+#else
+    return (void *) ( SOC_DIRAM_IRAM_LOW + ((intptr_t)p - SOC_DIRAM_DRAM_LOW) );
+#endif
+}
+
+/* Convert a D/IRAM IRAM pointer to equivalent word address in DRAM
+
+   - Address must be word aligned
+   - Address must pass esp_ptr_in_diram_iram() test, or result will be invalid pointer
+*/
+inline static void * IRAM_ATTR esp_ptr_diram_iram_to_dram(const void *p) {
+#if SOC_DIRAM_INVERTED
+    return (void *) ( SOC_DIRAM_DRAM_LOW + (SOC_DIRAM_IRAM_HIGH - (intptr_t)p) - 4);
+#else
+    return (void *) ( SOC_DIRAM_DRAM_LOW + ((intptr_t)p - SOC_DIRAM_IRAM_LOW) );
+#endif
+}
 
 inline static bool IRAM_ATTR esp_stack_ptr_is_sane(uint32_t sp)
 {
     //Check if stack ptr is in between SOC_DRAM_LOW and SOC_DRAM_HIGH, and 16 byte aligned.
     return !(sp < SOC_DRAM_LOW + 0x10 || sp > SOC_DRAM_HIGH - 0x10 || ((sp & 0xF) != 0));
 }
+

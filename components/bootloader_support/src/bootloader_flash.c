@@ -15,7 +15,6 @@
 
 #include <bootloader_flash.h>
 #include <esp_log.h>
-#include <esp_spi_flash.h> /* including in bootloader for error values */
 #include <esp_flash_encrypt.h>
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"

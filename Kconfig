@@ -170,7 +170,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             prompt "Optimization Level"
             default COMPILER_OPTIMIZATION_DEFAULT
             help
-                This option sets compiler optimization level (gcc -O argument).
+                This option sets compiler optimization level (gcc -O argument) for the app.
 
                 - The "Default" setting will add the -0g flag to CFLAGS.
                 - The "Size" setting will add the -0s flag to CFLAGS.
@@ -187,6 +187,9 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 "None" with -O0 produces compiled code without optimization.
 
                 Note that custom optimization levels may be unsupported.
+
+                Compiler optimization for the IDF bootloader is set separately,
+                see the BOOTLOADER_COMPILER_OPTIMIZATION setting.
 
             config COMPILER_OPTIMIZATION_DEFAULT
                 bool "Debug (-Og)"

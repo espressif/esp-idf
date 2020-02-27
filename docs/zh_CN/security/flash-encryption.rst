@@ -24,7 +24,9 @@ Flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的 SPI Flash �
   - 安全启动引导加载程序摘要（如果已启用安全启动）
   - 分区表中标有“加密”标记的分区
 
-Flash 加密与 :doc:`安全启动<secure-boot>` 功能各自独立，您可以在关闭安全启动的状态下使用 Flash 加密。但是，为了安全的计算机环境，二者应同时使用。在关闭安全启动的状态下，需运行其他配置来确保 Flash 加密的有效性。详细信息可参见 :ref:`flash-encryption-without-secure-boot`。
+.. only:: esp32
+
+    Flash 加密与 :doc:`安全启动<secure-boot-v2>` 功能各自独立，您可以在关闭安全启动的状态下使用 Flash 加密。但是，为了安全的计算机环境，二者应同时使用。在关闭安全启动的状态下，需运行其他配置来确保 Flash 加密的有效性。详细信息可参见 :ref:`flash-encryption-without-secure-boot`。
 
 .. important::
   启用 Flash 加密将限制后续 {IDF_TARGET_NAME} 更新。请务必阅读本文档（包括 :ref:`flash-encryption-limitations`）了解启用 Flash 加密的影响。
@@ -116,7 +118,9 @@ Flash 的加密过程
 
 - 在引导加载程序 config 下选择适当详细程度的日志。
 
-- 启用 Flash 加密将增大引导加载程序，因而可能需更新分区表偏移。请参见 :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    - 启用 Flash 加密将增大引导加载程序，因而可能需更新分区表偏移。请参见 :ref:`secure-boot-bootloader-size`。
 
 - 保存配置并退出。
 
@@ -310,7 +314,9 @@ Flash 的加密过程
 
 - 在引导加载程序 config 下选择适当详细程度的日志。
 
-- 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
 
 - 保存配置并退出。
 
@@ -347,7 +353,9 @@ Flash 的加密过程
 
 - 在引导加载程序 config 下选择适当详细程度的日志。
 
-- 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    - 启用 Flash 加密将增大引导加载程序，因而可能需要更新分区表偏移。可参见 See :ref:`secure-boot-bootloader-size`。
 
 - 保存配置并退出。
 
@@ -467,7 +475,9 @@ Flash 加密的要点
 
 - 如果已启用安全启动，则重新烧录加密设备的引导加载程序则需要“可重新烧录”的安全启动摘要（可参见 :ref:`flash-encryption-and-secure-boot`）。
 
-.. note:: 同时启用安全启动和 Flash 加密后，引导加载程序 app 二进制文件 ``bootloader.bin`` 可能会过大。参见 :ref:`secure-boot-bootloader-size`。
+.. only:: esp32
+
+    .. note:: 同时启用安全启动和 Flash 加密后，引导加载程序 app 二进制文件 ``bootloader.bin`` 可能会过大。参见 :ref:`secure-boot-bootloader-size`。
 
 .. important::
    在首次启动加密过程中，请勿中断 {IDF_TARGET_NAME} 的电源。如果电源中断，Flash 的内容将受到破坏，并需要重新烧录未加密数据。而这类重新烧录将不计入烧录限制次数。
@@ -562,7 +572,9 @@ Flash 加密可防止从加密 Flash 中读取明文，从而保护固件防止�
 
 - 出于相同原因，攻击者始终可获知一对相邻的 16 字节块（32 字节对齐）何时包含相同内容。因此，在 Flash 上存储敏感数据时应牢记这点，并进行相关设置避免该情况发生（可使用计数器字节或每 16 字节设置不同的值即可）。
 
-- 单独使用 Flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 Flash 加密使用 :doc:`安全启动 <secure-boot>`。
+.. only:: esp32
+
+    - 单独使用 Flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 Flash 加密使用 :doc:`安全启动 <secure-boot-v2>`。
 
 .. _flash-encryption-and-secure-boot:
 
@@ -572,8 +584,12 @@ Flash 加密与安全启动
 推荐搭配使用 Flash 加密与安全启动。但是，如果已启用安全启动，则重新烧录设备时会受到其他限制：
 
 - :ref:`updating-encrypted-flash-ota` 不受限制（如果新的 app 已使用安全启动签名密钥进行正确签名）。
-- 只有当选择 :ref:`可再次烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 安全启动模式，且安全启动密钥已预生成并烧录至 {IDF_TARGET_NAME}（可参见 :ref:`安全启动 <secure-boot-reflashable>`），则 :ref:`明文串行 flash 更新 <updating-encrypted-flash-serial>` 可实现。在该配置下，``idf.py bootloader`` 将生成简化的引导加载程序和安全启动摘要文件，用于在偏移量 0x0 处进行烧录。当进行明文串行重新烧录步骤时，须在烧录其他明文数据前重新烧录此文件。
-- 假设未重新烧录引导加载程序，:ref:`使用预生成的 Flash 加密密钥重新烧录 <pregenerated-flash-encryption-key>` 仍可实现。重新烧录引导加载程序时，需在安全启动配置中启用相同的 :ref:`可重新烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 选项。
+
+.. only:: esp32
+
+    - 只有当选择 :ref:`可再次烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 安全启动模式，且安全启动密钥已预生成并烧录至 {IDF_TARGET_NAME}（可参见 :ref:`安全启动 <secure-boot-reflashable>`），则 :ref:`明文串行 flash 更新 <updating-encrypted-flash-serial>` 可实现。在该配置下，``idf.py bootloader`` 将生成简化的引导加载程序和安全启动摘要文件，用于在偏移量 0x0 处进行烧录。当进行明文串行重新烧录步骤时，须在烧录其他明文数据前重新烧录此文件。
+
+    - 假设未重新烧录引导加载程序，:ref:`使用预生成的 Flash 加密密钥重新烧录 <pregenerated-flash-encryption-key>` 仍可实现。重新烧录引导加载程序时，需在安全启动配置中启用相同的 :ref:`可重新烧录 <CONFIG_SECURE_BOOTLOADER_MODE>` 选项。
 
 .. _flash-encryption-without-secure-boot:
 
