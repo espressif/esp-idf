@@ -719,6 +719,69 @@ uint8_t esp_ble_mesh_provisioner_get_free_settings_user_id_count(void)
 }
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 
+esp_err_t esp_ble_mesh_provisioner_start_recv_heartbeat(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_START_RECV_HEARTBEAT;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_type(uint8_t filter_type)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (filter_type > ESP_BLE_MESH_PROVISIONER_HB_FILTER_BLACKLIST) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE;
+
+    arg.set_heartbeat_filter_type.filter_type = filter_type;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op_flag, esp_ble_mesh_provisioner_hb_filter_info_t *info)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (op_flag > ESP_BLE_MESH_PROVISIONER_HB_FILTER_CLEAN || info == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (!ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_src) &&
+        !ESP_BLE_MESH_ADDR_IS_UNICAST(info->hb_dst) &&
+        !ESP_BLE_MESH_ADDR_IS_GROUP(info->hb_dst)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_SET_HEARTBEAT_FILTER_INFO;
+
+    arg.set_heartbeat_filter_info.op_flag = op_flag;
+    arg.set_heartbeat_filter_info.hb_src = info->hb_src;
+    arg.set_heartbeat_filter_info.hb_dst = info->hb_dst;
+    arg.set_heartbeat_filter_info.expiry = info->expiry;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 #if (CONFIG_BLE_MESH_FAST_PROV)

@@ -41,6 +41,7 @@ struct bt_mesh_node {
     char  name[BLE_MESH_NODE_NAME_SIZE]; /* Node name */
     u16_t comp_length;  /* Length of Composition Data */
     u8_t *comp_data;    /* Value of Composition Data */
+    u32_t last_hb;      /* Time (in seconds) when the last heartbeat is received */
 } __packed;
 
 int bt_mesh_provisioner_init(void);
@@ -121,6 +122,18 @@ int bt_mesh_provisioner_local_net_key_delete(u16_t net_idx);
 /* Provisioner bind local client model with proper appkey index */
 int bt_mesh_provisioner_bind_local_model_app_idx(u16_t elem_addr, u16_t mod_id,
         u16_t cid, u16_t app_idx);
+
+int bt_mesh_provisioner_start_recv_heartbeat(void (*cb)(u16_t src, u16_t dst, u8_t init_ttl,
+                                                        u8_t rx_ttl, u8_t hops, u16_t feat,
+                                                        u32_t count)
+                                            );
+
+int bt_mesh_provisioner_set_heartbeat_filter_type(u8_t filter_type);
+
+int bt_mesh_provisioner_set_heartbeat_filter_info(u8_t op_flag, u16_t src, u16_t dst, u32_t expiry);
+
+void bt_mesh_provisioner_heartbeat(u16_t src, u16_t dst, u8_t init_ttl,
+                                   u8_t rx_ttl, u8_t hops, u16_t feat);
 
 /* Provisioner print own element information */
 int bt_mesh_print_local_composition_data(void);

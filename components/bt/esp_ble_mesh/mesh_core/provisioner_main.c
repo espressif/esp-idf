@@ -34,6 +34,34 @@ static bt_mesh_mutex_t provisioner_lock;
 static u16_t all_node_count;
 static u16_t prov_node_count;
 
+#define PROVISIONER_HB_FILTER_WHITELIST     0x0
+#define PROVISIONER_HB_FILTER_BLACKLIST     0x1
+
+#define PROVISIONER_HB_FILTER_ADD           0x0
+#define PROVISIONER_HB_FILTER_REMOVE        0x1
+#define PROVISIONER_HB_FILTER_CLEAN         0x2
+
+#define PROVISIONER_HB_FILTER_WITH_SRC      BIT(0)
+#define PROVISIONER_HB_FILTER_WITH_DST      BIT(1)
+#define PROVISIONER_HB_FILTER_WITH_BOTH     (BIT(1) | BIT(0))
+
+#define PROVISIONER_HB_RECV_MAX_COUNT       0xFFFFFFFF
+
+static struct bt_mesh_provisioner_hb {
+    struct provisioner_hb_rx {
+        struct hb_rx_filter {
+            u16_t src;      /* Heartbeat source address, only unicast address */
+            u16_t dst;      /* Heartbeat destination address, unicast address or group address */
+            s64_t expiry;   /* In milliseconds, 0 means no expiry will be used */
+            u32_t count;    /* Number of received heartbeat messages when using whitelist */
+        } filter[CONFIG_BLE_MESH_PROVISIONER_HB_FILTER_SIZE];
+        u8_t  filter_type;  /* Heartbeat rx filter type */
+        u32_t count;        /* Number of received heartbeat messages when using blacklist */
+        void (*func)(u16_t hb_src, u16_t hb_dst, u8_t init_ttl,
+                     u8_t rx_ttl, u8_t hops, u16_t feat, u32_t count);
+    } rx;
+} provisioner_hb;
+
 static int provisioner_remove_node(u16_t index, bool erase);
 
 static void bt_mesh_provisioner_mutex_new(void)
@@ -224,6 +252,7 @@ int bt_mesh_provisioner_deinit(bool erase)
     bt_mesh_provisioner_release_netkey(erase);
     bt_mesh_provisioner_release_appkey(erase);
     bt_mesh_provisioner_release_node(erase);
+    memset(&provisioner_hb.rx, 0, sizeof(provisioner_hb.rx));
     bt_mesh_provisioner_mutex_free();
     return 0;
 }
@@ -338,6 +367,7 @@ static int provisioner_store_node(struct bt_mesh_node *node, bool prov, bool sto
             }
 
             memcpy(mesh_nodes[i], node, sizeof(struct bt_mesh_node));
+            node->last_hb = k_uptime_get_32() / 1000;
             provisioner_node_count_inc(prov);
             if (index) {
                 *index = i;
@@ -1535,6 +1565,314 @@ int bt_mesh_provisioner_bind_local_model_app_idx(u16_t elem_addr, u16_t mod_id,
 
     BT_ERR("%s, Model AppKey queue is full", __func__);
     return -ENOMEM;
+}
+
+int bt_mesh_provisioner_start_recv_heartbeat(void (*cb)(u16_t hb_src, u16_t hb_dst, u8_t init_ttl,
+                                                        u8_t rx_ttl, u8_t hops, u16_t feat, u32_t count)
+                                            )
+{
+    if (cb == NULL) {
+        BT_ERR("%s, Invalid heartbeat callback", __func__);
+        return -EINVAL;
+    }
+
+    memset(&provisioner_hb.rx, 0, sizeof(provisioner_hb.rx));
+
+    /* Start with an empty blacklist, which means all heartbeat messages will be reported */
+    provisioner_hb.rx.filter_type = PROVISIONER_HB_FILTER_BLACKLIST;
+    provisioner_hb.rx.func = cb;
+
+    return 0;
+}
+
+int bt_mesh_provisioner_set_heartbeat_filter_type(u8_t filter_type)
+{
+    if (filter_type > PROVISIONER_HB_FILTER_BLACKLIST) {
+        BT_ERR("%s, Invalid filter type 0x%02x", __func__, filter_type);
+        return -EINVAL;
+    }
+
+    if (provisioner_hb.rx.filter_type != filter_type) {
+        memset(&provisioner_hb.rx, 0, offsetof(struct provisioner_hb_rx, func));
+    }
+
+    provisioner_hb.rx.filter_type = filter_type;
+    return 0;
+}
+
+static u8_t hb_filter_addr_type(u16_t src, u16_t dst)
+{
+    if (BLE_MESH_ADDR_IS_UNICAST(src)) {
+        if (BLE_MESH_ADDR_IS_UNICAST(dst) || BLE_MESH_ADDR_IS_GROUP(dst)) {
+            return PROVISIONER_HB_FILTER_WITH_BOTH;
+        } else {
+            return PROVISIONER_HB_FILTER_WITH_SRC;
+        }
+    } else {
+        return PROVISIONER_HB_FILTER_WITH_DST;
+    }
+}
+
+static int hb_filter_alloc(u16_t src, u16_t dst, u32_t expiry)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+        struct hb_rx_filter *filter = &provisioner_hb.rx.filter[i];
+        if (filter->src == BLE_MESH_ADDR_UNASSIGNED &&
+            filter->dst == BLE_MESH_ADDR_UNASSIGNED) {
+            filter->src = src;
+            filter->dst = dst;
+            filter->expiry = expiry ? (k_uptime_get() + K_SECONDS(expiry)) : expiry;
+            filter->count = 0U;
+            return 0;
+        }
+    }
+
+    BT_ERR("%s, Heartbeat filter is full, src 0x%04x, dst 0x%04x", __func__, src, dst);
+    return -ENOMEM;
+}
+
+static void hb_filter_free(struct hb_rx_filter *filter)
+{
+    filter->src = BLE_MESH_ADDR_UNASSIGNED;
+    filter->dst = BLE_MESH_ADDR_UNASSIGNED;
+    filter->expiry = 0;
+    filter->count = 0U;
+}
+
+static int hb_filter_add(u16_t src, u16_t dst, u32_t expiry)
+{
+    struct hb_rx_filter *filter = NULL;
+    u8_t type = 0U;
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(src) &&
+        !BLE_MESH_ADDR_IS_UNICAST(dst) && !BLE_MESH_ADDR_IS_GROUP(dst)) {
+        BT_ERR("%s, Invalid filter address, src 0x%04x, dst 0x%04x", __func__, src, dst);
+        return -EINVAL;
+    }
+
+    type = hb_filter_addr_type(src, dst);
+
+    switch (type) {
+    case PROVISIONER_HB_FILTER_WITH_SRC: {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (src == filter->src) {
+                filter->dst = dst;
+                filter->expiry = expiry ? (k_uptime_get() + K_SECONDS(expiry)) : expiry;
+                filter->count = 0U;
+                return 0;
+            }
+        }
+        return hb_filter_alloc(src, dst, expiry);
+    }
+    case PROVISIONER_HB_FILTER_WITH_DST: {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (dst == filter->dst) {
+                filter->src = src;
+                filter->expiry = expiry ? (k_uptime_get() + K_SECONDS(expiry)) : expiry;
+                filter->count = 0U;
+                return 0;
+            }
+        }
+        return hb_filter_alloc(src, dst, expiry);
+    }
+    case PROVISIONER_HB_FILTER_WITH_BOTH: {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            /* Clear already existed src and dst in the filter */
+            if (src == filter->src || dst == filter->dst) {
+                filter->src = BLE_MESH_ADDR_UNASSIGNED;
+                filter->dst = BLE_MESH_ADDR_UNASSIGNED;
+                filter->expiry = 0;
+                filter->count = 0U;
+            }
+        }
+        return hb_filter_alloc(src, dst, expiry);
+    }
+    default:
+        BT_ERR("%s, Unknown filter addr type 0x%02x", __func__, type);
+        return -EINVAL;
+    }
+}
+
+static int hb_filter_remove(u16_t src, u16_t dst)
+{
+    struct hb_rx_filter *filter = NULL;
+    u8_t type = 0U;
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(src) &&
+        !BLE_MESH_ADDR_IS_UNICAST(dst) && !BLE_MESH_ADDR_IS_GROUP(dst)) {
+        BT_ERR("%s, Invalid filter address, src 0x%04x, dst 0x%04x", __func__, src, dst);
+        return -EINVAL;
+    }
+
+    type = hb_filter_addr_type(src, dst);
+
+    switch (type) {
+    case PROVISIONER_HB_FILTER_WITH_SRC: {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (src == filter->src && dst == BLE_MESH_ADDR_UNASSIGNED) {
+                hb_filter_free(filter);
+            }
+        }
+        return 0;
+    }
+    case PROVISIONER_HB_FILTER_WITH_DST: {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (src == BLE_MESH_ADDR_UNASSIGNED && dst == filter->dst) {
+                hb_filter_free(filter);
+            }
+        }
+        return 0;
+    }
+    case PROVISIONER_HB_FILTER_WITH_BOTH: {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (src == filter->src && dst == filter->dst) {
+                hb_filter_free(filter);
+            }
+        }
+        return 0;
+    }
+    default:
+        BT_ERR("%s, Unknown filter addr type 0x%02x", __func__, type);
+        return -EINVAL;
+    }
+}
+
+int bt_mesh_provisioner_set_heartbeat_filter_info(u8_t op_flag, u16_t src, u16_t dst, u32_t expiry)
+{
+    switch (op_flag) {
+    case PROVISIONER_HB_FILTER_ADD:
+        return hb_filter_add(src, dst, expiry);
+    case PROVISIONER_HB_FILTER_REMOVE:
+        return hb_filter_remove(src, dst);
+    case PROVISIONER_HB_FILTER_CLEAN:
+        memset(&provisioner_hb.rx, 0, offsetof(struct provisioner_hb_rx, filter_type));
+        return 0;
+    default:
+        BT_ERR("%s, Invalid operation flag 0x%02x", __func__, op_flag);
+        return -EINVAL;
+    }
+}
+
+void bt_mesh_provisioner_heartbeat(u16_t src, u16_t dst, u8_t init_ttl,
+                                   u8_t rx_ttl, u8_t hops, u16_t feat)
+{
+    struct hb_rx_filter *filter = NULL;
+    struct bt_mesh_node *node = NULL;
+    bool ignore = true;
+    u32_t count = 0U;
+    u8_t type = 0U;
+    int i;
+
+    if (provisioner_hb.rx.func == NULL) {
+        BT_DBG("Receiving heartbeat is not enabled");
+        return;
+    }
+
+    if (provisioner_hb.rx.filter_type == PROVISIONER_HB_FILTER_BLACKLIST) {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (src == filter->src || dst == filter->dst) {
+                type = hb_filter_addr_type(filter->src, filter->dst);
+                switch (type) {
+                case PROVISIONER_HB_FILTER_WITH_SRC:
+                    if (src == filter->src) {
+                        BT_INFO("Heartbeat filtered by backlist with src 0x%04x", src);
+                        return;
+                    }
+                    break;
+                case PROVISIONER_HB_FILTER_WITH_DST:
+                    if (dst == filter->dst) {
+                        BT_INFO("Heartbeat filtered by backlist with dst 0x%04x", dst);
+                        return;
+                    }
+                    break;
+                case PROVISIONER_HB_FILTER_WITH_BOTH:
+                    if (src == filter->src && dst == filter->dst) {
+                        BT_INFO("Heartbeat filtered by backlist with src 0x%04x, dst 0x%04x", src, dst);
+                        return;
+                    }
+                    break;
+                default:
+                    BT_ERR("%s, Unknown filter addr type 0x%02x", __func__, type);
+                    return;
+                }
+            }
+        }
+
+        if (provisioner_hb.rx.count < PROVISIONER_HB_RECV_MAX_COUNT) {
+            provisioner_hb.rx.count++;
+        }
+
+        count = provisioner_hb.rx.count;
+    } else {
+        for (i = 0; i < ARRAY_SIZE(provisioner_hb.rx.filter); i++) {
+            filter = &provisioner_hb.rx.filter[i];
+            if (src == filter->src || dst == filter->dst) {
+                type = hb_filter_addr_type(filter->src, filter->dst);
+                switch (type) {
+                case PROVISIONER_HB_FILTER_WITH_SRC:
+                    if (src == filter->src) {
+                        ignore = false;
+                    }
+                    break;
+                case PROVISIONER_HB_FILTER_WITH_DST:
+                    if (dst == filter->dst) {
+                        ignore = false;
+                    }
+                    break;
+                case PROVISIONER_HB_FILTER_WITH_BOTH:
+                    if (src == filter->src && dst == filter->dst) {
+                        ignore = false;
+                    }
+                    break;
+                default:
+                    BT_ERR("%s, Unknown filter addr type 0x%02x", __func__, type);
+                    return;
+                }
+                if (ignore == false) {
+                    break;
+                }
+            }
+        }
+
+        if (ignore == true) {
+            BT_INFO("Heartbeat filtered by whitelist, src 0x%04x, dst 0x%04x", src, dst);
+            return;
+        }
+
+        if (filter->expiry && k_uptime_get() > filter->expiry) {
+            BT_INFO("Period for heartbeat from 0x%04x expired", src);
+            return;
+        }
+
+        if (filter->count < PROVISIONER_HB_RECV_MAX_COUNT) {
+            filter->count++;
+        }
+
+        count = filter->count;
+    }
+
+    node = bt_mesh_provisioner_get_node_with_addr(src);
+    if (node) {
+        node->last_hb = k_uptime_get_32() / 1000;
+    }
+
+    BT_INFO("src 0x%04x, dst 0x%04x, init_ttl %u, rx_ttl %u, hops %u, feat 0x%04x, count %u",
+        src, dst, init_ttl, rx_ttl, hops, feat, count);
+
+    if (provisioner_hb.rx.func) {
+        provisioner_hb.rx.func(src, dst, init_ttl, rx_ttl, hops, feat, count);
+    }
 }
 
 int bt_mesh_print_local_composition_data(void)

@@ -702,6 +702,7 @@ typedef struct {
     char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN]; /*!< Node name */
     uint16_t comp_length;  /*!< Length of Composition Data */
     uint8_t *comp_data;    /*!< Value of Composition Data */
+    uint32_t last_hb;      /*!< Time (in seconds) when the last heartbeat is received */
 } __attribute__((packed)) esp_ble_mesh_node_t;
 
 /** Context of fast provisioning which need to be set. */
@@ -730,6 +731,22 @@ typedef enum {
     PROXY_FILTER_WHITELIST,
     PROXY_FILTER_BLACKLIST,
 } esp_ble_mesh_proxy_filter_type_t;
+
+/*!< Provisioner heartbeat filter type */
+#define ESP_BLE_MESH_PROVISIONER_HB_FILTER_WHITELIST    0x0
+#define ESP_BLE_MESH_PROVISIONER_HB_FILTER_BLACKLIST    0x1
+
+/*!< Provisioner heartbeat filter operation */
+#define ESP_BLE_MESH_PROVISIONER_HB_FILTER_ADD          0x0
+#define ESP_BLE_MESH_PROVISIONER_HB_FILTER_REMOVE       0x1
+#define ESP_BLE_MESH_PROVISIONER_HB_FILTER_CLEAN        0x2
+
+/** Context of Provisioner heartbeat filter information to be set */
+typedef struct {
+    uint16_t hb_src;    /*!< Heartbeat source address (unicast address) */
+    uint16_t hb_dst;    /*!< Heartbeat destination address (unicast address or group address) */
+    uint32_t expiry;    /*!< Expiry (in seconds) for the whitelist filter entry */
+} esp_ble_mesh_provisioner_hb_filter_info_t;
 
 /*!< This enum value is the event of node/provisioner/fast provisioning */
 typedef enum {
@@ -789,6 +806,10 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID_COMP_EVT, /*!< Provisioner release settings with user_id completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT,    /*!< Provisioner delete settings with index completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT,  /*!< Provisioner delete settings with user_id completion event */
+    ESP_BLE_MESH_PROVISIONER_START_RECV_HEARTBEAT_COMP_EVT,          /*!< Provisioner start to receive Heartbeat message completion event */
+    ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT,     /*!< Provisioner set the filter type of receiving heartbeat message completion event */
+    ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT,     /*!< Provisioner set the filter information of receiving heartbeat message completion event */
+    ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT,             /*!< Provisioner receives heartbeat message event */
     ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT,                   /*!< Set fast provisioning information (e.g. unicast address range, net_idx, etc.) completion event */
     ESP_BLE_MESH_SET_FAST_PROV_ACTION_COMP_EVT,                 /*!< Set fast provisioning action completion event */
     ESP_BLE_MESH_HEARTBEAT_MESSAGE_RECV_EVT,                    /*!< Receive Heartbeat message event */
@@ -1195,6 +1216,41 @@ typedef union {
         int err_code;                                   /*!< Indicate the result of deleting settings with user_id by the Provisioner */
         uint8_t index;                                  /*!< Index of Provisioner settings */
     } provisioner_delete_settings_with_user_id_comp;    /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_START_RECV_HEARTBEAT_COMP_EVT
+     */
+    struct ble_mesh_provisioner_start_recv_heartbeat_comp_param {
+        int err_code;                                   /*!< Indicate the result of starting to receive heartbeat messages by the Provisioner */
+    } provisioner_start_recv_heartbeat_comp;            /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_START_RECV_HEARTBEAT_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT
+     */
+    struct ble_mesh_provisioner_set_heartbeat_filter_type_comp_param {
+        int err_code;                                   /*!< Indicate the result of setting the heartbeat filter type by the Provisioner */
+        uint8_t filter_type;                            /*!< Type of the filter used for receiving heartbeat messages */
+    } provisioner_set_heartbeat_filter_type_comp;       /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT
+     */
+    struct ble_mesh_provisioner_set_heartbeat_filter_info_comp_param {
+        int err_code;                                   /*!< Indicate the result of setting the heartbeat filter address by the Provisioner */
+        uint8_t  op_flag;                               /*!< Operation (add, remove, clean) */
+        uint16_t hb_src;                                /*!< Heartbeat source address */
+        uint16_t hb_dst;                                /*!< Heartbeat destination address */
+        uint32_t expiry;                                /*!< Expiry of the source address */
+    } provisioner_set_heartbeat_filter_info_comp;       /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT
+     */
+    struct ble_mesh_provisioner_recv_heartbeat_msg_param {
+        uint16_t hb_src;                                   /*!< Heartbeat source address */
+        uint16_t hb_dst;                                   /*!< Heartbeat destination address */
+        uint8_t  init_ttl;                              /*!< Heartbeat InitTTL */
+        uint8_t  rx_ttl;                                /*!< Heartbeat RxTTL */
+        uint8_t  hops;                                  /*!< Heartbeat hops (InitTTL - RxTTL + 1) */
+        uint16_t feature;                               /*!< Bit field of currently active features of the node */
+        uint32_t count;                                 /*!< Number of received heartbeat messages */
+    } provisioner_recv_heartbeat_msg;                   /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_RECV_HEARTBEAT_MESSAGE_EVT */
     /**
      * @brief ESP_BLE_MESH_SET_FAST_PROV_INFO_COMP_EVT
      */

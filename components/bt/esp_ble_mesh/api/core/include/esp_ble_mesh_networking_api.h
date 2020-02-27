@@ -602,6 +602,81 @@ uint8_t esp_ble_mesh_provisioner_get_settings_index(const char *user_id);
 uint8_t esp_ble_mesh_provisioner_get_free_settings_user_id_count(void);
 
 /**
+ * @brief         This function is called by Provisioner to start receiving and processing
+ *                heartbeat messages.
+ *
+ * @note          If starting receiving heartbeat message successfully, the filter will be
+ *                an empty blacklist, which means all the heartbeat messages received by
+ *                Provisioner will be processed and reported to the application layer.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_start_recv_heartbeat(void);
+
+/**
+ * @brief         This function is called by Provisioner to set the heartbeat filter type.
+ *
+ * @note          1. If the filter type is not the same with the current value, then all the
+ *                addresses in the filter will be cleared.
+ *                2. If the previous type is blacklist, and changed to whitelist, then the
+ *                filter will be an empty whitelist, which means no heartbeat messages will
+ *                be reported. And users need to add source addresses into the filter, then
+ *                heartbeat messages from these addresses will be reported.
+ *
+ * @param[in]     filter_type: Heartbeat filter type (whitelist or blacklist).
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_type(uint8_t filter_type);
+
+/**
+ * @brief         This function is called by Provisioner to add, remove or clean the corresponding
+ *                information from the heartbeat filter.
+ *
+ * @note          1. If the op_flag is "add", the hb_src can be set to the source address (can only
+ *                be a unicast address) of heartbeat messages, and the hb_dst can be set to the
+ *                destination address (unicast address or group address), at least one of them needs
+ *                to be set.
+ *                If only one of them is set, the filter entry will only use the configured source
+ *                address or destination address to filter heartbeat messages. If both of them are
+ *                set, then the source address and destination address will both be used to decide
+ *                if a heartbeat message can be reported.
+ *                And when the filter is whitelist, users can use the expiry (in seconds) to decide
+ *                how long the filter entry can be used to filter heartbeat messages. If the expiry
+ *                is set to 0, then the corresponding filter entry will be valid indefinitely. Only
+ *                when the filter entry is removed, cleaned or the filter_type is changed (whitelist
+ *                to blacklist), then the filter entry will be invalid.
+ *                If part of the filter information already exists, then the corresponding filter
+ *                entry will be updated. For example, if the source address already exists, and users
+ *                try to add a filter entry with the same source address. In this situation, the
+ *                existed filter entry will be updated. The same for the destination address.
+ *                And if the source address and destination address are both set, then all the filter
+ *                entries which contain any of the two addresses will be cleaned. After this, a new
+ *                filter entry will be allocated to store the filter information.
+ *                2. If the op_flag is "remove", the hb_src can be set to the source address (can only
+ *                be a unicast address) of heartbeat messages, and the hb_dst can be set to the
+ *                destination address (unicast address or group address), at least one of them needs
+ *                to be set. If only one of the two addresses is set, then the filter entry with the
+ *                same source address or destination address will be removed. And if both of them are
+ *                set, then only the filter entry with the same source address and destination address
+ *                will be removed. User don't need to set the expiry parameter.
+ *                3. If the op_flag is "clean", then Provisioner will remove all the information from
+ *                each heartbeat filter entry, users don't need to set the parameter info.
+ *
+ * @param[in]     op_flag: Add, remove or clean
+ * @param[in]     info:    Pointer to heartbeat filter entry information, the information includes:
+                           hb_src - Heartbeat source address;
+                           hb_dst - Heartbeat destination address;
+                           expiry - Period (in seconds) for receiving heartbeat messages
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_set_heartbeat_filter_info(uint8_t op_flag, esp_ble_mesh_provisioner_hb_filter_info_t *info);
+
+/**
  * @brief         This function is called to get fast provisioning application key.
  *
  * @param[in]     net_idx: Network key index.

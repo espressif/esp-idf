@@ -885,7 +885,8 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
         return -EINVAL;
     }
 
-    if (rx->ctx.recv_dst != hb_sub_dst) {
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned() &&
+        rx->ctx.recv_dst != hb_sub_dst) {
         BT_WARN("Ignoring heartbeat to non-subscribed destination");
         return 0;
     }
@@ -899,7 +900,13 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
            rx->ctx.addr, rx->ctx.recv_ttl, init_ttl, hops,
            (hops == 1U) ? "" : "s", feat);
 
-    bt_mesh_heartbeat(rx->ctx.addr, rx->ctx.recv_dst, hops, feat);
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+        bt_mesh_is_provisioner_en() && !bt_mesh_is_provisioned()) {
+        bt_mesh_provisioner_heartbeat(
+            rx->ctx.addr, rx->ctx.recv_dst, init_ttl, rx->ctx.recv_ttl, hops, feat);
+    } else {
+        bt_mesh_heartbeat(rx->ctx.addr, rx->ctx.recv_dst, hops, feat);
+    }
 
     return 0;
 }
