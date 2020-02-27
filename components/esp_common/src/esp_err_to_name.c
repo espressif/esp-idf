@@ -605,6 +605,30 @@ static const esp_err_msg_t esp_err_msg_table[] = {
     ERR_TBL_IT(ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT),             /* 32786 0x8012 new connection in esp_tls_low_level_conn
                                                                                 connection timeouted */
 #   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SET_HOSTNAME_FAILED),        /* 32787 0x8013 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED), /* 32788 0x8014 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_CERT_VERIFY_SETUP_FAILED),       /* 32789 0x8015 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_KEY_VERIFY_SETUP_FAILED),        /* 32790 0x8016 wolfSSL api returned error */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_HANDSHAKE_FAILED),           /* 32791 0x8017 wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_CTX_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_CTX_SETUP_FAILED),               /* 32792 0x8018 wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_SETUP_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_SETUP_FAILED),               /* 32793 0x8019 wolfSSL api returned failed */
+#   endif
+#   ifdef      ESP_ERR_WOLFSSL_SSL_WRITE_FAILED
+    ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_WRITE_FAILED),               /* 32794 0x801a wolfSSL api returned failed */
+#   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE
     ERR_TBL_IT(ESP_ERR_HTTPS_OTA_BASE),                         /* 36864 0x9000 */
