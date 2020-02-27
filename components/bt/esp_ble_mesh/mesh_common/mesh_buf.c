@@ -7,10 +7,9 @@
 
 #include <string.h>
 
-#include "sdkconfig.h"
-
 #include "mesh_buf.h"
 #include "mesh_trace.h"
+#include "mesh_kernel.h"
 
 int net_buf_id(struct net_buf *buf)
 {
@@ -22,7 +21,7 @@ int net_buf_id(struct net_buf *buf)
 static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
         u16_t uninit_count)
 {
-    struct net_buf *buf;
+    struct net_buf *buf = NULL;
 
     buf = &pool->__bufs[pool->buf_count - uninit_count];
 
@@ -59,7 +58,7 @@ void *net_buf_simple_add_mem(struct net_buf_simple *buf, const void *mem,
 
 u8_t *net_buf_simple_add_u8(struct net_buf_simple *buf, u8_t val)
 {
-    u8_t *u8;
+    u8_t *u8 = NULL;
 
     NET_BUF_SIMPLE_DBG("buf %p val 0x%02x", buf, val);
 
@@ -161,7 +160,7 @@ void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len)
 
 u8_t net_buf_simple_pull_u8(struct net_buf_simple *buf)
 {
-    u8_t val;
+    u8_t val = 0U;
 
     val = buf->data[0];
     net_buf_simple_pull(buf, 1);
@@ -171,7 +170,7 @@ u8_t net_buf_simple_pull_u8(struct net_buf_simple *buf)
 
 u16_t net_buf_simple_pull_le16(struct net_buf_simple *buf)
 {
-    u16_t val;
+    u16_t val = 0U;
 
     val = UNALIGNED_GET((u16_t *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -181,7 +180,7 @@ u16_t net_buf_simple_pull_le16(struct net_buf_simple *buf)
 
 u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf)
 {
-    u16_t val;
+    u16_t val = 0U;
 
     val = UNALIGNED_GET((u16_t *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -191,7 +190,7 @@ u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf)
 
 u32_t net_buf_simple_pull_le32(struct net_buf_simple *buf)
 {
-    u32_t val;
+    u32_t val = 0U;
 
     val = UNALIGNED_GET((u32_t *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -201,7 +200,7 @@ u32_t net_buf_simple_pull_le32(struct net_buf_simple *buf)
 
 u32_t net_buf_simple_pull_be32(struct net_buf_simple *buf)
 {
-    u32_t val;
+    u32_t val = 0U;
 
     val = UNALIGNED_GET((u32_t *)buf->data);
     net_buf_simple_pull(buf, sizeof(val));
@@ -238,7 +237,7 @@ void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 
 void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
 {
-    struct net_buf *tail;
+    struct net_buf *tail = NULL;
 
     NET_BUF_ASSERT(list);
     NET_BUF_ASSERT(buf);
@@ -254,7 +253,7 @@ void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
 
 struct net_buf *net_buf_slist_get(sys_slist_t *list)
 {
-    struct net_buf *buf, *frag;
+    struct net_buf *buf = NULL, *frag = NULL;
 
     NET_BUF_ASSERT(list);
 
@@ -304,7 +303,7 @@ void net_buf_unref(struct net_buf *buf)
 
     while (buf) {
         struct net_buf *frags = buf->frags;
-        struct net_buf_pool *pool;
+        struct net_buf_pool *pool = NULL;
 
 #if defined(CONFIG_BLE_MESH_NET_BUF_LOG)
         if (!buf->ref) {
@@ -499,7 +498,7 @@ struct net_buf *net_buf_frag_del_debug(struct net_buf *parent,
 struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 #endif
 {
-    struct net_buf *next_frag;
+    struct net_buf *next_frag = NULL;
 
     NET_BUF_ASSERT(frag);
 
@@ -525,9 +524,9 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 size_t net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
                          size_t offset, size_t len)
 {
-    struct net_buf *frag;
-    size_t to_copy;
-    size_t copied;
+    struct net_buf *frag = NULL;
+    size_t to_copy = 0U;
+    size_t copied = 0U;
 
     len = MIN(len, dst_len);
 
@@ -567,7 +566,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
                 net_buf_allocator_cb allocate_cb, void *user_data)
 {
     struct net_buf *frag = net_buf_frag_last(buf);
-    size_t added_len = 0;
+    size_t added_len = 0U;
     const u8_t *value8 = value;
 
     do {

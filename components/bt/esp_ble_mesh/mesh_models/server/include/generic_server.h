@@ -371,4 +371,19 @@ int bt_mesh_gen_admin_prop_srv_init(struct bt_mesh_model *model, bool primary);
 int bt_mesh_gen_manu_prop_srv_init(struct bt_mesh_model *model, bool primary);
 int bt_mesh_gen_client_prop_srv_init(struct bt_mesh_model *model, bool primary);
 
+int bt_mesh_gen_onoff_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_level_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_def_trans_time_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_power_onoff_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_power_onoff_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_power_level_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_power_level_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_battery_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_location_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_location_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_user_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_admin_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_manu_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_gen_client_prop_srv_deinit(struct bt_mesh_model *model, bool primary);
+
 #endif /* _GENERIC_SERVER_H_ */

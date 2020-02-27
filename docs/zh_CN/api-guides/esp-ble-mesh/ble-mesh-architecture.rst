@@ -279,8 +279,8 @@ ESP-BLE-MESH 架构采用分层的方式进行设计，数据包的处理所经�
     - BLE Mesh Provisioner 配置入网 (PB-ADV & PB-GATT)
   * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
     - BLE Mesh 代理客户端相关功能
-  * - :component_file:`provisioner_beacon.c <bt/esp_ble_mesh/mesh_core/provisioner_beacon.c>`
-    - BLE Mesh Provisioner 接收 Unprovisioned Device Beacon
+  * - :component_file:`provisioner_main.c <bt/esp_ble_mesh/mesh_core/provisioner_main.c>`
+    - BLE Mesh Provisioner 网络相关功能
 
 2.1.3 Mesh Models 实现
 ^^^^^^^^^^^^^^^^^^^^^^

@@ -112,7 +112,7 @@ static void enable_gatt_proxy_cb(struct k_work *work)
 static void example_free_set_info(example_fast_prov_server_t *srv)
 {
     if (srv && srv->set_info) {
-        osi_free(srv->set_info);
+        bt_mesh_free(srv->set_info);
         srv->set_info = NULL;
     }
 }
@@ -270,7 +270,7 @@ esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
         }
 
         memcpy(&srv->ctx, ctx, sizeof(esp_ble_mesh_msg_ctx_t));
-        srv->set_info = osi_calloc(sizeof(struct fast_prov_info_set));
+        srv->set_info = bt_mesh_calloc(sizeof(struct fast_prov_info_set));
         if (!srv->set_info) {
             ESP_LOGE(TAG, "%s: Failed to allocate memory", __func__);
             bt_mesh_free_buf(msg);

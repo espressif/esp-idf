@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
 #include "btc_ble_mesh_time_scene_model.h"
@@ -33,7 +32,8 @@ esp_err_t esp_ble_mesh_time_scene_client_get_state(esp_ble_mesh_client_common_pa
     btc_ble_mesh_time_scene_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !params->ctx.addr || !get_state) {
+    if (!params || !params->model || !params->ctx.addr || (!get_state &&
+        params->opcode == ESP_BLE_MESH_MODEL_OP_SCHEDULER_ACT_GET)) {
         return ESP_ERR_INVALID_ARG;
     }
 

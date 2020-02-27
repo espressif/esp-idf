@@ -246,4 +246,7 @@ typedef union {
 int bt_mesh_sensor_srv_init(struct bt_mesh_model *model, bool primary);
 int bt_mesh_sensor_setup_srv_init(struct bt_mesh_model *model, bool primary);
 
+int bt_mesh_sensor_srv_deinit(struct bt_mesh_model *model, bool primary);
+int bt_mesh_sensor_setup_srv_deinit(struct bt_mesh_model *model, bool primary);
+
 #endif /* _SENSOR_SERVER_H_ */
