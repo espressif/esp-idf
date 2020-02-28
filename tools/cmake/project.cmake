@@ -465,7 +465,7 @@ macro(project project_name)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(python PYTHON)
 
-    set(idf_size ${python} ${idf_path}/tools/idf_size.py)
+    set(idf_size ${python} ${idf_path}/tools/idf_size.py --target ${IDF_TARGET})
     if(DEFINED OUTPUT_JSON AND OUTPUT_JSON)
         list(APPEND idf_size "--json")
     endif()

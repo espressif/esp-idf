@@ -40,4 +40,4 @@ if __name__ == "__main__":
 
     # This used to crash with a division by zero error but now it just prints nan% due to
     # zero lengths
-    print(idf_size.get_summary({"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {}), end="")
+    print(idf_size.get_summary(idf_size.MemRegions('esp32'), {"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {}), end="")
