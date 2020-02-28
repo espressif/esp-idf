@@ -69,6 +69,7 @@
 #include "esp_ota_ops.h"
 #include "esp_efuse.h"
 #include "bootloader_flash_config.h"
+#include "bootloader_mem.h"
 
 #ifdef CONFIG_APP_BUILD_TYPE_ELF_RAM
 #include "esp32/rom/efuse.h"
@@ -126,8 +127,8 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     RESET_REASON rst_reas[2];
 #endif
-    cpu_configure_region_protection();
-    cpu_init_memctl();
+
+    bootloader_init_mem();
 
     //Move exception vectors to IRAM
     asm volatile (\
@@ -277,8 +278,8 @@ void IRAM_ATTR call_start_cpu1(void)
                   ::"r"(&_init_start));
 
     ets_set_appcpu_boot_addr(0);
-    cpu_configure_region_protection();
-    cpu_init_memctl();
+
+    bootloader_init_mem();
 
 #if CONFIG_ESP_CONSOLE_UART_NONE
     ets_install_putc1(NULL);

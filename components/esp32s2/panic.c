@@ -195,10 +195,6 @@ static inline void disableAllWdts(void);
 
 //The fact that we've panic'ed probably means the other CPU is now running wild, possibly
 //messing up the serial output, so we stall it here.
-static void haltOtherCore(void)
-{
-    esp_cpu_stall( xPortGetCoreID() == 0 ? 1 : 0 );
-}
 
 
 static void setFirstBreakpoint(uint32_t pc)
@@ -324,7 +320,6 @@ void panicHandler(XtExcFrame *frame)
         esp_reset_reason_set_hint(ESP_RST_INT_WDT);
     }
 
-    haltOtherCore();
     panicPutStr("Guru Meditation Error: Core ");
     panicPutDec(core_id);
     panicPutStr(" panic'ed (");
@@ -394,7 +389,6 @@ void panicHandler(XtExcFrame *frame)
 
 void xt_unhandled_exception(XtExcFrame *frame)
 {
-    haltOtherCore();
     if (!abort_called) {
         panicPutStr("Guru Meditation Error: Core ");
         panicPutDec(xPortGetCoreID());
@@ -477,8 +471,6 @@ static void esp_panic_dig_reset(void)
     uart_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_freq_set_xtal();
-    // reset the digital part
-    esp_cpu_unstall(PRO_CPU_NUM);
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
     while (true) {
         ;
@@ -669,59 +661,6 @@ void esp_set_breakpoint_if_jtag(void *fn)
 {
     if (esp_cpu_in_ocd_debug_mode()) {
         setFirstBreakpoint((uint32_t)fn);
-    }
-}
-
-
-esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
-{
-    int x;
-    if (no < 0 || no > 1) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    if (flags & (~0xC0000000)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    int dbreakc = 0x3F;
-    //We support watching 2^n byte values, from 1 to 64. Calculate the mask for that.
-    for (x = 0; x < 7; x++) {
-        if (size == (1 << x)) {
-            break;
-        }
-        dbreakc <<= 1;
-    }
-    if (x == 7) {
-        return ESP_ERR_INVALID_ARG;
-    }
-    //Mask mask and add in flags.
-    dbreakc = (dbreakc & 0x3f) | flags;
-
-    if (no == 0) {
-        asm volatile(
-            "wsr.dbreaka0 %0\n" \
-            "wsr.dbreakc0 %1\n" \
-            ::"r"(adr), "r"(dbreakc));
-    } else {
-        asm volatile(
-            "wsr.dbreaka1 %0\n" \
-            "wsr.dbreakc1 %1\n" \
-            ::"r"(adr), "r"(dbreakc));
-    }
-    return ESP_OK;
-}
-
-void esp_clear_watchpoint(int no)
-{
-    //Setting a dbreakc register to 0 makes it trigger on neither load nor store, effectively disabling it.
-    int dbreakc = 0;
-    if (no == 0) {
-        asm volatile(
-            "wsr.dbreakc0 %0\n" \
-            ::"r"(dbreakc));
-    } else {
-        asm volatile(
-            "wsr.dbreakc1 %0\n" \
-            ::"r"(dbreakc));
     }
 }
 

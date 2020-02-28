@@ -17,6 +17,7 @@
 #include "esp_gdbstub_common.h"
 #include "soc/cpu.h"
 #include "soc/soc_memory_layout.h"
+#include "xtensa/config/specreg.h"
 #include "sdkconfig.h"
 
 #if !XCHAL_HAVE_WINDOWED

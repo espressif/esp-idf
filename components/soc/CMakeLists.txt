@@ -1,7 +1,9 @@
 idf_build_get_property(target IDF_TARGET)
 
-idf_component_register(SRCS "src/memory_layout_utils.c"
+idf_component_register(SRCS "src/cpu_util.c"
+                            "src/memory_layout_utils.c"
                             "src/lldesc.c"
+                            "src/hal/cpu_hal.c"
                             "src/hal/rmt_hal.c"
                             "src/hal/rtc_io_hal.c"
                             "src/hal/dac_hal.c"
@@ -25,6 +27,8 @@ idf_component_register(SRCS "src/memory_layout_utils.c"
                             "src/hal/uart_hal_iram.c"
                             "src/hal/spi_flash_hal.c"
                             "src/hal/spi_flash_hal_iram.c"
+                            "src/hal/mpu_hal.c"
+                            "src/hal/soc_hal.c"
                             "src/compare_set.c"
                        PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)
