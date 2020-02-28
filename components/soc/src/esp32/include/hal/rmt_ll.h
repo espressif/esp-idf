@@ -225,21 +225,21 @@ static inline uint32_t rmt_ll_get_tx_end_interrupt_status(rmt_dev_t *dev)
 {
     uint32_t status = dev->int_st.val;
     return ((status & 0x01) >> 0) | ((status & 0x08) >> 2) | ((status & 0x40) >> 4) | ((status & 0x200) >> 6) |
-           ((status & 0x1000) >> 8) | ((status & 0x8000) >> 10) | ((status & 40000) >> 12) | ((status & 0x200000) >> 14);
+           ((status & 0x1000) >> 8) | ((status & 0x8000) >> 10) | ((status & 0x40000) >> 12) | ((status & 0x200000) >> 14);
 }
 
 static inline uint32_t rmt_ll_get_rx_end_interrupt_status(rmt_dev_t *dev)
 {
     uint32_t status = dev->int_st.val;
     return ((status & 0x02) >> 1) | ((status & 0x10) >> 3) | ((status & 0x80) >> 5) | ((status & 0x400) >> 7) |
-           ((status & 0x2000) >> 9) | ((status & 0x10000) >> 11) | ((status & 80000) >> 13) | ((status & 0x400000) >> 15);
+           ((status & 0x2000) >> 9) | ((status & 0x10000) >> 11) | ((status & 0x80000) >> 13) | ((status & 0x400000) >> 15);
 }
 
 static inline uint32_t rmt_ll_get_err_interrupt_status(rmt_dev_t *dev)
 {
     uint32_t status =  dev->int_st.val;
     return ((status & 0x04) >> 2) | ((status & 0x20) >> 4) | ((status & 0x100) >> 6) | ((status & 0x800) >> 8) |
-           ((status & 0x4000) >> 10) | ((status & 0x20000) >> 12) | ((status & 100000) >> 14) | ((status & 0x800000) >> 16);
+           ((status & 0x4000) >> 10) | ((status & 0x20000) >> 12) | ((status & 0x100000) >> 14) | ((status & 0x800000) >> 16);
 }
 
 static inline uint32_t rmt_ll_get_tx_thres_interrupt_status(rmt_dev_t *dev)
