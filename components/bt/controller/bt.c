@@ -1138,6 +1138,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     s_btdm_allow_light_sleep = false;
 #endif
 
+    // set default sleep clock cycle and its fractional bits
+    btdm_lpcycle_us_frac = RTC_CLK_CAL_FRACT;
+    btdm_lpcycle_us = 2 << (btdm_lpcycle_us_frac);
+
 #if CONFIG_BTDM_MODEM_SLEEP_MODE_ORIG
 
     btdm_lpclk_sel = BTDM_LPCLK_SEL_XTAL; // set default value
