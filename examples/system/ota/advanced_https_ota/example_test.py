@@ -160,7 +160,7 @@ def test_examples_protocol_advanced_https_ota_example(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, bin_name)
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
@@ -215,7 +215,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_bin(env, extra_d
     binary_file = os.path.join(dut1.app.binary_path, truncated_bin_name)
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
@@ -266,7 +266,7 @@ def test_examples_protocol_advanced_https_ota_example_truncated_header(env, extr
     binary_file = os.path.join(dut1.app.binary_path, truncated_bin_name)
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
@@ -316,7 +316,7 @@ def test_examples_protocol_advanced_https_ota_example_random(env, extra_data):
     fo.close()
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):
@@ -355,7 +355,7 @@ def test_examples_protocol_advanced_https_ota_example_chunked(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, bin_name)
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     host_ip = get_my_ip()
     chunked_server = start_chunked_server(dut1.app.binary_path, 8070)
@@ -398,7 +398,7 @@ def test_examples_protocol_advanced_https_ota_example_redirect_url(env, extra_da
     binary_file = os.path.join(dut1.app.binary_path, bin_name)
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("advanced_https_ota_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("advanced_https_ota_bin_size", bin_size // 1024, dut1.TARGET)
     # start test
     host_ip = get_my_ip()
     if (get_server_status(host_ip, server_port) is False):

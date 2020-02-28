@@ -232,7 +232,7 @@ TEST_CASE("floating point division performance", "[fp]")
     printf("%d divisions from %f = %f\n", COUNTS, MAXFLOAT, f);
     printf("Per division = %d cycles\n", cycles);
 
-    TEST_PERFORMANCE_LESS_THAN(ESP32_CYCLES_PER_DIV, "%d cycles", cycles);
+    TEST_PERFORMANCE_LESS_THAN(CYCLES_PER_DIV, "%d cycles", cycles);
 }
 
 /* Note: not static, to avoid optimisation of const result */
@@ -265,6 +265,6 @@ TEST_CASE("floating point square root performance", "[fp]")
     printf("%d square roots from %f = %f\n", COUNTS, MAXFLOAT, f);
     printf("Per sqrt = %d cycles\n", cycles);
 
-    TEST_PERFORMANCE_LESS_THAN(ESP32_CYCLES_PER_SQRT, "%d cycles", cycles);
+    TEST_PERFORMANCE_LESS_THAN(CYCLES_PER_SQRT, "%d cycles", cycles);
 }
 

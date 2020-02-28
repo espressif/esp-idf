@@ -135,7 +135,7 @@ def test_example_app_ble_peripheral(env, extra_data):
     binary_file = os.path.join(dut.app.binary_path, "bleprph.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("bleprph_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("bleprph_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("bleprph_bin_size", bin_size // 1024, dut.TARGET)
 
     # Upload binary and start testing
     Utility.console_log("Starting bleprph simple example test app")

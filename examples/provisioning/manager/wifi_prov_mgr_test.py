@@ -35,7 +35,7 @@ def test_examples_wifi_prov_mgr(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "wifi_prov_mgr.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("wifi_prov_mgr_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("wifi_prov_mgr_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("wifi_prov_mgr_bin_size", bin_size // 1024, dut1.TARGET)
 
     # Upload binary and start testing
     dut1.start_app()

@@ -55,7 +55,7 @@ def test_examples_protocol_mqtt_ws(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "mqtt_websocket.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("mqtt_websocket_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("mqtt_websocket_size", bin_size // 1024)
+    ttfw_idf.check_performance("mqtt_websocket_size", bin_size // 1024, dut1.TARGET)
     # Look for host:port in sdkconfig
     try:
         value = re.search(r'\:\/\/([^:]+)\:([0-9]+)', dut1.app.get_sdkconfig()["CONFIG_BROKER_URI"])
