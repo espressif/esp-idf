@@ -99,12 +99,12 @@ static void example_ir_tx_task(void *arg)
         ESP_ERROR_CHECK(ir_builder->build_frame(ir_builder, addr, cmd));
         ESP_ERROR_CHECK(ir_builder->get_result(ir_builder, &items, &length));
         //To send data according to the waveform items.
-        rmt_write_items(example_tx_channel, items, length, true);
+        rmt_write_items(example_tx_channel, items, length, false);
         // Send repeat code
         vTaskDelay(pdMS_TO_TICKS(ir_builder->repeat_period_ms));
         ESP_ERROR_CHECK(ir_builder->build_repeat_frame(ir_builder));
         ESP_ERROR_CHECK(ir_builder->get_result(ir_builder, &items, &length));
-        rmt_write_items(example_tx_channel, items, length, true);
+        rmt_write_items(example_tx_channel, items, length, false);
         cmd++;
     }
     ir_builder->del(ir_builder);
