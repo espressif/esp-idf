@@ -333,14 +333,12 @@ typedef struct {
     unsigned secondary_channel:4; /**< secondary channel on which this packet is received. 0: none; 1: above; 2: below */
     unsigned :8;                  /**< reserved */
     unsigned timestamp:32;        /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
-#if CONFIG_IDF_TARGET_ESP32
     unsigned :32;                 /**< reserved */
-    unsigned :31;                 /**< reserved */
-    unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
-#elif CONFIG_IDF_TARGET_ESP32S2
-    unsigned :32;                 /**< reserved */
+#if CONFIG_IDF_TARGET_ESP32S2
     unsigned :32;                 /**< reserved */
 #endif
+    unsigned :31;                 /**< reserved */
+    unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
 #if CONFIG_IDF_TARGET_ESP32S2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
     unsigned :24;                 /**< reserved */
