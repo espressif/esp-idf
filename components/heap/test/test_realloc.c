@@ -14,10 +14,10 @@
 /* (can't realloc in place if comprehensive is enabled) */
 
 TEST_CASE("realloc shrink buffer in place", "[heap]")
-{
+{    
     void *x = malloc(64);
     TEST_ASSERT(x);
-    void *y = realloc(p, 48);
+    void *y = realloc(x, 48);
     TEST_ASSERT_EQUAL_PTR(x, y);
 }
 
