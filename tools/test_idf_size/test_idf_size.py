@@ -16,6 +16,7 @@
 
 from __future__ import print_function
 import sys
+import collections
 
 try:
     import idf_size
@@ -40,4 +41,8 @@ if __name__ == "__main__":
 
     # This used to crash with a division by zero error but now it just prints nan% due to
     # zero lengths
-    print(idf_size.get_summary(idf_size.MemRegions('esp32'), {"iram0_0_seg": {"length":0}, "dram0_0_seg": {"length":0}}, {}), end="")
+    MemRegNames = collections.namedtuple('MemRegNames', ['iram_names', 'dram_names', 'diram_names', 'used_iram_names',
+                                                         'used_dram_names', 'used_diram_names'])
+    mem_reg = MemRegNames(set(), set(), set(), set(), set(), set())
+    print(idf_size.get_summary(mem_reg, {"iram0_0_seg": {"origin":0,"length":0}, "dram0_0_seg":
+          {"origin":0, "length":0}}, {}), end="")
