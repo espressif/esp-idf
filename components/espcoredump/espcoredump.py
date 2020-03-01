@@ -1668,15 +1668,17 @@ def info_corefile(args):
     p = gdbmi_getinfo(p, handlers, "info threads")
     # THREADS STACKS
     p,threads,cur_thread = gdbmi_get_thread_ids(p)
+    print()
     for thr_id in threads:
         task_index = int(thr_id) - 1
-        if thr_id == cur_thread:
-            continue
         p = gdbmi_switch_thread(p, thr_id)
         p,thr_info_res = gdbmi_get_thread_info(p, thr_id)
+        if not thr_info_res.target_id:
+            print("WARNING: Unable to switch to thread %s\n" % thr_id)
+            continue
         tcb_addr = gdb2freertos_thread_id(thr_info_res.target_id)
         p,task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
-        print("\n==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
+        print("==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
         p = gdbmi_getinfo(p, handlers, "bt")
         if task_info and task_info[task_index].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
             print("The task '%s' is corrupted." % thr_id)
@@ -1684,6 +1686,7 @@ def info_corefile(args):
                   task_info[task_index].task_flags,
                   task_info[task_index].task_tcb_addr,
                   task_info[task_index].task_stack_start))
+        print()
     print("\n======================= ALL MEMORY REGIONS ========================")
     print("Name   Address   Size   Attrs")
     for ms in merged_segs:
