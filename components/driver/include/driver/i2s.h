@@ -14,21 +14,14 @@
 
 #pragma once
 
+#include "esp_types.h"
 #include "esp_err.h"
-#include <esp_types.h>
-#include "soc/soc.h"
-#include "soc/gpio_periph.h"
+#include "freertos/FreeRTOS.h"
 #include "soc/i2s_periph.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_caps.h"
-#include "esp32/rom/gpio.h"
-#include "esp_attr.h"
-#include "esp_intr_alloc.h"
 #include "driver/periph_ctrl.h"
-#include "driver/adc.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "hal/i2s_hal.h"
+#include "driver/adc.h" // adc1_channel_t typedef
 #include "hal/i2s_types.h"
 
 #ifdef __cplusplus

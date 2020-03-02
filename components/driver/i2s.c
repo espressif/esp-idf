@@ -20,15 +20,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/xtensa_api.h"
+#include "freertos/semphr.h"
 
 #include "esp32/rom/lldesc.h"
 #include "driver/gpio.h"
 #include "driver/i2s.h"
 #include "driver/dac.h"
+#include "hal/i2s_hal.h"
 #include "adc1_i2s_private.h"
 
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "esp_efuse.h"
