@@ -11,8 +11,6 @@
 #ifndef _BLE_MESH_HEALTH_CLI_H_
 #define _BLE_MESH_HEALTH_CLI_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
 #include "client_common.h"
 
 /**

@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
 #include "btc_ble_mesh_config_model.h"
@@ -34,13 +33,33 @@ esp_err_t esp_ble_mesh_register_config_server_callback(esp_ble_mesh_cfg_server_c
     return (btc_profile_cb_set(BTC_PID_CONFIG_SERVER, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
+static bool config_client_get_need_param(esp_ble_mesh_opcode_t opcode)
+{
+    switch (opcode) {
+    case ESP_BLE_MESH_MODEL_OP_COMPOSITION_DATA_GET:
+    case ESP_BLE_MESH_MODEL_OP_MODEL_PUB_GET:
+    case ESP_BLE_MESH_MODEL_OP_SIG_MODEL_SUB_GET:
+    case ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_SUB_GET:
+    case ESP_BLE_MESH_MODEL_OP_APP_KEY_GET:
+    case ESP_BLE_MESH_MODEL_OP_NODE_IDENTITY_GET:
+    case ESP_BLE_MESH_MODEL_OP_SIG_MODEL_APP_GET:
+    case ESP_BLE_MESH_MODEL_OP_VENDOR_MODEL_APP_GET:
+    case ESP_BLE_MESH_MODEL_OP_KEY_REFRESH_PHASE_GET:
+    case ESP_BLE_MESH_MODEL_OP_LPN_POLLTIMEOUT_GET:
+        return true;
+    default:
+        return false;
+    }
+}
+
 esp_err_t esp_ble_mesh_config_client_get_state(esp_ble_mesh_client_common_param_t *params,
         esp_ble_mesh_cfg_client_get_state_t *get_state)
 {
     btc_ble_mesh_config_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !params->ctx.addr || !get_state) {
+    if (!params || !params->model || !ESP_BLE_MESH_ADDR_IS_UNICAST(params->ctx.addr) ||
+        (config_client_get_need_param(params->opcode) && !get_state)) {
         return ESP_ERR_INVALID_ARG;
     }
 
@@ -62,7 +81,8 @@ esp_err_t esp_ble_mesh_config_client_set_state(esp_ble_mesh_client_common_param_
     btc_ble_mesh_config_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !params->ctx.addr || !set_state) {
+    if (!params || !params->model || !ESP_BLE_MESH_ADDR_IS_UNICAST(params->ctx.addr) ||
+        (params->opcode != ESP_BLE_MESH_MODEL_OP_NODE_RESET && !set_state)) {
         return ESP_ERR_INVALID_ARG;
     }
 

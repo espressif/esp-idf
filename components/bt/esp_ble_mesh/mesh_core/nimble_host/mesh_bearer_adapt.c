@@ -8,8 +8,6 @@
 
 #include <errno.h>
 
-#include "sdkconfig.h"
-
 #include "btc/btc_task.h"
 #include "osi/alarm.h"
 
@@ -24,16 +22,9 @@
 #include "services/gatt/ble_svc_gatt.h"
 
 #include "mesh_hci.h"
-#include "mesh_aes_encrypt.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_trace.h"
-#include "mesh_buf.h"
-#include "mesh_atomic.h"
-
-#include "esp_ble_mesh_defs.h"
-
-#include "provisioner_prov.h"
 #include "mesh_common.h"
+#include "mesh_aes_encrypt.h"
+#include "provisioner_prov.h"
 
 /** @def BT_UUID_MESH_PROV
  *  @brief Mesh Provisioning Service
@@ -72,7 +63,7 @@ struct bt_mesh_dev bt_mesh_dev;
 
 /* P-256 Variables */
 static u8_t bt_mesh_public_key[64];
-static BT_OCTET32 bt_mesh_private_key = {
+static u8_t bt_mesh_private_key[32] = {
     0x3f, 0x49, 0xf6, 0xd4, 0xa3, 0xc5, 0x5f, 0x38,
     0x74, 0xc9, 0xb3, 0xe3, 0xd2, 0x10, 0x3f, 0x50,
     0x4a, 0xff, 0x60, 0x7b, 0xeb, 0x40, 0xb7, 0x99,
@@ -90,25 +81,25 @@ static sys_slist_t bt_mesh_gatts_db;
 static struct bt_mesh_conn bt_mesh_gatts_conn[BLE_MESH_MAX_CONN];
 static struct bt_mesh_conn_cb *bt_mesh_gatts_conn_cb;
 
-static BD_ADDR bt_mesh_gatts_addr;
+static u8_t bt_mesh_gatts_addr[6];
 
 #endif /* defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE */
 
-esp_err_t bt_mesh_host_init(void)
+int bt_mesh_host_init(void)
 {
     int rc;
     rc = btc_init();
     if (rc != 0) {
-        return ESP_FAIL;
+        return -1;
     }
 
     rc = osi_alarm_create_mux();
     if (rc != 0) {
-        return ESP_FAIL;
+        return -1;
     }
 
     osi_alarm_init();
-    return ESP_OK;
+    return 0;
 }
 
 uint8_t ble_hs_hci_get_hci_version(void);
@@ -401,7 +392,7 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
         if (bt_mesh_scan_dev_found_cb) {
             bt_mesh_scan_dev_found_cb((bt_mesh_addr_t *)&desc->addr, desc->rssi, desc->event_type, buf);
         }
-        osi_free(buf);
+        bt_mesh_free(buf);
         break;
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_CLIENT
@@ -453,7 +444,7 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                              */
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                             if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
-                                provisioner_clear_link_conn_info(bt_mesh_gattc_info[i].addr.val);
+                                bt_mesh_provisioner_clear_link_info(bt_mesh_gattc_info[i].addr.val);
                             }
 #endif
                         }
@@ -464,14 +455,14 @@ static int disc_cb(struct ble_gap_event *event, void *arg)
                          */
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                         if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
-                            provisioner_clear_link_conn_info(bt_mesh_gattc_info[i].addr.val);
+                            bt_mesh_provisioner_clear_link_info(bt_mesh_gattc_info[i].addr.val);
                         }
 #endif
                     }
 #if CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT
                     if (bt_mesh_gattc_info[i].service_uuid == BLE_MESH_UUID_MESH_PROV_VAL) {
                         /* Decrease prov pbg_count */
-                        provisioner_pbg_count_dec();
+                        bt_mesh_provisioner_pbg_count_dec();
                     }
 #endif
                     /* Reset corresponding gattc info */
@@ -1710,7 +1701,7 @@ int bt_mesh_dh_key_gen(const u8_t remote_pk[64], bt_mesh_dh_key_cb_t cb, const u
 {
     uint8_t dhkey[32];
 
-    BT_DBG("private key = %s", bt_hex(bt_mesh_private_key, BT_OCTET32_LEN));
+    BT_DBG("private key = %s", bt_hex(bt_mesh_private_key, 32));
 
     ble_sm_alg_gen_dhkey((uint8_t *)&remote_pk[0], (uint8_t *)&remote_pk[32], bt_mesh_private_key, dhkey);
 

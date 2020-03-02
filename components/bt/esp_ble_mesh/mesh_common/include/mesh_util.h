@@ -15,9 +15,9 @@
 #define _BLE_MESH_UTIL_H_
 
 #include <stddef.h>
+#include "soc/soc.h"
 #include "mesh_types.h"
 #include "mesh_trace.h"
-#include "soc/soc.h"
 
 #ifdef __cplusplus
 extern "C" {

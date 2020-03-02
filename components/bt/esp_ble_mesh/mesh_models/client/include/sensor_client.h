@@ -19,9 +19,6 @@
 #ifndef _SENSOR_CLIENT_H_
 #define _SENSOR_CLIENT_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
-
 #include "client_common.h"
 
 /* Sensor Client Model Context */
@@ -141,6 +138,16 @@ struct bt_mesh_sensor_series_get {
  * @return Zero-success, other-fail
  */
 int bt_mesh_sensor_cli_init(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize sensor client model user_data.
+ *
+ * @param[in] model:   Pointer to sensor client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_sensor_cli_deinit(struct bt_mesh_model *model, bool primary);
 
 /**
  * @brief This function is called to get sensor states.
