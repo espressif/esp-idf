@@ -8,7 +8,19 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 234780 bytes (.bin may be padded larger)
+Total image size:~ 243076 bytes (.bin may be padded larger)
+
+***
+Running idf_size.py on bootloader...
+Total sizes:
+ DRAM .data size:       4 bytes
+ DRAM .bss  size:      48 bytes
+ DRAM other size:    7160 bytes (.dram0.rodata)
+Used static DRAM:    7212 bytes (  58324 available, 11.0% used)
+Used static IRAM:    4445 bytes (  92835 available, 4.6% used)
+      Flash code:       0 bytes
+    Flash rodata:       0 bytes
+Total image size:~  11657 bytes (.bin may be padded larger)
 
 ***
 Running idf_size.py --archives...
@@ -19,47 +31,47 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 234780 bytes (.bin may be padded larger)
+Total image size:~ 243076 bytes (.bin may be padded larger)
 Per-archive contributions to ELF file:
-            Archive File DRAM .data & .bss   IRAM Flash code & rodata   Total
-               liblwip.a         14   3751      0      66978    13936   84679
-                  libc.a          0      0      0      55583     3889   59472
-              libesp32.a       2635   2375   7758       4814     8133   25715
-           libfreertos.a       4156    832  12853          0     1545   19386
-          libspi_flash.a         36    359   7004        886     1624    9909
-                libsoc.a        660      8   3887          0     3456    8011
-               libheap.a       1331      4   4376       1218      980    7909
-                libgcc.a          4     20    104       5488      888    6504
-                libvfs.a        232    103      0       3770      403    4508
-              libunity.a          0    121      0       2316      830    3267
-             libstdc++.a          8     16      0       1827     1062    2913
-             libnewlib.a        152    272    853        803       86    2166
-            libpthread.a         16     12    174        774      638    1614
-             libdriver.a         40     20      0        961      537    1558
-                liblog.a          8    268    456        396      166    1294
-         libapp_update.a          0      0      0        123      717     840
-      libtcpip_adapter.a          0     81      0        180      359     620
-                libhal.a          0      0    515          0       32     547
-                  libm.a          0      0     92          0        0      92
-               libmain.a          0      0      0         53       10      63
-                libcxx.a          0      0      0         11        0      11
-libxtensa-debug-module.a          0      0      8          0        0       8
- libbootloader_support.a          0      0      0          0        0       0
-            libcoexist.a          0      0      0          0        0       0
-               libcore.a          0      0      0          0        0       0
-           libethernet.a          0      0      0          0        0       0
-            libmbedtls.a          0      0      0          0        0       0
-               libmesh.a          0      0      0          0        0       0
-           libnet80211.a          0      0      0          0        0       0
-          libnvs_flash.a          0      0      0          0        0       0
-                libphy.a          0      0      0          0        0       0
-                 libpp.a          0      0      0          0        0       0
-                librtc.a          0      0      0          0        0       0
-    libsmartconfig_ack.a          0      0      0          0        0       0
-                libwpa.a          0      0      0          0        0       0
-               libwpa2.a          0      0      0          0        0       0
-     libwpa_supplicant.a          0      0      0          0        0       0
-                libwps.a          0      0      0          0        0       0
+            Archive File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
+               liblwip.a         14   3751       0      0        0      66978    13936   84679
+                  libc.a          0      0       0      0        0      55583     3889   59472
+              libesp32.a       2635   2375       0   7758        0       4814     8133   25715
+           libfreertos.a       4156    832       0  12853        0          0     1545   19386
+          libspi_flash.a         36    359       0   7004        0        886     1624    9909
+                libsoc.a        660      8       0   3887        0          0     3456    8011
+               libheap.a       1331      4       0   4376        0       1218      980    7909
+                libgcc.a          4     20       0    104        0       5488      888    6504
+                libvfs.a        232    103       0      0        0       3770      403    4508
+              libunity.a          0    121       0      0        0       2316      830    3267
+             libstdc++.a          8     16       0      0        0       1827     1062    2913
+             libnewlib.a        152    272       0    853        0        803       86    2166
+            libpthread.a         16     12       0    174        0        774      638    1614
+             libdriver.a         40     20       0      0        0        961      537    1558
+                liblog.a          8    268       0    456        0        396      166    1294
+         libapp_update.a          0      0       0      0        0        123      717     840
+      libtcpip_adapter.a          0     81       0      0        0        180      359     620
+                libhal.a          0      0       0    515        0          0       32     547
+                  libm.a          0      0       0     92        0          0        0      92
+               libmain.a          0      0       0      0        0         53       10      63
+                libcxx.a          0      0       0      0        0         11        0      11
+libxtensa-debug-module.a          0      0       0      8        0          0        0       8
+ libbootloader_support.a          0      0       0      0        0          0        0       0
+            libcoexist.a          0      0       0      0        0          0        0       0
+               libcore.a          0      0       0      0        0          0        0       0
+           libethernet.a          0      0       0      0        0          0        0       0
+            libmbedtls.a          0      0       0      0        0          0        0       0
+               libmesh.a          0      0       0      0        0          0        0       0
+           libnet80211.a          0      0       0      0        0          0        0       0
+          libnvs_flash.a          0      0       0      0        0          0        0       0
+                libphy.a          0      0       0      0        0          0        0       0
+                 libpp.a          0      0       0      0        0          0        0       0
+                librtc.a          0      0       0      0        0          0        0       0
+    libsmartconfig_ack.a          0      0       0      0        0          0        0       0
+                libwpa.a          0      0       0      0        0          0        0       0
+               libwpa2.a          0      0       0      0        0          0        0       0
+     libwpa_supplicant.a          0      0       0      0        0          0        0       0
+                libwps.a          0      0       0      0        0          0        0       0
 
 ***
 Running idf_size.py --files...
@@ -70,290 +82,290 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 234780 bytes (.bin may be padded larger)
+Total image size:~ 243076 bytes (.bin may be padded larger)
 Per-file contributions to ELF file:
-             Object File DRAM .data & .bss   IRAM Flash code & rodata   Total
-        lib_a-vfprintf.o          0      0      0      14193      756   14949
-       lib_a-svfprintf.o          0      0      0      13834      756   14590
-      lib_a-svfiprintf.o          0      0      0       9642     1210   10852
-       lib_a-vfiprintf.o          0      0      0       9933      738   10671
-                   nd6.o          8   1027      0       8427      136    9598
-                tcp_in.o          0     54      0       8127      916    9097
-                 tasks.o         20    700   5667          0      503    6890
-               tcp_out.o          0      0      0       5060     1124    6184
-               sockets.o          0    728      0       4627      824    6179
-                   tcp.o          4     23      0       4290     1384    5701
-               api_msg.o          0      0      0       3763     1366    5129
-                  dhcp.o          0      8      0       3456     1401    4865
-                 panic.o       2579      5   2145          0        0    4729
-       esp_err_to_name.o          0      0      0         50     4091    4141
-        unwind-dw2-fde.o          4     20      0       3316      404    3744
-                  pbuf.o          0      1      0       2453     1161    3615
-               portasm.o       3084      0    480          0        0    3564
-            lib_a-dtoa.o          0      0      0       3522       13    3535
-                etharp.o          0    241      0       2618      658    3517
-                   ip6.o          0      0      0       3212      124    3336
-                   dns.o          0   1292      0       1809      206    3307
-   spi_flash_rom_patch.o          0      0   2518          0      766    3284
-                   udp.o          2      4      0       3020      216    3242
-            intr_alloc.o          8     22    726       1749      710    3215
-            multi_heap.o        857      0   2217          0        0    3074
-                 queue.o          8     56   2569          0      369    3002
-             flash_ops.o         32     41   2352         99        0    2524
-     unwind-dw2-xtensa.o          0      0      0       2172      324    2496
-               rtc_clk.o        660      8   1794          0        0    2462
-           lib_a-mprec.o          0      0      0       2134      296    2430
-                   vfs.o        192     40      0       1995      132    2359
-              ip6_frag.o          0      6      0       1905      442    2353
-               api_lib.o          0      0      0       1425      919    2344
-                  igmp.o          0     12      0       1604      707    2323
-             dbg_stubs.o          0   2072     32        100        0    2204
-              vfs_uart.o         40     63      0       1775      271    2149
-        unity_platform.o          0     13      0       1511      600    2124
-       esp_timer_esp32.o          8     26   1295        254      526    2109
-            rtc_periph.o          0      0      0          0     2080    2080
-            flash_mmap.o          0    296   1298        124      327    2045
-             heap_caps.o          4      0   1195        188      593    1980
-        eh_personality.o          0      0      0       1561      384    1945
-                   ip4.o          0      6      0       1664      139    1809
-                 netif.o          0    241      0       1239      287    1767
-        xtensa_vectors.o          8      0   1697          0       36    1741
-             cpu_start.o          0      1    806        277      486    1570
-                   clk.o          0      0     67        581      893    1541
-                timers.o          8     56   1149          0      233    1446
-              sys_arch.o          0      8      0       1216      222    1446
-  multi_heap_poisoning.o        470      0    964          0        0    1434
-        heap_caps_init.o          0      4      0       1030      387    1421
-                  mld6.o          0      4      0       1334        0    1338
-           cache_utils.o          4     14    836         81      390    1325
-                   raw.o          0      4      0       1087      223    1314
-             esp_timer.o          8     20    702        429      142    1301
-                   log.o          8    268    456        396      166    1294
-            system_api.o          0      8    589          0      662    1259
-     soc_memory_layout.o          0      0      0          0     1239    1239
-                  icmp.o          0      0      0        769      371    1140
-       xtensa_intr_asm.o       1024      0     51          0        0    1075
-                  port.o          0     16    617          0      369    1002
-               pthread.o          8      8    174        298      512    1000
-                 icmp6.o          0      0      0        863      127     990
-              rtc_init.o          0      0    980          0        0     980
-                 unity.o          0    108      0        767       90     965
-              rtc_time.o          0      0    803          0      137     940
-          dport_access.o          8     40    539        189      129     905
-          lib_a-fseeko.o          0      0      0        862        0     862
-                  time.o          0     32    139        691        0     862
-                 tcpip.o          0     16      0        644      191     851
-           esp_ota_ops.o          0      0      0        123      717     840
-           periph_ctrl.o          8      0      0        520      256     784
-                timers.o          0     12      0        638      131     781
-             partition.o          0      8      0        582      141     731
-                 locks.o          8      0    552          0       84     644
-                   ipc.o          0     36    159        329      104     628
-    tcpip_adapter_lwip.o          0     81      0        180      359     620
- pthread_local_storage.o          8      4      0        476      126     614
-           inet_chksum.o          0      0      0        580        0     580
-         crosscore_int.o          8      8    204        126      148     494
-                netbuf.o          0      0      0        154      326     480
-              vfs_lwip.o          0      0      0        307      155     462
-         syscall_table.o        144    240      0         67        0     451
-                 timer.o         16      0      0        112      281     409
-               int_wdt.o          0      1     87        301        0     389
-            eh_globals.o          0     16      0        149      193     358
-              brownout.o          0      0      0        145      191     336
-        freertos_hooks.o          8    128     43        137        0     316
-       windowspill_asm.o          0      0    311          0        0     311
-              cpu_util.o          0      0    310          0        0     310
-            rtc_module.o          8      8      0        291        0     307
-        xtensa_context.o          0      0    299          0        0     299
-          eh_terminate.o          0      0      0        117      141     258
-              ethernet.o          0      0      0        244       12     256
-            lib_a-puts.o          0      0      0        182       60     242
-dport_panic_highint_hdl.          8      0    234          0        0     242
-           lib_a-reent.o          0      0      0        232        0     232
-           lib_a-fopen.o          0      0      0        228        0     228
-            dhcpserver.o          0      4      0        203        0     207
-            test_utils.o          0      0      0         38      140     178
-         lib_a-sprintf.o          0      0      0        167        0     167
-         cache_err_int.o          0      0     56         98        0     154
-                  list.o          0      0    142          0        0     142
-           xtensa_intr.o          0      0    104          0       35     139
-              syscalls.o          0      0     94         45        0     139
-    si_class_type_info.o          0      0      0          0      136     136
-          lib_a-assert.o          0      0      0         68       60     128
-           lib_a-flags.o          0      0      0        127        0     127
-          lib_a-printf.o          0      0      0        116        0     116
-              ip4_addr.o          0      0      0         72       40     112
-       class_type_info.o          0      0      0          0      112     112
-         lib_a-s_frexp.o          0      0      0        110        0     110
-                    ip.o          0     60      0         50        0     110
-                  memp.o          0      0      0          0      108     108
-             lib2funcs.o          0      0    104          0        0     104
-         lib_a-vprintf.o          0      0      0         94        0      94
-    lib_a-s_fpclassify.o          0      0     92          0        0      92
-                   def.o          0      0      0         91        0      91
-        lib_a-fiprintf.o          0      0      0         84        0      84
-             hw_random.o          0      4     74          0        0      78
-           stack_check.o          0      4      0         32       42      78
-                 clock.o          0      0     72          0        0      72
-            reent_init.o          0      0     68          0        2      70
-              app_main.o          0      0      0         53       10      63
-state_asm--restore_extra          0      0     62          0        0      62
-state_asm--save_extra_nw          0      0     62          0        0      62
-                  uart.o          8     12      0         38        0      58
-               new_opv.o          0      0      0          0       56      56
-xtensa_vector_defaults.o          0      0     46          0        0      46
-           lib_a-fseek.o          0      0      0         45        0      45
-               _divdi3.o          0      0      0          0       40      40
-               _moddi3.o          0      0      0          0       40      40
-              _udivdi3.o          0      0      0          0       40      40
-              _umoddi3.o          0      0      0          0       40      40
-                new_op.o          0      0      0          0       40      40
-           xtensa_init.o          0      4     32          0        0      36
-  interrupts--intlevel.o          0      0      0          0       32      32
-                  init.o          0      0      0         27        0      27
-             wifi_init.o          0      0      0         17        9      26
-              ip6_addr.o          0      0      0          0       20      20
-           lib_a-errno.o          0      0      0         10        0      10
- int_asm--set_intclear.o          0      0      8          0        0       8
-                   eri.o          0      0      8          0        0       8
-   cxx_exception_stubs.o          0      0      0          6        0       6
-            cxx_guards.o          0      0      0          5        0       5
-      FreeRTOS-openocd.o          4      0      0          0        0       4
-       eh_term_handler.o          4      0      0          0        0       4
-       eh_unex_handler.o          4      0      0          0        0       4
-      bootloader_flash.o          0      0      0          0        0       0
-        bootloader_sha.o          0      0      0          0        0       0
-      esp_image_format.o          0      0      0          0        0       0
-           lib_a-fputs.o          0      0      0          0        0       0
-        lib_a-snprintf.o          0      0      0          0        0       0
-        lib_a-strerror.o          0      0      0          0        0       0
-       lib_a-sysgettod.o          0      0      0          0        0       0
-        lib_a-u_strerr.o          0      0      0          0        0       0
-       lib_a-vsnprintf.o          0      0      0          0        0       0
-  lib_a-xpg_strerror_r.o          0      0      0          0        0       0
-           coexist_api.o          0      0      0          0        0       0
-         coexist_arbit.o          0      0      0          0        0       0
-          coexist_core.o          0      0      0          0        0       0
-           coexist_dbg.o          0      0      0          0        0       0
-            coexist_hw.o          0      0      0          0        0       0
-         coexist_param.o          0      0      0          0        0       0
-         coexist_timer.o          0      0      0          0        0       0
-              misc_nvs.o          0      0      0          0        0       0
-                  gpio.o          0      0      0          0        0       0
-      ets_timer_legacy.o          0      0      0          0        0       0
-event_default_handlers.o          0      0      0          0        0       0
-            event_loop.o          0      0      0          0        0       0
-            lib_printf.o          0      0      0          0        0       0
-              phy_init.o          0      0      0          0        0       0
-                   sha.o          0      0      0          0        0       0
-       wifi_os_adapter.o          0      0      0          0        0       0
-              emac_dev.o          0      0      0          0        0       0
-             emac_main.o          0      0      0          0        0       0
-          event_groups.o          0      0      0          0        0       0
-               ringbuf.o          0      0      0          0        0       0
-            _addsubdf3.o          0      0      0          0        0       0
-               _cmpdf2.o          0      0      0          0        0       0
-               _divdf3.o          0      0      0          0        0       0
-               _divsf3.o          0      0      0          0        0       0
-          _extendsfdf2.o          0      0      0          0        0       0
-              _fixdfsi.o          0      0      0          0        0       0
-            _floatdidf.o          0      0      0          0        0       0
-            _floatdisf.o          0      0      0          0        0       0
-            _floatsidf.o          0      0      0          0        0       0
-               _muldf3.o          0      0      0          0        0       0
-          _popcountsi2.o          0      0      0          0        0       0
-            ethernetif.o          0      0      0          0        0       0
-                ethip6.o          0      0      0          0        0       0
-                wlanif.o          0      0      0          0        0       0
-            esp_sha256.o          0      0      0          0        0       0
-                  mesh.o          0      0      0          0        0       0
-           mesh_common.o          0      0      0          0        0       0
-           mesh_config.o          0      0      0          0        0       0
-             mesh_main.o          0      0      0          0        0       0
-           mesh_parent.o          0      0      0          0        0       0
-            mesh_route.o          0      0      0          0        0       0
-         mesh_schedule.o          0      0      0          0        0       0
-            mesh_timer.o          0      0      0          0        0       0
-        mesh_utilities.o          0      0      0          0        0       0
-             mesh_wifi.o          0      0      0          0        0       0
-             ieee80211.o          0      0      0          0        0       0
-      ieee80211_action.o          0      0      0          0        0       0
-ieee80211_action_vendor.          0      0      0          0        0       0
-         ieee80211_api.o          0      0      0          0        0       0
-      ieee80211_crypto.o          0      0      0          0        0       0
- ieee80211_crypto_ccmp.o          0      0      0          0        0       0
- ieee80211_crypto_tkip.o          0      0      0          0        0       0
-  ieee80211_crypto_wep.o          0      0      0          0        0       0
-       ieee80211_debug.o          0      0      0          0        0       0
-         ieee80211_ets.o          0      0      0          0        0       0
-      ieee80211_hostap.o          0      0      0          0        0       0
-          ieee80211_ht.o          0      0      0          0        0       0
-   ieee80211_ie_vendor.o          0      0      0          0        0       0
-       ieee80211_input.o          0      0      0          0        0       0
-       ieee80211_ioctl.o          0      0      0          0        0       0
-  ieee80211_mesh_quick.o          0      0      0          0        0       0
-        ieee80211_misc.o          0      0      0          0        0       0
-         ieee80211_nvs.o          0      0      0          0        0       0
-      ieee80211_output.o          0      0      0          0        0       0
-         ieee80211_phy.o          0      0      0          0        0       0
-       ieee80211_power.o          0      0      0          0        0       0
-       ieee80211_proto.o          0      0      0          0        0       0
-   ieee80211_regdomain.o          0      0      0          0        0       0
-        ieee80211_rfid.o          0      0      0          0        0       0
-        ieee80211_scan.o          0      0      0          0        0       0
-         ieee80211_sta.o          0      0      0          0        0       0
-       ieee80211_timer.o          0      0      0          0        0       0
-                wl_chm.o          0      0      0          0        0       0
-                wl_cnx.o          0      0      0          0        0       0
-               nvs_api.o          0      0      0          0        0       0
-    nvs_item_hash_list.o          0      0      0          0        0       0
-              nvs_page.o          0      0      0          0        0       0
-       nvs_pagemanager.o          0      0      0          0        0       0
-           nvs_storage.o          0      0      0          0        0       0
-             nvs_types.o          0      0      0          0        0       0
-                   phy.o          0      0      0          0        0       0
-           phy_chip_v7.o          0      0      0          0        0       0
-       phy_chip_v7_ana.o          0      0      0          0        0       0
-       phy_chip_v7_cal.o          0      0      0          0        0       0
-               esf_buf.o          0      0      0          0        0       0
-             if_hwctrl.o          0      0      0          0        0       0
-                  lmac.o          0      0      0          0        0       0
-                    pm.o          0      0      0          0        0       0
-  pm_for_bcn_only_mode.o          0      0      0          0        0       0
-                    pp.o          0      0      0          0        0       0
-              pp_debug.o          0      0      0          0        0       0
-              pp_timer.o          0      0      0          0        0       0
-          rate_control.o          0      0      0          0        0       0
-                   trc.o          0      0      0          0        0       0
-                  wdev.o          0      0      0          0        0       0
-                 bt_bb.o          0      0      0          0        0       0
-                    pm.o          0      0      0          0        0       0
-                   rtc.o          0      0      0          0        0       0
-            rtc_analog.o          0      0      0          0        0       0
-       smartconfig_ack.o          0      0      0          0        0       0
-           gpio_periph.o          0      0      0          0        0       0
-             rtc_sleep.o          0      0      0          0        0       0
-             bad_alloc.o          0      0      0          0        0       0
-                del_op.o          0      0      0          0        0       0
-               del_opv.o          0      0      0          0        0       0
-          eh_exception.o          0      0      0          0        0       0
-           new_handler.o          0      0      0          0        0       0
-                  pure.o          0      0      0          0        0       0
-                 tinfo.o          0      0      0          0        0       0
-             ap_config.o          0      0      0          0        0       0
-                common.o          0      0      0          0        0       0
-                   wpa.o          0      0      0          0        0       0
-              wpa_auth.o          0      0      0          0        0       0
-           wpa_auth_ie.o          0      0      0          0        0       0
-            wpa_common.o          0      0      0          0        0       0
-             wpa_debug.o          0      0      0          0        0       0
-                wpa_ie.o          0      0      0          0        0       0
-              wpa_main.o          0      0      0          0        0       0
-                wpabuf.o          0      0      0          0        0       0
-             wpas_glue.o          0      0      0          0        0       0
-         wpa2_internal.o          0      0      0          0        0       0
-             os_xtensa.o          0      0      0          0        0       0
-          wps_internal.o          0      0      0          0        0       0
+             Object File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
+        lib_a-vfprintf.o          0      0       0      0        0      14193      756   14949
+       lib_a-svfprintf.o          0      0       0      0        0      13834      756   14590
+      lib_a-svfiprintf.o          0      0       0      0        0       9642     1210   10852
+       lib_a-vfiprintf.o          0      0       0      0        0       9933      738   10671
+                   nd6.o          8   1027       0      0        0       8427      136    9598
+                tcp_in.o          0     54       0      0        0       8127      916    9097
+                 tasks.o         20    700       0   5667        0          0      503    6890
+               tcp_out.o          0      0       0      0        0       5060     1124    6184
+               sockets.o          0    728       0      0        0       4627      824    6179
+                   tcp.o          4     23       0      0        0       4290     1384    5701
+               api_msg.o          0      0       0      0        0       3763     1366    5129
+                  dhcp.o          0      8       0      0        0       3456     1401    4865
+                 panic.o       2579      5       0   2145        0          0        0    4729
+       esp_err_to_name.o          0      0       0      0        0         50     4091    4141
+        unwind-dw2-fde.o          4     20       0      0        0       3316      404    3744
+                  pbuf.o          0      1       0      0        0       2453     1161    3615
+               portasm.o       3084      0       0    480        0          0        0    3564
+            lib_a-dtoa.o          0      0       0      0        0       3522       13    3535
+                etharp.o          0    241       0      0        0       2618      658    3517
+                   ip6.o          0      0       0      0        0       3212      124    3336
+                   dns.o          0   1292       0      0        0       1809      206    3307
+   spi_flash_rom_patch.o          0      0       0   2518        0          0      766    3284
+                   udp.o          2      4       0      0        0       3020      216    3242
+            intr_alloc.o          8     22       0    726        0       1749      710    3215
+            multi_heap.o        857      0       0   2217        0          0        0    3074
+                 queue.o          8     56       0   2569        0          0      369    3002
+             flash_ops.o         32     41       0   2352        0         99        0    2524
+     unwind-dw2-xtensa.o          0      0       0      0        0       2172      324    2496
+               rtc_clk.o        660      8       0   1794        0          0        0    2462
+           lib_a-mprec.o          0      0       0      0        0       2134      296    2430
+                   vfs.o        192     40       0      0        0       1995      132    2359
+              ip6_frag.o          0      6       0      0        0       1905      442    2353
+               api_lib.o          0      0       0      0        0       1425      919    2344
+                  igmp.o          0     12       0      0        0       1604      707    2323
+             dbg_stubs.o          0   2072       0     32        0        100        0    2204
+              vfs_uart.o         40     63       0      0        0       1775      271    2149
+        unity_platform.o          0     13       0      0        0       1511      600    2124
+       esp_timer_esp32.o          8     26       0   1295        0        254      526    2109
+            rtc_periph.o          0      0       0      0        0          0     2080    2080
+            flash_mmap.o          0    296       0   1298        0        124      327    2045
+             heap_caps.o          4      0       0   1195        0        188      593    1980
+        eh_personality.o          0      0       0      0        0       1561      384    1945
+                   ip4.o          0      6       0      0        0       1664      139    1809
+                 netif.o          0    241       0      0        0       1239      287    1767
+        xtensa_vectors.o          8      0       0   1697        0          0       36    1741
+             cpu_start.o          0      1       0    806        0        277      486    1570
+                   clk.o          0      0       0     67        0        581      893    1541
+                timers.o          8     56       0   1149        0          0      233    1446
+              sys_arch.o          0      8       0      0        0       1216      222    1446
+  multi_heap_poisoning.o        470      0       0    964        0          0        0    1434
+        heap_caps_init.o          0      4       0      0        0       1030      387    1421
+                  mld6.o          0      4       0      0        0       1334        0    1338
+           cache_utils.o          4     14       0    836        0         81      390    1325
+                   raw.o          0      4       0      0        0       1087      223    1314
+             esp_timer.o          8     20       0    702        0        429      142    1301
+                   log.o          8    268       0    456        0        396      166    1294
+            system_api.o          0      8       0    589        0          0      662    1259
+     soc_memory_layout.o          0      0       0      0        0          0     1239    1239
+                  icmp.o          0      0       0      0        0        769      371    1140
+       xtensa_intr_asm.o       1024      0       0     51        0          0        0    1075
+                  port.o          0     16       0    617        0          0      369    1002
+               pthread.o          8      8       0    174        0        298      512    1000
+                 icmp6.o          0      0       0      0        0        863      127     990
+              rtc_init.o          0      0       0    980        0          0        0     980
+                 unity.o          0    108       0      0        0        767       90     965
+              rtc_time.o          0      0       0    803        0          0      137     940
+          dport_access.o          8     40       0    539        0        189      129     905
+          lib_a-fseeko.o          0      0       0      0        0        862        0     862
+                  time.o          0     32       0    139        0        691        0     862
+                 tcpip.o          0     16       0      0        0        644      191     851
+           esp_ota_ops.o          0      0       0      0        0        123      717     840
+           periph_ctrl.o          8      0       0      0        0        520      256     784
+                timers.o          0     12       0      0        0        638      131     781
+             partition.o          0      8       0      0        0        582      141     731
+                 locks.o          8      0       0    552        0          0       84     644
+                   ipc.o          0     36       0    159        0        329      104     628
+    tcpip_adapter_lwip.o          0     81       0      0        0        180      359     620
+ pthread_local_storage.o          8      4       0      0        0        476      126     614
+           inet_chksum.o          0      0       0      0        0        580        0     580
+         crosscore_int.o          8      8       0    204        0        126      148     494
+                netbuf.o          0      0       0      0        0        154      326     480
+              vfs_lwip.o          0      0       0      0        0        307      155     462
+         syscall_table.o        144    240       0      0        0         67        0     451
+                 timer.o         16      0       0      0        0        112      281     409
+               int_wdt.o          0      1       0     87        0        301        0     389
+            eh_globals.o          0     16       0      0        0        149      193     358
+              brownout.o          0      0       0      0        0        145      191     336
+        freertos_hooks.o          8    128       0     43        0        137        0     316
+       windowspill_asm.o          0      0       0    311        0          0        0     311
+              cpu_util.o          0      0       0    310        0          0        0     310
+            rtc_module.o          8      8       0      0        0        291        0     307
+        xtensa_context.o          0      0       0    299        0          0        0     299
+          eh_terminate.o          0      0       0      0        0        117      141     258
+              ethernet.o          0      0       0      0        0        244       12     256
+            lib_a-puts.o          0      0       0      0        0        182       60     242
+dport_panic_highint_hdl.          8      0       0    234        0          0        0     242
+           lib_a-reent.o          0      0       0      0        0        232        0     232
+           lib_a-fopen.o          0      0       0      0        0        228        0     228
+            dhcpserver.o          0      4       0      0        0        203        0     207
+            test_utils.o          0      0       0      0        0         38      140     178
+         lib_a-sprintf.o          0      0       0      0        0        167        0     167
+         cache_err_int.o          0      0       0     56        0         98        0     154
+                  list.o          0      0       0    142        0          0        0     142
+           xtensa_intr.o          0      0       0    104        0          0       35     139
+              syscalls.o          0      0       0     94        0         45        0     139
+    si_class_type_info.o          0      0       0      0        0          0      136     136
+          lib_a-assert.o          0      0       0      0        0         68       60     128
+           lib_a-flags.o          0      0       0      0        0        127        0     127
+          lib_a-printf.o          0      0       0      0        0        116        0     116
+              ip4_addr.o          0      0       0      0        0         72       40     112
+       class_type_info.o          0      0       0      0        0          0      112     112
+         lib_a-s_frexp.o          0      0       0      0        0        110        0     110
+                    ip.o          0     60       0      0        0         50        0     110
+                  memp.o          0      0       0      0        0          0      108     108
+             lib2funcs.o          0      0       0    104        0          0        0     104
+         lib_a-vprintf.o          0      0       0      0        0         94        0      94
+    lib_a-s_fpclassify.o          0      0       0     92        0          0        0      92
+                   def.o          0      0       0      0        0         91        0      91
+        lib_a-fiprintf.o          0      0       0      0        0         84        0      84
+             hw_random.o          0      4       0     74        0          0        0      78
+           stack_check.o          0      4       0      0        0         32       42      78
+                 clock.o          0      0       0     72        0          0        0      72
+            reent_init.o          0      0       0     68        0          0        2      70
+              app_main.o          0      0       0      0        0         53       10      63
+state_asm--restore_extra          0      0       0     62        0          0        0      62
+state_asm--save_extra_nw          0      0       0     62        0          0        0      62
+                  uart.o          8     12       0      0        0         38        0      58
+               new_opv.o          0      0       0      0        0          0       56      56
+xtensa_vector_defaults.o          0      0       0     46        0          0        0      46
+           lib_a-fseek.o          0      0       0      0        0         45        0      45
+               _divdi3.o          0      0       0      0        0          0       40      40
+               _moddi3.o          0      0       0      0        0          0       40      40
+              _udivdi3.o          0      0       0      0        0          0       40      40
+              _umoddi3.o          0      0       0      0        0          0       40      40
+                new_op.o          0      0       0      0        0          0       40      40
+           xtensa_init.o          0      4       0     32        0          0        0      36
+  interrupts--intlevel.o          0      0       0      0        0          0       32      32
+                  init.o          0      0       0      0        0         27        0      27
+             wifi_init.o          0      0       0      0        0         17        9      26
+              ip6_addr.o          0      0       0      0        0          0       20      20
+           lib_a-errno.o          0      0       0      0        0         10        0      10
+ int_asm--set_intclear.o          0      0       0      8        0          0        0       8
+                   eri.o          0      0       0      8        0          0        0       8
+   cxx_exception_stubs.o          0      0       0      0        0          6        0       6
+            cxx_guards.o          0      0       0      0        0          5        0       5
+      FreeRTOS-openocd.o          4      0       0      0        0          0        0       4
+       eh_term_handler.o          4      0       0      0        0          0        0       4
+       eh_unex_handler.o          4      0       0      0        0          0        0       4
+      bootloader_flash.o          0      0       0      0        0          0        0       0
+        bootloader_sha.o          0      0       0      0        0          0        0       0
+      esp_image_format.o          0      0       0      0        0          0        0       0
+           lib_a-fputs.o          0      0       0      0        0          0        0       0
+        lib_a-snprintf.o          0      0       0      0        0          0        0       0
+        lib_a-strerror.o          0      0       0      0        0          0        0       0
+       lib_a-sysgettod.o          0      0       0      0        0          0        0       0
+        lib_a-u_strerr.o          0      0       0      0        0          0        0       0
+       lib_a-vsnprintf.o          0      0       0      0        0          0        0       0
+  lib_a-xpg_strerror_r.o          0      0       0      0        0          0        0       0
+           coexist_api.o          0      0       0      0        0          0        0       0
+         coexist_arbit.o          0      0       0      0        0          0        0       0
+          coexist_core.o          0      0       0      0        0          0        0       0
+           coexist_dbg.o          0      0       0      0        0          0        0       0
+            coexist_hw.o          0      0       0      0        0          0        0       0
+         coexist_param.o          0      0       0      0        0          0        0       0
+         coexist_timer.o          0      0       0      0        0          0        0       0
+              misc_nvs.o          0      0       0      0        0          0        0       0
+                  gpio.o          0      0       0      0        0          0        0       0
+      ets_timer_legacy.o          0      0       0      0        0          0        0       0
+event_default_handlers.o          0      0       0      0        0          0        0       0
+            event_loop.o          0      0       0      0        0          0        0       0
+            lib_printf.o          0      0       0      0        0          0        0       0
+              phy_init.o          0      0       0      0        0          0        0       0
+                   sha.o          0      0       0      0        0          0        0       0
+       wifi_os_adapter.o          0      0       0      0        0          0        0       0
+              emac_dev.o          0      0       0      0        0          0        0       0
+             emac_main.o          0      0       0      0        0          0        0       0
+          event_groups.o          0      0       0      0        0          0        0       0
+               ringbuf.o          0      0       0      0        0          0        0       0
+            _addsubdf3.o          0      0       0      0        0          0        0       0
+               _cmpdf2.o          0      0       0      0        0          0        0       0
+               _divdf3.o          0      0       0      0        0          0        0       0
+               _divsf3.o          0      0       0      0        0          0        0       0
+          _extendsfdf2.o          0      0       0      0        0          0        0       0
+              _fixdfsi.o          0      0       0      0        0          0        0       0
+            _floatdidf.o          0      0       0      0        0          0        0       0
+            _floatdisf.o          0      0       0      0        0          0        0       0
+            _floatsidf.o          0      0       0      0        0          0        0       0
+               _muldf3.o          0      0       0      0        0          0        0       0
+          _popcountsi2.o          0      0       0      0        0          0        0       0
+            ethernetif.o          0      0       0      0        0          0        0       0
+                ethip6.o          0      0       0      0        0          0        0       0
+                wlanif.o          0      0       0      0        0          0        0       0
+            esp_sha256.o          0      0       0      0        0          0        0       0
+                  mesh.o          0      0       0      0        0          0        0       0
+           mesh_common.o          0      0       0      0        0          0        0       0
+           mesh_config.o          0      0       0      0        0          0        0       0
+             mesh_main.o          0      0       0      0        0          0        0       0
+           mesh_parent.o          0      0       0      0        0          0        0       0
+            mesh_route.o          0      0       0      0        0          0        0       0
+         mesh_schedule.o          0      0       0      0        0          0        0       0
+            mesh_timer.o          0      0       0      0        0          0        0       0
+        mesh_utilities.o          0      0       0      0        0          0        0       0
+             mesh_wifi.o          0      0       0      0        0          0        0       0
+             ieee80211.o          0      0       0      0        0          0        0       0
+      ieee80211_action.o          0      0       0      0        0          0        0       0
+ieee80211_action_vendor.          0      0       0      0        0          0        0       0
+         ieee80211_api.o          0      0       0      0        0          0        0       0
+      ieee80211_crypto.o          0      0       0      0        0          0        0       0
+ ieee80211_crypto_ccmp.o          0      0       0      0        0          0        0       0
+ ieee80211_crypto_tkip.o          0      0       0      0        0          0        0       0
+  ieee80211_crypto_wep.o          0      0       0      0        0          0        0       0
+       ieee80211_debug.o          0      0       0      0        0          0        0       0
+         ieee80211_ets.o          0      0       0      0        0          0        0       0
+      ieee80211_hostap.o          0      0       0      0        0          0        0       0
+          ieee80211_ht.o          0      0       0      0        0          0        0       0
+   ieee80211_ie_vendor.o          0      0       0      0        0          0        0       0
+       ieee80211_input.o          0      0       0      0        0          0        0       0
+       ieee80211_ioctl.o          0      0       0      0        0          0        0       0
+  ieee80211_mesh_quick.o          0      0       0      0        0          0        0       0
+        ieee80211_misc.o          0      0       0      0        0          0        0       0
+         ieee80211_nvs.o          0      0       0      0        0          0        0       0
+      ieee80211_output.o          0      0       0      0        0          0        0       0
+         ieee80211_phy.o          0      0       0      0        0          0        0       0
+       ieee80211_power.o          0      0       0      0        0          0        0       0
+       ieee80211_proto.o          0      0       0      0        0          0        0       0
+   ieee80211_regdomain.o          0      0       0      0        0          0        0       0
+        ieee80211_rfid.o          0      0       0      0        0          0        0       0
+        ieee80211_scan.o          0      0       0      0        0          0        0       0
+         ieee80211_sta.o          0      0       0      0        0          0        0       0
+       ieee80211_timer.o          0      0       0      0        0          0        0       0
+                wl_chm.o          0      0       0      0        0          0        0       0
+                wl_cnx.o          0      0       0      0        0          0        0       0
+               nvs_api.o          0      0       0      0        0          0        0       0
+    nvs_item_hash_list.o          0      0       0      0        0          0        0       0
+              nvs_page.o          0      0       0      0        0          0        0       0
+       nvs_pagemanager.o          0      0       0      0        0          0        0       0
+           nvs_storage.o          0      0       0      0        0          0        0       0
+             nvs_types.o          0      0       0      0        0          0        0       0
+                   phy.o          0      0       0      0        0          0        0       0
+           phy_chip_v7.o          0      0       0      0        0          0        0       0
+       phy_chip_v7_ana.o          0      0       0      0        0          0        0       0
+       phy_chip_v7_cal.o          0      0       0      0        0          0        0       0
+               esf_buf.o          0      0       0      0        0          0        0       0
+             if_hwctrl.o          0      0       0      0        0          0        0       0
+                  lmac.o          0      0       0      0        0          0        0       0
+                    pm.o          0      0       0      0        0          0        0       0
+  pm_for_bcn_only_mode.o          0      0       0      0        0          0        0       0
+                    pp.o          0      0       0      0        0          0        0       0
+              pp_debug.o          0      0       0      0        0          0        0       0
+              pp_timer.o          0      0       0      0        0          0        0       0
+          rate_control.o          0      0       0      0        0          0        0       0
+                   trc.o          0      0       0      0        0          0        0       0
+                  wdev.o          0      0       0      0        0          0        0       0
+                 bt_bb.o          0      0       0      0        0          0        0       0
+                    pm.o          0      0       0      0        0          0        0       0
+                   rtc.o          0      0       0      0        0          0        0       0
+            rtc_analog.o          0      0       0      0        0          0        0       0
+       smartconfig_ack.o          0      0       0      0        0          0        0       0
+           gpio_periph.o          0      0       0      0        0          0        0       0
+             rtc_sleep.o          0      0       0      0        0          0        0       0
+             bad_alloc.o          0      0       0      0        0          0        0       0
+                del_op.o          0      0       0      0        0          0        0       0
+               del_opv.o          0      0       0      0        0          0        0       0
+          eh_exception.o          0      0       0      0        0          0        0       0
+           new_handler.o          0      0       0      0        0          0        0       0
+                  pure.o          0      0       0      0        0          0        0       0
+                 tinfo.o          0      0       0      0        0          0        0       0
+             ap_config.o          0      0       0      0        0          0        0       0
+                common.o          0      0       0      0        0          0        0       0
+                   wpa.o          0      0       0      0        0          0        0       0
+              wpa_auth.o          0      0       0      0        0          0        0       0
+           wpa_auth_ie.o          0      0       0      0        0          0        0       0
+            wpa_common.o          0      0       0      0        0          0        0       0
+             wpa_debug.o          0      0       0      0        0          0        0       0
+                wpa_ie.o          0      0       0      0        0          0        0       0
+              wpa_main.o          0      0       0      0        0          0        0       0
+                wpabuf.o          0      0       0      0        0          0        0       0
+             wpas_glue.o          0      0       0      0        0          0        0       0
+         wpa2_internal.o          0      0       0      0        0          0        0       0
+             os_xtensa.o          0      0       0      0        0          0        0       0
+          wps_internal.o          0      0       0      0        0          0        0       0
 
 ***
 Running idf_size.py --archive_details...
@@ -364,16 +376,24 @@ Used static DRAM:   17620 bytes ( 163116 available, 9.7% used)
 Used static IRAM:   38932 bytes (  92140 available, 29.7% used)
       Flash code:  146944 bytes
     Flash rodata:   39580 bytes
-Total image size:~ 234780 bytes (.bin may be padded larger)
+Total image size:~ 243076 bytes (.bin may be padded larger)
 Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+p_uart_obj(12) s_rtc_isr_handle(4) s_rtc_isr_handler_list(4)
+Section total: 20
 
 Symbols from section: .dram0.data
 timer_spinlock(16) periph_spinlock(8) s_rtc_isr_handler_list_lock(8) uart_selectlock(8)
 Section total: 40
 
-Symbols from section: .dram0.bss
-p_uart_obj(12) s_rtc_isr_handle(4) s_rtc_isr_handler_list(4)
-Section total: 20
+Symbols from section: .flash.rodata
+str1.4(249) get_clk_en_mask(128) get_rst_en_mask(128) __FUNCTION__$5441(24) TG(8)
+Section total: 537
+
+Symbols from section: .flash.text
+get_clk_en_mask(211) get_rst_en_mask(157) timer_group_intr_enable(112) rtc_isr(86) periph_module_enable(78) rtc_isr_ensure_installed(75) rtc_gpio_force_hold_dis_all(65) rtc_isr_register(65) is_wifi_clk_peripheral(28) uart_set_select_notif_callback(26) get_rst_en_reg(25) get_clk_en_reg(21) uart_get_selectlock(12)
+Section total: 961
 
 Symbols from section: .iram0.text
 
@@ -383,34 +403,371 @@ Symbols from section: .iram0.vectors
 
 Section total: 0
 
-Symbols from section: .flash.text
-get_clk_en_mask(211) get_rst_en_mask(157) timer_group_intr_enable(112) rtc_isr(86) periph_module_enable(78) rtc_isr_ensure_installed(75) rtc_gpio_force_hold_dis_all(65) rtc_isr_register(65) is_wifi_clk_peripheral(28) uart_set_select_notif_callback(26) get_rst_en_reg(25) get_clk_en_reg(21) uart_get_selectlock(12)
-Section total: 961
+Symbols from section: .noinit
+
+Section total: 0
+
+***
+Running idf_size.py for esp32s2...
+Total sizes:
+ DRAM .data size:    7152 bytes
+ DRAM .bss  size:    1936 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
+      Flash code:   74439 bytes
+    Flash rodata:   18580 bytes
+Total image size:~ 136039 bytes (.bin may be padded larger)
+
+***
+Running idf_size.py on bootloader for esp32s2...
+Total sizes:
+ DRAM .data size:       4 bytes
+ DRAM .bss  size:     264 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   12094 bytes (  30914 available, 28.1% used)
+      Flash code:       0 bytes
+    Flash rodata:       0 bytes
+Total image size:~  12094 bytes (.bin may be padded larger)
+
+***
+Running idf_size.py --archives for esp32s2...
+Total sizes:
+ DRAM .data size:    7152 bytes
+ DRAM .bss  size:    1936 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
+      Flash code:   74439 bytes
+    Flash rodata:   18580 bytes
+Total image size:~ 136039 bytes (.bin may be padded larger)
+Per-archive contributions to ELF file:
+            Archive File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
+                  libc.a        364      4       0      0      368      54964     3765   59465
+           libfreertos.a       2080    736       0      0    13796          0     1175   17787
+            libesp32s2.a       2621     22       0      0     6853       4169     2209   15874
+                libsoc.a        405      8       0      0     7488       1574      878   10353
+          libspi_flash.a        775    416       0      0     5305       1109     1130    8735
+                libvfs.a        272     48       0      0      320       5581      555    6776
+         libesp_common.a          8     72       0      0      167        416     5304    5967
+               libheap.a        304      4       0      0     3479        888      741    5416
+             libdriver.a         80     32       0      0      112       3216      894    4334
+             libnewlib.a        152    272       0      0     1236        856       84    2600
+          libesp_timer.a         16     20       0      0      704        657      560    1957
+                liblog.a          8    272       0      0      874         94      147    1395
+        libesp_ringbuf.a          0      0       0      0      858          0      150    1008
+         libapp_update.a          0      4       0      0        4        151      470     629
+               libmain.a          0      0       0      0        0        192      196     388
+                libhal.a          0      0       0      0      337          0       32     369
+            libpthread.a          8     12       0      0       20        264        0     304
+                libgcc.a          0      0       0      0        0          0      160     160
+                   (exe)          0      0       0      0        3          3       12      18
+                libcxx.a          0      0       0      0        0         11        0      11
+ libbootloader_support.a          0      0       0      0        0          0        0       0
+         libmbedcrypto.a          0      0       0      0        0          0        0       0
+        libsoc_esp32s2.a          0      0       0      0        0          0        0       0
+     libwpa_supplicant.a          0      0       0      0        0          0        0       0
+             libxtensa.a          0      0       0      0        0          0        0       0
+
+***
+Running idf_size.py --files for esp32s2...
+Total sizes:
+ DRAM .data size:    7152 bytes
+ DRAM .bss  size:    1936 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
+      Flash code:   74439 bytes
+    Flash rodata:   18580 bytes
+Total image size:~ 136039 bytes (.bin may be padded larger)
+Per-file contributions to ELF file:
+             Object File DRAM .data & .bss & other   IRAM   D/IRAM Flash code & rodata   Total
+        lib_a-vfprintf.o          0      0       0      0        0      13681      752   14433
+       lib_a-svfprintf.o          0      0       0      0        0      13294      752   14046
+      lib_a-svfiprintf.o          0      0       0      0        0       9623     1206   10829
+       lib_a-vfiprintf.o          0      0       0      0        0       9933      734   10667
+               panic.c.o       2552      1       0      0     4874          0        0    7427
+               tasks.c.o         12    660       0      0     5626          0      406    6704
+     esp_err_to_name.c.o          0      0       0      0        0         53     5101    5154
+            vfs_uart.c.o         80      8       0      0       88       3689      423    4288
+            lib_a-dtoa.o          0      0       0      0        0       3524       13    3537
+             portasm.S.o       1544      0       0      0     1909          0        0    3453
+          intr_alloc.c.o          8     13       0      0      681       1682      706    3090
+          multi_heap.c.o        300      0       0      0     2573          0        0    2873
+               queue.c.o          0      0       0      0     2397          0      424    2821
+             rtc_clk.c.o        381      8       0      0     2256          0        0    2645
+                uart.c.o         40      8       0      0       48       2087      452    2635
+                 vfs.c.o        192     40       0      0      232       1892      132    2488
+           lib_a-mprec.o          0      0       0      0        0       2144      296    2440
+          flash_mmap.c.o          0    392       0      0     1592        124      252    2360
+spi_flash_chip_generic.c        340      0       0      0     1757          0        0    2097
+  spi_flash_hal_iram.c.o         24      0       0      0     1828          0        0    1852
+            task_wdt.c.o         53      4       0      0       57       1190      496    1800
+              timers.c.o          8     56       0      0     1051          0      223    1338
+           heap_caps.c.o          4      0       0      0      902         50      362    1318
+      xtensa_vectors.S.o          0      0       0      0     1289          0        0    1289
+            rtc_init.c.o          0      0       0      0     1255          0        8    1263
+      heap_caps_init.c.o          0      4       0      0        4        838      379    1225
+                 log.c.o          8    264       0      0      678         94      147    1191
+           cpu_start.c.o          0      0       0      0      536        152      489    1177
+esp_timer_impl_systimer.          8      8       0      0      404        252      442    1114
+     xtensa_intr_asm.S.o        512      0       0      0      563          0        0    1075
+             ringbuf.c.o          0      0       0      0      858          0      150    1008
+         periph_ctrl.c.o          8      0       0      0        8        661      272     949
+                 clk.c.o          0      0       0      0       34        626      281     941
+          lib_a-fseeko.o          0      0       0      0        0        910        0     910
+                time.c.o          0     32       0      0      147        719        0     898
+           partition.c.o          0      8       0      0        8        679      181     876
+       esp_flash_api.c.o          0      0       0      0      600         16      240     856
+           esp_timer.c.o          8     12       0      0      300        405      118     843
+       syscall_table.c.o        144    240       0      0      384         70        0     838
+ memory_layout_utils.c.o          0      0       0      0        0        509      295     804
+             rtc_wdt.c.o          0      0       0      0      800          0        0     800
+  esp_flash_spi_init.c.o        120      4       0      0      124        215      281     744
+          lib_a-locale.o        364      0       0      0      364          0       10     738
+            rtc_time.c.o          0      0       0      0      626          0        0     626
+               locks.c.o          8      0       0      0      495          5       84     592
+                port.c.o          0     16       0      0      424          0       87     527
+       crosscore_int.c.o          8      4       0      0      166         86      237     501
+   soc_memory_layout.c.o          0      0       0      0        0          0      479     479
+      freertos_hooks.c.o          8     64       0      0      119        243        0     434
+               timer.c.o         16     16       0      0       32        184      170     418
+           rtc_sleep.c.o          0      0       0      0      414          0        0     414
+         cache_utils.c.o          0      8       0      0      205         21      176     410
+            uart_hal.c.o          0      0       0      0        0        409        0     409
+       spi_flash_hal.c.o          0      0       0      0        0        309       96     405
+    hello_world_main.c.o          0      0       0      0        0        192      196     388
+         esp_ota_ops.c.o          0      4       0      0        4        151      214     373
+   spi_flash_chip_gd.c.o         95      0       0      0      276          0        0     371
+          lib_a-refill.o          0      0       0      0        0        368        0     368
+             int_wdt.c.o          0      0       0      0       59        302        0     361
+  system_api_esp32s2.c.o          0      0       0      0      323         27        0     350
+            brownout.c.o          0      0       0      0        0        120      203     323
+       windowspill_asm.o          0      0       0      0      315          0        0     315
+            cpu_util.c.o          0      0       0      0      309          0        0     309
+        brownout_hal.c.o          0      0       0      0        0        304        0     304
+ spi_flash_chip_issi.c.o         97      0       0      0      198          0        0     295
+  memspi_host_driver.c.o         43      0       0      0      249          0        0     292
+          rtc_module.c.o         16      8       0      0       24        231        0     279
+        esp_app_desc.c.o          0      0       0      0        0          0      256     256
+           lib_a-fopen.o          0      0       0      0        0        244        0     244
+            lib_a-puts.o          0      0       0      0        0        234        2     236
+           lib_a-reent.o          0      0       0      0        0        236        0     236
+        lib_a-snprintf.o          0      0       0      0        0        217        0     217
+pthread_local_storage.c.          8      4       0      0       12        183        0     207
+        log_freertos.c.o          0      8       0      0      196          0        0     204
+      xtensa_context.S.o          0      0       0      0      201          0        0     201
+spi_flash_os_func_app.c.         24      0       0      0      119         25        0     168
+                heap.c.o          0      0       0      0      151          0        0     151
+         xtensa_intr.c.o          0      0       0      0      112          0       35     147
+                list.c.o          0      0       0      0      138          0        0     138
+           lib_a-flags.o          0      0       0      0        0        128        0     128
+dport_panic_highint_hdl.          0      0       0      0      123          0        0     123
+spi_flash_os_func_noos.c         16      0       0      0      105          0        0     121
+          lib_a-printf.o          0      0       0      0        0        116        0     116
+           flash_ops.c.o         20      4       0      0       52         29        0     105
+         lib_a-s_frexp.o          0      0       0      0        0        100        0     100
+             pthread.c.o          0      8       0      0        8         81        0      97
+       cache_err_int.c.o          0      0       0      0        0         96        0      96
+         lib_a-vprintf.o          0      0       0      0        0         94        0      94
+      lib_a-localeconv.o          0      0       0      0        0         63        0      63
+          reent_init.c.o          0      0       0      0       59          0        0      59
+          system_api.c.o          0      8       0      0       48          0        0      56
+              rtc_io.c.o          0      0       0      0        0         53        0      53
+            syscalls.c.o          0      0       0      0        0         50        0      50
+xtensa_vector_defaults.S          0      0       0      0       46          0        0      46
+           lib_a-fseek.o          0      0       0      0        0         45        0      45
+       uart_hal_iram.c.o          0      0       0      0        0         43        0      43
+         xtensa_init.c.o          0      4       0      0       36          0        0      40
+               _divdi3.o          0      0       0      0        0          0       40      40
+               _moddi3.o          0      0       0      0        0          0       40      40
+              _udivdi3.o          0      0       0      0        0          0       40      40
+              _umoddi3.o          0      0       0      0        0          0       40      40
+spi_flash_chip_drivers.c         20      0       0      0       20          0        0      40
+  interrupts--intlevel.o          0      0       0      0        0          0       32      32
+             pthread.c.o          0      0       0      0        0         12        0      12
+           lib_a-errno.o          0      0       0      0        0         10        0      10
+                crtend.o          0      0       0      0        0          0        8       8
+         lib_a-environ.o          0      4       0      0        4          0        0       8
+          pm_esp32s2.c.o          0      0       0      0        0          8        0       8
+    FreeRTOS-openocd.c.o          4      0       0      0        4          0        0       8
+ int_asm--set_intclear.o          0      0       0      0        8          0        0       8
+state_asm--restore_extra          0      0       0      0        7          0        0       7
+state_asm--save_extra_nw          0      0       0      0        7          0        0       7
+                  crti.o          0      0       0      0        3          3        0       6
+cxx_exception_stubs.cpp.          0      0       0      0        0          6        0       6
+        cxx_guards.cpp.o          0      0       0      0        0          5        0       5
+              crtbegin.o          0      0       0      0        0          0        4       4
+                  crt0.o          0      0       0      0        0          0        0       0
+                  crtn.o          0      0       0      0        0          0        0       0
+     project_elf_src.c.o          0      0       0      0        0          0        0       0
+   bootloader_common.c.o          0      0       0      0        0          0        0       0
+bootloader_efuse_esp32s2          0      0       0      0        0          0        0       0
+    bootloader_flash.c.o          0      0       0      0        0          0        0       0
+   bootloader_random.c.o          0      0       0      0        0          0        0       0
+      bootloader_sha.c.o          0      0       0      0        0          0        0       0
+  bootloader_utility.c.o          0      0       0      0        0          0        0       0
+    esp_image_format.c.o          0      0       0      0        0          0        0       0
+    flash_partitions.c.o          0      0       0      0        0          0        0       0
+                isatty.o          0      0       0      0        0          0        0       0
+          lib_a-assert.o          0      0       0      0        0          0        0       0
+           lib_a-bzero.o          0      0       0      0        0          0        0       0
+          lib_a-ctype_.o          0      0       0      0        0          0        0       0
+         lib_a-envlock.o          0      0       0      0        0          0        0       0
+          lib_a-fclose.o          0      0       0      0        0          0        0       0
+          lib_a-fflush.o          0      0       0      0        0          0        0       0
+          lib_a-findfp.o          0      0       0      0        0          0        0       0
+        lib_a-fiprintf.o          0      0       0      0        0          0        0       0
+           lib_a-fputs.o          0      0       0      0        0          0        0       0
+          lib_a-fputwc.o          0      0       0      0        0          0        0       0
+         lib_a-fvwrite.o          0      0       0      0        0          0        0       0
+           lib_a-fwalk.o          0      0       0      0        0          0        0       0
+        lib_a-getenv_r.o          0      0       0      0        0          0        0       0
+       lib_a-gettzinfo.o          0      0       0      0        0          0        0       0
+        lib_a-gmtime_r.o          0      0       0      0        0          0        0       0
+          lib_a-impure.o          0      0       0      0        0          0        0       0
+        lib_a-iswspace.o          0      0       0      0        0          0        0       0
+       lib_a-lcltime_r.o          0      0       0      0        0          0        0       0
+         lib_a-makebuf.o          0      0       0      0        0          0        0       0
+         lib_a-mbrtowc.o          0      0       0      0        0          0        0       0
+        lib_a-mbtowc_r.o          0      0       0      0        0          0        0       0
+          lib_a-memchr.o          0      0       0      0        0          0        0       0
+          lib_a-memcmp.o          0      0       0      0        0          0        0       0
+          lib_a-memcpy.o          0      0       0      0        0          0        0       0
+         lib_a-memmove.o          0      0       0      0        0          0        0       0
+          lib_a-memset.o          0      0       0      0        0          0        0       0
+   lib_a-month_lengths.o          0      0       0      0        0          0        0       0
+            lib_a-putc.o          0      0       0      0        0          0        0       0
+         lib_a-putchar.o          0      0       0      0        0          0        0       0
+           lib_a-qsort.o          0      0       0      0        0          0        0       0
+            lib_a-sccl.o          0      0       0      0        0          0        0       0
+         lib_a-siscanf.o          0      0       0      0        0          0        0       0
+           lib_a-stdio.o          0      0       0      0        0          0        0       0
+          lib_a-strcmp.o          0      0       0      0        0          0        0       0
+          lib_a-strcpy.o          0      0       0      0        0          0        0       0
+         lib_a-strcspn.o          0      0       0      0        0          0        0       0
+        lib_a-strerror.o          0      0       0      0        0          0        0       0
+      lib_a-strerror_r.o          0      0       0      0        0          0        0       0
+         lib_a-strlcpy.o          0      0       0      0        0          0        0       0
+          lib_a-strlen.o          0      0       0      0        0          0        0       0
+         lib_a-strncmp.o          0      0       0      0        0          0        0       0
+         lib_a-strncpy.o          0      0       0      0        0          0        0       0
+          lib_a-strstr.o          0      0       0      0        0          0        0       0
+          lib_a-strtol.o          0      0       0      0        0          0        0       0
+         lib_a-strtoll.o          0      0       0      0        0          0        0       0
+         lib_a-strtoul.o          0      0       0      0        0          0        0       0
+        lib_a-strtoull.o          0      0       0      0        0          0        0       0
+       lib_a-svfiscanf.o          0      0       0      0        0          0        0       0
+       lib_a-sysgettod.o          0      0       0      0        0          0        0       0
+   lib_a-tzcalc_limits.o          0      0       0      0        0          0        0       0
+          lib_a-tzlock.o          0      0       0      0        0          0        0       0
+           lib_a-tzset.o          0      0       0      0        0          0        0       0
+         lib_a-tzset_r.o          0      0       0      0        0          0        0       0
+          lib_a-tzvars.o          0      0       0      0        0          0        0       0
+        lib_a-u_strerr.o          0      0       0      0        0          0        0       0
+          lib_a-ungetc.o          0      0       0      0        0          0        0       0
+            lib_a-wbuf.o          0      0       0      0        0          0        0       0
+         lib_a-wcrtomb.o          0      0       0      0        0          0        0       0
+        lib_a-wctomb_r.o          0      0       0      0        0          0        0       0
+          lib_a-wsetup.o          0      0       0      0        0          0        0       0
+                gpio.c.o          0      0       0      0        0          0        0       0
+          spi_common.c.o          0      0       0      0        0          0        0       0
+           hw_random.c.o          0      0       0      0        0          0        0       0
+            pm_locks.c.o          0      0       0      0        0          0        0       0
+            _addsubdf3.o          0      0       0      0        0          0        0       0
+               _cmpdf2.o          0      0       0      0        0          0        0       0
+               _divdf3.o          0      0       0      0        0          0        0       0
+              _fixdfsi.o          0      0       0      0        0          0        0       0
+            _floatdidf.o          0      0       0      0        0          0        0       0
+            _floatsidf.o          0      0       0      0        0          0        0       0
+               _muldf3.o          0      0       0      0        0          0        0       0
+             esp_mem.c.o          0      0       0      0        0          0        0       0
+            platform.c.o          0      0       0      0        0          0        0       0
+       platform_util.c.o          0      0       0      0        0          0        0       0
+              sha256.c.o          0      0       0      0        0          0        0       0
+            gpio_hal.c.o          0      0       0      0        0          0        0       0
+          rtc_io_hal.c.o          0      0       0      0        0          0        0       0
+ spi_flash_hal_gpspi.c.o          0      0       0      0        0          0        0       0
+           timer_hal.c.o          0      0       0      0        0          0        0       0
+         gpio_periph.c.o          0      0       0      0        0          0        0       0
+       rtc_io_periph.c.o          0      0       0      0        0          0        0       0
+          spi_periph.c.o          0      0       0      0        0          0        0       0
+         uart_periph.c.o          0      0       0      0        0          0        0       0
+        md5-internal.c.o          0      0       0      0        0          0        0       0
+           stdatomic.c.o          0      0       0      0        0          0        0       0
+
+***
+Running idf_size.py --archive_details for esp32s2...
+Total sizes:
+ DRAM .data size:    7152 bytes
+ DRAM .bss  size:    1936 bytes
+Used static DRAM:       0 bytes (      0 available, nan% used)
+Used static IRAM:       0 bytes (      0 available, nan% used)
+Used stat D/IRAM:   43020 bytes ( 350196 available, 10.9% used)
+      Flash code:   74439 bytes
+    Flash rodata:   18580 bytes
+Total image size:~ 136039 bytes (.bin may be padded larger)
+Symbols within the archive: libdriver.a (Not all symbols may be reported)
+
+Symbols from section: .dram0.bss
+p_timer_obj(16) p_uart_obj(8) s_rtc_isr_handle(4) s_rtc_isr_handler_list(4)
+Section total: 32
+
+Symbols from section: .dram0.data
+uart_context(32) timer_spinlock(16) periph_spinlock(8) rtc_spinlock(8) s_rtc_isr_handler_list_lock(8) uart_selectlock(8)
+Section total: 80
 
 Symbols from section: .flash.rodata
-str1.4(249) get_clk_en_mask(128) get_rst_en_mask(128) __FUNCTION__$5441(24) TG(8)
-Section total: 537
+timer_get_counter_value.str1.4(146) get_clk_en_mask(136) get_rst_en_mask(136) uart_pattern_enqueue.str1.4(88) uart_flush_input.str1.4(45) uart_set_word_length.str1.4(31) __FUNCTION__$7196(27) __FUNCTION__$5699(24) __FUNCTION__$6971(23) __FUNCTION__$6966(22) __FUNCTION__$6896(21) __FUNCTION__$6901(21) __FUNCTION__$6906(19) __FUNCTION__$6911(19) __FUNCTION__$6926(18) __FUNCTION__$6932(18) __FUNCTION__$7131(18) uart_pattern_pop_pos.str1.4(18) __FUNCTION__$7202(17) __FUNCTION__$6916(16) __FUNCTION__$6921(16) uart_set_stop_bits.str1.4(15)
+Section total: 894
+
+Symbols from section: .flash.text
+uart_flush_input(453) uart_wait_tx_done(417) get_clk_en_mask(267) get_rst_en_mask(198) timer_group_intr_enable(184) uart_set_word_length(144) uart_set_stop_bits(128) periph_module_enable(112) uart_get_bufferedlen(109) uart_enable_intr_mask(98) uart_disable_intr_mask(96) uart_set_baudrate(96) rtc_isr(90) uart_get_baudrate(82) uart_set_parity(82) rtc_isr_ensure_installed(79) uart_pattern_queue_update(74) uart_get_parity(69) uart_get_stop_bits(69) uart_get_word_length(69) rtc_isr_register(62) rtc_gpio_force_hold_dis_all(53) is_wifi_clk_peripheral(38) uart_is_driver_installed(30) get_rst_en_reg(25) uart_set_select_notif_callback(23) get_clk_en_reg(21) uart_disable_rx_intr(18) uart_enable_rx_intr(18) uart_get_selectlock(12)
+Section total: 3216
+
+Symbols from section: .iram0.text
+
+Section total: 0
+
+Symbols from section: .iram0.vectors
+
+Section total: 0
+
+Symbols from section: .noinit
+
+Section total: 0
+
+Symbols from section: .rtc.text
+
+Section total: 0
 
 ***
 Producing JSON output...
 {
     "dram_data": 9324,
     "dram_bss": 8296,
+    "dram_other": 0,
     "used_dram": 17620,
     "available_dram": 163116,
     "used_dram_ratio": 0.09749026203966006,
     "used_iram": 38932,
     "available_iram": 92140,
     "used_iram_ratio": 0.297027587890625,
+    "used_diram": 0,
+    "available_diram": 0,
+    "used_diram_ratio": 0,
     "flash_code": 146944,
     "flash_rodata": 39580,
-    "total_size": 234780
+    "total_size": 243076
 }
 {
     "liblwip.a": {
         "data": 14,
         "bss": 3751,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 66978,
         "flash_rodata": 13936,
         "total": 84679
@@ -418,7 +775,9 @@ Producing JSON output...
     "libc.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 55583,
         "flash_rodata": 3889,
         "total": 59472
@@ -426,7 +785,9 @@ Producing JSON output...
     "libesp32.a": {
         "data": 2635,
         "bss": 2375,
+        "other": 0,
         "iram": 7758,
+        "diram": 0,
         "flash_text": 4814,
         "flash_rodata": 8133,
         "total": 25715
@@ -434,7 +795,9 @@ Producing JSON output...
     "libfreertos.a": {
         "data": 4156,
         "bss": 832,
+        "other": 0,
         "iram": 12853,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 1545,
         "total": 19386
@@ -442,7 +805,9 @@ Producing JSON output...
     "libspi_flash.a": {
         "data": 36,
         "bss": 359,
+        "other": 0,
         "iram": 7004,
+        "diram": 0,
         "flash_text": 886,
         "flash_rodata": 1624,
         "total": 9909
@@ -450,7 +815,9 @@ Producing JSON output...
     "libsoc.a": {
         "data": 660,
         "bss": 8,
+        "other": 0,
         "iram": 3887,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 3456,
         "total": 8011
@@ -458,7 +825,9 @@ Producing JSON output...
     "libheap.a": {
         "data": 1331,
         "bss": 4,
+        "other": 0,
         "iram": 4376,
+        "diram": 0,
         "flash_text": 1218,
         "flash_rodata": 980,
         "total": 7909
@@ -466,7 +835,9 @@ Producing JSON output...
     "libgcc.a": {
         "data": 4,
         "bss": 20,
+        "other": 0,
         "iram": 104,
+        "diram": 0,
         "flash_text": 5488,
         "flash_rodata": 888,
         "total": 6504
@@ -474,7 +845,9 @@ Producing JSON output...
     "libvfs.a": {
         "data": 232,
         "bss": 103,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3770,
         "flash_rodata": 403,
         "total": 4508
@@ -482,7 +855,9 @@ Producing JSON output...
     "libunity.a": {
         "data": 0,
         "bss": 121,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 2316,
         "flash_rodata": 830,
         "total": 3267
@@ -490,7 +865,9 @@ Producing JSON output...
     "libstdc++.a": {
         "data": 8,
         "bss": 16,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1827,
         "flash_rodata": 1062,
         "total": 2913
@@ -498,7 +875,9 @@ Producing JSON output...
     "libnewlib.a": {
         "data": 152,
         "bss": 272,
+        "other": 0,
         "iram": 853,
+        "diram": 0,
         "flash_text": 803,
         "flash_rodata": 86,
         "total": 2166
@@ -506,7 +885,9 @@ Producing JSON output...
     "libpthread.a": {
         "data": 16,
         "bss": 12,
+        "other": 0,
         "iram": 174,
+        "diram": 0,
         "flash_text": 774,
         "flash_rodata": 638,
         "total": 1614
@@ -514,7 +895,9 @@ Producing JSON output...
     "libdriver.a": {
         "data": 40,
         "bss": 20,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 961,
         "flash_rodata": 537,
         "total": 1558
@@ -522,7 +905,9 @@ Producing JSON output...
     "liblog.a": {
         "data": 8,
         "bss": 268,
+        "other": 0,
         "iram": 456,
+        "diram": 0,
         "flash_text": 396,
         "flash_rodata": 166,
         "total": 1294
@@ -530,7 +915,9 @@ Producing JSON output...
     "libapp_update.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 123,
         "flash_rodata": 717,
         "total": 840
@@ -538,7 +925,9 @@ Producing JSON output...
     "libtcpip_adapter.a": {
         "data": 0,
         "bss": 81,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 180,
         "flash_rodata": 359,
         "total": 620
@@ -546,7 +935,9 @@ Producing JSON output...
     "libhal.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 515,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 32,
         "total": 547
@@ -554,7 +945,9 @@ Producing JSON output...
     "libm.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 92,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 92
@@ -562,7 +955,9 @@ Producing JSON output...
     "libmain.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 53,
         "flash_rodata": 10,
         "total": 63
@@ -570,7 +965,9 @@ Producing JSON output...
     "libcxx.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 11,
         "flash_rodata": 0,
         "total": 11
@@ -578,7 +975,9 @@ Producing JSON output...
     "libxtensa-debug-module.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 8,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 8
@@ -586,7 +985,9 @@ Producing JSON output...
     "libbootloader_support.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -594,7 +995,9 @@ Producing JSON output...
     "libcoexist.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -602,7 +1005,9 @@ Producing JSON output...
     "libcore.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -610,7 +1015,9 @@ Producing JSON output...
     "libethernet.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -618,7 +1025,9 @@ Producing JSON output...
     "libmbedtls.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -626,7 +1035,9 @@ Producing JSON output...
     "libmesh.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -634,7 +1045,9 @@ Producing JSON output...
     "libnet80211.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -642,7 +1055,9 @@ Producing JSON output...
     "libnvs_flash.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -650,7 +1065,9 @@ Producing JSON output...
     "libphy.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -658,7 +1075,9 @@ Producing JSON output...
     "libpp.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -666,7 +1085,9 @@ Producing JSON output...
     "librtc.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -674,7 +1095,9 @@ Producing JSON output...
     "libsmartconfig_ack.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -682,7 +1105,9 @@ Producing JSON output...
     "libwpa.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -690,7 +1115,9 @@ Producing JSON output...
     "libwpa2.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -698,7 +1125,9 @@ Producing JSON output...
     "libwpa_supplicant.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -706,7 +1135,9 @@ Producing JSON output...
     "libwps.a": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -716,7 +1147,9 @@ Producing JSON output...
     "libc.a:lib_a-vfprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 14193,
         "flash_rodata": 756,
         "total": 14949
@@ -724,7 +1157,9 @@ Producing JSON output...
     "libc.a:lib_a-svfprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 13834,
         "flash_rodata": 756,
         "total": 14590
@@ -732,7 +1167,9 @@ Producing JSON output...
     "libc.a:lib_a-svfiprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 9642,
         "flash_rodata": 1210,
         "total": 10852
@@ -740,7 +1177,9 @@ Producing JSON output...
     "libc.a:lib_a-vfiprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 9933,
         "flash_rodata": 738,
         "total": 10671
@@ -748,7 +1187,9 @@ Producing JSON output...
     "liblwip.a:nd6.o": {
         "data": 8,
         "bss": 1027,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 8427,
         "flash_rodata": 136,
         "total": 9598
@@ -756,7 +1197,9 @@ Producing JSON output...
     "liblwip.a:tcp_in.o": {
         "data": 0,
         "bss": 54,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 8127,
         "flash_rodata": 916,
         "total": 9097
@@ -764,7 +1207,9 @@ Producing JSON output...
     "libfreertos.a:tasks.o": {
         "data": 20,
         "bss": 700,
+        "other": 0,
         "iram": 5667,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 503,
         "total": 6890
@@ -772,7 +1217,9 @@ Producing JSON output...
     "liblwip.a:tcp_out.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 5060,
         "flash_rodata": 1124,
         "total": 6184
@@ -780,7 +1227,9 @@ Producing JSON output...
     "liblwip.a:sockets.o": {
         "data": 0,
         "bss": 728,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 4627,
         "flash_rodata": 824,
         "total": 6179
@@ -788,7 +1237,9 @@ Producing JSON output...
     "liblwip.a:tcp.o": {
         "data": 4,
         "bss": 23,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 4290,
         "flash_rodata": 1384,
         "total": 5701
@@ -796,7 +1247,9 @@ Producing JSON output...
     "liblwip.a:api_msg.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3763,
         "flash_rodata": 1366,
         "total": 5129
@@ -804,7 +1257,9 @@ Producing JSON output...
     "liblwip.a:dhcp.o": {
         "data": 0,
         "bss": 8,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3456,
         "flash_rodata": 1401,
         "total": 4865
@@ -812,7 +1267,9 @@ Producing JSON output...
     "libesp32.a:panic.o": {
         "data": 2579,
         "bss": 5,
+        "other": 0,
         "iram": 2145,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 4729
@@ -820,7 +1277,9 @@ Producing JSON output...
     "libesp32.a:esp_err_to_name.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 50,
         "flash_rodata": 4091,
         "total": 4141
@@ -828,7 +1287,9 @@ Producing JSON output...
     "libgcc.a:unwind-dw2-fde.o": {
         "data": 4,
         "bss": 20,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3316,
         "flash_rodata": 404,
         "total": 3744
@@ -836,7 +1297,9 @@ Producing JSON output...
     "liblwip.a:pbuf.o": {
         "data": 0,
         "bss": 1,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 2453,
         "flash_rodata": 1161,
         "total": 3615
@@ -844,7 +1307,9 @@ Producing JSON output...
     "libfreertos.a:portasm.o": {
         "data": 3084,
         "bss": 0,
+        "other": 0,
         "iram": 480,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 3564
@@ -852,7 +1317,9 @@ Producing JSON output...
     "libc.a:lib_a-dtoa.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3522,
         "flash_rodata": 13,
         "total": 3535
@@ -860,7 +1327,9 @@ Producing JSON output...
     "liblwip.a:etharp.o": {
         "data": 0,
         "bss": 241,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 2618,
         "flash_rodata": 658,
         "total": 3517
@@ -868,7 +1337,9 @@ Producing JSON output...
     "liblwip.a:ip6.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3212,
         "flash_rodata": 124,
         "total": 3336
@@ -876,7 +1347,9 @@ Producing JSON output...
     "liblwip.a:dns.o": {
         "data": 0,
         "bss": 1292,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1809,
         "flash_rodata": 206,
         "total": 3307
@@ -884,7 +1357,9 @@ Producing JSON output...
     "libspi_flash.a:spi_flash_rom_patch.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 2518,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 766,
         "total": 3284
@@ -892,7 +1367,9 @@ Producing JSON output...
     "liblwip.a:udp.o": {
         "data": 2,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 3020,
         "flash_rodata": 216,
         "total": 3242
@@ -900,7 +1377,9 @@ Producing JSON output...
     "libesp32.a:intr_alloc.o": {
         "data": 8,
         "bss": 22,
+        "other": 0,
         "iram": 726,
+        "diram": 0,
         "flash_text": 1749,
         "flash_rodata": 710,
         "total": 3215
@@ -908,7 +1387,9 @@ Producing JSON output...
     "libheap.a:multi_heap.o": {
         "data": 857,
         "bss": 0,
+        "other": 0,
         "iram": 2217,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 3074
@@ -916,7 +1397,9 @@ Producing JSON output...
     "libfreertos.a:queue.o": {
         "data": 8,
         "bss": 56,
+        "other": 0,
         "iram": 2569,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 369,
         "total": 3002
@@ -924,7 +1407,9 @@ Producing JSON output...
     "libspi_flash.a:flash_ops.o": {
         "data": 32,
         "bss": 41,
+        "other": 0,
         "iram": 2352,
+        "diram": 0,
         "flash_text": 99,
         "flash_rodata": 0,
         "total": 2524
@@ -932,7 +1417,9 @@ Producing JSON output...
     "libgcc.a:unwind-dw2-xtensa.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 2172,
         "flash_rodata": 324,
         "total": 2496
@@ -940,7 +1427,9 @@ Producing JSON output...
     "libsoc.a:rtc_clk.o": {
         "data": 660,
         "bss": 8,
+        "other": 0,
         "iram": 1794,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 2462
@@ -948,7 +1437,9 @@ Producing JSON output...
     "libc.a:lib_a-mprec.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 2134,
         "flash_rodata": 296,
         "total": 2430
@@ -956,7 +1447,9 @@ Producing JSON output...
     "libvfs.a:vfs.o": {
         "data": 192,
         "bss": 40,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1995,
         "flash_rodata": 132,
         "total": 2359
@@ -964,7 +1457,9 @@ Producing JSON output...
     "liblwip.a:ip6_frag.o": {
         "data": 0,
         "bss": 6,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1905,
         "flash_rodata": 442,
         "total": 2353
@@ -972,7 +1467,9 @@ Producing JSON output...
     "liblwip.a:api_lib.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1425,
         "flash_rodata": 919,
         "total": 2344
@@ -980,7 +1477,9 @@ Producing JSON output...
     "liblwip.a:igmp.o": {
         "data": 0,
         "bss": 12,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1604,
         "flash_rodata": 707,
         "total": 2323
@@ -988,7 +1487,9 @@ Producing JSON output...
     "libesp32.a:dbg_stubs.o": {
         "data": 0,
         "bss": 2072,
+        "other": 0,
         "iram": 32,
+        "diram": 0,
         "flash_text": 100,
         "flash_rodata": 0,
         "total": 2204
@@ -996,7 +1497,9 @@ Producing JSON output...
     "libvfs.a:vfs_uart.o": {
         "data": 40,
         "bss": 63,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1775,
         "flash_rodata": 271,
         "total": 2149
@@ -1004,7 +1507,9 @@ Producing JSON output...
     "libunity.a:unity_platform.o": {
         "data": 0,
         "bss": 13,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1511,
         "flash_rodata": 600,
         "total": 2124
@@ -1012,7 +1517,9 @@ Producing JSON output...
     "libesp32.a:esp_timer_esp32.o": {
         "data": 8,
         "bss": 26,
+        "other": 0,
         "iram": 1295,
+        "diram": 0,
         "flash_text": 254,
         "flash_rodata": 526,
         "total": 2109
@@ -1020,7 +1527,9 @@ Producing JSON output...
     "libsoc.a:rtc_periph.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 2080,
         "total": 2080
@@ -1028,7 +1537,9 @@ Producing JSON output...
     "libspi_flash.a:flash_mmap.o": {
         "data": 0,
         "bss": 296,
+        "other": 0,
         "iram": 1298,
+        "diram": 0,
         "flash_text": 124,
         "flash_rodata": 327,
         "total": 2045
@@ -1036,7 +1547,9 @@ Producing JSON output...
     "libheap.a:heap_caps.o": {
         "data": 4,
         "bss": 0,
+        "other": 0,
         "iram": 1195,
+        "diram": 0,
         "flash_text": 188,
         "flash_rodata": 593,
         "total": 1980
@@ -1044,7 +1557,9 @@ Producing JSON output...
     "libstdc++.a:eh_personality.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1561,
         "flash_rodata": 384,
         "total": 1945
@@ -1052,7 +1567,9 @@ Producing JSON output...
     "liblwip.a:ip4.o": {
         "data": 0,
         "bss": 6,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1664,
         "flash_rodata": 139,
         "total": 1809
@@ -1060,7 +1577,9 @@ Producing JSON output...
     "liblwip.a:netif.o": {
         "data": 0,
         "bss": 241,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1239,
         "flash_rodata": 287,
         "total": 1767
@@ -1068,7 +1587,9 @@ Producing JSON output...
     "libfreertos.a:xtensa_vectors.o": {
         "data": 8,
         "bss": 0,
+        "other": 0,
         "iram": 1697,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 36,
         "total": 1741
@@ -1076,7 +1597,9 @@ Producing JSON output...
     "libesp32.a:cpu_start.o": {
         "data": 0,
         "bss": 1,
+        "other": 0,
         "iram": 806,
+        "diram": 0,
         "flash_text": 277,
         "flash_rodata": 486,
         "total": 1570
@@ -1084,7 +1607,9 @@ Producing JSON output...
     "libesp32.a:clk.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 67,
+        "diram": 0,
         "flash_text": 581,
         "flash_rodata": 893,
         "total": 1541
@@ -1092,7 +1617,9 @@ Producing JSON output...
     "libfreertos.a:timers.o": {
         "data": 8,
         "bss": 56,
+        "other": 0,
         "iram": 1149,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 233,
         "total": 1446
@@ -1100,7 +1627,9 @@ Producing JSON output...
     "liblwip.a:sys_arch.o": {
         "data": 0,
         "bss": 8,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1216,
         "flash_rodata": 222,
         "total": 1446
@@ -1108,7 +1637,9 @@ Producing JSON output...
     "libheap.a:multi_heap_poisoning.o": {
         "data": 470,
         "bss": 0,
+        "other": 0,
         "iram": 964,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 1434
@@ -1116,7 +1647,9 @@ Producing JSON output...
     "libheap.a:heap_caps_init.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1030,
         "flash_rodata": 387,
         "total": 1421
@@ -1124,7 +1657,9 @@ Producing JSON output...
     "liblwip.a:mld6.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1334,
         "flash_rodata": 0,
         "total": 1338
@@ -1132,7 +1667,9 @@ Producing JSON output...
     "libspi_flash.a:cache_utils.o": {
         "data": 4,
         "bss": 14,
+        "other": 0,
         "iram": 836,
+        "diram": 0,
         "flash_text": 81,
         "flash_rodata": 390,
         "total": 1325
@@ -1140,7 +1677,9 @@ Producing JSON output...
     "liblwip.a:raw.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 1087,
         "flash_rodata": 223,
         "total": 1314
@@ -1148,7 +1687,9 @@ Producing JSON output...
     "libesp32.a:esp_timer.o": {
         "data": 8,
         "bss": 20,
+        "other": 0,
         "iram": 702,
+        "diram": 0,
         "flash_text": 429,
         "flash_rodata": 142,
         "total": 1301
@@ -1156,7 +1697,9 @@ Producing JSON output...
     "liblog.a:log.o": {
         "data": 8,
         "bss": 268,
+        "other": 0,
         "iram": 456,
+        "diram": 0,
         "flash_text": 396,
         "flash_rodata": 166,
         "total": 1294
@@ -1164,7 +1707,9 @@ Producing JSON output...
     "libesp32.a:system_api.o": {
         "data": 0,
         "bss": 8,
+        "other": 0,
         "iram": 589,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 662,
         "total": 1259
@@ -1172,7 +1717,9 @@ Producing JSON output...
     "libsoc.a:soc_memory_layout.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 1239,
         "total": 1239
@@ -1180,7 +1727,9 @@ Producing JSON output...
     "liblwip.a:icmp.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 769,
         "flash_rodata": 371,
         "total": 1140
@@ -1188,7 +1737,9 @@ Producing JSON output...
     "libfreertos.a:xtensa_intr_asm.o": {
         "data": 1024,
         "bss": 0,
+        "other": 0,
         "iram": 51,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 1075
@@ -1196,7 +1747,9 @@ Producing JSON output...
     "libfreertos.a:port.o": {
         "data": 0,
         "bss": 16,
+        "other": 0,
         "iram": 617,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 369,
         "total": 1002
@@ -1204,7 +1757,9 @@ Producing JSON output...
     "libpthread.a:pthread.o": {
         "data": 8,
         "bss": 8,
+        "other": 0,
         "iram": 174,
+        "diram": 0,
         "flash_text": 298,
         "flash_rodata": 512,
         "total": 1000
@@ -1212,7 +1767,9 @@ Producing JSON output...
     "liblwip.a:icmp6.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 863,
         "flash_rodata": 127,
         "total": 990
@@ -1220,7 +1777,9 @@ Producing JSON output...
     "libsoc.a:rtc_init.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 980,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 980
@@ -1228,7 +1787,9 @@ Producing JSON output...
     "libunity.a:unity.o": {
         "data": 0,
         "bss": 108,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 767,
         "flash_rodata": 90,
         "total": 965
@@ -1236,7 +1797,9 @@ Producing JSON output...
     "libsoc.a:rtc_time.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 803,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 137,
         "total": 940
@@ -1244,7 +1807,9 @@ Producing JSON output...
     "libesp32.a:dport_access.o": {
         "data": 8,
         "bss": 40,
+        "other": 0,
         "iram": 539,
+        "diram": 0,
         "flash_text": 189,
         "flash_rodata": 129,
         "total": 905
@@ -1252,7 +1817,9 @@ Producing JSON output...
     "libc.a:lib_a-fseeko.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 862,
         "flash_rodata": 0,
         "total": 862
@@ -1260,7 +1827,9 @@ Producing JSON output...
     "libnewlib.a:time.o": {
         "data": 0,
         "bss": 32,
+        "other": 0,
         "iram": 139,
+        "diram": 0,
         "flash_text": 691,
         "flash_rodata": 0,
         "total": 862
@@ -1268,7 +1837,9 @@ Producing JSON output...
     "liblwip.a:tcpip.o": {
         "data": 0,
         "bss": 16,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 644,
         "flash_rodata": 191,
         "total": 851
@@ -1276,7 +1847,9 @@ Producing JSON output...
     "libapp_update.a:esp_ota_ops.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 123,
         "flash_rodata": 717,
         "total": 840
@@ -1284,7 +1857,9 @@ Producing JSON output...
     "libdriver.a:periph_ctrl.o": {
         "data": 8,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 520,
         "flash_rodata": 256,
         "total": 784
@@ -1292,7 +1867,9 @@ Producing JSON output...
     "liblwip.a:timers.o": {
         "data": 0,
         "bss": 12,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 638,
         "flash_rodata": 131,
         "total": 781
@@ -1300,7 +1877,9 @@ Producing JSON output...
     "libspi_flash.a:partition.o": {
         "data": 0,
         "bss": 8,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 582,
         "flash_rodata": 141,
         "total": 731
@@ -1308,7 +1887,9 @@ Producing JSON output...
     "libnewlib.a:locks.o": {
         "data": 8,
         "bss": 0,
+        "other": 0,
         "iram": 552,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 84,
         "total": 644
@@ -1316,7 +1897,9 @@ Producing JSON output...
     "libesp32.a:ipc.o": {
         "data": 0,
         "bss": 36,
+        "other": 0,
         "iram": 159,
+        "diram": 0,
         "flash_text": 329,
         "flash_rodata": 104,
         "total": 628
@@ -1324,7 +1907,9 @@ Producing JSON output...
     "libtcpip_adapter.a:tcpip_adapter_lwip.o": {
         "data": 0,
         "bss": 81,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 180,
         "flash_rodata": 359,
         "total": 620
@@ -1332,7 +1917,9 @@ Producing JSON output...
     "libpthread.a:pthread_local_storage.o": {
         "data": 8,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 476,
         "flash_rodata": 126,
         "total": 614
@@ -1340,7 +1927,9 @@ Producing JSON output...
     "liblwip.a:inet_chksum.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 580,
         "flash_rodata": 0,
         "total": 580
@@ -1348,7 +1937,9 @@ Producing JSON output...
     "libesp32.a:crosscore_int.o": {
         "data": 8,
         "bss": 8,
+        "other": 0,
         "iram": 204,
+        "diram": 0,
         "flash_text": 126,
         "flash_rodata": 148,
         "total": 494
@@ -1356,7 +1947,9 @@ Producing JSON output...
     "liblwip.a:netbuf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 154,
         "flash_rodata": 326,
         "total": 480
@@ -1364,7 +1957,9 @@ Producing JSON output...
     "liblwip.a:vfs_lwip.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 307,
         "flash_rodata": 155,
         "total": 462
@@ -1372,7 +1967,9 @@ Producing JSON output...
     "libnewlib.a:syscall_table.o": {
         "data": 144,
         "bss": 240,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 67,
         "flash_rodata": 0,
         "total": 451
@@ -1380,7 +1977,9 @@ Producing JSON output...
     "libdriver.a:timer.o": {
         "data": 16,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 112,
         "flash_rodata": 281,
         "total": 409
@@ -1388,7 +1987,9 @@ Producing JSON output...
     "libesp32.a:int_wdt.o": {
         "data": 0,
         "bss": 1,
+        "other": 0,
         "iram": 87,
+        "diram": 0,
         "flash_text": 301,
         "flash_rodata": 0,
         "total": 389
@@ -1396,7 +1997,9 @@ Producing JSON output...
     "libstdc++.a:eh_globals.o": {
         "data": 0,
         "bss": 16,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 149,
         "flash_rodata": 193,
         "total": 358
@@ -1404,7 +2007,9 @@ Producing JSON output...
     "libesp32.a:brownout.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 145,
         "flash_rodata": 191,
         "total": 336
@@ -1412,7 +2017,9 @@ Producing JSON output...
     "libesp32.a:freertos_hooks.o": {
         "data": 8,
         "bss": 128,
+        "other": 0,
         "iram": 43,
+        "diram": 0,
         "flash_text": 137,
         "flash_rodata": 0,
         "total": 316
@@ -1420,7 +2027,9 @@ Producing JSON output...
     "libhal.a:windowspill_asm.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 311,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 311
@@ -1428,7 +2037,9 @@ Producing JSON output...
     "libsoc.a:cpu_util.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 310,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 310
@@ -1436,7 +2047,9 @@ Producing JSON output...
     "libdriver.a:rtc_module.o": {
         "data": 8,
         "bss": 8,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 291,
         "flash_rodata": 0,
         "total": 307
@@ -1444,7 +2057,9 @@ Producing JSON output...
     "libfreertos.a:xtensa_context.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 299,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 299
@@ -1452,7 +2067,9 @@ Producing JSON output...
     "libstdc++.a:eh_terminate.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 117,
         "flash_rodata": 141,
         "total": 258
@@ -1460,7 +2077,9 @@ Producing JSON output...
     "liblwip.a:ethernet.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 244,
         "flash_rodata": 12,
         "total": 256
@@ -1468,7 +2087,9 @@ Producing JSON output...
     "libc.a:lib_a-puts.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 182,
         "flash_rodata": 60,
         "total": 242
@@ -1476,7 +2097,9 @@ Producing JSON output...
     "libesp32.a:dport_panic_highint_hdl.o": {
         "data": 8,
         "bss": 0,
+        "other": 0,
         "iram": 234,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 242
@@ -1484,7 +2107,9 @@ Producing JSON output...
     "libc.a:lib_a-reent.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 232,
         "flash_rodata": 0,
         "total": 232
@@ -1492,7 +2117,9 @@ Producing JSON output...
     "libc.a:lib_a-fopen.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 228,
         "flash_rodata": 0,
         "total": 228
@@ -1500,7 +2127,9 @@ Producing JSON output...
     "liblwip.a:dhcpserver.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 203,
         "flash_rodata": 0,
         "total": 207
@@ -1508,7 +2137,9 @@ Producing JSON output...
     "libunity.a:test_utils.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 38,
         "flash_rodata": 140,
         "total": 178
@@ -1516,7 +2147,9 @@ Producing JSON output...
     "libc.a:lib_a-sprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 167,
         "flash_rodata": 0,
         "total": 167
@@ -1524,7 +2157,9 @@ Producing JSON output...
     "libesp32.a:cache_err_int.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 56,
+        "diram": 0,
         "flash_text": 98,
         "flash_rodata": 0,
         "total": 154
@@ -1532,7 +2167,9 @@ Producing JSON output...
     "libfreertos.a:list.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 142,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 142
@@ -1540,7 +2177,9 @@ Producing JSON output...
     "libfreertos.a:xtensa_intr.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 104,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 35,
         "total": 139
@@ -1548,7 +2187,9 @@ Producing JSON output...
     "libnewlib.a:syscalls.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 94,
+        "diram": 0,
         "flash_text": 45,
         "flash_rodata": 0,
         "total": 139
@@ -1556,7 +2197,9 @@ Producing JSON output...
     "libstdc++.a:si_class_type_info.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 136,
         "total": 136
@@ -1564,7 +2207,9 @@ Producing JSON output...
     "libc.a:lib_a-assert.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 68,
         "flash_rodata": 60,
         "total": 128
@@ -1572,7 +2217,9 @@ Producing JSON output...
     "libc.a:lib_a-flags.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 127,
         "flash_rodata": 0,
         "total": 127
@@ -1580,7 +2227,9 @@ Producing JSON output...
     "libc.a:lib_a-printf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 116,
         "flash_rodata": 0,
         "total": 116
@@ -1588,7 +2237,9 @@ Producing JSON output...
     "liblwip.a:ip4_addr.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 72,
         "flash_rodata": 40,
         "total": 112
@@ -1596,7 +2247,9 @@ Producing JSON output...
     "libstdc++.a:class_type_info.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 112,
         "total": 112
@@ -1604,7 +2257,9 @@ Producing JSON output...
     "libc.a:lib_a-s_frexp.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 110,
         "flash_rodata": 0,
         "total": 110
@@ -1612,7 +2267,9 @@ Producing JSON output...
     "liblwip.a:ip.o": {
         "data": 0,
         "bss": 60,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 50,
         "flash_rodata": 0,
         "total": 110
@@ -1620,7 +2277,9 @@ Producing JSON output...
     "liblwip.a:memp.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 108,
         "total": 108
@@ -1628,7 +2287,9 @@ Producing JSON output...
     "libgcc.a:lib2funcs.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 104,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 104
@@ -1636,7 +2297,9 @@ Producing JSON output...
     "libc.a:lib_a-vprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 94,
         "flash_rodata": 0,
         "total": 94
@@ -1644,7 +2307,9 @@ Producing JSON output...
     "libm.a:lib_a-s_fpclassify.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 92,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 92
@@ -1652,7 +2317,9 @@ Producing JSON output...
     "liblwip.a:def.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 91,
         "flash_rodata": 0,
         "total": 91
@@ -1660,7 +2327,9 @@ Producing JSON output...
     "libc.a:lib_a-fiprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 84,
         "flash_rodata": 0,
         "total": 84
@@ -1668,7 +2337,9 @@ Producing JSON output...
     "libesp32.a:hw_random.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 74,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 78
@@ -1676,7 +2347,9 @@ Producing JSON output...
     "libesp32.a:stack_check.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 32,
         "flash_rodata": 42,
         "total": 78
@@ -1684,7 +2357,9 @@ Producing JSON output...
     "libhal.a:clock.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 72,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 72
@@ -1692,7 +2367,9 @@ Producing JSON output...
     "libnewlib.a:reent_init.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 68,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 2,
         "total": 70
@@ -1700,7 +2377,9 @@ Producing JSON output...
     "libmain.a:app_main.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 53,
         "flash_rodata": 10,
         "total": 63
@@ -1708,7 +2387,9 @@ Producing JSON output...
     "libhal.a:state_asm--restore_extra_nw.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 62,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 62
@@ -1716,7 +2397,9 @@ Producing JSON output...
     "libhal.a:state_asm--save_extra_nw.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 62,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 62
@@ -1724,7 +2407,9 @@ Producing JSON output...
     "libdriver.a:uart.o": {
         "data": 8,
         "bss": 12,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 38,
         "flash_rodata": 0,
         "total": 58
@@ -1732,7 +2417,9 @@ Producing JSON output...
     "libstdc++.a:new_opv.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 56,
         "total": 56
@@ -1740,7 +2427,9 @@ Producing JSON output...
     "libfreertos.a:xtensa_vector_defaults.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 46,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 46
@@ -1748,7 +2437,9 @@ Producing JSON output...
     "libc.a:lib_a-fseek.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 45,
         "flash_rodata": 0,
         "total": 45
@@ -1756,7 +2447,9 @@ Producing JSON output...
     "libgcc.a:_divdi3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 40,
         "total": 40
@@ -1764,7 +2457,9 @@ Producing JSON output...
     "libgcc.a:_moddi3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 40,
         "total": 40
@@ -1772,7 +2467,9 @@ Producing JSON output...
     "libgcc.a:_udivdi3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 40,
         "total": 40
@@ -1780,7 +2477,9 @@ Producing JSON output...
     "libgcc.a:_umoddi3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 40,
         "total": 40
@@ -1788,7 +2487,9 @@ Producing JSON output...
     "libstdc++.a:new_op.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 40,
         "total": 40
@@ -1796,7 +2497,9 @@ Producing JSON output...
     "libfreertos.a:xtensa_init.o": {
         "data": 0,
         "bss": 4,
+        "other": 0,
         "iram": 32,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 36
@@ -1804,7 +2507,9 @@ Producing JSON output...
     "libhal.a:interrupts--intlevel.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 32,
         "total": 32
@@ -1812,7 +2517,9 @@ Producing JSON output...
     "liblwip.a:init.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 27,
         "flash_rodata": 0,
         "total": 27
@@ -1820,7 +2527,9 @@ Producing JSON output...
     "libesp32.a:wifi_init.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 17,
         "flash_rodata": 9,
         "total": 26
@@ -1828,7 +2537,9 @@ Producing JSON output...
     "liblwip.a:ip6_addr.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 20,
         "total": 20
@@ -1836,7 +2547,9 @@ Producing JSON output...
     "libc.a:lib_a-errno.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 10,
         "flash_rodata": 0,
         "total": 10
@@ -1844,7 +2557,9 @@ Producing JSON output...
     "libhal.a:int_asm--set_intclear.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 8,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 8
@@ -1852,7 +2567,9 @@ Producing JSON output...
     "libxtensa-debug-module.a:eri.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 8,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 8
@@ -1860,7 +2577,9 @@ Producing JSON output...
     "libcxx.a:cxx_exception_stubs.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 6,
         "flash_rodata": 0,
         "total": 6
@@ -1868,7 +2587,9 @@ Producing JSON output...
     "libcxx.a:cxx_guards.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 5,
         "flash_rodata": 0,
         "total": 5
@@ -1876,7 +2597,9 @@ Producing JSON output...
     "libfreertos.a:FreeRTOS-openocd.o": {
         "data": 4,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 4
@@ -1884,7 +2607,9 @@ Producing JSON output...
     "libstdc++.a:eh_term_handler.o": {
         "data": 4,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 4
@@ -1892,7 +2617,9 @@ Producing JSON output...
     "libstdc++.a:eh_unex_handler.o": {
         "data": 4,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 4
@@ -1900,7 +2627,9 @@ Producing JSON output...
     "libbootloader_support.a:bootloader_flash.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1908,7 +2637,9 @@ Producing JSON output...
     "libbootloader_support.a:bootloader_sha.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1916,7 +2647,9 @@ Producing JSON output...
     "libbootloader_support.a:esp_image_format.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1924,7 +2657,9 @@ Producing JSON output...
     "libc.a:lib_a-fputs.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1932,7 +2667,9 @@ Producing JSON output...
     "libc.a:lib_a-snprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1940,7 +2677,9 @@ Producing JSON output...
     "libc.a:lib_a-strerror.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1948,7 +2687,9 @@ Producing JSON output...
     "libc.a:lib_a-sysgettod.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1956,7 +2697,9 @@ Producing JSON output...
     "libc.a:lib_a-u_strerr.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1964,7 +2707,9 @@ Producing JSON output...
     "libc.a:lib_a-vsnprintf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1972,7 +2717,9 @@ Producing JSON output...
     "libc.a:lib_a-xpg_strerror_r.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1980,7 +2727,9 @@ Producing JSON output...
     "libcoexist.a:coexist_api.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1988,7 +2737,9 @@ Producing JSON output...
     "libcoexist.a:coexist_arbit.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -1996,7 +2747,9 @@ Producing JSON output...
     "libcoexist.a:coexist_core.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2004,7 +2757,9 @@ Producing JSON output...
     "libcoexist.a:coexist_dbg.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2012,7 +2767,9 @@ Producing JSON output...
     "libcoexist.a:coexist_hw.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2020,7 +2777,9 @@ Producing JSON output...
     "libcoexist.a:coexist_param.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2028,7 +2787,9 @@ Producing JSON output...
     "libcoexist.a:coexist_timer.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2036,7 +2797,9 @@ Producing JSON output...
     "libcore.a:misc_nvs.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2044,7 +2807,9 @@ Producing JSON output...
     "libdriver.a:gpio.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2052,7 +2817,9 @@ Producing JSON output...
     "libesp32.a:ets_timer_legacy.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2060,7 +2827,9 @@ Producing JSON output...
     "libesp32.a:event_default_handlers.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2068,7 +2837,9 @@ Producing JSON output...
     "libesp32.a:event_loop.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2076,7 +2847,9 @@ Producing JSON output...
     "libesp32.a:lib_printf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2084,7 +2857,9 @@ Producing JSON output...
     "libesp32.a:phy_init.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2092,7 +2867,9 @@ Producing JSON output...
     "libesp32.a:sha.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2100,7 +2877,9 @@ Producing JSON output...
     "libesp32.a:wifi_os_adapter.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2108,7 +2887,9 @@ Producing JSON output...
     "libethernet.a:emac_dev.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2116,7 +2897,9 @@ Producing JSON output...
     "libethernet.a:emac_main.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2124,7 +2907,9 @@ Producing JSON output...
     "libfreertos.a:event_groups.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2132,7 +2917,9 @@ Producing JSON output...
     "libfreertos.a:ringbuf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2140,7 +2927,9 @@ Producing JSON output...
     "libgcc.a:_addsubdf3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2148,7 +2937,9 @@ Producing JSON output...
     "libgcc.a:_cmpdf2.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2156,7 +2947,9 @@ Producing JSON output...
     "libgcc.a:_divdf3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2164,7 +2957,9 @@ Producing JSON output...
     "libgcc.a:_divsf3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2172,7 +2967,9 @@ Producing JSON output...
     "libgcc.a:_extendsfdf2.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2180,7 +2977,9 @@ Producing JSON output...
     "libgcc.a:_fixdfsi.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2188,7 +2987,9 @@ Producing JSON output...
     "libgcc.a:_floatdidf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2196,7 +2997,9 @@ Producing JSON output...
     "libgcc.a:_floatdisf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2204,7 +3007,9 @@ Producing JSON output...
     "libgcc.a:_floatsidf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2212,7 +3017,9 @@ Producing JSON output...
     "libgcc.a:_muldf3.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2220,7 +3027,9 @@ Producing JSON output...
     "libgcc.a:_popcountsi2.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2228,7 +3037,9 @@ Producing JSON output...
     "liblwip.a:ethernetif.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2236,7 +3047,9 @@ Producing JSON output...
     "liblwip.a:ethip6.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2244,7 +3057,9 @@ Producing JSON output...
     "liblwip.a:wlanif.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2252,7 +3067,9 @@ Producing JSON output...
     "libmbedtls.a:esp_sha256.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2260,7 +3077,9 @@ Producing JSON output...
     "libmesh.a:mesh.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2268,7 +3087,9 @@ Producing JSON output...
     "libmesh.a:mesh_common.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2276,7 +3097,9 @@ Producing JSON output...
     "libmesh.a:mesh_config.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2284,7 +3107,9 @@ Producing JSON output...
     "libmesh.a:mesh_main.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2292,7 +3117,9 @@ Producing JSON output...
     "libmesh.a:mesh_parent.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2300,7 +3127,9 @@ Producing JSON output...
     "libmesh.a:mesh_route.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2308,7 +3137,9 @@ Producing JSON output...
     "libmesh.a:mesh_schedule.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2316,7 +3147,9 @@ Producing JSON output...
     "libmesh.a:mesh_timer.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2324,7 +3157,9 @@ Producing JSON output...
     "libmesh.a:mesh_utilities.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2332,7 +3167,9 @@ Producing JSON output...
     "libmesh.a:mesh_wifi.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2340,7 +3177,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2348,7 +3187,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_action.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2356,7 +3197,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_action_vendor.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2364,7 +3207,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_api.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2372,7 +3217,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_crypto.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2380,7 +3227,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_crypto_ccmp.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2388,7 +3237,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_crypto_tkip.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2396,7 +3247,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_crypto_wep.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2404,7 +3257,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_debug.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2412,7 +3267,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_ets.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2420,7 +3277,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_hostap.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2428,7 +3287,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_ht.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2436,7 +3297,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_ie_vendor.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2444,7 +3307,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_input.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2452,7 +3317,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_ioctl.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2460,7 +3327,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_mesh_quick.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2468,7 +3337,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_misc.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2476,7 +3347,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_nvs.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2484,7 +3357,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_output.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2492,7 +3367,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_phy.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2500,7 +3377,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_power.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2508,7 +3387,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_proto.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2516,7 +3397,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_regdomain.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2524,7 +3407,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_rfid.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2532,7 +3417,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_scan.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2540,7 +3427,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_sta.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2548,7 +3437,9 @@ Producing JSON output...
     "libnet80211.a:ieee80211_timer.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2556,7 +3447,9 @@ Producing JSON output...
     "libnet80211.a:wl_chm.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2564,7 +3457,9 @@ Producing JSON output...
     "libnet80211.a:wl_cnx.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2572,7 +3467,9 @@ Producing JSON output...
     "libnvs_flash.a:nvs_api.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2580,7 +3477,9 @@ Producing JSON output...
     "libnvs_flash.a:nvs_item_hash_list.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2588,7 +3487,9 @@ Producing JSON output...
     "libnvs_flash.a:nvs_page.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2596,7 +3497,9 @@ Producing JSON output...
     "libnvs_flash.a:nvs_pagemanager.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2604,7 +3507,9 @@ Producing JSON output...
     "libnvs_flash.a:nvs_storage.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2612,7 +3517,9 @@ Producing JSON output...
     "libnvs_flash.a:nvs_types.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2620,7 +3527,9 @@ Producing JSON output...
     "libphy.a:phy.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2628,7 +3537,9 @@ Producing JSON output...
     "libphy.a:phy_chip_v7.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2636,7 +3547,9 @@ Producing JSON output...
     "libphy.a:phy_chip_v7_ana.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2644,7 +3557,9 @@ Producing JSON output...
     "libphy.a:phy_chip_v7_cal.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2652,7 +3567,9 @@ Producing JSON output...
     "libpp.a:esf_buf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2660,7 +3577,9 @@ Producing JSON output...
     "libpp.a:if_hwctrl.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2668,7 +3587,9 @@ Producing JSON output...
     "libpp.a:lmac.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2676,7 +3597,9 @@ Producing JSON output...
     "libpp.a:pm.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2684,7 +3607,9 @@ Producing JSON output...
     "libpp.a:pm_for_bcn_only_mode.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2692,7 +3617,9 @@ Producing JSON output...
     "libpp.a:pp.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2700,7 +3627,9 @@ Producing JSON output...
     "libpp.a:pp_debug.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2708,7 +3637,9 @@ Producing JSON output...
     "libpp.a:pp_timer.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2716,7 +3647,9 @@ Producing JSON output...
     "libpp.a:rate_control.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2724,7 +3657,9 @@ Producing JSON output...
     "libpp.a:trc.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2732,7 +3667,9 @@ Producing JSON output...
     "libpp.a:wdev.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2740,7 +3677,9 @@ Producing JSON output...
     "librtc.a:bt_bb.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2748,7 +3687,9 @@ Producing JSON output...
     "librtc.a:pm.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2756,7 +3697,9 @@ Producing JSON output...
     "librtc.a:rtc.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2764,7 +3707,9 @@ Producing JSON output...
     "librtc.a:rtc_analog.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2772,7 +3717,9 @@ Producing JSON output...
     "libsmartconfig_ack.a:smartconfig_ack.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2780,7 +3727,9 @@ Producing JSON output...
     "libsoc.a:gpio_periph.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2788,7 +3737,9 @@ Producing JSON output...
     "libsoc.a:rtc_sleep.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2796,7 +3747,9 @@ Producing JSON output...
     "libstdc++.a:bad_alloc.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2804,7 +3757,9 @@ Producing JSON output...
     "libstdc++.a:del_op.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2812,7 +3767,9 @@ Producing JSON output...
     "libstdc++.a:del_opv.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2820,7 +3777,9 @@ Producing JSON output...
     "libstdc++.a:eh_exception.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2828,7 +3787,9 @@ Producing JSON output...
     "libstdc++.a:new_handler.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2836,7 +3797,9 @@ Producing JSON output...
     "libstdc++.a:pure.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2844,7 +3807,9 @@ Producing JSON output...
     "libstdc++.a:tinfo.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2852,7 +3817,9 @@ Producing JSON output...
     "libwpa.a:ap_config.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2860,7 +3827,9 @@ Producing JSON output...
     "libwpa.a:common.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2868,7 +3837,9 @@ Producing JSON output...
     "libwpa.a:wpa.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2876,7 +3847,9 @@ Producing JSON output...
     "libwpa.a:wpa_auth.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2884,7 +3857,9 @@ Producing JSON output...
     "libwpa.a:wpa_auth_ie.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2892,7 +3867,9 @@ Producing JSON output...
     "libwpa.a:wpa_common.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2900,7 +3877,9 @@ Producing JSON output...
     "libwpa.a:wpa_debug.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2908,7 +3887,9 @@ Producing JSON output...
     "libwpa.a:wpa_ie.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2916,7 +3897,9 @@ Producing JSON output...
     "libwpa.a:wpa_main.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2924,7 +3907,9 @@ Producing JSON output...
     "libwpa.a:wpabuf.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2932,7 +3917,9 @@ Producing JSON output...
     "libwpa.a:wpas_glue.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2940,7 +3927,9 @@ Producing JSON output...
     "libwpa2.a:wpa2_internal.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2948,7 +3937,9 @@ Producing JSON output...
     "libwpa_supplicant.a:os_xtensa.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
@@ -2956,26 +3947,33 @@ Producing JSON output...
     "libwps.a:wps_internal.o": {
         "data": 0,
         "bss": 0,
+        "other": 0,
         "iram": 0,
+        "diram": 0,
         "flash_text": 0,
         "flash_rodata": 0,
         "total": 0
     }
 }
 {
+    ".dram0.bss": {
+        "p_uart_obj": 12,
+        "s_rtc_isr_handle": 4,
+        "s_rtc_isr_handler_list": 4
+    },
     ".dram0.data": {
         "timer_spinlock": 16,
         "periph_spinlock": 8,
         "s_rtc_isr_handler_list_lock": 8,
         "uart_selectlock": 8
     },
-    ".dram0.bss": {
-        "p_uart_obj": 12,
-        "s_rtc_isr_handle": 4,
-        "s_rtc_isr_handler_list": 4
+    ".flash.rodata": {
+        "str1.4": 249,
+        "get_clk_en_mask": 128,
+        "get_rst_en_mask": 128,
+        "__FUNCTION__$5441": 24,
+        "TG": 8
     },
-    ".iram0.text": {},
-    ".iram0.vectors": {},
     ".flash.text": {
         "get_clk_en_mask": 211,
         "get_rst_en_mask": 157,
@@ -2991,13 +3989,9 @@ Producing JSON output...
         "get_clk_en_reg": 21,
         "uart_get_selectlock": 12
     },
-    ".flash.rodata": {
-        "str1.4": 249,
-        "get_clk_en_mask": 128,
-        "get_rst_en_mask": 128,
-        "__FUNCTION__$5441": 24,
-        "TG": 8
-    }
+    ".iram0.text": {},
+    ".iram0.vectors": {},
+    ".noinit": {}
 }
 
 ***
