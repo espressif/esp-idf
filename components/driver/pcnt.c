@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/xtensa_api.h"
 #include "esp_log.h"
 #include "driver/pcnt.h"
 #include "driver/periph_ctrl.h"
+#include "hal/pcnt_hal.h"
+#include "soc/pcnt_caps.h"
 
 #define PCNT_CHANNEL_ERR_STR  "PCNT CHANNEL ERROR"
 #define PCNT_UNIT_ERR_STR  "PCNT UNIT ERROR"

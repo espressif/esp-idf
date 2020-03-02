@@ -15,3 +15,4 @@
 #pragma once
 #include "soc/pcnt_reg.h"
 #include "soc/pcnt_struct.h"
+#include "soc/pcnt_caps.h"
