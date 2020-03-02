@@ -11,18 +11,11 @@
 #include <stdbool.h>
 #include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_CRYPTO)
 
-#include "mesh_types.h"
-#include "mesh_util.h"
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_bearer_adapt.h"
-#include "mesh_aes_encrypt.h"
-
-#include "mesh.h"
 #include "crypto.h"
+#include "mesh_aes_encrypt.h"
+#include "mesh_bearer_adapt.h"
 
 #define NET_MIC_LEN(pdu) (((pdu)[1] & 0x80) ? 8 : 4)
 #define APP_MIC_LEN(aszmic) ((aszmic) ? 8 : 4)
@@ -30,8 +23,8 @@
 int bt_mesh_aes_cmac(const u8_t key[16], struct bt_mesh_sg *sg,
                      size_t sg_len, u8_t mac[16])
 {
-    struct tc_aes_key_sched_struct sched;
-    struct tc_cmac_struct state;
+    struct tc_aes_key_sched_struct sched = {0};
+    struct tc_cmac_struct state = {0};
 
     if (tc_cmac_setup(&state, key, &sched) == TC_CRYPTO_FAIL) {
         return -EIO;
@@ -54,7 +47,7 @@ int bt_mesh_aes_cmac(const u8_t key[16], struct bt_mesh_sg *sg,
 int bt_mesh_k1(const u8_t *ikm, size_t ikm_len, const u8_t salt[16],
                const char *info, u8_t okm[16])
 {
-    int err;
+    int err = 0;
 
     err = bt_mesh_aes_cmac_one(salt, ikm, ikm_len, okm);
     if (err < 0) {
@@ -67,12 +60,12 @@ int bt_mesh_k1(const u8_t *ikm, size_t ikm_len, const u8_t salt[16],
 int bt_mesh_k2(const u8_t n[16], const u8_t *p, size_t p_len,
                u8_t net_id[1], u8_t enc_key[16], u8_t priv_key[16])
 {
-    struct bt_mesh_sg sg[3];
-    u8_t salt[16];
-    u8_t out[16];
-    u8_t t[16];
-    u8_t pad;
-    int err;
+    struct bt_mesh_sg sg[3] = {0};
+    u8_t salt[16] = {0};
+    u8_t out[16] = {0};
+    u8_t t[16] = {0};
+    u8_t pad = 0U;
+    int err = 0;
 
     BT_DBG("n %s", bt_hex(n, 16));
     BT_DBG("p %s", bt_hex(p, p_len));
@@ -132,9 +125,9 @@ int bt_mesh_k2(const u8_t n[16], const u8_t *p, size_t p_len,
 int bt_mesh_k3(const u8_t n[16], u8_t out[8])
 {
     u8_t id64[] = { 'i', 'd', '6', '4', 0x01 };
-    u8_t tmp[16];
-    u8_t t[16];
-    int err;
+    u8_t tmp[16] = {0};
+    u8_t t[16] = {0};
+    int err = 0;
 
     err = bt_mesh_s1("smk3", tmp);
     if (err) {
@@ -159,9 +152,9 @@ int bt_mesh_k3(const u8_t n[16], u8_t out[8])
 int bt_mesh_k4(const u8_t n[16], u8_t out[1])
 {
     u8_t id6[] = { 'i', 'd', '6', 0x01 };
-    u8_t tmp[16];
-    u8_t t[16];
-    int err;
+    u8_t tmp[16] = {0};
+    u8_t t[16] = {0};
+    int err = 0;
 
     err = bt_mesh_s1("smk4", tmp);
     if (err) {
@@ -186,8 +179,8 @@ int bt_mesh_k4(const u8_t n[16], u8_t out[1])
 int bt_mesh_id128(const u8_t n[16], const char *s, u8_t out[16])
 {
     const char *id128 = "id128\x01";
-    u8_t salt[16];
-    int err;
+    u8_t salt[16] = {0};
+    int err = 0;
 
     err = bt_mesh_s1(s, salt);
     if (err) {
@@ -202,10 +195,11 @@ static int bt_mesh_ccm_decrypt(const u8_t key[16], u8_t nonce[13],
                                const u8_t *aad, size_t aad_len,
                                u8_t *out_msg, size_t mic_size)
 {
-    u8_t msg[16], pmsg[16], cmic[16], cmsg[16], Xn[16], mic[16];
-    u16_t last_blk, blk_cnt;
-    size_t i, j;
-    int err;
+    u8_t msg[16] = {0}, pmsg[16] = {0}, cmic[16] = {0},
+         cmsg[16] = {0}, Xn[16] = {0}, mic[16] = {0};
+    u16_t last_blk = 0U, blk_cnt = 0U;
+    size_t i = 0U, j = 0U;
+    int err = 0;
 
     if (msg_len < 1 || aad_len >= 0xff00) {
         return -EINVAL;
@@ -360,10 +354,11 @@ static int bt_mesh_ccm_encrypt(const u8_t key[16], u8_t nonce[13],
                                const u8_t *aad, size_t aad_len,
                                u8_t *out_msg, size_t mic_size)
 {
-    u8_t pmsg[16], cmic[16], cmsg[16], mic[16], Xn[16];
-    u16_t blk_cnt, last_blk;
-    size_t i, j;
-    int err;
+    u8_t pmsg[16] = {0}, cmic[16] = {0}, cmsg[16] = {0},
+         mic[16] = {0}, Xn[16] = {0};
+    u16_t blk_cnt = 0U, last_blk = 0U;
+    size_t i = 0U, j = 0U;
+    int err = 0;
 
     BT_DBG("key %s", bt_hex(key, 16));
     BT_DBG("nonce %s", bt_hex(nonce, 13));
@@ -573,8 +568,8 @@ int bt_mesh_net_obfuscate(u8_t *pdu, u32_t iv_index,
                           const u8_t privacy_key[16])
 {
     u8_t priv_rand[16] = { 0x00, 0x00, 0x00, 0x00, 0x00, };
-    u8_t tmp[16];
-    int err, i;
+    u8_t tmp[16] = {0};
+    int err = 0, i;
 
     BT_DBG("IVIndex %u, PrivacyKey %s", iv_index, bt_hex(privacy_key, 16));
 
@@ -599,8 +594,8 @@ int bt_mesh_net_encrypt(const u8_t key[16], struct net_buf_simple *buf,
                         u32_t iv_index, bool proxy)
 {
     u8_t mic_len = NET_MIC_LEN(buf->data);
-    u8_t nonce[13];
-    int err;
+    u8_t nonce[13] = {0};
+    int err = 0;
 
     BT_DBG("IVIndex %u EncKey %s mic_len %u", iv_index, bt_hex(key, 16),
            mic_len);
@@ -631,7 +626,7 @@ int bt_mesh_net_decrypt(const u8_t key[16], struct net_buf_simple *buf,
                         u32_t iv_index, bool proxy)
 {
     u8_t mic_len = NET_MIC_LEN(buf->data);
-    u8_t nonce[13];
+    u8_t nonce[13] = {0};
 
     BT_DBG("PDU (%u bytes) %s", buf->len, bt_hex(buf->data, buf->len));
     BT_DBG("iv_index %u, key %s mic_len %u", iv_index, bt_hex(key, 16),
@@ -677,8 +672,8 @@ int bt_mesh_app_encrypt(const u8_t key[16], bool dev_key, u8_t aszmic,
                         struct net_buf_simple *buf, const u8_t *ad,
                         u16_t src, u16_t dst, u32_t seq_num, u32_t iv_index)
 {
-    u8_t nonce[13];
-    int err;
+    u8_t nonce[13] = {0};
+    int err = 0;
 
     BT_DBG("AppKey %s", bt_hex(key, 16));
     BT_DBG("dev_key %u src 0x%04x dst 0x%04x", dev_key, src, dst);
@@ -704,8 +699,8 @@ int bt_mesh_app_decrypt(const u8_t key[16], bool dev_key, u8_t aszmic,
                         const u8_t *ad, u16_t src, u16_t dst, u32_t seq_num,
                         u32_t iv_index)
 {
-    u8_t nonce[13];
-    int err;
+    u8_t nonce[13] = {0};
+    int err = 0;
 
     BT_DBG("EncData (len %u) %s", buf->len, bt_hex(buf->data, buf->len));
 
@@ -794,9 +789,9 @@ bool bt_mesh_fcs_check(struct net_buf_simple *buf, u8_t received_fcs)
 
 int bt_mesh_virtual_addr(const u8_t virtual_label[16], u16_t *addr)
 {
-    u8_t salt[16];
-    u8_t tmp[16];
-    int err;
+    u8_t salt[16] = {0};
+    u8_t tmp[16] = {0};
+    int err = 0;
 
     err = bt_mesh_s1("vtad", salt);
     if (err) {
@@ -856,8 +851,8 @@ int bt_mesh_beacon_auth(const u8_t beacon_key[16], u8_t flags,
                         const u8_t net_id[8], u32_t iv_index,
                         u8_t auth[8])
 {
-    u8_t msg[13], tmp[16];
-    int err;
+    u8_t msg[13] = {0}, tmp[16] = {0};
+    int err = 0;
 
     BT_DBG("BeaconKey %s", bt_hex(beacon_key, 16));
     BT_DBG("NetId %s", bt_hex(net_id, 8));

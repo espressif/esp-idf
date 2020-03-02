@@ -191,7 +191,7 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
 {
     uint16_t unicast_addr = 0;
     uint16_t i = 0;
-    struct bt_mesh_node_t *node_info;
+    esp_ble_mesh_node_t *node_info;
 
     ESP_LOGD(TAG, "enter %s\n", __func__);
     int nerrors = arg_parse(argc, argv, (void **) &provisioner_get_node);
@@ -201,7 +201,7 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
     }
 
     arg_int_to_value(provisioner_get_node.unicast_addr, unicast_addr, "unicast address");
-    node_info = bt_mesh_provisioner_get_node_info(unicast_addr);
+    node_info = esp_ble_mesh_provisioner_get_node_with_addr(unicast_addr);
 
     if (node_info == NULL) {
         return ESP_FAIL;
@@ -224,7 +224,7 @@ int ble_mesh_provisioner_get_node(int argc, char **argv)
 
 int ble_mesh_provisioner_add_node(int argc, char **argv)
 {
-    struct bt_mesh_node_t node_info;
+    struct bt_mesh_node node_info;
     esp_err_t result;
     ESP_LOGD(TAG, " enter %s\n", __func__);
 

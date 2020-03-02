@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
 #include "btc_ble_mesh_generic_model.h"
@@ -27,13 +26,27 @@ esp_err_t esp_ble_mesh_register_generic_client_callback(esp_ble_mesh_generic_cli
     return (btc_profile_cb_set(BTC_PID_GENERIC_CLIENT, callback) == 0 ? ESP_OK : ESP_FAIL);
 }
 
+static bool generic_client_get_need_param(esp_ble_mesh_opcode_t opcode)
+{
+    switch (opcode) {
+    case ESP_BLE_MESH_MODEL_OP_GEN_USER_PROPERTY_GET:
+    case ESP_BLE_MESH_MODEL_OP_GEN_ADMIN_PROPERTY_GET:
+    case ESP_BLE_MESH_MODEL_OP_GEN_MANUFACTURER_PROPERTY_GET:
+    case ESP_BLE_MESH_MODEL_OP_GEN_CLIENT_PROPERTIES_GET:
+        return true;
+    default:
+        return false;
+    }
+}
+
 esp_err_t esp_ble_mesh_generic_client_get_state(esp_ble_mesh_client_common_param_t *params,
         esp_ble_mesh_generic_client_get_state_t *get_state)
 {
     btc_ble_mesh_generic_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !params->ctx.addr || !get_state) {
+    if (!params || !params->model || !params->ctx.addr ||
+        (generic_client_get_need_param(params->opcode) && !get_state)) {
         return ESP_ERR_INVALID_ARG;
     }
 

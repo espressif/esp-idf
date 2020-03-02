@@ -65,6 +65,7 @@ typedef struct {
     struct bt_mesh_msg_ctx ctx;     /* Message context */
     u32_t opcode;                   /* Message opcode */
     u32_t op_pending;               /* Expected status message opcode */
+    s32_t timeout;                  /* Calculated message timeout value */
     struct k_delayed_work timer;    /* Time used to get response. Only for internal use. */
 } bt_mesh_client_node_t;
 
@@ -83,6 +84,8 @@ void bt_mesh_client_model_lock(void);
 void bt_mesh_client_model_unlock(void);
 
 int bt_mesh_client_init(struct bt_mesh_model *model);
+
+int bt_mesh_client_deinit(struct bt_mesh_model *model);
 
 /**
  * @brief Check if the msg received by client model is a publish msg or not
@@ -109,14 +112,6 @@ int bt_mesh_client_send_msg(struct bt_mesh_model *model,
 int bt_mesh_client_free_node(bt_mesh_client_node_t *node);
 
 int bt_mesh_client_clear_list(void *data);
-
-enum {
-    NODE = 0,
-    PROVISIONER,
-    FAST_PROV,
-};
-
-#define ROLE_NVAL   0xFF
 
 typedef struct {
     struct bt_mesh_model *model;    /* The client model structure */
