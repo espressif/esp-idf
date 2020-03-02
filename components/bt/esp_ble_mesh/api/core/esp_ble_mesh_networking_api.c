@@ -500,6 +500,11 @@ uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void)
     return btc_ble_mesh_provisioner_get_prov_node_count();
 }
 
+esp_ble_mesh_node_t **esp_ble_mesh_provisioner_get_node_list_entry(void)
+{
+    return btc_ble_mesh_provisioner_get_node_list_entry();
+}
+
 #if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
 esp_err_t esp_ble_mesh_provisioner_open_settings_with_index(uint8_t index)
 {

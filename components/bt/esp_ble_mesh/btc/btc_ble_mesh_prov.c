@@ -788,6 +788,11 @@ u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
     return bt_mesh_provisioner_get_prov_node_count();
 }
 
+esp_ble_mesh_node_t **btc_ble_mesh_provisioner_get_node_list_entry(void)
+{
+    return (esp_ble_mesh_node_t **)bt_mesh_provisioner_get_node_list_entry();
+}
+
 #if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
 const char *btc_ble_mesh_provisioner_get_settings_user_id(uint8_t index)
 {

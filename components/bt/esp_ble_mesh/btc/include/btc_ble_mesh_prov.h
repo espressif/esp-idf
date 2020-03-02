@@ -346,6 +346,8 @@ const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
 
 u16_t btc_ble_mesh_provisioner_get_prov_node_count(void);
 
+esp_ble_mesh_node_t **btc_ble_mesh_provisioner_get_node_list_entry(void);
+
 const char *btc_ble_mesh_provisioner_get_settings_user_id(uint8_t index);
 uint8_t btc_ble_mesh_provisioner_get_settings_index(const char *user_id);
 uint8_t btc_ble_mesh_provisioner_get_free_settings_user_id_count(void);

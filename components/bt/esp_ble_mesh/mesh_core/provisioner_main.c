@@ -825,6 +825,11 @@ int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t
     return 0;
 }
 
+struct bt_mesh_node **bt_mesh_provisioner_get_node_list_entry(void)
+{
+    return mesh_nodes;
+}
+
 /* Provisioner DevKey, NetKey and AppKey related functions */
 
 const u8_t *bt_mesh_provisioner_net_key_get(u16_t net_idx)

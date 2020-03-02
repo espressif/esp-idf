@@ -371,6 +371,19 @@ const uint8_t *esp_ble_mesh_provisioner_get_local_net_key(uint16_t net_idx);
 uint16_t esp_ble_mesh_provisioner_get_prov_node_count(void);
 
 /**
+ * @brief         This function is called by Provisioner to get the entry of the table of nodes.
+ *
+ * @note          After invoking the function to get the entry of nodes, users can use the "for"
+ *                loop combined with the macro CONFIG_BLE_MESH_MAX_PROV_NODES to get each node's
+ *                information. But before trying to read the node's information, users need to
+ *                check if the node exists, i.e. if the *(esp_ble_mesh_node_t **node) is NULL.
+ *
+ * @return        Pointer to the start of nodes table.
+ *
+ */
+esp_ble_mesh_node_t **esp_ble_mesh_provisioner_get_node_list_entry(void);
+
+/**
  * @brief         This function is called by Provisioner to open the corresponding
  *                flash section for storing mesh provisioning information.
  *

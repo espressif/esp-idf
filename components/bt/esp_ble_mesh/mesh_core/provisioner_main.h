@@ -93,6 +93,8 @@ u16_t bt_mesh_provisioner_get_node_index(const char *name);
 
 int bt_mesh_provisioner_store_node_comp_data(u16_t addr, const u8_t *data, u16_t length);
 
+struct bt_mesh_node **bt_mesh_provisioner_get_node_list_entry(void);
+
 const u8_t *bt_mesh_provisioner_net_key_get(u16_t net_idx);
 
 struct bt_mesh_subnet *bt_mesh_provisioner_subnet_get(u16_t net_idx);
