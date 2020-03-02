@@ -1,23 +1,23 @@
 ### General ignore list
 #
-components/xtensa/include/xtensa/*
-components/xtensa/include/*
-components/xtensa/esp32/include/xtensa/config/*
+components/xtensa/include/xtensa/
+components/xtensa/include/
+components/xtensa/esp32/include/xtensa/config/
 
-components/newlib/platform_include/*
+components/newlib/platform_include/
 
-components/freertos/include/freertos/*
-components/freertos/xtensa/include/freertos/*
+components/freertos/include/freertos/
+components/freertos/xtensa/include/freertos/
 
 
 components/log/include/esp_log_internal.h
 
-components/soc/include/hal/*
-components/soc/include/soc/*
+components/soc/include/hal/
+components/soc/include/soc/
 
 components/esp_rom/include/esp32s2/rom/rsa_pss.h
 
-components/esp_common/include/esp_private/*
+components/esp_common/include/esp_private/
 
 components/esp32/include/esp32/brownout.h
 components/esp32/include/esp32/spiram.h
@@ -46,28 +46,28 @@ components/spi_flash/include/spi_flash_chip_generic.h
 
 components/bootloader_support/include/esp_app_format.h
 
-components/wpa_supplicant/include/*
-components/wpa_supplicant/port/*
+components/wpa_supplicant/include/
+components/wpa_supplicant/port/
 
-components/mbedtls/port/include/*
-components/mbedtls/mbedtls/include/mbedtls/*
+components/mbedtls/port/include/
+components/mbedtls/mbedtls/include/mbedtls/
 
 components/espcoredump/include/esp_core_dump.h
 
-components/coap/*
-components/nghttp/*
-components/cbor/*
+components/coap/
+components/nghttp/
+components/cbor/
 
-components/esp-tls/private_include/*
+components/esp-tls/private_include/
 
-components/protobuf-c/*
+components/protobuf-c/
 
 components/mdns/include/mdns_console.h
 
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h
 components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h
 
-components/expat/*
+components/expat/
 
 components/fatfs/vfs/vfs_fat_internal.h
 components/fatfs/src/ffconf.h
@@ -78,9 +78,9 @@ components/freemodbus/common/include/esp_modbus_slave.h
 
 components/idf_test/include/idf_performance.h
 
-components/json/cJSON/*
+components/json/cJSON/
 
-components/libsodium/*
+components/libsodium/
 
 components/spiffs/include/spiffs_config.h
 
@@ -100,3 +100,53 @@ components/heap/include/esp_heap_task_info.h
 components/esp_wifi/include/esp_private/wifi_os_adapter.h
 components/asio/port/include/esp_exception.h
 components/esp_common/include/esp_compiler.h
+
+### To be fixed: headers that rely on implicit inclusion
+#
+components/lwip/lwip/src/include/lwip/prot/nd6.h
+components/lwip/port/esp32/include/netif/dhcp_state.h
+components/soc/src/esp32/rtc_clk_common.h
+components/soc/src/esp32/i2c_rtc_clk.h
+components/soc/src/esp32/include/hal/cpu_ll.h
+components/soc/src/esp32/include/hal/timer_ll.h
+components/soc/src/esp32/include/hal/cpu_ll.h
+components/soc/src/esp32/include/hal/timer_ll.h
+components/esp_rom/include/esp32/rom/sha.h
+components/esp_rom/include/esp32/rom/secure_boot.h
+components/esp_rom/include/esp32s2/rom/spi_flash.h
+components/esp_rom/include/esp32s2/rom/cache.h
+components/esp_rom/include/esp32s2/rom/secure_boot.h
+components/esp_rom/include/esp32s2/rom/opi_flash.h
+components/esp_rom/include/esp32s2/rom/efuse.h
+components/esp_common/include/esp_freertos_hooks.h
+components/esp32/include/esp32/dport_access.h
+components/esp32/include/rom/sha.h
+components/esp32/include/rom/secure_boot.h
+components/driver/esp32/include/touch_sensor.h
+components/esp_ringbuf/include/freertos/ringbuf.h
+components/efuse/esp32/include/esp_efuse_table.h
+components/esp_wifi/include/esp_wifi_crypto_types.h
+components/esp_wifi/include/esp_coexist_internal.h
+components/esp_wifi/include/esp_wifi_netif.h
+components/esp_wifi/include/smartconfig_ack.h
+components/esp_wifi/include/esp_wifi_default.h
+components/esp_wifi/include/esp_coexist_adapter.h
+components/esp_event/include/esp_event_base.h
+components/esp_netif/include/esp_netif_sta_list.h
+components/esp_netif/include/esp_netif_defaults.h
+components/esp_netif/include/esp_netif_net_stack.h
+components/esp_netif/include/esp_netif_types.h
+components/esp_netif/include/esp_netif_ip_addr.h
+components/esp_netif/include/esp_netif_ppp.h
+components/tcpip_adapter/include/tcpip_adapter_compatible/tcpip_adapter_compat.h
+components/bootloader_support/include/bootloader_util.h
+components/tcpip_adapter/include/tcpip_adapter_types.h
+components/console/linenoise/linenoise.h
+components/protocomm/include/transports/protocomm_httpd.h
+components/fatfs/src/diskio.h
+components/fatfs/diskio/diskio_sdmmc.h
+components/openssl/include/openssl/ssl.h
+components/ulp/include/ulp_common.h
+components/lwip/include/apps/sntp/sntp.h
+components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h
+components/wifi_provisioning/include/wifi_provisioning/scheme_softap.h
