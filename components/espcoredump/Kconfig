@@ -6,12 +6,15 @@ menu "Core dump"
         help
             Select place to store core dump: flash, uart or none (to disable core dumps generation).
 
+            Core dumps to Flash are not available if PSRAM is used for task stacks.
+
             If core dump is configured to be stored in flash and custom partition table is used add
             corresponding entry to your CSV. For examples, please see predefined partition table CSV descriptions
             in the components/partition_table directory.
 
         config ESP32_ENABLE_COREDUMP_TO_FLASH
             bool "Flash"
+            depends on !SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
             select ESP32_ENABLE_COREDUMP
         config ESP32_ENABLE_COREDUMP_TO_UART
             bool "UART"
