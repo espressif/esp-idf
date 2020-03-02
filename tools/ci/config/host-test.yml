@@ -169,6 +169,12 @@ test_gen_kconfig_doc:
     - cd tools/kconfig_new/test/gen_kconfig_doc/
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_target_visibility.py
 
+test_confgen:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/confgen/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confgen.py
+
 test_idf_monitor:
   extends: .host_test_template
   artifacts:
