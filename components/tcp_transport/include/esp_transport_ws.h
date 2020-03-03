@@ -14,6 +14,7 @@ extern "C" {
 #endif
 
 typedef enum ws_transport_opcodes {
+    WS_TRANSPORT_OPCODES_CONT =  0x00,
     WS_TRANSPORT_OPCODES_TEXT =  0x01,
     WS_TRANSPORT_OPCODES_BINARY = 0x02,
     WS_TRANSPORT_OPCODES_CLOSE = 0x08,
@@ -80,6 +81,16 @@ int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t o
  *      - Received op-code as enum
  */
 ws_transport_opcodes_t esp_transport_ws_get_read_opcode(esp_transport_handle_t t);
+
+/**
+ * @brief               Returns payload length of the last received data
+ *
+ * @param t             websocket transport handle
+ *
+ * @return
+ *      - Number of bytes in the payload
+ */
+int esp_transport_ws_get_read_payload_len(esp_transport_handle_t t);
 
 
 #ifdef __cplusplus
