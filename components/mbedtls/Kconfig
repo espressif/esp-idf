@@ -220,7 +220,6 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"
         default y
-        depends on !IDF_TARGET_ESP32S2
         help
             Enable hardware accelerated multiple precision integer operations.
 

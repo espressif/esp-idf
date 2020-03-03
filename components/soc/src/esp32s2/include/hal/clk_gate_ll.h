@@ -174,10 +174,10 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         }
     case PERIPH_RSA_MODULE:
         if (enable == true) {
-            // Also clear reset on digital signature, otherwise RSA is held in reset
+            /* also clear reset on digital signature, otherwise RSA is held in reset */
             return (DPORT_CRYPTO_RSA_RST | DPORT_CRYPTO_DS_RST);
         } else {
-            // Don't reset digital signature unit, as this resets AES also
+            /* don't reset digital signature unit, as this resets AES also */
             return DPORT_CRYPTO_RSA_RST;
         }
     case PERIPH_CRYPTO_DMA_MODULE:
