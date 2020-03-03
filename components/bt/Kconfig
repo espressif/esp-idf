@@ -1556,6 +1556,16 @@ menu Bluetooth
             low-priority event buffers, then an incoming advertising report will
             get dropped
 
+    config NIMBLE_MSYS1_BLOCK_COUNT
+        int "MSYS_1 Block Count"
+        depends on NIMBLE_ENABLED
+        default 12
+        help
+            MSYS is a system level mbuf registry. For prepare write & prepare
+            responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+            enabled cases, this block count is increased by 8 than user defined
+            count.
+
     config NIMBLE_HS_FLOW_CTRL
         bool "Enable Host Flow control"
         depends on NIMBLE_ENABLED
