@@ -216,6 +216,16 @@ config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
         low-priority event buffers, then an incoming advertising report will
         get dropped
 
+config BT_NIMBLE_MSYS1_BLOCK_COUNT
+    int "MSYS_1 Block Count"
+    depends on BT_NIMBLE_ENABLED
+    default 12
+    help
+        MSYS is a system level mbuf registry. For prepare write & prepare
+        responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+        enabled cases, this block count is increased by 8 than user defined
+        count.
+
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
     depends on BT_NIMBLE_ENABLED
