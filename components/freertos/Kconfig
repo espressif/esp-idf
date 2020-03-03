@@ -1,8 +1,10 @@
 menu "FreeRTOS"
 
     config FREERTOS_UNICORE
-        # This config variable is also checked in the ESP32 startup code, not only in FreeRTOS.
+        # This config variable is also checked in the target startup code, not only in FreeRTOS
+        # hence the dependency on what target the app is being built for.
         bool "Run FreeRTOS only on first core"
+        default y if IDF_TARGET_ESP32S2
         default n
         help
             This version of FreeRTOS normally takes control of all cores of

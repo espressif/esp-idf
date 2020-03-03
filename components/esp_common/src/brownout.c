@@ -69,7 +69,7 @@ void esp_brownout_init(void)
 
     brownout_hal_config(&cfg);
 
-    ESP_ERROR_CHECK( rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M) );
+    rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M);
 
     brownout_hal_intr_enable(true);
 }
