@@ -255,7 +255,7 @@ Exclusion of content based on chip-target
 Occasionally there will be content that is only relevant for one of targets. When this is the case, you can exclude that content by using the ''.. only:: TARGET'' directive, where you replace 'TARGET' with one of the chip names. As of now the following targets are available:
 
 * esp32
-* esp32s2 
+* esp32s2
 
 Example:
 
@@ -267,7 +267,30 @@ Example:
 
 This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
 
-The '':TARGET:'' role is used for excluding content from a table of content tree. For example:
+A weakness in this extension is that it does not correctly handle the case were you exclude a section, and that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases were this can't be avoided is the following:
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        .. _section_1_label:
+
+        Section 1
+        ^^^^^^^^^
+
+        Section one content
+
+        .. _section_2_label:
+
+    .. only:: esp32s2
+
+        _section_2_label:
+
+    Section 2
+    ^^^^^^^^^
+    Section 2 content
+
+The :TARGET: role is used for excluding content from a table of content tree. For example:
 
 .. code-block:: none
 

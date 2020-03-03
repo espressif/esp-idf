@@ -69,9 +69,10 @@ FreeRTOS support
 OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS tasks as threads. Viewing them all can be done using the GDB ``i threads`` command, changing to a certain task is done with ``thread n``, with ``n`` being the number of the thread. FreeRTOS detection can be disabled in target's configuration. For more details see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
 
-.. _jtag-debugging-tip-code-flash-voltage:
 
-.. only:: esp33
+.. only:: esp32
+
+    .. _jtag-debugging-tip-code-flash-voltage:
 
     Why to set SPI flash voltage in OpenOCD configuration?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -83,7 +84,11 @@ OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS task
     Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash, while WROVER modules use 1.8 V flash.
 
 
-.. _jtag-debugging-tip-optimize-jtag-speed:
+    .. _jtag-debugging-tip-optimize-jtag-speed:
+
+.. only:: esp32s2
+
+    .. _jtag-debugging-tip-optimize-jtag-speed:
 
 Optimize JTAG speed
 ^^^^^^^^^^^^^^^^^^^
@@ -156,18 +161,17 @@ Disable RTOS support
 
 Comment out this line to have RTOS support.
 
-
-Power supply voltage of ESP32's SPI flash chip
-""""""""""""""""""""""""""""""""""""""""""""""
-
-::
-
-    set ESP32_FLASH_VOLTAGE 1.8
-
-Comment out this line to set 3.3 V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`
-
-
 .. only:: esp32
+
+    Power supply voltage of ESP32's SPI flash chip
+    """"""""""""""""""""""""""""""""""""""""""""""
+
+    ::
+
+        set ESP32_FLASH_VOLTAGE 1.8
+
+    Comment out this line to set 3.3 V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`
+
 
     Configuration file for ESP32 targets
     """"""""""""""""""""""""""""""""""""
