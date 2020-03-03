@@ -255,7 +255,7 @@ Exclusion of content based on chip-target
 Occasionally there will be content that is only relevant for one of targets. When this is the case, you can exclude that content by using the ''.. only:: TARGET'' directive, where you replace 'TARGET' with one of the chip names. As of now the following targets are available:
 
 * esp32
-* esp32s2 
+* esp32s2
 
 Example:
 
@@ -267,7 +267,30 @@ Example:
 
 This functionality is provided by the `Sphinx selective exclude <https://github.com/pfalcon/sphinx_selective_exclude>`_ extension.
 
-The '':TARGET:'' role is used for excluding content from a table of content tree. For example:
+A weakness in this extension is that it does not correctly handle the case were you exclude a section, and that is directly followed by a labeled new section. In these cases everything will render correctly, but the label will not correctly link to the section that follows. A temporary work-around for the cases were this can't be avoided is the following:
+
+.. code-block:: none
+
+    .. only:: esp32
+
+        .. _section_1_label:
+
+        Section 1
+        ^^^^^^^^^
+
+        Section one content
+
+        .. _section_2_label:
+
+    .. only:: esp32s2
+
+        _section_2_label:
+
+    Section 2
+    ^^^^^^^^^
+    Section 2 content
+
+The :TARGET: role is used for excluding content from a table of content tree. For example:
 
 .. code-block:: none
 
@@ -302,8 +325,6 @@ This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with
 This extension also supports markup for defining a local (for a single .rst-file) substitutions. You can do this by putting a definition like {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE",esp32="ESP32_VALUE",esp32s2beta="ESP32S2BETA_VALUE"}, in your rst-file. This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current rst-file. For example:
 
 {\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2beta="IO5"} will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2beta.
-
-.. note:: Due to limitations in Sphinx processing, these substitutions are not applied to any document that is included via the ``.. include::` directive. In these cases it's necessary to use the ``only`` blocks and write per-target sections instead. Unfortunately this includes any document which is not yet translated, as the ``zh_CN`` version will include the ``en`` version.
 
 Put it all together
 -------------------
