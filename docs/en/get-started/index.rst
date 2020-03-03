@@ -6,7 +6,7 @@ Get Started
 
 This document is intended to help you set up the software development environment for the hardware based on the {IDF_TARGET_NAME} chip by Espressif.
 
-After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then building, and flashing firmware onto an {IDF_TARGET_NAME} board.
+After that, a simple example will show you how to use ESP-IDF (Espressif IoT Development Framework) for menu configuration, then for building and flashing firmware onto an {IDF_TARGET_NAME} board.
 
 .. include-build-file:: inc/version-note.inc
 
@@ -18,10 +18,10 @@ Introduction
     {IDF_TARGET_NAME} is a system on a chip that integrates the following features:
 
     * Wi-Fi (2.4 GHz band)
-    * Bluetooth 4.2
+    * Bluetooth
     * Dual high performance cores
     * Ultra Low Power co-processor
-    * Several peripherals
+    * Multiple peripherals
 
 .. only:: esp32s2
 
@@ -29,7 +29,7 @@ Introduction
 
     * Wi-Fi (2.4 GHz band)
     * Ultra Low Power co-processor
-    * Several peripherals
+    * Multiple peripherals
 
 Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
 
@@ -75,6 +75,10 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
         ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
 
+.. only:: esp32s2
+
+    There are currently no hardware guides available for ESP32-S2.
+
 
 .. _get-started-step-by-step:
 
@@ -86,7 +90,7 @@ This is a detailed roadmap to walk you through the installation process.
 Setting up Development Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* :ref:`get-started-get-prerequisites` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>` or :doc:`macOS <macos-setup>`
+* :ref:`get-started-get-prerequisites` for :doc:`Windows <windows-setup>`, :doc:`Linux <linux-setup>`, or :doc:`macOS <macos-setup>`
 * :ref:`get-started-get-esp-idf`
 * :ref:`get-started-set-up-tools`
 * :ref:`get-started-set-up-env`
@@ -205,7 +209,7 @@ Linux and macOS
 Customizing the tools installation path
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux and macOS, ``%USERPROFILE%\.espressif`` on Windows. If you wish to install the tools into a different directory, set the environment variable ``IDF_TOOLS_PATH`` before running the installation scripts. Make sure that your user has sufficient permissions to read and write this path.
+The scripts introduced in this step install compilation tools required by ESP-IDF inside the user home directory: ``$HOME/.espressif`` on Linux and macOS, ``%USERPROFILE%\.espressif`` on Windows. If you wish to install the tools into a different directory, set the environment variable ``IDF_TOOLS_PATH`` before running the installation scripts. Make sure that your user account has sufficient permissions to read and write this path.
 
 If changing the ``IDF_TOOLS_PATH``, make sure it is set to the same value every time the Install script (``install.bat``, ``install.ps1`` or ``install.sh``) and an Export script (``export.bat``, ``export.ps1`` or ``export.sh``) are executed.
 
@@ -357,7 +361,9 @@ To navigate and use ``menuconfig``, press the following keys:
 Step 8. Build the Project
 =========================
 
-Build the project by running::
+Build the project by running:
+
+.. code-block:: batch
 
     idf.py build
 
@@ -391,7 +397,9 @@ If there are no errors, the build will finish by generating the firmware binary 
 Step 9. Flash onto the Device
 =============================
 
-Flash the binaries that you just built onto your {IDF_TARGET_NAME} board by running::
+Flash the binaries that you just built onto your {IDF_TARGET_NAME} board by running:
+
+.. code-block:: bash
 
     idf.py -p PORT [-b BAUD] flash
 
@@ -405,7 +413,32 @@ For more information on idf.py arguments, see :ref:`idf.py`.
 
     The option ``flash`` automatically builds and flashes the project, so running ``idf.py build`` is not necessary.
 
-.. code-block:: none
+
+Encountered Issues While Flashing?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you run the given command and see errors such as "Failed to connect", there might be several reasons for this. One of the reasons might be issues encountered by ``esptool.py``, the utility that is called by the build system to reset the chip, interact with the ROM bootloader, and flash firmware. One simple solution to try is manual reset described below, and if it does not help you can find more details about possible issues in `Troubleshooting <https://github.com/espressif/esptool#bootloader-wont-respond>`_.
+
+``esptool.py`` resets {IDF_TARGET_NAME} automatically by asserting DTR and RTS control lines of the USB to serial converter chip, i.e., FTDI or CP210x (for more information, see :doc:`establish-serial-connection`). The DTR and RTS control lines are in turn connected to ``GPIO0`` and ``CHIP_PU`` (EN) pins of {IDF_TARGET_NAME}, thus changes in the voltage levels of DTR and RTS will boot {IDF_TARGET_NAME} into Firmware Download mode. As an example, check the `schematic <https://dl.espressif.com/dl/schematics/esp32_devkitc_v4-sch-20180607a.pdf>`_ for the ESP32 DevKitC development board.
+
+In general, you should have no problems with the official esp-idf development boards. However, ``esptool.py`` is not able to reset your hardware automatically in the following cases:
+
+- Your hardware does not have the DTR and RTS lines connected to ``GPIO0`` and ``CIHP_PU``
+- The DTR and RTS lines are configured differently
+- There are no such serial control lines at all
+
+Depending on the kind of hardware you have, it may also be possible to manually put your {IDF_TARGET_NAME} board into Firmware Download mode (reset).
+
+- For development boards produced by Espressif, this information can be found in the respective getting started guides or user guides. For example, to manually reset an esp-idf development board, hold down the **Boot** button (``GPIO0``) and press the **EN** button (``CHIP_PU``).
+- For other types of hardware, try pulling ``GPIO0`` down.
+
+
+Normal Operation
+~~~~~~~~~~~~~~~~
+
+After resetting, you will see the output log similar to the following:
+
+.. code-block:: bash
 
     Running esptool.py in directory [...]/esp/hello_world
     Executing "python [...]/esp-idf/components/esptool_py/esptool/esptool.py -b 460800 write_flash @flash_project_args"...
@@ -436,7 +469,7 @@ For more information on idf.py arguments, see :ref:`idf.py`.
     Leaving...
     Hard resetting via RTS pin...
 
-If there are no issues by the end of the flash process, the module will be reset and the “hello_world” application will be running.
+If there are no issues by the end of the flash process, the board will reboot and start up the “hello_world” application.
 
 .. (Not currently supported) If you'd like to use the Eclipse IDE instead of running ``idf.py``, check out the :doc:`Eclipse guide <eclipse-setup>`.
 
@@ -468,7 +501,7 @@ After startup and diagnostic logs scroll up, you should see "Hello world!" print
     ...
     Hello world!
     Restarting in 10 seconds...
-    I (211) cpu_start: Starting scheduler on APP CPU.
+    This is esp32 chip with 2 CPU cores, WiFi/BT/BLE, silicon revision 1, 2MB external flash
     Restarting in 9 seconds...
     Restarting in 8 seconds...
     Restarting in 7 seconds...
@@ -502,7 +535,7 @@ See also:
 - :doc:`IDF Monitor <../api-guides/tools/idf-monitor>` for handy shortcuts and more details on using IDF monitor.
 - :ref:`idf.py` for a full reference of ``idf.py`` commands and options.
 
-**That's all that you need to get started with ESP32!**
+**That's all that you need to get started with {IDF_TARGET_NAME}!**
 
 Now you are ready to try some other :idf:`examples`, or go straight to developing your own applications.
 
