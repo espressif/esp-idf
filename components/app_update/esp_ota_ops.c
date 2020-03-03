@@ -40,6 +40,12 @@
 #include "esp_system.h"
 #include "esp_efuse.h"
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/crc.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/crc.h"
+#include "esp32s2/rom/secure_boot.h"
+#endif
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
 
@@ -857,3 +863,24 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
 
     return ESP_OK;
 }
+
+#if CONFIG_IDF_TARGET_ESP32S2 && CONFIG_SECURE_BOOT_V2_ENABLED
+esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index) {
+
+    if (!esp_secure_boot_enabled()) {
+        ESP_LOGE(TAG, "Secure boot v2 has not been enabled.");
+        return ESP_FAIL;
+    }
+
+    if (index != SECURE_BOOT_PUBLIC_KEY_INDEX_0 &&
+         index != SECURE_BOOT_PUBLIC_KEY_INDEX_1 &&
+         index != SECURE_BOOT_PUBLIC_KEY_INDEX_2) {
+        ESP_LOGE(TAG, "Invalid Index found for public key revocation %d.", index);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ets_secure_boot_revoke_public_key_digest(index);
+    ESP_LOGI(TAG, "Revoked signature block %d.", index);
+    return ESP_OK;
+}
+#endif

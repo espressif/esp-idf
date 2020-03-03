@@ -383,7 +383,7 @@ menu "Security features"
 
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
-            depends on ESP32_REV_MIN_3 && SECURE_BOOT_V2_ENABLED
+            depends on (ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2) && SECURE_BOOT_V2_ENABLED
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.
@@ -447,7 +447,9 @@ menu "Security features"
 
         config SECURE_BOOT_V2_ENABLED
             bool "Enable Secure Boot version 2"
-            depends on ESP32_REV_MIN_3
+            depends on ESP32_REV_MIN_3 || IDF_TARGET_ESP32S2
+            select SECURE_ENABLE_SECURE_ROM_DL_MODE if IDF_TARGET_ESP32S2 && !SECURE_INSECURE_ALLOW_DL_MODE
+            select SECURE_DISABLE_ROM_DL_MODE if ESP32_REV_MIN_3 && !SECURE_INSECURE_ALLOW_DL_MODE
             help
                 Build a bootloader which enables Secure Boot version 2 on first boot.
                 Refer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.
@@ -680,6 +682,19 @@ menu "Security features"
                 Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse holding the public
                 key digest, causing an immediate denial of service and possibly allowing an additional fault
                 injection attack to bypass the signature protection.
+
+        config SECURE_INSECURE_ALLOW_DL_MODE
+            bool "Don't automatically restrict UART download mode"
+            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ENABLED
+            default N
+            help
+                By default, enabling either flash encryption in release mode or secure boot will automatically
+                disable UART download mode on ESP32 ECO3, or enable secure download mode on newer chips.
+                This is recommended to reduce the attack surface of the chip.
+
+                To allow the full UART download mode to stay enabled, enable this option and ensure
+                the options SECURE_DISABLE_ROM_DL_MODE and SECURE_ENABLE_SECURE_ROM_DL_MODE are disabled as applicable.
+                This is not recommended.
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"
