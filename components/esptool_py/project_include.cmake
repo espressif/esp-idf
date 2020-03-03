@@ -66,12 +66,6 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     set(ESPFLASHSIZE detect)
 endif()
 
-# Set variables if the PHY data partition is in the flash
-if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
-    set(PHY_PARTITION_OFFSET   ${CONFIG_PHY_DATA_OFFSET})
-    set(PHY_PARTITION_BIN_FILE "esp32/phy_init_data.bin")
-endif()
-
 get_filename_component(IDF_PROJECT_NAME ${IDF_PROJECT_EXECUTABLE} NAME_WE)
 if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
     set(unsigned_project_binary "${IDF_PROJECT_NAME}-unsigned.bin")

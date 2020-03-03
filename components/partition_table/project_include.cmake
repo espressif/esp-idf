@@ -45,6 +45,7 @@ function(get_partition_info variable get_part_info_args part_info)
     set(${variable} ${result} PARENT_SCOPE)
 endfunction()
 
+# Set variables if the PHY data partition is in the flash
 if(CONFIG_ESP32_PHY_INIT_DATA_IN_PARTITION)
     get_partition_info(PHY_PARTITION_OFFSET
                 "--partition-type data --partition-subtype phy" "offset")
