@@ -15,7 +15,7 @@ set(ULP_APP_NAME ulp_${COMPONENT_NAME})
 # 2. Specify all assembly source files here.
 #    Files should be placed into a separate directory (in this case, ulp/),
 #    which should not be added to COMPONENT_SRCS.
-set(ULP_S_SOURCES "ulp/pulse_cnt.S")
+set(ULP_S_SOURCES "ulp/pulse_cnt.S" "ulp/wake_up.S")
 #
 # 3. List all the component source files which include automatically
 #    generated ULP export file, $(ULP_APP_NAME).h:
