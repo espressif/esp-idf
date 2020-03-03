@@ -230,8 +230,7 @@ esp_err_t esp_flash_set_protected_region(esp_flash_t *chip, const esp_flash_regi
  *
  * @return
  *      - ESP_OK: success
- *      - ESP_ERR_NO_MEM: the buffer is not valid, however failed to malloc on
- *        the heap.
+ *      - ESP_ERR_NO_MEM: Buffer is in external PSRAM which cannot be concurrently accessed, and a temporary internal buffer could not be allocated.
  *      - or a flash error code if operation failed.
  */
 esp_err_t esp_flash_read(esp_flash_t *chip, void *buffer, uint32_t address, uint32_t length);
