@@ -299,6 +299,34 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void);
  */
 bool esp_ota_check_rollback_is_possible(void);
 
+#if CONFIG_IDF_TARGET_ESP32S2 && (CONFIG_SECURE_BOOT_V2_ENABLED || __DOXYGEN__)
+
+/**
+ * Secure Boot V2 public key indexes.
+ */
+typedef enum {
+    SECURE_BOOT_PUBLIC_KEY_INDEX_0,     /*!< Points to the 0th index of the Secure Boot v2 public key */
+    SECURE_BOOT_PUBLIC_KEY_INDEX_1,     /*!< Points to the 1st index of the Secure Boot v2 public key */
+    SECURE_BOOT_PUBLIC_KEY_INDEX_2      /*!< Points to the 2nd index of the Secure Boot v2 public key */
+} esp_ota_secure_boot_public_key_index_t;
+
+/**
+ * @brief Revokes the old signature digest. To be called in the application after the rollback logic.
+ *
+ * Relevant for Secure boot v2 on ESP32-S2 where upto 3 key digests can be stored (Key #N-1, Key #N, Key #N+1).
+ * When key #N-1 used to sign an app is invalidated, an OTA update is to be sent with an app signed with key #N-1 & Key #N.
+ * After successfully booting the OTA app should call this function to revoke Key #N-1.
+ *
+ * @param index - The index of the signature block to be revoked
+ *
+ * @return
+ *        - ESP_OK: If revocation is successful.
+ *        - ESP_ERR_INVALID_ARG: If the index of the public key to be revoked is incorrect.
+ *        - ESP_FAIL: If secure boot v2 has not been enabled.
+ */
+esp_err_t esp_ota_revoke_secure_boot_public_key(esp_ota_secure_boot_public_key_index_t index);
+#endif /* CONFIG_IDF_TARGET_ESP32S2 */
+
 #ifdef __cplusplus
 }
 #endif

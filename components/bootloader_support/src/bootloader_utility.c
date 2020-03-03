@@ -821,6 +821,7 @@ void bootloader_debug_buffer(const void *buffer, size_t length, const char *labe
 
 esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, uint8_t *digest)
 {
+
     if (digest == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -837,7 +838,7 @@ esp_err_t bootloader_sha256_flash_contents(uint32_t flash_offset, uint32_t len, 
     while (len > 0) {
         uint32_t mmu_page_offset = ((flash_offset & MMAP_ALIGNED_MASK) != 0) ? 1 : 0; /* Skip 1st MMU Page if it is already populated */
         uint32_t partial_image_len = MIN(len, ((mmu_free_pages_count - mmu_page_offset) * SPI_FLASH_MMU_PAGE_SIZE)); /* Read the image that fits in the free MMU pages */
-        
+
         const void * image = bootloader_mmap(flash_offset, partial_image_len);
         if (image == NULL) {
             bootloader_sha256_finish(sha_handle, NULL);
