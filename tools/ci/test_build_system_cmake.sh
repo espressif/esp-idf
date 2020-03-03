@@ -632,8 +632,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     printf "\n#include \"test_component.h\"\n" >> main/main.c
     printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> idf_project.yml
     ! idf.py build || failure "Build should fail if dependencies are not installed"
-    pip install ${COMPONENT_MANAGER_REPO}
-    idf.py reconfigure build || failure "Build succeeds once requirements are installed"
+    pip install ${COMPONENT_MANAGER_REPO} || failure "Failed to install the component manager"
+    idf.py reconfigure build || failure "Build didn't succeed with required components installed by package manager"
     pip uninstall -y idf_component_manager
     rm idf_project.yml
     git checkout main/main.c
