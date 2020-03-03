@@ -97,7 +97,7 @@ void ref_clock_init()
     rmt_ll_start_tx(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
     rmt_ll_set_mem_owner(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 0);
     rmt_ll_reset_tx_pointer(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
-    rmt_ll_enable_tx_carrier(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, false);
+    rmt_ll_enable_carrier(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, false);
     rmt_ll_set_counter_clock_div(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 1);
     rmt_ll_set_mem_blocks(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 1);
     rmt_ll_set_counter_clock_src(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 0);

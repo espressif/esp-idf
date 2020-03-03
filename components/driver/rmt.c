@@ -156,7 +156,7 @@ esp_err_t rmt_set_tx_carrier(rmt_channel_t channel, bool carrier_en, uint16_t hi
     RMT_ENTER_CRITICAL();
     rmt_ll_set_carrier_high_low_ticks(p_rmt_obj[channel]->hal.regs, channel, high_level, low_level);
     rmt_ll_set_carrier_to_level(p_rmt_obj[channel]->hal.regs, channel, carrier_level);
-    rmt_ll_enable_tx_carrier(p_rmt_obj[channel]->hal.regs, channel, carrier_en);
+    rmt_ll_enable_carrier(p_rmt_obj[channel]->hal.regs, channel, carrier_en);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -447,6 +447,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     }
     rmt_ll_set_mem_blocks(dev, channel, mem_cnt);
     rmt_ll_set_mem_owner(dev, channel, RMT_MEM_OWNER_HW);
+    rmt_ll_enable_carrier(dev, channel, false); // disable carrier feature by default
     RMT_EXIT_CRITICAL();
 
     s_rmt_src_clock_hz[channel] = rmt_source_clk_hz;
@@ -463,7 +464,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         rmt_ll_enable_tx_idle(dev, channel, rmt_param->tx_config.idle_output_en);
         rmt_ll_set_tx_idle_level(dev, channel, idle_level);
         /*Set carrier*/
-        rmt_ll_enable_tx_carrier(dev, channel, carrier_en);
+        rmt_ll_enable_carrier(dev, channel, carrier_en);
         if (carrier_en) {
             uint32_t duty_div, duty_h, duty_l;
             duty_div = rmt_source_clk_hz / carrier_freq_hz;
