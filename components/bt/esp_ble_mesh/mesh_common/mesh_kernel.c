@@ -187,18 +187,21 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
         }
         if (!hash_map_set(bm_alarm_hash_map, work, (void *)alarm)) {
             BT_ERR("%s Unable to add the timer to hash map.", __func__);
+            bt_mesh_alarm_unlock();
+            return;
         }
     }
-    bt_mesh_alarm_unlock();
 
     alarm = hash_map_get(bm_alarm_hash_map, work);
     if (alarm == NULL) {
         BT_WARN("%s, Unable to find expected alarm in hash map", __func__);
+        bt_mesh_alarm_unlock();
         return;
     }
 
     // Just init the work timer only, don't start it.
     osi_alarm_cancel(alarm);
+    bt_mesh_alarm_unlock();
     return;
 }
 
@@ -209,15 +212,18 @@ int k_delayed_work_submit(struct k_delayed_work *work, s32_t delay)
         return -EINVAL;
     }
 
+    bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
         BT_WARN("%s, Unable to find expected alarm in hash map", __func__);
+        bt_mesh_alarm_unlock();
         return -EINVAL;
     }
 
     // Cancel the alarm first, before start the alarm.
     osi_alarm_cancel(alarm);
     osi_alarm_set(alarm, delay);
+    bt_mesh_alarm_unlock();
     return 0;
 }
 
@@ -228,16 +234,18 @@ int k_delayed_work_submit_periodic(struct k_delayed_work *work, s32_t period)
         return -EINVAL;
     }
 
+    bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
         BT_WARN("%s, Unable to find expected alarm in hash map", __func__);
+        bt_mesh_alarm_unlock();
         return -EINVAL;
     }
 
     /* Cancel the alarm first before starting it. */
     osi_alarm_cancel(alarm);
     osi_alarm_set_periodic(alarm, period);
-
+    bt_mesh_alarm_unlock();
     return 0;
 }
 
@@ -248,14 +256,17 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
         return -EINVAL;
     }
 
+    bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
         BT_WARN("%s, Unable to find expected alarm in hash map", __func__);
+        bt_mesh_alarm_unlock();
         return -EINVAL;
     }
 
     osi_alarm_cancel(alarm);
     alarm->deadline_us = 0;
+    bt_mesh_alarm_unlock();
     return 0;
 }
 
@@ -266,29 +277,38 @@ int k_delayed_work_free(struct k_delayed_work *work)
         return -EINVAL;
     }
 
+    bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, work);
     if (alarm == NULL) {
         BT_WARN("%s Unable to find expected alarm in hash map", __func__);
+        bt_mesh_alarm_unlock();
         return -EINVAL;
     }
 
     osi_alarm_cancel(alarm);
     hash_map_erase(bm_alarm_hash_map, work);
+    bt_mesh_alarm_unlock();
     return 0;
 }
 
 s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 {
+    s32_t time = 0;
+
     if (!work || !bm_alarm_hash_map) {
         BT_ERR("%s, Invalid parameter", __func__);
         return 0;
     }
 
+    bt_mesh_alarm_lock();
     osi_alarm_t *alarm = hash_map_get(bm_alarm_hash_map, (void *)work);
     if (alarm == NULL) {
         BT_WARN("%s Unable to find expected alarm in hash map", __func__);
+        bt_mesh_alarm_unlock();
         return 0;
     }
 
-    return osi_alarm_get_remaining_ms(alarm);
+    time = osi_alarm_get_remaining_ms(alarm);
+    bt_mesh_alarm_unlock();
+    return time;
 }
