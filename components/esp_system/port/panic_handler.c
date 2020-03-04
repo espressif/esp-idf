@@ -146,7 +146,7 @@ static void print_backtrace(const void* f, int core)
     int depth = 100;
     //Initialize stk_frame with first frame of stack
     esp_backtrace_frame_t stk_frame = {.pc = frame->pc, .sp = frame->a1, .next_pc = frame->a0};
-    panic_print_str("\r\nBacktrace: ");
+    panic_print_str("\r\nBacktrace:");
     print_backtrace_entry(esp_cpu_process_stack_pc(stk_frame.pc), stk_frame.sp);
 
     //Check if first frame is valid
