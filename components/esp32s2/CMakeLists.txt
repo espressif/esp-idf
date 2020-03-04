@@ -21,7 +21,6 @@ else()
              "intr_alloc.c"
              "pm_esp32s2.c"
              "pm_trace.c"
-             "reset_reason.c"
              "sleep_modes.c"
              "spiram.c"
              "spiram_psram.c"

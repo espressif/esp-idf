@@ -517,6 +517,7 @@ static __attribute__((noreturn)) void esp_digital_reset(void)
 #if CONFIG_IDF_TARGET_ESP32
     esp_cpu_unstall(PRO_CPU_NUM);
 #endif
+
     // reset the digital part
     SET_PERI_REG_MASK(RTC_CNTL_OPTIONS0_REG, RTC_CNTL_SW_SYS_RST);
     while (true) {
@@ -527,7 +528,9 @@ static __attribute__((noreturn)) void esp_digital_reset(void)
 void __attribute__((noreturn)) panic_restart(void)
 {
     // If resetting because of a cache error, reset the digital part
-    if (esp_cache_err_get_cpuid() != -1) {
+    // Make sure that the reset reason is not a generic panic reason as well on ESP32S2,
+    // as esp_cache_err_get_cpuid always returns PRO_CPU_NUM
+    if (esp_cache_err_get_cpuid() != -1 && esp_reset_reason_get_hint() != ESP_RST_PANIC) {
         esp_digital_reset();
     } else {
         esp_restart_noos();
