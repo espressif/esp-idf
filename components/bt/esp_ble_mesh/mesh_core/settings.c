@@ -3189,6 +3189,7 @@ int bt_mesh_provisioner_release_settings_with_user_id(const char *user_id, bool 
 
     return provisioner_settings_release(idx, erase);
 }
+#endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 
 static int role_erase(nvs_handle handle, const char *name)
 {
@@ -3518,6 +3519,7 @@ int bt_mesh_settings_erase_by_handle(nvs_handle handle)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
 static int settings_user_id_delete(u8_t index)
 {
     char nvs_name[16] = {'\0'};
@@ -3639,6 +3641,37 @@ u8_t bt_mesh_provisioner_get_free_settings_user_id_count(void)
     return count;
 }
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
+
+int bt_mesh_provisioner_direct_erase_settings(void)
+{
+    nvs_handle handle = 0;
+    int err = 0;
+
+    err = bt_mesh_settings_direct_open(&handle);
+    if (err) {
+        return err;
+    }
+
+#if CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE
+    for (int i = 0; i < ARRAY_SIZE(settings_name); i++) {
+        err = settings_user_id_delete(i);
+        if (err) {
+            BT_ERR("%s, Failed to erase settings %d", __func__, i);
+            return err;
+        }
+    }
+    bt_mesh_save_user_id_settings("mesh/uid", NULL, 0);
+#else
+    err = bt_mesh_settings_erase_by_handle(handle);
+    if (err) {
+        BT_ERR("%s, Failed to erase settings", __func__);
+        return err;
+    }
+#endif
+
+    bt_mesh_settings_direct_close();
+    return 0;
+}
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 int settings_core_init(void)

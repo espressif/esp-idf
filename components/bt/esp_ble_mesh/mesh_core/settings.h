@@ -78,6 +78,7 @@ const char *bt_mesh_provisioner_get_settings_user_id(u8_t index);
 u8_t bt_mesh_provisioner_get_settings_index(const char *user_id);
 u8_t bt_mesh_provisioner_get_free_settings_user_id_count(void);
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
+int bt_mesh_provisioner_direct_erase_settings(void);
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 void bt_mesh_settings_lock(void);

@@ -80,6 +80,45 @@ void bt_mesh_settings_nvs_close(nvs_handle handle)
     nvs_close(handle);
 }
 
+int bt_mesh_settings_direct_open(nvs_handle *handle)
+{
+    int err = 0;
+
+#if CONFIG_BLE_MESH_SPECIFIC_PARTITION
+    err = nvs_flash_init_partition(CONFIG_BLE_MESH_PARTITION_NAME);
+    if (err != ESP_OK) {
+        BT_ERR("Failed to init partition %s, err %d", CONFIG_BLE_MESH_PARTITION_NAME, err);
+        return -EIO;
+    }
+#endif
+
+    for (int i = 0; i < ARRAY_SIZE(settings_ctx); i++) {
+        struct settings_context *ctx = &settings_ctx[i];
+        err = bt_mesh_settings_nvs_open(ctx->nvs_name, &ctx->handle);
+        if (err) {
+            BT_ERR("%s, Failed to open %s, err %d", __func__, ctx->nvs_name, err);
+            return -EIO;
+        }
+        if (i == SETTINGS_CORE && handle) {
+            *handle = ctx->handle;
+        }
+    }
+
+    return 0;
+}
+
+void bt_mesh_settings_direct_close(void)
+{
+    for (int i = 0; i < ARRAY_SIZE(settings_ctx); i++) {
+        struct settings_context *ctx = &settings_ctx[i];
+        bt_mesh_settings_nvs_close(ctx->handle);
+    }
+
+#if CONFIG_BLE_MESH_SPECIFIC_PARTITION
+    nvs_flash_deinit_partition(CONFIG_BLE_MESH_PARTITION_NAME);
+#endif
+}
+
 void bt_mesh_settings_foreach(void)
 {
     struct settings_context *ctx = NULL;

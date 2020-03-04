@@ -35,6 +35,9 @@ void bt_mesh_settings_deforeach(bool erase);
 int bt_mesh_settings_nvs_open(const char* name, nvs_handle *handle);
 void bt_mesh_settings_nvs_close(nvs_handle handle);
 
+int bt_mesh_settings_direct_open(nvs_handle *handle);
+void bt_mesh_settings_direct_close(void);
+
 int bt_mesh_save_settings(nvs_handle handle, const char *key, const u8_t *val, size_t len);
 int bt_mesh_load_settings(nvs_handle handle, const char *key, u8_t *buf, size_t buf_len, bool *exist);
 struct net_buf_simple *bt_mesh_get_settings_item(nvs_handle handle, const char *key);

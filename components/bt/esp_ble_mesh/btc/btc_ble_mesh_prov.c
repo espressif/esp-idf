@@ -1890,6 +1890,12 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
                 &param.provisioner_delete_settings_with_user_id_comp.index);
         break;
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
+#if CONFIG_BLE_MESH_SETTINGS
+    case BTC_BLE_MESH_ACT_PROVISIONER_DIRECT_ERASE_SETTINGS:
+        act = ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT;
+        param.provisioner_direct_erase_settings_comp.err_code = bt_mesh_provisioner_direct_erase_settings();
+        break;
+#endif /* CONFIG_BLE_MESH_SETTINGS */
     case BTC_BLE_MESH_ACT_PROVISIONER_START_RECV_HEARTBEAT:
         act = ESP_BLE_MESH_PROVISIONER_START_RECV_HEARTBEAT_COMP_EVT;
         param.provisioner_start_recv_heartbeat_comp.err_code =

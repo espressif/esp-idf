@@ -615,6 +615,18 @@ uint8_t esp_ble_mesh_provisioner_get_settings_index(const char *user_id);
 uint8_t esp_ble_mesh_provisioner_get_free_settings_user_id_count(void);
 
 /**
+ * @brief         This function is called by Provisioner to directly erase the stored
+ *                mesh information from flash.
+ *
+ * @note          This function can be invoked when the mesh stack is not initialized
+ *                or has been deinitialized.
+ *
+ * @return        ESP_OK on success or error code otherwise.
+ *
+ */
+esp_err_t esp_ble_mesh_provisioner_direct_erase_settings(void);
+
+/**
  * @brief         This function is called by Provisioner to start receiving and processing
  *                heartbeat messages.
  *

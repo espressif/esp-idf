@@ -724,6 +724,19 @@ uint8_t esp_ble_mesh_provisioner_get_free_settings_user_id_count(void)
 }
 #endif /* CONFIG_BLE_MESH_USE_MULTIPLE_NAMESPACE */
 
+esp_err_t esp_ble_mesh_provisioner_direct_erase_settings(void)
+{
+    btc_msg_t msg = {0};
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_PROVISIONER_DIRECT_ERASE_SETTINGS;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
 esp_err_t esp_ble_mesh_provisioner_start_recv_heartbeat(void)
 {
     btc_msg_t msg = {0};

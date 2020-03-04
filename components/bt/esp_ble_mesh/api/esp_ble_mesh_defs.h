@@ -806,6 +806,7 @@ typedef enum {
     ESP_BLE_MESH_PROVISIONER_RELEASE_SETTINGS_WITH_USER_ID_COMP_EVT, /*!< Provisioner release settings with user_id completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_INDEX_COMP_EVT,    /*!< Provisioner delete settings with index completion event */
     ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT,  /*!< Provisioner delete settings with user_id completion event */
+    ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT,         /*!< Provisioner directly erase settings completion event */
     ESP_BLE_MESH_PROVISIONER_START_RECV_HEARTBEAT_COMP_EVT,          /*!< Provisioner start to receive Heartbeat message completion event */
     ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_TYPE_COMP_EVT,     /*!< Provisioner set the filter type of receiving heartbeat message completion event */
     ESP_BLE_MESH_PROVISIONER_SET_HEARTBEAT_FILTER_INFO_COMP_EVT,     /*!< Provisioner set the filter information of receiving heartbeat message completion event */
@@ -1217,6 +1218,12 @@ typedef union {
         int err_code;                                   /*!< Indicate the result of deleting settings with user_id by the Provisioner */
         uint8_t index;                                  /*!< Index of Provisioner settings */
     } provisioner_delete_settings_with_user_id_comp;    /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_DELETE_SETTINGS_WITH_USER_ID_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT
+     */
+    struct ble_mesh_provisioner_direct_erase_settings_comp_param {
+        int err_code;                                   /*!< Indicate the result of directly erasing settings by the Provisioner */
+    } provisioner_direct_erase_settings_comp;           /*!< Event parameters of ESP_BLE_MESH_PROVISIONER_DRIECT_ERASE_SETTINGS_COMP_EVT */
     /**
      * @brief ESP_BLE_MESH_PROVISIONER_START_RECV_HEARTBEAT_COMP_EVT
      */
