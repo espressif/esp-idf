@@ -73,10 +73,22 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
 
 esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
 {
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
     if (param == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    return btc_ble_mesh_deinit(param);
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    arg.mesh_deinit.param.erase_flash = param->erase_flash;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_DEINIT_MESH;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
