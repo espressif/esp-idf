@@ -157,7 +157,7 @@ void esp_panic_handler(panic_info_t *info)
     if (g_panic_abort) {
         info->description = NULL;
         info->details = s_panic_abort_details ? print_abort_details : NULL;
-        info->reason = "SoftwareAbort";
+        info->reason = NULL;
         info->exception = PANIC_EXCEPTION_ABORT;
     }
 
@@ -184,11 +184,13 @@ void esp_panic_handler(panic_info_t *info)
      * NULL fields in panic_info_t are not printed.
      *
      * */
-    panic_print_str("Guru Meditation Error: Core ");
-    panic_print_dec(info->core);
-    panic_print_str(" panic'ed (");
-    panic_print_str(info->reason);
-    panic_print_str("). ");
+    if (info->reason) {
+        panic_print_str("Guru Meditation Error: Core ");
+        panic_print_dec(info->core);
+        panic_print_str(" panic'ed (");
+        panic_print_str(info->reason);
+        panic_print_str("). ");
+    }
 
     if (info->description) {
         panic_print_str(info->description);
