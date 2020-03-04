@@ -934,11 +934,6 @@ static void btc_ble_mesh_proxy_client_filter_status_recv_cb(u8_t conn_handle,
 }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
 
-int btc_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
-{
-    return bt_mesh_deinit((struct bt_mesh_deinit_param *)param);
-}
-
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model)
 {
     __ASSERT(model && model->op, "%s, Invalid parameter", __func__);
@@ -1884,6 +1879,10 @@ void btc_ble_mesh_prov_call_handler(btc_msg_t *msg)
         break;
     }
 #endif /* CONFIG_BLE_MESH_GATT_PROXY_CLIENT */
+    case BTC_BLE_MESH_ACT_DEINIT_MESH:
+        act = ESP_BLE_MESH_DEINIT_MESH_COMP_EVT;
+        param.deinit_mesh_comp.err_code = bt_mesh_deinit((struct bt_mesh_deinit_param *)&arg->mesh_deinit.param);
+        break;
     default:
         BT_WARN("%s, Invalid msg->act %d", __func__, msg->act);
         return;

@@ -792,6 +792,7 @@ typedef enum {
     ESP_BLE_MESH_PROXY_CLIENT_SET_FILTER_TYPE_COMP_EVT,         /*!< Proxy Client set filter type completion event */
     ESP_BLE_MESH_PROXY_CLIENT_ADD_FILTER_ADDR_COMP_EVT,         /*!< Proxy Client add filter address completion event */
     ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT,      /*!< Proxy Client remove filter address completion event */
+    ESP_BLE_MESH_DEINIT_MESH_COMP_EVT,                          /*!< De-initialize BLE Mesh stack completion event */
     ESP_BLE_MESH_PROV_EVT_MAX,
 } esp_ble_mesh_prov_cb_event_t;
 
@@ -1259,6 +1260,12 @@ typedef union {
         uint8_t conn_handle;                    /*!< Proxy connection handle */
         uint16_t net_idx;                       /*!< Corresponding NetKey Index */
     } proxy_client_remove_filter_addr_comp;     /*!< Event parameter of ESP_BLE_MESH_PROXY_CLIENT_REMOVE_FILTER_ADDR_COMP_EVT */
+    /**
+     * @brief ESP_BLE_MESH_DEINIT_MESH_COMP_EVT
+     */
+    struct ble_mesh_deinit_mesh_comp_param {
+        int err_code;                           /*!< Indicate the result of BLE Mesh deinitialization */
+    } deinit_mesh_comp;                         /*!< Event parameter of ESP_BLE_MESH_DEINIT_MESH_COMP_EVT */
 } esp_ble_mesh_prov_cb_param_t;
 
 /**
