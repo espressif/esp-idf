@@ -985,7 +985,7 @@ void vTaskPrioritySet( TaskHandle_t xTask, UBaseType_t uxNewPriority ) PRIVILEGE
  *
  * @param uxNewPriority The priority to which the task will be set.
  */
-void vTaskPrioritySetCurrent( TaskHandle_t xTask, UBaseType_t uxNewPriority )
+void vTaskPrioritySetCurrent( TaskHandle_t xTask, UBaseType_t uxNewPriority );
 
 /**
  * Suspend a task.
