@@ -85,7 +85,8 @@ if(CONFIG_NIMBLE_ENABLED)
             "./nimble/porting/nimble/src/mem.c"
             "./nimble/porting/nimble/src/os_mbuf.c"
             "./nimble/porting/nimble/src/os_cputime.c"
-            "./esp-hci/src/esp_nimble_hci.c")
+            "./esp-hci/src/esp_nimble_hci.c"
+            "./port/src/esp_nimble_mem.c")
 
     if(NOT CONFIG_NIMBLE_CRYPTO_STACK_MBEDTLS)
 
