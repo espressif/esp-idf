@@ -146,6 +146,14 @@ esp_err_t esp_modem_netif_set_default_handlers(void *h, esp_netif_t * esp_netif)
     if (ret != ESP_OK) {
         goto set_event_failed;
     }
+    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_PPP_GOT_IP, esp_netif_action_connected, esp_netif);
+    if (ret != ESP_OK) {
+        goto set_event_failed;
+    }
+    ret = esp_event_handler_register(IP_EVENT, IP_EVENT_PPP_LOST_IP, esp_netif_action_disconnected, esp_netif);
+    if (ret != ESP_OK) {
+        goto set_event_failed;
+    }
     return ESP_OK;
 
 set_event_failed:

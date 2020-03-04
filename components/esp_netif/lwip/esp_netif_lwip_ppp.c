@@ -60,6 +60,11 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
         case PPPERR_NONE: /* Connected */
             ESP_LOGI(TAG, "Connected");
             if (pcb->if4_up && !ip_addr_isany(&pppif->ip_addr)) {
+                esp_netif_ip_info_t *ip_info = netif->ip_info;
+                ip4_addr_set(&ip_info->ip, ip_2_ip4(&pppif->ip_addr));
+                ip4_addr_set(&ip_info->netmask, ip_2_ip4(&pppif->netmask));
+                ip4_addr_set(&ip_info->gw, ip_2_ip4(&pppif->gw));
+
                 evt.ip_info.ip.addr = pppif->ip_addr.u_addr.ip4.addr;
                 evt.ip_info.gw.addr = pppif->gw.u_addr.ip4.addr;
                 evt.ip_info.netmask.addr = pppif->netmask.u_addr.ip4.addr;
