@@ -18,6 +18,8 @@
 #include <stdint.h>
 #include <esp_partition.h>
 #include "sdkconfig.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 /* include performance pass standards header file */
 #include "idf_performance.h"
@@ -259,7 +261,6 @@ esp_err_t test_utils_set_leak_level(size_t leak_level, esp_type_leak_t type, esp
 size_t test_utils_get_leak_level(esp_type_leak_t type, esp_comp_leak_t component);
 
 
-
 typedef struct test_utils_exhaust_memory_record_s *test_utils_exhaust_memory_rec;
 
 /**
@@ -285,3 +286,9 @@ test_utils_exhaust_memory_rec test_utils_exhaust_memory(uint32_t caps, size_t li
 void test_utils_free_exhausted_memory(test_utils_exhaust_memory_rec rec);
 
 
+/**
+ * @brief Delete task ensuring dynamic memory (for stack, tcb etc.) gets freed up immediately
+ *
+ * @param[in] thandle    Handle of task to be deleted (should not be NULL or self handle)
+ */
+void test_utils_task_delete(TaskHandle_t thandle);

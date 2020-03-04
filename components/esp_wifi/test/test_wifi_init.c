@@ -96,24 +96,27 @@ static void wifi_driver_can_start_on_APP_CPU_task(void* arg)
     TEST_ESP_OK(event_deinit());
     ESP_LOGI(TAG, EMPH_STR("nvs_flash_deinit..."));
     TEST_ESP_OK(nvs_flash_deinit());
-    xSemaphoreGive(*sema);
     ESP_LOGI(TAG, "exit task...");
-    vTaskDelete(NULL);
+    xSemaphoreGive(*sema);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("wifi driver can start on APP CPU", "[wifi_init]")
 {
-    TaskHandle_t th;
+    TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
     xTaskCreatePinnedToCore(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048*2, &sema, 3, &th, 1);
 #else
     xTaskCreate(wifi_driver_can_start_on_APP_CPU_task, "wifi_driver_can_start_on_APP_CPU_task", 2048*2, &sema, 3, &th);
 #endif
+    TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);
     vSemaphoreDelete(sema);
     sema = NULL;
+    test_utils_task_delete(th);
 }
 
 static void wifi_start_stop_task(void* arg)
@@ -148,22 +151,25 @@ static void wifi_start_stop_task(void* arg)
     nvs_flash_deinit();
     ESP_LOGI(TAG, "test passed...");
     xSemaphoreGive(*sema);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("Calling esp_wifi_stop() with start", "[wifi_init]")
 {
-    TaskHandle_t th;
+    TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
     xTaskCreatePinnedToCore(wifi_start_stop_task, "wifi_start_stop_task", 2048*2, &sema, 3, &th, 0);
 #else
     xTaskCreate(wifi_start_stop_task, "wifi_start_stop_task", 2048*2, &sema, 3, &th);
 #endif
+    TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);
     vSemaphoreDelete(sema);
     sema = NULL;
+    test_utils_task_delete(th);
 }
 
 static void wifi_stop_task(void* arg)
@@ -194,20 +200,23 @@ static void wifi_stop_task(void* arg)
     nvs_flash_deinit();
     ESP_LOGI(TAG, "test passed...");
     xSemaphoreGive(*sema);
-    vTaskDelete(NULL);
+    vTaskSuspend(NULL);
 }
 
 TEST_CASE("Calling esp_wifi_stop() without start", "[wifi_init]")
 {
-    TaskHandle_t th;
+    TaskHandle_t th = NULL;
     SemaphoreHandle_t sema = xSemaphoreCreateBinary();
+    TEST_ASSERT_NOT_NULL(sema);
     printf("Creating tasks\n");
 #ifndef CONFIG_FREERTOS_UNICORE
     xTaskCreatePinnedToCore(wifi_stop_task, "wifi_stop_task", 2048*2, &sema, 3, &th, 0);
 #else
     xTaskCreate(wifi_stop_task, "wifi_stop_task", 2048*2, &sema, 3, &th);
 #endif
+    TEST_ASSERT_NOT_NULL(th);
     xSemaphoreTake(sema, portMAX_DELAY);
     vSemaphoreDelete(sema);
     sema = NULL;
+    test_utils_task_delete(th);
 }
