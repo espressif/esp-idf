@@ -350,6 +350,10 @@ function run_tests()
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
     rm sdkconfig.defaults
 
+    print_status "Displays partition table when executing target partition_table"
+    idf.py partition_table | grep -E "# Espressif .+ Partition Table"
+    rm -r build
+
     print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
     OLDPATH="$PATH"
     PYTHON="$(which python)"
