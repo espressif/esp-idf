@@ -176,8 +176,6 @@ menu "Example Connection Configuration"
 
     config EXAMPLE_CONNECT_IPV6
         bool "Obtain IPv6 link-local address"
-        depends on IDF_TARGET_ESP32
-        # ToDo: remove once IPV6 is supported on esp32s2
         default y
         help
             By default, examples will wait until IPv4 and IPv6 addresses are obtained.
