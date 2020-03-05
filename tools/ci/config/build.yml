@@ -20,6 +20,7 @@
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
       - $BOT_LABEL_REGULAR_TEST
 
 .build_ssc_template:
