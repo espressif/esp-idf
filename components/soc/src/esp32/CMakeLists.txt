@@ -6,7 +6,6 @@ set(srcs "brownout_hal.c"
     "rtc_sleep.c"
     "rtc_time.c"
     "rtc_wdt.c"
-    "sdio_slave_hal.c"
     "soc_memory_layout.c"
     "touch_sensor_hal.c")
 
