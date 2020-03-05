@@ -234,6 +234,19 @@ function run_tests()
     (cd build && cmake -G "Unix Makefiles" .. && make) || failure "Make build failed"
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    print_status "idf.py can build with Ninja"
+    clean_build_dir
+    idf.py -G Ninja build  || failure "idf.py cannot build with Ninja"
+    grep "CMAKE_GENERATOR:INTERNAL=Ninja" build/CMakeCache.txt || failure "Ninja is not set in CMakeCache.txt"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
+    print_status "idf.py can build with Unix Makefiles"
+    clean_build_dir
+    mkdir build
+    idf.py -G "Unix Makefiles" build || failure "idf.py cannot build with Unix Makefiles"
+    grep "CMAKE_GENERATOR:INTERNAL=Unix Makefiles" build/CMakeCache.txt || failure "Unix Makefiles are not set in CMakeCache.txt"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
     print_status "Can build with IDF_PATH set via cmake cache not environment"
     clean_build_dir
     ${SED} -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
