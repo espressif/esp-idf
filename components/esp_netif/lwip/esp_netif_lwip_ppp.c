@@ -21,6 +21,8 @@
 #include "esp_event.h"
 #include "esp_netif_ppp.h"
 #include "esp_netif_lwip_internal.h"
+#include "lwip/ip6_addr.h"
+#include <string.h>
 
 ESP_EVENT_DEFINE_BASE(NETIF_PPP_STATUS);
 
@@ -57,28 +59,54 @@ static void on_ppp_status_changed(ppp_pcb *pcb, int err_code, void *ctx)
     switch (err_code) {
         case PPPERR_NONE: /* Connected */
             ESP_LOGI(TAG, "Connected");
+            if (pcb->if4_up && !ip_addr_isany(&pppif->ip_addr)) {
+                evt.ip_info.ip.addr = pppif->ip_addr.u_addr.ip4.addr;
+                evt.ip_info.gw.addr = pppif->gw.u_addr.ip4.addr;
+                evt.ip_info.netmask.addr = pppif->netmask.u_addr.ip4.addr;
 
-            evt.ip_info.ip.addr = pppif->ip_addr.u_addr.ip4.addr;
-            evt.ip_info.gw.addr = pppif->gw.u_addr.ip4.addr;
-            evt.ip_info.netmask.addr = pppif->netmask.u_addr.ip4.addr;
+                dest_ip = dns_getserver(0);
+                if(dest_ip != NULL){
+                    ns1.addr = (*dest_ip).u_addr.ip4.addr;
+                }
+                dest_ip = dns_getserver(1);
+                if(dest_ip != NULL){
+                    ns2.addr = (*dest_ip).u_addr.ip4.addr;
+                }
+                ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&ns1));
+                ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&ns2));
 
-            dest_ip = dns_getserver(0);
-            if(dest_ip != NULL){
-                ns1.addr = (*dest_ip).u_addr.ip4.addr;
+
+                err = esp_event_post(IP_EVENT, netif->get_ip_event, &evt, sizeof(evt), 0);
+                if (ESP_OK != err) {
+                    ESP_LOGE(TAG, "esp_event_post failed with code %d", err);
+                }
+                return;
+#if PPP_IPV6_SUPPORT
+            } else if (pcb->if6_up && !ip_addr_isany(&pppif->ip6_addr[0])) {
+                esp_netif_ip6_info_t ip6_info;
+                ip6_addr_t lwip_ip6_info;
+                ip_event_got_ip6_t ip6_event = { .esp_netif = pppif->state, .if_index = -1 };
+
+                ip6_addr_set(&lwip_ip6_info, ip_2_ip6(&pppif->ip6_addr[0]));
+#if LWIP_IPV6_SCOPES
+                memcpy(&ip6_info.ip, &lwip_ip6_info, sizeof(esp_ip6_addr_t));
+#else
+                memcpy(&ip6_info.ip, &lwip_ip6_info, sizeof(ip6_addr_t));
+                ip6_info.ip.zone = 0;   // zero out zone, as not used in lwip
+#endif /* LWIP_IPV6_SCOPES */
+                memcpy(&ip6_event.ip6_info, &ip6_info, sizeof(esp_netif_ip6_info_t));
+
+                ESP_LOGI(TAG, "Got IPv6 address " IPV6STR, IPV62STR(pppif->ip6_addr[0].u_addr.ip6));
+                err = esp_event_post(IP_EVENT, IP_EVENT_GOT_IP6, &ip6_event, sizeof(ip6_event), 0);
+                if (ESP_OK != err) {
+                    ESP_LOGE(TAG, "esp_event_post failed with code %d", err);
+                }
+                return;
+#endif /* PPP_IPV6_SUPPORT */
+            } else {
+                ESP_LOGE(TAG, "Unexpected connected event");
+                return;
             }
-            dest_ip = dns_getserver(1);
-            if(dest_ip != NULL){
-                ns2.addr = (*dest_ip).u_addr.ip4.addr;
-            }
-            ESP_LOGI(TAG, "Name Server1: " IPSTR, IP2STR(&ns1));
-            ESP_LOGI(TAG, "Name Server2: " IPSTR, IP2STR(&ns2));
-
-
-            err = esp_event_post(IP_EVENT, netif->get_ip_event, &evt, sizeof(evt), 0);
-            if (ESP_OK != err) {
-                ESP_LOGE(TAG, "esp_event_send_internal failed with code %d", err);
-            }
-            return;
 
         case PPPERR_PARAM:
             ESP_LOGE(TAG, "Invalid parameter");
