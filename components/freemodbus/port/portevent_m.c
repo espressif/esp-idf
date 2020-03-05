@@ -153,9 +153,19 @@ void vMBMasterOsResInit( void )
 BOOL xMBMasterRunResTake( LONG lTimeOut )
 {
     BaseType_t xStatus = pdTRUE;
+    static uint8_t errorCounter = 0;
 
     // If waiting time is -1. It will wait forever
     xStatus = xSemaphoreTake(xSemaphorMasterHdl, lTimeOut );
+    /* START work around https://zodiactest.atlassian.net/browse/EQ-1059 */
+    if(xStatus != pdTRUE) {
+        errorCounter++;
+        if(errorCounter > 5) {
+            vMBMasterRunResRelease();
+            errorCounter = 0;
+        }
+    }
+    /* END work around*/
     MB_PORT_CHECK((xStatus == pdTRUE), FALSE , "%s:Take resource failure.", __func__);
     ESP_LOGV(MB_PORT_TAG,"%s:Take resource (%lu ticks).", __func__, lTimeOut);
     return TRUE;
