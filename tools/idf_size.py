@@ -31,7 +31,6 @@ import os.path
 import re
 import sys
 
-DEFAULT_TOOLCHAIN_PREFIX = "xtensa-esp32-elf-"
 GLOBAL_JSON_INDENT = 4
 GLOBAL_JSON_SEPARATORS = (',', ': ')
 
@@ -300,12 +299,6 @@ def sizes_by_key(sections, key):
 
 def main():
     parser = argparse.ArgumentParser(description="idf_size - a tool to print size information from an IDF MAP file")
-
-    parser.add_argument(
-        # FIXME: toolchain is not used
-        '--toolchain-prefix',
-        help="Triplet prefix to add before objdump executable",
-        default=DEFAULT_TOOLCHAIN_PREFIX)
 
     parser.add_argument(
         '--json',
