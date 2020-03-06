@@ -14,17 +14,13 @@
 
 #pragma once
 
-#include <esp_types.h>
-#include "esp_intr_alloc.h"
+#include "esp_types.h"
 #include "esp_err.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/xtensa_api.h"
-#include "soc/soc.h"
-#include "soc/pcnt_caps.h"
 #include "driver/gpio.h"
 #include "hal/pcnt_types.h"
-#include "hal/pcnt_hal.h"
+#include "soc/pcnt_periph.h"
 
 #ifdef __cplusplus
 extern "C" {
