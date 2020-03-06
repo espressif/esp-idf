@@ -533,6 +533,8 @@ esp_err_t rmt_set_err_intr_en(rmt_channel_t channel, bool en);
 /**
 * @brief Set RMT TX interrupt enable
 *
+* This function requires the driver to be installed first!
+*
 * @param channel RMT channel
 * @param en enable or disable TX interrupt.
 *
@@ -545,7 +547,9 @@ esp_err_t rmt_set_tx_intr_en(rmt_channel_t channel, bool en);
 /**
 * @brief Set RMT TX threshold event interrupt enable
 *
-* An interrupt will be triggered when the number of transmitted items reaches the threshold value
+* An interrupt will be triggered when the number of transmitted items reaches the threshold value.
+* This function requires the driver to be installed first!
+*
 *
 * @param channel RMT channel
 * @param en enable or disable TX event interrupt.
