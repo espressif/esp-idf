@@ -38,9 +38,11 @@
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/rtc.h"
+#include "esp32/rom/crc.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"
 #include "esp32s2/rom/rtc.h"
+#include "esp32s2/rom/crc.h"
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32
@@ -85,6 +87,69 @@ static int64_t s_phy_rf_en_ts = 0;
 
 static DRAM_ATTR portMUX_TYPE s_phy_int_mux = portMUX_INITIALIZER_UNLOCKED;
 
+#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+/* The following static variables are only used by Wi-Fi tasks, so they can be handled without lock */
+static phy_init_data_type_t s_phy_init_data_type = 0;
+
+static phy_init_data_type_t s_current_apply_phy_init_data = 0;
+
+static char s_phy_current_country[PHY_COUNTRY_CODE_LEN] = {0};
+
+/* Whether it is a new bin */
+static bool s_multiple_phy_init_data_bin = false;
+
+/* PHY init data type array */
+static char* s_phy_type[ESP_PHY_INIT_DATA_TYPE_NUMBER] = {"DEFAULT", "SRRC", "FCC", "CE", "NCC", "KCC", "MIC", "IC", 
+    "ACMA", "ANATEL", "ISED", "WPC", "OFCA", "IFETEL", "RCM"};
+
+/* Country and PHY init data type map */
+static phy_country_to_bin_type_t s_country_code_map_type_table[] = {
+    {"AT",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"AU",  ESP_PHY_INIT_DATA_TYPE_ACMA},
+    {"BE",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"BG",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"BR",  ESP_PHY_INIT_DATA_TYPE_ANATEL},
+    {"CA",  ESP_PHY_INIT_DATA_TYPE_ISED},
+    {"CH",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"CN",  ESP_PHY_INIT_DATA_TYPE_SRRC},     
+    {"CY",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"CZ",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"DE",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"DK",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"EE",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"ES",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"FI",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"FR",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"GB",  ESP_PHY_INIT_DATA_TYPE_CE},   
+    {"GR",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"HK",  ESP_PHY_INIT_DATA_TYPE_OFCA},
+    {"HR",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"HU",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"IE",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"IN",  ESP_PHY_INIT_DATA_TYPE_WPC},
+    {"IS",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"IT",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"JP",  ESP_PHY_INIT_DATA_TYPE_MIC}, 
+    {"KR",  ESP_PHY_INIT_DATA_TYPE_KCC},
+    {"LI",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"LT",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"LU",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"LV",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"MT",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"MX",  ESP_PHY_INIT_DATA_TYPE_IFETEL},
+    {"NL",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"NO",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"NZ",  ESP_PHY_INIT_DATA_TYPE_RCM},
+    {"PL",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"PT",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"RO",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"SE",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"SI",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"SK",  ESP_PHY_INIT_DATA_TYPE_CE},
+    {"TW",  ESP_PHY_INIT_DATA_TYPE_NCC},
+    {"US",  ESP_PHY_INIT_DATA_TYPE_FCC},
+};
+#endif
 uint32_t IRAM_ATTR phy_enter_critical(void)
 {
     if (xPortInIsrContext()) {
@@ -502,6 +567,14 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         ESP_LOGE(TAG, "failed to validate PHY data partition");
         return NULL;
     }
+#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN    
+    if ((*(init_data_store + (sizeof(phy_init_magic_pre) + PHY_SUPPORT_MULTIPLE_BIN_OFFSET)))) {
+        s_multiple_phy_init_data_bin = true;
+        ESP_LOGI(TAG, "Support multiple PHY init data bins");
+    } else {
+        ESP_LOGW(TAG, "Does not support multiple PHY init data bins");
+    }
+#endif
     ESP_LOGD(TAG, "PHY data partition validated");
     return (const esp_phy_init_data_t*) (init_data_store + sizeof(phy_init_magic_pre));
 }
@@ -601,6 +674,7 @@ static esp_err_t load_cal_data_from_nvs_handle(nvs_handle_t handle,
 {
     esp_err_t err;
     uint32_t cal_data_version;
+
     err = nvs_get_u32(handle, PHY_CAL_VERSION_KEY, &cal_data_version);
     if (err != ESP_OK) {
         ESP_LOGD(TAG, "%s: failed to get cal_version (0x%x)", __func__, err);
@@ -765,3 +839,227 @@ void esp_phy_load_cal_and_init(phy_rf_module_t module)
     free(cal_data); // PHY maintains a copy of calibration data, so we can free this
 }
 
+#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+static esp_err_t phy_crc_check_init_data(uint8_t* init_data, const uint8_t* checksum, size_t init_data_length)
+{   
+    uint32_t crc_data = 0;
+    crc_data = crc32_le(crc_data, init_data, init_data_length);
+    uint32_t crc_size_conversion = htonl(crc_data);
+
+    if (crc_size_conversion != *(uint32_t*)(checksum)) {
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+static uint8_t phy_find_bin_type_according_country(const char* country)
+{
+    uint32_t i = 0;
+    uint8_t phy_init_data_type = 0;
+
+    for (i = 0; i < sizeof(s_country_code_map_type_table)/sizeof(phy_country_to_bin_type_t); i++) 
+    {
+        if (!memcmp(country, s_country_code_map_type_table[i].cc, sizeof(s_phy_current_country))) {
+            phy_init_data_type = s_country_code_map_type_table[i].type;
+            ESP_LOGD(TAG, "Current country is %c%c, PHY init data type is %s\n", s_country_code_map_type_table[i].cc[0],
+                    s_country_code_map_type_table[i].cc[1], s_phy_type[s_country_code_map_type_table[i].type]);
+            break;
+        }
+    }
+
+    if (i == sizeof(s_country_code_map_type_table)/sizeof(phy_country_to_bin_type_t)) {
+        phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT;
+        ESP_LOGW(TAG, "Use the default certification code beacuse %c%c doesn't have a certificate", country[0], country[1]);
+    }
+
+    return phy_init_data_type;
+}
+
+static esp_err_t phy_find_bin_data_according_type(uint8_t* out_init_data_store,
+        const phy_control_info_data_t* init_data_control_info,
+        const uint8_t* init_data_multiple,
+        phy_init_data_type_t init_data_type)
+{
+      int i = 0;
+      for (i = 0; i < init_data_control_info->number; i++) {
+          if (init_data_type == *(init_data_multiple + (i * sizeof(esp_phy_init_data_t)) + PHY_INIT_DATA_TYPE_OFFSET)) {
+              memcpy(out_init_data_store + sizeof(phy_init_magic_pre),
+                      init_data_multiple + (i * sizeof(esp_phy_init_data_t)), sizeof(esp_phy_init_data_t));
+              break;
+          }
+      }
+
+      if (i == init_data_control_info->number) {
+          return ESP_FAIL;
+      }
+      return ESP_OK;
+}
+
+static esp_err_t phy_get_multiple_init_data(const esp_partition_t* partition,
+        uint8_t* init_data_store,
+        size_t init_data_store_length,
+        phy_init_data_type_t init_data_type)
+{
+    phy_control_info_data_t* init_data_control_info = (phy_control_info_data_t*) malloc(sizeof(phy_control_info_data_t));
+    if (init_data_control_info == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for PHY init data control info");
+        return ESP_FAIL;
+    }
+    
+    esp_err_t err = esp_partition_read(partition, init_data_store_length, init_data_control_info, sizeof(phy_control_info_data_t));
+    if (err != ESP_OK) {
+        free(init_data_control_info);
+        ESP_LOGE(TAG, "failed to read PHY control info data partition (0x%x)", err);
+        return ESP_FAIL;
+    }
+
+    if ((init_data_control_info->check_algorithm) == PHY_CRC_ALGORITHM) {
+        err =  phy_crc_check_init_data(init_data_control_info->multiple_bin_checksum, init_data_control_info->control_info_checksum,
+                sizeof(phy_control_info_data_t) - sizeof(init_data_control_info->control_info_checksum));
+        if (err != ESP_OK) {
+            free(init_data_control_info);
+            ESP_LOGE(TAG, "PHY init data control info check error");
+            return ESP_FAIL;
+        }
+    } else {
+        free(init_data_control_info);
+        ESP_LOGE(TAG, "Check algorithm not CRC, PHY init data update failed");
+        return ESP_FAIL;
+    }
+
+    uint8_t* init_data_multiple = (uint8_t*) malloc(sizeof(esp_phy_init_data_t) * init_data_control_info->number);
+    if (init_data_multiple == NULL) {
+        free(init_data_control_info);
+        ESP_LOGE(TAG, "failed to allocate memory for PHY init data multiple bin");
+        return ESP_FAIL;
+    } 
+    
+    err = esp_partition_read(partition, init_data_store_length + sizeof(phy_control_info_data_t),
+            init_data_multiple, sizeof(esp_phy_init_data_t) * init_data_control_info->number);
+    if (err != ESP_OK) {
+        free(init_data_multiple);
+        free(init_data_control_info);
+        ESP_LOGE(TAG, "failed to read PHY init data multiple bin partition (0x%x)", err);
+        return ESP_FAIL;
+    }
+    
+    if ((init_data_control_info->check_algorithm) == PHY_CRC_ALGORITHM) {
+        err = phy_crc_check_init_data(init_data_multiple, init_data_control_info->multiple_bin_checksum, 
+                sizeof(esp_phy_init_data_t) * init_data_control_info->number);
+        if (err != ESP_OK) {
+            free(init_data_multiple);
+            free(init_data_control_info);
+            ESP_LOGE(TAG, "PHY init data multiple bin check error");
+            return ESP_FAIL;
+        }
+    } else {
+        free(init_data_multiple);
+        free(init_data_control_info);
+        ESP_LOGE(TAG, "Check algorithm not CRC, PHY init data update failed");
+        return ESP_FAIL;
+    }
+
+    err = phy_find_bin_data_according_type(init_data_store, init_data_control_info, init_data_multiple, init_data_type);
+    if (err != ESP_OK) {
+		ESP_LOGW(TAG, "%s has not been certified, use DEFAULT PHY init data", s_phy_type[init_data_type]);
+		s_phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT; 
+    } else {
+        s_phy_init_data_type = init_data_type;
+    }
+
+    free(init_data_multiple);
+    free(init_data_control_info);
+    return ESP_OK;
+}
+
+esp_err_t esp_phy_update_init_data(phy_init_data_type_t init_data_type)
+{
+    const esp_partition_t* partition = esp_partition_find_first(
+          ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_PHY, NULL);
+    if (partition == NULL) {
+        ESP_LOGE(TAG, "Updated country code PHY data partition not found");
+        return ESP_FAIL;
+    }
+    size_t init_data_store_length = sizeof(phy_init_magic_pre) +
+        sizeof(esp_phy_init_data_t) + sizeof(phy_init_magic_post);
+    uint8_t* init_data_store = (uint8_t*) malloc(init_data_store_length);
+    if (init_data_store == NULL) {
+        ESP_LOGE(TAG, "failed to allocate memory for updated country code PHY init data");
+        return ESP_ERR_NO_MEM;
+    }
+
+    esp_err_t err = esp_partition_read(partition, 0, init_data_store, init_data_store_length);
+    if (err != ESP_OK) {
+        free(init_data_store);
+        ESP_LOGE(TAG, "failed to read updated country code PHY data partition (0x%x)", err);
+        return ESP_FAIL;
+    }
+    if (memcmp(init_data_store, PHY_INIT_MAGIC, sizeof(phy_init_magic_pre)) != 0 ||
+            memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
+                PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) != 0) {
+        free(init_data_store);
+        ESP_LOGE(TAG, "failed to validate updated country code PHY data partition");
+        return ESP_FAIL;
+    }
+
+    //find init data bin according init data type
+    if (init_data_type != ESP_PHY_INIT_DATA_TYPE_DEFAULT) {
+        err = phy_get_multiple_init_data(partition, init_data_store, init_data_store_length, init_data_type);
+        if (err != ESP_OK) {
+            free(init_data_store);
+#if CONFIG_ESP32_PHY_INIT_DATA_ERROR
+            abort();
+#else
+            return ESP_FAIL;
+#endif
+        }
+    } else {
+        s_phy_init_data_type = ESP_PHY_INIT_DATA_TYPE_DEFAULT;
+    }
+
+    if (s_current_apply_phy_init_data != s_phy_init_data_type) {
+        err = esp_phy_apply_phy_init_data(init_data_store + sizeof(phy_init_magic_pre));
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "PHY init data failed to load");
+            free(init_data_store);
+            return ESP_FAIL;
+        }
+
+        ESP_LOGI(TAG, "PHY init data type updated from %s to %s",
+                s_phy_type[s_current_apply_phy_init_data], s_phy_type[s_phy_init_data_type]);
+        s_current_apply_phy_init_data = s_phy_init_data_type;
+    }
+
+    free(init_data_store);
+    return ESP_OK;
+}
+#endif
+
+esp_err_t esp_phy_update_country_info(const char *country)
+{
+#if CONFIG_ESP32_SUPPORT_MULTIPLE_PHY_INIT_DATA_BIN
+    uint8_t phy_init_data_type_map = 0;
+    //if country equal s_phy_current_country, return;
+    if (!memcmp(country, s_phy_current_country, sizeof(s_phy_current_country))) {
+        return ESP_OK;
+    }
+
+    memcpy(s_phy_current_country, country, sizeof(s_phy_current_country));
+    
+    if (!s_multiple_phy_init_data_bin) {
+        ESP_LOGD(TAG, "Does not support multiple PHY init data bins");
+        return ESP_FAIL;
+    }
+
+    phy_init_data_type_map = phy_find_bin_type_according_country(country);
+    if (phy_init_data_type_map == s_phy_init_data_type) {
+        return ESP_OK;
+    }
+    
+    esp_err_t err =  esp_phy_update_init_data(phy_init_data_type_map);
+    if (err != ESP_OK) {
+        return err;
+    }
+#endif 
+    return ESP_OK;
+}

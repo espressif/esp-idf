@@ -41,6 +41,7 @@
 #include "esp32s2/clk.h"
 #include "soc/dport_reg.h"
 #include "soc/syscon_reg.h"
+#include "phy_init_data.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"
@@ -576,6 +577,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._dport_access_stall_other_cpu_end_wrap = esp_empty_wrapper,
     ._phy_rf_deinit = esp_phy_rf_deinit,
     ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
+    ._phy_update_country_info = esp_phy_update_country_info,
     ._read_mac = esp_read_mac,
     ._timer_arm = timer_arm_wrapper,
     ._timer_disarm = timer_disarm_wrapper,
