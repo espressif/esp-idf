@@ -25,7 +25,7 @@
 
 void mpu_hal_set_region_access(int id, mpu_access_t access)
 {
-    uint32_t addr = cpu_ll_id_to_addr(id);
+    uint32_t addr = mpu_ll_id_to_addr(id);
 
     switch (access)
     {
@@ -47,6 +47,9 @@ void mpu_hal_set_region_access(int id, mpu_access_t access)
             break;
         case MPU_REGION_RWX:
             mpu_ll_set_region_rwx(addr);
+            break;
+        case MPU_REGION_ILLEGAL:
+            mpu_ll_set_region_illegal(addr);
             break;
         default:
             break;
