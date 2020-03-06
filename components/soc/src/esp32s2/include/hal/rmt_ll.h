@@ -253,7 +253,7 @@ static inline void rmt_ll_get_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t ch
     *low_ticks = dev->carrier_duty_ch[channel].low;
 }
 
-static inline void rmt_ll_enable_tx_carrier(rmt_dev_t *dev, uint32_t channel, bool enable)
+static inline void rmt_ll_enable_carrier(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->conf_ch[channel].conf0.carrier_en = enable;
 }

@@ -18,21 +18,8 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 #define RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
-
-/**
-* @brief RMT channel ID
-*
-*/
-typedef enum {
-    RMT_CHANNEL_0,  /*!< RMT channel number 0 */
-    RMT_CHANNEL_1,  /*!< RMT channel number 1 */
-    RMT_CHANNEL_2,  /*!< RMT channel number 2 */
-    RMT_CHANNEL_3,  /*!< RMT channel number 3 */
-    RMT_CHANNEL_MAX /*!< Number of RMT channels */
-} rmt_channel_id_t;
+#define RMT_CHANNELS_NUM (4)       /*!< Total 4 channels */
 
 #ifdef __cplusplus
 }

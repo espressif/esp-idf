@@ -28,6 +28,8 @@ extern "C" {
 #include "soc/rmt_struct.h"
 #include "hal/rmt_types.h"
 
+#define RMT_CHANNEL_FLAGS_ALWAYS_ON (1 << 0)    /*!< Channel can work when APB frequency is changing (RMT channel adopts REF_TICK as clock source) */
+
 /**
  * @brief Define memory space of each RMT channel (in words = 4 bytes)
  *
@@ -65,6 +67,7 @@ typedef struct {
     gpio_num_t gpio_num;   /*!< RMT GPIO number */
     uint8_t clk_div;       /*!< RMT channel counter divider */
     uint8_t mem_block_num; /*!< RMT memory block number */
+    uint32_t flags;        /*!< RMT channel extra configurations, OR'd with RMT_CHANNEL_FLAGS_[*] */
     union {
         rmt_tx_config_t tx_config; /*!< RMT TX parameter */
         rmt_rx_config_t rx_config; /*!< RMT RX parameter */
@@ -82,6 +85,7 @@ typedef struct {
         .gpio_num = gpio,                            \
         .clk_div = 80,                               \
         .mem_block_num = 1,                          \
+        .flags = 0,                                  \
         .tx_config = {                               \
             .carrier_freq_hz = 38000,                \
             .carrier_level = RMT_CARRIER_LEVEL_HIGH, \
@@ -104,6 +108,7 @@ typedef struct {
         .gpio_num = gpio,                       \
         .clk_div = 80,                          \
         .mem_block_num = 1,                     \
+        .flags = 0,                             \
         .rx_config = {                          \
             .idle_threshold = 12000,            \
             .filter_ticks_thresh = 100,         \
