@@ -257,6 +257,15 @@ config BT_NIMBLE_HS_FLOW_CTRL_TX_ON_DISCONNECT
         Enable this option to send number-of-completed-packets event to
         controller after disconnection
 
+config BT_NIMBLE_RPA_TIMEOUT
+    int "RPA timeout in seconds"
+    range 1 41400
+    depends on BT_NIMBLE_ENABLED
+    default 900
+    help
+        Time interval between RPA address change. This is applicable in case of
+        Host based RPA
+
 menuconfig BT_NIMBLE_MESH
     bool "Enable BLE mesh functionality"
     select BT_NIMBLE_SM_SC
