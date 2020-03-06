@@ -162,6 +162,11 @@ static inline void cpu_ll_break(void)
     __asm__ ("break 0,0");
 }
 
+static inline void cpu_ll_set_vecbase(const void* vecbase)
+{
+    asm volatile ("wsr %0, vecbase" :: "r" (vecbase));
+}
+
 #ifdef __cplusplus
 }
 #endif
