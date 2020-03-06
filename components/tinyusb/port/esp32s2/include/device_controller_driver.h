@@ -14,22 +14,38 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/usb_pins.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+// Espressif
+#include "driver/periph_ctrl.h"
+#include "freertos/xtensa_api.h"
+#include "esp_intr_alloc.h"
+#include "esp_log.h"
+#include "esp32s2/rom/gpio.h"
+#include "soc/dport_reg.h"
 #include "soc/gpio_sig_map.h"
-#include "soc/usb_reg.h"
-#include "soc/usb_types.h"
-#include "soc/usb_struct.h"
+#include "soc/usb_periph.h"
+#include "tusb_config.h"
+// TinyUSB
+#include "tusb_option.h"
+#include "descriptors_control.h"
+#include "device/dcd.h"
 
-/**
- * @brief A pin decriptor for init
- */
+
+#define USB_EP_DIRECTIONS 2
+#define USB_MAX_EP_NUM 16
+
 typedef struct {
-    const int pin;
-    const int func;
-    const bool is_output;
-    const int ext_phy_only;
-} usb_iopin_dsc_t;
+    uint8_t *buffer;
+    uint16_t total_len;
+    uint16_t queued_len;
+    uint16_t max_size;
+    bool short_packet;
+} xfer_ctl_t;
 
-extern const usb_iopin_dsc_t usb_periph_iopins[];
+#ifdef __cplusplus
+}
+#endif

@@ -14,22 +14,17 @@
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/usb_pins.h"
-#include "soc/gpio_sig_map.h"
-#include "soc/usb_reg.h"
-#include "soc/usb_types.h"
-#include "soc/usb_struct.h"
+#include "tusb.h"
 
-/**
- * @brief A pin decriptor for init
- */
-typedef struct {
-    const int pin;
-    const int func;
-    const bool is_output;
-    const int ext_phy_only;
-} usb_iopin_dsc_t;
+#define _PID_MAP(itf, n) ((CFG_TUD_##itf) << (n))
 
-extern const usb_iopin_dsc_t usb_periph_iopins[];
+#define USB_ESPRESSIF_VID 0x303A
+
+#define USB_STRING_DESCRIPTOR_ARRAY_SIZE 7
+typedef char *tusb_desc_strarray_device_t[USB_STRING_DESCRIPTOR_ARRAY_SIZE];
+
+tusb_desc_device_t descriptor_tinyusb;
+tusb_desc_strarray_device_t descriptor_str_tinyusb;
+
+tusb_desc_device_t descriptor_kconfig;
+tusb_desc_strarray_device_t descriptor_str_kconfig;
