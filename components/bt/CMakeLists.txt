@@ -480,6 +480,7 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_hs_adv.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_hci.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_hci_util.c"
+                    "host/nimble/nimble/nimble/host/src/ble_hs_resolv.c"
                     "host/nimble/nimble/nimble/host/store/ram/src/ble_store_ram.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_config.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
