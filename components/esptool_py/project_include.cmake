@@ -226,7 +226,12 @@ $<JOIN:$<TARGET_PROPERTY:encrypted-${target_name},IMAGES>,\n>")
                     CONTENT "${flash_args_content}")
         file(GENERATE OUTPUT "${build_dir}/encrypted_${target_name}_args"
                     INPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in")
+    else()
+        fail_target(encrypted-${target_name} "Error: The target encrypted-${target_name} requires"
+                    "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT to be enabled.")
+
     endif()
+
 endfunction()
 
 
