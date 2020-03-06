@@ -354,6 +354,28 @@ static inline void i2s_ll_set_rx_chan_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
+ * @brief Set I2S tx dma equal
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set tx dma equal
+ */
+static inline void i2s_ll_set_tx_dma_equal(i2s_dev_t *hw, uint32_t val)
+{
+    hw->conf.tx_dma_equal = val;
+}
+
+/**
+ * @brief Set I2S rx dma equal
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param val value to set rx dma equal
+ */
+static inline void i2s_ll_set_rx_dma_equal(i2s_dev_t *hw, uint32_t val)
+{
+    hw->conf.rx_dma_equal = val;
+}
+
+/**
  * @brief Set I2S out link address
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -384,61 +406,6 @@ static inline void i2s_ll_set_in_link_addr(i2s_dev_t *hw, uint32_t val)
 static inline void i2s_ll_set_rx_eof_num(i2s_dev_t *hw, uint32_t val)
 {
     hw->rx_eof_num = val;
-}
-
-/**
- * @brief Get I2S tx pdm fp
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx pdm fp
- */
-static inline void i2s_ll_get_tx_pdm_fp(i2s_dev_t *hw, uint32_t *val)
-{
-    *val = hw->pdm_freq_conf.tx_pdm_fp;
-}
-
-/**
- * @brief Get I2S tx pdm fs
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get tx pdm fs
- */
-static inline void i2s_ll_get_tx_pdm_fs(i2s_dev_t *hw, uint32_t *val)
-{
-    *val = hw->pdm_freq_conf.tx_pdm_fs;
-}
-
-/**
- * @brief Set I2S tx pdm fp
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm fp
- */
-static inline void i2s_ll_set_tx_pdm_fp(i2s_dev_t *hw, uint32_t val)
-{
-    hw->pdm_freq_conf.tx_pdm_fp = val;
-}
-
-/**
- * @brief Set I2S tx pdm fs
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm fs
- */
-static inline void i2s_ll_set_tx_pdm_fs(i2s_dev_t *hw, uint32_t val)
-{
-    hw->pdm_freq_conf.tx_pdm_fs = val;
-}
-
-/**
- * @brief Get I2S rx sinc dsr 16 en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to get rx sinc dsr 16 en
- */
-static inline void i2s_ll_get_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool *val)
-{
-    *val = hw->pdm_conf.rx_sinc_dsr_16_en;
 }
 
 /**
@@ -530,17 +497,6 @@ static inline void i2s_ll_set_rx_bits_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Set I2S rx sinc dsr 16 en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx sinc dsr 16 en
- */
-static inline void i2s_ll_set_rx_sinc_dsr_16_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.rx_sinc_dsr_16_en = val;
-}
-
-/**
  * @brief Set I2S dscr en
  *
  * @param hw Peripheral I2S hardware instance address.
@@ -571,50 +527,6 @@ static inline void i2s_ll_set_lcd_en(i2s_dev_t *hw, bool val)
 static inline void i2s_ll_set_camera_en(i2s_dev_t *hw, bool val)
 {
     hw->conf2.camera_en = val;
-}
-
-/**
- * @brief Set I2S pcm2pdm conv en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set pcm2pdm conv en
- */
-static inline void i2s_ll_set_pcm2pdm_conv_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.pcm2pdm_conv_en = val;
-}
-
-/**
- * @brief Set I2S pdm2pcm conv en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set pdm2pcm conv en
- */
-static inline void i2s_ll_set_pdm2pcm_conv_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.pdm2pcm_conv_en = val;
-}
-
-/**
- * @brief Set I2S rx pdm en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set rx pdm en
- */
-static inline void i2s_ll_set_rx_pdm_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.rx_pdm_en = val;
-}
-
-/**
- * @brief Set I2S tx pdm en
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx pdm en
- */
-static inline void i2s_ll_set_tx_pdm_en(i2s_dev_t *hw, bool val)
-{
-    hw->pdm_conf.tx_pdm_en = val;
 }
 
 /**
@@ -791,17 +703,6 @@ static inline void i2s_ll_set_tx_mono(i2s_dev_t *hw, uint32_t val)
 static inline void i2s_ll_set_rx_mono(i2s_dev_t *hw, uint32_t val)
 {
     hw->conf.rx_mono = val;
-}
-
-/**
- * @brief Set I2S tx sinc osr2
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param val value to set tx sinc osr2
- */
-static inline void i2s_ll_set_tx_sinc_osr2(i2s_dev_t *hw, uint32_t val)
-{
-    hw->pdm_conf.tx_sinc_osr2 = val;
 }
 
 /**

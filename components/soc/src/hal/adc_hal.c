@@ -16,7 +16,6 @@
 
 void adc_hal_init(void)
 {
-    adc_ll_set_power_manage(ADC_POWER_BY_FSM);
     // Set internal FSM wait time, fixed value.
     adc_ll_dig_set_fsm_time(SOC_ADC_FSM_RSTB_WAIT_DEFAULT, SOC_ADC_FSM_START_WAIT_DEFAULT,
                             SOC_ADC_FSM_STANDBY_WAIT_DEFAULT);

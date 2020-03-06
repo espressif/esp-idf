@@ -26,7 +26,14 @@ extern "C" {
 /**
  * @brief I2S port number, the max port number is (I2S_NUM_MAX -1).
  */
-typedef int i2s_port_t;
+typedef enum {
+    I2S_NUM_0 = 0,                 /*!< I2S port 0 */
+#if SOC_I2S_NUM > 1
+    I2S_NUM_1 = 1,                 /*!< I2S port 1 */
+#endif
+    I2S_NUM_MAX,                   /*!< I2S port max */
+} i2s_port_t;
+
 
 #define I2S_PIN_NO_CHANGE (-1) /*!< Use in i2s_pin_config_t for pins which should not be changed */
 
@@ -75,6 +82,7 @@ typedef enum {
     I2S_CHANNEL_FMT_ONLY_LEFT,
 } i2s_channel_fmt_t;
 
+#if SOC_I2S_SUPPORTS_PDM
 /**
  * @brief PDM sample rate ratio, measured in Hz.
  *
@@ -92,6 +100,7 @@ typedef enum {
     PDM_PCM_CONV_ENABLE,
     PDM_PCM_CONV_DISABLE,
 } pdm_pcm_conv_t;
+#endif
 
 /**
  * @brief I2S Mode, defaut is I2S_MODE_MASTER | I2S_MODE_TX
@@ -104,9 +113,11 @@ typedef enum {
     I2S_MODE_SLAVE = 2,
     I2S_MODE_TX = 4,
     I2S_MODE_RX = 8,
+#if SOC_I2S_SUPPORTS_ADC_DAC
     I2S_MODE_DAC_BUILT_IN = 16,       /*!< Output I2S data to built-in DAC, no matter the data format is 16bit or 32 bit, the DAC module will only take the 8bits from MSB*/
     I2S_MODE_ADC_BUILT_IN = 32,       /*!< Input I2S data from built-in ADC, each data can be 12-bit width at most*/
-#if SOC_I2S_SUPPORT_PDM
+#endif
+#if SOC_I2S_SUPPORTS_PDM
     I2S_MODE_PDM = 64,
 #endif
 } i2s_mode_t;
@@ -173,7 +184,7 @@ typedef struct {
     int data_in_num;    /*!< DATA in pin*/
 } i2s_pin_config_t;
 
-#if SOC_I2S_SUPPORT_PDM
+#if SOC_I2S_SUPPORTS_PDM
 /**
  * @brief I2S PDM RX downsample mode
  */

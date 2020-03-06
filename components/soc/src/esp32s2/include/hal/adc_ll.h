@@ -2,7 +2,7 @@
 
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
-#include "soc/apb_ctrl_struct.h"
+#include "soc/apb_saradc_struct.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -83,11 +83,11 @@ typedef enum {
 static inline void adc_ll_dig_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
-    APB_CTRL.saradc_fsm_wait.rstb_wait = rst_wait;
+    APB_SARADC.fsm_wait.rstb_wait = rst_wait;
     // Internal FSM start wait time
-    APB_CTRL.saradc_fsm_wait.xpd_wait = start_wait;
+    APB_SARADC.fsm_wait.xpd_wait = start_wait;
     // Internal FSM standby wait time
-    APB_CTRL.saradc_fsm_wait.standby_wait = standby_wait;
+    APB_SARADC.fsm_wait.standby_wait = standby_wait;
 }
 
 /**
@@ -99,7 +99,7 @@ static inline void adc_ll_dig_set_fsm_time(uint32_t rst_wait, uint32_t start_wai
  */
 static inline void adc_ll_dig_set_sample_cycle(uint32_t sample_cycle)
 {
-    APB_CTRL.saradc_fsm.sample_cycle = sample_cycle;
+    APB_SARADC.fsm.sample_cycle = sample_cycle;
 }
 
 /**
@@ -109,7 +109,7 @@ static inline void adc_ll_dig_set_sample_cycle(uint32_t sample_cycle)
  */
 static inline void adc_ll_dig_set_output_format(adc_ll_dig_output_format_t format)
 {
-    APB_CTRL.saradc_ctrl.data_sar_sel = format;
+    APB_SARADC.ctrl.data_sar_sel = format;
 }
 
 /**
@@ -120,7 +120,7 @@ static inline void adc_ll_dig_set_output_format(adc_ll_dig_output_format_t forma
  */
 static inline void adc_ll_dig_set_convert_limit_num(uint32_t meas_num)
 {
-    APB_CTRL.saradc_ctrl2.max_meas_num = meas_num;
+    APB_SARADC.ctrl2.max_meas_num = meas_num;
 }
 
 /**
@@ -129,7 +129,7 @@ static inline void adc_ll_dig_set_convert_limit_num(uint32_t meas_num)
  */
 static inline void adc_ll_dig_convert_limit_enable(void)
 {
-    APB_CTRL.saradc_ctrl2.meas_num_limit = 1;
+    APB_SARADC.ctrl2.meas_num_limit = 1;
 }
 
 /**
@@ -138,7 +138,7 @@ static inline void adc_ll_dig_convert_limit_enable(void)
  */
 static inline void adc_ll_dig_convert_limit_disable(void)
 {
-    APB_CTRL.saradc_ctrl2.meas_num_limit = 0;
+    APB_SARADC.ctrl2.meas_num_limit = 0;
 }
 
 /**
@@ -151,15 +151,15 @@ static inline void adc_ll_dig_convert_limit_disable(void)
 static inline void adc_ll_dig_set_convert_mode(adc_ll_convert_mode_t mode)
 {
     if (mode == ADC_CONV_SINGLE_UNIT_1) {
-        APB_CTRL.saradc_ctrl.work_mode = 0;
-        APB_CTRL.saradc_ctrl.sar_sel = 0;
+        APB_SARADC.ctrl.work_mode = 0;
+        APB_SARADC.ctrl.sar_sel = 0;
     } else if (mode == ADC_CONV_SINGLE_UNIT_2) {
-        APB_CTRL.saradc_ctrl.work_mode = 0;
-        APB_CTRL.saradc_ctrl.sar_sel = 1;
+        APB_SARADC.ctrl.work_mode = 0;
+        APB_SARADC.ctrl.sar_sel = 1;
     } else if (mode == ADC_CONV_BOTH_UNIT) {
-        APB_CTRL.saradc_ctrl.work_mode = 1;
+        APB_SARADC.ctrl.work_mode = 1;
     } else if (mode == ADC_CONV_ALTER_UNIT) {
-        APB_CTRL.saradc_ctrl.work_mode = 2;
+        APB_SARADC.ctrl.work_mode = 2;
     }
 }
 
@@ -171,7 +171,7 @@ static inline void adc_ll_dig_set_convert_mode(adc_ll_convert_mode_t mode)
 static inline void adc_ll_dig_set_data_source(adc_i2s_source_t src)
 {
     /* 1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix */
-    APB_CTRL.saradc_ctrl.data_to_i2s = src;
+    APB_SARADC.ctrl.data_to_i2s = src;
 }
 
 /**
@@ -186,9 +186,9 @@ static inline void adc_ll_dig_set_data_source(adc_i2s_source_t src)
 static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
 {
     if (adc_n == ADC_NUM_1) {
-        APB_CTRL.saradc_ctrl.sar1_patt_len = patt_len - 1;
+        APB_SARADC.ctrl.sar1_patt_len = patt_len - 1;
     } else { // adc_n == ADC_NUM_2
-        APB_CTRL.saradc_ctrl.sar2_patt_len = patt_len - 1;
+        APB_SARADC.ctrl.sar2_patt_len = patt_len - 1;
     }
 }
 
@@ -204,18 +204,17 @@ static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t pat
  */
 static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_ll_pattern_table_t pattern)
 {
-    uint32_t tab;
-    uint8_t *arg;
+    const uint32_t patt_tab_idx = pattern_index / 4;
+    const uint32_t patt_shift   = (3 - (pattern_index % 4)) * 8;
+    const uint32_t patt_mask    = 0xFF << patt_shift;
+
     if (adc_n == ADC_NUM_1) {
-        tab = *(uint32_t *)(&APB_CTRL.saradc_sar1_patt_tab1 + pattern_index / 4);
-        arg = (uint8_t *)&tab;
-        arg[pattern_index % 4] = pattern.val;
-        *(uint32_t *)(&APB_CTRL.saradc_sar1_patt_tab1 + pattern_index / 4) = tab;
-    } else { // adc_n == ADC_NUM_2
-        tab = *(uint32_t *)(&APB_CTRL.saradc_sar2_patt_tab1 + pattern_index / 4);
-        arg = (uint8_t *)&tab;
-        arg[pattern_index % 4] = pattern.val;
-        *(uint32_t *)(&APB_CTRL.saradc_sar2_patt_tab1 + pattern_index / 4) = tab;
+        APB_SARADC.sar1_patt_tab[patt_tab_idx] &= ~patt_mask;
+        APB_SARADC.sar1_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;
+    }
+    else { // adc_n == ADC_NUM_2
+        APB_SARADC.sar2_patt_tab[patt_tab_idx] &= ~patt_mask;
+        APB_SARADC.sar2_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;  
     }
 }
 
@@ -390,7 +389,7 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
 static inline void adc_ll_set_clk_div(uint32_t div)
 {
     /* ADC clock devided from APB clk, e.g. 80 / 2 = 40Mhz, */
-    APB_CTRL.saradc_ctrl.sar_clk_div = div;
+    APB_SARADC.ctrl.sar_clk_div = div;
 }
 
 /**
@@ -457,9 +456,9 @@ static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
 static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
 {
     if (adc_n == ADC_NUM_1) {
-        APB_CTRL.saradc_ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
+        APB_SARADC.ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
     } else { // adc_n == ADC_NUM_2
-        APB_CTRL.saradc_ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
+        APB_SARADC.ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
     }
 }
 

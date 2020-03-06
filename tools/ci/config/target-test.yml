@@ -345,7 +345,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 13
+  parallel: 14
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -419,7 +419,7 @@ UT_017:
 
 UT_018:
   extends: .unit_test_template
-  parallel: 3
+  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -451,13 +451,6 @@ UT_024:
   tags:
     - ESP32_IDF
     - UT_T1_MCPWM
-    - psram
-
-UT_026:
-  extends: .unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_I2S
     - psram
 
 UT_028:
