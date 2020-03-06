@@ -188,6 +188,11 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_FAIL;
     }
 
+    if (cfg->crt_bundle_attach != NULL) {
+        ESP_LOGE(TAG,"use_crt_bundle not supported in wolfssl");
+        return ESP_FAIL;
+    }
+
     tls->priv_ssl =(void *)wolfSSL_new( (WOLFSSL_CTX *)tls->priv_ctx);
     if (!tls->priv_ssl) {
         ESP_LOGE(TAG, "Create wolfSSL failed");
