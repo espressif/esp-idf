@@ -160,9 +160,9 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Examples**::
 
   1:         SUB R1, R2, R3             //R1 = R2 - R3
-  
+
   2:         sub R1, R2, 0x1234         //R1 = R2 - 0x1234
-  
+
   3:         .set value1, 0x03          //constant value1=0x03
              SUB R1, R2, value1         //R1 = R2 - value1
   4:         .global label              //declaration of variable label
@@ -211,7 +211,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Syntax**
   **OR** *Rdst, Rsrc1, Rsrc2*
- 
+
   **OR** *Rdst, Rsrc1, imm*
 
 **Operands**
@@ -222,12 +222,12 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Cycles**
   2 cycles to execute, 4 cycles to fetch next instruction
- 
+
 **Description**
   The instruction does logical OR of a source register and another source register or 16-bit signed value and stores result to the destination register.
 
 **Examples**::
- 
+
   1:       OR R1, R2, R3           //R1 = R2 \| R3
 
   2:       OR R1, R2, 0x1234       //R1 = R2 \| 0x1234
@@ -255,7 +255,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
   - *Rsrc1* - Register R[0..3]
   - *Rsrc2* - Register R[0..3]
   - *Imm* - 16-bit signed value
- 
+
 **Cycles**
   2 cycles to execute, 4 cycles to fetch next instruction
 
@@ -373,7 +373,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 **Examples**::
 
   1:        ST  R1, R2, 0x12        //MEM[R2+0x12] = R1
-  
+
   2:        .data                   //Data section definition
     Addr1:  .word     123           // Define label Addr1 16 bit
             .set      offs, 0x00    // Define constant offs
@@ -392,9 +392,9 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
 
 **Operands**
    *Rdst*  – Register R[0..3], destination
-   
+
    *Rsrc* – Register R[0..3], holds address of destination, in 32-bit words
-   
+
    *Offset* – 10-bit signed value, offset in bytes
 
 **Cycles**
@@ -481,8 +481,8 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
       - *EQ* (equal) – jump if value in R0 == threshold
       - *LT* (less than) – jump if value in R0 < threshold
       - *LE* (less or equal) – jump if value in R0 <= threshold
-      - *GT* (greater than) – jump if value in R0 > threshold 
-      - *GE* (greater or equal) – jump if value in R0 >= threshold 
+      - *GT* (greater than) – jump if value in R0 > threshold
+      - *GE* (greater or equal) – jump if value in R0 >= threshold
 
 
 **Cycles**
@@ -551,7 +551,7 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
     next:
 
     // JUMPS target, threshold, GT is implemented as:
-    
+
              JUMPS next, threshold, LE
              JUMPS target, threshold, GE
     next:
@@ -851,24 +851,23 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    **REG_RD**   *Addr, High, Low*
 
 **Operands**
-  - *Addr* – register address, in 32-bit words
-  - *High* – High part of R0
-  - *Low* – Low part of R0
+  - *Addr* – Register address, in 32-bit words
+  - *High* – Register end bit number
+  - *Low* – Register start bit number
 
 **Cycles**
   4 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-   The instruction reads up to 16 bits from a peripheral register into a general purpose register: ``R0 = REG[Addr][High:Low]``.
+  The instruction reads up to 16 bits from a peripheral register into a general purpose register: ``R0 = REG[Addr][High:Low]``.
 
-   This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP,
-   can be calculated from the address of the same register on the DPORT bus as follows::
+  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP, can be calculated from the address of the same register on the DPORT bus as follows::
 
     addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
 
 **Examples**::
 
-  1:        REG_RD      0x120, 2, 0     // load 4 bits: R0 = {12'b0, REG[0x120][7:4]}
+  1:        REG_RD      0x120, 7, 4     // load 4 bits: R0 = {12'b0, REG[0x120][7:4]}
 
 
 **REG_WR** – write to peripheral register
@@ -878,19 +877,18 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
   **REG_WR**   *Addr, High, Low, Data*
 
 **Operands**
-  - *Addr* – register address, in 32-bit words.
-  - *High* – High part of R0
-  - *Low* – Low part of R0
-  - *Data* – value to write, 8 bits
+  - *Addr* – Register address, in 32-bit words.
+  - *High* – Register end bit number
+  - *Low* – Register start bit number
+  - *Data* – Value to write, 8 bits
 
 **Cycles**
   8 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-   The instruction writes up to 8 bits from a general purpose register into a peripheral register. ``REG[Addr][High:Low] = data``
+  The instruction writes up to 8 bits from an immediate data value into a peripheral register: ``REG[Addr][High:Low] = data``.
 
-   This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP,
-   can be calculated from the address of the same register on the DPORT bus as follows::
+  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP, can be calculated from the address of the same register on the DPORT bus as follows::
 
     addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
 
@@ -942,9 +940,4 @@ WRITE_RTC_FIELD(rtc_reg, field, value)
 
     /* Set RTC_CNTL_ULP_CP_SLP_TIMER_EN field of RTC_CNTL_STATE0_REG to 0 */
     WRITE_RTC_FIELD(RTC_CNTL_STATE0_REG, RTC_CNTL_ULP_CP_SLP_TIMER_EN, 0)
-
-
-
-
-
 
