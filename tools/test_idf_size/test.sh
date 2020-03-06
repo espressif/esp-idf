@@ -12,6 +12,42 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py --files app.map &>> output \
     && echo -e "\n***\nRunning idf_size.py --archive_details..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --archive_details libdriver.a app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff with bootloader..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --diff bootloader.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff with itself..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff with another app..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --diff app2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff with app in reverse order..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app2.map --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archives with bootloader..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archives --diff bootloader.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archives with itself..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archives --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archives with another app..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archives --diff app2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archives with app in reverse order..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app2.map --archives --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --files with bootloader..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --files --diff bootloader.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --files with itself..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --files --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --files with another app..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --files --diff app2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --files with app in reverse order..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app2.map --files --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archive_details with bootloader..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libdriver.a --diff bootloader.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archive_details with bootloader..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libc.a --diff bootloader.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archive_details with itself..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libdriver.a --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archive_details with another app..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libdriver.a --diff app2.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archive_details with app in reverse order..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app2.map --archive_details libdriver.a --diff app.map &>> output \
+    && echo -e "\n***\nRunning idf_size.py diff --archive_details with another app..." &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py app.map --archive_details libfreertos.a --diff app2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py for esp32s2..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --target esp32s2 app_esp32s2.map &>> output \
     && echo -e "\n***\nRunning idf_size.py on bootloader for esp32s2..." &>> output \

@@ -44,5 +44,6 @@ if __name__ == "__main__":
     MemRegNames = collections.namedtuple('MemRegNames', ['iram_names', 'dram_names', 'diram_names', 'used_iram_names',
                                                          'used_dram_names', 'used_diram_names'])
     mem_reg = MemRegNames(set(), set(), set(), set(), set(), set())
-    print(idf_size.get_summary(mem_reg, {"iram0_0_seg": {"origin":0,"length":0}, "dram0_0_seg":
+
+    print(idf_size.get_summary('a.map', mem_reg, {"iram0_0_seg": {"origin":0,"length":0}, "dram0_0_seg":
           {"origin":0, "length":0}}, {}), end="")
