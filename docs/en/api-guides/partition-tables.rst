@@ -23,7 +23,7 @@ Built-in Partition Tables
 
 Here is the summary printed for the "Single factory app, no OTA" configuration::
 
-  # Espressif ESP Partition Table
+  # ESP-IDF Partition Table
   # Name,   Type, SubType, Offset,  Size, Flags
   nvs,      data, nvs,     0x9000,  0x6000,
   phy_init, data, phy,     0xf000,  0x1000,
@@ -34,7 +34,7 @@ Here is the summary printed for the "Single factory app, no OTA" configuration::
 
 Here is the summary printed for the "Factory app, two OTA definitions" configuration::
 
-  # Espressif ESP Partition Table
+  # ESP-IDF Partition Table
   # Name,   Type, SubType, Offset,  Size, Flags
   nvs,      data, nvs,     0x9000,  0x4000,
   otadata,  data, ota,     0xd000,  0x2000,

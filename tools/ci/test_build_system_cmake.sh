@@ -461,7 +461,7 @@ function run_tests()
     rm -r build
 
     print_status "Displays partition table when executing target partition_table"
-    idf.py partition_table | grep -E "# Espressif .+ Partition Table"
+    idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
     rm -r build
 
     print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
