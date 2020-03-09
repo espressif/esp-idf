@@ -1,10 +1,9 @@
-
 Flash Encryption
 ================
 
 :link_to_translation:`zh_CN:[中文]`
 
-This document is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Using an application code example, it demonstrates how to test and verify flash encryption operations during development and production.
+This is a quick start guide to {IDF_TARGET_NAME}'s flash encryption feature. Using an application code example, it demonstrates how to test and verify flash encryption operations during development and production.
 
 
 Introduction
@@ -12,7 +11,7 @@ Introduction
 
 Flash encryption is intended for encrypting the contents of the {IDF_TARGET_NAME}'s off-chip flash memory. Once this feature is enabled, firmware is flashed as plaintext, and then the data is encrypted in place on the first boot. As a result, physical readout of flash will not be sufficient to recover most flash contents.
 
-The following types of data are encrypted by default:
+With flash encryption enabled, the following types of data are encrypted by default:
 
 - Firmware bootloader
 - Partition Table
@@ -41,48 +40,84 @@ The flash encryption operation is controlled by various eFuses available on {IDF
 
 .. Comment: As text in cells of list-table header rows does not wrap, it is necessary to make 0 header rows and apply bold typeface to the first row. Otherwise, the table goes beyond the html page limits on the right.
 
-.. list-table:: eFuses Used in Flash Encryption
-   :widths: 25 40 10 15 10
-   :header-rows: 0
+.. only:: esp32
 
-   * - **eFuse**
-     - **Description**
-     - **Bit Depth**
-     - **Locking for Reading/Writing Available**
-     - **Default Value**
-   * - ``CODING_SCHEME``
-     - Controls actual number of BLOCK1 bits used to derive final 256-bit AES key. Possible values: ``0`` for 256 bits, ``1`` for 192 bits, ``2`` for 128 bits. Final AES key is derived based on the ``FLASH_CRYPT_CONFIG`` value.
-     - 2
-     - Yes
-     - 0
-   * - ``BLOCK1``
-     - AES key storage.
-     - 256
-     - Yes
-     - x
-   * - ``FLASH_CRYPT_CONFIG``
-     - Controls the AES encryption process.
-     - 4
-     - Yes
-     - 0xF
-   * - ``download_dis_encrypt``
-     - If set, disables flash encryption operation while running in Firmware Download mode.
-     - 1
-     - Yes
-     - 0
-   * - ``download_dis_decrypt``
-     - If set, disables flash decryption while running in UART Firmware Download mode.
-     - 1
-     - Yes
-     - 0
-   * - ``FLASH_CRYPT_CNT``
-     - Enables/disables encryption at boot time. If even number of bits set (0, 2, 4, 6) - encrypt flash at boot time. If odd number of bits set (1, 3, 5, 7) - do not encrypt flash at boot time.
-     - 7
-     - Yes
-     - 0
+    .. list-table:: eFuses Used in Flash Encryption
+       :widths: 25 40 10 15 10
+       :header-rows: 0
+
+       * - **eFuse**
+         - **Description**
+         - **Bit Depth**
+         - **Locking for Reading/Writing Available**
+         - **Default Value**
+       * - ``CODING_SCHEME``
+         - Controls actual number of BLOCK1 bits used to derive final 256-bit AES key. Possible values: ``0`` for 256 bits, ``1`` for 192 bits, ``2`` for 128 bits. Final AES key is derived based on the ``FLASH_CRYPT_CONFIG`` value.
+         - 2
+         - Yes
+         - 0
+       * - ``BLOCK1``
+         - AES key storage.
+         - 256
+         - Yes
+         - x
+       * - ``FLASH_CRYPT_CONFIG``
+         - Controls the AES encryption process.
+         - 4
+         - Yes
+         - 0xF
+       * - ``download_dis_encrypt``
+         - If set, disables flash encryption operation while running in Firmware Download mode.
+         - 1
+         - Yes
+         - 0
+       * - ``download_dis_decrypt``
+         - If set, disables flash decryption while running in UART Firmware Download mode.
+         - 1
+         - Yes
+         - 0
+       * - ``FLASH_CRYPT_CNT``
+         - Enables/disables encryption at boot time. If even number of bits set (0, 2, 4, 6) - encrypt flash at boot time. If odd number of bits set (1, 3, 5, 7) - do not encrypt flash at boot time.
+         - 7
+         - Yes
+         - 0
+
+    Read and write access to eFuse bits is controlled by appropriate fields in the registers ``efuse_wr_disable`` and ``efuse_rd_disable``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`.
 
 
-Read and write access to eFuse bits is controlled by appropriate fields in the registers ``efuse_wr_disable`` and ``efuse_rd_disable``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`.
+.. only:: esp32s2
+
+    .. list-table:: eFuses Used in Flash Encryption
+       :widths: 25 40 10 15 10
+       :header-rows: 0
+
+       * - **eFuse**
+         - **Description**
+         - **Bit Depth**
+         - **Locking for Reading/Writing Available**
+         - **Default Value**
+       * - ``EFUSE_KEY_PURPOSE_N``
+         - Controls the purpose of ``KEYN``, where N is between 0 and 5. Possible values: ``2`` for ``XTS_AES_256_KEY_1`` , ``3`` for ``XTS_AES_256_KEY_2``, and ``4`` for ``XTS_AES_128_KEY``. Final AES key is derived based on TABLE X.
+         - 4
+         - Yes
+         - 0
+       * - ``KEYN``
+         - AES key storage. N is between 0 and 5.
+         - 256
+         - Yes
+         - x
+       * - ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT``
+         - If set, disables flash encryption when in download bootmodes.
+         - 1
+         - Yes
+         - 0
+       * - ``EFUSE_SPI_BOOT_CRYPT_CNT``
+         - Enables encryption and decryption, when an SPI boot mode is set. Feature is enabled if 1 or 3 bits are set in the eFuse, disabled otherwise.
+         - 3
+         - Yes
+         - 0
+
+    Read and write access to eFuse bits is controlled by appropriate fields in the registers ``EFUSE_WR_DIS`` and ``EFUSE_RD_DIS``. For more information on {IDF_TARGET_NAME} eFuses, see :doc:`eFuse manager <../api-reference/system/efuse>`.
 
 
 Flash Encryption Process
@@ -90,14 +125,22 @@ Flash Encryption Process
 
 Assuming that the eFuse values are in their default states and the firmware bootloader is compiled to support flash encryption, the flash encryption process executes as shown below:
 
-#. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
-#. Firmware bootloader reads the ``FLASH_CRYPT_CNT`` eFuse value (``0b00000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical reference manual`_.
-#. Flash encryption block generates an AES-256 bit key and writes it into the BLOCK1 eFuse. This operation is done entirely by hardware, and the key cannot be accessed via software.
-#. Flash encryption block encrypts the flash contents - partitions encrypted by default and the ones marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
-#. Firmware bootloader sets the first available bit in ``FLASH_CRYPT_CNT`` (0b00000001) to mark the flash contents as encrypted. Odd number of bits is set.
-#. For :ref:`flash-enc-development-mode`, the firmware bootloader sets only the eFuse bits ``download_dis_decrypt`` and ``download_dis_cache`` to allow the UART bootloader to re-flash encrypted binaries. Also, the ``FLASH_CRYPT_CNT`` eFuse bits are NOT write-protected.
-#. For :ref:`flash-enc-release-mode`, the firmware bootloader sets the eFuse bits ``download_dis_encrypt``, ``download_dis_decrypt``, and ``download_dis_cache`` to 1 to prevent the UART bootloader from decrypting the flash contents. It also write-protects the ``FLASH_CRYPT_CNT`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
-#. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
+1. On the first power-on reset, all data in flash is un-encrypted (plaintext). The ROM bootloader loads the firmware bootloader.
+
+.. only:: esp32
+
+    2. Firmware bootloader reads the ``FLASH_CRYPT_CNT`` eFuse value (``0b00000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG`` eFuse to 0xF. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical reference manual`_.
+
+.. only:: esp32s2
+
+    2. Firmware bootloader reads the ``EFUSE_SPI_BOOT_CRYPT_CNT`` eFuse value (``0b00000000``). Since the value is ``0`` (even number of bits set), it configures and enables the flash encryption block. It also sets the ``FLASH_CRYPT_CONFIG???`` eFuse to 0xF. For more information on the flash encryption block, see `{IDF_TARGET_NAME} Technical reference manual`_.
+
+3. Flash encryption block generates an AES-256 bit key and writes it into the BLOCK1 eFuse. This operation is done entirely by hardware, and the key cannot be accessed via software.
+4. Flash encryption block encrypts the flash contents - partitions encrypted by default and the ones marked as ``encrypted``. Encrypting in-place can take time, up to a minute for large partitions.
+5. Firmware bootloader sets the first available bit in ``FLASH_CRYPT_CNT`` (0b00000001) to mark the flash contents as encrypted. Odd number of bits is set.
+6. For :ref:`flash-enc-development-mode`, the firmware bootloader sets only the eFuse bits ``download_dis_decrypt`` and ``download_dis_cache`` to allow the UART bootloader to re-flash encrypted binaries. Also, the ``FLASH_CRYPT_CNT`` eFuse bits are NOT write-protected.
+7. For :ref:`flash-enc-release-mode`, the firmware bootloader sets the eFuse bits ``download_dis_encrypt``, ``download_dis_decrypt``, and ``download_dis_cache`` to 1 to prevent the UART bootloader from decrypting the flash contents. It also write-protects the ``FLASH_CRYPT_CNT`` eFuse bits. To modify this behavior, see :ref:`uart-bootloader-encryption`.
+8. The device is then rebooted to start executing the encrypted image. The firmware bootloader calls the flash decryption block to decrypt the flash contents and then loads the decrypted contents into IRAM.
 
 During the development stage, there is a frequent need to program different plaintext flash images and test the flash encryption process. This requires that Firmware Download mode is able to load new plaintext images as many times as it might be needed. However, during manufacturing or production stages, Firmware Download mode should not be allowed to access flash contents for security reasons.
 
@@ -305,7 +348,7 @@ At this stage, if you need to update and re-flash binaries, see :ref:`encrypt-pa
 Using Host Generated Key
 """"""""""""""""""""""""
 
-It is possible to pre-generate a flash encryption key on the host computer and burn it into the {IDF_TARGET_NAME}'s ``BLOCK1`` eFuse. This allows you to pre-encrypt data on the host and flash already encrypted data without needing a plaintext flash update. This feature can be used in both :ref:`flash-enc-development-mode` and :ref:`flash-enc-release-mode`. Without a pre-generated key, data is flashed in plaintext and then {IDF_TARGET_NAME} encrypts the data in-place.
+It is possible to pre-generate a flash encryption key on the host computer and burn it into the eFuse. This allows you to pre-encrypt data on the host and flash already encrypted data without needing a plaintext flash update. This feature can be used in both :ref:`flash-enc-development-mode` and :ref:`flash-enc-release-mode`. Without a pre-generated key, data is flashed in plaintext and then {IDF_TARGET_NAME} encrypts the data in-place.
 
 .. note::
 
@@ -511,7 +554,13 @@ Once flash encryption is enabled, the ``FLASH_CRYPT_CNT`` eFuse value will have 
 
 To check if flash encryption on your {IDF_TARGET_NAME} device is enabled, do one of the following:
 
-- flash the application example :example:`security/flash_encryption` onto your device. This application prints the ``FLASH_CRYPT_CNT`` eFuse value and if flash encryption is enabled or disabled.
+.. only:: esp32
+
+    - flash the application example :example:`security/flash_encryption` onto your device. This application prints the ``FLASH_CRYPT_CNT`` eFuse value and if flash encryption is enabled or disabled.
+
+.. only:: esp32s2
+
+    - flash the application example :example:`security/flash_encryption` onto your device. This application prints the ``EFUSE_SPI_BOOT_CRYPT_CNT`` eFuse value and if flash encryption is enabled or disabled.
 
 - :doc:`Find the serial port name <../get-started/establish-serial-connection>` under which your {IDF_TARGET_NAME} device is connected, replace ``PORT`` with your port name in the following command, and run it:
 
