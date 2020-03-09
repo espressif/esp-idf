@@ -187,55 +187,28 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
 
 void *multi_heap_aligned_alloc(multi_heap_handle_t heap, size_t size, size_t alignment)
 {
-    if(heap == NULL) {
+    if (size > SIZE_MAX  - POISON_OVERHEAD) {
         return NULL;
     }
-
-    if(!size) {
-        return NULL;
-    }
-
-    if(!alignment) {
-        return NULL;
-    }
-
-    //Alignment must be a power of two...
-    if((alignment & (alignment - 1)) != 0) {
-        return NULL;
-    }
-
-    if(size > SIZE_MAX  - POISON_OVERHEAD) {
-        return NULL;
-    }
-
-    uint32_t overhead = (sizeof(uint32_t) + (alignment - 1) + POISON_OVERHEAD);
 
     multi_heap_internal_lock(heap);
-    poison_head_t *head = multi_heap_malloc_impl(heap, size + overhead);
+    poison_head_t *head = multi_heap_aligned_alloc_impl(heap, size + POISON_OVERHEAD, alignment);
     uint8_t *data = NULL;
     if (head != NULL) {
-        data = poison_allocated_region(head, size + (overhead - POISON_OVERHEAD));
+        data = poison_allocated_region(head, size);
 #ifdef SLOW
         /* check everything we got back is FREE_FILL_PATTERN & swap for MALLOC_FILL_PATTERN */
         bool ret = verify_fill_pattern(data, size, true, true, true);
         assert( ret );
-#else 
-        (void)data;
 #endif
     } else {
         multi_heap_internal_unlock(heap);
         return NULL;
     }
 
-    //Lets align our new obtained block address:
-    //and save information to recover original block pointer
-    //to allow us to deallocate the memory when needed
-    void *ptr = (void *)ALIGN_UP((uintptr_t)head + sizeof(uint32_t) + sizeof(poison_head_t), alignment);
-    *((uint32_t *)ptr - 1) = (uint32_t)((uintptr_t)ptr - (uintptr_t)head);
-
     multi_heap_internal_unlock(heap);
     
-    return ptr;
+    return data;
 }
 
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
@@ -261,25 +234,16 @@ void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
 
 void multi_heap_aligned_free(multi_heap_handle_t heap, void *p)
 {
-    if(p == NULL) {
-        return;
-    }
-
     multi_heap_internal_lock(heap);
-
-    uint32_t offset = *((uint32_t *)p - 1);
-    void *block_head = (void *)((uint8_t *)p - offset);
-    block_head += sizeof(poison_head_t);
-
-    poison_head_t *head = verify_allocated_region(block_head, true);
+    poison_head_t *head = verify_allocated_region(p, true);
     assert(head != NULL); 
-    block_head -= sizeof(poison_head_t);
+
 #ifdef SLOW
     /* replace everything with FREE_FILL_PATTERN, including the poison head/tail */
-    memset(block_head, FREE_FILL_PATTERN, head->alloc_size + POISON_OVERHEAD);
+    memset(head, FREE_FILL_PATTERN, head->alloc_size + POISON_OVERHEAD);
 #endif
 
-    multi_heap_free_impl(heap, block_head);
+    multi_heap_aligned_free_impl(heap, head);
     multi_heap_internal_unlock(heap);
 }
 
