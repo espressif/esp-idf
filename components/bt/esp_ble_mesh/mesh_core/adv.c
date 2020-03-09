@@ -329,8 +329,8 @@ void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool)
         struct net_buf *buf = &pool->__bufs[i];
         if (buf->ref > 1U) {
             buf->ref = 1U;
-            net_buf_unref(buf);
         }
+        net_buf_unref(buf);
     }
 }
 
@@ -372,6 +372,9 @@ static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
     if (msg->arg) {
         buf = (struct net_buf *)msg->arg;
         BLE_MESH_ADV(buf)->busy = 0U;
+        if (buf->ref > 1U) {
+            buf->ref = 1U;
+        }
         net_buf_unref(buf);
     }
 
