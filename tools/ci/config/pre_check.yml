@@ -141,18 +141,22 @@ build_template_app:
 
     # CONFIG_COMPILER_OPTIMIZATION_DEFAULT with flag -Og
     - echo "CONFIG_COMPILER_OPTIMIZATION_DEFAULT=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG=y" >> sdkconfig.defaults
     - *build_with_make_and_cmake
 
     # CONFIG_COMPILER_OPTIMIZATION_NONE with flag -O0
     - echo "CONFIG_COMPILER_OPTIMIZATION_NONE=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE=y" >> sdkconfig.defaults
     - *build_with_make_and_cmake
 
     # CONFIG_COMPILER_OPTIMIZATION_SIZE with flag -Os
     - echo "CONFIG_COMPILER_OPTIMIZATION_SIZE=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE=y" >> sdkconfig.defaults
     - *build_with_make_and_cmake
 
     # CONFIG_COMPILER_OPTIMIZATION_PERF with flag -O2
     - echo "CONFIG_COMPILER_OPTIMIZATION_PERF=y" > sdkconfig.defaults
+    - echo "CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF=y" >> sdkconfig.defaults
     - *build_with_make_and_cmake
 
     # Same as above, but also disable assertions.
