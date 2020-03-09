@@ -26,7 +26,7 @@
 以下是 "Single factory app, no OTA" 选项的分区表信息摘要：
 
 
-   # Espressif {IDF_TARGET_NAME} Partition Table
+   # ESP-IDF Partition Table
    # Name,   Type, SubType, Offset,  Size,   Flags
    nvs,      data, nvs,     0x9000,  0x6000,
    phy_init, data, phy,     0xf000,  0x1000,
@@ -37,7 +37,7 @@
 
 以下是 "Factory app, two OTA definitions" 选项的分区表信息摘要：
 
-   # Espressif {IDF_TARGET_NAME} Partition Table
+   # ESP-IDF Partition Table
    # Name,   Type, SubType, Offset,   Size,   Flags
    nvs,      data, nvs,     0x9000,   0x4000,
    otadata,  data, ota,     0xd000,   0x2000,
