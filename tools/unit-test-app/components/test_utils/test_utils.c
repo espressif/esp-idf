@@ -143,3 +143,41 @@ size_t test_utils_get_leak_level(esp_type_leak_t type_of_leak, esp_comp_leak_t c
     }
     return leak_level;
 }
+
+
+#define EXHAUST_MEMORY_ENTRIES 100
+
+struct test_utils_exhaust_memory_record_s {
+    int *entries[EXHAUST_MEMORY_ENTRIES];
+};
+
+test_utils_exhaust_memory_rec test_utils_exhaust_memory(uint32_t caps, size_t limit)
+{
+    int idx = 0;
+    test_utils_exhaust_memory_rec rec = calloc(1, sizeof(struct test_utils_exhaust_memory_record_s));
+    TEST_ASSERT_NOT_NULL_MESSAGE(rec, "test_utils_exhaust_memory: not enough free memory to allocate record structure!");
+
+    while (idx < EXHAUST_MEMORY_ENTRIES) {
+        size_t free_caps = heap_caps_get_largest_free_block(caps);
+        if (free_caps <= limit) {
+            return rec; // done!
+        }
+        rec->entries[idx] = heap_caps_malloc(free_caps - limit, caps);
+        TEST_ASSERT_NOT_NULL_MESSAGE(rec->entries[idx],
+                                     "test_utils_exhaust_memory: something went wrong while freeing up memory, is another task using heap?");
+        heap_caps_check_integrity_all(true);
+        idx++;
+    }
+
+    TEST_FAIL_MESSAGE("test_utils_exhaust_memory: The heap with the requested caps is too fragmented, increase EXHAUST_MEMORY_ENTRIES or defrag the heap!");
+    abort();
+}
+
+void test_utils_free_exhausted_memory(test_utils_exhaust_memory_rec rec)
+{
+    for (int i = 0; i < EXHAUST_MEMORY_ENTRIES; i++) {
+        free(rec->entries[i]);
+    }
+    free(rec);
+}
+
