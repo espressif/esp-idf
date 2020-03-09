@@ -159,7 +159,7 @@ esp32> i2cget -c 0x5b -r 0x00 -l 1
 0x10 
 ```
 
-* `-c` option to specify the address of I2C device (acquired from `i2cetect` command).
+* `-c` option to specify the address of I2C device (acquired from `i2cdetect` command).
 * `-r` option to specify the register address you want to inspect.
 * `-l` option to specify the length of the content.
 * Here the returned value 0x10 means that the sensor is just in the boot mode and is ready to go into application mode. For more information about CCS811 you should consult the [official website](http://ams.com/ccs811).

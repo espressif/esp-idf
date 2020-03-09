@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include <stddef.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
 
 // Forward declaration. Definition in linenoise/linenoise.h.
@@ -55,19 +56,59 @@ typedef struct {
     uint32_t task_stack_size;      //!< repl task stack size
     uint32_t task_priority;        //!< repl task priority
     const char *prompt;            //!< prompt (NULL represents default: "esp> ")
+    union {
+        struct {
+            int channel;        //!< UART channel
+            uint32_t baud_rate; //!< Comunication baud rate
+            int tx_gpio;        //!< GPIO number for TX path, -1 means using the default
+            int rx_gpio;        //!< GPIO number for RX path, -1 means using the default
+        } uart;                 //!< UART specific configuration
+    } device;                   //!< device configuration
 } esp_console_repl_config_t;
+
+#ifdef CONFIG_ESP_CONSOLE_UART_NUM
+#define CONSOLE_DEFAULT_UART_CHANNEL CONFIG_ESP_CONSOLE_UART_NUM
+#else
+#define CONSOLE_DEFAULT_UART_CHANNEL 0
+#endif
+
+#ifdef CONFIG_ESP_CONSOLE_UART_BAUDRATE
+#define CONSOLE_DEFAULT_UART_BAUDRATE CONFIG_ESP_CONSOLE_UART_BAUDRATE
+#else
+#define CONSOLE_DEFAULT_UART_BAUDRATE 115200
+#endif
+
+#ifdef CONFIG_ESP_CONSOLE_UART_TX_GPIO
+#define CONSOLE_DEFAULT_UART_TX_GPIO CONFIG_ESP_CONSOLE_UART_TX_GPIO
+#else
+#define CONSOLE_DEFAULT_UART_TX_GPIO 1
+#endif
+
+#ifdef CONFIG_ESP_CONSOLE_UART_RX_GPIO
+#define CONSOLE_DEFAULT_UART_RX_GPIO CONFIG_ESP_CONSOLE_UART_RX_GPIO
+#else
+#define CONSOLE_DEFAULT_UART_RX_GPIO 3
+#endif
 
 /**
  * @brief Default console repl configuration value
  *
  */
-#define ESP_CONSOLE_REPL_CONFIG_DEFAULT() \
-    {                                     \
-        .max_history_len = 32,            \
-        .history_save_path = NULL,        \
-        .task_stack_size = 4096,          \
-        .task_priority = 2,               \
-        .prompt = NULL,                   \
+#define ESP_CONSOLE_REPL_CONFIG_DEFAULT()                   \
+    {                                                       \
+        .max_history_len = 32,                              \
+        .history_save_path = NULL,                          \
+        .task_stack_size = 4096,                            \
+        .task_priority = 2,                                 \
+        .prompt = NULL,                                     \
+        .device = {                                         \
+            .uart = {                                       \
+                .channel = CONSOLE_DEFAULT_UART_CHANNEL,    \
+                .baud_rate = CONSOLE_DEFAULT_UART_BAUDRATE, \
+                .tx_gpio = CONSOLE_DEFAULT_UART_TX_GPIO,    \
+                .rx_gpio = CONSOLE_DEFAULT_UART_RX_GPIO,    \
+            }                                               \
+        }                                                   \
     }
 
 /**
@@ -231,6 +272,8 @@ esp_err_t esp_console_register_help_command(void);
  ******************************************************************************/
 /**
  * @brief Initialize console REPL environment
+ *
+ * @param config REPL configuration
  *
  * @note This is a all-in-one function to establish the environment needed for REPL, includes:
  *       - Install the UART driver on the console UART (8n1, 115200, REF_TICK clock source)
