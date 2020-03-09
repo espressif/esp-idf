@@ -1,0 +1,169 @@
+menu "TinyUSB"
+
+    config USB_ENABLED
+        bool "Enable TinyUSB driver"
+        default n
+        depends on IDF_TARGET_ESP32S2
+        select FREERTOS_SUPPORT_STATIC_ALLOCATION
+        select FREERTOS_USE_AUTHENTIC_INCLUDE_PATHS
+        help
+            Adds support for TinyUSB
+
+    config USB_CDC_ENABLED
+        bool "Enable USB Serial (CDC) TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable USB Serial (CDC) TinyUSB driver.
+
+    config USB_CDC_RX_BUFSIZE
+        int "CDC FIFO size of RX"
+        default 64
+        depends on USB_CDC_ENABLED
+        help
+            CDC FIFO size of RX
+
+    config USB_CDC_TX_BUFSIZE
+        int "CDC FIFO size of TX"
+        default 64
+        depends on USB_CDC_ENABLED
+        help
+            CDC FIFO size of TX
+
+    config USB_MSC_ENABLED
+        bool "Enable Mass Storage (MSC) TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable MSC TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL and
+            .string_descriptor = NULL in the tinyusb_config_t structure).
+
+    config USB_MSC_BUFSIZE
+        int "MSC Buffer size of Device Mass storage"
+        default 512
+        depends on USB_MSC_ENABLED
+        help
+            MSC Buffer size of Device Mass storage
+
+
+    config USB_HID_ENABLED
+        bool "Enable HID TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable HID TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL and
+            .string_descriptor = NULL in the tinyusb_config_t structure).
+
+    config USB_HID_BUFSIZE
+        int "HID buffer size Should be sufficient to hold ID (if any) + Data"
+        default 16
+        depends on USB_HID_ENABLED
+        help
+            HID buffer size Should be sufficient to hold ID (if any) + Data
+
+
+    config USB_MIDI_ENABLED
+        bool "Enable MIDI TinyUSB driver"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable MIDI TinyUSB driver. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL
+            and .string_descriptor = NULL in the tinyusb_config_t structure).
+
+    config USB_CUSTOM_CLASS_ENABLED
+        bool "Enable a custom TinyUSB class"
+        default n
+        depends on USB_ENABLED
+        help
+            Enable a custom TinyUSB class. It is recomended to use Menuconfig-driven descriptor (.descriptor = NULL
+            and .string_descriptor = NULL in the tinyusb_config_t structure).
+
+    config USB_DEBUG
+        bool "Debug mode"
+        default n
+        depends on USB_ENABLED
+        help
+            Debug mode
+
+    menu "Descriptor configuration"
+
+        config USB_DESC_USE_ESPRESSIF_VID
+            bool "VID: Use an Espressif's default value"
+            default y
+            depends on USB_ENABLED
+            help
+                Long description
+
+        config USB_DESC_CUSTOM_VID
+            hex "Custom VID value"
+            default 0x1234
+            depends on !USB_DESC_USE_ESPRESSIF_VID
+            help
+                Custom Vendor ID
+
+        config USB_DESC_USE_DEFAULT_PID
+            bool "PID: Use a default PID assigning"
+            default y
+            depends on USB_ENABLED
+            help
+                Default TinyUSB PID assigning uses values 0x4000...0x4007
+
+        config USB_DESC_CUSTOM_PID
+            hex "Custom PID value"
+            default 0x5678
+            depends on !USB_DESC_USE_DEFAULT_PID
+            help
+                Custom Product ID
+
+        config USB_DESC_BCDDEVICE
+            hex "bcdDevice"
+            default 0x0100
+            depends on USB_ENABLED
+            help
+                Version of the firmware of the USB device
+
+        config USB_DESC_MANUFACTURER_STRING
+            string "Manufacturer"
+            default "Espressif Systems"
+            depends on USB_ENABLED
+            help
+                Name of the manufacturer of the USB device
+
+        config USB_DESC_PRODUCT_STRING
+            string "Product"
+            default "Espressif Device"
+            depends on USB_ENABLED
+            help
+                Name of the USB device
+
+        config USB_DESC_SERIAL_STRING
+            string "Serial string"
+            default "123456"
+            depends on USB_ENABLED
+            help
+                Specify serial number of the USB device
+
+        config USB_DESC_CDC_STRING
+            string "CDC Device String"
+            default "Espressif CDC Device"
+            depends on USB_CDC_ENABLED
+            help
+                Specify name of the CDC device
+
+        config USB_DESC_MSC_STRING
+            string "MSC Device String"
+            default "Espressif MSC Device"
+            depends on USB_MSC_ENABLED
+            help
+                Specify name of the MSC device
+
+        config USB_DESC_HID_STRING
+            string "HID Device String"
+            default "Espressif HID Device"
+            depends on USB_HID_ENABLED
+            help
+                Specify name of the HID device
+
+    endmenu
+
+endmenu

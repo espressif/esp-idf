@@ -1,0 +1,10 @@
+menu "Example Configuration"
+
+    config EXAMPLE_MANUAL_DESC
+        bool "Set up a USB descriptor manually in code"
+        default y
+        help
+            You can set up a descriptor using Menuconfig or independently of
+            your project configuration - manually in code
+
+endmenu
