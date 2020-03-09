@@ -68,6 +68,7 @@
 #include "esp_pm.h"
 #include "esp_private/pm_impl.h"
 #include "trax.h"
+#include "esp_ota_ops.h"
 #include "esp_efuse.h"
 #include "bootloader_mem.h"
 
@@ -165,6 +166,26 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
+    if (LOG_LOCAL_LEVEL >= ESP_LOG_INFO) {
+        const esp_app_desc_t *app_desc = esp_ota_get_app_description();
+        ESP_EARLY_LOGI(TAG, "Application information:");
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_NAME_VAR
+        ESP_EARLY_LOGI(TAG, "Project name:     %s", app_desc->project_name);
+#endif
+#ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR
+        ESP_EARLY_LOGI(TAG, "App version:      %s", app_desc->version);
+#endif
+#ifdef CONFIG_BOOTLOADER_APP_SECURE_VERSION
+        ESP_EARLY_LOGI(TAG, "Secure version:   %d", app_desc->secure_version);
+#endif
+#ifdef CONFIG_APP_COMPILE_TIME_DATE
+        ESP_EARLY_LOGI(TAG, "Compile time:     %s %s", app_desc->date, app_desc->time);
+#endif
+        char buf[17];
+        esp_ota_get_app_elf_sha256(buf, sizeof(buf));
+        ESP_EARLY_LOGI(TAG, "ELF file SHA256:  %s...", buf);
+        ESP_EARLY_LOGI(TAG, "ESP-IDF:          %s", app_desc->idf_ver);
+    }
     ESP_EARLY_LOGI(TAG, "Single core mode");
 
 #if CONFIG_SPIRAM_MEMTEST
@@ -198,14 +219,7 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_enable_cache_wrap(icache_wrap_enable, dcache_wrap_enable);
 #endif
 
-    /* Initialize heap allocator. WARNING: This *needs* to happen *after* the app cpu has booted.
-       If the heap allocator is initialized first, it will put free memory linked list items into
-       memory also used by the ROM. Starting the app cpu will let its ROM initialize that memory,
-       corrupting those linked lists. Initializing the allocator *after* the app cpu has booted
-       works around this problem.
-       With SPI RAM enabled, there's a second reason: half of the SPI RAM will be managed by the
-       app CPU, and when that is not up yet, the memory will be inaccessible and heap_caps_init may
-       fail initializing it properly. */
+    /* Initialize heap allocator */
     heap_caps_init();
 
     ESP_EARLY_LOGI(TAG, "Pro cpu start user code");

@@ -40,9 +40,7 @@ void bootloader_fill_random(void *buffer, size_t length)
 {
     uint8_t *buffer_bytes = (uint8_t *)buffer;
     uint32_t random;
-#if CONFIG_IDF_TARGET_ESP32
     uint32_t start, now;
-#endif
 
     assert(buffer != NULL);
 
@@ -55,17 +53,12 @@ void bootloader_fill_random(void *buffer, size_t length)
                as-is, we repeatedly read the RNG register and XOR all
                values.
             */
-#if CONFIG_IDF_TARGET_ESP32
             random = REG_READ(WDEV_RND_REG);
             RSR(CCOUNT, start);
             do {
                 random ^= REG_READ(WDEV_RND_REG);
                 RSR(CCOUNT, now);
             } while (now - start < 80 * 32 * 2); /* extra factor of 2 is precautionary */
-#elif CONFIG_IDF_TARGET_ESP32S2
-            // ToDo: Get random from register
-            random = 12345678;
-#endif
         }
         buffer_bytes[i] = random >> ((i % 4) * 8);
     }
