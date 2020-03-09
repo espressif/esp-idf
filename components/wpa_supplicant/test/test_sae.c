@@ -27,7 +27,7 @@
 
 typedef struct crypto_bignum crypto_bignum;
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+
 static struct wpabuf *wpabuf_alloc2(size_t len)
 {
     struct wpabuf *buf = (struct wpabuf *)os_zalloc(sizeof(struct wpabuf) + len);
@@ -267,6 +267,5 @@ TEST_CASE("Test SAE functionality with ECC group", "[wpa3_sae]")
     ESP_LOGI("SAE Test", "=========== Complete ============");
 
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 #endif /* CONFIG_WPA3_SAE */
