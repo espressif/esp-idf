@@ -245,7 +245,7 @@ Registering of an interrupt handler for the RMT controller is done be calling :c
 
 .. note::
 
-    When calling :cpp:func:`rmt_driver_install` to use the system RMT driver, a default ISR is being installed. In such a case you cannot register a generic ISR handler with :cpp:func:`rmt_isr_register`.
+    :cpp:func:`rmt_driver_install` uses the system RMT driver, and a default ISR is being installed. You can still register a generic ISR handler with :cpp:func:`rmt_isr_register`.
 
 The RMT controller triggers interrupts on four specific events describes below. To enable interrupts on these events, the following functions are provided:
 
