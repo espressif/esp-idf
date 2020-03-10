@@ -105,6 +105,114 @@ TEST_CASE("mbedtls CTR stream test", "[aes]")
     free(decryptedtext);
 }
 
+TEST_CASE("mbedtls GCM stream test", "[aes]")
+{
+
+    const unsigned SZ = 100;
+    mbedtls_gcm_context ctx;
+    uint8_t nonce[16];
+    uint8_t key[16];
+    uint8_t tag[16];
+    mbedtls_cipher_id_t cipher = MBEDTLS_CIPHER_ID_AES;
+
+    /* Cipher produced via this Python:
+        import os, binascii
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+
+        key = b'\x56' * 16
+        iv = b'\x89' * 16
+        data = b'\xab' * 100
+
+        aesgcm = AESGCM(key)
+
+        ct = aesgcm.encrypt(iv, data, '')
+
+        ct_arr = ""
+        for idx, b in enumerate(ct):
+            if idx % 8 == 0:
+                ct_arr += '\n'
+            ct_arr += "0x{}, ".format(binascii.hexlify(b))
+        print(ct_arr)
+    */
+    const uint8_t expected_cipher[] = {
+        0x03, 0x92, 0x13, 0x49, 0x1f, 0x1f, 0x24, 0x41,
+        0xe8, 0xeb, 0x89, 0x47, 0x50, 0x0a, 0xce, 0xa3,
+        0xc7, 0x1c, 0x10, 0x70, 0xb0, 0x89, 0x82, 0x5e,
+        0x0f, 0x4a, 0x23, 0xee, 0xd2, 0xfc, 0xff, 0x45,
+        0x61, 0x4c, 0xd1, 0xfb, 0x6d, 0xe2, 0xbe, 0x67,
+        0x6f, 0x94, 0x72, 0xa3, 0xe7, 0x04, 0x99, 0xb3,
+        0x4a, 0x46, 0xf9, 0x2b, 0xaf, 0xac, 0xa9, 0x0e,
+        0x43, 0x7e, 0x8b, 0xc4, 0xbf, 0x49, 0xa4, 0x83,
+        0x9c, 0x31, 0x11, 0x1c, 0x09, 0xac, 0x90, 0xdf,
+        0x00, 0x34, 0x08, 0xe5, 0x70, 0xa3, 0x7e, 0x4b,
+        0x36, 0x48, 0x5a, 0x3f, 0x28, 0xc7, 0x1c, 0xd9,
+        0x1b, 0x1b, 0x49, 0x96, 0xe9, 0x7c, 0xea, 0x54,
+        0x7c, 0x71, 0x29, 0x0d
+    };
+    const uint8_t expected_tag[] = {
+        0x35, 0x1c, 0x21, 0xc6, 0xbc, 0x6b, 0x18, 0x52,
+        0x90, 0xe1, 0xf2, 0x5b, 0xe1, 0xf6, 0x15, 0xee,
+    };
+
+
+    memset(nonce, 0x89, 16);
+    memset(key, 0x56, 16);
+
+    // allocate internal memory
+    uint8_t *chipertext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *plaintext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+    uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT|MALLOC_CAP_INTERNAL);
+
+    TEST_ASSERT_NOT_NULL(chipertext);
+    TEST_ASSERT_NOT_NULL(plaintext);
+    TEST_ASSERT_NOT_NULL(decryptedtext);
+
+    memset(plaintext, 0xAB, SZ);
+    /* Test that all the end results are the same
+        no matter how many bytes we encrypt each call
+        */
+    for (int bytes_to_process = 16; bytes_to_process < SZ; bytes_to_process = bytes_to_process + 16) {
+        memset(nonce, 0x89, 16);
+        memset(chipertext, 0x0, SZ);
+        memset(decryptedtext, 0x0, SZ);
+        memset(tag, 0x0, 16);
+
+        mbedtls_gcm_init(&ctx);
+        mbedtls_gcm_setkey(&ctx, cipher, key, 128);
+        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_ENCRYPT, nonce, sizeof(nonce), NULL, 0 );
+
+        // Encrypt
+        for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
+            // Limit length of last call to avoid exceeding buffer size
+            size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
+            mbedtls_gcm_update(&ctx, length, plaintext+idx, chipertext+idx );
+        }
+        mbedtls_gcm_finish( &ctx, tag, sizeof(tag) );
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_cipher, chipertext, SZ);
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_tag, tag, sizeof(tag));
+
+        // Decrypt
+        memset(nonce, 0x89, 16);
+        mbedtls_gcm_free( &ctx );
+        mbedtls_gcm_init(&ctx);
+        mbedtls_gcm_setkey(&ctx, cipher, key, 128);
+        mbedtls_gcm_starts( &ctx, MBEDTLS_AES_DECRYPT, nonce, sizeof(nonce), NULL, 0 );
+
+        for (int idx = 0; idx < SZ; idx = idx + bytes_to_process) {
+            // Limit length of last call to avoid exceeding buffer size
+
+            size_t length = (idx + bytes_to_process > SZ) ? (SZ - idx) : bytes_to_process;
+            mbedtls_gcm_update(&ctx, length, chipertext+idx, decryptedtext + idx );
+        }
+        mbedtls_gcm_finish( &ctx, tag, sizeof(tag) );
+        TEST_ASSERT_EQUAL_HEX8_ARRAY(plaintext, decryptedtext, SZ);
+        mbedtls_gcm_free( &ctx );
+    }
+    free(plaintext);
+    free(chipertext);
+    free(decryptedtext);
+}
+
 TEST_CASE("mbedtls OFB stream test", "[aes]")
 {
     const unsigned SZ = 100;

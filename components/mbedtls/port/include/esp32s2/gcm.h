@@ -43,10 +43,12 @@ typedef enum {
  * \brief          The GCM context structure.
  */
 typedef struct {
-    uint8_t H[16];                        /*!< H */
-    uint8_t S[16];
+    uint8_t H[16];                        /*!< Initial hash value */
+    uint8_t ghash[16];                    /*!< GHASH value. */
     uint8_t J0[16];
-    uint8_t ori_j0[16];
+    uint64_t HL[16];                      /*!< Precalculated HTable low. */
+    uint64_t HH[16];                      /*!< Precalculated HTable high. */
+    uint8_t ori_j0[16];                   /*!< J0 from first iteration. */
     const uint8_t *iv;
     size_t iv_len;                       /*!< The length of IV. */
     uint64_t aad_len;                     /*!< The total length of the additional data. */

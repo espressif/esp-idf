@@ -197,7 +197,7 @@ menu "mbedTLS"
 
     config MBEDTLS_AES_USE_INTERRUPT
         bool "Use interrupt for long AES operations"
-        depends on MBEDTLS_HARDWARE_AES
+        depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
         default y
         help
             Use an interrupt to coordinate long AES operations.
@@ -207,14 +207,15 @@ menu "mbedTLS"
 
     config MBEDTLS_HARDWARE_GCM
         bool "Enable partially hardware accelerated GCM"
-        #depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
-        depends on 0
-        default n
+        depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
+        default y
         help
-            Enable partially hardware accelerated GCM.
+            Enable partially hardware accelerated GCM. GHASH calculation is still done
+            in software.
 
-            Due to hardware limitations, hardware acceleration currently does not
-            offer any speed boost over software GCM with hardware accelerated AES operations.
+            If MBEDTLS_HARDWARE_GCM is disabled and MBEDTLS_HARDWARE_AES is enabled then
+            mbedTLS will still use the hardware accelerated AES block operation, but
+            on a single block at a time.
 
     config MBEDTLS_HARDWARE_MPI
         bool "Enable hardware MPI (bignum) acceleration"

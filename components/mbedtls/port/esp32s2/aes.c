@@ -46,10 +46,10 @@
 #include "soc/lldesc.h"
 #include "esp_heap_caps.h"
 #include "sys/param.h"
+#include "esp_pm.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
-
 
 #define AES_BLOCK_BYTES 16
 #define IV_WORDS        4
@@ -62,13 +62,6 @@
 /* Input over this length will yield and wait for interrupt instead of
    busy-waiting, 30000 bytes is approx 0.5 ms */
 #define AES_DMA_INTR_TRIG_LEN 2000
-
-#define ESP_GET_BE32(a) __builtin_bswap32( *(uint32_t*)(a) )
-
-#define ESP_PUT_BE32(a, val)                                    \
-    do {                                                        \
-        *(uint32_t*)(a) = __builtin_bswap32( (uint32_t)(val) ); \
-    } while (0)
 
 #define ESP_PUT_BE64(a, val)                                    \
     do {                                                        \
@@ -90,10 +83,16 @@ typedef enum {
 
 #if defined(CONFIG_MBEDTLS_AES_USE_INTERRUPT)
 static SemaphoreHandle_t op_complete_sem;
+#if defined(CONFIG_PM_ENABLE)
+static esp_pm_lock_handle_t s_pm_cpu_lock;
+static esp_pm_lock_handle_t s_pm_sleep_lock;
+#endif
 #endif
 
 _lock_t crypto_dma_lock;
-static _lock_t aes_lock;
+static _lock_t s_aes_lock;
+
+
 
 static const char *TAG = "esp-aes";
 
@@ -102,10 +101,11 @@ static inline bool valid_key_length(const esp_aes_context *ctx)
     return ctx->key_bytes == 128 / 8 || ctx->key_bytes == 192 / 8 || ctx->key_bytes == 256 / 8;
 }
 
+
 void esp_aes_acquire_hardware( void )
 {
     /* Need to lock DMA since it is shared with SHA block */
-    _lock_acquire(&aes_lock);
+    _lock_acquire(&s_aes_lock);
     _lock_acquire(&crypto_dma_lock);
 
     /* Enable AES hardware */
@@ -119,7 +119,7 @@ void esp_aes_release_hardware( void )
     periph_module_disable(PERIPH_AES_DMA_MODULE);
 
     _lock_release(&crypto_dma_lock);
-    _lock_release(&aes_lock);
+    _lock_release(&s_aes_lock);
 }
 
 
@@ -234,14 +234,38 @@ static IRAM_ATTR void esp_aes_complete_isr(void *arg)
     }
 }
 
-static void esp_aes_isr_initialise( void )
+static esp_err_t esp_aes_isr_initialise( void )
 {
     REG_WRITE(AES_INT_CLR_REG, 1);
     REG_WRITE(AES_INT_ENA_REG, 1);
     if (op_complete_sem == NULL) {
         op_complete_sem = xSemaphoreCreateBinary();
+
+        if (op_complete_sem == NULL) {
+            ESP_LOGE(TAG, "Failed to create intr semaphore");
+            return ESP_FAIL;
+        }
+
         esp_intr_alloc(ETS_AES_INTR_SOURCE, 0, esp_aes_complete_isr, NULL, NULL);
     }
+
+    /* AES is clocked proportionally to CPU clock, take power management lock */
+#ifdef CONFIG_PM_ENABLE
+    if (s_pm_cpu_lock == NULL) {
+        if (esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "aes_sleep", &s_pm_sleep_lock) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to create PM sleep lock");
+            return ESP_FAIL;
+        }
+        if (esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "aes_cpu", &s_pm_cpu_lock) != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to create PM CPU lock");
+            return ESP_FAIL;
+        }
+    }
+    esp_pm_lock_acquire(s_pm_cpu_lock);
+    esp_pm_lock_acquire(s_pm_sleep_lock);
+#endif
+
+    return ESP_OK;
 }
 #endif // CONFIG_MBEDTLS_AES_USE_INTERRUPT
 
@@ -257,6 +281,10 @@ static void esp_aes_dma_wait_complete(bool use_intr, lldesc_t *output_desc)
             ESP_LOGE("AES", "Timed out waiting for completion of AES Interrupt");
             abort();
         }
+#ifdef CONFIG_PM_ENABLE
+        esp_pm_lock_release(s_pm_cpu_lock);
+        esp_pm_lock_release(s_pm_sleep_lock);
+#endif  // CONFIG_PM_ENABLE
     }
 #endif
 
@@ -312,6 +340,7 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
 static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char *input, unsigned char *output, size_t len, uint8_t *stream_out, bool realloc_input, bool realloc_output)
 {
     size_t chunk_len;
+    int ret = 0;
     int offset = 0;
     unsigned char *input_buf = NULL;
     unsigned char *output_buf = NULL;
@@ -324,7 +353,8 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
 
         if (input_buf == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory");
-            return -1;
+            ret = -1;
+            goto cleanup;
         }
     }
 
@@ -333,7 +363,8 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
 
         if (output_buf == NULL) {
             ESP_LOGE(TAG, "Failed to allocate memory");
-            return -1;
+            ret = -1;
+            goto cleanup;
         }
     } else {
         output_buf = output;
@@ -351,7 +382,8 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
         }
 
         if (esp_aes_process_dma(ctx, dma_input, output_buf, chunk_len, stream_out) != 0) {
-            return -1;
+            ret = -1;
+            goto cleanup;
         }
 
         if (realloc_output) {
@@ -364,6 +396,8 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
         offset += chunk_len;
     }
 
+cleanup:
+
      if (realloc_input) {
          free(input_buf);
      }
@@ -371,7 +405,7 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
          free(output_buf);
      }
 
-    return 0;
+    return ret;
 }
 
 /* Encrypt/decrypt the input using DMA */
@@ -474,7 +508,10 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
     /* Only use interrupt for long AES operations */
     if (len > AES_DMA_INTR_TRIG_LEN) {
         use_intr = true;
-        esp_aes_isr_initialise();
+        if (esp_aes_isr_initialise() == ESP_FAIL) {
+            ret = -1;
+            goto cleanup;
+        }
     } else
 #endif
     {
@@ -483,8 +520,8 @@ static int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input,
 
     /* Start AES operation */
     REG_WRITE(AES_TRIGGER_REG, 1);
-
     esp_aes_dma_wait_complete(use_intr, out_desc_head);
+
 
 
 #if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
@@ -510,6 +547,25 @@ cleanup:
 }
 
 
+static int esp_aes_validate_input(esp_aes_context *ctx, const unsigned char *input,
+                       unsigned char *output )
+{
+    if (!ctx) {
+        ESP_LOGE(TAG, "No AES context supplied");
+        return -1;
+    }
+    if (!input) {
+        ESP_LOGE(TAG, "No input supplied");
+        return -1;
+    }
+    if (!output) {
+        ESP_LOGE(TAG, "No output supplied");
+        return -1;
+    }
+
+    return 0;
+}
+
 
 /*
  * AES-ECB single block encryption
@@ -519,6 +575,10 @@ int esp_internal_aes_encrypt( esp_aes_context *ctx,
                               unsigned char output[16] )
 {
     int r;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
@@ -549,6 +609,10 @@ int esp_internal_aes_decrypt( esp_aes_context *ctx,
                               unsigned char output[16] )
 {
     int r;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
@@ -582,6 +646,10 @@ int esp_aes_crypt_ecb( esp_aes_context *ctx,
 {
     int r;
 
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
+
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
@@ -607,11 +675,19 @@ int esp_aes_crypt_cbc( esp_aes_context *ctx,
                        unsigned char *output )
 {
     int r = 0;
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return -1;
+    }
 
     /* For CBC input length should be multiple of
      * AES BLOCK BYTES
      * */
-    if ( length % AES_BLOCK_BYTES ) {
+    if ( (length % AES_BLOCK_BYTES) || (length == 0) ) {
         return ERR_ESP_AES_INVALID_INPUT_LENGTH;
     }
 
@@ -651,6 +727,16 @@ int esp_aes_crypt_cfb8( esp_aes_context *ctx,
     unsigned char ov[17];
     int r = 0;
     size_t block_bytes = length - (length % AES_BLOCK_BYTES);
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return -1;
+    }
+
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
@@ -728,11 +814,27 @@ int esp_aes_crypt_cfb128( esp_aes_context *ctx,
     uint8_t c;
     int r = 0;
     size_t stream_bytes = 0;
-    size_t n = *iv_off;
+    size_t n;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return -1;
+    }
+
+    if (!iv_off) {
+        ESP_LOGE(TAG, "No IV offset supplied");
+        return -1;
+    }
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
     }
+
+    n = *iv_off;
 
     /* First process the *iv_off bytes
      * which are pending from the previous call to this API
@@ -796,8 +898,25 @@ int esp_aes_crypt_ofb( esp_aes_context *ctx,
                        unsigned char *output )
 {
     int r = 0;
-    size_t n = *iv_off;
+    size_t n;
     size_t stream_bytes = 0;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return -1;
+    }
+
+    if (!iv_off) {
+        ESP_LOGE(TAG, "No IV offset supplied");
+        return -1;
+    }
+
+    n = *iv_off;
+
     /* If there is an offset then use the output of the previous AES block
         (the updated IV) to calculate the new output */
     while (n > 0 && length > 0) {
@@ -841,7 +960,23 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
                        unsigned char *output )
 {
     int r = 0;
-    size_t n = *nc_off;
+    size_t n;
+
+    if (esp_aes_validate_input(ctx, input, output)) {
+        return -1;
+    }
+
+    if (!nonce_counter) {
+        ESP_LOGE(TAG, "No nonce supplied");
+        return -1;
+    }
+
+    if (!nc_off) {
+        ESP_LOGE(TAG, "No nonce offset supplied");
+        return -1;
+    }
+
+    n = *nc_off;
 
     if (!valid_key_length(ctx)) {
         return MBEDTLS_ERR_AES_INVALID_KEY_LENGTH;
@@ -881,7 +1016,7 @@ int esp_aes_crypt_ctr( esp_aes_context *ctx,
     return r;
 }
 
-static void esp_gcm_ghash(uint8_t *h0, const unsigned char *x, size_t x_len, uint8_t *j0);
+static void esp_gcm_ghash(esp_gcm_context *ctx, const unsigned char *x, size_t x_len, uint8_t *z);
 
 /*
  * Calculates the Initial Counter Block, J0
@@ -899,14 +1034,16 @@ static void esp_gcm_derive_J0(esp_gcm_context *ctx)
         memcpy(ctx->J0, ctx->iv, ctx->iv_len);
         ctx->J0[AES_BLOCK_BYTES - 1] |= 1;
     } else {
-        /* For IV != 96 bit, J0 = GHASH(IV || 0[s+64] || [len(IV)]64) */
+   /* For IV != 96 bit, J0 = GHASH(IV || 0[s+64] || [len(IV)]64) */
         /* First calculate GHASH on IV */
-        esp_gcm_ghash(ctx->H, ctx->iv, ctx->iv_len, ctx->J0);
+        esp_gcm_ghash(ctx, ctx->iv, ctx->iv_len, ctx->J0);
         /* Next create 128 bit block which is equal to
         64 bit 0 + iv length truncated to 64 bits */
         ESP_PUT_BE64(len_buf + 8, ctx->iv_len * 8);
         /*   Calculate GHASH on last block */
-        esp_gcm_ghash(ctx->H, len_buf, 16, ctx->J0);
+        esp_gcm_ghash(ctx, len_buf, 16, ctx->J0);
+
+
     }
 }
 
@@ -942,68 +1079,146 @@ static void xor_data(uint8_t *d, const uint8_t *s)
     *dst++ ^= *src++;
 }
 
-/* Right shift 128 bits by 1 in Big Endian format */
-static void right_shift_be(uint8_t *v)
-{
-    uint8_t prev_lsb = 0, cur_lsb;
-    uint32_t data;
 
-    for (int i = 0; i < 16; i += 4) {
-        data = ESP_GET_BE32(v + i);
-
-        cur_lsb = v[i + 3] & 0x1;
-        data = (data >> 1) | (prev_lsb << 31);
-
-        ESP_PUT_BE32((v + i), data);
-        prev_lsb = cur_lsb;
-    }
-}
-
-/* Multiplication in GF(2^128)
- * z = x * y
- *
- * Steps:
- * 1. Let x0.x1...x127 denote the sequence of bits in X.
- * 2. Let Z0 =[0]128 and V0 = Y.
- * 3. For i = 0 to 127, calculate blocks Zi+1 and Vi+1 as follows:
- *
- *     Zi+1 = Zi if [x]i = 0, else Zi+1 = Zi ^ Vi
- *     Vi+1 = Vi >> 1 if LSB(Vi) = 0, else Vi+1 = (Vi >> 1) ^ R
- *
- *  Note: as per AES-GCM spec 800-38D for Vi+1 calculation LSB(Vi)
- *  should be check for 1 but this is actually big endian format so
- *  we need to check MSB(V[15])
+/*
+ * 32-bit integer manipulation macros (big endian)
  */
-static void gcm_mult(const uint8_t *x, const uint8_t *y, uint8_t *z)
+#ifndef GET_UINT32_BE
+#define GET_UINT32_BE(n,b,i)                            \
+{                                                       \
+    (n) = ( (uint32_t) (b)[(i)    ] << 24 )             \
+        | ( (uint32_t) (b)[(i) + 1] << 16 )             \
+        | ( (uint32_t) (b)[(i) + 2] <<  8 )             \
+        | ( (uint32_t) (b)[(i) + 3]       );            \
+}
+#endif
+
+#ifndef PUT_UINT32_BE
+#define PUT_UINT32_BE(n,b,i)                            \
+{                                                       \
+    (b)[(i)    ] = (unsigned char) ( (n) >> 24 );       \
+    (b)[(i) + 1] = (unsigned char) ( (n) >> 16 );       \
+    (b)[(i) + 2] = (unsigned char) ( (n) >>  8 );       \
+    (b)[(i) + 3] = (unsigned char) ( (n)       );       \
+}
+#endif
+
+/* Based on MbedTLS's implemenation
+ *
+ * Precompute small multiples of H, that is set
+ *      HH[i] || HL[i] = H times i,
+ * where i is seen as a field element as in [MGV], ie high-order bits
+ * correspond to low powers of P. The result is stored in the same way, that
+ * is the high-order bit of HH corresponds to P^0 and the low-order bit of HL
+ * corresponds to P^127.
+ */
+static int gcm_gen_table( esp_gcm_context *ctx )
 {
-    uint8_t v[16];
     int i, j;
-    uint32_t R = 0x000000E1; /* Field polynomial in Big endian format */
+    uint64_t hi, lo;
+    uint64_t vl, vh;
+    unsigned char *h;
 
-    memset(z, 0, 16); /* Z_0 = 0^128 */
-    memcpy(v, y, 16); /* V_0 = Y */
+    h = ctx->H;
 
-    for (i = 0; i < 16; i++) {
-        /* Test each bit in a byte of x[i]
-         * Again as per spec we need to test each bit
-         * in x from index 0 to 127, however its big
-         * endian format for each sub byte
-         */
-        for (j = 0; j < 8; j++) {
-            if (x[i] & (1 << (7 - j))) {
-                xor_data(z, v);
-            }
-            /* https://pdfs.semanticscholar.org/1246/a9ad98dc0421ccfc945e6529c886f23e848d.pdf
-             * page 9
-             */
-            if (v[15] & 0x1) {
-                right_shift_be(v);
-                v[0] ^= R;
-            } else {
-                right_shift_be(v);
-            }
+    /* pack h as two 64-bits ints, big-endian */
+    GET_UINT32_BE( hi, h,  0  );
+    GET_UINT32_BE( lo, h,  4  );
+    vh = (uint64_t) hi << 32 | lo;
+
+    GET_UINT32_BE( hi, h,  8  );
+    GET_UINT32_BE( lo, h,  12 );
+    vl = (uint64_t) hi << 32 | lo;
+
+    /* 8 = 1000 corresponds to 1 in GF(2^128) */
+    ctx->HL[8] = vl;
+    ctx->HH[8] = vh;
+
+    /* 0 corresponds to 0 in GF(2^128) */
+    ctx->HH[0] = 0;
+    ctx->HL[0] = 0;
+
+    for( i = 4; i > 0; i >>= 1 )
+    {
+        uint32_t T = ( vl & 1 ) * 0xe1000000U;
+        vl  = ( vh << 63 ) | ( vl >> 1 );
+        vh  = ( vh >> 1 ) ^ ( (uint64_t) T << 32);
+
+        ctx->HL[i] = vl;
+        ctx->HH[i] = vh;
+    }
+
+    for( i = 2; i <= 8; i *= 2 )
+    {
+        uint64_t *HiL = ctx->HL + i, *HiH = ctx->HH + i;
+        vh = *HiH;
+        vl = *HiL;
+        for( j = 1; j < i; j++ )
+        {
+            HiH[j] = vh ^ ctx->HH[j];
+            HiL[j] = vl ^ ctx->HL[j];
         }
     }
+
+    return( 0 );
+}
+/*
+ * Shoup's method for multiplication use this table with
+ *      last4[x] = x times P^128
+ * where x and last4[x] are seen as elements of GF(2^128) as in [MGV]
+ */
+static const uint64_t last4[16] =
+{
+    0x0000, 0x1c20, 0x3840, 0x2460,
+    0x7080, 0x6ca0, 0x48c0, 0x54e0,
+    0xe100, 0xfd20, 0xd940, 0xc560,
+    0x9180, 0x8da0, 0xa9c0, 0xb5e0
+};
+/* Based on MbedTLS's implemenation
+ *
+ * Sets output to x times H using the precomputed tables.
+ * x and output are seen as elements of GF(2^128) as in [MGV].
+ */
+static void gcm_mult( esp_gcm_context *ctx, const unsigned char x[16],
+                      unsigned char output[16] )
+{
+    int i = 0;
+    unsigned char lo, hi, rem;
+    uint64_t zh, zl;
+
+    lo = x[15] & 0xf;
+
+    zh = ctx->HH[lo];
+    zl = ctx->HL[lo];
+
+    for( i = 15; i >= 0; i-- )
+    {
+        lo = x[i] & 0xf;
+        hi = x[i] >> 4;
+
+        if( i != 15 )
+        {
+            rem = (unsigned char) zl & 0xf;
+            zl = ( zh << 60 ) | ( zl >> 4 );
+            zh = ( zh >> 4 );
+            zh ^= (uint64_t) last4[rem] << 48;
+            zh ^= ctx->HH[lo];
+            zl ^= ctx->HL[lo];
+
+        }
+
+        rem = (unsigned char) zl & 0xf;
+        zl = ( zh << 60 ) | ( zl >> 4 );
+        zh = ( zh >> 4 );
+        zh ^= (uint64_t) last4[rem] << 48;
+        zh ^= ctx->HH[hi];
+        zl ^= ctx->HL[hi];
+    }
+
+    PUT_UINT32_BE( zh >> 32, output, 0 );
+    PUT_UINT32_BE( zh, output, 4 );
+    PUT_UINT32_BE( zl >> 32, output, 8 );
+    PUT_UINT32_BE( zl, output, 12 );
 }
 
 
@@ -1024,14 +1239,16 @@ int esp_aes_gcm_setkey( esp_gcm_context *ctx,
 
     return ( 0 );
 }
-/* AES-GCM GHASH calculation j0 = GHASH(x) using h0 hash key
+
+
+/* AES-GCM GHASH calculation z = GHASH(x) using h0 hash key
 */
-static void esp_gcm_ghash(uint8_t *h0, const unsigned char *x, size_t x_len, uint8_t *j0)
+static void esp_gcm_ghash(esp_gcm_context *ctx, const unsigned char *x, size_t x_len, uint8_t *z)
 {
-    uint8_t y0[AES_BLOCK_BYTES], tmp[AES_BLOCK_BYTES];
+
+    uint8_t tmp[AES_BLOCK_BYTES];
 
     memset(tmp, 0, AES_BLOCK_BYTES);
-
     /* GHASH(X) is calculated on input string which is multiple of 128 bits
      * If input string bit length is not multiple of 128 bits it needs to
      * be padded by 0
@@ -1046,12 +1263,12 @@ static void esp_gcm_ghash(uint8_t *h0, const unsigned char *x, size_t x_len, uin
 
     /* If input bit string is >= 128 bits, process full 128 bit blocks */
     while (x_len >= AES_BLOCK_BYTES) {
-        xor_data(j0, x);
-        gcm_mult(j0, h0, y0);
+
+        xor_data(z, x);
+        gcm_mult(ctx, z, z);
 
         x += AES_BLOCK_BYTES;
         x_len -= AES_BLOCK_BYTES;
-        memcpy(j0, y0, AES_BLOCK_BYTES);
     }
 
     /* If input bit string is not multiple of 128 create last 128 bit
@@ -1059,12 +1276,10 @@ static void esp_gcm_ghash(uint8_t *h0, const unsigned char *x, size_t x_len, uin
      */
     if (x_len) {
         memcpy(tmp, x, x_len);
-        xor_data(j0, tmp);
-        gcm_mult(j0, h0, y0);
-        memcpy(j0, y0, AES_BLOCK_BYTES);
+        xor_data(z, tmp);
+        gcm_mult(ctx, z, z);
     }
 }
-
 
 
 /* Function to init AES GCM context to zero */
@@ -1103,6 +1318,22 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
         return ( MBEDTLS_ERR_GCM_BAD_INPUT );
     }
 
+    if (!ctx) {
+        ESP_LOGE(TAG, "No AES context supplied");
+        return -1;
+    }
+
+    if (!iv) {
+        ESP_LOGE(TAG, "No IV supplied");
+        return -1;
+    }
+
+    if ( (aad_len > 0) && !aad) {
+        ESP_LOGE(TAG, "No aad supplied");
+        return -1;
+    }
+
+
     /* Initialize AES-GCM context */
     ctx->iv = iv;
     ctx->iv_len = iv_len;
@@ -1123,6 +1354,7 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
     memcpy(ctx->H, (uint8_t *)AES_H_BASE, AES_BLOCK_BYTES);
 
     esp_aes_release_hardware();
+    gcm_gen_table(ctx);
 
     /* Once H is obtained we need to derive J0 (Initial Counter Block) */
     esp_gcm_derive_J0(ctx);
@@ -1132,6 +1364,9 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
      * so we make a copy here
      */
     memcpy(ctx->ori_j0, ctx->J0, 16);
+
+    esp_gcm_ghash(ctx, ctx->aad, ctx->aad_len, ctx->ghash);
+
 
     return ( 0 );
 }
@@ -1143,9 +1378,21 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
                         unsigned char *output )
 {
     size_t nc_off = 0;
-    uint8_t stream[AES_BLOCK_BYTES] = {0};
     uint8_t nonce_counter[AES_BLOCK_BYTES] = {0};
-    uint8_t gcm_s[AES_BLOCK_BYTES] = {0};
+    uint8_t stream[AES_BLOCK_BYTES] = {0};
+
+    if (!ctx) {
+        ESP_LOGE(TAG, "No GCM context supplied");
+        return -1;
+    }
+    if (!input) {
+        ESP_LOGE(TAG, "No input supplied");
+        return -1;
+    }
+    if (!output) {
+        ESP_LOGE(TAG, "No output supplied");
+        return -1;
+    }
 
     if ( output > input && (size_t) ( output - input ) < length ) {
         return ( MBEDTLS_ERR_GCM_BAD_INPUT );
@@ -1154,17 +1401,12 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
      * calculate GHASH on aad and preincrement the ICB
      */
     if (ctx->gcm_state == ESP_AES_GCM_STATE_INIT) {
-        /* The GHASH calculation is done at multiple stages
-         * Here we calculate GHASH of AAD and save it
-         */
-        esp_gcm_ghash(ctx->H, ctx->aad, ctx->aad_len, gcm_s);
-        /* Jo needs to be incremented first time, later the GCTR
+        /* Jo needs to be incremented first time, later the CTR
          * operation will auto update it
          */
         increment32_j0(ctx, nonce_counter);
         ctx->gcm_state = ESP_AES_GCM_STATE_UPDATE;
     } else if (ctx->gcm_state == ESP_AES_GCM_STATE_UPDATE) {
-        memcpy(gcm_s, ctx->S, AES_BLOCK_BYTES);
         memcpy(nonce_counter, ctx->J0, AES_BLOCK_BYTES);
     }
 
@@ -1178,12 +1420,11 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
 
     /* Perform intermediate GHASH on "encrypted" data irrespective of mode */
     if (ctx->mode == ESP_AES_DECRYPT) {
-        esp_gcm_ghash(ctx->H, input, length, gcm_s);
+        esp_gcm_ghash(ctx, input, length, ctx->ghash);
     } else {
-        esp_gcm_ghash(ctx->H, output, length, gcm_s);
-    }
+        esp_gcm_ghash(ctx, output, length, ctx->ghash);
 
-    memcpy(ctx->S, gcm_s, AES_BLOCK_BYTES);
+    }
 
     return 0;
 }
@@ -1203,10 +1444,10 @@ int esp_aes_gcm_finish( esp_gcm_context *ctx,
     /* Calculate final GHASH on aad_len, data length */
     ESP_PUT_BE64(len_block, ctx->aad_len * 8);
     ESP_PUT_BE64(len_block + 8, ctx->data_len * 8);
-    esp_gcm_ghash(ctx->H, len_block, AES_BLOCK_BYTES, ctx->S);
+    esp_gcm_ghash(ctx, len_block, AES_BLOCK_BYTES, ctx->ghash);
 
-    /* Tag T = GCTR(J0, S) where T is truncated to tag_len */
-    esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, 0, ctx->S, tag);
+    /* Tag T = GCTR(J0, ) where T is truncated to tag_len */
+    esp_aes_crypt_ctr(&ctx->aes_ctx, tag_len, &nc_off, ctx->ori_j0, 0, ctx->ghash, tag);
 
     return 0;
 }
