@@ -16,6 +16,11 @@
 
 static const char* TAG = "default_event_loop";
 
+static esp_event_handler_instance_t s_instance;
+
+static int TIMER_START_HANDLER_0 = 0;
+static int TIMER_START_HANDLER_1 = 1;
+
 static char* get_id_string(esp_event_base_t base, int32_t id) {
     char* event = "";
     if (base == TIMER_EVENTS) {
@@ -52,7 +57,14 @@ static void timer_callback(void* arg)
 // Handler which executes when the timer started event gets executed by the loop.
 static void timer_started_handler(void* handler_args, esp_event_base_t base, int32_t id, void* event_data)
 {
-    ESP_LOGI(TAG, "%s:%s: timer_started_handler", base, get_id_string(base, id));
+    int start_handler_num = *((int*) handler_args);
+    ESP_LOGI(TAG, "%s:%s: timer_started_handler, instance %d", base, get_id_string(base, id), start_handler_num);
+}
+
+// Second handler which executes when the timer started event gets executed by the loop.
+static void timer_started_handler_2(void* handler_args, esp_event_base_t base, int32_t id, void* event_data)
+{
+    ESP_LOGI(TAG, "%s:%s: timer_started_handler_2", base, get_id_string(base, id));
 }
 
 // Handler which executes when the timer expiry event gets executed by the loop. This handler keeps track of
@@ -117,7 +129,7 @@ static void task_event_source(void* args)
 
         if (iteration == TASK_ITERATIONS_UNREGISTER) {
             ESP_LOGI(TAG, "%s:%s: unregistering task_iteration_handler", TASK_EVENTS, get_id_string(TASK_EVENTS, TASK_ITERATION_EVENT));
-            ESP_ERROR_CHECK(esp_event_handler_unregister(TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler));
+            ESP_ERROR_CHECK(esp_event_handler_instance_unregister(TASK_EVENTS, TASK_ITERATION_EVENT, s_instance));
         }
 
         vTaskDelay(pdMS_TO_TICKS(TASK_PERIOD));
@@ -144,20 +156,22 @@ void app_main(void)
     // Create the default event loop
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // Register the specific timer event handlers.
-    ESP_ERROR_CHECK(esp_event_handler_register(TIMER_EVENTS, TIMER_EVENT_STARTED, timer_started_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(TIMER_EVENTS, TIMER_EVENT_EXPIRY, timer_expiry_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(TIMER_EVENTS, TIMER_EVENT_STOPPED, timer_stopped_handler, NULL));
+    // Register the specific timer event handlers. Timer start handler is registered twice.
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TIMER_EVENTS, TIMER_EVENT_STARTED, timer_started_handler, &TIMER_START_HANDLER_0, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TIMER_EVENTS, TIMER_EVENT_STARTED, timer_started_handler, &TIMER_START_HANDLER_1, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TIMER_EVENTS, TIMER_EVENT_STARTED, timer_started_handler_2, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TIMER_EVENTS, TIMER_EVENT_EXPIRY, timer_expiry_handler, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TIMER_EVENTS, TIMER_EVENT_STOPPED, timer_stopped_handler, NULL, NULL));
 
     // Register the handler for all timer family events. This will execute if the timer is started, expired or is stopped.
-    ESP_ERROR_CHECK(esp_event_handler_register(TIMER_EVENTS, ESP_EVENT_ANY_ID, timer_any_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TIMER_EVENTS, ESP_EVENT_ANY_ID, timer_any_handler, NULL, NULL));
 
-    // Register the handler for task iteration event.
-    ESP_ERROR_CHECK(esp_event_handler_register(TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, NULL));
+    // Register the handler for task iteration event; need to pass instance handle for later unregistration.
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(TASK_EVENTS, TASK_ITERATION_EVENT, task_iteration_handler, NULL, &s_instance));
 
     // Register the handler for all event. This will execute if either the timer events or the task iteration event
     // is posted to the default loop.
-    ESP_ERROR_CHECK(esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, all_event_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, all_event_handler, NULL, NULL));
 
     // Create and start the event sources
     esp_timer_create_args_t timer_args = {
