@@ -117,6 +117,7 @@ static int esp_tcp_connect(const char *host, int hostlen, int port, int *sockfd,
             struct timeval tv;
             ms_to_timeval(cfg->timeout_ms, &tv);
             setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+            setsockopt(fd, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
         }
         if (cfg->non_block) {
             int flags = fcntl(fd, F_GETFL, 0);
