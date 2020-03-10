@@ -457,6 +457,16 @@ menu "ESP32S2-specific"
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.
 
+    config ESP32S2_RTC_XTAL_CAL_RETRY
+        int "Number of attempts to repeat 32k XTAL calibration"
+        default 3
+        depends on ESP32S2_RTC_CLK_SRC_EXT_CRYS
+        help
+            Number of attempts to repeat 32k XTAL calibration
+            before giving up and switching to the internal RC.
+            Increase this option if the 32k crystal oscillator
+            does not start and switches to internal RC.
+
     config ESP32S2_DISABLE_BASIC_ROM_CONSOLE
         bool "Permanently disable BASIC ROM Console"
         default n
