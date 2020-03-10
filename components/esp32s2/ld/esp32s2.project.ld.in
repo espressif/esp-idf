@@ -160,6 +160,8 @@ SECTIONS
 
     mapping[iram0_text]
 
+    /* align + add 16B for the possibly overlapping instructions */
+    . = ALIGN(4) + 16;
     _iram_text_end = ABSOLUTE(.);
     _iram_end = ABSOLUTE(.);
   } > iram0_0_seg

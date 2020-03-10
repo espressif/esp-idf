@@ -29,6 +29,29 @@ menu "ESP32S2-specific"
         default 160 if ESP32S2_DEFAULT_CPU_FREQ_160
         default 240 if ESP32S2_DEFAULT_CPU_FREQ_240
 
+    menu "Memory protection"
+
+        config ESP32S2_MEMPROT_FEATURE
+            bool "Enable memory protection"
+            default "y"
+            help
+                If enabled, permission control module watches all memory access and fires panic handler
+                if permission violation is detected. This feature automatically splits
+                memory into data and instruction segments and sets Read/Execute permissions
+                for instruction part (below splitting address) and Read/Write permissions
+                for data part (above splitting address). The memory protection is effective
+                on all access through IRAM0 and DRAM0 buses.
+
+        config ESP32S2_MEMPROT_FEATURE_LOCK
+            depends on ESP32S2_MEMPROT_FEATURE
+            bool "Lock memory protection settings"
+            default "y"
+            help
+                Once locked, memory protection settings cannot be changed anymore.
+                The lock is reset only on the chip startup.
+
+    endmenu  # Memory protection
+
     menu "Cache config"
 
         choice ESP32S2_INSTRUCTION_CACHE_SIZE

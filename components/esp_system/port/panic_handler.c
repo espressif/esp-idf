@@ -43,6 +43,7 @@
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/cache_err_int.h"
 #include "esp32s2/rom/uart.h"
+#include "esp32s2/memprot.h"
 #include "soc/extmem_reg.h"
 #include "soc/cache_memory.h"
 #include "soc/rtc_cntl_reg.h"
@@ -50,11 +51,11 @@
 
 #include "panic_internal.h"
 
-extern void esp_panic_handler(panic_info_t*);
+extern void esp_panic_handler(panic_info_t *);
 
 static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
 
-static XtExcFrame* xt_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
+static XtExcFrame *xt_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
 
 /*
   Panic handlers; these get called when an unhandled exception occurs or the assembly-level
@@ -65,9 +66,9 @@ static XtExcFrame* xt_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
 /*
   Note: The linker script will put everything in this file in IRAM/DRAM, so it also works with flash cache disabled.
 */
-static void print_illegal_instruction_details(const void* f)
+static void print_illegal_instruction_details(const void *f)
 {
-    XtExcFrame* frame  = (XtExcFrame*) f;
+    XtExcFrame *frame  = (XtExcFrame *) f;
     /* Print out memory around the instruction word */
     uint32_t epc = frame->pc;
     epc = (epc & ~0x3) - 4;
@@ -76,7 +77,7 @@ static void print_illegal_instruction_details(const void* f)
     if (epc < SOC_IROM_MASK_LOW || epc >= SOC_IROM_HIGH) {
         return;
     }
-    volatile uint32_t* pepc = (uint32_t*)epc;
+    volatile uint32_t *pepc = (uint32_t *)epc;
 
     panic_print_str("Memory dump at 0x");
     panic_print_hex(epc);
@@ -89,7 +90,7 @@ static void print_illegal_instruction_details(const void* f)
     panic_print_hex(*(pepc + 2));
 }
 
-static void print_debug_exception_details(const void* f)
+static void print_debug_exception_details(const void *f)
 {
     int debug_rsn;
     asm("rsr.debugcause %0":"=r"(debug_rsn));
@@ -144,9 +145,9 @@ static void print_backtrace_entry(uint32_t pc, uint32_t sp)
     panic_print_hex(sp);
 }
 
-static void print_backtrace(const void* f, int core)
+static void print_backtrace(const void *f, int core)
 {
-    XtExcFrame *frame = (XtExcFrame*) f;
+    XtExcFrame *frame = (XtExcFrame *) f;
     int depth = 100;
     //Initialize stk_frame with first frame of stack
     esp_backtrace_frame_t stk_frame = {.pc = frame->pc, .sp = frame->a1, .next_pc = frame->a0};
@@ -155,7 +156,7 @@ static void print_backtrace(const void* f, int core)
 
     //Check if first frame is valid
     bool corrupted = !(esp_stack_ptr_is_sane(stk_frame.sp) &&
-                     esp_ptr_executable((void*)esp_cpu_process_stack_pc(stk_frame.pc)));
+                       esp_ptr_executable((void *)esp_cpu_process_stack_pc(stk_frame.pc)));
 
     uint32_t i = ((depth <= 0) ? INT32_MAX : depth) - 1;    //Account for stack frame that's already printed
     while (i-- > 0 && stk_frame.next_pc != 0 && !corrupted) {
@@ -176,7 +177,7 @@ static void print_backtrace(const void* f, int core)
 
 static void print_registers(const void *f, int core)
 {
-    XtExcFrame* frame = (XtExcFrame*) f;
+    XtExcFrame *frame = (XtExcFrame *) f;
     int *regs = (int *)frame;
     int x, y;
     const char *sdesc[] = {
@@ -207,10 +208,10 @@ static void print_registers(const void *f, int core)
     // If the core which triggers the interrupt watchpoint was in ISR context, dump the epc registers.
     if (xPortInterruptedFromISRContext()
 #if !CONFIG_FREERTOS_UNICORE
-        && ((core == 0 && frame->exccause == PANIC_RSN_INTWDT_CPU0) ||
-           (core == 1 && frame->exccause == PANIC_RSN_INTWDT_CPU1))
+            && ((core == 0 && frame->exccause == PANIC_RSN_INTWDT_CPU0) ||
+                (core == 1 && frame->exccause == PANIC_RSN_INTWDT_CPU1))
 #endif //!CONFIG_FREERTOS_UNICORE
-        ) {
+       ) {
 
         panic_print_str("\r\n");
 
@@ -246,7 +247,7 @@ static void print_state_for_core(const void *f, int core)
     print_backtrace(f, core);
 }
 
-static void print_state(const void* f)
+static void print_state(const void *f)
 {
 #if !CONFIG_FREERTOS_UNICORE
     int err_core = f == xt_exc_frames[0] ? 0 : 1;
@@ -271,7 +272,7 @@ static void print_state(const void* f)
 }
 
 #if CONFIG_IDF_TARGET_ESP32S2
-static inline void print_cache_err_details(const void* f)
+static inline void print_cache_err_details(const void *f)
 {
     uint32_t vaddr = 0, size = 0;
     uint32_t status[2];
@@ -357,9 +358,27 @@ static inline void print_cache_err_details(const void* f)
         }
     }
 }
+
+static inline void print_memprot_err_details(const void *f)
+{
+    uint32_t *fault_addr;
+    uint32_t op_type, op_subtype;
+    mem_type_prot_t mem_type = esp_memprot_get_intr_memtype();
+    esp_memprot_get_fault_status( mem_type, &fault_addr, &op_type, &op_subtype );
+
+    char *operation_type = "Write";
+    if ( op_type == 0 ) {
+        operation_type = (mem_type == MEMPROT_IRAM0 && op_subtype == 0) ? "Instruction fetch" : "Read";
+    }
+
+    panic_print_str( operation_type );
+    panic_print_str( " operation at address 0x" );
+    panic_print_hex( (uint32_t)fault_addr );
+    panic_print_str(" not permitted.\r\n");
+}
 #endif
 
-static void frame_to_panic_info(XtExcFrame *frame, panic_info_t* info, bool pseudo_excause)
+static void frame_to_panic_info(XtExcFrame *frame, panic_info_t *info, bool pseudo_excause)
 {
     info->core = cpu_hal_get_core_id();
     info->exception = PANIC_EXCEPTION_FAULT;
@@ -405,8 +424,13 @@ static void frame_to_panic_info(XtExcFrame *frame, panic_info_t* info, bool pseu
         }
 
 #if CONFIG_IDF_TARGET_ESP32S2
-        if(frame->exccause == PANIC_RSN_CACHEERR) {
-            info->details = print_cache_err_details;
+        if (frame->exccause == PANIC_RSN_CACHEERR) {
+            if ( esp_memprot_is_assoc_intr_any() ) {
+                info->details = print_memprot_err_details;
+                info->reason = "Memory protection fault";
+            } else {
+                info->details = print_cache_err_details;
+            }
         }
 #endif
     } else {
@@ -437,7 +461,7 @@ static void frame_to_panic_info(XtExcFrame *frame, panic_info_t* info, bool pseu
     }
 
     info->state = print_state;
-    info->addr = ((void*) ((XtExcFrame*) frame)->pc);
+    info->addr = ((void *) ((XtExcFrame *) frame)->pc);
     info->frame = frame;
 }
 
@@ -456,7 +480,7 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
     // These are cases where both CPUs both go into panic handler. The following code ensures
     // only one core proceeds to the system panic handler.
     if (pseudo_excause) {
-        #define BUSY_WAIT_IF_TRUE(b)                { if (b) while(1); }
+#define BUSY_WAIT_IF_TRUE(b)                { if (b) while(1); }
         // For WDT expiry, pause the non-offending core - offending core handles panic
         BUSY_WAIT_IF_TRUE(frame->exccause == PANIC_RSN_INTWDT_CPU0 && core_id == 1);
         BUSY_WAIT_IF_TRUE(frame->exccause == PANIC_RSN_INTWDT_CPU1 && core_id == 0);
@@ -483,7 +507,7 @@ static void panic_handler(XtExcFrame *frame, bool pseudo_excause)
 
     if (esp_cpu_in_ocd_debug_mode()) {
         if (frame->exccause == PANIC_RSN_INTWDT_CPU0 ||
-            frame->exccause == PANIC_RSN_INTWDT_CPU1) {
+                frame->exccause == PANIC_RSN_INTWDT_CPU1) {
             wdt_hal_write_protect_disable(&wdt0_context);
             wdt_hal_handle_intr(&wdt0_context);
             wdt_hal_write_protect_enable(&wdt0_context);
@@ -536,9 +560,18 @@ void __attribute__((noreturn)) panic_restart(void)
     // If resetting because of a cache error, reset the digital part
     // Make sure that the reset reason is not a generic panic reason as well on ESP32S2,
     // as esp_cache_err_get_cpuid always returns PRO_CPU_NUM
-    if (esp_cache_err_get_cpuid() != -1 && esp_reset_reason_get_hint() != ESP_RST_PANIC) {
-        esp_digital_reset();
-    } else {
-        esp_restart_noos();
+
+    bool digital_reset_needed = false;
+    if ( esp_cache_err_get_cpuid() != -1 && esp_reset_reason_get_hint() != ESP_RST_PANIC ) {
+        digital_reset_needed = true;
     }
+#if CONFIG_IDF_TARGET_ESP32S2
+    if ( esp_memprot_is_intr_ena_any() || esp_memprot_is_locked_any() ) {
+        digital_reset_needed = true;
+    }
+#endif
+    if ( digital_reset_needed ) {
+        esp_digital_reset();
+    }
+    esp_restart_noos();
 }

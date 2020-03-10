@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
+#ifndef CONFIG_ESP32S2_MEMPROT_FEATURE
 TEST_CASE("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
@@ -100,6 +101,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     free(m1);
     printf("Done.\n");
 }
+#endif
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("IRAM_8BIT capability test", "[heap]")

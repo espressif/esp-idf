@@ -26,6 +26,7 @@
 #include "esp32s2/brownout.h"
 #include "esp32s2/cache_err_int.h"
 #include "esp32s2/spiram.h"
+#include "esp32s2/memprot.h"
 
 #include "soc/cpu.h"
 #include "soc/rtc.h"
@@ -317,6 +318,14 @@ void start_cpu0_default(void)
     err = esp_pthread_init();
     assert(err == ESP_OK && "Failed to init pthread module!");
 
+#if CONFIG_ESP32S2_MEMPROT_FEATURE
+#if CONFIG_ESP32S2_MEMPROT_FEATURE_LOCK
+    esp_memprot_set_prot(true, true);
+#else
+    esp_memprot_set_prot(true, false);
+#endif
+#endif
+
     do_global_ctors();
 #if CONFIG_ESP_INT_WDT
     esp_int_wdt_init();
@@ -353,6 +362,7 @@ void start_cpu0_default(void)
                         ESP_TASK_MAIN_STACK, NULL,
                         ESP_TASK_MAIN_PRIO, NULL, 0);
     assert(res == pdTRUE);
+
     ESP_LOGI(TAG, "Starting scheduler on PRO CPU.");
     vTaskStartScheduler();
     abort(); /* Only get to here if not enough free heap to start scheduler */
