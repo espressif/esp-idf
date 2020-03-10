@@ -712,9 +712,12 @@ do_update:
 
     k_delayed_work_submit(&bt_mesh.ivu_timer, BLE_MESH_IVU_TIMEOUT);
 
-    for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-        if (bt_mesh.sub[i].net_idx != BLE_MESH_KEY_UNUSED) {
-            bt_mesh_net_beacon_update(&bt_mesh.sub[i]);
+    size_t subnet_size = bt_mesh_rx_netkey_size();
+
+    for (i = 0; i < subnet_size; i++) {
+        struct bt_mesh_subnet *sub = bt_mesh_rx_netkey_get(i);
+        if (sub && sub->net_idx != BLE_MESH_KEY_UNUSED) {
+            bt_mesh_net_beacon_update(sub);
         }
     }
 
