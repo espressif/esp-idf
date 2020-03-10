@@ -63,7 +63,7 @@ If you have one of ESP32 development boards listed below, you can click on the l
     ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
     ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
     ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
-
+    ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
 .. _get-started-step-by-step-legacy:
 
 Installation Step by Step
