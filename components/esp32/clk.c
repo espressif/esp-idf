@@ -278,7 +278,7 @@ void esp_perip_clk_init(void)
                               DPORT_LEDC_CLK_EN |
                               DPORT_TIMERGROUP1_CLK_EN |
                               DPORT_PWM0_CLK_EN |
-                              DPORT_CAN_CLK_EN |
+                              DPORT_TWAI_CLK_EN |
                               DPORT_PWM1_CLK_EN |
                               DPORT_PWM2_CLK_EN |
                               DPORT_PWM3_CLK_EN;

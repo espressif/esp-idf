@@ -958,7 +958,8 @@
 #define DPORT_SPI_DMA_CLK_EN   (BIT(22))
 #define DPORT_I2S1_CLK_EN   (BIT(21))
 #define DPORT_PWM1_CLK_EN   (BIT(20))
-#define DPORT_CAN_CLK_EN   (BIT(19))
+#define DPORT_TWAI_CLK_EN   (BIT(19))
+#define DPORT_CAN_CLK_EN    DPORT_TWAI_CLK_EN
 #define DPORT_I2C_EXT1_CLK_EN   (BIT(18))
 #define DPORT_PWM0_CLK_EN   (BIT(17))
 #define DPORT_SPI3_CLK_EN   (BIT(16))
@@ -992,7 +993,8 @@
 #define DPORT_SPI_DMA_RST   (BIT(22))
 #define DPORT_I2S1_RST   (BIT(21))
 #define DPORT_PWM1_RST   (BIT(20))
-#define DPORT_CAN_RST   (BIT(19))
+#define DPORT_TWAI_RST   (BIT(19))
+#define DPORT_CAN_RST    DPORT_TWAI_RST
 #define DPORT_I2C_EXT1_RST   (BIT(18))
 #define DPORT_PWM0_RST   (BIT(17))
 #define DPORT_SPI3_RST   (BIT(16))

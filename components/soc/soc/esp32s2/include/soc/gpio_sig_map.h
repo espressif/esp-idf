@@ -188,10 +188,10 @@
 #define FSPICS3_OUT_IDX               120
 #define FSPICS4_OUT_IDX               121
 #define FSPICS5_OUT_IDX               122
-#define CAN_RX_IDX                    123
-#define CAN_TX_IDX                    123
-#define CAN_BUS_OFF_ON_IDX            124
-#define CAN_CLKOUT_IDX                125
+#define TWAI_RX_IDX                   123
+#define TWAI_TX_IDX                   123
+#define TWAI_BUS_OFF_ON_IDX           124
+#define TWAI_CLKOUT_IDX               125
 #define SUBSPICLK_OUT_MUX_IDX         126
 #define SUBSPIQ_IN_IDX                127
 #define SUBSPIQ_OUT_IDX               127

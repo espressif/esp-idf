@@ -8,7 +8,6 @@ Peripherals API
 
 
     ADC <adc>
-    CAN <can>
     DAC <dac>
     GPIO (including RTC low power I/O) <gpio>
     :esp32s2: HMAC <hmac>
@@ -30,6 +29,7 @@ Peripherals API
     :esp32s2: Temp sensor <temp_sensor>
     Timer <timer>
     Touch Sensor <touch_pad>
+    TWAI <twai>
     UART <uart>
 
 

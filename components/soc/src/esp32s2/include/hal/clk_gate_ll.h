@@ -74,8 +74,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return DPORT_SPI2_DMA_CLK_EN;
     case PERIPH_SPI3_DMA_MODULE:
         return DPORT_SPI3_DMA_CLK_EN;
-    case PERIPH_CAN_MODULE:
-        return DPORT_CAN_CLK_EN;
+    case PERIPH_TWAI_MODULE:
+        return DPORT_TWAI_CLK_EN;
     case PERIPH_RNG_MODULE:
         return DPORT_WIFI_CLK_RNG_EN;
     case PERIPH_WIFI_MODULE:
@@ -152,8 +152,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return DPORT_SPI2_DMA_RST;
     case PERIPH_SPI3_DMA_MODULE:
         return DPORT_SPI3_DMA_RST;
-    case PERIPH_CAN_MODULE:
-        return DPORT_CAN_RST;
+    case PERIPH_TWAI_MODULE:
+        return DPORT_TWAI_RST;
     case PERIPH_SYSTIMER_MODULE:
         return DPORT_SYSTIMER_RST;
     case PERIPH_AES_MODULE:
