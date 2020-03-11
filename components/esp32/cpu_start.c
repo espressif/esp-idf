@@ -47,7 +47,6 @@
 #include "nvs_flash.h"
 #include "esp_event.h"
 #include "esp_spi_flash.h"
-#include "esp_ipc.h"
 #include "esp_crosscore_int.h"
 #include "esp_dport_access.h"
 #include "esp_log.h"
