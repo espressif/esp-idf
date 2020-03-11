@@ -55,3 +55,8 @@ void cpu_hal_clear_watchpoint(int id)
     cpu_ll_clear_watchpoint(id);
 }
 #endif // SOC_CPU_WATCHPOINTS_NUM > 0
+
+void cpu_hal_set_vecbase(const void* base)
+{
+    cpu_ll_set_vecbase(base);
+}

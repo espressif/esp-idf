@@ -130,10 +130,8 @@ void IRAM_ATTR call_start_cpu0(void)
 
     bootloader_init_mem();
 
-    //Move exception vectors to IRAM
-    asm volatile (\
-                  "wsr    %0, vecbase\n" \
-                  ::"r"(&_init_start));
+    // Move exception vectors to IRAM
+    cpu_hal_set_vecbase(&_init_start);
 
     rst_reas[0] = rtc_get_reset_reason(0);
 
@@ -273,9 +271,8 @@ static void wdt_reset_cpu1_info_enable(void)
 
 void IRAM_ATTR call_start_cpu1(void)
 {
-    asm volatile (\
-                  "wsr    %0, vecbase\n" \
-                  ::"r"(&_init_start));
+    // Move exception vectors to IRAM
+    cpu_hal_set_vecbase(&_init_start);
 
     ets_set_appcpu_boot_addr(0);
 

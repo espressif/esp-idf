@@ -109,6 +109,13 @@ void cpu_hal_clear_watchpoint(int id);
 
 #endif // SOC_CPU_WATCHPOINTS_NUM > 0
 
+/**
+ * Set exception vector table base address.
+ *
+ * @param base address to move the exception vector table to
+ */
+void cpu_hal_set_vecbase(const void* base);
+
 #ifdef __cplusplus
 }
 #endif
