@@ -279,7 +279,6 @@ esp_err_t httpd_uri(struct httpd_data *hd)
 {
     httpd_uri_t            *uri = NULL;
     httpd_req_t            *req = &hd->hd_req;
-    struct httpd_req_aux   *aux = req->aux;
     struct http_parser_url *res = &hd->hd_req_aux.url_parse_res;
 
     /* For conveying URI not found/method not allowed */
@@ -313,6 +312,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
 
     /* Final step for a WebSocket handshake verification */
 #ifdef CONFIG_HTTPD_WS_SUPPORT
+    struct httpd_req_aux   *aux = req->aux;
     if (uri->is_websocket && aux->ws_handshake_detect && uri->method == HTTP_GET) {
         ESP_LOGD(TAG, LOG_FMT("Responding WS handshake to sock %d"), aux->sd->fd);
         esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req);

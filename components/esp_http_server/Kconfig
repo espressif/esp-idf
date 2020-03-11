@@ -41,7 +41,7 @@ menu "HTTP Server"
 
     config HTTPD_WS_SUPPORT
         bool "WebSocket server support"
-        default y
+        default n
         help
             This sets the WebSocket server support.
 

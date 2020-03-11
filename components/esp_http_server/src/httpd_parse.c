@@ -690,7 +690,9 @@ static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
     ra->first_chunk_sent = 0;
     ra->req_hdrs_count = 0;
     ra->resp_hdrs_count = 0;
+#if CONFIG_HTTPD_WS_SUPPORT
     ra->ws_handshake_detect = false;
+#endif
     memset(ra->resp_hdrs, 0, config->max_resp_headers * sizeof(struct resp_hdr));
 }
 
@@ -703,11 +705,13 @@ static void httpd_req_cleanup(httpd_req_t *r)
         httpd_sess_free_ctx(ra->sd->ctx, ra->sd->free_ctx);
     }
 
+#if CONFIG_HTTPD_WS_SUPPORT
     /* Close the socket when a WebSocket Close request is received */
     if (ra->sd->ws_close) {
         ESP_LOGD(TAG, LOG_FMT("Try closing WS connection at FD: %d"), ra->sd->fd);
         httpd_sess_trigger_close(r->handle, ra->sd->fd);
     }
+#endif
 
     /* Retrieve session info from the request into the socket database. */
     ra->sd->ctx = r->sess_ctx;

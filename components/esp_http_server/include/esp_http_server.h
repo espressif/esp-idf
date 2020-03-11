@@ -1514,6 +1514,23 @@ esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *pkt, size_t ma
  */
 esp_err_t httpd_ws_send_frame(httpd_req_t *req, httpd_ws_frame_t *pkt);
 
+/**
+ * @brief Low level send of a WebSocket frame out of the scope of current request
+ * using internally configured httpd send function
+ *
+ * This API should rarely be called directly, with an exception of asynchronous send using httpd_queue_work.
+ *
+ * @param[in] hd      Server instance data
+ * @param[in] fd      Socket descriptor for sending data
+ * @param[in] frame     WebSocket frame
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : When socket errors occurs
+ *  - ESP_ERR_INVALID_STATE     : Handshake was already done beforehand
+ *  - ESP_ERR_INVALID_ARG       : Argument is invalid (null or non-WebSocket)
+ */
+esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t *frame);
+
 #endif /* CONFIG_HTTPD_WS_SUPPORT */
 /** End of WebSocket related stuff
  * @}

@@ -26,7 +26,7 @@
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 
-#define TAG "httpd_ws"
+static const char *TAG="httpd_ws";
 
 /*
  * Bit masks for WebSocket frames.
@@ -266,6 +266,11 @@ esp_err_t httpd_ws_send_frame(httpd_req_t *req, httpd_ws_frame_t *frame)
     if (ret != ESP_OK) {
         return ret;
     }
+    return httpd_ws_send_frame_async(req->handle, httpd_req_to_sockfd(req), frame);
+}
+
+esp_err_t httpd_ws_send_frame_async(httpd_handle_t hd, int fd, httpd_ws_frame_t *frame)
+{
     if (!frame) {
         ESP_LOGW(TAG, LOG_FMT("Argument is invalid"));
         return ESP_ERR_INVALID_ARG;
@@ -299,15 +304,20 @@ esp_err_t httpd_ws_send_frame(httpd_req_t *req, httpd_ws_frame_t *frame)
     /* WebSocket server does not required to mask response payload, so leave the MASK bit as 0. */
     header_buf[1] &= (~HTTPD_WS_MASK_BIT);
 
+    struct sock_db *sess = httpd_sess_get(hd, fd);
+    if (!sess) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     /* Send off header */
-    if (httpd_send(req, (const char *)header_buf, tx_len) < 0) {
+    if (sess->send_fn(hd, fd, (const char *)header_buf, tx_len, 0) < 0) {
         ESP_LOGW(TAG, LOG_FMT("Failed to send WS header"));
         return ESP_FAIL;
     }
 
     /* Send off payload */
     if(frame->len > 0 && frame->payload != NULL) {
-        if (httpd_send(req, (const char *)frame->payload, frame->len) < 0) {
+        if (sess->send_fn(hd, fd, (const char *)frame->payload, frame->len, 0) < 0) {
             ESP_LOGW(TAG, LOG_FMT("Failed to send WS payload"));
             return ESP_FAIL;
         }
