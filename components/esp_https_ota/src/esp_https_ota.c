@@ -71,27 +71,20 @@ static esp_err_t _http_handle_response_code(esp_http_client_handle_t http_client
     }
     
     char upgrade_data_buf[DEFAULT_OTA_BUF_SIZE];
-    /*
-     * `data_read_size` holds number of bytes to be read.
-     * `bytes_read` holds number of bytes read.
-     */
-    int bytes_read = 0, data_read_size = DEFAULT_OTA_BUF_SIZE;
+    // process_again() returns true only in case of redirection.
     if (process_again(status_code)) {
-        while (data_read_size > 0) {
-            int data_read = esp_http_client_read(http_client, (upgrade_data_buf + bytes_read), data_read_size);
+        while (1) {
             /*
-             * As esp_http_client_read never returns negative error code, we rely on
-             * `errno` to check for underlying transport connectivity closure if any
+             *  In case of redirection, esp_http_client_read() is called
+             *  to clear the response buffer of http_client.
              */
-            if (errno == ENOTCONN || errno == ECONNRESET) {
-                ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
-                break;
+            int data_read = esp_http_client_read(http_client, upgrade_data_buf, DEFAULT_OTA_BUF_SIZE);
+            if (data_read < 0) {
+                ESP_LOGE(TAG, "Error: SSL data read error");
+                return ESP_FAIL;
+            } else if (data_read == 0) {
+                return ESP_OK;
             }
-            bytes_read += data_read;
-            data_read_size -= data_read;
-        }
-        if (data_read_size > 0) {
-            return ESP_FAIL;
         }
     }
     return ESP_OK;
@@ -246,7 +239,7 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
          * As esp_http_client_read never returns negative error code, we rely on
          * `errno` to check for underlying transport connectivity closure if any
          */
-        if (errno == ENOTCONN || errno == ECONNRESET) {
+        if (errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED) {
             ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
             break;
         }
@@ -297,17 +290,21 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                                              handle->ota_upgrade_buf_size);
             if (data_read == 0) {
                 /*
-                 * As esp_http_client_read never returns negative error code, we rely on
-                 * `errno` to check for underlying transport connectivity closure if any
+                 *  esp_https_ota_is_complete_data_received is added to check whether
+                 *  complete image is received.
                  */
-                if (errno == ENOTCONN || errno == ECONNRESET) {
+                bool is_recv_complete = esp_https_ota_is_complete_data_received(https_ota_handle);
+                /*
+                 * As esp_http_client_read never returns negative error code, we rely on
+                 * `errno` to check for underlying transport connectivity closure if any.
+                 * Incase the complete data has not been received but the server has sent
+                 * an ENOTCONN or ECONNRESET, failure is returned. We close with success
+                 * if complete data has been received.
+                 */
+                if ((errno == ENOTCONN || errno == ECONNRESET || errno == ECONNABORTED) && !is_recv_complete) {
                     ESP_LOGE(TAG, "Connection closed, errno = %d", errno);
                     return ESP_FAIL;
-                }
-                /*  esp_https_ota_is_complete_data_received is added to check whether
-                    complete image is received.
-                */
-                if (!esp_https_ota_is_complete_data_received(https_ota_handle)) {
+                } else if (!is_recv_complete) {
                     return ESP_ERR_HTTPS_OTA_IN_PROGRESS;
                 }
                 ESP_LOGI(TAG, "Connection closed");
