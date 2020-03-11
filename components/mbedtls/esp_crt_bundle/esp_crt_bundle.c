@@ -176,7 +176,7 @@ static esp_err_t esp_crt_bundle_init(const uint8_t *x509_bundle)
     return ESP_OK;
 }
 
-esp_err_t esp_crt_bundle_attach(mbedtls_ssl_config *conf)
+esp_err_t esp_crt_bundle_attach(void *conf)
 {
     esp_err_t ret = ESP_OK;
     // If no bundle has been set by the user then use the bundle embedded in the binary
@@ -195,8 +195,8 @@ esp_err_t esp_crt_bundle_attach(mbedtls_ssl_config *conf)
          * cacert_ptr passes non-NULL check during handshake
          */
         mbedtls_x509_crt_init(&s_dummy_crt);
-        conf->ca_chain = &s_dummy_crt;
-        mbedtls_ssl_conf_verify(conf, esp_crt_verify_callback, NULL);
+        ((mbedtls_ssl_config *)conf)->ca_chain = &s_dummy_crt;
+        mbedtls_ssl_conf_verify((mbedtls_ssl_config *)conf, esp_crt_verify_callback, NULL);
     }
 
     return ret;
