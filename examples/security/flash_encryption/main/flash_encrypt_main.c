@@ -23,6 +23,11 @@ static void example_read_write_flash(void);
 
 static const char* TAG = "example";
 
+#if CONFIG_IDF_TARGET_ESP32
+#define TARGET_CRYPT_CNT_EFUSE ESP_EFUSE_FLASH_CRYPT_CNT
+#elif CONFIG_IDF_TARGET_ESP32S2
+#define TARGET_CRYPT_CNT_EFUSE ESP_EFUSE_SPI_BOOT_CRYPT_CNT
+#endif
 
 void app_main(void)
 {
@@ -54,7 +59,7 @@ static void example_print_chip_info(void)
 static void example_print_flash_encryption_status(void)
 {
     uint32_t flash_crypt_cnt = 0;
-    esp_efuse_read_field_blob(ESP_EFUSE_FLASH_CRYPT_CNT, &flash_crypt_cnt, 7);
+    esp_efuse_read_field_blob(TARGET_CRYPT_CNT_EFUSE, &flash_crypt_cnt, 7);
     printf("FLASH_CRYPT_CNT eFuse value is %d\n", flash_crypt_cnt);
 
     esp_flash_enc_mode_t mode = esp_get_flash_encryption_mode();

@@ -25,6 +25,8 @@
 #include "esp32s2/rom/secure_boot.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/efuse.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 
 static const char *TAG = "flash_encrypt";
 
@@ -38,53 +40,54 @@ static esp_err_t encrypt_partition(int index, const esp_partition_info_t *partit
 esp_err_t esp_flash_encrypt_check_and_update(void)
 {
     // TODO: not clear why this is read from DATA1 and written to PGM_DATA2
-    uint32_t cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
-    ESP_LOGV(TAG, "SPI_BOOT_CRYPT_CNT 0x%x", cnt);
+    uint8_t flash_crypt_wr_dis = 0;
+    uint32_t flash_crypt_cnt = REG_GET_FIELD(EFUSE_RD_REPEAT_DATA1_REG, EFUSE_SPI_BOOT_CRYPT_CNT);
+    esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT, &flash_crypt_wr_dis, 1);
 
-    bool flash_crypt_wr_dis = false; // TODO: check if CRYPT_CNT is write disabled
+    ESP_LOGV(TAG, "SPI_BOOT_CRYPT_CNT 0x%x", flash_crypt_cnt);
+    ESP_LOGV(TAG, "EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT 0x%x", flash_crypt_wr_dis);
 
     _Static_assert(EFUSE_SPI_BOOT_CRYPT_CNT == 0x7, "assuming CRYPT_CNT is only 3 bits wide");
 
-    if (cnt == 1 || cnt == 3 || cnt == 7) {
+    if (__builtin_parity(flash_crypt_cnt) == 1) {
         /* Flash is already encrypted */
-        int left;
-        if (cnt == 7 /* || disabled */) {
-            left = 0;
-        } else if (cnt == 3) {
-            left = 1;
-        } else {
-            left = 2;
+        int left = (flash_crypt_cnt == 1) ? 1 : 0;
+        if (flash_crypt_wr_dis) {
+            left = 0; /* can't update FLASH_CRYPT_CNT, no more flashes */
         }
         ESP_LOGI(TAG, "flash encryption is enabled (%d plaintext flashes left)", left);
         return ESP_OK;
-    }
-    else {
+    } else {
+
+#ifndef CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
         /* Flash is not encrypted, so encrypt it! */
-        return encrypt_flash_contents(cnt, flash_crypt_wr_dis);
+        return encrypt_flash_contents(flash_crypt_cnt, flash_crypt_wr_dis);
+#else
+        ESP_LOGE(TAG, "flash encryption is not enabled, and SECURE_FLASH_REQUIRE_ALREADY_ENABLED "
+                      "is set, refusing to boot.");
+        return ESP_ERR_INVALID_STATE;
+#endif // CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED
+
     }
 }
 
 static esp_err_t initialise_flash_encryption(void)
 {
     /* Before first flash encryption pass, need to initialise key & crypto config */
-
     /* Find out if a key is already set */
     bool has_aes128 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY, NULL);
     bool has_aes256_1 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_1, NULL);
     bool has_aes256_2 = ets_efuse_find_purpose(ETS_EFUSE_KEY_PURPOSE_XTS_AES_256_KEY_2, NULL);
-
     bool has_key = has_aes128 || (has_aes256_1 && has_aes256_2);
+    uint32_t dis_write = REG_GET_FIELD(EFUSE_PGM_DATA0_REG, EFUSE_WR_DIS);
+    uint32_t dis_read =  REG_GET_FIELD(EFUSE_PGM_DATA1_REG, EFUSE_RD_DIS); 
 
     if (!has_key && (has_aes256_1 || has_aes256_2)) {
         ESP_LOGE(TAG, "Invalid efuse key blocks: Both AES-256 key blocks must be set.");
         return ESP_ERR_INVALID_STATE;
     }
 
-    if (has_key) {
-        ESP_LOGI(TAG, "Using pre-existing key in efuse");
-
-        ESP_LOGE(TAG, "TODO: Check key is read & write protected"); // TODO
-    } else {
+    if(!has_key && !dis_write && !dis_read) {
         ESP_LOGI(TAG, "Generating new flash encryption key...");
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_AES256
         const unsigned BLOCKS_NEEDED = 2;
@@ -102,14 +105,13 @@ static esp_err_t initialise_flash_encryption(void)
         }
 
         for(ets_efuse_purpose_t purpose = PURPOSE_START; purpose <= PURPOSE_END; purpose++) {
-            uint32_t buf[8];
+            uint32_t buf[8] = {0};
             bootloader_fill_random(buf, sizeof(buf));
             ets_efuse_block_t block = ets_efuse_find_unused_key_block();
-            ESP_LOGD(TAG, "Writing ETS_EFUSE_BLOCK_KEY%d with purpose %d",
+            ESP_LOGI(TAG, "Writing ETS_EFUSE_BLOCK_KEY%d with purpose %d",
                      block - ETS_EFUSE_BLOCK_KEY0, purpose);
             bootloader_debug_buffer(buf, sizeof(buf), "Key content");
             int r = ets_efuse_write_key(block, purpose, buf, sizeof(buf));
-            bzero(buf, sizeof(buf));
             if (r != 0) {
                 ESP_LOGE(TAG, "Failed to write efuse block %d with purpose %d. Can't continue.");
                 return ESP_FAIL;
@@ -117,9 +119,37 @@ static esp_err_t initialise_flash_encryption(void)
         }
 
         ESP_LOGD(TAG, "Key generation complete");
+
+    } else {
+        ESP_LOGI(TAG, "Using pre-existing key in efuse");
     }
 
-    ESP_LOGE(TAG, "TODO: burn remaining security protection bits"); // TODO
+    uint32_t new_wdata1 = 0;
+
+#ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
+    ESP_LOGI(TAG, "Disable UART bootloader encryption...");
+    new_wdata1 |= EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT;
+#else
+    ESP_LOGW(TAG, "Not disabling UART bootloader encryption");
+#endif
+#ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
+    ESP_LOGI(TAG, "Disable UART bootloader cache...");
+    new_wdata1 |= (EFUSE_DIS_DOWNLOAD_DCACHE | EFUSE_DIS_DOWNLOAD_ICACHE);
+#else
+    ESP_LOGW(TAG, "Not disabling UART bootloader cache - SECURITY COMPROMISED");
+#endif
+#ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
+    ESP_LOGI(TAG, "Disable JTAG...");
+    new_wdata1 |= EFUSE_HARD_DIS_JTAG;
+#else
+    ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
+#endif
+
+    if (new_wdata1 != 0) {
+        ets_efuse_clear_program_registers();
+        REG_WRITE(EFUSE_PGM_DATA1_REG, new_wdata1);
+        esp_efuse_burn_new_values();
+    }
 
     return ESP_OK;
 }
@@ -156,10 +186,7 @@ static esp_err_t encrypt_flash_contents(uint32_t spi_boot_crypt_cnt, bool flash_
         return err;
     }
 
-    /* Now iterate the just-loaded partition table, looking for entries to encrypt
-     */
-
-    /* Go through each partition and encrypt if necessary */
+    /* Now iterate the just-loaded partition table, looking for entries to encrypt */
     for (int i = 0; i < num_partitions; i++) {
         err = encrypt_partition(i, &partition_table[i]);
         if (err != ESP_OK) {
@@ -176,10 +203,17 @@ static esp_err_t encrypt_flash_contents(uint32_t spi_boot_crypt_cnt, bool flash_
     ESP_LOGD(TAG, "SPI_BOOT_CRYPT_CNT 0x%x -> 0x%x", spi_boot_crypt_cnt, new_spi_boot_crypt_cnt);
 
     ets_efuse_clear_program_registers();
-    REG_SET_FIELD(EFUSE_PGM_DATA2_REG, EFUSE_SPI_BOOT_CRYPT_CNT, new_spi_boot_crypt_cnt);
-    ets_efuse_program(ETS_EFUSE_BLOCK0);
 
+    REG_SET_FIELD(EFUSE_PGM_DATA2_REG, EFUSE_SPI_BOOT_CRYPT_CNT, new_spi_boot_crypt_cnt);
+    esp_efuse_burn_new_values();
     ESP_LOGI(TAG, "Flash encryption completed");
+
+    //Secure SPI boot cnt after its update if needed.
+#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+    uint32_t spi_boot_cnt_wr_dis = 1;
+    ESP_LOGI(TAG, "Write protecting SPI_CRYPT_CNT eFuse");
+    esp_efuse_write_field_blob(ESP_EFUSE_WR_DIS_SPI_BOOT_CRYPT_CNT, &spi_boot_cnt_wr_dis, 1);
+#endif
 
     return ESP_OK;
 }
@@ -191,21 +225,30 @@ static esp_err_t encrypt_bootloader(void)
     /* Check for plaintext bootloader (verification will fail if it's already encrypted) */
     if (esp_image_verify_bootloader(&image_length) == ESP_OK) {
         ESP_LOGD(TAG, "bootloader is plaintext. Encrypting...");
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+        // Account for the signature sector after the bootloader
+        image_length = (image_length + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE - 1);
+        image_length += FLASH_SECTOR_SIZE;
+        if (ESP_BOOTLOADER_OFFSET + image_length > ESP_PARTITION_TABLE_OFFSET) {
+            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PARTITION_TABLE_OFFSET);
+            return ESP_ERR_INVALID_STATE;
+        }
+#endif // CONFIG_SECURE_BOOT_V2_ENABLED
+
         err = esp_flash_encrypt_region(ESP_BOOTLOADER_OFFSET, image_length);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to encrypt bootloader in place: 0x%x", err);
             return err;
-        }
-
-        if (esp_secure_boot_enabled()) {
-            // TODO: anything different for secure boot?
-        }
+        } 
+        
+        ESP_LOGI(TAG, "bootloader encrypted successfully");
+        return err;
     }
     else {
         ESP_LOGW(TAG, "no valid bootloader was found");
+        return ESP_ERR_INVALID_STATE;
     }
-
-    return ESP_OK;
 }
 
 static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partition_table, int *num_partitions)
@@ -232,6 +275,7 @@ static esp_err_t encrypt_and_load_partition_table(esp_partition_info_t *partitio
     }
 
     /* Valid partition table loded */
+    ESP_LOGI(TAG, "partition table encrypted and loaded successfully");
     return ESP_OK;
 }
 
