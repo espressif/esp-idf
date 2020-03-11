@@ -46,17 +46,21 @@ typedef enum {
     LEDC_DUTY_DIR_MAX,
 } ledc_duty_direction_t;
 
-typedef enum  {
-    LEDC_REF_TICK = 0, /*!< LEDC timer clock divided from reference tick (1Mhz) */
-    LEDC_APB_CLK,      /*!< LEDC timer clock divided from APB clock (80Mhz) */
-} ledc_clk_src_t;
-
 typedef enum {
-    LEDC_AUTO_CLK,        /*!< The driver will automatically select the source clock(REF_TICK or APB) based on the giving resolution and duty parameter when init the timer*/  
+    LEDC_AUTO_CLK,        /*!< The driver will automatically select the source clock(REF_TICK or APB) based on the giving resolution and duty parameter when init the timer*/
     LEDC_USE_REF_TICK,    /*!< LEDC timer select REF_TICK clock as source clock*/
     LEDC_USE_APB_CLK,     /*!< LEDC timer select APB clock as source clock*/
     LEDC_USE_RTC8M_CLK,   /*!< LEDC timer select RTC8M_CLK as source clock. Only for low speed channels and this parameter must be the same for all low speed channels*/
 } ledc_clk_cfg_t;
+
+/* Note: Setting numeric values to match ledc_clk_cfg_t values are a hack to avoid collision with
+   LEDC_AUTO_CLK in the driver, as these enums have very similar names and user may pass
+   one of these by mistake. */
+typedef enum  {
+    LEDC_REF_TICK = LEDC_USE_REF_TICK, /*!< LEDC timer clock divided from reference tick (1Mhz) */
+    LEDC_APB_CLK = LEDC_USE_APB_CLK,  /*!< LEDC timer clock divided from APB clock (80Mhz) */
+} ledc_clk_src_t;
+
 
 typedef enum {
     LEDC_TIMER_0 = 0, /*!< LEDC timer 0 */
