@@ -2589,6 +2589,26 @@ if BLE_MESH
                 This option adds extra self-tests which are run every time BLE Mesh
                 networking is initialized.
 
+        if BLE_MESH_SELF_TEST
+
+            config BLE_MESH_TEST_AUTO_ENTER_NETWORK
+                bool "Unprovisioned device enters mesh network automatically"
+                default y
+                help
+                    With this option enabled, an unprovisioned device can automatically
+                    enters mesh network using a specific test function without the pro-
+                    visioning procedure. And on the Provisioner side, a test function
+                    needs to be invoked to add the node information into the mesh stack.
+
+            config BLE_MESH_TEST_USE_WHITE_LIST
+                bool "Use white list to filter mesh advertising packets"
+                default n
+                help
+                    With this option enabled, users can use whilte list to filter mesh
+                    advertising packets while scanning.
+
+        endif # BLE_MESH_SELF_TEST
+
         config BLE_MESH_SHELL
             bool "Enable BLE Mesh shell"
             default n

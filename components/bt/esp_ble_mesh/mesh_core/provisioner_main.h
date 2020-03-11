@@ -71,8 +71,6 @@ int bt_mesh_provisioner_restore_node_name(u16_t addr, const char *name);
 
 int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16_t length, bool prov);
 
-int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node);
-
 struct bt_mesh_node *bt_mesh_provisioner_get_node_with_uuid(const u8_t uuid[16]);
 
 struct bt_mesh_node *bt_mesh_provisioner_get_node_with_addr(u16_t unicast_addr);
@@ -121,6 +119,8 @@ int bt_mesh_provisioner_bind_local_model_app_idx(u16_t elem_addr, u16_t mod_id,
 
 /* Provisioner print own element information */
 int bt_mesh_print_local_composition_data(void);
+
+int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node);
 
 /* The following APIs are for fast provisioning */
 

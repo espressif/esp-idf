@@ -267,9 +267,8 @@ static bool valid_scan_param(const struct bt_mesh_scan_param *param)
     return true;
 }
 
-static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window, u8_t filter_dup)
+static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window, u8_t filter_dup, u8_t scan_fil_policy)
 {
-    UINT8 scan_fil_policy = BLE_MESH_SP_ADV_ALL; /* No whitelist for BLE Mesh */
     UINT8 addr_type_own = BLE_MESH_ADDR_PUBLIC;  /* Currently only support Public Address */
     tGATT_IF client_if = 0xFF; /* Default GATT interface id */
 
@@ -442,7 +441,7 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
     }
 #endif
 
-    err = start_le_scan(param->type, param->interval, param->window, param->filter_dup);
+    err = start_le_scan(param->type, param->interval, param->window, param->filter_dup, param->scan_fil_policy);
     if (err) {
         return err;
     }
@@ -469,6 +468,23 @@ int bt_le_scan_stop(void)
     bt_mesh_scan_dev_found_cb = NULL;
     return 0;
 }
+
+#if CONFIG_BLE_MESH_TEST_USE_WHITE_LIST
+int bt_le_update_white_list(struct bt_mesh_white_list *wl)
+{
+    if (wl == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    if (BTM_BleUpdateAdvWhitelist(wl->add_remove, wl->remote_bda,
+            (tBTM_ADD_WHITELIST_CBACK *)wl->update_wl_comp_cb) == false) {
+        return -EIO;
+    }
+
+    return 0;
+}
+#endif
 
 #if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
     CONFIG_BLE_MESH_GATT_PROXY_SERVER
