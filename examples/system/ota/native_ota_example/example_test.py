@@ -21,6 +21,7 @@ except ImportError:
 
 import DUT
 import random
+import subprocess
 
 server_cert = "-----BEGIN CERTIFICATE-----\n" \
               "MIIDXTCCAkWgAwIBAgIJAP4LF7E72HakMA0GCSqGSIb3DQEBCwUAMEUxCzAJBgNV\n"\
@@ -82,23 +83,32 @@ def get_my_ip():
     return my_ip
 
 
-def start_https_server(ota_image_dir, server_ip, server_port):
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument('-p', '--port', dest='port', type= int,
-    #     help= "Server Port", default= 8000)
-    # args = parser.parse_args()
-    os.chdir(ota_image_dir)
+def get_server_status(host_ip, port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_status = sock.connect_ex((host_ip, port))
+    sock.close()
+    if server_status == 0:
+        return True
+    return False
 
+
+def create_file(server_file, file_data):
+    with open(server_file, "w+") as file:
+        file.write(file_data)
+
+
+def get_ca_cert(ota_image_dir):
+    os.chdir(ota_image_dir)
     server_file = os.path.join(ota_image_dir, "server_cert.pem")
-    cert_file_handle = open(server_file, "w+")
-    cert_file_handle.write(server_cert)
-    cert_file_handle.close()
+    create_file(server_file, server_cert)
 
     key_file = os.path.join(ota_image_dir, "server_key.pem")
-    key_file_handle = open("server_key.pem", "w+")
-    key_file_handle.write(server_key)
-    key_file_handle.close()
+    create_file(key_file, server_key)
+    return server_file, key_file
 
+
+def start_https_server(ota_image_dir, server_ip, server_port):
+    server_file, key_file = get_ca_cert(ota_image_dir)
     httpd = BaseHTTPServer.HTTPServer((server_ip, server_port),
                                       SimpleHTTPServer.SimpleHTTPRequestHandler)
 
@@ -106,6 +116,12 @@ def start_https_server(ota_image_dir, server_ip, server_port):
                                    keyfile=key_file,
                                    certfile=server_file, server_side=True)
     httpd.serve_forever()
+
+
+def start_chunked_server(ota_image_dir, server_port):
+    server_file, key_file = get_ca_cert(ota_image_dir)
+    chunked_server = subprocess.Popen(["openssl", "s_server", "-WWW", "-key", key_file, "-cert", server_file, "-port", str(server_port)])
+    return chunked_server
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
@@ -119,6 +135,7 @@ def test_examples_protocol_native_ota_example(env, extra_data):
       3. Reboot with the new OTA image
     """
     dut1 = env.get_dut("native_ota_example", "examples/system/ota/native_ota_example")
+    server_port = 8002
     # No. of times working of application to be validated
     iterations = 3
     # File to be downloaded. This file is generated after compilation
@@ -130,9 +147,10 @@ def test_examples_protocol_native_ota_example(env, extra_data):
     IDF.check_performance("native_ota_bin_size", bin_size // 1024)
     # start test
     host_ip = get_my_ip()
-    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8005))
-    thread1.daemon = True
-    thread1.start()
+    if (get_server_status(host_ip, server_port) is False):
+        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1.daemon = True
+        thread1.start()
     dut1.start_app()
     for i in range(iterations):
         dut1.expect("Loaded app from partition at offset", timeout=30)
@@ -144,10 +162,10 @@ def test_examples_protocol_native_ota_example(env, extra_data):
             thread1.close()
         dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
 
-        print("writing to device: {}".format("https://" + host_ip + ":8005/" + bin_name))
-        dut1.write("https://" + host_ip + ":8005/" + bin_name)
+        print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + bin_name))
+        dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + bin_name)
         dut1.expect("Loaded app from partition at offset", timeout=60)
-        dut1.expect("Starting OTA example", timeout=30)
+        dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
         dut1.reset()
 
 
@@ -163,6 +181,7 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
       4. Check working of code if bin is truncated
     """
     dut1 = env.get_dut("native_ota_example", "examples/system/ota/native_ota_example")
+    server_port = 8002
     # Original binary file generated after compilation
     bin_name = "native_ota.bin"
     # Truncated binary file to be generated from original binary file
@@ -183,9 +202,10 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
     IDF.check_performance("native_ota_bin_size", bin_size // 1024)
     # start test
     host_ip = get_my_ip()
-    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8006))
-    thread1.daemon = True
-    thread1.start()
+    if (get_server_status(host_ip, server_port) is False):
+        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1.daemon = True
+        thread1.start()
     dut1.start_app()
     dut1.expect("Loaded app from partition at offset", timeout=30)
     try:
@@ -195,9 +215,10 @@ def test_examples_protocol_native_ota_example_truncated_bin(env, extra_data):
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
 
-    print("writing to device: {}".format("https://" + host_ip + ":8006/" + truncated_bin_name))
-    dut1.write("https://" + host_ip + ":8006/" + truncated_bin_name)
+    print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name))
+    dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name)
     dut1.expect("native_ota_example: Image validation failed, image is corrupted", timeout=20)
+    os.remove(binary_file)
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
@@ -212,6 +233,7 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
       4. Check working of code if headers are not sent completely
     """
     dut1 = env.get_dut("native_ota_example", "examples/system/ota/native_ota_example")
+    server_port = 8002
     # Original binary file generated after compilation
     bin_name = "native_ota.bin"
     # Truncated binary file to be generated from original binary file
@@ -231,9 +253,10 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
     IDF.check_performance("native_ota_bin_size", bin_size // 1024)
     # start test
     host_ip = get_my_ip()
-    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8007))
-    thread1.daemon = True
-    thread1.start()
+    if (get_server_status(host_ip, server_port) is False):
+        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1.daemon = True
+        thread1.start()
     dut1.start_app()
     dut1.expect("Loaded app from partition at offset", timeout=30)
     try:
@@ -243,9 +266,10 @@ def test_examples_protocol_native_ota_example_truncated_header(env, extra_data):
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
 
-    print("writing to device: {}".format("https://" + host_ip + ":8007/" + truncated_bin_name))
-    dut1.write("https://" + host_ip + ":8007/" + truncated_bin_name)
+    print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name))
+    dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + truncated_bin_name)
     dut1.expect("native_ota_example: received package is not fit len", timeout=20)
+    os.remove(binary_file)
 
 
 @IDF.idf_example_test(env_tag="Example_WIFI")
@@ -260,6 +284,7 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
       4. Check working of code for random binary file
     """
     dut1 = env.get_dut("native_ota_example", "examples/system/ota/native_ota_example")
+    server_port = 8002
     # Random binary file to be generated
     random_bin_name = "random.bin"
     # Size of random binary file. 32000 is choosen, to reduce the time required to run the test-case
@@ -267,7 +292,10 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
     # check and log bin size
     binary_file = os.path.join(dut1.app.binary_path, random_bin_name)
     fo = open(binary_file, "w+")
-    for i in range(random_bin_size):
+    # First byte of binary file is always set to zero. If first byte is generated randomly,
+    # in some cases it may generate 0xE9 which will result in failure of testcase.
+    fo.write(str(0))
+    for i in range(random_bin_size - 1):
         fo.write(str(random.randrange(0,255,1)))
     fo.close()
     bin_size = os.path.getsize(binary_file)
@@ -275,9 +303,10 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
     IDF.check_performance("native_ota_bin_size", bin_size // 1024)
     # start test
     host_ip = get_my_ip()
-    thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, 8008))
-    thread1.daemon = True
-    thread1.start()
+    if (get_server_status(host_ip, server_port) is False):
+        thread1 = Thread(target=start_https_server, args=(dut1.app.binary_path, host_ip, server_port))
+        thread1.daemon = True
+        thread1.start()
     dut1.start_app()
     dut1.expect("Loaded app from partition at offset", timeout=30)
     try:
@@ -287,13 +316,54 @@ def test_examples_protocol_native_ota_example_random(env, extra_data):
         raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
     dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
 
-    print("writing to device: {}".format("https://" + host_ip + ":8008/" + random_bin_name))
-    dut1.write("https://" + host_ip + ":8008/" + random_bin_name)
+    print("writing to device: {}".format("https://" + host_ip + ":" + str(server_port) + "/" + random_bin_name))
+    dut1.write("https://" + host_ip + ":" + str(server_port) + "/" + random_bin_name)
     dut1.expect("esp_ota_ops: OTA image has invalid magic byte", timeout=20)
+    os.remove(binary_file)
+
+
+@IDF.idf_example_test(env_tag="Example_WIFI")
+def test_examples_protocol_native_ota_example_chunked(env, extra_data):
+    """
+    This is a positive test case, which downloads complete binary file multiple number of times.
+    Number of iterations can be specified in variable iterations.
+    steps: |
+      1. join AP
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    dut1 = env.get_dut("native_ota_example", "examples/system/ota/native_ota_example")
+    # File to be downloaded. This file is generated after compilation
+    bin_name = "native_ota.bin"
+    # check and log bin size
+    binary_file = os.path.join(dut1.app.binary_path, bin_name)
+    bin_size = os.path.getsize(binary_file)
+    IDF.log_performance("native_ota_bin_size", "{}KB".format(bin_size // 1024))
+    IDF.check_performance("native_ota_bin_size", bin_size // 1024)
+    # start test
+    host_ip = get_my_ip()
+    chunked_server = start_chunked_server(dut1.app.binary_path, 8070)
+    dut1.start_app()
+    dut1.expect("Loaded app from partition at offset", timeout=30)
+    try:
+        ip_address = dut1.expect(re.compile(r" sta ip: ([^,]+),"), timeout=30)
+        print("Connected to AP with IP: {}".format(ip_address))
+    except DUT.ExpectTimeout:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+
+    dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
+    print("writing to device: {}".format("https://" + host_ip + ":8070/" + bin_name))
+    dut1.write("https://" + host_ip + ":8070/" + bin_name)
+    dut1.expect("Loaded app from partition at offset", timeout=60)
+    dut1.expect("Connect to Wifi ! Start to Connect to Server....", timeout=30)
+    chunked_server.kill()
+    os.remove(os.path.join(dut1.app.binary_path, "server_cert.pem"))
+    os.remove(os.path.join(dut1.app.binary_path, "server_key.pem"))
 
 
 if __name__ == '__main__':
     test_examples_protocol_native_ota_example()
+    test_examples_protocol_native_ota_example_chunked()
     test_examples_protocol_native_ota_example_truncated_bin()
     test_examples_protocol_native_ota_example_truncated_header()
     test_examples_protocol_native_ota_example_random()
