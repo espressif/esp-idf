@@ -133,7 +133,7 @@ int uECC_verify_antifault(const uint8_t *public_key,
     }
     /* Curve may be longer than hash, in which case keep reading the rest of the bytes */
     for (int w = hash_words; w < curve->num_words; w++) {
-        vhash_words[w % hash_words] |= rx[w] | r[w];
+        vhash_words[w % hash_words] |= rx[w] ^ r[w];
     }
 
     /* Accept only if v == r. */
