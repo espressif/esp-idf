@@ -220,7 +220,7 @@ def test_examples_protocol_websocket(env, extra_data):
     binary_file = os.path.join(dut1.app.binary_path, "websocket-example.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("websocket_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("websocket_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("websocket_bin_size", bin_size // 1024, dut1.TARGET)
 
     try:
         if "CONFIG_WEBSOCKET_URI_FROM_STDIN" in dut1.app.get_sdkconfig():

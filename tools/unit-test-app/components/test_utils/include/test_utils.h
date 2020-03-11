@@ -45,21 +45,6 @@
     TEST_ASSERT(value > PERFORMANCE_CON(IDF_PERFORMANCE_MIN_, name)); \
 } while(0)
 
-//Add more targets here, and corresponding performance requirements for that target in idf_performance.h
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define PERFORMANCE_TARGET_SUFFIX       _ESP32
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define PERFORMANCE_TARGET_SUFFIX       _ESP32S2
-#else
-#error target surfix not defined!
-#endif
-
-
-#define TEST_TARGET_PERFORMANCE_LESS_THAN(name, value_fmt, value) TEST_PERFORMANCE_LESS_THAN(PERFORMANCE_CON(name, PERFORMANCE_TARGET_SUFFIX), value_fmt, value)
-
-#define TEST_TARGET_PERFORMANCE_GREATER_THAN(name, value_fmt, value) TEST_PERFORMANCE_GREATER_THAN(PERFORMANCE_CON(name, PERFORMANCE_TARGET_SUFFIX), value_fmt, value)
-
-
 /* @brief macro to print IDF performance
  * @param mode :        performance item name. a string pointer.
  * @param value_fmt:    print format and unit of the value, for example: "%02fms", "%dKB"

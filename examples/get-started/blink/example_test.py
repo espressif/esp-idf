@@ -34,7 +34,7 @@ def test_examples_blink(env, extra_data):
     binary_file = os.path.join(dut.app.binary_path, "blink.bin")
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("blink_bin_size", "{}KB".format(bin_size // 1024))
-    ttfw_idf.check_performance("blink_bin_size", bin_size // 1024)
+    ttfw_idf.check_performance("blink_bin_size", bin_size // 1024, dut.TARGET)
 
     dut.start_app()
 
