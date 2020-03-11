@@ -25,7 +25,7 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_commo
 static esp_err_t esp_core_dump_write_binary(void *frame, core_dump_write_config_t *write_cfg)
 {
     esp_err_t err;
-    core_dump_task_header_t tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
+    static core_dump_task_header_t tasks[CONFIG_ESP32_CORE_DUMP_MAX_TASKS_NUM];
     uint32_t tcb_sz, task_num, tcb_sz_padded;
     bool task_is_valid = false;
     uint32_t data_len = 0, i;

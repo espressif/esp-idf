@@ -6,6 +6,7 @@ set(COMPONENT_ADD_LDFRAGMENTS linker.lf)
 set(COMPONENT_SRCS "src/core_dump_common.c" 
                    "src/core_dump_flash.c"
                    "src/core_dump_port.c"
-                   "src/core_dump_uart.c") 
+                   "src/core_dump_uart.c"
+                   "src/core_dump_flash_newstack.c") 
 
 register_component()

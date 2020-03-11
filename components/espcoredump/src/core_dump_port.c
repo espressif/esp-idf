@@ -20,9 +20,9 @@ const static DRAM_ATTR char TAG[] __attribute__((unused)) = "esp_core_dump_port"
 
 #if CONFIG_ESP32_ENABLE_COREDUMP
 
-inline bool esp_task_stack_start_is_sane(uint32_t sp)
+static inline bool esp_task_stack_start_is_sane(uint32_t sp)
 {
-    return !(sp < 0x3ffae010UL || sp > 0x3fffffffUL);
+    return esp_ptr_in_dram((const void*)sp) || esp_ptr_external_ram((const void*)sp);
 }
 
 inline bool esp_tcb_addr_is_sane(uint32_t addr, uint32_t sz)

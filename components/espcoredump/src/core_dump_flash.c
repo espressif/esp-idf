@@ -198,8 +198,13 @@ static esp_err_t esp_core_dump_flash_write_data(void *priv, void * data, uint32_
     return err;
 }
 
+#ifdef CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+#define esp_core_dump_to_flash esp_core_dump_to_flash_inner
+#endif // CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY
+
 void esp_core_dump_to_flash(XtExcFrame *frame)
 {
+    ESP_COREDUMP_LOGI("%s called with sp: %p frame: %p", __func__, get_sp(), frame);
     core_dump_write_config_t wr_cfg;
     core_dump_write_flash_data_t wr_data;
 
@@ -228,5 +233,5 @@ void esp_core_dump_to_flash(XtExcFrame *frame)
     esp_core_dump_write((void*)frame, &wr_cfg);
     ESP_COREDUMP_LOGI("Core dump has been saved to flash.");
 }
-#endif
 
+#endif // CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
