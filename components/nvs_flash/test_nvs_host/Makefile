@@ -39,7 +39,7 @@ COVERAGE_FILES = $(OBJ_FILES:.o=.gc*)
 
 $(OBJ_FILES): %.o: %.cpp
 
-$(TEST_PROGRAM): $(OBJ_FILES)
+$(TEST_PROGRAM): $(OBJ_FILES) clean-coverage
 	$(MAKE) -C ../../mbedtls/mbedtls/ lib
 	g++ $(LDFLAGS) -o $(TEST_PROGRAM) $(OBJ_FILES) ../../mbedtls/mbedtls/library/libmbedcrypto.a
 
@@ -62,12 +62,14 @@ coverage_report: coverage.info
 	genhtml coverage.info --output-directory coverage_report
 	@echo "Coverage report is in coverage_report/index.html"
 
-clean:
-	$(MAKE) -C ../../mbedtls/mbedtls/ clean
-	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
+clean-coverage:
 	rm -f $(COVERAGE_FILES) *.gcov
 	rm -rf coverage_report/
 	rm -f coverage.info
+
+clean: clean-coverage
+	$(MAKE) -C ../../mbedtls/mbedtls/ clean
+	rm -f $(OBJ_FILES) $(TEST_PROGRAM)
 	rm -f ../nvs_partition_generator/partition_single_page.bin
 	rm -f ../nvs_partition_generator/partition_multipage_blob.bin
 	rm -f ../nvs_partition_generator/partition_encrypted.bin
@@ -80,4 +82,4 @@ clean:
 
 
 
-.PHONY: clean all test long-test
+.PHONY: clean clean-coverage all test long-test
