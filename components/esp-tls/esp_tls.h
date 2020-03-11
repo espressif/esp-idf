@@ -197,7 +197,7 @@ typedef struct esp_tls_cfg {
                                                  then PSK authentication is enabled with configured setup.
                                                  Important note: the pointer must be valid for connection */
 
-    esp_err_t (*crt_bundle_attach)(mbedtls_ssl_config *conf);
+    esp_err_t (*crt_bundle_attach)(void *conf);
                                             /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification
                                                  bundle for server verification, must be enabled in menuconfig */
 
