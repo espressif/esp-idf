@@ -1,6 +1,5 @@
 set(srcs
     "adc_common.c"
-    "can.c"
     "dac.c"
     "gpio.c"
     "i2c.c"
@@ -21,6 +20,7 @@ set(srcs
     "spi_bus_lock.c"
     "timer.c"
     "touch_sensor_common.c"
+    "twai.c"
     "uart.c")
 
 set(includes "include")

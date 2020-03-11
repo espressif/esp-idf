@@ -86,8 +86,6 @@ INPUT = \
     ##
     ## Peripherals - API Reference
     ##
-    $(IDF_PATH)/components/driver/include/driver/can.h \
-    $(IDF_PATH)/components/soc/include/hal/can_types.h \
     $(IDF_PATH)/components/driver/include/driver/dac.h \
     $(IDF_PATH)/components/driver/include/driver/gpio.h \
     $(IDF_PATH)/components/driver/include/driver/rtc_io.h \
@@ -107,6 +105,7 @@ INPUT = \
     $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
+    $(IDF_PATH)/components/driver/include/driver/twai.h \
     $(IDF_PATH)/components/driver/include/driver/adc_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
@@ -125,6 +124,7 @@ INPUT = \
     $(IDF_PATH)/components/soc/include/hal/adc_types.h \
     $(IDF_PATH)/components/soc/include/hal/gpio_types.h \
     $(IDF_PATH)/components/soc/include/hal/uart_types.h \
+    $(IDF_PATH)/components/soc/include/hal/twai_types.h \
     $(IDF_PATH)/components/soc/include/hal/touch_sensor_types.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/adc_channel.h \
     $(IDF_PATH)/components/soc/soc/esp32/include/soc/dac_channel.h \

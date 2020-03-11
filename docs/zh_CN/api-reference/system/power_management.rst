@@ -86,7 +86,7 @@ ESP32 支持下表中所述的三种电源管理锁。
 - **SPI slave**：从调用 :cpp:func:`spi_slave_initialize` 至 :cpp:func:`spi_slave_free` 期间。
 - **Ethernet**：从调用 :cpp:func:`esp_eth_driver_install` 至 :cpp:func:`esp_eth_driver_uninstall` 期间。
 - **WiFi**：从调用 :cpp:func:`esp_wifi_start` 至 :cpp:func:`esp_wifi_stop` 期间。如果启用了调制解调器睡眠模式，广播关闭时将释放此管理锁。
-- **CAN**：从调用 :cpp:func:`can_driver_install` 至 :cpp:func:`can_driver_uninstall` 期间。
+- **TWAI**：从调用 :cpp:func:`twai_driver_install` 至 :cpp:func:`twai_driver_uninstall` 期间。
 
 .. only:: esp32
 

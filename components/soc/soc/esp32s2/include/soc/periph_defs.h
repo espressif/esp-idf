@@ -43,7 +43,7 @@ typedef enum {
     PERIPH_HSPI_MODULE, //SPI3
     PERIPH_SPI2_DMA_MODULE,
     PERIPH_SPI3_DMA_MODULE,
-    PERIPH_CAN_MODULE,
+    PERIPH_TWAI_MODULE,
     PERIPH_RNG_MODULE,
     PERIPH_WIFI_MODULE,
     PERIPH_WIFI_BT_COMMON_MODULE,
@@ -107,7 +107,7 @@ typedef enum {
     ETS_PWM3_INTR_SOURCE,                       /**< interruot of PWM3, level*/
     ETS_LEDC_INTR_SOURCE,                       /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
-    ETS_CAN_INTR_SOURCE ,                       /**< interrupt of can, level*/
+    ETS_TWAI_INTR_SOURCE ,                      /**< interrupt of twai, level*/
 
     ETS_USB_INTR_SOURCE = 48,                   /**< interrupt of USB, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
