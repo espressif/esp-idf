@@ -87,6 +87,7 @@ def test_examples_wifi_prov_mgr(env, extra_data):
         raise RuntimeError("Failed to send apply config")
 
     success = False
+    retry = 0
     while True:
         time.sleep(5)
         print("Wi-Fi connection state")
@@ -96,6 +97,10 @@ def test_examples_wifi_prov_mgr(env, extra_data):
         elif (ret == 0):
             print("Provisioning was successful")
             success = True
+        elif (ret == 3 and retry < 3):
+            retry = retry + 1
+            print("Connection failed.. retry again...: ", ret)
+            continue
         break
 
     if not success:
