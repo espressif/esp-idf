@@ -14,43 +14,34 @@
 
 #include <freertos/xtensa_context.h>
     
-    .extern esp_clear_watchpoint
+    .extern shared_stack
+    .extern shared_stack_callback
+    .extern shared_stack_function_done
+    .extern longjmp
     .text
 
-/**
- * extern void switch_stack_enter(portSTACK_TYPE *stack, portSTACK_TYPE *backup_stack);
- */
-    .globl     esp_switch_stack_enter
-    .type       esp_switch_stack_enter,@function
+
+/* extern void esp_shared_stack_invoke_function(void) */
+
+    .globl     esp_shared_stack_invoke_function
+    .type       esp_shared_stack_invoke_function,@function
     .align      4
-esp_switch_stack_enter:
+esp_shared_stack_invoke_function:
 
     #ifndef __XTENSA_CALL0_ABI__
-    entry   sp, 0x10
-    mov   a4, a1
-    s32i   a4, a3, 0 /* on a3 there is a safe place to save the current stack */
-    l32i   a4, a2, 0 /* obtains the user allocated stack buffer */
-    mov   a1, a4     /* sp register now contains caller specified stack */
-    retw
-    #else 
-    #error "this code is written for Window ABI"
-    #endif
-
-/**
- * extern void switch_stack_exit(portSTACK_TYPE *backup_stack);
- */
-    .globl  esp_switch_stack_exit
-    .type   esp_switch_stack_exit,@function
-    .align  4
-esp_switch_stack_exit:
-
-    #ifndef __XTENSA_CALL0_ABI__
-    entry   sp, 0x10
-
-    l32i a4, a2, 0  /* recover the original task stack */
-    mov a1, a4      /* put it on sp register again */
-    retw
-
+    movi    a0, 0                   /* no need to rotate window, it will be destroyed anyway */
+    movi    a6, shared_stack        
+    l32i    sp, a6, 0               /* load shared stack pointer */
+    movi    a12, shared_stack_callback
+    l32i    a12, a12, 0
+    callx4  a12                     /* call user function */
+    movi    a6, shared_stack_function_done
+    movi    a7, 1       
+    s32i    a7, a6, 0               /* hint the function was finished */
+    movi    a6, shared_stack_env    
+    movi    a7, 0     
+    call4   longjmp                 /* jump to last clean state previously saved */
+    ret
     #else 
     #error "this code is written for Window ABI"
     #endif
