@@ -36,8 +36,6 @@
 #include "esp32s2/rom/spi_flash.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/clk.h"
-#include "soc/spi_mem_reg.h"
-#include "soc/spi_mem_struct.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "cache_utils.h"
@@ -776,6 +774,7 @@ void spi_flash_dump_counters(void)
 }
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
 
 #if defined(CONFIG_SPI_FLASH_USE_LEGACY_IMPL) && defined(CONFIG_IDF_TARGET_ESP32S2)
 // TODO esp32s2: Remove once ESP32S2 has new SPI Flash API support

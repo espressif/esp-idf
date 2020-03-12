@@ -24,6 +24,7 @@
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "bootloader_console.h"
+#include "bootloader_flash.h"
 
 #include "soc/cpu.h"
 #include "soc/dport_reg.h"
@@ -266,6 +267,8 @@ static esp_err_t bootloader_init_spi_flash(void)
 
     print_flash_info(&bootloader_image_hdr);
     update_flash_config(&bootloader_image_hdr);
+    //ensure the flash is write-protected
+    bootloader_enable_wp();
     return ESP_OK;
 }
 

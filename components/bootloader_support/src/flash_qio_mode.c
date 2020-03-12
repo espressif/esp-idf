@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include "bootloader_flash_config.h"
 #include "flash_qio_mode.h"
+#include "bootloader_flash.h"
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_rom_efuse.h"
@@ -22,32 +23,13 @@
 #include "esp32/rom/spi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/spi_flash.h"
-#include "soc/spi_mem_struct.h"
+#elif CONFIG_IDF_TARGET_ESP32S3
+#include "esp32s3/rom/spi_flash.h"
 #endif
-#include "soc/spi_struct.h"
-#include "soc/spi_reg.h"
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
-/* SPI flash controller */
-#if CONFIG_IDF_TARGET_ESP32
-#define SPIFLASH SPI1
-#elif CONFIG_IDF_TARGET_ESP32S2
-#define SPIFLASH SPIMEM1
-#endif
-
-/* SPI commands (actual on-wire commands not SPI controller bitmasks)
-   Suitable for use with the execute_flash_command static function.
-*/
-#define CMD_RDID       0x9F
-#define CMD_WRSR       0x01
-#define CMD_WRSR2      0x31 /* Not all SPI flash uses this command */
-#define CMD_WREN       0x06
-#define CMD_WRDI       0x04
-#define CMD_RDSR       0x05
-#define CMD_RDSR2      0x35 /* Not all SPI flash uses this command */
-#define CMD_OTPEN      0x3A /* Enable OTP mode, not all SPI flash uses this command */
 
 static const char *TAG = "qio_mode";
 
@@ -124,56 +106,14 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 
    The command passed here is always the on-the-wire command given to the SPI flash unit.
 */
-static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len);
 
 /* dummy_len_plus values defined in ROM for SPI flash configuration */
-extern uint8_t g_rom_spiflash_dummy_len_plus[];
 uint32_t bootloader_read_flash_id(void)
 {
-    uint32_t id = execute_flash_command(CMD_RDID, 0, 0, 24);
+    uint32_t id = bootloader_execute_flash_command(CMD_RDID, 0, 0, 24);
     id = ((id & 0xff) << 16) | ((id >> 16) & 0xff) | (id & 0xff00);
     return id;
 }
-
-#if CONFIG_IDF_TARGET_ESP32S2
-#define FLASH_WRAP_CMD   0x77
-typedef enum {
-    FLASH_WRAP_MODE_8B  = 0,
-    FLASH_WRAP_MODE_16B = 2,
-    FLASH_WRAP_MODE_32B = 4,
-    FLASH_WRAP_MODE_64B = 6,
-    FLASH_WRAP_MODE_DISABLE = 1
-} spi_flash_wrap_mode_t;
-static esp_err_t spi_flash_wrap_set(spi_flash_wrap_mode_t mode)
-{
-    uint32_t reg_bkp_ctrl = SPIFLASH.ctrl.val;
-    uint32_t reg_bkp_usr  = SPIFLASH.user.val;
-    SPIFLASH.user.fwrite_dio = 0;
-    SPIFLASH.user.fwrite_dual = 0;
-    SPIFLASH.user.fwrite_qio = 1;
-    SPIFLASH.user.fwrite_quad = 0;
-    SPIFLASH.ctrl.fcmd_dual = 0;
-    SPIFLASH.ctrl.fcmd_quad = 0;
-    SPIFLASH.user.usr_dummy = 0;
-    SPIFLASH.user.usr_addr = 1;
-    SPIFLASH.user.usr_command = 1;
-    SPIFLASH.user2.usr_command_bitlen = 7;
-    SPIFLASH.user2.usr_command_value = FLASH_WRAP_CMD;
-    SPIFLASH.user1.usr_addr_bitlen = 23;
-    SPIFLASH.addr = 0;
-    SPIFLASH.user.usr_miso = 0;
-    SPIFLASH.user.usr_mosi = 1;
-    SPIFLASH.mosi_dlen.usr_mosi_bit_len = 7;
-    SPIFLASH.data_buf[0] = (uint32_t) mode << 4;;
-    SPIFLASH.cmd.usr = 1;
-    while (SPIFLASH.cmd.usr != 0) {
-    }
-
-    SPIFLASH.ctrl.val = reg_bkp_ctrl;
-    SPIFLASH.user.val = reg_bkp_usr;
-    return ESP_OK;
-}
-#endif
 
 void bootloader_enable_qio_mode(void)
 {
@@ -206,8 +146,8 @@ void bootloader_enable_qio_mode(void)
     enable_qio_mode(chip_data[i].read_status_fn,
                     chip_data[i].write_status_fn,
                     chip_data[i].status_qio_bit);
-#if CONFIG_IDF_TARGET_ESP32S2
-    spi_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
+#if SOC_CACHE_SUPPORT_WRAP
+    bootloader_flash_wrap_set(FLASH_WRAP_MODE_DISABLE);
 #endif
 }
 
@@ -224,7 +164,7 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
     ESP_LOGD(TAG, "Initial flash chip status 0x%x", status);
 
     if ((status & (1 << status_qio_bit)) == 0) {
-        execute_flash_command(CMD_WREN, 0, 0, 0);
+        bootloader_execute_flash_command(CMD_WREN, 0, 0, 0);
         write_status_fn(status | (1 << status_qio_bit));
 
         esp_rom_spiflash_wait_idle(&g_rom_flashchip);
@@ -262,95 +202,48 @@ static esp_err_t enable_qio_mode(read_status_fn_t read_status_fn,
 
 static unsigned read_status_8b_rdsr(void)
 {
-    return execute_flash_command(CMD_RDSR, 0, 0, 8);
+    return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
 }
 
 static unsigned read_status_8b_rdsr2(void)
 {
-    return execute_flash_command(CMD_RDSR2, 0, 0, 8);
+    return bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8);
 }
 
 static unsigned read_status_16b_rdsr_rdsr2(void)
 {
-    return execute_flash_command(CMD_RDSR, 0, 0, 8) | (execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
+    return bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8) | (bootloader_execute_flash_command(CMD_RDSR2, 0, 0, 8) << 8);
 }
 
 static void write_status_8b_wrsr(unsigned new_status)
 {
-    execute_flash_command(CMD_WRSR, new_status, 8, 0);
+    bootloader_execute_flash_command(CMD_WRSR, new_status, 8, 0);
 }
 
 static void write_status_8b_wrsr2(unsigned new_status)
 {
-    execute_flash_command(CMD_WRSR2, new_status, 8, 0);
+    bootloader_execute_flash_command(CMD_WRSR2, new_status, 8, 0);
 }
 
 static void write_status_16b_wrsr(unsigned new_status)
 {
-    execute_flash_command(CMD_WRSR, new_status, 16, 0);
+    bootloader_execute_flash_command(CMD_WRSR, new_status, 16, 0);
 }
 
 static unsigned read_status_8b_xmc25qu64a(void)
 {
-    execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
+    bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-    uint32_t read_status = execute_flash_command(CMD_RDSR, 0, 0, 8);
-    execute_flash_command(CMD_WRDI, 0, 0, 0);   /* Exit OTP mode */
+    uint32_t read_status = bootloader_execute_flash_command(CMD_RDSR, 0, 0, 8);
+    bootloader_execute_flash_command(CMD_WRDI, 0, 0, 0);   /* Exit OTP mode */
     return read_status;
 }
 
 static void write_status_8b_xmc25qu64a(unsigned new_status)
 {
-    execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
+    bootloader_execute_flash_command(CMD_OTPEN, 0, 0, 0);  /* Enter OTP mode */
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-    execute_flash_command(CMD_WRSR, new_status, 8, 0);
+    bootloader_execute_flash_command(CMD_WRSR, new_status, 8, 0);
     esp_rom_spiflash_wait_idle(&g_rom_flashchip);
-    execute_flash_command(CMD_WRDI, 0, 0, 0);   /* Exit OTP mode */
-}
-
-static uint32_t execute_flash_command(uint8_t command, uint32_t mosi_data, uint8_t mosi_len, uint8_t miso_len)
-{
-    uint32_t old_ctrl_reg = SPIFLASH.ctrl.val;
-#if CONFIG_IDF_TARGET_ESP32
-    SPIFLASH.ctrl.val = SPI_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
-#elif CONFIG_IDF_TARGET_ESP32S2
-    SPIFLASH.ctrl.val = SPI_MEM_WP_REG_M; // keep WP high while idle, otherwise leave DIO mode
-#endif
-    SPIFLASH.user.usr_dummy = 0;
-    SPIFLASH.user.usr_addr = 0;
-    SPIFLASH.user.usr_command = 1;
-    SPIFLASH.user2.usr_command_bitlen = 7;
-
-    SPIFLASH.user2.usr_command_value = command;
-    SPIFLASH.user.usr_miso = miso_len > 0;
-#if CONFIG_IDF_TARGET_ESP32
-    SPIFLASH.miso_dlen.usr_miso_dbitlen = miso_len ? (miso_len - 1) : 0;
-#elif CONFIG_IDF_TARGET_ESP32S2
-    SPIFLASH.miso_dlen.usr_miso_bit_len = miso_len ? (miso_len - 1) : 0;
-#endif
-    SPIFLASH.user.usr_mosi = mosi_len > 0;
-#if CONFIG_IDF_TARGET_ESP32
-    SPIFLASH.mosi_dlen.usr_mosi_dbitlen = mosi_len ? (mosi_len - 1) : 0;
-#elif CONFIG_IDF_TARGET_ESP32S2
-    SPIFLASH.mosi_dlen.usr_mosi_bit_len = mosi_len ? (mosi_len - 1) : 0;
-#endif
-    SPIFLASH.data_buf[0] = mosi_data;
-
-    if (g_rom_spiflash_dummy_len_plus[1]) {
-        /* When flash pins are mapped via GPIO matrix, need a dummy cycle before reading via MISO */
-        if (miso_len > 0) {
-            SPIFLASH.user.usr_dummy = 1;
-            SPIFLASH.user1.usr_dummy_cyclelen = g_rom_spiflash_dummy_len_plus[1] - 1;
-        } else {
-            SPIFLASH.user.usr_dummy = 0;
-            SPIFLASH.user1.usr_dummy_cyclelen = 0;
-        }
-    }
-
-    SPIFLASH.cmd.usr = 1;
-    while (SPIFLASH.cmd.usr != 0) {
-    }
-
-    SPIFLASH.ctrl.val = old_ctrl_reg;
-    return SPIFLASH.data_buf[0];
+    bootloader_execute_flash_command(CMD_WRDI, 0, 0, 0);   /* Exit OTP mode */
 }
