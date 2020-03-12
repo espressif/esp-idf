@@ -35,8 +35,6 @@
 #include "esp32/clk.h"
 #elif CONFIG_IDF_TARGET_ESP32S2BETA
 #include "esp32s2beta/clk.h"
-#include "soc/spi_mem_reg.h"
-#include "soc/spi_mem_struct.h"
 #endif
 #include "esp_flash_partitions.h"
 #include "cache_utils.h"
@@ -831,6 +829,7 @@ void spi_flash_dump_counters(void)
 }
 
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
 
 #if defined(CONFIG_SPI_FLASH_USE_LEGACY_IMPL) && defined(CONFIG_IDF_TARGET_ESP32S2BETA)
 // TODO esp32s2beta: Remove once ESP32S2Beta has new SPI Flash API support

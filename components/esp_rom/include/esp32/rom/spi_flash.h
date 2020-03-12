@@ -121,6 +121,7 @@ extern "C" {
 #define ESP_ROM_SPIFLASH_BP2                  BIT4
 #define ESP_ROM_SPIFLASH_WR_PROTECT           (ESP_ROM_SPIFLASH_BP0|ESP_ROM_SPIFLASH_BP1|ESP_ROM_SPIFLASH_BP2)
 #define ESP_ROM_SPIFLASH_QE                   BIT9
+#define ESP_ROM_SPIFLASH_BP_MASK_ISSI         (BIT7 | BIT5 | BIT4 | BIT3 | BIT2)
 
 //Extra dummy for flash read
 #define ESP_ROM_SPIFLASH_DUMMY_LEN_PLUS_20M   0
