@@ -380,11 +380,11 @@ typedef struct {
     /** Callback used to update publish message. Initialized by the stack. */
     esp_ble_mesh_cb_t update;
 
-    /** Role of the device that is going to publish messages */
-    uint8_t dev_role;
-
     /** Publish Period Timer. Initialized by the stack. */
     struct k_delayed_work timer;
+
+    /** Role of the device that is going to publish messages */
+    uint8_t dev_role;
 } esp_ble_mesh_model_pub_t;
 
 /** @def ESP_BLE_MESH_MODEL_PUB_DEFINE
