@@ -170,8 +170,8 @@ void app_main(void)
          * The line is returned when ENTER is pressed.
          */
         char* line = linenoise(prompt);
-        if (line == NULL) { /* Ignore empty lines */
-            continue;
+        if (line == NULL) { /* Break on EOF or error */
+            break;
         }
         /* Add the command to the history */
         linenoiseHistoryAdd(line);
@@ -195,4 +195,8 @@ void app_main(void)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+    
+    ESP_LOGE(TAG, "Error or end-of-input, terminating console");
+    esp_console_deinit();
+    vTaskDelete(NULL); /* terminate app_main */
 }
