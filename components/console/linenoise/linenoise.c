@@ -979,11 +979,11 @@ char *linenoise(const char *prompt) {
     } else {
         count = linenoiseDumb(buf, LINENOISE_MAX_LINE, prompt);
     }
-    if (count > 0) {
+    if (count >= 0) {
         sanitize(buf);
         count = strlen(buf);
     }
-    if (count <= 0) {
+    if (count < 0) {
         free(buf);
         return NULL;
     }
