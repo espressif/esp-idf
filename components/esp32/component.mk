@@ -8,6 +8,10 @@ ifndef CONFIG_NO_BLOBS
 LIBS += core rtc net80211 pp wpa smartconfig coexist wps wpa2 espnow phy mesh
 endif
 
+ifdef CONFIG_FREERTOS_UNICORE
+   COMPONENT_OBJEXCLUDE := ipc.o
+endif
+
 ifdef CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY  
    # This linker script must come before esp32.project.ld
    LINKER_SCRIPTS += esp32.extram.bss.ld
