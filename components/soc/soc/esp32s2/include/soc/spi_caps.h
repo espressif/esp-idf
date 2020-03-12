@@ -45,5 +45,21 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct spi_dev_s;
+extern volatile struct spi_dev_s GPSPI3;
+struct spi_mem_dev_s;
+extern volatile struct spi_mem_dev_s SPIMEM1;
+#ifdef __cplusplus
+}
+#endif
+
 // Peripheral supports DIO, DOUT, QIO, or QOUT
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)  (!((void*)spi_dev == (void*)&GPSPI3))
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)          (!((void*)spi_dev == (void*)&GPSPI3))
+
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_dev)    ((void*)spi_dev == (void*)&SPIMEM1)
+
