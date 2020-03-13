@@ -238,15 +238,24 @@ void panicHandler(XtExcFrame *frame)
     }
 
 #if !CONFIG_FREERTOS_UNICORE
+    /*
+     * When the real Interrupt watchdog occurs (_l4_intr_livelock_counter >= _l4_intr_livelock_max),
+     * do not clear the wdt interrupt, help the App cpu (Core 1) map tg1 1st stage timeout
+     * interrupt, trigger the App cpu (Core 1) to respond to the wdt interrupt.
+     */
+    if (core_id == PRO_CPU_NUM) {
+        intr_matrix_set(APP_CPU_NUM, ETS_TG1_WDT_LEVEL_INTR_SOURCE, ETS_T1_WDT_INUM);
+    }
+
     //Save frame for other core.
     if ((frame->exccause == PANIC_RSN_INTWDT_CPU0 && core_id == 1) || (frame->exccause == PANIC_RSN_INTWDT_CPU1 && core_id == 0)) {
         other_core_frame = frame;
         while (1);
     }
 
-    //The core which triggers the interrupt watchdog will delay 1 us, so the other core can save its frame.
+    //The core which triggers the interrupt watchdog will delay 500 us, so the other core can save its frame.
     if (frame->exccause == PANIC_RSN_INTWDT_CPU0 || frame->exccause == PANIC_RSN_INTWDT_CPU1) {
-        ets_delay_us(1);
+        ets_delay_us(500);
     }
 
     if (frame->exccause == PANIC_RSN_CACHEERR && esp_cache_err_get_cpuid() != core_id) {

@@ -388,6 +388,10 @@ void start_cpu0_default(void)
     esp_int_wdt_init();
     //Initialize the interrupt watch dog for CPU0.
     esp_int_wdt_cpu_init();
+#else
+#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+    assert(!soc_has_cache_lock_bug() && "Minimum Supported ESP32 Revision requires Rev 3");
+#endif
 #endif
     esp_cache_err_int_init();
     esp_crosscore_int_init();

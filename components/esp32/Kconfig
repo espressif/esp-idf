@@ -21,6 +21,7 @@ menu "ESP32-specific"
             bool "Rev 2"
         config ESP32_REV_MIN_3
             bool "Rev 3"
+            select INT_WDT if !FREERTOS_UNICORE && SPIRAM_SUPPORT
     endchoice
 
     config ESP32_REV_MIN

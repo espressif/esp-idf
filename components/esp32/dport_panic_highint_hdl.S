@@ -17,10 +17,12 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include "freertos/xtensa_context.h"
+#include "freertos/xtensa_rtos.h"
 #include "esp_panic.h"
 #include "sdkconfig.h"
 #include "soc/soc.h"
 #include "soc/dport_reg.h"
+#include "soc/timer_group_reg.h"
 
 /*
 
@@ -39,6 +41,16 @@ Interrupt , a high-priority interrupt, is used for several things:
 _l5_intr_stack:
     .space      L5_INTR_STACK_SIZE
 
+#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+    .global _l4_intr_livelock_counter
+    .global _l4_intr_livelock_max
+    .align  16
+_l4_intr_livelock_counter:
+    .word   0
+_l4_intr_livelock_max:
+    .word   0
+#endif
+
     .section .iram1,"ax"
     .global     xt_highint5
     .type       xt_highint5,@function
@@ -52,8 +64,28 @@ xt_highint5:
     bnez    a0, .handle_dport_access_int
 #endif // CONFIG_FREERTOS_UNICORE
 
+#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+    /* See if we're here for the tg1 watchdog interrupt */
+    rsr     a0, INTERRUPT
+    extui   a0, a0, ETS_T1_WDT_INUM, 1
+    beqz    a0, 1f
+
+    getcoreid   a0
+    bnez    a0, 1f                          /* App cpu (Core 1) jump bypass */
+
+    /* Pro cpu (Core 0) can execute to here. */
+    wsr     a5, depc                        /* use DEPC as temp storage */
+    movi    a0, _l4_intr_livelock_counter
+    l32i    a0, a0, 0
+    movi    a5, _l4_intr_livelock_max
+    l32i    a5, a5, 0
+    bltu    a0, a5, .handle_livelock_int    /* _l4_intr_livelock_counter < _l4_intr_livelock_max */
+
+    rsr     a5, depc                        /* restore a5 */
+#endif
+
     /* Allocate exception frame and save minimal context. */
-    mov     a0, sp
+1:  mov     a0, sp
     addi    sp, sp, -XT_STK_FRMSZ
     s32i    a0, sp, XT_STK_A1
     #if XCHAL_HAVE_WINDOWED
@@ -129,6 +161,114 @@ xt_highint5:
     rfi     5
 
 
+#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+
+    .align      4
+.handle_livelock_int:
+
+    /* Save A2, A3, A4 so we can use those registers */
+    movi    a0, _l4_intr_stack
+    s32i    a2, a0, L4_INTR_A2_OFFSET
+    s32i    a3, a0, L4_INTR_A3_OFFSET
+    s32i    a4, a0, L4_INTR_A4_OFFSET
+
+    rsil    a0, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested iterrupt */
+
+    movi    a2, _l4_intr_livelock_counter   /* _l4_intr_livelock_counter++ */
+    l32i    a3, a2, 0
+    addi    a3, a3, 1
+    s32i    a3, a2, 0
+
+    /*
+    The delay time can be calculated by the following formula:
+      T = ceil(0.25 + max(t1, t2)) us
+
+      t1 = 80 / f1, t2 = (1 + 14/N) * 20 / f2
+
+      f1: PSRAM access frequency, unit: MHz.
+      f2: Flash access frequency, unit: MHz.
+
+      When flash is slow/fast read, N = 1.
+      When flash is DOUT/DIO read, N = 2.
+      When flash is QOUT/QIO read, N = 4.
+    */
+    rsr.ccount  a2
+    movi    a4, g_ticks_per_us_pro
+    l32i    a4, a4, 0
+#if defined(CONFIG_FLASHMODE_QIO) || defined(CONFIG_FLASHMODE_QOUT)
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a3, 2
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a3, 3
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a3, 3
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a3, 4
+# else
+    movi    a3, 5
+# endif
+#elif defined(CONFIG_FLASHMODE_DIO) || defined(CONFIG_FLASHMODE_DOUT)
+# if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
+    movi    a3, 3
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a3, 3
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_40M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a3, 5
+# elif defined(CONFIG_ESPTOOLPY_FLASHFREQ_26M) && defined(CONFIG_SPIRAM_SPEED_40M)
+    movi    a3, 7
+# else
+    movi    a3, 9
+# endif
+#endif
+    mull    a3, a3, a4
+1:  rsr.ccount  a4                          /* delay_us(N) */
+    sub     a4, a4, a2
+    bltu    a4, a3, 1b
+
+    /* Feed watchdog and clear tg1 1st stage timeout interrupt */
+    movi    a2, TIMERG1
+    movi    a3, TIMG_WDT_WKEY_VALUE
+    memw
+    s32i    a3, a2, 100                     /* disable tg1 write protect */
+    movi    a3, 40
+    memw
+    s32i    a3, a2, 80                      /* set timeout before interrupt */
+    movi    a3, 4000
+    memw
+    s32i    a3, a2, 84                      /* set timeout before system reset */
+    movi    a3, 1
+    s32i    a3, a2, 96                      /* feed wdt */
+    memw
+
+    /*
+    The vector number of the interrupt watchdog is ETS_T1_WDT_INUM (24), which is a
+    Level-Triggered interrupt and needs to be cleared at the peripheral.
+    */
+    l32i    a4, a2, 164
+    movi    a3, 4
+    or      a3, a4, a3
+    memw
+    s32i    a3, a2, 164                     /* clear tg1 1st stage timeout interrupt */
+
+    movi    a3, 0
+    s32i    a3, a2, 100                     /* enable tg1 write protect */
+    memw
+
+    wsr     a0, PS                          /* restore iterrupt level */
+
+    /* Done. Restore registers and return. */
+    movi    a0, _l4_intr_stack
+    l32i    a2, a0, L4_INTR_A2_OFFSET
+    l32i    a3, a0, L4_INTR_A3_OFFSET
+    l32i    a4, a0, L4_INTR_A4_OFFSET
+    rsync                                   /* ensure register restored */
+
+    rsr     a5, depc
+
+    rsr     a0, EXCSAVE_4                   /* restore a0 */
+    rfi     4
+
+#endif
 
 
 #ifndef CONFIG_FREERTOS_UNICORE
