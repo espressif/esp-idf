@@ -626,7 +626,7 @@ static int provisioner_check_unprov_dev_info(const u8_t uuid[16], bt_mesh_prov_b
 
     /* Check if the device has already been provisioned */
     if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
-        BT_WARN("Provisioned before, start to provision again");
+        BT_INFO("Provisioned before, start to provision again");
         return 0;
     }
 
