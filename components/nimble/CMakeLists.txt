@@ -70,6 +70,7 @@ if(CONFIG_NIMBLE_ENABLED)
             "./nimble/nimble/host/src/ble_hs_adv.c"
             "./nimble/nimble/host/src/ble_hs_hci.c"
             "./nimble/nimble/host/src/ble_hs_hci_util.c"
+            "./nimble/nimble/host/src/ble_hs_resolv.c"
             "./nimble/nimble/host/store/ram/src/ble_store_ram.c"
             "./nimble/nimble/host/store/config/src/ble_store_config.c"
             "./nimble/nimble/host/store/config/src/ble_store_nvs.c"

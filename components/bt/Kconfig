@@ -1597,6 +1597,15 @@ menu Bluetooth
             Enable this option to send number-of-completed-packets event to
             controller after disconnection
 
+    config NIMBLE_RPA_TIMEOUT
+        int "RPA timeout in seconds"
+        range 1 41400
+        depends on NIMBLE_ENABLED
+        default 900
+        help
+            Time interval between RPA address change. This is applicable in case of
+            Host based RPA
+
     menuconfig NIMBLE_MESH
         bool "Enable BLE mesh functionality"
         select NIMBLE_SM_SC
