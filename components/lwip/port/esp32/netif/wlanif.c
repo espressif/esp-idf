@@ -106,7 +106,7 @@ low_level_output(struct netif *netif, struct pbuf *p)
 {
   wifi_interface_t wifi_if = tcpip_adapter_get_esp_if(netif);
   struct pbuf *q = p;
-  err_t ret;
+  esp_err_t ret;
 
   if (wifi_if >= ESP_IF_MAX) {
     return ERR_IF;
@@ -125,6 +125,14 @@ low_level_output(struct netif *netif, struct pbuf *p)
     }
     ret = esp_wifi_internal_tx(wifi_if, q->payload, q->len);
     pbuf_free(q);
+  }
+
+  if (ret == ESP_OK) {
+    return ERR_OK;
+  } else if (ret == ESP_ERR_NO_MEM) {
+    return ERR_MEM;
+  } else {
+    return ERR_ABRT;
   }
 
   return ret;

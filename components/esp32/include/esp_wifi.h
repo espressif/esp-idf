@@ -100,23 +100,26 @@ typedef struct {
     int                    tx_buf_type;            /**< WiFi TX buffer type */
     int                    static_tx_buf_num;      /**< WiFi static TX buffer number */
     int                    dynamic_tx_buf_num;     /**< WiFi dynamic TX buffer number */
+    int                    cache_tx_buf_num;       /**< WiFi TX cache buffer number */
     int                    csi_enable;             /**< WiFi channel state information enable flag */
     int                    ampdu_rx_enable;        /**< WiFi AMPDU RX feature enable flag */
     int                    ampdu_tx_enable;        /**< WiFi AMPDU TX feature enable flag */
     int                    nvs_enable;             /**< WiFi NVS flash enable flag */
     int                    nano_enable;            /**< Nano option for printf/scan family enable flag */
-    int                    tx_ba_win;              /**< WiFi Block Ack TX window size */
     int                    rx_ba_win;              /**< WiFi Block Ack RX window size */
     int                    wifi_task_core_id;      /**< WiFi Task Core ID */
     int                    beacon_max_len;         /**< WiFi softAP maximum length of the beacon */
     int                    mgmt_sbuf_num;          /**< WiFi management short buffer number, the minimum value is 6, the maximum value is 32 */
+    uint64_t               feature_caps;           /**< Enables additional WiFi features and capabilities */
     int                    magic;                  /**< WiFi init magic number, it should be the last field */
 } wifi_init_config_t;
 
 #ifdef CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM
 #define WIFI_STATIC_TX_BUFFER_NUM CONFIG_ESP32_WIFI_STATIC_TX_BUFFER_NUM
+#define WIFI_CACHE_TX_BUFFER_NUM  CONFIG_ESP32_WIFI_CACHE_TX_BUFFER_NUM
 #else
 #define WIFI_STATIC_TX_BUFFER_NUM 0
+#define WIFI_CACHE_TX_BUFFER_NUM  CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
 #endif
 
 #ifdef CONFIG_ESP32_WIFI_DYNAMIC_TX_BUFFER_NUM
@@ -156,14 +159,9 @@ typedef struct {
 #endif
 
 extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
+extern uint64_t g_wifi_feature_caps;
 
 #define WIFI_INIT_CONFIG_MAGIC    0x1F2F3F4F
-
-#ifdef CONFIG_ESP32_WIFI_AMPDU_TX_ENABLED
-#define WIFI_DEFAULT_TX_BA_WIN CONFIG_ESP32_WIFI_TX_BA_WIN
-#else
-#define WIFI_DEFAULT_TX_BA_WIN 0 /* unused if ampdu_tx_enable == false */
-#endif
 
 #ifdef CONFIG_ESP32_WIFI_AMPDU_RX_ENABLED
 #define WIFI_DEFAULT_RX_BA_WIN CONFIG_ESP32_WIFI_RX_BA_WIN
@@ -189,6 +187,8 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
 #define WIFI_MGMT_SBUF_NUM 32
 #endif
 
+#define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
+
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .event_handler = &esp_event_send, \
     .osi_funcs = &g_wifi_osi_funcs, \
@@ -198,16 +198,17 @@ extern const wpa_crypto_funcs_t g_wifi_default_wpa_crypto_funcs;
     .tx_buf_type = CONFIG_ESP32_WIFI_TX_BUFFER_TYPE,\
     .static_tx_buf_num = WIFI_STATIC_TX_BUFFER_NUM,\
     .dynamic_tx_buf_num = WIFI_DYNAMIC_TX_BUFFER_NUM,\
+    .cache_tx_buf_num = WIFI_CACHE_TX_BUFFER_NUM,\
     .csi_enable = WIFI_CSI_ENABLED,\
     .ampdu_rx_enable = WIFI_AMPDU_RX_ENABLED,\
     .ampdu_tx_enable = WIFI_AMPDU_TX_ENABLED,\
     .nvs_enable = WIFI_NVS_ENABLED,\
     .nano_enable = WIFI_NANO_FORMAT_ENABLED,\
-    .tx_ba_win = WIFI_DEFAULT_TX_BA_WIN,\
     .rx_ba_win = WIFI_DEFAULT_RX_BA_WIN,\
     .wifi_task_core_id = WIFI_TASK_CORE_ID,\
     .beacon_max_len = WIFI_SOFTAP_BEACON_MAX_LEN, \
     .mgmt_sbuf_num = WIFI_MGMT_SBUF_NUM, \
+    .feature_caps = g_wifi_feature_caps, \
     .magic = WIFI_INIT_CONFIG_MAGIC\
 };
 

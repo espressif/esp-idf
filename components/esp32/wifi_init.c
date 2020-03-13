@@ -35,6 +35,13 @@ mesh_event_cb_t g_mesh_event_cb = NULL;
 static esp_pm_lock_handle_t s_wifi_modem_sleep_lock;
 #endif
 
+/* Set additional WiFi features and capabilities */
+uint64_t g_wifi_feature_caps =
+#if CONFIG_SPIRAM_SUPPORT
+    CONFIG_FEATURE_CACHE_TX_BUF_BIT |
+#endif
+0;
+
 /* Callback function to update WiFi MAC time */
 wifi_mac_time_update_cb_t s_wifi_mac_time_update_cb = NULL;
 
