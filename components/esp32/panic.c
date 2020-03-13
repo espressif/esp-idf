@@ -621,7 +621,11 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
         disableAllWdts();
         s_dumping_core = true;
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
-        esp_core_dump_to_flash(frame);
+        if (xPortGetCoreID() == APP_CPU_NUM) {
+            panicPutStr("Current task in APP CPU, skip...\n");
+        } else {
+            esp_core_dump_to_flash(frame);
+        }
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32_PANIC_SILENT_REBOOT
         esp_core_dump_to_uart(frame);
