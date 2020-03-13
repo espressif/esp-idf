@@ -162,9 +162,10 @@ void clear_log_level_list(void)
 #endif
 }
 
-void esp_log_write(esp_log_level_t level,
+void esp_log_writev(esp_log_level_t level,
                    const char *tag,
-                   const char *format, ...)
+                   const char *format,
+                   va_list args)
 {
     if (!esp_log_impl_lock_timeout()) {
         return;
@@ -185,9 +186,17 @@ void esp_log_write(esp_log_level_t level,
         return;
     }
 
+    (*s_log_print_func)(format, args);
+
+}
+
+void esp_log_write(esp_log_level_t level,
+                   const char *tag,
+                   const char *format, ...)
+{
     va_list list;
     va_start(list, format);
-    (*s_log_print_func)(format, list);
+    esp_log_writev(level, tag, format, list);
     va_end(list);
 }
 
