@@ -48,6 +48,12 @@ typedef enum {
     PERIPH_WIFI_MODULE,
     PERIPH_WIFI_BT_COMMON_MODULE,
     PERIPH_SYSTIMER_MODULE,
+    PERIPH_AES_MODULE,
+    PERIPH_SHA_MODULE,
+    PERIPH_RSA_MODULE,
+    PERIPH_CRYPTO_DMA_MODULE,        //this DMA is shared between AES and SHA
+    PERIPH_AES_DMA_MODULE,
+    PERIPH_SHA_DMA_MODULE,
 } periph_module_t;
 
 typedef enum {

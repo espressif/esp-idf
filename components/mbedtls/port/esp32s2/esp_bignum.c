@@ -223,8 +223,8 @@ static inline void start_op(uint32_t op_reg)
 */
 static inline void wait_op_complete(uint32_t op_reg)
 {
-    while(DPORT_REG_READ(RSA_QUERY_INTERRUPT_REG) != 1)
-       { }
+    while (DPORT_REG_READ(RSA_QUERY_INTERRUPT_REG) != 1)
+    { }
 
     /* clear the interrupt */
     DPORT_REG_WRITE(RSA_CLEAR_INTERRUPT_REG, 1);
@@ -258,7 +258,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
 
     esp_mpi_acquire_hardware();
 
-    DPORT_REG_WRITE(RSA_LENGTH_REG, (num_words-1));
+    DPORT_REG_WRITE(RSA_LENGTH_REG, (num_words - 1));
     DPORT_REG_WRITE(RSA_M_DASH_REG, (uint32_t)Mprime);
 
     /* Load M, X, Rinv, Mprime (Mprime is mod 2^32) */
@@ -404,17 +404,17 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     size_t num_words = MAX(x_words, y_words);
     size_t z_words  = x_words + y_words;
 
-     /* Short-circuit eval if either argument is 0 or 1.
+    /* Short-circuit eval if either argument is 0 or 1.
 
-       This is needed as the mpi modular division
-       argument will sometimes call in here when one
-       argument is too large for the hardware unit, but the other
-       argument is zero or one.
+      This is needed as the mpi modular division
+      argument will sometimes call in here when one
+      argument is too large for the hardware unit, but the other
+      argument is zero or one.
 
-       This leaks some timing information, although overall there is a
-       lot less timing variation than a software MPI approach.
+      This leaks some timing information, although overall there is a
+      lot less timing variation than a software MPI approach.
     */
-    if (x_bits == 0 || y_bits== 0) {
+    if (x_bits == 0 || y_bits == 0) {
         mbedtls_mpi_lset(Z, 0);
         return 0;
     }
@@ -449,7 +449,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
         } else {
             /* Still too long for the hardware unit... */
             mbedtls_mpi_grow(Z, z_words);
-            if(y_words > x_words) {
+            if (y_words > x_words) {
                 return mpi_mult_mpi_overlong(Z, X, Y, y_words, z_words);
             } else {
                 return mpi_mult_mpi_overlong(Z, Y, X, x_words, z_words);
@@ -468,7 +468,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     */
 
     DPORT_REG_WRITE(RSA_M_DASH_REG, 0);
-    DPORT_REG_WRITE(RSA_LENGTH_REG, (num_words*2 - 1));
+    DPORT_REG_WRITE(RSA_LENGTH_REG, (num_words * 2 - 1));
     start_op(RSA_MULT_START_REG);
 
     wait_op_complete(RSA_MULT_START_REG);

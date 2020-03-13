@@ -270,9 +270,13 @@
 #define SOC_DIRAM_DRAM_LOW    0x3FFB0000
 #define SOC_DIRAM_DRAM_HIGH   0x40000000
 
-// Region of memory accessible via DMA. See esp_ptr_dma_capable().
+// Region of memory accessible via DMA in internal memory. See esp_ptr_dma_capable().
 #define SOC_DMA_LOW  0x3FFB0000
 #define SOC_DMA_HIGH 0x40000000
+
+// Region of memory accessible via DMA in external memory. See esp_ptr_dma_ext_capable().
+#define SOC_DMA_EXT_LOW     0x3F500000
+#define SOC_DMA_EXT_HIGH    0x3FF80000
 
 // Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
 #define SOC_BYTE_ACCESSIBLE_LOW     0x3FF9E000

@@ -3,7 +3,7 @@
  * Based on mbedTLS FIPS-197 compliant version.
  *
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016, Espressif Systems (Shanghai) PTE Ltd
+ *  Additions Copyright (C) 2016-20, Espressif Systems (Shanghai) PTE Ltd
  *  SPDX-License-Identifier: Apache-2.0
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may
@@ -38,6 +38,7 @@ extern "C" {
 #define ERR_ESP_AES_INVALID_KEY_LENGTH                -0x0020  /**< Invalid key length. */
 #define ERR_ESP_AES_INVALID_INPUT_LENGTH              -0x0022  /**< Invalid data input length. */
 
+
 /**
  * \brief          AES context structure
  *
@@ -52,11 +53,11 @@ typedef struct {
     uint8_t key[32];
 } esp_aes_context;
 
+
 /**
  * \brief The AES XTS context-type definition.
  */
-typedef struct
-{
+typedef struct {
     esp_aes_context crypt; /*!< The AES context to use for AES block
                                         encryption or decryption. */
     esp_aes_context tweak; /*!< The AES context used for tweak
@@ -312,8 +313,8 @@ int esp_aes_crypt_ofb( esp_aes_context *ctx,
  * \return         #MBEDTLS_ERR_AES_INVALID_KEY_LENGTH on failure.
  */
 int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
-                                const unsigned char *key,
-                                unsigned int keybits );
+                            const unsigned char *key,
+                            unsigned int keybits );
 
 /**
  * \brief           Internal AES block encryption function
@@ -325,8 +326,8 @@ int esp_aes_xts_setkey_enc( esp_aes_xts_context *ctx,
  * \param output    Output (ciphertext) block
  */
 int esp_aes_xts_setkey_dec( esp_aes_xts_context *ctx,
-                                const unsigned char *key,
-                                unsigned int keybits );
+                            const unsigned char *key,
+                            unsigned int keybits );
 
 
 /**
