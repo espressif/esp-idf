@@ -585,7 +585,9 @@ void *multi_heap_realloc_impl(multi_heap_handle_t heap, void *p, size_t size)
         // unwrapping for heap poisoning features.)
         result = multi_heap_malloc_impl(heap, size);
         if (result != NULL) {
+            multi_heap_internal_unlock(heap);
             memcpy(result, pb->data, block_data_size(pb));
+            multi_heap_internal_lock(heap);
             multi_heap_free_impl(heap, pb->data);
         }
     }
