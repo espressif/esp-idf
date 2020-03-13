@@ -33,6 +33,8 @@
 #define ACTION_SUSPEND  0x02
 #define ACTION_EXIT     0x03
 
+static bool mesh_init = false;
+
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
                       u8_t flags, u32_t iv_index, u16_t addr,
                       const u8_t dev_key[16])
@@ -309,6 +311,11 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 {
     int err = 0;
 
+    if (mesh_init == true) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
+
     bt_mesh_k_init();
 
     bt_mesh_hci_init();
@@ -374,6 +381,7 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
         bt_mesh_settings_init();
     }
 
+    mesh_init = true;
     return 0;
 }
 
@@ -384,6 +392,11 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
     if (param == NULL) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
+    }
+
+    if (mesh_init == false) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
@@ -424,9 +437,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
     bt_mesh_trans_deinit(param->erase);
     bt_mesh_net_deinit(param->erase);
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
-        bt_mesh_beacon_deinit();
-    }
+    bt_mesh_beacon_deinit();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
         if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
@@ -473,6 +484,7 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 
     bt_mesh_k_deinit();
 
+    mesh_init = false;
     return 0;
 }
 
