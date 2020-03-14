@@ -457,7 +457,7 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name)
     /* Save the device name if local storage is enabled */
     p = (UINT8 *)btm_cb.cfg.bd_name;
     if (p != (UINT8 *)p_name) {
-        BCM_STRNCPY_S(btm_cb.cfg.bd_name, sizeof(btm_cb.cfg.bd_name), p_name, BTM_MAX_LOC_BD_NAME_LEN);
+        BCM_STRNCPY_S(btm_cb.cfg.bd_name, p_name, BTM_MAX_LOC_BD_NAME_LEN);
         btm_cb.cfg.bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
     }
 #else

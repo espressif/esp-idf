@@ -121,8 +121,7 @@ BOOLEAN BTM_SecAddBleDevice (BD_ADDR bd_addr, BD_NAME bd_name, tBT_DEVICE_TYPE d
 
     if (bd_name && bd_name[0]) {
         p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
-        BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name, sizeof (p_dev_rec->sec_bd_name),
-                       (char *)bd_name, BTM_MAX_REM_BD_NAME_LEN);
+        BCM_STRNCPY_S ((char *)p_dev_rec->sec_bd_name,(char *)bd_name, BTM_MAX_REM_BD_NAME_LEN);
     }
     p_dev_rec->device_type |= dev_type;
     p_dev_rec->ble.ble_addr_type = addr_type;
