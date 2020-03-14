@@ -817,7 +817,7 @@ static void btdm_controller_mem_init(void)
 esp_err_t esp_bt_controller_mem_release(esp_bt_mode_t mode)
 {
     bool update = true;
-    intptr_t mem_start, mem_end;
+    intptr_t mem_start=(intptr_t) NULL, mem_end=(intptr_t) NULL;
 
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
         return ESP_ERR_INVALID_STATE;
