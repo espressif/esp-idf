@@ -483,8 +483,7 @@ static void bta_av_api_sink_enable(tBTA_AV_DATA *p_data)
     activate_sink = p_data->hdr.layer_specific;
     APPL_TRACE_DEBUG("bta_av_api_sink_enable %d \n", activate_sink)
     char p_service_name[BTA_SERVICE_NAME_LEN + 1];
-    BCM_STRNCPY_S(p_service_name, sizeof(p_service_name),
-                  BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
+    BCM_STRNCPY_S(p_service_name, BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
 
     if (activate_sink) {
         AVDT_SINK_Activate();
@@ -526,7 +525,7 @@ static void bta_av_api_register(tBTA_AV_DATA *p_data)
     tBTA_UTL_COD    cod;
     UINT8           index = 0;
     char p_avk_service_name[BTA_SERVICE_NAME_LEN + 1];
-    BCM_STRNCPY_S(p_avk_service_name, sizeof(p_avk_service_name), BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
+    BCM_STRNCPY_S(p_avk_service_name, BTIF_AVK_SERVICE_NAME, BTA_SERVICE_NAME_LEN);
 
     memset(&cs, 0, sizeof(tAVDT_CS));
 
