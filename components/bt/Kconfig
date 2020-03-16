@@ -1338,6 +1338,36 @@ menu Bluetooth
         help
             This enables NimBLE host stack
 
+    choice NIMBLE_MEM_ALLOC_MODE
+        prompt "Memory allocation strategy"
+        default NIMBLE_MEM_ALLOC_MODE_INTERNAL
+        depends on NIMBLE_ENABLED
+        help
+            Allocation strategy for NimBLE host stack, essentially provides ability to
+            allocate all required dynamic allocations from,
+
+            - Internal DRAM memory only
+            - External SPIRAM memory only
+            - Either internal or external memory based on default malloc()
+              behavior in ESP-IDF
+
+            Recommended mode here is always internal, since that is most preferred
+            from security perspective. But if application requirement does not
+            allow sufficient free internal memory then alternate mode can be
+            selected.
+
+        config NIMBLE_MEM_ALLOC_MODE_INTERNAL
+            bool "Internal memory"
+
+        config NIMBLE_MEM_ALLOC_MODE_EXTERNAL
+            bool "External SPIRAM"
+            depends on ESP32_SPIRAM_SUPPORT
+
+        config NIMBLE_MEM_ALLOC_MODE_DEFAULT
+            bool "Default alloc mode"
+
+    endchoice
+
     config NIMBLE_MAX_CONNECTIONS
         int "Maximum number of concurrent connections"
         range 1 9
@@ -1525,6 +1555,56 @@ menu Bluetooth
             buffers are only used for advertising reports. If there are no free
             low-priority event buffers, then an incoming advertising report will
             get dropped
+
+    config NIMBLE_MSYS1_BLOCK_COUNT
+        int "MSYS_1 Block Count"
+        depends on NIMBLE_ENABLED
+        default 12
+        help
+            MSYS is a system level mbuf registry. For prepare write & prepare
+            responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+            enabled cases, this block count is increased by 8 than user defined
+            count.
+
+    config NIMBLE_HS_FLOW_CTRL
+        bool "Enable Host Flow control"
+        depends on NIMBLE_ENABLED
+        default y
+        help
+            Enable Host Flow control
+
+    config NIMBLE_HS_FLOW_CTRL_ITVL
+        int "Host Flow control interval"
+        depends on NIMBLE_HS_FLOW_CTRL
+        default 1000
+        help
+            Host flow control interval in msecs
+
+    config NIMBLE_HS_FLOW_CTRL_THRESH
+        int "Host Flow control threshold"
+        depends on NIMBLE_HS_FLOW_CTRL
+        default 2
+        help
+            Host flow control threshold, if the number of free buffers are at or
+            below this threshold, send an immediate number-of-completed-packets
+            event
+
+    config NIMBLE_HS_FLOW_CTRL_TX_ON_DISCONNECT
+        bool "Host Flow control on disconnect"
+        depends on NIMBLE_HS_FLOW_CTRL
+        default y
+        help
+            Enable this option to send number-of-completed-packets event to
+            controller after disconnection
+
+    config NIMBLE_RPA_TIMEOUT
+        int "RPA timeout in seconds"
+        range 1 41400
+        depends on NIMBLE_ENABLED
+        default 900
+        help
+            Time interval between RPA address change. This is applicable in case of
+            Host based RPA
 
     menuconfig NIMBLE_MESH
         bool "Enable BLE mesh functionality"

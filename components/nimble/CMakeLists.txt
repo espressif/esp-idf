@@ -70,6 +70,7 @@ if(CONFIG_NIMBLE_ENABLED)
             "./nimble/nimble/host/src/ble_hs_adv.c"
             "./nimble/nimble/host/src/ble_hs_hci.c"
             "./nimble/nimble/host/src/ble_hs_hci_util.c"
+            "./nimble/nimble/host/src/ble_hs_resolv.c"
             "./nimble/nimble/host/store/ram/src/ble_store_ram.c"
             "./nimble/nimble/host/store/config/src/ble_store_config.c"
             "./nimble/nimble/host/store/config/src/ble_store_nvs.c"
@@ -85,7 +86,8 @@ if(CONFIG_NIMBLE_ENABLED)
             "./nimble/porting/nimble/src/mem.c"
             "./nimble/porting/nimble/src/os_mbuf.c"
             "./nimble/porting/nimble/src/os_cputime.c"
-            "./esp-hci/src/esp_nimble_hci.c")
+            "./esp-hci/src/esp_nimble_hci.c"
+            "./port/src/esp_nimble_mem.c")
 
     if(NOT CONFIG_NIMBLE_CRYPTO_STACK_MBEDTLS)
 
