@@ -29,7 +29,7 @@ esp_prov.config_throw_except = True
 @ttfw_idf.idf_example_test(env_tag="Example_WIFI_BT")
 def test_examples_provisioning_ble(env, extra_data):
     # Acquire DUT
-    dut1 = env.get_dut("ble_prov", "examples/provisioning/ble_prov", dut_class=ttfw_idf.ESP32DUT)
+    dut1 = env.get_dut("ble_prov", "examples/provisioning/legacy/ble_prov", dut_class=ttfw_idf.ESP32DUT)
 
     # Get binary file
     binary_file = os.path.join(dut1.app.binary_path, "ble_prov.bin")

@@ -20,8 +20,14 @@
 #include <nvs_flash.h>
 
 #include <wifi_provisioning/manager.h>
+
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
 #include <wifi_provisioning/scheme_ble.h>
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
+
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
 #include <wifi_provisioning/scheme_softap.h>
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
 
 static const char *TAG = "app";
 
@@ -93,6 +99,27 @@ static void get_device_service_name(char *service_name, size_t max)
              ssid_prefix, eth_mac[3], eth_mac[4], eth_mac[5]);
 }
 
+/* Handler for the optional provisioning endpoint registered by the application.
+ * The data format can be chosen by applications. Here, we are using plain ascii text.
+ * Applications can choose to use other formats like protobuf, JSON, XML, etc.
+ */
+esp_err_t custom_prov_data_handler(uint32_t session_id, const uint8_t *inbuf, ssize_t inlen,
+                                          uint8_t **outbuf, ssize_t *outlen, void *priv_data)
+{
+    if (inbuf) {
+        ESP_LOGI(TAG, "Received data: %.*s", inlen, (char *)inbuf);
+    }
+    char response[] = "SUCCESS";
+    *outbuf = (uint8_t *)strdup(response);
+    if (*outbuf == NULL) {
+        ESP_LOGE(TAG, "System out of memory");
+        return ESP_ERR_NO_MEM;
+    }
+    *outlen = strlen(response) + 1; /* +1 for NULL terminating byte */
+
+    return ESP_OK;
+}
+
 void app_main(void)
 {
     /* Initialize NVS partition */
@@ -120,6 +147,9 @@ void app_main(void)
 
     /* Initialize Wi-Fi including netif with default config */
     esp_netif_create_default_wifi_sta();
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
+    esp_netif_create_default_wifi_ap();
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
@@ -127,7 +157,12 @@ void app_main(void)
     wifi_prov_mgr_config_t config = {
         /* What is the Provisioning Scheme that we want ?
          * wifi_prov_scheme_softap or wifi_prov_scheme_ble */
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
         .scheme = wifi_prov_scheme_ble,
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
+        .scheme = wifi_prov_scheme_softap,
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
 
         /* Any default scheme specific event handler that you would
          * like to choose. Since our example application requires
@@ -137,7 +172,12 @@ void app_main(void)
          * appropriate scheme specific event handler allows the manager
          * to take care of this automatically. This can be set to
          * WIFI_PROV_EVENT_HANDLER_NONE when using wifi_prov_scheme_softap*/
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
         .scheme_event_handler = WIFI_PROV_SCHEME_BLE_EVENT_HANDLER_FREE_BTDM
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP
+        .scheme_event_handler = WIFI_PROV_EVENT_HANDLER_NONE
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_SOFTAP */
     };
 
     /* Initialize provisioning manager with the
@@ -181,6 +221,7 @@ void app_main(void)
          */
         const char *service_key = NULL;
 
+#ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
         /* This step is only useful when scheme is wifi_prov_scheme_ble. This will
          * set a custom 128 bit UUID which will be included in the BLE advertisement
          * and will correspond to the primary GATT service that provides provisioning
@@ -197,9 +238,22 @@ void app_main(void)
             0xef, 0xcd, 0xab, 0x90, 0x78, 0x56, 0x34, 0x12
         };
         wifi_prov_scheme_ble_set_service_uuid(custom_service_uuid);
+#endif /* CONFIG_EXAMPLE_PROV_TRANSPORT_BLE */
 
+        /* An optional endpoint that applications can create if they expect to
+         * get some additional custom data during provisioning workflow.
+         * The endpoint name can be anything of your choice.
+         * This call must be made before starting the provisioning.
+         */
+        wifi_prov_mgr_endpoint_create("custom-data");
         /* Start provisioning service */
         ESP_ERROR_CHECK(wifi_prov_mgr_start_provisioning(security, pop, service_name, service_key));
+
+        /* The handler for the optional endpoint created above.
+         * This call must be made after starting the provisioning, and only if the endpoint
+         * has already been created above.
+         */
+        wifi_prov_mgr_endpoint_register("custom-data", custom_prov_data_handler, NULL);
 
         /* Uncomment the following to wait for the provisioning to finish and then release
          * the resources of the manager. Since in this case de-initialization is triggered

@@ -1,4 +1,6 @@
-# Console based Provisioning Example
+# Console based Provisioning Example (Legacy)
+
+> Check this example only if you wish to use console based provisioning. For any real applications, it is recommended to use the new `wifi_prov_mgr` example which is based on the simpler `wifi_provisioning` APIs.
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
