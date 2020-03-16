@@ -36,7 +36,7 @@ telnet localhost 4444
 idf.py menuconfig
 ```
 
-The example will enable the following options by default: 
+The example will enable the following options by default:
 
 * Enable the Application Tracing Module under `Component config -> Application Level Tracing -> Data Destination` by choosing `Trace memory`.
 * Enable GCOV to host interface under `Component config -> Application Level Tracing -> GCOV to Host Enable`.
@@ -60,7 +60,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ### 1. Hard-coded Dump
 
-The example will initially execute two hard-coded dumps. Therefore, when the application outputs `Ready to dump GCOV data...`, users should execute the `esp32 gcov dump` OpenOCD command. The example should output the following:
+The example will initially execute two hard-coded dumps. Therefore, when the application outputs `Ready to dump GCOV data...`, users should execute the `esp gcov dump` OpenOCD command. The example should output the following:
 
 ```
 blink_dummy_func: Counter = 0
@@ -75,7 +75,7 @@ GCOV data have been dumped.
 
 ### 2. Instant Run-Time Dump
 
-After the two hard-coded dumps, the example will continue looping through it's main blink function. Users can call `esp32 gcov` OpenOCD command to trigger an instant run-time dump. The output should resemble the following:
+After the two hard-coded dumps, the example will continue looping through it's main blink function. Users can call `esp gcov` OpenOCD command to trigger an instant run-time dump. The output should resemble the following:
 
 ```
 blink_dummy_func: Counter = 2
@@ -144,7 +144,7 @@ If the following log is output when issuing an OpenOCD command via telnet, it co
 
 ```
 Open On-Chip Debugger
-> esp32 gcov dump
+> esp gcov dump
 Target halted. PRO_CPU: PC=0x4008AFF4 (active)    APP_CPU: PC=0x400E396E
 Total trace memory: 16384 bytes
 Connect targets...
