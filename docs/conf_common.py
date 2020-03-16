@@ -21,6 +21,7 @@ import os
 import os.path
 import re
 import subprocess
+from sanitize_version import sanitize_version
 from idf_extensions.util import download_file_if_missing
 
 # build_docs on the CI server sometimes fails under Python3. This is a workaround:
@@ -36,14 +37,14 @@ suppress_warnings = ['image.nonlocal_uri']
 
 # If your documentation needs a minimal Sphinx version, state it here.
 # needs_sphinx = '1.0'
-idf_target = ''
+
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = ['breathe',
 
               'sphinx.ext.todo',
-
+              'sphinx_idf_theme',
               'sphinxcontrib.blockdiag',
               'sphinxcontrib.seqdiag',
               'sphinxcontrib.actdiag',
@@ -80,7 +81,6 @@ todo_include_todos = False
 # Enabling this fixes cropping of blockdiag edge labels
 seqdiag_antialias = True
 
-
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
@@ -102,16 +102,14 @@ master_doc = 'index'
 # built documents.
 #
 
-# Readthedocs largely ignores 'version' and 'release', and displays one of
-# 'latest', tag name, or branch name, depending on the build type.
-# Still, this is useful for non-RTD builds.
-# This is supposed to be "the short X.Y version", but it's the only version
+# This is the full exact version, canonical git version description
 # visible when you open index.html.
-# Display full version to make things less confusing.
 version = subprocess.check_output(['git', 'describe']).strip().decode('utf-8')
-# The full version, including alpha/beta/rc tags.
-# If needed, nearest tag is returned by 'git describe --abbrev=0'.
-release = version
+
+# The 'release' version is the same as version for non-CI builds, but for CI
+# builds on a branch then it's replaced with the branch name
+release = sanitize_version(version)
+
 print('Version: {0}  Release: {1}'.format(version, release))
 
 # There are two options for replacing |today|: either, you set today to some
@@ -156,9 +154,10 @@ def update_exclude_patterns(tags):
             exclude_patterns.append(e)
 
     if "esp32s2" not in tags:
-        # Exclude ESP32-only document pages so they aren't found in the initial search for .rst files
+        # Exclude ESP32-S2-only document pages so they aren't found in the initial search for .rst files
         # note: in toctrees, these also need to be marked with a :esp32: filter
-        for e in ['hw-reference/esp32s2/**',
+        for e in ['esp32s2.rst',
+                  'hw-reference/esp32s2/**',
                   'api-guides/ulps2_instruction_set.rst',
                   'api-reference/peripherals/temp_sensor.rst']:
             exclude_patterns.append(e)
@@ -189,6 +188,15 @@ pygments_style = 'sphinx'
 # keep_warnings = False
 
 
+# Extra options required by sphinx_idf_theme
+project_slug = 'esp-idf'
+versions_url = 'https://dl.espressif.com/dl/esp-idf/idf_versions.js'
+
+idf_targets = ['esp32', 'esp32s2']
+languages = ['en', 'zh_CN']
+
+project_homepage = "https://github.com/espressif/esp-idf"
+
 # -- Options for HTML output ----------------------------------------------
 
 # Custom added feature to allow redirecting old URLs
@@ -204,7 +212,8 @@ html_redirect_pages = [tuple(l.split(' ')) for l in lines]
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'sphinx_rtd_theme'
+
+html_theme = 'sphinx_idf_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -368,7 +377,12 @@ texinfo_documents = [
 # https://github.com/rtfd/sphinx_rtd_theme/pull/432
 def setup(app):
     app.add_stylesheet('theme_overrides.css')
-    app.add_config_value('idf_target', '', 'env')
+
+    # these two must be pushed in by build_docs.py
+    if "idf_target" not in app.config:
+        app.add_config_value('idf_target', None, 'env')
+        app.add_config_value('idf_targets', None, 'env')
+
     # Breathe extension variables (depend on build_dir)
     # note: we generate into xml_in and then copy_if_modified to xml dir
     app.config.breathe_projects = {"esp32-idf": os.path.join(app.config.build_dir, "xml_in/")}

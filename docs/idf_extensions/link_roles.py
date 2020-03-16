@@ -36,17 +36,7 @@ def setup(app):
     app.add_role('example_raw', github_link('raw', rev, '/examples/', app.config))
 
     # link to the current documentation file in specific language version
-    on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-    if on_rtd:
-        # provide RTD specific commit identification to be included in the link
-        tag_rev = 'latest'
-        if (subprocess.check_output(['git','rev-parse', '--short', 'HEAD']).decode('utf-8').strip() != rev):
-            tag_rev = rev
-    else:
-        # if not on the RTD then provide generic identification
-        tag_rev = subprocess.check_output(['git', 'describe', '--always']).decode('utf-8').strip()
-
-    app.add_role('link_to_translation', crosslink('%s../../%s/{}/%s.html'.format(tag_rev)))
+    app.add_role('link_to_translation', link_to_translation(app.config))
 
     return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
 
@@ -117,13 +107,15 @@ def github_link(link_type, rev, root_path, app_config):
     return role
 
 
-def crosslink(pattern):
+def link_to_translation(config):
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
         (language, link_text) = text.split(':')
         docname = inliner.document.settings.env.docname
         doc_path = inliner.document.settings.env.doc2path(docname, None, None)
-        return_path = '../' * doc_path.count('/')
-        url = pattern % (return_path, language, docname)
+        return_path = '../' * doc_path.count('/')  # path back to the root from 'docname'
+        # then take off 3 more paths for language/release/targetname and build the new URL
+        url = "{}.html".format(os.path.join(return_path, '../../..', language, config.release,
+                                            config.idf_target, docname))
         node = nodes.reference(rawtext, link_text, refuri=url, **options)
         return [node], []
     return role

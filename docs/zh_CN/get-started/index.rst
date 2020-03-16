@@ -320,6 +320,8 @@ Windows 操作系统
     cd %userprofile%\esp\hello_world
     idf.py menuconfig
 
+Setting the target with ``idf.py set-target {IDF_TARGET}`` should be done once, after opening a new project. If the project contains some existing builds and configuration, they will be cleared and initialized. The target may be saved in environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
+
 如果之前的步骤都正确，则会显示下面的菜单：
 
 .. figure:: ../../_static/project-configuration.png

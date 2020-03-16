@@ -46,6 +46,8 @@ variables:
 # target test config file, used by assign test job
   CI_TARGET_TEST_CONFIG_FILE: "$CI_PROJECT_DIR/tools/ci/config/target-test.yml"
 
+  # Versioned esp-idf-doc env image to use for all document building jobs
+  ESP_IDF_DOC_ENV_IMAGE: "$CI_DOCKER_REGISTRY/esp-idf-doc-env:v3"
 
 
 # before each job, we need to check if this job is filtered by bot stage/job filter
