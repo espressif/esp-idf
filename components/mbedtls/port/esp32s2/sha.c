@@ -236,19 +236,19 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 #endif
 
     /* DMA cannot access memory in the iCache range, copy data to temporary buffers before transfer */
-    if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input)) {
-        non_icache_input = malloc(sizeof(unsigned char) * MIN(ilen, SHA_DMA_MAX_BYTES));
+    if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input) && (ilen != 0)) {
+        non_icache_input = heap_caps_malloc(sizeof(unsigned char) * MIN(ilen, SHA_DMA_MAX_BYTES), MALLOC_CAP_DMA);
         if (non_icache_input == NULL) {
-            ESP_LOGE(TAG, "Failed to allocate memory");
+            ESP_LOGE(TAG, "Failed to allocate input memory");
             ret = ESP_ERR_NO_MEM;
             goto cleanup;
         }
     }
 
-    if (!esp_ptr_dma_ext_capable(buf) && !esp_ptr_dma_capable(buf)) {
-        non_icache_buf = malloc(sizeof(unsigned char) * buf_len);
+    if (!esp_ptr_dma_ext_capable(buf) && !esp_ptr_dma_capable(buf) && (buf_len != 0)) {
+        non_icache_buf = heap_caps_malloc(sizeof(unsigned char) * buf_len, MALLOC_CAP_DMA);
         if (non_icache_buf == NULL) {
-            ESP_LOGE(TAG, "Failed to allocate memory");
+            ESP_LOGE(TAG, "Failed to allocate buf memory");
             ret = ESP_ERR_NO_MEM;
             goto cleanup;
         }
