@@ -258,7 +258,7 @@ TEST_CASE("Page validates blob size", "[nvs]")
     Page page;
     TEST_ESP_OK(page.load(0));
 
-    char buf[2048] = { 0 };
+    char buf[4096] = { 0 };
     // There are two potential errors here:
     // - not enough space in the page (because one value has been written already)
     // - value is too long
@@ -527,6 +527,35 @@ TEST_CASE("can modify an item on a page which will be erased", "[nvs]")
     }
 }
 
+TEST_CASE("erase operations are distributed among sectors", "[nvs]")
+{
+    const size_t sectors = 6;
+    SpiFlashEmulator emu(sectors);
+    Storage storage;
+    CHECK(storage.init(0, sectors) == ESP_OK);
+    
+    /* Fill some part of storage with static values */
+    const size_t static_sectors = 2;
+    for (size_t i = 0; i < static_sectors * Page::ENTRY_COUNT; ++i) {
+        char name[Item::MAX_KEY_LENGTH];
+        snprintf(name, sizeof(name), "static%d", (int) i);
+        REQUIRE(storage.writeItem(1, name, i) == ESP_OK);
+    }
+
+    /* Now perform many write operations */
+    const size_t write_ops = 2000;
+    for (size_t i = 0; i < write_ops; ++i) {
+        REQUIRE(storage.writeItem(1, "value", i) == ESP_OK);
+    }
+
+    /* Check that erase counts are distributed between the remaining sectors */
+    const size_t max_erase_cnt = write_ops / Page::ENTRY_COUNT / (sectors - static_sectors) + 1;
+    for (size_t i = 0; i < sectors; ++i) {
+        auto erase_cnt = emu.getSectorEraseCount(i);
+        INFO("Sector " << i << " erased " << erase_cnt);
+        CHECK(erase_cnt <= max_erase_cnt);
+    }
+}
 
 TEST_CASE("can erase items", "[nvs]")
 {
