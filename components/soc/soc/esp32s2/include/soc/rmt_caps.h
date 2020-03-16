@@ -18,10 +18,12 @@
 extern "C" {
 #endif
 
-#define RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
-#define RMT_CHANNELS_NUM (4)       /*!< Total 4 channels */
-#define RMT_SUPPORT_RX_PINGPONG_MODE (1)
-#define RMT_SUPPORT_RX_DEMODULATION  (1)
+#define RMT_CHANNEL_MEM_WORDS (64)       /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */
+#define RMT_CHANNELS_NUM (4)             /*!< Total 4 channels */
+#define RMT_SUPPORT_RX_PINGPONG (1)      /*!< Support Ping-Pong mode on RX path */
+#define RMT_SUPPORT_RX_DEMODULATION  (1) /*!< Support signal demodulation on RX path (i.e. remove carrier) */
+#define RMT_SUPPORT_TX_LOOP_COUNT (1)    /*!< Support transmit specified number of cycles in loop mode */
+#define RMT_SUPPORT_TX_SIMULTANEOUS (1)  /*!< Support multiple channel transmit simultaneously */
 
 #ifdef __cplusplus
 }

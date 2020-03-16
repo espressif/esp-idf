@@ -56,7 +56,7 @@ void rmt_hal_set_carrier_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_
     uint32_t carrier_div = (base_clk_hz + carrier_clk_hz / 2) / carrier_clk_hz;
     uint32_t div_high = (uint32_t)(carrier_div * carrier_clk_duty);
     uint32_t div_low = carrier_div - div_high;
-    rmt_ll_set_carrier_high_low_ticks(hal->regs, channel, div_high, div_low);
+    rmt_ll_set_tx_carrier_high_low_ticks(hal->regs, channel, div_high, div_low);
 }
 
 void rmt_hal_get_carrier_clock(rmt_hal_context_t *hal, uint32_t channel, uint32_t base_clk_hz, uint32_t *carrier_clk_hz, float *carrier_clk_duty)

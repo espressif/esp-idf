@@ -21,6 +21,11 @@ extern "C" {
 #include "soc/rmt_struct.h"
 #include "soc/rmt_caps.h"
 
+static inline void rmt_ll_enable_drive_clock(rmt_dev_t *dev, bool enable)
+{
+    dev->conf_ch[0].conf0.clk_en = enable;
+}
+
 static inline void rmt_ll_reset_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
     dev->conf_ch[channel].conf1.ref_cnt_rst = 1;
@@ -57,12 +62,12 @@ static inline void rmt_ll_enable_rx(rmt_dev_t *dev, uint32_t channel, bool enabl
     dev->conf_ch[channel].conf1.rx_en = enable;
 }
 
-static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, uint32_t channel, bool enable)
+static inline void rmt_ll_power_down_mem(rmt_dev_t *dev, bool enable)
 {
     dev->conf_ch[0].conf0.mem_pd = enable; // Only conf0 register of channel0 has `mem_pd`
 }
 
-static inline bool rmt_ll_is_mem_power_down(rmt_dev_t *dev, uint32_t channel)
+static inline bool rmt_ll_is_mem_power_down(rmt_dev_t *dev)
 {
     return dev->conf_ch[0].conf0.mem_pd; // Only conf0 register of channel0 has `mem_pd`
 }
@@ -84,7 +89,8 @@ static inline void rmt_ll_set_counter_clock_div(rmt_dev_t *dev, uint32_t channel
 
 static inline uint32_t rmt_ll_get_counter_clock_div(rmt_dev_t *dev, uint32_t channel)
 {
-    return dev->conf_ch[channel].conf0.div_cnt;
+    uint32_t div = dev->conf_ch[channel].conf0.div_cnt;
+    return div == 0 ? 256 : div;
 }
 
 static inline void rmt_ll_enable_tx_pingpong(rmt_dev_t *dev, bool enable)
@@ -117,12 +123,12 @@ static inline uint32_t rmt_ll_get_mem_owner(rmt_dev_t *dev, uint32_t channel)
     return dev->conf_ch[channel].conf1.mem_owner;
 }
 
-static inline void rmt_ll_enable_tx_cyclic(rmt_dev_t *dev, uint32_t channel, bool enable)
+static inline void rmt_ll_enable_tx_loop(rmt_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->conf_ch[channel].conf1.tx_conti_mode = enable;
 }
 
-static inline bool rmt_ll_is_tx_cyclic_enabled(rmt_dev_t *dev, uint32_t channel)
+static inline bool rmt_ll_is_tx_loop_enabled(rmt_dev_t *dev, uint32_t channel)
 {
     return dev->conf_ch[channel].conf1.tx_conti_mode;
 }
@@ -248,7 +254,7 @@ static inline uint32_t rmt_ll_get_tx_thres_interrupt_status(rmt_dev_t *dev)
     return (status & 0xFF000000) >> 24;
 }
 
-static inline void rmt_ll_set_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
+static inline void rmt_ll_set_tx_carrier_high_low_ticks(rmt_dev_t *dev, uint32_t channel, uint32_t high_ticks, uint32_t low_ticks)
 {
     dev->carrier_duty_ch[channel].high = high_ticks;
     dev->carrier_duty_ch[channel].low = low_ticks;
@@ -265,7 +271,7 @@ static inline void rmt_ll_enable_carrier(rmt_dev_t *dev, uint32_t channel, bool 
     dev->conf_ch[channel].conf0.carrier_en = enable;
 }
 
-static inline void rmt_ll_set_carrier_to_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
+static inline void rmt_ll_set_carrier_on_level(rmt_dev_t *dev, uint32_t channel, uint8_t level)
 {
     dev->conf_ch[channel].conf0.carrier_out_lv = level;
 }

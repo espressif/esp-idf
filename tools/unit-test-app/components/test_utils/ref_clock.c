@@ -101,7 +101,7 @@ void ref_clock_init()
     rmt_ll_set_counter_clock_div(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 1);
     rmt_ll_set_mem_blocks(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 1);
     rmt_ll_set_counter_clock_src(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, 0);
-    rmt_ll_enable_tx_cyclic(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, true);
+    rmt_ll_enable_tx_loop(s_rmt.regs, REF_CLOCK_RMT_CHANNEL, true);
     rmt_ll_start_tx(s_rmt.regs, REF_CLOCK_RMT_CHANNEL);
 
     // Route signal to PCNT

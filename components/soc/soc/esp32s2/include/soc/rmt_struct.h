@@ -21,7 +21,7 @@ extern "C" {
 #endif
 
 typedef volatile struct {
-    uint32_t data_ch[4];                                   /**/
+    uint32_t data_ch[4]; /* Data FIFO, Can only be accessed by PeriBus2 */
     struct {
         union {
             struct {
@@ -283,7 +283,7 @@ typedef volatile struct {
     uint32_t reserved_f0;
     uint32_t reserved_f4;
     uint32_t reserved_f8;
-    uint32_t date;                                      /**/
+    uint32_t date; /* Version Control Register */
 } rmt_dev_t;
 extern rmt_dev_t RMT;
 
