@@ -116,6 +116,7 @@
 #include <sys/fcntl.h>
 #include <unistd.h>
 #include "linenoise.h"
+#include "sdkconfig.h"
 
 #define LINENOISE_DEFAULT_HISTORY_MAX_LEN 100
 #define LINENOISE_MAX_LINE 4096
@@ -979,11 +980,14 @@ char *linenoise(const char *prompt) {
     } else {
         count = linenoiseDumb(buf, LINENOISE_MAX_LINE, prompt);
     }
+#ifdef CONFIG_ESP_LINENOISE_RETURN_ZERO_STRING
     if (count >= 0) {
+#else
+    if (count > 0) {
+#endif
         sanitize(buf);
         count = strlen(buf);
-    }
-    if (count < 0) {
+    } else {
         free(buf);
         return NULL;
     }
