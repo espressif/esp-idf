@@ -1,0 +1,10 @@
+menu "Linenoise"
+
+    config ESP_LINENOISE_RETURN_ZERO_STRING
+        bool "Return 0 length strings"
+        default n
+        help
+            If enabled linenoise will return 0 length strings if the user presses enter with out typing 
+            a command, if disabled NULL will be returned instead.
+
+endmenu
