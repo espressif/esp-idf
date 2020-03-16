@@ -125,6 +125,19 @@ static void bt_mesh_tx_seg_unlock(void)
     bt_mesh_mutex_unlock(&tx_seg_lock);
 }
 
+u8_t bt_mesh_get_seg_retrans_num(void)
+{
+    return SEG_RETRANSMIT_ATTEMPTS;
+}
+
+s32_t bt_mesh_get_seg_retrans_timeout(u8_t ttl)
+{
+    struct seg_tx tx = {
+        .ttl = ttl,
+    };
+    return SEG_RETRANSMIT_TIMEOUT(&tx);
+}
+
 void bt_mesh_set_hb_sub_dst(u16_t addr)
 {
     hb_sub_dst = addr;
@@ -1130,13 +1143,33 @@ static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
     }
 }
 
+static u32_t incomplete_timeout(struct seg_rx *rx)
+{
+    u32_t timeout = 0U;
+    u8_t ttl = 0U;
+
+    if (rx->ttl == BLE_MESH_TTL_DEFAULT) {
+        ttl = bt_mesh_default_ttl_get();
+    } else {
+        ttl = rx->ttl;
+    }
+
+    /* "The incomplete timer shall be set to a minimum of 10 seconds." */
+    timeout = K_SECONDS(10);
+
+    /* The less segments being received, the shorter timeout will be used. */
+    timeout += K_MSEC(ttl * popcount(rx->block) * 100U);
+
+    return MIN(timeout, K_SECONDS(60));
+}
+
 static void seg_ack(struct k_work *work)
 {
     struct seg_rx *rx = CONTAINER_OF(work, struct seg_rx, ack);
 
     BT_DBG("rx %p", rx);
 
-    if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
+    if (k_uptime_get_32() - rx->last > incomplete_timeout(rx)) {
         BT_WARN("Incomplete timer expired");
         seg_rx_reset(rx, false);
         return;
@@ -1583,6 +1616,50 @@ void bt_mesh_tx_reset(void)
         seg_tx_reset(&seg_tx[i]);
     }
 }
+
+#if CONFIG_BLE_MESH_PROVISIONER
+void bt_mesh_rx_reset_single(u16_t src)
+{
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(src)) {
+        return;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
+        struct seg_rx *rx = &seg_rx[i];
+        if (src == rx->src) {
+            seg_rx_reset(rx, true);
+        }
+    }
+
+    for (i = 0; i < ARRAY_SIZE(bt_mesh.rpl); i++) {
+        struct bt_mesh_rpl *rpl = &bt_mesh.rpl[i];
+        if (src == rpl->src) {
+            memset(rpl, 0, sizeof(struct bt_mesh_rpl));
+            if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+                bt_mesh_clear_rpl_single(src);
+            }
+        }
+    }
+}
+
+void bt_mesh_tx_reset_single(u16_t dst)
+{
+    int i;
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(dst)) {
+        return;
+    }
+
+    for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
+        struct seg_tx *tx = &seg_tx[i];
+        if (dst == tx->dst) {
+            seg_tx_reset(tx);
+        }
+    }
+}
+#endif /* CONFIG_BLE_MESH_PROVISIONER */
 
 void bt_mesh_trans_init(void)
 {

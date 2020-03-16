@@ -80,6 +80,10 @@ struct bt_mesh_ctl_friend_sub_confirm {
     u8_t xact;
 } __packed;
 
+u8_t bt_mesh_get_seg_retrans_num(void);
+
+s32_t bt_mesh_get_seg_retrans_timeout(u8_t ttl);
+
 void bt_mesh_set_hb_sub_dst(u16_t addr);
 
 struct bt_mesh_app_key *bt_mesh_app_key_find(u16_t app_idx);
@@ -88,6 +92,8 @@ bool bt_mesh_tx_in_progress(void);
 
 void bt_mesh_rx_reset(void);
 void bt_mesh_tx_reset(void);
+void bt_mesh_rx_reset_single(u16_t src);
+void bt_mesh_tx_reset_single(u16_t dst);
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
                      size_t data_len, u64_t *seq_auth,
