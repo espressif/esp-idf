@@ -63,14 +63,15 @@ nc -l 192.168.0.167 -p 3333
 ```
 
 ### Python scripts
-Each script contains port number, IP version (IPv4 or IPv6) and IP address (only clients) that has to be altered to match the values used by the application. Example:
+Each script in the application directory could be used to exercise the socket communication. 
+Command line arguments such as IP version (IPv4 or IPv6) and IP address and payload data (only clients) shall be supplied.
+In addition to that, port number and interface id are hardcoded in the scripts and might need to be altered to match the values used by the application. Example:
 
 ```
-PORT = 3333;
-IP_VERSION = 'IPv4'
-IPV4 = '192.168.0.167'
-IPV6 = 'FE80::32AE:A4FF:FE80:5288'
+PORT = 3333
+INTERFACE = 'en0'
 ```
+
 ### Note about IPv6 addresses
 
 Examples are configured to obtain multiple IPv6 addresses. The actual behavior may differ depending on the local network, typically the ESP gets assigned these two addresses
