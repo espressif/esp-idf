@@ -32,7 +32,7 @@ else() # Regular app build
                 # If SDK_TOOLCHAIN_SUPPORTS_TIME_WIDE_64_BITS option is defined
                 # then all time functions from the ROM memory will not be linked.
                 # Instead, those functions can be used from the toolchain by ESP-IDF.
-                target_linker_script(${COMPONENT_LIB} INTERFACE "esp32/ld/esp32.rom.newlib-funcs-time.ld")
+                target_linker_script(${COMPONENT_LIB} INTERFACE "esp32/ld/esp32.rom.newlib-time.ld")
             endif()
 
             # Include in newlib nano from ROM only if SPIRAM cache workaround is disabled
