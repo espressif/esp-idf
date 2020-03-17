@@ -246,7 +246,7 @@ static void http_rest_with_hostname_path(void)
     esp_http_client_cleanup(client);
 }
 
-
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
 static void http_auth_basic(void)
 {
     esp_http_client_config_t config = {
@@ -285,6 +285,7 @@ static void http_auth_basic_redirect(void)
     }
     esp_http_client_cleanup(client);
 }
+#endif
 
 static void http_auth_digest(void)
 {
@@ -433,7 +434,6 @@ static void http_perform_as_stream_reader(void)
     }
     esp_http_client_config_t config = {
         .url = "http://httpbin.org/get",
-        .event_handler = _http_event_handler,
     };
     esp_http_client_handle_t client = esp_http_client_init(&config);
     esp_err_t err;
@@ -516,8 +516,10 @@ static void http_test_task(void *pvParameters)
 {
     http_rest_with_url();
     http_rest_with_hostname_path();
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
     http_auth_basic();
     http_auth_basic_redirect();
+#endif
     http_auth_digest();
     http_relative_redirect();
     http_absolute_redirect();
