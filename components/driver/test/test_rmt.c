@@ -14,6 +14,9 @@
 // CI ONLY: Don't connect any other signals to this GPIO
 #define RMT_DATA_IO (12) // bind signal RMT_SIG_OUT0_IDX and RMT_SIG_IN0_IDX on the same GPIO
 
+#define RMT_TESTBENCH_FLAGS_ALWAYS_ON (1<<0)
+#define RMT_TESTBENCH_FLAGS_CARRIER_ON (1<<1)
+
 static const char *TAG = "RMT.test";
 static ir_builder_t *s_ir_builder = NULL;
 static ir_parser_t *s_ir_parser = NULL;
@@ -23,13 +26,28 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
     // RMT channel configuration
     if (tx_channel >= 0) {
         rmt_config_t tx_config = RMT_DEFAULT_CONFIG_TX(RMT_DATA_IO, tx_channel);
-        tx_config.flags = flags;
+        if (flags & RMT_TESTBENCH_FLAGS_ALWAYS_ON) {
+            tx_config.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+        }
+        if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {
+            tx_config.tx_config.carrier_en = true;
+        }
         TEST_ESP_OK(rmt_config(&tx_config));
     }
 
     if (rx_channel >= 0) {
         rmt_config_t rx_config = RMT_DEFAULT_CONFIG_RX(RMT_DATA_IO, rx_channel);
-        rx_config.flags = flags;
+        if (flags & RMT_TESTBENCH_FLAGS_ALWAYS_ON) {
+            rx_config.flags |= RMT_CHANNEL_FLAGS_ALWAYS_ON;
+        }
+#if RMT_SUPPORT_RX_DEMODULATION
+        if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {
+            rx_config.rx_config.rm_carrier = true;
+            rx_config.rx_config.carrier_freq_hz = 38000;
+            rx_config.rx_config.carrier_duty_percent = 33;
+            rx_config.rx_config.carrier_level = RMT_CARRIER_LEVEL_HIGH;
+        }
+#endif
         TEST_ESP_OK(rmt_config(&rx_config));
     }
 
@@ -168,7 +186,7 @@ TEST_CASE("RMT install/uninstall test", "[rmt][pressure]")
     }
 }
 
-TEST_CASE("RMT NEC TX and RX", "[rmt][timeout=240]")
+static void do_nec_tx_rx(uint32_t flags)
 {
     RingbufHandle_t rb = NULL;
     rmt_item32_t *items = NULL;
@@ -179,56 +197,72 @@ TEST_CASE("RMT NEC TX and RX", "[rmt][timeout=240]")
     int tx_channel = 0;
     int rx_channel = 1;
 
-    uint32_t test_flags[] = {0, RMT_CHANNEL_FLAGS_ALWAYS_ON}; // test REF_TICK clock source
-
     // test on different flags combinations
-    for (int run = 0; run < sizeof(test_flags) / sizeof(test_flags[0]); run++) {
-        rmt_setup_testbench(tx_channel, rx_channel, test_flags[run]);
+    rmt_setup_testbench(tx_channel, rx_channel, flags);
 
-        // get ready to receive
-        TEST_ESP_OK(rmt_get_ringbuf_handle(rx_channel, &rb));
-        TEST_ASSERT_NOT_NULL(rb);
-        TEST_ESP_OK(rmt_rx_start(rx_channel, true));
+    // get ready to receive
+    TEST_ESP_OK(rmt_get_ringbuf_handle(rx_channel, &rb));
+    TEST_ASSERT_NOT_NULL(rb);
+    TEST_ESP_OK(rmt_rx_start(rx_channel, true));
 
-        vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
-        // build NEC codes
-        cmd = 0x20;
-        while (cmd <= 0x30) {
-            ESP_LOGI(TAG, "Send command 0x%x to address 0x%x", cmd, addr);
-            // Send new key code
-            TEST_ESP_OK(s_ir_builder->build_frame(s_ir_builder, addr, cmd));
-            TEST_ESP_OK(s_ir_builder->get_result(s_ir_builder, &items, &length));
-            if (cmd & 0x01) {
-                TEST_ESP_OK(rmt_write_items(tx_channel, items, length, false)); // no wait
-                TEST_ESP_OK(rmt_wait_tx_done(tx_channel, portMAX_DELAY));
-            } else {
-                TEST_ESP_OK(rmt_write_items(tx_channel, items, length, true)); // wait until done
-            }
-            cmd++;
+    // build NEC codes
+    cmd = 0x20;
+    while (cmd <= 0x30) {
+        ESP_LOGI(TAG, "Send command 0x%x to address 0x%x", cmd, addr);
+        // Send new key code
+        TEST_ESP_OK(s_ir_builder->build_frame(s_ir_builder, addr, cmd));
+        TEST_ESP_OK(s_ir_builder->get_result(s_ir_builder, &items, &length));
+        if (cmd & 0x01) {
+            TEST_ESP_OK(rmt_write_items(tx_channel, items, length, false)); // no wait
+            TEST_ESP_OK(rmt_wait_tx_done(tx_channel, portMAX_DELAY));
+        } else {
+            TEST_ESP_OK(rmt_write_items(tx_channel, items, length, true)); // wait until done
         }
-
-        // parse NEC codes
-        while (rb) {
-            items = (rmt_item32_t *) xRingbufferReceive(rb, &length, 1000);
-            if (items) {
-                length /= 4; // one RMT = 4 Bytes
-                if (s_ir_parser->input(s_ir_parser, items, length) == ESP_OK) {
-                    if (s_ir_parser->get_scan_code(s_ir_parser, &addr, &cmd, &repeat) == ESP_OK) {
-                        ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04x cmd: 0x%04x", repeat ? "(repeat)" : "", addr, cmd);
-                    }
-                }
-                vRingbufferReturnItem(rb, (void *) items);
-            } else {
-                ESP_LOGI(TAG, "done");
-                break;
-            }
-        }
-
-        TEST_ASSERT_EQUAL(0x30, cmd);
-        rmt_clean_testbench(tx_channel, rx_channel);
+        cmd++;
     }
+
+    // parse NEC codes
+    while (rb) {
+        items = (rmt_item32_t *) xRingbufferReceive(rb, &length, 1000);
+        if (items) {
+            length /= 4; // one RMT = 4 Bytes
+            if (s_ir_parser->input(s_ir_parser, items, length) == ESP_OK) {
+                if (s_ir_parser->get_scan_code(s_ir_parser, &addr, &cmd, &repeat) == ESP_OK) {
+                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04x cmd: 0x%04x", repeat ? "(repeat)" : "", addr, cmd);
+                }
+            }
+            vRingbufferReturnItem(rb, (void *) items);
+        } else {
+            ESP_LOGI(TAG, "done");
+            break;
+        }
+    }
+
+    TEST_ASSERT_EQUAL(0x30, cmd);
+    rmt_clean_testbench(tx_channel, rx_channel);
 }
+
+// basic nec tx and rx test, using APB source clock, no modulation
+TEST_CASE("RMT NEC TX and RX (APB)", "[rmt]")
+{
+    do_nec_tx_rx(0);
+}
+
+// test with RMT_TESTBENCH_FLAGS_ALWAYS_ON will take a long time (REF_TICK is much slower than APB CLOCK)
+TEST_CASE("RMT NEC TX and RX (REF_TICK)", "[rmt][timeout=240]")
+{
+    do_nec_tx_rx(RMT_TESTBENCH_FLAGS_ALWAYS_ON);
+}
+
+#if RMT_SUPPORT_RX_DEMODULATION
+// basic nec tx and rx test, using APB source clock, with modulation and demodulation on
+TEST_CASE("RMT NEC TX and RX (Modulation/Demodulation)", "[rmt]")
+{
+    do_nec_tx_rx(RMT_TESTBENCH_FLAGS_CARRIER_ON);
+}
+#endif
 
 TEST_CASE("RMT TX (RMT_CHANNEL_MEM_WORDS-1) symbols", "[rmt][boundary]")
 {
@@ -312,61 +346,3 @@ TEST_CASE("RMT TX stop", "[rmt]")
     TEST_ASSERT(num < count);
     rmt_clean_testbench(tx_channel, rx_channel);
 }
-
-#ifdef RMT_SUPPORT_RX_DEMODULATION
-/**
- * @brief RMT demoudulation receiver initialization
- */
-static void rx_demoudulation_init(void)
-{
-    rmt_rx_config_t rx_cfg = {
-        .filter_en = true,
-        .filter_ticks_thresh = 100,
-        .idle_threshold = RMT_ITEM32_TIMEOUT_US / 10 * (RMT_TICK_10_US),
-        .rm_carrier = true,
-        .high_thres = 20,
-        .low_thres = 20,
-        .carrier_level = RMT_CARRIER_LEVEL_HIGH,
-    };
-    rmt_config_t rmt_rx = {
-        .channel = RMT_RX_CHANNEL,
-        .gpio_num = RMT_RX_GPIO_NUM,
-        .clk_div = RMT_CLK_DIV,
-        .mem_block_num = 1,
-        .rmt_mode = RMT_MODE_RX,
-        .rx_config = rx_cfg,
-    };
-    rmt_config(&rmt_rx);
-    rmt_driver_install(rmt_rx.channel, (sizeof(rmt_item32_t) * DATA_ITEM_NUM * (RMT_TX_DATA_NUM + 6)), 0);
-}
-
-TEST_CASE("RMT carrier TX and RX", "[rmt][test_env=UT_T1_RMT]")
-{
-    rx_demoudulation_init();
-    RingbufHandle_t rb = NULL;
-    rmt_get_ringbuf_handle(RMT_RX_CHANNEL, &rb);
-    rmt_rx_start(RMT_RX_CHANNEL, 1);
-    ESP_LOGI(TAG, "Star receiving RMT data...");
-
-    tx_init();
-    rmt_set_tx_carrier(RMT_TX_CHANNEL, true, 1052, 1052, RMT_CARRIER_LEVEL_HIGH);
-    uint16_t cmd = 0x0;
-    uint16_t addr = 0x11;
-    int num_items = DATA_ITEM_NUM * RMT_TX_DATA_NUM;
-    rmt_item32_t *items = calloc(num_items + 1, sizeof(rmt_item32_t));
-
-    vTaskDelay(pdMS_TO_TICKS(2000));
-
-    ESP_LOGI(TAG, "Sending RMT data...");
-    // send data
-    set_tx_data(RMT_TX_CHANNEL, cmd, addr, num_items, items, 0);
-    // wait until tx done
-    rmt_write_items(RMT_TX_CHANNEL, items, num_items, 1);
-    free(items);
-    // receive data
-    uint16_t tmp = get_rx_data(rb);
-    TEST_ASSERT(tmp == RMT_TX_DATA_NUM);
-    TEST_ESP_OK(rmt_driver_uninstall(RMT_TX_CHANNEL));
-    TEST_ESP_OK(rmt_driver_uninstall(RMT_RX_CHANNEL));
-}
-#endif

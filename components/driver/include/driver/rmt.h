@@ -56,12 +56,11 @@ typedef struct {
     uint16_t idle_threshold;     /*!< RMT RX idle threshold */
     uint8_t filter_ticks_thresh; /*!< RMT filter tick number */
     bool filter_en;              /*!< RMT receiver filter enable */
-
-#ifdef RMT_SUPPORT_RX_DEMODULATION
-    bool rm_carrier;             /*!< RMT receiver remove carrier enable */
-    uint16_t high_thres;         /*!< The threshold of carrier high level tick number */
-    uint16_t low_thres;          /*!< The threshold of carrier low level tick number */
-    rmt_carrier_level_t carrier_level;  /*!< The level need to remove carrier */
+#if RMT_SUPPORT_RX_DEMODULATION
+    bool rm_carrier;                   /*!< RMT receiver remove carrier enable */
+    uint32_t carrier_freq_hz;          /*!< RMT carrier frequency */
+    uint8_t carrier_duty_percent;      /*!< RMT carrier duty (%) */
+    rmt_carrier_level_t carrier_level; /*!< The level to remove the carrier */
 #endif
 } rmt_rx_config_t;
 

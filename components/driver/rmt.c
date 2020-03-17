@@ -486,7 +486,6 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
     }
     rmt_ll_set_mem_blocks(dev, channel, mem_cnt);
     rmt_ll_set_mem_owner(dev, channel, RMT_MEM_OWNER_HW);
-    rmt_ll_enable_carrier(dev, channel, false); // disable carrier feature by default
     RMT_EXIT_CRITICAL();
 
     s_rmt_src_clock_hz[channel] = rmt_source_clk_hz;
@@ -534,10 +533,15 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         rmt_ll_enable_rx_pingpong(dev, channel, true);
 #endif
 
-#ifdef RMT_SUPPORT_RX_DEMODULATION
-        rmt_ll_enable_rx_carrier_rm(dev, channel, rmt_param->rx_config.rm_carrier);
-        rmt_ll_set_rx_carrier_high_low_ticks(dev, channel, rmt_param->rx_config.high_thres, rmt_param->rx_config.low_thres );
-        rmt_ll_set_carrier_on_level(dev, channel, rmt_param->rx_config.carrier_level);
+#if RMT_SUPPORT_RX_DEMODULATION
+        rmt_ll_enable_carrier(dev, channel, rmt_param->rx_config.rm_carrier);
+        if (rmt_param->rx_config.rm_carrier) {
+            uint32_t duty_total = rmt_source_clk_hz / rmt_ll_get_counter_clock_div(dev, channel) / rmt_param->rx_config.carrier_freq_hz;
+            uint32_t duty_high = duty_total * rmt_param->rx_config.carrier_duty_percent / 100;
+            // there could be residual in timing the carrier pulse, so double enlarge the theoretical value
+            rmt_ll_set_rx_carrier_high_low_ticks(dev, channel, duty_high * 2, (duty_total - duty_high) * 2);
+            rmt_ll_set_carrier_on_level(dev, channel, rmt_param->rx_config.carrier_level);
+        }
 #endif
         RMT_EXIT_CRITICAL();
 
