@@ -1,4 +1,4 @@
-/* These are the newlib functions present in ESP32 ROM.
+/* These are the newlib functions and the .bss/.data symbols necessary for these functions present in ESP32 ROM.
    They should not be used when you need to solve the Y2K38 problem.
    Because these functions were compiled with 32-bit width for the time_t structure.
  */
@@ -19,3 +19,11 @@ time = 0x40001844;
 __time_load_locale = 0x4000183c;
 tzset = 0x40001a1c;
 _tzset_r = 0x40001a28;
+__tzcalc_limits = 0x400018a0;
+__tz_lock = 0x40001a04;
+__tz_unlock = 0x40001a10;
+/* The .bss/.data symbols necessary for these functions */
+_timezone = 0x3ffae0a0;
+_tzname = 0x3ffae030;
+_daylight = 0x3ffae0a4;
+__month_lengths = 0x3ff9609c;
