@@ -1195,7 +1195,7 @@ UINT16 AVDT_SendReport(UINT8 handle, AVDT_REPORT_TYPE type,
                     len = AVDT_MAX_CNAME_SIZE;
                 }
                 *p++ = (UINT8)len;
-                BCM_STRNCPY_S((char *)p, len + 1, (char *)p_data->cname, len + 1);
+                BCM_STRNCPY_S((char *)p, (char *)p_data->cname, AVDT_MAX_CNAME_SIZE + 1);
                 p += len;
                 break;
             }
