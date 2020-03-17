@@ -329,8 +329,8 @@ void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool)
         struct net_buf *buf = &pool->__bufs[i];
         if (buf->ref > 1U) {
             buf->ref = 1U;
-            net_buf_unref(buf);
         }
+        net_buf_unref(buf);
     }
 }
 
@@ -372,6 +372,9 @@ static void bt_mesh_unref_buf(bt_mesh_msg_t *msg)
     if (msg->arg) {
         buf = (struct net_buf *)msg->arg;
         BLE_MESH_ADV(buf)->busy = 0U;
+        if (buf->ref > 1U) {
+            buf->ref = 1U;
+        }
         net_buf_unref(buf);
     }
 
@@ -770,7 +773,7 @@ void bt_mesh_adv_init(void)
     __ASSERT(adv_task.stack, "%s, Failed to create adv thread stack", __func__);
     adv_task.handle = xTaskCreateStaticPinnedToCore(adv_thread, "BLE_Mesh_ADV_Task", BLE_MESH_ADV_TASK_STACK_SIZE, NULL,
                                   configMAX_PRIORITIES - 5, adv_task.stack, adv_task.task, BLE_MESH_ADV_TASK_CORE);
-    __ASSERT(adv_task.stack, "%s, Failed to create static adv thread stack", __func__);
+    __ASSERT(adv_task.handle, "%s, Failed to create static adv thread", __func__);
 #endif
 }
 
@@ -779,6 +782,15 @@ void bt_mesh_adv_deinit(void)
     if (xBleMeshQueue.queue == NULL) {
         return;
     }
+
+    vTaskDelete(adv_task.handle);
+    adv_task.handle = NULL;
+#if CONFIG_SPIRAM_USE_MALLOC
+    heap_caps_free(adv_task.stack);
+    adv_task.stack = NULL;
+    heap_caps_free(adv_task.task);
+    adv_task.task = NULL;
+#endif
 
 #if defined(CONFIG_BLE_MESH_RELAY_ADV_BUF)
     xQueueRemoveFromSet(xBleMeshQueue.queue, xBleMeshQueueSet);
@@ -811,17 +823,6 @@ void bt_mesh_adv_deinit(void)
 
     bt_mesh_unref_buf_from_pool(&adv_buf_pool);
     memset(adv_pool, 0, sizeof(adv_pool));
-
-    vTaskDelete(adv_task.handle);
-    adv_task.handle = NULL;
-#if CONFIG_SPIRAM_USE_MALLOC
-    heap_caps_free(adv_task.stack);
-    adv_task.stack = NULL;
-    /* Delay certain period for free adv_task.task */
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    heap_caps_free(adv_task.task);
-    adv_task.task = NULL;
-#endif
 }
 
 int bt_mesh_scan_enable(void)
