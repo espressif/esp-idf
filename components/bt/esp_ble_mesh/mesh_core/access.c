@@ -396,13 +396,17 @@ static int publish_retransmit(struct bt_mesh_model *mod)
     };
     int err = 0;
 
-    key = bt_mesh_app_key_find(pub->key);
+    key = bt_mesh_tx_appkey_get(pub->dev_role, pub->key);
     if (!key) {
         BT_ERR("%s, Failed to find AppKey", __func__);
         return -EADDRNOTAVAIL;
     }
 
-    tx.sub = bt_mesh_subnet_get(key->net_idx);
+    tx.sub = bt_mesh_tx_netkey_get(pub->dev_role, key->net_idx);
+    if (!tx.sub) {
+        BT_ERR("%s, Failed to get subnet", __func__);
+        return -EADDRNOTAVAIL;
+    }
 
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
