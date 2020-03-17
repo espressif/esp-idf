@@ -79,7 +79,7 @@ typedef struct {
 #endif
     rmt_item32_t *tx_buf;
     RingbufHandle_t rx_buf;
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
     rmt_item32_t *rx_item_buf;
     uint32_t rx_item_buf_size;
     uint32_t rx_item_len;
@@ -220,14 +220,11 @@ esp_err_t rmt_rx_start(rmt_channel_t channel, bool rx_idx_rst)
     rmt_ll_clear_rx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel);
     rmt_ll_enable_rx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
 
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
     const uint32_t item_block_len = rmt_ll_get_mem_blocks(p_rmt_obj[channel]->hal.regs, channel) * RMT_MEM_ITEM_NUM;
-    rmt_ll_set_rx_limit(p_rmt_obj[channel]->hal.regs, channel, item_block_len / 2);
     p_rmt_obj[channel]->rx_item_start_idx = 0;
     p_rmt_obj[channel]->rx_item_len = 0;
-    if (rmt_ll_is_rx_pingpong_enabled(p_rmt_obj[channel]->hal.regs, channel)) {
-        rmt_ll_enable_rx_thres_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
-    }
+    rmt_set_rx_thr_intr_en(channel, true, item_block_len / 2);
 #endif
 
     rmt_ll_enable_rx(p_rmt_obj[channel]->hal.regs, channel, true);
@@ -239,9 +236,10 @@ esp_err_t rmt_rx_stop(rmt_channel_t channel)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     RMT_ENTER_CRITICAL();
-    rmt_ll_enable_rx(p_rmt_obj[channel]->hal.regs, channel, false);
     rmt_ll_enable_rx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, false);
-#ifdef RMT_SUPPORT_RX_PINGPONG
+    rmt_ll_enable_rx(p_rmt_obj[channel]->hal.regs, channel, false);
+    rmt_ll_reset_rx_pointer(p_rmt_obj[channel]->hal.regs, channel);
+#if RMT_SUPPORT_RX_PINGPONG
     rmt_ll_enable_rx_thres_interrupt(p_rmt_obj[channel]->hal.regs, channel, false);
 #endif
     RMT_EXIT_CRITICAL();
@@ -378,12 +376,13 @@ esp_err_t rmt_set_rx_intr_en(rmt_channel_t channel, bool en)
     return ESP_OK;
 }
 
-#ifdef RMT_SUPPORT_RX_PINGPONG
-static esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
+#if RMT_SUPPORT_RX_PINGPONG
+esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     if (en) {
-        RMT_CHECK(evt_thresh <= 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
+        uint32_t item_block_len = rmt_ll_get_mem_blocks(p_rmt_obj[channel]->hal.regs, channel) * RMT_MEM_ITEM_NUM;
+        RMT_CHECK(evt_thresh <= item_block_len, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
         RMT_ENTER_CRITICAL();
         rmt_ll_set_rx_limit(p_rmt_obj[channel]->hal.regs, channel, evt_thresh);
         rmt_ll_enable_rx_thres_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
@@ -419,7 +418,8 @@ esp_err_t rmt_set_tx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_th
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
     if (en) {
-        RMT_CHECK(evt_thresh <= 256, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
+        uint32_t item_block_len = rmt_ll_get_mem_blocks(p_rmt_obj[channel]->hal.regs, channel) * RMT_MEM_ITEM_NUM;
+        RMT_CHECK(evt_thresh <= item_block_len, "RMT EVT THRESH ERR", ESP_ERR_INVALID_ARG);
         RMT_ENTER_CRITICAL();
         rmt_ll_set_tx_limit(p_rmt_obj[channel]->hal.regs, channel, evt_thresh);
         rmt_ll_enable_tx_thres_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
@@ -497,6 +497,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 
         RMT_ENTER_CRITICAL();
         rmt_ll_enable_tx_loop(dev, channel, rmt_param->tx_config.loop_en);
+        /* always enable tx ping-pong */
         rmt_ll_enable_tx_pingpong(dev, true);
         /*Set idle level */
         rmt_ll_enable_tx_idle(dev, channel, rmt_param->tx_config.idle_output_en);
@@ -529,7 +530,8 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         rmt_ll_set_rx_filter_thres(dev, channel, filter_cnt);
         rmt_ll_enable_rx_filter(dev, channel, rmt_param->rx_config.filter_en);
 
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
+        /* always enable rx ping-pong */
         rmt_ll_enable_rx_pingpong(dev, channel, true);
 #endif
 
@@ -713,7 +715,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             rmt_ll_set_mem_owner(p_rmt_obj[channel]->hal.regs, channel, RMT_MEM_OWNER_SW);
             if (p_rmt->rx_buf) {
                 addr = RMTMEM.chan[channel].data32;
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
                 if (item_len > p_rmt->rx_item_start_idx) {
                     item_len = item_len - p_rmt->rx_item_start_idx;
                 }
@@ -730,7 +732,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR");
             }
 
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
             p_rmt->rx_item_start_idx = 0;
             p_rmt->rx_item_len = 0;
             memset((void *)p_rmt->rx_item_buf, 0, p_rmt->rx_item_buf_size);
@@ -742,7 +744,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         rmt_ll_clear_rx_end_interrupt(hal->regs, channel);
     }
 
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
     // Rx thres interrupt
     status = rmt_ll_get_rx_thres_interrupt_status(hal->regs);
     while (status) {
@@ -753,14 +755,16 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         int rx_thres_lim = rmt_ll_get_rx_limit(p_rmt_obj[channel]->hal.regs, channel);
         int item_len = (p_rmt->rx_item_start_idx == 0) ? rx_thres_lim : (mem_item_size - rx_thres_lim);
         if ((p_rmt->rx_item_len + item_len) < (p_rmt->rx_item_buf_size / 4)) {
+            rmt_ll_set_mem_owner(p_rmt_obj[channel]->hal.regs, channel, RMT_MEM_OWNER_SW);
             memcpy((void *)(p_rmt->rx_item_buf + p_rmt->rx_item_len), (void *)(RMTMEM.chan[channel].data32 + p_rmt->rx_item_start_idx), item_len * 4);
+            rmt_ll_set_mem_owner(p_rmt_obj[channel]->hal.regs, channel, RMT_MEM_OWNER_HW);
             p_rmt->rx_item_len += item_len;
             p_rmt->rx_item_start_idx += item_len;
             if (p_rmt->rx_item_start_idx >= mem_item_size) {
                 p_rmt->rx_item_start_idx = 0;
             }
         } else {
-            ESP_EARLY_LOGE(RMT_TAG, "---RMT RX BUFFER ERROR %d\n", sizeof(p_rmt->rx_item_buf));
+            ESP_EARLY_LOGE(RMT_TAG, "---RX buffer too small: %d", sizeof(p_rmt->rx_item_buf));
         }
         rmt_ll_clear_rx_thres_interrupt(hal->regs, channel);
     }
@@ -802,9 +806,9 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     rmt_set_rx_intr_en(channel, 0);
     rmt_set_err_intr_en(channel, 0);
     rmt_set_tx_intr_en(channel, 0);
-    rmt_set_tx_thr_intr_en(channel, 0, 0xffff);
-#ifdef RMT_SUPPORT_RX_PINGPONG
-    rmt_set_rx_thr_intr_en(channel, 0, 0xffff);
+    rmt_set_tx_thr_intr_en(channel, false, 0xffff);
+#if RMT_SUPPORT_RX_PINGPONG
+    rmt_set_rx_thr_intr_en(channel, false, 0xffff);
 #endif
 
     _lock_acquire_recursive(&rmt_driver_isr_lock);
@@ -837,8 +841,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     if (p_rmt_obj[channel]->sample_to_rmt) {
         p_rmt_obj[channel]->sample_to_rmt = NULL;
     }
-
-#ifdef RMT_SUPPORT_RX_PINGPONG
+#if RMT_SUPPORT_RX_PINGPONG
     if (p_rmt_obj[channel]->rx_item_buf) {
         free(p_rmt_obj[channel]->rx_item_buf);
         p_rmt_obj[channel]->rx_item_buf = NULL;
@@ -865,12 +868,12 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
     }
 
 #if !CONFIG_SPIRAM_USE_MALLOC
-    p_rmt_obj[channel] = (rmt_obj_t *)malloc(sizeof(rmt_obj_t));
+    p_rmt_obj[channel] = calloc(1, sizeof(rmt_obj_t));
 #else
     if (!(intr_alloc_flags & ESP_INTR_FLAG_IRAM)) {
-        p_rmt_obj[channel] = (rmt_obj_t *)malloc(sizeof(rmt_obj_t));
+        p_rmt_obj[channel] = calloc(1, sizeof(rmt_obj_t));
     } else {
-        p_rmt_obj[channel] = (rmt_obj_t *)heap_caps_calloc(1, sizeof(rmt_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        p_rmt_obj[channel] = heap_caps_calloc(1, sizeof(rmt_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     }
 #endif
 
@@ -878,7 +881,6 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         ESP_LOGE(RMT_TAG, "RMT driver malloc error");
         return ESP_ERR_NO_MEM;
     }
-    memset(p_rmt_obj[channel], 0, sizeof(rmt_obj_t));
 
     rmt_hal_init(&p_rmt_obj[channel]->hal);
     rmt_hal_channel_reset(&p_rmt_obj[channel]->hal, channel);
@@ -908,15 +910,15 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         p_rmt_obj[channel]->rx_buf = xRingbufferCreate(rx_buf_size, RINGBUF_TYPE_NOSPLIT);
     }
 
-#ifdef RMT_SUPPORT_RX_PINGPONG
-    if (p_rmt_obj[channel]->rx_item_buf == NULL  && rx_buf_size > 0) {
+#if RMT_SUPPORT_RX_PINGPONG
+    if (p_rmt_obj[channel]->rx_item_buf == NULL && rx_buf_size > 0) {
 #if !CONFIG_SPIRAM_USE_MALLOC
-        p_rmt_obj[channel]->rx_item_buf = (rmt_item32_t *)malloc(rx_buf_size);
+        p_rmt_obj[channel]->rx_item_buf = calloc(1, rx_buf_size);
 #else
         if (!(p_rmt_obj[channel]->intr_alloc_flags & ESP_INTR_FLAG_IRAM)) {
-            p_rmt_obj[channel]->rx_item_buf = (rmt_item32_t *)malloc(rx_buf_size);
+            p_rmt_obj[channel]->rx_item_buf = calloc(1, rx_buf_size);
         } else {
-            p_rmt_obj[channel]->rx_item_buf = (rmt_item32_t *)heap_caps_calloc(1, rx_buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            p_rmt_obj[channel]->rx_item_buf = heap_caps_calloc(1, rx_buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         }
 #endif
         if (p_rmt_obj[channel]->rx_item_buf == NULL) {

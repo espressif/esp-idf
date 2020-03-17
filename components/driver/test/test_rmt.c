@@ -346,3 +346,50 @@ TEST_CASE("RMT TX stop", "[rmt]")
     TEST_ASSERT(num < count);
     rmt_clean_testbench(tx_channel, rx_channel);
 }
+
+#if RMT_SUPPORT_RX_PINGPONG
+TEST_CASE("RMT Ping-Pong operation", "[rmt]")
+{
+    int tx_channel = 0;
+    int rx_channel = 1;
+    rmt_item32_t frames[RMT_CHANNEL_MEM_WORDS * 2]; // send two block data using ping-pong
+    RingbufHandle_t rb = NULL;
+    uint32_t size = sizeof(frames) / sizeof(frames[0]);
+
+    // The design of the following test frame should trigger three rx threshold interrupt and one rx end interrupt
+    int i = 0;
+    for (i = 0; i < size - 1; i++) {
+        frames[i].level0 = 1;
+        frames[i].duration0 = 100;
+        frames[i].level1 = 0;
+        frames[i].duration1 = 100;
+    }
+    frames[i].level0 = 1;
+    frames[i].duration0 = 0;
+    frames[i].level1 = 0;
+    frames[i].duration1 = 0;
+
+    rmt_setup_testbench(tx_channel, rx_channel, 0);
+
+    // get ready to receive
+    TEST_ESP_OK(rmt_get_ringbuf_handle(rx_channel, &rb));
+    TEST_ASSERT_NOT_NULL(rb);
+    TEST_ESP_OK(rmt_rx_start(rx_channel, true));
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    for (uint32_t test_count = 0; test_count < 5; test_count++) {
+        TEST_ESP_OK(rmt_write_items(tx_channel, frames, size, true));
+
+        // parse received data
+        uint32_t length = 0;
+        rmt_item32_t *items = (rmt_item32_t *) xRingbufferReceive(rb, &length, 1000);
+        if (items) {
+            vRingbufferReturnItem(rb, (void *) items);
+        }
+        TEST_ASSERT_EQUAL(4 * (size - 1), length);
+    }
+
+    rmt_clean_testbench(tx_channel, rx_channel);
+}
+#endif

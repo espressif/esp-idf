@@ -789,6 +789,23 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
 */
 rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, void *arg);
 
+#if RMT_SUPPORT_RX_PINGPONG
+/**
+* @brief Set RMT RX threshold event interrupt enable
+*
+* An interrupt will be triggered when the number of received items reaches the threshold value
+*
+* @param channel RMT channel
+* @param en enable or disable RX event interrupt.
+* @param evt_thresh RMT event interrupt threshold value
+*
+* @return
+*     - ESP_ERR_INVALID_ARG Parameter error
+*     - ESP_OK Success
+*/
+esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
