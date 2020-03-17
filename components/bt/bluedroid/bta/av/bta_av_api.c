@@ -114,7 +114,7 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name, UINT8 app_id,
         p_buf->hdr.layer_specific   = chnl;
         p_buf->hdr.event = BTA_AV_API_REGISTER_EVT;
         if (p_service_name) {
-            BCM_STRNCPY_S(p_buf->p_service_name, sizeof(p_buf->p_service_name), p_service_name, BTA_SERVICE_NAME_LEN);
+            BCM_STRNCPY_S(p_buf->p_service_name, p_service_name, BTA_SERVICE_NAME_LEN);
             p_buf->p_service_name[BTA_SERVICE_NAME_LEN - 1] = 0;
         } else {
             p_buf->p_service_name[0] = 0;
