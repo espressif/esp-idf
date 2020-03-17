@@ -27,28 +27,23 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <sys/param.h>
-#include "esp32/rom/bigint.h"
 #include "soc/hwcrypto_periph.h"
 #include "esp_system.h"
 #include "esp_log.h"
-#include "esp_intr_alloc.h"
 #include "esp_attr.h"
+#include "bignum_impl.h"
 
 #include <mbedtls/bignum.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/semphr.h"
-#include "driver/periph_ctrl.h"
 
 /* Some implementation notes:
  *
  * - Naming convention x_words, y_words, z_words for number of words (limbs) used in a particular
  *   bignum. This number may be less than the size of the bignum
  *
- * - Naming convention hw_words for the hardware length of the operation. This number is always
- *   rounded up to a 512 bit multiple, and may be larger than any of the numbers involved in the
- *   calculation.
+ * - Naming convention hw_words for the hardware length of the operation. This number maybe be rounded up
+ *   for targets that requres this (e.g. ESP32), and may be larger than any of the numbers
+ *   involved in the calculation.
  *
  * - Timing behaviour of these functions will depend on the length of the inputs. This is fundamentally
  *   the same constraint as the software mbedTLS implementations, and relies on the same
@@ -60,30 +55,8 @@ static const __attribute__((unused)) char *TAG = "bignum";
 #define ciL    (sizeof(mbedtls_mpi_uint))         /* chars in limb  */
 #define biL    (ciL << 3)                         /* bits  in limb  */
 
+
 static _lock_t mpi_lock;
-
-void esp_mpi_acquire_hardware( void )
-{
-    /* newlib locks lazy initialize on ESP-IDF */
-    _lock_acquire(&mpi_lock);
-
-    /* Enable RSA hardware */
-    periph_module_enable(PERIPH_RSA_MODULE);
-    DPORT_REG_CLR_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
-
-    while(DPORT_REG_READ(RSA_CLEAN_REG) != 1);
-    // Note: from enabling RSA clock to here takes about 1.3us
-}
-
-void esp_mpi_release_hardware( void )
-{
-    DPORT_REG_SET_BIT(DPORT_RSA_PD_CTRL_REG, DPORT_RSA_PD);
-
-    /* Disable RSA hardware */
-    periph_module_disable(PERIPH_RSA_MODULE);
-
-    _lock_release(&mpi_lock);
-}
 
 /* Convert bit count to word count
  */
@@ -92,76 +65,39 @@ static inline size_t bits_to_words(size_t bits)
     return (bits + 31) / 32;
 }
 
-/* Round up number of words to nearest
-   512 bit (16 word) block count.
+/* Return the number of words actually used to represent an mpi
+   number.
 */
-static inline size_t hardware_words(size_t words)
+#if defined(MBEDTLS_MPI_EXP_MOD_ALT)
+static size_t mpi_words(const mbedtls_mpi *mpi)
 {
-    return (words + 0xF) & ~0xF;
-}
-
-/* Number of words used to hold 'mpi'.
-
-   Equivalent of bits_to_words(mbedtls_mpi_bitlen(mpi)), but uses less cycles if the
-   exact bit count is not needed.
-
-   Note that mpi->n (size of memory buffer) may be higher than this
-   number, if the high bits are mostly zeroes.
-*/
-static inline size_t word_length(const mbedtls_mpi *mpi)
-{
-    for(size_t i = mpi->n; i > 0; i--) {
-        if( mpi->p[i - 1] != 0 ) {
+    for (size_t i = mpi->n; i > 0; i--) {
+        if (mpi->p[i - 1] != 0) {
             return i;
         }
     }
     return 0;
 }
 
-/* Copy mbedTLS MPI bignum 'mpi' to hardware memory block at 'mem_base'.
+#endif //MBEDTLS_MPI_EXP_MOD_ALT
 
-   If hw_words is higher than the number of words in the bignum then
-   these additional words will be zeroed in the memory buffer.
-
-*/
-static inline void mpi_to_mem_block(uint32_t mem_base, const mbedtls_mpi *mpi, size_t hw_words)
+void esp_mpi_acquire_hardware( void )
 {
-    uint32_t *pbase = (uint32_t *)mem_base;
-    uint32_t copy_words = hw_words < mpi->n ? hw_words : mpi->n;
+    /* newlib locks lazy initialize on ESP-IDF */
+    _lock_acquire(&mpi_lock);
 
-    /* Copy MPI data to memory block registers */
-    for (int i = 0; i < copy_words; i++) {
-        pbase[i] = mpi->p[i];
-    }
-
-    /* Zero any remaining memory block data */
-    for (int i = copy_words; i < hw_words; i++) {
-        pbase[i] = 0;
-    }
-
-    /* Note: not executing memw here, can do it before we start a bignum operation */
+    /* Enable RSA hardware */
+    esp_mpi_enable_hardware_hw_op();
 }
 
-/* Read mbedTLS MPI bignum back from hardware memory block.
-
-   Reads num_words words from block.
-
-   Bignum 'x' should already be grown to at least num_words by caller (can be done while
-   calculation is in progress, to save some cycles)
-*/
-static inline void mem_block_to_mpi(mbedtls_mpi *x, uint32_t mem_base, int num_words)
+void esp_mpi_release_hardware( void )
 {
-    assert(x->n >= num_words);
+    esp_mpi_disable_hardware_hw_op();
 
-    /* Copy data from memory block registers */
-    esp_dport_access_read_buffer(x->p, mem_base, num_words);
-
-    /* Zero any remaining limbs in the bignum, if the buffer is bigger
-       than num_words */
-    for(size_t i = num_words; i < x->n; i++) {
-        x->p[i] = 0;
-    }
+    _lock_release(&mpi_lock);
 }
+
+
 
 
 /**
@@ -213,39 +149,16 @@ static int calculate_rinv(mbedtls_mpi *Rinv, const mbedtls_mpi *M, int num_words
     MBEDTLS_MPI_CHK(mbedtls_mpi_set_bit(&RR, num_bits * 2, 1));
     MBEDTLS_MPI_CHK(mbedtls_mpi_mod_mpi(Rinv, &RR, M));
 
- cleanup:
+cleanup:
     mbedtls_mpi_free(&RR);
+
     return ret;
 }
 
 
-/* Begin an RSA operation. op_reg specifies which 'START' register
-   to write to.
-*/
-static inline void start_op(uint32_t op_reg)
-{
-    /* Clear interrupt status */
-    DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
 
-    /* Note: above REG_WRITE includes a memw, so we know any writes
-       to the memory blocks are also complete. */
 
-    DPORT_REG_WRITE(op_reg, 1);
-}
 
-/* Wait for an RSA operation to complete.
-*/
-static inline void wait_op_complete(uint32_t op_reg)
-{
-    while(DPORT_REG_READ(RSA_INTERRUPT_REG) != 1)
-       { }
-
-    /* clear the interrupt */
-    DPORT_REG_WRITE(RSA_INTERRUPT_REG, 1);
-}
-
-/* Sub-stages of modulo multiplication/exponentiation operations */
-inline static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t hw_words, size_t z_words);
 
 /* Z = (X * Y) mod M
 
@@ -253,7 +166,8 @@ inline static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, 
 */
 int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M)
 {
-    int ret;
+    int ret = 0;
+
     size_t x_bits = mbedtls_mpi_bitlen(X);
     size_t y_bits = mbedtls_mpi_bitlen(Y);
     size_t m_bits = mbedtls_mpi_bitlen(M);
@@ -262,7 +176,7 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     size_t y_words = bits_to_words(y_bits);
     size_t m_words = bits_to_words(m_bits);
     size_t z_words = bits_to_words(z_bits);
-    size_t hw_words = hardware_words(MAX(x_words, MAX(y_words, m_words))); /* longest operand */
+    size_t hw_words = esp_mpi_hardware_words(MAX(x_words, MAX(y_words, m_words))); /* longest operand */
     mbedtls_mpi Rinv;
     mbedtls_mpi_uint Mprime;
 
@@ -272,72 +186,28 @@ int esp_mpi_mul_mpi_mod(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi 
     Mprime = modular_inverse(M);
 
     esp_mpi_acquire_hardware();
+    /* Load and start a (X * Y) mod M calculation */
+    esp_mpi_mul_mpi_mod_hw_op(X, Y, M, &Rinv, Mprime, hw_words);
 
-    /* Load M, X, Rinv, Mprime (Mprime is mod 2^32) */
-    mpi_to_mem_block(RSA_MEM_M_BLOCK_BASE, M, hw_words);
-    mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, hw_words);
-    mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, &Rinv, hw_words);
-    DPORT_REG_WRITE(RSA_M_DASH_REG, (uint32_t)Mprime);
+    MBEDTLS_MPI_CHK(mbedtls_mpi_grow(Z, z_words));
 
-    /* "mode" register loaded with number of 512-bit blocks, minus 1 */
-    DPORT_REG_WRITE(RSA_MULT_MODE_REG, (hw_words / 16) - 1);
+    esp_mpi_read_result_hw_op(Z, z_words);
+    Z->s = X->s * Y->s;
 
-    /* Execute first stage montgomery multiplication */
-    start_op(RSA_MULT_START_REG);
-
-    wait_op_complete(RSA_MULT_START_REG);
-
-    /* execute second stage */
-    ret = modular_multiply_finish(Z, X, Y, hw_words, z_words);
-
+cleanup:
+    mbedtls_mpi_free(&Rinv);
     esp_mpi_release_hardware();
 
- cleanup:
-    mbedtls_mpi_free(&Rinv);
     return ret;
 }
 
 #if defined(MBEDTLS_MPI_EXP_MOD_ALT)
 
-static int mont(mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M,
-                mbedtls_mpi_uint Mprime,
-                size_t hw_words,
-                bool again)
-{
-    // Note Z may be the same pointer as X or Y
-    int ret = 0;
-
-    // montgomery mult prepare
-    if (again == false) {
-        mpi_to_mem_block(RSA_MEM_M_BLOCK_BASE, M, hw_words);
-        DPORT_REG_WRITE(RSA_M_DASH_REG, Mprime);
-        DPORT_REG_WRITE(RSA_MULT_MODE_REG, hw_words / 16 - 1);
-    }
-
-    mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, hw_words);
-    mpi_to_mem_block(RSA_MEM_RB_BLOCK_BASE, Y, hw_words);
-
-    start_op(RSA_MULT_START_REG);
-
-    MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
-
-    wait_op_complete(RSA_MULT_START_REG);
-
-    /* Read back the result */
-    mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, hw_words);
-
-    /* from HAC 14.36 - 3. If Z >= M then Z = Z - M */
-    if (mbedtls_mpi_cmp_mpi(Z, M) >= 0) {
-        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_mpi(Z, Z, M));
-    }
- cleanup:
-    return ret;
-}
-
+#ifdef ESP_MPI_USE_MONT_EXP
 /*
  * Return the most significant one-bit.
  */
-static size_t mbedtls_mpi_msb( const mbedtls_mpi* X )
+static size_t mbedtls_mpi_msb( const mbedtls_mpi *X )
 {
     int i, j;
     if (X != NULL && X->n != 0) {
@@ -357,18 +227,18 @@ static size_t mbedtls_mpi_msb( const mbedtls_mpi* X )
 /*
  * Montgomery exponentiation: Z = X ^ Y mod M  (HAC 14.94)
  */
-static int mpi_montgomery_exp_calc( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M,
-                            mbedtls_mpi* Rinv,
-                            size_t hw_words,
-                            mbedtls_mpi_uint Mprime )
+static int mpi_montgomery_exp_calc( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M,
+                                    mbedtls_mpi *Rinv,
+                                    size_t hw_words,
+                                    mbedtls_mpi_uint Mprime )
 {
     int ret = 0;
     mbedtls_mpi X_, one;
 
     mbedtls_mpi_init(&X_);
     mbedtls_mpi_init(&one);
-    if( ( ( ret = mbedtls_mpi_grow(&one, hw_words) ) != 0 ) ||
-        ( ( ret = mbedtls_mpi_set_bit(&one, 0, 1) )  != 0 ) ) {
+    if ( ( ( ret = mbedtls_mpi_grow(&one, hw_words) ) != 0 ) ||
+            ( ( ret = mbedtls_mpi_set_bit(&one, 0, 1) )  != 0 ) ) {
         goto cleanup2;
     }
 
@@ -381,39 +251,39 @@ static int mpi_montgomery_exp_calc( mbedtls_mpi* Z, const mbedtls_mpi* X, const 
 
         // 1.1 x_ = mont(x, R^2 mod m)
         //        = mont(x, rb)
-        MBEDTLS_MPI_CHK( mont(&X_, X, Rinv, M, Mprime, hw_words, false) );
+        MBEDTLS_MPI_CHK( esp_mont_hw_op(&X_, X, Rinv, M, Mprime, hw_words, false) );
 
         // 1.2 z = R mod m
         // now z = R mod m = Mont (R^2 mod m, 1) mod M (as Mont(x) = X&R^-1 mod M)
-        MBEDTLS_MPI_CHK( mont(Z, Rinv, &one, M, Mprime, hw_words, true) );
+        MBEDTLS_MPI_CHK( esp_mont_hw_op(Z, Rinv, &one, M, Mprime, hw_words, true) );
 
         // 2 for i from t down to 0
         for (int i = t; i >= 0; i--) {
             // 2.1 z = mont(z,z)
             if (i != t) { // skip on the first iteration as is still unity
-                MBEDTLS_MPI_CHK( mont(Z, Z, Z, M, Mprime, hw_words, true) );
+                MBEDTLS_MPI_CHK( esp_mont_hw_op(Z, Z, Z, M, Mprime, hw_words, true) );
             }
 
             // 2.2 if y[i] = 1 then z = mont(A, x_)
             if (mbedtls_mpi_get_bit(Y, i)) {
-                MBEDTLS_MPI_CHK( mont(Z, Z, &X_, M, Mprime, hw_words, true) );
+                MBEDTLS_MPI_CHK( esp_mont_hw_op(Z, Z, &X_, M, Mprime, hw_words, true) );
             }
         }
 
         // 3 z = Mont(z, 1)
-        MBEDTLS_MPI_CHK( mont(Z, Z, &one, M, Mprime, hw_words, true) );
+        MBEDTLS_MPI_CHK( esp_mont_hw_op(Z, Z, &one, M, Mprime, hw_words, true) );
     }
 
- cleanup:
-    mbedtls_mpi_free(&X_);
-    mbedtls_mpi_free(&one);
+cleanup:
     esp_mpi_release_hardware();
-    return ret;
 
- cleanup2:
+cleanup2:
+    mbedtls_mpi_free(&X_);
     mbedtls_mpi_free(&one);
     return ret;
 }
+
+#endif //USE_MONT_EXPONENATIATION
 
 /*
  * Z = X ^ Y mod M
@@ -423,17 +293,18 @@ static int mpi_montgomery_exp_calc( mbedtls_mpi* Z, const mbedtls_mpi* X, const 
  * (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
  *
  */
-int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi* Y, const mbedtls_mpi* M, mbedtls_mpi* _Rinv )
+int mbedtls_mpi_exp_mod( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, mbedtls_mpi *_Rinv )
 {
     int ret = 0;
-    size_t x_words = word_length(X);
-    size_t y_words = word_length(Y);
-    size_t m_words = word_length(M);
+    size_t x_words = mpi_words(X);
+    size_t y_words = mpi_words(Y);
+    size_t m_words = mpi_words(M);
+
 
     /* "all numbers must be the same length", so choose longest number
        as cardinal length of operation...
     */
-    size_t hw_words = hardware_words(MAX(m_words, MAX(x_words, y_words)));
+    size_t num_words = esp_mpi_hardware_words(MAX(m_words, MAX(x_words, y_words)));
 
     mbedtls_mpi Rinv_new; /* used if _Rinv == NULL */
     mbedtls_mpi *Rinv;    /* points to _Rinv (if not NULL) othwerwise &RR_new */
@@ -451,7 +322,7 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
         return mbedtls_mpi_lset(Z, 1);
     }
 
-    if (hw_words * 32 > 4096) {
+    if (num_words * 32 > 4096) {
         return MBEDTLS_ERR_MPI_NOT_ACCEPTABLE;
     }
 
@@ -464,13 +335,27 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
         Rinv = _Rinv;
     }
     if (Rinv->p == NULL) {
-        MBEDTLS_MPI_CHK(calculate_rinv(Rinv, M, hw_words));
+        MBEDTLS_MPI_CHK(calculate_rinv(Rinv, M, num_words));
     }
 
     Mprime = modular_inverse(M);
 
     // Montgomery exponentiation: Z = X ^ Y mod M  (HAC 14.94)
-    MBEDTLS_MPI_CHK( mpi_montgomery_exp_calc(Z, X, Y, M, Rinv, hw_words, Mprime) );
+#ifdef ESP_MPI_USE_MONT_EXP
+    ret = mpi_montgomery_exp_calc(Z, X, Y, M, Rinv, num_words, Mprime) ;
+    MBEDTLS_MPI_CHK(ret);
+#else
+    esp_mpi_acquire_hardware();
+
+    esp_mpi_exp_mpi_mod_hw_op(X, Y, M, Rinv, Mprime, num_words);
+    ret = mbedtls_mpi_grow(Z, m_words);
+    if (ret != 0) {
+        esp_mpi_release_hardware();
+        goto cleanup;
+    }
+    esp_mpi_read_result_hw_op(Z, m_words);
+    esp_mpi_release_hardware();
+#endif
 
     // Compensate for negative X
     if (X->s == -1 && (Y->p[0] & 1) != 0) {
@@ -480,56 +365,21 @@ int mbedtls_mpi_exp_mod( mbedtls_mpi* Z, const mbedtls_mpi* X, const mbedtls_mpi
         Z->s = 1;
     }
 
- cleanup:
+cleanup:
     if (_Rinv == NULL) {
         mbedtls_mpi_free(&Rinv_new);
     }
-
     return ret;
 }
 
 #endif /* MBEDTLS_MPI_EXP_MOD_ALT */
 
-/* Second & final step of a modular multiply - load second multiplication
- * factor Y, run the operation (modular inverse), read back the result
- * into Z.
- *
- * Called from both mbedtls_mpi_exp_mod and mbedtls_mpi_mod_mpi.
- *
- * @param Z result value
- * @param X first multiplication factor (used to set sign of result).
- * @param Y second multiplication factor.
- * @param hw_words Size of the hardware operation, in words
- * @param z_words Size of the expected result, in words (may be less than hw_words).
- *        Z will be grown to at least this length.
- *
- *  Caller must have already called esp_mpi_acquire_hardware().
- */
-static int modular_multiply_finish(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t hw_words, size_t z_words)
-{
-    int ret = 0;
 
-    /* Load Y to X input memory block, rerun */
-    mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, Y, hw_words);
-
-    start_op(RSA_MULT_START_REG);
-
-    MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, z_words) );
-
-    wait_op_complete(RSA_MULT_START_REG);
-
-    mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, z_words);
-
-    Z->s = X->s * Y->s;
-
- cleanup:
-    return ret;
-}
 
 #if defined(MBEDTLS_MPI_MUL_MPI_ALT) /* MBEDTLS_MPI_MUL_MPI_ALT */
 
-static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words);
-static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t Y_bits, size_t z_words);
+static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words);
+static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t y_words, size_t z_words);
 
 /* Z = X * Y */
 int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y )
@@ -540,7 +390,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     size_t x_words = bits_to_words(x_bits);
     size_t y_words = bits_to_words(y_bits);
     size_t z_words = bits_to_words(x_bits + y_bits);
-    size_t hw_words = hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
+    size_t hw_words = esp_mpi_hardware_words(MAX(x_words, y_words)); // length of one operand in hardware
 
     /* Short-circuit eval if either argument is 0 or 1.
 
@@ -583,7 +433,7 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
             return mpi_mult_mpi_failover_mod_mult(Z, X, Y, z_words);
         } else {
             /* Still too long for the hardware unit... */
-            if(y_words > x_words) {
+            if (y_words > x_words) {
                 return mpi_mult_mpi_overlong(Z, X, Y, y_words, z_words);
             } else {
                 return mpi_mult_mpi_overlong(Z, Y, X, x_words, z_words);
@@ -592,93 +442,20 @@ int mbedtls_mpi_mul_mpi( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi
     }
 
     /* Otherwise, we can use the (faster) multiply hardware unit */
-
     esp_mpi_acquire_hardware();
 
-    /* Copy X (right-extended) & Y (left-extended) to memory block */
-    mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, hw_words);
-    mpi_to_mem_block(RSA_MEM_Z_BLOCK_BASE + hw_words * 4, Y, hw_words);
-    /* NB: as Y is left-extended, we don't zero the bottom words_mult words of Y block.
-       This is OK for now because zeroing is done by hardware when we do esp_mpi_acquire_hardware().
-    */
+    esp_mpi_mul_mpi_hw_op(X, Y, hw_words);
+    esp_mpi_read_result_hw_op(Z, z_words);
 
-    DPORT_REG_WRITE(RSA_M_DASH_REG, 0);
-
-    /* "mode" register loaded with number of 512-bit blocks in result,
-       plus 7 (for range 9-12). (this is ((N~ / 32) - 1) + 8))
-    */
-    DPORT_REG_WRITE(RSA_MULT_MODE_REG, ((hw_words * 2) / 16) + 7);
-
-    start_op(RSA_MULT_START_REG);
-
-    wait_op_complete(RSA_MULT_START_REG);
-
-    /* Read back the result */
-    mem_block_to_mpi(Z, RSA_MEM_Z_BLOCK_BASE, z_words);
+    esp_mpi_release_hardware();
 
     Z->s = X->s * Y->s;
 
- cleanup:
-    esp_mpi_release_hardware();
-
+cleanup:
     return ret;
 }
 
-/* Special-case of mbedtls_mpi_mult_mpi(), where we use hardware montgomery mod
-   multiplication to calculate an mbedtls_mpi_mult_mpi result where either
-   A or B are >2048 bits so can't use the standard multiplication method.
 
-   Result (z_words, based on A bits + B bits) must still be less than 4096 bits.
-
-   This case is simpler than the general case modulo multiply of
-   esp_mpi_mul_mpi_mod() because we can control the other arguments:
-
-   * Modulus is chosen with M=(2^num_bits - 1) (ie M=R-1), so output
-   isn't actually modulo anything.
-   * Mprime and Rinv are therefore predictable as follows:
-   Mprime = 1
-   Rinv = 1
-
-   (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
-*/
-static int mpi_mult_mpi_failover_mod_mult(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words)
-{
-    int ret = 0;
-    size_t hw_words = hardware_words(z_words);
-
-    /* Load coefficients to hardware */
-    esp_mpi_acquire_hardware();
-
-    /* M = 2^num_words - 1, so block is entirely FF */
-    for(int i = 0; i < hw_words; i++) {
-        DPORT_REG_WRITE(RSA_MEM_M_BLOCK_BASE + i * 4, UINT32_MAX);
-    }
-    /* Mprime = 1 */
-    DPORT_REG_WRITE(RSA_M_DASH_REG, 1);
-
-    /* "mode" register loaded with number of 512-bit blocks, minus 1 */
-    DPORT_REG_WRITE(RSA_MULT_MODE_REG, (hw_words / 16) - 1);
-
-    /* Load X */
-    mpi_to_mem_block(RSA_MEM_X_BLOCK_BASE, X, hw_words);
-
-    /* Rinv = 1 */
-    DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE, 1);
-    for(int i = 1; i < hw_words; i++) {
-        DPORT_REG_WRITE(RSA_MEM_RB_BLOCK_BASE + i * 4, 0);
-    }
-
-    start_op(RSA_MULT_START_REG);
-
-    wait_op_complete(RSA_MULT_START_REG);
-
-    /* finish the modular multiplication */
-    ret = modular_multiply_finish(Z, X, Y, hw_words, z_words);
-
-    esp_mpi_release_hardware();
-
-    return ret;
-}
 
 /* Deal with the case when X & Y are too long for the hardware unit, by splitting one operand
    into two halves.
@@ -729,9 +506,44 @@ static int mpi_mult_mpi_overlong(mbedtls_mpi *Z, const mbedtls_mpi *X, const mbe
     /* Z += Ztemp */
     MBEDTLS_MPI_CHK( mbedtls_mpi_add_mpi(Z, Z, &Ztemp) );
 
- cleanup:
+cleanup:
     mbedtls_mpi_free(&Ztemp);
 
+    return ret;
+}
+
+/* Special-case of mbedtls_mpi_mult_mpi(), where we use hardware montgomery mod
+   multiplication to calculate an mbedtls_mpi_mult_mpi result where either
+   A or B are >2048 bits so can't use the standard multiplication method.
+
+   Result (number of words, based on A bits + B bits) must still be less than 4096 bits.
+
+   This case is simpler than the general case modulo multiply of
+   esp_mpi_mul_mpi_mod() because we can control the other arguments:
+
+   * Modulus is chosen with M=(2^num_bits - 1) (ie M=R-1), so output
+   * Mprime and Rinv are therefore predictable as follows:
+   isn't actually modulo anything.
+   Mprime 1
+   Rinv 1
+
+   (See RSA Accelerator section in Technical Reference for more about Mprime, Rinv)
+*/
+
+static int mpi_mult_mpi_failover_mod_mult( mbedtls_mpi *Z, const mbedtls_mpi *X, const mbedtls_mpi *Y, size_t z_words)
+{
+    int ret;
+    size_t hw_words = esp_mpi_hardware_words(z_words);
+
+    esp_mpi_acquire_hardware();
+
+    esp_mpi_mult_mpi_failover_mod_mult_hw_op(X, Y, hw_words );
+    MBEDTLS_MPI_CHK( mbedtls_mpi_grow(Z, hw_words) );
+    esp_mpi_read_result_hw_op(Z, hw_words);
+
+    Z->s = X->s * Y->s;
+cleanup:
+    esp_mpi_release_hardware();
     return ret;
 }
 
