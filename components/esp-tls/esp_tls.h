@@ -433,10 +433,8 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
  * @param[in]  datalen  Length of data buffer.
  *
  * @return
- *             - >0  if write operation was successful, the return value is the number
+ *             - >=0  if write operation was successful, the return value is the number
  *                   of bytes actually written to the TLS/SSL connection.
- *             -  0  if write operation was not successful. The underlying
- *                   connection was closed.
  *             - <0  if write operation was not successful, because either an
  *                   error occured or an action must be taken by the calling process.
  */
