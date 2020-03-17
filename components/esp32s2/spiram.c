@@ -219,6 +219,8 @@ esp_err_t esp_spiram_init(void)
         return r;
     }
 
+    ESP_EARLY_LOGI(TAG, "Found %dMBit SPI RAM device",
+                                          (esp_spiram_get_size()*8)/(1024*1024));
     ESP_EARLY_LOGI(TAG, "SPI RAM mode: %s", PSRAM_SPEED == PSRAM_CACHE_S40M ? "sram 40m" : \
                                           PSRAM_SPEED == PSRAM_CACHE_S80M ? "sram 80m" : "sram 20m");
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in %s mode.", \
@@ -295,6 +297,10 @@ esp_err_t esp_spiram_reserve_dma_pool(size_t size) {
 
 size_t esp_spiram_get_size(void)
 {
+    psram_size_t size=psram_get_size();
+    if (size==PSRAM_SIZE_16MBITS) return 2*1024*1024;
+    if (size==PSRAM_SIZE_32MBITS) return 4*1024*1024;
+    if (size==PSRAM_SIZE_64MBITS) return 8*1024*1024;
     return CONFIG_SPIRAM_SIZE;
 }
 
