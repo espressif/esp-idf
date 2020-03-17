@@ -36,6 +36,7 @@ extern "C" {
 
 typedef enum {
     ESP_AES_GCM_STATE_INIT,
+    ESP_AES_GCM_STATE_START,
     ESP_AES_GCM_STATE_UPDATE,
     ESP_AES_GCM_STATE_FINISH
 } esp_aes_gcm_state;
