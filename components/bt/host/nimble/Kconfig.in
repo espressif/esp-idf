@@ -10,6 +10,7 @@ choice BT_NIMBLE_MEM_ALLOC_MODE
         - External SPIRAM memory only
         - Either internal or external memory based on default malloc()
           behavior in ESP-IDF
+        - Internal IRAM memory wherever applicable else internal DRAM
 
         Recommended mode here is always internal, since that is most preferred
         from security perspective. But if application requirement does not
@@ -26,7 +27,16 @@ choice BT_NIMBLE_MEM_ALLOC_MODE
     config BT_NIMBLE_MEM_ALLOC_MODE_DEFAULT
         bool "Default alloc mode"
 
-endchoice
+    config BT_NIMBLE_MEM_ALLOC_MODE_IRAM_8BIT
+        bool "Internal IRAM"
+        depends on ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+        help
+            Allows to use IRAM memory region as 8bit accessible region.
+
+            Every unaligned (8bit or 16bit) access will result in an exception
+            and incur penalty of certain clock cycles per unaligned read/write.
+
+endchoice #BT_NIMBLE_MEM_ALLOC_MODE
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
