@@ -13,13 +13,18 @@
 
 #include <test_utils.h>
 
-#include "unity.h"
 #include "driver/gpio.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
 #include "hal/spi_flash_hal.h"
 #include "ccomp_timer.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/ets_sys.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/ets_sys.h"
+#endif
 
 #define FUNC_SPI    1
 
@@ -549,7 +554,7 @@ static bool is_mxic_chip(esp_flash_t* chip)
     return (spi_flash_chip_mxic_probe(chip, flash_id)==ESP_OK);
 }
 
-static void test_toggle_qe(esp_flash_t* chip)
+IRAM_ATTR NOINLINE_ATTR static void test_toggle_qe(esp_flash_t* chip)
 {
     bool qe;
     if (chip == NULL) {
@@ -562,7 +567,7 @@ static void test_toggle_qe(esp_flash_t* chip)
     bool allow_failure = is_winbond_chip(chip) || is_mxic_chip(chip);
 
     for (int i = 0; i < 4; i ++) {
-        ESP_LOGI(TAG, "write qe: %d->%d", qe, !qe);
+        ets_printf(DRAM_STR("write qe: %d->%d\n"), qe, !qe);
         qe = !qe;
         chip->read_mode = qe? SPI_FLASH_QOUT: SPI_FLASH_SLOWRD;
         ret = esp_flash_set_io_mode(chip, qe);
