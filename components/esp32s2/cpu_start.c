@@ -151,7 +151,6 @@ void IRAM_ATTR call_start_cpu0(void)
        1. make data buses works with SPIRAM
        2. make instruction and rodata work with SPIRAM, still through instruction cache */
 #if CONFIG_SPIRAM_BOOT_INIT
-    esp_spiram_init_cache();
     if (esp_spiram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_IGNORE_NOTFOUND
         ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
@@ -161,6 +160,7 @@ void IRAM_ATTR call_start_cpu0(void)
         abort();
 #endif
     }
+    esp_spiram_init_cache();
 #endif
 
     ESP_EARLY_LOGI(TAG, "Pro cpu up.");
