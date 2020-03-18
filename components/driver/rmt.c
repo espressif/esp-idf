@@ -193,7 +193,17 @@ esp_err_t rmt_tx_start(rmt_channel_t channel, bool tx_idx_rst)
         rmt_ll_reset_tx_pointer(p_rmt_obj[channel]->hal.regs, channel);
     }
     rmt_ll_clear_tx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel);
-    rmt_ll_enable_tx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
+    // enable tx end interrupt in non-loop mode
+    if (!rmt_ll_is_tx_loop_enabled(p_rmt_obj[channel]->hal.regs, channel)) {
+        rmt_ll_enable_tx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
+    } else {
+#if RMT_SUPPORT_TX_LOOP_COUNT
+        rmt_ll_reset_tx_loop(p_rmt_obj[channel]->hal.regs, channel);
+        rmt_ll_enable_tx_loop_count(p_rmt_obj[channel]->hal.regs, channel, true);
+        rmt_ll_clear_tx_loop_interrupt(p_rmt_obj[channel]->hal.regs, channel);
+        rmt_ll_enable_tx_loop_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
+#endif
+    }
     rmt_ll_start_tx(p_rmt_obj[channel]->hal.regs, channel);
     RMT_EXIT_CRITICAL();
     return ESP_OK;
@@ -497,6 +507,11 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 
         RMT_ENTER_CRITICAL();
         rmt_ll_enable_tx_loop(dev, channel, rmt_param->tx_config.loop_en);
+#if RMT_SUPPORT_TX_LOOP_COUNT
+        if (rmt_param->tx_config.loop_en) {
+            rmt_ll_set_tx_loop_count(dev, channel, rmt_param->tx_config.loop_count);
+        }
+#endif
         /* always enable tx ping-pong */
         rmt_ll_enable_tx_pingpong(dev, true);
         /*Set idle level */
@@ -770,6 +785,23 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
     }
 #endif
 
+#if RMT_SUPPORT_TX_LOOP_COUNT
+    // loop count interrupt
+    status = rmt_ll_get_tx_loop_interrupt_status(hal->regs);
+    while (status) {
+        channel = __builtin_ffs(status) - 1;
+        status &= ~(1 << channel);
+        rmt_obj_t *p_rmt = p_rmt_obj[channel];
+        if (p_rmt) {
+            xSemaphoreGiveFromISR(p_rmt->tx_sem, &HPTaskAwoken);
+            if (rmt_tx_end_callback.function != NULL) {
+                rmt_tx_end_callback.function(channel, rmt_tx_end_callback.arg);
+            }
+        }
+        rmt_ll_clear_tx_loop_interrupt(hal->regs, channel);
+    }
+#endif
+
     // Err interrupt
     status = rmt_ll_get_err_interrupt_status(hal->regs);
     while (status) {
@@ -983,8 +1015,17 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t *rmt_item, i
     rmt_tx_start(channel, true);
     p_rmt->wait_done = wait_tx_done;
     if (wait_tx_done) {
-        xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
-        xSemaphoreGive(p_rmt->tx_sem);
+        // wait loop done
+        if (rmt_ll_is_tx_loop_enabled(p_rmt_obj[channel]->hal.regs, channel)) {
+#if RMT_SUPPORT_TX_LOOP_COUNT
+            xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
+            xSemaphoreGive(p_rmt->tx_sem);
+#endif
+        } else {
+            // wait tx end
+            xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
+            xSemaphoreGive(p_rmt->tx_sem);
+        }
     }
     return ESP_OK;
 }

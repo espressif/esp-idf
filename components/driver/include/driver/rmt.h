@@ -44,6 +44,9 @@ typedef struct {
     rmt_carrier_level_t carrier_level; /*!< Level of the RMT output, when the carrier is applied */
     rmt_idle_level_t idle_level;       /*!< RMT idle level */
     uint8_t carrier_duty_percent;      /*!< RMT carrier duty (%) */
+#if RMT_SUPPORT_TX_LOOP_COUNT
+    uint32_t loop_count;               /*!< Maximum loop count */
+#endif
     bool carrier_en;                   /*!< RMT carrier enable */
     bool loop_en;                      /*!< Enable sending RMT items in a loop */
     bool idle_output_en;               /*!< RMT idle level output enable */

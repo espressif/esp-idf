@@ -138,7 +138,7 @@ When configuring channel in transmit mode, set **tx_config** and the following m
 * Level of the RMT output, when the carrier is applied - **carrier_level**
 * Enable the RMT output if idle - **idle_output_en**
 * Set the signal level on the RMT output if idle - **idle_level**
-
+:esp32s2: * Specify maximum number of transmissions in a loop - **loop_count**
 
 Receive Mode
 ^^^^^^^^^^^^

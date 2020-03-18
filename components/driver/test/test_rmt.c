@@ -16,6 +16,7 @@
 
 #define RMT_TESTBENCH_FLAGS_ALWAYS_ON (1<<0)
 #define RMT_TESTBENCH_FLAGS_CARRIER_ON (1<<1)
+#define RMT_TESTBENCH_FLAGS_LOOP_ON (1<<2)
 
 static const char *TAG = "RMT.test";
 static ir_builder_t *s_ir_builder = NULL;
@@ -32,6 +33,12 @@ static void rmt_setup_testbench(int tx_channel, int rx_channel, uint32_t flags)
         if (flags & RMT_TESTBENCH_FLAGS_CARRIER_ON) {
             tx_config.tx_config.carrier_en = true;
         }
+#if RMT_SUPPORT_TX_LOOP_COUNT
+        if (flags & RMT_TESTBENCH_FLAGS_LOOP_ON) {
+            tx_config.tx_config.loop_en = true;
+            tx_config.tx_config.loop_count = 10;
+        }
+#endif
         TEST_ESP_OK(rmt_config(&tx_config));
     }
 
@@ -455,6 +462,10 @@ TEST_CASE("RMT TX simultaneously", "[rmt]")
 #endif
 
 #if RMT_SUPPORT_TX_LOOP_COUNT
+static void rmt_tx_loop_end(rmt_channel_t channel, void *arg)
+{
+    rmt_tx_stop(channel);
+}
 TEST_CASE("RMT TX loop", "[rmt]")
 {
     RingbufHandle_t rb = NULL;
@@ -476,6 +487,8 @@ TEST_CASE("RMT TX loop", "[rmt]")
 
     vTaskDelay(pdMS_TO_TICKS(1000));
 
+    // register callback functions, invoked when tx loop count to ceiling
+    rmt_register_tx_end_callback(rmt_tx_loop_end, NULL);
     // build NEC codes
     ESP_LOGI(TAG, "Send command 0x%x to address 0x%x", cmd, addr);
     // Send new key code
