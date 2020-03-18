@@ -236,13 +236,24 @@ static esp_err_t encrypt_bootloader(void)
     /* Check for plaintext bootloader (verification will fail if it's already encrypted) */
     if (esp_image_verify_bootloader(&image_length) == ESP_OK) {
         ESP_LOGD(TAG, "bootloader is plaintext. Encrypting...");
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+        // Account for the signature sector after the bootloader
+        image_length = (image_length + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE - 1);
+        image_length += FLASH_SECTOR_SIZE;
+        if (ESP_BOOTLOADER_OFFSET + image_length > ESP_PARTITION_TABLE_OFFSET) {
+            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PARTITION_TABLE_OFFSET);
+            return ESP_ERR_INVALID_STATE;
+        }
+#endif // CONFIG_SECURE_BOOT_V2_ENABLED
+
         err = esp_flash_encrypt_region(ESP_BOOTLOADER_OFFSET, image_length);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to encrypt bootloader in place: 0x%x", err);
             return err;
         }
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef CONFIG_SECURE_BOOT_V1_ENABLED
         /* If secure boot is enabled and bootloader was plaintext, also
          * need to encrypt secure boot IV+digest.
          */

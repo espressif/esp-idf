@@ -51,3 +51,6 @@ api-guide/ulp-cmake                            api-guide/ulp
 api-guide/unit-tests-cmake                     api-guide/unit-tests
 
 api-reference/network/tcpip_adapter            api-reference/network/esp_netif
+
+# The 'secure boot' guides are now 'secure boot v1' guides
+security/secure-boot.rst                    security/secure-boot-v1.rst

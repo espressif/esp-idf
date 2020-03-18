@@ -198,7 +198,7 @@ Secure OTA Updates Without Secure boot
 
 The verification of signed OTA updates can be performed even without enabling hardware secure boot. For doing so, refer :ref:`signed-app-verify`
 
-
+    
 OTA Tool (otatool.py)
 ---------------------
 

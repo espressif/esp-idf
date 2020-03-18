@@ -24,7 +24,7 @@ Flash 加密功能用于加密与 ESP32 搭载使用的 SPI Flash 中的内容�
   - 安全启动引导加载程序摘要（如果已启用安全启动）
   - 分区表中标有“加密”标记的分区
 
-Flash 加密与 :doc:`安全启动<secure-boot>` 功能各自独立，您可以在关闭安全启动的状态下使用 Flash 加密。但是，为了安全的计算机环境，二者应同时使用。在关闭安全启动的状态下，需运行其他配置来确保 Flash 加密的有效性。详细信息可参见 :ref:`flash-encryption-without-secure-boot`。 
+Flash 加密与 :doc:`安全启动<secure-boot-v2>` 功能各自独立，您可以在关闭安全启动的状态下使用 Flash 加密。但是，为了安全的计算机环境，二者应同时使用。在关闭安全启动的状态下，需运行其他配置来确保 Flash 加密的有效性。详细信息可参见 :ref:`flash-encryption-without-secure-boot`。 
 
 .. important::
   启用 Flash 加密将限制后续 ESP32 更新。请务必阅读本文档（包括 :ref:`flash-encryption-limitations`）了解启用 Flash 加密的影响。
@@ -562,7 +562,7 @@ Flash 加密可防止从加密 Flash 中读取明文，从而保护固件防止�
 
 - 出于相同原因，攻击者始终可获知一对相邻的 16 字节块（32 字节对齐）何时包含相同内容。因此，在 Flash 上存储敏感数据时应牢记这点，并进行相关设置避免该情况发生（可使用计数器字节或每 16 字节设置不同的值即可）。
 
-- 单独使用 Flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 Flash 加密使用 :doc:`安全启动 <secure-boot>`。
+- 单独使用 Flash 加密可能无法防止攻击者修改本设备的固件。为防止设备上运行未经授权的固件，可搭配 Flash 加密使用 :doc:`安全启动 <secure-boot-v2>`。
 
 .. _flash-encryption-and-secure-boot:
 

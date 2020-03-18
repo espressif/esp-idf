@@ -220,6 +220,9 @@
 #define SOC_MEM_INTERNAL_LOW        0x3FF9E000
 #define SOC_MEM_INTERNAL_HIGH       0x40072000
 
+// Start (highest address) of ROM boot stack, only relevant during early boot
+#define SOC_ROM_STACK_START         0x3ffffffc
+
 //Interrupt hardware source table
 //This table is decided by hardware, don't touch this.
 #define ETS_WIFI_MAC_INTR_SOURCE                    0/**< interrupt of WiFi MAC, level*/
