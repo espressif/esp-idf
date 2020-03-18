@@ -174,6 +174,8 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
         if(memcmp(mac,mac_begin,6) >= 0 && memcmp(mac_end,mac,6) >=0 ){
             mac[3] += 0x02; // contain carry bit 
             mac[4] += 0xd0;
+        } else {
+            mac[5] += 1;
         }
 #else
         mac[5] += 1;
