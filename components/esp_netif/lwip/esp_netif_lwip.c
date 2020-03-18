@@ -1101,7 +1101,9 @@ static esp_err_t esp_netif_down_api(esp_netif_api_msg_t *msg)
 
         esp_netif_reset_ip_info(esp_netif);
     }
-
+    for(int8_t i = 0 ;i < LWIP_IPV6_NUM_ADDRESSES ;i++) {
+        netif_ip6_addr_set(lwip_netif, i, IP6_ADDR_ANY6);
+    }
     netif_set_addr(lwip_netif, IP4_ADDR_ANY4, IP4_ADDR_ANY4, IP4_ADDR_ANY4);
     netif_set_down(lwip_netif);
 
