@@ -78,6 +78,8 @@ def main():
     parser.add_argument("--language", "-l", choices=LANGUAGES, required=False)
     parser.add_argument("--target", "-t", choices=TARGETS, required=False)
     parser.add_argument("--build-dir", "-b", type=str, default="_build")
+    parser.add_argument("--builders", "-bs", nargs='+', type=str, default=["html"],
+                        help="List of builders for Sphinx, e.g. html or latex, for latex a PDF is also generated")
     parser.add_argument("--sphinx-parallel-builds", "-p", choices=["auto"] + [str(x) for x in range(8)],
                         help="Parallel Sphinx builds - number of independent Sphinx builds to run", default="auto")
     parser.add_argument("--sphinx-parallel-jobs", "-j", choices=["auto"] + [str(x) for x in range(8)],
@@ -151,7 +153,7 @@ def parallel_call(args, callback):
     for target in targets:
         for language in languages:
             build_dir = os.path.realpath(os.path.join(args.build_dir, language, target))
-            entries.append((language, target, build_dir, args.sphinx_parallel_jobs))
+            entries.append((language, target, build_dir, args.sphinx_parallel_jobs, args.builders))
 
     print(entries)
     errcodes = pool.map(callback, entries)
@@ -251,12 +253,73 @@ def action_build(args):
                               log_file=os.path.join(build_dir, SPHINX_WARN_LOG),
                               known_warnings_file=SPHINX_KNOWN_WARNINGS,
                               out_sanitized_log_file=os.path.join(build_dir, SPHINX_SANITIZED_LOG))
+
     if ret != 0:
         return ret
 
 
 def call_build_docs(entry):
-    return sphinx_call(*entry, buildername="html")
+    (language, target, build_dir, sphinx_parallel_jobs, builders) = entry
+    for buildername in builders:
+        ret = sphinx_call(language, target, build_dir, sphinx_parallel_jobs, buildername)
+        if ret != 0:
+            return ret
+
+    # Build PDF from tex
+    if 'latex' in builders:
+        latex_dir = os.path.join(build_dir, "latex")
+        ret = build_pdf(language, target, latex_dir)
+
+    return ret
+
+
+def build_pdf(language, target, latex_dir):
+    # Note: because this runs in a multiprocessing Process, everything which happens here should be isolated to a single process
+
+    # wrap stdout & stderr in a way that lets us see which build_docs instance they come from
+    #
+    # this doesn't apply to subprocesses, they write to OS stdout & stderr so no prefix appears
+    prefix = "%s/%s: " % (language, target)
+
+    print("Building PDF in latex_dir: %s" % (latex_dir))
+
+    saved_cwd = os.getcwd()
+    os.chdir(latex_dir)
+
+    # Based on read the docs PDFBuilder
+    rcfile = 'latexmkrc'
+
+    cmd = [
+        'latexmk',
+        '-r',
+        rcfile,
+        '-pdf',
+        # When ``-f`` is used, latexmk will continue building if it
+        # encounters errors. We still receive a failure exit code in this
+        # case, but the correct steps should run.
+        '-f',
+        '-dvi-',    # dont generate dvi
+        '-ps-',     # dont generate ps
+        '-interaction=nonstopmode',
+        '-quiet',
+        '-outdir=build',
+    ]
+
+    try:
+        p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for c in iter(lambda: p.stdout.readline(), b''):
+            sys.stdout.write(prefix)
+            sys.stdout.write(c.decode('utf-8'))
+        ret = p.wait()
+        assert (ret is not None)
+        sys.stdout.flush()
+    except KeyboardInterrupt:  # this seems to be the only way to get Ctrl-C to kill everything?
+        p.kill()
+        os.chdir(saved_cwd)
+        return 130  # FIXME It doesn't return this errorcode, why? Just prints stacktrace
+    os.chdir(saved_cwd)
+
+    return ret
 
 
 SANITIZE_FILENAME_REGEX = re.compile("[^:]*/([^/:]*)(:.*)")
@@ -331,7 +394,8 @@ def action_linkcheck(args):
 
 
 def call_linkcheck(entry):
-    return sphinx_call(*entry, buildername="linkcheck")
+    # Remove the last entry which the buildername, since the linkcheck builder is not supplied through the builder list argument
+    return sphinx_call(*entry[:4], buildername="linkcheck")
 
 
 # https://github.com/espressif/esp-idf/tree/

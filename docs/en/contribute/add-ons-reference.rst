@@ -161,6 +161,10 @@ Other Extensions
 
     These replacements cannot be used inside markup that rely on alignment of characters, e.g. tables.
 
+:idf_file:`docs/idf_extensions/latex_builder.py`
+    An extension for adding ESP-IDF specific functionality to the latex builder. Overrides the default Sphinx latex builder.
+
+    Creates and adds the espidf.sty latex package to the output directory, which contains some macros for run-time variables such as IDF-Target.
 
 Related Documents
 -----------------
