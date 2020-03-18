@@ -87,7 +87,13 @@ static u8_t bt_mesh_gatts_addr[6];
 
 int bt_mesh_host_init(void)
 {
+    static bool init = false;
     int rc;
+
+    if (init == true) {
+        return 0;
+    }
+
     rc = btc_init();
     if (rc != 0) {
         return -1;
@@ -99,6 +105,7 @@ int bt_mesh_host_init(void)
     }
 
     osi_alarm_init();
+    init = true;
     return 0;
 }
 
@@ -815,9 +822,15 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
         adv_params.disc_mode = BLE_GAP_DISC_MODE_NON;
     }
 
+again:
     err = ble_gap_adv_start(BLE_OWN_ADDR_PUBLIC, NULL, BLE_HS_FOREVER, &adv_params,
                             gap_event_cb, NULL);
     if (err) {
+        if (err == BLE_HS_EALREADY) {
+            ble_gap_adv_stop();
+            goto again;
+        }
+
         BT_ERR("Advertising start failed: err %d", err);
         return err;
     }
@@ -900,6 +913,11 @@ int bt_le_scan_stop(void)
 void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb)
 {
     bt_mesh_gatts_conn_cb = cb;
+}
+
+void bt_mesh_gatts_conn_cb_deregister(void)
+{
+    bt_mesh_gatts_conn_cb = NULL;
 }
 
 static struct bt_mesh_gatt_attr *bt_mesh_gatts_find_attr_by_handle(u16_t handle)
@@ -1095,6 +1113,16 @@ populate:
     return 0;
 }
 
+static int gatts_deregister(struct bt_mesh_gatt_service *svc)
+{
+    if (sys_slist_is_empty(&bt_mesh_gatts_db)) {
+        return 0;
+    }
+
+    sys_slist_find_and_remove(&bt_mesh_gatts_db, &svc->node);
+    return 0;
+}
+
 int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc)
 {
     uint16_t offset = 0;
@@ -1109,6 +1137,15 @@ int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc)
         svc->attrs[i].handle = offset + i;
     }
     gatts_register(svc);
+    return 0;
+}
+
+int bt_mesh_gatts_service_deregister(struct bt_mesh_gatt_service *svc)
+{
+    assert(svc != NULL);
+
+    gatts_deregister(svc);
+
     return 0;
 }
 
@@ -1202,6 +1239,11 @@ int bt_mesh_gatts_set_local_device_name(const char *name)
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb)
 {
     bt_mesh_gattc_conn_cb = cb;
+}
+
+void bt_mesh_gattc_conn_cb_deregister(void)
+{
+    bt_mesh_gattc_conn_cb = NULL;
 }
 
 u8_t bt_mesh_gattc_get_free_conn_count(void)
@@ -1564,20 +1606,26 @@ void bt_mesh_gatt_init(void)
     ble_hs_cfg.gatts_register_cb = gatt_register_cb;
 
 #if defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE
+    static bool init = false;
     int rc;
-    ble_svc_gap_init();
-    ble_svc_gatt_init();
 
-    rc = ble_gatts_count_cfg(svc_defs);
-    assert(rc == 0);
+    if (init == false) {
+        ble_svc_gap_init();
+        ble_svc_gatt_init();
 
-    rc = ble_gatts_add_svcs(svc_defs);
-    assert(rc == 0);
+        rc = ble_gatts_count_cfg(svc_defs);
+        assert(rc == 0);
 
-    ble_gatts_start();
+        rc = ble_gatts_add_svcs(svc_defs);
+        assert(rc == 0);
 
-    ble_gatts_svc_set_visibility(prov_svc_start_handle, 1);
-    ble_gatts_svc_set_visibility(proxy_svc_start_handle, 0);
+        ble_gatts_start();
+
+        ble_gatts_svc_set_visibility(prov_svc_start_handle, 1);
+        ble_gatts_svc_set_visibility(proxy_svc_start_handle, 0);
+
+        init = true;
+    }
 #endif
 
 #if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
@@ -1586,6 +1634,30 @@ void bt_mesh_gatt_init(void)
         bt_mesh_gattc_info[i].conn.handle = 0xFFFF;
         bt_mesh_gattc_info[i].mtu = BLE_ATT_MTU_DFLT;
         bt_mesh_gattc_info[i].wr_desc_done = false;
+    }
+#endif
+}
+
+void bt_mesh_gatt_deinit(void)
+{
+#if (CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_SERVER
+    memset(bt_mesh_gatts_addr, 0, BLE_MESH_ADDR_LEN);
+#endif
+
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
+    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
+    for (int i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
+        bt_mesh_gattc_info[i].conn.handle = 0xFFFF;
+        memset(&bt_mesh_gattc_info[i].addr, 0, sizeof(bt_mesh_addr_t));
+        bt_mesh_gattc_info[i].service_uuid = 0U;
+        bt_mesh_gattc_info[i].mtu = BLE_ATT_MTU_DFLT;
+        bt_mesh_gattc_info[i].wr_desc_done = false;
+        bt_mesh_gattc_info[i].start_handle = 0U;
+        bt_mesh_gattc_info[i].end_handle = 0U;
+        bt_mesh_gattc_info[i].data_in_handle = 0U;
+        bt_mesh_gattc_info[i].data_out_handle = 0U;
+        bt_mesh_gattc_info[i].ccc_handle = 0U;
     }
 #endif
 }
