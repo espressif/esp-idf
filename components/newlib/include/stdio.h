@@ -696,8 +696,10 @@ _ELIDABLE_INLINE int __sputc_r(struct _reent *_ptr, int _c, FILE *_p) {
 
 #ifndef __CYGWIN__
 #ifndef lint
+#ifdef __SINGLE_THREAD__
 #define	getc(fp)	__sgetc_r(_REENT, fp)
 #define putc(x, fp)	__sputc_r(_REENT, x, fp)
+#endif /* __SINGLE_THREAD__ */
 #endif /* lint */
 #endif /* __CYGWIN__ */
 
@@ -714,8 +716,10 @@ _ELIDABLE_INLINE int __sputc_r(struct _reent *_ptr, int _c, FILE *_p) {
 
 #endif /* !__CUSTOM_FILE_IO__ */
 
+#ifdef __SINGLE_THREAD__
 #define	getchar()	getc(stdin)
 #define	putchar(x)	putc(x, stdout)
+#endif /* __SINGLE_THREAD__ */
 
 #ifndef __STRICT_ANSI__
 #define	getchar_unlocked()	getc_unlocked(stdin)
