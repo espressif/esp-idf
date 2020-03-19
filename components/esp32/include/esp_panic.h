@@ -23,7 +23,7 @@ extern "C"
 #include "soc/soc.h"
 
 /**
- * @brief If an OCD is connected over JTAG. set breakpoint 0 to the given function 
+ * @brief If an OCD is connected over JTAG. set breakpoint 0 to the given function
  *        address. Do nothing otherwise.
  * @param data  Pointer to the target breakpoint position
  */
@@ -45,7 +45,7 @@ void esp_set_breakpoint_if_jtag(void *fn);
  *
  * @return ESP_ERR_INVALID_ARG on invalid arg, ESP_OK otherwise
  *
- * @warning The ESP32 watchpoint hardware watches a region of bytes by effectively 
+ * @warning The ESP32 watchpoint hardware watches a region of bytes by effectively
  *          masking away the lower n bits for a region with size 2^n. If adr does
  *          not have zero for these lower n bits, you may not be watching the
  *          region you intended.
@@ -60,6 +60,13 @@ esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags);
  *
  */
 void esp_clear_watchpoint(int no);
+
+/**
+ * @brief check in panic status
+ *
+ * return ture is in panic status
+ */
+bool esp_check_in_panic_status(void);
 
 /**
  * @brief Checks stack pointer

@@ -62,7 +62,7 @@ void spi_flash_op_unlock()
 }
 /*
  If you're going to modify this, keep in mind that while the flash caches of the pro and app
- cpu are separate, the psram cache is *not*. If one of the CPUs returns from a flash routine 
+ cpu are separate, the psram cache is *not*. If one of the CPUs returns from a flash routine
  with its cache enabled but the other CPUs cache is not enabled yet, you will have problems
  when accessing psram from the former CPU.
 */
@@ -133,7 +133,7 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
     }
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
-    // This CPU executes this routine, with non-IRAM interrupts and the scheduler 
+    // This CPU executes this routine, with non-IRAM interrupts and the scheduler
     // disabled. The other CPU is spinning in the spi_flash_op_block_func task, also
     // with non-iram interrupts and the scheduler disabled. None of these CPUs will
     // touch external RAM or flash this way, so we can safely disable caches.
@@ -183,10 +183,10 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
     const uint32_t cpuid = xPortGetCoreID();
     const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 
-    // do not care about other CPU, it was halted upon entering panic handler
-    spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
     // Kill interrupts that aren't located in IRAM
     esp_intr_noniram_disable();
+    // do not care about other CPU, it was halted upon entering panic handler
+    spi_flash_disable_cache(other_cpuid, &s_flash_op_cache_state[other_cpuid]);
     // Disable cache on this CPU as well
     spi_flash_disable_cache(cpuid, &s_flash_op_cache_state[cpuid]);
 }
@@ -194,9 +194,11 @@ void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu_no_os()
 void IRAM_ATTR spi_flash_enable_interrupts_caches_no_os()
 {
     const uint32_t cpuid = xPortGetCoreID();
+    const uint32_t other_cpuid = (cpuid == 0) ? 1 : 0;
 
     // Re-enable cache on this CPU
     spi_flash_restore_cache(cpuid, s_flash_op_cache_state[cpuid]);
+    spi_flash_restore_cache(other_cpuid, s_flash_op_cache_state[other_cpuid]);
     // Re-enable non-iram interrupts
     esp_intr_noniram_enable();
 }
@@ -220,6 +222,10 @@ void spi_flash_op_unlock()
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
+    if (esp_ptr_external_ram(get_sp())) {
+        ets_printf(DRAM_STR("Cache disabled but cache memory accesed!\n"));
+        __asm__ __volatile__ ("ill.n\nill.n\n");
+    }
     spi_flash_op_lock();
     esp_intr_noniram_disable();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);

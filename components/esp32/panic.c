@@ -47,6 +47,8 @@
 #include "SEGGER_RTT.h"
 #endif
 
+static bool g_panic_interrupt_state = false;
+
 #if CONFIG_ESP32_APPTRACE_ONPANIC_HOST_FLUSH_TMO == -1
 #define APPTRACE_ONPANIC_HOST_FLUSH_TMO   ESP_APPTRACE_TMO_INFINITE
 #else
@@ -433,6 +435,7 @@ static inline void disableAllWdts()
     TIMERG0.wdt_config0.en = 0;
     TIMERG0.wdt_wprotect = 0;
     TIMERG1.wdt_wprotect = TIMG_WDT_WKEY_VALUE;
+    TIMERG1.int_clr_timers.wdt = 1;
     TIMERG1.wdt_config0.en = 0;
     TIMERG1.wdt_wprotect = 0;
 }
@@ -621,11 +624,8 @@ static __attribute__((noreturn)) void commonErrorHandler(XtExcFrame *frame)
         disableAllWdts();
         s_dumping_core = true;
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_FLASH
-        if (xPortGetCoreID() == APP_CPU_NUM) {
-            panicPutStr("Current task in APP CPU, skip...\n");
-        } else {
-            esp_core_dump_to_flash(frame);
-        }
+        g_panic_interrupt_state =  true;
+        esp_core_dump_to_flash(frame);
 #endif
 #if CONFIG_ESP32_ENABLE_COREDUMP_TO_UART && !CONFIG_ESP32_PANIC_SILENT_REBOOT
         esp_core_dump_to_uart(frame);
@@ -659,6 +659,10 @@ void esp_set_breakpoint_if_jtag(void *fn)
     }
 }
 
+bool esp_check_in_panic_status(void)
+{
+    return g_panic_interrupt_state;
+}
 
 esp_err_t esp_set_watchpoint(int no, void *adr, int size, int flags)
 {
