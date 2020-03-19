@@ -78,6 +78,6 @@ esp_efuse_coding_scheme_t esp_efuse_get_coding_scheme(esp_efuse_block_t blk)
     } else {
         scheme = EFUSE_CODING_SCHEME_RS;
     }
-    ESP_LOGD(TAG, "coding scheme %d", scheme);
+    ESP_EARLY_LOGD(TAG, "coding scheme %d", scheme);
     return scheme;
 }

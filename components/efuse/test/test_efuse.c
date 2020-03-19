@@ -18,7 +18,6 @@
 #include "test_utils.h"
 #include "sdkconfig.h"
 
-//#define MANUAL_FPGA_TEST
 static const char* TAG = "efuse_test";
 
 static void test_read_blob(void)
@@ -34,7 +33,7 @@ static void test_read_blob(void)
     TEST_ASSERT_EQUAL_INT(sizeof(mac) * 8, esp_efuse_get_field_size(ESP_EFUSE_MAC_FACTORY));
     ESP_LOGI(TAG, "MAC: %02x:%02x:%02x:%02x:%02x:%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
+#ifdef CONFIG_IDF_TARGET_ESP32
     ESP_LOGI(TAG, "2. Check CRC by MAC");
     uint8_t crc;
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_MAC_FACTORY_CRC, &crc, 8));
@@ -761,8 +760,7 @@ TEST_CASE("Test a write/read protection", "[efuse]")
 
 #endif // #ifdef CONFIG_EFUSE_VIRTUAL
 
-#if defined(MANUAL_FPGA_TEST) && !defined(CONFIG_EFUSE_VIRTUAL)
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32)
+#ifdef CONFIG_IDF_ENV_FPGA
 TEST_CASE("Test a real write (FPGA)", "[efuse]")
 {
     ESP_LOGI(TAG, "1. Write MAC address");
@@ -784,7 +782,7 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
         TEST_ASSERT_EQUAL_HEX8_ARRAY(new_mac, mac, sizeof(new_mac));
         esp_efuse_utility_debug_dump_blocks();
     }
-
+#ifdef CONFIG_IDF_TARGET_ESP32S2
     ESP_LOGI(TAG, "2. Write KEY3");
     uint8_t key[32] = {0};
     TEST_ESP_OK(esp_efuse_read_field_blob(ESP_EFUSE_KEY3, &key, 256));
@@ -807,7 +805,7 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
         TEST_ASSERT_EQUAL_INT(0, key[i]);
     }
     esp_efuse_utility_debug_dump_blocks();
-
+#endif // CONFIG_IDF_TARGET_ESP32S2
     ESP_LOGI(TAG, "4. Write SECURE_VERSION");
     int max_bits = esp_efuse_get_field_size(ESP_EFUSE_SECURE_VERSION);
     size_t read_sec_version;
@@ -820,5 +818,4 @@ TEST_CASE("Test a real write (FPGA)", "[efuse]")
         TEST_ASSERT_EQUAL_INT(i + 1, read_sec_version);
     }
 }
-#endif  // DISABLED_FOR_TARGETS(ESP32)
-#endif  // FPGA_TEST
+#endif  // CONFIG_IDF_ENV_FPGA
