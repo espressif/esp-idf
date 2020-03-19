@@ -208,7 +208,7 @@ menu "mbedTLS"
     config MBEDTLS_HARDWARE_GCM
         bool "Enable partially hardware accelerated GCM"
         depends on IDF_TARGET_ESP32S2 && MBEDTLS_HARDWARE_AES
-        default n
+        default y
         help
             Enable partially hardware accelerated GCM. GHASH calculation is still done
             in software.

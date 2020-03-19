@@ -345,7 +345,6 @@ static int esp_aes_process_dma_ext_ram(esp_aes_context *ctx, const unsigned char
     unsigned char *input_buf = NULL;
     unsigned char *output_buf = NULL;
     const unsigned char *dma_input;
-
     chunk_len = MIN(AES_MAX_CHUNK_WRITE_SIZE, len);
 
     if (realloc_input) {
@@ -1290,6 +1289,8 @@ void esp_aes_gcm_init( esp_gcm_context *ctx)
     }
 
     bzero(ctx, sizeof(esp_gcm_context));
+
+    ctx->gcm_state = ESP_AES_GCM_STATE_INIT;
 }
 
 /* Function to clear AES-GCM context */
@@ -1298,7 +1299,6 @@ void esp_aes_gcm_free( esp_gcm_context *ctx)
     if (ctx == NULL) {
         return;
     }
-
     bzero(ctx, sizeof(esp_gcm_context));
 }
 
@@ -1333,28 +1333,35 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
         return -1;
     }
 
-
     /* Initialize AES-GCM context */
+    memset(ctx->ghash, 0, sizeof(ctx->ghash));
+    ctx->data_len = 0;
+
     ctx->iv = iv;
     ctx->iv_len = iv_len;
     ctx->aad = aad;
     ctx->aad_len = aad_len;
-    ctx->gcm_state = ESP_AES_GCM_STATE_INIT;
     ctx->mode = mode;
 
-    /* Lock the AES engine to calculate ghash key H in hardware */
-    esp_aes_acquire_hardware();
-    esp_aes_setkey_hardware( &ctx->aes_ctx, mode);
-    esp_aes_mode_init(ESP_AES_BLOCK_MODE_GCM);
-    /* Enable DMA mode */
-    REG_WRITE(AES_DMA_ENABLE_REG, 1);
-    REG_WRITE(AES_TRIGGER_REG, 1);
-    while (REG_READ(AES_STATE_REG) != AES_STATE_IDLE);
+    /* H and the lookup table are only generated once per ctx */
+    if (ctx->gcm_state == ESP_AES_GCM_STATE_INIT) {
+        /* Lock the AES engine to calculate ghash key H in hardware */
+        esp_aes_acquire_hardware();
+        esp_aes_setkey_hardware( &ctx->aes_ctx, mode);
+        esp_aes_mode_init(ESP_AES_BLOCK_MODE_GCM);
+        /* Enable DMA mode */
+        REG_WRITE(AES_DMA_ENABLE_REG, 1);
+        REG_WRITE(AES_TRIGGER_REG, 1);
+        while (REG_READ(AES_STATE_REG) != AES_STATE_IDLE);
 
-    memcpy(ctx->H, (uint8_t *)AES_H_BASE, AES_BLOCK_BYTES);
+        memcpy(ctx->H, (uint8_t *)AES_H_BASE, AES_BLOCK_BYTES);
 
-    esp_aes_release_hardware();
-    gcm_gen_table(ctx);
+        esp_aes_release_hardware();
+
+        gcm_gen_table(ctx);
+    }
+
+    ctx->gcm_state = ESP_AES_GCM_STATE_START;
 
     /* Once H is obtained we need to derive J0 (Initial Counter Block) */
     esp_gcm_derive_J0(ctx);
@@ -1366,7 +1373,6 @@ int esp_aes_gcm_starts( esp_gcm_context *ctx,
     memcpy(ctx->ori_j0, ctx->J0, 16);
 
     esp_gcm_ghash(ctx, ctx->aad, ctx->aad_len, ctx->ghash);
-
 
     return ( 0 );
 }
@@ -1400,7 +1406,7 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
     /* If this is the first time esp_gcm_update is getting called
      * calculate GHASH on aad and preincrement the ICB
      */
-    if (ctx->gcm_state == ESP_AES_GCM_STATE_INIT) {
+    if (ctx->gcm_state == ESP_AES_GCM_STATE_START) {
         /* Jo needs to be incremented first time, later the CTR
          * operation will auto update it
          */
@@ -1410,20 +1416,23 @@ int esp_aes_gcm_update( esp_gcm_context *ctx,
         memcpy(nonce_counter, ctx->J0, AES_BLOCK_BYTES);
     }
 
+    /* Perform intermediate GHASH on "encrypted" data during decryption */
+    if (ctx->mode == ESP_AES_DECRYPT) {
+        esp_gcm_ghash(ctx, input, length, ctx->ghash);
+    }
+
     /* Output = GCTR(J0, Input): Encrypt/Decrypt the input */
     esp_aes_crypt_ctr(&ctx->aes_ctx, length, &nc_off, nonce_counter, stream, input, output);
+
     /* ICB gets auto incremented after GCTR operation here so update the context */
     memcpy(ctx->J0, nonce_counter, AES_BLOCK_BYTES);
 
     /* Keep updating the length counter for final tag calculation */
     ctx->data_len += length;
 
-    /* Perform intermediate GHASH on "encrypted" data irrespective of mode */
-    if (ctx->mode == ESP_AES_DECRYPT) {
-        esp_gcm_ghash(ctx, input, length, ctx->ghash);
-    } else {
+    /* Perform intermediate GHASH on "encrypted" data during encryption*/
+    if (ctx->mode == ESP_AES_ENCRYPT) {
         esp_gcm_ghash(ctx, output, length, ctx->ghash);
-
     }
 
     return 0;
