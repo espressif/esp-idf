@@ -38,21 +38,21 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
 In all cases, error cause will be printed in parens. See `Guru Meditation Errors`_ for a list of possible error causes.
 
-Subsequent behavior of the panic handler can be set using :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC` configuration choice. The available options are:
+Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
 
-- Print registers and reboot — default option.
-
+- Print registers and reboot (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) — default option.
+  
   This will print register values at the point of the exception, print the backtrace, and restart the chip.
 
-- Print registers and halt
+- Print registers and halt (``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``)
 
   Similar to the above option, but halt instead of rebooting. External reset is required to restart the program.
 
-- Silent reboot
+- Silent reboot (``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``)
 
   Don't print registers or backtrace, restart the chip immediately.
 
-- Invoke GDB Stub
+- Invoke GDB Stub (``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``)
 
   Start GDB server which can communicate with GDB over console UART port. See `GDB Stub`_ for more details.
 
@@ -116,7 +116,7 @@ The following diagram illustrates panic handler behavior:
 Register Dump and Backtrace
 ---------------------------
 
-Unless ``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_SILENT_REBOOT`` option is enabled, panic handler prints some of the CPU registers, and the backtrace, to the console::
+Unless ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, panic handler prints some of the CPU registers, and the backtrace, to the console::
 
     Core 0 register dump:
     PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
@@ -160,7 +160,7 @@ To find the location where a fatal error has happened, look at the lines which f
 GDB Stub
 --------
 
-If ``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_GDBSTUB`` option is enabled, panic handler will not reset the chip when fatal error happens. Instead, it will start GDB remote protocol server, commonly referred to as GDB Stub. When this happens, GDB instance running on the host computer can be instructed to connect to the {IDF_TARGET_NAME} UART port.
+If ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option is enabled, panic handler will not reset the chip when fatal error happens. Instead, it will start GDB remote protocol server, commonly referred to as GDB Stub. When this happens, GDB instance running on the host computer can be instructed to connect to the ESP32 UART port.
 
 If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically when GDB Stub prompt is detected on the UART. The output would look like this::
 

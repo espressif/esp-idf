@@ -84,3 +84,9 @@ bool IRAM_ATTR esp_cpu_in_ocd_debug_mode(void)
 #endif
 }
 
+void IRAM_ATTR esp_set_breakpoint_if_jtag(void *fn)
+{
+    if (esp_cpu_in_ocd_debug_mode()) {
+        cpu_hal_set_breakpoint(0, fn);
+    }
+}

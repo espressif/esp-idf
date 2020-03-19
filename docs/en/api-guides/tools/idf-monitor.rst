@@ -103,7 +103,7 @@ By default, if esp-idf crashes, the panic handler prints relevant registers and 
 
 Optionally, the panic handler can be configured to run GDBStub, the tool which can communicate with  GDB_ project debugger. GDBStub allows to read memory, examine call stack frames and variables, etc. It is not as versatile as JTAG debugging, but this method does not require any special hardware.
 
-To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC` to ``Invoke GDBStub``.
+To enable GDBStub, open the project configuration menu (``idf.py menuconfig``) and set :ref:`CONFIG_ESP_SYSTEM_PANIC` to ``Invoke GDBStub``.
 
 In this case, if the panic handler is triggered, as soon as IDF Monitor sees that GDBStub has loaded, it automatically pauses serial monitoring and runs GDB with necessary arguments. After GDB exits, the board is reset via the RTS serial line. If this line is not connected, please reset the board manually by pressing its Reset button.
 

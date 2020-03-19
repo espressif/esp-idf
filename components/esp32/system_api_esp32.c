@@ -34,6 +34,13 @@
 #include "hal/timer_ll.h"
 #include "freertos/xtensa_api.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/cache_err_int.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/cache_err_int.h"
+#endif
+
+
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
@@ -94,10 +101,10 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-         DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
-         DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
-         DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+        DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
+        DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
+        DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
+        DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart

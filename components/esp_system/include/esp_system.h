@@ -223,7 +223,7 @@ esp_err_t esp_efuse_mac_get_default(uint8_t *mac);
 esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
 
 /**
-  * @brief  Derive local MAC address from universal MAC address.
+  * @brief Derive local MAC address from universal MAC address.
   *
   * This function derives a local MAC address from an universal MAC address.
   * A `definition of local vs universal MAC address can be found on Wikipedia
@@ -237,6 +237,13 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type);
   * @return ESP_OK on success
   */
 esp_err_t esp_derive_local_mac(uint8_t* local_mac, const uint8_t* universal_mac);
+
+/**
+ * @brief Trigger a software abort
+ * 
+ * @param details Details that will be displayed during panic handling.
+ */
+void  __attribute__((noreturn)) esp_system_abort(const char* details);
 
 /**
  * @brief Chip models

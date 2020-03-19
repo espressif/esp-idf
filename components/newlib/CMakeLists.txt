@@ -1,4 +1,5 @@
 set(srcs 
+    "abort.c"
     "heap.c"
     "locks.c"
     "poll.c"

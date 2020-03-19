@@ -330,7 +330,7 @@ static void bootloader_check_wdt_reset(void)
 
 void abort(void)
 {
-#if !CONFIG_ESP32S2_PANIC_SILENT_REBOOT
+#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
     ets_printf("abort() was called at PC 0x%08x\r\n", (intptr_t)__builtin_return_address(0) - 3);
 #endif
     if (esp_cpu_in_ocd_debug_mode()) {

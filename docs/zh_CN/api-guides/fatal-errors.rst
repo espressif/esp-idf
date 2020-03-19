@@ -39,21 +39,21 @@
 
 不管哪种情况，错误原因都会被打印在括号中。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
-紧急处理程序接下来的行为将取决于 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC` 的设置，支持的选项包括：
+紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
 
-- 打印 CPU 寄存器，然后重启（``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_PRINT_REBOOT``）- 默认选项
+- 打印 CPU 寄存器，然后重启（``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``）- 默认选项
 
   打印系统发生异常时 CPU 寄存器的值，打印回溯，最后重启芯片。
 
-- 打印 CPU 寄存器，然后暂停（``CONFIG_E{IDF_TARGET_CFG_PREFIX}_PANIC_PRINT_HALT``）
+- 打印 CPU 寄存器，然后暂停（``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``）
 
   与上一个选项类似，但不会重启，而是选择暂停程序的运行。重启程序需要外部执行复位操作。
 
-- 静默重启（``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_SILENT_REBOOT``）
+- 静默重启（``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``）
 
   不打印 CPU 寄存器的值，也不打印回溯，立即重启芯片。
 
-- 调用 GDB Stub（``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_GDBSTUB``）
+- 调用 GDB Stub（``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``）
 
   启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。详细信息请参阅 :ref:`GDB-Stub`。
 
@@ -112,7 +112,7 @@
 寄存器转储与回溯
 ----------------
 
-除非启用了 ``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台::
+除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台::
 
     Core 0 register dump:
     PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
@@ -158,7 +158,7 @@
 GDB Stub
 --------
 
-如果启用了 ``CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC_GDBSTUB`` 选项，在发生严重错误时，紧急处理程序不会复位芯片，相反，它将启动 GDB 远程协议服务器，通常称为 GDB Stub。发生这种情况时，可以让主机上运行的 GDB 实例通过 UART 端口连接到 {IDF_TARGET_NAME}。
+如果启用了 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项，在发生严重错误时，紧急处理程序不会复位芯片，相反，它将启动 GDB 远程协议服务器，通常称为 GDB Stub。发生这种情况时，可以让主机上运行的 GDB 实例通过 UART 端口连接到 ESP32。
 
 如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会在 UART 端口检测到 GDB Stub 提示符后自动启动 GDB，输出会类似于::
 
