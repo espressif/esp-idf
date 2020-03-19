@@ -1125,3 +1125,27 @@ esp_err_t rmt_get_counter_clock(rmt_channel_t channel, uint32_t *clock_hz)
     RMT_EXIT_CRITICAL();
     return ESP_OK;
 }
+
+#if RMT_SUPPORT_TX_GROUP
+esp_err_t rmt_add_channel_to_group(rmt_channel_t channel)
+{
+    RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_ENTER_CRITICAL();
+    rmt_ll_enable_tx_sync(p_rmt_obj[channel]->hal.regs, true);
+    rmt_ll_add_channel_to_group(p_rmt_obj[channel]->hal.regs, channel);
+    rmt_ll_reset_counter_clock_div(p_rmt_obj[channel]->hal.regs, channel);
+    RMT_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel)
+{
+    RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
+    RMT_ENTER_CRITICAL();
+    if (rmt_ll_remove_channel_from_group(p_rmt_obj[channel]->hal.regs, channel) == 0) {
+        rmt_ll_enable_tx_sync(p_rmt_obj[channel]->hal.regs, false);
+    }
+    RMT_EXIT_CRITICAL();
+    return ESP_OK;
+}
+#endif

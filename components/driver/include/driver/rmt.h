@@ -806,6 +806,30 @@ rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, voi
 esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
 #endif
 
+#if RMT_SUPPORT_TX_GROUP
+/**
+* @brief Add channel into a group (channels in the same group will transmit simultaneously)
+*
+* @param channel RMT channel
+*
+* @return
+*     - ESP_ERR_INVALID_ARG Parameter error
+*     - ESP_OK Success
+*/
+esp_err_t rmt_add_channel_to_group(rmt_channel_t channel);
+
+/**
+* @brief Remove channel out of a group
+*
+* @param channel RMT channel
+*
+* @return
+*     - ESP_ERR_INVALID_ARG Parameter error
+*     - ESP_OK Success
+*/
+esp_err_t rmt_remove_channel_from_group(rmt_channel_t channel);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

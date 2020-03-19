@@ -23,7 +23,7 @@ extern "C" {
 #define RMT_SUPPORT_RX_PINGPONG (1)      /*!< Support Ping-Pong mode on RX path */
 #define RMT_SUPPORT_RX_DEMODULATION  (1) /*!< Support signal demodulation on RX path (i.e. remove carrier) */
 #define RMT_SUPPORT_TX_LOOP_COUNT (1)    /*!< Support transmit specified number of cycles in loop mode */
-#define RMT_SUPPORT_TX_SIMULTANEOUS (1)  /*!< Support multiple channel transmit simultaneously */
+#define RMT_SUPPORT_TX_GROUP (1)         /*!< Support a group of TX channels to transmit simultaneously */
 
 #ifdef __cplusplus
 }

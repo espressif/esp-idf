@@ -393,3 +393,115 @@ TEST_CASE("RMT Ping-Pong operation", "[rmt]")
     rmt_clean_testbench(tx_channel, rx_channel);
 }
 #endif
+#if RMT_SUPPORT_TX_GROUP
+static uint32_t tx_end_time0, tx_end_time1;
+static void rmt_tx_end_cb(rmt_channel_t channel, void *arg)
+{
+    if (channel == 0) {
+        tx_end_time0 = esp_cpu_get_ccount();
+    } else {
+        tx_end_time1 = esp_cpu_get_ccount();
+    }
+}
+TEST_CASE("RMT TX simultaneously", "[rmt]")
+{
+    rmt_item32_t frames[RMT_CHANNEL_MEM_WORDS];
+    uint32_t size = sizeof(frames) / sizeof(frames[0]);
+    int channel0 = 0;
+    int channel1 = 1;
+
+    int i = 0;
+    for (i = 0; i < size - 1; i++) {
+        frames[i].level0 = 1;
+        frames[i].duration0 = 1000;
+        frames[i].level1 = 0;
+        frames[i].duration1 = 1000;
+    }
+    frames[i].level0 = 0;
+    frames[i].duration0 = 0;
+    frames[i].level1 = 0;
+    frames[i].duration1 = 0;
+
+    rmt_config_t tx_config0 = RMT_DEFAULT_CONFIG_TX(12, channel0);
+    rmt_config_t tx_config1 = RMT_DEFAULT_CONFIG_TX(13, channel1);
+    TEST_ESP_OK(rmt_config(&tx_config0));
+    TEST_ESP_OK(rmt_config(&tx_config1));
+
+    TEST_ESP_OK(rmt_driver_install(channel0, 0, 0));
+    TEST_ESP_OK(rmt_driver_install(channel1, 0, 0));
+
+    rmt_register_tx_end_callback(rmt_tx_end_cb, NULL);
+
+    TEST_ESP_OK(rmt_add_channel_to_group(channel0));
+    TEST_ESP_OK(rmt_add_channel_to_group(channel1));
+
+    TEST_ESP_OK(rmt_write_items(channel0, frames, size, false));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    TEST_ESP_OK(rmt_write_items(channel1, frames, size, false));
+
+    TEST_ESP_OK(rmt_wait_tx_done(channel0, portMAX_DELAY));
+    TEST_ESP_OK(rmt_wait_tx_done(channel1, portMAX_DELAY));
+
+    ESP_LOGI(TAG, "tx_end_time0=%u, tx_end_time1=%u", tx_end_time0, tx_end_time1);
+    TEST_ASSERT_LESS_OR_EQUAL_UINT32(2000, tx_end_time1 - tx_end_time0);
+
+    TEST_ESP_OK(rmt_remove_channel_from_group(channel0));
+    TEST_ESP_OK(rmt_remove_channel_from_group(channel1));
+
+    TEST_ESP_OK(rmt_driver_uninstall(channel0));
+    TEST_ESP_OK(rmt_driver_uninstall(channel1));
+
+}
+#endif
+
+#if RMT_SUPPORT_TX_LOOP_COUNT
+TEST_CASE("RMT TX loop", "[rmt]")
+{
+    RingbufHandle_t rb = NULL;
+    rmt_item32_t *items = NULL;
+    uint32_t length = 0;
+    uint32_t addr = 0x10;
+    uint32_t cmd = 0x20;
+    bool repeat = false;
+    int tx_channel = 0;
+    int rx_channel = 1;
+    uint32_t count = 0;
+
+    rmt_setup_testbench(tx_channel, rx_channel, RMT_TESTBENCH_FLAGS_LOOP_ON);
+
+    // get ready to receive
+    TEST_ESP_OK(rmt_get_ringbuf_handle(rx_channel, &rb));
+    TEST_ASSERT_NOT_NULL(rb);
+    TEST_ESP_OK(rmt_rx_start(rx_channel, true));
+
+    vTaskDelay(pdMS_TO_TICKS(1000));
+
+    // build NEC codes
+    ESP_LOGI(TAG, "Send command 0x%x to address 0x%x", cmd, addr);
+    // Send new key code
+    TEST_ESP_OK(s_ir_builder->build_frame(s_ir_builder, addr, cmd));
+    TEST_ESP_OK(s_ir_builder->get_result(s_ir_builder, &items, &length));
+    TEST_ESP_OK(rmt_write_items(tx_channel, items, length, true)); // wait until done
+
+    // parse NEC codes
+    while (rb) {
+        items = (rmt_item32_t *) xRingbufferReceive(rb, &length, 1000);
+        if (items) {
+            length /= 4; // one RMT = 4 Bytes
+            if (s_ir_parser->input(s_ir_parser, items, length) == ESP_OK) {
+                if (s_ir_parser->get_scan_code(s_ir_parser, &addr, &cmd, &repeat) == ESP_OK) {
+                    count++;
+                    ESP_LOGI(TAG, "Scan Code %s --- addr: 0x%04x cmd: 0x%04x", repeat ? "(repeat)" : "", addr, cmd);
+                }
+            }
+            vRingbufferReturnItem(rb, (void *) items);
+        } else {
+            ESP_LOGI(TAG, "done");
+            break;
+        }
+    }
+
+    TEST_ASSERT_EQUAL(10, count);
+    rmt_clean_testbench(tx_channel, rx_channel);
+}
+#endif
