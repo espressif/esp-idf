@@ -270,26 +270,26 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "563a39e0a7c7368f81bfa1c3aff8b590a0617cdfe51177ddc808f66cc0866c76",
-            "size": 38405896,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz"
+            "sha256": "12a577aa04b6639766ae908f33cf70baefc11ac4499b8b1c8812d99f05fb6a02",
+            "size": 39517697,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Linux-x86_64.tar.gz"
           },
           "macos": {
-            "sha256": "fef537614d73fda848f6168273b6c7ba45f850484533361e7bc50ac1d315f780",
-            "size": 32062124,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Darwin-x86_64.tar.gz"
+            "sha256": "f60e0ef96da48725cd8da7d6abe83cd9501167aa51625c90dd4d31081a631279",
+            "size": 35802699,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Darwin-x86_64.tar.gz"
           },
-          "name": "3.13.4",
+          "name": "3.16.4",
           "status": "recommended",
           "win32": {
-            "sha256": "28daf772f55d817a13ef14e25af2a5569f8326dac66a6aa3cc5208cf1f8e943f",
-            "size": 26385104,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-win32-x86.zip"
+            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
+            "size": 32812189,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
           },
           "win64": {
-            "sha256": "bcd477d49e4a9400b41213d53450b474beaedb264631693c958ef9affa8e5623",
-            "size": 29696565,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-win64-x64.zip"
+            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
+            "size": 32812189,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
           }
         }
       ]
@@ -383,21 +383,21 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "978fd9e26c2db8d33392c6daef50e9edac0a3db6680710a9f9ad47e01f3e49b7",
-            "size": 85276,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-linux64.tar.gz"
+            "sha256": "4b2ad65db438595813b981db921f675f5c775c302b34dc85710ffddf07ec9033",
+            "size": 102826,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-linux64.tar.gz"
           },
           "macos": {
-            "sha256": "9504cd1783ef3c242d06330a50d54dc8f838b605f5fc3e892c47254929f7350c",
-            "size": 91457,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-osx.tar.gz"
+            "sha256": "6cd22e2c5fc654282d26b485d9b3d68e242b09a22c2e73a253f2a4a7cfd6774c",
+            "size": 119947,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-osx.tar.gz"
           },
-          "name": "1.9.0",
+          "name": "1.10.0",
           "status": "recommended",
           "win64": {
-            "sha256": "2d70010633ddaacc3af4ffbd21e22fae90d158674a09e132e06424ba3ab036e9",
-            "size": 254497,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-win64.zip"
+            "sha256": "919fd158c16bf135e8a850bb4046ec1ce28a7439ee08b977cd0b7f6b3463d178",
+            "size": 262400,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-win64.zip"
           }
         }
       ]
