@@ -43,6 +43,10 @@
 
 #define BYTE_ORDER LITTLE_ENDIAN
 
+#ifndef CONFIG_LWIP_ESP_LWIP_ASSERT
+#define LWIP_NOASSERT 1
+#endif
+
 typedef uint8_t  u8_t;
 typedef int8_t   s8_t;
 typedef uint16_t u16_t;
