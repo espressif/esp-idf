@@ -37,7 +37,6 @@ TEST_CASE("mqtt init and deinit", "[mqtt][leaks=0]")
     esp_mqtt_client_destroy(client);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static const char* this_bin_addr(void)
 {
     spi_flash_mmap_handle_t out_handle;
@@ -69,4 +68,3 @@ TEST_CASE("mqtt enqueue and destroy outbox", "[mqtt][leaks=0]")
 
     esp_mqtt_client_destroy(client);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
