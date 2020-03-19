@@ -5,7 +5,7 @@
 
 echo "- Getting paths of CMakeLists and Makefiles"
 IFS=
-CMAKELISTS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/common_components/" | grep -v "/cxx/experimental/experimental_cpp_component/" | grep -v "/main/" | grep -v "/build_system/cmake/" | grep -v "/mb_example_common/" | grep -v "/socket_addr_from_stdin/" | sort -n)
+CMAKELISTS=$( find ${IDF_PATH}/examples/ -type f -name CMakeLists.txt | grep -v "/components/" | grep -v "/common_components/" | grep -v "/cxx/experimental/experimental_cpp_component/" | grep -v "/main/" | grep -v "/build_system/cmake/" | grep -v "/mb_example_common/" | sort -n)
 MAKEFILES=$( find ${IDF_PATH}/examples/ -type f -name Makefile | grep -v "/build_system/cmake/" | sort -n)
 echo "  [DONE]"
 
