@@ -81,6 +81,12 @@ low_level_init(struct netif *netif)
 #endif
 #endif
 
+#if ESP_IPV6
+#if LWIP_IPV6 && LWIP_IPV6_MLD
+  netif->flags |= NETIF_FLAG_MLD6;
+#endif
+#endif
+
 #if !ESP_L2_TO_L3_COPY
   netif->l2_buffer_free_notify = esp_wifi_internal_free_rx_buffer;
 #endif
