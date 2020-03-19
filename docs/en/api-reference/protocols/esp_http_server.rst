@@ -152,6 +152,13 @@ Persistent Connections Example
 Check the example under :example:`protocols/http_server/persistent_sockets`.
 
 
+Websocket server
+----------------
+
+HTTP server provides a simple websocket support if the feature is enabled in menuconfig, please see :ref:`CONFIG_HTTPD_WS_SUPPORT`.
+Please check the example under :example:`protocols/http_server/ws_echo_server`
+
+
 API Reference
 -------------
 

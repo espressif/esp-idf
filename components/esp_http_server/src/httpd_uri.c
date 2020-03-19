@@ -172,6 +172,9 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
             hd->hd_calls[i]->method   = uri_handler->method;
             hd->hd_calls[i]->handler  = uri_handler->handler;
             hd->hd_calls[i]->user_ctx = uri_handler->user_ctx;
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
+#endif
             ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
             return ESP_OK;
         }
@@ -306,6 +309,24 @@ esp_err_t httpd_uri(struct httpd_data *hd)
 
     /* Attach user context data (passed during URI registration) into request */
     req->user_ctx = uri->user_ctx;
+
+    /* Final step for a WebSocket handshake verification */
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    struct httpd_req_aux   *aux = req->aux;
+    if (uri->is_websocket && aux->ws_handshake_detect && uri->method == HTTP_GET) {
+        ESP_LOGD(TAG, LOG_FMT("Responding WS handshake to sock %d"), aux->sd->fd);
+        esp_err_t ret = httpd_ws_respond_server_handshake(&hd->hd_req);
+        if (ret != ESP_OK) {
+            return ret;
+        }
+
+        aux->sd->ws_handshake_done = true;
+        aux->sd->ws_handler = uri->handler;
+
+        /* Return immediately after handshake, no need to call handler here */
+        return ESP_OK;
+    }
+#endif
 
     /* Invoke handler */
     if (uri->handler(req) != ESP_OK) {
