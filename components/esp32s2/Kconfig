@@ -118,7 +118,13 @@ menu "ESP32S2-specific"
 
         choice SPIRAM_TYPE
             prompt "Type of SPI RAM chip in use"
-            default SPIRAM_TYPE_ESPPSRAM32
+            default SPIRAM_TYPE_AUTO
+
+            config SPIRAM_TYPE_AUTO
+                bool "Auto-detect"
+
+            config SPIRAM_TYPE_ESPPSRAM16
+                bool "ESP-PSRAM16 or APS1604"
 
             config SPIRAM_TYPE_ESPPSRAM32
                 bool "ESP-PSRAM32 or IS25WP032"
@@ -129,9 +135,12 @@ menu "ESP32S2-specific"
 
         config SPIRAM_SIZE
             int
+            default -1 if SPIRAM_TYPE_AUTO
+            default 2097152 if SPIRAM_TYPE_ESPPSRAM16
             default 4194304 if SPIRAM_TYPE_ESPPSRAM32
             default 8388608 if SPIRAM_TYPE_ESPPSRAM64
             default 0
+
         menu "PSRAM clock and cs IO for ESP32S2"
             depends on ESP32S2_SPIRAM_SUPPORT
             config DEFAULT_PSRAM_CLK_IO
