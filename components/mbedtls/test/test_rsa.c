@@ -306,7 +306,7 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 }
 #endif
 
-TEST_CASE("test performance RSA key operations", "[bignum]")
+TEST_CASE("test performance RSA key operations", "[bignum][ignore]")
 {
     for (int keysize = 2048; keysize <= 4096; keysize += 2048) {
         rsa_key_operations(keysize, true, false, false);
