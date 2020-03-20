@@ -320,11 +320,28 @@ Substitution macros
 """""""""""""""""""
 When you need to refer to the chip's name, toolchain name, path or other common names that depend on the target type you can consider using the substitution macros supplied by :idf_file:`docs/idf_extensions/format_idf_target.py`.
 
-This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC` will render as: This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+For example, the following reStructuredText content:
 
-This extension also supports markup for defining a local (for a single .rst-file) substitutions. You can do this by putting a definition like {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE",esp32="ESP32_VALUE",esp32s2beta="ESP32S2BETA_VALUE"}, in your rst-file. This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current rst-file. For example:
+    This is a {\IDF_TARGET_NAME}, with /{\IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{\IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{\IDF_TARGET_CFG_PREFIX}_MULTI_DOC`
 
-{\IDF_TARGET_TX_PIN:default="IO3",esp32="IO4",esp32s2beta="IO5"} will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2beta.
+Would render in the documentation as:
+
+    This is a {IDF_TARGET_NAME}, with /{IDF_TARGET_PATH_NAME}/soc.c, compiled with `xtensa-{IDF_TARGET_TOOLCHAIN_NAME}-elf-gcc` with `CONFIG_{IDF_TARGET_CFG_PREFIX}_MULTI_DOC`.
+
+This extension also supports markup for defining local (within a single source file) substitutions. Place a definition like the following into a single line of the RST file:
+
+    {\IDF_TARGET_SUFFIX:default="DEFAULT_VALUE", esp32="ESP32_VALUE", esp32s2="ESP32S2_VALUE"}
+
+This will define a target-dependent substitution of the tag {\IDF_TARGET_SUFFIX} in the current RST file. For example:
+
+    {\IDF_TARGET_TX_PIN:default="IO3", esp32="IO4", esp32s2="IO5"}
+
+Will define a substitution for the tag {\IDF_TARGET_TX_PIN}, which would be replaced by the text IO5 if sphinx was called with the tag esp32s2.
+
+.. note::
+
+   These single-file definitions can be placed anywhere in the .rst file (on their own line), but the name of the directive must start with ``IDF_TARGET_``.
+
 
 Put it all together
 -------------------
