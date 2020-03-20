@@ -116,6 +116,8 @@ static vfs_uart_context_t* s_ctx[UART_NUM] = {
 #endif
 };
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
 typedef struct {
     esp_vfs_select_sem_t select_sem;
     fd_set *readfds;
@@ -131,6 +133,8 @@ static int s_registered_select_num = 0;
 static portMUX_TYPE s_registered_select_lock = portMUX_INITIALIZER_UNLOCKED;
 
 static esp_err_t uart_end_select(void *end_select_args);
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
 
 static int uart_open(const char * path, int flags, int mode)
 {
@@ -319,6 +323,8 @@ static int uart_fcntl(int fd, int cmd, int arg)
     return result;
 }
 
+#ifdef CONFIG_VFS_SUPPORT_DIR
+
 static int uart_access(const char *path, int amode)
 {
     int ret = -1;
@@ -340,6 +346,8 @@ static int uart_access(const char *path, int amode)
     return ret;
 }
 
+#endif // CONFIG_VFS_SUPPORT_DIR
+
 static int uart_fsync(int fd)
 {
     assert(fd >= 0 && fd < 3);
@@ -348,6 +356,8 @@ static int uart_fsync(int fd)
     _lock_release_recursive(&s_ctx[fd]->write_lock);
     return 0;
 }
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
 
 static esp_err_t register_select(uart_select_args_t *args)
 {
@@ -508,6 +518,8 @@ static esp_err_t uart_end_select(void *end_select_args)
 
     return ret;
 }
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 static int uart_tcsetattr(int fd, int optional_actions, const struct termios *p)
@@ -972,9 +984,13 @@ void esp_vfs_dev_uart_register(void)
         .read = &uart_read,
         .fcntl = &uart_fcntl,
         .fsync = &uart_fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
         .access = &uart_access,
+#endif // CONFIG_VFS_SUPPORT_DIR
+#ifdef CONFIG_VFS_SUPPORT_SELECT
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,
+#endif // CONFIG_VFS_SUPPORT_SELECT
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
         .tcsetattr = &uart_tcsetattr,
         .tcgetattr = &uart_tcgetattr,

@@ -507,6 +507,52 @@ int esp_vfs_fstat(struct _reent *r, int fd, struct stat * st)
     return ret;
 }
 
+int esp_vfs_fcntl_r(struct _reent *r, int fd, int cmd, int arg)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, arg);
+    return ret;
+}
+
+int esp_vfs_ioctl(int fd, int cmd, ...)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    va_list args;
+    va_start(args, cmd);
+    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
+    va_end(args);
+    return ret;
+}
+
+int esp_vfs_fsync(int fd)
+{
+    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
+    const int local_fd = get_local_fd(vfs, fd);
+    struct _reent* r = __getreent();
+    if (vfs == NULL || local_fd < 0) {
+        __errno_r(r) = EBADF;
+        return -1;
+    }
+    int ret;
+    CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
+    return ret;
+}
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
+
 int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(path);
@@ -517,6 +563,20 @@ int esp_vfs_stat(struct _reent *r, const char * path, struct stat * st)
     const char* path_within_vfs = translate_path(vfs, path);
     int ret;
     CHECK_AND_CALL(ret, r, vfs, stat, path_within_vfs, st);
+    return ret;
+}
+
+int esp_vfs_utime(const char *path, const struct utimbuf *times)
+{
+    int ret;
+    const vfs_entry_t* vfs = get_vfs_for_path(path);
+    struct _reent* r = __getreent();
+    if (vfs == NULL) {
+        __errno_r(r) = ENOENT;
+        return -1;
+    }
+    const char* path_within_vfs = translate_path(vfs, path);
+    CHECK_AND_CALL(ret, r, vfs, utime, path_within_vfs, times);
     return ret;
 }
 
@@ -712,50 +772,6 @@ int rmdir(const char* name)
     return ret;
 }
 
-int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
-{
-    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    const int local_fd = get_local_fd(vfs, fd);
-    if (vfs == NULL || local_fd < 0) {
-        __errno_r(r) = EBADF;
-        return -1;
-    }
-    int ret;
-    CHECK_AND_CALL(ret, r, vfs, fcntl, local_fd, cmd, arg);
-    return ret;
-}
-
-int ioctl(int fd, int cmd, ...)
-{
-    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
-    if (vfs == NULL || local_fd < 0) {
-        __errno_r(r) = EBADF;
-        return -1;
-    }
-    int ret;
-    va_list args;
-    va_start(args, cmd);
-    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
-    va_end(args);
-    return ret;
-}
-
-int fsync(int fd)
-{
-    const vfs_entry_t* vfs = get_vfs_for_fd(fd);
-    const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
-    if (vfs == NULL || local_fd < 0) {
-        __errno_r(r) = EBADF;
-        return -1;
-    }
-    int ret;
-    CHECK_AND_CALL(ret, r, vfs, fsync, local_fd);
-    return ret;
-}
-
 int access(const char *path, int amode)
 {
     int ret;
@@ -783,6 +799,10 @@ int truncate(const char *path, off_t length)
     CHECK_AND_CALL(ret, r, vfs, truncate, path_within_vfs, length);
     return ret;
 }
+
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
 
 static void call_end_selects(int end_index, const fds_triple_t *vfs_fds_triple, void **driver_args)
 {
@@ -1074,7 +1094,10 @@ void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken)
     }
 }
 
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
+
 int tcgetattr(int fd, struct termios *p)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
@@ -1174,95 +1197,10 @@ int tcsendbreak(int fd, int duration)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-int esp_vfs_utime(const char *path, const struct utimbuf *times)
-{
-    int ret;
-    const vfs_entry_t* vfs = get_vfs_for_path(path);
-    struct _reent* r = __getreent();
-    if (vfs == NULL) {
-        __errno_r(r) = ENOENT;
-        return -1;
-    }
-    const char* path_within_vfs = translate_path(vfs, path);
-    CHECK_AND_CALL(ret, r, vfs, utime, path_within_vfs, times);
-    return ret;
-}
 
-int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout)
-{
-    struct timeval tv = {
-        // timeout is in milliseconds
-        .tv_sec = timeout / 1000,
-        .tv_usec = (timeout % 1000) * 1000,
-    };
-    int max_fd = -1;
-    fd_set readfds;
-    fd_set writefds;
-    fd_set errorfds;
-    struct _reent* r = __getreent();
-    int ret = 0;
 
-    if (fds == NULL) {
-        __errno_r(r) = ENOENT;
-        return -1;
-    }
 
-    FD_ZERO(&readfds);
-    FD_ZERO(&writefds);
-    FD_ZERO(&errorfds);
 
-    for (int i = 0; i < nfds; ++i) {
-        fds[i].revents = 0;
-
-        if (fds[i].fd < 0) {
-            // revents should remain 0 and events ignored (according to the documentation of poll()).
-            continue;
-        }
-
-        if (fds[i].fd >= MAX_FDS) {
-            fds[i].revents |= POLLNVAL;
-            ++ret;
-            continue;
-        }
-
-        if (fds[i].events & (POLLIN | POLLRDNORM | POLLRDBAND | POLLPRI)) {
-            FD_SET(fds[i].fd, &readfds);
-            FD_SET(fds[i].fd, &errorfds);
-            max_fd = MAX(max_fd, fds[i].fd);
-        }
-
-        if (fds[i].events & (POLLOUT | POLLWRNORM | POLLWRBAND)) {
-            FD_SET(fds[i].fd, &writefds);
-            FD_SET(fds[i].fd, &errorfds);
-            max_fd = MAX(max_fd, fds[i].fd);
-        }
-    }
-
-    const int select_ret = esp_vfs_select(max_fd + 1, &readfds, &writefds, &errorfds, timeout < 0 ? NULL: &tv);
-
-    if (select_ret > 0) {
-        ret += select_ret;
-
-        for (int i = 0; i < nfds; ++i) {
-            if (FD_ISSET(fds[i].fd, &readfds)) {
-                fds[i].revents |= POLLIN;
-            }
-
-            if (FD_ISSET(fds[i].fd, &writefds)) {
-                fds[i].revents |= POLLOUT;
-            }
-
-            if (FD_ISSET(fds[i].fd, &errorfds)) {
-                fds[i].revents |= POLLERR;
-            }
-        }
-    } else {
-        ret = select_ret;
-        // keeping the errno from select()
-    }
-
-    return ret;
-}
 
 void vfs_include_syscalls_impl(void)
 {
