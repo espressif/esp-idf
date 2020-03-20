@@ -18,14 +18,19 @@
 #include <sys/errno.h>
 #include <sys/lock.h>
 #include <sys/fcntl.h>
-#include "esp_vfs.h"
-#include "esp_vfs_dev.h"
 #include "esp_attr.h"
-#include "lwip/sockets.h"
+#include "esp_vfs.h"
 #include "sdkconfig.h"
+#include "lwip/sockets.h"
 #include "lwip/sys.h"
 
+#ifndef CONFIG_VFS_SUPPORT_IO
+#error This file should only be built when CONFIG_VFS_SUPPORT_IO=y
+#endif
+
 _Static_assert(MAX_FDS >= CONFIG_LWIP_MAX_SOCKETS, "MAX_FDS < CONFIG_LWIP_MAX_SOCKETS");
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
 
 static void lwip_stop_socket_select(void *sem)
 {
@@ -46,6 +51,14 @@ static void *lwip_get_socket_select_semaphore(void)
      */
     return (void *) sys_thread_sem_get();
 }
+#else // CONFIG_VFS_SUPPORT_SELECT
+
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout)
+{
+    return lwip_select(nfds, readfds, writefds, errorfds, timeout);
+}
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
 
 static int lwip_fcntl_r_wrapper(int fd, int cmd, int arg)
 {
@@ -68,10 +81,12 @@ void esp_vfs_lwip_sockets_register(void)
         .read = &lwip_read,
         .fcntl = &lwip_fcntl_r_wrapper,
         .ioctl = &lwip_ioctl_r_wrapper,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
         .socket_select = &lwip_select,
         .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .stop_socket_select = &lwip_stop_socket_select,
         .stop_socket_select_isr = &lwip_stop_socket_select_isr,
+#endif // CONFIG_VFS_SUPPORT_SELECT
     };
     /* Non-LWIP file descriptors are from 0 to (LWIP_SOCKET_OFFSET-1). LWIP
      * file descriptors are registered from LWIP_SOCKET_OFFSET to
