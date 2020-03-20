@@ -20,7 +20,6 @@ list(APPEND ldfragments newlib.lf)
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
-                    REQUIRES vfs 
                     PRIV_REQUIRES soc esp_timer
                     LDFRAGMENTS "${ldfragments}")  
 
