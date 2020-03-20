@@ -164,6 +164,13 @@ How To Enable Secure Boot V2
 
 10. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image (using the validated public key portion of its appended signature block).
 
+Restrictions after Secure Boot is enabled
+-----------------------------------------
+
+- Any updated bootloader or app will need to be signed with a key matching the digest already stored in efuse.
+
+- After Secure Boot is enabled, no further efuses can be read protected. (If :doc:`/security/flash-encryption` is enabled then the bootloader will ensure that any flash encryption key generated on first boot will already be read protected.) If :ref:`CONFIG_SECURE_BOOT_INSECURE` is enabled then this behaviour can be disabled, but this is not recommended.
+
 .. _secure-boot-v2-generate-key:
 
 Generating Secure Boot Signing Key
