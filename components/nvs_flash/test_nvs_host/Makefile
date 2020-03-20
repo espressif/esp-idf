@@ -24,6 +24,7 @@ SOURCE_FILES = \
 	test_nvs.cpp \
 	test_partition_manager.cpp \
 	test_nvs_handle.cpp \
+	test_nvs_storage.cpp \
 	test_nvs_cxx_api.cpp \
 	crc.cpp \
 	main.cpp
