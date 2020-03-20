@@ -383,7 +383,8 @@ You can setup environment to build documentation locally on your PC by installin
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
-The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/index.html>`_.
+
+The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP-IDF Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
 
 Do not worry about being confronted with several packages to install. Besides Doxygen and sphinx_idf_theme, all remaining packages are written in pure Python. Therefore installation of all of them is combined into one simple step.
 
@@ -437,9 +438,10 @@ Installation of Doxygen is OS dependent:
 sphinx_idf_theme
 @@@@@@@@@@@@@@@@
 
-The ``sphinx_idf_theme`` needs a mixture of Python and JavaScript in order to build. So currently it's necessary install `node.js <https://nodejs.org/en/download/>` in order to build it locally.
+The ``sphinx_idf_theme`` needs a mixture of Python and JavaScript in order to build. So currently it's necessary install `node.js <https://nodejs.org/en/download/>`_ in order to build it locally.
 
 ::
+
    cd ~/esp
    git clone https://github.com/espressif/sphinx_idf_theme.git
    cd sphinx_idf_theme

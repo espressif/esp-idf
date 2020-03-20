@@ -793,35 +793,35 @@ Flash 参数
 
 .. _selecting-idf-target:
 
-Selecting the Target
+选择“目标”芯片
 ====================
 
-ESP-IDF supports multiple targets (chips). The identifiers used for each chip are as follows:
+ESP-IDF 支持多款芯片，它们通过在软件中使用不同的 “目标” (target) 名进行区分，具体对应关系如下：
 
-* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WDH, ESP32-PICO-D4
-* ``esp32s2``— for ESP32-S2
+* ``esp32`` — 适用于 ESP32-D0WD、ESP32-D2WD、ESP32-S0WD (ESP-SOLO)、ESP32-U4WDH、ESP32-PICO-D4
+* ``esp32s2``— 适用于 ESP32-S2
 
-To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
+在构建项目前，请首先根据您的芯片选择正确的软件目标，具体命令为 ``idf.py set-target <target>``。举例 ::
 
     idf.py set-target esp32s2
 
 .. important::
 
-    ``idf.py set-target`` will clear the build directory and re-generate the ``sdkconfig`` file from scratch. The old ``sdkconfig`` file will be saved as ``sdkconfig.old``.
+    运行 ``idf.py set-target`` 命令将清除 ``build`` 文件夹的内容，并重新生成一个 ``sdkconfig`` 文件。之前的 ``sdkconfig`` 将另存为 ``sdkconfig.old``。
 
 .. note::
 
-    The behavior of ``idf.py set-target`` command is equivalent to:
+    运行 ``idf.py set-target`` 命令相当于分别运行以下几个命令：
 
-    1. clearing the build directory (``idf.py fullclean``)
-    2. removing the sdkconfig file (``mv sdkconfig sdkconfig.old``)
-    3. configuring the project with the new target (``idf.py -DIDF_TARGET=esp32 reconfigure``)
+    1. 清除 ``build`` 文件夹 (``idf.py fullclean``)
+    2. 移除 ``sdkconfig`` 文件 (``mv sdkconfig sdkconfig.old``)
+    3. 根据选择的“目标”芯片配置项目 (``idf.py -DIDF_TARGET=esp32 reconfigure``)
 
-It is also possible to pass the desired ``IDF_TARGET`` as an environement variable (e.g. ``export IDF_TARGET=esp32s2``) or as a CMake variable (e.g. ``-DIDF_TARGET=esp32s2`` argument to CMake or idf.py). Setting the environment variable is a convenient method if you mostly work with one type of the chip.
+您也可以将要用的 ``IDF_TARGET`` 设置为环境变量，比如：export IDF_TARGET=esp32s2；或设置为 CMake 变量，比如将 ``-DIDF_TARGET=esp32s2`` 以参数形式传递给 CMake 或 idf.py。如果您大多数时间仅使用一款芯片，则将 ``IDF_TARGET`` 配置为环境变量比较方便。
 
-To specify the _default_ value of ``IDF_TARGET`` for a given project, add ``CONFIG_IDF_TARGET`` value to ``sdkconfig.defaults``. For example, ``CONFIG_IDF_TARGET="esp32s2"``. This value will be used if ``IDF_TARGET`` is not specified by other method: using an environment variable, CMake variable, or ``idf.py set-target`` command.
+对于特定项目，您可以使用以下方式为 ``IDF_TARGET`` 配置 _default_ 值：把 ``CONFIG_IDF_TARGET`` 的值加入 ``sdkconfig.defaults``。举例而言，配置 ``CONFIG_IDF_TARGET="esp32s2"``。这样一来，除非特别设置（比如使用环境变量、CMake 变量或 ``idf.py set-target`` 命令），否则 ``IDF_TARGET`` 将默认采用 ``CONFIG_IDF_TARGET``。
 
-If the target has not been set by any of these methods, the build system will default to ``esp32`` target.
+如果您从未通过以上述任何方式配置过“目标”芯片，则构建系统会默认将 ``esp32`` 设定为“目标”芯片。
 
 .. _write-pure-component:
 
