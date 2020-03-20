@@ -178,6 +178,7 @@ void esp_efuse_utility_update_virt_blocks(void)
 }
 
 // Prints efuse values for all registers.
+#ifndef BOOTLOADER_BUILD
 void esp_efuse_utility_debug_dump_blocks(void)
 {
     printf("EFUSE_BLKx:\n");
@@ -201,6 +202,7 @@ void esp_efuse_utility_debug_dump_blocks(void)
 #endif
     printf("\n");
 }
+#endif // BOOTLOADER_BUILD
 
 // returns the number of array elements for placing these bits in an array with the length of each element equal to size_of_base.
 int esp_efuse_utility_get_number_of_items(int bits, int size_of_base)
