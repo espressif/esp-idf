@@ -316,7 +316,7 @@ static void bta_ag_sco_read_cback(UINT16 sco_inx, BT_HDR *p_data, tBTM_SCO_DATA_
 {
     if (status != BTM_SCO_DATA_CORRECT)
     {
-        ets_printf("bta_ag_sco_read_cback: status(%d)", status);
+        APPL_TRACE_WARNING("bta_ag_sco_read_cback: status(%d)", status);
     }
 
     /* Callout function must free the data. */
@@ -760,7 +760,6 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
             p_buf->offset = pkt_offset;
             len_to_send = bta_ag_sco_co_out_data(p_buf->data + pkt_offset);
             p_buf->len = len_to_send;
-            
             if (len_to_send == p_scb->out_pkt_len)
             {
                 if (p_sco->state == BTA_AG_SCO_OPEN_ST) {
@@ -777,8 +776,8 @@ static void bta_ag_sco_event(tBTA_AG_SCB *p_scb, UINT8 event)
                     break;
                 }
             }
-            return;
         }
+        return;
     }
 #endif
 
