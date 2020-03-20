@@ -158,12 +158,12 @@ extern unsigned int	_xtos_ints_on( unsigned int mask );
 /* Newer functions to enable/disable the specified interrupt.  */
 static inline void _xtos_interrupt_enable(unsigned int intnum)
 {
-    _xtos_ints_on(1 << intnum);
+    _xtos_ints_on(1U << intnum);
 }
 
 static inline void _xtos_interrupt_disable(unsigned int intnum)
 {
-    _xtos_ints_off(1 << intnum);
+    _xtos_ints_off(1U << intnum);
 }
 
 extern unsigned		_xtos_set_intlevel( int intlevel );
@@ -234,4 +234,3 @@ extern void		_xtos_timer_3_delta( int cycles );
 #endif /* !_ASMLANGUAGE && !__ASSEMBLER__ */
 
 #endif /* XTRUNTIME_H */
-
