@@ -152,7 +152,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_CLOSE_EVT             5   /* GATTC  close request status event */
 #define BTA_GATTC_SEARCH_CMPL_EVT       6   /* GATT discovery complete event */
 #define BTA_GATTC_SEARCH_RES_EVT        7   /* GATT discovery result event */
-#define BTA_GATTC_READ_DESCR_EVT        8   /* GATT read characterisitc descriptor event */
+#define BTA_GATTC_READ_DESCR_EVT        8   /* GATT read characteristic descriptor event */
 #define BTA_GATTC_WRITE_DESCR_EVT       9   /* GATT write characteristic descriptor event */
 #define BTA_GATTC_NOTIF_EVT             10  /* GATT attribute notification event */
 #define BTA_GATTC_PREP_WRITE_EVT        11  /* GATT prepare write  event */
@@ -739,7 +739,7 @@ extern void BTA_GATTC_Disable(void);
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTC module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_client_cb - pointer to the application callback function.
 **
 ** Returns          None
@@ -867,32 +867,32 @@ extern const tBTA_GATTC_CHARACTERISTIC* BTA_GATTC_GetCharacteristic(UINT16 conn_
 *******************************************************************************/
 extern const tBTA_GATTC_DESCRIPTOR* BTA_GATTC_GetDescriptor(UINT16 conn_id, UINT16 handle);
 
-extern void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid, 
-                                         btgatt_db_element_t **db, int *count);
+extern void BTA_GATTC_GetServiceWithUUID(UINT16 conn_id, tBT_UUID *svc_uuid,
+                                         btgatt_db_element_t **db, UINT16 *count);
 
 extern void BTA_GATTC_GetAllChar(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                                 btgatt_db_element_t **db, int *count);
+                                 btgatt_db_element_t **db, UINT16 *count);
 
 extern void BTA_GATTC_GetAllDescriptor(UINT16 conn_id, UINT16 char_handle,
-                                       btgatt_db_element_t **db, int *count);
+                                       btgatt_db_element_t **db, UINT16 *count);
 
 extern void BTA_GATTC_GetCharByUUID(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, tBT_UUID char_uuid,
-                                    btgatt_db_element_t **db, int *count);
+                                    btgatt_db_element_t **db, UINT16 *count);
 
 extern void BTA_GATTC_GetDescrByUUID(UINT16 conn_id, uint16_t start_handle, uint16_t end_handle,
                                      tBT_UUID char_uuid, tBT_UUID descr_uuid,
-                                     btgatt_db_element_t **db, int *count);
+                                     btgatt_db_element_t **db, UINT16 *count);
 
 extern void BTA_GATTC_GetDescrByCharHandle(UINT16 conn_id, UINT16 char_handle, tBT_UUID descr_uuid,
-                                           btgatt_db_element_t **db, int *count);
+                                           btgatt_db_element_t **db, UINT16 *count);
 
 extern void BTA_GATTC_GetIncludeService(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                                        tBT_UUID *incl_uuid, btgatt_db_element_t **db, int *count);
+                                        tBT_UUID *incl_uuid, btgatt_db_element_t **db, UINT16 *count);
 
-extern void BTA_GATTC_GetDBSize(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, int *count);
+extern void BTA_GATTC_GetDBSize(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle, UINT16 *count);
 
 extern void BTA_GATTC_GetDBSizeByType(UINT16 conn_id, bt_gatt_db_attribute_type_t type,
-                                      UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, int *count);
+                                      UINT16 start_handle, UINT16 end_handle, UINT16 char_handle, UINT16 *count);
 
 /*******************************************************************************
 **
@@ -907,7 +907,7 @@ extern void BTA_GATTC_GetDBSizeByType(UINT16 conn_id, bt_gatt_db_attribute_type_
 **
 *******************************************************************************/
 extern void BTA_GATTC_GetGattDb(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle,
-                                btgatt_db_element_t **db, int *count);
+                                btgatt_db_element_t **db, UINT16 *count);
 
 /*******************************************************************************
 **
@@ -1202,7 +1202,7 @@ extern void BTA_GATTS_Disable(void);
 ** Description      This function is called to register application callbacks
 **                    with BTA GATTS module.
 **
-** Parameters       p_app_uuid - applicaiton UUID
+** Parameters       p_app_uuid - application UUID
 **                  p_cback - pointer to the application callback function.
 **
 ** Returns          None
@@ -1325,7 +1325,7 @@ extern void  BTA_GATTS_DeleteService(UINT16 service_id);
 ** Description      This function is called to start a service.
 **
 ** Parameters       service_id: the service ID to be started.
-**                  sup_transport: supported trasnport.
+**                  sup_transport: supported transport.
 **
 ** Returns          None.
 **
