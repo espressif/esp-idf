@@ -129,6 +129,9 @@ esp_err_t bluetooth_init(void)
         return ret;
     }
 
+    esp_log_level_set("*", ESP_LOG_ERROR);
+    esp_log_level_set("ble_mesh_prov_console", ESP_LOG_INFO);
+
     return ret;
 }
 
