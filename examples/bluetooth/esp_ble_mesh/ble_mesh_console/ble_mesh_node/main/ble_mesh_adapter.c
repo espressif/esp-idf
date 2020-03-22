@@ -29,8 +29,9 @@ esp_ble_mesh_model_t *ble_mesh_get_model(uint16_t model_id)
         model = &gen_onoff_srv_models[1];
         break;
 #if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
+    // as server
     case ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI:
-        model = &gen_onoff_cli_models[1];
+        model = &gen_onoff_cli_models[2];
         break;
 #endif
     case ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI:

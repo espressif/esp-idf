@@ -126,6 +126,8 @@ esp_err_t bluetooth_init(void)
         return ret;
     }
 
+    esp_log_level_set("*", ESP_LOG_ERROR);
+    esp_log_level_set("ble_mesh_node_console", ESP_LOG_INFO);
     return ret;
 }
 
@@ -153,6 +155,9 @@ void app_main(void)
     register_bluetooth();
     ble_mesh_register_mesh_node();
     ble_mesh_register_server();
+#if (CONFIG_BLE_MESH_GENERIC_ONOFF_CLI)
+    ble_mesh_register_gen_onoff_client();
+#endif
 
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
