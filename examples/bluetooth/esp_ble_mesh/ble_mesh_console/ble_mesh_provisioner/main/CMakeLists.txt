@@ -1,4 +1,5 @@
 set(COMPONENT_SRCS "ble_mesh_adapter.c"
+                   "transaction.c"
                    "ble_mesh_cfg_srv_model.c"
                    "ble_mesh_console_lib.c"
                    "ble_mesh_console_main.c"
