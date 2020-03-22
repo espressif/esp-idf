@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #include "ble_mesh_cfg_srv_model.h"
-
+#include "esp_ble_mesh_generic_model_api.h"
 uint8_t dev_uuid[16] = {0xdd, 0xdd};
 
 #if CONFIG_BLE_MESH_NODE
@@ -40,9 +40,8 @@ esp_ble_mesh_prov_t prov = {
 };
 #endif //CONFIG_BLE_MESH_PROVISIONER
 
-ESP_BLE_MESH_MODEL_PUB_DEFINE(model_pub_config, 2 + 1, ROLE_NODE);
-
 esp_ble_mesh_model_pub_t vendor_model_pub_config;
+ESP_BLE_MESH_MODEL_PUB_DEFINE(model_pub_config, 2 + 1, ROLE_NODE);
 
 // configure server module
 esp_ble_mesh_cfg_srv_t cfg_srv = {
@@ -96,16 +95,15 @@ esp_ble_mesh_comp_t config_client_comp = {
 };
 
 // configure special module
-esp_ble_mesh_model_op_t gen_onoff_srv_model_op_config[] = {
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET,       0),
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET,       2),
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2),
-    ESP_BLE_MESH_MODEL_OP_END,
+ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
+static esp_ble_mesh_gen_onoff_srv_t onoff_server = {
+    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
 };
 
 esp_ble_mesh_model_t gen_onoff_srv_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
-    ESP_BLE_MESH_SIG_MODEL(ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_model_op_config, &model_pub_config, NULL),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
 };
 
 esp_ble_mesh_elem_t gen_onoff_srv_elements[] = {
@@ -126,6 +124,7 @@ esp_ble_mesh_client_t gen_onoff_cli;
 esp_ble_mesh_model_t gen_onoff_cli_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
     ESP_BLE_MESH_MODEL_CFG_CLI(&cfg_cli),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
     ESP_BLE_MESH_MODEL_GEN_ONOFF_CLI(&model_pub_config, &gen_onoff_cli),
 };
 
