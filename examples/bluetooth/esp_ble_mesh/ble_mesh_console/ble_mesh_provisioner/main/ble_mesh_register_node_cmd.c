@@ -23,6 +23,7 @@
 #include "esp_ble_mesh_config_model_api.h"
 
 #include "ble_mesh_adapter.h"
+#include "transaction.h"
 
 typedef struct {
     struct arg_str *static_val;
@@ -62,8 +63,6 @@ ble_mesh_node_status node_status = {
     .previous = 0x0,
     .current = 0x0,
 };
-
-SemaphoreHandle_t ble_mesh_node_sema;
 
 void ble_mesh_register_node_cmd(void);
 // Register callback function
@@ -142,10 +141,10 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
         break;
 #if (CONFIG_BLE_MESH_PROVISIONER)
     case ESP_BLE_MESH_PROVISIONER_RECV_UNPROV_ADV_PKT_EVT:
-        ESP_LOGI(TAG, "Provisioner recv unprovisioned device beacon:");
+        ESP_LOGD(TAG, "Provisioner recv unprovisioned device beacon:");
         ESP_LOG_BUFFER_HEX("Device UUID %s", param->provisioner_recv_unprov_adv_pkt.dev_uuid, 16);
         ESP_LOG_BUFFER_HEX("Address %s", param->provisioner_recv_unprov_adv_pkt.addr, 6);
-        ESP_LOGI(TAG, "Address type 0x%x, oob_info 0x%04x, adv_type 0x%x, bearer 0x%x",
+        ESP_LOGD(TAG, "Address type 0x%x, oob_info 0x%04x, adv_type 0x%x, bearer 0x%x",
             param->provisioner_recv_unprov_adv_pkt.addr_type, param->provisioner_recv_unprov_adv_pkt.oob_info,
             param->provisioner_recv_unprov_adv_pkt.adv_type, param->provisioner_recv_unprov_adv_pkt.bearer);
         break;
@@ -200,8 +199,17 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
 {
     esp_err_t result = ESP_OK;
     uint8_t status;
+    uint64_t *start_time = NULL;
+    transaction_t *trans = NULL;
 
     ESP_LOGD(TAG, "enter %s, event=%x\n", __func__, event);
+    do {
+        trans = transaction_get(TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE, trans);
+        if (trans) {
+            start_time = (uint64_t *)trans->input;
+            break;
+        }
+    }while(trans);
 
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
@@ -211,11 +219,17 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
                 ble_mesh_node_get_state(status);
                 result = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
                          sizeof(status), &status);
+                if (result != ESP_OK) {
+                    ESP_LOGE(TAG, "Node:SendMsg,Fal");
+                }
             } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
                 ble_mesh_node_set_state(param->model_operation.msg[0]);
                 ESP_LOGI(TAG, "Node:SetAck,OK,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
                 result = esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
                          sizeof(status), param->model_operation.msg);
+                if (result != ESP_OK) {
+                    ESP_LOGE(TAG, "Node:SendMsg,Fal");
+                }
             } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
                 ble_mesh_node_set_state(param->model_operation.msg[0]);
                 ESP_LOGI(TAG, "Node:SetUnAck,OK,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
@@ -224,11 +238,12 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
             } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
                 ESP_LOGI(TAG, "VendorModel:SetAck,OK,%d", param->model_operation.ctx->recv_ttl);
             } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_STATUS) {
-                uint64_t current_time = esp_timer_get_time();
-                result = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - start_time) / 1000), param->model_operation.msg, param->model_operation.ctx->recv_ttl, param->model_operation.length);
                 ESP_LOGI(TAG, "VendorModel:Status,OK,%d", param->model_operation.ctx->recv_ttl);
-                if (ble_mesh_test_perf_send_sema != NULL && result == ESP_OK) {
-                    xSemaphoreGive(ble_mesh_test_perf_send_sema);
+                if (trans) {
+                    uint64_t current_time = esp_timer_get_time();
+                    result = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 1000), param->model_operation.msg,
+                        param->model_operation.ctx->recv_ttl, param->model_operation.length);
+                    transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
                 }
             }
         }
@@ -245,10 +260,11 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_RECV_PUBLISH_MSG_EVT:
         ESP_LOGI(TAG, "Node:PublishReceive,OK,0x%04X,%d,%d", param->client_recv_publish_msg.opcode, param->client_recv_publish_msg.length, param->client_recv_publish_msg.msg[1]);
-        uint64_t current_time = esp_timer_get_time();
-        result = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - start_time) / 2000), param->client_recv_publish_msg.msg, param->client_recv_publish_msg.ctx->recv_ttl, param->client_recv_publish_msg.length);
-        if (ble_mesh_test_perf_send_sema != NULL && param->client_recv_publish_msg.msg[2] == VENDOR_MODEL_PERF_OPERATION_TYPE_SET_UNACK && result == ESP_OK) {
-            xSemaphoreGive(ble_mesh_test_perf_send_sema);
+        if (trans) {
+            uint64_t current_time = esp_timer_get_time();
+            result = ble_mesh_test_performance_client_model_accumulate_time(((uint32_t)(current_time - *start_time) / 2000), param->client_recv_publish_msg.msg,
+                param->client_recv_publish_msg.ctx->recv_ttl, param->client_recv_publish_msg.length);
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
         }
         break;
     case ESP_BLE_MESH_MODEL_PUBLISH_UPDATE_EVT:
@@ -256,8 +272,8 @@ void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_c
         break;
     case ESP_BLE_MESH_CLIENT_MODEL_SEND_TIMEOUT_EVT:
         ESP_LOGI(TAG, "Node:TimeOut, 0x%04X", param->client_send_timeout.opcode);
-        if (ble_mesh_test_perf_send_sema != NULL) {
-            xSemaphoreGive(ble_mesh_test_perf_send_sema);
+        if (trans) {
+            transaction_set_events(trans, TRANS_MESH_SEND_MESSAGE_EVT);
         }
         break;
     case ESP_BLE_MESH_MODEL_EVT_MAX:
@@ -317,7 +333,7 @@ static int ble_mesh_load_oob(int argc, char **argv)
     //parsing prov
 #if CONFIG_BLE_MESH_NODE
     prov.uuid = dev_uuid;
-    memcpy(dev_uuid, esp_bt_dev_get_address(), 6);
+    memcpy(dev_uuid, esp_bt_dev_get_address(), BD_ADDR_LEN);
     if (oob.static_val->count != 0) {
         static_val = malloc(oob.static_val_len->ival[0] + 1);
         if (static_val == NULL) {
@@ -352,7 +368,6 @@ static int ble_mesh_load_oob(int argc, char **argv)
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return 0;
 }
-
 
 int ble_mesh_init(int argc, char **argv)
 {

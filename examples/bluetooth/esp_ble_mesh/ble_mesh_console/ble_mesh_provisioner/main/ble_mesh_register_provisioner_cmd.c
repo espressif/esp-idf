@@ -82,32 +82,9 @@ ble_mesh_provisioner_add_key_t provisioner_add_key;
 
 void ble_mesh_regist_provisioner_cmd(void);
 
-void ble_mesh_prov_adv_cb(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type, const uint8_t adv_type,
-                          const uint8_t *dev_uuid, uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer);
-
 void ble_mesh_register_mesh_provisioner(void)
 {
     ble_mesh_regist_provisioner_cmd();
-}
-
-void ble_mesh_prov_adv_cb(const esp_ble_mesh_bd_addr_t addr, const esp_ble_mesh_addr_type_t addr_type, const uint8_t adv_type,
-                          const uint8_t *dev_uuid, uint16_t oob_info, esp_ble_mesh_prov_bearer_t bearer)
-{
-    ESP_LOGD(TAG, "enter %s\n", __func__);
-    ESP_LOGI(TAG, "scan device address:");
-    esp_log_buffer_hex(TAG, addr, sizeof(esp_ble_mesh_bd_addr_t));
-    ESP_LOGI(TAG, "scan device uuid:");
-    esp_log_buffer_hex(TAG, dev_uuid, 16);
-    ESP_LOGD(TAG, "exit %s\n", __func__);
-}
-
-int ble_mesh_provisioner_register(int argc, char** argv)
-{
-    ESP_LOGD(TAG, "enter %s \n", __func__);
-    // esp_ble_mesh_register_unprov_adv_pkt_callback(ble_mesh_prov_adv_cb);
-    ESP_LOGI(TAG, "Provisioner:Reg,OK");
-    ESP_LOGD(TAG, "exit %s \n", __func__);
-    return 0;
 }
 
 int ble_mesh_provision_address(int argc, char **argv)
@@ -126,27 +103,17 @@ int ble_mesh_provision_address(int argc, char **argv)
         arg_print_errors(stderr, provisioner_addr.end, argv[0]);
         return 1;
     }
-    
+
+    memcpy(device_addr.uuid, preset_addr_uuid, BD_ADDR_LEN);
     if (provisioner_addr.device_addr->count != 0) {
-        if (provisioner_addr.device_uuid->count != 0) {
-            del_dev.flag = BIT(0) | BIT(1);
-            str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], device_addr.uuid);
-            str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], del_dev.uuid); 
-        } else {
-            del_dev.flag = BIT(0);
-            memcpy(device_addr.uuid, preset_addr_uuid, 16);
-            memcpy(del_dev.uuid, preset_addr_uuid, 16);
-        }
         str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], device_addr.addr);
         str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], del_dev.addr);
         arg_int_to_value(provisioner_addr.addr_type, device_addr.addr_type, "address type");
         arg_int_to_value(provisioner_addr.addr_type, del_dev.addr_type, "address type");
     } else if (provisioner_addr.device_uuid->count != 0) {
+        get_value_string((char *)provisioner_addr.device_uuid->sval[0], (char *)device_addr.uuid);
+        get_value_string((char *)provisioner_addr.device_uuid->sval[0], (char *)del_dev.uuid);
         del_dev.flag = BIT(1);
-        memcpy(device_addr.addr, preset_addr_uuid, 6);
-        memcpy(del_dev.addr, preset_addr_uuid, 6);
-        str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], device_addr.uuid);
-        str_2_mac((uint8_t *)provisioner_addr.device_addr->sval[0], del_dev.uuid); 
     }
 
     if (strcmp(provisioner_addr.add_del->sval[0], "add") == 0) {
@@ -155,6 +122,12 @@ int ble_mesh_provision_address(int argc, char **argv)
         err = esp_ble_mesh_provisioner_add_unprov_dev(&device_addr, provisioner_addr.flag->ival[0]);
     } else if (strcmp(provisioner_addr.add_del->sval[0], "del") == 0) {
         err = esp_ble_mesh_provisioner_delete_dev(&del_dev);
+    }
+
+    if (err != ESP_OK) {
+        ESP_LOGI(TAG, "Provisioner:AddDelAddr,Fail,%d", err);
+    } else {
+        ESP_LOGI(TAG, "Provisioner:AddDelAddr,OK");
     }
 
     ESP_LOGD(TAG, "exit %s \n", __func__);
@@ -249,6 +222,8 @@ int ble_mesh_provisioner_add_node(int argc, char **argv)
     result = bt_mesh_provisioner_store_node_info(&node_info);
     if (result == ESP_OK) {
         ESP_LOGI(TAG, "Provisioner:AddNodeInfo,OK\n");
+    } else {
+        ESP_LOGI(TAG, "Provisioner:AddNodeInfo,ERROR,%d\n", result);
     }
 
     ESP_LOGD(TAG, "exit %s\n", __func__);
@@ -282,7 +257,7 @@ int ble_mesh_provisioner_add_key(int argc, char **argv)
     }
 
     if (err != ESP_OK) {
-        ESP_LOGI(TAG, "Provisioner:KeyAction,Fail");
+        ESP_LOGI(TAG, "Provisioner:KeyAction,Fail,%d", err);
     } else {
         ESP_LOGI(TAG, "Provisioner:KeyAction,OK");
     }
@@ -314,7 +289,7 @@ int ble_mesh_provision_bind_local_model(int argc, char **argv)
     err = esp_ble_mesh_provisioner_bind_app_key_to_local_model(element_addr, app_idx, model_id, company_id);
 
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Provisioner:BindModel,Fail,%x\n", err);
+        ESP_LOGE(TAG, "Provisioner:BindModel,Fail,%d\n", err);
     } else {
         ESP_LOGI(TAG, "Provisioner:BindModel,OK\n");
     }
@@ -324,14 +299,6 @@ int ble_mesh_provision_bind_local_model(int argc, char **argv)
 
 void ble_mesh_regist_provisioner_cmd(void)
 {
-    const esp_console_cmd_t prov_register = {
-        .command = "bmpreg",
-        .help = "ble mesh provisioner: register callback",
-        .hint = NULL,
-        .func = &ble_mesh_provisioner_register,
-    };
-    ESP_ERROR_CHECK(esp_console_cmd_register(&prov_register));
-
     provisioner_addr.add_del = arg_str1("z", NULL, "<add/delete>", "action type");
     provisioner_addr.device_addr = arg_str0("d", NULL, "<address>", "device address");
     provisioner_addr.device_uuid = arg_str0("u", NULL, "<uuid>", "device uuid");
