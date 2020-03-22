@@ -21,6 +21,14 @@ def get_github_rev():
     return path
 
 
+def url_join(*url_parts):
+    """ Make a URL out of multiple components, assume first part is the https:// part and
+    anything else is a path component """
+    result = "/".join(url_parts)
+    result = re.sub(r"([^:])//+", r"\1/", result)  # remove any // that isn't in the https:// part
+    return result
+
+
 def setup(app):
     rev = get_github_rev()
 
@@ -38,7 +46,7 @@ def setup(app):
     # link to the current documentation file in specific language version
     app.add_role('link_to_translation', link_to_translation(app.config))
 
-    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.2'}
+    return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.3'}
 
 
 def github_link(link_type, rev, root_path, app_config):
@@ -64,7 +72,7 @@ def github_link(link_type, rev, root_path, app_config):
         rel_path = root_path + link
         abs_path = os.path.join(app_config.idf_path, rel_path.lstrip('/'))
         line_no = None
-        url = BASE_URL + link_type + rel_path
+        url = url_join(BASE_URL, link_type, rev, rel_path)
 
         if '#L' in abs_path:
             # drop any URL line number from the file, line numbers take the form #Lnnn or #Lnnn-Lnnn for a range
