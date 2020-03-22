@@ -344,6 +344,8 @@ int ble_mesh_configuration_client_model_operation(int argc, char **argv)
                     err = esp_ble_mesh_config_client_set_state(&client_common, (esp_ble_mesh_cfg_client_set_state_t *)&relay_set);
                 } else if (strcmp(configuration_client_model_operation.set_state->sval[0], "pubset") == 0) {
                     err = esp_ble_mesh_config_client_set_state(&client_common, (esp_ble_mesh_cfg_client_set_state_t *)&mod_pub_set);
+                } else if (strcmp(configuration_client_model_operation.set_state->sval[0], "reset") == 0) {
+                    err = esp_ble_mesh_config_client_set_state(&client_common, NULL);
                 }
             }
         } else if (strcmp(configuration_client_model_operation.action_type->sval[0], "reg") == 0) {
