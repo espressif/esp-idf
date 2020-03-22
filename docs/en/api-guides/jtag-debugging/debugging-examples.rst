@@ -640,7 +640,7 @@ Commands presented so for should provide are very basis and intended to let you 
     the call, in effect treating it as a single source line.
     (gdb)
 
-By typing just ``help``, you will get top level list of command classes, to aid you drilling down to more details. Optionally refer to available GDB cheat sheets, for instance http://darkdust.net/files/GDB%20Cheat%20Sheet.pdf. Good to have as a reference (even if not all commands are applicable in an embedded environment).
+By typing just ``help``, you will get top level list of command classes, to aid you drilling down to more details. Optionally refer to available GDB cheat sheets, for instance https://darkdust.net/files/GDB%20Cheat%20Sheet.pdf. Good to have as a reference (even if not all commands are applicable in an embedded environment).
 
 
 Ending debugger session

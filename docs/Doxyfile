@@ -10,7 +10,7 @@
 # Make sure that correct warnings are generated to flag issues with documented code
 #
 # For the complete list of configuration statements see:
-# https://www.stack.nl/~dimitri/doxygen/manual/config.html
+# http://doxygen.nl/manual/config.html
 
 
 PROJECT_NAME = "ESP32 Programming Guide"

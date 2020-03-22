@@ -9,7 +9,7 @@ Resources
 
 * A comprehensive collection of `solutions <https://github.com/espressif/esp-iot-solution#solutions>`_, `practical applications <https://github.com/espressif/esp-iot-solution#esp32-iot-example-list>`_, `components and drivers <https://github.com/espressif/esp-iot-solution#components>`_ based on ESP-IDF is available in `ESP32 IoT Solution <https://github.com/espressif/esp-iot-solution>`_ repository. In most of cases descriptions are provided both in English and in 中文.
 
-* To develop applications using Arduino platform, refer to `Arduino core for ESP32 WiFi chip <https://github.com/espressif/arduino-esp32#arduino-core-for-esp32-wifi-chip>`_.
+* To develop applications using Arduino platform, refer to `Arduino core for ESP32 WiFi chip <https://github.com/espressif/arduino-esp32#readme>`_.
 
 * Several `books <https://www.espressif.com/en/support/iot-college/books-new>`_ have been written about ESP32 and they are listed on `Espressif <https://www.espressif.com/en/support/iot-college/books-new>`__ web site.
 

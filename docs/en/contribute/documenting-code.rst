@@ -9,7 +9,7 @@ The purpose of this description is to provide quick summary on documentation sty
 Introduction
 ------------
 
-When documenting code for this repository, please follow `Doxygen style <https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks, for example: ::
+When documenting code for this repository, please follow `Doxygen style <http://doxygen.nl/manual/docblocks.html#specialblock>`_. You are doing it by inserting special commands, for instance ``@param``, into standard comments blocks, for example: ::
 
     /**
      * @param ratio this is oxygen to air ratio
@@ -23,13 +23,13 @@ Typical comment block, that contains documentation of a function, looks like bel
     :align: center
     :alt: Sample inline code documentation
 
-Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data rich and very well organized `Doxygen Manual <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_.
+Doxygen supports couple of formatting styles. It also gives you great flexibility on level of details to include in documentation. To get familiar with available features, please check data rich and very well organized `Doxygen Manual <http://doxygen.nl/manual/index.html>`_.
 
 
 Why we need it?
 ---------------
 
-The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx <http://www.sphinx-doc.org/>`_ and `Breathe <https://breathe.readthedocs.io/>`_ to aid preparation and automatic updates of API documentation when the code changes.
+The ultimate goal is to ensure that all the code is consistently documented, so we can use tools like `Sphinx`_ and `Breathe`_ to aid preparation and automatic updates of API documentation when the code changes.
 
 With these tools the above piece of code renders like below:
 
@@ -335,13 +335,13 @@ Once documentation is ready, follow instruction in :doc:`../api-reference/templa
 OK, but I am new to Sphinx!
 ---------------------------
 
-1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx <http://www.sphinx-doc.org/>`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <http://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out about more about the specific markdown syntax that we use on`Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
+1. No worries. All the software you need is well documented. It is also open source and free. Start by checking `Sphinx`_ documentation. If you are not clear how to write using rst markup language, see `reStructuredText Primer <https://www.sphinx-doc.org/en/stable/rest.html>`_. You can also use markdown (.md) files, and find out about more about the specific markdown syntax that we use on`Recommonmark parser's documentation page <https://recommonmark.readthedocs.io/en/latest/>`_.
 
 2. Check the source files of this documentation to understand what is behind of what you see now on the screen. Sources are maintained on GitHub in `espressif/esp-idf`_ repository in :idf:`docs` folder. You can go directly to the source file of this page by scrolling up and clicking the link in the top right corner. When on GitHub, see what's really inside, open source files by clicking ``Raw`` button.
 
 3. You will likely want to see how documentation builds and looks like before posting it on the GitHub. There are two options to do so:
 
-    * Install `Sphinx <http://www.sphinx-doc.org/>`_, `Breathe <https://breathe.readthedocs.io/>`_, `Blockdiag <http://blockdiag.com/en/index.html>`_ and `Doxygen <https://www.stack.nl/~dimitri/doxygen/>`_ to build it locally, see chapter below.
+    * Install `Sphinx`_, `Breathe`_, `Blockdiag <http://blockdiag.com/en/index.html>`_ and `Doxygen <http://doxygen.nl/>`_ to build it locally, see chapter below.
 
     * Set up an account on `Read the Docs <https://readthedocs.org/>`_ and build documentation in the cloud. Read the Docs provides document building and hosting for free and their service works really quick and great.
 
@@ -358,15 +358,15 @@ Install Dependencies
 
 You can setup environment to build documentation locally on your PC by installing:
 
-1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
+1. Doxygen - http://doxygen.nl/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
 3. Breathe - https://github.com/michaeljones/breathe#breathe
-4. Document theme "sphinx_idf_theme" - https://github.com/rtfd/sphinx_idf_theme
-5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
+4. Document theme "sphinx_idf_theme" - https://github.com/espressif/sphinx_idf_theme
+5. Custom 404 page "sphinx-notfound-page" - https://github.com/readthedocs/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
-The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_.
+The package "sphinx_idf_theme" is added to have the same "look and feel" of `ESP32 Programming Guide <https://docs.espressif.com/projects/esp-idf/en/latest/esp32/index.html>`_.
 
 Do not worry about being confronted with several packages to install. Besides Doxygen and sphinx_idf_theme, all remaining packages are written in pure Python. Therefore installation of all of them is combined into one simple step.
 
@@ -490,3 +490,5 @@ Related Documents
 
 .. _interactive shell: http://interactive.blockdiag.com/?compression=deflate&src=eJxlUMFOwzAMvecrrO3aITYQQirlAIIzEseJQ5q4TUSIq8TVGIh_J2m7jbKc7Ge_5_dSO1Lv2soWvoVYgieNoMh7VGzJR9FJtugZ7lYQ0UcKEbYNOY36rRQHZHUPT68vV5tceGLbWCUzPfeaFFMoBZzecVc56vWwJFnWMmJ59CCZg617xpOFbTSyw0pmvT_HJ7hxtFNGBr6wvuu5SCkchcrZ1vAeXZomznh5YgTqfcpR02cBO6vZVDeXBRjMjKEcFRbLh8f18-Z2UUBDnqP9wmp9ncRmSSfND2ldGo2h_zse407g0Mxc1q7HzJ3-4jzYYTJjtQH3iSV-fgFzx50J
 
+.. _Sphinx:  https://www.sphinx-doc.org/
+.. _Breathe: https://breathe.readthedocs.io

@@ -430,7 +430,7 @@ After installing Impulse and ensuring that it can successfully load trace files 
 6. Double-click on created port. View for this port should open.
 7. Click Start/Stop Streaming button. Data should be loaded.
 8. Use 'Zoom Out', 'Zoom In' and 'Zoom Fit' button to inspect data.
-9. For settings measurement cursors and other features please see `Impulse documentation <http://toem.de/index.php/projects/impulse>`_).
+9. For settings measurement cursors and other features please see `Impulse documentation <https://toem.de/index.php/projects/impulse>`_).
 
 .. note::
 

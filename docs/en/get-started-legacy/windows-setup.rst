@@ -73,4 +73,4 @@ Related Documents
     windows-setup-scratch
 
 
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/

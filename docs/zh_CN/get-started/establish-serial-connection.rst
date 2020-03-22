@@ -30,11 +30,11 @@
         `ESP32-Sense Kit <https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/esp32_sense_kit_guide_en.md#guide-for-esp32-sense-development-kit>`_, n/a, 搭配 `ESP-Prog`_ 使用
 
 .. _CP210x: https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers
-.. _FTDI: http://www.ftdichip.com/Drivers/VCP.htm
+.. _FTDI: https://www.ftdichip.com/Drivers/VCP.htm
 .. _ESP-Prog: https://github.com/espressif/esp-iot-solution/blob/master/documents/evaluation_boards/ESP-Prog_guide_en.md#introduction-to-the-esp-prog-board
 
 * CP210x: `CP210x USB 至 UART 桥 VCP 驱动程序 <https://www.silabs.com/products/development-tools/software/usb-to-uart-bridge-vcp-drivers>`_
-* FTDI: `FTDI 虚拟 COM 端口驱动程序 <http://www.ftdichip.com/Drivers/VCP.htm>`_
+* FTDI: `FTDI 虚拟 COM 端口驱动程序 <https://www.ftdichip.com/Drivers/VCP.htm>`_
 
 以上驱动仅用于参考。一般情况下，当上述任一 {IDF_TARGET_NAME} 开发板与 PC 连接时，对应驱动程序应该已经被打包在操作系统中，并已经自动安装。
 
@@ -96,7 +96,7 @@ MacOS ::
 确认串口连接
 ------------------------
 
-现在，请使用串口终端程序，验证串口连接是否可用。在本示例中，我们将使用 `PuTTY SSH Client <http://www.putty.org/>`_， `PuTTY SSH Client <http://www.putty.org/>`_ 既可用于 Windows 也可用于 Linux。你也可以使用其他串口程序并设置如下的通信参数。
+现在，请使用串口终端程序，验证串口连接是否可用。在本示例中，我们将使用 `PuTTY SSH Client <https://www.putty.org/>`_， `PuTTY SSH Client <https://www.putty.org/>`_ 既可用于 Windows 也可用于 Linux。你也可以使用其他串口程序并设置如下的通信参数。
 
 运行终端，配置串口：波特率 = 115200，数据位 = 8，停止位 = 1，奇偶校验 = N。以下截屏分别展示了在 Windows 和 Linux 中配置串口和上述通信参数（如 115200-8-1-N）。注意，这里一定要选择在上述步骤中确认的串口进行配置。
 
