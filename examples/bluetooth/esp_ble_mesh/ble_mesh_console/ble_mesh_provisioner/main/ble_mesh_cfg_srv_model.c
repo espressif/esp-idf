@@ -93,16 +93,16 @@ esp_ble_mesh_comp_t config_client_comp = {
 };
 
 // configure special module
-esp_ble_mesh_model_op_t gen_onoff_srv_model_op_config[] = {
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET,       0),
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET,       2),
-    ESP_BLE_MESH_MODEL_OP(ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK, 2),
-    ESP_BLE_MESH_MODEL_OP_END,
-};
+ESP_BLE_MESH_MODEL_PUB_DEFINE(onoff_pub_0, 2 + 3, ROLE_NODE);
+static esp_ble_mesh_gen_onoff_srv_t onoff_server = {
+    .rsp_ctrl.get_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+    .rsp_ctrl.set_auto_rsp = ESP_BLE_MESH_SERVER_RSP_BY_APP,
+ };
+
 
 esp_ble_mesh_model_t gen_onoff_srv_models[] = {
     ESP_BLE_MESH_MODEL_CFG_SRV(&cfg_srv),
-    ESP_BLE_MESH_SIG_MODEL(ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_srv_model_op_config, &model_pub_config, NULL),
+    ESP_BLE_MESH_MODEL_GEN_ONOFF_SRV(&onoff_pub_0, &onoff_server),
 };
 
 esp_ble_mesh_elem_t gen_onoff_srv_elements[] = {

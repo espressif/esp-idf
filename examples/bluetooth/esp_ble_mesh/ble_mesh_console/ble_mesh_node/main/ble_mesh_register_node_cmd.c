@@ -22,6 +22,7 @@
 #include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
+#include "esp_ble_mesh_generic_model_api.h"
 
 #include "ble_mesh_console_lib.h"
 #include "ble_mesh_adapter.h"
@@ -90,6 +91,8 @@ void ble_mesh_register_node_cmd(void);
 // Register callback function
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param);
 void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param);
+void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
+        esp_ble_mesh_generic_server_cb_param_t *param);
 
 
 void ble_mesh_register_mesh_node(void)
@@ -103,14 +106,81 @@ int ble_mesh_register_node_cb(int argc, char** argv)
     ble_mesh_node_init();
     esp_ble_mesh_register_prov_callback(ble_mesh_prov_cb);
     esp_ble_mesh_register_custom_model_callback(ble_mesh_model_cb);
+    esp_ble_mesh_register_generic_server_callback(ble_mesh_generic_server_model_cb);
     ESP_LOGI(TAG, "Node:Reg,OK");
     ESP_LOGD(TAG, "exit %s\n", __func__);
     return 0;
 }
 
+void ble_mesh_generic_server_model_cb(esp_ble_mesh_generic_server_cb_event_t event,
+        esp_ble_mesh_generic_server_cb_param_t *param)
+{
+    uint32_t opcode = param->ctx.recv_op;
+    uint8_t status;
+
+    ESP_LOGD(TAG, "enter %s: event is %d, opcode is 0x%x\n", __func__, event, opcode);
+
+    switch (event) {
+        case ESP_BLE_MESH_GENERIC_SERVER_STATE_CHANGE_EVT:
+            if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
+                ESP_LOGI(TAG, "GenOnOffServer:SetStatus,OK,%d", param->value.state_change.onoff_set.onoff);
+                ble_mesh_node_set_state(param->value.state_change.onoff_set.onoff);
+            } else if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+                ESP_LOGI(TAG, "GenOnOffServer:SetUnAck,OK,%d", param->value.state_change.onoff_set.onoff);
+                ble_mesh_node_set_state(param->value.state_change.onoff_set.onoff);
+            }
+            break;
+    case ESP_BLE_MESH_GENERIC_SERVER_RECV_GET_MSG_EVT: {
+        switch (opcode) {
+        case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET:
+            ESP_LOGI(TAG, "GenOnOffServer:GetStatus,OK");
+            ble_mesh_node_get_state(status);
+            esp_ble_mesh_server_model_send_msg(param->model, &param->ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+                                                   sizeof(status), &status);
+            break;
+        default:
+            break;
+        }
+        break;
+    }
+    case ESP_BLE_MESH_GENERIC_SERVER_RECV_SET_MSG_EVT: {
+        if (opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET || opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
+            esp_ble_mesh_gen_onoff_srv_t *srv = param->model->user_data;
+            if (param->value.set.onoff.op_en == false) {
+                srv->state.onoff = param->value.set.onoff.onoff;
+            } else {
+                /* TODO: Delay and state transition */
+               srv->state.onoff = param->value.set.onoff.onoff;
+            }
+        }
+       
+        switch (opcode) {
+            case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET:
+                ESP_LOGI(TAG, "GenOnOffServer:SetStatus,OK,%d", param->value.set.onoff.onoff);
+                ble_mesh_node_set_state(param->value.set.onoff.onoff);
+                ble_mesh_node_get_state(status);
+                esp_ble_mesh_server_model_send_msg(param->model, &param->ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
+                                                   sizeof(status), &status);
+                break;
+            case ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK:
+                ble_mesh_node_set_state(param->value.set.onoff.onoff);
+                ESP_LOGI(TAG, "GenOnOffServer:SetUNACK,OK,%d", param->value.set.onoff.onoff);
+                break;
+            default:
+                break;
+        }
+        break;
+    }
+    default:
+        break;
+    }
+    ESP_LOGD(TAG, "exit %s \n", __func__);
+}
+
 void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_param_t *param)
 {
     ESP_LOGD(TAG, "enter %s, event = %d", __func__, event);
+
     switch (event) {
     case ESP_BLE_MESH_PROV_REGISTER_COMP_EVT:
         ble_mesh_callback_check_err_code(param->prov_register_comp.err_code, "Provisioning:Register");
@@ -169,32 +239,15 @@ void ble_mesh_prov_cb(esp_ble_mesh_prov_cb_event_t event, esp_ble_mesh_prov_cb_p
 
 void ble_mesh_model_cb(esp_ble_mesh_model_cb_event_t event, esp_ble_mesh_model_cb_param_t *param)
 {
-    uint8_t status;
     uint16_t result;
     uint8_t data[4];
     
     ESP_LOGD(TAG, "enter %s, event=%x\n", __func__, event);
-    printf("enter %s, event=%x\n", __func__, event);
+
     switch (event) {
     case ESP_BLE_MESH_MODEL_OPERATION_EVT:
         if (param->model_operation.model != NULL && param->model_operation.model->op != NULL) {
-            if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_GET) {
-                ESP_LOGI(TAG, "Node:GetStatus,Success");
-                ble_mesh_node_get_state(status);
-                esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-                                                   sizeof(status), &status);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET) {
-                ESP_LOGI(TAG, "Node:SetAck,Success,%d,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl, param->model_operation.length);
-                ble_mesh_node_set_state(param->model_operation.msg[0]);
-                ble_mesh_node_get_state(status);
-                esp_ble_mesh_server_model_send_msg(param->model_operation.model, param->model_operation.ctx, ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS,
-                                                   sizeof(status), &status);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_SET_UNACK) {
-                ble_mesh_node_set_state(param->model_operation.msg[0]);
-                ESP_LOGI(TAG, "Node:SetUnAck,Success,%d,%d", param->model_operation.msg[0], param->model_operation.ctx->recv_ttl);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_MODEL_OP_GEN_ONOFF_STATUS) {
-                ESP_LOGI(TAG, "Node:Status,Success,%d", param->model_operation.length);
-            } else if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
+             if (param->model_operation.opcode == ESP_BLE_MESH_VND_MODEL_OP_TEST_PERF_SET) {
                 ESP_LOGI(TAG, "VendorModel:SetAck,Success,%d", param->model_operation.ctx->recv_ttl);
                 data[0] = param->model_operation.msg[0];
                 data[1] = param->model_operation.msg[1];
@@ -316,14 +369,17 @@ int ble_mesh_init(int argc, char **argv)
     local_component = ble_mesh_get_component(component.model_type->ival[0]);
 
     if (component.dev_uuid->count != 0) {
-        device_uuid = malloc((16 + 1) * sizeof(uint8_t));
+        device_uuid = malloc((ESP_BLE_MESH_OCTET16_LEN + 1) * sizeof(uint8_t));
         if (device_uuid == NULL) {
             ESP_LOGE(TAG, "ble mesh malloc failed, %d\n", __LINE__);
         }
-        get_value_string((char *)component.dev_uuid->sval[0], (char *) device_uuid);
-        memcpy(dev_uuid, device_uuid, 16);
-    } else {
-        memcpy(dev_uuid, esp_bt_dev_get_address(), 6);
+        err = get_value_string((char *)component.dev_uuid->sval[0], (char *) device_uuid);
+        if (err == ESP_OK) {
+            memcpy(dev_uuid, device_uuid, ESP_BLE_MESH_OCTET16_LEN);
+        } else {
+            str_2_mac((uint8_t *)component.dev_uuid->sval[0], device_uuid);
+            memcpy(dev_uuid, device_uuid, BD_ADDR_LEN);
+        }
     }
 
     err = esp_ble_mesh_init(&prov, local_component);
