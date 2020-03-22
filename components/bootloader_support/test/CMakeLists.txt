@@ -1,3 +1,3 @@
 idf_component_register(SRC_DIRS "."
-                    INCLUDE_DIRS "."
-                    REQUIRES unity bootloader_support app_update)
+                    PRIV_INCLUDE_DIRS "."
+                    PRIV_REQUIRES unity bootloader_support app_update)
