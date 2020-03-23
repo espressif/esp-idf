@@ -60,7 +60,7 @@ def action_extensions(base_actions, project_path):
 
         return result
 
-    def monitor(action, ctx, args, print_filter):
+    def monitor(action, ctx, args, print_filter, encrypted):
         """
         Run idf_monitor.py to watch build output
         """
@@ -87,6 +87,9 @@ def action_extensions(base_actions, project_path):
         if print_filter is not None:
             monitor_args += ["--print_filter", print_filter]
         monitor_args += [elf_file]
+
+        if encrypted:
+            monitor_args += ['--encrypted']
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ["-m", " ".join("'%s'" % a for a in idf_py)]
@@ -117,6 +120,14 @@ def action_extensions(base_actions, project_path):
         esptool_args += ["erase_flash"]
         run_tool("esptool.py", esptool_args, args.build_dir)
 
+    def global_callback(ctx, global_args, tasks):
+        encryption = any([task.name in ("encrypted-flash", "encrypted-app-flash") for task in tasks])
+        if encryption:
+            for task in tasks:
+                if task.name == "monitor":
+                    task.action_args["encrypted"] = True
+                    break
+
     baud_rate = {
         "names": ["-b", "--baud"],
         "help": "Baud rate.",
@@ -134,6 +145,7 @@ def action_extensions(base_actions, project_path):
     }
 
     serial_actions = {
+        "global_action_callbacks": [global_callback],
         "actions": {
             "flash": {
                 "callback": flash,
@@ -165,13 +177,22 @@ def action_extensions(base_actions, project_path):
                             'Please see the IDF Monitor section of the ESP-IDF documentation '
                             'for a more detailed description and further examples.'),
                         "default": None,
-                    },
+                    }, {
+                        "names": ["--encrypted", "-E"],
+                        "is_flag": True,
+                        "help": ("Enable encrypted flash targets.\n"
+                                 "IDF Monitor will invoke encrypted-flash and encrypted-app-flash targets "
+                                 "if this option is set. This option is set by default if IDF Monitor was invoked "
+                                 "together with encrypted-flash or encrypted-app-flash target."),
+                    }
                 ],
                 "order_dependencies": [
                     "flash",
+                    "encrypted-flash",
                     "partition_table-flash",
                     "bootloader-flash",
                     "app-flash",
+                    "encrypted-app-flash",
                 ],
             },
             "partition_table-flash": {

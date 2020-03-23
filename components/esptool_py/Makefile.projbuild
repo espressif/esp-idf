@@ -88,6 +88,7 @@ endif
 
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 encrypted-flash: all_binaries $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
+	$(eval MONITOR_OPTS += --encrypted)
 	@echo "Flashing binaries to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 ifdef CONFIG_SECURE_BOOT
 	@echo "(Secure boot enabled, so bootloader not flashed automatically. See 'make bootloader' output)"
@@ -112,6 +113,7 @@ app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) pa
 
 ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
 encrypted-app-flash: $(APP_BIN) $(ESPTOOLPY_SRC) $(call prereq_if_explicit,erase_flash) partition_table_get_info | check_python_dependencies
+	$(eval MONITOR_OPTS += --encrypted)
 	@echo "Flashing encrypted app binary to serial port $(ESPPORT) (app at offset $(APP_OFFSET))..."
 	$(ESPTOOLPY_WRITE_FLASH_ENCRYPT) $(APP_OFFSET) $(APP_BIN)
 else
