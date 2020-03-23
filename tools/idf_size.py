@@ -171,7 +171,10 @@ def scan_to_header(f, header_line):
 
 
 def format_json(json_object):
-    return json.dumps(json_object, indent=GLOBAL_JSON_INDENT, separators=GLOBAL_JSON_SEPARATORS) + "\n"
+    return json.dumps(json_object,
+                      allow_nan=False,
+                      indent=GLOBAL_JSON_INDENT,
+                      separators=GLOBAL_JSON_SEPARATORS) + os.linesep
 
 
 def load_map_data(map_file):
@@ -428,12 +431,31 @@ class StructureForSummary(object):
 
         return r
 
+    def get_json_dic(self):
+        return collections.OrderedDict([
+            ('dram_data', self.used_dram_data + self.used_diram_data),
+            ('dram_bss', self.used_dram_bss + self.used_diram_bss),
+            ('dram_other', self.used_dram_other),
+            ('used_dram', self.used_dram),
+            ('available_dram', self.total_dram - self.used_dram),
+            ('used_dram_ratio', self.used_dram_ratio if self.total_dram != 0 else 0),
+            ('used_iram', self.used_iram),
+            ('available_iram', self.total_iram - self.used_iram),
+            ('used_iram_ratio', self.used_iram_ratio if self.total_iram != 0 else 0),
+            ('used_diram', self.used_diram),
+            ('available_diram', self.total_diram - self.used_diram),
+            ('used_diram_ratio', self.used_diram_ratio if self.total_diram != 0 else 0),
+            ('flash_code', self.flash_code),
+            ('flash_rodata', self.flash_rodata),
+            ('total_size', self.total_size)
+        ])
+
 
 def get_summary(path, mem_reg, memory_config, sections,
                 as_json=False,
                 path_diff=None, mem_reg_diff=None, memory_config_diff=None, sections_diff=None):
 
-    diff_en = not as_json and mem_reg_diff and memory_config_diff and sections_diff
+    diff_en = mem_reg_diff and memory_config_diff and sections_diff
 
     current = StructureForSummary.get(mem_reg, memory_config, sections)
     reference = StructureForSummary.get(mem_reg_diff,
@@ -441,23 +463,17 @@ def get_summary(path, mem_reg, memory_config, sections,
                                         sections_diff) if diff_en else StructureForSummary()
 
     if as_json:
-        output = format_json(collections.OrderedDict([
-            ("dram_data", current.used_dram_data + current.used_diram_data),
-            ("dram_bss", current.used_dram_bss + current.used_diram_bss),
-            ("dram_other", current.used_dram_other),
-            ("used_dram", current.used_dram),
-            ("available_dram", current.total_dram - current.used_dram),
-            ("used_dram_ratio", current.used_dram_ratio if current.total_dram != 0 else 0),
-            ("used_iram", current.used_iram),
-            ("available_iram", current.total_iram - current.used_iram),
-            ("used_iram_ratio", current.used_iram_ratio if current.total_iram != 0 else 0),
-            ("used_diram", current.used_diram),
-            ("available_diram", current.total_diram - current.used_diram),
-            ("used_diram_ratio", current.used_diram_ratio if current.total_diram != 0 else 0),
-            ("flash_code", current.flash_code),
-            ("flash_rodata", current.flash_rodata),
-            ("total_size", current.total_size)
-        ]))
+        current_json_dic = current.get_json_dic()
+        if diff_en:
+            reference_json_dic = reference.get_json_dic()
+            diff_json_dic = collections.OrderedDict([(k,
+                                                      v - reference_json_dic[k]) for k, v in iteritems(current_json_dic)])
+            output = format_json(collections.OrderedDict([('current', current_json_dic),
+                                                          ('reference', reference_json_dic),
+                                                          ('diff', diff_json_dic),
+                                                          ]))
+        else:
+            output = format_json(current_json_dic)
     else:
         rows = []
         if diff_en:
@@ -629,7 +645,21 @@ def get_detailed_sizes(mem_reg, sections, key, header, as_json=False, sections_d
     reference = StructureForDetailedSizes.get(mem_reg, sections_diff, key) if diff_en else {}
 
     if as_json:
-        output = format_json(current)
+        if diff_en:
+            diff_json_dic = collections.OrderedDict()
+            for name in sorted(list(frozenset(current.keys()) | frozenset(reference.keys()))):
+                cur_name_dic = current.get(name, {})
+                ref_name_dic = reference.get(name, {})
+                all_keys = sorted(list(frozenset(cur_name_dic.keys()) | frozenset(ref_name_dic.keys())))
+                diff_json_dic[name] = collections.OrderedDict([(k,
+                                                                cur_name_dic.get(k, 0) -
+                                                                ref_name_dic.get(k, 0)) for k in all_keys])
+            output = format_json(collections.OrderedDict([('current', current),
+                                                          ('reference', reference),
+                                                          ('diff', diff_json_dic),
+                                                          ]))
+        else:
+            output = format_json(current)
     else:
         def _get_output(data, selection):
             header_format = '{:>24} {:>10} {:>6} {:>7} {:>6} {:>8} {:>10} {:>8} {:>7}' + os.linesep
@@ -782,7 +812,21 @@ def get_archive_symbols(mem_reg, sections, archive, as_json=False, sections_diff
     reference = StructureForArchiveSymbols.get(mem_reg, archive, sections_diff) if diff_en else {}
 
     if as_json:
-        output = format_json(current)
+        if diff_en:
+            diff_json_dic = collections.OrderedDict()
+            for name in sorted(list(frozenset(current.keys()) | frozenset(reference.keys()))):
+                cur_name_dic = current.get(name, {})
+                ref_name_dic = reference.get(name, {})
+                all_keys = sorted(list(frozenset(cur_name_dic.keys()) | frozenset(ref_name_dic.keys())))
+                diff_json_dic[name] = collections.OrderedDict([(key,
+                                                                cur_name_dic.get(key, 0) -
+                                                                ref_name_dic.get(key, 0)) for key in all_keys])
+            output = format_json(collections.OrderedDict([('current', current),
+                                                          ('reference', reference),
+                                                          ('diff', diff_json_dic),
+                                                          ]))
+        else:
+            output = format_json(current)
     else:
         def _get_item_pairs(name, section):
             return collections.OrderedDict([(key.replace(name + '.', ''), val) for key, val in iteritems(section)])

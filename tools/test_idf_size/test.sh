@@ -63,6 +63,10 @@
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --files app.map &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app.map &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --json app.map --diff app2.map &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --json --archives app.map --diff app2.map &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --json --files app.map --diff app2.map &>> output \
+    && coverage run -a $IDF_PATH/tools/idf_size.py --json --archive_details libdriver.a app.map --diff app2.map &>> output \
     && echo -e "\n***\nProducing JSON file output..." &>> output \
     && coverage run -a $IDF_PATH/tools/idf_size.py --json --output-file output.json app.map &>> output \
     && echo -e "\n***\nProducing text file output..." &>> output \
