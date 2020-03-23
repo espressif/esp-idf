@@ -6,17 +6,17 @@
 #include "mbedtls/sha256.h"
 #include "unity.h"
 #include "sdkconfig.h"
-#include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
 #include "sodium/utils.h"
+#include "ccomp_timer.h"
 
 TEST_CASE("mbedtls SHA performance", "[aes]")
 {
     const unsigned CALLS = 256;
     const unsigned CALL_SZ = 16 * 1024;
     mbedtls_sha256_context sha256_ctx;
-    int64_t start, end;
+    float elapsed_usec;
     unsigned char sha256[32];
 
     // allocate internal memory
@@ -25,13 +25,13 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
     memset(buf, 0x55, CALL_SZ);
 
     mbedtls_sha256_init(&sha256_ctx);
-    start = esp_timer_get_time();
+    ccomp_timer_start();
     TEST_ASSERT_EQUAL(0, mbedtls_sha256_starts_ret(&sha256_ctx, false));
     for (int c = 0; c < CALLS; c++) {
         TEST_ASSERT_EQUAL(0, mbedtls_sha256_update_ret(&sha256_ctx, buf, CALL_SZ));
     }
     TEST_ASSERT_EQUAL(0, mbedtls_sha256_finish_ret(&sha256_ctx, sha256));
-    end = esp_timer_get_time();
+    elapsed_usec = ccomp_timer_stop();
 
     free(buf);
     mbedtls_sha256_free(&sha256_ctx);
@@ -45,9 +45,8 @@ TEST_CASE("mbedtls SHA performance", "[aes]")
 
     TEST_ASSERT_EQUAL_STRING(expected_hash, hash_str);
 
-    float usecs = end - start;
     // bytes/usec = MB/sec
-    float mb_sec = (CALL_SZ * CALLS) / usecs;
+    float mb_sec = (CALL_SZ * CALLS) / elapsed_usec;
     printf("SHA256 rate %.3fMB/sec\n", mb_sec);
 #ifdef CONFIG_MBEDTLS_HARDWARE_SHA
     // Don't put a hard limit on software SHA performance

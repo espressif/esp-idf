@@ -8,16 +8,16 @@
 #include "mbedtls/gcm.h"
 #include "unity.h"
 #include "sdkconfig.h"
-#include "esp_timer.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
+#include "ccomp_timer.h"
 
 TEST_CASE("mbedtls AES performance", "[aes]")
 {
     const unsigned CALLS = 256;
     const unsigned CALL_SZ = 32 * 1024;
     mbedtls_aes_context ctx;
-    int64_t start, end;
+    float elapsed_usec;
     uint8_t iv[16];
     uint8_t key[16];
 
@@ -30,12 +30,12 @@ TEST_CASE("mbedtls AES performance", "[aes]")
     mbedtls_aes_init(&ctx);
     mbedtls_aes_setkey_enc(&ctx, key, 128);
 
-    start = esp_timer_get_time();
+    ccomp_timer_start();
     for (int c = 0; c < CALLS; c++) {
         memset(buf, 0xAA, CALL_SZ);
         mbedtls_aes_crypt_cbc(&ctx, MBEDTLS_AES_ENCRYPT, CALL_SZ, iv, buf, buf);
     }
-    end = esp_timer_get_time();
+    elapsed_usec = ccomp_timer_stop();
 
     /* Sanity check: make sure the last ciphertext block matches
        what we expect to see.
@@ -59,9 +59,8 @@ TEST_CASE("mbedtls AES performance", "[aes]")
 
     free(buf);
 
-    float usecs = end - start;
     // bytes/usec = MB/sec
-    float mb_sec = (CALL_SZ * CALLS) / usecs;
+    float mb_sec = (CALL_SZ * CALLS) / elapsed_usec;
     printf("Encryption rate %.3fMB/sec\n", mb_sec);
 #ifdef CONFIG_MBEDTLS_HARDWARE_AES
     // Don't put a hard limit on software AES performance
@@ -74,7 +73,7 @@ TEST_CASE("mbedtls AES GCM performance", "[aes]")
 {
     const unsigned CALL_SZ = 32 * 1024;
     mbedtls_gcm_context ctx;
-    int64_t start, end;
+    float elapsed_usec;
     unsigned char tag_buf[16];
     mbedtls_cipher_id_t cipher = MBEDTLS_CIPHER_ID_AES;
     uint8_t iv[16];
@@ -92,12 +91,12 @@ TEST_CASE("mbedtls AES GCM performance", "[aes]")
     mbedtls_gcm_init(&ctx);
     mbedtls_gcm_setkey( &ctx, cipher, key, 128);
 
-    start = esp_timer_get_time();
+    ccomp_timer_start();
 
     memset(buf, 0xAA, CALL_SZ);
     mbedtls_gcm_crypt_and_tag(&ctx, MBEDTLS_AES_ENCRYPT, CALL_SZ, iv, sizeof(iv), aad, sizeof(aad), buf, buf, 16, tag_buf);
 
-    end = esp_timer_get_time();
+    elapsed_usec = ccomp_timer_stop();
 
     /* Sanity check: make sure the last ciphertext block matches
        what we expect to see.
@@ -131,9 +130,8 @@ TEST_CASE("mbedtls AES GCM performance", "[aes]")
 
     free(buf);
 
-    float usecs = end - start;
     // bytes/usec = MB/sec
-    float mb_sec = CALL_SZ / usecs;
+    float mb_sec = CALL_SZ / elapsed_usec;
     printf("GCM encryption rate %.3fMB/sec\n", mb_sec);
 
 #ifdef CONFIG_MBEDTLS_HARDWARE_GCM
