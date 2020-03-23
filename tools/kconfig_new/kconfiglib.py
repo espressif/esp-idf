@@ -1125,7 +1125,7 @@ class Kconfig(object):
         was set when the configuration was loaded.
         """
         try:
-            return open(filename)
+            return open(filename) if sys.version_info[0] < 3 else open(filename, encoding='utf-8')
         except IOError as e:
             if not os.path.isabs(filename) and self.srctree is not None:
                 filename = os.path.join(self.srctree, filename)
