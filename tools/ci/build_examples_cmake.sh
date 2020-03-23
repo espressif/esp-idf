@@ -60,7 +60,6 @@ BUILD_PATH=$(${REALPATH} --relative-to ${IDF_PATH} ${BUILD_PATH})
 
 ALL_BUILD_LIST_JSON="${BUILD_PATH}/list.json"
 JOB_BUILD_LIST_JSON="${BUILD_PATH}/list_job_${CI_NODE_INDEX}.json"
-mkdir -p "${BUILD_PATH}/example_builds"
 
 echo "build_examples running for target $IDF_TARGET"
 
@@ -80,7 +79,7 @@ ${IDF_PATH}/tools/find_apps.py examples \
     --exclude examples/build_system/idf_as_lib \
     --work-dir "${BUILD_PATH}/@f/@w/@t" \
     --build-dir build \
-    --build-log "${LOG_PATH}/@f.txt" \
+    --build-log "${LOG_PATH}/@f_@w.txt" \
     --output ${ALL_BUILD_LIST_JSON} \
     --config 'sdkconfig.ci=default' \
     --config 'sdkconfig.ci.*=' \
