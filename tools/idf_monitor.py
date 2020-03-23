@@ -312,7 +312,8 @@ class Monitor(object):
 
     Main difference is that all event processing happens in the main thread, not the worker threads.
     """
-    def __init__(self, serial_instance, elf_file, print_filter, make="make", toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF"):
+    def __init__(self, serial_instance, elf_file, print_filter, make="make", encrypted=False,
+                 toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF"):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()
         self.console = miniterm.Console()
@@ -340,6 +341,7 @@ class Monitor(object):
             self.make = shlex.split(make)  # allow for possibility the "make" arg is a list of arguments (for idf.py)
         else:
             self.make = make
+        self.encrypted = encrypted
         self.toolchain_prefix = toolchain_prefix
         self.menu_key = CTRL_T
         self.exit_key = CTRL_RBRACKET
@@ -480,11 +482,11 @@ class Monitor(object):
             self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             self.output_enable(True)
         elif c == CTRL_F:  # Recompile & upload
-            self.run_make("flash")
+            self.run_make("encrypted-flash" if self.encrypted else "flash")
         elif c in [CTRL_A, 'a', 'A']:  # Recompile & upload app only
             # "CTRL-A" cannot be captured with the default settings of the Windows command line, therefore, "A" can be used
             # instead
-            self.run_make("app-flash")
+            self.run_make("encrypted-app-flash" if self.encrypted else "app-flash")
         elif c == CTRL_Y:  # Toggle output display
             self.output_toggle()
         elif c == CTRL_L:  # Toggle saving output into file
@@ -709,6 +711,11 @@ def main():
         type=str, default='make')
 
     parser.add_argument(
+        '--encrypted',
+        help='Use encrypted targets while running make',
+        action='store_true')
+
+    parser.add_argument(
         '--toolchain-prefix',
         help="Triplet prefix to add before cross-toolchain names",
         default=DEFAULT_TOOLCHAIN_PREFIX)
@@ -754,7 +761,8 @@ def main():
     except KeyError:
         pass  # not running a make jobserver
 
-    monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.toolchain_prefix, args.eol)
+    monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
+                      args.toolchain_prefix, args.eol)
 
     yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
         p=serial_instance))
