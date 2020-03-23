@@ -63,7 +63,7 @@ For advanced users who want to customize the install process:
     windows-setup-scratch
     windows-setup-update
 
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _cmake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/

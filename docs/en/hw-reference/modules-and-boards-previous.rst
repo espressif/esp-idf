@@ -21,4 +21,4 @@ Related Documents
 * :doc:`modules-and-boards`
 
 
-.. _FTDI Virtual COM Port Drivers: http://www.ftdichip.com/Drivers/VCP.htm
+.. _FTDI Virtual COM Port Drivers: https://www.ftdichip.com/Drivers/VCP.htm

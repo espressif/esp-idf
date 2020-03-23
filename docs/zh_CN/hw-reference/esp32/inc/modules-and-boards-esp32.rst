@@ -290,5 +290,5 @@ ESP-WROVER-KIT V4.1 开发板集成了 ESP-WROVER-B 模组，该模组集成了 
 * :doc:`modules-and-boards-previous`
 
 
-.. _FTDI 虚拟 COM 端口驱动: http://www.ftdichip.com/Drivers/VCP.htm
+.. _FTDI 虚拟 COM 端口驱动: https://www.ftdichip.com/Drivers/VCP.htm
 .. _乐鑫产品订购信息: https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_cn.pdf

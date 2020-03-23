@@ -63,7 +63,7 @@ ESP-IDF 工具安装器可在“开始”菜单中，创建一个打开 ESP-IDF 
     windows-setup-scratch
     windows-setup-update
 
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _cmake: https://cmake.org/download/
 .. _ninja: https://ninja-build.org/
 .. _Python: https://www.python.org/downloads/windows/

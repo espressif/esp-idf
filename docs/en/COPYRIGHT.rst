@@ -150,7 +150,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 
 
 .. _Newlib: https://sourceware.org/newlib/
-.. _FreeRTOS: http://freertos.org/
+.. _FreeRTOS: https://freertos.org/
 .. _esptool.py: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
@@ -158,7 +158,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _wpa_supplicant: https://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
-.. _JSMN: http://zserge.com/jsmn.html
+.. _JSMN: https://zserge.com/jsmn.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _libcoap: https://github.com/obgm/libcoap

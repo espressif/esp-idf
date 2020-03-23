@@ -17,5 +17,5 @@ ESP32-S2-WROOM-32    ESP32-S2      2            N/A        MIFA  16 x 23 x 3
 * U.FL - U.FL / IPEX antenna connector
 
 
-.. _FTDI Virtual COM Port Drivers: http://www.ftdichip.com/Drivers/VCP.htm
+.. _FTDI Virtual COM Port Drivers: https://www.ftdichip.com/Drivers/VCP.htm
 .. _Espressif Products Ordering Information: https://www.espressif.com/sites/default/files/documentation/espressif_products_ordering_information_en.pdf

@@ -117,7 +117,7 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 .. _ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 
