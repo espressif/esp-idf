@@ -601,4 +601,11 @@ menu "LWIP"
 
     endmenu # SNTP
 
+    config LWIP_ESP_LWIP_ASSERT
+        bool "Enable LWIP ASSERT checks"
+        default y
+        help
+            Enable this option allows lwip to check assert.
+            It is recommended to keep it open, do not close it.
+
 endmenu
