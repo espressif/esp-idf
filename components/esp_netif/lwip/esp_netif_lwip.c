@@ -1370,7 +1370,26 @@ esp_err_t esp_netif_get_dns_info(esp_netif_t *esp_netif, esp_netif_dns_type_t ty
     return esp_netif_lwip_ipc_call(esp_netif_get_dns_info_api, esp_netif, (void *)&dns_param);
 }
 
-static void esp_netif_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
+{
+    ip6_addr_t* lwip_ip6_info = (ip6_addr_t*)ip6_addr;
+
+    if (ip6_addr_isglobal(lwip_ip6_info)) {
+        return ESP_IP6_ADDR_IS_GLOBAL;
+    } else if (ip6_addr_islinklocal(lwip_ip6_info)) {
+        return ESP_IP6_ADDR_IS_LINK_LOCAL;
+    } else if (ip6_addr_issitelocal(lwip_ip6_info)) {
+        return ESP_IP6_ADDR_IS_SITE_LOCAL;
+    } else if (ip6_addr_isuniquelocal(lwip_ip6_info)) {
+        return ESP_IP6_ADDR_IS_UNIQUE_LOCAL;
+    } else if (ip6_addr_isipv4mappedipv6(lwip_ip6_info)) {
+        return ESP_IP6_ADDR_IS_IPV4_MAPPED_IPV6;
+    }
+    return ESP_IP6_ADDR_IS_UNKNOWN;
+
+}
+
+static void esp_netif_nd6_cb(struct netif *p_netif, uint8_t ip_index)
 {
     ESP_LOGD(TAG, "%s lwip-netif:%p", __func__, p_netif);
     if (!p_netif) {
@@ -1381,9 +1400,9 @@ static void esp_netif_nd6_cb(struct netif *p_netif, uint8_t ip_idex)
     esp_netif_ip6_info_t ip6_info;
     ip6_addr_t lwip_ip6_info;
     //notify event
-    ip_event_got_ip6_t evt = { .esp_netif = p_netif->state, .if_index = -1 };
+    ip_event_got_ip6_t evt = { .esp_netif = p_netif->state, .if_index = -1, .ip_index = ip_index };
 
-    ip6_addr_set(&lwip_ip6_info, ip_2_ip6(&p_netif->ip6_addr[ip_idex]));
+    ip6_addr_set(&lwip_ip6_info, ip_2_ip6(&p_netif->ip6_addr[ip_index]));
 #if LWIP_IPV6_SCOPES
     memcpy(&ip6_info.ip, &lwip_ip6_info, sizeof(esp_ip6_addr_t));
 #else

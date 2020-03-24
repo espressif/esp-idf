@@ -2,6 +2,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_IP_MODE
         prompt "IP Version"
+        depends on EXAMPLE_SOCKET_IP_INPUT_STRING
         help
             Example can use either IPV4 or IPV6.
 
@@ -33,5 +34,18 @@ menu "Example Configuration"
         default 3333
         help
             The remote port to which the client example will connect to.
+
+    choice EXAMPLE_SOCKET_IP_INPUT
+        prompt "Socket example source"
+        default EXAMPLE_SOCKET_IP_INPUT_STRING
+        help
+            Selects the input source of the IP used in the example.
+
+        config EXAMPLE_SOCKET_IP_INPUT_STRING
+            bool "From string"
+
+        config EXAMPLE_SOCKET_IP_INPUT_STDIN
+            bool "From stdin"
+    endchoice
 
 endmenu
