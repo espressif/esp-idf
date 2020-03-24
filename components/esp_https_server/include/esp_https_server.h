@@ -110,10 +110,10 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     },                                            \
     .cacert_pem = NULL,                           \
     .cacert_len = 0,                              \
-    .prvtkey_pem = NULL,                          \
-    .prvtkey_len = 0,                             \
     .client_verify_cert_pem = NULL,               \
     .client_verify_cert_len = 0,                  \
+    .prvtkey_pem = NULL,                          \
+    .prvtkey_len = 0,                             \
     .transport_mode = HTTPD_SSL_TRANSPORT_SECURE, \
     .port_secure = 443,                           \
     .port_insecure = 80,                          \
