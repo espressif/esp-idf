@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2015-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -21,51 +20,111 @@
 #include <errno.h>
 #include <reent.h>
 #include <sys/fcntl.h>
+#include "sdkconfig.h"
 
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/rom/uart.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/rom/uart.h"
+#endif
 
-int system(const char* str)
+static int syscall_not_implemented(void)
 {
     errno = ENOSYS;
     return -1;
 }
 
+static int syscall_not_implemented_aborts(void)
+{
+    abort();
+}
+
+ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t size)
+{
+    const char* cdata = (const char*) data;
+    if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
+        for (size_t i = 0; i < size; ++i) {
+            uart_tx_one_char(cdata[i]);
+        }
+        return size;
+    }
+    errno = EBADF;
+    return -1;
+}
+
+ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
+{
+    char* cdata = (char*) data;
+    if (fd == STDIN_FILENO) {
+        size_t received;
+        for (received = 0; received < size; ++received) {
+            int status = uart_rx_one_char((uint8_t*) &cdata[received]);
+            if (status != 0) {
+                break;
+            }
+        }
+        return received;
+    }
+    errno = EBADF;
+    return -1;
+}
+
+
+/* The following weak definitions of syscalls will be used unless
+ * another definition is provided. That definition may come from
+ * VFS, LWIP, or the application.
+ */
+ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
+    __attribute__((weak,alias("_read_r_console")));
+ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
+    __attribute__((weak,alias("_write_r_console")));
+
+
+/* The aliases below are to "syscall_not_implemented", which
+ * doesn't have the same signature as the original function.
+ * Disable type mismatch warnings for this reason.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattribute-alias"
+
+int _open_r(struct _reent *r, const char * path, int flags, int mode)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _close_r(struct _reent *r, int fd)
+    __attribute__((weak,alias("syscall_not_implemented")));
+off_t _lseek_r(struct _reent *r, int fd, off_t size, int mode)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _fcntl_r(struct _reent *r, int fd, int cmd, int arg)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _fstat_r(struct _reent *r, int fd, struct stat * st)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _stat_r(struct _reent *r, const char * path, struct stat * st)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _link_r(struct _reent *r, const char* n1, const char* n2)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _unlink_r(struct _reent *r, const char *path)
+    __attribute__((weak,alias("syscall_not_implemented")));
+int _rename_r(struct _reent *r, const char *src, const char *dst)
+    __attribute__((weak,alias("syscall_not_implemented")));
+
+/* These functions are not expected to be overridden */
+int system(const char* str)
+    __attribute__((alias("syscall_not_implemented")));
 int _system_r(struct _reent *r, const char *str)
-{
-    __errno_r(r) = ENOSYS;
-    return -1;
-}
-
+    __attribute__((alias("syscall_not_implemented")));
 int raise(int sig)
-{
-    abort();
-}
-
+    __attribute__((alias("syscall_not_implemented_aborts")));
 int _raise_r(struct _reent *r, int sig)
-{
-    abort();
-}
-
+    __attribute__((alias("syscall_not_implemented_aborts")));
 void* _sbrk_r(struct _reent *r, ptrdiff_t sz)
-{
-    abort();
-}
-
+    __attribute__((alias("syscall_not_implemented_aborts")));
 int _getpid_r(struct _reent *r)
-{
-    __errno_r(r) = ENOSYS;
-    return -1;
-}
-
+    __attribute__((alias("syscall_not_implemented")));
 int _kill_r(struct _reent *r, int pid, int sig)
-{
-    __errno_r(r) = ENOSYS;
-    return -1;
-}
-
+    __attribute__((alias("syscall_not_implemented")));
 void _exit(int __status)
-{
-    abort();
-}
+    __attribute__((alias("syscall_not_implemented_aborts")));
+
+#pragma GCC diagnostic pop
 
 /* Replaces newlib fcntl, which has been compiled without HAVE_FCNTL */
 int fcntl(int fd, int cmd, ...)

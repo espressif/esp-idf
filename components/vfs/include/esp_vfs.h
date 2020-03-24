@@ -132,6 +132,7 @@ typedef struct
         int (*fstat_p)(void* ctx, int fd, struct stat * st);                                         /*!< fstat with context pointer */
         int (*fstat)(int fd, struct stat * st);                                                      /*!< fstat without context pointer */
     };
+#ifdef CONFIG_VFS_SUPPORT_DIR
     union {
         int (*stat_p)(void* ctx, const char * path, struct stat * st);                               /*!< stat with context pointer */
         int (*stat)(const char * path, struct stat * st);                                            /*!< stat without context pointer */
@@ -180,6 +181,7 @@ typedef struct
         int (*rmdir_p)(void* ctx, const char* name);                                                /*!< rmdir with context pointer */
         int (*rmdir)(const char* name);                                                             /*!< rmdir without context pointer */
     };
+#endif // CONFIG_VFS_SUPPORT_DIR
     union {
         int (*fcntl_p)(void* ctx, int fd, int cmd, int arg);                                        /*!< fcntl with context pointer */
         int (*fcntl)(int fd, int cmd, int arg);                                                     /*!< fcntl without context pointer */
@@ -192,6 +194,7 @@ typedef struct
         int (*fsync_p)(void* ctx, int fd);                                                          /*!< fsync with context pointer */
         int (*fsync)(int fd);                                                                       /*!< fsync without context pointer */
     };
+#ifdef CONFIG_VFS_SUPPORT_DIR
     union {
         int (*access_p)(void* ctx, const char *path, int amode);                                    /*!< access with context pointer */
         int (*access)(const char *path, int amode);                                                 /*!< access without context pointer */
@@ -204,6 +207,7 @@ typedef struct
         int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);                   /*!< utime with context pointer */
         int (*utime)(const char *path, const struct utimbuf *times);                                /*!< utime without context pointer */
     };
+#endif // CONFIG_VFS_SUPPORT_DIR
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     union {
         int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);       /*!< tcsetattr with context pointer */
@@ -234,7 +238,7 @@ typedef struct
         int (*tcsendbreak)(int fd, int duration);                                                   /*!< tcsendbreak without context pointer */
     };
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
-
+#ifdef CONFIG_VFS_SUPPORT_SELECT
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
     esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
@@ -247,6 +251,7 @@ typedef struct
     void* (*get_socket_select_semaphore)(void);
     /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
     esp_err_t (*end_select)(void *end_select_args);
+#endif // CONFIG_VFS_SUPPORT_SELECT
 } esp_vfs_t;
 
 
@@ -405,23 +410,6 @@ void esp_vfs_select_triggered(esp_vfs_select_sem_t sem);
  * @param woken is set to pdTRUE if the function wakes up a task with higher priority
  */
 void esp_vfs_select_triggered_isr(esp_vfs_select_sem_t sem, BaseType_t *woken);
-
-/**
- * @brief Implements the VFS layer for synchronous I/O multiplexing by poll()
- *
- * The implementation is based on esp_vfs_select. The parameters and return values are compatible with POSIX poll().
- *
- * @param fds         Pointer to the array containing file descriptors and events poll() should consider.
- * @param nfds        Number of items in the array fds.
- * @param timeout     Poll() should wait at least timeout milliseconds. If the value is 0 then it should return
- *                    immediately. If the value is -1 then it should wait (block) until the event occurs.
- *
- * @return            A positive return value indicates the number of file descriptors that have been selected. The 0
- *                    return value indicates a timed-out poll. -1 is return on failure and errno is set accordingly.
- *
- */
-int esp_vfs_poll(struct pollfd *fds, nfds_t nfds, int timeout);
-
 
 /**
  *

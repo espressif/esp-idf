@@ -23,6 +23,14 @@
 #include "freertos/task.h"
 #include "esp_vfs.h"
 
+#ifndef CONFIG_SEMIHOSTFS_MAX_MOUNT_POINTS
+#define CONFIG_SEMIHOSTFS_MAX_MOUNT_POINTS 1
+#endif
+
+#ifndef CONFIG_SEMIHOSTFS_HOST_PATH_MAX_LEN
+#define CONFIG_SEMIHOSTFS_HOST_PATH_MAX_LEN 128
+#endif
+
 #define LOG_LOCAL_LEVEL ESP_LOG_NONE
 #include "esp_log.h"
 const static char *TAG = "esp_semihost";

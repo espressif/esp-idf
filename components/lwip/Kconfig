@@ -63,9 +63,12 @@ menu "LWIP"
             to 16.
 
     config LWIP_USE_ONLY_LWIP_SELECT
-        bool "Support LWIP socket select() only"
+        bool "Support LWIP socket select() only (DEPRECATED)"
         default n
         help
+            This option is deprecated. Use VFS_SUPPORT_SELECT instead, which is
+            the inverse of this option.
+
             The virtual filesystem layer of select() redirects sockets to
             lwip_select() and non-socket file descriptors to their respective driver
             implementations. If this option is enabled then all calls of select()

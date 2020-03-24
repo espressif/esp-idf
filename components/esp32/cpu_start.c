@@ -354,18 +354,21 @@ void start_cpu0_default(void)
     esp_efuse_disable_basic_rom_console();
 #endif
     rtc_gpio_force_hold_dis_all();
+
+#ifdef CONFIG_VFS_SUPPORT_IO
     esp_vfs_dev_uart_register();
+#endif // CONFIG_VFS_SUPPORT_IO
+
+#if defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
     esp_reent_init(_GLOBAL_REENT);
-#ifndef CONFIG_ESP_CONSOLE_UART_NONE
     const char* default_uart_dev = "/dev/uart/" STRINGIFY(CONFIG_ESP_CONSOLE_UART_NUM);
     _GLOBAL_REENT->_stdin  = fopen(default_uart_dev, "r");
     _GLOBAL_REENT->_stdout = fopen(default_uart_dev, "w");
     _GLOBAL_REENT->_stderr = fopen(default_uart_dev, "w");
-#else
-    _GLOBAL_REENT->_stdin  = (FILE*) &__sf_fake_stdin;
-    _GLOBAL_REENT->_stdout = (FILE*) &__sf_fake_stdout;
-    _GLOBAL_REENT->_stderr = (FILE*) &__sf_fake_stderr;
-#endif
+#else // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+    _REENT_SMALL_CHECK_INIT(_GLOBAL_REENT);
+#endif // defined(CONFIG_VFS_SUPPORT_IO) && !defined(CONFIG_ESP_CONSOLE_UART_NONE)
+
     esp_timer_init();
     esp_set_time_from_rtc();
 #if CONFIG_APPTRACE_ENABLE

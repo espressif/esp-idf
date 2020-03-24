@@ -3,17 +3,13 @@ set(srcs
     "heap.c"
     "locks.c"
     "poll.c"
-    "pread.c"
-    "pwrite.c"
     "pthread.c"
     "random.c"
     "reent_init.c"
-    "select.c"
     "syscall_table.c"
     "syscalls.c"
     "termios.c"
-    "time.c"
-    "utime.c")
+    "time.c")
 set(include_dirs platform_include)
 
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)
@@ -24,7 +20,6 @@ list(APPEND ldfragments newlib.lf)
 
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "${include_dirs}"
-                    REQUIRES vfs 
                     PRIV_REQUIRES soc esp_timer
                     LDFRAGMENTS "${ldfragments}")  
 
