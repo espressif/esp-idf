@@ -64,17 +64,6 @@ if BLE_MESH
                 queue in the bottom layer which is used to store unprovisioned device
                 information (e.g. Device UUID, address).
 
-        config BLE_MESH_MAX_STORED_NODES
-            int "Maximum number of nodes whose information can be stored"
-            default 10
-            range BLE_MESH_MAX_PROV_NODES 1000
-            help
-                This option specifies the maximum number of nodes whose information can be
-                stored by a Provisioner in its upper layer.
-                Users can change this value according to the number of nodes whose information
-                (e.g. Device UUID, unicast address, element number) are going to be stored by
-                a Provisioner. And the nodes include the provisioned ones and user-added ones.
-
         config BLE_MESH_MAX_PROV_NODES
             int "Maximum number of devices that can be provisioned by Provisioner"
             default 10
