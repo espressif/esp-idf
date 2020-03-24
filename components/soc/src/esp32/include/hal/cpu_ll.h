@@ -15,6 +15,8 @@
 
 #include <stdint.h>
 
+#include "esp_attr.h"
+
 #include "soc/cpu_caps.h"
 
 #include "xt_instr_macros.h"
@@ -27,7 +29,7 @@
 extern "C" {
 #endif
 
-static inline int cpu_ll_get_core_id(void)
+static inline int IRAM_ATTR cpu_ll_get_core_id(void)
 {
     uint32_t id;
     asm volatile (

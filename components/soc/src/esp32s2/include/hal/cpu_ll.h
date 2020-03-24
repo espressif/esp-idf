@@ -12,8 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #pragma once
-
 #include <stdint.h>
+
+#include "esp_attr.h"
 
 #include "soc/cpu_caps.h"
 
@@ -27,7 +28,7 @@
 extern "C" {
 #endif
 
-static inline int cpu_ll_get_core_id(void)
+static inline int IRAM_ATTR cpu_ll_get_core_id(void)
 {
     return 0;
 }
