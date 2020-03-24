@@ -2,7 +2,7 @@ ESP-IDF Programming Guide
 =========================
 :link_to_translation:`zh_CN:[中文]`
 
-This is the documentation for Espressif IoT Development Framework (`esp-idf <https://github.com/espressif/esp-idf>`_). ESP-IDF is the official development framework for the `ESP32 <https://www.espressif.com/en/products/hardware/socs>`_ SoC family.
+This is the documentation for Espressif IoT Development Framework (`esp-idf <https://github.com/espressif/esp-idf>`_). ESP-IDF is the official development framework for the `ESP32 and ESP32-S Series SoCs <https://www.espressif.com/en/products/hardware/socs>`_.
 
 .. only:: html
 
