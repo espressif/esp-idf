@@ -369,7 +369,8 @@ typedef struct {
 
     uint16_t publish_addr;  /*!< Publish Address. */
     uint16_t app_idx:12,    /*!< Publish AppKey Index. */
-             cred:1;        /*!< Friendship Credentials Flag. */
+             cred:1,        /*!< Friendship Credentials Flag. */
+             send_rel:1;    /*!< Force reliable sending (segment acks) */
 
     uint8_t  ttl;           /*!< Publish Time to Live. */
     uint8_t  retransmit;    /*!< Retransmit Count & Interval Steps. */
