@@ -28,13 +28,14 @@ def setup(app):
     return {'parallel_read_safe': True, 'parallel_write_safe': True, 'version': '0.1'}
 
 
-def _parse_defines(header_path):
+def _parse_defines(header_path, sdk_config_path):
     defines = {}
-    # Note: we run C preprocessor here without any -I arguments, so assumption is
+    # Note: we run C preprocessor here without any -I arguments (except "sdkconfig.h"), so assumption is
     # that these headers are all self-contained and don't include any other headers
     # not in the same directory
     print("Reading macros from %s..." % (header_path))
-    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-dM", "-E", header_path]).decode()
+    processed_output = subprocess.check_output(["xtensa-esp32-elf-gcc", "-I", sdk_config_path,
+                                                "-dM", "-E", header_path]).decode()
     for line in processed_output.split("\n"):
         line = line.strip()
         m = re.search("#define ([^ ]+) ?(.*)", line)
@@ -47,20 +48,24 @@ def _parse_defines(header_path):
 def generate_doxygen(app, project_description):
     build_dir = os.path.dirname(app.doctreedir.rstrip(os.sep))
 
+    sdk_config_path = os.path.join(project_description["build_dir"], "config")
+
     # Parse kconfig macros to pass into doxygen
     #
     # TODO: this should use the set of "config which can't be changed" eventually,
     # not the header
     defines = _parse_defines(os.path.join(project_description["build_dir"],
-                                          "config", "sdkconfig.h"))
+                                          "config", "sdkconfig.h"), sdk_config_path)
 
     # Add all SOC _caps.h headers to the defines
     #
     # kind of a hack, be nicer to add a component info dict in project_description.json
     soc_path = [p for p in project_description["build_component_paths"] if p.endswith("/soc")][0]
-    for soc_header in glob.glob(os.path.join(soc_path, project_description["target"],
-                                             "include", "soc", "*_caps.h")):
-        defines.update(_parse_defines(soc_header))
+    soc_headers = glob.glob(os.path.join(soc_path, "soc", project_description["target"],
+                                         "include", "soc", "*_caps.h"))
+    assert len(soc_headers) > 0
+    for soc_header in soc_headers:
+        defines.update(_parse_defines(soc_header, sdk_config_path))
 
     # Call Doxygen to get XML files from the header files
     print("Calling Doxygen to generate latest XML files")
