@@ -594,8 +594,8 @@ It is recommended to use flash encryption and secure boot together. However, if 
 
 .. _flash-encryption-advanced-features:
 
-Flash Encryption Advanced Features
-----------------------------------
+Advanced Features
+-----------------
 
 The following information is useful for advanced use of flash encryption:
 
@@ -661,6 +661,12 @@ It is possible to write these eFuse manually, and write protect it before first 
 
 It is strongly recommended to never write protect ``FLASH_CRYPT_CONFIG`` when it the value is zero. If this eFuse is set to zero, no bits in the flash encryption key are tweaked and the flash encryption algorithm is equivalent to AES ECB mode.
 
+JTAG Debugging
+^^^^^^^^^^^^^^
+
+By default, when Flash Encryption is enabled (in either Development or Release mode) then JTAG debugging is disabled via eFuse. The bootloader does this on first boot, at the same time it enables flash encryption.
+
+See :ref:`jtag-debugging-security-features` for more information about using JTAG Debugging with Flash Encryption.
 
 Technical Details
 -----------------
