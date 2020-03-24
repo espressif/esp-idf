@@ -994,7 +994,7 @@ const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void)
 
 u16_t btc_ble_mesh_provisioner_get_prov_node_count(void)
 {
-    return bt_mesh_provisioner_get_prov_node_count();
+    return bt_mesh_provisioner_get_node_count();
 }
 
 /* Configuration Models */
