@@ -9,6 +9,10 @@ Secure Boot is separate from the :doc:`Flash Encryption <flash-encryption>` feat
 
     Enabling secure boot limits your options for further updates of your ESP32. Make sure to read this document throughly and understand the implications of enabling secure boot.
 
+.. note::
+
+    Secure boot is only supported when using the default GNU Make build system. The CMake build system preview in ESP-IDF v3.x does not support secure boot.
+
 Background
 ----------
 
