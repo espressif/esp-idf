@@ -631,7 +631,7 @@ static int provisioner_check_unprov_dev_info(const u8_t uuid[16], bt_mesh_prov_b
     }
 
     /* Check if the provisioned nodes queue is full */
-    if (bt_mesh_provisioner_get_prov_node_count() == CONFIG_BLE_MESH_MAX_PROV_NODES) {
+    if (bt_mesh_provisioner_get_node_count() == CONFIG_BLE_MESH_MAX_PROV_NODES) {
         BT_WARN("Current provisioned devices reach max limit");
         return -ENOMEM;
     }
@@ -877,7 +877,7 @@ start:
     }
 
     /* Check if current provisioned node count + active link reach max limit */
-    if (bt_mesh_provisioner_get_prov_node_count() + prov_ctx.pba_count + \
+    if (bt_mesh_provisioner_get_node_count() + prov_ctx.pba_count + \
             prov_ctx.pbg_count >= CONFIG_BLE_MESH_MAX_PROV_NODES) {
         BT_ERR("Node count + active link count reach max limit");
         return -EIO;
@@ -953,7 +953,7 @@ int bt_mesh_provisioner_prov_device_with_addr(const u8_t uuid[16], const u8_t ad
      */
 
     /* Check if current provisioned node count + active link reach max limit */
-    if (bt_mesh_provisioner_get_prov_node_count() + prov_ctx.pba_count + \
+    if (bt_mesh_provisioner_get_node_count() + prov_ctx.pba_count + \
             prov_ctx.pbg_count >= CONFIG_BLE_MESH_MAX_PROV_NODES) {
         BT_ERR("Node count + active link count reach max limit");
         return -EIO;
