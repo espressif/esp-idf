@@ -18,6 +18,7 @@
 #include "unity.h"
 #include "sdkconfig.h"
 #include "test_utils.h"
+#include "ccomp_timer.h"
 
 #define PRINT_DEBUG_INFO
 
@@ -306,7 +307,7 @@ static void print_rsa_details(mbedtls_rsa_context *rsa)
 }
 #endif
 
-TEST_CASE("test performance RSA key operations", "[bignum][ignore]")
+TEST_CASE("test performance RSA key operations", "[bignum]")
 {
     for (int keysize = 2048; keysize <= 4096; keysize += 2048) {
         rsa_key_operations(keysize, true, false, false);
@@ -325,7 +326,6 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     unsigned char orig_buf[4096 / 8];
     unsigned char encrypted_buf[4096 / 8];
     unsigned char decrypted_buf[4096 / 8];
-    int64_t start;
     int public_perf, private_perf;
 
     printf("First, orig_buf is encrypted by the public key, and then decrypted by the private key\n");
@@ -357,13 +357,13 @@ static void rsa_key_operations(int keysize, bool check_performance, bool use_bli
     TEST_ASSERT_EQUAL(keysize, (int)rsa.len * 8);
     TEST_ASSERT_EQUAL(keysize, (int)rsa.D.n * sizeof(mbedtls_mpi_uint) * 8); // The private exponent
 
-    start = esp_timer_get_time();
+    ccomp_timer_start();;
     TEST_ASSERT_EQUAL(0, mbedtls_rsa_public(&rsa, orig_buf, encrypted_buf));
-    public_perf = esp_timer_get_time() - start;
+    public_perf = ccomp_timer_stop();
 
-    start = esp_timer_get_time();
+    ccomp_timer_start();;
     TEST_ASSERT_EQUAL(0, mbedtls_rsa_private(&rsa, use_blinding?myrand:NULL, NULL, encrypted_buf, decrypted_buf));
-    private_perf = esp_timer_get_time() - start;
+    private_perf = ccomp_timer_stop();
 
     if (check_performance && keysize == 2048) {
         TEST_PERFORMANCE_LESS_THAN(RSA_2048KEY_PUBLIC_OP, "public operations %d us", public_perf);
