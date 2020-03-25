@@ -268,7 +268,7 @@ int esp_transport_ws_send_raw(esp_transport_handle_t t, ws_transport_opcodes_t o
         return ESP_ERR_INVALID_ARG;
     }
     ESP_LOGD(TAG, "Sending raw ws message with opcode %d", op_code);
-    return _ws_write(t, op_code | WS_FIN, WS_MASK, b, len, timeout_ms);
+    return _ws_write(t, op_code, WS_MASK, b, len, timeout_ms);
 }
 
 static int ws_write(esp_transport_handle_t t, const char *b, int len, int timeout_ms)
