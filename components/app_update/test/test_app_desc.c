@@ -4,7 +4,7 @@
 
 TEST_CASE("esp_ota_get_app_elf_sha256 test", "[esp_app_desc]")
 {
-    const int sha256_hex_len = 64;
+    const int sha256_hex_len = CONFIG_APP_RETRIEVE_LEN_ELF_SHA;
     char dst[sha256_hex_len + 2];
     const char fill = 0xcc;
     int res;
