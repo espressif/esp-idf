@@ -367,7 +367,7 @@ static int provisioner_store_node(struct bt_mesh_node *node, bool prov, bool sto
             }
 
             memcpy(mesh_nodes[i], node, sizeof(struct bt_mesh_node));
-            node->last_hb = k_uptime_get_32() / 1000;
+            mesh_nodes[i]->last_hb = k_uptime_get_32() / 1000;
             provisioner_node_count_inc(prov);
             if (index) {
                 *index = i;
