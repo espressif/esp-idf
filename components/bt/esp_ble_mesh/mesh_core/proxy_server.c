@@ -1420,11 +1420,6 @@ int bt_mesh_proxy_init(void)
 
     bt_mesh_gatts_conn_cb_register(&conn_callbacks);
 
-#if defined(CONFIG_BLE_MESH_PB_GATT)
-    const struct bt_mesh_prov *prov = bt_mesh_prov_get();
-    __ASSERT(prov && prov->uuid, "%s, Device UUID is not initialized", __func__);
-#endif
-
     return bt_mesh_gatts_set_local_device_name(device_name);
 }
 
