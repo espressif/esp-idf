@@ -104,6 +104,7 @@ esp_err_t esp_wifi_deinit(void)
     err = esp_wifi_deinit_internal();
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to deinit Wi-Fi driver (0x%x)", err);
+        return err;
     }
 
     tcpip_adapter_clear_default_wifi_handlers();
