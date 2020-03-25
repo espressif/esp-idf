@@ -35,7 +35,7 @@ For this guide, suppose we have the following::
 - a component named ``my_component`` that is archived as library ``libmy_component.a`` during build
 - three source files archived under the library, ``my_src1.c``, ``my_src2.c`` and ``my_src3.c`` which are compiled as ``my_src1.o``, ``my_src2.o`` and ``my_src3.o``, respectively
 - under ``my_src1.o``, the function ``my_function1`` is defined; under ``my_src2.o``, the function ``my_function2`` is defined
-- there exist bool-type config ``PERFORMANCE_MODE`` (y/n) and int type config ``PERFORMANCE_LEVEL`` (with range 0-3) in my_component's Kconfig
+- there exist bool-type config ``PERFORMANCE_MODE`` (y/n) and int type config ``PERFORMANCE_LEVEL`` (with range 0-3) in ``my_component``'s Kconfig
 
 
 Creating and Specifying a Linker Fragment File
@@ -206,7 +206,7 @@ Nesting condition-checking is also possible. The following is equivalent to the 
 The 'default' placements
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Up until this point, the term  'default placements' has been mentioned as fallback placements for when the
+Up until this point, the term  'default placements' has been mentioned as fallback placements when the
 placement rules ``rtc`` and ``noflash`` are not specified. It is important to note that the tokens ``noflash`` or ``rtc`` are not merely keywords, but are actually
 entities called fragments, specifically :ref:`schemes<ldgen-scheme-fragment>`.
 
@@ -338,8 +338,7 @@ Compatibility with ESP-IDF v3.x Linker Script Fragment Files
 
 ESP-IDF v4.0 brings some changes to the linker script fragment file grammar:
 
-- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation
-    and examples demonstrates properly indented grammar
+- indentation is enforced and improperly indented fragment files generate a parse exception; this was not enforced in the old version but previous documentation and examples demonstrates properly indented grammar
 - move to ``if...elif...else`` structure for conditionals, with the ability to nest checks and place entire fragments themselves inside conditionals
 - mapping fragments now requires a name like other fragment types
 
