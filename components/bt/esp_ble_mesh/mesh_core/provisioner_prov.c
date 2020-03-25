@@ -660,6 +660,7 @@ static int provisioner_start_prov_pb_adv(const u8_t uuid[16], const bt_mesh_addr
     if (assign_addr == BLE_MESH_ADDR_UNASSIGNED &&
             prov_ctx.curr_alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_ERR("No available unicast address to assign");
+        bt_mesh_pb_adv_unlock();
         return -EIO;
     }
 
@@ -718,6 +719,7 @@ static int provisioner_start_prov_pb_gatt(const u8_t uuid[16], const bt_mesh_add
     if (assign_addr == BLE_MESH_ADDR_UNASSIGNED &&
             prov_ctx.curr_alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
         BT_ERR("No available unicast address to assign");
+        bt_mesh_pb_gatt_unlock();
         return -EIO;
     }
 
