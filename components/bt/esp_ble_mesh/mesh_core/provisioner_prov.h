@@ -332,6 +332,18 @@ u16_t bt_mesh_provisioner_get_primary_elem_addr(void);
 int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr);
 
 /**
+ * @brief This function is used to update next allocated address by Provisioner.
+ *
+ * @note  This function is used for mesh internal test.
+ *
+ * @param[in] unicast_addr: unicast address of the node
+ * @param[in] element_num:  element count of the node
+ *
+ * @return Zero - success, otherwise - fail
+ */
+int bt_mesh_test_provisioner_update_alloc_addr(u16_t unicast_addr, u16_t element_num);
+
+/**
  * @brief This function is called to input number/string out-put by unprovisioned device.
  *
  * @param[in] idx       The provisioning link index

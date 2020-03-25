@@ -1245,6 +1245,26 @@ int bt_mesh_provisioner_set_primary_elem_addr(u16_t addr)
     return 0;
 }
 
+#if CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK
+int bt_mesh_test_provisioner_update_alloc_addr(u16_t unicast_addr, u16_t element_num)
+{
+    u16_t max_addr = FAST_PROV_ENABLE() ? prov_ctx.fast_prov.unicast_addr_max : PROV_MAX_ADDR_TO_ASSIGN;
+
+    if (unicast_addr + element_num > max_addr) {
+        BT_WARN("%s, Not enough unicast address to allocate", __func__);
+        prov_ctx.curr_alloc_addr = BLE_MESH_ADDR_UNASSIGNED;
+    } else {
+        prov_ctx.curr_alloc_addr = unicast_addr + element_num;
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_store_prov_info(prov_ctx.primary_addr, prov_ctx.curr_alloc_addr);
+    }
+
+    return 0;
+}
+#endif /* CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK */
+
 /* The following APIs are for fast provisioning */
 
 void bt_mesh_provisioner_fast_prov_enable(bool enable)
