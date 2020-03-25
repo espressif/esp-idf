@@ -39,7 +39,7 @@
 // #define WDT_INT_NUM 24
 #define WDT_INT_NUM ETS_T1_WDT_INUM
 
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
 /*
  * This parameter is indicates the response time of tg1 watchdog to identify the
  * live lock, Too large values may affect BT and Wifi modules.
@@ -61,7 +61,7 @@ static void IRAM_ATTR tick_hook(void) {
         //Only feed wdt if app cpu also ticked.
         if (int_wdt_app_cpu_ticked) {
             TIMERG1.wdt_wprotect=TIMG_WDT_WKEY_VALUE;
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
             _l4_intr_livelock_counter = 0;
             TIMERG1.wdt_config2=CONFIG_INT_WDT_TIMEOUT_MS*2/(_l4_intr_livelock_max+1); //Set timeout before interrupt
 #else
@@ -115,13 +115,9 @@ void esp_int_wdt_cpu_init()
      * We found a live lock issue on ESP32 ECO3, This problem will cause the cache busy and then
      * the CPU to stop executing instructions. In order to solve this problem, we need to use
      * tg1 1st stage timeout interrupt to interrupt the cache busy state of the live lock.
-     * Here we only bind this interrupt to the Pro cpu (Core 0), when the tg1 1st stage timeout
-     * interrupt caused by the live lock occurs, only the Pro cpu (Core 0) execution path switched
-     * to level 4 ISR to unlock the cache busy status and resume system.
      */
-    if (xPortGetCoreID() == PRO_CPU_NUM) {
-        intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+    intr_matrix_set(xPortGetCoreID(), ETS_TG1_WDT_LEVEL_INTR_SOURCE, WDT_INT_NUM);
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
         _l4_intr_livelock_max = 0;
         if (soc_has_cache_lock_bug()) {
             assert(((1000/CONFIG_FREERTOS_HZ)<<1) <= TG1_WDT_LIVELOCK_TIMEOUT_MS);
@@ -129,7 +125,6 @@ void esp_int_wdt_cpu_init()
             _l4_intr_livelock_max = CONFIG_INT_WDT_TIMEOUT_MS/TG1_WDT_LIVELOCK_TIMEOUT_MS - 1;
         }
 #endif
-    }
     //We do not register a handler for the interrupt because it is interrupt level 4 which
     //is not servicable from C. Instead, xtensa_vectors.S has a call to the panic handler for
     //this interrupt.

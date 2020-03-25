@@ -389,8 +389,8 @@ void start_cpu0_default(void)
     //Initialize the interrupt watch dog for CPU0.
     esp_int_wdt_cpu_init();
 #else
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
-    assert(!soc_has_cache_lock_bug() && "Minimum Supported ESP32 Revision requires Rev 3");
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+    assert(!soc_has_cache_lock_bug() && "ESP32 Rev 3 + Dual Core + PSRAM requires INT WDT enabled in project config!");
 #endif
 #endif
     esp_cache_err_int_init();

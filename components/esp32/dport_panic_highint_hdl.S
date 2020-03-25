@@ -39,15 +39,19 @@ Interrupt , a high-priority interrupt, is used for several things:
 #define L5_INTR_A4_OFFSET   8
     .data
 _l5_intr_stack:
-    .space      L5_INTR_STACK_SIZE
+    .space      L5_INTR_STACK_SIZE*portNUM_PROCESSORS
 
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     .global _l4_intr_livelock_counter
     .global _l4_intr_livelock_max
     .align  16
 _l4_intr_livelock_counter:
     .word   0
 _l4_intr_livelock_max:
+    .word   0
+_l4_intr_livelock_sync:
+    .word   0, 0
+_l4_intr_livelock_app:
     .word   0
 #endif
 
@@ -64,14 +68,11 @@ xt_highint5:
     bnez    a0, .handle_dport_access_int
 #endif // CONFIG_FREERTOS_UNICORE
 
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
     /* See if we're here for the tg1 watchdog interrupt */
     rsr     a0, INTERRUPT
     extui   a0, a0, ETS_T1_WDT_INUM, 1
     beqz    a0, 1f
-
-    getcoreid   a0
-    bnez    a0, 1f                          /* App cpu (Core 1) jump bypass */
 
     /* Pro cpu (Core 0) can execute to here. */
     wsr     a5, depc                        /* use DEPC as temp storage */
@@ -161,19 +162,115 @@ xt_highint5:
     rfi     5
 
 
-#if !defined(CONFIG_FREERTOS_UNICORE) && defined(CONFIG_SPIRAM_SUPPORT)
+#if CONFIG_ESP32_ECO3_CACHE_LOCK_FIX
+
+/*
+--------------------------------------------------------------------------------
+  Macro intr_matrix_map - Attach an CPU interrupt to a hardware source.
+
+  Input  : "addr" - Interrupt map configuration base address
+  Input  : "src"  - Interrupt source.
+  Input  : "inum" - Interrupt number.
+--------------------------------------------------------------------------------
+*/
+    .macro intr_matrix_map  addr src inum
+    movi    a2, \src
+    slli    a2, a2, 2
+    movi    a3, \addr
+    add     a3, a3, a2
+    movi    a2, \inum
+    s32i    a2, a3, 0
+    .endm
+
+/*
+--------------------------------------------------------------------------------
+  Macro wdt_clr_intr_status - Clear the WDT interrupt status.
+  Macro wdt_feed            - Feed the WDT.
+
+  Input  : "dev" - Beginning address of the peripheral registers
+--------------------------------------------------------------------------------
+*/
+    .macro wdt_clr_intr_status  dev
+    movi    a2, \dev
+    movi    a3, TIMG_WDT_WKEY_VALUE
+    memw
+    s32i    a3, a2, 100                     /* disable write protect */
+    l32i    a4, a2, 164
+    movi    a3, 4
+    or      a3, a4, a3
+    memw
+    s32i    a3, a2, 164                     /* clear 1st stage timeout interrupt */
+    movi    a3, 0
+    s32i    a3, a2, 100                     /* enable write protect */
+    .endm
+
+    .macro wdt_feed dev
+    movi    a2, \dev
+    movi    a3, TIMG_WDT_WKEY_VALUE
+    memw
+    s32i    a3, a2, 100                     /* disable write protect */
+    movi    a4, _l4_intr_livelock_max
+    l32i    a4, a4, 0
+    addi    a4, a4, 1
+    movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<1)
+    quou    a3, a3, a4
+    memw
+    s32i    a3, a2, 80                      /* set timeout before interrupt */
+    movi    a3, (CONFIG_INT_WDT_TIMEOUT_MS<<2)
+    memw
+    s32i    a3, a2, 84                      /* set timeout before system reset */
+    movi    a3, 1
+    s32i    a3, a2, 96                      /* feed wdt */
+    memw
+    movi    a3, 0
+    s32i    a3, a2, 100                     /* enable write protect */
+    memw
+    .endm
 
     .align      4
 .handle_livelock_int:
 
+    getcoreid   a5
+
     /* Save A2, A3, A4 so we can use those registers */
+    movi    a0, L4_INTR_STACK_SIZE
+    mull    a5, a5, a0
     movi    a0, _l4_intr_stack
+    add     a0, a0, a5
     s32i    a2, a0, L4_INTR_A2_OFFSET
     s32i    a3, a0, L4_INTR_A3_OFFSET
     s32i    a4, a0, L4_INTR_A4_OFFSET
 
-    rsil    a0, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested iterrupt */
+    /* Here, we can use a0, a2, a3, a4, a5 registers */
+    getcoreid   a5
 
+    beqz    a5, 1f
+    movi    a2, _l4_intr_livelock_app
+    l32i    a3, a2, 0
+    addi    a3, a3, 1
+    s32i    a3, a2, 0
+
+    /* Dual core synchronization, ensuring that both cores enter interrupts */
+1:  movi    a4, 0x1
+    movi    a2, _l4_intr_livelock_sync
+    addx4   a3, a5, a2
+    s32i    a4, a3, 0
+
+1:  movi    a2, _l4_intr_livelock_sync
+    movi    a3, 1
+    addx4   a3, a3, a2
+    l32i    a2, a2, 0
+    l32i    a3, a3, 0
+    and     a2, a2, a3
+    beqz    a2, 1b
+
+    rsil    a0, CONFIG_ESP32_DPORT_DIS_INTERRUPT_LVL /* disable nested interrupt */
+
+    beqz    a5, 1f                          /* Pro cpu (Core 0) jump bypass */
+
+    movi    a2, _l4_intr_livelock_app
+    l32i    a2, a2, 0
+    bnei    a2, 2, 1f
     movi    a2, _l4_intr_livelock_counter   /* _l4_intr_livelock_counter++ */
     l32i    a3, a2, 0
     addi    a3, a3, 1
@@ -192,8 +289,10 @@ xt_highint5:
       When flash is DOUT/DIO read, N = 2.
       When flash is QOUT/QIO read, N = 4.
     */
-    rsr.ccount  a2
-    movi    a4, g_ticks_per_us_pro
+1:  rsr.ccount  a2
+    movi    a3, g_ticks_per_us_pro
+    movi    a4, g_ticks_per_us_app
+    moveqz  a4, a3, a5
     l32i    a4, a4, 0
 #if defined(CONFIG_FLASHMODE_QIO) || defined(CONFIG_FLASHMODE_QOUT)
 # if defined(CONFIG_ESPTOOLPY_FLASHFREQ_80M) && defined(CONFIG_SPIRAM_SPEED_80M)
@@ -221,43 +320,71 @@ xt_highint5:
 # endif
 #endif
     mull    a3, a3, a4
-1:  rsr.ccount  a4                          /* delay_us(N) */
+2:  rsr.ccount  a4                          /* delay_us(N) */
     sub     a4, a4, a2
-    bltu    a4, a3, 1b
+    bltu    a4, a3, 2b
 
-    /* Feed watchdog and clear tg1 1st stage timeout interrupt */
-    movi    a2, TIMERG1
-    movi    a3, TIMG_WDT_WKEY_VALUE
-    memw
-    s32i    a3, a2, 100                     /* disable tg1 write protect */
-    movi    a3, 40
-    memw
-    s32i    a3, a2, 80                      /* set timeout before interrupt */
-    movi    a3, 4000
-    memw
-    s32i    a3, a2, 84                      /* set timeout before system reset */
-    movi    a3, 1
-    s32i    a3, a2, 96                      /* feed wdt */
-    memw
+    beqz    a5, 2f
+    movi    a2, _l4_intr_livelock_app
+    l32i    a2, a2, 0
+    beqi    a2, 2, 8f
+
+2:  movi    a2, _l4_intr_livelock_sync
+    movi    a4, 1
+    addx4   a3, a4, a2
+    l32i    a2, a2, 0
+    l32i    a3, a3, 0
+    and     a2, a2, a3
+    beqz    a2, 4f
+
+    beqz    a5, 3f
+    /*
+    Pro cpu (Core 0) jump bypass, continue waiting, App cpu (Core 1)
+    can execute to here, unmap itself tg1 1st stage timeout interrupt
+    then restore registers and exit highint4.
+    */
+    intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, 16
+    j       9f
+3:  j       1b
 
     /*
-    The vector number of the interrupt watchdog is ETS_T1_WDT_INUM (24), which is a
-    Level-Triggered interrupt and needs to be cleared at the peripheral.
+    Here, App cpu (Core 1) has exited isr, Pro cpu (Core 0) help the
+    App cpu map tg1 1st stage timeout interrupt clear tg1 interrupt.
     */
-    l32i    a4, a2, 164
-    movi    a3, 4
-    or      a3, a4, a3
-    memw
-    s32i    a3, a2, 164                     /* clear tg1 1st stage timeout interrupt */
+4:  intr_matrix_map DPORT_APP_MAC_INTR_MAP_REG, ETS_TG1_WDT_LEVEL_INTR_SOURCE, ETS_T1_WDT_INUM
 
-    movi    a3, 0
-    s32i    a3, a2, 100                     /* enable tg1 write protect */
-    memw
+1:  movi    a2, _l4_intr_livelock_sync
+    movi    a4, 1
+    addx4   a3, a4, a2
+    l32i    a2, a2, 0
+    l32i    a3, a3, 0
+    and     a2, a2, a3
+    beqz    a2, 1b                          /* Wait for App cpu to enter highint4 again */
 
-    wsr     a0, PS                          /* restore iterrupt level */
+    wdt_clr_intr_status TIMERG1
+    j       9f
+
+    /* Feed watchdog */
+8:  wdt_feed    TIMERG1
+
+9:  wsr     a0, PS                          /* restore iterrupt level */
+
+    movi    a0, 0
+    beqz    a5, 1f
+    movi    a2, _l4_intr_livelock_app
+    l32i    a3, a2, 0
+    bnei    a3, 2, 1f
+    s32i    a0, a2, 0
+
+1:  movi    a2, _l4_intr_livelock_sync
+    addx4   a2, a5, a2
+    s32i    a0, a2, 0
 
     /* Done. Restore registers and return. */
+    movi    a0, L4_INTR_STACK_SIZE
+    mull    a5, a5, a0
     movi    a0, _l4_intr_stack
+    add     a0, a0, a5
     l32i    a2, a0, L4_INTR_A2_OFFSET
     l32i    a3, a0, L4_INTR_A3_OFFSET
     l32i    a4, a0, L4_INTR_A4_OFFSET
