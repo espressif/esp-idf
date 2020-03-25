@@ -247,6 +247,7 @@ build_test_apps_esp32s2:
     paths:
       - docs/_build/*/*/*.txt
       - docs/_build/*/*/html/*
+      - docs/_build/*/*/latex/*
     expire_in: 4 days
   only:
     variables:
