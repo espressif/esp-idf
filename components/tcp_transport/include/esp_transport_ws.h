@@ -20,6 +20,7 @@ typedef enum ws_transport_opcodes {
     WS_TRANSPORT_OPCODES_CLOSE = 0x08,
     WS_TRANSPORT_OPCODES_PING = 0x09,
     WS_TRANSPORT_OPCODES_PONG = 0x0a,
+    WS_TRANSPORT_OPCODES_FIN = 0x80,
 } ws_transport_opcodes_t;
 
 /**
