@@ -470,99 +470,6 @@ static esp_err_t IRAM_ATTR psram_enable_qio_mode(psram_spi_num_t spi_num)
     return ESP_OK;
 }
 
-#define PSRAM_2T_EID_M           0xf0ffffff
-#define PSRAM_2T_EID_S           16
-#define PSRAM_2T_CHECK_ID(id)    (((id) >> PSRAM_2T_EID_S) & PSRAM_2T_EID_M)
-
-/*
- * If the psram id is included in below list, 2T mode need to be enabled
- * Note:In order to save RAM memory, DRAM_ATTR is omitted intentionally
- */
-static const uint32_t psram_check_id[] = {
-// need check bits  //    original ID   //
-    0x0053B24A,     //  xxxx0x53B24A5D0D
-    0x0064A246,     //  xxxx0x64A2465D0D
-    0x00B9A046,     //  xxxx0xB9A0465D0D
-    0x00BAA046,     //  xxxx0xBAA0465D0D
-    0x00C0A046,     //  xxxx0xC0A0465D0D
-    0x1053B24A,     //  xxxx1x53B24A5D0D
-    0x1064A246,     //  xxxx1x64A2465D0D
-    0x10B9A046,     //  xxxx1xB9A0465D0D
-    0x10BAA046,     //  xxxx1xBAA0465D0D
-    0x10C0A046,     //  xxxx1xC0A0465D0D
-    0x2022A146,     //  xxxx2x22A1465D0D
-    0x20A8A146,     //  xxxx2xA8A1465D0D
-    0x20C0A046,     //  xxxx2xC0A0465D0D
-    0x20C0B158,     //  xxxx2xC0B1585D0D
-    0x3022A146,     //  xxxx3x22A1465D0D
-    0x30A8A146,     //  xxxx3xA8A1465D0D
-    0x30C0A046,     //  xxxx3xC0A0465D0D
-    0x30C0B158,     //  xxxx3xC0B1585D0D
-    0x4026A158,     //  xxxx4x26A1585D0D
-    0x402AA046,     //  xxxx4x2AA0465D0D
-    0x402FA046,     //  xxxx4x2FA0465D0D
-    0x402FA048,     //  xxxx4x2FA0485D0D
-    0x4064A246,     //  xxxx4x64A2465D0D
-    0x40A8A15A,     //  xxxx4xA8A15A5D0D
-    0x40B9D14A,     //  xxxx4xB9D14A5D0D
-    0x5026A158,     //  xxxx5x26A1585D0D
-    0x502AA046,     //  xxxx5x2AA0465D0D
-    0x502FA046,     //  xxxx5x2FA0465D0D
-    0x5064A246,     //  xxxx5x64A2465D0D
-    0x50A8A15A,     //  xxxx5xA8A15A5D0D
-    0x50B9D14A,     //  xxxx5xB9D14A5D0D
-    0x50C0A046,     //  xxxx5xC0A0465D0D
-    0x602AA046,     //  xxxx6x2AA0465D0D
-    0x6064A246,     //  xxxx6x64A2465D0D
-    0x702AA046,     //  xxxx7x2AA0465D0D
-    0x7064A246,     //  xxxx7x64A2465D0D
-    0x8026A146,     //  xxxx8x26A1465D0D
-    0x9026A146,     //  xxxx9x26A1465D0D
-    0xA02FA046,     //  xxxxAx2FA0465D0D
-    0xB02FA046,     //  xxxxBx2FA0465D0D
-    0xC003B246,     //  xxxxCx03B2465D0D
-    0xC003B248,     //  xxxxCx03B2485D0D
-    0xC091D14A,     //  xxxxCx91D14A5D0D
-    0xC0B8A046,     //  xxxxCxB8A0465D0D
-    0xC0BFB148,     //  xxxxCxBFB1485D0D
-    0xD091D14A,     //  xxxxDx91D14A5D0D
-    0xD0B8A046,     //  xxxxDxB8A0465D0D
-    0xD0BFB148,     //  xxxxDxBFB1485D0D
-    0xE021A146,     //  xxxxEx21A1465D0D
-    0xE0B8A046,     //  xxxxExB8A0465D0D
-    0xE0B9A046,     //  xxxxExB9A0465D0D
-    0xE0BFA046,     //  xxxxExBFA0465D0D
-    0xE0BFB158,     //  xxxxExBFB1585D0D
-    0xF021A146,     //  xxxxFx21A1465D0D
-    0xF0B8A046,     //  xxxxFxB8A0465D0D
-    0xF0B9A046,     //  xxxxFxB9A0465D0D
-    0xF0BFA046,     //  xxxxFxBFA0465D0D
-    0xF0BFB158,     //  xxxxFxBFB1585D0D
-};
-
-/*
- * Note:In order to save RAM memory, IRAM_ATTR is omitted intentionally
- */
-static bool psram_should_use_2t_mode(uint64_t psram_id)
-{
-    uint32_t idx = 0;
-    uint32_t low_idx = 0;
-    uint32_t high_idx = sizeof(psram_check_id) / 4;
-    uint32_t check_id = PSRAM_2T_CHECK_ID(psram_id);
-
-    while (low_idx <= high_idx) {
-        idx = (low_idx + high_idx) / 2;
-        if (check_id < psram_check_id[idx]) {
-            high_idx = idx - 1;
-        } else if (check_id > psram_check_id[idx]) {
-            low_idx = idx + 1;
-        } else {
-            return true;
-        }
-    }
-    return false;
-}
-
 #if CONFIG_SPIRAM_2T_MODE
 // use SPI user mode to write psram
 static void spi_user_psram_write(psram_spi_num_t spi_num, uint32_t address, uint32_t *data_buffer, uint32_t data_len)
@@ -1043,13 +950,10 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
     psram_set_cs_timing(_SPI_CACHE_PORT, s_clk_mode);
     psram_enable_qio_mode(PSRAM_SPI_1);
 
-    if(((PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_64MBITS) || PSRAM_IS_64MBIT_TRIAL(s_psram_id))
-        && (psram_should_use_2t_mode(s_psram_id) == true)) {
-#if !CONFIG_SPIRAM_2T_MODE
-        ESP_EARLY_LOGW(TAG, "This PSRAM has single bit error risk, suggest to enable PSRAM 2T mode, and disable SPIRAM bank switching. Please read the help text for SPIRAM_2T_MODE in the project configuration menu.");
-#else
+    if(((PSRAM_SIZE_ID(s_psram_id) == PSRAM_EID_SIZE_64MBITS) || PSRAM_IS_64MBIT_TRIAL(s_psram_id))) {
+#if CONFIG_SPIRAM_2T_MODE
 #if CONFIG_SPIRAM_BANKSWITCH_ENABLE
-        ESP_EARLY_LOGE(TAG, "This PSRAM has single bit error risk, suggest to enable PSRAM 2T mode, and disable SPIRAM bank switching. Please read the help text for SPIRAM_2T_MODE in the project configuration menu.");
+        ESP_EARLY_LOGE(TAG, "PSRAM 2T mode and SPIRAM bank switching can not enabled meanwhile. Please read the help text for SPIRAM_2T_MODE in the project configuration menu.");
         abort();
 #endif
         /* Note: 2T mode command should not be sent twice, 
@@ -1064,8 +968,6 @@ esp_err_t IRAM_ATTR psram_enable(psram_cache_mode_t mode, psram_vaddr_mode_t vad
         s_2t_mode_enabled = true;
         ESP_EARLY_LOGI(TAG, "PSRAM is in 2T mode");
 #endif
-    } else {
-        ESP_EARLY_LOGD(TAG, "This 64Mbit PSRAM ID is not at risk of bit errors, not enabling 2T mode workaround.");
     }
 
     psram_cache_init(mode, vaddrmode);
