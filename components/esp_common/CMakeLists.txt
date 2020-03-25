@@ -13,7 +13,9 @@ else()
              "src/freertos_hooks.c"
              "src/mac_addr.c"
              "src/pm_locks.c"
-             "src/stack_check.c")
+             "src/stack_check.c"
+             "src/task_wdt.c"
+             "src/int_wdt.c")
 
     # IPC framework is not applicable if freertos unicore config is selected
     if(NOT CONFIG_FREERTOS_UNICORE)

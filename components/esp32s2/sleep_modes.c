@@ -31,9 +31,9 @@
 #include "soc/spi_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/extmem_reg.h"
-#include "soc/rtc_wdt.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/uart_caps.h"
+#include "hal/wdt_hal.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
@@ -301,16 +301,15 @@ esp_err_t esp_light_sleep_start(void)
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
-    bool wdt_was_enabled = rtc_wdt_is_on(); // If WDT was enabled in the user code, then do not change it here.
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
     if (!wdt_was_enabled) {
-        rtc_wdt_protect_off();
-        rtc_wdt_disable();
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
-        rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
-        rtc_wdt_enable();
-        rtc_wdt_protect_on();
+        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+        uint32_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_enable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
 
     // Enter sleep, then wait for flash to be ready on wakeup
@@ -340,7 +339,9 @@ esp_err_t esp_light_sleep_start(void)
     esp_timer_private_unlock();
     DPORT_STALL_OTHER_CPU_END();
     if (!wdt_was_enabled) {
-        rtc_wdt_disable();
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
     portEXIT_CRITICAL(&light_sleep_lock);
     return err;

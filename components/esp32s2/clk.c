@@ -28,9 +28,9 @@
 #include "soc/dport_access.h"
 #include "soc/soc.h"
 #include "soc/rtc.h"
-#include "soc/rtc_wdt.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_reg.h"
+#include "hal/wdt_hal.h"
 #include "driver/periph_ctrl.h"
 #include "xtensa/core-macros.h"
 #include "bootloader_clock.h"
@@ -85,10 +85,13 @@ void esp_clk_init(void)
     // Therefore, for the time of frequency change, set a new lower timeout value (1.6 sec).
     // This prevents excessive delay before resetting in case the supply voltage is drawdown.
     // (If frequency is changed from 90kHz to 32kHz then WDT timeout will increased to 1.6sec * 90/32 = 4.5 sec).
-    rtc_wdt_protect_off();
-    rtc_wdt_feed();
-    rtc_wdt_set_time(RTC_WDT_STAGE0, 1600);
-    rtc_wdt_protect_on();
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    uint32_t stage_timeout_ticks = (uint32_t)(1600ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    //Bootloader has enabled RTC WDT until now. We're only modifying timeout, so keep the stage and  timeout action the same
+    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
 #if defined(CONFIG_ESP32S2_RTC_CLK_SRC_EXT_CRYS)
@@ -103,10 +106,11 @@ void esp_clk_init(void)
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // After changing a frequency WDT timeout needs to be set for new frequency.
-    rtc_wdt_protect_off();
-    rtc_wdt_feed();
-    rtc_wdt_set_time(RTC_WDT_STAGE0, CONFIG_BOOTLOADER_WDT_TIME_MS);
-    rtc_wdt_protect_on();
+    stage_timeout_ticks = (uint32_t)((uint64_t)CONFIG_BOOTLOADER_WDT_TIME_MS * rtc_clk_slow_freq_get_hz() / 1000ULL);
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_feed(&rtc_wdt_ctx);
+    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
     rtc_cpu_freq_config_t old_config, new_config;

@@ -20,6 +20,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 typedef volatile struct {
     union {
         struct {

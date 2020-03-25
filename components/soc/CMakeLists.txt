@@ -29,6 +29,7 @@ idf_component_register(SRCS "src/cpu_util.c"
                             "src/hal/spi_flash_hal_iram.c"
                             "src/hal/mpu_hal.c"
                             "src/hal/soc_hal.c"
+                            "src/hal/wdt_hal_iram.c"
                             "src/compare_set.c"
                        PRIV_REQUIRES ${target}
                        LDFRAGMENTS linker.lf)

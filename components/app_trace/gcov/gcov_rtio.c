@@ -23,7 +23,7 @@
 #include "soc/timer_periph.h"
 #include "esp_app_trace.h"
 #include "esp_private/dbg_stubs.h"
-#include "hal/timer_ll.h"
+#include "hal/wdt_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
@@ -133,14 +133,16 @@ void esp_gcov_dump(void)
     esp_cpu_stall(other_core);
 #endif
     while (!esp_apptrace_host_is_connected(ESP_APPTRACE_DEST_TRAX)) {
-        // to avoid complains that task watchdog got triggered for other tasks
-        timer_ll_wdt_set_protect(&TIMERG0, false);
-        timer_ll_wdt_feed(&TIMERG0);
-        timer_ll_wdt_set_protect(&TIMERG0, true);
-        // to avoid reboot on INT_WDT
-        timer_ll_wdt_set_protect(&TIMERG1, false);
-        timer_ll_wdt_feed(&TIMERG1);
-        timer_ll_wdt_set_protect(&TIMERG1, true);
+        wdt_hal_context_t twdt = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+        wdt_hal_context_t iwdt = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+        //Feed the Task Watchdog (TG0) to prevent it from timing out
+        wdt_hal_write_protect_disable(&twdt);
+        wdt_hal_feed(&twdt);
+        wdt_hal_write_protect_enable(&twdt);
+        //Likewise, feed the Interrupt Watchdog (TG1) to prevent a reboot
+        wdt_hal_write_protect_disable(&iwdt);
+        wdt_hal_feed(&iwdt);
+        wdt_hal_write_protect_enable(&iwdt);
     }
 
     esp_dbg_stub_gcov_dump_do();

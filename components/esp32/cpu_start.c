@@ -28,8 +28,9 @@
 #include "soc/dport_reg.h"
 #include "soc/gpio_periph.h"
 #include "soc/timer_periph.h"
-#include "soc/rtc_wdt.h"
 #include "soc/efuse_periph.h"
+
+#include "hal/wdt_hal.h"
 
 #include "driver/rtc_io.h"
 
@@ -146,7 +147,10 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
     ) {
 #ifndef CONFIG_BOOTLOADER_WDT_ENABLE
-        rtc_wdt_disable();
+        wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
     }
 
@@ -553,7 +557,10 @@ static void main_task(void* args)
 
     // Now that the application is about to start, disable boot watchdog
 #ifndef CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE
-    rtc_wdt_disable();
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 #ifdef CONFIG_BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
     const esp_partition_t *efuse_partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_EFUSE_EM, NULL);

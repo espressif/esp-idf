@@ -23,3 +23,4 @@ entries:
     lldesc (noflash_text)
     cpu_hal (noflash)
     soc_hal (noflash)
+    wdt_hal_iram (noflash)
