@@ -84,7 +84,7 @@ uint32_t rmt_hal_receive(rmt_hal_context_t *hal, uint32_t channel, rmt_item32_t 
 {
     uint32_t len = 0;
     rmt_ll_set_mem_owner(hal->regs, channel, RMT_MEM_OWNER_SW);
-    for (len = 0; len < RMT_CHANNEL_MEM_WORDS; len++) {
+    for (len = 0; len < SOC_RMT_CHANNEL_MEM_WORDS; len++) {
         buf[len].val = hal->mem->chan[channel].data32[len].val;
         if (!(buf[len].val & 0x7FFF)) {
             break;

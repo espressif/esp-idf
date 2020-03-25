@@ -34,7 +34,7 @@ extern "C" {
  * @brief Define memory space of each RMT channel (in words = 4 bytes)
  *
  */
-#define RMT_MEM_ITEM_NUM RMT_CHANNEL_MEM_WORDS
+#define RMT_MEM_ITEM_NUM SOC_RMT_CHANNEL_MEM_WORDS
 
 /**
 * @brief Data struct of RMT TX configure parameters
@@ -44,7 +44,7 @@ typedef struct {
     rmt_carrier_level_t carrier_level; /*!< Level of the RMT output, when the carrier is applied */
     rmt_idle_level_t idle_level;       /*!< RMT idle level */
     uint8_t carrier_duty_percent;      /*!< RMT carrier duty (%) */
-#if RMT_SUPPORT_TX_LOOP_COUNT
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
     uint32_t loop_count;               /*!< Maximum loop count */
 #endif
     bool carrier_en;                   /*!< RMT carrier enable */
@@ -59,7 +59,7 @@ typedef struct {
     uint16_t idle_threshold;     /*!< RMT RX idle threshold */
     uint8_t filter_ticks_thresh; /*!< RMT filter tick number */
     bool filter_en;              /*!< RMT receiver filter enable */
-#if RMT_SUPPORT_RX_DEMODULATION
+#if SOC_RMT_SUPPORT_RX_DEMODULATION
     bool rm_carrier;                   /*!< RMT receiver remove carrier enable */
     uint32_t carrier_freq_hz;          /*!< RMT carrier frequency */
     uint8_t carrier_duty_percent;      /*!< RMT carrier duty (%) */
@@ -792,7 +792,7 @@ esp_err_t rmt_write_sample(rmt_channel_t channel, const uint8_t *src, size_t src
 */
 rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, void *arg);
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
 /**
 * @brief Set RMT RX threshold event interrupt enable
 *
@@ -809,7 +809,7 @@ rmt_tx_end_callback_t rmt_register_tx_end_callback(rmt_tx_end_fn_t function, voi
 esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh);
 #endif
 
-#if RMT_SUPPORT_TX_GROUP
+#if SOC_RMT_SUPPORT_TX_GROUP
 /**
 * @brief Add channel into a group (channels in the same group will transmit simultaneously)
 *

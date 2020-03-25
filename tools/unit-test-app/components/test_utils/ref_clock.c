@@ -49,7 +49,7 @@
 #include "sdkconfig.h"
 
 /* Select which RMT and PCNT channels, and GPIO to use */
-#define REF_CLOCK_RMT_CHANNEL   RMT_CHANNELS_NUM - 1
+#define REF_CLOCK_RMT_CHANNEL   SOC_RMT_CHANNELS_NUM - 1
 #define REF_CLOCK_PCNT_UNIT     0
 #define REF_CLOCK_GPIO          21
 

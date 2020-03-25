@@ -278,7 +278,7 @@ static inline void rmt_ll_set_carrier_on_level(rmt_dev_t *dev, uint32_t channel,
 
 static inline void rmt_ll_write_memory(rmt_mem_t *mem, uint32_t channel, const rmt_item32_t *data, uint32_t length, uint32_t off)
 {
-    length = (off + length) > RMT_CHANNEL_MEM_WORDS ? (RMT_CHANNEL_MEM_WORDS - off) : length;
+    length = (off + length) > SOC_RMT_CHANNEL_MEM_WORDS ? (SOC_RMT_CHANNEL_MEM_WORDS - off) : length;
     for (uint32_t i = 0; i < length; i++) {
         mem->chan[channel].data32[i + off].val = data[i].val;
     }

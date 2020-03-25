@@ -79,7 +79,7 @@ typedef struct {
 #endif
     rmt_item32_t *tx_buf;
     RingbufHandle_t rx_buf;
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     rmt_item32_t *rx_item_buf;
     uint32_t rx_item_buf_size;
     uint32_t rx_item_len;
@@ -197,7 +197,7 @@ esp_err_t rmt_tx_start(rmt_channel_t channel, bool tx_idx_rst)
     if (!rmt_ll_is_tx_loop_enabled(p_rmt_obj[channel]->hal.regs, channel)) {
         rmt_ll_enable_tx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
     } else {
-#if RMT_SUPPORT_TX_LOOP_COUNT
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
         rmt_ll_reset_tx_loop(p_rmt_obj[channel]->hal.regs, channel);
         rmt_ll_enable_tx_loop_count(p_rmt_obj[channel]->hal.regs, channel, true);
         rmt_ll_clear_tx_loop_interrupt(p_rmt_obj[channel]->hal.regs, channel);
@@ -230,7 +230,7 @@ esp_err_t rmt_rx_start(rmt_channel_t channel, bool rx_idx_rst)
     rmt_ll_clear_rx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel);
     rmt_ll_enable_rx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, true);
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     const uint32_t item_block_len = rmt_ll_get_mem_blocks(p_rmt_obj[channel]->hal.regs, channel) * RMT_MEM_ITEM_NUM;
     p_rmt_obj[channel]->rx_item_start_idx = 0;
     p_rmt_obj[channel]->rx_item_len = 0;
@@ -249,7 +249,7 @@ esp_err_t rmt_rx_stop(rmt_channel_t channel)
     rmt_ll_enable_rx_end_interrupt(p_rmt_obj[channel]->hal.regs, channel, false);
     rmt_ll_enable_rx(p_rmt_obj[channel]->hal.regs, channel, false);
     rmt_ll_reset_rx_pointer(p_rmt_obj[channel]->hal.regs, channel);
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     rmt_ll_enable_rx_thres_interrupt(p_rmt_obj[channel]->hal.regs, channel, false);
 #endif
     RMT_EXIT_CRITICAL();
@@ -386,7 +386,7 @@ esp_err_t rmt_set_rx_intr_en(rmt_channel_t channel, bool en)
     return ESP_OK;
 }
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
 esp_err_t rmt_set_rx_thr_intr_en(rmt_channel_t channel, bool en, uint16_t evt_thresh)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
@@ -507,7 +507,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 
         RMT_ENTER_CRITICAL();
         rmt_ll_enable_tx_loop(dev, channel, rmt_param->tx_config.loop_en);
-#if RMT_SUPPORT_TX_LOOP_COUNT
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
         if (rmt_param->tx_config.loop_en) {
             rmt_ll_set_tx_loop_count(dev, channel, rmt_param->tx_config.loop_count);
         }
@@ -545,12 +545,12 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
         rmt_ll_set_rx_filter_thres(dev, channel, filter_cnt);
         rmt_ll_enable_rx_filter(dev, channel, rmt_param->rx_config.filter_en);
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
         /* always enable rx ping-pong */
         rmt_ll_enable_rx_pingpong(dev, channel, true);
 #endif
 
-#if RMT_SUPPORT_RX_DEMODULATION
+#if SOC_RMT_SUPPORT_RX_DEMODULATION
         rmt_ll_enable_carrier(dev, channel, rmt_param->rx_config.rm_carrier);
         if (rmt_param->rx_config.rm_carrier) {
             uint32_t duty_total = rmt_source_clk_hz / rmt_ll_get_counter_clock_div(dev, channel) / rmt_param->rx_config.carrier_freq_hz;
@@ -730,7 +730,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
             rmt_ll_set_mem_owner(p_rmt_obj[channel]->hal.regs, channel, RMT_MEM_OWNER_SW);
             if (p_rmt->rx_buf) {
                 addr = RMTMEM.chan[channel].data32;
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
                 if (item_len > p_rmt->rx_item_start_idx) {
                     item_len = item_len - p_rmt->rx_item_start_idx;
                 }
@@ -747,7 +747,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
                 ESP_EARLY_LOGE(RMT_TAG, "RMT RX BUFFER ERROR");
             }
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
             p_rmt->rx_item_start_idx = 0;
             p_rmt->rx_item_len = 0;
             memset((void *)p_rmt->rx_item_buf, 0, p_rmt->rx_item_buf_size);
@@ -759,7 +759,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
         rmt_ll_clear_rx_end_interrupt(hal->regs, channel);
     }
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     // Rx thres interrupt
     status = rmt_ll_get_rx_thres_interrupt_status(hal->regs);
     while (status) {
@@ -785,7 +785,7 @@ static void IRAM_ATTR rmt_driver_isr_default(void *arg)
     }
 #endif
 
-#if RMT_SUPPORT_TX_LOOP_COUNT
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
     // loop count interrupt
     status = rmt_ll_get_tx_loop_interrupt_status(hal->regs);
     while (status) {
@@ -839,7 +839,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     rmt_set_err_intr_en(channel, 0);
     rmt_set_tx_intr_en(channel, 0);
     rmt_set_tx_thr_intr_en(channel, false, 0xffff);
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     rmt_set_rx_thr_intr_en(channel, false, 0xffff);
 #endif
 
@@ -873,7 +873,7 @@ esp_err_t rmt_driver_uninstall(rmt_channel_t channel)
     if (p_rmt_obj[channel]->sample_to_rmt) {
         p_rmt_obj[channel]->sample_to_rmt = NULL;
     }
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     if (p_rmt_obj[channel]->rx_item_buf) {
         free(p_rmt_obj[channel]->rx_item_buf);
         p_rmt_obj[channel]->rx_item_buf = NULL;
@@ -942,7 +942,7 @@ esp_err_t rmt_driver_install(rmt_channel_t channel, size_t rx_buf_size, int intr
         p_rmt_obj[channel]->rx_buf = xRingbufferCreate(rx_buf_size, RINGBUF_TYPE_NOSPLIT);
     }
 
-#if RMT_SUPPORT_RX_PINGPONG
+#if SOC_RMT_SUPPORT_RX_PINGPONG
     if (p_rmt_obj[channel]->rx_item_buf == NULL && rx_buf_size > 0) {
 #if !CONFIG_SPIRAM_USE_MALLOC
         p_rmt_obj[channel]->rx_item_buf = calloc(1, rx_buf_size);
@@ -1017,7 +1017,7 @@ esp_err_t rmt_write_items(rmt_channel_t channel, const rmt_item32_t *rmt_item, i
     if (wait_tx_done) {
         // wait loop done
         if (rmt_ll_is_tx_loop_enabled(p_rmt_obj[channel]->hal.regs, channel)) {
-#if RMT_SUPPORT_TX_LOOP_COUNT
+#if SOC_RMT_SUPPORT_TX_LOOP_COUNT
             xSemaphoreTake(p_rmt->tx_sem, portMAX_DELAY);
             xSemaphoreGive(p_rmt->tx_sem);
 #endif
@@ -1167,7 +1167,7 @@ esp_err_t rmt_get_counter_clock(rmt_channel_t channel, uint32_t *clock_hz)
     return ESP_OK;
 }
 
-#if RMT_SUPPORT_TX_GROUP
+#if SOC_RMT_SUPPORT_TX_GROUP
 esp_err_t rmt_add_channel_to_group(rmt_channel_t channel)
 {
     RMT_CHECK(channel < RMT_CHANNEL_MAX, RMT_CHANNEL_ERROR_STR, ESP_ERR_INVALID_ARG);
