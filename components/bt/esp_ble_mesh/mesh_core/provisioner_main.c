@@ -1512,6 +1512,8 @@ int bt_mesh_print_local_composition_data(void)
 #if CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK
 int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
 {
+    int err = 0;
+
     if (!node) {
         BT_ERR("%s, Invalid parameter", __func__);
         return -EINVAL;
@@ -1532,12 +1534,24 @@ int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
         return -EINVAL;
     }
 
+    if (node->unicast_addr + node->element_num - 1 > 0x7FFF) {
+        BT_ERR("%s, Not enough unicast address for the node", __func__);
+        return -EIO;
+    }
+
     if (bt_mesh_provisioner_net_key_get(node->net_idx) == NULL) {
         BT_ERR("%s, Invalid NetKey Index 0x%03x", __func__, node->net_idx);
         return -EINVAL;
     }
 
-    return provisioner_store_node(node, false, true, NULL);
+    err = provisioner_store_node(node, true, NULL);
+    if (err) {
+        BT_ERR("%s, Failed to store node info", __func__);
+        return err;
+    }
+
+    bt_mesh_test_provisioner_update_alloc_addr(node->unicast_addr, node->element_num);
+    return 0;
 }
 #endif /* CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK */
 
