@@ -35,6 +35,8 @@ static const char *TAG = "esp-tls-wolfssl";
 static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
 #if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+#include "freertos/semphr.h"
+static SemaphoreHandle_t tls_conn_lock;
 static inline unsigned int esp_wolfssl_psk_client_cb(WOLFSSL* ssl, const char* hint, char* identity,
         unsigned int id_max_len, unsigned char* key,unsigned int key_max_len);
 static esp_err_t esp_wolfssl_set_cipher_list(WOLFSSL_CTX *ctx);
@@ -173,6 +175,11 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         if(cfg->psk_hint_key->key == NULL || cfg->psk_hint_key->hint == NULL || cfg->psk_hint_key->key_size <= 0) {
             ESP_LOGE(TAG, "Please provide appropriate key, keysize and hint to use PSK");
             return ESP_FAIL;
+        }
+        /* mutex is given back when call back function executes or in case of failure (at cleanup) */
+        if ((xSemaphoreTake(tls_conn_lock, 1000/portTICK_PERIOD_MS) != pdTRUE)) {
+            ESP_LOGE(TAG, "tls_conn_lock could not be obtained in specified time");
+            return -1;
         }
         ESP_LOGI(TAG, "setting psk configurations");
         if((cfg->psk_hint_key->key_size > PSK_MAX_KEY_LEN) || (strlen(cfg->psk_hint_key->hint) > PSK_MAX_ID_LEN)) {
@@ -402,6 +409,9 @@ void esp_wolfssl_cleanup(esp_tls_t *tls)
     if (!tls) {
         return;
     }
+#ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
+    xSemaphoreGive(tls_conn_lock);
+#endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
     wolfSSL_shutdown( (WOLFSSL *)tls->priv_ssl);
     wolfSSL_free( (WOLFSSL *)tls->priv_ssl);
     tls->priv_ssl = NULL;
@@ -515,6 +525,15 @@ static esp_err_t esp_wolfssl_set_cipher_list(WOLFSSL_CTX *ctx)
     return ESP_OK;
 }
 
+/* initialize the mutex before app_main() when using PSK */
+static void __attribute__((constructor))
+espt_tls_wolfssl_init_conn_lock (void)
+{
+    if ((tls_conn_lock = xSemaphoreCreateMutex()) == NULL) {
+        ESP_EARLY_LOGE(TAG, "mutex for tls psk connection could not be created");
+    }
+}
+
 /* Some callback functions required by PSK */
 static inline unsigned int esp_wolfssl_psk_client_cb(WOLFSSL* ssl, const char* hint,
         char* identity, unsigned int id_max_len, unsigned char* key,
@@ -527,6 +546,7 @@ static inline unsigned int esp_wolfssl_psk_client_cb(WOLFSSL* ssl, const char* h
     for(int count = 0; count < psk_key_max_len; count ++) {
          key[count] = psk_key_array[count];
     }
+    xSemaphoreGive(tls_conn_lock);
     return psk_key_max_len;
     /* return length of key in octets or 0 or for error */
 }
