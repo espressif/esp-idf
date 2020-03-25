@@ -1,7 +1,7 @@
 idf_component_register(SRC_DIRS "."
-                    INCLUDE_DIRS "." "${CMAKE_CURRENT_BINARY_DIR}"
+                    PRIV_INCLUDE_DIRS "." "${CMAKE_CURRENT_BINARY_DIR}"
                     PRIV_INCLUDE_DIRS "../src"
-                    REQUIRES unity esp_common test_utils wpa_supplicant mbedtls)
+                    PRIV_REQUIRES unity esp_common test_utils wpa_supplicant mbedtls)
 
 idf_component_get_property(esp_supplicant_dir wpa_supplicant COMPONENT_DIR)
 

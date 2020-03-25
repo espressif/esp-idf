@@ -1,6 +1,6 @@
 idf_component_register(SRC_DIRS "."
-                    INCLUDE_DIRS "."
-                    REQUIRES unity test_utils mbedtls libsodium
+                    PRIV_INCLUDE_DIRS "."
+                    PRIV_REQUIRES unity test_utils mbedtls libsodium
                     EMBED_TXTFILES server_cert_chain.pem prvtkey.pem server_cert_bundle)
 
 

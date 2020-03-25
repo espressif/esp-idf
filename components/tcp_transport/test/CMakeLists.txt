@@ -1,5 +1,3 @@
-set(COMPONENT_SRCDIRS ".")
-set(COMPONENT_PRIV_INCLUDEDIRS "../private_include" ".")
-set(COMPONENT_PRIV_REQUIRES unity test_utils tcp_transport)
-
-register_component()
+idf_component_register(SRC_DIRS "."
+                    PRIV_INCLUDE_DIRS "../private_include" "."
+                    PRIV_REQUIRES unity test_utils tcp_transport)

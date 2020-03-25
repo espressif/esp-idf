@@ -1,6 +1,3 @@
-set(COMPONENT_SRCS "main.c"
-                   "coex_cmd.c")
-
-set(COMPONENT_ADD_INCLUDEDIRS ".")
-set(SUPPORTED_TARGETS esp32)
-register_component()
+idf_component_register(SRCS "main.c" "coex_cmd.c"
+                    INCLUDE_DIRS  "."
+                    REQUIRED_IDF_TARGETS esp32)

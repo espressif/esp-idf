@@ -1,5 +1,5 @@
 idf_component_register(SRC_DIRS .
-                       INCLUDE_DIRS .
-                       REQUIRES unity test_utils vfs fatfs
+                       PRIV_INCLUDE_DIRS .
+                       PRIV_REQUIRES unity test_utils vfs fatfs
                        EMBED_TXTFILES fatfs.img
                       )
