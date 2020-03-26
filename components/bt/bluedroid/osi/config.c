@@ -387,7 +387,7 @@ bool config_save(const config_t *config, const char *filename)
     char *line = osi_calloc(1024);
     char *keyname = osi_calloc(sizeof(CONFIG_KEY) + 1);
     int config_size = get_config_size(config);
-    char *buf = osi_calloc(config_size + 100);
+    char *buf = osi_calloc(config_size);
     if (!line || !buf || !keyname) {
         err_code |= 0x01;
         goto error;
@@ -407,6 +407,16 @@ bool config_save(const config_t *config, const char *filename)
     for (const list_node_t *node = list_begin(config->sections); node != list_end(config->sections); node = list_next(node)) {
         const section_t *section = (const section_t *)list_node(node);
         w_cnt = snprintf(line, 1024, "[%s]\n", section->name);
+        if(w_cnt < 0) {
+            OSI_TRACE_ERROR("snprintf error w_cnt %d.",w_cnt);
+            err_code |= 0x10;
+            goto error;
+        }
+        if(w_cnt_total + w_cnt > config_size) {
+            OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size (config_size = %d).", __func__, (w_cnt + w_cnt_total), config_size);
+            err_code |= 0x20;
+            goto error;
+        }
         OSI_TRACE_DEBUG("section name: %s, w_cnt + w_cnt_total = %d\n", section->name, w_cnt + w_cnt_total);
         memcpy(buf + w_cnt_total, line, w_cnt);
         w_cnt_total += w_cnt;
@@ -415,6 +425,16 @@ bool config_save(const config_t *config, const char *filename)
             const entry_t *entry = (const entry_t *)list_node(enode);
             OSI_TRACE_DEBUG("(key, val): (%s, %s)\n", entry->key, entry->value);
             w_cnt = snprintf(line, 1024, "%s = %s\n", entry->key, entry->value);
+            if(w_cnt < 0) {
+                OSI_TRACE_ERROR("snprintf error w_cnt %d.",w_cnt);
+                err_code |= 0x10;
+                goto error;
+            }
+            if(w_cnt_total + w_cnt > config_size) {
+                OSI_TRACE_ERROR("%s, memcpy size (w_cnt + w_cnt_total = %d) is larger than buffer size.(config_size = %d)", __func__, (w_cnt + w_cnt_total), config_size);
+                err_code |= 0x20;
+                goto error;
+            }
             OSI_TRACE_DEBUG("%s, w_cnt + w_cnt_total = %d", __func__, w_cnt + w_cnt_total);
             memcpy(buf + w_cnt_total, line, w_cnt);
             w_cnt_total += w_cnt;
@@ -520,7 +540,10 @@ static void config_parse(nvs_handle fp, config_t *config)
     char *section = osi_calloc(1024);
     char *keyname = osi_calloc(sizeof(CONFIG_KEY) + 1);
     int buf_size = get_config_size_from_flash(fp);
-    char *buf = osi_calloc(buf_size + 100);
+    char *buf = osi_calloc(buf_size);
+    if(buf_size == 0) { //First use nvs
+        goto error;
+    }
     if (!line || !section || !buf || !keyname) {
         err_code |= 0x01;
         goto error;

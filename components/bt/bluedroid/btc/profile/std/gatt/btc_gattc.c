@@ -315,7 +315,7 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int svc_num = 0;
+    uint16_t svc_num = 0;
     tBT_UUID *bta_uuid = NULL;
     if (svc_uuid) {
         bta_uuid = osi_malloc(sizeof(tBT_UUID));
@@ -324,7 +324,7 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
 
     BTA_GATTC_GetServiceWithUUID(conn_id, bta_uuid, &db, &svc_num);
 
-    if ((status = btc_gattc_check_valid_param(svc_num, offset)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)svc_num, offset)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
@@ -334,7 +334,7 @@ esp_gatt_status_t btc_ble_gattc_get_service(uint16_t conn_id, esp_bt_uuid_t *svc
         *count = 0;
         return status;
     } else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)svc_num, ESP_GATT_DB_PRIMARY_SERVICE, offset, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, svc_num, ESP_GATT_DB_PRIMARY_SERVICE, offset, (void *)result, db);
     }
 
     *count = svc_num;
@@ -356,17 +356,17 @@ esp_gatt_status_t btc_ble_gattc_get_all_char(uint16_t conn_id,
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int char_num = 0;
+    uint16_t char_num = 0;
     BTA_GATTC_GetAllChar(conn_id, start_handle, end_handle, &db, &char_num);
 
-    if ((status = btc_gattc_check_valid_param(char_num, offset)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)char_num, offset)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
         *count = 0;
         return status;
     } else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)char_num, ESP_GATT_DB_CHARACTERISTIC, offset, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, char_num, ESP_GATT_DB_CHARACTERISTIC, offset, (void *)result, db);
     }
 
     *count = char_num;
@@ -384,17 +384,17 @@ esp_gatt_status_t btc_ble_gattc_get_all_descr(uint16_t conn_id,
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int descr_num = 0;
+    uint16_t descr_num = 0;
     BTA_GATTC_GetAllDescriptor(conn_id, char_handle, &db, &descr_num);
 
-    if ((status = btc_gattc_check_valid_param(descr_num, offset)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)descr_num, offset)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
         *count = 0;
         return status;
     } else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, offset, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, descr_num, ESP_GATT_DB_DESCRIPTOR, offset, (void *)result, db);
     }
 
     *count = descr_num;
@@ -414,19 +414,19 @@ esp_gatt_status_t btc_ble_gattc_get_char_by_uuid(uint16_t conn_id,
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int char_num = 0;
+    uint16_t char_num = 0;
     tBT_UUID bta_uuid = {0};
     btc_to_bta_uuid(&bta_uuid, &char_uuid);
     BTA_GATTC_GetCharByUUID(conn_id, start_handle, end_handle, bta_uuid, &db, &char_num);
 
-    if ((status = btc_gattc_check_valid_param(char_num, 0)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)char_num, 0)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
         *count = 0;
         return status;
     } else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)char_num, ESP_GATT_DB_CHARACTERISTIC, 0, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, char_num, ESP_GATT_DB_CHARACTERISTIC, 0, (void *)result, db);
     }
 
     *count = char_num;
@@ -447,7 +447,7 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int descr_num = 0;
+    uint16_t descr_num = 0;
     tBT_UUID bta_char_uuid = {0};
     tBT_UUID bta_descr_uuid = {0};
     btc_to_bta_uuid(&bta_char_uuid, &char_uuid);
@@ -456,14 +456,14 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_uuid(uint16_t conn_id,
     BTA_GATTC_GetDescrByUUID(conn_id, start_handle, end_handle,
                              bta_char_uuid, bta_descr_uuid, &db, &descr_num);
 
-    if ((status = btc_gattc_check_valid_param(descr_num, 0)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)descr_num, 0)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
         *count = 0;
         return status;
     } else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
     }
 
     *count = descr_num;
@@ -482,20 +482,20 @@ esp_gatt_status_t btc_ble_gattc_get_descr_by_char_handle(uint16_t conn_id,
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int descr_num = 0;
+    uint16_t descr_num = 0;
     tBT_UUID bta_descr_uuid = {0};
     btc_to_bta_uuid(&bta_descr_uuid, &descr_uuid);
 
     BTA_GATTC_GetDescrByCharHandle(conn_id, char_handle, bta_descr_uuid, &db, &descr_num);
 
-    if ((status = btc_gattc_check_valid_param(descr_num, 0)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)descr_num, 0)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
         *count = 0;
         return status;
     } else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, descr_num, ESP_GATT_DB_DESCRIPTOR, 0, (void *)result, db);
     }
 
     *count = descr_num;
@@ -516,7 +516,7 @@ esp_gatt_status_t btc_ble_gattc_get_include_service(uint16_t conn_id,
 {
     esp_gatt_status_t status;
     btgatt_db_element_t *db = NULL;
-    int incl_num = 0;
+    uint16_t incl_num = 0;
     tBT_UUID bta_uuid = {0};
 
     if (incl_uuid != NULL) {
@@ -526,14 +526,14 @@ esp_gatt_status_t btc_ble_gattc_get_include_service(uint16_t conn_id,
         BTA_GATTC_GetIncludeService(conn_id, start_handle, end_handle, NULL, &db, &incl_num);
     }
 
-    if ((status = btc_gattc_check_valid_param(incl_num, 0)) != ESP_GATT_OK) {
+    if ((status = btc_gattc_check_valid_param((int)incl_num, 0)) != ESP_GATT_OK) {
         if (db) {
             osi_free(db);
         }
         *count = 0;
         return status;
     }else {
-        btc_gattc_fill_gatt_db_conversion(*count, (uint16_t)incl_num, ESP_GATT_DB_INCLUDED_SERVICE, 0, (void *)result, db);
+        btc_gattc_fill_gatt_db_conversion(*count, incl_num, ESP_GATT_DB_INCLUDED_SERVICE, 0, (void *)result, db);
     }
 
     *count = incl_num;
@@ -552,9 +552,9 @@ esp_gatt_status_t btc_ble_gattc_get_attr_count(uint16_t conn_id,
                                                uint16_t *count)
 {
     if (type == ESP_GATT_DB_ALL) {
-        BTA_GATTC_GetDBSize(conn_id, start_handle, end_handle, (int *)count);
+        BTA_GATTC_GetDBSize(conn_id, start_handle, end_handle, count);
     } else {
-        BTA_GATTC_GetDBSizeByType(conn_id, type, start_handle, end_handle, char_handle, (int *)count);
+        BTA_GATTC_GetDBSizeByType(conn_id, type, start_handle, end_handle, char_handle, count);
     }
 
     return ESP_GATT_OK;
@@ -564,7 +564,7 @@ esp_gatt_status_t btc_ble_gattc_get_db(uint16_t conn_id, uint16_t start_handle, 
                                        esp_gattc_db_elem_t *db, uint16_t *count)
 {
     btgatt_db_element_t *get_db = NULL;
-    int num = 0;
+    uint16_t num = 0;
     tBT_UUID bta_uuid;
     uint16_t db_size = 0;
     BTA_GATTC_GetGattDb(conn_id, start_handle, end_handle, &get_db, &num);
