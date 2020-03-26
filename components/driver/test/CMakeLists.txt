@@ -1,3 +1,3 @@
-idf_component_register(SRC_DIRS . param_test
+idf_component_register(SRC_DIRS . param_test touch_sensor_test
                        PRIV_INCLUDE_DIRS include param_test/include
                        PRIV_REQUIRES unity test_utils driver nvs_flash esp_serial_slave_link infrared_tools)

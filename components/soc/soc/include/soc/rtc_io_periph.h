@@ -22,6 +22,7 @@
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_reg.h"
 #include "soc/rtc_cntl_struct.h"
+#include "soc/sens_struct.h"
 #include "soc/gpio_caps.h"
 
 #ifdef __cplusplus

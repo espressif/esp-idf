@@ -13,9 +13,6 @@
 // limitations under the License.
 #ifndef _SOC_RTC_CNTL_STRUCT_H_
 #define _SOC_RTC_CNTL_STRUCT_H_
-
-#include <stdint.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,15 +34,8 @@ typedef volatile struct {
             uint32_t bbpll_force_pu:      1;             /*BB_PLL force power up*/
             uint32_t xtl_force_pd:        1;             /*crystall force power down*/
             uint32_t xtl_force_pu:        1;             /*crystall force power up*/
-            uint32_t bias_sleep_folw_8m:  1;             /*BIAS_SLEEP follow CK8M*/
-            uint32_t bias_force_sleep:    1;             /*BIAS_SLEEP force sleep*/
-            uint32_t bias_force_nosleep:  1;             /*BIAS_SLEEP force no sleep*/
-            uint32_t bias_i2c_folw_8m:    1;             /*BIAS_I2C follow CK8M*/
-            uint32_t bias_i2c_force_pd:   1;             /*BIAS_I2C force power down*/
-            uint32_t bias_i2c_force_pu:   1;             /*BIAS_I2C force power up*/
-            uint32_t bias_core_folw_8m:   1;             /*BIAS_CORE follow CK8M*/
-            uint32_t bias_core_force_pd:  1;             /*BIAS_CORE force power down*/
-            uint32_t bias_core_force_pu:  1;             /*BIAS_CORE force power up*/
+            uint32_t xtl_en_wait:         4;             /*wait bias_sleep and current source wakeup*/
+            uint32_t reserved18:          5;
             uint32_t xtl_force_iso:       1;
             uint32_t pll_force_iso:       1;
             uint32_t analog_force_iso:    1;
@@ -155,16 +145,21 @@ typedef volatile struct {
     } timer6;
     union {
         struct {
-            uint32_t reserved0:          23;
-            uint32_t plla_force_pd:       1;             /*PLLA force power down*/
-            uint32_t plla_force_pu:       1;             /*PLLA force power up*/
-            uint32_t bbpll_cal_slp_start: 1;             /*start BBPLL calibration during sleep*/
-            uint32_t pvtmon_pu:           1;             /*1: PVTMON power up   otherwise power down*/
-            uint32_t txrf_i2c_pu:         1;             /*1: TXRF_I2C power up   otherwise power down*/
-            uint32_t rfrx_pbus_pu:        1;             /*1: RFRX_PBUS power up   otherwise power down*/
-            uint32_t reserved29:          1;
-            uint32_t ckgen_i2c_pu:        1;             /*1: CKGEN_I2C power up   otherwise power down*/
-            uint32_t pll_i2c_pu:          1;
+            uint32_t reserved0:             18;
+            uint32_t i2c_reset_por_force_pd: 1;
+            uint32_t i2c_reset_por_force_pu: 1;
+            uint32_t glitch_rst_en:          1;
+            uint32_t sar_i2c_force_pd:       1;          /*PLLA force power down*/
+            uint32_t sar_i2c_force_pu:       1;          /*PLLA force power up*/
+            uint32_t plla_force_pd:          1;          /*PLLA force power down*/
+            uint32_t plla_force_pu:          1;          /*PLLA force power up*/
+            uint32_t bbpll_cal_slp_start:    1;          /*start BBPLL calibration during sleep*/
+            uint32_t pvtmon_pu:              1;          /*1: PVTMON power up   otherwise power down*/
+            uint32_t txrf_i2c_pu:            1;          /*1: TXRF_I2C power up   otherwise power down*/
+            uint32_t rfrx_pbus_pu:           1;          /*1: RFRX_PBUS power up   otherwise power down*/
+            uint32_t reserved29:             1;
+            uint32_t ckgen_i2c_pu:           1;          /*1: CKGEN_I2C power up   otherwise power down*/
+            uint32_t pll_i2c_pu:             1;
         };
         uint32_t val;
     } ana_conf;
@@ -180,106 +175,112 @@ typedef volatile struct {
     } reset_state;
     union {
         struct {
-            uint32_t wakeup_cause:      15;              /*wakeup cause*/
-            uint32_t rtc_wakeup_ena:    15;              /*wakeup enable bitmap*/
-            uint32_t gpio_wakeup_filter: 1;              /*enable filter for gpio wakeup event*/
-            uint32_t reserved31:         1;
+            uint32_t reserved0:     15;
+            uint32_t rtc_wakeup_ena:17;                  /*wakeup enable bitmap*/
         };
         uint32_t val;
     } wakeup_state;
     union {
         struct {
-            uint32_t slp_wakeup:                 1;      /*enable sleep wakeup interrupt*/
-            uint32_t slp_reject:                 1;      /*enable sleep reject interrupt*/
-            uint32_t sdio_idle:                  1;      /*enable SDIO idle interrupt*/
-            uint32_t rtc_wdt:                    1;      /*enable RTC WDT interrupt*/
-            uint32_t reserved4:                  1;
-            uint32_t rtc_ulp_cp:                 1;      /*enable ULP-coprocessor interrupt*/
-            uint32_t rtc_touch_done:             1;      /*enable touch done interrupt*/
-            uint32_t rtc_touch_active:           1;      /*enable touch active interrupt*/
-            uint32_t rtc_touch_inactive:         1;      /*enable touch inactive interrupt*/
-            uint32_t rtc_brown_out:              1;      /*enable brown out interrupt*/
-            uint32_t rtc_main_timer:             1;      /*enable RTC main timer interrupt*/
-            uint32_t rtc_saradc1:                1;      /*enable saradc1 interrupt*/
-            uint32_t rtc_tsens:                  1;      /*enable tsens interrupt*/
-            uint32_t rtc_cocpu:                  1;      /*enable riscV cocpu interrupt*/
-            uint32_t rtc_saradc2:                1;      /*enable saradc2 interrupt*/
-            uint32_t rtc_swd:                    1;      /*enable super watch dog interrupt*/
-            uint32_t rtc_xtal32k_dead:           1;      /*enable cocpu trap interrupt*/
-            uint32_t rtc_cocpu_trap:             1;
-            uint32_t reserved18:                14;
+            uint32_t slp_wakeup:                  1;     /*enable sleep wakeup interrupt*/
+            uint32_t slp_reject:                  1;     /*enable sleep reject interrupt*/
+            uint32_t sdio_idle:                   1;     /*enable SDIO idle interrupt*/
+            uint32_t rtc_wdt:                     1;     /*enable RTC WDT interrupt*/
+            uint32_t rtc_touch_scan_done:         1;     /*enable touch scan done interrupt*/
+            uint32_t rtc_ulp_cp:                  1;     /*enable ULP-coprocessor interrupt*/
+            uint32_t rtc_touch_done:              1;     /*enable touch done interrupt*/
+            uint32_t rtc_touch_active:            1;     /*enable touch active interrupt*/
+            uint32_t rtc_touch_inactive:          1;     /*enable touch inactive interrupt*/
+            uint32_t rtc_brown_out:               1;     /*enable brown out interrupt*/
+            uint32_t rtc_main_timer:              1;     /*enable RTC main timer interrupt*/
+            uint32_t rtc_saradc1:                 1;     /*enable saradc1 interrupt*/
+            uint32_t rtc_tsens:                   1;     /*enable tsens interrupt*/
+            uint32_t rtc_cocpu:                   1;     /*enable riscV cocpu interrupt*/
+            uint32_t rtc_saradc2:                 1;     /*enable saradc2 interrupt*/
+            uint32_t rtc_swd:                     1;     /*enable super watch dog interrupt*/
+            uint32_t rtc_xtal32k_dead:            1;     /*enable xtal32k_dead  interrupt*/
+            uint32_t rtc_cocpu_trap:              1;     /*enable cocpu trap interrupt*/
+            uint32_t rtc_touch_timeout:           1;     /*enable touch timeout interrupt*/
+            uint32_t rtc_glitch_det:              1;     /*enbale gitch det interrupt*/
+            uint32_t reserved20:                 12;
         };
         uint32_t val;
     } int_ena;
     union {
         struct {
-            uint32_t slp_wakeup:                 1;      /*sleep wakeup interrupt raw*/
-            uint32_t slp_reject:                 1;      /*sleep reject interrupt raw*/
-            uint32_t sdio_idle:                  1;      /*SDIO idle interrupt raw*/
-            uint32_t rtc_wdt:                    1;      /*RTC WDT interrupt raw*/
-            uint32_t reserved4:                  1;
-            uint32_t rtc_ulp_cp:                 1;      /*ULP-coprocessor interrupt raw*/
-            uint32_t rtc_touch_done:             1;      /*touch interrupt raw*/
-            uint32_t rtc_touch_active:           1;      /*touch active interrupt raw*/
-            uint32_t rtc_touch_inactive:         1;      /*touch inactive interrupt raw*/
-            uint32_t rtc_brown_out:              1;      /*brown out interrupt raw*/
-            uint32_t rtc_main_timer:             1;      /*RTC main timer interrupt raw*/
-            uint32_t rtc_saradc1:                1;      /*saradc1 interrupt raw*/
-            uint32_t rtc_tsens:                  1;      /*tsens interrupt raw*/
-            uint32_t rtc_cocpu:                  1;      /*riscV cocpu interrupt raw*/
-            uint32_t rtc_saradc2:                1;      /*saradc2 interrupt raw*/
-            uint32_t rtc_swd:                    1;      /*super watch dog interrupt raw*/
-            uint32_t rtc_xtal32k_dead:           1;      /*xtal32k dead detection interrupt raw*/
-            uint32_t rtc_cocpu_trap:             1;      /*cocpu trap interrupt raw*/
-            uint32_t reserved18:                14;
+            uint32_t slp_wakeup:                  1;     /*sleep wakeup interrupt raw*/
+            uint32_t slp_reject:                  1;     /*sleep reject interrupt raw*/
+            uint32_t sdio_idle:                   1;     /*SDIO idle interrupt raw*/
+            uint32_t rtc_wdt:                     1;     /*RTC WDT interrupt raw*/
+            uint32_t rtc_touch_scan_done:         1;
+            uint32_t rtc_ulp_cp:                  1;     /*ULP-coprocessor interrupt raw*/
+            uint32_t rtc_touch_done:              1;     /*touch interrupt raw*/
+            uint32_t rtc_touch_active:            1;     /*touch active interrupt raw*/
+            uint32_t rtc_touch_inactive:          1;     /*touch inactive interrupt raw*/
+            uint32_t rtc_brown_out:               1;     /*brown out interrupt raw*/
+            uint32_t rtc_main_timer:              1;     /*RTC main timer interrupt raw*/
+            uint32_t rtc_saradc1:                 1;     /*saradc1 interrupt raw*/
+            uint32_t rtc_tsens:                   1;     /*tsens interrupt raw*/
+            uint32_t rtc_cocpu:                   1;     /*riscV cocpu interrupt raw*/
+            uint32_t rtc_saradc2:                 1;     /*saradc2 interrupt raw*/
+            uint32_t rtc_swd:                     1;     /*super watch dog interrupt raw*/
+            uint32_t rtc_xtal32k_dead:            1;     /*xtal32k dead detection interrupt raw*/
+            uint32_t rtc_cocpu_trap:              1;     /*cocpu trap interrupt raw*/
+            uint32_t rtc_touch_timeout:           1;     /*touch timeout interrupt raw*/
+            uint32_t rtc_glitch_det:              1;     /*glitch_det_interrupt_raw*/
+            uint32_t reserved20:                 12;
         };
         uint32_t val;
     } int_raw;
     union {
         struct {
-            uint32_t slp_wakeup:                1;       /*sleep wakeup interrupt state*/
-            uint32_t slp_reject:                1;       /*sleep reject interrupt state*/
-            uint32_t sdio_idle:                 1;       /*SDIO idle interrupt state*/
-            uint32_t rtc_wdt:                   1;       /*RTC WDT interrupt state*/
-            uint32_t reserved4:                 1;
-            uint32_t rtc_ulp_cp:                1;       /*ULP-coprocessor interrupt state*/
-            uint32_t rtc_touch_done:            1;       /*touch done interrupt state*/
-            uint32_t rtc_touch_active:          1;       /*touch active interrupt state*/
-            uint32_t rtc_touch_inactive:        1;       /*touch inactive interrupt state*/
-            uint32_t rtc_brown_out:             1;       /*brown out interrupt state*/
-            uint32_t rtc_main_timer:            1;       /*RTC main timer interrupt state*/
-            uint32_t rtc_saradc1:               1;       /*saradc1 interrupt state*/
-            uint32_t rtc_tsens:                 1;       /*tsens interrupt state*/
-            uint32_t rtc_cocpu:                 1;       /*riscV cocpu interrupt state*/
-            uint32_t rtc_saradc2:               1;       /*saradc2 interrupt state*/
-            uint32_t rtc_swd:                   1;       /*super watch dog interrupt state*/
-            uint32_t rtc_xtal32k_dead:          1;       /*xtal32k dead detection interrupt state*/
-            uint32_t rtc_cocpu_trap:            1;       /*cocpu trap interrupt state*/
-            uint32_t reserved18:               14;
+            uint32_t slp_wakeup:                 1;      /*sleep wakeup interrupt state*/
+            uint32_t slp_reject:                 1;      /*sleep reject interrupt state*/
+            uint32_t sdio_idle:                  1;      /*SDIO idle interrupt state*/
+            uint32_t rtc_wdt:                    1;      /*RTC WDT interrupt state*/
+            uint32_t rtc_touch_scan_done:        1;
+            uint32_t rtc_ulp_cp:                 1;      /*ULP-coprocessor interrupt state*/
+            uint32_t rtc_touch_done:             1;      /*touch done interrupt state*/
+            uint32_t rtc_touch_active:           1;      /*touch active interrupt state*/
+            uint32_t rtc_touch_inactive:         1;      /*touch inactive interrupt state*/
+            uint32_t rtc_brown_out:              1;      /*brown out interrupt state*/
+            uint32_t rtc_main_timer:             1;      /*RTC main timer interrupt state*/
+            uint32_t rtc_saradc1:                1;      /*saradc1 interrupt state*/
+            uint32_t rtc_tsens:                  1;      /*tsens interrupt state*/
+            uint32_t rtc_cocpu:                  1;      /*riscV cocpu interrupt state*/
+            uint32_t rtc_saradc2:                1;      /*saradc2 interrupt state*/
+            uint32_t rtc_swd:                    1;      /*super watch dog interrupt state*/
+            uint32_t rtc_xtal32k_dead:           1;      /*xtal32k dead detection interrupt state*/
+            uint32_t rtc_cocpu_trap:             1;      /*cocpu trap interrupt state*/
+            uint32_t rtc_touch_timeout:          1;      /*Touch timeout interrupt state*/
+            uint32_t rtc_glitch_det:             1;      /*glitch_det_interrupt state*/
+            uint32_t reserved20:                12;
         };
         uint32_t val;
     } int_st;
     union {
         struct {
-            uint32_t slp_wakeup:                 1;      /*Clear sleep wakeup interrupt state*/
-            uint32_t slp_reject:                 1;      /*Clear sleep reject interrupt state*/
-            uint32_t sdio_idle:                  1;      /*Clear SDIO idle interrupt state*/
-            uint32_t rtc_wdt:                    1;      /*Clear RTC WDT interrupt state*/
-            uint32_t reserved4:                  1;
-            uint32_t rtc_ulp_cp:                 1;      /*Clear ULP-coprocessor interrupt state*/
-            uint32_t rtc_touch_done:             1;      /*Clear touch done interrupt state*/
-            uint32_t rtc_touch_active:           1;      /*Clear touch active interrupt state*/
-            uint32_t rtc_touch_inactive:         1;      /*Clear touch inactive interrupt state*/
-            uint32_t rtc_brown_out:              1;      /*Clear brown out interrupt state*/
-            uint32_t rtc_main_timer:             1;      /*Clear RTC main timer interrupt state*/
-            uint32_t rtc_saradc1:                1;      /*Clear saradc1 interrupt state*/
-            uint32_t rtc_tsens:                  1;      /*Clear tsens interrupt state*/
-            uint32_t rtc_cocpu:                  1;      /*Clear riscV cocpu interrupt state*/
-            uint32_t rtc_saradc2:                1;      /*Clear saradc2 interrupt state*/
-            uint32_t rtc_swd:                    1;      /*Clear super watch dog interrupt state*/
-            uint32_t rtc_xtal32k_dead:           1;      /*Clear RTC WDT interrupt state*/
-            uint32_t rtc_cocpu_trap:             1;      /*Clear cocpu trap interrupt state*/
-            uint32_t reserved18:                14;
+            uint32_t slp_wakeup:                  1;     /*Clear sleep wakeup interrupt state*/
+            uint32_t slp_reject:                  1;     /*Clear sleep reject interrupt state*/
+            uint32_t sdio_idle:                   1;     /*Clear SDIO idle interrupt state*/
+            uint32_t rtc_wdt:                     1;     /*Clear RTC WDT interrupt state*/
+            uint32_t rtc_touch_scan_done:         1;
+            uint32_t rtc_ulp_cp:                  1;     /*Clear ULP-coprocessor interrupt state*/
+            uint32_t rtc_touch_done:              1;     /*Clear touch done interrupt state*/
+            uint32_t rtc_touch_active:            1;     /*Clear touch active interrupt state*/
+            uint32_t rtc_touch_inactive:          1;     /*Clear touch inactive interrupt state*/
+            uint32_t rtc_brown_out:               1;     /*Clear brown out interrupt state*/
+            uint32_t rtc_main_timer:              1;     /*Clear RTC main timer interrupt state*/
+            uint32_t rtc_saradc1:                 1;     /*Clear saradc1 interrupt state*/
+            uint32_t rtc_tsens:                   1;     /*Clear tsens interrupt state*/
+            uint32_t rtc_cocpu:                   1;     /*Clear riscV cocpu interrupt state*/
+            uint32_t rtc_saradc2:                 1;     /*Clear saradc2 interrupt state*/
+            uint32_t rtc_swd:                     1;     /*Clear super watch dog interrupt state*/
+            uint32_t rtc_xtal32k_dead:            1;     /*Clear RTC WDT interrupt state*/
+            uint32_t rtc_cocpu_trap:              1;     /*Clear cocpu trap interrupt state*/
+            uint32_t rtc_touch_timeout:           1;     /*Clear touch timeout interrupt state*/
+            uint32_t rtc_glitch_det:              1;     /*Clear glitch det interrupt state*/
+            uint32_t reserved20:                 12;
         };
         uint32_t val;
     } int_clr;
@@ -299,7 +300,8 @@ typedef volatile struct {
             uint32_t dgm_xtal_32k:         3;            /*xtal_32k gm control*/
             uint32_t dres_xtal_32k:        3;            /*DRES_XTAL_32K*/
             uint32_t xpd_xtal_32k:         1;            /*XPD_XTAL_32K*/
-            uint32_t dac_xtal_32k:         6;            /*DAC_XTAL_32K*/
+            uint32_t dac_xtal_32k:         3;            /*DAC_XTAL_32K*/
+            uint32_t rtc_wdt_state:        3;            /*state of 32k_wdt*/
             uint32_t rtc_xtal32k_gpio_sel: 1;            /*XTAL_32K sel. 0: external XTAL_32K  1: CLK from RTC pad X32P_C*/
             uint32_t reserved24:           6;
             uint32_t ctr_lv:               1;            /*0: power down XTAL at high level  1: power down XTAL at low level*/
@@ -309,16 +311,17 @@ typedef volatile struct {
     } ext_xtl_conf;
     union {
         struct {
-            uint32_t reserved0:     30;
-            uint32_t wakeup0_lv:     1;                  /*0: external wakeup at low level  1: external wakeup at high level*/
-            uint32_t wakeup1_lv:     1;
+            uint32_t reserved0:         29;
+            uint32_t gpio_wakeup_filter: 1;              /*enable filter for gpio wakeup event*/
+            uint32_t wakeup0_lv:         1;              /*0: external wakeup at low level  1: external wakeup at high level*/
+            uint32_t wakeup1_lv:         1;
         };
         uint32_t val;
     } ext_wakeup_conf;
     union {
         struct {
-            uint32_t reject_cause:        15;            /*sleep reject cause*/
-            uint32_t rtc_sleep_reject_ena:15;            /*sleep reject enable*/
+            uint32_t reserved0:           13;
+            uint32_t rtc_sleep_reject_ena:17;            /*sleep reject enable*/
             uint32_t light_slp_reject_en:  1;            /*enable reject for light sleep*/
             uint32_t deep_slp_reject_en:   1;            /*enable reject for deep sleep*/
         };
@@ -395,8 +398,17 @@ typedef volatile struct {
     } sdio_conf;
     union {
         struct {
-            uint32_t reserved0:            22;
-            uint32_t dbg_atten:             4;           /*DBG_ATTEN*/
+            uint32_t reserved0:            10;
+            uint32_t bias_buf_idle:         1;
+            uint32_t bias_buf_wake:         1;
+            uint32_t bias_buf_deep_slp:     1;
+            uint32_t bias_buf_monitor:      1;
+            uint32_t pd_cur_deep_slp:       1;           /*xpd cur when rtc in sleep_state*/
+            uint32_t pd_cur_monitor:        1;           /*xpd cur when rtc in monitor state*/
+            uint32_t bias_sleep_deep_slp:   1;           /*bias_sleep when rtc in sleep_state*/
+            uint32_t bias_sleep_monitor:    1;           /*bias_sleep when rtc in monitor state*/
+            uint32_t dbg_atten_deep_slp:    4;           /*DBG_ATTEN when rtc in sleep state*/
+            uint32_t dbg_atten_monitor:     4;           /*DBG_ATTEN when rtc in monitor state*/
             uint32_t enb_sck_xtal:          1;           /*ENB_SCK_XTAL*/
             uint32_t inc_heartbeat_refresh: 1;           /*INC_HEARTBEAT_REFRESH*/
             uint32_t dec_heartbeat_period:  1;           /*DEC_HEARTBEAT_PERIOD*/
@@ -659,7 +671,8 @@ typedef volatile struct {
             uint32_t pd_rf_ena:                 1;       /*enable power down RF when brown out happens*/
             uint32_t rst_wait:                 10;       /*brown out reset wait cycles*/
             uint32_t rst_ena:                   1;       /*enable brown out reset*/
-            uint32_t reserved27:                2;
+            uint32_t rst_sel:                   1;       /*1:  4-pos reset*/
+            uint32_t reserved28:                1;
             uint32_t cnt_clr:                   1;       /*clear brown out counter*/
             uint32_t ena:                       1;       /*enable brown out*/
             uint32_t det:                       1;
@@ -687,9 +700,7 @@ typedef volatile struct {
     union {
         struct {
             uint32_t ulp_cp_pc_init:        11;          /*ULP-coprocessor PC initial address*/
-            uint32_t reserved11:             1;
-            uint32_t ulp_cp_timer_slp_cycle:16;          /*sleep cycles for ULP-coprocessor timer*/
-            uint32_t reserved28:             1;
+            uint32_t reserved11:            18;
             uint32_t ulp_cp_gpio_wakeup_ena: 1;          /*ULP-coprocessor wakeup by GPIO enable*/
             uint32_t ulp_cp_gpio_wakeup_clr: 1;          /*ULP-coprocessor wakeup by GPIO state clear*/
             uint32_t ulp_cp_slp_timer_en:    1;          /*ULP-coprocessor timer enable bit*/
@@ -715,13 +726,13 @@ typedef volatile struct {
             uint32_t cocpu_start_2_reset_dis: 6;         /*time from start cocpu to pull down reset*/
             uint32_t cocpu_start_2_intr_en:   6;         /*time from start cocpu to give start interrupt*/
             uint32_t cocpu_shut:              1;         /*to shut cocpu*/
-            uint32_t cocpu_shut_2_clk_dis:    6;         /*time from shut cocpu to disable clk*/
+            uint32_t cocpu_shut_2_clk_dis:    8;         /*time from shut cocpu to disable clk*/
             uint32_t cocpu_shut_reset_en:     1;         /*to reset cocpu*/
             uint32_t cocpu_sel:               1;         /*1: old ULP 0: new riscV*/
             uint32_t cocpu_done_force:        1;         /*1: select riscv done 0: select ulp done*/
             uint32_t cocpu_done:              1;         /*done signal used by riscv to control timer.*/
             uint32_t cocpu_sw_int_trigger:    1;         /*trigger cocpu register interrupt*/
-            uint32_t reserved25:              7;
+            uint32_t reserved27:              5;
         };
         uint32_t val;
     } cocpu_ctrl;
@@ -734,23 +745,23 @@ typedef volatile struct {
     } touch_ctrl1;
     union {
         struct {
-            uint32_t reserved0:          2;
-            uint32_t touch_drange:       2;              /*TOUCH_DRANGE*/
-            uint32_t touch_drefl:        2;              /*TOUCH_DREFL*/
-            uint32_t touch_drefh:        2;              /*TOUCH_DREFH*/
-            uint32_t touch_xpd_bias:     1;              /*TOUCH_XPD_BIAS*/
-            uint32_t touch_refc:         3;              /*TOUCH pad0 reference cap*/
-            uint32_t reserved12:         1;
-            uint32_t touch_slp_timer_en: 1;              /*touch timer enable bit*/
-            uint32_t touch_start_fsm_en: 1;              /*1: TOUCH_START & TOUCH_XPD is controlled by touch fsm*/
-            uint32_t touch_start_en:     1;              /*1: start touch fsm*/
-            uint32_t touch_start_force:  1;              /*1: to start touch fsm by SW*/
-            uint32_t touch_xpd_wait:     8;              /*the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD*/
-            uint32_t touch_slp_cyc_div:  2;              /*when a touch pad is active  sleep cycle could be divided by this number*/
-            uint32_t reserved27:         2;
-            uint32_t touch_reset:        1;              /*reset upgrade touch*/
-            uint32_t touch_clk_fo:       1;              /*touch clock force on*/
-            uint32_t touch_clkgate_en:   1;              /*touch clock enable*/
+            uint32_t reserved0:              2;
+            uint32_t touch_drange:           2;          /*TOUCH_DRANGE*/
+            uint32_t touch_drefl:            2;          /*TOUCH_DREFL*/
+            uint32_t touch_drefh:            2;          /*TOUCH_DREFH*/
+            uint32_t touch_xpd_bias:         1;          /*TOUCH_XPD_BIAS*/
+            uint32_t touch_refc:             3;          /*TOUCH pad0 reference cap*/
+            uint32_t touch_dbias:            1;          /*1:use self bias 0:use bandgap bias*/
+            uint32_t touch_slp_timer_en:     1;          /*touch timer enable bit*/
+            uint32_t touch_start_fsm_en:     1;          /*1: TOUCH_START & TOUCH_XPD is controlled by touch fsm*/
+            uint32_t touch_start_en:         1;          /*1: start touch fsm*/
+            uint32_t touch_start_force:      1;          /*1: to start touch fsm by SW*/
+            uint32_t touch_xpd_wait:         8;          /*the waiting cycles (in 8MHz) between TOUCH_START and TOUCH_XPD*/
+            uint32_t touch_slp_cyc_div:      2;          /*when a touch pad is active  sleep cycle could be divided by this number*/
+            uint32_t touch_timer_force_done: 2;          /*force touch timer done*/
+            uint32_t touch_reset:            1;          /*reset upgrade touch*/
+            uint32_t touch_clk_fo:           1;          /*touch clock force on*/
+            uint32_t touch_clkgate_en:       1;          /*touch clock enable*/
         };
         uint32_t val;
     } touch_ctrl2;
@@ -786,14 +797,15 @@ typedef volatile struct {
     } touch_approach;
     union {
         struct {
-            uint32_t reserved0:            12;
+            uint32_t reserved0:             9;
+            uint32_t touch_smooth_lvl:      2;
             uint32_t touch_jitter_step:     4;           /*touch jitter step*/
             uint32_t touch_neg_noise_limit: 4;           /*negative threshold counter limit*/
             uint32_t touch_neg_noise_thres: 2;
             uint32_t touch_noise_thres:     2;
             uint32_t touch_hysteresis:      2;
             uint32_t touch_debounce:        3;           /*debounce counter*/
-            uint32_t touch_filter_mode:     2;           /*0: IIR ? 1: IIR ? 2: IIR 1/8 3: Jitter*/
+            uint32_t touch_filter_mode:     3;           /*0: IIR ? 1: IIR ? 2: IIR 1/8 3: Jitter*/
             uint32_t touch_filter_en:       1;           /*touch filter enable*/
         };
         uint32_t val;
@@ -821,8 +833,21 @@ typedef volatile struct {
         };
         uint32_t val;
     } usb_conf;
-    uint32_t reserved_124;
-    uint32_t reserved_128;
+    union {
+        struct {
+            uint32_t touch_timeout_num:22;
+            uint32_t touch_timeout_en:  1;
+            uint32_t reserved23:        9;
+        };
+        uint32_t val;
+    } touch_timeout_ctrl;
+    union {
+        struct {
+            uint32_t reject_cause:17;                    /*sleep reject cause*/
+            uint32_t reserved17:  15;
+        };
+        uint32_t val;
+    } slp_reject_cause;
     union {
         struct {
             uint32_t force_download_boot: 1;
@@ -830,6 +855,21 @@ typedef volatile struct {
         };
         uint32_t val;
     } option1;
+    union {
+        struct {
+            uint32_t wakeup_cause:17;                    /*sleep wakeup cause*/
+            uint32_t reserved17:  15;
+        };
+        uint32_t val;
+    } slp_wakeup_cause;
+    union {
+        struct {
+            uint32_t reserved0:              8;
+            uint32_t ulp_cp_timer_slp_cycle:24;          /*sleep cycles for ULP-coprocessor timer*/
+        };
+        uint32_t val;
+    } ulp_cp_timer_1;
+    uint32_t reserved_134;
     union {
         struct {
             uint32_t date:      28;

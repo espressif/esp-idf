@@ -16,9 +16,7 @@
 
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
-#include "soc/touch_sensor_periph.h"
 #include "hal/touch_sensor_types.h"
-#include "touch_sensor.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -141,21 +139,31 @@ esp_err_t touch_pad_get_fsm_mode(touch_fsm_mode_t *mode);
 
 
 /**
- * @brief To clear the touch status register, usually use this function in touch ISR to clear status.
+ * @brief To clear the touch sensor channel active status.
  *
- * @note Generally no manual removal is required.
+ * @note The FSM automatically updates the touch sensor status. It is generally not necessary to call this API to clear the status.
  * @return
  *      - ESP_OK on success
  */
 esp_err_t touch_pad_clear_status(void);
 
 /**
- * @brief Get the touch sensor status, usually used in ISR to decide which pads are 'touched'.
+ * @brief Get the touch sensor channel active status mask.
+ *        The bit position represents the channel number. The 0/1 status of the bit represents the trigger status.
  *
  * @return
  *      - The touch sensor status. e.g. Touch1 trigger status is `status_mask & (BIT1)`.
  */
 uint32_t touch_pad_get_status(void);
+
+/**
+ * @brief Check touch sensor measurement status.
+ *
+ * @return
+ *      - True measurement is under way
+ *      - False measurement done
+ */
+bool touch_pad_meas_is_done(void);
 
 #ifdef __cplusplus
 }

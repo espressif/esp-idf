@@ -18,11 +18,11 @@
 extern "C" {
 #endif
 
-#define SOC_TOUCH_SENSOR_NUM            (10)
-#define SOC_TOUCH_SENSOR_BIT_MASK_MAX   (0x3ff)
+#define SOC_TOUCH_SENSOR_NUM                (10)
+#define SOC_TOUCH_SENSOR_BIT_MASK_MAX       (0x3ff)
 
-#define SOC_TOUCH_PAD_MEASURE_WAIT      (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
-#define SOC_TOUCH_PAD_THRESHOLD_MAX     (0)     /*!<If set touch threshold max value, The touch sensor can't be in touched status */
+#define SOC_TOUCH_PAD_MEASURE_WAIT          (0xFF)  /*!<The timer frequency is 8Mhz, the max value is 0xff */
+#define SOC_TOUCH_PAD_THRESHOLD_MAX         (0)     /*!<If set touch threshold max value, The touch sensor can't be in touched status */
 
 #ifdef __cplusplus
 }

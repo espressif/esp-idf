@@ -14,4 +14,4 @@
 
 #pragma once
 
-#include "touch_sensor_common.h"
+#include "touch_sensor.h"

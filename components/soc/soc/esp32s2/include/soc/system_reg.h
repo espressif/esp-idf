@@ -898,6 +898,10 @@ extern "C" {
 #define DPORT_SOC_CLK_SEL_M  ((DPORT_SOC_CLK_SEL_V)<<(DPORT_SOC_CLK_SEL_S))
 #define DPORT_SOC_CLK_SEL_V  0x3
 #define DPORT_SOC_CLK_SEL_S  10
+#define DPORT_SOC_CLK_SEL_XTL    0
+#define DPORT_SOC_CLK_SEL_PLL    1
+#define DPORT_SOC_CLK_SEL_8M     2
+#define DPORT_SOC_CLK_SEL_APLL   3
 /* DPORT_PRE_DIV_CNT : R/W ;bitpos:[9:0] ;default: 10'h1 ; */
 /*description: */
 #define DPORT_PRE_DIV_CNT  0x000003FF

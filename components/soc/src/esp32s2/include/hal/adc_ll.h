@@ -257,11 +257,11 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_width_t bits)
 {
     if (adc_n == ADC_NUM_1) {
-        SENS.sar_meas1_ctrl1.sar1_bit_width = bits;
-        SENS.sar_reader1_ctrl.sar1_sample_bit = bits;
+        // SENS.sar_meas1_ctrl1.sar1_bit_width = bits;
+        // SENS.sar_reader1_ctrl.sar1_sample_bit = bits;
     } else { // adc_n == ADC_NUM_2
-        SENS.sar_meas2_ctrl1.sar2_bit_width = bits;
-        SENS.sar_reader2_ctrl.sar2_sample_bit = bits;
+        // SENS.sar_meas2_ctrl1.sar2_bit_width = bits;
+        // SENS.sar_reader2_ctrl.sar2_sample_bit = bits;
     }
 }
 

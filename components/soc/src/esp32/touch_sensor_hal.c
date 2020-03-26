@@ -19,7 +19,7 @@
 
 void touch_hal_init(void)
 {
-    touch_ll_disable_interrupt();
+    touch_ll_intr_disable();
     touch_ll_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
     touch_ll_clear_group_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX, SOC_TOUCH_SENSOR_BIT_MASK_MAX);
     touch_ll_set_trigger_mode(TOUCH_TRIGGER_MODE_DEFAULT);
@@ -35,13 +35,13 @@ void touch_hal_deinit(void)
 {
     touch_ll_stop_fsm();
     touch_ll_clear_trigger_status_mask();
-    touch_ll_disable_interrupt();
+    touch_ll_intr_disable();
 }
 
 void touch_hal_get_wakeup_status(touch_pad_t *pad_num)
 {
     uint32_t touch_mask = 0;
-    touch_hal_read_trigger_status_mask(&touch_mask);
+    touch_ll_read_trigger_status_mask(&touch_mask);
     if (touch_mask == 0) {
         *pad_num = -1;
     }

@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#include "driver/touch_sensor_common.h"
+
 /**
  * @brief Configure touch pad interrupt threshold.
  *
@@ -51,7 +53,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold);
  *     - ESP_ERR_INVALID_STATE This touch pad hardware connection is error, the value of "touch_value" is 0.
  *     - ESP_FAIL Touch pad not initialized
  */
-esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t * touch_value);
+esp_err_t touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value);
 
 /**
  * @brief get filtered touch sensor counter value by IIR filter.
@@ -121,13 +123,13 @@ esp_err_t touch_pad_set_filter_read_cb(filter_cb_t read_cb);
  *     - ESP_ERR_INVALID_ARG GPIO error
  *     - ESP_ERR_NO_MEM No memory
  */
-esp_err_t touch_pad_isr_register(intr_handler_t fn, void* arg);
+esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg);
 
 /**
  * @brief Set touch sensor measurement and sleep time.
- *        Excessive total time will slow down the touch response. 
+ *        Excessive total time will slow down the touch response.
  *        Too small measurement time will not be sampled enough, resulting in inaccurate measurements.
- * 
+ *
  * @note The greater the duty cycle of the measurement time, the more system power is consumed.
  * @param sleep_cycle  The touch sensor will sleep after each measurement.
  *                     sleep_cycle decide the interval between each measurement.
@@ -268,6 +270,13 @@ esp_err_t touch_pad_intr_enable(void);
 esp_err_t touch_pad_intr_disable(void);
 
 /**
+ * @brief To clear touch pad interrupt
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t touch_pad_intr_clear(void);
+
+/**
  * @brief set touch pad filter calibration period, in ms.
  *        Need to call touch_pad_filter_start before all touch filter APIs
  * @param new_period_ms filter period, in ms
@@ -287,7 +296,7 @@ esp_err_t touch_pad_set_filter_period(uint32_t new_period_ms);
  *      - ESP_ERR_INVALID_STATE driver state error
  *      - ESP_ERR_INVALID_ARG parameter error
  */
-esp_err_t touch_pad_get_filter_period(uint32_t* p_period_ms);
+esp_err_t touch_pad_get_filter_period(uint32_t *p_period_ms);
 
 /**
  * @brief start touch pad filter function
