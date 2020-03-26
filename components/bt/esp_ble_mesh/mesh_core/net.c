@@ -811,7 +811,8 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER) &&
-        bt_mesh_proxy_relay(&buf->b, dst)) {
+        bt_mesh_proxy_relay(&buf->b, dst) &&
+        BLE_MESH_ADDR_IS_UNICAST(dst)) {
         send_cb_finalize(cb, cb_data);
         return 0;
     }
