@@ -84,6 +84,20 @@ void net_buf_simple_add_be16(struct net_buf_simple *buf, u16_t val)
     memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
 }
 
+void net_buf_simple_add_le24(struct net_buf_simple *buf, u32_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
+
+    sys_put_le24(val, net_buf_simple_add(buf, 3));
+}
+
+void net_buf_simple_add_be24(struct net_buf_simple *buf, u32_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
+
+    sys_put_be24(val, net_buf_simple_add(buf, 3));
+}
+
 void net_buf_simple_add_le32(struct net_buf_simple *buf, u32_t val)
 {
     NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
@@ -186,6 +200,30 @@ u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf)
     net_buf_simple_pull(buf, sizeof(val));
 
     return sys_be16_to_cpu(val);
+}
+
+u32_t net_buf_simple_pull_le24(struct net_buf_simple *buf)
+{
+    struct uint24 {
+        u32_t u24:24;
+    } __packed val;
+
+    val = UNALIGNED_GET((struct uint24 *)buf->data);
+    net_buf_simple_pull(buf, sizeof(val));
+
+    return sys_le24_to_cpu(val.u24);
+}
+
+u32_t net_buf_simple_pull_be24(struct net_buf_simple *buf)
+{
+    struct uint24 {
+        u32_t u24:24;
+    } __packed val;
+
+    val = UNALIGNED_GET((struct uint24 *)buf->data);
+    net_buf_simple_pull(buf, sizeof(val));
+
+    return sys_be24_to_cpu(val.u24);
 }
 
 u32_t net_buf_simple_pull_le32(struct net_buf_simple *buf)

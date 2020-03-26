@@ -242,6 +242,30 @@ void net_buf_simple_add_le16(struct net_buf_simple *buf, u16_t val);
 void net_buf_simple_add_be16(struct net_buf_simple *buf, u16_t val);
 
 /**
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+void net_buf_simple_add_le24(struct net_buf_simple *buf, u32_t val);
+
+/**
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+void net_buf_simple_add_be24(struct net_buf_simple *buf, u32_t val);
+
+/**
  * @brief Add 32-bit value at the end of the buffer
  *
  * Adds 32-bit value in little endian format at the end of buffer.
@@ -371,6 +395,30 @@ u16_t net_buf_simple_pull_le16(struct net_buf_simple *buf);
  * @return 16-bit value converted from big endian to host endian.
  */
 u16_t net_buf_simple_pull_be16(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+u32_t net_buf_simple_pull_le24(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+u32_t net_buf_simple_pull_be24(struct net_buf_simple *buf);
 
 /**
  * @brief Remove and convert 32 bits from the beginning of the buffer.
@@ -883,6 +931,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_add_be16(buf, val) net_buf_simple_add_be16(&(buf)->b, val)
 
 /**
+ * @def net_buf_add_le24
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+#define net_buf_add_le24(buf, val) net_buf_simple_add_le24(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be24
+ * @brief Add 24-bit value at the end of the buffer
+ *
+ * Adds 24-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 24-bit value to be added.
+ */
+#define net_buf_add_be24(buf, val) net_buf_simple_add_be24(&(buf)->b, val)
+
+/**
  *  @def net_buf_add_le32
  *  @brief Add 32-bit value at the end of the buffer
  *
@@ -1023,6 +1097,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  *  @return 16-bit value converted from big endian to host endian.
  */
 #define net_buf_pull_be16(buf) net_buf_simple_pull_be16(&(buf)->b)
+
+/**
+ * @def net_buf_pull_le24
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 24-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le24(buf) net_buf_simple_pull_le24(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be24
+ * @brief Remove and convert 24 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 24-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 24-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be24(buf) net_buf_simple_pull_be24(&(buf)->b)
 
 /**
  *  @def net_buf_pull_le32
