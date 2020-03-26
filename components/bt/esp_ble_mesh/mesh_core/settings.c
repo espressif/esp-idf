@@ -268,8 +268,7 @@ static int seq_set(const char *name)
         return 0;
     }
 
-    bt_mesh.seq = ((u32_t)seq.val[0] | ((u32_t)seq.val[1] << 8) |
-                   ((u32_t)seq.val[2] << 16));
+    bt_mesh.seq = sys_get_le24(seq.val);
 
 #if CONFIG_BLE_MESH_SEQ_STORE_RATE > 0
     /* Make sure we have a large enough sequence number. We
@@ -1526,9 +1525,7 @@ static void store_pending_seq(void)
 {
     struct seq_val seq = {0};
 
-    seq.val[0] = bt_mesh.seq;
-    seq.val[1] = bt_mesh.seq >> 8;
-    seq.val[2] = bt_mesh.seq >> 16;
+    sys_put_le24(bt_mesh.seq, seq.val);
 
     bt_mesh_save_core_settings("mesh/seq", (const u8_t *)&seq, sizeof(seq));
 }
