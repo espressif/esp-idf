@@ -40,7 +40,7 @@ class StringSubstituter:
 
     """
     TARGET_NAMES = {'esp32': 'ESP32', 'esp32s2': 'ESP32-S2'}
-    TOOLCHAIN_NAMES = {'esp32': 'esp', 'esp32s2': 'esp32s2'}
+    TOOLCHAIN_NAMES = {'esp32': 'esp32', 'esp32s2': 'esp32s2'}
     CONFIG_PREFIX = {'esp32': 'ESP32', 'esp32s2': 'ESP32S2'}
 
     TRM_EN_URL = {'esp32': 'https://www.espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf',
