@@ -74,6 +74,12 @@
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
         ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
 
+.. only:: esp32s2
+
+    .. toctree::
+        :maxdepth: 1
+        
+        ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
 
 .. _get-started-step-by-step:
 

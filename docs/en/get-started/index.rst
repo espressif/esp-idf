@@ -74,7 +74,10 @@ If you have one of {IDF_TARGET_NAME} development boards listed below, you can cl
 
 .. only:: esp32s2
 
-    There are currently no hardware guides available for ESP32-S2.
+    .. toctree::
+        :maxdepth: 1
+
+        ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
 
 .. _get-started-step-by-step:
 
