@@ -251,6 +251,17 @@ static void test_handler_post_wo_task(void* event_handler_arg, esp_event_base_t 
     }
 }
 
+static void test_handler_unregister_itself(void* event_handler_arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    esp_event_loop_handle_t* loop = (esp_event_loop_handle_t*) event_data;
+    int* unregistered = (int*) event_handler_arg;
+
+    (*unregistered) += (event_base == s_test_base1 ? 0 : 10) + event_id + 1;
+
+    // Unregister this handler for this event
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_unregister_with(*loop, event_base, event_id, test_handler_unregister_itself));
+}
+
 static void test_post_from_handler_loop_task(void* args)
 {
     esp_event_loop_handle_t event_loop = (esp_event_loop_handle_t) args;
@@ -423,6 +434,61 @@ TEST_CASE("can unregister handler", "[event]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
 
     vSemaphoreDelete(arg.mutex);
+
+    TEST_TEARDOWN();
+}
+
+TEST_CASE("handler can unregister itself", "[event]")
+{
+    /* this test aims to verify that handlers can unregister themselves */
+
+    TEST_SETUP();
+
+    esp_event_loop_handle_t loop;
+    esp_event_loop_args_t loop_args = test_event_get_default_loop_args();
+
+    loop_args.task_name = NULL;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_create(&loop_args, &loop));
+
+    int unregistered = 0;
+
+    /*
+     * s_test_base1, ev1 = 1
+     * s_test_base1, ev2 = 2 
+     * s_test_base2, ev1 = 11 
+     * s_test_base2, ev2 = 12
+     */
+    int expected_unregistered = 0;
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV1, test_handler_unregister_itself, &unregistered));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base1, TEST_EVENT_BASE1_EV2, test_handler_unregister_itself, &unregistered));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV1, test_handler_unregister_itself, &unregistered));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_handler_register_with(loop, s_test_base2, TEST_EVENT_BASE2_EV2, test_handler_unregister_itself, &unregistered));
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    expected_unregistered =  2;  // base1, ev2
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    expected_unregistered +=  1 + 11; // base1, ev1 +  base2, ev1
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    expected_unregistered += 12; //  base2, ev2
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered);
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base1, TEST_EVENT_BASE1_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV1, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_post_to(loop, s_test_base2, TEST_EVENT_BASE2_EV2, &loop, sizeof(loop), portMAX_DELAY));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_run(loop, pdMS_TO_TICKS(10)));
+    TEST_ASSERT_EQUAL(expected_unregistered, unregistered); // all handlers unregistered
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_event_loop_delete(loop));
 
     TEST_TEARDOWN();
 }
