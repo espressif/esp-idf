@@ -504,9 +504,8 @@ static int encrypt_friend_pdu(struct bt_mesh_friend *frnd, struct net_buf *buf,
         }
 
         seq = bt_mesh_next_seq();
-        buf->data[2] = seq >> 16;
-        buf->data[3] = seq >> 8;
-        buf->data[4] = seq;
+        sys_put_be24(seq, &buf->data[2]);
+
         iv_index = BLE_MESH_NET_IVI_TX;
         FRIEND_ADV(buf)->app_idx = BLE_MESH_KEY_UNUSED;
     } else {
@@ -972,9 +971,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         return -EINVAL;
     }
 
-    poll_to = (((u32_t)msg->poll_to[0] << 16) |
-               ((u32_t)msg->poll_to[1] << 8) |
-               ((u32_t)msg->poll_to[2]));
+    poll_to = sys_get_be24(msg->poll_to);
 
     if (poll_to <= 0x000009 || poll_to >= 0x34bc00) {
         BT_WARN("%s, Prohibited PollTimeout (0x%06x)", __func__, poll_to);
@@ -1381,9 +1378,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 
     info.ctl = rx->ctl;
 
-    info.seq[0] = (rx->seq >> 16);
-    info.seq[1] = (rx->seq >> 8);
-    info.seq[2] = rx->seq;
+    sys_put_be24(rx->seq, info.seq);
 
     info.iv_index = BLE_MESH_NET_IVI_RX(rx);
 
@@ -1420,9 +1415,7 @@ static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
     info.ttl = tx->ctx->send_ttl;
     info.ctl = (tx->ctx->app_idx == BLE_MESH_KEY_UNUSED);
 
-    info.seq[0] = (bt_mesh.seq >> 16);
-    info.seq[1] = (bt_mesh.seq >> 8);
-    info.seq[2] = bt_mesh.seq;
+    sys_put_be24(bt_mesh.seq, info.seq);
 
     info.iv_index = BLE_MESH_NET_IVI_TX;
 
