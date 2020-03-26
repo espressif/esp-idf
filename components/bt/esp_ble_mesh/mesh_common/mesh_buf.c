@@ -114,6 +114,20 @@ void net_buf_simple_add_be32(struct net_buf_simple *buf, u32_t val)
     memcpy(net_buf_simple_add(buf, sizeof(val)), &val, sizeof(val));
 }
 
+void net_buf_simple_add_le48(struct net_buf_simple *buf, u64_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %" PRIu64, buf, val);
+
+    sys_put_le48(val, net_buf_simple_add(buf, 6));
+}
+
+void net_buf_simple_add_be48(struct net_buf_simple *buf, u64_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %" PRIu64, buf, val);
+
+    sys_put_be48(val, net_buf_simple_add(buf, 6));
+}
+
 void *net_buf_simple_push(struct net_buf_simple *buf, size_t len)
 {
     NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
@@ -244,6 +258,30 @@ u32_t net_buf_simple_pull_be32(struct net_buf_simple *buf)
     net_buf_simple_pull(buf, sizeof(val));
 
     return sys_be32_to_cpu(val);
+}
+
+u64_t net_buf_simple_pull_le48(struct net_buf_simple *buf)
+{
+    struct uint48 {
+        u64_t u48:48;
+    } __packed val;
+
+    val = UNALIGNED_GET((struct uint48 *)buf->data);
+    net_buf_simple_pull(buf, sizeof(val));
+
+    return sys_le48_to_cpu(val.u48);
+}
+
+u64_t net_buf_simple_pull_be48(struct net_buf_simple *buf)
+{
+    struct uint48 {
+        u64_t u48:48;
+    } __packed val;
+
+    val = UNALIGNED_GET((struct uint48 *)buf->data);
+    net_buf_simple_pull(buf, sizeof(val));
+
+    return sys_be48_to_cpu(val.u48);
 }
 
 size_t net_buf_simple_headroom(struct net_buf_simple *buf)
