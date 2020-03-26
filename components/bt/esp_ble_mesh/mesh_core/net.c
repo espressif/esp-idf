@@ -60,7 +60,10 @@
 static struct friend_cred friend_cred[FRIEND_CRED_COUNT];
 #endif
 
-static u64_t msg_cache[CONFIG_BLE_MESH_MSG_CACHE_SIZE];
+static struct {
+    u32_t src:15, /* MSB of source address is always 0 */
+          seq:17;
+} msg_cache[CONFIG_BLE_MESH_MSG_CACHE_SIZE];
 static u16_t msg_cache_next;
 
 /* Singleton network context (the implementation only supports one) */
@@ -105,49 +108,38 @@ static bool check_dup(struct net_buf_simple *data)
     return false;
 }
 
-static u64_t msg_hash(struct bt_mesh_net_rx *rx, struct net_buf_simple *pdu)
-{
-    u32_t hash1 = 0U, hash2 = 0U;
-
-    /* Three least significant bytes of IVI + first byte of SEQ */
-    hash1 = (BLE_MESH_NET_IVI_RX(rx) << 8) | pdu->data[2];
-
-    /* Two last bytes of SEQ + SRC */
-    memcpy(&hash2, &pdu->data[3], 4);
-
-    return (u64_t)hash1 << 32 | (u64_t)hash2;
-}
-
 static bool msg_cache_match(struct bt_mesh_net_rx *rx,
                             struct net_buf_simple *pdu)
 {
-    u64_t hash = msg_hash(rx, pdu);
     int i;
 
     for (i = 0; i < ARRAY_SIZE(msg_cache); i++) {
-        if (msg_cache[i] == hash) {
+        if (msg_cache[i].src == SRC(pdu->data) &&
+            msg_cache[i].seq == (SEQ(pdu->data) & BIT_MASK(17))) {
             return true;
         }
     }
 
-    /* Add to the cache */
-    rx->msg_cache_idx = msg_cache_next++;
-    msg_cache[rx->msg_cache_idx] = hash;
-    msg_cache_next %= ARRAY_SIZE(msg_cache);
-
     return false;
+}
+
+static void msg_cache_add(struct bt_mesh_net_rx *rx)
+{
+    rx->msg_cache_idx = msg_cache_next++;
+    msg_cache[rx->msg_cache_idx].src = rx->ctx.addr;
+    msg_cache[rx->msg_cache_idx].seq = rx->seq;
+    msg_cache_next %= ARRAY_SIZE(msg_cache);
 }
 
 #if CONFIG_BLE_MESH_PROVISIONER
 void bt_mesh_msg_cache_clear(u16_t unicast_addr, u8_t elem_num)
 {
-    u16_t src = 0U;
     int i;
 
     for (i = 0; i < ARRAY_SIZE(msg_cache); i++) {
-        src = (((u8_t)(msg_cache[i] >> 16)) << 8) | (u8_t)(msg_cache[i] >> 24);
-        if (src >= unicast_addr && src < unicast_addr + elem_num) {
-            memset(&msg_cache[i], 0x0, sizeof(msg_cache[i]));
+        if (msg_cache[i].src >= unicast_addr &&
+            msg_cache[i].src < unicast_addr + elem_num) {
+            memset(&msg_cache[i], 0, sizeof(msg_cache[i]));
         }
     }
 }
@@ -1040,15 +1032,15 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
         return -ENOENT;
     }
 
-    if (rx->net_if == BLE_MESH_NET_IF_ADV && msg_cache_match(rx, buf)) {
-        BT_WARN("Duplicate found in Network Message Cache");
-        return -EALREADY;
-    }
-
     rx->ctx.addr = SRC(buf->data);
     if (!BLE_MESH_ADDR_IS_UNICAST(rx->ctx.addr)) {
-        BT_WARN("Ignoring non-unicast src addr 0x%04x", rx->ctx.addr);
+        BT_INFO("Ignoring non-unicast src addr 0x%04x", rx->ctx.addr);
         return -EINVAL;
+    }
+
+    if (rx->net_if == BLE_MESH_NET_IF_ADV && msg_cache_match(rx, buf)) {
+        BT_DBG("Duplicate found in Network Message Cache");
+        return -EALREADY;
     }
 
     BT_DBG("src 0x%04x", rx->ctx.addr);
@@ -1373,6 +1365,8 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
            rx->ctx.recv_ttl);
     BT_DBG("PDU: %s", bt_hex(buf->data, buf->len));
 
+    msg_cache_add(rx);
+
     return 0;
 }
 
@@ -1454,7 +1448,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
     */
     if (bt_mesh_trans_recv(&buf, &rx) == -EAGAIN) {
         BT_WARN("Removing rejected message from Network Message Cache");
-        msg_cache[rx.msg_cache_idx] = 0ULL;
+        msg_cache[rx.msg_cache_idx].src = BLE_MESH_ADDR_UNASSIGNED;
         /* Rewind the next index now that we're not using this entry */
         msg_cache_next = rx.msg_cache_idx;
     }
