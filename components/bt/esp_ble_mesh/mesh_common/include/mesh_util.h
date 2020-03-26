@@ -432,6 +432,21 @@ static inline void sys_put_be48(u64_t val, u8_t dst[6])
 }
 
 /**
+ *  @brief Put a 64-bit integer as big-endian to arbitrary location.
+ *
+ *  Put a 64-bit integer, originally in host endianness, to a
+ *  potentially unaligned memory location in big-endian format.
+ *
+ *  @param val 64-bit integer in host endianness.
+ *  @param dst Destination memory address to store the result.
+ */
+static inline void sys_put_be64(u64_t val, u8_t dst[8])
+{
+    sys_put_be32(val >> 32, dst);
+    sys_put_be32(val, &dst[4]);
+}
+
+/**
  *  @brief Put a 16-bit integer as little-endian to arbitrary location.
  *
  *  Put a 16-bit integer, originally in host endianness, to a
@@ -564,6 +579,21 @@ static inline u32_t sys_get_be32(const u8_t src[4])
 static inline u64_t sys_get_be48(const u8_t src[6])
 {
     return ((u64_t)sys_get_be32(&src[0]) << 32) | sys_get_be16(&src[4]);
+}
+
+/**
+ *  @brief Get a 64-bit integer stored in big-endian format.
+ *
+ *  Get a 64-bit integer, stored in big-endian format in a potentially
+ *  unaligned memory location, and convert it to the host endianness.
+ *
+ *  @param src Location of the big-endian 64-bit integer to get.
+ *
+ *  @return 64-bit integer in host endianness.
+ */
+static inline u64_t sys_get_be64(const u8_t src[8])
+{
+    return ((u64_t)sys_get_be32(&src[0]) << 32) | sys_get_be32(&src[4]);
 }
 
 /**
