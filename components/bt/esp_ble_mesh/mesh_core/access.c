@@ -797,6 +797,10 @@ static int get_opcode(struct net_buf_simple *buf, u32_t *opcode)
         }
 
         *opcode = net_buf_simple_pull_u8(buf) << 16;
+        /* Using LE for the CID since the model layer is defined as
+         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * will declare the opcode in this way.
+         */
         *opcode |= net_buf_simple_pull_le16(buf);
         return 0;
     }
@@ -921,6 +925,10 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
         break;
     case 3:
         net_buf_simple_add_u8(msg, ((opcode >> 16) & 0xff));
+        /* Using LE for the CID since the model layer is defined as
+         * little-endian in the mesh spec and using BT_MESH_MODEL_OP_3
+         * will declare the opcode in this way.
+         */
         net_buf_simple_add_le16(msg, opcode & 0xffff);
         break;
     default:
