@@ -49,7 +49,7 @@ static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
     int i;
 
     if (net_buf_simple_tailroom(buf) <
-            4 + (elem->model_count * 2U) + (elem->vnd_model_count * 2U)) {
+            4 + (elem->model_count * 2U) + (elem->vnd_model_count * 4U)) {
         BT_ERR("%s, Too large device composition", __func__);
         return -E2BIG;
     }
