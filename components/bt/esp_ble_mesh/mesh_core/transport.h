@@ -100,8 +100,8 @@ void bt_mesh_rx_reset_single(u16_t src);
 void bt_mesh_tx_reset_single(u16_t dst);
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
-                     size_t data_len, u64_t *seq_auth,
-                     const struct bt_mesh_send_cb *cb, void *cb_data);
+                     size_t data_len, const struct bt_mesh_send_cb *cb,
+                     void *cb_data);
 
 int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
                        const struct bt_mesh_send_cb *cb, void *cb_data);
