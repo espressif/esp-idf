@@ -314,6 +314,30 @@ void net_buf_simple_add_le48(struct net_buf_simple *buf, u64_t val);
 void net_buf_simple_add_be48(struct net_buf_simple *buf, u64_t val);
 
 /**
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+void net_buf_simple_add_le64(struct net_buf_simple *buf, u64_t val);
+
+/**
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+void net_buf_simple_add_be64(struct net_buf_simple *buf, u64_t val);
+
+/**
  * @brief Push data to the beginning of the buffer.
  *
  * Modifies the data pointer and buffer length to account for more data
@@ -491,6 +515,30 @@ u64_t net_buf_simple_pull_le48(struct net_buf_simple *buf);
  * @return 48-bit value converted from big endian to host endian.
  */
 u64_t net_buf_simple_pull_be48(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+u64_t net_buf_simple_pull_le64(struct net_buf_simple *buf);
+
+/**
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_simple_pull(), but a helper for operating
+ * on 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+u64_t net_buf_simple_pull_be64(struct net_buf_simple *buf);
 
 /**
  * @brief Get the tail pointer for a buffer.
@@ -1057,6 +1105,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
 #define net_buf_add_be48(buf, val) net_buf_simple_add_be48(&(buf)->b, val)
 
 /**
+ * @def net_buf_add_le64
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in little endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+#define net_buf_add_le64(buf, val) net_buf_simple_add_le64(&(buf)->b, val)
+
+/**
+ * @def net_buf_add_be64
+ * @brief Add 64-bit value at the end of the buffer
+ *
+ * Adds 64-bit value in big endian format at the end of buffer.
+ * Increments the data length of a buffer to account for more data
+ * at the end.
+ *
+ * @param buf Buffer to update.
+ * @param val 64-bit value to be added.
+ */
+#define net_buf_add_be64(buf, val) net_buf_simple_add_be64(&(buf)->b, val)
+
+/**
  *  @def net_buf_push
  *  @brief Push data to the beginning of the buffer.
  *
@@ -1249,6 +1323,32 @@ static inline void *net_buf_user_data(struct net_buf *buf)
  * @return 48-bit value converted from big endian to host endian.
  */
 #define net_buf_pull_be48(buf) net_buf_simple_pull_be48(&(buf)->b)
+
+/**
+ * @def net_buf_pull_le64
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 64-bit little endian data.
+ *
+ * @param buf A valid pointer on a buffer.
+ *
+ * @return 64-bit value converted from little endian to host endian.
+ */
+#define net_buf_pull_le64(buf) net_buf_simple_pull_le64(&(buf)->b)
+
+/**
+ * @def net_buf_pull_be64
+ * @brief Remove and convert 64 bits from the beginning of the buffer.
+ *
+ * Same idea as with net_buf_pull(), but a helper for operating on
+ * 64-bit big endian data.
+ *
+ * @param buf A valid pointer on a buffer
+ *
+ * @return 64-bit value converted from big endian to host endian.
+ */
+#define net_buf_pull_be64(buf) net_buf_simple_pull_be64(&(buf)->b)
 
 /**
  *  @def net_buf_tailroom
