@@ -18,8 +18,8 @@
 extern "C" {
 #endif
 
-#define RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
-#define RMT_CHANNELS_NUM (8)       /*!< Total 8 channels */
+#define SOC_RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
+#define SOC_RMT_CHANNELS_NUM (8)       /*!< Total 8 channels */
 
 #ifdef __cplusplus
 }

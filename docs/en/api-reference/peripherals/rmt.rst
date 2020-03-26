@@ -131,24 +131,31 @@ Transmit Mode
 
 When configuring channel in transmit mode, set **tx_config** and the following members of :cpp:type:`rmt_tx_config_t`:
 
-* Transmit the currently configured data items in a loop - **loop_en**
-* Enable the RMT carrier signal - **carrier_en**
-* Frequency of the carrier in Hz - **carrier_freq_hz**
-* Duty cycle of the carrier signal in percent (%) - **carrier_duty_percent**
-* Level of the RMT output, when the carrier is applied - **carrier_level**
-* Enable the RMT output if idle - **idle_output_en**
-* Set the signal level on the RMT output if idle - **idle_level**
+.. list::
 
+    * Transmit the currently configured data items in a loop - **loop_en**
+    * Enable the RMT carrier signal - **carrier_en**
+    * Frequency of the carrier in Hz - **carrier_freq_hz**
+    * Duty cycle of the carrier signal in percent (%) - **carrier_duty_percent**
+    * Level of the RMT output, when the carrier is applied - **carrier_level**
+    * Enable the RMT output if idle - **idle_output_en**
+    * Set the signal level on the RMT output if idle - **idle_level**
+    :esp32s2: * Specify maximum number of transmissions in a loop - **loop_count**
 
 Receive Mode
 ^^^^^^^^^^^^
 
 In receive mode, set **rx_config** and the following members of :cpp:type:`rmt_rx_config_t`:
 
-* Enable a filter on the input of the RMT receiver - **filter_en**
-* A threshold of the filter, set in the number of ticks - **filter_ticks_thresh**. Pulses shorter than this setting will be filtered out. Note, that the range of entered tick values is [0..255].
-* A pulse length threshold that will turn the RMT receiver idle, set in number of ticks - **idle_threshold**. The receiver will ignore pulses longer than this setting.
+.. list::
 
+    * Enable a filter on the input of the RMT receiver - **filter_en**
+    * A threshold of the filter, set in the number of ticks - **filter_ticks_thresh**. Pulses shorter than this setting will be filtered out. Note, that the range of entered tick values is [0..255].
+    * A pulse length threshold that will turn the RMT receiver idle, set in number of ticks - **idle_threshold**. The receiver will ignore pulses longer than this setting.
+    :esp32s2: * Enable the RMT carrier demodulation - **carrier_rm**
+    :esp32s2: * Frequency of the carrier in Hz - **carrier_freq_hz**
+    :esp32s2: * Duty cycle of the carrier signal in percent (%) - **carrier_duty_percent**
+    :esp32s2: * Level of the RMT input, where the carrier is modulated to - **carrier_level**
 
 Finalize Configuration
 ^^^^^^^^^^^^^^^^^^^^^^
