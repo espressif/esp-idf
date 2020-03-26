@@ -20,7 +20,7 @@ extern "C" {
 
 #include "sdkconfig.h"
 
-#if (CONFIG_ESP32_REV_MIN >= 2)
+#if __DOXYGEN__ || (CONFIG_ESP32_REV_MIN >= 2)
 #define CAN_BRP_DIV_SUPPORTED       1
 #define CAN_BRP_DIV_THRESH          128
 //Any even number from 2 to 128, or multiples of 4 from 132 to 256
