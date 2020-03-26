@@ -47,10 +47,9 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
             INSTALL_COMMAND ""
             CMAKE_ARGS  -DCMAKE_GENERATOR=${CMAKE_GENERATOR}
                         -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
-                        -DULP_S_SOURCES=${sources} -DULP_APP_NAME=${app_name}
+                        -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
+                        -DULP_APP_NAME=${app_name}
                         -DCOMPONENT_DIR=${COMPONENT_DIR}
-                        # Even though this resolves to a ';' separated list, this is fine. This must be special behavior
-                        # for generator expressions.
                         -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                         -DIDF_PATH=${idf_path}
                         -DSDKCONFIG=${SDKCONFIG_HEADER}
@@ -60,8 +59,9 @@ function(ulp_embed_binary app_name s_sources exp_dep_srcs)
             BUILD_BYPRODUCTS ${ulp_artifacts} ${ulp_artifacts_extras} ${ulp_ps_sources}
                             ${CMAKE_CURRENT_BINARY_DIR}/${app_name}/${app_name}
             BUILD_ALWAYS 1
-            LIST_SEPARATOR |
             )
+
+        set_property(TARGET ${app_name} PROPERTY ULP_SOURCES "${sources}")
 
         spaces2list(exp_dep_srcs)
         set_source_files_properties(${exp_dep_srcs} PROPERTIES OBJECT_DEPENDS ${ulp_artifacts})
