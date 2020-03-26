@@ -176,6 +176,62 @@ void net_buf_simple_push_u8(struct net_buf_simple *buf, u8_t val)
     *data = val;
 }
 
+void net_buf_simple_push_le24(struct net_buf_simple *buf, u32_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
+
+    sys_put_le24(val, net_buf_simple_push(buf, 3));
+}
+
+void net_buf_simple_push_be24(struct net_buf_simple *buf, u32_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
+
+    sys_put_be24(val, net_buf_simple_push(buf, 3));
+}
+
+void net_buf_simple_push_le32(struct net_buf_simple *buf, u32_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
+
+    sys_put_le32(val, net_buf_simple_push(buf, sizeof(val)));
+}
+
+void net_buf_simple_push_be32(struct net_buf_simple *buf, u32_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %u", buf, val);
+
+    sys_put_be32(val, net_buf_simple_push(buf, sizeof(val)));
+}
+
+void net_buf_simple_push_le48(struct net_buf_simple *buf, u64_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %" PRIu64, buf, val);
+
+    sys_put_le48(val, net_buf_simple_push(buf, 6));
+}
+
+void net_buf_simple_push_be48(struct net_buf_simple *buf, u64_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %" PRIu64, buf, val);
+
+    sys_put_be48(val, net_buf_simple_push(buf, 6));
+}
+
+void net_buf_simple_push_le64(struct net_buf_simple *buf, u64_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %" PRIu64, buf, val);
+
+    sys_put_le64(val, net_buf_simple_push(buf, sizeof(val)));
+}
+
+void net_buf_simple_push_be64(struct net_buf_simple *buf, u64_t val)
+{
+    NET_BUF_SIMPLE_DBG("buf %p val %" PRIu64, buf, val);
+
+    sys_put_be64(val, net_buf_simple_push(buf, sizeof(val)));
+}
+
 void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 {
     NET_BUF_SIMPLE_DBG("buf %p len %u", buf, len);
