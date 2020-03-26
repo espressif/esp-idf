@@ -44,8 +44,7 @@ ULP 协处理器代码是用汇编语言编写的，并使用 `binutils-esp32ulp
 ``set(ULP_APP_NAME ulp_${COMPONENT_NAME})``
     为生成的 ULP 应用程序设置名称，不带扩展名。此名称用于 ULP 应用程序的构建输出：ELF 文件、.map 文件、二进制文件、生成的头文件和链接器导出文件。
 
-``set(ULP_S_SOURCES "ulp/ulp_assembly_source_file_1.S ulp/ulp_assembly_source_file_2.S")``
-    设置要传递给 ULP 汇编器的程序集文件列表，用空格隔开，路径可以是绝对路径，也可以是组件 CMakeLists.txt 的相对路径。
+    ulp_embed_binary(${ulp_app_name} "${ulp_s_sources}" "${ulp_exp_dep_srcs}")
 
 ``set(ULP_EXP_DEP_SRCS "ulp_c_source_file_1.c ulp_c_source_file_2.c")``
     设置组件中源文件名称的列表。所有包含被生成的头文件的原文件都必须在列表里。此列表建立正确构建依赖项，并确保在构建过程会先生成才编译包含头文件的原文件。请参考下文，查看为 ULP 应用程序生成的头文件等相关概念。此列表需要用空格隔开，路径可以是组件 CMakeLists.txt 文件的相对路径，也可以是绝对路径。

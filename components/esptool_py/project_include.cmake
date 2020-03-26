@@ -173,6 +173,11 @@ esptool_py_custom_target(app-flash app "app")
 if(CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT)
     esptool_py_custom_target(encrypted-flash encrypted_project "app;partition_table;bootloader")
     esptool_py_custom_target(encrypted-app-flash encrypted_app "app")
+else()
+    fail_target(encrypted-flash "Error: The target encrypted-flash requires"
+                "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT to be enabled.")
+    fail_target(encrypted-app-flash "Error: The target encrypted-app-flash requires"
+                "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT to be enabled.")
 endif()
 
 # esptool_py_flash_project_args
