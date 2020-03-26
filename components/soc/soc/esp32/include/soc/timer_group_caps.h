@@ -14,7 +14,4 @@
 
 #pragma once
 
-#include "soc/soc.h"
-
-//APB Frequency
-#define WDT_SOURCE_CLK_FREQ_MHZ     (APB_CLK_FREQ / 1000000)
+#define WDT_SOURCE_CLK_FREQ_MHZ (80) // Watch Dog clock source comes from APB, which is 80MHz by default
