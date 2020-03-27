@@ -552,7 +552,7 @@ static bool is_unprov_dev_being_provision(const u8_t uuid[16])
      * Unprovisioned Device Beacon when Transaction ACK for Provisioning Complete
      * is received). So in Fast Provisioning the Provisioner should ignore this.
      */
-    if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
+    if (bt_mesh_provisioner_get_node_with_uuid(uuid)) {
         BT_WARN("Device has already been provisioned");
         return true;
     }
@@ -625,7 +625,7 @@ static int provisioner_check_unprov_dev_info(const u8_t uuid[16], bt_mesh_prov_b
     }
 
     /* Check if the device has already been provisioned */
-    if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
+    if (bt_mesh_provisioner_get_node_with_uuid(uuid)) {
         BT_INFO("Provisioned before, start to provision again");
         return 0;
     }
@@ -1063,15 +1063,11 @@ int bt_mesh_provisioner_delete_device(struct bt_mesh_device_delete *del_dev)
 
     /* Third: find if the device is been provisioned */
     if (addr_cmp && (del_dev->addr_type <= BLE_MESH_ADDR_RANDOM)) {
-        if (bt_mesh_provisioner_find_node_with_addr(&del_addr, true)) {
-            return 0;
-        }
+        bt_mesh_provisioner_delete_node_with_dev_addr(&del_addr);
     }
 
     if (uuid_cmp) {
-        if (bt_mesh_provisioner_find_node_with_uuid(del_dev->uuid, true)) {
-            return 0;
-        }
+        bt_mesh_provisioner_delete_node_with_uuid(del_dev->uuid);
     }
 
     return 0;
