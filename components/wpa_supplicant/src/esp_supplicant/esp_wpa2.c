@@ -752,7 +752,7 @@ static int eap_peer_sm_init(void)
 
     s_wpa2_data_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_wpa2_data_lock) {
-        wpa_printf(MSG_ERROR, "wpa2 eap_peer_sm_init: failed to alloc data lock");
+        wpa_printf(MSG_ERROR, "wpa2 eap_peer_sm_init: failed to alloc data lock");  // NOLINT(clang-analyzer-unix.Malloc)
         return ESP_ERR_NO_MEM;
     }
 
