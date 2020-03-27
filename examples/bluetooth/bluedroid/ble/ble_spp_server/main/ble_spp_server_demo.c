@@ -386,6 +386,7 @@ void uart_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+
 static void spp_uart_init(void)
 {
     uart_config_t uart_config = {
@@ -432,19 +433,131 @@ void spp_heartbeat_task(void * arg)
 }
 #endif
 
+static uint8_t send_data(uint8_t *buffer, uint16_t size)
+{
+    uint8_t total_num = 0;
+    uint8_t current_num = 0;
+
+    ESP_LOGI(GATTS_TABLE_TAG, "size : %d \n",size);
+    ESP_LOGI(GATTS_TABLE_TAG, "buffer : %s \n",buffer);
+    if ((size) && (is_connected))
+    {
+        uint8_t *temp = NULL;
+        uint8_t *ntf_value_p = NULL;
+#ifdef SUPPORT_HEARTBEAT
+        if (!enable_heart_ntf)
+        {
+            ESP_LOGE(GATTS_TABLE_TAG, "%s do not enable heartbeat Notify\n", __func__);
+            break;
+        }
+#endif
+        if (!enable_data_ntf)
+        {
+            ESP_LOGE(GATTS_TABLE_TAG, "%s do not enable data Notify\n", __func__);
+            return 0;
+        }
+        temp = (uint8_t *)malloc(sizeof(uint8_t) * size);
+        if (temp == NULL)
+        {
+            ESP_LOGE(GATTS_TABLE_TAG, "%s malloc.1 failed\n", __func__);
+            return 0;
+        }
+        memset(temp, 0x0, size);
+        memcpy(temp,buffer,size);
+        if (size <= (spp_mtu_size - 3))
+        {
+            esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL], size, buffer, false);
+        }
+        else if (size > (spp_mtu_size - 3))
+        {
+            if ((size % (spp_mtu_size - 7)) == 0)
+            {
+                total_num = size / (spp_mtu_size - 7);
+            }
+            else
+            {
+                total_num = size / (spp_mtu_size - 7) + 1;
+            }
+            current_num = 1;
+            ntf_value_p = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
+            if (ntf_value_p == NULL)
+            {
+                ESP_LOGE(GATTS_TABLE_TAG, "%s malloc.2 failed\n", __func__);
+                free(temp);
+                return 0;
+            }
+            while (current_num <= total_num)
+            {
+                if (current_num < total_num)
+                {
+                    ntf_value_p[0] = '#';
+                    ntf_value_p[1] = '#';
+                    ntf_value_p[2] = total_num;
+                    ntf_value_p[3] = current_num;
+                    memcpy(ntf_value_p + 4, temp + (current_num - 1) * (spp_mtu_size - 7), (spp_mtu_size - 7));
+                    esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL], (spp_mtu_size - 3), ntf_value_p, false);
+                }
+                else if (current_num == total_num)
+                {
+                    ntf_value_p[0] = '#';
+                    ntf_value_p[1] = '#';
+                    ntf_value_p[2] = total_num;
+                    ntf_value_p[3] = current_num;
+                    memcpy(ntf_value_p + 4, temp + (current_num - 1) * (spp_mtu_size - 7), (size - (current_num - 1) * (spp_mtu_size - 7)));
+                    esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_DATA_NTY_VAL], (size - (current_num - 1) * (spp_mtu_size - 7) + 4), ntf_value_p, false);
+                }
+                vTaskDelay(20 / portTICK_PERIOD_MS);
+                current_num++;
+            }
+            free(ntf_value_p);
+        }
+        free(temp);
+    }
+    return 1;
+}
+
 void spp_cmd_task(void * arg)
 {
     uint8_t * cmd_id;
+    uint8_t * temp = NULL;
 
     for(;;){
         vTaskDelay(50 / portTICK_PERIOD_MS);
         if(xQueueReceive(cmd_cmd_queue, &cmd_id, portMAX_DELAY)) {
             esp_log_buffer_char(GATTS_TABLE_TAG,(char *)(cmd_id),strlen((char *)cmd_id));
+            if(!memcmp((char *)(cmd_id),"get.sn",strlen((char *)cmd_id))){
+                temp = (uint8_t *)malloc(12);
+                if(temp == NULL){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s malloc.1 failed\n", __func__);
+                    break;
+                }
+                memcpy(temp,"ACK",3);
+                esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_STATUS_VAL],3, temp, false);
+                ESP_LOGI(GATTS_TABLE_TAG, "ACK sent \n");
+                memcpy(temp,"JT9999999996",12);
+                send_data(temp,12);
+                ESP_LOGI(GATTS_TABLE_TAG, "SN sent \n");
+            }
+            else if(!memcmp((char *)(cmd_id),"get.scan",strlen((char *)cmd_id))){
+                ESP_LOGI(GATTS_TABLE_TAG, "CMD MATCH: %s \n",(char *)(cmd_id));
+                temp = (uint8_t *)malloc(12);
+                if(temp == NULL){
+                    ESP_LOGE(GATTS_TABLE_TAG, "%s malloc.1 failed\n", __func__);
+                    break;
+                }
+                memcpy(temp,"ACK",3);
+                esp_ble_gatts_send_indicate(spp_gatts_if, spp_conn_id, spp_handle_table[SPP_IDX_SPP_STATUS_VAL],3, temp, false);
+                ESP_LOGI(GATTS_TABLE_TAG, "ACK sent \n");
+                send_data(scan_sample,sizeof(scan_sample));
+                ESP_LOGI(GATTS_TABLE_TAG, "SCAN sent \n");
+                }
             free(cmd_id);
         }
     }
     vTaskDelete(NULL);
 }
+
+
 
 static void spp_task_init(void)
 {
@@ -456,7 +569,7 @@ static void spp_task_init(void)
 #endif
 
     cmd_cmd_queue = xQueueCreate(10, sizeof(uint32_t));
-    xTaskCreate(spp_cmd_task, "spp_cmd_task", 2048, NULL, 10, NULL);
+    xTaskCreate(spp_cmd_task, "spp_cmd_task", 2048*2, NULL, 10, NULL);
 }
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
@@ -507,6 +620,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
             if(p_data->write.is_prep == false){
                 ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_WRITE_EVT : handle = %d\n", res);
                 if(res == SPP_IDX_SPP_COMMAND_VAL){
+                    ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_CMD \n");
                     uint8_t * spp_cmd_buff = NULL;
                     spp_cmd_buff = (uint8_t *)malloc((spp_mtu_size - 3) * sizeof(uint8_t));
                     if(spp_cmd_buff == NULL){
@@ -517,6 +631,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                     memcpy(spp_cmd_buff,p_data->write.value,p_data->write.len);
                     xQueueSend(cmd_cmd_queue,&spp_cmd_buff,10/portTICK_PERIOD_MS);
                 }else if(res == SPP_IDX_SPP_DATA_NTF_CFG){
+                    ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_DATA \n");
                     if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x01)&&(p_data->write.value[1] == 0x00)){
                         enable_data_ntf = true;
                     }else if((p_data->write.len == 2)&&(p_data->write.value[0] == 0x00)&&(p_data->write.value[1] == 0x00)){
@@ -560,6 +675,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
     	    break;
     	}
     	case ESP_GATTS_MTU_EVT:
+            ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_MTU_EVT : size received = %d\n",p_data->mtu.mtu);
     	    spp_mtu_size = p_data->mtu.mtu;
     	    break;
     	case ESP_GATTS_CONF_EVT:
