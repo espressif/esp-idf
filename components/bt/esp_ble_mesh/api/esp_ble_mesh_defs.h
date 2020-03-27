@@ -38,6 +38,12 @@ extern "C" {
 /*!< The maximum length of a BLE Mesh message, including Opcode, Payload and TransMIC */
 #define ESP_BLE_MESH_SDU_MAX_LEN            384
 
+/*!< Length of a short Mesh MIC. */
+#define ESP_BLE_MESH_MIC_SHORT              4
+
+/*!< Length of a long Mesh MIC. */
+#define ESP_BLE_MESH_MIC_LONG               8
+
 /*!< The maximum length of a BLE Mesh provisioned node name */
 #define ESP_BLE_MESH_NODE_NAME_MAX_LEN      31
 

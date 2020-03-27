@@ -22,9 +22,7 @@
 #include "client_common.h"
 #include "mesh_common.h"
 
-#define UNSEG_ACCESS_MSG_MAX_LEN    11  /* 11 octets (Opcode + Payload), 4 octets TransMIC */
-#define SEG_ACCESS_MSG_SEG_LEN      12  /* 12 * 32 = 384 octets (Opcode + Payload + TransMIC) */
-#define HCI_TIME_FOR_START_ADV      K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
+#define HCI_TIME_FOR_START_ADV  K_MSEC(5)   /* Three adv related hci commands may take 4 ~ 5ms */
 
 static bt_mesh_client_node_t *bt_mesh_client_pick_node(sys_slist_t *list, u16_t tx_dst)
 {
@@ -183,7 +181,7 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
     bool need_seg = false;
     u8_t mic_size = 0;
 
-    if (msg->len > UNSEG_ACCESS_MSG_MAX_LEN || ctx->send_rel) {
+    if (msg->len > BLE_MESH_SDU_UNSEG_MAX || ctx->send_rel) {
         need_seg = true;    /* Needs segmentation */
     }
 
