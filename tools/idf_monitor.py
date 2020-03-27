@@ -459,7 +459,8 @@ class Monitor(object):
 
     Main difference is that all event processing happens in the main thread, not the worker threads.
     """
-    def __init__(self, serial_instance, elf_file, print_filter, make="make", toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF",
+    def __init__(self, serial_instance, elf_file, print_filter, make="make", encrypted=False,
+                 toolchain_prefix=DEFAULT_TOOLCHAIN_PREFIX, eol="CRLF",
                  decode_coredumps=COREDUMP_DECODE_INFO):
         super(Monitor, self).__init__()
         self.event_queue = queue.Queue()
@@ -490,6 +491,7 @@ class Monitor(object):
             self.make = shlex.split(make)  # allow for possibility the "make" arg is a list of arguments (for idf.py)
         else:
             self.make = make
+        self.encrypted = encrypted
         self.toolchain_prefix = toolchain_prefix
 
         # internal state
@@ -848,9 +850,9 @@ class Monitor(object):
             self.serial.setDTR(self.serial.dtr)  # usbser.sys workaround
             self.output_enable(True)
         elif cmd == CMD_MAKE:
-            self.run_make("flash")
+            self.run_make("encrypted-flash" if self.encrypted else "flash")
         elif cmd == CMD_APP_FLASH:
-            self.run_make("app-flash")
+            self.run_make("encrypted-app-flash" if self.encrypted else "app-flash")
         elif cmd == CMD_OUTPUT_TOGGLE:
             self.output_toggle()
         elif cmd == CMD_TOGGLE_LOGGING:
@@ -900,6 +902,11 @@ def main():
         '--make', '-m',
         help='Command to run make',
         type=str, default='make')
+
+    parser.add_argument(
+        '--encrypted',
+        help='Use encrypted targets while running make',
+        action='store_true')
 
     parser.add_argument(
         '--toolchain-prefix',
@@ -960,7 +967,8 @@ def main():
     except KeyError:
         pass  # not running a make jobserver
 
-    monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.toolchain_prefix, args.eol,
+    monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
+                      args.toolchain_prefix, args.eol,
                       args.decode_coredumps)
 
     yellow_print('--- idf_monitor on {p.name} {p.baudrate} ---'.format(
