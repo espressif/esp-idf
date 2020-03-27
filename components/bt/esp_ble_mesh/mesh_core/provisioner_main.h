@@ -59,10 +59,6 @@ int bt_mesh_provisioner_provision(const bt_mesh_addr_t *addr, const u8_t uuid[16
                                   u16_t unicast_addr, u8_t element_num, u16_t net_idx, u8_t flags,
                                   u32_t iv_index, const u8_t dev_key[16], u16_t *index);
 
-bool bt_mesh_provisioner_find_node_with_uuid(const u8_t uuid[16], bool reset);
-
-bool bt_mesh_provisioner_find_node_with_addr(const bt_mesh_addr_t *addr, bool reset);
-
 int bt_mesh_provisioner_remove_node(const u8_t uuid[16]);
 
 int bt_mesh_provisioner_restore_node_name(u16_t addr, const char *name);
@@ -75,7 +71,9 @@ struct bt_mesh_node *bt_mesh_provisioner_get_node_with_addr(u16_t unicast_addr);
 
 int bt_mesh_provisioner_delete_node_with_uuid(const u8_t uuid[16]);
 
-int bt_mesh_provisioner_delete_node_with_addr(u16_t unicast_addr);
+int bt_mesh_provisioner_delete_node_with_node_addr(u16_t unicast_addr);
+
+int bt_mesh_provisioner_delete_node_with_dev_addr(const bt_mesh_addr_t *addr);
 
 int bt_mesh_provisioner_set_node_name(u16_t index, const char *name);
 
