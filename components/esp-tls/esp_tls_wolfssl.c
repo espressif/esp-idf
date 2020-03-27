@@ -34,6 +34,24 @@ static const char *TAG = "esp-tls-wolfssl";
 /* Prototypes for the static functions */
 static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t *cfg, esp_tls_t *tls);
 
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+#include "freertos/semphr.h"
+static SemaphoreHandle_t tls_conn_lock;
+static inline unsigned int esp_wolfssl_psk_client_cb(WOLFSSL* ssl, const char* hint, char* identity,
+        unsigned int id_max_len, unsigned char* key,unsigned int key_max_len);
+static esp_err_t esp_wolfssl_set_cipher_list(WOLFSSL_CTX *ctx);
+#ifdef WOLFSSL_TLS13
+#define PSK_MAX_ID_LEN 128
+#else
+#define PSK_MAX_ID_LEN 64
+#endif
+#define PSK_MAX_KEY_LEN 64
+
+static char psk_id_str[PSK_MAX_ID_LEN];
+static uint8_t psk_key_array[PSK_MAX_KEY_LEN];
+static uint8_t psk_key_max_len = 0;
+#endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
+
 #ifdef CONFIG_ESP_TLS_SERVER
 static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls);
 #endif /* CONFIG_ESP_TLS_SERVER */
@@ -139,22 +157,6 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
     }
 
-    if (cfg->alpn_protos) {
-#ifdef CONFIG_WOLFSSL_HAVE_ALPN
-        char **alpn_list = (char **)cfg->alpn_protos;
-        for (; *alpn_list != NULL; alpn_list ++) {
-            if ((ret = wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH)) != WOLFSSL_SUCCESS) {
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
-                ESP_LOGE(TAG, "Use wolfSSL ALPN failed");
-                return ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED;
-            }
-        }
-#else
-    ESP_LOGE(TAG, "CONFIG_WOLFSSL_HAVE_ALPN not enabled in menuconfig");
-    return ESP_FAIL;
-#endif /* CONFIG_WOLFSSL_HAVE_ALPN */
-    }
-
     if (cfg->use_global_ca_store == true) {
         if ((esp_load_wolfssl_verify_buffer(tls, global_cacert, global_cacert_pem_bytes, FILE_TYPE_CA_CERT, &ret)) != ESP_OK) {
             ESP_LOGE(TAG, "Error in loading certificate verify buffer, returned %d", ret);
@@ -168,8 +170,36 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         }
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_PEER, NULL);
     } else if (cfg->psk_hint_key) {
-        ESP_LOGE(TAG,"psk_hint_key not supported in wolfssl");
-        return ESP_FAIL;
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+        /*** PSK encryption mode is configured only if no certificate supplied and psk pointer not null ***/
+        if(cfg->psk_hint_key->key == NULL || cfg->psk_hint_key->hint == NULL || cfg->psk_hint_key->key_size <= 0) {
+            ESP_LOGE(TAG, "Please provide appropriate key, keysize and hint to use PSK");
+            return ESP_FAIL;
+        }
+        /* mutex is given back when call back function executes or in case of failure (at cleanup) */
+        if ((xSemaphoreTake(tls_conn_lock, 1000/portTICK_PERIOD_MS) != pdTRUE)) {
+            ESP_LOGE(TAG, "tls_conn_lock could not be obtained in specified time");
+            return -1;
+        }
+        ESP_LOGI(TAG, "setting psk configurations");
+        if((cfg->psk_hint_key->key_size > PSK_MAX_KEY_LEN) || (strlen(cfg->psk_hint_key->hint) > PSK_MAX_ID_LEN)) {
+            ESP_LOGE(TAG, "psk key length should be <= %d and identity hint length should be <= %d", PSK_MAX_KEY_LEN, PSK_MAX_ID_LEN);
+            return ESP_ERR_INVALID_ARG;
+        }
+        psk_key_max_len = cfg->psk_hint_key->key_size;
+        memset(psk_key_array, 0, sizeof(psk_key_array));
+        memset(psk_id_str, 0, sizeof(psk_id_str));
+        memcpy(psk_key_array, cfg->psk_hint_key->key, psk_key_max_len);
+        memcpy(psk_id_str, cfg->psk_hint_key->hint, strlen(cfg->psk_hint_key->hint));
+        wolfSSL_CTX_set_psk_client_callback( (WOLFSSL_CTX *)tls->priv_ctx, esp_wolfssl_psk_client_cb);
+        if(esp_wolfssl_set_cipher_list( (WOLFSSL_CTX *)tls->priv_ctx) != ESP_OK) {
+            ESP_LOGE(TAG, "error in setting cipher-list");
+            return ESP_FAIL;
+        }
+#else
+        ESP_LOGE(TAG, "psk_hint_key configured but not enabled in menuconfig: Please enable ESP_TLS_PSK_VERIFICATION option");
+        return ESP_ERR_INVALID_STATE;
+#endif
     } else {
         wolfSSL_CTX_set_verify( (WOLFSSL_CTX *)tls->priv_ctx, WOLFSSL_VERIFY_NONE, NULL);
     }
@@ -200,7 +230,6 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         return ESP_ERR_WOLFSSL_SSL_SETUP_FAILED;
     }
 
-#ifdef HAVE_SNI
     if (!cfg->skip_common_name) {
         char *use_host = NULL;
         if (cfg->common_name != NULL) {
@@ -220,7 +249,24 @@ static esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls
         }
         free(use_host);
     }
-#endif
+
+    if (cfg->alpn_protos) {
+#ifdef CONFIG_WOLFSSL_HAVE_ALPN
+        char **alpn_list = (char **)cfg->alpn_protos;
+        for (; *alpn_list != NULL; alpn_list ++) {
+            ESP_LOGD(TAG, "alpn protocol is %s", *alpn_list);
+            if ((ret = wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH)) != WOLFSSL_SUCCESS) {
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
+                ESP_LOGE(TAG, "wolfSSL UseALPN failed, returned %d", ret);
+                return ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED;
+            }
+        }
+#else
+    ESP_LOGE(TAG, "CONFIG_WOLFSSL_HAVE_ALPN not enabled in menuconfig");
+    return ESP_FAIL;
+#endif /* CONFIG_WOLFSSL_HAVE_ALPN */
+    }
+
     wolfSSL_set_fd((WOLFSSL *)tls->priv_ssl, tls->sockfd);
     return ESP_OK;
 }
@@ -233,22 +279,6 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
     if (!tls->priv_ctx) {
         ESP_LOGE(TAG, "Set wolfSSL ctx failed");
         return ESP_ERR_WOLFSSL_CTX_SETUP_FAILED;
-    }
-
-    if (cfg->alpn_protos) {
-#ifdef CONFIG_WOLFSSL_HAVE_ALPN
-        char **alpn_list = (char **)cfg->alpn_protos;
-        for (; *alpn_list != NULL; alpn_list ++) {
-            if ((ret = wolfSSL_UseALPN( (WOLFSSL *)tls->priv_ssl, *alpn_list, strlen(*alpn_list), WOLFSSL_ALPN_FAILED_ON_MISMATCH)) != WOLFSSL_SUCCESS) {
-                ESP_LOGE(TAG, "Use wolfSSL ALPN failed");
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL, -ret);
-                return ESP_ERR_WOLFSSL_SSL_CONF_ALPN_PROTOCOLS_FAILED;
-            }
-        }
-#else
-    ESP_LOGE(TAG, "CONFIG_WOLFSSL_HAVE_ALPN not enabled in menuconfig");
-    return ESP_FAIL;
-#endif /* CONFIG_WOLFSSL_HAVE_ALPN */
     }
 
     if (cfg->cacert_buf != NULL) {
@@ -351,7 +381,7 @@ void esp_wolfssl_verify_certificate(esp_tls_t *tls)
 {
     int flags;
     if ((flags = wolfSSL_get_verify_result( (WOLFSSL *)tls->priv_ssl)) != WOLFSSL_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to verify peer certificate %d!", flags);
+        ESP_LOGE(TAG, "Failed to verify peer certificate , returned %d!", flags);
         ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_WOLFSSL_CERT_FLAGS, flags);
     } else {
         ESP_LOGI(TAG, "Certificate verified.");
@@ -379,6 +409,9 @@ void esp_wolfssl_cleanup(esp_tls_t *tls)
     if (!tls) {
         return;
     }
+#ifdef CONFIG_ESP_TLS_PSK_VERIFICATION
+    xSemaphoreGive(tls_conn_lock);
+#endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
     wolfSSL_shutdown( (WOLFSSL *)tls->priv_ssl);
     wolfSSL_free( (WOLFSSL *)tls->priv_ssl);
     tls->priv_ssl = NULL;
@@ -465,3 +498,56 @@ void esp_wolfssl_free_global_ca_store(void)
         global_cacert_pem_bytes = 0;
     }
 }
+
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+static esp_err_t esp_wolfssl_set_cipher_list(WOLFSSL_CTX *ctx)
+{
+    const char *defaultCipherList;
+    int ret;
+#if defined(HAVE_AESGCM) && !defined(NO_DH)
+#ifdef WOLFSSL_TLS13
+    defaultCipherList = "DHE-PSK-AES128-GCM-SHA256:"
+                                    "TLS13-AES128-GCM-SHA256";
+#else
+    defaultCipherList = "DHE-PSK-AES128-GCM-SHA256";
+#endif
+#elif defined(HAVE_NULL_CIPHER)
+    defaultCipherList = "PSK-NULL-SHA256";
+#else
+    defaultCipherList = "PSK-AES128-CBC-SHA256";
+#endif
+    ESP_LOGD(TAG, "cipher list is %s", defaultCipherList);
+    if ((ret = wolfSSL_CTX_set_cipher_list(ctx,defaultCipherList)) != WOLFSSL_SUCCESS) {
+        wolfSSL_CTX_free(ctx);
+        ESP_LOGE(TAG, "can't set cipher list, returned %02x", ret);
+        return ESP_FAIL;
+    }
+    return ESP_OK;
+}
+
+/* initialize the mutex before app_main() when using PSK */
+static void __attribute__((constructor))
+espt_tls_wolfssl_init_conn_lock (void)
+{
+    if ((tls_conn_lock = xSemaphoreCreateMutex()) == NULL) {
+        ESP_EARLY_LOGE(TAG, "mutex for tls psk connection could not be created");
+    }
+}
+
+/* Some callback functions required by PSK */
+static inline unsigned int esp_wolfssl_psk_client_cb(WOLFSSL* ssl, const char* hint,
+        char* identity, unsigned int id_max_len, unsigned char* key,
+        unsigned int key_max_len)
+{
+    (void)key_max_len;
+
+    /* see internal.h MAX_PSK_ID_LEN for PSK identity limit */
+    memcpy(identity, psk_id_str, id_max_len);
+    for(int count = 0; count < psk_key_max_len; count ++) {
+         key[count] = psk_key_array[count];
+    }
+    xSemaphoreGive(tls_conn_lock);
+    return psk_key_max_len;
+    /* return length of key in octets or 0 or for error */
+}
+#endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
