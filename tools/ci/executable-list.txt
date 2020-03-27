@@ -27,6 +27,7 @@ examples/storage/parttool/parttool_example.sh
 examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
+install.fish
 install.sh
 tools/build_apps.py
 tools/check_kconfigs.py

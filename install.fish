@@ -1,6 +1,6 @@
 #!/usr/bin/env fish
 
-set basedir (realpath (status --current-filename)/..)
+set basedir $PWD
 
 set -x IDF_PATH $basedir
 
