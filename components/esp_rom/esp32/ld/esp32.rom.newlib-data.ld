@@ -10,14 +10,10 @@
 
 _ctype_ = 0x3ff96354;
 __ctype_ptr__ = 0x3ff96350;
-_daylight = 0x3ffae0a4;
 environ = 0x3ffae0b4;
 _global_impure_ptr = 0x3ffae0b0;
 __mb_cur_max = 0x3ff96530;
-__month_lengths = 0x3ff9609c;
 __sf_fake_stderr = 0x3ff96458;
 __sf_fake_stdin = 0x3ff96498;
 __sf_fake_stdout = 0x3ff96478;
-_timezone = 0x3ffae0a0;
-_tzname = 0x3ffae030;
 __wctomb = 0x3ff96540;
