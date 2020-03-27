@@ -424,41 +424,6 @@ static struct bt_mesh_node *provisioner_find_node_with_uuid(const u8_t uuid[16],
     return NULL;
 }
 
-bool bt_mesh_provisioner_find_node_with_uuid(const u8_t uuid[16], bool reset)
-{
-    struct bt_mesh_node *node = NULL;
-    u16_t index = 0U;
-
-    node = provisioner_find_node_with_uuid(uuid, &index);
-    if (!node) {
-        return false;
-    }
-
-    if (reset) {
-        provisioner_remove_node(index, true);
-    }
-    return true;
-}
-
-bool bt_mesh_provisioner_find_node_with_addr(const bt_mesh_addr_t *addr, bool reset)
-{
-    int i;
-
-    for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
-        if (mesh_nodes[i]) {
-            if (!memcmp(mesh_nodes[i]->addr, addr->val, BLE_MESH_ADDR_LEN) &&
-                mesh_nodes[i]->addr_type == addr->type) {
-                if (reset) {
-                    provisioner_remove_node(i, true);
-                }
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
 int bt_mesh_provisioner_remove_node(const u8_t uuid[16])
 {
     struct bt_mesh_node *node = NULL;
@@ -580,7 +545,7 @@ int bt_mesh_provisioner_delete_node_with_uuid(const u8_t uuid[16])
     return 0;
 }
 
-int bt_mesh_provisioner_delete_node_with_addr(u16_t unicast_addr)
+int bt_mesh_provisioner_delete_node_with_node_addr(u16_t unicast_addr)
 {
     struct bt_mesh_node *node = NULL;
     u16_t index = 0U;
@@ -593,6 +558,21 @@ int bt_mesh_provisioner_delete_node_with_addr(u16_t unicast_addr)
 
     provisioner_remove_node(index, true);
     return 0;
+}
+
+int bt_mesh_provisioner_delete_node_with_dev_addr(const bt_mesh_addr_t *addr)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(mesh_nodes); i++) {
+        if (mesh_nodes[i] && mesh_nodes[i]->addr_type == addr->type &&
+            !memcmp(mesh_nodes[i]->addr, addr->val, BLE_MESH_ADDR_LEN)) {
+            return provisioner_remove_node(i, true);
+        }
+    }
+
+    BT_WARN("Node not exist, device address %s", bt_hex(addr->val, BLE_MESH_ADDR_LEN));
+    return -ENODEV;
 }
 
 static int provisioner_check_node_index(u16_t index)
