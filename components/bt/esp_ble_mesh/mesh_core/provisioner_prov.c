@@ -626,7 +626,7 @@ static int provisioner_check_unprov_dev_info(const u8_t uuid[16], bt_mesh_prov_b
 
     /* Check if the device has already been provisioned */
     if (bt_mesh_provisioner_find_node_with_uuid(uuid, false)) {
-        BT_WARN("Provisioned before, start to provision again");
+        BT_INFO("Provisioned before, start to provision again");
         return 0;
     }
 
@@ -2492,38 +2492,35 @@ static void send_prov_data(const u8_t idx)
         sys_put_be16(prev_addr, &pdu[23]);
         link[idx].unicast_addr = prev_addr;
     } else {
+        u16_t alloc_addr = BLE_MESH_ADDR_UNASSIGNED;
+
         if (BLE_MESH_ADDR_IS_UNICAST(link[idx].assign_addr)) {
-            if (link[idx].assign_addr + link[idx].element_num - 1 > max_addr) {
-                BT_ERR("%s, Too large assigned address for the device", __func__);
-                goto fail;
-            }
-
-            /* Make sure the assigned unicast address is not identical with any unicast address
-             * of other nodes. Also need to make sure the address is not identical with any
-             * address of Provisioner.
-             */
-            if (bt_mesh_provisioner_check_is_addr_dup(link[idx].assign_addr, link[idx].element_num, true)) {
-                BT_ERR("%s, Assigned address 0x%04x is duplicated", __func__, link[idx].assign_addr);
-                goto fail;
-            }
-
-            sys_put_be16(link[idx].assign_addr, &pdu[23]);
-            link[idx].unicast_addr = link[idx].assign_addr;
+            alloc_addr = link[idx].assign_addr;
         } else {
             /* If this device to be provisioned is a new device */
             if (prov_ctx.curr_alloc_addr == BLE_MESH_ADDR_UNASSIGNED) {
                 BT_ERR("%s, No unicast address can be allocated", __func__);
                 goto fail;
             }
-
-            if (prov_ctx.curr_alloc_addr + link[idx].element_num - 1 > max_addr) {
-                BT_ERR("%s, Not enough unicast address for the device", __func__);
-                goto fail;
-            }
-
-            sys_put_be16(prov_ctx.curr_alloc_addr, &pdu[23]);
-            link[idx].unicast_addr = prov_ctx.curr_alloc_addr;
+            alloc_addr = prov_ctx.curr_alloc_addr;
         }
+
+        if (alloc_addr + link[idx].element_num - 1 > max_addr) {
+            BT_ERR("%s, Not enough unicast address for the device", __func__);
+            goto fail;
+        }
+
+        /* Make sure the assigned unicast address is not identical with any unicast
+         * address of other nodes. And make sure the address is not identical with
+         * any unicast address of Provisioner.
+         */
+        if (bt_mesh_provisioner_check_is_addr_dup(alloc_addr, link[idx].element_num, true)) {
+            BT_ERR("%s, Assigned address 0x%04x is duplicated", __func__, alloc_addr);
+            goto fail;
+        }
+
+        sys_put_be16(alloc_addr, &pdu[23]);
+        link[idx].unicast_addr = alloc_addr;
     }
 
     prov_buf_init(&buf, PROV_DATA);
