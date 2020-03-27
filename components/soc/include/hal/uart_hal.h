@@ -430,6 +430,24 @@ void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
  */
 void uart_hal_set_loop_back(uart_hal_context_t *hal, bool loop_back_en);
 
+/**
+ * @brief  Calculate uart symbol bit length, as defined in configuration.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return number of bits per UART symbol.
+ */
+uint8_t uart_hal_get_symb_len(uart_hal_context_t *hal);
+
+/**
+ * @brief  Get UART maximum timeout threshold.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return maximum timeout threshold value for target.
+ */
+uint16_t uart_hal_get_max_rx_timeout_thrd(uart_hal_context_t *hal);
+
 #ifdef __cplusplus
 }
 #endif

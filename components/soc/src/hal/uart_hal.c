@@ -76,11 +76,6 @@ void uart_hal_set_at_cmd_char(uart_hal_context_t *hal, uart_at_cmd_t *at_cmd)
     uart_ll_set_at_cmd_char(hal->dev, at_cmd);
 }
 
-void uart_hal_set_rx_timeout(uart_hal_context_t *hal, const uint8_t tout)
-{
-    uart_ll_set_rx_tout(hal->dev, tout);
-}
-
 void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk)
 {
     uart_ll_get_sclk(hal->dev, sclk);
@@ -153,4 +148,32 @@ void uart_hal_init(uart_hal_context_t *hal, int uart_num)
     uart_ll_set_tx_idle_num(hal->dev, 0);
     // Disable hw-flow control
     uart_ll_set_hw_flow_ctrl(hal->dev, UART_HW_FLOWCTRL_DISABLE, 100);
+}
+
+uint8_t uart_hal_get_symb_len(uart_hal_context_t *hal)
+{
+    uint8_t symbol_len = 1; // number of bits per symbol including start
+    uart_parity_t parity_mode;
+    uart_stop_bits_t stop_bit;
+    uart_word_length_t data_bit;
+    uart_ll_get_data_bit_num(hal->dev, &data_bit);
+    uart_ll_get_stop_bits(hal->dev, &stop_bit);
+    uart_ll_get_parity(hal->dev, &parity_mode);
+    symbol_len += (data_bit < UART_DATA_BITS_MAX) ? (uint8_t)data_bit + 5 : 8;
+    symbol_len += (stop_bit > UART_STOP_BITS_1) ? 2 : 1;
+    symbol_len += (parity_mode > UART_PARITY_DISABLE) ? 1 : 0;
+    return symbol_len;
+}
+
+void uart_hal_set_rx_timeout(uart_hal_context_t *hal, const uint8_t tout)
+{
+    uint8_t symb_len = uart_hal_get_symb_len(hal);
+    uart_ll_set_rx_tout(hal->dev, symb_len * tout);
+}
+
+uint16_t uart_hal_get_max_rx_timeout_thrd(uart_hal_context_t *hal)
+{
+    uint8_t symb_len = uart_hal_get_symb_len(hal);
+    uint16_t max_tout_thresh = uart_ll_max_tout_thrd(hal->dev);
+    return (max_tout_thresh / symb_len);
 }

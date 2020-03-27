@@ -52,13 +52,13 @@ static const char* UART_TAG = "uart";
         return (ret_val); \
     }
 
-#define UART_EMPTY_THRESH_DEFAULT  (10)
-#define UART_FULL_THRESH_DEFAULT  (120)
-#define UART_TOUT_THRESH_DEFAULT   (10)
-#define UART_CLKDIV_FRAG_BIT_WIDTH  (3)
-#define UART_TX_IDLE_NUM_DEFAULT   (0)
-#define UART_PATTERN_DET_QLEN_DEFAULT (10)
-#define UART_MIN_WAKEUP_THRESH      (SOC_UART_MIN_WAKEUP_THRESH)
+#define UART_EMPTY_THRESH_DEFAULT       (10)
+#define UART_FULL_THRESH_DEFAULT        (120)
+#define UART_TOUT_THRESH_DEFAULT        (10)
+#define UART_CLKDIV_FRAG_BIT_WIDTH      (3)
+#define UART_TX_IDLE_NUM_DEFAULT        (0)
+#define UART_PATTERN_DET_QLEN_DEFAULT   (10)
+#define UART_MIN_WAKEUP_THRESH          (SOC_UART_MIN_WAKEUP_THRESH)
 
 #define UART_INTR_CONFIG_FLAG ((UART_INTR_RXFIFO_FULL) \
                             | (UART_INTR_RXFIFO_TOUT) \
@@ -1492,8 +1492,12 @@ esp_err_t uart_set_tx_empty_threshold(uart_port_t uart_num, int threshold)
 esp_err_t uart_set_rx_timeout(uart_port_t uart_num, const uint8_t tout_thresh)
 {
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
-    UART_CHECK((tout_thresh < 127), "tout_thresh max value is 126", ESP_ERR_INVALID_ARG);
-
+    // get maximum timeout threshold
+    uint16_t tout_max_thresh = uart_hal_get_max_rx_timeout_thrd(&(uart_context[uart_num].hal));
+    if (tout_thresh > tout_max_thresh) {
+        ESP_LOGE(UART_TAG, "tout_thresh = %d > maximum value = %d", tout_thresh, tout_max_thresh);
+        return ESP_ERR_INVALID_ARG;
+    }
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_set_rx_timeout(&(uart_context[uart_num].hal), tout_thresh);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));

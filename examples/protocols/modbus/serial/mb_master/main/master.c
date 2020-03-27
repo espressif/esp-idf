@@ -21,6 +21,9 @@
 #define MB_PORT_NUM     (CONFIG_MB_UART_PORT_NUM)   // Number of UART port used for Modbus connection
 #define MB_DEV_SPEED    (CONFIG_MB_UART_BAUD_RATE)  // The communication speed of the UART
 
+// Note: Some pins on target chip cannot be assigned for UART communication.
+// See UART documentation for selected board and target to configure pins using Kconfig.
+
 // The number of parameters that intended to be used in the particular control process
 #define MASTER_MAX_CIDS num_device_parameters
 
