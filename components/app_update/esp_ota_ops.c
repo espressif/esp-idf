@@ -165,7 +165,8 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
     if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
         ret = esp_partition_erase_range(partition, 0, partition->size);
     } else {
-        ret = esp_partition_erase_range(partition, 0, (image_size / SPI_FLASH_SEC_SIZE + 1) * SPI_FLASH_SEC_SIZE);
+        const int aligned_erase_size = (image_size + SPI_FLASH_SEC_SIZE - 1) & ~(SPI_FLASH_SEC_SIZE - 1);
+        ret = esp_partition_erase_range(partition, 0, aligned_erase_size);
     }
 
     if (ret != ESP_OK) {
