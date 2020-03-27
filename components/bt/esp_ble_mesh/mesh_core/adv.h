@@ -97,4 +97,6 @@ int bt_mesh_scan_enable(void);
 
 int bt_mesh_scan_disable(void);
 
+int bt_mesh_scan_with_wl_enable(void);
+
 #endif /* _ADV_H_ */

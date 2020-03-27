@@ -908,6 +908,24 @@ int bt_le_scan_stop(void)
     bt_mesh_scan_dev_found_cb = NULL;
     return 0;
 }
+
+#if CONFIG_BLE_MESH_TEST_USE_WHITE_LIST
+int bt_le_update_white_list(struct bt_mesh_white_list *wl)
+{
+    ble_addr_t addr = {0};
+
+    if (wl == NULL || wl->add_remove == false) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    addr.type = wl->addr_type;
+    memcpy(addr.val, wl->remote_bda, BLE_MESH_ADDR_LEN);
+
+    return ble_gap_wl_set(&addr, 1);
+}
+#endif
+
 #if defined(CONFIG_BLE_MESH_NODE) && CONFIG_BLE_MESH_NODE
 
 void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb)

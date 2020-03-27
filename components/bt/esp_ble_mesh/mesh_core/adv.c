@@ -837,7 +837,8 @@ int bt_mesh_scan_enable(void)
         .filter_dup = BLE_MESH_SCAN_FILTER_DUP_DISABLE,
 #endif
         .interval   = MESH_SCAN_INTERVAL,
-        .window     = MESH_SCAN_WINDOW
+        .window     = MESH_SCAN_WINDOW,
+        .scan_fil_policy = BLE_MESH_SP_ADV_ALL,
     };
 
     BT_DBG("%s", __func__);
@@ -865,3 +866,32 @@ int bt_mesh_scan_disable(void)
 
     return 0;
 }
+
+#if CONFIG_BLE_MESH_TEST_USE_WHITE_LIST
+int bt_mesh_scan_with_wl_enable(void)
+{
+    int err = 0;
+
+    struct bt_mesh_scan_param scan_param = {
+        .type       = BLE_MESH_SCAN_PASSIVE,
+#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
+        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_ENABLE,
+#else
+        .filter_dup = BLE_MESH_SCAN_FILTER_DUP_DISABLE,
+#endif
+        .interval   = MESH_SCAN_INTERVAL,
+        .window     = MESH_SCAN_WINDOW,
+        .scan_fil_policy = BLE_MESH_SP_ADV_WL,
+    };
+
+    BT_DBG("%s", __func__);
+
+    err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+    if (err) {
+        BT_ERR("starting scan failed (err %d)", err);
+        return err;
+    }
+
+    return 0;
+}
+#endif /* CONFIG_BLE_MESH_TEST_USE_WHITE_LIST */

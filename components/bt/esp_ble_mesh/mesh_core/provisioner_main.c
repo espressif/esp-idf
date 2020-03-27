@@ -586,16 +586,6 @@ int bt_mesh_provisioner_restore_node_comp_data(u16_t addr, const u8_t *data, u16
     return 0;
 }
 
-int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
-{
-    if (!node) {
-        BT_ERR("%s, Invalid parameter", __func__);
-        return -EINVAL;
-    }
-
-    return provisioner_store_node(node, false, true, NULL);
-}
-
 struct bt_mesh_node *bt_mesh_provisioner_get_node_with_uuid(const u8_t uuid[16])
 {
     return provisioner_find_node_with_uuid(uuid, NULL);
@@ -1551,6 +1541,38 @@ int bt_mesh_print_local_composition_data(void)
 
     return 0;
 }
+
+#if CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK
+int bt_mesh_provisioner_store_node_info(struct bt_mesh_node *node)
+{
+    if (!node) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    if (!BLE_MESH_ADDR_IS_UNICAST(node->unicast_addr)) {
+        BT_ERR("%s, Not a unicast address 0x%04x", __func__, node->unicast_addr);
+        return -EINVAL;
+    }
+
+    if (node->element_num == 0) {
+        BT_ERR("%s, Invalid element count %d", __func__, node->element_num);
+        return -EINVAL;
+    }
+
+    if (bt_mesh_provisioner_check_is_addr_dup(node->unicast_addr, node->element_num, true)) {
+        BT_ERR("%s, Unicast address 0x%04x is duplicated", __func__, node->unicast_addr);
+        return -EINVAL;
+    }
+
+    if (bt_mesh_provisioner_net_key_get(node->net_idx) == NULL) {
+        BT_ERR("%s, Invalid NetKey Index 0x%03x", __func__, node->net_idx);
+        return -EINVAL;
+    }
+
+    return provisioner_store_node(node, false, true, NULL);
+}
+#endif /* CONFIG_BLE_MESH_TEST_AUTO_ENTER_NETWORK */
 
 #endif /* CONFIG_BLE_MESH_PROVISIONER */
 
