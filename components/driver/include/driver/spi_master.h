@@ -171,7 +171,7 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  * @note While in general, speeds up to 80MHz on the dedicated SPI pins and 40MHz on GPIO-matrix-routed pins are
  *       supported, full-duplex transfers routed over the GPIO matrix only support speeds up to 26MHz.
  *
- * @param host SPI peripheral to allocate device on
+ * @param host_id SPI peripheral to allocate device on
  * @param dev_config SPI interface protocol config for the device
  * @param handle Pointer to variable to hold the device handle
  * @return
@@ -180,7 +180,7 @@ typedef struct spi_device_t* spi_device_handle_t;  ///< Handle for a device on a
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success
  */
-esp_err_t spi_bus_add_device(spi_host_device_t host, const spi_device_interface_config_t *dev_config, spi_device_handle_t *handle);
+esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interface_config_t *dev_config, spi_device_handle_t *handle);
 
 
 /**

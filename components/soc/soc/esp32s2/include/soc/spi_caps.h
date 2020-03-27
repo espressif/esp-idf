@@ -14,8 +14,9 @@
 
 #pragma once
 
-#define SOC_SPI_PERIPH_NUM      4
+#define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    3
+#define SOC_SPI_PERIPH_CS_NUM(i)    3
 
 #define SPI_FUNC_NUM            0
 #define SPI_IOMUX_PIN_NUM_HD    27
@@ -35,7 +36,7 @@
 #define FSPI_IOMUX_PIN_NUM_WP   14
 //TODO: add the next slot
 
-//HSPI and VSPI have no iomux pins
+//HSPI has no iomux pins
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     72
 
