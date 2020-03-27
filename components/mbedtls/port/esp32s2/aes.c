@@ -37,7 +37,6 @@
 #include "soc/hwcrypto_reg.h"
 #include "soc/crypto_dma_reg.h"
 #include "soc/periph_defs.h"
-#include "esp32s2/crypto_dma.h"
 #include "esp32s2/rom/lldesc.h"
 #include "esp32s2/rom/cache.h"
 #include "esp_intr_alloc.h"
@@ -47,6 +46,7 @@
 #include "esp_heap_caps.h"
 #include "sys/param.h"
 #include "esp_pm.h"
+#include "esp_crypto_lock.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -89,11 +89,6 @@ static esp_pm_lock_handle_t s_pm_sleep_lock;
 #endif
 #endif
 
-_lock_t crypto_dma_lock;
-static _lock_t s_aes_lock;
-
-
-
 static const char *TAG = "esp-aes";
 
 static inline bool valid_key_length(const esp_aes_context *ctx)
@@ -105,8 +100,7 @@ static inline bool valid_key_length(const esp_aes_context *ctx)
 void esp_aes_acquire_hardware( void )
 {
     /* Need to lock DMA since it is shared with SHA block */
-    _lock_acquire(&s_aes_lock);
-    _lock_acquire(&crypto_dma_lock);
+    esp_crypto_lock_acquire();
 
     /* Enable AES hardware */
     periph_module_enable(PERIPH_AES_DMA_MODULE);
@@ -118,8 +112,7 @@ void esp_aes_release_hardware( void )
     /* Disable AES hardware */
     periph_module_disable(PERIPH_AES_DMA_MODULE);
 
-    _lock_release(&crypto_dma_lock);
-    _lock_release(&s_aes_lock);
+    esp_crypto_lock_release();
 }
 
 
