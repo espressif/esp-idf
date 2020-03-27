@@ -184,6 +184,10 @@ static bool verify_fill_pattern(void *data, size_t size, bool print_errors, bool
 
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
 {
+    if (!size) {
+        return NULL;
+    }
+
     if(size > SIZE_MAX - POISON_OVERHEAD) {
         return NULL;
     }
