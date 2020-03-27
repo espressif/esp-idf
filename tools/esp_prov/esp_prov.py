@@ -77,7 +77,7 @@ def get_transport(sel_transport, service_name):
             # will fallback to using the provided UUIDs instead
             nu_lookup = {'prov-session': 'ff51', 'prov-config': 'ff52', 'proto-ver': 'ff53'}
             tp = transport.Transport_BLE(devname=service_name,
-                                         service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
+                                         service_uuid='021a9004-0382-4aea-bff4-6b3f1c5adfb4',
                                          nu_lookup=nu_lookup)
         elif (sel_transport == 'console'):
             tp = transport.Transport_Console()
