@@ -1965,8 +1965,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
         break;
     }
     case BTC_BLE_MESH_ACT_SERVER_MODEL_SEND: {
-        /* arg->model_send.length contains opcode & message, 4 is used for TransMIC */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 4);
+        /* arg->model_send.length contains opcode & payload, plus extra 4-bytes TransMIC */
+        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             break;
@@ -1983,8 +1983,8 @@ void btc_ble_mesh_model_call_handler(btc_msg_t *msg)
     }
     case BTC_BLE_MESH_ACT_CLIENT_MODEL_SEND: {
         bt_mesh_role_param_t common = {0};
-        /* arg->model_send.length contains opcode & message, 4 is used for TransMIC */
-        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + 4);
+        /* arg->model_send.length contains opcode & message, plus extra 4-bytes TransMIC */
+        struct net_buf_simple *buf = bt_mesh_alloc_buf(arg->model_send.length + BLE_MESH_MIC_SHORT);
         if (!buf) {
             BT_ERR("%s, Failed to allocate memory", __func__);
             break;

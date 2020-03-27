@@ -829,10 +829,10 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
     u8_t nid = 0U;
     int err = 0;
 
-    if (ctl && net_buf_simple_tailroom(buf) < 8) {
+    if (ctl && net_buf_simple_tailroom(buf) < BLE_MESH_MIC_LONG) {
         BT_ERR("%s, Insufficient MIC space for CTL PDU", __func__);
         return -EINVAL;
-    } else if (net_buf_simple_tailroom(buf) < 4) {
+    } else if (net_buf_simple_tailroom(buf) < BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Insufficient MIC space for PDU", __func__);
         return -EINVAL;
     }

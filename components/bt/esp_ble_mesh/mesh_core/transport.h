@@ -18,6 +18,9 @@ extern "C" {
 
 #define TRANS_SEQ_AUTH_NVAL            0xffffffffffffffff
 
+#define BLE_MESH_SDU_UNSEG_MAX         11
+#define BLE_MESH_CTL_SEG_SDU_MAX       8
+#define BLE_MESH_APP_SEG_SDU_MAX       12
 #define BLE_MESH_TX_SDU_MAX            (CONFIG_BLE_MESH_TX_SEG_MAX * 12)
 
 #define TRANS_SEQ_ZERO_MASK            ((u16_t)BIT_MASK(13))
