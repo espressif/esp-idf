@@ -17,6 +17,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "esp_debug_helpers.h"
 
 #include "esp32/rom/ets_sys.h"
 #include "esp32/rom/uart.h"
@@ -34,6 +35,7 @@
 
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
+#define REASON_PRINT_BACKTRACE  BIT(2)
 
 static portMUX_TYPE reason_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static volatile uint32_t reason[ portNUM_PROCESSORS ];
@@ -73,6 +75,9 @@ static void IRAM_ATTR esp_crosscore_isr(void *arg) {
          * handled by a hook in xtensa_vectors.S. Could be used in the future
          * to allow DFS features without the extra latency of the ISR hook.
          */
+    }
+    if (my_reason_val & REASON_PRINT_BACKTRACE) {
+        esp_backtrace_print(100);
     }
 }
 
@@ -115,3 +120,7 @@ void IRAM_ATTR esp_crosscore_int_send_freq_switch(int core_id)
     esp_crosscore_int_send(core_id, REASON_FREQ_SWITCH);
 }
 
+void IRAM_ATTR esp_crosscore_int_send_print_backtrace(int core_id)
+{
+    esp_crosscore_int_send(core_id, REASON_PRINT_BACKTRACE);
+}
