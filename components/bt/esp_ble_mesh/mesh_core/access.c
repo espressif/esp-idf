@@ -411,7 +411,7 @@ static int publish_retransmit(struct bt_mesh_model *mod)
     ctx.net_idx = key->net_idx;
     ctx.app_idx = key->app_idx;
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + 4);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -976,12 +976,12 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    if (net_buf_simple_tailroom(msg) < 4) {
+    if (net_buf_simple_tailroom(msg) < BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Not enough tailroom for TransMIC", __func__);
         return -EINVAL;
     }
 
-    if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - 4) {
+    if (msg->len > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN) - BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Too big message", __func__);
         return -EMSGSIZE;
     }
@@ -1061,7 +1061,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
         return -EADDRNOTAVAIL;
     }
 
-    if (pub->msg->len + 4 > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
+    if (pub->msg->len + BLE_MESH_MIC_SHORT > MIN(BLE_MESH_TX_SDU_MAX, BLE_MESH_SDU_MAX_LEN)) {
         BT_ERR("%s, Message does not fit maximum SDU size", __func__);
         return -EMSGSIZE;
     }
@@ -1090,7 +1090,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
     BT_INFO("Publish Retransmit Count %u Interval %ums", pub->count,
            BLE_MESH_PUB_TRANSMIT_INT(pub->retransmit));
 
-    sdu = bt_mesh_alloc_buf(pub->msg->len + 4);
+    sdu = bt_mesh_alloc_buf(pub->msg->len + BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;

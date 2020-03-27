@@ -40,7 +40,7 @@ _Static_assert(CONFIG_BLE_MESH_ADV_BUF_COUNT >= (CONFIG_BLE_MESH_TX_SEG_MAX + 3)
 #define AID(data)                   ((data)[0] & AID_MASK)
 #define ASZMIC(data)                (((data)[1] >> 7) & 1)
 
-#define APP_MIC_LEN(aszmic)         ((aszmic) ? 8 : 4)
+#define APP_MIC_LEN(aszmic)         ((aszmic) ? BLE_MESH_MIC_LONG : BLE_MESH_MIC_SHORT)
 
 #define UNSEG_HDR(akf, aid)         ((akf << 6) | (aid & AID_MASK))
 #define SEG_HDR(akf, aid)           (UNSEG_HDR(akf, aid) | 0x80)
@@ -428,7 +428,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
     seg_o = 0U;
     tx->dst = net_tx->ctx->addr;
-    tx->seg_n = (sdu->len - 1) / 12U;
+    tx->seg_n = (sdu->len - 1) / BLE_MESH_APP_SEG_SDU_MAX;
     tx->nack_count = tx->seg_n + 1;
     tx->seq_auth = SEQ_AUTH(BLE_MESH_NET_IVI_TX, bt_mesh.seq);
     tx->sub = net_tx->sub;
@@ -480,7 +480,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
                              (seg_o >> 3)));
         net_buf_add_u8(seg, ((seg_o & 0x07) << 5) | tx->seg_n);
 
-        len = MIN(sdu->len, 12);
+        len = MIN(sdu->len, BLE_MESH_APP_SEG_SDU_MAX);
         net_buf_add_mem(seg, sdu->data, len);
         net_buf_simple_pull(sdu, len);
 
@@ -563,12 +563,12 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
     u8_t aid = 0U;
     int err = 0;
 
-    if (net_buf_simple_tailroom(msg) < 4) {
+    if (net_buf_simple_tailroom(msg) < BLE_MESH_MIC_SHORT) {
         BT_ERR("%s, Insufficient tailroom for Transport MIC", __func__);
         return -EINVAL;
     }
 
-    if (msg->len > 11) {
+    if (msg->len > BLE_MESH_SDU_UNSEG_MAX) {
         tx->ctx->send_rel = 1U;
     }
 
@@ -590,7 +590,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 
     tx->aid = aid;
 
-    if (!tx->ctx->send_rel || net_buf_simple_tailroom(msg) < 8) {
+    if (!tx->ctx->send_rel || net_buf_simple_tailroom(msg) < BLE_MESH_MIC_LONG) {
         tx->aszmic = 0U;
     } else {
         tx->aszmic = 1U;
@@ -732,7 +732,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u32_t seq, u8_t hdr,
     /* Use bt_mesh_alloc_buf() instead of NET_BUF_SIMPLE_DEFINE to avoid
      * causing btu task stackoverflow.
      */
-    sdu = bt_mesh_alloc_buf(CONFIG_BLE_MESH_RX_SDU_MAX - 4);
+    sdu = bt_mesh_alloc_buf(CONFIG_BLE_MESH_RX_SDU_MAX - BLE_MESH_MIC_SHORT);
     if (!sdu) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return -ENOMEM;
@@ -1134,7 +1134,7 @@ static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
     }
 
     tx_seg->dst = tx->ctx->addr;
-    tx_seg->seg_n = (data_len - 1) / 8;
+    tx_seg->seg_n = (data_len - 1) / BLE_MESH_CTL_SEG_SDU_MAX;
     tx_seg->nack_count = tx_seg->seg_n + 1;
     tx_seg->seq_auth = SEQ_AUTH(BLE_MESH_NET_IVI_TX, bt_mesh.seq);
     tx_seg->sub = tx->sub;
@@ -1174,7 +1174,7 @@ static int ctl_send_seg(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
         net_buf_add_u8(seg, (((seq_zero & 0x3f) << 2) | (seg_o >> 3)));
         net_buf_add_u8(seg, ((seg_o & 0x07) << 5) | tx_seg->seg_n);
 
-        len = MIN(unsent, 8);
+        len = MIN(unsent, BLE_MESH_CTL_SEG_SDU_MAX);
         net_buf_add_mem(seg, (u8_t *)data + (data_len - unsent), len);
         unsent -= len;
 
@@ -1204,7 +1204,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
             tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
     BT_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
 
-    if (data_len <= 11) {
+    if (data_len <= BLE_MESH_SDU_UNSEG_MAX) {
         return ctl_send_unseg(tx, ctl_op, data, data_len,
                               cb, cb_data);
     } else {
@@ -1321,9 +1321,9 @@ static void seg_ack(struct k_work *work)
 static inline u8_t seg_len(bool ctl)
 {
     if (ctl) {
-        return 8;
+        return BLE_MESH_CTL_SEG_SDU_MAX;
     } else {
-        return 12;
+        return BLE_MESH_APP_SEG_SDU_MAX;
     }
 }
 
