@@ -665,6 +665,7 @@ PROVIDE ( lmp_dhkey_chk_handler = 0x4002ab48 );
 PROVIDE ( lmp_pause_enc_aes_req_handler = 0x400279a4 );
 PROVIDE ( lmp_io_cap_res_handler = 0x4002c670 );
 PROVIDE ( lmp_io_cap_req_handler = 0x4002c7a4 );
+PROVIDE ( lc_cmd_cmp_bd_addr_send = 0x4002cec4 );
 PROVIDE ( ld_acl_tx_packet_type_select = 0x4002fb40 );
 PROVIDE ( ld_acl_sched = 0x40033268 );
 PROVIDE ( ld_acl_sniff_sched = 0x4003340c );
