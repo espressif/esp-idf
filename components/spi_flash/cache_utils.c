@@ -92,6 +92,10 @@ void IRAM_ATTR spi_flash_op_block_func(void* arg)
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
+    if (esp_ptr_external_ram(get_sp())) {
+        ets_printf(DRAM_STR("Cache disabled but cache memory accesed!\n"));
+        __asm__ __volatile__ ("ill.n\nill.n\n");
+    }
     spi_flash_op_lock();
 
     const uint32_t cpuid = xPortGetCoreID();
@@ -222,10 +226,6 @@ void spi_flash_op_unlock()
 
 void IRAM_ATTR spi_flash_disable_interrupts_caches_and_other_cpu()
 {
-    if (esp_ptr_external_ram(get_sp())) {
-        ets_printf(DRAM_STR("Cache disabled but cache memory accesed!\n"));
-        __asm__ __volatile__ ("ill.n\nill.n\n");
-    }
     spi_flash_op_lock();
     esp_intr_noniram_disable();
     spi_flash_disable_cache(0, &s_flash_op_cache_state[0]);
