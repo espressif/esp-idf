@@ -1191,13 +1191,13 @@ static int p_node_set(const char *name)
         u16_t addr = net_buf_simple_pull_le16(buf);
         if (!BLE_MESH_ADDR_IS_UNICAST(addr)) {
             BT_ERR("%s, 0x%04x is not a unicast address", __func__, addr);
-            goto free;
+            continue;
         }
 
         err = node_info_set(addr, prov, &exist);
         if (err) {
             BT_ERR("%s, Failed to load node 0x%04x info", __func__, addr);
-            goto free;
+            continue;
         }
 
         if (exist == false) {
@@ -1207,17 +1207,16 @@ static int p_node_set(const char *name)
         err = node_name_set(addr, prov);
         if (err) {
             BT_ERR("%s, Failed to load node 0x%04x name", __func__, addr);
-            goto free;
+            continue;
         }
 
         err = node_comp_data_set(addr, prov);
         if (err) {
             BT_ERR("%s, Failed to load node 0x%04x comp data", __func__, addr);
-            goto free;
+            continue;
         }
     }
 
-free:
     bt_mesh_free_buf(buf);
     return err;
 }
