@@ -132,8 +132,8 @@ void app_main(void)
         .source_clk = UART_SCLK_APB,
     };
     //Install UART driver, and get the queue.
-    uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
     uart_param_config(EX_UART_NUM, &uart_config);
+    uart_driver_install(EX_UART_NUM, BUF_SIZE * 2, BUF_SIZE * 2, 20, &uart0_queue, 0);
 
     //Set UART log level
     esp_log_level_set(TAG, ESP_LOG_INFO);

@@ -105,8 +105,8 @@ static void uart1_init(void)
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
         .source_clk = UART_SCLK_APB,
     };
-    uart_driver_install(UART_NUM_1, 256, 256, 0, NULL, 0);
     uart_param_config(UART_NUM_1, &uart_config);
+    uart_driver_install(UART_NUM_1, 256, 256, 0, NULL, 0);
 }
 
 static void send_task(void *param)
