@@ -34,8 +34,8 @@ static void uart_config(uint32_t baud_rate, bool use_ref_tick)
         .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
     };
     uart_config.source_clk = use_ref_tick ? UART_SCLK_REF_TICK : UART_SCLK_APB;
-    uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
     uart_param_config(UART_NUM1, &uart_config);
+    uart_driver_install(UART_NUM1, BUF_SIZE * 2, BUF_SIZE * 2, 20, NULL, 0);
     TEST_ESP_OK(uart_set_loop_back(UART_NUM1, true));
 }
 
