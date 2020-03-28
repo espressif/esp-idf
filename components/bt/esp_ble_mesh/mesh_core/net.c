@@ -1049,13 +1049,13 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
     }
 
     if (rx->net_if == BLE_MESH_NET_IF_ADV && msg_cache_match(rx, buf)) {
-        BT_WARN("Duplicate found in Network Message Cache");
+        BT_DBG("Duplicate found in Network Message Cache");
         return -EALREADY;
     }
 
     rx->ctx.addr = SRC(buf->data);
     if (!BLE_MESH_ADDR_IS_UNICAST(rx->ctx.addr)) {
-        BT_WARN("Ignoring non-unicast src addr 0x%04x", rx->ctx.addr);
+        BT_INFO("Ignoring non-unicast src addr 0x%04x", rx->ctx.addr);
         return -EINVAL;
     }
 

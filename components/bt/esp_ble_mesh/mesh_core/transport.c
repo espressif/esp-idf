@@ -1344,7 +1344,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
         }
 
         if (rx->block == BLOCK_COMPLETE(rx->seg_n)) {
-            BT_WARN("Got segment for already complete SDU");
+            BT_INFO("Got segment for already complete SDU");
             send_ack(net_rx->sub, net_rx->ctx.recv_dst,
                      net_rx->ctx.addr, net_rx->ctx.send_ttl,
                      seq_auth, rx->block, rx->obo);
