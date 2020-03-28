@@ -461,6 +461,15 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_MESH_VOTING
     ERR_TBL_IT(ESP_ERR_MESH_VOTING),                            /* 16406 0x4016 */
 #   endif
+#   ifdef      ESP_ERR_MESH_XMIT
+    ERR_TBL_IT(ESP_ERR_MESH_XMIT),                              /* 16407 0x4017 */
+#   endif
+#   ifdef      ESP_ERR_MESH_QUEUE_READ
+    ERR_TBL_IT(ESP_ERR_MESH_QUEUE_READ),                        /* 16408 0x4018 */
+#   endif
+#   ifdef      ESP_ERR_MESH_INACTIVE
+    ERR_TBL_IT(ESP_ERR_MESH_INACTIVE),                          /* 16409 0x4019 */
+#   endif
     // components/esp_netif/include/esp_netif_types.h
 #   ifdef      ESP_ERR_ESP_NETIF_BASE
     ERR_TBL_IT(ESP_ERR_ESP_NETIF_BASE),                         /* 20480 0x5000 */
