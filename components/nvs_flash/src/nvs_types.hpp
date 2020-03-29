@@ -28,6 +28,12 @@ using namespace std;
 namespace nvs
 {
 
+/**
+ * Used to recognize transient states of a blob. Once a blob is modified, new chunks with the new data are written
+ * with a new version. The version is saved in the highest bit of Item::chunkIndex as well as in
+ * Item::blobIndex::chunkStart.
+ * If a chunk is modified and hence re-written, the version swaps: 0x0 -> 0x80 or 0x80 -> 0x0.
+ */
 enum class VerOffset: uint8_t {
     VER_0_OFFSET = 0x0,
     VER_1_OFFSET = 0x80,
