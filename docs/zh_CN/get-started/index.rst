@@ -326,7 +326,7 @@ Windows 操作系统
     cd %userprofile%\esp\hello_world
     idf.py menuconfig
 
-Setting the target with ``idf.py set-target {IDF_TARGET}`` should be done once, after opening a new project. If the project contains some existing builds and configuration, they will be cleared and initialized. The target may be saved in environment variable to skip this step at all. See :ref:`selecting-idf-target` for additional information.
+打开一个新项目后，应首先设置“目标”芯片 ``idf.py set-target {IDF_TARGET}``。注意，此操作将清除并初始化项目之前的编译和配置（如有）。 您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
 
 如果之前的步骤都正确，则会显示下面的菜单：
 
@@ -447,9 +447,9 @@ Setting the target with ``idf.py set-target {IDF_TARGET}`` should be done once, 
 .. _get-started-build-monitor:
 
 第十步：监视器
-======================
+===============
 
-您可以使用 ``make monitor`` 命令，监视 “hello_world” 的运行情况。注意，不要忘记将 PORT 替换为您的串口名称。
+您可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 的运行情况。注意，不要忘记将 PORT 替换为您的串口名称。
 
 运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动：::
 

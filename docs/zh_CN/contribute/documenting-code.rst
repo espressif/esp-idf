@@ -278,14 +278,14 @@ Sphinx 新手怎么办
 1. Doxygen - http://doxygen.nl/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
 3. Breathe - https://github.com/michaeljones/breathe#breathe
-4. Document theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
+4. Document theme "sphinx_idf_theme" - https://github.com/rtfd/sphinx_idf_theme
 5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
-添加 "sphinx_rtd_theme" 包之后，文档将与 `ESP32 编程指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html>`_ 的风格保持一致，与 "Read the Docs" 网站的显示效果一样.
+添加 "sphinx_idf_theme" 包之后，文档将与 `ESP-IDF 编程指南 <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ 的风格保持一致。
 
-不用担心需要安装太多包。除 Doxygen 之外，其他包均使用 Python 语言，可一键安装。
+不用担心需要安装太多包。除 Doxygen 和 sphinx_idf_theme 之外，其他包均使用纯 Python 语言，可一键安装。
 
 Doxygen 的安装取决于操作系统：
 
@@ -327,7 +327,24 @@ Doxygen 的安装取决于操作系统：
 
         查看屏幕上的记录，确定 ``mingw-w64-i686-python-pillow-4.3.0-1`` 已安装。旧版本 *pillow* 无法运行。
 
-    Windows 安装 Doxygen 的缺点是 `blockdiag pictures <add-illustrations>` 字体不能正确加载，可能会存在乱码。在此问题解决之前，您可以使用 `interactive shell`_ 查看完整图片。
+    Windows 安装 Doxygen 的缺点是 `blockdiag pictures <add-illustrations>`_ 字体不能正确加载，可能会存在乱码。在此问题解决之前，您可以使用 `interactive shell`_ 查看完整图片。
+
+
+sphinx_idf_theme
+@@@@@@@@@@@@@@@@
+
+编译 ``sphinx_idf_theme`` 需要同时使用 Python 和 JavaScript。因此，目前要进行本地编译还必须安装 `node.js <https://nodejs.org/en/download/>`_ ，命令如下：
+
+::
+
+   cd ~/esp
+   git clone https://github.com/espressif/sphinx_idf_theme.git
+   cd sphinx_idf_theme
+   npm install
+   python setup.py build
+   python setup.py install
+
+我们计划在不久的将来支持安装预编译 ``sphinx_idf_theme``，给您带来的暂时不便，敬请谅解。
 
 其他所有应用都是 `Python <https://www.python.org/>`_ 包，可以按照下列步骤一键安装：
 
