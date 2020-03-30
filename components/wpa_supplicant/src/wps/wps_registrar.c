@@ -1644,11 +1644,11 @@ int wps_build_cred(struct wps_data *wps, struct wpabuf *msg)
 			return -1;
 		wps->new_psk_len--; /* remove newline */
 		while (wps->new_psk_len &&
-		       wps->new_psk[wps->new_psk_len - 1] == '=')
+		       wps->new_psk[wps->new_psk_len - 1] == '=')	// NOLINT(clang-analyzer-unix.Malloc)
 			wps->new_psk_len--;
 		wpa_hexdump_ascii_key(MSG_DEBUG, "WPS: Generated passphrase",
 				      wps->new_psk, wps->new_psk_len);
-		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);
+		os_memcpy(wps->cred.key, wps->new_psk, wps->new_psk_len);	// NOLINT(clang-analyzer-unix.Malloc)
 		wps->cred.key_len = wps->new_psk_len;
 	} else if (wps->use_psk_key && wps->wps->psk_set) {
 		char hex[65];

@@ -338,6 +338,6 @@ void __attribute__((noreturn)) panic_abort(const char *details)
 #endif
 #endif
 
-    *((int *) 0) = 0; // should be an invalid operation on targets
+    *((int *) 0) = 0; // NOLINT(clang-analyzer-core.NullDereference) should be an invalid operation on targets
     while(1);
 }

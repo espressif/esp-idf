@@ -3007,7 +3007,7 @@ static int trex_newnode(TRex *exp, TRexNodeType type)
 		exp->_nallocated *= 2;
 		exp->_nodes = (TRexNode *)realloc(exp->_nodes, exp->_nallocated * sizeof(TRexNode));
 	}
-	exp->_nodes[exp->_nsize++] = n;
+	exp->_nodes[exp->_nsize++] = n; // NOLINT(clang-analyzer-unix.Malloc)
 	newid = exp->_nsize - 1;
 	return (int)newid;
 }

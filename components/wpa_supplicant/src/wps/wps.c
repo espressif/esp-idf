@@ -275,7 +275,7 @@ int wps_ap_priority_compar(const struct wpabuf *wps_a,
     }
 
     if (wps_a == NULL || wps_parse_msg(wps_a, attr_a) < 0)
-        return 1;
+        return 1;   // NOLINT(clang-analyzer-unix.Malloc)
     if (wps_b == NULL || wps_parse_msg(wps_b, attr_b) < 0)
         return -1;
 

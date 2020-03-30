@@ -2036,7 +2036,7 @@ SM_STATE(WPA_PTK_GROUP, REKEYNEGOTIATING)
                (!sm->Pair ? WPA_KEY_INFO_INSTALL : 0),
                rsc, gsm->GNonce, kde, pos - kde, gsm->GN, 1);
     if (sm->wpa == WPA_VERSION_WPA2)
-        os_free(kde);
+        os_free(kde);  // NOLINT(clang-analyzer-unix.Malloc)
 }
 
 
