@@ -15,10 +15,6 @@
 #include "mesh_common.h"
 #include "provisioner_prov.h"
 
-static bt_mesh_mutex_t bm_alarm_lock;
-static bt_mesh_mutex_t bm_list_lock;
-static bt_mesh_mutex_t bm_buf_lock;
-static bt_mesh_mutex_t bm_atomic_lock;
 static hash_map_t *bm_alarm_hash_map;
 static const size_t BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE = 20 + CONFIG_BLE_MESH_PBA_SAME_TIME + \
         CONFIG_BLE_MESH_PBG_SAME_TIME;
@@ -30,94 +26,6 @@ typedef struct alarm_t {
     void *cb_data;
     int64_t deadline_us;
 } osi_alarm_t;
-
-static void bt_mesh_alarm_mutex_new(void)
-{
-    if (!bm_alarm_lock.mutex) {
-        bt_mesh_mutex_create(&bm_alarm_lock);
-    }
-}
-
-static void bt_mesh_alarm_mutex_free(void)
-{
-    bt_mesh_mutex_free(&bm_alarm_lock);
-}
-
-static void bt_mesh_alarm_lock(void)
-{
-    bt_mesh_mutex_lock(&bm_alarm_lock);
-}
-
-static void bt_mesh_alarm_unlock(void)
-{
-    bt_mesh_mutex_unlock(&bm_alarm_lock);
-}
-
-static void bt_mesh_list_mutex_new(void)
-{
-    if (!bm_list_lock.mutex) {
-        bt_mesh_mutex_create(&bm_list_lock);
-    }
-}
-
-static void bt_mesh_list_mutex_free(void)
-{
-    bt_mesh_mutex_free(&bm_list_lock);
-}
-
-void bt_mesh_list_lock(void)
-{
-    bt_mesh_mutex_lock(&bm_list_lock);
-}
-
-void bt_mesh_list_unlock(void)
-{
-    bt_mesh_mutex_unlock(&bm_list_lock);
-}
-
-static void bt_mesh_buf_mutex_new(void)
-{
-    if (!bm_buf_lock.mutex) {
-        bt_mesh_mutex_create(&bm_buf_lock);
-    }
-}
-
-static void bt_mesh_buf_mutex_free(void)
-{
-    bt_mesh_mutex_free(&bm_buf_lock);
-}
-
-void bt_mesh_buf_lock(void)
-{
-    bt_mesh_mutex_lock(&bm_buf_lock);
-}
-
-void bt_mesh_buf_unlock(void)
-{
-    bt_mesh_mutex_unlock(&bm_buf_lock);
-}
-
-static void bt_mesh_atomic_mutex_new(void)
-{
-    if (!bm_atomic_lock.mutex) {
-        bt_mesh_mutex_create(&bm_atomic_lock);
-    }
-}
-
-static void bt_mesh_atomic_mutex_free(void)
-{
-    bt_mesh_mutex_free(&bm_atomic_lock);
-}
-
-void bt_mesh_atomic_lock(void)
-{
-    bt_mesh_mutex_lock(&bm_atomic_lock);
-}
-
-void bt_mesh_atomic_unlock(void)
-{
-    bt_mesh_mutex_unlock(&bm_atomic_lock);
-}
 
 s64_t k_uptime_get(void)
 {
@@ -141,24 +49,16 @@ void k_sleep(s32_t duration)
     return;
 }
 
-void bt_mesh_k_init(void)
+void bt_mesh_timer_init(void)
 {
-    bt_mesh_alarm_mutex_new();
-    bt_mesh_list_mutex_new();
-    bt_mesh_buf_mutex_new();
-    bt_mesh_atomic_mutex_new();
     bm_alarm_hash_map = hash_map_new(BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE,
                                      hash_function_pointer, NULL,
                                      (data_free_fn)osi_alarm_free, NULL);
     __ASSERT(bm_alarm_hash_map, "%s, Failed to create hash map", __func__);
 }
 
-void bt_mesh_k_deinit(void)
+void bt_mesh_timer_deinit(void)
 {
-    bt_mesh_alarm_mutex_free();
-    bt_mesh_list_mutex_free();
-    bt_mesh_buf_mutex_free();
-    bt_mesh_atomic_mutex_free();
     if (bm_alarm_hash_map) {
         hash_map_free(bm_alarm_hash_map);
         bm_alarm_hash_map = NULL;
