@@ -42,6 +42,12 @@
  */
 #define SLOW_CLK_CAL_CYCLES     CONFIG_ESP32S2_RTC_CLK_CAL_CYCLES
 
+#ifdef CONFIG_ESP32S2_RTC_XTAL_CAL_RETRY
+#define RTC_XTAL_CAL_RETRY CONFIG_ESP32S2_RTC_XTAL_CAL_RETRY
+#else
+#define RTC_XTAL_CAL_RETRY 1
+#endif
+
 #define MHZ (1000000)
 
 /* Lower threshold for a reasonably-looking calibration value for a 32k XTAL.
@@ -148,11 +154,7 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
     /* number of times to repeat 32k XTAL calibration
      * before giving up and switching to the internal RC
      */
-#ifdef CONFIG_IDF_TARGET_ESP32
-    int retry_32k_xtal = 1;     /* don't change the behavior for the ESP32 */
-#else
-    int retry_32k_xtal = 3;
-#endif
+    int retry_32k_xtal = RTC_XTAL_CAL_RETRY;
 
     do {
         if (rtc_slow_freq == RTC_SLOW_FREQ_32K_XTAL) {
