@@ -43,12 +43,6 @@ u32_t k_uptime_get_32(void)
     return (u32_t)(esp_timer_get_time() / 1000);
 }
 
-void k_sleep(s32_t duration)
-{
-    vTaskDelay(duration / portTICK_PERIOD_MS);
-    return;
-}
-
 void bt_mesh_timer_init(void)
 {
     bm_alarm_hash_map = hash_map_new(BLE_MESH_GENERAL_ALARM_HASH_MAP_SIZE,
