@@ -67,6 +67,8 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         ESP_LOGE(TAG, "mismatch chip ID, expected %d, found %d", chip_id, img_hdr->chip_id);
         err = ESP_FAIL;
     }
+
+#ifndef CONFIG_IDF_ENV_FPGA
     uint8_t revision = bootloader_common_get_chip_revision();
     if (revision < img_hdr->min_chip_rev) {
         /* To fix this error, please update mininum supported chip revision from configuration,
@@ -78,6 +80,8 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         ESP_LOGI(TAG, "chip revision: %d, min. %s chip revision: %d", revision, type == ESP_IMAGE_BOOTLOADER ? "bootloader" : "application", img_hdr->min_chip_rev);
 #endif
     }
+#endif // CONFIG_IDF_ENV_FPGA
+
     return err;
 }
 

@@ -46,4 +46,26 @@
     }
 }
 
+#ifndef CONFIG_IDF_ENV_FPGA
+
+#else // CONFIG_IDF_ENV_FPGA
+#include "esp_log.h"
+
+static void s_non_functional(const char *func)
+{
+    ESP_EARLY_LOGW("rand", "%s non-functional for FPGA builds", func);
+}
+
+void bootloader_random_enable()
+{
+    s_non_functional(__func__);
+}
+
+void bootloader_random_disable()
+{
+    s_non_functional(__func__);
+}
+
+#endif // CONFIG_IDF_ENV_FPGA
+
 #endif // BOOTLOADER_BUILD
