@@ -120,7 +120,7 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example output
 
-Here is an example console output. In this case a 128MB SDSC card was connected, and `format_if_mount_failed` parameter was set to `true` in the source code. Card was unformatted, so the initial mount has failed. Card was then partitioned, formatted, and mounted again.
+Here is an example console output. In this case a 128MB SDSC card was connected, and `EXAMPLE_FORMAT_IF_MOUNT_FAILED` menuconfig option enabled. Card was unformatted, so the initial mount has failed. Card was then partitioned, formatted, and mounted again.
 
 ```
 I (336) example: Initializing SD card
@@ -165,6 +165,6 @@ Connections between the card and the ESP32 are too long for the frequency used. 
 ### Failure to mount filesystem
 
 ```
-example: Failed to mount filesystem. If you want the card to be formatted, set format_if_mount_failed = true.
+example: Failed to mount filesystem. If you want the card to be formatted, set the EXAMPLE_FORMAT_IF_MOUNT_FAILED menuconfig option.
 ```
-The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Modify `format_if_mount_failed = false` to `format_if_mount_failed = true` in the example code, then build and flash the example.
+The example will be able to mount only cards formatted using FAT32 filesystem. If the card is formatted as exFAT or some other filesystem, you have an option to format it in the example code. Enable the `EXAMPLE_FORMAT_IF_MOUNT_FAILED` menuconfig option, then build and flash the example.
