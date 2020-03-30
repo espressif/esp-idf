@@ -1217,6 +1217,7 @@ For example, to get the Python interpreter used for the build:
   - CXX_COMPILE_OPTIONS - compile options applied to all components' C++ source files
   - EXECUTABLE - project executable; set by call to ``idf_build_executable``
   - EXECUTABLE_NAME - name of project executable without extension; set by call to ``idf_build_executable``
+  - EXECUTABLE_DIR - path containing the output executable
   - IDF_PATH - ESP-IDF path; set from IDF_PATH environment variable, if not, inferred from the location of ``idf.cmake``
   - IDF_TARGET - target chip for the build; set from the required target argument for ``idf_build_process``
   - IDF_VER - ESP-IDF version; set from either a version file or the Git revision of the IDF_PATH repository
