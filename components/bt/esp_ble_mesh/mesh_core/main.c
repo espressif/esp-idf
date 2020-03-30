@@ -319,7 +319,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
         return -EALREADY;
     }
 
-    bt_mesh_k_init();
+    bt_mesh_mutex_init();
+
+    bt_mesh_timer_init();
 
     bt_mesh_hci_init();
 
@@ -485,7 +487,9 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
         bt_mesh_settings_deinit();
     }
 
-    bt_mesh_k_deinit();
+    bt_mesh_timer_deinit();
+
+    bt_mesh_mutex_deinit();
 
     mesh_init = false;
     return 0;

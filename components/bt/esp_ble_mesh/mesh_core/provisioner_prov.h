@@ -22,22 +22,13 @@
 extern "C" {
 #endif
 
-#if !CONFIG_BLE_MESH_PROVISIONER
-
+#ifndef CONFIG_BLE_MESH_PBA_SAME_TIME
 #define CONFIG_BLE_MESH_PBA_SAME_TIME   0
+#endif
+
+#ifndef CONFIG_BLE_MESH_PBG_SAME_TIME
 #define CONFIG_BLE_MESH_PBG_SAME_TIME   0
-
-#else
-
-#if !defined(CONFIG_BLE_MESH_PB_ADV)
-#define CONFIG_BLE_MESH_PBA_SAME_TIME   0
-#endif /* !CONFIG_BLE_MESH_PB_ADV */
-
-#if !defined(CONFIG_BLE_MESH_PB_GATT)
-#define CONFIG_BLE_MESH_PBG_SAME_TIME   0
-#endif /* !CONFIG_BLE_MESH_PB_GATT */
-
-#endif /* !CONFIG_BLE_MESH_PROVISIONER */
+#endif
 
 #define RM_AFTER_PROV  BIT(0)
 #define START_PROV_NOW BIT(1)
