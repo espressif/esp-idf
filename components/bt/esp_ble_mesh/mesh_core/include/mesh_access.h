@@ -14,7 +14,7 @@
 #include "mesh_types.h"
 #include "mesh_util.h"
 #include "mesh_buf.h"
-#include "mesh_kernel.h"
+#include "mesh_timer.h"
 
 /**
  * @brief Bluetooth Mesh Access Layer
