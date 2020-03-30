@@ -180,8 +180,7 @@ menu "Bootloader config"
     config BOOTLOADER_WDT_TIME_MS
         int "Timeout for RTC watchdog (ms)"
         depends on BOOTLOADER_WDT_ENABLE
-        default 9000  if IDF_TARGET_ESP32
-        default 40000 if IDF_TARGET_ESP32S2
+        default 9000
         range 0 120000
         help
             Verify that this parameter is correct and more then the execution time.
