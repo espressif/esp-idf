@@ -31,6 +31,8 @@
 #ifndef _MB_FRAME_H
 #define _MB_FRAME_H
 
+#include "port.h"
+
 #ifdef __cplusplus
 PR_BEGIN_EXTERN_C
 #endif
@@ -61,12 +63,12 @@ PR_BEGIN_EXTERN_C
  */
 
 /* ----------------------- Defines ------------------------------------------*/
-#define MB_PDU_SIZE_MAX     253 /*!< Maximum size of a PDU. */
+#define MB_PDU_SIZE_MAX     ( 253 ) /*!< Maximum size of a PDU. */
 #define MB_PDU_SIZE_MIN     1   /*!< Function Code */
 #define MB_PDU_FUNC_OFF     0   /*!< Offset of function code in PDU. */
 #define MB_PDU_DATA_OFF     1   /*!< Offset for response data in PDU. */
 
-#define MB_SER_PDU_SIZE_MAX 256 /*!< Maximum size of a Modbus frame. */
+#define MB_SER_PDU_SIZE_MAX ( MB_SERIAL_BUF_SIZE ) /*!< Maximum size of a Modbus frame. */
 #define MB_SER_PDU_SIZE_LRC 1   /*!< Size of LRC field in PDU. */
 #define MB_SER_PDU_ADDR_OFF 0   /*!< Offset of slave address in Ser-PDU. */
 #define MB_SER_PDU_PDU_OFF  1   /*!< Offset of Modbus-PDU in Ser-PDU. */

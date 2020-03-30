@@ -40,9 +40,9 @@ void uart_hal_write_txfifo(uart_hal_context_t *hal, const uint8_t *buf, uint32_t
     uart_ll_write_txfifo(hal->dev, buf, fill_len);
 }
 
-void uart_hal_read_rxfifo(uart_hal_context_t *hal, uint8_t *buf, int *rd_len)
+void uart_hal_read_rxfifo(uart_hal_context_t *hal, uint8_t *buf, int *inout_rd_len)
 {
-    uint16_t read_len = uart_ll_get_rxfifo_len(hal->dev);
-    *rd_len = read_len;
+    uint16_t read_len = (*inout_rd_len > 0) ? *inout_rd_len : uart_ll_get_rxfifo_len(hal->dev);
+    *inout_rd_len = read_len;
     uart_ll_read_rxfifo(hal->dev, buf, read_len);
 }

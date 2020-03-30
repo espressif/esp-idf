@@ -36,7 +36,7 @@
 extern BOOL xMBMasterPortSerialTxPoll(void);
 
 /*-----------------------Master mode use these variables----------------------*/
-#define MB_RESPONSE_TICS pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND)
+#define MB_RESPONSE_TICS pdMS_TO_TICKS(CONFIG_FMB_MASTER_TIMEOUT_MS_RESPOND + 10)
 
 
 static mb_master_interface_t* mbm_interface_ptr = NULL; //&default_interface_inst;
@@ -333,41 +333,6 @@ static uint8_t mbc_serial_master_get_command(mb_param_type_t param_type, mb_para
     return command;
 }
 
-// Helper function to set parameter buffer according to its type
-static esp_err_t mbc_serial_master_set_param_data(void* dest, void* src, mb_descr_type_t param_type, size_t param_size)
-{
-    esp_err_t err = ESP_OK;
-    MB_MASTER_CHECK((dest != NULL), 
-                        ESP_ERR_INVALID_ARG, "incorrect parameter pointer.");
-    MB_MASTER_CHECK((src != NULL), 
-                        ESP_ERR_INVALID_ARG, "incorrect parameter pointer.");
-    // Transfer parameter data into value of characteristic
-    switch(param_type)
-    {
-        case PARAM_TYPE_U8:
-            *((uint8_t*)dest) = *((uint8_t*)src);
-            break;
-        case PARAM_TYPE_U16:
-            *((uint16_t*)dest) = *((uint16_t*)src);
-            break;
-        case PARAM_TYPE_U32:
-            *((uint32_t*)dest) = *((uint32_t*)src);
-            break;
-        case PARAM_TYPE_FLOAT:
-            *((float*)dest) = *(float*)src;
-            break;
-        case PARAM_TYPE_ASCII:
-            memcpy((void*)dest, (void*)src, (size_t)param_size);
-            break;
-        default:
-            ESP_LOGE(MB_MASTER_TAG, "%s: Incorrect param type (%u).",
-                        __FUNCTION__, (uint16_t)param_type);
-            err = ESP_ERR_NOT_SUPPORTED;
-            break;
-    }
-    return err;
-}
-
 // Helper to search parameter by name in the parameter description table 
 // and fills Modbus request fields accordingly
 static esp_err_t mbc_serial_master_set_request(char* name, mb_param_mode_t mode, 
@@ -418,7 +383,7 @@ static esp_err_t mbc_serial_master_set_request(char* name, mb_param_mode_t mode,
 
 // Get parameter data for corresponding characteristic
 static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name, 
-                                                    uint8_t* value, uint8_t *type)
+                                                    uint8_t* value_ptr, uint8_t *type)
 {
     MB_MASTER_CHECK((name != NULL), 
                         ESP_ERR_INVALID_ARG, "mb incorrect descriptor.");
@@ -427,19 +392,12 @@ static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name,
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
 
     error = mbc_serial_master_set_request(name, MB_PARAM_READ, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
-        error = mbc_serial_master_send_request(&request, &param_buffer[0]);
+        // Send request to read characteristic data
+        error = mbc_serial_master_send_request(&request, value_ptr);
         if (error == ESP_OK) {
-            // If data pointer is NULL then we don't need to set value 
-            // (it is still in the cache of cid)
-            if (value != NULL) {
-                error = mbc_serial_master_set_param_data((void*)value, (void*)&param_buffer[0],
-                                                    reg_info.param_type, reg_info.param_size);
-                MB_MASTER_CHECK((error == ESP_OK), ESP_ERR_INVALID_STATE, "fail to set parameter data.");
-            }
             ESP_LOGD(MB_MASTER_TAG, "%s: Good response for get cid(%u) = %s",
                                     __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));
         } else {
@@ -457,28 +415,22 @@ static esp_err_t mbc_serial_master_get_parameter(uint16_t cid, char* name,
 
 // Set parameter value for characteristic selected by name and cid
 static esp_err_t mbc_serial_master_set_parameter(uint16_t cid, char* name, 
-                                                    uint8_t* value, uint8_t *type)
+                                                    uint8_t* value_ptr, uint8_t *type)
 {
     MB_MASTER_CHECK((name != NULL), 
                         ESP_ERR_INVALID_ARG, "mb incorrect descriptor.");
-    MB_MASTER_CHECK((value != NULL), 
+    MB_MASTER_CHECK((value_ptr != NULL),
                         ESP_ERR_INVALID_ARG, "value pointer is incorrect.");
     MB_MASTER_CHECK((type != NULL), 
                         ESP_ERR_INVALID_ARG, "type pointer is incorrect.");
     esp_err_t error = ESP_ERR_INVALID_RESPONSE;
     mb_param_request_t request ;
     mb_parameter_descriptor_t reg_info = { 0 };
-    uint8_t param_buffer[PARAM_MAX_SIZE] = { 0 };
 
     error = mbc_serial_master_set_request(name, MB_PARAM_WRITE, &request, &reg_info);
     if ((error == ESP_OK) && (cid == reg_info.cid)) {
-        // Transfer value of characteristic into parameter buffer
-        error = mbc_serial_master_set_param_data((void*)&param_buffer[0], (void*)value,
-                                                reg_info.param_type, reg_info.param_size);
-        MB_MASTER_CHECK((error == ESP_OK), 
-                            ESP_ERR_INVALID_STATE, "failure to set parameter data.");
         // Send request to write characteristic data
-        error = mbc_serial_master_send_request(&request, &param_buffer[0]);
+        error = mbc_serial_master_send_request(&request, value_ptr);
         if (error == ESP_OK) {
             ESP_LOGD(MB_MASTER_TAG, "%s: Good response for set cid(%u) = %s",
                                     __FUNCTION__, (int)reg_info.cid, (char*)esp_err_to_name(error));

@@ -808,6 +808,26 @@ static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thr)
 }
 
 /**
+ * @brief  Get the timeout value for receiver receiving a byte.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return tout_thr The timeout threshold value. If timeout feature is disabled returns 0.
+ */
+static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
+{
+    uint16_t tout_thrd = 0;
+    if (hw->conf1.rx_tout_en > 0) {
+        if (hw->conf0.tick_ref_always_on == 0) {
+            tout_thrd = (uint16_t)(hw->conf1.rx_tout_thrhd / UART_LL_TOUT_REF_FACTOR_DEFAULT);
+        } else {
+            tout_thrd = (uint16_t)(hw->conf1.rx_tout_thrhd  << 3);
+        }
+    }
+    return tout_thrd;
+}
+
+/**
  * @brief  Get UART maximum timeout threshold.
  *
  * @param  hw Beginning address of the peripheral registers.
@@ -816,13 +836,13 @@ static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thr)
  */
 static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
 {
-    uint16_t tout_sym = 0;
+    uint16_t tout_thrd = 0;
     if (hw->conf0.tick_ref_always_on == 0) {
-        tout_sym = (uint16_t)(UART_RX_TOUT_THRHD_V / UART_LL_TOUT_REF_FACTOR_DEFAULT);
+        tout_thrd = (uint16_t)(UART_RX_TOUT_THRHD_V / UART_LL_TOUT_REF_FACTOR_DEFAULT);
     } else {
-        tout_sym = (uint16_t)(UART_RX_TOUT_THRHD_V  << 3);
+        tout_thrd = (uint16_t)(UART_RX_TOUT_THRHD_V  << 3);
     }
-    return tout_sym;
+    return tout_thrd;
 }
 
 #undef UART_LL_TOUT_REF_FACTOR_DEFAULT

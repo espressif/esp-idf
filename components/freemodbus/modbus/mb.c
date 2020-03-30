@@ -62,7 +62,7 @@
 static UCHAR    ucMBAddress;
 static eMBMode  eMBCurrentMode;
 
-volatile UCHAR ucMbSlaveBuf[MB_SER_PDU_SIZE_MAX];
+volatile UCHAR ucMbSlaveBuf[MB_SERIAL_BUF_SIZE];
 
 static enum
 {
