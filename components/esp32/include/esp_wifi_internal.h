@@ -318,6 +318,17 @@ esp_err_t esp_wifi_internal_set_log_mod(wifi_log_module_t module, uint32_t submo
   */
 esp_err_t esp_wifi_internal_get_log(wifi_log_level_t *log_level, uint32_t *log_mod);
 
+/**
+  * @brief     Dump WiFi key statistic counters
+  *
+  * @attention Application can call this API at the points that potential error happens, 
+  *            such as, WiFi disconnect, IP lost, socket fail etc.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_internal_statistic_dump(void);
+
 #ifdef __cplusplus
 }
 #endif
