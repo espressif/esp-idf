@@ -11,14 +11,11 @@
 #include <string.h>
 #include <errno.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
-
-#include "osi/thread.h"
+#include "bt_common.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ADV)
 
+#include "mesh_kernel.h"
 #include "mesh.h"
 #include "mesh_hci.h"
 #include "mesh_common.h"

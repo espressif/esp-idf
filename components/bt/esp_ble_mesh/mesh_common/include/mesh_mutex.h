@@ -15,12 +15,7 @@
 #ifndef _BLE_MESH_MUTEX_H_
 #define _BLE_MESH_MUTEX_H_
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-
-#include "mesh_types.h"
+#include "mesh_kernel.h"
 #include "mesh_slist.h"
 #include "mesh_atomic.h"
 

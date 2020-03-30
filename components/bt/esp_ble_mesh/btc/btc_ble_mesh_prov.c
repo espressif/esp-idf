@@ -15,10 +15,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-
 #include "adv.h"
+#include "mesh_kernel.h"
 #include "mesh_proxy.h"
 #include "mesh.h"
 #include "access.h"

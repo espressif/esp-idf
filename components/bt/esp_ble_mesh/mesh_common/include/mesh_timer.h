@@ -256,18 +256,6 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler);
  */
 s64_t k_uptime_get(void);
 
-/**
- * @brief Put the current thread to sleep.
- *
- * This routine puts the current thread to sleep for @a duration
- * milliseconds.
- *
- * @param duration Number of milliseconds to sleep.
- *
- * @return N/A
- */
-void k_sleep(s32_t duration);
-
 void bt_mesh_timer_init(void);
 void bt_mesh_timer_deinit(void);
 
