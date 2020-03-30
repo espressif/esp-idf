@@ -107,16 +107,16 @@ eMBMasterReqWriteHoldingRegister( UCHAR ucSndAddr, USHORT usRegAddr, USHORT usRe
     else if ( xMBMasterRunResTake( lTimeOut ) == FALSE ) eErrStatus = MB_MRE_MASTER_BUSY;
     else
     {
-		vMBMasterGetPDUSndBuf(&ucMBFrame);
-		vMBMasterSetDestAddress(ucSndAddr);
-		ucMBFrame[MB_PDU_FUNC_OFF]                = MB_FUNC_WRITE_REGISTER;
-		ucMBFrame[MB_PDU_REQ_WRITE_ADDR_OFF]      = usRegAddr >> 8;
-		ucMBFrame[MB_PDU_REQ_WRITE_ADDR_OFF + 1]  = usRegAddr;
-		ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF]     = usRegData >> 8;
-		ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF + 1] = usRegData ;
-		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_SIZE );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
-		eErrStatus = eMBMasterWaitRequestFinish( );
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterSetDestAddress(ucSndAddr);
+        ucMBFrame[MB_PDU_FUNC_OFF]                = MB_FUNC_WRITE_REGISTER;
+        ucMBFrame[MB_PDU_REQ_WRITE_ADDR_OFF]      = usRegAddr >> 8;
+        ucMBFrame[MB_PDU_REQ_WRITE_ADDR_OFF + 1]  = usRegAddr;
+        ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF]     = usRegData >> 8;
+        ucMBFrame[MB_PDU_REQ_WRITE_VALUE_OFF + 1] = usRegData ;
+        vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_SIZE );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
+        eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
 }
@@ -168,7 +168,7 @@ eMBMasterFuncWriteHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
  */
 eMBMasterReqErrCode
 eMBMasterReqWriteMultipleHoldingRegister( UCHAR ucSndAddr,
-		USHORT usRegAddr, USHORT usNRegs, USHORT * pusDataBuffer, LONG lTimeOut )
+        USHORT usRegAddr, USHORT usNRegs, USHORT * pusDataBuffer, LONG lTimeOut )
 {
     UCHAR                 *ucMBFrame;
     USHORT                 usRegIndex = 0;
@@ -178,23 +178,23 @@ eMBMasterReqWriteMultipleHoldingRegister( UCHAR ucSndAddr,
     else if ( xMBMasterRunResTake( lTimeOut ) == FALSE ) eErrStatus = MB_MRE_MASTER_BUSY;
     else
     {
-		vMBMasterGetPDUSndBuf(&ucMBFrame);
-		vMBMasterSetDestAddress(ucSndAddr);
-		ucMBFrame[MB_PDU_FUNC_OFF]                     = MB_FUNC_WRITE_MULTIPLE_REGISTERS;
-		ucMBFrame[MB_PDU_REQ_WRITE_MUL_ADDR_OFF]       = usRegAddr >> 8;
-		ucMBFrame[MB_PDU_REQ_WRITE_MUL_ADDR_OFF + 1]   = usRegAddr;
-		ucMBFrame[MB_PDU_REQ_WRITE_MUL_REGCNT_OFF]     = usNRegs >> 8;
-		ucMBFrame[MB_PDU_REQ_WRITE_MUL_REGCNT_OFF + 1] = usNRegs ;
-		ucMBFrame[MB_PDU_REQ_WRITE_MUL_BYTECNT_OFF]    = usNRegs * 2;
-		ucMBFrame += MB_PDU_REQ_WRITE_MUL_VALUES_OFF;
-		while( usNRegs > usRegIndex)
-		{
-			*ucMBFrame++ = pusDataBuffer[usRegIndex] >> 8;
-			*ucMBFrame++ = pusDataBuffer[usRegIndex++] ;
-		}
-		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_MUL_SIZE_MIN + 2*usNRegs );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
-		eErrStatus = eMBMasterWaitRequestFinish( );
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterSetDestAddress(ucSndAddr);
+        ucMBFrame[MB_PDU_FUNC_OFF]                     = MB_FUNC_WRITE_MULTIPLE_REGISTERS;
+        ucMBFrame[MB_PDU_REQ_WRITE_MUL_ADDR_OFF]       = usRegAddr >> 8;
+        ucMBFrame[MB_PDU_REQ_WRITE_MUL_ADDR_OFF + 1]   = usRegAddr;
+        ucMBFrame[MB_PDU_REQ_WRITE_MUL_REGCNT_OFF]     = usNRegs >> 8;
+        ucMBFrame[MB_PDU_REQ_WRITE_MUL_REGCNT_OFF + 1] = usNRegs ;
+        ucMBFrame[MB_PDU_REQ_WRITE_MUL_BYTECNT_OFF]    = usNRegs * 2;
+        ucMBFrame += MB_PDU_REQ_WRITE_MUL_VALUES_OFF;
+        while( usNRegs > usRegIndex)
+        {
+            *ucMBFrame++ = pusDataBuffer[usRegIndex] >> 8;
+            *ucMBFrame++ = pusDataBuffer[usRegIndex++] ;
+        }
+        vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_WRITE_MUL_SIZE_MIN + 2*usNRegs );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
+        eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
 }
@@ -213,7 +213,7 @@ eMBMasterFuncWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
     /* If this request is broadcast, the *usLen is not need check. */
     if( ( *usLen == MB_PDU_SIZE_MIN + MB_PDU_FUNC_WRITE_MUL_SIZE ) || xMBMasterRequestIsBroadcast() )
     {
-		vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
         usRegAddress = ( USHORT )( ucMBFrame[MB_PDU_REQ_WRITE_MUL_ADDR_OFF] << 8 );
         usRegAddress |= ( USHORT )( ucMBFrame[MB_PDU_REQ_WRITE_MUL_ADDR_OFF + 1] );
         usRegAddress++;
@@ -271,16 +271,16 @@ eMBMasterReqReadHoldingRegister( UCHAR ucSndAddr, USHORT usRegAddr, USHORT usNRe
     else if ( xMBMasterRunResTake( lTimeOut ) == FALSE ) eErrStatus = MB_MRE_MASTER_BUSY;
     else
     {
-		vMBMasterGetPDUSndBuf(&ucMBFrame);
-		vMBMasterSetDestAddress(ucSndAddr);
-		ucMBFrame[MB_PDU_FUNC_OFF]                = MB_FUNC_READ_HOLDING_REGISTER;
-		ucMBFrame[MB_PDU_REQ_READ_ADDR_OFF]       = usRegAddr >> 8;
-		ucMBFrame[MB_PDU_REQ_READ_ADDR_OFF + 1]   = usRegAddr;
-		ucMBFrame[MB_PDU_REQ_READ_REGCNT_OFF]     = usNRegs >> 8;
-		ucMBFrame[MB_PDU_REQ_READ_REGCNT_OFF + 1] = usNRegs;
-		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READ_SIZE );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
-		eErrStatus = eMBMasterWaitRequestFinish( );
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterSetDestAddress(ucSndAddr);
+        ucMBFrame[MB_PDU_FUNC_OFF]                = MB_FUNC_READ_HOLDING_REGISTER;
+        ucMBFrame[MB_PDU_REQ_READ_ADDR_OFF]       = usRegAddr >> 8;
+        ucMBFrame[MB_PDU_REQ_READ_ADDR_OFF + 1]   = usRegAddr;
+        ucMBFrame[MB_PDU_REQ_READ_REGCNT_OFF]     = usNRegs >> 8;
+        ucMBFrame[MB_PDU_REQ_READ_REGCNT_OFF + 1] = usNRegs;
+        vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READ_SIZE );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
+        eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
 }
@@ -298,11 +298,11 @@ eMBMasterFuncReadHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
     /* If this request is broadcast, and it's read mode. This request don't need execute. */
     if ( xMBMasterRequestIsBroadcast() )
     {
-    	eStatus = MB_EX_NONE;
+        eStatus = MB_EX_NONE;
     }
     else if( *usLen >= MB_PDU_SIZE_MIN + MB_PDU_FUNC_READ_SIZE_MIN )
     {
-		vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
         usRegAddress = ( USHORT )( ucMBFrame[MB_PDU_REQ_READ_ADDR_OFF] << 8 );
         usRegAddress |= ( USHORT )( ucMBFrame[MB_PDU_REQ_READ_ADDR_OFF + 1] );
         usRegAddress++;
@@ -355,8 +355,8 @@ eMBMasterFuncReadHoldingRegister( UCHAR * pucFrame, USHORT * usLen )
  */
 eMBMasterReqErrCode
 eMBMasterReqReadWriteMultipleHoldingRegister( UCHAR ucSndAddr,
-		USHORT usReadRegAddr, USHORT usNReadRegs, USHORT * pusDataBuffer,
-		USHORT usWriteRegAddr, USHORT usNWriteRegs, LONG lTimeOut )
+        USHORT usReadRegAddr, USHORT usNReadRegs, USHORT * pusDataBuffer,
+        USHORT usWriteRegAddr, USHORT usNWriteRegs, LONG lTimeOut )
 {
     UCHAR                 *ucMBFrame;
     USHORT                 usRegIndex = 0;
@@ -366,27 +366,27 @@ eMBMasterReqReadWriteMultipleHoldingRegister( UCHAR ucSndAddr,
     else if ( xMBMasterRunResTake( lTimeOut ) == FALSE ) eErrStatus = MB_MRE_MASTER_BUSY;
     else
     {
-		vMBMasterGetPDUSndBuf(&ucMBFrame);
-		vMBMasterSetDestAddress(ucSndAddr);
-		ucMBFrame[MB_PDU_FUNC_OFF]                           = MB_FUNC_READWRITE_MULTIPLE_REGISTERS;
-		ucMBFrame[MB_PDU_REQ_READWRITE_READ_ADDR_OFF]        = usReadRegAddr >> 8;
-		ucMBFrame[MB_PDU_REQ_READWRITE_READ_ADDR_OFF + 1]    = usReadRegAddr;
-		ucMBFrame[MB_PDU_REQ_READWRITE_READ_REGCNT_OFF]      = usNReadRegs >> 8;
-		ucMBFrame[MB_PDU_REQ_READWRITE_READ_REGCNT_OFF + 1]  = usNReadRegs ;
-		ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_ADDR_OFF]       = usWriteRegAddr >> 8;
-		ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_ADDR_OFF + 1]   = usWriteRegAddr;
-		ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_REGCNT_OFF]     = usNWriteRegs >> 8;
-		ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_REGCNT_OFF + 1] = usNWriteRegs ;
-		ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_BYTECNT_OFF]    = usNWriteRegs * 2;
-		ucMBFrame += MB_PDU_REQ_READWRITE_WRITE_VALUES_OFF;
-		while( usNWriteRegs > usRegIndex)
-		{
-			*ucMBFrame++ = pusDataBuffer[usRegIndex] >> 8;
-			*ucMBFrame++ = pusDataBuffer[usRegIndex++] ;
-		}
-		vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READWRITE_SIZE_MIN + 2*usNWriteRegs );
-		( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
-		eErrStatus = eMBMasterWaitRequestFinish( );
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterSetDestAddress(ucSndAddr);
+        ucMBFrame[MB_PDU_FUNC_OFF]                           = MB_FUNC_READWRITE_MULTIPLE_REGISTERS;
+        ucMBFrame[MB_PDU_REQ_READWRITE_READ_ADDR_OFF]        = usReadRegAddr >> 8;
+        ucMBFrame[MB_PDU_REQ_READWRITE_READ_ADDR_OFF + 1]    = usReadRegAddr;
+        ucMBFrame[MB_PDU_REQ_READWRITE_READ_REGCNT_OFF]      = usNReadRegs >> 8;
+        ucMBFrame[MB_PDU_REQ_READWRITE_READ_REGCNT_OFF + 1]  = usNReadRegs ;
+        ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_ADDR_OFF]       = usWriteRegAddr >> 8;
+        ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_ADDR_OFF + 1]   = usWriteRegAddr;
+        ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_REGCNT_OFF]     = usNWriteRegs >> 8;
+        ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_REGCNT_OFF + 1] = usNWriteRegs ;
+        ucMBFrame[MB_PDU_REQ_READWRITE_WRITE_BYTECNT_OFF]    = usNWriteRegs * 2;
+        ucMBFrame += MB_PDU_REQ_READWRITE_WRITE_VALUES_OFF;
+        while( usNWriteRegs > usRegIndex)
+        {
+            *ucMBFrame++ = pusDataBuffer[usRegIndex] >> 8;
+            *ucMBFrame++ = pusDataBuffer[usRegIndex++] ;
+        }
+        vMBMasterSetPDUSndLength( MB_PDU_SIZE_MIN + MB_PDU_REQ_READWRITE_SIZE_MIN + 2*usNWriteRegs );
+        ( void ) xMBMasterPortEventPost( EV_MASTER_FRAME_TRANSMIT );
+        eErrStatus = eMBMasterWaitRequestFinish( );
     }
     return eErrStatus;
 }
@@ -406,11 +406,11 @@ eMBMasterFuncReadWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen 
     /* If this request is broadcast, and it's read mode. This request don't need execute. */
     if ( xMBMasterRequestIsBroadcast() )
     {
-    	eStatus = MB_EX_NONE;
+        eStatus = MB_EX_NONE;
     }
     else if( *usLen >= MB_PDU_SIZE_MIN + MB_PDU_FUNC_READWRITE_SIZE_MIN )
     {
-    	vMBMasterGetPDUSndBuf(&ucMBFrame);
+        vMBMasterGetPDUSndBuf(&ucMBFrame);
         usRegReadAddress = ( USHORT )( ucMBFrame[MB_PDU_REQ_READWRITE_READ_ADDR_OFF] << 8U );
         usRegReadAddress |= ( USHORT )( ucMBFrame[MB_PDU_REQ_READWRITE_READ_ADDR_OFF + 1] );
         usRegReadAddress++;
@@ -434,8 +434,8 @@ eMBMasterFuncReadWriteMultipleHoldingRegister( UCHAR * pucFrame, USHORT * usLen 
             if( eRegStatus == MB_ENOERR )
             {
                 /* Make the read callback. */
-				eRegStatus = eMBMasterRegHoldingCB(&pucFrame[MB_PDU_FUNC_READWRITE_READ_VALUES_OFF],
-						                      usRegReadAddress, usRegReadCount, MB_REG_READ);
+                eRegStatus = eMBMasterRegHoldingCB(&pucFrame[MB_PDU_FUNC_READWRITE_READ_VALUES_OFF],
+                                              usRegReadAddress, usRegReadCount, MB_REG_READ);
             }
             if( eRegStatus != MB_ENOERR )
             {

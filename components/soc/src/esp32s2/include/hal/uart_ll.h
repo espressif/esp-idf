@@ -773,6 +773,22 @@ static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 }
 
 /**
+ * @brief  Get the timeout value for receiver receiving a byte.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return tout_thr The timeout threshold value. If timeout feature is disabled returns 0.
+ */
+static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
+{
+    uint16_t tout_thrd = 0;
+    if(hw->conf1.rx_tout_en > 0) {
+        tout_thrd = hw->mem_conf.rx_tout_thrhd;
+    }
+    return tout_thrd;
+}
+
+/**
  * @brief  Get UART maximum timeout threshold.
  *
  * @param  hw Beginning address of the peripheral registers.

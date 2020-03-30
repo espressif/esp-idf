@@ -382,8 +382,6 @@ xMBASCIITransmitFSM( void )
         eSndState = STATE_TX_IDLE;
         xMBPortEventPost( EV_FRAME_TRANSMIT );
         xNeedPoll = FALSE;
-
-        eSndState = STATE_TX_IDLE;
         break;
 
         /* We should not get a transmitter event if the transmitter is in

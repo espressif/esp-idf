@@ -135,7 +135,7 @@ void app_main(void)
                             UART_PIN_NO_CHANGE));
 
     // Set UART driver mode to Half Duplex
-    ESP_ERROR_CHECK(uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX));  
+    ESP_ERROR_CHECK(uart_set_mode(MB_PORT_NUM, UART_MODE_RS485_HALF_DUPLEX));
                                     
     ESP_LOGI(SLAVE_TAG, "Modbus slave stack initialized.");
     ESP_LOGI(SLAVE_TAG, "Start modbus test...");

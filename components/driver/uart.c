@@ -104,6 +104,7 @@ typedef struct {
     intr_handle_t intr_handle;          /*!< UART interrupt handle*/
     uart_mode_t uart_mode;              /*!< UART controller actual mode set by uart_set_mode() */
     bool coll_det_flg;                  /*!< UART collision detection flag */
+    bool rx_always_timeout_flg;         /*!< UART always detect rx timeout flag */
 
     //rx parameters
     int rx_buffered_len;                  /*!< UART cached data length */
@@ -808,6 +809,10 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                 pat_flg = 0;
             }
             if (p_uart->rx_buffer_full_flg == false) {
+                rx_fifo_len = uart_hal_get_rxfifo_len(&(uart_context[uart_num].hal));
+                if ((p_uart_obj[uart_num]->rx_always_timeout_flg) && !(uart_intr_status & UART_INTR_RXFIFO_TOUT)) {
+                    rx_fifo_len--; // leave one byte in the fifo in order to trigger uart_intr_rxfifo_tout
+                }
                 uart_hal_read_rxfifo(&(uart_context[uart_num].hal), p_uart->rx_data_buf, &rx_fifo_len);
                 uint8_t pat_chr = 0;
                 uint8_t pat_num = 0;
@@ -825,6 +830,7 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                     uart_hal_clr_intsts_mask(&(uart_context[uart_num].hal), UART_INTR_RXFIFO_TOUT | UART_INTR_RXFIFO_FULL);
                     uart_event.type = UART_DATA;
                     uart_event.size = rx_fifo_len;
+                    uart_event.timeout_flag = (uart_intr_status & UART_INTR_RXFIFO_TOUT) ? true : false;
                     UART_ENTER_CRITICAL_ISR(&uart_selectlock);
                     if (p_uart->uart_select_notif_callback) {
                         p_uart->uart_select_notif_callback(uart_num, UART_SELECT_READ_NOTIF, &HPTaskAwoken);
@@ -1296,6 +1302,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         p_uart_obj[uart_num]->uart_num = uart_num;
         p_uart_obj[uart_num]->uart_mode = UART_MODE_UART;
         p_uart_obj[uart_num]->coll_det_flg = false;
+        p_uart_obj[uart_num]->rx_always_timeout_flg = false;
         p_uart_obj[uart_num]->tx_fifo_sem = xSemaphoreCreateBinary();
         xSemaphoreGive(p_uart_obj[uart_num]->tx_fifo_sem);
         p_uart_obj[uart_num]->tx_done_sem = xSemaphoreCreateBinary();
@@ -1342,7 +1349,7 @@ esp_err_t uart_driver_install(uart_port_t uart_num, int rx_buffer_size, int tx_b
         .intr_enable_mask = UART_INTR_CONFIG_FLAG,
         .rxfifo_full_thresh = UART_FULL_THRESH_DEFAULT,
         .rx_timeout_thresh = UART_TOUT_THRESH_DEFAULT,
-        .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT
+        .txfifo_empty_intr_thresh = UART_EMPTY_THRESH_DEFAULT,
     };
     uart_module_enable(uart_num);
     uart_hal_disable_intr_mask(&(uart_context[uart_num].hal), UART_INTR_MASK);
@@ -1548,4 +1555,14 @@ esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en)
     UART_CHECK((uart_num < UART_NUM_MAX), "uart_num error", ESP_ERR_INVALID_ARG);
     uart_hal_set_loop_back(&(uart_context[uart_num].hal), loop_back_en);
     return ESP_OK;
+}
+
+void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout)
+{
+    uint16_t rx_tout = uart_hal_get_rx_tout_thr(&(uart_context[uart_num].hal));
+    if (rx_tout) {
+        p_uart_obj[uart_num]->rx_always_timeout_flg = always_rx_timeout;
+    } else {
+        p_uart_obj[uart_num]->rx_always_timeout_flg = false;
+    }
 }

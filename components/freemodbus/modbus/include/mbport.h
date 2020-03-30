@@ -81,6 +81,7 @@ typedef enum {
     EV_ERROR_RESPOND_TIMEOUT,  /*!< Slave respond timeout. */
     EV_ERROR_RECEIVE_DATA,     /*!< Receive frame data erroe. */
     EV_ERROR_EXECUTE_FUNCTION, /*!< Execute function error. */
+    EV_ERROR_OK,               /*!< Data processed. */
 } eMBMasterErrorEventType;
 #endif
 

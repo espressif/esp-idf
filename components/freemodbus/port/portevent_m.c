@@ -217,7 +217,7 @@ void vMBMasterErrorCBExecuteFunction(UCHAR ucDestAddress, const UCHAR* pucPDUDat
 {
     BOOL ret = xMBMasterPortEventPost(EV_MASTER_ERROR_EXECUTE_FUNCTION);
     MB_PORT_CHECK((ret == TRUE), ; , "%s: Post event 'EV_MASTER_ERROR_EXECUTE_FUNCTION' failed!", __func__);
-    ESP_LOGD(MB_PORT_TAG,"%s:Callback execute data timeout failure.", __func__);
+    ESP_LOGD(MB_PORT_TAG,"%s:Callback execute data handler failure.", __func__);
 }
 
 /**
@@ -252,7 +252,7 @@ eMBMasterReqErrCode eMBMasterWaitRequestFinish( void ) {
                                                 MB_EVENT_REQ_MASK,  // The bits within the event group to wait for.
                                                 pdTRUE,             // Masked bits should be cleared before returning.
                                                 pdFALSE,            // Don't wait for both bits, either bit will do.
-                                                portMAX_DELAY );    // Wait forever for either bit to be set.
+                                                1000 );             // Wait forever for either bit to be set. //portMAX_DELAY
     xRecvedEvent = (eMBMasterEventType)(uxBits);
     if (xRecvedEvent) {
         ESP_LOGD(MB_PORT_TAG,"%s: returned event = 0x%x", __func__, xRecvedEvent);
