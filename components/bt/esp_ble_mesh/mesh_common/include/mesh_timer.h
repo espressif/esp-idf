@@ -5,8 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _BLE_MESH_KERNEL_H_
-#define _BLE_MESH_KERNEL_H_
+#ifndef _BLE_MESH_TIMER_H_
+#define _BLE_MESH_TIMER_H_
 
 #include "mesh_types.h"
 #include "mesh_slist.h"
@@ -284,5 +284,5 @@ void bt_mesh_k_deinit(void);
 }
 #endif
 
-#endif /* _BLE_MESH_KERNEL_H_ */
+#endif /* _BLE_MESH_TIMER_H_ */
 
