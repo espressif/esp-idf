@@ -19,7 +19,7 @@
  */
 
 #include "mesh_atomic.h"
-#include "mesh_timer.h"
+#include "mesh_mutex.h"
 
 #ifndef CONFIG_ATOMIC_OPERATIONS_BUILTIN
 
