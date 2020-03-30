@@ -71,7 +71,7 @@ def generate_doxygen(app, project_description):
     print("Calling Doxygen to generate latest XML files")
     doxy_env = os.environ
     doxy_env.update({
-        "ENV_DOXYGEN_DEFINES": " ".join(defines),
+        "ENV_DOXYGEN_DEFINES": " ".join('{}={}'.format(key, value) for key, value in defines.items()),
         "IDF_PATH": app.config.idf_path,
         "IDF_TARGET": app.config.idf_target,
     })
