@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "mesh_mutex.h"
+#include "mesh_common.h"
 
 static bt_mesh_mutex_t alarm_lock;
 static bt_mesh_mutex_t list_lock;

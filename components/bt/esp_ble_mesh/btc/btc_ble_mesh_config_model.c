@@ -15,11 +15,9 @@
 #include <string.h>
 #include <errno.h>
 
-#include "foundation.h"
-#include "mesh_common.h"
-#include "cfg_cli.h"
-
 #include "btc_ble_mesh_config_model.h"
+#include "foundation.h"
+#include "cfg_cli.h"
 #include "esp_ble_mesh_config_model_api.h"
 
 #define CID_NVAL 0xffff

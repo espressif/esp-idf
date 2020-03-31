@@ -11,8 +11,6 @@
 #include <string.h>
 #include <errno.h>
 
-#include "bt_common.h"
-
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_ADV)
 
 #include "mesh_kernel.h"

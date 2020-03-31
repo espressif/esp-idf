@@ -6,10 +6,7 @@
  */
 
 #include <string.h>
-
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_mutex.h"
+#include "mesh_common.h"
 
 int net_buf_id(struct net_buf *buf)
 {
