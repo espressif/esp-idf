@@ -78,7 +78,7 @@ test cases:
   - - SSC SSC2 sta -C -s <target_ssid>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC1 ap -S -s <target_ssid> -n 15
-    - - R SSC1 C +SAP:OK
+    - - R SSC1 C +SAP:ERROR
   - - SSC SSC2 sta -C -s <target_ssid>
     - - R SSC2 RE "\+JAP:CONNECTED,%%s"%%(<target_ssid>)
   - - SSC SSC2 sta -D
