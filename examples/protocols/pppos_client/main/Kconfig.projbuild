@@ -19,14 +19,22 @@ menu "Example Configuration"
     config EXAMPLE_MODEM_PPP_AUTH_USERNAME
         string "Set username for authentication"
         default "espressif"
+        depends on !EXAMPLE_MODEM_PPP_AUTH_NONE
         help
             Set username for PPP Authentication.
 
     config EXAMPLE_MODEM_PPP_AUTH_PASSWORD
         string "Set password for authentication"
         default "esp32"
+        depends on !EXAMPLE_MODEM_PPP_AUTH_NONE
         help
             Set password for PPP Authentication.
+
+    config EXAMPLE_MODEM_PPP_AUTH_NONE
+        bool "Skip PPP authentication"
+        default n
+        help
+            Set to true for the PPP client to skip authentication
 
     config EXAMPLE_SEND_MSG
         bool "Short message (SMS)"

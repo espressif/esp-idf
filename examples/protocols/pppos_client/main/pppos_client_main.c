@@ -217,7 +217,7 @@ void app_main(void)
     esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_PAP;
 #elif CONFIG_LWIP_PPP_CHAP_SUPPORT
     esp_netif_auth_type_t auth_type = NETIF_PPP_AUTHTYPE_CHAP;
-#else
+#elif !defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_NONE)
 #error "Unsupported AUTH Negotiation"
 #endif
     ESP_ERROR_CHECK(esp_netif_init());
@@ -273,7 +273,9 @@ void app_main(void)
     ESP_ERROR_CHECK(dce->get_battery_status(dce, &bcs, &bcl, &voltage));
     ESP_LOGI(TAG, "Battery voltage: %d mV", voltage);
     /* setup PPPoS network parameters */
+#if !defined(CONFIG_EXAMPLE_MODEM_PPP_AUTH_NONE) && (defined(CONFIG_LWIP_PPP_PAP_SUPPORT) || defined(CONFIG_LWIP_PPP_CHAP_SUPPORT))
     esp_netif_ppp_set_auth(esp_netif, auth_type, CONFIG_EXAMPLE_MODEM_PPP_AUTH_USERNAME, CONFIG_EXAMPLE_MODEM_PPP_AUTH_PASSWORD);
+#endif
     void *modem_netif_adapter = esp_modem_netif_setup(dte);
     esp_modem_netif_set_default_handlers(modem_netif_adapter, esp_netif);
     /* attach the modem to the network interface */
