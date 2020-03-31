@@ -8,9 +8,14 @@
 #include "test_utils.h"
 #include "esp_expression_with_stack.h"
 
+#define SHARED_STACK_SIZE 8192
+
+static StackType_t *shared_stack_sp = NULL; 
+
 void external_stack_function(void)
 {
     printf("Executing this printf from external stack! sp=%p\n", get_sp());
+    shared_stack_sp = (StackType_t *)get_sp();
 }
 
 void another_external_stack_function(void) 
@@ -19,11 +24,12 @@ void another_external_stack_function(void)
     printf("We can even use FreeRTOS resources delaying..., sp=%p\n", get_sp());
     vTaskDelay(100);
     printf("Done!, sp=%p\n", get_sp());
+    shared_stack_sp = (StackType_t *)get_sp();
 }
 
 TEST_CASE("test printf using shared buffer stack", "[newlib]")
 {
-    portSTACK_TYPE *shared_stack = malloc(8192);
+    portSTACK_TYPE *shared_stack = malloc(SHARED_STACK_SIZE);
 
     TEST_ASSERT(shared_stack != NULL);
 
@@ -32,8 +38,22 @@ TEST_CASE("test printf using shared buffer stack", "[newlib]")
     printf("SP: %p\n", get_sp());
     printf("shared_stack: %p\n", (void *)shared_stack);
 
-    esp_execute_shared_stack_function(printf_lock, shared_stack,8192,external_stack_function);
-    esp_execute_shared_stack_function(printf_lock, shared_stack,8192,another_external_stack_function); 
+    esp_execute_shared_stack_function(printf_lock, 
+                                    shared_stack,
+                                    SHARED_STACK_SIZE,
+                                    external_stack_function);
+    
+    TEST_ASSERT(((shared_stack_sp >= shared_stack_sp) && 
+                (shared_stack_sp < (shared_stack + SHARED_STACK_SIZE))));
+    
+    esp_execute_shared_stack_function(printf_lock, 
+                                    shared_stack,
+                                    SHARED_STACK_SIZE,
+                                    another_external_stack_function); 
+    
+    TEST_ASSERT(((shared_stack_sp >= shared_stack_sp) && 
+                (shared_stack_sp < (shared_stack + SHARED_STACK_SIZE))));
+
     vSemaphoreDelete(printf_lock);   
     free(shared_stack);
 }

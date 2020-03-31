@@ -39,8 +39,9 @@ esp_shared_stack_invoke_function:
     movi    a7, 1       
     s32i    a7, a6, 0               /* hint the function was finished */
     movi    a6, shared_stack_env    
-    movi    a7, 0     
-    call4   longjmp                 /* jump to last clean state previously saved */
+    movi    a7, 0
+    movi    a12, longjmp     
+    callx4  a12                 /* jump to last clean state previously saved */
     ret
     #else 
     #error "this code is written for Window ABI"
