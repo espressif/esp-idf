@@ -402,8 +402,8 @@ TEST_CASE("mbedtls SHA256 PSRAM DMA", "[mbedtls]")
     mbedtls_sha256_context sha256_ctx;
     unsigned char sha256[32];
 
-    // allocate internal memory
-    uint8_t *buf = heap_caps_malloc(CALL_SZ, MALLOC_CAP_SPIRAM);
+    // allocate external memory
+    uint8_t *buf = heap_caps_malloc(CALL_SZ, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     TEST_ASSERT(esp_ptr_external_ram(buf));
     memset(buf, 0x54, CALL_SZ);
 

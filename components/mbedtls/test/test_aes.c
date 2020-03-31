@@ -509,7 +509,7 @@ void aes_psram_ctr_test(uint32_t input_buf_caps, uint32_t output_buf_caps)
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
-    // allocate internal memory
+    // allocate memory according the requested caps
     uint8_t *chipertext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, output_buf_caps);
     uint8_t *plaintext = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, input_buf_caps);
     uint8_t *decryptedtext = heap_caps_malloc(SZ, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
@@ -558,8 +558,8 @@ void aes_psram_one_buf_ctr_test(void)
     memset(nonce, 0x2F, 16);
     memset(key, 0x1E, 16);
 
-    // allocate internal memory
-    uint8_t *buf = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, MALLOC_CAP_SPIRAM);
+    // allocate external memory
+    uint8_t *buf = heap_caps_malloc(SZ + ALIGNMENT_SIZE_BYTES, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
 
     TEST_ASSERT_NOT_NULL(buf);
 
@@ -1157,17 +1157,17 @@ void aes_icache_ctr_test(uint32_t output_buf_caps)
 /* Tests how crypto DMA handles data in external memory */
 TEST_CASE("mbedtls AES PSRAM tests", "[aes]")
 {
-    aes_psram_ctr_test(MALLOC_CAP_INTERNAL, MALLOC_CAP_SPIRAM);
-    aes_psram_ctr_test(MALLOC_CAP_SPIRAM, MALLOC_CAP_INTERNAL);
-    aes_psram_ctr_test(MALLOC_CAP_SPIRAM, MALLOC_CAP_SPIRAM);
+    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
+    aes_psram_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
     aes_psram_one_buf_ctr_test();
 }
 
 /* Tests how crypto DMA handles data from iCache */
 TEST_CASE("mbedtls AES iCache tests", "[aes]")
 {
-    aes_icache_ctr_test(MALLOC_CAP_SPIRAM);
-    aes_icache_ctr_test(MALLOC_CAP_INTERNAL);
+    aes_icache_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
+    aes_icache_ctr_test(MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL);
 }
 #endif // CONFIG_SPIRAM_USE_MALLOC
 
