@@ -15,10 +15,10 @@
 #include <string.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_generic_model.h"
+
 #include "model_opcode.h"
 #include "generic_client.h"
-
-#include "btc_ble_mesh_generic_model.h"
 
 /** The following are the macro definitions of generic client
  *  model messages length, and a message is composed of three

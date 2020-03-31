@@ -14,12 +14,12 @@
 
 #include <errno.h>
 
+#include "btc_ble_mesh_time_scene_model.h"
+
 #include "access.h"
 #include "transport.h"
 #include "model_opcode.h"
 #include "state_transition.h"
-
-#include "btc_ble_mesh_time_scene_model.h"
 
 static bt_mesh_mutex_t time_scene_server_lock;
 

@@ -15,13 +15,11 @@
 #include <string.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_health_model.h"
 #include "foundation.h"
-#include "mesh_common.h"
 #include "health_srv.h"
 #include "health_cli.h"
-
-#include "btc_ble_mesh_health_model.h"
-#include "esp_ble_mesh_defs.h"
+#include "esp_ble_mesh_health_model_api.h"
 
 extern s32_t health_msg_timeout;
 

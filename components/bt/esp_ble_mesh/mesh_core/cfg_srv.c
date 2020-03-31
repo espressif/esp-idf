@@ -13,6 +13,8 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
 
+#include "btc_ble_mesh_config_model.h"
+
 #include "mesh.h"
 #include "adv.h"
 #include "lpn.h"
@@ -27,8 +29,6 @@
 #include "proxy_server.h"
 #include "mesh_main.h"
 #include "mesh_common.h"
-
-#include "btc_ble_mesh_config_model.h"
 
 #define DEFAULT_TTL 7
 

@@ -15,6 +15,14 @@
 #include <string.h>
 #include <errno.h>
 
+#include "btc_ble_mesh_prov.h"
+#include "btc_ble_mesh_config_model.h"
+#include "btc_ble_mesh_health_model.h"
+#include "btc_ble_mesh_generic_model.h"
+#include "btc_ble_mesh_time_scene_model.h"
+#include "btc_ble_mesh_sensor_model.h"
+#include "btc_ble_mesh_lighting_model.h"
+
 #include "adv.h"
 #include "mesh_kernel.h"
 #include "mesh_proxy.h"
@@ -37,15 +45,6 @@
 #include "client_common.h"
 #include "state_binding.h"
 
-#include "btc_ble_mesh_prov.h"
-#include "btc_ble_mesh_config_model.h"
-#include "btc_ble_mesh_health_model.h"
-#include "btc_ble_mesh_generic_model.h"
-#include "btc_ble_mesh_time_scene_model.h"
-#include "btc_ble_mesh_sensor_model.h"
-#include "btc_ble_mesh_lighting_model.h"
-
-#include "esp_ble_mesh_defs.h"
 #include "esp_ble_mesh_common_api.h"
 #include "esp_ble_mesh_provisioning_api.h"
 #include "esp_ble_mesh_networking_api.h"

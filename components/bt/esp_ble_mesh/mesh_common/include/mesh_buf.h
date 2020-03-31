@@ -12,6 +12,7 @@
 #define _BLE_MESH_BUF_H_
 
 #include "mesh_slist.h"
+#include "mesh_compiler.h"
 
 #ifdef __cplusplus
 extern "C" {
