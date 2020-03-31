@@ -45,12 +45,20 @@ esp_switch_stack_enter:
 esp_switch_stack_exit:
 
     #ifndef __XTENSA_CALL0_ABI__
-    entry   sp, 0x10
-
-    l32i a4, a2, 0  /* recover the original task stack */
-    mov a1, a4      /* put it on sp register again */
-    retw
-
+    movi    a0, 0                   /* no need to rotate window, it will be destroyed anyway */
+    movi    a6, shared_stack        
+    l32i    sp, a6, 0               /* load shared stack pointer */
+    movi    a12, shared_stack_callback
+    l32i    a12, a12, 0
+    callx4  a12                     /* call user function */
+    movi    a6, shared_stack_function_done
+    movi    a7, 1       
+    s32i    a7, a6, 0               /* hint the function was finished */
+    movi    a6, shared_stack_env    
+    movi    a7, 0
+    movi    a12, longjmp     
+    callx4  a12                 /* jump to last clean state previously saved */
+    ret
     #else 
     #error "this code is written for Window ABI"
     #endif
