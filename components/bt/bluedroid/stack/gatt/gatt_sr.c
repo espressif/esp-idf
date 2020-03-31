@@ -1087,6 +1087,7 @@ void gatts_process_read_by_type_req(tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len,
         }
     } else {
         attp_send_sr_msg(p_tcb, p_msg);
+        gatt_dequeue_sr_cmd(p_tcb);
     }
 
 }
