@@ -601,7 +601,7 @@ menu "Security features"
 
         config SECURE_BOOT_ALLOW_ROM_BASIC
             bool "Leave ROM BASIC Interpreter available on reset"
-            depends on SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT && IDF_TARGET_ESP32
+            depends on (SECURE_BOOT_INSECURE || SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT) && IDF_TARGET_ESP32
             default N
             help
                 By default, the BASIC ROM Console starts on reset if no valid bootloader is

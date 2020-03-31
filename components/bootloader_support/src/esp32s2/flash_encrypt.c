@@ -233,7 +233,7 @@ static esp_err_t encrypt_bootloader(void)
         image_length += FLASH_SECTOR_SIZE;
         if (ESP_BOOTLOADER_OFFSET + image_length > ESP_PARTITION_TABLE_OFFSET) {
             ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PARTITION_TABLE_OFFSET);
-            return ESP_ERR_INVALID_STATE;
+            return ESP_ERR_INVALID_SIZE;
         }
 #endif // CONFIG_SECURE_BOOT_V2_ENABLED
 
@@ -248,7 +248,7 @@ static esp_err_t encrypt_bootloader(void)
     }
     else {
         ESP_LOGW(TAG, "no valid bootloader was found");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_ERR_NOT_FOUND;
     }
 }
 
