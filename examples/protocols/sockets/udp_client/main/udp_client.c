@@ -55,7 +55,6 @@ static void udp_client_task(void *pvParameters)
         dest_addr.sin_port = htons(PORT);
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
-        inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
 #elif defined(CONFIG_EXAMPLE_IPV6)
         struct sockaddr_in6 dest_addr = { 0 };
         inet6_aton(HOST_IP_ADDR, &dest_addr.sin6_addr);
@@ -64,7 +63,6 @@ static void udp_client_task(void *pvParameters)
         dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
         addr_family = AF_INET6;
         ip_protocol = IPPROTO_IPV6;
-        inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
 #elif defined(CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN)
         struct sockaddr_in6 dest_addr = { 0 };
         ESP_ERROR_CHECK(get_addr_from_stdin(PORT, SOCK_DGRAM, &ip_protocol, &addr_family, &dest_addr));
