@@ -15,10 +15,8 @@
 #include <string.h>
 #include <errno.h>
 
-#include "mesh_common.h"
-#include "time_scene_client.h"
-
 #include "btc_ble_mesh_time_scene_model.h"
+#include "time_scene_client.h"
 #include "esp_ble_mesh_time_scene_model_api.h"
 
 /* Time and Scenes Client Models related functions */

@@ -15,8 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "btc/btc_manage.h"
-
 #include "esp_err.h"
 
 #include "btc_ble_mesh_prov.h"

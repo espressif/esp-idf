@@ -10,6 +10,7 @@
 #define _BLE_MESH_TRACE_H_
 
 #include "esp_log.h"
+#include "mesh_util.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,10 +56,6 @@ extern "C" {
 #else
 #define BLE_MESH_LOG_LOCAL_LEVEL_MAPPING    LOG_LOCAL_LEVEL
 #endif
-
-#ifndef MAX
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-#endif /* MAX(a, b) */
 
 #define BLE_MESH_LOG_LEVEL_CHECK(LAYER, LEVEL) (MAX(LAYER##_LOG_LEVEL, BLE_MESH_LOG_LOCAL_LEVEL_MAPPING) >= LOG_LEVEL_##LEVEL)
 

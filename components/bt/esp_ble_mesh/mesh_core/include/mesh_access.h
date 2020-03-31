@@ -11,8 +11,7 @@
 #ifndef _BLE_MESH_ACCESS_H_
 #define _BLE_MESH_ACCESS_H_
 
-#include "mesh_types.h"
-#include "mesh_util.h"
+#include "sdkconfig.h"
 #include "mesh_buf.h"
 #include "mesh_timer.h"
 
