@@ -8,6 +8,7 @@
 #ifndef _FOUNDATION_H_
 #define _FOUNDATION_H_
 
+#include "mesh_byteorder.h"
 #include "net.h"
 
 #ifdef __cplusplus

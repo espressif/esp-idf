@@ -13,12 +13,12 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
 
+#include "btc_ble_mesh_config_model.h"
+
 #include "mesh.h"
 #include "foundation.h"
 #include "mesh_common.h"
 #include "cfg_cli.h"
-
-#include "btc_ble_mesh_config_model.h"
 
 #define CID_NVAL 0xffff
 

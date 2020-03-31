@@ -17,8 +17,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "btc/btc_manage.h"
-
 #include "esp_err.h"
 
 #include "btc_ble_mesh_prov.h"

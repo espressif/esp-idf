@@ -12,12 +12,12 @@
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG_MODEL)
 
+#include "btc_ble_mesh_health_model.h"
+
 #include "access.h"
 #include "foundation.h"
 #include "mesh_common.h"
 #include "health_srv.h"
-
-#include "btc_ble_mesh_health_model.h"
 
 #define HEALTH_TEST_STANDARD    0x00
 

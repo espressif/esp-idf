@@ -24,6 +24,9 @@
 
 #include "esp_heap_caps.h"
 
+#include "mesh_byteorder.h"
+#include "mesh_ffs.h"
+#include "mesh_trace.h"
 #include "mesh_mutex.h"
 #include "mesh_access.h"
 
