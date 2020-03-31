@@ -43,7 +43,7 @@ Current temperature: 24.875
 
 If something went wrong:
 ```
-I2C Exception with error: -1
+I2C Exception with error: ESP_FAIL (-1)
 Coulnd't read sensor!
 ```
 

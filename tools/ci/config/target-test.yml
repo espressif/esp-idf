@@ -429,7 +429,7 @@ component_ut_test_001:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 43
+  parallel: 44
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -644,7 +644,7 @@ UT_045:
     - ESP32_IDF
     - UT_SDIO
     - psram
-    
+
 UT_046:
   extends: .unit_test_template
   tags:
