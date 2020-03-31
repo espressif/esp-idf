@@ -110,14 +110,23 @@ An image is “verified” if the public key stored in any signature block is va
 Bootloader Size
 ---------------
 
+{IDF_TARGET_MAX_BOOTLOADER_SIZE:default = "64KB (0x10000 bytes)", esp32 = "48KB (0xC000 bytes)"}
+{IDF_TARGET_MAX_PARTITION_TABLE_OFFSET:default = "0x12000", esp32 = "0xE000"}
+.. Above is calculated as 0x1000 at start of flash + IDF_TARGET_MAX_BOOTLOADER_SIZE + 0x1000 signature sector
+
 When secure boot is enabled the bootloader app binary ``bootloader.bin`` may exceed the default bootloader size limit. This is especially likely if flash encryption is enabled as well. The default size limit is 0x7000 (28672) bytes (partition table offset 0x8000 - bootloader offset 0x1000).
 
-If the bootloader becomes too large, the ESP32 will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
+If the bootloader becomes too large, the {IDF_TARGET_NAME} will fail to boot - errors will be logged about either invalid partition table or invalid bootloader checksum.
+
+When Secure Boot V2 is enabled, there is also an absolute binary size limit of {IDF_TARGET_MAX_BOOTLOADER_SIZE} (excluding the 4KB signature), because the bootloader is first loaded into a fixed size buffer for verification.
 
 Options to work around this are:
 
+- Set :ref:`bootloader compiler optimization <CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION>` back to "Size" if it has been changed from this default value.
 - Reduce :ref:`bootloader log level <CONFIG_BOOTLOADER_LOG_LEVEL>`. Setting log level to Warning, Error or None all significantly reduce the final binary size (but may make it harder to debug).
 - Set :ref:`partition table offset <CONFIG_PARTITION_TABLE_OFFSET>` to a higher value than 0x8000, to place the partition table later in the flash. This increases the space available for the bootloader. If the :doc:`partition table </api-guides/partition-tables>` CSV file contains explicit partition offsets, they will need changing so no partition has an offset lower than ``CONFIG_PARTITION_TABLE_OFFSET + 0x1000``. (This includes the default partition CSV files supplied with ESP-IDF.)
+
+  Note that because of the absolute binary size limit, there is no benefit to moving the partition table any higher than offset {IDF_TARGET_MAX_PARTITION_TABLE_OFFSET}.
 
 .. _efuse-usage:
 
@@ -167,6 +176,13 @@ How To Enable Secure Boot V2
 .. note:: If the ESP32 is reset or powered down during the first boot, it will start the process again on the next boot.
 
 10. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image (using the validated public key portion of its appended signature block).
+
+Restrictions after Secure Boot is enabled
+-----------------------------------------
+
+- Any updated bootloader or app will need to be signed with a key matching the digest already stored in efuse.
+
+- After Secure Boot is enabled, no further efuses can be read protected. (If :doc:`/security/flash-encryption` is enabled then the bootloader will ensure that any flash encryption key generated on first boot will already be read protected.) If :ref:`CONFIG_SECURE_BOOT_INSECURE` is enabled then this behaviour can be disabled, but this is not recommended.
 
 .. _secure-boot-v2-generate-key:
 
