@@ -160,3 +160,10 @@ TEST_CASE("Capabilities aligned calloc test", "[heap]")
 #endif
 
 }
+
+TEST_CASE("aligned_alloc(0) should return a NULL pointer", "[heap]")
+{
+    void *p;
+    p = heap_caps_aligned_alloc(32, 0, MALLOC_CAP_DEFAULT);
+    TEST_ASSERT(p == NULL);
+}
