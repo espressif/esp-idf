@@ -132,3 +132,9 @@ TEST_CASE("unreasonable allocs should all fail", "[heap]")
     TEST_ASSERT_NULL(test_malloc_wrapper(xPortGetFreeHeapSize() - 1));
 }
 
+TEST_CASE("malloc(0) should return a NULL pointer", "[heap]")
+{
+    void *p;
+    p = malloc(0);
+    TEST_ASSERT(p == NULL);
+}
