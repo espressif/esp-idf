@@ -501,6 +501,10 @@ void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub)
     BT_DBG("idx 0x%04x", sub->net_idx);
 
     memcpy(&sub->keys[0], &sub->keys[1], sizeof(sub->keys[0]));
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        BT_DBG("Store updated NetKey persistently");
+        bt_mesh_store_subnet(sub);
+    }
 
     for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
         struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
@@ -511,6 +515,10 @@ void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub)
 
         memcpy(&key->keys[0], &key->keys[1], sizeof(key->keys[0]));
         key->updated = false;
+        if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+            BT_DBG("Store updated AppKey persistently");
+            bt_mesh_store_app_key(key);
+        }
     }
 }
 
