@@ -14,9 +14,10 @@
 
 #include <freertos/xtensa_context.h>
     
-    .extern shared_stack
-    .extern shared_stack_callback
-    .extern shared_stack_function_done
+    .extern xtensa_shared_stack
+    .extern xtensa_shared_stack_callback
+    .extern xtensa_shared_stack_function_done
+    .extern xtensa_shared_stack_env
     .extern longjmp
     .text
 
@@ -29,16 +30,18 @@
 esp_shared_stack_invoke_function:
 
     #ifndef __XTENSA_CALL0_ABI__
-    movi    a0, 0                   /* no need to rotate window, it will be destroyed anyway */
-    movi    a6, shared_stack        
+    movi    a0, 0                   /* must not rotate the window here, */
+                                    /* the state of execution for shared stack */
+                                    /* functions will be completely destroyed at end */
+    movi    a6, xtensa_shared_stack        
     l32i    sp, a6, 0               /* load shared stack pointer */
-    movi    a12, shared_stack_callback
+    movi    a12, xtensa_shared_stack_callback
     l32i    a12, a12, 0
     callx4  a12                     /* call user function */
-    movi    a6, shared_stack_function_done
+    movi    a6, xtensa_shared_stack_function_done
     movi    a7, 1       
     s32i    a7, a6, 0               /* hint the function was finished */
-    movi    a6, shared_stack_env    
+    movi    a6, xtensa_shared_stack_env    
     movi    a7, 0
     movi    a12, longjmp     
     callx4  a12                 /* jump to last clean state previously saved */
