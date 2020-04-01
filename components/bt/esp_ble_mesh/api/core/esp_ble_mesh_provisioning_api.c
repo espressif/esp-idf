@@ -350,6 +350,10 @@ esp_err_t esp_ble_mesh_provisioner_set_dev_uuid_match(const uint8_t *match_val, 
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
+    if (match_len + offset > ESP_BLE_MESH_OCTET16_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
 
     msg.sig = BTC_SIG_API_CALL;
@@ -446,7 +450,8 @@ esp_err_t esp_ble_mesh_set_fast_prov_info(esp_ble_mesh_fast_prov_info_t *fast_pr
     btc_ble_mesh_prov_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (fast_prov_info == NULL) {
+    if (fast_prov_info == NULL || (fast_prov_info->offset +
+            fast_prov_info->match_len > ESP_BLE_MESH_OCTET16_LEN)) {
         return ESP_ERR_INVALID_ARG;
     }
 

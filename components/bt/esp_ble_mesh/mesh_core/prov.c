@@ -1743,6 +1743,12 @@ int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
         return -EINVAL;
     }
 
+    if (prov_info->static_val_len > 16 ||
+        prov_info->output_size > 8 || prov_info->input_size > 8) {
+        BT_ERR("%s, Invalid auth oob length", __func__);
+        return -EINVAL;
+    }
+
     /* Changed by Espressif. Use micro-ecc to generate public key now. */
     key = bt_mesh_pub_key_get();
     if (!key) {
