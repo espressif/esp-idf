@@ -139,7 +139,7 @@ esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
          * status_bit_mask (2) + status_ctx_flag (1) + status_unicast (1) + status_net_idx (1) +
          * status_group (1) + status_pri_prov (1) + status_match (1) + status_action (1).
          */
-        uint8_t match_len = 0, match_val[16];
+        uint8_t match_len = 0, match_val[16] = {0};
         uint8_t status_unicast = 0;
         uint8_t flags = 0;
 
@@ -186,6 +186,11 @@ esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
         uint16_t pri_prov_addr = (ctx_flags & BIT(7)) ? net_buf_simple_pull_le16(buf) : ESP_BLE_MESH_ADDR_UNASSIGNED;
         if (ctx_flags & BIT(8)) {
             match_len = buf->len - ((ctx_flags & BIT(9)) ? 1 : 0);
+            if (match_len > ESP_BLE_MESH_OCTET16_LEN) {
+                net_buf_simple_add_le16(msg, BIT(5));
+                net_buf_simple_add_u8(msg, 0x01);   /* too large match value length */
+                break;
+            }
             memcpy(match_val, buf->data, match_len);
             net_buf_simple_pull(buf, match_len);
         }
@@ -245,14 +250,6 @@ esp_err_t example_fast_prov_server_recv_msg(esp_ble_mesh_model_t *model,
             if (!ESP_BLE_MESH_ADDR_IS_UNICAST(pri_prov_addr)) {
                 net_buf_simple_add_le16(msg, BIT(4));
                 net_buf_simple_add_u8(msg, 0x01);   /* not a unicast address */
-                break;
-            }
-        }
-
-        if (ctx_flags & BIT(8)) {
-            if (match_len > 16) {
-                net_buf_simple_add_le16(msg, BIT(5));
-                net_buf_simple_add_u8(msg, 0x01);   /* too large match value length */
                 break;
             }
         }
