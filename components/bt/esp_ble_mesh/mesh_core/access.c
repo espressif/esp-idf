@@ -627,7 +627,7 @@ void bt_mesh_comp_provision(u16_t addr)
 
     dev_primary_addr = addr;
 
-    BT_INFO("addr 0x%04x elem_count %u", addr, dev_comp->elem_count);
+    BT_INFO("Primary address 0x%04x, element count %u", addr, dev_comp->elem_count);
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
@@ -842,7 +842,7 @@ void bt_mesh_model_recv(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
         return;
     }
 
-    BT_INFO("OpCode 0x%08x", opcode);
+    BT_DBG("OpCode 0x%08x", opcode);
 
     for (i = 0; i < dev_comp->elem_count; i++) {
         struct bt_mesh_elem *elem = &dev_comp->elem[i];
@@ -967,8 +967,8 @@ static int model_send(struct bt_mesh_model *model,
         return -EINVAL;
     }
 
-    BT_INFO("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->ctx->net_idx,
-           tx->ctx->app_idx, tx->ctx->addr);
+    BT_INFO("app_idx 0x%04x src 0x%04x dst 0x%04x",
+        tx->ctx->app_idx, tx->src, tx->ctx->addr);
     BT_INFO("len %u: %s", msg->len, bt_hex(msg->data, msg->len));
 
     if (!ready_to_send(role, tx->ctx->addr)) {
