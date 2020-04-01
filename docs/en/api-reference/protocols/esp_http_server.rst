@@ -35,7 +35,7 @@ Application Example
              * as well be any binary data (needs type casting).
              * In case of string data, null termination will be absent, and
              * content length would give length of string */
-            char[100] content;
+            char content[100];
 
             /* Truncate if content length larger than the buffer */
             size_t recv_size = MIN(req->content_len, sizeof(content));
