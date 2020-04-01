@@ -73,6 +73,8 @@ class CMakeBuildSystem(BuildSystem):
                     logging.debug("Appending {} to sdkconfig".format(sdkconfig_name))
                     with open(sdkconfig_path, "r") as f_in:
                         for line in f_in:
+                            if not line.endswith("\n"):
+                                line += "\n"
                             f_out.write(os.path.expandvars(line))
             # Also save the sdkconfig file in the build directory
             shutil.copyfile(
