@@ -306,9 +306,11 @@ void *multi_heap_get_block_owner(multi_heap_block_handle_t block)
 
 multi_heap_handle_t multi_heap_register(void *start, size_t size)
 {
+#ifdef SLOW
     if (start != NULL) {
         memset(start, FREE_FILL_PATTERN, size);
     }
+#endif
     return multi_heap_register_impl(start, size);
 }
 
