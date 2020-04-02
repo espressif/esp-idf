@@ -560,7 +560,8 @@ static int btc_ble_mesh_output_string_cb(const char *str)
 
     BT_DBG("%s", __func__);
 
-    strncpy(mesh_param.node_prov_output_str.string, str, strlen(str));
+    strncpy(mesh_param.node_prov_output_str.string, str,
+        MIN(strlen(str), sizeof(mesh_param.node_prov_output_str.string)));
 
     ret = btc_ble_mesh_prov_callback(&mesh_param, ESP_BLE_MESH_NODE_PROV_OUTPUT_STRING_EVT);
     return (ret == BT_STATUS_SUCCESS) ? 0 : -1;

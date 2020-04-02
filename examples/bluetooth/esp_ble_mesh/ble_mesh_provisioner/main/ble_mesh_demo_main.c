@@ -191,7 +191,7 @@ static esp_err_t prov_complete(int node_idx, const esp_ble_mesh_octet16_t uuid,
     esp_ble_mesh_client_common_param_t common = {0};
     esp_ble_mesh_cfg_client_get_state_t get_state = {0};
     esp_ble_mesh_node_info_t *node = NULL;
-    char name[10];
+    char name[11] = {0};
     int err;
 
     ESP_LOGI(TAG, "node index: 0x%x, unicast address: 0x%02x, element num: %d, netkey index: 0x%02x",
