@@ -308,6 +308,8 @@ The list of directories in ``COMPONENT_DIRS`` is searched for the project's comp
 
 When CMake runs to configure the project, it logs the components included in the build. This list can be useful for debugging the inclusion/exclusion of certain components.
 
+.. _cmake-components-same-name:
+
 Multiple components with the same name
 --------------------------------------
 
@@ -1313,6 +1315,7 @@ For example, to get the directory of the ``freertos`` component:
 - COMPONENT_ALIAS - alias for COMPONENT_LIB used for linking the component to external targets; set by ``idf_build_component`` and alias library itself
   is created by ``idf_component_register``
 - COMPONENT_DIR - component directory; set by ``idf_build_component``
+- COMPONENT_OVERRIDEN_DIR - contains the directory of the original component if ref:`this component overrides another component<cmake-components-same-name>`
 - COMPONENT_LIB - name for created component static/interface library; set by ``idf_build_component`` and library itself
   is created by ``idf_component_register``
 - COMPONENT_NAME - name of the component; set by ``idf_build_component`` based on the component directory name
