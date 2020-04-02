@@ -185,9 +185,9 @@ class Env(object):
         dut_close_errors = []
         for dut_name in self.allocated_duts:
             dut = self.allocated_duts[dut_name]["dut"]
-            if dut_debug:
-                dut.print_debug_info()
             try:
+                if dut_debug:
+                    dut.print_debug_info()
                 dut.close()
             except Exception as e:
                 dut_close_errors.append(e)
