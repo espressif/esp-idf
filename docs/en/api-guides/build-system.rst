@@ -1268,7 +1268,9 @@ the first element/member instead.
                          [LDFRAGMENTS ldfragment1 ldfragment2 ...]
                          [REQUIRED_IDF_TARGETS target1 target2 ...]
                          [EMBED_FILES file1 file2 ...]
-                         [EMBED_TXTFILES file1 file2 ...])
+                         [EMBED_TXTFILES file1 file2 ...]
+                         [KCONFIG kconfig]
+                         [KCONFIG_PROJBUILD kconfig_projbuild])
 
 Register a component to the build system. Much like the ``project()`` CMake command, this should be called from the component's 
 CMakeLists.txt directly (not through a function or macro) and is recommended to be called before any other command. Here are some
@@ -1291,6 +1293,8 @@ The arguments for ``idf_component_register`` include:
   - PRIV_REQUIRES - private component requirements for the component; ignored on config-only components
   - LDFRAGMENTS - component linker fragment files
   - REQUIRED_IDF_TARGETS - specify the only target the component supports
+  - KCONFIG - override the default Kconfig file
+  - KCONFIG_PROJBUILD - override the default Kconfig.projbuild file
 
 The following are used for :ref:`embedding data into the component<cmake_embed_data>`, and is considered as source files
 when determining if a component is config-only. This means that even if the component does not specify source files, a static library is still
