@@ -12,8 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef _DRIVER_ADC2_INTERNAL_H_
-#define _DRIVER_ADC2_INTERNAL_H_
+#pragma once
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +46,4 @@ esp_err_t adc2_wifi_release(void);
 #ifdef __cplusplus
 }
 #endif
-
-#endif  /*_DRIVER_ADC2_INTERNAL_H_*/
 

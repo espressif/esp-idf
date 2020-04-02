@@ -233,7 +233,7 @@ esp_err_t touch_pad_isr_register(intr_handler_t fn, void *arg, touch_pad_intr_ma
  *
  * @param enable true(default): Enable the timeout check; false: Disable the timeout check.
  * @param threshold For all channels, the maximum value that will not be exceeded during normal operation.
- * 
+ *
 * @return
  *     - ESP_OK Success
  */
@@ -244,7 +244,7 @@ esp_err_t touch_pad_timeout_set(bool enable, uint32_t threshold);
  *        If this API is not called, the touch FSM will stop the measurement after timeout interrupt.
  *
  * @note  Call this API after finishes the exception handling by user.
- * 
+ *
  * @return
  *     - ESP_OK Success
  */
@@ -491,7 +491,7 @@ esp_err_t touch_pad_sleep_channel_get_info(touch_pad_sleep_channel_t *slp_config
  *        e.g. The user should uses `touch_pad_sleep_channel_read_data` instead of `touch_pad_read_raw_data` to obtain the sleep channel reading.
  *
  * @param pad_num Set touch channel number for sleep pad. Only one touch sensor channel is supported in deep sleep mode.
- * @param enable true: enable sleep pad for touch sensor; false: disable sleep pad for touch sensor; 
+ * @param enable true: enable sleep pad for touch sensor; false: disable sleep pad for touch sensor;
  * @return
  *     - ESP_OK Success
  */
@@ -502,9 +502,9 @@ esp_err_t touch_pad_sleep_channel_enable(touch_pad_t pad_num, bool enable);
  *        The touch sensor can works in sleep mode to wake up sleep.
  *
  * @note  ESP32S2 only support one sleep channel.
- * 
+ *
  * @param pad_num Set touch channel number for sleep pad. Only one touch sensor channel is supported in deep sleep mode.
- * @param enable true: enable proximity for sleep channel; false: disable proximity for sleep channel; 
+ * @param enable true: enable proximity for sleep channel; false: disable proximity for sleep channel;
  * @return
  *     - ESP_OK Success
  */
@@ -515,7 +515,7 @@ esp_err_t touch_pad_sleep_channel_enable_proximity(touch_pad_t pad_num, bool ena
  *        The threshold determines the sensitivity of the touch sensor.
  *
  * @note  In general, the touch threshold during sleep can use the threshold parameter parameters before sleep.
- * 
+ *
  * @param pad_num Set touch channel number for sleep pad. Only one touch sensor channel is supported in deep sleep mode.
  * @param touch_thres touch sleep pad threshold
  * @return
@@ -528,7 +528,7 @@ esp_err_t touch_pad_sleep_set_threshold(touch_pad_t pad_num, uint32_t touch_thre
  *        The threshold determines the sensitivity of the touch sensor.
  *
  * @note In general, the touch threshold during sleep can use the threshold parameter parameters before sleep.
- * 
+ *
  * @param pad_num Set touch channel number for sleep pad. Only one touch sensor channel is supported in deep sleep mode.
  * @param touch_thres touch sleep pad threshold
  * @return

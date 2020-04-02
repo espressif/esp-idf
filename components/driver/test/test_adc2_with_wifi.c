@@ -12,10 +12,23 @@
 #include "nvs_flash.h"
 #include "test_utils.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
-
 static const char* TAG = "test_adc2";
 
+#ifdef CONFIG_IDF_TARGET_ESP32
+    #define ADC_TEST_WIDTH         ADC_WIDTH_BIT_12
+    #define ADC_TEST_RESOLUTION    (4096)
+    #define ADC_TEST_DAC_RANGE     (256)
+    #define ADC_TEST_CH1           ADC2_CHANNEL_8
+    #define ADC_TEST_CH2           ADC2_CHANNEL_9
+    #define ADC_TEST_ERROR         (600)
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    #define ADC_TEST_WIDTH         ADC_WIDTH_BIT_13   //ESP32S2 only support 13 bit width
+    #define ADC_TEST_RESOLUTION    (8192)
+    #define ADC_TEST_DAC_RANGE     (210)
+    #define ADC_TEST_CH1           ADC2_CHANNEL_6
+    #define ADC_TEST_CH2           ADC2_CHANNEL_7
+    #define ADC_TEST_ERROR         (1500)
+#endif
 #define DEFAULT_SSID "TEST_SSID"
 #define DEFAULT_PWD "TEST_PASS"
 
@@ -84,9 +97,8 @@ TEST_CASE("adc2 work with wifi","[adc]")
     TEST_ESP_OK( dac_output_enable( DAC_CHANNEL_2 ));
     TEST_ESP_OK( dac_output_voltage( DAC_CHANNEL_1, 30 ));
     TEST_ESP_OK( dac_output_voltage( DAC_CHANNEL_2, 60 ));
-    TEST_ESP_OK( adc2_config_channel_atten( ADC2_CHANNEL_8, ADC_ATTEN_0db ));
-    TEST_ESP_OK( adc2_config_channel_atten( ADC2_CHANNEL_9, ADC_ATTEN_0db ));
-
+    TEST_ESP_OK( adc2_config_channel_atten( ADC_TEST_CH1, ADC_ATTEN_0db ));
+    TEST_ESP_OK( adc2_config_channel_atten( ADC_TEST_CH2, ADC_ATTEN_0db ));
     //init wifi
     printf("nvs init\n");
     esp_err_t r = nvs_flash_init();
@@ -112,23 +124,26 @@ TEST_CASE("adc2 work with wifi","[adc]")
     TEST_ESP_OK(esp_wifi_set_config(ESP_IF_WIFI_STA, &wifi_config));
 
     //test read value
-    TEST_ESP_OK( adc2_get_raw( ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &read_raw ));
-    target_value = 30*4096*3/256; //3 = 3.3/1.1
+    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ));
+    target_value = 30*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE; //3 = 3.3/1.1
     printf("dac set: %d, adc read: %d (target_value: %d)\n", 30, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( 600, target_value, read_raw );
-    TEST_ESP_OK( adc2_get_raw( ADC2_CHANNEL_9, ADC_WIDTH_12Bit, &read_raw ));
-    target_value = 60*4096*3/256;
+    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
+    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ));
+    target_value = 60*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE;
     printf("dac set: %d, adc read: %d (target_value: %d)\n", 60, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( 600, target_value, read_raw );
+    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
 
     //now start wifi
     printf("wifi start...\n");
     TEST_ESP_OK(esp_wifi_start());
-
     //test reading during wifi on
-    TEST_ASSERT_EQUAL( adc2_get_raw( ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &read_raw ), ESP_ERR_TIMEOUT );
-    TEST_ASSERT_EQUAL( adc2_get_raw( ADC2_CHANNEL_9, ADC_WIDTH_12Bit, &read_raw ), ESP_ERR_TIMEOUT );
-
+#ifdef CONFIG_IDF_TARGET_ESP32
+    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ), ESP_ERR_TIMEOUT );
+    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ), ESP_ERR_TIMEOUT );
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ), ESP_OK );
+    TEST_ASSERT_EQUAL( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ), ESP_OK );
+#endif
     //wifi stop again
     printf("wifi stop...\n");
     TEST_ESP_OK( esp_wifi_stop() );
@@ -137,18 +152,16 @@ TEST_CASE("adc2 work with wifi","[adc]")
     nvs_flash_deinit();
 
     //test read value
-    TEST_ESP_OK( adc2_get_raw( ADC2_CHANNEL_8, ADC_WIDTH_12Bit, &read_raw ));
-    target_value = 30*4096*3/256; //3 = 3.3/1.1
+    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH1, ADC_TEST_WIDTH, &read_raw ));
+    target_value = 30*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE; //3 = 3.3/1.1
     printf("dac set: %d, adc read: %d (target_value: %d)\n", 30, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( 600, target_value, read_raw );
-    TEST_ESP_OK( adc2_get_raw( ADC2_CHANNEL_9, ADC_WIDTH_12Bit, &read_raw ));
-    target_value = 60*4096*3/256;
+    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
+    TEST_ESP_OK( adc2_get_raw( ADC_TEST_CH2, ADC_TEST_WIDTH, &read_raw ));
+    target_value = 60*ADC_TEST_RESOLUTION*3/ADC_TEST_DAC_RANGE;
     printf("dac set: %d, adc read: %d (target_value: %d)\n", 60, read_raw, target_value );
-    TEST_ASSERT_INT_WITHIN( 600, target_value, read_raw );
+    TEST_ASSERT_INT_WITHIN( ADC_TEST_ERROR, target_value, read_raw );
 
     printf("test passed...\n");
 
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
-
-#endif

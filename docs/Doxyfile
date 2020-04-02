@@ -86,7 +86,6 @@ INPUT = \
     ##
     ## Peripherals - API Reference
     ##
-    $(IDF_PATH)/components/driver/include/driver/adc.h \
     $(IDF_PATH)/components/driver/include/driver/can.h \
     $(IDF_PATH)/components/soc/include/hal/can_types.h \
     $(IDF_PATH)/components/driver/include/driver/dac.h \
@@ -103,10 +102,12 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
     $(IDF_PATH)/components/driver/include/driver/spi_master.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
-    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/touch_sensor.h \
-    $(IDF_PATH)/components/driver/esp32s2/include/temp_sensor.h \
+    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
+    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
+    $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
+    $(IDF_PATH)/components/driver/include/driver/adc_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(IDF_PATH)/components/soc/include/hal/rmt_types.h \

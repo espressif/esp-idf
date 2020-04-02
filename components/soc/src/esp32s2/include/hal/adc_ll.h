@@ -3,6 +3,8 @@
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
+#include "soc/apb_saradc_reg.h"
+#include "soc/rtc_cntl_struct.h"
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -10,45 +12,10 @@ extern "C" {
 #endif
 
 typedef enum {
-    ADC_DIG_FORMAT_12BIT,   /*!< ADC to I2S data format, [15:12]-channel [11:0]-12 bits ADC data.
-                                 Note: In single convert mode. */
-    ADC_DIG_FORMAT_11BIT,   /*!< ADC to I2S data format, [15]-1 [14:11]-channel [10:0]-11 bits ADC data.
-                                 Note: In multi convert mode. */
-    ADC_DIG_FORMAT_MAX,
-} adc_ll_dig_output_format_t;
-
-typedef enum {
-    ADC_CONV_SINGLE_UNIT_1 = 1, /*!< SAR ADC 1*/
-    ADC_CONV_SINGLE_UNIT_2 = 2, /*!< SAR ADC 2, not supported yet*/
-    ADC_CONV_BOTH_UNIT     = 3, /*!< SAR ADC 1 and 2, not supported yet */
-    ADC_CONV_ALTER_UNIT    = 7, /*!< SAR ADC 1 and 2 alternative mode, not supported yet */
-    ADC_CONV_UNIT_MAX,
-} adc_ll_convert_mode_t;
-
-typedef enum {
     ADC_NUM_1 = 0,          /*!< SAR ADC 1 */
     ADC_NUM_2 = 1,          /*!< SAR ADC 2 */
     ADC_NUM_MAX,
 } adc_ll_num_t;
-
-typedef struct {
-    union {
-        struct {
-            uint8_t atten:     2;   /*!< ADC sampling voltage attenuation configuration.
-                                         0: input voltage * 1;
-                                         1: input voltage * 1/1.34;
-                                         2: input voltage * 1/2;
-                                         3: input voltage * 1/3.6. */
-            uint8_t bit_width: 2;   /*!< ADC resolution.
-                                         0: 9 bit;
-                                         1: 10 bit;
-                                         2: 11 bit;
-                                         3: 12 bit. */
-            uint8_t channel:   4;   /*!< ADC channel index. */
-        };
-        uint8_t val;
-    };
-} adc_ll_pattern_table_t;
 
 typedef enum {
     ADC_POWER_BY_FSM,   /*!< ADC XPD controled by FSM. Used for polling mode */
@@ -58,16 +25,55 @@ typedef enum {
 } adc_ll_power_t;
 
 typedef enum {
-    ADC_HALL_CTRL_ULP = 0x0,/*!< Hall sensor controled by ULP */
-    ADC_HALL_CTRL_RTC = 0x1 /*!< Hall sensor controled by RTC */
-} adc_ll_hall_controller_t ;
+    ADC_RTC_DATA_OK = 0,
+    ADC_RTC_CTRL_UNSELECTED = 1,
+    ADC_RTC_CTRL_BREAK = 2,
+    ADC_RTC_DATA_FAIL = -1,
+} adc_ll_rtc_raw_data_t;
 
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif /* _MSC_VER */
+
+/**
+ * @brief Analyze whether the obtained raw data is correct.
+ *        ADC2 use arbiter by default. The arbitration result can be judged by the flag bit in the original data.
+ *
+ */
+typedef struct {
+    union {
+        struct {
+            uint16_t data:     13;  /*!<ADC real output data info. Resolution: 13 bit. */
+            uint16_t reserved:  1;  /*!<reserved */
+            uint16_t flag:      2;  /*!<ADC data flag info.
+                                        If (flag == 0), The data is valid.
+                                        If (flag > 0), The data is invalid. */
+        };
+        uint16_t val;
+    };
+} adc_rtc_output_data_t;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif /* _MSC_VER */
+
+/**
+ * @brief ADC controller type selection.
+ * 
+ * @note For ADC2, use the force option with care. The system power consumption detection will use ADC2.
+ *       If it is forced to switch to another controller, it may cause the system to obtain incorrect values.
+ * @note Normally, there is no need to switch the controller manually.
+ */
 typedef enum {
-    ADC_CTRL_RTC = 0,
-    ADC_CTRL_ULP = 1,
-    ADC_CTRL_DIG = 2,
-    ADC2_CTRL_PWDET = 3,
-} adc_ll_controller_t ;
+    ADC_CTRL_RTC = 0,   /*!<For ADC1. Select RTC controller. For ADC2. The controller is selected by the arbiter. Arbiter in default mode. */
+    ADC_CTRL_ULP = 1,   /*!<For ADC1. Select ULP controller. For ADC2. The controller is selected by the arbiter. Arbiter in default mode. */
+    ADC_CTRL_DIG = 2,   /*!<For ADC1. Select DIG controller. For ADC2. The controller is selected by the arbiter. Arbiter in default mode. */
+    ADC2_CTRL_PWDET = 3,/*!<For ADC2. The controller is selected by the arbiter. Arbiter in default mode. */
+    ADC2_CTRL_FORCE_PWDET = 3,  /*!<For ADC2. Arbiter in shield mode. Force select Wi-Fi controller work. */
+    ADC2_CTRL_FORCE_RTC = 4,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
+    ADC2_CTRL_FORCE_ULP = 5,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
+    ADC2_CTRL_FORCE_DIG = 6,    /*!<For ADC2. Arbiter in shield mode. Force select digital controller work. */
+} adc_controller_t;
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -80,7 +86,7 @@ typedef enum {
  * @param start_wait Delay time after open xpd.
  * @param standby_wait Delay time to close xpd.
  */
-static inline void adc_ll_dig_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
+static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
     APB_SARADC.fsm_wait.rstb_wait = rst_wait;
@@ -97,9 +103,21 @@ static inline void adc_ll_dig_set_fsm_time(uint32_t rst_wait, uint32_t start_wai
  * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
  *                     Range: 2 ~ 0xFF.
  */
-static inline void adc_ll_dig_set_sample_cycle(uint32_t sample_cycle)
+static inline void adc_ll_digi_set_sample_cycle(uint32_t sample_cycle)
 {
     APB_SARADC.fsm.sample_cycle = sample_cycle;
+}
+
+/**
+ * Set SAR ADC module clock division factor.
+ * SAR ADC clock divided from digital controller clock.
+ *
+ * @param div Division factor.
+ */
+static inline void adc_ll_digi_set_clk_div(uint32_t div)
+{
+    /* ADC clock devided from digital controller clock clk */
+    APB_SARADC.ctrl.sar_clk_div = div;
 }
 
 /**
@@ -107,7 +125,7 @@ static inline void adc_ll_dig_set_sample_cycle(uint32_t sample_cycle)
  *
  * @param format Output data format.
  */
-static inline void adc_ll_dig_set_output_format(adc_ll_dig_output_format_t format)
+static inline void adc_ll_digi_set_output_format(adc_digi_output_format_t format)
 {
     APB_SARADC.ctrl.data_sar_sel = format;
 }
@@ -118,7 +136,7 @@ static inline void adc_ll_dig_set_output_format(adc_ll_dig_output_format_t forma
  *
  * @param meas_num Max conversion number. Range: 0 ~ 255.
  */
-static inline void adc_ll_dig_set_convert_limit_num(uint32_t meas_num)
+static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 {
     APB_SARADC.ctrl2.max_meas_num = meas_num;
 }
@@ -127,7 +145,7 @@ static inline void adc_ll_dig_set_convert_limit_num(uint32_t meas_num)
  * Enable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
  */
-static inline void adc_ll_dig_convert_limit_enable(void)
+static inline void adc_ll_digi_convert_limit_enable(void)
 {
     APB_SARADC.ctrl2.meas_num_limit = 1;
 }
@@ -136,7 +154,7 @@ static inline void adc_ll_dig_convert_limit_enable(void)
  * Disable max conversion number detection for digital controller.
  * If the number of ADC conversion is equal to the maximum, the conversion is stopped.
  */
-static inline void adc_ll_dig_convert_limit_disable(void)
+static inline void adc_ll_digi_convert_limit_disable(void)
 {
     APB_SARADC.ctrl2.meas_num_limit = 0;
 }
@@ -148,7 +166,7 @@ static inline void adc_ll_dig_convert_limit_disable(void)
  *
  * @param mode Conversion mode select.
  */
-static inline void adc_ll_dig_set_convert_mode(adc_ll_convert_mode_t mode)
+static inline void adc_ll_digi_set_convert_mode(adc_digi_convert_mode_t mode)
 {
     if (mode == ADC_CONV_SINGLE_UNIT_1) {
         APB_SARADC.ctrl.work_mode = 0;
@@ -164,26 +182,15 @@ static inline void adc_ll_dig_set_convert_mode(adc_ll_convert_mode_t mode)
 }
 
 /**
- * Set I2S DMA data source for digital controller.
- *
- * @param src i2s data source.
- */
-static inline void adc_ll_dig_set_data_source(adc_i2s_source_t src)
-{
-    /* 1: I2S input data is from SAR ADC (for DMA)  0: I2S input data is from GPIO matrix */
-    APB_SARADC.ctrl.data_to_i2s = src;
-}
-
-/**
- * Set pattern table lenth for digital controller.
+ * Set pattern table length for digital controller.
  * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
  * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
  * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @param patt_len Items range: 1 ~ 16.
  */
-static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
+static inline void adc_ll_digi_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t patt_len)
 {
     if (adc_n == ADC_NUM_1) {
         APB_SARADC.ctrl.sar1_patt_len = patt_len - 1;
@@ -193,29 +200,428 @@ static inline void adc_ll_set_pattern_table_len(adc_ll_num_t adc_n, uint32_t pat
 }
 
 /**
- * Set pattern table lenth for digital controller.
+ * Set pattern table for digital controller.
  * The pattern table that defines the conversion rules for each SAR ADC. Each table has 16 items, in which channel selection,
  * resolution and attenuation are stored. When the conversion is started, the controller reads conversion rules from the
  * pattern table one by one. For each controller the scan sequence has at most 16 different rules before repeating itself.
  *
- * @prarm adc_n ADC unit.
- * @param pattern_index Items index. Range: 1 ~ 16.
+ * @param adc_n ADC unit.
+ * @param pattern_index Items index. Range: 0 ~ 15.
  * @param pattern Stored conversion rules.
  */
-static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_ll_pattern_table_t pattern)
+static inline void adc_ll_digi_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern_index, adc_digi_pattern_table_t pattern)
 {
-    const uint32_t patt_tab_idx = pattern_index / 4;
-    const uint32_t patt_shift   = (3 - (pattern_index % 4)) * 8;
-    const uint32_t patt_mask    = 0xFF << patt_shift;
+    uint32_t tab;
+    uint8_t index = pattern_index / 4;
+    uint8_t offset = (pattern_index % 4) * 8;
+    if (adc_n == ADC_NUM_1) {
+        tab = APB_SARADC.sar1_patt_tab[index];  // Read old register value
+        tab &= (~(0xFF000000 >> offset));       // clear old data
+        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        APB_SARADC.sar1_patt_tab[index] = tab;  // Write back
+    } else { // adc_n == ADC_NUM_2
+        tab = APB_SARADC.sar2_patt_tab[index];  // Read old register value
+        tab &= (~(0xFF000000 >> offset));       // clear old data
+        tab |= ((uint32_t)pattern.val << 24) >> offset; // Fill in the new data
+        APB_SARADC.sar2_patt_tab[index] = tab;  // Write back
+    }
+}
+
+/**
+ * Reset the pattern table pointer, then take the measurement rule from table header in next measurement.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_digi_clear_pattern_table(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.ctrl.sar1_patt_p_clear = 1;
+        APB_SARADC.ctrl.sar1_patt_p_clear = 0;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.ctrl.sar2_patt_p_clear = 1;
+        APB_SARADC.ctrl.sar2_patt_p_clear = 0;
+    }
+}
+
+/**
+ * Sets the number of cycles required for the conversion to complete and wait for the arbiter to stabilize.
+ *
+ * @note Only ADC2 have arbiter function.
+ * @param cycle range: 0 ~ 4.
+ */
+static inline void adc_ll_digi_set_arbiter_stable_cycle(uint32_t cycle)
+{
+    APB_SARADC.ctrl.wait_arb_cycle = cycle;
+}
+
+/**
+ * ADC Digital controller output data invert or not.
+ *
+ * @param adc_n ADC unit.
+ * @param inv_en data invert or not.
+ */
+static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.ctrl2.sar2_inv = inv_en;   // Enable / Disable ADC data invert
+    }
+}
+
+/**
+ * Sets the number of interval clock cycles for the digital controller to trigger the measurement.
+ *
+ * @note The trigger interval should not be less than the sampling time of the SAR ADC.
+ * @param cycle The number of clock cycles for the trigger interval. The unit is the divided clock. Range: 40 ~ 4095.
+ */
+static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
+{
+    APB_SARADC.ctrl2.timer_target = cycle;
+}
+
+/**
+ * Enable digital controller timer to trigger the measurement.
+ */
+static inline void adc_ll_digi_trigger_enable(void)
+{
+    APB_SARADC.ctrl2.timer_sel = 1;
+    APB_SARADC.ctrl2.timer_en = 1;
+}
+
+/**
+ * Disable digital controller timer to trigger the measurement.
+ */
+static inline void adc_ll_digi_trigger_disable(void)
+{
+    APB_SARADC.ctrl2.timer_en = 0;
+    APB_SARADC.ctrl2.timer_sel = 0;
+}
+
+/**
+ * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
+ * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
+ *
+ * @param div_num Division factor. Range: 1 ~ 255.
+ * @param div_b Division factor. Range: 1 ~ 63.
+ * @param div_a Division factor. Range: 1 ~ 63.
+ */
+static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
+{
+    APB_SARADC.apb_adc_clkm_conf.clkm_div_num = div_num;
+    APB_SARADC.apb_adc_clkm_conf.clkm_div_b = div_b;
+    APB_SARADC.apb_adc_clkm_conf.clkm_div_a = div_a;
+}
+
+/**
+ * Enable clock and select clock source for ADC digital controller.
+ *
+ * @param use_apll true: use APLL clock; false: use APB clock.
+ */
+static inline void adc_ll_digi_controller_clk_enable(bool use_apll)
+{
+    if (use_apll) {
+        APB_SARADC.apb_adc_clkm_conf.clk_sel = 1;   // APLL clock
+    } else {
+        APB_SARADC.apb_adc_clkm_conf.clk_sel = 2;   // APB clock
+    }
+    APB_SARADC.ctrl.sar_clk_gated = 1;
+}
+
+/**
+ * Disable clock for ADC digital controller.
+ */
+static inline void adc_ll_digi_controller_clk_disable(void)
+{
+    APB_SARADC.ctrl.sar_clk_gated = 0;
+    APB_SARADC.apb_adc_clkm_conf.clk_sel = 0;
+}
+
+/**
+ * Reset adc digital controller filter.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_digi_filter_reset(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.filter_ctrl.adc1_filter_reset = 1;
+        APB_SARADC.filter_ctrl.adc1_filter_reset = 0;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.filter_ctrl.adc2_filter_reset = 1;
+        APB_SARADC.filter_ctrl.adc2_filter_reset = 0;
+    }
+}
+
+/**
+ * Set adc digital controller filter factor.
+ *
+ * @param adc_n ADC unit.
+ * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ */
+static inline void adc_ll_digi_filter_set_factor(adc_ll_num_t adc_n, adc_digi_filter_mode_t factor)
+{
+    int mode = 0;
+    switch (factor) {
+    case ADC_DIGI_FILTER_IIR_2:  mode = 2;  break;
+    case ADC_DIGI_FILTER_IIR_4:  mode = 4;  break;
+    case ADC_DIGI_FILTER_IIR_8:  mode = 8;  break;
+    case ADC_DIGI_FILTER_IIR_16: mode = 16; break;
+    case ADC_DIGI_FILTER_IIR_64: mode = 64; break;
+    default: mode = 8; break;
+    }
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.filter_ctrl.adc1_filter_factor = mode;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.filter_ctrl.adc2_filter_factor = mode;
+    }
+}
+
+/**
+ * Get adc digital controller filter factor.
+ *
+ * @param adc_n ADC unit.
+ * @param factor Expression: filter_data = (k-1)/k * last_data + new_data / k. Set values: (2, 4, 8, 16, 64).
+ */
+static inline void adc_ll_digi_filter_get_factor(adc_ll_num_t adc_n, adc_digi_filter_mode_t *factor)
+{
+    int mode = 0;
+    if (adc_n == ADC_NUM_1) {
+        mode = APB_SARADC.filter_ctrl.adc1_filter_factor;
+    } else { // adc_n == ADC_NUM_2
+        mode = APB_SARADC.filter_ctrl.adc2_filter_factor;
+    }
+    switch (mode) {
+    case 2:  *factor = ADC_DIGI_FILTER_IIR_2;  break;
+    case 4:  *factor = ADC_DIGI_FILTER_IIR_4;  break;
+    case 8:  *factor = ADC_DIGI_FILTER_IIR_8;  break;
+    case 16: *factor = ADC_DIGI_FILTER_IIR_16; break;
+    case 64: *factor = ADC_DIGI_FILTER_IIR_64; break;
+    default: *factor = ADC_DIGI_FILTER_IIR_MAX;    break;
+    }
+}
+
+/**
+ * Enable/disable adc digital controller filter.
+ * Filtering the ADC data to obtain smooth data at higher sampling rates.
+ *
+ * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_digi_filter_enable(adc_ll_num_t adc_n, bool enable)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.filter_ctrl.adc1_filter_en = enable;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.filter_ctrl.adc2_filter_en = enable;
+    }
+}
+
+/**
+ * Get the filtered data of adc digital controller filter.
+ * The data after each measurement and filtering is updated to the DMA by the digital controller. But it can also be obtained manually through this API.
+ *
+ * @note The filter will filter all the enabled channel data of the each ADC unit at the same time.
+ * @param adc_n ADC unit.
+ * @return Filtered data.
+ */
+static inline uint32_t adc_ll_digi_filter_read_data(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        return APB_SARADC.filter_status.adc1_filter_data;
+    } else { // adc_n == ADC_NUM_2
+        return APB_SARADC.filter_status.adc2_filter_data;
+    }
+}
+
+/**
+ * Set monitor mode of adc digital controller.
+ *
+ * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
+ * @param adc_n ADC unit.
+ * @param is_larger true:  If ADC_OUT >  threshold, Generates monitor interrupt.
+ *                  false: If ADC_OUT <  threshold, Generates monitor interrupt.
+ */
+static inline void adc_ll_digi_monitor_set_mode(adc_ll_num_t adc_n, bool is_larger)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.thres_ctrl.adc1_thres_mode = is_larger;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.thres_ctrl.adc2_thres_mode = is_larger;
+    }
+}
+
+/**
+ * Set monitor threshold of adc digital controller.
+ *
+ * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
+ * @param adc_n ADC unit.
+ * @param threshold Monitor threshold.
+ */
+static inline void adc_ll_digi_monitor_set_thres(adc_ll_num_t adc_n, uint32_t threshold)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.thres_ctrl.adc1_thres = threshold;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.thres_ctrl.adc2_thres = threshold;
+    }
+}
+
+/**
+ * Enable/disable monitor of adc digital controller.
+ *
+ * @note The monitor will monitor all the enabled channel data of the each ADC unit at the same time.
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_digi_monitor_enable(adc_ll_num_t adc_n, bool enable)
+{
+    if (adc_n == ADC_NUM_1) {
+        APB_SARADC.thres_ctrl.adc1_thres_en = enable;
+    } else { // adc_n == ADC_NUM_2
+        APB_SARADC.thres_ctrl.adc2_thres_en = enable;
+    }
+}
+
+/**
+ * Enable interrupt of adc digital controller by bitmask.
+ *
+ * @param adc_n ADC unit.
+ * @param intr Interrupt bitmask.
+ */
+static inline void adc_ll_digi_intr_enable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
+{
+    if (adc_n == ADC_NUM_1) {
+        if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+            APB_SARADC.int_ena.adc1_thres = 1;
+        }
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc1_done = 1;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+            APB_SARADC.int_ena.adc2_thres = 1;
+        }
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc2_done = 1;
+        }
+    }
+}
+
+/**
+ * Disable interrupt of adc digital controller by bitmask.
+ *
+ * @param adc_n ADC unit.
+ * @param intr Interrupt bitmask.
+ */
+static inline void adc_ll_digi_intr_disable(adc_ll_num_t adc_n, adc_digi_intr_t intr)
+{
+    if (adc_n == ADC_NUM_1) {
+        if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+            APB_SARADC.int_ena.adc1_thres = 0;
+        }
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc1_done = 0;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+            APB_SARADC.int_ena.adc2_thres = 0;
+        }
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_ena.adc2_done = 0;
+        }
+    }
+}
+
+/**
+ * Clear interrupt of adc digital controller by bitmask.
+ *
+ * @param adc_n ADC unit.
+ * @param intr Interrupt bitmask.
+ */
+static inline void adc_ll_digi_intr_clear(adc_ll_num_t adc_n, adc_digi_intr_t intr)
+{
+    if (adc_n == ADC_NUM_1) {
+        if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+            APB_SARADC.int_clr.adc1_thres = 1;
+        }
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_clr.adc1_done = 1;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (intr & ADC_DIGI_INTR_MASK_MONITOR) {
+            APB_SARADC.int_clr.adc2_thres = 1;
+        }
+        if (intr & ADC_DIGI_INTR_MASK_MEAS_DONE) {
+            APB_SARADC.int_clr.adc2_done = 1;
+        }
+    }
+}
+
+/**
+ * Get interrupt status mask of adc digital controller.
+ *
+ * @param adc_n ADC unit.
+ * @return
+ *     - intr Interrupt bitmask.
+ */
+static inline uint32_t adc_ll_digi_get_intr_status(adc_ll_num_t adc_n)
+{
+    uint32_t int_st = APB_SARADC.int_st.val;
+    uint32_t ret_msk = 0;
 
     if (adc_n == ADC_NUM_1) {
-        APB_SARADC.sar1_patt_tab[patt_tab_idx] &= ~patt_mask;
-        APB_SARADC.sar1_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;
+        if (int_st & APB_SARADC_ADC1_DONE_INT_ST_M) {
+            ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
+        }
+        if (int_st & APB_SARADC_ADC1_THRES_INT_ST) {
+            ret_msk |= ADC_DIGI_INTR_MASK_MONITOR;
+        }
+    } else { // adc_n == ADC_NUM_2
+        if (int_st & APB_SARADC_ADC2_DONE_INT_ST_M) {
+            ret_msk |= ADC_DIGI_INTR_MASK_MEAS_DONE;
+        }
+        if (int_st & APB_SARADC_ADC2_THRES_INT_ST_M) {
+            ret_msk |= ADC_DIGI_INTR_MASK_MONITOR;
+        }
     }
-    else { // adc_n == ADC_NUM_2
-        APB_SARADC.sar2_patt_tab[patt_tab_idx] &= ~patt_mask;
-        APB_SARADC.sar2_patt_tab[patt_tab_idx] |= pattern.val << patt_shift;  
-    }
+
+    return ret_msk;
+}
+
+/**
+ * Set DMA eof num of adc digital controller.
+ * If the number of measurements reaches `dma_eof_num`, then `dma_in_suc_eof` signal is generated.
+ *
+ * @param num eof num of DMA.
+ */
+static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
+{
+    APB_SARADC.dma_conf.apb_adc_eof_num = num;
+}
+
+/**
+ * Enable output data to DMA from adc digital controller.
+ */
+static inline void adc_ll_digi_dma_enable(void)
+{
+    APB_SARADC.dma_conf.apb_adc_trans = 1;
+}
+
+/**
+ * Disable output data to DMA from adc digital controller.
+ */
+static inline void adc_ll_digi_dma_disable(void)
+{
+    APB_SARADC.dma_conf.apb_adc_trans = 0;
+}
+
+/**
+ * Reset adc digital controller.
+ */
+static inline void adc_ll_digi_reset(void)
+{
+    APB_SARADC.dma_conf.apb_adc_reset_fsm = 1;
+    APB_SARADC.dma_conf.apb_adc_reset_fsm = 0;
 }
 
 /*---------------------------------------------------------------
@@ -225,7 +631,7 @@ static inline void adc_ll_set_pattern_table(adc_ll_num_t adc_n, uint32_t pattern
  * Set adc cct for PWDET controller.
  *
  * @note Capacitor tuning of the PA power monitor. cct set to the same value with PHY.
- * @prarm cct Range: 0 ~ 7.
+ * @param cct Range: 0 ~ 7.
  */
 static inline void adc_ll_pwdet_set_cct(uint32_t cct)
 {
@@ -251,18 +657,13 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 /**
  * Set adc output data format for RTC controller.
  *
+ * @note ESP32S2 RTC controller only support 13bit.
  * @prarm adc_n ADC unit.
  * @prarm bits Output data bits width option.
  */
 static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_width_t bits)
 {
-    if (adc_n == ADC_NUM_1) {
-        // SENS.sar_meas1_ctrl1.sar1_bit_width = bits;
-        // SENS.sar_reader1_ctrl.sar1_sample_bit = bits;
-    } else { // adc_n == ADC_NUM_2
-        // SENS.sar_meas2_ctrl1.sar2_bit_width = bits;
-        // SENS.sar_reader2_ctrl.sar2_sample_bit = bits;
-    }
+    return;
 }
 
 /**
@@ -270,7 +671,7 @@ static inline void adc_ll_rtc_set_output_format(adc_ll_num_t adc_n, adc_bits_wid
  *
  * @note Only one channel can be selected for once measurement.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
 static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
@@ -283,11 +684,28 @@ static inline void adc_ll_rtc_enable_channel(adc_ll_num_t adc_n, int channel)
 }
 
 /**
+ * Disable adc channel to start convert.
+ *
+ * @note Only one channel can be selected in once measurement.
+ *
+ * @param adc_n ADC unit.
+ * @param channel ADC channel number for each ADCn.
+ */
+static inline void adc_ll_rtc_disable_channel(adc_ll_num_t adc_n, int channel)
+{
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_meas1_ctrl2.sar1_en_pad = 0; //only one channel is selected.
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_meas2_ctrl2.sar2_en_pad = 0; //only one channel is selected.
+    }
+}
+
+/**
  * Start conversion once by software for RTC controller.
  *
  * @note It may be block to wait conversion idle for ADC1.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @param channel ADC channel number for each ADCn.
  */
 static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
@@ -305,7 +723,7 @@ static inline void adc_ll_rtc_start_convert(adc_ll_num_t adc_n, int channel)
 /**
  * Check the conversion done flag for each ADCn for RTC controller.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @return
  *      -true  : The conversion process is finish.
  *      -false : The conversion process is not finish.
@@ -324,7 +742,7 @@ static inline bool adc_ll_rtc_convert_is_done(adc_ll_num_t adc_n)
 /**
  * Get the converted value for each ADCn for RTC controller.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
  * @return
  *      - Converted value.
  */
@@ -339,24 +757,124 @@ static inline int adc_ll_rtc_get_convert_value(adc_ll_num_t adc_n)
     return ret_val;
 }
 
+/**
+ * ADC module RTC output data invert or not.
+ *
+ * @param adc_n ADC unit.
+ * @param inv_en data invert or not.
+ */
+static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
+{
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
+    }
+}
+
+/**
+ * Enable ADCn conversion complete interrupt for RTC controller.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_rtc_intr_enable(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_reader1_ctrl.sar1_int_en = 1;
+        RTCCNTL.int_ena.rtc_saradc1 = 1;
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_reader2_ctrl.sar2_int_en = 1;
+        RTCCNTL.int_ena.rtc_saradc2 = 1;
+    }
+}
+
+/**
+ * Disable ADCn conversion complete interrupt for RTC controller.
+ *
+ * @param adc_n ADC unit.
+ */
+static inline void adc_ll_rtc_intr_disable(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_reader1_ctrl.sar1_int_en = 0;
+        RTCCNTL.int_ena.rtc_saradc1 = 0;
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_reader2_ctrl.sar2_int_en = 0;
+        RTCCNTL.int_ena.rtc_saradc2 = 0;
+    }
+}
+
+/**
+ * Reset RTC controller FSM.
+ */
+static inline void adc_ll_rtc_reset(void)
+{
+    SENS.sar_meas1_ctrl1.rtc_saradc_reset = 1;
+    SENS.sar_meas1_ctrl1.rtc_saradc_reset = 0;
+}
+
+/**
+ * Sets the number of cycles required for the conversion to complete and wait for the arbiter to stabilize.
+ *
+ * @note Only ADC2 have arbiter function.
+ * @param cycle range: [0,4].
+ */
+static inline void adc_ll_rtc_set_arbiter_stable_cycle(uint32_t cycle)
+{
+    SENS.sar_reader2_ctrl.sar2_wait_arb_cycle = cycle;
+}
+
+/**
+ * Analyze whether the obtained raw data is correct.
+ * ADC2 can use arbiter. The arbitration result can be judged by the flag bit in the original data.
+ *
+ * @param adc_n ADC unit.
+ * @param raw_data ADC raw data input (convert value).
+ * @return
+ *      - 0: The data is correct to use.
+ *      - 1: The data is invalid. The current controller is not enabled by the arbiter.
+ *      - 2: The data is invalid. The current controller process was interrupted by a higher priority controller.
+ *      - -1: The data is error.
+ */
+static inline adc_ll_rtc_raw_data_t adc_ll_rtc_analysis_raw_data(adc_ll_num_t adc_n, uint16_t raw_data)
+{
+    /* ADC1 don't need check data */
+    if (adc_n == ADC_NUM_1) {
+        return ADC_RTC_DATA_OK;
+    }
+    adc_rtc_output_data_t *temp = (adc_rtc_output_data_t *)&raw_data;
+    if (temp->flag == 0) {
+        return ADC_RTC_DATA_OK;
+    } else if (temp->flag == 1) {
+        return ADC_RTC_CTRL_UNSELECTED;
+    } else if (temp->flag == 2) {
+        return ADC_RTC_CTRL_BREAK;
+    } else {
+        return ADC_RTC_DATA_FAIL;
+    }
+}
+
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
 /**
  * Set ADC module power management.
  *
- * @prarm manage Set ADC power status.
+ * @param manage Set ADC power status.
  */
 static inline void adc_ll_set_power_manage(adc_ll_power_t manage)
 {
     /* Bit1  0:Fsm  1: SW mode
        Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_POWER_SW_ON) {
+        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 1;
         SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PU;
     } else if (manage == ADC_POWER_BY_FSM) {
+        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 1;
         SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_FSM;
     } else if (manage == ADC_POWER_SW_OFF) {
         SENS.sar_power_xpd_sar.force_xpd_sar = SENS_FORCE_XPD_SAR_PD;
+        SENS.sar_meas1_ctrl1.rtc_saradc_clkgate_en = 0;
     }
 }
 
@@ -382,14 +900,17 @@ static inline adc_ll_power_t adc_ll_get_power_manage(void)
 }
 
 /**
- * ADC module clock division factor setting. ADC clock devided from APB clock.
+ * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
  *
- * @prarm div Division factor.
+ * @param div Division factor.
  */
-static inline void adc_ll_set_clk_div(uint32_t div)
+static inline void adc_ll_set_sar_clk_div(adc_ll_num_t adc_n, uint32_t div)
 {
-    /* ADC clock devided from APB clk, e.g. 80 / 2 = 40Mhz, */
-    APB_SARADC.ctrl.sar_clk_div = div;
+    if (adc_n == ADC_NUM_1) {
+        SENS.sar_reader1_ctrl.sar1_clk_div = div;
+    } else { // adc_n == ADC_NUM_2
+        SENS.sar_reader2_ctrl.sar2_clk_div = div;
+    }
 }
 
 /**
@@ -421,9 +942,9 @@ static inline void adc_ll_set_clk_div(uint32_t div)
  *
  * For maximum accuracy, use the ADC calibration APIs and measure voltages within these recommended ranges.
  *
- * @prarm adc_n ADC unit.
- * @prarm channel ADCn channel number.
- * @prarm atten The attenuation option.
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @param atten The attenuation option.
  */
 static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
@@ -435,30 +956,18 @@ static inline void adc_ll_set_atten(adc_ll_num_t adc_n, adc_channel_t channel, a
 }
 
 /**
- * ADC module RTC output data invert or not.
+ * Get the attenuation of a particular channel on ADCn.
  *
- * @prarm adc_n ADC unit.
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @return atten The attenuation option.
  */
-static inline void adc_ll_rtc_output_invert(adc_ll_num_t adc_n, bool inv_en)
+static inline adc_atten_t adc_ll_get_atten(adc_ll_num_t adc_n, adc_channel_t channel)
 {
     if (adc_n == ADC_NUM_1) {
-        SENS.sar_reader1_ctrl.sar1_data_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_NUM_2
-        SENS.sar_reader2_ctrl.sar2_data_inv = inv_en;  // Enable / Disable ADC data invert
-    }
-}
-
-/**
- * ADC module Digital output data invert or not.
- *
- * @prarm adc_n ADC unit.
- */
-static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
-{
-    if (adc_n == ADC_NUM_1) {
-        APB_SARADC.ctrl2.sar1_inv = inv_en;   // Enable / Disable ADC data invert
-    } else { // adc_n == ADC_NUM_2
-        APB_SARADC.ctrl2.sar2_inv = inv_en;  // Enable / Disable ADC data invert
+        return (adc_atten_t)((SENS.sar_atten1 >> (channel * 2)) & 0x3);
+    } else {
+        return (adc_atten_t)((SENS.sar_atten2 >> (channel * 2)) & 0x3);
     }
 }
 
@@ -469,10 +978,10 @@ static inline void adc_ll_dig_output_invert(adc_ll_num_t adc_n, bool inv_en)
  * Two RTC controller: Single conversion modes (Polling). For low power purpose working during deep sleep;
  * the other is dedicated for Power detect (PWDET / PKDET), Only support ADC2.
  *
- * @prarm adc_n ADC unit.
- * @prarm ctrl ADC controller.
+ * @param adc_n ADC unit.
+ * @param ctrl ADC controller.
  */
-static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t ctrl)
+static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ctrl)
 {
     if (adc_n == ADC_NUM_1) {
         switch ( ctrl ) {
@@ -480,22 +989,16 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t
             SENS.sar_meas1_mux.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_meas1_ctrl2.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas1_ctrl2.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
-            SENS.sar_hall_ctrl.xpd_hall_force     = 1;    // 1: SW control HALL power;        0: ULP FSM control HALL power.
-            SENS.sar_hall_ctrl.hall_phase_force   = 1;    // 1: SW control HALL phase;        0: ULP FSM control HALL phase.
             break;
         case ADC_CTRL_ULP:
             SENS.sar_meas1_mux.sar1_dig_force       = 0;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_meas1_ctrl2.meas1_start_force  = 0;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas1_ctrl2.sar1_en_pad_force  = 0;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
-            SENS.sar_hall_ctrl.xpd_hall_force     = 0;    // 1: SW control HALL power;        0: ULP FSM control HALL power.
-            SENS.sar_hall_ctrl.hall_phase_force   = 0;    // 1: SW control HALL phase;        0: ULP FSM control HALL phase.
             break;
         case ADC_CTRL_DIG:
             SENS.sar_meas1_mux.sar1_dig_force       = 1;    // 1: Select digital control;       0: Select RTC control.
             SENS.sar_meas1_ctrl2.meas1_start_force  = 1;    // 1: SW control RTC ADC start;     0: ULP control RTC ADC start.
             SENS.sar_meas1_ctrl2.sar1_en_pad_force  = 1;    // 1: SW control RTC ADC bit map;   0: ULP control RTC ADC bit map;
-            SENS.sar_hall_ctrl.xpd_hall_force     = 1;    // 1: SW control HALL power;        0: ULP FSM control HALL power.
-            SENS.sar_hall_ctrl.hall_phase_force   = 1;    // 1: SW control HALL phase;        0: ULP FSM control HALL phase.
             break;
         default:
             break;
@@ -525,87 +1028,225 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_ll_controller_t
 }
 
 /**
- * Close ADC AMP module if don't use it for power save.
- */
-static inline void adc_ll_amp_disable(void)
-{
-    //channel is set in the  convert function
-    SENS.sar_meas1_ctrl1.force_xpd_amp = SENS_FORCE_XPD_AMP_PD;
-    //disable FSM, it's only used by the LNA.
-    SENS.sar_amp_ctrl3.amp_rst_fb_fsm = 0;
-    SENS.sar_amp_ctrl3.amp_short_ref_fsm = 0;
-    SENS.sar_amp_ctrl3.amp_short_ref_gnd_fsm = 0;
-    SENS.sar_amp_ctrl1.sar_amp_wait1 = 1;
-    SENS.sar_amp_ctrl1.sar_amp_wait2 = 1;
-    SENS.sar_amp_ctrl2.sar_amp_wait3 = 1;
-}
-
-/*---------------------------------------------------------------
-                    Hall sensor setting
----------------------------------------------------------------*/
-
-/**
- * Enable hall sensor.
- */
-static inline void adc_ll_hall_enable(void)
-{
-    SENS.sar_hall_ctrl.xpd_hall = 1;
-}
-
-/**
- * Disable hall sensor.
- */
-static inline void adc_ll_hall_disable(void)
-{
-    SENS.sar_hall_ctrl.xpd_hall = 0;
-}
-
-/**
- * Reverse phase of hall sensor.
- */
-static inline void adc_ll_hall_phase_enable(void)
-{
-    SENS.sar_hall_ctrl.hall_phase = 1;
-}
-
-/**
- * Don't reverse phase of hall sensor.
- */
-static inline void adc_ll_hall_phase_disable(void)
-{
-    SENS.sar_hall_ctrl.hall_phase = 0;
-}
-
-/**
- * Set hall sensor controller.
+ * Set ADC2 module arbiter work mode.
+ * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
+ * the low priority controller will read the invalid ADC data, and the validity of the data can be judged by the flag bit in the data.
  *
- * @param hall_ctrl Hall controller.
+ * @note Only ADC2 support arbiter.
+ * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
+ *
+ * @param mode Refer to `adc_arbiter_mode_t`.
  */
-static inline void adc_ll_set_hall_controller(adc_ll_hall_controller_t hall_ctrl)
+static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
 {
-    SENS.sar_hall_ctrl.xpd_hall_force = hall_ctrl;    // 1: SW control HALL power;    0: ULP FSM control HALL power.
-    SENS.sar_hall_ctrl.hall_phase_force = hall_ctrl;  // 1: SW control HALL phase;    0: ULP FSM control HALL phase.
+    SENS.sar_meas2_mux.sar2_rtc_force = 0;  // Enable arbiter in wakeup mode
+    if (mode == ADC_ARB_MODE_FIX) {
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_grant_force = 0;
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_fix_priority = 1;
+    } else if (mode == ADC_ARB_MODE_LOOP) {
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_grant_force = 0;
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_fix_priority = 0;
+    } else {
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_grant_force = 1;    // Shield arbiter.
+    }
 }
 
 /**
- *  Output ADC2 reference voltage to gpio 25 or 26 or 27
+ * Set ADC2 module controller priority in arbiter.
+ * The arbiter is to improve the use efficiency of ADC2. After the control right is robbed by the high priority,
+ * the low priority controller will read the invalid ADC data, and the validity of the data can be judged by the flag bit in the data.
  *
- *  This function utilizes the testing mux exclusive to ADC 2 to route the
- *  reference voltage one of ADC2's channels. Supported gpios are gpios
- *  25, 26, and 27. This refernce voltage can be manually read from the pin
- *  and used in the esp_adc_cal component.
+ * @note Only ADC2 support arbiter.
+ * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
+ * @note Default priority: Wi-Fi(2) > RTC(1) > Digital(0);
  *
- *  @param[in]  io    GPIO number (gpios 25,26,27 supported)
- *
- *  @return
- *                  - true: v_ref successfully routed to selected gpio
- *                  - false: Unsupported gpio
+ * @param pri_rtc RTC controller priority. Range: 0 ~ 2.
+ * @param pri_dig Digital controller priority. Range: 0 ~ 2.
+ * @param pri_pwdet Wi-Fi controller priority. Range: 0 ~ 2.
  */
-static inline bool adc_ll_vref_output(int io)
+static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig, uint8_t pri_pwdet)
 {
-    return false;
+    if (pri_rtc != pri_dig && pri_rtc != pri_pwdet && pri_dig != pri_pwdet) {
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_rtc_priority = pri_rtc;
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_apb_priority = pri_dig;
+        APB_SARADC.apb_adc_arb_ctrl.adc_arb_wifi_priority = pri_pwdet;
+    }
+    /* Should select highest priority controller. */
+    if (pri_rtc > pri_dig) {
+        if (pri_rtc > pri_pwdet) {
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_apb_force = 0;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_rtc_force = 1;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_wifi_force = 0;
+        } else {
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_apb_force = 0;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_rtc_force = 0;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_wifi_force = 1;
+        }
+    } else {
+        if (pri_dig > pri_pwdet) {
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_apb_force = 1;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_rtc_force = 0;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_wifi_force = 0;
+        } else {
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_apb_force = 0;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_rtc_force = 0;
+            APB_SARADC.apb_adc_arb_ctrl.adc_arb_wifi_force = 1;
+        }
+    }
 }
 
+/**
+ * Force switch ADC2 to RTC controller in sleep mode. Shield arbiter.
+ * In sleep mode, the arbiter is in power-down mode.
+ * Need to switch the controller to RTC to shield the control of the arbiter.
+ * After waking up, it needs to switch to arbiter control.
+ * 
+ * @note The hardware will do this automatically. In normal use, there is no need to call this interface to manually switch the controller.
+ * @note Only support ADC2.
+ */
+static inline void adc_ll_enable_sleep_controller(void)
+{
+    SENS.sar_meas2_mux.sar2_rtc_force = 1;
+}
+
+/**
+ * Force switch ADC2 to arbiter in wakeup mode.
+ * In sleep mode, the arbiter is in power-down mode.
+ * Need to switch the controller to RTC to shield the control of the arbiter.
+ * After waking up, it needs to switch to arbiter control.
+ *
+ * @note The hardware will do this automatically. In normal use, there is no need to call this interface to manually switch the controller.
+ * @note Only support ADC2.
+ */
+static inline void adc_ll_disable_sleep_controller(void)
+{
+    SENS.sar_meas2_mux.sar2_rtc_force = 0;
+}
+
+/* ADC calibration code. */
+#include "soc/rtc_cntl_reg.h"
+#include "i2c_rtc_clk.h"
+
+#define I2C_ADC            0X69
+#define I2C_ADC_HOSTID     0
+
+#define ANA_CONFIG2_REG  0x6000E048
+#define ANA_CONFIG2_M   (BIT(18))
+
+#define SAR1_ENCAL_GND_ADDR 0x7
+#define SAR1_ENCAL_GND_ADDR_MSB 5
+#define SAR1_ENCAL_GND_ADDR_LSB 5
+
+#define SAR2_ENCAL_GND_ADDR 0x7
+#define SAR2_ENCAL_GND_ADDR_MSB 7
+#define SAR2_ENCAL_GND_ADDR_LSB 7
+
+#define SAR1_INITIAL_CODE_HIGH_ADDR 0x1
+#define SAR1_INITIAL_CODE_HIGH_ADDR_MSB 0x3
+#define SAR1_INITIAL_CODE_HIGH_ADDR_LSB 0x0
+
+#define SAR1_INITIAL_CODE_LOW_ADDR  0x0
+#define SAR1_INITIAL_CODE_LOW_ADDR_MSB  0x7
+#define SAR1_INITIAL_CODE_LOW_ADDR_LSB  0x0
+
+#define SAR2_INITIAL_CODE_HIGH_ADDR 0x4
+#define SAR2_INITIAL_CODE_HIGH_ADDR_MSB 0x3
+#define SAR2_INITIAL_CODE_HIGH_ADDR_LSB 0x0
+
+#define SAR2_INITIAL_CODE_LOW_ADDR  0x3
+#define SAR2_INITIAL_CODE_LOW_ADDR_MSB  0x7
+#define SAR2_INITIAL_CODE_LOW_ADDR_LSB  0x0
+
+#define SAR1_DREF_ADDR  0x2
+#define SAR1_DREF_ADDR_MSB  0x6
+#define SAR1_DREF_ADDR_LSB  0x4
+
+#define SAR2_DREF_ADDR  0x5
+#define SAR2_DREF_ADDR_MSB  0x6
+#define SAR2_DREF_ADDR_LSB  0x4
+
+#define ADC_HAL_CAL_OFFSET_RANGE (4096)
+#define ADC_HAL_CAL_TIMES        (10)
+
+/**
+ * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
+ *
+ * @note  Different ADC units and different attenuation options use different calibration data (initial data).
+ *
+ * @param adc_n ADC index number.
+ * @param channel adc channel number.
+ * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
+ *                     false: Use IO external voltage as calibration voltage.
+ */
+static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
+{
+    /* Enable i2s_write_reg function. */
+    void phy_get_romfunc_addr(void);
+    phy_get_romfunc_addr();
+    CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+
+    /* Enable/disable internal connect GND (for calibration). */
+    if (adc_n == ADC_NUM_1) {
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_DREF_ADDR, 4);
+        if (internal_gnd) {
+            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_ENCAL_GND_ADDR, 1);
+        } else {
+            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
+        }
+    } else {
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_DREF_ADDR, 4);
+        if (internal_gnd) {
+            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_ENCAL_GND_ADDR, 1);
+        } else {
+            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
+        }
+    }
+}
+
+/**
+ * Resume register status after calibration.
+ *
+ * @param adc_n ADC index number.
+ */
+static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
+{
+    if (adc_n == ADC_NUM_1) {
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
+    } else {
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
+    }
+}
+
+/**
+ * Set the calibration result to ADC.
+ *
+ * @note  Different ADC units and different attenuation options use different calibration data (initial data).
+ *
+ * @param adc_n ADC index number.
+ */
+static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t param)
+{
+    uint8_t msb = param >> 8;
+    uint8_t lsb = param & 0xFF;
+    /* Enable i2s_write_reg function. */
+    void phy_get_romfunc_addr(void);
+    phy_get_romfunc_addr();
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
+    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+
+    if (adc_n == ADC_NUM_1) {
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
+}
+/* Temp code end. */
 
 #ifdef __cplusplus
 }

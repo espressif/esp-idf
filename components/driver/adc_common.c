@@ -20,24 +20,17 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "esp_log.h"
+#include "esp_pm.h"
 #include "soc/rtc.h"
 #include "rtc_io.h"
-#include "adc.h"
-#include "dac.h"
+#include "driver/dac.h"
 #include "sys/lock.h"
 #include "driver/gpio.h"
-#include "adc1_i2s_private.h"
+#include "driver/adc.h"
+#include "adc1_private.h"
 
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
-
-#define ADC_MAX_MEAS_NUM_DEFAULT      (255)
-#define ADC_MEAS_NUM_LIM_DEFAULT      (1)
-#define SAR_ADC_CLK_DIV_DEFUALT       (2)
-
-#define DIG_ADC_OUTPUT_FORMAT_DEFUALT (ADC_DIG_FORMAT_12BIT)
-#define DIG_ADC_ATTEN_DEFUALT         (ADC_ATTEN_DB_11)
-#define DIG_ADC_BIT_WIDTH_DEFUALT     (ADC_WIDTH_BIT_12)
 
 #define ADC_CHECK_RET(fun_ret) ({                  \
     if (fun_ret != ESP_OK) {                                \
@@ -65,9 +58,11 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 
 /*
 In ADC2, there're two locks used for different cases:
-1. lock shared with app and WIFI:
-   when wifi using the ADC2, we assume it will never stop,
-   so app checks the lock and returns immediately if failed.
+1. lock shared with app and Wi-Fi:
+   ESP32:
+        When Wi-Fi using the ADC2, we assume it will never stop, so app checks the lock and returns immediately if failed.
+   ESP32S2:
+        The controller's control over the ADC is determined by the arbiter. There is no need to control by lock.
 
 2. lock shared between tasks:
    when several tasks sharing the ADC2, we want to guarantee
@@ -77,13 +72,40 @@ In ADC2, there're two locks used for different cases:
 
 adc2_spinlock should be acquired first, then adc2_wifi_lock or rtc_spinlock.
 */
+#ifdef CONFIG_IDF_TARGET_ESP32
 //prevent ADC2 being used by wifi and other tasks at the same time.
 static _lock_t adc2_wifi_lock;
+/** For ESP32S2 the ADC2 The right to use ADC2 is controlled by the arbiter, and there is no need to set a lock. */
+#define ADC2_WIFI_LOCK_ACQUIRE()        _lock_acquire( &adc2_wifi_lock )
+#define ADC2_WIFI_LOCK_RELEASE()        _lock_release( &adc2_wifi_lock )
+#define ADC2_WIFI_LOCK_TRY_ACQUIRE()    _lock_try_acquire( &adc2_wifi_lock )
+#define ADC2_WIFI_LOCK_CHECK()          ((uint32_t *)adc2_wifi_lock != NULL)
+
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+
+#define ADC2_WIFI_LOCK_ACQUIRE()
+#define ADC2_WIFI_LOCK_RELEASE()
+#define ADC2_WIFI_LOCK_TRY_ACQUIRE()    (0)     //WIFI controller and rtc controller have independent parameter configuration.
+#define ADC2_WIFI_LOCK_CHECK()          (true)
+
+#endif
+
 //prevent ADC2 being used by tasks (regardless of WIFI)
 static portMUX_TYPE adc2_spinlock = portMUX_INITIALIZER_UNLOCKED;
+#define ADC2_ENTER_CRITICAL()   portENTER_CRITICAL( &adc2_spinlock )
+#define ADC2_EXIT_CRITICAL()    portEXIT_CRITICAL( &adc2_spinlock )
 
 //prevent ADC1 being used by I2S dma and other tasks at the same time.
-static _lock_t adc1_i2s_lock;
+static _lock_t adc1_dma_lock;
+#define ADC1_DMA_LOCK_ACQUIRE() _lock_acquire( &adc1_dma_lock )
+#define ADC1_DMA_LOCK_RELEASE() _lock_release( &adc1_dma_lock )
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#ifdef CONFIG_PM_ENABLE
+static esp_pm_lock_handle_t s_adc2_arbiter_lock;
+#endif  //CONFIG_PM_ENABLE
+#endif  //CONFIG_IDF_TARGET_ESP32S2
+
 /*---------------------------------------------------------------
                     ADC Common
 ---------------------------------------------------------------*/
@@ -121,16 +143,7 @@ void adc_power_off(void)
 esp_err_t adc_set_clk_div(uint8_t clk_div)
 {
     ADC_ENTER_CRITICAL();
-    adc_hal_set_clk_div(clk_div);
-    ADC_EXIT_CRITICAL();
-    return ESP_OK;
-}
-
-esp_err_t adc_set_i2s_data_source(adc_i2s_source_t src)
-{
-    ADC_CHECK(src < ADC_I2S_DATA_SRC_MAX, "ADC i2s data source error", ESP_ERR_INVALID_ARG);
-    ADC_ENTER_CRITICAL();
-    adc_hal_dig_set_data_source(src);
+    adc_hal_digi_set_clk_div(clk_div);
     ADC_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -141,18 +154,14 @@ esp_err_t adc_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
     if (adc_unit & ADC_UNIT_1) {
         ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
         gpio_num = ADC_GET_IO_NUM(ADC_NUM_1, channel);
-
-        ADC_CHECK_RET(rtc_gpio_init(gpio_num));
-        ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-        ADC_CHECK_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
     }
     if (adc_unit & ADC_UNIT_2) {
         ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
         gpio_num = ADC_GET_IO_NUM(ADC_NUM_2, channel);
-        ADC_CHECK_RET(rtc_gpio_init(gpio_num));
-        ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
-        ADC_CHECK_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
     }
+    ADC_CHECK_RET(rtc_gpio_init(gpio_num));
+    ADC_CHECK_RET(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED));
+    ADC_CHECK_RET(gpio_set_pull_mode(gpio_num, GPIO_FLOATING));
     return ESP_OK;
 }
 
@@ -160,18 +169,24 @@ esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
 {
     ADC_ENTER_CRITICAL();
     if (adc_unit & ADC_UNIT_1) {
-        adc_hal_output_invert(ADC_NUM_1, inv_en);
+        adc_hal_rtc_output_invert(ADC_NUM_1, inv_en);
     }
     if (adc_unit & ADC_UNIT_2) {
-        adc_hal_output_invert(ADC_NUM_1, inv_en);
+        adc_hal_rtc_output_invert(ADC_NUM_1, inv_en);
     }
     ADC_EXIT_CRITICAL();
+
     return ESP_OK;
 }
 
 esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
 {
-    ADC_CHECK(bits < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
+#ifdef CONFIG_IDF_TARGET_ESP32
+    ADC_CHECK(bits < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    ADC_CHECK(bits == ADC_WIDTH_BIT_13, "WIDTH ERR: ESP32S2 support 13 bit width", ESP_ERR_INVALID_ARG);
+#endif
+
     ADC_ENTER_CRITICAL();
     if (adc_unit & ADC_UNIT_1) {
         adc_hal_rtc_set_output_format(ADC_NUM_1, bits);
@@ -181,61 +196,33 @@ esp_err_t adc_set_data_width(adc_unit_t adc_unit, adc_bits_width_t bits)
         adc_hal_pwdet_set_cct(SOC_ADC_PWDET_CCT_DEFAULT);
     }
     ADC_EXIT_CRITICAL();
+
     return ESP_OK;
 }
 
-/* this function should be called in the critical section. */
-static int adc_convert(adc_ll_num_t adc_n, int channel)
+/**
+ * @brief Reset RTC controller FSM.
+ *
+ * @return
+ *      - ESP_OK Success
+ */
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+esp_err_t adc_rtc_reset(void)
 {
-    return adc_hal_convert(adc_n, channel);
-}
-
-/*-------------------------------------------------------------------------------------
- *                      ADC I2S
- *------------------------------------------------------------------------------------*/
-esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
-{
-    if (adc_unit & ADC_UNIT_1) {
-        ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_NUM_1)), "ADC1 not support DMA for now.", ESP_ERR_INVALID_ARG);
-        ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        ADC_CHECK((SOC_ADC_SUPPORT_DMA_MODE(ADC_NUM_2)), "ADC2 not support DMA for now.", ESP_ERR_INVALID_ARG);
-        ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
-    }
-
-    adc_ll_pattern_table_t adc1_pattern[1];
-    adc_ll_pattern_table_t adc2_pattern[1];
-    adc_hal_dig_config_t dig_cfg = {
-        .conv_limit_en = ADC_MEAS_NUM_LIM_DEFAULT,
-        .conv_limit_num = ADC_MAX_MEAS_NUM_DEFAULT,
-        .clk_div = SAR_ADC_CLK_DIV_DEFUALT,
-        .format = DIG_ADC_OUTPUT_FORMAT_DEFUALT,
-        .conv_mode = (adc_ll_convert_mode_t)adc_unit,
-    };
-
-    if (adc_unit & ADC_UNIT_1) {
-        adc1_pattern[0].atten = DIG_ADC_ATTEN_DEFUALT;
-        adc1_pattern[0].bit_width = DIG_ADC_BIT_WIDTH_DEFUALT;
-        adc1_pattern[0].channel = channel;
-        dig_cfg.adc1_pattern_len = 1;
-        dig_cfg.adc1_pattern = adc1_pattern;
-    }
-    if (adc_unit & ADC_UNIT_2) {
-        adc2_pattern[0].atten = DIG_ADC_ATTEN_DEFUALT;
-        adc2_pattern[0].bit_width = DIG_ADC_BIT_WIDTH_DEFUALT;
-        adc2_pattern[0].channel = channel;
-        dig_cfg.adc2_pattern_len = 1;
-        dig_cfg.adc2_pattern = adc2_pattern;
-    }
-
     ADC_ENTER_CRITICAL();
-    adc_hal_init();
-    adc_hal_dig_controller_config(&dig_cfg);
+    adc_hal_rtc_reset();
     ADC_EXIT_CRITICAL();
-
     return ESP_OK;
 }
+
+static inline void adc_set_init_code(adc_ll_num_t adc_n, adc_channel_t channel)
+{
+    adc_atten_t atten = adc_hal_get_atten(adc_n, channel);
+    uint32_t cal_val = adc_hal_calibration(adc_n, channel, atten, true, false);
+    adc_hal_set_calibration_param(adc_n, cal_val);
+    ESP_LOGD(ADC_TAG, "Set cal adc %d\n", cal_val);
+}
+#endif
 
 /*-------------------------------------------------------------------------------------
  *                      ADC1
@@ -243,6 +230,7 @@ esp_err_t adc_i2s_mode_init(adc_unit_t adc_unit, adc_channel_t channel)
 esp_err_t adc1_pad_get_io_num(adc1_channel_t channel, gpio_num_t *gpio_num)
 {
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
+
     int io = ADC_GET_IO_NUM(ADC_NUM_1, channel);
     if (io < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -257,71 +245,91 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
 {
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
     ADC_CHECK(atten < ADC_ATTEN_MAX, "ADC Atten Err", ESP_ERR_INVALID_ARG);
+
     adc_gpio_init(ADC_UNIT_1, channel);
+    ADC_ENTER_CRITICAL();
     adc_hal_set_atten(ADC_NUM_1, channel, atten);
+    ADC_EXIT_CRITICAL();
+
     return ESP_OK;
 }
 
 esp_err_t adc1_config_width(adc_bits_width_t width_bit)
 {
-    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "ADC bit width error", ESP_ERR_INVALID_ARG);
+#ifdef CONFIG_IDF_TARGET_ESP32
+    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    ADC_CHECK(width_bit == ADC_WIDTH_BIT_13, "WIDTH ERR: ESP32S2 support 13 bit width", ESP_ERR_INVALID_ARG);
+#endif
+
+    ADC_ENTER_CRITICAL();
     adc_hal_rtc_set_output_format(ADC_NUM_1, width_bit);
-    adc_hal_output_invert(ADC_NUM_1, true);
+    adc_hal_rtc_output_invert(ADC_NUM_1, SOC_ADC1_DATA_INVERT_DEFAULT);
+    adc_hal_set_sar_clk_div(ADC_NUM_1, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_1));
+    ADC_EXIT_CRITICAL();
+
     return ESP_OK;
 }
 
-esp_err_t adc1_i2s_mode_acquire(void)
+esp_err_t adc1_dma_mode_acquire(void)
 {
     /* Use locks to avoid digtal and RTC controller conflicts.
        for adc1, block until acquire the lock. */
-    _lock_acquire( &adc1_i2s_lock );
-    ESP_LOGD( ADC_TAG, "i2s mode takes adc1 lock." );
+    ADC1_DMA_LOCK_ACQUIRE();
+    ESP_LOGD( ADC_TAG, "dma mode takes adc1 lock." );
+
     ADC_ENTER_CRITICAL();
     adc_hal_set_power_manage(ADC_POWER_SW_ON);
     /* switch SARADC into DIG channel */
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_DIG);
     ADC_EXIT_CRITICAL();
+
     return ESP_OK;
 }
 
-esp_err_t adc1_adc_mode_acquire(void)
+esp_err_t adc1_rtc_mode_acquire(void)
 {
     /* Use locks to avoid digtal and RTC controller conflicts.
        for adc1, block until acquire the lock. */
-    _lock_acquire( &adc1_i2s_lock );
+    ADC1_DMA_LOCK_ACQUIRE();
+
     ADC_ENTER_CRITICAL();
     /* switch SARADC into RTC channel. */
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);
     ADC_EXIT_CRITICAL();
+
     return ESP_OK;
 }
 
 esp_err_t adc1_lock_release(void)
 {
-    ADC_CHECK((uint32_t *)adc1_i2s_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
-    /* Use locks to avoid digtal and RTC controller conflicts.
-       for adc1, block until acquire the lock. */
-    _lock_release( &adc1_i2s_lock );
+    ADC_CHECK((uint32_t *)adc1_dma_lock != NULL, "adc1 lock release called before acquire", ESP_ERR_INVALID_STATE );
+    /* Use locks to avoid digtal and RTC controller conflicts. for adc1, block until acquire the lock. */
+    ADC1_DMA_LOCK_RELEASE();
     return ESP_OK;
 }
 
 int adc1_get_raw(adc1_channel_t channel)
 {
-    uint16_t adc_value;
+    int adc_value;
     ADC_CHANNEL_CHECK(ADC_NUM_1, channel);
-    adc1_adc_mode_acquire();
-
+    adc1_rtc_mode_acquire();
     adc_power_on();
+
     ADC_ENTER_CRITICAL();
-    /* disable other peripherals. */
-    adc_hal_hall_disable();
-    /* currently the LNA is not open, close it by default. */
-    adc_hal_amp_disable();
-    /* set controller */
-    adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);
-    /* start conversion */
-    adc_value = adc_convert(ADC_NUM_1, channel);
+#ifdef CONFIG_IDF_TARGET_ESP32
+    adc_hal_hall_disable(); //Disable other peripherals.
+    adc_hal_amp_disable();  //Currently the LNA is not open, close it by default.
+#endif
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    adc_set_init_code(ADC_NUM_1, channel);             // calibration for adc
+#endif
+    adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_RTC);    //Set controller
+    adc_hal_convert(ADC_NUM_1, channel, &adc_value);   //Start conversion, For ADC1, the data always valid.
     ADC_EXIT_CRITICAL();
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    adc_hal_rtc_reset();    //Reset FSM of rtc controller
+#endif
 
     adc1_lock_release();
     return adc_value;
@@ -340,9 +348,11 @@ void adc1_ulp_enable(void)
     adc_hal_set_controller(ADC_NUM_1, ADC_CTRL_ULP);
     /* since most users do not need LNA and HALL with uLP, we disable them here
        open them in the uLP if needed. */
+#ifdef CONFIG_IDF_TARGET_ESP32
     /* disable other peripherals. */
     adc_hal_hall_disable();
     adc_hal_amp_disable();
+#endif
     ADC_EXIT_CRITICAL();
 }
 
@@ -352,6 +362,7 @@ void adc1_ulp_enable(void)
 esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
 {
     ADC_CHANNEL_CHECK(ADC_NUM_2, channel);
+
     int io = ADC_GET_IO_NUM(ADC_NUM_2, channel);
     if (io < 0) {
         return ESP_ERR_INVALID_ARG;
@@ -362,20 +373,21 @@ esp_err_t adc2_pad_get_io_num(adc2_channel_t channel, gpio_num_t *gpio_num)
     return ESP_OK;
 }
 
+/** For ESP32S2 the ADC2 The right to use ADC2 is controlled by the arbiter, and there is no need to set a lock.*/
 esp_err_t adc2_wifi_acquire(void)
 {
     /* Wi-Fi module will use adc2. Use locks to avoid conflicts. */
-    _lock_acquire( &adc2_wifi_lock );
+    ADC2_WIFI_LOCK_ACQUIRE();
     ESP_LOGD( ADC_TAG, "Wi-Fi takes adc2 lock." );
     return ESP_OK;
 }
 
 esp_err_t adc2_wifi_release(void)
 {
-    ADC_CHECK((uint32_t *)adc2_wifi_lock != NULL, "wifi release called before acquire", ESP_ERR_INVALID_STATE );
-
-    _lock_release( &adc2_wifi_lock );
+    ADC_CHECK(ADC2_WIFI_LOCK_CHECK(), "wifi release called before acquire", ESP_ERR_INVALID_STATE );
+    ADC2_WIFI_LOCK_RELEASE();
     ESP_LOGD( ADC_TAG, "Wi-Fi returns adc2 lock." );
+
     return ESP_OK;
 }
 
@@ -395,119 +407,123 @@ esp_err_t adc2_config_channel_atten(adc2_channel_t channel, adc_atten_t atten)
     ADC_CHECK(atten <= ADC_ATTEN_11db, "ADC2 Atten Err", ESP_ERR_INVALID_ARG);
 
     adc2_pad_init(channel);
-    portENTER_CRITICAL( &adc2_spinlock );
-
-    //lazy initialization
+    ADC2_ENTER_CRITICAL();
     //avoid collision with other tasks
-    if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
+    if ( ADC2_WIFI_LOCK_TRY_ACQUIRE() == -1 ) {
         //try the lock, return if failed (wifi using).
-        portEXIT_CRITICAL( &adc2_spinlock );
+        ADC2_EXIT_CRITICAL();
         return ESP_ERR_TIMEOUT;
     }
     adc_hal_set_atten(ADC_NUM_2, channel, atten);
-    _lock_release( &adc2_wifi_lock );
+    ADC2_WIFI_LOCK_RELEASE();
+    ADC2_EXIT_CRITICAL();
 
-    portEXIT_CRITICAL( &adc2_spinlock );
     return ESP_OK;
 }
 
 static inline void adc2_config_width(adc_bits_width_t width_bit)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#ifdef CONFIG_PM_ENABLE
+    /* Lock APB clock. */
+    if (s_adc2_arbiter_lock == NULL) {
+        esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "adc2", &s_adc2_arbiter_lock);
+    }
+#endif  //CONFIG_PM_ENABLE
+#endif  //CONFIG_IDF_TARGET_ESP32S2
     ADC_ENTER_CRITICAL();
     adc_hal_rtc_set_output_format(ADC_NUM_2, width_bit);
     adc_hal_pwdet_set_cct(SOC_ADC_PWDET_CCT_DEFAULT);
-    adc_hal_output_invert(ADC_NUM_2, true);
+    adc_hal_rtc_output_invert(ADC_NUM_2, SOC_ADC2_DATA_INVERT_DEFAULT);
+    adc_hal_set_sar_clk_div(ADC_NUM_2, SOC_ADC_SAR_CLK_DIV_DEFAULT(ADC_NUM_2));
     ADC_EXIT_CRITICAL();
 }
 
 static inline void adc2_dac_disable( adc2_channel_t channel)
 {
+#ifdef CONFIG_IDF_TARGET_ESP32
     if ( channel == ADC2_CHANNEL_8 ) { // the same as DAC channel 1
         dac_output_disable(DAC_CHANNEL_1);
     } else if ( channel == ADC2_CHANNEL_9 ) {
         dac_output_disable(DAC_CHANNEL_2);
     }
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    if ( channel == ADC2_CHANNEL_6 ) { // the same as DAC channel 1
+        dac_output_disable(DAC_CHANNEL_1);
+    } else if ( channel == ADC2_CHANNEL_7 ) {
+        dac_output_disable(DAC_CHANNEL_2);
+    }
+#endif
 }
 
-//registers in critical section with adc1:
-//SENS_SAR_START_FORCE_REG,
+/**
+ * @note For ESP32S2:
+ *       The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
+ *       Or, the RTC controller will fail when get raw data.
+ *       This issue does not occur on digital controllers (DMA mode), and the hardware guarantees that there will be no errors.
+ */
 esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *raw_out)
 {
-    uint16_t adc_value = 0;
+    int adc_value = 0;
+
+    ADC_CHECK(raw_out != NULL, "ADC out value err", ESP_ERR_INVALID_ARG);
     ADC_CHECK(channel < ADC2_CHANNEL_MAX, "ADC Channel Err", ESP_ERR_INVALID_ARG);
+#ifdef CONFIG_IDF_TARGET_ESP32
+    ADC_CHECK(width_bit < ADC_WIDTH_MAX, "WIDTH ERR: ESP32 support 9 ~ 12 bit width", ESP_ERR_INVALID_ARG);
+#elif defined CONFIG_IDF_TARGET_ESP32S2
+    ADC_CHECK(width_bit == ADC_WIDTH_BIT_13, "WIDTH ERR: ESP32S2 support 13 bit width", ESP_ERR_INVALID_ARG);
+#endif
 
-    //in critical section with whole rtc module
-    adc_power_on();
+    adc_power_on();         //in critical section with whole rtc module
 
-    //avoid collision with other tasks
-    portENTER_CRITICAL(&adc2_spinlock);
-    //lazy initialization
-    //try the lock, return if failed (wifi using).
-    if ( _lock_try_acquire( &adc2_wifi_lock ) == -1 ) {
-        portEXIT_CRITICAL( &adc2_spinlock );
+    ADC2_ENTER_CRITICAL();  //avoid collision with other tasks
+
+    if ( ADC2_WIFI_LOCK_TRY_ACQUIRE() == -1 ) { //try the lock, return if failed (wifi using).
+        ADC2_EXIT_CRITICAL();
         return ESP_ERR_TIMEOUT;
     }
-
-    //disable other peripherals
 #ifdef CONFIG_ADC_DISABLE_DAC
-    adc2_dac_disable(channel);
+    adc2_dac_disable(channel);      //disable other peripherals
 #endif
-    // set controller
-    // in critical section with whole rtc module
-    // because the PWDET use the same registers, place it here.
-    adc2_config_width(width_bit);
-    adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);
-    //start converting
-    adc_value = adc_convert(ADC_NUM_2, channel);
-    _lock_release( &adc2_wifi_lock );
-    portEXIT_CRITICAL(&adc2_spinlock);
+    adc2_config_width(width_bit);   // in critical section with whole rtc module. because the PWDET use the same registers, place it here.
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    adc_set_init_code(ADC_NUM_2, channel);  // calibration for adc
+#endif
+    adc_hal_set_controller(ADC_NUM_2, ADC_CTRL_RTC);// set controller
 
-    *raw_out = (int)adc_value;
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#ifdef CONFIG_PM_ENABLE
+    if (s_adc2_arbiter_lock) {
+        esp_pm_lock_acquire(s_adc2_arbiter_lock);
+    }
+#endif //CONFIG_PM_ENABLE
+#endif //CONFIG_IDF_TARGET_ESP32
+
+    if (adc_hal_convert(ADC_NUM_2, channel, &adc_value)) {
+        adc_value = -1;
+    }
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#ifdef CONFIG_PM_ENABLE
+    /* Release APB clock. */
+    if (s_adc2_arbiter_lock) {
+        esp_pm_lock_release(s_adc2_arbiter_lock);
+    }
+#endif //CONFIG_PM_ENABLE
+#endif //CONFIG_IDF_TARGET_ESP32
+
+    ADC2_WIFI_LOCK_RELEASE();
+    ADC2_EXIT_CRITICAL();
+
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+    adc_rtc_reset();
+#endif
+
+    if (adc_value < 0) {
+        ESP_LOGD( ADC_TAG, "ADC2 ARB: Return data is invalid." );
+        return ESP_ERR_INVALID_STATE;
+    }
+    *raw_out = adc_value;
     return ESP_OK;
 }
 
-esp_err_t adc2_vref_to_gpio(gpio_num_t gpio)
-{
-    adc_power_always_on();               //Select power source of ADC
-    if (adc_hal_vref_output(gpio) != true) {
-        return ESP_ERR_INVALID_ARG;
-    } else {
-        //Configure RTC gpio
-        rtc_gpio_init(gpio);
-        rtc_gpio_set_direction(gpio, RTC_GPIO_MODE_DISABLED);
-        rtc_gpio_pullup_dis(gpio);
-        rtc_gpio_pulldown_dis(gpio);
-        return ESP_OK;
-    }
-}
-
-/*---------------------------------------------------------------
-                        HALL SENSOR
----------------------------------------------------------------*/
-
-static int hall_sensor_get_value(void)    //hall sensor without LNA
-{
-    int hall_value;
-
-    adc_power_on();
-
-    ADC_ENTER_CRITICAL();
-    /* disable other peripherals. */
-    adc_hal_amp_disable();
-    adc_hal_hall_enable();
-    // set controller
-    adc_hal_set_controller( ADC_NUM_1, ADC_CTRL_RTC );
-    hall_value = adc_hal_hall_convert();
-    ADC_EXIT_CRITICAL();
-
-    return hall_value;
-}
-
-int hall_sensor_read(void)
-{
-    adc_gpio_init(ADC_NUM_1, ADC1_CHANNEL_0);
-    adc_gpio_init(ADC_NUM_1, ADC1_CHANNEL_3);
-    adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_0);
-    adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_0);
-    return hall_sensor_get_value();
-}

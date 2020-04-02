@@ -3,18 +3,6 @@
 #include "hal/adc_types.h"
 #include "hal/adc_ll.h"
 
-typedef struct {
-    bool conv_limit_en;
-    uint32_t conv_limit_num;
-    uint32_t clk_div;
-    uint32_t adc1_pattern_len;
-    uint32_t adc2_pattern_len;
-    adc_ll_pattern_table_t *adc1_pattern;
-    adc_ll_pattern_table_t *adc2_pattern;
-    adc_ll_convert_mode_t conv_mode;
-    adc_ll_dig_output_format_t format;
-} adc_hal_dig_config_t;
-
 /*---------------------------------------------------------------
                     Common setting
 ---------------------------------------------------------------*/
@@ -24,13 +12,18 @@ typedef struct {
 void adc_hal_init(void);
 
 /**
+ * ADC module deinitialization.
+ */
+void adc_hal_deinit(void);
+
+/**
  * Set adc sample cycle for digital controller.
  *
  * @note Normally, please use default value.
  * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
  *                     Range: 2 ~ 0xFF.
  */
-#define adc_hal_dig_set_sample_cycle(sample_cycle) adc_ll_dig_set_sample_cycle(sample_cycle)
+#define adc_hal_digi_set_sample_cycle(sample_cycle) adc_ll_digi_set_sample_cycle(sample_cycle)
 
 /**
  * Set ADC module power management.
@@ -52,14 +45,14 @@ void adc_hal_init(void);
  *
  * @prarm div Division factor.
  */
-#define adc_hal_set_clk_div(div) adc_ll_set_clk_div(div)
+#define adc_hal_digi_set_clk_div(div) adc_ll_digi_set_clk_div(div)
 
 /**
- * ADC module output data invert or not.
+ * ADC SAR clock division factor setting. ADC SAR clock devided from `RTC_FAST_CLK`.
  *
- * @prarm adc_n ADC unit.
+ * @prarm div Division factor.
  */
-void adc_hal_output_invert(adc_ll_num_t adc_n, bool inv_en);
+#define adc_hal_set_sar_clk_div(adc_n, div) adc_ll_set_sar_clk_div(adc_n, div)
 
 /**
  * Set ADC module controller.
@@ -109,6 +102,15 @@ void adc_hal_output_invert(adc_ll_num_t adc_n, bool inv_en);
 #define adc_hal_set_atten(adc_n, channel, atten) adc_ll_set_atten(adc_n, channel, atten)
 
 /**
+ * Get the attenuation of a particular channel on ADCn.
+ *
+ * @param adc_n ADC unit.
+ * @param channel ADCn channel number.
+ * @return atten The attenuation option.
+ */
+#define adc_hal_get_atten(adc_n, channel) adc_ll_get_atten(adc_n, channel)
+
+/**
  * Close ADC AMP module if don't use it for power save.
  */
 #define adc_hal_amp_disable() adc_ll_amp_disable()
@@ -138,6 +140,21 @@ void adc_hal_output_invert(adc_ll_num_t adc_n, bool inv_en);
 ---------------------------------------------------------------*/
 
 /**
+ * Get the converted value for each ADCn for RTC controller.
+ *
+ * @note It may be block to wait conversion finish.
+ *
+ * @prarm adc_n ADC unit.
+ * @param channel adc channel number.
+ * @param value Pointer for touch value.
+ *
+ * @return
+ *      - 0: The value is valid.
+ *      - ~0: The value is invalid.
+ */
+int adc_hal_convert(adc_ll_num_t adc_n, int channel, int *value);
+
+/**
  * Set adc output data format for RTC controller.
  *
  * @prarm adc_n ADC unit.
@@ -146,62 +163,19 @@ void adc_hal_output_invert(adc_ll_num_t adc_n, bool inv_en);
 #define adc_hal_rtc_set_output_format(adc_n, bits) adc_ll_rtc_set_output_format(adc_n, bits)
 
 /**
- * Get the converted value for each ADCn for RTC controller.
+ * ADC module output data invert or not.
  *
- * @note It may be block to wait conversion finish.
  * @prarm adc_n ADC unit.
- * @return
- *      - Converted value.
  */
-int adc_hal_convert(adc_ll_num_t adc_n, int channel);
+#define adc_hal_rtc_output_invert(adc_n, inv_en) adc_ll_rtc_output_invert(adc_n, inv_en)
 
 /*---------------------------------------------------------------
                     Digital controller setting
 ---------------------------------------------------------------*/
+
 /**
- * Setting the digital controller.
+ * Reset the pattern table pointer, then take the measurement rule from table header in next measurement.
  *
- * @prarm adc_hal_dig_config_t cfg Pointer to digital controller paramter.
+ * @param adc_n ADC unit.
  */
-void adc_hal_dig_controller_config(const adc_hal_dig_config_t *cfg);
-
-/**
- * Set I2S DMA data source for digital controller.
- *
- * @param src i2s data source.
- */
-#define adc_hal_dig_set_data_source(src) adc_ll_dig_set_data_source(src)
-
-/*---------------------------------------------------------------
-                    Hall sensor setting
----------------------------------------------------------------*/
-
-/**
- * Enable hall sensor.
- */
-#define adc_hal_hall_enable() adc_ll_hall_enable()
-
-/**
- * Disable hall sensor.
- */
-#define adc_hal_hall_disable() adc_ll_hall_disable()
-
-/**
- *  Start hall convert and return the hall value.
- *
- *  @return Hall value.
- */
-int adc_hal_hall_convert(void);
-
-/**
- *  @brief Output ADC2 reference voltage to gpio
- *
- *  This function utilizes the testing mux exclusive to ADC2 to route the
- *  reference voltage one of ADC2's channels.
- *
- *  @param[in]  io    GPIO number
- *  @return
- *                  - true: v_ref successfully routed to selected gpio
- *                  - false: Unsupported gpio
- */
-#define adc_hal_vref_output(io) adc_ll_vref_output(io)
+#define adc_hal_digi_clear_pattern_table(adc_n) adc_ll_digi_clear_pattern_table(adc_n)

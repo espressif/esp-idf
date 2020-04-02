@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The HAL layer for SPI (common part)
+// The HAL layer for Touch sensor (common part)
 
 #include "hal/touch_sensor_hal.h"
 #include "hal/touch_sensor_types.h"

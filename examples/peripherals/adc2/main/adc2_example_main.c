@@ -19,6 +19,12 @@
 #define DAC_EXAMPLE_CHANNEL     CONFIG_EXAMPLE_DAC_CHANNEL
 #define ADC2_EXAMPLE_CHANNEL    CONFIG_EXAMPLE_ADC2_CHANNEL
 
+#if CONFIG_IDF_TARGET_ESP32
+static const adc_bits_width_t width = ADC_WIDTH_BIT_12;
+#elif CONFIG_IDF_TARGET_ESP32S2
+static const adc_bits_width_t width = ADC_WIDTH_BIT_13;
+#endif
+
 void app_main(void)
 {
     uint8_t output_data=0;
@@ -46,7 +52,7 @@ void app_main(void)
     printf("start conversion.\n");
     while(1) {
         dac_output_voltage( DAC_EXAMPLE_CHANNEL, output_data++ );
-        r = adc2_get_raw( ADC2_EXAMPLE_CHANNEL, ADC_WIDTH_12Bit, &read_raw);
+        r = adc2_get_raw( ADC2_EXAMPLE_CHANNEL, width, &read_raw);
         if ( r == ESP_OK ) {
             printf("%d: %d\n", output_data, read_raw );
         } else if ( r == ESP_ERR_INVALID_STATE ) {

@@ -28,7 +28,7 @@
 #if SOC_I2S_SUPPORTS_ADC_DAC
 #include "driver/dac.h"
 #include "hal/i2s_hal.h"
-#include "adc1_i2s_private.h"
+#include "adc1_private.h"
 #endif
 
 #include "esp_intr_alloc.h"
@@ -1061,7 +1061,7 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num)
     I2S_CHECK((p_i2s_obj[i2s_num] != NULL), "Not initialized yet", ESP_ERR_INVALID_STATE);
     I2S_CHECK((p_i2s_obj[i2s_num]->mode & I2S_MODE_ADC_BUILT_IN), "i2s built-in adc not enabled", ESP_ERR_INVALID_STATE);
 
-    adc1_i2s_mode_acquire();
+    adc1_dma_mode_acquire();
     _i2s_adc_mode_recover();
     i2s_hal_start_rx(&(p_i2s_obj[i2s_num]->hal));
     i2s_hal_reset(&(p_i2s_obj[i2s_num]->hal));
