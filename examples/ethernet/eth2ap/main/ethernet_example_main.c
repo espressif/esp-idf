@@ -124,16 +124,23 @@ static void eth_event_handler(void *arg, esp_event_base_t event_base,
 static void wifi_event_handler(void *arg, esp_event_base_t event_base,
                                int32_t event_id, void *event_data)
 {
+    static uint8_t s_con_cnt = 0;
     switch (event_id) {
     case WIFI_EVENT_AP_STACONNECTED:
         ESP_LOGI(TAG, "Wi-Fi AP got a station connected");
-        s_sta_is_connected = true;
-        esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, pkt_wifi2eth);
+        if (!s_con_cnt) {
+            s_sta_is_connected = true;
+            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, pkt_wifi2eth);
+        }
+        s_con_cnt++;
         break;
     case WIFI_EVENT_AP_STADISCONNECTED:
         ESP_LOGI(TAG, "Wi-Fi AP got a station disconnected");
-        s_sta_is_connected = false;
-        esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+        s_con_cnt--;
+        if (!s_con_cnt) {
+            s_sta_is_connected = false;
+            esp_wifi_internal_reg_rxcb(ESP_IF_WIFI_AP, NULL);
+        }
         break;
     default:
         break;
@@ -205,7 +212,8 @@ static void initialize_wifi(void)
             .ssid_len = strlen(CONFIG_EXAMPLE_WIFI_SSID),
             .password = CONFIG_EXAMPLE_WIFI_PASSWORD,
             .max_connection = CONFIG_EXAMPLE_MAX_STA_CONN,
-            .authmode = WIFI_AUTH_WPA_WPA2_PSK
+            .authmode = WIFI_AUTH_WPA_WPA2_PSK,
+            .channel = CONFIG_EXAMPLE_WIFI_CHANNEL // default: channel 1
         },
     };
     if (strlen(CONFIG_EXAMPLE_WIFI_PASSWORD) == 0) {

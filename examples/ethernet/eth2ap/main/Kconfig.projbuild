@@ -143,6 +143,13 @@ menu "Example Configuration"
         help
             Set the password of Wi-Fi ap interface.
 
+    config EXAMPLE_WIFI_CHANNEL
+        int "WiFi channel"
+        range 1 13
+        default 1
+        help
+            Set the channel of Wi-Fi ap.
+
     config EXAMPLE_MAX_STA_CONN
         int "Maximum STA connections"
         default 4
