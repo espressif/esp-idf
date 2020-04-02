@@ -103,7 +103,7 @@ typedef union {
         char string[8];
     } input_string;
     struct ble_mesh_set_device_name_args {
-        char name[ESP_BLE_MESH_DEVICE_NAME_MAX_LEN];
+        char name[ESP_BLE_MESH_DEVICE_NAME_MAX_LEN + 1];
     } set_device_name;
     struct ble_mesh_provisioner_read_oob_pub_key_args {
         uint8_t link_idx;
@@ -157,7 +157,7 @@ typedef union {
     } set_primary_elem_addr;
     struct ble_mesh_provisioner_set_node_name_args {
         uint16_t index;
-        char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN];
+        char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN + 1];
     } set_node_name;
     struct ble_mesh_provisioner_add_local_app_key_args {
         uint8_t app_key[16];
