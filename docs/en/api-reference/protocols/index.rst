@@ -12,6 +12,7 @@ Application Protocols
    ASIO <asio>
    ESP-MQTT <mqtt>
    Modbus slave <modbus>
+   Websocket Client <esp_websocket_client>
 
 Example code for this API section is provided in :example:`protocols` directory of ESP-IDF examples.
 
