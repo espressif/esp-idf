@@ -15,9 +15,10 @@
 """ IDF Test Applications """
 import subprocess
 
-import os
-import json
 import App
+import json
+import os
+import sys
 
 
 class IDFApp(App.BaseApp):
@@ -154,20 +155,36 @@ class IDFApp(App.BaseApp):
                                       "gen_esp32part.py")
         assert os.path.exists(partition_tool)
 
-        for (_, path) in self.flash_files:
-            if "partition" in path:
+        errors = []
+        # self.flash_files is sorted based on offset in order to have a consistent result with different versions of
+        # Python
+        for (_, path) in sorted(self.flash_files, key=lambda elem: elem[0]):
+            if 'partition' in os.path.split(path)[1]:
                 partition_file = os.path.join(self.binary_path, path)
+
+                process = subprocess.Popen([sys.executable, partition_tool, partition_file],
+                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                (raw_data, raw_error) = process.communicate()
+                if isinstance(raw_error, bytes):
+                    raw_error = raw_error.decode()
+                if 'Traceback' in raw_error:
+                    # Some exception occured. It is possible that we've tried the wrong binary file.
+                    errors.append((path, raw_error))
+                    continue
+
+                if isinstance(raw_data, bytes):
+                    raw_data = raw_data.decode()
                 break
         else:
-            raise ValueError("No partition table found for IDF binary path: {}".format(self.binary_path))
+            traceback_msg = os.linesep.join(['{} {}:{}{}'.format(partition_tool,
+                                                                 p,
+                                                                 os.linesep,
+                                                                 msg) for p, msg in errors])
+            raise ValueError("No partition table found for IDF binary path: {}{}{}".format(self.binary_path,
+                                                                                           os.linesep,
+                                                                                           traceback_msg))
 
-        process = subprocess.Popen(["python", partition_tool, partition_file],
-                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        raw_data = process.stdout.read()
-        if isinstance(raw_data, bytes):
-            raw_data = raw_data.decode()
         partition_table = dict()
-
         for line in raw_data.splitlines():
             if line[0] != "#":
                 try:
