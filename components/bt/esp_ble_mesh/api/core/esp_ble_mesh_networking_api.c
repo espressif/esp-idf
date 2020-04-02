@@ -268,7 +268,8 @@ esp_err_t esp_ble_mesh_provisioner_set_node_name(uint16_t index, const char *nam
 
     arg.set_node_name.index = index;
     memset(arg.set_node_name.name, 0, sizeof(arg.set_node_name.name));
-    memcpy(arg.set_node_name.name, name, strlen(name));
+    strncpy(arg.set_node_name.name, name, ESP_BLE_MESH_NODE_NAME_MAX_LEN);
+
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }

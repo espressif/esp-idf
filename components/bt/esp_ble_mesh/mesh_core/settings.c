@@ -1081,7 +1081,7 @@ static int node_info_set(u16_t addr, bool *exist)
 
 static int node_name_set(u16_t addr)
 {
-    char name[BLE_MESH_NODE_NAME_SIZE] = {0};
+    char name[BLE_MESH_NODE_NAME_SIZE + 1] = {0};
     char get[16] = {'\0'};
     bool exist = false;
     int err = 0;
@@ -2513,7 +2513,7 @@ void bt_mesh_clear_node_info(u16_t unicast_addr)
 
 void bt_mesh_store_node_name(struct bt_mesh_node *node)
 {
-    char node_name[BLE_MESH_NODE_NAME_SIZE] = {0};
+    char node_name[BLE_MESH_NODE_NAME_SIZE + 1] = {0};
     char name[16] = {'\0'};
     int err = 0;
 
@@ -2522,7 +2522,7 @@ void bt_mesh_store_node_name(struct bt_mesh_node *node)
         return;
     }
 
-    strncpy(node_name, node->name, BLE_MESH_NODE_NAME_SIZE);
+    strncpy(node_name, node->name, BLE_MESH_NODE_NAME_SIZE + 1);
 
     sprintf(name, "mesh/pn/%04x/n", node->unicast_addr);
     err = bt_mesh_save_core_settings(name, (const u8_t *)node_name, BLE_MESH_NODE_NAME_SIZE);
