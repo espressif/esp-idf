@@ -22,6 +22,7 @@
 #include "nvs_flash.h"
 
 static const char* TAG = "example";
+#define PROMPT_STR CONFIG_IDF_TARGET
 
 /* Console command history can be stored to and loaded from a file.
  * The easiest way to do this is to use FATFS filesystem on top of
@@ -143,7 +144,7 @@ void app_main(void)
     /* Prompt to be printed before each line.
      * This can be customized, made dynamic, etc.
      */
-    const char* prompt = LOG_COLOR_I "esp32> " LOG_RESET_COLOR;
+    const char* prompt = LOG_COLOR_I PROMPT_STR "> " LOG_RESET_COLOR;
 
     printf("\n"
            "This is an example of ESP-IDF console component.\n"
@@ -163,7 +164,7 @@ void app_main(void)
         /* Since the terminal doesn't support escape sequences,
          * don't use color codes in the prompt.
          */
-        prompt = "esp32> ";
+        prompt = PROMPT_STR "> ";
 #endif //CONFIG_LOG_COLORS
     }
 
