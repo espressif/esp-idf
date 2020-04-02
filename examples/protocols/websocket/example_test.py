@@ -82,7 +82,7 @@ class Websocket:
                     return
 
             except socket.error as err:
-                print("Unable to establish a websocket connection: {}, {}".format(err))
+                print("Unable to establish a websocket connection: {}".format(err))
                 raise
 
     def handshake(self, data):
