@@ -224,7 +224,7 @@ struct spi_bus_lock_dev_t {
     uint32_t            mask;       ///< Bitwise OR-ed mask of the REQ, PEND, LOCK bits of this device
 };
 
-static const char TAG[] = "bus_lock";
+DRAM_ATTR static const char TAG[] = "bus_lock";
 
 #define LOCK_CHECK(a, str, ret_val, ...) \
     if (!(a)) { \
@@ -656,8 +656,10 @@ IRAM_ATTR bool spi_bus_lock_touch(spi_bus_lock_dev_handle_t dev_handle)
 {
     spi_bus_lock_dev_t* last_dev = dev_handle->parent->last_dev;
     dev_handle->parent->last_dev = dev_handle;
-    ESP_EARLY_LOGD(TAG, "SPI dev changed from %d to %d",
-                   dev_lock_get_id(last_dev), dev_lock_get_id(dev_handle));
+    if (last_dev) {
+        ESP_DRAM_LOGD(TAG, "SPI dev changed from %d to %d",
+                    dev_lock_get_id(last_dev), dev_lock_get_id(dev_handle));
+    }
     return (dev_handle != last_dev);
 }
 
@@ -679,7 +681,7 @@ IRAM_ATTR esp_err_t spi_bus_lock_acquire_start(spi_bus_lock_dev_t *dev_handle, T
         if (err != ESP_OK) return err;
     }
 
-    ESP_LOGV(TAG, "dev %d acquired.", dev_lock_get_id(dev_handle));
+    ESP_DRAM_LOGV(TAG, "dev %d acquired.", dev_lock_get_id(dev_handle));
     BUS_LOCK_DEBUG_EXECUTE_CHECK(lock->acquiring_dev == dev_handle);
 
     //When arrives at here, requests of this device should already be handled
