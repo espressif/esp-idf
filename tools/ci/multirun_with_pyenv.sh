@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/usr/bin/env bash
 #
 # Tool for running scripts with several versions of Python by the use of pyenv (versions must be installed before in
 # the docker image)
