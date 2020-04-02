@@ -697,7 +697,7 @@ typedef struct {
     uint8_t  dev_key[16];   /*!< Node device key */
 
     /* Additional information */
-    char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN]; /*!< Node name */
+    char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN + 1]; /*!< Node name */
     uint16_t comp_length;  /*!< Length of Composition Data */
     uint8_t *comp_data;    /*!< Value of Composition Data */
 } __attribute__((packed)) esp_ble_mesh_node_t;

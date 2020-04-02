@@ -42,7 +42,7 @@ struct bt_mesh_node {
     u8_t  dev_key[16];  /* Node device key */
 
     /* Additional information */
-    char  name[BLE_MESH_NODE_NAME_SIZE]; /* Node name */
+    char  name[BLE_MESH_NODE_NAME_SIZE + 1]; /* Node name */
     u16_t comp_length;  /* Length of Composition Data */
     u8_t *comp_data;    /* Value of Composition Data */
 } __packed;
