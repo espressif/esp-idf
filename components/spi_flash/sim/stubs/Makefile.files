@@ -4,6 +4,7 @@ SOURCE_FILES := \
 	newlib/lock.c \
 	esp32/crc.cpp \
 	esp32/esp_random.c \
+	esp_timer/src/esp_timer.c \
 	bootloader_support/src/bootloader_common.c
 
 INCLUDE_DIRS := \
@@ -12,6 +13,7 @@ INCLUDE_DIRS := \
 	app_update/include \
 	driver/include \
 	esp32/include \
+	esp_timer/include \
 	freertos/include \
 	log/include \
 	newlib/include \
@@ -25,6 +27,7 @@ INCLUDE_DIRS := \
 	xtensa/include \
 	xtensa/esp32/include \
 	esp32/include \
+	esp_timer/include \
 	bootloader_support/include \
 	app_update/include \
 	spi_flash/include \
