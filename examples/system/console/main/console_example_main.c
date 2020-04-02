@@ -112,6 +112,9 @@ static void initialize_console(void)
     /* Set command history size */
     linenoiseHistorySetMaxLen(100);
 
+    /* Don't return empty lines */
+    linenoiseAllowEmpty(false);
+
 #if CONFIG_STORE_HISTORY
     /* Load command history from filesystem */
     linenoiseHistoryLoad(HISTORY_PATH);
@@ -174,7 +177,7 @@ void app_main(void)
             break;
         }
         /* Add the command to the history if not empty*/
-        if(strlen(line) > 0) {
+        if (strlen(line) > 0) {
             linenoiseHistoryAdd(line);
 #if CONFIG_STORE_HISTORY
             /* Save command history to filesystem */
@@ -197,8 +200,7 @@ void app_main(void)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
-    
+
     ESP_LOGE(TAG, "Error or end-of-input, terminating console");
     esp_console_deinit();
-    vTaskDelete(NULL); /* terminate app_main */
 }
