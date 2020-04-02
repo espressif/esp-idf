@@ -1,3 +1,4 @@
+cmake_minimum_required(VERSION 3.5)
 include("${BUILD_PROPERTIES_FILE}")
 include("${COMPONENT_PROPERTIES_FILE}")
 
@@ -16,6 +17,38 @@ include(${idf_path}/tools/cmake/utilities.cmake)
 function(__component_get_property var component_target property)
     set(_property __component_${component_target}_${property})
     set(${var} ${${_property}} PARENT_SCOPE)
+endfunction()
+
+#
+# Given a component name or alias, get the corresponding component target.
+#
+function(__component_get_target var name_or_alias)
+    idf_build_get_property(component_targets __COMPONENT_TARGETS)
+
+    # Assume first that the paramters is an alias.
+    string(REPLACE "::" "_" name_or_alias "${name_or_alias}")
+    set(component_target ___${name_or_alias})
+
+    if(component_target IN_LIST component_targets)
+        set(${var} ${component_target} PARENT_SCOPE)
+        set(target ${component_target})
+    else() # assumption is wrong, try to look for it manually
+        unset(target)
+        foreach(component_target ${component_targets})
+            __component_get_property(_component_name ${component_target} COMPONENT_NAME)
+            if(name_or_alias STREQUAL _component_name)
+                set(target ${component_target})
+                break()
+            endif()
+        endforeach()
+        set(${var} ${target} PARENT_SCOPE)
+    endif()
+endfunction()
+
+function(idf_component_get_property var component property)
+    __component_get_target(component_target ${component})
+    __component_get_property(_var ${component_target} ${property})
+    set(${var} ${_var} PARENT_SCOPE)
 endfunction()
 
 macro(require_idf_targets)
@@ -104,15 +137,15 @@ __component_set_property(${__component_target} __COMPONENT_REGISTERED ${__compon
 
     if(__component_kconfig)
         get_filename_component(__component_kconfig "${__component_kconfig}" ABSOLUTE)
-        set(__contents 
-"${__contents}\n__component_set_property(${__component_target} KCONFIG \"${__component_kconfig}\""
+        set(__contents
+"${__contents}\n__component_set_property(${__component_target} KCONFIG \"${__component_kconfig}\")"
             )
     endif()
 
     if(__component_kconfig_projbuild)
         get_filename_component(__component_kconfig "${__component_kconfig}" ABSOLUTE)
-        set(__contents 
-"${__contents}\n__component_set_property(${__component_target} KCONFIG_PROJBUILD \"${__component_kconfig_projbuild}\""
+        set(__contents
+"${__contents}\n__component_set_property(${__component_target} KCONFIG_PROJBUILD \"${__component_kconfig_projbuild}\")"
             )
     endif()
 
