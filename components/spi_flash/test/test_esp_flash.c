@@ -77,6 +77,9 @@ typedef void (*flash_test_func_t)(esp_flash_t* chip);
 #define FLASH_TEST_CASE(STR, FUNC_TO_RUN) \
     TEST_CASE(STR, "[esp_flash]") {flash_test_func(FUNC_TO_RUN, 1 /* first index reserved for main flash */ );}
 
+#define FLASH_TEST_CASE_IGNORE(STR, FUNC_TO_RUN) \
+    TEST_CASE(STR, "[esp_flash][ignore]") {flash_test_func(FUNC_TO_RUN, 1 /* first index reserved for main flash */ );}
+
 /* Use FLASH_TEST_CASE_3 for tests which also run on external flash, which sits in the place of PSRAM
    (these tests are incompatible with PSRAM)
 
@@ -84,10 +87,14 @@ typedef void (*flash_test_func_t)(esp_flash_t* chip);
  */
 #if defined(CONFIG_SPIRAM_SUPPORT) || TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 #define FLASH_TEST_CASE_3(STR, FUNCT_TO_RUN)
+#define FLASH_TEST_CASE_3_IGNORE(STR, FUNCT_TO_RUN)
 #else
 // Disabled for ESP32-S2 due to lack of runners
 #define FLASH_TEST_CASE_3(STR, FUNC_TO_RUN) \
     TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
+
+#define FLASH_TEST_CASE_3_IGNORE(STR, FUNC_TO_RUN) \
+    TEST_CASE(STR", 3 chips", "[esp_flash][test_env=UT_T1_ESP_FLASH][ignore]") {flash_test_func(FUNC_TO_RUN, TEST_CONFIG_NUM);}
 #endif
 
 //currently all the configs are the same with esp_flash_spi_device_config_t, no more information required
@@ -499,8 +506,9 @@ static void read_and_check(esp_flash_t *chip, const esp_partition_t *part, const
 esp_err_t esp_flash_set_io_mode(esp_flash_t* chip, bool qe);
 esp_err_t esp_flash_get_io_mode(esp_flash_t* chip, bool* qe);
 esp_err_t esp_flash_read_chip_id(esp_flash_t* chip, uint32_t* flash_id);
+esp_err_t spi_flash_chip_mxic_probe(esp_flash_t *chip, uint32_t flash_id);
 
-static bool check_winbond_chip(esp_flash_t* chip)
+static bool is_winbond_chip(esp_flash_t* chip)
 {
     uint32_t flash_id;
     esp_err_t ret = esp_flash_read_chip_id(chip, &flash_id);
@@ -510,6 +518,14 @@ static bool check_winbond_chip(esp_flash_t* chip)
     } else {
         return false;
     }
+}
+
+static bool is_mxic_chip(esp_flash_t* chip)
+{
+    uint32_t flash_id;
+    esp_err_t ret = esp_flash_read_chip_id(chip, &flash_id);
+    TEST_ESP_OK(ret);
+    return (spi_flash_chip_mxic_probe(chip, flash_id)==ESP_OK);
 }
 
 static void test_toggle_qe(esp_flash_t* chip)
@@ -522,14 +538,14 @@ static void test_toggle_qe(esp_flash_t* chip)
     esp_err_t ret = esp_flash_get_io_mode(chip, &qe);
     TEST_ESP_OK(ret);
 
-    bool is_winbond_chip = check_winbond_chip(chip);
+    bool allow_failure = is_winbond_chip(chip) || is_mxic_chip(chip);
 
     for (int i = 0; i < 4; i ++) {
         ESP_LOGI(TAG, "write qe: %d->%d", qe, !qe);
         qe = !qe;
         chip->read_mode = qe? SPI_FLASH_QOUT: SPI_FLASH_SLOWRD;
         ret = esp_flash_set_io_mode(chip, qe);
-        if (is_winbond_chip && !qe && ret == ESP_ERR_FLASH_NO_RESPONSE) {
+        if (allow_failure && !qe && ret == ESP_ERR_FLASH_NO_RESPONSE) {
             //allows clear qe failure for Winbond chips
             ret = ESP_OK;
         }
@@ -539,8 +555,12 @@ static void test_toggle_qe(esp_flash_t* chip)
         ret = esp_flash_get_io_mode(chip, &qe_read);
         TEST_ESP_OK(ret);
         ESP_LOGD(TAG, "qe read: %d", qe_read);
-        if (qe != qe_read && !qe && is_winbond_chip) {
-            ESP_LOGE(TAG, "cannot clear QE bit, this may be normal for Winbond chips.");
+        if (!qe && qe_read) {
+            if (allow_failure) {
+                ESP_LOGW(TAG, "cannot clear QE bit for known permanent QE (Winbond or MXIC) chips.");
+            } else {
+                ESP_LOGE(TAG, "cannot clear QE bit, please make sure force clearing QE option is enabled in `spi_flash_common_set_io_mode`, and this chip is not a permanent QE one.");
+            }
             chip->read_mode = io_mode_before;
             return;
         }
@@ -550,8 +570,11 @@ static void test_toggle_qe(esp_flash_t* chip)
     chip->read_mode = io_mode_before;
 }
 
-FLASH_TEST_CASE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
-FLASH_TEST_CASE_3("Test esp_flash_write can toggle QE bit", test_toggle_qe);
+// These tests show whether the QE is permanent or not for the chip tested.
+// To test the behaviour of a new SPI flash chip, enable force_check flag in generic driver
+// `spi_flash_common_set_io_mode` and then run this test.
+FLASH_TEST_CASE_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
+FLASH_TEST_CASE_3_IGNORE("Test esp_flash_write can toggle QE bit", test_toggle_qe);
 
 
 void test_permutations(flashtest_config_t* config)
