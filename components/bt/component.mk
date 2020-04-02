@@ -196,7 +196,8 @@ COMPONENT_SRCDIRS += host/nimble/nimble/nimble/host/src                         
                      host/nimble/nimble/nimble/host/util/src                       \
                      host/nimble/nimble/nimble/host/store/ram/src                  \
                      host/nimble/nimble/nimble/host/store/config/src               \
-                     host/nimble/esp-hci/src
+                     host/nimble/esp-hci/src                                       \
+                     host/nimble/port/src
 
 ifndef CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS
 COMPONENT_SRCDIRS += host/nimble/nimble/ext/tinycrypt/src

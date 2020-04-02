@@ -464,6 +464,7 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/src/ble_hs_adv.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_hci.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_hci_util.c"
+                    "host/nimble/nimble/nimble/host/src/ble_hs_resolv.c"
                     "host/nimble/nimble/nimble/host/store/ram/src/ble_store_ram.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_config.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
@@ -479,7 +480,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/porting/nimble/src/mem.c"
                     "host/nimble/nimble/porting/nimble/src/os_mbuf.c"
                     "host/nimble/nimble/porting/nimble/src/os_cputime.c"
-                    "host/nimble/esp-hci/src/esp_nimble_hci.c")
+                    "host/nimble/esp-hci/src/esp_nimble_hci.c"
+                    "host/nimble/port/src/esp_nimble_mem.c")
 
         if (CONFIG_BLE_MESH)
             list(APPEND srcs "esp_ble_mesh/mesh_core/nimble_host/mesh_bearer_adapt.c")
