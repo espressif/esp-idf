@@ -21,6 +21,8 @@ void adc_hal_init(void)
                              SOC_ADC_FSM_STANDBY_WAIT_DEFAULT);
     adc_ll_digi_set_sample_cycle(ADC_FSM_SAMPLE_CYCLE_DEFAULT);
     adc_hal_pwdet_set_cct(SOC_ADC_PWDET_CCT_DEFAULT);
+    adc_ll_digi_output_invert(ADC_NUM_1, SOC_ADC_DIGI_DATA_INVERT_DEFAULT(ADC_NUM_1));
+    adc_ll_digi_output_invert(ADC_NUM_2, SOC_ADC_DIGI_DATA_INVERT_DEFAULT(ADC_NUM_2));
 }
 
 void adc_hal_deinit(void)

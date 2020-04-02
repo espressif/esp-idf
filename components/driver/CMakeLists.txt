@@ -39,7 +39,8 @@ endif()
 if(IDF_TARGET STREQUAL "esp32s2")
     list(APPEND srcs "esp32s2/rtc_tempsensor.c"
                      "esp32s2/touch_sensor.c"
-                     "esp32s2/adc.c")
+                     "esp32s2/adc.c"
+                     "esp32s2/adc2_init_cal.c")
     # currently only S2 beta has its own target-specific includes
     list(APPEND includes "esp32s2/include")
 endif()

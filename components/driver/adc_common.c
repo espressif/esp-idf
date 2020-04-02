@@ -22,7 +22,7 @@
 #include "esp_log.h"
 #include "esp_pm.h"
 #include "soc/rtc.h"
-#include "rtc_io.h"
+#include "driver/rtc_io.h"
 #include "driver/dac.h"
 #include "sys/lock.h"
 #include "driver/gpio.h"

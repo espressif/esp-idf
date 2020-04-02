@@ -31,10 +31,6 @@ typedef enum {
     ADC_RTC_DATA_FAIL = -1,
 } adc_ll_rtc_raw_data_t;
 
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#endif /* _MSC_VER */
-
 /**
  * @brief Analyze whether the obtained raw data is correct.
  *        ADC2 use arbiter by default. The arbitration result can be judged by the flag bit in the original data.
@@ -52,10 +48,6 @@ typedef struct {
         uint16_t val;
     };
 } adc_rtc_output_data_t;
-
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif /* _MSC_VER */
 
 /**
  * @brief ADC controller type selection.
@@ -1164,9 +1156,6 @@ static inline void adc_ll_disable_sleep_controller(void)
 #define SAR2_DREF_ADDR  0x5
 #define SAR2_DREF_ADDR_MSB  0x6
 #define SAR2_DREF_ADDR_LSB  0x4
-
-#define ADC_HAL_CAL_OFFSET_RANGE (4096)
-#define ADC_HAL_CAL_TIMES        (10)
 
 /**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.

@@ -25,9 +25,6 @@ void adc_hal_digi_init(void)
 {
     adc_hal_init();
     adc_ll_digi_set_clk_div(SOC_ADC_DIGI_SAR_CLK_DIV_DEFAULT);
-    adc_ll_digi_output_invert(ADC_NUM_1, SOC_ADC_DIGI_DATA_INVERT_DEFAULT(ADC_NUM_1));
-    adc_ll_digi_output_invert(ADC_NUM_2, SOC_ADC_DIGI_DATA_INVERT_DEFAULT(ADC_NUM_2));
-
 }
 
 void adc_hal_digi_deinit(void)
@@ -162,6 +159,9 @@ void adc_hal_arbiter_config(adc_arbiter_t *config)
 /*---------------------------------------------------------------
                     ADC calibration setting
 ---------------------------------------------------------------*/
+
+#define ADC_HAL_CAL_OFFSET_RANGE (4096)
+#define ADC_HAL_CAL_TIMES        (10)
 
 static uint16_t s_adc_cali_param[ADC_NUM_MAX][ADC_ATTEN_MAX] = { {0}, {0} };
 
