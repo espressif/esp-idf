@@ -1061,7 +1061,7 @@ typedef struct {
      * Occupancy state upon receiving a Sensor Status message from an
      * occupancy sensor.
      */
-    uint32_t time_occupancy_delay;  /*!< The value of Light LC Time Occupany Delay state */
+    uint32_t time_occupancy_delay;  /*!< The value of Light LC Time Occupancy Delay state */
     /**
      * A timing state that determines the time the controlled lights fade
      * to the level determined by the Light LC Lightness On state.
@@ -1341,7 +1341,7 @@ typedef struct {
 
 /** Parameter of Light LC Occupancy Mode state change event */
 typedef struct {
-    uint8_t mode;       /*!< The value of Light LC Occupany Mode state */
+    uint8_t mode;       /*!< The value of Light LC Occupancy Mode state */
 } esp_ble_mesh_state_change_light_lc_om_set_t;
 
 /** Parameter of Light LC Light OnOff state change event */

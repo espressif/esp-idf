@@ -548,7 +548,7 @@ Generally, a Provisioner is used to provision unprovisioned devices and form a m
 
     Normally when they are several unprovisioned devices, users can provision them one by one. But when it comes to a large number of unprovisioned devices (e.g. 100), provisioning them one by one will take huge amount of time. With fast provisioning, users can provision 100 unprovisioned devices in about 50 seconds.
 
-4.2 Why EspBleMesh App would wait for a long time or keep waiting during fast provisioning?
+4.2 Why EspBleMesh App would wait for a long time during fast provisioning?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     After the App provisioned one Proxy node, it will disconnect from the App during fast provisioning, and reconnect with the App when all the nodes are provisioned.
