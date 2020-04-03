@@ -98,7 +98,6 @@
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_CUSTOM_TEST
-      - $BOT_LABEL_EXAMPLE_TEST
   variables:
     TEST_FW_PATH: "$CI_PROJECT_DIR/tools/tiny-test-fw"
     TEST_CASE_PATH: "$CI_PROJECT_DIR/tools/test_apps"
