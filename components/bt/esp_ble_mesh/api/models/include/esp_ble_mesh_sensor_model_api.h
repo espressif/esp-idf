@@ -523,7 +523,7 @@ typedef struct {
 typedef struct {
     bool     op_en;         /*!< Indicate if optional parameters are included */
     uint16_t property_id;   /*!< Property identifying a sensor */
-    struct net_buf_simple *raw_value;   /*!< Raw value containg X1 and X2 (optional) */
+    struct net_buf_simple *raw_value;   /*!< Raw value containing X1 and X2 (optional) */
 } esp_ble_mesh_server_recv_sensor_series_get_t;
 
 /**

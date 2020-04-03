@@ -256,7 +256,7 @@ typedef struct {
 /** Parameters of Generic Admin Property Set. */
 typedef struct {
     uint16_t property_id;   /*!< Property ID identifying a Generic Admin Property */
-    uint8_t  user_access;   /*!< Enumeration indicating user accessn */
+    uint8_t  user_access;   /*!< Enumeration indicating user access */
     struct net_buf_simple *property_value;  /*!< Raw value for the Admin Property */
 } esp_ble_mesh_gen_admin_property_set_t;
 
