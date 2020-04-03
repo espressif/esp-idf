@@ -4,7 +4,7 @@
 #include "esp_types.h"
 #include "esp32s2/clk.h"
 #include "esp_log.h"
-#include "esp_timer.h"
+#include "ccomp_timer.h"
 #include "esp_heap_caps.h"
 #include "idf_performance.h"
 
@@ -25,7 +25,6 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
 {
     const size_t BUFFER_SZ = 32 * 1024 + 6; // NB: not an exact multiple of SHA block size
 
-    int64_t begin, end;
     uint32_t us_sha1, us_sha512;
     uint8_t sha1_result[20] = { 0 };
     uint8_t sha512_result[64] = { 0 };
@@ -45,19 +44,16 @@ TEST_CASE("Test esp_sha()", "[hw_crypto]")
                                           0x1e, 0x07, 0xc6, 0xa2, 0x9e, 0x3b, 0x65, 0x75,
                                           0x80, 0x7d, 0xe6, 0x6e, 0x47, 0x61, 0x2c, 0x94 };
 
-    begin = esp_timer_get_time();
+    ccomp_timer_start();;
     esp_sha(SHA1, buffer, BUFFER_SZ, sha1_result);
-    end = esp_timer_get_time();
+    us_sha1 = ccomp_timer_stop();
     TEST_ASSERT_EQUAL_HEX8_ARRAY(sha1_expected, sha1_result, sizeof(sha1_expected));
-    us_sha1 = end - begin;
     ESP_LOGI(TAG, "esp_sha() 32KB SHA1 in %u us", us_sha1);
 
-    begin = esp_timer_get_time();
+    ccomp_timer_start();;
     esp_sha(SHA2_512, buffer, BUFFER_SZ, sha512_result);
-    end = esp_timer_get_time();
+    us_sha512 = ccomp_timer_stop();
     TEST_ASSERT_EQUAL_HEX8_ARRAY(sha512_expected, sha512_result, sizeof(sha512_expected));
-
-    us_sha512 = end - begin;
     ESP_LOGI(TAG, "esp_sha() 32KB SHA512 in %u us", us_sha512);
 
     free(buffer);
