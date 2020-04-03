@@ -24,3 +24,4 @@ entries:
     cpu_hal (noflash)
     soc_hal (noflash)
     wdt_hal_iram (noflash)
+    systimer_hal (noflash)

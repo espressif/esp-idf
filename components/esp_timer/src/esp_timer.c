@@ -278,7 +278,7 @@ static void timer_process_alarm(esp_timer_dispatch_t dispatch_method)
     (void) dispatch_method;
 
     timer_list_lock();
-    uint64_t now = esp_timer_impl_get_time();
+    int64_t now = esp_timer_impl_get_time();
     esp_timer_handle_t it = LIST_FIRST(&s_timers);
     while (it != NULL &&
             it->alarm < now) {
@@ -501,9 +501,4 @@ int64_t IRAM_ATTR esp_timer_get_next_alarm(void)
     }
     timer_list_unlock();
     return next_alarm;
-}
-
-int64_t IRAM_ATTR esp_timer_get_time(void)
-{
-    return (int64_t) esp_timer_impl_get_time();
 }
