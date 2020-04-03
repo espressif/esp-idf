@@ -63,7 +63,6 @@ class DefaultEnvConfig(object):
 set_default_config = DefaultEnvConfig.set_default_config
 get_default_config = DefaultEnvConfig.get_default_config
 
-
 MANDATORY_INFO = {
     "execution_time": 1,
     "env_tag": "default",
@@ -158,6 +157,7 @@ def test_method(**kwargs):
                                    In some cases, one test function might test many test cases.
                                    If this flag is set, test case can update junit report by its own.
     """
+
     def test(test_func):
 
         case_info = MANDATORY_INFO.copy()
@@ -181,6 +181,27 @@ def test_method(**kwargs):
                     env_config[key] = kwargs[key]
 
             env_config.update(overwrite)
+
+            # FIXME: CI need more variable here. add `if CI_TARGET: ...` later with CI.
+            target = env_config['target'] if 'target' in env_config else kwargs['target']
+            dut_dict = kwargs['dut_dict']
+            if isinstance(target, list):
+                target = target[0]
+            elif isinstance(target, str):
+                target = target
+            else:
+                raise TypeError('keyword targets can only be list or str')
+            if target not in dut_dict:
+                raise Exception('target can only be {%s}' % ', '.join(dut_dict.keys()))
+
+            dut = dut_dict[target]
+            try:
+                # try to config the default behavior of erase nvs
+                dut.ERASE_NVS = kwargs['erase_nvs']
+            except AttributeError:
+                pass
+
+            env_config['dut'] = dut
             env_inst = Env.Env(**env_config)
 
             # prepare for xunit test results
@@ -227,4 +248,5 @@ def test_method(**kwargs):
         handle_test.case_info = case_info
         handle_test.test_method = True
         return handle_test
+
     return test

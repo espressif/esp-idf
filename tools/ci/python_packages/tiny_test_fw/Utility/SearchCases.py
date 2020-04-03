@@ -42,9 +42,14 @@ class Search(object):
                     continue
         except ImportError as e:
             print("ImportError: \r\n\tFile:" + file_name + "\r\n\tError:" + str(e))
-        for i, test_function in enumerate(test_functions):
+
+        test_functions_out = []
+        for case in test_functions:
+            test_functions_out += cls.replicate_case(case)
+
+        for i, test_function in enumerate(test_functions_out):
             print("\t{}. ".format(i + 1) + test_function.case_info["name"])
-        return test_functions
+        return test_functions_out
 
     @classmethod
     def _search_test_case_files(cls, test_case, file_pattern):
@@ -77,17 +82,26 @@ class Search(object):
             if isinstance(case.case_info[key], (list, tuple)):
                 replicate_config.append(key)
 
-        def _replicate_for_key(case_list, replicate_key, replicate_list):
+        def _replicate_for_key(cases, replicate_key, replicate_list):
+            def deepcopy_func(f, name=None):
+                fn = types.FunctionType(f.__code__, f.__globals__, name if name else f.__name__,
+                                        f.__defaults__, f.__closure__)
+                fn.__dict__.update(copy.deepcopy(f.__dict__))
+                return fn
+
             case_out = []
-            for _case in case_list:
+            for inner_case in cases:
                 for value in replicate_list:
-                    new_case = copy.deepcopy(_case)
+                    new_case = deepcopy_func(inner_case)
                     new_case.case_info[replicate_key] = value
                     case_out.append(new_case)
             return case_out
 
         replicated_cases = [case]
-        for key in replicate_config:
+        while replicate_config:
+            if not replicate_config:
+                break
+            key = replicate_config.pop()
             replicated_cases = _replicate_for_key(replicated_cases, key, case.case_info[key])
 
         return replicated_cases
@@ -104,8 +118,4 @@ class Search(object):
         test_cases = []
         for test_case_file in test_case_files:
             test_cases += cls._search_cases_from_file(test_case_file)
-        # handle replicate cases
-        test_case_out = []
-        for case in test_cases:
-            test_case_out += cls.replicate_case(case)
-        return test_case_out
+        return test_cases
