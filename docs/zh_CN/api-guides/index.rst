@@ -23,7 +23,7 @@ API 指南
    引导加载程序 <bootloader>
    分区表 <partition-tables>
    :esp32: Secure Boot <../security/secure-boot-v1>
-   :esp32:  Secure Boot V2 <../security/secure-boot-v2>
+   Secure Boot V2 <../security/secure-boot-v2>
    ULP 协处理器 <ulp>
    :esp32: ULP (传统 GNU Make) <ulp-legacy>
    :esp32s2: ULP-RISC-V Coprocessor <ulp-risc-v>
