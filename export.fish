@@ -31,7 +31,8 @@ function idf_export_main
     # "$IDF_PATH"/tools is already added by 'idf_tools.py export'
     set IDF_ADD_PATHS_EXTRAS "$IDF_PATH"/components/esptool_py/esptool
     set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/espcoredump
-    set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/partition_table/
+    set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/partition_table
+    set IDF_ADD_PATHS_EXTRAS "$IDF_ADD_PATHS_EXTRAS":"$IDF_PATH"/components/app_update
     set -x PATH "$IDF_ADD_PATHS_EXTRAS":"$PATH"
 
     set added_path_variables
