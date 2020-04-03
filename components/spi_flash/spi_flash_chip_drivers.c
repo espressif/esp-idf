@@ -16,6 +16,7 @@
 #include "spi_flash_chip_driver.h"
 #include "spi_flash_chip_generic.h"
 #include "spi_flash_chip_issi.h"
+#include "spi_flash_chip_mxic.h"
 #include "spi_flash_chip_gd.h"
 #include "sdkconfig.h"
 
@@ -34,6 +35,9 @@ static const spi_flash_chip_t *default_registered_chips[] = {
 #endif
 #ifdef CONFIG_SPI_FLASH_SUPPORT_GD_CHIP
     &esp_flash_chip_gd,
+#endif
+#ifdef CONFIG_SPI_FLASH_SUPPORT_MXIC_CHIP
+    &esp_flash_chip_mxic,
 #endif
     &esp_flash_chip_generic,
     NULL,
