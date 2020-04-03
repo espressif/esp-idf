@@ -261,7 +261,7 @@ Specific files that provide implementation of provisioning of Node are shown in 
     - Functionality
   * - :component_file:`prov.c <bt/esp_ble_mesh/mesh_core/prov.c>`
     - ESP-BLE-MESH Node provisioning (PB-ADV & PB-GATT)
-  * - :component_file:`proxy.c <bt/esp_ble_mesh/mesh_core/proxy.c>`
+  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
     - ESP-BLE-MESH Proxy Server related functionalities
   * - :component_file:`beacon.c <bt/esp_ble_mesh/mesh_core/beacon.c>`
     - APIs used to handle ESP-BLE-MESH Beacons
@@ -276,7 +276,7 @@ Specific files that implement functions of Provisioner are shown in Table 2.3:
     - Functionality
   * - :component_file:`provisioner_prov.c <bt/esp_ble_mesh/mesh_core/provisioner_prov.c>`
     - ESP-BLE-MESH Provisioner provisioning (PB-ADV & PB-GATT)
-  * - :component_file:`provisioner_proxy.c <bt/esp_ble_mesh/mesh_core/provisioner_proxy.c>`
+  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/mesh_core/proxy_client.c>`
     - ESP-BLE-MESH Proxy Client related functionalities
   * - :component_file:`provisioner_beacon.c <bt/esp_ble_mesh/mesh_core/provisioner_beacon.c>`
     - ESP-BLE-MESH Provisioner receives Unprovisioned Device Beacon
@@ -385,11 +385,11 @@ When adopting the design of independent module, the two main factors should be c
     - ESP-BLE-MESH Friend functionality
   * - :component_file:`net.c <bt/esp_ble_mesh/mesh_core/net.c>`
     - ESP-BLE-MESH Relay feature, network creation, IV Update procedure, IV Index recovery procedure, Key Refresh procedure related functionalities
-  * - :component_file:`proxy.c <bt/esp_ble_mesh/mesh_core/proxy.c>`
+  * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
     - ESP-BLE-MESH Proxy Server related functionalities
-  * - :component_file:`provisioner_proxy.c <bt/esp_ble_mesh/mesh_core/provisioner_proxy.c>`
+  * - :component_file:`proxy_client.c <bt/esp_ble_mesh/mesh_core/proxy_client.c>`
     - ESP-BLE-MESH Proxy Client related functionalities
   * - :component_file:`settings.c <bt/esp_ble_mesh/mesh_core/settings.c>`
-    - ESP-BLE-MESH Node NVS storage functionality
-  * - :component_file:`mesh_main.c <bt/esp_ble_mesh/mesh_core/mesh_main.c>`
-    - ESP-BLE-MESH node removal related functionality
+    - ESP-BLE-MESH NVS storage functionality
+  * - :component_file:`main.c <bt/esp_ble_mesh/mesh_core/main.c>`
+    - ESP-BLE-MESH stack initialize, stack enable, node removal related functionalities
