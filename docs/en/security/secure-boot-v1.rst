@@ -4,7 +4,7 @@ Secure Boot
 .. important::
 
     All references in this document are related to Secure Boot V1 (The AES based Secure Boot Scheme). ESP32 Revision 3 onwards, the preferred secure boot scheme is :doc:`Secure Boot V2 <secure-boot-v2>`.  
-    Please refer to Secure Boot V2 document for ESP32 Revision 3 or ESP32S2.
+    Please refer to Secure Boot V2 document for ESP32 Revision 3 or ESP32-S2.
 
 Secure Boot is a feature for ensuring only your code can run on the chip. Data loaded from flash is verified on each reset.
 

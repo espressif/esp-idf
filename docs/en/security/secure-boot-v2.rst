@@ -3,15 +3,19 @@ Secure Boot V2
 
 .. important::
 
-    The references in this document are related to Secure Boot v2, the preferred scheme from ESP32-ECO3 onwards and in ESP32S2. (Refer to :doc:`Secure Boot <secure-boot-v1>` for ESP32)
-    
+    The references in this document are related to Secure Boot V2, the preferred scheme from ESP32-ECO3 onwards and in ESP32-S2.
+
+    .. only:: esp32
+
+        Refer also to :doc:`Secure Boot <secure-boot-v1>` for ESP32.
+
     Secure Boot V2 uses RSA based app and bootloader verification. This document can also be referred for signing apps with the RSA scheme without signing the bootloader.
 
 Background
 ----------
 
-Secure Boot protects a device from running unsigned code (verification at time of load). A new RSA based secure boot 
-verification scheme (Secure Boot V2) has been introduced for ESP32S2 and ESP32 ECO3 onwards. 
+Secure Boot protects a device from running unsigned code (verification at time of load). A new RSA based secure boot
+verification scheme (Secure Boot V2) has been introduced for ESP32-S2 and ESP32 ECO3 onwards.
 
 - The software bootloader’s RSA-PSS signature is verified by the Mask ROM and it is executed post successful verification.
 - The verified software bootloader verifies the RSA-PSS signature of the application image before it is executed.
@@ -21,9 +25,13 @@ Advantages
 
 - The RSA public key is stored on the device. The corresponding RSA private key is kept secret on a server and is never accessed by the device.
 
-- Upto three public keys can store can be generated and stored in ESP32S2 during manufacturing. (ESP32 ECO3: only one key)
+- Up to three public keys can be generated and stored in ESP32-S2 during manufacturing. (ESP32 ECO3: only one key)
 
-- ESP32S2 also provides the facility to revoke individual public keys.  
+  .. only:: esp32
+
+    - ESP32-S2 provides the facility to permanently revoke individual public keys. This can be configured conservatively or aggressively.
+
+    - Conservatively - The old key is revoked after the bootloader and application have successfully migrated to a new key. Aggressively - The key is revoked as soon as verification with this key fails.
 
 - Same image format & signature verification is applied for applications & software bootloader.
 
@@ -37,7 +45,7 @@ This is an overview of the Secure Boot V2 Process, Step by step instructions are
 
 1. Secure Boot V2 verifies the signature blocks appended to the bootloader and application binaries. The signature block contains the image binary signed by a RSA-3072 private key and its corresponding public key. More details on the :ref:`signature-block-format`.
 
-2. On startup, ROM code checks the secure boot v2  bit in eFuse.
+2. On startup, ROM code checks the Secure Boot V2  bit in eFuse.
 
 3. If secure boot is enabled, ROM checks the SHA-256 of the public key in the signature block in the eFuse.
 
@@ -88,9 +96,9 @@ The remainder of the signature sector is erased flash (0xFF) which allows writin
 Verifying the signature Block
 -----------------------------
 
-A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is stored at offset 1196. Upto 3 signature blocks can be appended to the bootloader or application image in ESP32S2. (ESP32 ECO3: only one key)
+A signature block is “valid” if the first byte is 0xe7 and a valid CRC32 is stored at offset 1196. Upto 3 signature blocks can be appended to the bootloader or application image in ESP32-S2. (ESP32 ECO3: only one key)
 
-An image is “verified” if the public key stored in any signature block is valid for this device, and if the stored signature is valid for the image data read from flash. 
+An image is “verified” if the public key stored in any signature block is valid for this device, and if the stored signature is valid for the image data read from flash.
 
 1. The magic byte, signature block CRC is validated.
 
@@ -100,10 +108,10 @@ An image is “verified” if the public key stored in any signature block is va
 
 4. The public key is used to verify the signature of the bootloader image, using RSA-PSS (section 8.1.2 of RFC8017) with the image digest calculated in step (3) for comparison.
 
-- The application signing scheme is set to RSA for secure boot V2 and to ECDSA for secure boot V1.
+- The application signing scheme is set to RSA for Secure Boot V2 and to ECDSA for Secure Boot V1.
 
 .. important::
-  It is recommended to use secure boot V2 on the chip versions supporting them.
+  It is recommended to use Secure Boot V2 on the chip versions supporting them.
 
 .. _secure-boot-v2-bootloader-size:
 
@@ -133,25 +141,46 @@ Options to work around this are:
 eFuse usage
 -----------
 
-ESP32-ECO3:
+.. only:: esp32
 
-- ABS_DONE_1 - Enables secure boot protection on boot.
+    ESP32-ECO3:
 
-- BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
+    - ABS_DONE_1 - Enables secure boot protection on boot.
 
+    - BLK2 - Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
+
+.. only:: esp32s2
+
+    - SECURE_BOOT_EN - Enables secure boot protection on boot.
+
+    - KEY_PURPOSE_X - Set the purpose of the key block on ESP32-S2 by programming SECURE_BOOT_DIGESTX (X = 0, 1, 2) into KEY_PURPOSE_X (X = 0, 1, 2, 3, 4). Example: If KEY_PURPOSE_2 is set to SECURE_BOOT_DIGEST1, then BLOCK_KEY2 will have the Secure Boot V2 public key digest.
+
+    - BLOCK_KEYX - The block contains the data corresponding to its purpose programmed in KEY_PURPOSE_X. Stores the SHA-256 digest of the public key. SHA-256 hash of public key modulus, exponent, precalculated R & M’ values (represented as 776 bytes – offsets 36 to 812 - as per the :ref:`signature-block-format`) is written to an eFuse key block.
+
+    - KEY_REVOKEX - The revocation bits corresponding to each of the 3 key block. Ex. Setting KEY_REVOKE2 revokes the key block whose key purpose is SECURE_BOOT_DIGEST2.
+
+    - SECURE_BOOT_AGGRESSIVE_REVOKE - Enables aggressive revocation of keys. The key is revoked as soon as verification with this key fails.
 
 .. _secure-boot-v2-howto:
 
 How To Enable Secure Boot V2
 ----------------------------
 
-1. Open the :ref:`project-configuration-menu`, in "Security Features" set "Enable hardware Secure Boot in bootloader" to enable Secure Boot. The chip revision should be changed to revision 3(ESP32- ECO3) to view the Secure Boot V2 option.
+1. Open the :ref:`project-configuration-menu`, in "Security Features" set "Enable hardware Secure Boot in bootloader" to enable Secure Boot.
 
-2. To change the chip revision, set "Minimum Supported ESP32 Revision" to Rev 3 in "Component Config" -> "ESP32- Specific", the Secure Boot V2 option can be enabled under "Enable hardware Secure Boot in bootloader" -> "Secure Boot Version". Secure Boot V2 is available for ESP32 ECO3 onwards and in ESP32S2.
+.. only:: esp32
 
-3. Specify the secure boot signing key path. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+    2. For ESP32, Secure Boot V2 is available only ESP32 ECO3 onwards. To view the "Secure Boot V2" option the chip revision should be changed to revision 3 (ESP32- ECO3). To change the chip revision, set "Minimum Supported ESP32 Revision" to Rev 3 in "Component Config" -> "ESP32- Specific".
 
-4. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration
+    3. Specify the secure boot signing key path. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+
+.. only:: esp32s2
+
+    2. The "Secure Boot V2" option will be selected and the "App Signing Scheme" would be set to RSA by default.
+
+    3. Select the number of keys to be used to sign the bootloader binary and chose one of them to sign the application. Specify the secure boot signing key paths for each one of these. The file can be anywhere on your system. A relative path will be evaluated from the project directory. The file does not need to exist yet.
+
+4. Set other menuconfig options (as desired). Pay particular attention to the "Bootloader Config" options, as you can only flash the bootloader once. Then exit menuconfig and save your configuration.
 
 5. The first time you run ``make`` or ``idf.py build``, if the signing key is not found then an error message will be printed with a command to generate a signing key via ``espsecure.py generate_signing_key``.
 
@@ -169,11 +198,11 @@ How To Enable Secure Boot V2
 
 .. note:: ``idf.py flash`` doesn't flash the bootloader if secure boot is enabled.
 
-9. Reset the ESP32 and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the ESP32 to verify that secure boot is enabled and no errors have occurred due to the build configuration.
+9. Reset the {IDF_TARGET_NAME} and it will boot the software bootloader you flashed. The software bootloader will enable secure boot on the chip, and then it verifies the app image signature and boots the app. You should watch the serial console output from the {IDF_TARGET_NAME} to verify that secure boot is enabled and no errors have occurred due to the build configuration.
 
 .. note:: Secure boot won't be enabled until after a valid partition table and app image have been flashed. This is to prevent accidents before the system is fully configured.
 
-.. note:: If the ESP32 is reset or powered down during the first boot, it will start the process again on the next boot.
+.. note:: If the {IDF_TARGET_NAME} is reset or powered down during the first boot, it will start the process again on the next boot.
 
 10. On subsequent boots, the secure boot hardware will verify the software bootloader has not changed and the software bootloader will verify the signed app image (using the validated public key portion of its appended signature block).
 
@@ -226,6 +255,48 @@ Secure Boot Best Practices
 * Do not allow any third party to observe any aspects of the key generation or signing process using espsecure.py. Both processes are vulnerable to timing or other side-channel attacks.
 * Enable all secure boot options in the Secure Boot Configuration. These include flash encryption, disabling of JTAG, disabling BASIC ROM interpeter, and disabling the UART bootloader encrypted flash access.
 * Use secure boot in combination with :doc:`flash encryption<flash-encryption>` to prevent local readout of the flash contents.
+
+.. only:: esp32s2
+
+    Key Management
+    --------------
+
+    * Between 1 and 3 RSA-3072 public keypairs (Keys #0, #1, #2) should be computed independently and stored separately.
+    * The KEY_DIGEST efuses should be write protected after being programmed.
+    * The unused KEY_DIGEST slots must have their corresponding KEY_REVOKE efuse burned to permanently disable them. This must happen before the device leaves the factory.
+    * The eFuses can either be written by the software bootloader during during first boot after enabling "Secure Boot V2" from menuconfig or can be done using `espefuse.py` which communicates with the serial bootloader program in ROM.
+    * The KEY_DIGESTs should be numbered sequentially beginning at key digest #0. (ie if key digest #1 is used, key digest #0 should be used. If key digest #2 is used, key digest #0 & #1 must be used.)
+    * The software bootloader (non OTA upgradeable) is signed using at least one, possibly all three, private keys and flashed in the factory.
+    * Apps should only be signed with a single private key (the others being stored securely elsewhere), however they may be signed with multiple private keys if some are being revoked (see Key Revocation, below).
+
+    Multiple Keys
+    -------------
+
+    * The bootloader should be signed with all the private key(s) that are needed for the life of the device, before it is flashed.
+    * The build system can sign with at most one private key, user has to run manual commands to append more signatures if necessary.
+    * You can use the append functionality of ``espsecure.py``, this command would also printed at the end of the Secure Boot V2 enabled bootloader compilation.
+        espsecure.py sign_data -k secure_boot_signing_key2.pem -v 2 --append_signatures -o signed_bootloader.bin build/bootloader/bootloader.bin
+    * While signing with multiple private keys, it is recommended that the private keys be signed independently, if possible on different servers and stored separately.
+    * You can check the signatures attached to a binary using -
+        espsecure.py signature_info_v2 datafile.bin
+
+    Key Revocation
+    --------------
+
+    * Keys are processed in a linear order. (key #0, key #1, key #2).
+    * Applications should be signed with only one key at a time, to minimise the exposure of unused private keys.
+    * The bootloader can be signed with multiple keys from the factory.
+
+    Assuming a trusted private key (N-1) has been compromised, to update to new keypair (N).
+    1. Server sends an OTA update with an application signed with the new private key (#N).
+    2. The new OTA update is written to an unused OTA app partition.
+    3. The new application's signature block is validated. The public keys are checked against the digests programmed in the eFuse & the application is verified using the verified public key.
+    4. The active partition is set to the new OTA application's partition.
+    5. Device resets, loads the bootloader (verified with key #N-1) which then boots new app (verified with key #N).
+    6. The new app verifies bootloader with key #N (as a final check) and then runs code to revoke key #N-1 (sets KEY_REVOKE efuse bit).
+    7. The API `esp_ota_revoke_secure_boot_public_key()` can be used to revoke the key #N-1.
+
+    * A similiar approach can also be used to physically reflash with a new key. For physical reflashing, the bootloader content can also be changed at the same time.
 
 .. _secure-boot-v2-technical-details:
 
