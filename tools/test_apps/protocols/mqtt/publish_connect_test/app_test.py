@@ -131,7 +131,7 @@ class TlsServer:
 
 
 @ttfw_idf.idf_custom_test(env_tag="Example_WIFI", group="test-apps")
-def test_examples_protocol_mqtt_publish_connect(env, extra_data):
+def test_app_protocol_mqtt_publish_connect(env, extra_data):
     """
     steps:
       1. join AP
@@ -227,4 +227,4 @@ def test_examples_protocol_mqtt_publish_connect(env, extra_data):
 
 
 if __name__ == '__main__':
-    test_examples_protocol_mqtt_publish_connect()
+    test_app_protocol_mqtt_publish_connect()

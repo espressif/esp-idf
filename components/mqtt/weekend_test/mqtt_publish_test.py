@@ -113,7 +113,7 @@ def test_single_config(dut, transport, qos, repeat, published):
     event_stop_client.clear()
 
 
-@ttfw_idf.idf_example_test(env_tag="Example_WIFI")
+@ttfw_idf.idf_custom_test(env_tag="Example_WIFI")
 def test_weekend_mqtt_publish(env, extra_data):
     # Using broker url dictionary for different transport
     global broker_host
@@ -127,7 +127,7 @@ def test_weekend_mqtt_publish(env, extra_data):
       3. Test evaluates python client received correct qos0 message
       4. Test ESP32 client received correct qos0 message
     """
-    dut1 = env.get_dut("mqtt_publish_connect_test", "examples/protocols/mqtt/publish_connect_test")
+    dut1 = env.get_dut("mqtt_publish_connect_test", "tools/test_apps/protocols/mqtt/publish_connect_test")
     # Look for host:port in sdkconfig
     try:
         # python client subscribes to the topic to which esp client publishes and vice versa
