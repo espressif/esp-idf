@@ -1074,6 +1074,17 @@ esp_err_t esp_wifi_get_ant(wifi_ant_config_t *config);
   */
 esp_err_t esp_wifi_improve_contention_ability(bool enable);
 
+/**
+  * @brief     Set the management frame receiving
+  *
+  * @param     filter the management frame need to be received by the callback
+  * @param     cb the management frame receiving callback
+  *
+  * @return
+  *    - ESP_OK: succeed
+  */
+esp_err_t esp_wifi_set_rx_mgmt(wifi_rx_mgmt_filter_t filter, wifi_rx_mgmt_cb_t cb);
+
 #ifdef __cplusplus
 }
 #endif

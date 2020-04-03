@@ -519,6 +519,24 @@ typedef struct {
     } data;                             /**< Configuration of ioctl command */
 } wifi_ioctl_config_t;
 
+/** 
+  * @brief Manangement frame receiving callback function
+  *
+  */
+typedef void (*wifi_rx_mgmt_cb_t)(const uint8_t *frame, int len, int rssi);
+
+/** 
+  * @brief Management frame receiving filter
+  *
+  */
+typedef enum {
+    WIFI_RX_MGMT_FILTER_PROBE     = 1,      /**< Probe */
+    WIFI_RX_MGMT_FILTER_BEACON    = (1<<1), /**< Beacon */
+    WIFI_RX_MGMT_FILTER_AUTH      = (1<<2), /**< Auth/Deauth */
+    WIFI_RX_MGMT_FILTER_ASSOC     = (1<<3), /**< Assoc/Disassoc */
+    WIFI_RX_MGMT_FILTER_ACTION    = (1<<4), /**< Action */
+} wifi_rx_mgmt_filter_t;
+
 #ifdef __cplusplus
 }
 #endif
