@@ -105,7 +105,10 @@ extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSe
     nvs::Storage* new_storage = NULL;
     nvs::Storage* storage = lookup_storage_from_name(partName);
     if (storage == NULL) {
-        new_storage = new nvs::Storage((const char *)partName);
+        new_storage = new (std::nothrow) nvs::Storage((const char *)partName);
+
+        if (!new_storage) return ESP_ERR_NO_MEM;
+
         storage = new_storage;
     }
 
@@ -127,6 +130,9 @@ extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t
 
     if(cfg) {
         auto encrMgr = EncrMgr::getInstance();
+
+        if (!encrMgr) return ESP_ERR_NO_MEM;
+
         auto err = encrMgr->setSecurityContext(baseSector, sectorCount, cfg);
         if(err != ESP_OK) {
             return err;
@@ -282,7 +288,10 @@ extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* 
         return err;
     }
 
-    HandleEntry *handle_entry = new HandleEntry(open_mode==NVS_READONLY, nsIndex, sHandle);
+    HandleEntry *handle_entry = new (std::nothrow) HandleEntry(open_mode==NVS_READONLY, nsIndex, sHandle);
+
+    if (!handle_entry) return ESP_ERR_NO_MEM;
+
     s_nvs_handles.push_back(handle_entry);
 
     *out_handle = handle_entry->mHandle;

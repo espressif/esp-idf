@@ -27,8 +27,10 @@ namespace nvs
     {
         if(!isActive)
         {
-            instance = new EncrMgr();
-            isActive = true;
+            instance = new (std::nothrow) EncrMgr();
+            if (instance) {
+                isActive = true;
+            }
         }
         return instance;
     }
@@ -62,7 +64,9 @@ namespace nvs
 
         uint8_t* eky = reinterpret_cast<uint8_t*>(cfg);
 
-        auto ctxt = new XtsCtxt();
+        auto ctxt = new (std::nothrow) XtsCtxt();
+
+        if (!ctxt) return ESP_ERR_NO_MEM;
 
         ctxt->baseSector = baseSector;
         ctxt->sectorCount = sectorCount;
