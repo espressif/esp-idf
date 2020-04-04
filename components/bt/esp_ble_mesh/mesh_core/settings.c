@@ -182,7 +182,14 @@ static int role_set(const char *name)
     }
 
     if (exist == false) {
+#if CONFIG_BLE_MESH_SETTINGS_BACKWARD_COMPATIBILITY
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+            !IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+            bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
+        }
+#else
         return 0;
+#endif
     }
 
     BT_INFO("Restored mesh device role %lu", bt_mesh_atomic_get(bt_mesh.flags) & DEVICE_ROLE_BITS);
