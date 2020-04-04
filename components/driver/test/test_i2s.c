@@ -205,7 +205,7 @@ TEST_CASE("I2S Loopback test(master tx and rx)", "[i2s]")
 
 #if !DISABLED_FOR_TARGETS(ESP32S2)
 /* ESP32S2 has only single I2S port and hence following test cases are not applicable */
-TEST_CASE("I2S adc test", "[i2s][ignore]")
+TEST_CASE("I2S adc test", "[i2s]")
 {
     // init I2S ADC
     i2s_config_t i2s_config = {

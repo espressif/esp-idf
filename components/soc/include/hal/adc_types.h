@@ -158,10 +158,6 @@ typedef enum {
     ADC_DIGI_FORMAT_MAX,
 } adc_digi_output_format_t;
 
-#ifdef _MSC_VER
-#pragma pack(push, 1)
-#endif /* _MSC_VER */
-
 /**
  * @brief ADC digital controller (DMA mode) output data format.
  *        Used to analyze the acquired ADC (DMA) data.
@@ -204,10 +200,6 @@ typedef struct {
         uint8_t val;
     };
 } adc_digi_pattern_table_t;
-
-#ifdef _MSC_VER
-#pragma pack(pop)
-#endif /* _MSC_VER */
 
 /**
  * @brief ADC digital controller (DMA mode) interrupt type options.
