@@ -477,7 +477,15 @@ typedef struct httpd_uri {
 	* for basic auth: "something" in 'Basic realm="something"'
 	*/
 	const char* auth_realm;
-#endif	    
+#endif
+
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+    /**
+     * Flag for indicating a WebSocket endpoint.
+     * If this flag is true, then method must be HTTP_GET. Otherwise the handshake will not be handled.
+     */
+    bool is_websocket;
+#endif    
 } httpd_uri_t;
 
 /**
