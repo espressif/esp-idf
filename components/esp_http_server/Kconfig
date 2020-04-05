@@ -59,5 +59,11 @@ menu "HTTP Server"
         default 32
         help
             Maximum length of passwords.
-
+            
+    config HTTPD_WS_SUPPORT
+        bool "WebSocket server support"
+        default n
+        help
+            This sets the WebSocket server support.
+            
 endmenu
