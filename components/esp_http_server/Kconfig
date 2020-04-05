@@ -65,5 +65,5 @@ menu "HTTP Server"
         default n
         help
             This sets the WebSocket server support.
-     
+
 endmenu
