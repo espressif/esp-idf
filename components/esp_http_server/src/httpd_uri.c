@@ -413,7 +413,7 @@ esp_err_t httpd_uri(struct httpd_data *hd)
         return ESP_OK;
     }
 #endif
-    
+
     /* Invoke handler */
     if (uri->handler(req) != ESP_OK) {
         /* Handler returns error, this socket should be closed */
