@@ -485,7 +485,7 @@ typedef struct httpd_uri {
      * If this flag is true, then method must be HTTP_GET. Otherwise the handshake will not be handled.
      */
     bool is_websocket;
-#endif    
+#endif
 } httpd_uri_t;
 
 /**
