@@ -835,7 +835,7 @@ static esp_err_t i2s_param_config(i2s_port_t i2s_num, const i2s_config_t *i2s_co
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_ADC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S ADC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_DAC_BUILT_IN) && (i2s_num != I2S_NUM_0)), "I2S DAC built-in only support on I2S0", ESP_ERR_INVALID_ARG);
 #endif
-    I2S_CHECK(((i2s_config->communication_format & I2S_COMM_FORMAT_I2S) || (i2s_config->communication_format & I2S_COMM_FORMAT_PCM)), "I2S communication format invalid.", ESP_ERR_INVALID_ARG);
+    I2S_CHECK(!((i2s_config->communication_format & I2S_COMM_FORMAT_I2S) || (i2s_config->communication_format & I2S_COMM_FORMAT_PCM)), "I2S communication format invalid.", ESP_ERR_INVALID_ARG);
 #if SOC_I2S_SUPPORTS_PDM
     I2S_CHECK(!((i2s_config->mode & I2S_MODE_PDM) && (i2s_num != I2S_NUM_0)), "I2S DAC PDM only support on I2S0", ESP_ERR_INVALID_ARG);
 #endif
