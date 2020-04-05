@@ -31,8 +31,8 @@
 #define SOC_LOGV(tag, fmt, ...) ESP_EARLY_LOGV(tag, fmt, ##__VA_ARGS__)
 
 #else
-
-#ifdef CONFIG_IDF_TARGET_ESPP32
+#include "sdkconfig.h"
+#ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/ets_sys.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
 #include "esp32s2/rom/ets_sys.h"

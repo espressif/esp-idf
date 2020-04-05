@@ -1,18 +1,13 @@
 menu "Example Configuration"
 
-    choice EXAMPLE_IP_MODE
-        prompt "IP Version"
-        help
-            Example can use either IPV4 or IPV6.
+    config EXAMPLE_IPV4
+        bool "IPV4"
+        default y
 
-        config EXAMPLE_IPV4
-            bool "IPV4"
-
-        config EXAMPLE_IPV6
-            bool "IPV6"
-            select EXAMPLE_CONNECT_IPV6
-
-    endchoice
+    config EXAMPLE_IPV6
+        bool "IPV6"
+        default n
+        select EXAMPLE_CONNECT_IPV6
 
     config EXAMPLE_PORT
         int "Port"

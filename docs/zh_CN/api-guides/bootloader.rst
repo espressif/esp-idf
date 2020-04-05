@@ -43,6 +43,8 @@
 	ota_0,    0,    ota_0,   ,         512K
 	ota_1,    0,    ota_1,   ,         512K
 
+.. _bootloader_boot_from_test_firmware:
+
 从测试固件启动
 --------------
 用户可以编写在生产环境中测试用的特殊固件，然后在需要的时候运行。此时需要在分区表中专门申请一块分区用于保存该测试固件（详情请参阅 :doc:`分区表 <partition-tables>`）。如果想要触发测试固件，还需要设置 :ref:`CONFIG_BOOTLOADER_APP_TEST`。

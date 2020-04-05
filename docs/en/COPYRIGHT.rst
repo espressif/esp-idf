@@ -77,6 +77,11 @@ This is the list of licenses for tools included in this repository, which are us
 * :idf_file:`Menuconfig of Kconfiglib <tools/kconfig_new/menuconfig.py>` is Copyright (C) 2018-2019, Nordic Semiconductor ASA and Ulf Magnusson, and is licensed under the ISC License.
 
 
+Documentation
+-------------
+
+* HTML version of the `ESP-IDF Programming Guide`_ uses the Sphinx theme `sphinx_idf_theme`_, which is Copyright (c) 2013-2020 Dave Snider, Read the Docs, Inc. & contributors, and Espressif Systems (Shanghai) CO., LTD. It is based on `sphinx_rtd_theme`_. Both are licensed under MIT license.
+
 ROM Source Code Copyrights
 ==========================
 
@@ -145,7 +150,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 
 
 .. _Newlib: https://sourceware.org/newlib/
-.. _FreeRTOS: http://freertos.org/
+.. _FreeRTOS: https://freertos.org/
 .. _esptool.py: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/
 .. _TinyBasic: https://github.com/BleuLlama/TinyBasicPlus
@@ -153,7 +158,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _wpa_supplicant: https://w1.fi/wpa_supplicant/
 .. _FreeBSD net80211: https://github.com/freebsd/freebsd/tree/master/sys/net80211
 .. _TJpgDec: http://elm-chan.org/fsw/tjpgd/00index.html
-.. _JSMN: http://zserge.com/jsmn.html
+.. _JSMN: https://zserge.com/jsmn.html
 .. _argtable3: https://github.com/argtable/argtable3
 .. _linenoise: https://github.com/antirez/linenoise
 .. _libcoap: https://github.com/obgm/libcoap
@@ -171,3 +176,7 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _zephyr: https://github.com/zephyrproject-rtos/zephyr
 .. _mynewt-nimble: https://github.com/apache/mynewt-nimble
 .. _TinyCBOR: https://github.com/intel/tinycbor
+.. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
+.. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
+.. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
+

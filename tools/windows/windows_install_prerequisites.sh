@@ -34,7 +34,7 @@ set -e
 pacman --noconfirm -Syu # This step may require the terminal to be closed and restarted
 
 pacman --noconfirm -S --needed gettext-devel gcc git make ncurses-devel flex bison gperf vim \
-       mingw-w64-i686-python2-pip mingw-w64-i686-python2-cryptography unzip winpty
+       mingw-w64-i686-python-pip mingw-w64-i686-python-cryptography unzip winpty
 
 # if IDF_PATH is set, install requirements now as well
 if [ -n "$IDF_PATH" ]; then
@@ -42,7 +42,7 @@ if [ -n "$IDF_PATH" ]; then
 fi
 
 # Automatically download precompiled toolchain, unpack at /opt/xtensa-esp32-elf/
-TOOLCHAIN_ZIP=xtensa-esp32-elf-gcc8_2_0-esp-2019r2-win32.zip
+TOOLCHAIN_ZIP=xtensa-esp32-elf-gcc8_2_0-esp-2020r1-win32.zip
 echo "Downloading precompiled toolchain ${TOOLCHAIN_ZIP}..."
 cd ~
 curl -LO --retry 10 https://dl.espressif.com/dl/${TOOLCHAIN_ZIP}

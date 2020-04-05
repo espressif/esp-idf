@@ -16,7 +16,7 @@ Depending on the parameters, the user can create either a loop with a dedicated 
 
 ### Handler Registration/Unregistration,
 
-Handler registration and unregistration works the same way as the default event loop, just with a different API, `esp_event_handler_register_with()` and `esp_event_handler_register_with()` respectively. There are two things this example highlights:
+Handler registration and unregistration works the same way as the default event loop, just with a different API, `esp_event_handler_instance_register_with()` and `esp_event_handler_instance_unregister_with()` respectively. There are two things this example highlights:
 
 1. The possibility of registering the same handler for different loops
 2. The ability to pass static data to handlers.

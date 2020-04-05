@@ -11,8 +11,8 @@ else()
     endforeach()
 
     idf_component_register(SRCS "${TEST_CASES_FILES}" "test_sodium.c"
-                        INCLUDE_DIRS "." "${LS_TESTDIR}/../quirks"
-                        REQUIRES unity libsodium)
+                        PRIV_INCLUDE_DIRS "." "${LS_TESTDIR}/../quirks"
+                        PRIV_REQUIRES unity libsodium)
 
     # The libsodium test suite is designed to be run each test case as an executable on a desktop computer and uses
     # filesytem to write & then compare contents of each file.

@@ -9,7 +9,7 @@
    which declares strong symbols. This is done so that ROM functions are always
    used instead of the ones provided by libc.a.
 
-   Time functions were moved to the esp32.rom.newlib-funcs-time.ld file.
+   Time functions were moved to the esp32.rom.newlib-time.ld file.
  */
 
 abs = 0x40056340;
@@ -126,9 +126,6 @@ __swsetup_r = 0x40058cc8;
 toascii = 0x4000c720;
 tolower = 0x40001868;
 toupper = 0x40001884;
-__tzcalc_limits = 0x400018a0;
-__tz_lock = 0x40001a04;
-__tz_unlock = 0x40001a10;
 ungetc = 0x400590f4;
 _ungetc_r = 0x40058fa0;
 __utoa = 0x400561f0;

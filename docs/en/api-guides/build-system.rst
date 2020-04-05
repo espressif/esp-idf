@@ -178,14 +178,15 @@ For more detailed information about integrating ESP-IDF with CMake into an IDE, 
 
 .. _setting-python-interpreter:
 
-Setting the Python Interpreter
-------------------------------
+Setting up the Python Interpreter
+---------------------------------
 
-Currently, ESP-IDF only works with Python 2.7. If you have a system where the default ``python`` interpreter is Python 3.x, this can lead to problems.
+ESP-IDF works well with all supported Python versions. It should work out-of-box even if you have a legacy system where the default ``python`` interpreter is still Python 2.7, however, it is advised to switch to Python 3 if possible.
 
-If using ``idf.py``, running ``idf.py`` as ``python2 $IDF_PATH/tools/idf.py ...`` will work around this issue (``idf.py`` will tell other Python processes to use the same Python interpreter). You can set up a shell alias or another script to simplify the command.
+``idf.py`` and other Python scripts will run with the default Python interpreter, i.e. ``python``. You can switch to a
+different one like ``python3 $IDF_PATH/tools/idf.py ...``, or you can set up a shell alias or another script to simplify the command.
 
-If using CMake directly, running ``cmake -D PYTHON=python2 ...`` will cause CMake to override the default Python interpreter.
+If using CMake directly, running ``cmake -D PYTHON=python3 ...`` will cause CMake to override the default Python interpreter.
 
 If using an IDE with CMake, setting the ``PYTHON`` value as a CMake cache override in the IDE UI will override the default Python interpreter.
 
@@ -959,7 +960,7 @@ Selecting the Target
 
 ESP-IDF supports multiple targets (chips). The identifiers used for each chip are as follows:
 
-* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WD, ESP32-PICO-D4
+* ``esp32`` — for ESP32-D0WD, ESP32-D2WD, ESP32-S0WD (ESP-SOLO), ESP32-U4WDH, ESP32-PICO-D4
 * ``esp32s2``— for ESP32-S2
 
 To select the target before building the project, use ``idf.py set-target <target>`` command, for example::
@@ -1487,6 +1488,8 @@ The tool will convert the project Makefile and any component ``component.mk`` fi
 
 It does so by running ``make`` to expand the ESP-IDF build system variables which are set by the build, and then producing equivalent CMakelists files to set the same variables.
 
+.. important:: When the conversion tool converts a ``component.mk`` file, it doesn't determine what other components that component depends on. This information needs to be added manually by editing the new component ``CMakeLists.txt`` file and adding ``REQUIRES`` and/or ``PRIV_REQUIRES`` clauses. Otherwise, source files in the component will fail to compile as headers from other components are not found. See :ref:`component requirements`.
+
 The conversion tool is not capable of dealing with complex Makefile logic or unusual targets. These will need to be converted by hand.
 
 No Longer Available in CMake
@@ -1540,7 +1543,7 @@ Flashing from make
 .. _cmake project: https://cmake.org/cmake/help/v3.5/command/project.html
 .. _cmake set: https://cmake.org/cmake/help/v3.5/command/set.html
 .. _cmake string: https://cmake.org/cmake/help/v3.5/command/string.html
-.. _cmake faq generated files: https://cmake.org/Wiki/CMake_FAQ#How_can_I_generate_a_source_file_during_the_build.3F
+.. _cmake faq generated files: https://gitlab.kitware.com/cmake/community/-/wikis/FAQ#how-can-i-generate-a-source-file-during-the-build
 .. _ADDITIONAL_MAKE_CLEAN_FILES: https://cmake.org/cmake/help/v3.5/prop_dir/ADDITIONAL_MAKE_CLEAN_FILES.html
 .. _ExternalProject: https://cmake.org/cmake/help/v3.5/module/ExternalProject.html
 .. _cmake language variables: https://cmake.org/cmake/help/v3.5/manual/cmake-variables.7.html#variables-for-languages
@@ -1549,6 +1552,6 @@ Flashing from make
 .. _target_link_libraries: https://cmake.org/cmake/help/v3.5/command/target_link_libraries.html#command:target_link_libraries
 .. _cmake_toolchain_file: https://cmake.org/cmake/help/v3.5/variable/CMAKE_TOOLCHAIN_FILE.html
 .. _quirc: https://github.com/dlbeer/quirc
-.. _pyenv: https://github.com/pyenv/pyenv#README
+.. _pyenv: https://github.com/pyenv/pyenv#readme
 .. _virtualenv: https://virtualenv.pypa.io/en/stable/
 .. _CCache: https://ccache.dev/

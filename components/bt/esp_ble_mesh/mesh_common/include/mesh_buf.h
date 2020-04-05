@@ -11,12 +11,7 @@
 #ifndef _BLE_MESH_BUF_H_
 #define _BLE_MESH_BUF_H_
 
-#include <stddef.h>
-#include "sys/cdefs.h"
-#include "mesh_types.h"
 #include "mesh_slist.h"
-#include "mesh_kernel.h"
-#include "mesh_util.h"
 
 #ifdef __cplusplus
 extern "C" {

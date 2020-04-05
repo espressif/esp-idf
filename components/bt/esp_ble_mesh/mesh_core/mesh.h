@@ -9,6 +9,8 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#include "net.h"
+
 #define BLE_MESH_KEY_PRIMARY 0x0000
 #define BLE_MESH_KEY_ANY     0xffff
 

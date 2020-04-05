@@ -10,15 +10,31 @@ unset(link_options)
 # Add the following build specifications here, since these seem to be dependent
 # on config values on the root Kconfig.
 
-if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
-    list(APPEND compile_options "-Os")
-    list(APPEND compile_options "-freorder-blocks")
-elseif(CONFIG_COMPILER_OPTIMIZATION_DEFAULT)
-    list(APPEND compile_options "-Og")
-elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
-    list(APPEND compile_options "-O0")
-elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
-    list(APPEND compile_options "-O2")
+if(NOT BOOTLOADER_BUILD)
+
+    if(CONFIG_COMPILER_OPTIMIZATION_SIZE)
+        list(APPEND compile_options "-Os")
+        list(APPEND compile_options "-freorder-blocks")
+    elseif(CONFIG_COMPILER_OPTIMIZATION_DEFAULT)
+        list(APPEND compile_options "-Og")
+    elseif(CONFIG_COMPILER_OPTIMIZATION_NONE)
+        list(APPEND compile_options "-O0")
+    elseif(CONFIG_COMPILER_OPTIMIZATION_PERF)
+        list(APPEND compile_options "-O2")
+    endif()
+
+else()  # BOOTLOADER_BUILD
+
+    if(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_SIZE)
+        list(APPEND compile_options "-Os")
+        list(APPEND compile_options "-freorder-blocks")
+    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG)
+        list(APPEND compile_options "-Og")
+    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_NONE)
+        list(APPEND compile_options "-O0")
+    elseif(CONFIG_BOOTLOADER_COMPILER_OPTIMIZATION_PERF)
+        list(APPEND compile_options "-O2")
+    endif()
 
 endif()
 

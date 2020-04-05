@@ -28,6 +28,10 @@
 extern "C" {
 #endif
 
+/*---------------------------------------------------------------
+                    RTC controller setting
+---------------------------------------------------------------*/
+
 /**
  * Power on dac module and start output voltage.
  *
@@ -36,6 +40,7 @@ extern "C" {
  */
 static inline void dac_ll_power_on(dac_channel_t channel)
 {
+    SENS.sar_dac_ctrl1.dac_clkgate_en = 1;
     RTCIO.pad_dac[channel].dac_xpd_force = 1;
     RTCIO.pad_dac[channel].xpd_dac = 1;
 }
@@ -49,6 +54,9 @@ static inline void dac_ll_power_down(dac_channel_t channel)
 {
     RTCIO.pad_dac[channel].dac_xpd_force = 0;
     RTCIO.pad_dac[channel].xpd_dac = 0;
+    if (RTCIO.pad_dac[0].xpd_dac == 0 && RTCIO.pad_dac[1].xpd_dac == 0) {
+        SENS.sar_dac_ctrl1.dac_clkgate_en = 0;
+    }
 }
 
 /**
@@ -67,6 +75,15 @@ static inline void dac_ll_update_output_value(dac_channel_t channel, uint8_t val
         SENS.sar_dac_ctrl2.dac_cw_en2 = 0;
         RTCIO.pad_dac[channel].dac = value;
     }
+}
+
+/**
+ * Reset dac by software.
+ */
+static inline void dac_ll_rtc_reset(void)
+{
+    SENS.sar_dac_ctrl1.dac_reset = 1;
+    SENS.sar_dac_ctrl1.dac_reset = 0;
 }
 
 /************************************/
@@ -168,6 +185,10 @@ static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
     }
 }
 
+/*---------------------------------------------------------------
+                    Digital controller setting
+---------------------------------------------------------------*/
+
 /************************************/
 /*           DAC DMA API's          */
 /************************************/
@@ -178,6 +199,7 @@ static inline void dac_ll_cw_set_dc_offset(dac_channel_t channel, int8_t offset)
 static inline void dac_ll_dma_enable(void)
 {
     SENS.sar_dac_ctrl1.dac_dig_force = 1;
+    SENS.sar_dac_ctrl1.dac_clk_inv = 1;
 }
 
 /**
@@ -186,6 +208,7 @@ static inline void dac_ll_dma_enable(void)
 static inline void dac_ll_dma_disable(void)
 {
     SENS.sar_dac_ctrl1.dac_dig_force = 0;
+    SENS.sar_dac_ctrl1.dac_clk_inv = 0;
 }
 
 #ifdef __cplusplus

@@ -380,7 +380,7 @@ typedef struct {
 typedef struct {
     tBTM_ESCO_INFO   esco;              /* Current settings             */
 #if BTM_SCO_HCI_INCLUDED == TRUE
-#define BTM_SCO_XMIT_QUEUE_THRS         20
+#define BTM_SCO_XMIT_QUEUE_THRS     20
     fixed_queue_t   *xmit_data_q;       /* SCO data transmitting queue  */
     INT16           sent_not_acked;
 #endif
@@ -390,7 +390,6 @@ typedef struct {
     UINT16           hci_handle;        /* HCI Handle                   */
     BOOLEAN          is_orig;           /* TRUE if the originator       */
     BOOLEAN          rem_bd_known;      /* TRUE if remote BD addr known */
-
 } tSCO_CONN;
 
 /* SCO Management control block */

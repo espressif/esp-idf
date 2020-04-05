@@ -35,7 +35,7 @@ Application Example
              * as well be any binary data (needs type casting).
              * In case of string data, null termination will be absent, and
              * content length would give length of string */
-            char[100] content;
+            char content[100];
 
             /* Truncate if content length larger than the buffer */
             size_t recv_size = MIN(req->content_len, sizeof(content));
@@ -150,6 +150,13 @@ Persistent Connections Example
 
 
 Check the example under :example:`protocols/http_server/persistent_sockets`.
+
+
+Websocket server
+----------------
+
+HTTP server provides a simple websocket support if the feature is enabled in menuconfig, please see :ref:`CONFIG_HTTPD_WS_SUPPORT`.
+Please check the example under :example:`protocols/http_server/ws_echo_server`
 
 
 API Reference

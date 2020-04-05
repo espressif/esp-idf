@@ -20,7 +20,7 @@ Simply put, posting an event to a loop is the act of queueing its handlers for e
 
 ### Handler Registration/Unregistration
 
-This example demonstrates handler registration to the default event loop using `esp_event_handler_register` for (1) specific events, (2) **any** event under a certain base, and (3) **any** event. This also shows the possbility of registering multiple handlers to the same event.
+This example demonstrates handler registration to the default event loop using `esp_event_handler_register` for (1) specific events, (2) **any** event under a certain base, and (3) **any** event. This also shows the possbility of registering multiple handlers to the same event as well as registering one handler to the same event multiple times.
 
 Unregistering a handler is done using `esp_event_handler_unregister()`. Unregistering a handler means that it no longer executes even when the event it was previously registered to gets posted to the loop.
 
@@ -55,44 +55,46 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 The example should have the following log output:
 
 ```
-I (276) default_event_loop: setting up
-I (276) default_event_loop: starting event sources
-I (276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: posting to default loop
-I (276) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 1 out of 5
-I (296) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler
-I (306) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_any_handler
-I (316) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: all_event_handler
-I (326) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 1 times
-I (336) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
-I (806) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 2 out of 5
-I (806) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 2 times
-I (806) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
-I (1276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop
-I (1276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed 1 out of 3 times
-I (1286) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler
-I (1296) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler
-I (1306) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 3 out of 5
-I (1316) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: unregistering task_iteration_handler
-I (1316) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 3 times
-I (1336) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
-I (1846) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 4 out of 5
-I (1846) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
-I (2276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop
-I (2276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed 2 out of 3 times
-I (2286) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler
-I (2296) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler
-I (2346) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 5 out of 5
-I (2346) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
-I (3276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop
-I (3276) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: posting to default loop
-I (3286) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed 3 out of 3 times
-I (3296) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler
-I (3306) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler
-I (3316) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: timer_stopped_handler
-I (3326) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: deleted timer event source
-I (3326) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: timer_any_handler
-I (3336) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: all_event_handler
-I (3346) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: deleting task event source
+I (328) default_event_loop: setting up
+I (338) default_event_loop: starting event sources
+I (338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: posting to default loop
+I (338) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 1 out of 5
+I (358) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler, instance 0
+I (368) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler, instance 1
+I (378) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler_2
+I (388) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_any_handler
+I (388) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: all_event_handler
+I (398) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 1 times
+I (408) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
+I (858) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 2 out of 5
+I (858) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 2 times
+I (858) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
+I (1338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop
+I (1338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed 1 out of 3 times
+I (1348) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler
+I (1358) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler
+I (1358) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 3 out of 5
+I (1368) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: unregistering task_iteration_handler
+I (1368) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 3 times
+I (1388) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
+I (1898) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 4 out of 5
+I (1898) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
+I (2338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop
+I (2338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed 2 out of 3 times
+I (2348) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler
+I (2358) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler
+I (2398) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, 5 out of 5
+I (2398) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
+I (3338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: posting to default loop
+I (3338) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: posting to default loop
+I (3348) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed 3 out of 3 times
+I (3358) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_any_handler
+I (3358) default_event_loop: TIMER_EVENTS:TIMER_EVENT_EXPIRY: all_event_handler
+I (3368) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: timer_stopped_handler
+I (3378) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: deleted timer event source
+I (3388) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: timer_any_handler
+I (3398) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STOPPED: all_event_handler
+I (3398) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: deleting task event source
 ```
 
 ## Example Breakdown
@@ -135,14 +137,17 @@ The two event sources are started. The respective events are posted to the defau
 #### 3. Execution of handlers
 
 ```
-I (296) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler
+I (358) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler, instance 0
+I (368) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler, instance 1
+I (378) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_started_handler_2
 I (306) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: timer_any_handler
 I (316) default_event_loop: TIMER_EVENTS:TIMER_EVENT_STARTED: all_event_handler
 ...
 I (326) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed 1 times
 I (336) default_event_loop: TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler
 ```
-The handlers are executed for the events that were posted in **(2)**. In addition to the event-specific handlers `timer_started_handler()` and `task_iteration_handler()`, the `timer_any_handler()` and `all_event_handler()` are also executed.
+The handlers are executed for the events that were posted in **(2)**. Note how `timer_started_handler()` is called twice on the same event post. This shows the ability to register a single event handler to a single event multiple times. Note also how `timer_started_handler_2()` is called on the same event post. This shows that multiple handlers can be registered to a single event.
+In addition to the event-specific handlers `timer_started_handler()` (registered twice), `timer_started_handler_2()` and `task_iteration_handler()`, the `timer_any_handler()` and `all_event_handler()` are also executed.
 
 The `timer_any_handler()` executes for **any** timer event. It can be seen executing for the timer expiry and timer stopped events in the subsequent parts of the log.
 

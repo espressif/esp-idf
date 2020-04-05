@@ -78,7 +78,7 @@ def test_examples_protocol_mqtt_ssl(env, extra_data):
     bin_size = os.path.getsize(binary_file)
     ttfw_idf.log_performance("mqtt_ssl_bin_size", "{}KB"
                              .format(bin_size // 1024))
-    ttfw_idf.check_performance("mqtt_ssl_size", bin_size // 1024)
+    ttfw_idf.check_performance("mqtt_ssl_size", bin_size // 1024, dut1.TARGET)
     # Look for host:port in sdkconfig
     try:
         value = re.search(r'\:\/\/([^:]+)\:([0-9]+)', dut1.app.get_sdkconfig()["CONFIG_BROKER_URI"])

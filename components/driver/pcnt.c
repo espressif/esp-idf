@@ -12,9 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "freertos/xtensa_api.h"
 #include "esp_log.h"
 #include "driver/pcnt.h"
 #include "driver/periph_ctrl.h"
+#include "hal/pcnt_hal.h"
+#include "soc/pcnt_caps.h"
 
 #define PCNT_CHANNEL_ERR_STR  "PCNT CHANNEL ERROR"
 #define PCNT_UNIT_ERR_STR  "PCNT UNIT ERROR"
@@ -297,7 +302,6 @@ static inline esp_err_t _pcnt_isr_service_install(pcnt_port_t pcnt_port, int int
 {
     PCNT_OBJ_CHECK(pcnt_port);
     PCNT_CHECK(pcnt_isr_func == NULL, "ISR service already installed", ESP_ERR_INVALID_STATE);
-    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
     esp_err_t ret = ESP_FAIL;
     pcnt_isr_func = (pcnt_isr_func_t *) calloc(PCNT_UNIT_MAX, sizeof(pcnt_isr_func_t));
 
@@ -305,28 +309,27 @@ static inline esp_err_t _pcnt_isr_service_install(pcnt_port_t pcnt_port, int int
         ret = ESP_ERR_NO_MEM;
     } else {
         ret = pcnt_isr_register(pcnt_intr_service, (void *)pcnt_port, intr_alloc_flags, &pcnt_isr_service);
+        if (ret != ESP_OK) {
+            ESP_LOGE(TAG, "pcnt isr registration failed, maybe you need `pcnt_isr_unregister` to unregister your isr");
+            free(pcnt_isr_func);
+            pcnt_isr_func = NULL;
+        }
     }
 
-    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
     return ret;
 }
 
 static inline esp_err_t _pcnt_isr_service_uninstall(pcnt_port_t pcnt_port)
 {
     PCNT_OBJ_CHECK(pcnt_port);
-
-    if (pcnt_isr_func == NULL) {
-        return ESP_FAIL;
-    }
-
-    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
-    esp_intr_free(pcnt_isr_service);
+    PCNT_CHECK(pcnt_isr_func != NULL, "ISR Service not installed yet.", ESP_ERR_INVALID_STATE);
+    esp_err_t ret = ESP_FAIL;
+    ret = pcnt_isr_unregister(pcnt_isr_service);
     free(pcnt_isr_func);
     pcnt_isr_func = NULL;
     pcnt_isr_service = NULL;
-    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
 
-    return ESP_OK;
+    return ret;
 }
 
 static inline esp_err_t _pcnt_unit_config(pcnt_port_t pcnt_port, const pcnt_config_t *pcnt_config)
@@ -485,10 +488,23 @@ esp_err_t pcnt_filter_disable(pcnt_unit_t unit)
     return _pcnt_filter_disable(PCNT_PORT_0, unit);
 }
 
+esp_err_t pcnt_isr_unregister(pcnt_isr_handle_t handle)
+{
+    esp_err_t ret = ESP_FAIL;
+    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+    ret = esp_intr_free(handle);
+    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
+    return ret;
+}
+
 esp_err_t pcnt_isr_register(void (*fun)(void *), void *arg, int intr_alloc_flags, pcnt_isr_handle_t *handle)
 {
+    esp_err_t ret = ESP_FAIL;
     PCNT_CHECK(fun != NULL, PCNT_ADDRESS_ERR_STR, ESP_ERR_INVALID_ARG);
-    return esp_intr_alloc(ETS_PCNT_INTR_SOURCE, intr_alloc_flags, fun, arg, handle);
+    PCNT_ENTER_CRITICAL(&pcnt_spinlock);
+    ret = esp_intr_alloc(ETS_PCNT_INTR_SOURCE, intr_alloc_flags, fun, arg, handle);
+    PCNT_EXIT_CRITICAL(&pcnt_spinlock);
+    return ret;
 }
 
 esp_err_t pcnt_isr_handler_add(pcnt_unit_t unit, void(*isr_handler)(void *), void *args)

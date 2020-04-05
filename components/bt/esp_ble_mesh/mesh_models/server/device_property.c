@@ -12,11 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <string.h>
-#include <stdint.h>
-
-#include "mesh_types.h"
-
 #include "server_common.h"
 #include "device_property.h"
 

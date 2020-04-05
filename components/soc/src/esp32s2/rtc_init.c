@@ -115,8 +115,6 @@ void rtc_init(rtc_config_t cfg)
         CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,RTC_CNTL_SAR_I2C_FORCE_PD);
         //cancel digital pu force
         CLEAR_PERI_REG_MASK(RTC_CNTL_PWC_REG, RTC_CNTL_MEM_FORCE_PU);
-        //cannel i2c_reset_protect pd force
-        CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG,RTC_CNTL_I2C_RESET_POR_FORCE_PD);
 
         /* If this mask is enabled, all soc memories cannot enter power down mode */
         /* We should control soc memory power down mode from RTC, so we will not touch this register any more */

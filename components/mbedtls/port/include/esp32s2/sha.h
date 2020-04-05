@@ -1,4 +1,4 @@
-// Copyright 2015-2016 Espressif Systems (Shanghai) PTE LTD
+// Copyright 2019-2020 Espressif Systems (Shanghai) PTE LTD
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,9 +16,8 @@
 #define _ESP_SHA_H_
 
 #include "esp32s2/rom/sha.h"
-#include "esp_types.h"
 
-/** @brief Low-level support functions for the hardware SHA engine
+/** @brief Low-level support functions for the hardware SHA engine using DMA
  *
  * @note If you're looking for a SHA API to use, try mbedtls component
  * mbedtls/shaXX.h. That API supports hardware acceleration.
@@ -28,15 +27,8 @@
  *
  * Some technical details about the hardware SHA engine:
  *
- * - SHA accelerator engine calculates one digest at a time, per SHA
- *   algorithm type. It initialises and maintains the digest state
- *   internally. It is possible to read out an in-progress SHA digest
- *   state, but it is not possible to restore a SHA digest state
- *   into the engine.
- *
- * - The memory block SHA_TEXT_BASE is shared between all SHA digest
- *   engines, so all engines must be idle before this memory block is
- *   modified.
+ * - The crypto DMA is shared between the SHA and AES engine, it is not
+ *   possible for them to run calcalutions in parallel.
  *
  */
 
@@ -50,16 +42,10 @@ typedef SHA_TYPE esp_sha_type;
 /** @brief Calculate SHA1 or SHA2 sum of some data, using hardware SHA engine
  *
  * @note For more versatile SHA calculations, where data doesn't need
- * to be passed all at once, try the mbedTLS mbedtls/shaX.h APIs. The
- * hardware-accelerated mbedTLS implementation is also faster when
- * hashing large amounts of data.
+ * to be passed all at once, try the mbedTLS mbedtls/shaX.h APIs.
  *
  * @note It is not necessary to lock any SHA hardware before calling
  * this function, thread safety is managed internally.
- *
- * @note If a TLS connection is open then this function may block
- * indefinitely waiting for a SHA engine to become available. Use the
- * mbedTLS SHA API to avoid this problem.
  *
  * @param sha_type SHA algorithm to use.
  *
@@ -73,157 +59,106 @@ typedef SHA_TYPE esp_sha_type;
  */
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output);
 
-/* @brief Begin to execute a single SHA block operation
+/** @brief Execute SHA block operation using DMA
  *
  * @note This is a piece of a SHA algorithm, rather than an entire SHA
  * algorithm.
  *
- * @note Call esp_sha_try_lock_engine() before calling this
- * function. Do not call esp_sha_lock_memory_block() beforehand, this
- * is done inside the function.
+ * @note Call esp_sha_aquire_hardware() before calling this
+ * function.
  *
  * @param sha_type SHA algorithm to use.
  *
- * @param data_block Pointer to block of data. Block size is
- * determined by algorithm (SHA1/SHA2_256 = 64 bytes,
- * SHA2_384/SHA2_512 = 128 bytes)
- *
- * @param is_first_block If this parameter is true, the SHA state will
- * be initialised (with the initial state of the given SHA algorithm)
- * before the block is calculated. If false, the existing state of the
- * SHA engine will be used.
- *
- * @return As a performance optimisation, this function returns before
- * the SHA block operation is complete. Both this function and
- * esp_sha_read_state() will automatically wait for any previous
- * operation to complete before they begin. If using the SHA registers
- * directly in another way, call esp_sha_wait_idle() after calling this
- * function but before accessing the SHA registers.
- */
-void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block);
-
-/* @brief Begin to execute SHA block operation using DMA
- *
- * @note This is a piece of a SHA algorithm, rather than an entire SHA
- * algorithm.
- *
- * @note Call esp_sha_try_lock_engine() before calling this
- * function. Do not call esp_sha_lock_memory_block() beforehand, this
- * is done inside the function.
- *
- * @param sha_type SHA algorithm to use.
- *
- * @param data_block Pointer to block of data. Block size is
+ * @param input Pointer to the input data. Block size is
  * determined by algorithm (SHA1/SHA2_256 = 64 bytes,
  * SHA2_384/SHA2_512 = 128 bytes)
  *
  * @param ilen length of input data should be multiple of block length.
  *
+ * @param buf Pointer to blocks of data that will be prepended
+ * to data_block before hashing. Useful when there is two sources of
+ * data that need to be efficiently calculated in a single SHA DMA
+ * operation.
+ *
+ * @param buf_len length of buf data should be multiple of block length.
+ * Should not be longer than the maximum amount of bytes in a single block
+ * (128 bytes)
+ *
  * @param is_first_block If this parameter is true, the SHA state will
  * be initialised (with the initial state of the given SHA algorithm)
  * before the block is calculated. If false, the existing state of the
  * SHA engine will be used.
  *
+ * @param t The number of bits for the SHA512/t hash function, with
+ * output truncated to t bits. Used for calculating the inital hash.
+ * t is any positive integer between 1 and 512, except 384.
+ *
+ * @return 0 if successful
  */
-int esp_sha_dma(esp_sha_type sha_type, const void *data_block, uint32_t ilen, bool is_first_block);
+int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
+                const void *buf, uint32_t buf_len, bool is_first_block);
 
-/** @brief Read out the current state of the SHA digest loaded in the engine.
+/**
+ * @brief Read out the current state of the SHA digest
  *
  * @note This is a piece of a SHA algorithm, rather than an entire SHA algorithm.
  *
- * @note Call esp_sha_try_lock_engine() before calling this
- * function. Do not call esp_sha_lock_memory_block() beforehand, this
- * is done inside the function.
+ * @note Call esp_sha_aquire_hardware() before calling this
+ * function.
  *
  * If the SHA suffix padding block has been executed already, the
- * value that is read is the SHA digest (in big endian
- * format). Otherwise, the value that is read is an interim SHA state.
- *
- * @note If sha_type is SHA2_384, only 48 bytes of state will be read.
- * This is enough for the final SHA2_384 digest, but if you want the
- * interim SHA-384 state (to continue digesting) then pass SHA2_512 instead.
+ * value that is read is the SHA digest.
+ * Otherwise, the value that is read is an interim SHA state.
  *
  * @param sha_type SHA algorithm in use.
- *
- * @param state Pointer to a memory buffer to hold the SHA state. Size
- * is 20 bytes (SHA1), 32 bytes (SHA2_256), 48 bytes (SHA2_384) or 64 bytes (SHA2_512).
- *
+ * @param digest_state Pointer to a memory buffer to hold the SHA state. Size
+ * is 20 bytes (SHA1), 32 bytes (SHA2_256), or 64 bytes (SHA2_384, SHA2_512).
  */
 void esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state);
 
 /**
- * @brief Obtain exclusive access to a particular SHA engine
+ * @brief Set the current state of the SHA digest
  *
- * @param sha_type Type of SHA engine to use.
+ * @note Call esp_sha_aquire_hardware() before calling this
+ * function.
  *
- * Blocks until engine is available. Note: Can block indefinitely
- * while a TLS connection is open, suggest using
- * esp_sha_try_lock_engine() and failing over to software SHA.
+ * When resuming a
+ *
+ * @param sha_type SHA algorithm in use.
+ * @param digest_state
  */
-void esp_sha_lock_engine(esp_sha_type sha_type);
+void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state);
+
 
 /**
- * @brief Try and obtain exclusive access to a particular SHA engine
- *
- * @param sha_type Type of SHA engine to use.
- *
- * @return Returns true if the SHA engine is locked for exclusive
- * use. Call esp_sha_unlock_sha_engine() when done.  Returns false if
- * the SHA engine is already in use, caller should use software SHA
- * algorithm for this digest.
+ * @brief Enables the SHA and crypto DMA peripheral and takes the
+ * locks for both of them.
  */
-bool esp_sha_try_lock_engine(esp_sha_type sha_type);
+void esp_sha_acquire_hardware(void);
 
 /**
- * @brief Unlock an engine previously locked with esp_sha_lock_engine() or esp_sha_try_lock_engine()
- *
- * @param sha_type Type of engine to release.
+ * @brief Disables the SHA and crypto DMA peripheral and releases the
+ * locks.
  */
-void esp_sha_unlock_engine(esp_sha_type sha_type);
+void esp_sha_release_hardware(void);
+
+/*
+*/
 
 /**
- * @brief Acquire exclusive access to the SHA shared memory block at SHA_TEXT_BASE
+ * @brief Sets the initial hash value for SHA512/t.
  *
- * This memory block is shared across all the SHA algorithm types.
+ * @note Is generated according to the algorithm described in the TRM,
+ * chapter SHA-Accelerator
  *
- * Caller should have already locked a SHA engine before calling this function.
+ * @note The engine must be locked until the value is used for an operation
+ * or read out. Else you risk another operation overwriting it.
  *
- * Note that it is possible to obtain exclusive access to the memory block even
- * while it is in use by the SHA engine. Caller should use esp_sha_wait_idle()
- * to ensure the SHA engine is not reading from the memory block in hardware.
+ * @param t
  *
- * @note You do not need to lock the memory block before calling esp_sha_block() or esp_sha_read_digest_state(), these functions handle memory block locking internally.
- *
- * Call esp_sha_unlock_memory_block() when done.
+ * @return 0 if successful
  */
-void esp_sha_lock_memory_block(void);
-
-/**
- * @brief Release exclusive access to the SHA register memory block at SHA_TEXT_BASE
- *
- * Caller should have already locked a SHA engine before calling this function.
- *
- * Call following esp_sha_lock_memory_block().
- */
-void esp_sha_unlock_memory_block(void);
-
-/** @brief Wait for the SHA engine to finish any current operation
- *
- * @note This function does not ensure exclusive access to any SHA
- * engine. Caller should use esp_sha_try_lock_engine() and
- * esp_sha_lock_memory_block() as required.
- *
- * @note Functions declared in this header file wait for SHA engine
- * completion automatically, so you don't need to use this API for
- * these. However if accessing SHA registers directly, you will need
- * to call this before accessing SHA registers if using the
- * esp_sha_block() function.
- *
- * @note This function busy-waits, so wastes CPU resources.
- * Best to delay calling until you are about to need it.
- *
- */
-void esp_sha_wait_idle(void);
+int esp_sha_512_t_init_hash(uint16_t t);
 
 #ifdef __cplusplus
 }

@@ -242,7 +242,8 @@ int sh2lib_connect(struct sh2lib_handle *hd, const char *uri)
     esp_tls_cfg_t tls_cfg = {
         .alpn_protos = proto,
         .non_block = true,
-    };    
+        .timeout_ms = 10 * 1000,
+    };
     if ((hd->http2_tls = esp_tls_conn_http_new(uri, &tls_cfg)) == NULL) {
         ESP_LOGE(TAG, "[sh2-connect] esp-tls connection failed");
         goto error;

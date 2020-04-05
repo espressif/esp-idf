@@ -9,6 +9,8 @@
 #ifndef _FRIEND_H_
 #define _FRIEND_H_
 
+#include "net.h"
+
 enum bt_mesh_friend_pdu_type {
     BLE_MESH_FRIEND_PDU_SINGLE,
     BLE_MESH_FRIEND_PDU_PARTIAL,
@@ -50,6 +52,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
                            struct net_buf_simple *buf);
 
 int bt_mesh_friend_init(void);
+int bt_mesh_friend_deinit(void);
 
 void bt_mesh_friend_remove_lpn(u16_t lpn_addr);
 

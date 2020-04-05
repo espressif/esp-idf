@@ -30,6 +30,7 @@ Random number generation
 
 When Wi-Fi or Bluetooth are enabled, numbers returned by hardware random number generator (RNG) can be considered true random numbers. Without Wi-Fi or Bluetooth enabled, hardware RNG is a pseudo-random number generator. At startup, ESP-IDF bootloader seeds the hardware RNG with entropy, but care must be taken when reading random values between the start of ``app_main`` and initialization of Wi-Fi or Bluetooth drivers.
 
+.. _MAC-Address-Allocation:
 
 MAC Address
 -----------

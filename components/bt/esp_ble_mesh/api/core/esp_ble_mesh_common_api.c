@@ -17,9 +17,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
-#include "osi/alarm.h"
 
 #include "esp_err.h"
 
@@ -31,7 +29,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     btc_ble_mesh_prov_args_t arg = {0};
     SemaphoreHandle_t semaphore = NULL;
     btc_msg_t msg = {0};
-    esp_err_t ret;
+    esp_err_t ret = ESP_OK;
 
     if (prov == NULL || comp == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -46,7 +44,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
 
     // Create a semaphore
     if ((semaphore = xSemaphoreCreateCounting(1, 0)) == NULL) {
-        LOG_ERROR("%s, Failed to allocate memory for the semaphore", __func__);
+        BT_ERR("%s, Failed to allocate memory for the semaphore", __func__);
         return ESP_ERR_NO_MEM;
     }
 
@@ -61,7 +59,7 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
 
     if (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL) != BT_STATUS_SUCCESS) {
         vSemaphoreDelete(semaphore);
-        LOG_ERROR("%s, BLE Mesh initialise failed", __func__);
+        BT_ERR("%s, BLE Mesh initialise failed", __func__);
         return ESP_FAIL;
     }
 
@@ -71,5 +69,26 @@ esp_err_t esp_ble_mesh_init(esp_ble_mesh_prov_t *prov, esp_ble_mesh_comp_t *comp
     vSemaphoreDelete(semaphore);
 
     return ESP_OK;
+}
+
+esp_err_t esp_ble_mesh_deinit(esp_ble_mesh_deinit_param_t *param)
+{
+    btc_ble_mesh_prov_args_t arg = {0};
+    btc_msg_t msg = {0};
+
+    if (param == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    ESP_BLE_HOST_STATUS_CHECK(ESP_BLE_HOST_STATUS_ENABLED);
+
+    arg.mesh_deinit.param.erase_flash = param->erase_flash;
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_PROV;
+    msg.act = BTC_BLE_MESH_ACT_DEINIT_MESH;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_mesh_prov_args_t), NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 

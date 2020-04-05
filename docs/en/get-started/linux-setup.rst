@@ -11,15 +11,15 @@ To compile with ESP-IDF you need to get the following packages:
 
 - CentOS 7::
 
-    sudo yum install git wget flex bison gperf python pyserial python-pyelftools cmake ninja-build ccache
+    sudo yum install git wget flex bison gperf python cmake ninja-build ccache
 
 - Ubuntu and Debian::
 
-    sudo apt-get install git wget flex bison gperf python python-pip python-setuptools python-serial python-click python-cryptography python-future python-pyparsing python-pyelftools cmake ninja-build ccache libffi-dev libssl-dev
+    sudo apt-get install git wget flex bison gperf python python-pip python-setuptools cmake ninja-build ccache libffi-dev libssl-dev
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python2-pip python2-pyserial python2-click python2-cryptography python2-future python2-pyparsing python2-pyelftools cmake ninja ccache
+    sudo pacman -S --needed gcc git make flex bison gperf python-pip cmake ninja ccache
 
 .. note::
     CMake version 3.5 or newer is required for use with ESP-IDF. Older Linux distributions may require updating, enabling of a "backports" repository, or installing of a "cmake3" package rather than "cmake".
@@ -31,6 +31,20 @@ Permission issues /dev/ttyUSB0
 ------------------------------
 
 With some Linux distributions you may get the ``Failed to open port /dev/ttyUSB0`` error message when flashing the {IDF_TARGET_NAME}. :ref:`This can be solved by adding the current user to the dialout group<linux-dialout-group>`.
+
+Setting up Python 3 as default for Ubuntu and Debian
+----------------------------------------------------
+
+Ubuntu and Debian are still providing Python 2.7 as the default interpreter. Python 3 can be installed as follows::
+
+    sudo apt-get install python3 python3-pip python3-setuptools
+
+Making Python 3 the default interpreter is possible by running::
+
+    sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 10
+
+.. note::
+    This is system-wide change which may affect all of the applications.
 
 Next Steps
 ==========

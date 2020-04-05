@@ -23,7 +23,10 @@
 
 #define TAG "ble_mesh_prov_console"
 
-uint64_t start_time;
+#define TRANS_TYPE_MESH_PERF 0x01
+#define TRANS_MESH_SEND_MESSAGE 0x01
+#define TRANS_MESH_SEND_MESSAGE_EVT 0x01
+
 typedef enum {
     VENDOR_MODEL_PERF_OPERATION_TYPE_GET = 1,
     VENDOR_MODEL_PERF_OPERATION_TYPE_SET,
@@ -62,40 +65,29 @@ ble_mesh_performance_statistics_t test_perf_statistics;
 
 #define SEND_MESSAGE_TIMEOUT (30000/portTICK_RATE_MS)
 
-extern SemaphoreHandle_t ble_mesh_node_sema;
-extern SemaphoreHandle_t ble_mesh_test_perf_send_sema;
-extern SemaphoreHandle_t ble_mesh_test_perf_sema;
-
 #define arg_int_to_value(src_msg, dst_msg, message) do { \
     if (src_msg->count != 0) {\
-        ESP_LOGD(TAG, " %s, %s\n", __func__, message);\
         dst_msg = src_msg->ival[0];\
     } \
 } while(0) \
 
 #define ble_mesh_node_get_value(index, key, value) do { \
     uint16_t _index = 0; \
-    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY); \
     for (_index = 0; _index < NODE_MAX_GROUP_CONFIG; _index) { \
         if (node_set_prestore_params[_index].key == value) { \
             break; \
         } \
     } \
     index = _index; \
-    xSemaphoreGive(ble_mesh_node_sema); \
 } while(0) \
 
 #define ble_mesh_node_set_state(status) do { \
-    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY); \
     node_status.previous = node_status.current; \
     node_status.current = status; \
-    xSemaphoreGive(ble_mesh_node_sema); \
 }while(0) \
 
 #define ble_mesh_node_get_state(status) do { \
-    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY); \
     status = node_status.previous; \
-    xSemaphoreGive(ble_mesh_node_sema); \
 }while(0) \
 
 #define ble_mesh_callback_check_err_code(err_code, message) do { \

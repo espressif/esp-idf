@@ -21,7 +21,7 @@
 extern "C" {
 #endif
 
-#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000004
+#define ESP_WIFI_OS_ADAPTER_VERSION  0x00000006
 #define ESP_WIFI_OS_ADAPTER_MAGIC    0xDEADBEAF
 
 #define OSI_FUNCS_TIME_BLOCKING      0xffffffff
@@ -83,14 +83,16 @@ typedef struct {
     void (* _phy_common_clock_enable)(void);
     void (* _phy_common_clock_disable)(void);
 #endif
+    int32_t (* _phy_update_country_info)(const char* country);
     int32_t (* _read_mac)(uint8_t* mac, uint32_t type);
     void (* _timer_arm)(void *timer, uint32_t tmout, bool repeat);
     void (* _timer_disarm)(void *timer);
     void (* _timer_done)(void *ptimer);
     void (* _timer_setfn)(void *ptimer, void *pfunction, void *parg);
     void (* _timer_arm_us)(void *ptimer, uint32_t us, bool repeat);
-    void (* _periph_module_enable)(uint32_t periph);
-    void (* _periph_module_disable)(uint32_t periph);
+    void (* _wifi_reset_mac)(void);
+    void (* _wifi_clock_enable)(void);
+    void (* _wifi_clock_disable)(void);
     int64_t (* _esp_timer_get_time)(void);
     int32_t (* _nvs_set_i8)(uint32_t handle, const char* key, int8_t value);
     int32_t (* _nvs_get_i8)(uint32_t handle, const char* key, int8_t* out_value);
@@ -111,6 +113,7 @@ typedef struct {
     uint32_t (* _slowclk_cal_get)(void);
 #endif
     void (* _log_write)(uint32_t level, const char* tag, const char* format, ...);
+    void (* _log_writev)(uint32_t level, const char* tag, const char* format, va_list args);
     uint32_t (* _log_timestamp)(void);
     void * (* _malloc_internal)(size_t size);
     void * (* _realloc_internal)(void *ptr, size_t size);

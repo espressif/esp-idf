@@ -18,15 +18,32 @@
 extern "C" {
 #endif
 
+#define PCNT_PIN_NOT_USED     (-1)  /*!< When selected for a pin, this pin will not be used */
+
 /**
  * @brief PCNT port number, the max port number is (PCNT_PORT_MAX - 1).
  */
-typedef int pcnt_port_t;
+typedef enum {
+    PCNT_PORT_0 = 0,                 /*!< PCNT port 0 */
+    PCNT_PORT_MAX,                   /*!< PCNT port max */
+} pcnt_port_t;
 
 /**
  * @brief Selection of all available PCNT units
  */
-typedef int pcnt_unit_t;
+typedef enum {
+    PCNT_UNIT_0 = 0,                 /*!< PCNT unit 0 */
+    PCNT_UNIT_1 = 1,                 /*!< PCNT unit 1 */
+    PCNT_UNIT_2 = 2,                 /*!< PCNT unit 2 */
+    PCNT_UNIT_3 = 3,                 /*!< PCNT unit 3 */
+#if SOC_PCNT_UNIT_NUM > 4
+    PCNT_UNIT_4 = 4,                 /*!< PCNT unit 4 */
+    PCNT_UNIT_5 = 5,                 /*!< PCNT unit 5 */
+    PCNT_UNIT_6 = 6,                 /*!< PCNT unit 6 */
+    PCNT_UNIT_7 = 7,                 /*!< PCNT unit 7 */
+#endif
+    PCNT_UNIT_MAX,
+} pcnt_unit_t; 
 
 /**
  * @brief Selection of available modes that determine the counter's action depending on the state of the control signal's input GPIO

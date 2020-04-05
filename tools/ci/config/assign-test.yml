@@ -27,6 +27,7 @@ assign_test:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
       - $BOT_LABEL_INTEGRATION_TEST
       - $BOT_LABEL_EXAMPLE_TEST
       - $BOT_LABEL_CUSTOM_TEST

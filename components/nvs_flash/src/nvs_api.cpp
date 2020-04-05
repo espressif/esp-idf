@@ -95,7 +95,7 @@ extern "C" esp_err_t nvs_flash_init_custom(const char *partName, uint32_t baseSe
 {
     ESP_LOGD(TAG, "nvs_flash_init_custom partition=%s start=%d count=%d", partName, baseSector, sectorCount);
 
-    return nvs::NVSPartitionManager::get_instance()->init_custom(partName, baseSector, sectorCount);
+    return NVSPartitionManager::get_instance()->init_custom(partName, baseSector, sectorCount);
 }
 
 #ifdef CONFIG_NVS_ENCRYPTION
@@ -125,7 +125,7 @@ extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
     Lock::init();
     Lock lock;
 
-    return nvs::NVSPartitionManager::get_instance()->init_partition(part_name);
+    return NVSPartitionManager::get_instance()->init_partition(part_name);
 }
 
 extern "C" esp_err_t nvs_flash_init(void)
@@ -163,6 +163,10 @@ extern "C" esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg)
 
 extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 {
+    if (NVSPartitionManager::get_instance()->lookup_storage_from_name(part_name)) {
+        return ESP_ERR_NVS_INVALID_STATE;
+    }
+
     const esp_partition_t* partition = esp_partition_find_first(
             ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, part_name);
     if (partition == NULL) {
@@ -187,7 +191,7 @@ extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
     s_nvs_handles.clearAndFreeNodes();
 
     // Deinit partition
-    return nvs::NVSPartitionManager::get_instance()->deinit_partition(partition_name);
+    return NVSPartitionManager::get_instance()->deinit_partition(partition_name);
 }
 
 extern "C" esp_err_t nvs_flash_deinit(void)
@@ -213,7 +217,7 @@ extern "C" esp_err_t nvs_open_from_partition(const char *part_name, const char* 
     ESP_LOGD(TAG, "%s %s %d", __func__, name, open_mode);
 
     NVSHandleSimple *handle;
-    esp_err_t result = nvs::NVSPartitionManager::get_instance()->open_handle(part_name, name, open_mode, &handle);
+    esp_err_t result = NVSPartitionManager::get_instance()->open_handle(part_name, name, open_mode, &handle);
     if (result == ESP_OK) {
         NVSHandleEntry *entry = new (std::nothrow) NVSHandleEntry(handle, part_name);
         if (entry) {

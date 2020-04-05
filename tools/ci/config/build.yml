@@ -12,14 +12,21 @@
   extends: .build_template
   artifacts:
     paths:
-      - tools/unit-test-app/output
       - components/idf_test/unit_test/TestCaseAll.yml
+      # Keep only significant files in the output folder (mainly to get rid of .map files)
+      - tools/unit-test-app/output/*/*.bin
+      - tools/unit-test-app/output/*/sdkconfig
+      - tools/unit-test-app/output/*/*.elf
+      - tools/unit-test-app/output/*/flasher_args.json
+      - tools/unit-test-app/output/*/bootloader/*.bin
+      - tools/unit-test-app/output/*/partition_table/*.bin
     expire_in: 4 days
   only:
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_BUILD
       - $BOT_LABEL_UNIT_TEST
+      - $BOT_LABEL_UNIT_TEST_S2
       - $BOT_LABEL_REGULAR_TEST
 
 .build_ssc_template:
@@ -231,7 +238,7 @@ build_test_apps_esp32s2:
 
 .build_docs_template: &build_docs_template
   stage: build
-  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags:
     - build_docs
   artifacts:
@@ -249,6 +256,7 @@ build_test_apps_esp32s2:
   dependencies: []
   script:
     - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT build
 
 build_docs_en_esp32:

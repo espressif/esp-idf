@@ -38,6 +38,9 @@
 #include "esp_private/wifi_os_adapter.h"
 #include "esp_private/wifi.h"
 #include "esp_phy_init.h"
+#include "soc/dport_reg.h"
+#include "soc/syscon_reg.h"
+#include "phy_init_data.h"
 #include "driver/periph_ctrl.h"
 #include "nvs.h"
 #include "os.h"
@@ -408,6 +411,22 @@ static void IRAM_ATTR timer_arm_us_wrapper(void *ptimer, uint32_t us, bool repea
     ets_timer_arm_us(ptimer, us, repeat);
 }
 
+static void wifi_reset_mac_wrapper(void)
+{
+    DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+    DPORT_CLEAR_PERI_REG_MASK(DPORT_CORE_RST_EN_REG, DPORT_MAC_RST);
+}
+
+static void wifi_clock_enable_wrapper(void)
+{
+    periph_module_enable(PERIPH_WIFI_MODULE);
+}
+
+static void wifi_clock_disable_wrapper(void)
+{
+    periph_module_disable(PERIPH_WIFI_MODULE);
+}
+
 static int get_time_wrapper(void *t)
 {
     return os_get_time(t);
@@ -570,14 +589,16 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._phy_load_cal_and_init = esp_phy_load_cal_and_init,
     ._phy_common_clock_enable = esp_phy_common_clock_enable,
     ._phy_common_clock_disable = esp_phy_common_clock_disable,
+    ._phy_update_country_info = esp_phy_update_country_info,
     ._read_mac = esp_read_mac,
     ._timer_arm = timer_arm_wrapper,
     ._timer_disarm = timer_disarm_wrapper,
     ._timer_done = timer_done_wrapper,
     ._timer_setfn = timer_setfn_wrapper,
     ._timer_arm_us = timer_arm_us_wrapper,
-    ._periph_module_enable = periph_module_enable,
-    ._periph_module_disable = periph_module_disable,
+    ._wifi_reset_mac = wifi_reset_mac_wrapper,
+    ._wifi_clock_enable = wifi_clock_enable_wrapper,
+    ._wifi_clock_disable = wifi_clock_disable_wrapper,
     ._esp_timer_get_time = esp_timer_get_time,
     ._nvs_set_i8 = nvs_set_i8,
     ._nvs_get_i8 = nvs_get_i8,
@@ -595,6 +616,7 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._get_time = get_time_wrapper,
     ._random = os_random,
     ._log_write = esp_log_write,
+    ._log_writev = esp_log_writev,
     ._log_timestamp = esp_log_timestamp,
     ._malloc_internal =  malloc_internal_wrapper,
     ._realloc_internal = realloc_internal_wrapper,

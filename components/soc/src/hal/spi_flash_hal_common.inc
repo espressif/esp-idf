@@ -55,12 +55,32 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     if (!SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(dev) && io_mode > SPI_FLASH_FASTRD) {
         return ESP_ERR_NOT_SUPPORTED;
     }
+    if (addr_bitlen > 24 && SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(dev)) {
+        /*
+         * The extra address bits (24-addr_bitlen) are used to control the M7-M0 bits right after
+         * the address field, to avoid the flash going into continuous read mode.
+         *
+         * On ESP32-S2 the MEMSPI (that SUPPORT_CONTROL_DUMMY_OUTPUT), the least significant
+         * addr_bitlen bits of the address will be used, instead of the MSBs. The driver is
+         * required to set the address according to the extra address bits.
+         *
+         * To reduce the time consuming for the read() function to calculate the shift of address,
+         * the addr_bitlen is kept to 24 bits. And the CONTROL_DUMMY_OUTPUT feature is used to
+         * control those bits instead.
+         */
+
+        //This block is only reached when SPI_FLASH_QIO or SPI_FLASH_DIO
+        assert(io_mode == SPI_FLASH_DIO || io_mode == SPI_FLASH_QIO);
+        int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
+        dummy_cyclelen_base += (addr_bitlen - 24) / line_width;
+        addr_bitlen = 24;
+        spi_flash_ll_set_dummy_out(dev, 1, 1);
+    }
 
     spi_flash_ll_set_command8(dev, command);
     spi_flash_ll_set_addr_bitlen(dev, addr_bitlen);
     // Add dummy cycles to compensate for latency of GPIO matrix and external delay, if necessary...
     spi_flash_ll_set_dummy(dev, COMPUTE_DUMMY_CYCLELEN(host, dummy_cyclelen_base));
-    spi_flash_ll_set_dummy_out(dev, 1, 1);
     //disable all data phases, enable them later if needed
     spi_flash_ll_set_miso_bitlen(dev, 0);
     spi_flash_ll_set_mosi_bitlen(dev, 0);

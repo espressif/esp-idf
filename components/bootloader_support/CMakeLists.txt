@@ -2,6 +2,7 @@ set(srcs
     "src/bootloader_clock.c"
     "src/bootloader_common.c"
     "src/bootloader_flash.c"
+    "src/bootloader_mem.c"
     "src/bootloader_random.c"
     "src/bootloader_utility.c"
     "src/esp_image_format.c"
@@ -20,20 +21,32 @@ if(BOOTLOADER_BUILD)
     set(include_dirs "include" "include_bootloader")
     set(priv_requires micro-ecc spi_flash efuse)
     list(APPEND srcs
-        "src/bootloader_init.c"
-        "src/${IDF_TARGET}/bootloader_sha.c"
-        "src/${IDF_TARGET}/flash_encrypt.c"
-        "src/${IDF_TARGET}/secure_boot_signatures.c"
-        "src/${IDF_TARGET}/secure_boot.c"
-        "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
-        )
+    "src/bootloader_init.c"
+    "src/${IDF_TARGET}/bootloader_sha.c"
+    "src/${IDF_TARGET}/flash_encrypt.c"
+    "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
+    )
 else()
     list(APPEND srcs
-        "src/idf/bootloader_sha.c"
-        "src/idf/secure_boot_signatures.c")
+        "src/idf/bootloader_sha.c")
     set(include_dirs "include")
     set(priv_include_dirs "include_bootloader")
     set(priv_requires spi_flash mbedtls efuse)
+endif()
+
+if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME OR CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+    if(BOOTLOADER_BUILD)
+        list(APPEND srcs
+        "src/${IDF_TARGET}/secure_boot_signatures.c")
+    else()
+        list(APPEND srcs
+            "src/idf/secure_boot_signatures.c")
+    endif()
+endif()
+
+if(CONFIG_SECURE_BOOT AND BOOTLOADER_BUILD)
+    list(APPEND srcs
+        "src/${IDF_TARGET}/secure_boot.c")
 endif()
 
 set(requires soc) #unfortunately the header directly uses SOC registers
@@ -44,7 +57,7 @@ idf_component_register(SRCS "${srcs}"
                     REQUIRES "${requires}"
                     PRIV_REQUIRES "${priv_requires}")
 
-if(CONFIG_SECURE_SIGNED_APPS)
+if(CONFIG_SECURE_SIGNED_APPS AND (CONFIG_SECURE_BOOT_V1_ENABLED OR CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME))
     if(BOOTLOADER_BUILD)
         # Whether CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES or not, we need verification key to embed
         # in the library.

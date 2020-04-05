@@ -557,42 +557,77 @@ class ESPCoreDumpLoaderError(ESPCoreDumpError):
         super(ESPCoreDumpLoaderError, self).__init__(message)
 
 
-def esp_core_dump_ver(chip, maj, min):
-    return (((chip & 0xFFFF) << 16) | ((maj & 0xFF) << 8) | ((min & 0xFF) << 0))
+class ESPCoreDumpVersion(object):
+    """Core dump version class
+    """
+    # This class contains all version-dependent params
+    ESP_CORE_DUMP_CHIP_ESP32 = 0
+    ESP_CORE_DUMP_CHIP_ESP32S2 = 2
+
+    def __init__(self, version=None):
+        """Constructor for core dump version
+        """
+        super(ESPCoreDumpVersion, self).__init__()
+        if version is None:
+            self.version = 0
+        else:
+            self.set_version(version)
+
+    @staticmethod
+    def make_dump_ver(maj, min):
+        return (((maj & 0xFF) << 8) | ((min & 0xFF) << 0))
+
+    def set_version(self, version):
+        self.version = version
+
+    @property
+    def chip_ver(self):
+        return ((self.version & 0xFFFF0000) >> 16)
+
+    @property
+    def dump_ver(self):
+        return (self.version & 0x0000FFFF)
+
+    @property
+    def major(self):
+        return ((self.version & 0x0000FF00) >> 8)
+
+    @property
+    def minor(self):
+        return (self.version & 0x000000FF)
 
 
-class ESPCoreDumpLoader(object):
+class ESPCoreDumpLoader(ESPCoreDumpVersion):
     """Core dump loader base class
     """
-    # TODO: add class for core dump version and move all version-dependent params to it
-    ESP_CORE_DUMP_CHIP_ESP32 = 0
     # "legacy" stands for core dumps v0.1 (before IDF v4.1)
-    ESP32_COREDUMP_VERSION_BIN_V1 = esp_core_dump_ver(ESP_CORE_DUMP_CHIP_ESP32, 0, 1)
-    ESP32_COREDUMP_VERSION_BIN_V2 = esp_core_dump_ver(ESP_CORE_DUMP_CHIP_ESP32, 0, 2)
-    ESP32_COREDUMP_VERSION_ELF_CRC32 = esp_core_dump_ver(ESP_CORE_DUMP_CHIP_ESP32, 1, 0)
-    ESP32_COREDUMP_VERSION_ELF_SHA256 = esp_core_dump_ver(ESP_CORE_DUMP_CHIP_ESP32, 1, 1)
+    ESP_COREDUMP_VERSION_BIN_V1 = ESPCoreDumpVersion.make_dump_ver(0, 1)
+    ESP_COREDUMP_VERSION_BIN_V2 = ESPCoreDumpVersion.make_dump_ver(0, 2)
+    ESP_COREDUMP_VERSION_ELF_CRC32 = ESPCoreDumpVersion.make_dump_ver(1, 0)
+    ESP_COREDUMP_VERSION_ELF_SHA256 = ESPCoreDumpVersion.make_dump_ver(1, 1)
     ESP_CORE_DUMP_INFO_TYPE = 8266
     ESP_CORE_DUMP_TASK_INFO_TYPE = 678
     ESP_CORE_DUMP_EXTRA_INFO_TYPE = 677
     ESP_COREDUMP_CURR_TASK_MARKER = 0xdeadbeef
-    ESP32_COREDUMP_BIN_V1_HDR_FMT = '<4L'
-    ESP32_COREDUMP_BIN_V1_HDR_SZ = struct.calcsize(ESP32_COREDUMP_BIN_V1_HDR_FMT)
-    ESP32_COREDUMP_HDR_FMT = '<5L'
-    ESP32_COREDUMP_HDR_SZ = struct.calcsize(ESP32_COREDUMP_HDR_FMT)
-    ESP32_COREDUMP_TSK_HDR_FMT = '<3L'
-    ESP32_COREDUMP_TSK_HDR_SZ = struct.calcsize(ESP32_COREDUMP_TSK_HDR_FMT)
-    ESP32_COREDUMP_MEM_SEG_HDR_FMT = '<2L'
-    ESP32_COREDUMP_MEM_SEG_HDR_SZ = struct.calcsize(ESP32_COREDUMP_MEM_SEG_HDR_FMT)
-    ESP32_COREDUMP_NOTE_HDR_FMT = '<3L'
-    ESP32_COREDUMP_NOTE_HDR_SZ = struct.calcsize(ESP32_COREDUMP_NOTE_HDR_FMT)
-    ESP32_COREDUMP_CRC_FMT = '<L'
-    ESP32_COREDUMP_CRC_SZ = struct.calcsize(ESP32_COREDUMP_CRC_FMT)
-    ESP32_COREDUMP_SHA256_FMT = '32c'
-    ESP32_COREDUMP_SHA256_SZ = struct.calcsize(ESP32_COREDUMP_SHA256_FMT)
+    ESP_COREDUMP_BIN_V1_HDR_FMT = '<4L'
+    ESP_COREDUMP_BIN_V1_HDR_SZ = struct.calcsize(ESP_COREDUMP_BIN_V1_HDR_FMT)
+    ESP_COREDUMP_HDR_FMT = '<5L'
+    ESP_COREDUMP_HDR_SZ = struct.calcsize(ESP_COREDUMP_HDR_FMT)
+    ESP_COREDUMP_TSK_HDR_FMT = '<3L'
+    ESP_COREDUMP_TSK_HDR_SZ = struct.calcsize(ESP_COREDUMP_TSK_HDR_FMT)
+    ESP_COREDUMP_MEM_SEG_HDR_FMT = '<2L'
+    ESP_COREDUMP_MEM_SEG_HDR_SZ = struct.calcsize(ESP_COREDUMP_MEM_SEG_HDR_FMT)
+    ESP_COREDUMP_NOTE_HDR_FMT = '<3L'
+    ESP_COREDUMP_NOTE_HDR_SZ = struct.calcsize(ESP_COREDUMP_NOTE_HDR_FMT)
+    ESP_COREDUMP_CRC_FMT = '<L'
+    ESP_COREDUMP_CRC_SZ = struct.calcsize(ESP_COREDUMP_CRC_FMT)
+    ESP_COREDUMP_SHA256_FMT = '32c'
+    ESP_COREDUMP_SHA256_SZ = struct.calcsize(ESP_COREDUMP_SHA256_FMT)
 
     def __init__(self):
         """Base constructor for core dump loader
         """
+        super(ESPCoreDumpLoader, self).__init__()
         self.fcore = None
         self.hdr = {}
 
@@ -728,14 +763,15 @@ class ESPCoreDumpLoader(object):
         """ Reads the ELF formatted core dump image and parse it
         """
         core_off = off
-        if self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_ELF_CRC32:
-            checksum_len = self.ESP32_COREDUMP_CRC_SZ
-        elif self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_ELF_SHA256:
-            checksum_len = self.ESP32_COREDUMP_SHA256_SZ
+        self.set_version(self.hdr['ver'])
+        if self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_CRC32:
+            checksum_len = self.ESP_COREDUMP_CRC_SZ
+        elif self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_SHA256:
+            checksum_len = self.ESP_COREDUMP_SHA256_SZ
         else:
-            raise ESPCoreDumpLoaderError("Core dump version '%d' is not supported!" % self.hdr['ver'])
+            raise ESPCoreDumpLoaderError("Core dump version '%d' is not supported!" % self.dump_ver)
         core_elf = ESPCoreDumpElfFile()
-        data = self.read_data(core_off, self.hdr['tot_len'] - checksum_len - self.ESP32_COREDUMP_HDR_SZ)
+        data = self.read_data(core_off, self.hdr['tot_len'] - checksum_len - self.ESP_COREDUMP_HDR_SZ)
         with open(core_fname, 'w+b') as fce:
             try:
                 fce.write(data)
@@ -756,9 +792,9 @@ class ESPCoreDumpLoader(object):
                         if 'ESP_CORE_DUMP_INFO' == note.name and note.type == self.ESP_CORE_DUMP_INFO_TYPE and exe_name:
                             app_sha256 = binascii.hexlify(exe_elf.sha256())
                             n_ver_len = struct.calcsize("<L")
-                            n_sha256_len = self.ESP32_COREDUMP_SHA256_SZ * 2  # SHA256 as hex string
+                            n_sha256_len = self.ESP_COREDUMP_SHA256_SZ * 2  # SHA256 as hex string
                             n_ver,coredump_sha256 = struct.unpack("<L%ds" % (n_sha256_len), note.desc[:n_ver_len + n_sha256_len])
-                            if coredump_sha256 != app_sha256 or n_ver != self.hdr['ver']:
+                            if coredump_sha256 != app_sha256 or ESPCoreDumpVersion(n_ver).dump_ver != self.dump_ver:
                                 raise ESPCoreDumpError("Invalid application image for coredump: app_SHA256(%s) != coredump_SHA256(%s)." %
                                                        (app_sha256, coredump_sha256))
             except ESPCoreDumpError as e:
@@ -781,8 +817,8 @@ class ESPCoreDumpLoader(object):
             for i in range(self.hdr['task_num']):
                 task_status.task_index = i
                 task_status.task_flags = EspCoreDumpTaskStatus.TASK_STATUS_CORRECT
-                data = self.read_data(core_off, self.ESP32_COREDUMP_TSK_HDR_SZ)
-                tcb_addr,stack_top,stack_end = struct.unpack_from(self.ESP32_COREDUMP_TSK_HDR_FMT, data)
+                data = self.read_data(core_off, self.ESP_COREDUMP_TSK_HDR_SZ)
+                tcb_addr,stack_top,stack_end = struct.unpack_from(self.ESP_COREDUMP_TSK_HDR_FMT, data)
                 if stack_end > stack_top:
                     stack_len = stack_end - stack_top
                     stack_base = stack_top
@@ -793,7 +829,7 @@ class ESPCoreDumpLoader(object):
                 if stack_len_aligned % 4:
                     stack_len_aligned = 4 * (old_div(stack_len_aligned,4) + 1)
 
-                core_off += self.ESP32_COREDUMP_TSK_HDR_SZ
+                core_off += self.ESP_COREDUMP_TSK_HDR_SZ
                 logging.debug("Read TCB %d bytes @ 0x%x" % (tcbsz_aligned, tcb_addr))
                 data = self.read_data(core_off, tcbsz_aligned)
                 task_status.task_tcb_addr = tcb_addr
@@ -846,11 +882,12 @@ class ESPCoreDumpLoader(object):
                         exc_regs.extend([reg_id, extra_regs[reg_id]])
                     core_dump_info_notes += Elf32NoteDesc("EXTRA_INFO", self.ESP_CORE_DUMP_EXTRA_INFO_TYPE,
                                                           struct.pack("<%dL" % (1 + len(exc_regs)), tcb_addr, *exc_regs)).dump()
-            if self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_BIN_V2:
+            self.set_version(self.hdr['ver'])
+            if self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V2:
                 for i in range(self.hdr['segs_num']):
-                    data = self.read_data(core_off, self.ESP32_COREDUMP_MEM_SEG_HDR_SZ)
-                    core_off += self.ESP32_COREDUMP_MEM_SEG_HDR_SZ
-                    mem_start,mem_sz = struct.unpack_from(self.ESP32_COREDUMP_MEM_SEG_HDR_FMT, data)
+                    data = self.read_data(core_off, self.ESP_COREDUMP_MEM_SEG_HDR_SZ)
+                    core_off += self.ESP_COREDUMP_MEM_SEG_HDR_SZ
+                    mem_start,mem_sz = struct.unpack_from(self.ESP_COREDUMP_MEM_SEG_HDR_FMT, data)
                     logging.debug("Read memory segment %d bytes @ 0x%x" % (mem_sz, mem_start))
                     data = self.read_data(core_off, stack_len_aligned)
                     core_elf.add_program_segment(mem_start, data, ESPCoreDumpElfFile.PT_LOAD, ESPCoreDumpSegment.PF_R | ESPCoreDumpSegment.PF_W)
@@ -887,19 +924,23 @@ class ESPCoreDumpLoader(object):
     def create_corefile(self, core_fname=None, exe_name=None, rom_elf=None, off=0):
         """Creates core dump ELF file
         """
-        data = self.read_data(off, self.ESP32_COREDUMP_HDR_SZ)
-        vals = struct.unpack_from(self.ESP32_COREDUMP_HDR_FMT, data)
+        data = self.read_data(off, self.ESP_COREDUMP_HDR_SZ)
+        vals = struct.unpack_from(self.ESP_COREDUMP_HDR_FMT, data)
         self.hdr = dict(zip(('tot_len', 'ver', 'task_num', 'tcbsz', 'segs_num'), vals))
         if not core_fname:
             fce = tempfile.NamedTemporaryFile(mode='w+b', delete=False)
             core_fname = fce.name
-        if self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_ELF_CRC32 or self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_ELF_SHA256:
-            return self._extract_elf_corefile(core_fname, off + self.ESP32_COREDUMP_HDR_SZ, exe_name)
-        elif self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_BIN_V2:
-            return self._extract_bin_corefile(core_fname, rom_elf, off + self.ESP32_COREDUMP_HDR_SZ)
-        elif self.hdr['ver'] == self.ESP32_COREDUMP_VERSION_BIN_V1:
-            return self._extract_bin_corefile(core_fname, rom_elf, off + self.ESP32_COREDUMP_BIN_V1_HDR_SZ)
-        raise ESPCoreDumpLoaderError("Core dump version '0x%x' is not supported!" % (self.hdr['ver']))
+        self.set_version(self.hdr['ver'])
+        if self.chip_ver == ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32S2 or self.chip_ver == ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32:
+            if self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_CRC32 or self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_SHA256:
+                return self._extract_elf_corefile(core_fname, off + self.ESP_COREDUMP_HDR_SZ, exe_name)
+            elif self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V2:
+                return self._extract_bin_corefile(core_fname, rom_elf, off + self.ESP_COREDUMP_HDR_SZ)
+            elif self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V1:
+                return self._extract_bin_corefile(core_fname, rom_elf, off + self.ESP_COREDUMP_BIN_V1_HDR_SZ)
+            raise ESPCoreDumpLoaderError("Core dump version '0x%x' is not supported!" % (self.dump_ver))
+        else:
+            raise ESPCoreDumpLoaderError("Core dump chip '0x%x' is not supported!" % (self.chip_ver))
 
     def read_data(self, off, sz):
         """Reads data from raw core dump got from flash or UART
@@ -950,9 +991,9 @@ class ESPCoreDumpFileLoader(ESPCoreDumpLoader):
 class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     """Core dump flash loader class
     """
-    ESP32_COREDUMP_FLASH_LEN_FMT    = '<L'
-    ESP32_COREDUMP_FLASH_LEN_SZ     = struct.calcsize(ESP32_COREDUMP_FLASH_LEN_FMT)
-    ESP32_COREDUMP_PART_TABLE_OFF   = 0x8000
+    ESP_COREDUMP_FLASH_LEN_FMT    = '<L'
+    ESP_COREDUMP_FLASH_LEN_SZ     = struct.calcsize(ESP_COREDUMP_FLASH_LEN_FMT)
+    ESP_COREDUMP_PART_TABLE_OFF   = 0x8000
 
     def __init__(self, off, tool_path=None, chip='esp32', port=None, baud=None):
         """Constructor for core dump flash loader
@@ -980,7 +1021,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
         if not tool_path:
             tool_path = self.get_tool_path(use_esptool=False)
         if not part_off:
-            part_off = self.ESP32_COREDUMP_PART_TABLE_OFF
+            part_off = self.ESP_COREDUMP_PART_TABLE_OFF
         size = None
         offset = None
         try:
@@ -1051,7 +1092,7 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
                 logging.warning("The core dump image offset is not specified. Use partition offset: %d.", part_offset)
             if part_offset != off:
                 logging.warning("Predefined image offset: %d does not match core dump partition offset: %d", off, part_offset)
-            tool_args.extend(['read_flash', str(off), str(self.ESP32_COREDUMP_FLASH_LEN_SZ)])
+            tool_args.extend(['read_flash', str(off), str(self.ESP_COREDUMP_FLASH_LEN_SZ)])
             tool_args.append(f.name)
             self.fcore_name = f.name
             # read core dump length
@@ -1106,28 +1147,31 @@ class ESPCoreDumpFlashLoader(ESPCoreDumpLoader):
     def _read_core_dump_length(self, f):
         """Reads core dump length
         """
-        data = f.read(self.ESP32_COREDUMP_FLASH_LEN_SZ)
-        tot_len, = struct.unpack_from(self.ESP32_COREDUMP_FLASH_LEN_FMT, data)
+        data = f.read(self.ESP_COREDUMP_FLASH_LEN_SZ)
+        tot_len, = struct.unpack_from(self.ESP_COREDUMP_FLASH_LEN_FMT, data)
         return tot_len
 
     def create_corefile(self, core_fname=None, exe_name=None, rom_elf=None):
         """Checks flash coredump data integrity and creates ELF file
         """
-        data = self.read_data(0, self.ESP32_COREDUMP_HDR_SZ)
+        data = self.read_data(0, self.ESP_COREDUMP_HDR_SZ)
         self.checksum_len = 0
-        _,coredump_ver,_,_,_ = struct.unpack_from(self.ESP32_COREDUMP_HDR_FMT, data)
-        if coredump_ver == self.ESP32_COREDUMP_VERSION_ELF_CRC32 or coredump_ver == self.ESP32_COREDUMP_VERSION_BIN_V1 \
-                or coredump_ver == self.ESP32_COREDUMP_VERSION_BIN_V2:
-            logging.debug("Dump size = %d, crc off = 0x%x", self.dump_sz, self.dump_sz - self.ESP32_COREDUMP_CRC_SZ)
-            data = self.read_data(self.dump_sz - self.ESP32_COREDUMP_CRC_SZ, self.ESP32_COREDUMP_CRC_SZ)
-            dump_crc, = struct.unpack_from(self.ESP32_COREDUMP_CRC_FMT, data)
-            data = self.read_data(0, self.dump_sz - self.ESP32_COREDUMP_CRC_SZ)
+        _,coredump_ver_data,_,_,_ = struct.unpack_from(self.ESP_COREDUMP_HDR_FMT, data)
+        self.set_version(coredump_ver_data)
+        if self.chip_ver != ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32S2 and self.chip_ver != ESPCoreDumpVersion.ESP_CORE_DUMP_CHIP_ESP32:
+            raise ESPCoreDumpLoaderError("Invalid core dump chip version: '%s', should be <= '0x%x'" % (self.chip_ver, self.ESP_CORE_DUMP_CHIP_ESP32S2))
+        if self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_CRC32 or self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V1 \
+                or self.dump_ver == self.ESP_COREDUMP_VERSION_BIN_V2:
+            logging.debug("Dump size = %d, crc off = 0x%x", self.dump_sz, self.dump_sz - self.ESP_COREDUMP_CRC_SZ)
+            data = self.read_data(self.dump_sz - self.ESP_COREDUMP_CRC_SZ, self.ESP_COREDUMP_CRC_SZ)
+            dump_crc, = struct.unpack_from(self.ESP_COREDUMP_CRC_FMT, data)
+            data = self.read_data(0, self.dump_sz - self.ESP_COREDUMP_CRC_SZ)
             data_crc = binascii.crc32(data) & 0xffffffff
             if dump_crc != data_crc:
                 raise ESPCoreDumpLoaderError("Invalid core dump CRC %x, should be %x" % (data_crc, dump_crc))
-        elif coredump_ver == self.ESP32_COREDUMP_VERSION_ELF_SHA256:
-            dump_sha256 = self.read_data(self.dump_sz - self.ESP32_COREDUMP_SHA256_SZ, self.ESP32_COREDUMP_SHA256_SZ)
-            data = self.read_data(0, self.dump_sz - self.ESP32_COREDUMP_SHA256_SZ)
+        elif self.dump_ver == self.ESP_COREDUMP_VERSION_ELF_SHA256:
+            dump_sha256 = self.read_data(self.dump_sz - self.ESP_COREDUMP_SHA256_SZ, self.ESP_COREDUMP_SHA256_SZ)
+            data = self.read_data(0, self.dump_sz - self.ESP_COREDUMP_SHA256_SZ)
             data_sha256 = sha256(data)
             data_sha256_str = data_sha256.hexdigest()
             dump_sha256_str = binascii.hexlify(dump_sha256).decode('ascii')
@@ -1624,15 +1668,17 @@ def info_corefile(args):
     p = gdbmi_getinfo(p, handlers, "info threads")
     # THREADS STACKS
     p,threads,cur_thread = gdbmi_get_thread_ids(p)
+    print()
     for thr_id in threads:
         task_index = int(thr_id) - 1
-        if thr_id == cur_thread:
-            continue
         p = gdbmi_switch_thread(p, thr_id)
         p,thr_info_res = gdbmi_get_thread_info(p, thr_id)
+        if not thr_info_res.target_id:
+            print("WARNING: Unable to switch to thread %s\n" % thr_id)
+            continue
         tcb_addr = gdb2freertos_thread_id(thr_info_res.target_id)
         p,task_name = gdbmi_freertos_get_task_name(p, tcb_addr)
-        print("\n==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
+        print("==================== THREAD %s (TCB: 0x%x, name: '%s') =====================" % (thr_id, tcb_addr, task_name))
         p = gdbmi_getinfo(p, handlers, "bt")
         if task_info and task_info[task_index].task_flags != EspCoreDumpTaskStatus.TASK_STATUS_CORRECT:
             print("The task '%s' is corrupted." % thr_id)
@@ -1640,6 +1686,7 @@ def info_corefile(args):
                   task_info[task_index].task_flags,
                   task_info[task_index].task_tcb_addr,
                   task_info[task_index].task_stack_start))
+        print()
     print("\n======================= ALL MEMORY REGIONS ========================")
     print("Name   Address   Size   Attrs")
     for ms in merged_segs:

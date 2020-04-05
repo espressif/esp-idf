@@ -30,9 +30,15 @@
 #include "soc/timer_periph.h"
 #include "soc/cpu.h"
 #include "soc/rtc.h"
-#include "soc/rtc_wdt.h"
-#include "hal/timer_ll.h"
+#include "hal/wdt_hal.h"
 #include "freertos/xtensa_api.h"
+
+#if CONFIG_IDF_TARGET_ESP32
+#include "esp32/cache_err_int.h"
+#elif CONFIG_IDF_TARGET_ESP32S2
+#include "esp32s2/cache_err_int.h"
+#endif
+
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
  * core are already stopped. Stalls other core, resets hardware,
@@ -44,14 +50,14 @@ void IRAM_ATTR esp_restart_noos(void)
     xt_ints_off(0xFFFFFFFF);
 
     // Enable RTC watchdog for 1 second
-    rtc_wdt_protect_off();
-    rtc_wdt_disable();
-    rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
-    rtc_wdt_set_stage(RTC_WDT_STAGE1, RTC_WDT_STAGE_ACTION_RESET_SYSTEM);
-    rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_200ns);
-    rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_200ns);
-    rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
-    rtc_wdt_flashboot_mode_enable();
+    wdt_hal_context_t rtc_wdt_ctx;
+    wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+    uint32_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
+    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE1, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+    wdt_hal_set_flashboot_en(&rtc_wdt_ctx, true);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i
@@ -65,14 +71,17 @@ void IRAM_ATTR esp_restart_noos(void)
     // Other core is now stalled, can access DPORT registers directly
     esp_dport_access_int_abort();
 
+    //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
     // Disable TG0/TG1 watchdogs
-    timer_ll_wdt_set_protect(&TIMERG0, false);
-    timer_ll_wdt_set_enable(&TIMERG0, false);
-    timer_ll_wdt_set_protect(&TIMERG0, true);
+    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+    wdt_hal_write_protect_disable(&wdt0_context);
+    wdt_hal_disable(&wdt0_context);
+    wdt_hal_write_protect_enable(&wdt0_context);
 
-    timer_ll_wdt_set_protect(&TIMERG1, false);
-    timer_ll_wdt_set_enable(&TIMERG1, false);
-    timer_ll_wdt_set_protect(&TIMERG1, true);
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+    wdt_hal_write_protect_disable(&wdt1_context);
+    wdt_hal_disable(&wdt1_context);
+    wdt_hal_write_protect_enable(&wdt1_context);
 
     // Flush any data left in UART FIFOs
     uart_tx_wait_idle(0);
@@ -94,10 +103,10 @@ void IRAM_ATTR esp_restart_noos(void)
 
     // Reset wifi/bluetooth/ethernet/sdio (bb/mac)
     DPORT_SET_PERI_REG_MASK(DPORT_CORE_RST_EN_REG,
-         DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
-         DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
-         DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
-         DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
+        DPORT_BB_RST | DPORT_FE_RST | DPORT_MAC_RST |
+        DPORT_BT_RST | DPORT_BTMAC_RST | DPORT_SDIO_RST |
+        DPORT_SDIO_HOST_RST | DPORT_EMAC_RST | DPORT_MACPWR_RST |
+        DPORT_RW_BTMAC_RST | DPORT_RW_BTLP_RST);
     DPORT_REG_WRITE(DPORT_CORE_RST_EN_REG, 0);
 
     // Reset timer/spi/uart

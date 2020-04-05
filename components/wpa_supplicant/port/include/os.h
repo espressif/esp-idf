@@ -263,8 +263,7 @@ char * ets_strdup(const char *s);
 #define os_strncpy(d, s, n) strncpy((d), (s), (n))
 #endif
 #ifndef os_strrchr
-//hard cold
-#define os_strrchr(s, c)  NULL
+#define os_strrchr(s, c)  strrchr((s), (c))
 #endif
 #ifndef os_strstr
 #define os_strstr(h, n) strstr((h), (n))

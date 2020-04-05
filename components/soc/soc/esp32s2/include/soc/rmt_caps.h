@@ -18,21 +18,12 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
-#define RMT_CHANNEL_MEM_WORDS (64) /*!< Each channel owns 64 words memory */
-
-/**
-* @brief RMT channel ID
-*
-*/
-typedef enum {
-    RMT_CHANNEL_0,  /*!< RMT channel number 0 */
-    RMT_CHANNEL_1,  /*!< RMT channel number 1 */
-    RMT_CHANNEL_2,  /*!< RMT channel number 2 */
-    RMT_CHANNEL_3,  /*!< RMT channel number 3 */
-    RMT_CHANNEL_MAX /*!< Number of RMT channels */
-} rmt_channel_id_t;
+#define SOC_RMT_CHANNEL_MEM_WORDS (64)       /*!< Each channel owns 64 words memory (1 word = 4 Bytes) */
+#define SOC_RMT_CHANNELS_NUM (4)             /*!< Total 4 channels */
+#define SOC_RMT_SUPPORT_RX_PINGPONG (1)      /*!< Support Ping-Pong mode on RX path */
+#define SOC_RMT_SUPPORT_RX_DEMODULATION  (1) /*!< Support signal demodulation on RX path (i.e. remove carrier) */
+#define SOC_RMT_SUPPORT_TX_LOOP_COUNT (1)    /*!< Support transmit specified number of cycles in loop mode */
+#define SOC_RMT_SUPPORT_TX_GROUP (1)         /*!< Support a group of TX channels to transmit simultaneously */
 
 #ifdef __cplusplus
 }

@@ -1,8 +1,3 @@
-[mapping:esp32]
-archive: libesp32.a
-entries:
-    panic (noflash)
-
 [mapping:gcc]
 archive: libgcc.a
 entries:

@@ -31,7 +31,7 @@ void esp_flash_encryption_init_checks()
     // FLASH_CRYPT_CNT *must* be write protected. This will have happened automatically
     // if bootloader is IDF V4.0 or newer but may not have happened for previous ESP-IDF bootloaders.
 #ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef CONFIG_SECURE_BOOT
     if (esp_secure_boot_enabled() && esp_flash_encryption_enabled()) {
         uint8_t flash_crypt_cnt_wr_dis = 0;
         esp_efuse_read_field_blob(ESP_EFUSE_WR_DIS_FLASH_CRYPT_CNT, &flash_crypt_cnt_wr_dis, 1);
@@ -40,7 +40,7 @@ void esp_flash_encryption_init_checks()
             esp_flash_write_protect_crypt_cnt();
         }
     }
-#endif // CONFIG_SECURE_BOOT_ENABLED
+#endif // CONFIG_SECURE_BOOT
 #endif // CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
 
     // Second check is to print a warning or error if the current running flash encryption mode

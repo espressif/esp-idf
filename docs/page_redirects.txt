@@ -17,13 +17,13 @@ api-reference/wifi/esp_wifi               api-reference/network/esp_wifi
 api-reference/system/tcpip_adapter        api-reference/network/esp_netif
 get-started/idf-monitor                   api-guides/tools/idf-monitor
 get-started-cmake/idf-monitor             api-guides/tools/idf-monitor
-get-started/get-started-devkitc           hw-reference/get-started-devkitc
-get-started/get-started-devkitc-v2        hw-reference/get-started-devkitc-v2
-get-started/get-started-wrover-kit        hw-reference/get-started-wrover-kit
-get-started/get-started-wrover-kit-v2     hw-reference/get-started-wrover-kit-v2
-get-started/get-started-wrover-kit-v3     hw-reference/get-started-wrover-kit-v3
-get-started/get-started-pico-kit          hw-reference/get-started-pico-kit
-get-started/get-started-pico-kit-v3       hw-reference/get-started-pico-kit-v3
+get-started/get-started-devkitc           hw-reference/esp32/get-started-devkitc
+get-started/get-started-devkitc-v2        hw-reference/esp32/get-started-devkitc-v2
+get-started/get-started-wrover-kit        hw-reference/esp32/get-started-wrover-kit
+get-started/get-started-wrover-kit-v2     hw-reference/esp32/get-started-wrover-kit-v2
+get-started/get-started-wrover-kit-v3     hw-reference/esp32/get-started-wrover-kit-v3
+get-started/get-started-pico-kit          hw-reference/esp32/get-started-pico-kit
+get-started/get-started-pico-kit-v3       hw-reference/esp32/get-started-pico-kit-v3
 
 # The preview 'get-started-cmake' guides are now 'get-started'
 get-started-cmake                              get-started
@@ -38,16 +38,31 @@ get-started-cmake/macos-setup-scratch          get-started/macos-setup-scratch
 get-started-cmake/toolchain-setup-scratch      get-started/toolchain-setup-scratch
 get-started-cmake/windows-setup                get-started/windows-setup
 get-started-cmake/windows-setup-scratch        get-started/windows-setup-scratch
-get-started-cmake/get-started-devkitc          hw-reference/get-started-devkitc
-get-started-cmake/get-started-devkitc-v2       hw-reference/get-started-devkitc-v2
-get-started-cmake/get-started-wrover-kit       hw-reference/get-started-wrover-kit
-get-started-cmake/get-started-wrover-kit-v2    hw-reference/get-started-wrover-kit-v2
-get-started-cmake/get-started-wrover-kit-v3    hw-reference/get-started-wrover-kit-v3
-get-started-cmake/get-started-pico-kit         hw-reference/get-started-pico-kit
-get-started-cmake/get-started-pico-kit-v3      hw-reference/get-started-pico-kit-v3
+get-started-cmake/get-started-devkitc          hw-reference/esp32/get-started-devkitc
+get-started-cmake/get-started-devkitc-v2       hw-reference/esp32/get-started-devkitc-v2
+get-started-cmake/get-started-wrover-kit       hw-reference/esp32/get-started-wrover-kit
+get-started-cmake/get-started-wrover-kit-v2    hw-reference/esp32/get-started-wrover-kit-v2
+get-started-cmake/get-started-wrover-kit-v3    hw-reference/esp32/get-started-wrover-kit-v3
+get-started-cmake/get-started-pico-kit         hw-reference/esp32/get-started-pico-kit
+get-started-cmake/get-started-pico-kit-v3      hw-reference/esp32/get-started-pico-kit-v3
 
 api-guide/build-system-cmake                   api-guide/build-system
 api-guide/ulp-cmake                            api-guide/ulp
 api-guide/unit-tests-cmake                     api-guide/unit-tests
 
 api-reference/network/tcpip_adapter            api-reference/network/esp_netif
+
+# The 'secure boot' guides are now 'secure boot v1' guides
+security/secure-boot                           security/secure-boot-v1
+
+# Since ESP32-S2, hw-reference URLs are now namespaced by chip
+hw-reference/get-started-devkitc           hw-reference/esp32/get-started-devkitc
+hw-reference/get-started-devkitc-v2        hw-reference/esp32/get-started-devkitc-v2
+hw-reference/get-started-wrover-kit        hw-reference/esp32/get-started-wrover-kit
+hw-reference/get-started-wrover-kit-v2     hw-reference/esp32/get-started-wrover-kit-v2
+hw-reference/get-started-wrover-kit-v3     hw-reference/esp32/get-started-wrover-kit-v3
+hw-reference/get-started-pico-kit          hw-reference/esp32/get-started-pico-kit
+hw-reference/get-started-pico-kit-v3       hw-reference/esp32/get-started-pico-kit-v3
+hw-reference/get-started-ethernet-kit-v1.0 hw-reference/esp32/get-started-ethernet-kit-v1.0
+hw-reference/get-started-ethernet-kit      hw-reference/esp32/get-started-ethernet-kit
+

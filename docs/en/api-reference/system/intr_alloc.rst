@@ -10,9 +10,9 @@ Overview
   to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
   multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
 
-.. only.. esp32s2
+.. only:: esp32s2
 
-  The {IDF_TARGET_NAME} has one cores, with 32 interrupts each. Each interrupt has a certain priority level, most (but not all) interrupts are connected
+  The {IDF_TARGET_NAME} has one core, with 32 interrupts. Each interrupt has a certain priority level, most (but not all) interrupts are connected
   to the interrupt mux. Because there are more interrupt sources than interrupts, sometimes it makes sense to share an interrupt in
   multiple drivers. The esp_intr_alloc abstraction exists to hide all these implementation details.
 

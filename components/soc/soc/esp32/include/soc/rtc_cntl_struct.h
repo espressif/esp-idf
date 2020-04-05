@@ -447,8 +447,8 @@ typedef volatile struct rtc_cntl_dev_s {
             uint32_t flashboot_mod_en: 1;            /*enable WDT in flash boot*/
             uint32_t sys_reset_length: 3;            /*system reset counter length*/
             uint32_t cpu_reset_length: 3;            /*CPU reset counter length*/
-            uint32_t level_int_en:     1;            /*N/A*/
-            uint32_t edge_int_en:      1;            /*N/A*/
+            uint32_t level_int_en:     1;            /*When set, level type interrupt generation is enabled*/
+            uint32_t edge_int_en:      1;            /*When set, edge type interrupt generation is enabled*/
             uint32_t stg3:             3;            /*1: interrupt stage en  2: CPU reset stage en  3: system reset stage en  4: RTC reset stage en*/
             uint32_t stg2:             3;            /*1: interrupt stage en  2: CPU reset stage en  3: system reset stage en  4: RTC reset stage en*/
             uint32_t stg1:             3;            /*1: interrupt stage en  2: CPU reset stage en  3: system reset stage en  4: RTC reset stage en*/

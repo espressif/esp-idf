@@ -13,10 +13,13 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_vfs_fat.h"
-#include "driver/sdmmc_host.h"
 #include "driver/sdspi_host.h"
 #include "driver/spi_common.h"
 #include "sdmmc_cmd.h"
+
+#ifdef CONFIG_IDF_TARGET_ESP32
+#include "driver/sdmmc_host.h"
+#endif
 
 static const char *TAG = "example";
 
@@ -28,7 +31,19 @@ static const char *TAG = "example";
 
 // #define USE_SPI_MODE
 
+// ESP32-S2 doesn't have an SD Host peripheral, always use SPI:
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+#ifndef USE_SPI_MODE
+#define USE_SPI_MODE
+#endif // USE_SPI_MODE
+// on ESP32-S2, DMA channel must be the same as host id
+#define SPI_DMA_CHAN    host.slot
+#endif //CONFIG_IDF_TARGET_ESP32S2
+
+// DMA channel to be used by the SPI peripheral
+#ifndef SPI_DMA_CHAN
 #define SPI_DMA_CHAN    1
+#endif //SPI_DMA_CHAN
 
 // When testing SD and SPI modes, keep in mind that once the card has been
 // initialized in SPI mode, it can not be reinitialized in SD mode without
@@ -105,7 +120,8 @@ void app_main(void)
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdspi_device_config_t slot_config = SDSPI_DEVICE_CONFIG_DEFAULT();
-    slot_config.gpio_cs   = PIN_NUM_CS;
+    slot_config.gpio_cs = PIN_NUM_CS;
+    slot_config.host_id = host.slot;
 
     ret = esp_vfs_fat_sdspi_mount(mount_point, &host, &slot_config, &mount_config, &card);
 #endif //USE_SPI_MODE

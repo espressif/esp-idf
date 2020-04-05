@@ -1,0 +1,17 @@
+#Ethernet Data Frame Format
+
+rackdiag ethernet_data_frame {
+    node_width = 500;
+    default_fontsize = 15;
+    ascending;
+    8U;
+    description = "Ethernet Data Frame Format";
+    1: Preamble (7 Bytes) [color = lightgrey];
+    2: Start-of-Frame Delimiter (1 Byte) [color = lightgrey];
+    3: Destination Address (6 Bytes) [color = lightblue];
+    4: Source Address (6 Bytes) [color = lightblue];
+    5: Type / Length (2 Bytes) [color = lightyellow];
+    6: Payload (0 ~ 1500 Bytes) [2U];
+    6: Pad (if necessary) [2U];
+    8: Frame Check Sequence (4 Bytes) [color = lightgrey];
+}

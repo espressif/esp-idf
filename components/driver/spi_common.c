@@ -31,6 +31,7 @@
 #include "stdatomic.h"
 #include "hal/spi_hal.h"
 
+
 static const char *SPI_TAG = "spi";
 
 #define SPI_CHECK(a, str, ret_val) do { \
@@ -53,6 +54,23 @@ typedef struct spi_device_t spi_device_t;
 
 #define DMA_CHANNEL_ENABLED(dma_chan)    (BIT(dma_chan-1))
 
+
+typedef struct {
+    int host_id;
+    spi_destroy_func_t destroy_func;
+    void* destroy_arg;
+    spi_bus_attr_t bus_attr;
+} spicommon_bus_context_t;
+
+#define MAIN_BUS_DEFAULT() { \
+        .host_id = 0, \
+        .bus_attr = { \
+            .dma_chan = 0, \
+            .max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE, \
+            .dma_desc_num= 0, \
+        }, \
+    }
+
 //Periph 1 is 'claimed' by SPI flash code.
 static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(true), ATOMIC_VAR_INIT(false), ATOMIC_VAR_INIT(false),
 #if SOC_SPI_PERIPH_NUM >= 4
@@ -62,6 +80,9 @@ static atomic_bool spi_periph_claimed[SOC_SPI_PERIPH_NUM] = { ATOMIC_VAR_INIT(tr
 static const char* spi_claiming_func[3] = {NULL, NULL, NULL};
 static uint8_t spi_dma_chan_enabled = 0;
 static portMUX_TYPE spi_dma_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+static spicommon_bus_context_t s_mainbus = MAIN_BUS_DEFAULT();
+static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
 
 
 //Returns true if this peripheral is successfully claimed, false if otherwise.
@@ -415,6 +436,173 @@ bool spicommon_bus_using_iomux(spi_host_device_t host)
     CHECK_IOMUX_PIN(host, spihd);
     return true;
 }
+
+
+void spi_bus_main_set_lock(spi_bus_lock_handle_t lock)
+{
+    bus_ctx[0]->bus_attr.lock = lock;
+}
+
+spi_bus_lock_handle_t spi_bus_lock_get_by_id(spi_host_device_t host_id)
+{
+    return bus_ctx[host_id]->bus_attr.lock;
+}
+
+static inline bool is_valid_host(spi_host_device_t host)
+{
+    return host >= SPI1_HOST && host <= SPI3_HOST;
+}
+
+esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *bus_config, int dma_chan)
+{
+    esp_err_t err = ESP_OK;
+    spicommon_bus_context_t *ctx = NULL;
+    spi_bus_attr_t *bus_attr = NULL;
+    SPI_CHECK(is_valid_host(host_id), "invalid host_id", ESP_ERR_INVALID_ARG);
+    SPI_CHECK(bus_ctx[host_id] == NULL, "SPI bus already initialized.", ESP_ERR_INVALID_STATE);
+#ifdef CONFIG_IDF_TARGET_ESP32
+    SPI_CHECK( dma_chan >= 0 && dma_chan <= 2, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#elif CONFIG_IDF_TARGET_ESP32S2
+    SPI_CHECK( dma_chan == 0 || dma_chan == host_id, "invalid dma channel", ESP_ERR_INVALID_ARG );
+#endif
+    SPI_CHECK((bus_config->intr_flags & (ESP_INTR_FLAG_HIGH|ESP_INTR_FLAG_EDGE|ESP_INTR_FLAG_INTRDISABLED))==0, "intr flag not allowed", ESP_ERR_INVALID_ARG);
+#ifndef CONFIG_SPI_MASTER_ISR_IN_IRAM
+    SPI_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM)==0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_MASTER_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
+#endif
+
+    bool spi_chan_claimed = spicommon_periph_claim(host_id, "spi master");
+    SPI_CHECK(spi_chan_claimed, "host_id already in use", ESP_ERR_INVALID_STATE);
+
+    if (dma_chan != 0) {
+        bool dma_chan_claimed=spicommon_dma_chan_claim(dma_chan);
+        if (!dma_chan_claimed) {
+            spicommon_periph_free(host_id);
+            SPI_CHECK(false, "dma channel already in use", ESP_ERR_INVALID_STATE);
+        }
+    }
+
+    //clean and initialize the context
+    ctx = (spicommon_bus_context_t*)malloc(sizeof(spicommon_bus_context_t));
+    if (!ctx) {
+        err = ESP_ERR_NO_MEM;
+        goto cleanup;
+    }
+    *ctx = (spicommon_bus_context_t) {
+        .host_id = host_id,
+        .bus_attr = {
+            .bus_cfg = *bus_config,
+            .dma_chan = dma_chan,
+        },
+    };
+
+    bus_attr = &ctx->bus_attr;
+    if (dma_chan == 0) {
+        bus_attr->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
+        bus_attr->dma_desc_num = 0;
+    } else {
+        //See how many dma descriptors we need and allocate them
+        int dma_desc_ct = lldesc_get_required_num(bus_config->max_transfer_sz);
+        if (dma_desc_ct == 0) dma_desc_ct = 1; //default to 4k when max is not given
+
+        bus_attr->max_transfer_sz = dma_desc_ct * LLDESC_MAX_NUM_PER_DESC;
+        bus_attr->dmadesc_tx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        bus_attr->dmadesc_rx = heap_caps_malloc(sizeof(lldesc_t) * dma_desc_ct, MALLOC_CAP_DMA);
+        if (bus_attr->dmadesc_tx == NULL || bus_attr->dmadesc_rx == NULL) {
+            err = ESP_ERR_NO_MEM;
+            goto cleanup;
+        }
+        bus_attr->dma_desc_num = dma_desc_ct;
+    }
+
+    spi_bus_lock_config_t lock_config = {
+        .host_id = host_id,
+        .cs_num = SOC_SPI_PERIPH_CS_NUM(host_id),
+    };
+    err = spi_bus_init_lock(&bus_attr->lock, &lock_config);
+    if (err != ESP_OK) {
+        goto cleanup;
+    }
+
+#ifdef CONFIG_PM_ENABLE
+    err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
+            &bus_attr->pm_lock);
+    if (err != ESP_OK) {
+        goto cleanup;
+    }
+#endif //CONFIG_PM_ENABLE
+
+    err = spicommon_bus_initialize_io(host_id, bus_config, dma_chan, SPICOMMON_BUSFLAG_MASTER | bus_config->flags, &bus_attr->flags);
+    if (err != ESP_OK) {
+        goto cleanup;
+    }
+
+    bus_ctx[host_id] = ctx;
+    return ESP_OK;
+
+cleanup:
+    if (bus_attr) {
+#ifdef CONFIG_PM_ENABLE
+        esp_pm_lock_delete(bus_attr->pm_lock);
+#endif
+        if (bus_attr->lock) {
+            spi_bus_deinit_lock(bus_attr->lock);
+        }
+        free(bus_attr->dmadesc_tx);
+        free(bus_attr->dmadesc_rx);
+    }
+    free(ctx);
+    if (dma_chan) {
+        spicommon_dma_chan_free(dma_chan);
+    }
+    spicommon_periph_free(host_id);
+    return err;
+}
+
+const spi_bus_attr_t* spi_bus_get_attr(spi_host_device_t host_id)
+{
+    if (bus_ctx[host_id] == NULL) return NULL;
+
+    return &bus_ctx[host_id]->bus_attr;
+}
+
+esp_err_t spi_bus_free(spi_host_device_t host_id)
+{
+    esp_err_t err = ESP_OK;
+    spicommon_bus_context_t* ctx = bus_ctx[host_id];
+    spi_bus_attr_t* bus_attr = &ctx->bus_attr;
+
+    if (ctx->destroy_func) {
+        err = ctx->destroy_func(ctx->destroy_arg);
+    }
+
+    spicommon_bus_free_io_cfg(&bus_attr->bus_cfg);
+
+#ifdef CONFIG_PM_ENABLE
+    esp_pm_lock_delete(bus_attr->pm_lock);
+#endif
+    spi_bus_deinit_lock(bus_attr->lock);
+
+    free(bus_attr->dmadesc_rx);
+    free(bus_attr->dmadesc_tx);
+
+    if (bus_attr->dma_chan > 0) {
+        spicommon_dma_chan_free (bus_attr->dma_chan);
+    }
+    spicommon_periph_free(host_id);
+
+    free(ctx);
+    bus_ctx[host_id] = NULL;
+    return err;
+}
+
+esp_err_t spi_bus_register_destroy_func(spi_host_device_t host_id,
+                                        spi_destroy_func_t f, void *arg)
+{
+    bus_ctx[host_id]->destroy_func = f;
+    bus_ctx[host_id]->destroy_arg = arg;
+    return ESP_OK;
+}
+
 
 /*
 Code for workaround for DMA issue in ESP32 v0/v1 silicon

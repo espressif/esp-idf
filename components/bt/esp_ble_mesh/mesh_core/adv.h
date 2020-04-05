@@ -10,6 +10,7 @@
 #ifndef _ADV_H_
 #define _ADV_H_
 
+#include "mesh_access.h"
 #include "mesh_bearer_adapt.h"
 
 /* Maximum advertising data payload for a single data type */
@@ -33,6 +34,7 @@ enum bt_mesh_adv_type {
     BLE_MESH_ADV_DATA,
     BLE_MESH_ADV_BEACON,
     BLE_MESH_ADV_URI,
+    BLE_MESH_ADV_BLE,
 };
 
 typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, u16_t duration,
@@ -42,7 +44,7 @@ struct bt_mesh_adv {
     const struct bt_mesh_send_cb *cb;
     void *cb_data;
 
-    u8_t      type: 2,
+    u8_t      type: 3,
               busy: 1;
     u8_t      xmit;
 
@@ -72,6 +74,8 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
         enum bt_mesh_adv_type type,
         u8_t xmit, s32_t timeout);
 
+void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
+
 void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
                       void *cb_data);
 
@@ -88,9 +92,19 @@ u16_t bt_mesh_get_stored_relay_count(void);
 void bt_mesh_adv_update(void);
 
 void bt_mesh_adv_init(void);
+void bt_mesh_adv_deinit(void);
 
 int bt_mesh_scan_enable(void);
 
 int bt_mesh_scan_disable(void);
+
+int bt_mesh_scan_with_wl_enable(void);
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_start_ble_advertising(const struct bt_mesh_ble_adv_param *param,
+                                  const struct bt_mesh_ble_adv_data *data, u8_t *index);
+
+int bt_mesh_stop_ble_advertising(u8_t index);
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
 #endif /* _ADV_H_ */

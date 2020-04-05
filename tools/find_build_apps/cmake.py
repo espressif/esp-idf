@@ -53,7 +53,7 @@ class CMakeBuildSystem(BuildSystem):
         # Note: the build system supports taking multiple sdkconfig.defaults files via SDKCONFIG_DEFAULTS
         # CMake variable. However here we do this manually to perform environment variable expansion in the
         # sdkconfig files.
-        sdkconfig_defaults_list = ["sdkconfig.defaults"]
+        sdkconfig_defaults_list = ["sdkconfig.defaults", "sdkconfig.defaults." + build_item.target]
         if build_item.sdkconfig_path:
             sdkconfig_defaults_list.append(build_item.sdkconfig_path)
 
@@ -73,6 +73,8 @@ class CMakeBuildSystem(BuildSystem):
                     logging.debug("Appending {} to sdkconfig".format(sdkconfig_name))
                     with open(sdkconfig_path, "r") as f_in:
                         for line in f_in:
+                            if not line.endswith("\n"):
+                                line += "\n"
                             f_out.write(os.path.expandvars(line))
             # Also save the sdkconfig file in the build directory
             shutil.copyfile(

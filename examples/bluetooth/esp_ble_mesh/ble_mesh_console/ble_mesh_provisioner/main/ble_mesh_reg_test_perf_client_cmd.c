@@ -20,9 +20,7 @@
 
 #include "esp_ble_mesh_networking_api.h"
 #include "ble_mesh_adapter.h"
-
-SemaphoreHandle_t ble_mesh_test_perf_send_sema;
-SemaphoreHandle_t ble_mesh_test_perf_sema;
+#include "transaction.h"
 
 typedef struct {
     struct arg_str *action_type;
@@ -58,7 +56,9 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
 {
     uint16_t i;
     uint8_t *data = NULL;
+    uint64_t start_time;
     esp_ble_mesh_msg_ctx_t ctx;
+    transaction_t *trans = NULL;
     ble_mesh_test_perf_throughput_data *profile_context = (ble_mesh_test_perf_throughput_data *)params;
 
     ESP_LOGD(TAG, "enter %s\n", __func__);
@@ -77,16 +77,15 @@ void ble_mesh_test_performance_client_model_throughput(void *params)
         ESP_LOGE(TAG, " %s, %d, malloc fail\n", __func__, __LINE__);
     }
 
-    ble_mesh_test_perf_send_sema = xSemaphoreCreateMutex();
-    xSemaphoreTake(ble_mesh_test_perf_send_sema, SEND_MESSAGE_TIMEOUT);
-
+    TRANSACTION_INIT(&trans, TRANS_TYPE_MESH_PERF, TRANS_MESH_SEND_MESSAGE,
+                    TRANS_MESH_SEND_MESSAGE_EVT, SEND_MESSAGE_TIMEOUT, &start_time, NULL);
     for (i = 1; i <= profile_context->test_num; i++) {
         ble_mesh_create_send_data((char *)data, profile_context->length, i, profile_context->opcode);
         start_time = esp_timer_get_time();
         esp_ble_mesh_client_model_send_msg(profile_context->model, &ctx, profile_context->opcode,
                                            profile_context->length, data, 8000, profile_context->need_ack, profile_context->device_role);
         ble_mesh_test_performance_client_model_accumulate_statistics(profile_context->length);
-        xSemaphoreTake(ble_mesh_test_perf_send_sema, SEND_MESSAGE_TIMEOUT);
+        transaction_run(trans);
     }
 
     ESP_LOGI(TAG, "VendorModel:SendPackage,Finish");
@@ -111,7 +110,6 @@ int ble_mesh_test_performance_client_model(int argc, char **argv)
     model = ble_mesh_get_model(ESP_BLE_MESH_VND_MODEL_ID_TEST_PERF_CLI);
 
     if (strcmp(test_perf_client_model.action_type->sval[0], "init") == 0) {
-        ble_mesh_test_perf_sema = xSemaphoreCreateMutex();
         result = esp_ble_mesh_client_model_init(model);
         if (result == ESP_OK) {
             ESP_LOGI(TAG, "VendorClientModel:Init,OK");
@@ -158,6 +156,7 @@ int ble_mesh_test_performance_client_model_performance(int argc, char **argv)
     }
 
     if (strcmp(test_perf_client_model_statistics.action_type->sval[0], "init") == 0) {
+        init_transactions();
         result = ble_mesh_test_performance_client_model_init(test_perf_client_model_statistics.node_num->ival[0],
                  test_perf_client_model_statistics.test_size->ival[0], test_perf_client_model_statistics.ttl->ival[0]);
         if (result == 0) {

@@ -14,7 +14,6 @@
 
 #include <stdint.h>
 
-#include "btc/btc_task.h"
 #include "btc/btc_manage.h"
 
 #include "btc_ble_mesh_lighting_model.h"
@@ -33,7 +32,8 @@ esp_err_t esp_ble_mesh_light_client_get_state(esp_ble_mesh_client_common_param_t
     btc_ble_mesh_lighting_client_args_t arg = {0};
     btc_msg_t msg = {0};
 
-    if (!params || !params->model || !params->ctx.addr || !get_state) {
+    if (!params || !params->model || !params->ctx.addr || (!get_state &&
+        params->opcode == ESP_BLE_MESH_MODEL_OP_LIGHT_LC_PROPERTY_GET)) {
         return ESP_ERR_INVALID_ARG;
     }
 

@@ -22,6 +22,7 @@ extern "C" {
 #include <stdbool.h>
 #include <esp_bit_defs.h>
 #include "soc/timer_group_caps.h"
+#include "esp_attr.h"
 
 /**
  * @brief Selects a Timer-Group out of 2 available groups
@@ -69,17 +70,6 @@ typedef enum {
     TIMER_INTR_NONE = 0
 } timer_intr_t;
 FLAG_ATTR(timer_intr_t)
-
-/**
- * @brief Behavior of the watchdog if a stage times out.
- */
-//this is compatible with the value of esp32.
-typedef enum {
-    TIMER_WDT_OFF = 0,          /*!< The stage is turned off*/
-    TIMER_WDT_INT = 1,          /*!< The stage will trigger an interrupt*/
-    TIMER_WDT_RESET_CPU = 2,    /*!< The stage will reset the CPU*/
-    TIMER_WDT_RESET_SYSTEM = 3, /*!< The stage will reset the whole system*/
-} timer_wdt_behavior_t;
 
 /**
  * @brief Decides whether to enable alarm mode

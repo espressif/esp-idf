@@ -67,7 +67,7 @@ menu "Common ESP-related"
         help
             Select whether to use UART for console output (through stdout and stderr).
 
-            - Default is to use UART0 on pins GPIO1(TX) and GPIO3(RX).
+            - Default is to use UART0 on pre-defined GPIOs.
             - If "Custom" is selected, UART0 or UART1 can be chosen,
               and any pins can be selected.
             - If "None" is selected, there will be no console output on any UART, except
@@ -75,7 +75,7 @@ menu "Common ESP-related"
               bootstrapping GPIO13 pin to low logic level.
 
         config ESP_CONSOLE_UART_DEFAULT
-            bool "Default: UART0, TX=GPIO1, RX=GPIO3"
+            bool "Default: UART0"
         config ESP_CONSOLE_UART_CUSTOM
             bool "Custom"
         config ESP_CONSOLE_UART_NONE
@@ -104,15 +104,15 @@ menu "Common ESP-related"
 
     config ESP_CONSOLE_UART_TX_GPIO
         int "UART TX on GPIO#"
-        depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 33
-        default 19
+        range 0 46
+        default 1 if IDF_TARGET_ESP32
+        default 43 if IDF_TARGET_ESP32S2
 
     config ESP_CONSOLE_UART_RX_GPIO
         int "UART RX on GPIO#"
-        depends on ESP_CONSOLE_UART_CUSTOM
-        range 0 39
-        default 21
+        range 0 46
+        default 3 if IDF_TARGET_ESP32
+        default 44 if IDF_TARGET_ESP32S2
 
     config ESP_CONSOLE_UART_BAUDRATE
         int "UART console baud rate"

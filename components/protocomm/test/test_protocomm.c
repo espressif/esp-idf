@@ -553,8 +553,18 @@ static esp_err_t test_req_endpoint(session_t *session)
         memcpy(enc_test_data, rand_test_data, sizeof(rand_test_data));
     }
     else if (session->sec_ver == 1) {
-        mbedtls_aes_crypt_ctr(&session->ctx_aes, sizeof(rand_test_data), &session->nc_off,
-                              session->rand, session->stb, rand_test_data, enc_test_data);
+#if !CONFIG_MBEDTLS_HARDWARE_AES
+        // Check if the AES key is correctly set before calling the software encryption
+        // API. Without this check, the code will crash, resulting in a test case failure.
+        // For hardware AES, portability layer takes care of this.
+        if (session->ctx_aes.rk != NULL && session->ctx_aes.nr > 0) {
+#endif
+
+            mbedtls_aes_crypt_ctr(&session->ctx_aes, sizeof(rand_test_data), &session->nc_off,
+                    session->rand, session->stb, rand_test_data, enc_test_data);
+#if !CONFIG_MBEDTLS_HARDWARE_AES
+        }
+#endif
     }
 
     ssize_t  verify_data_len = 0;
@@ -1098,7 +1108,6 @@ static esp_err_t test_security0 (void)
     return ESP_OK;
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("leak test", "[PROTOCOMM]")
 {
 #ifdef CONFIG_HEAP_TRACING
@@ -1139,7 +1148,6 @@ TEST_CASE("leak test", "[PROTOCOMM]")
 
     TEST_ASSERT(pre_start_mem == post_stop_mem);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 TEST_CASE("security 0 basic test", "[PROTOCOMM]")
 {
@@ -1166,7 +1174,6 @@ TEST_CASE("security 1 wrong pop test", "[PROTOCOMM]")
     TEST_ASSERT(test_security1_wrong_pop() == ESP_OK);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("security 1 insecure client test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1_insecure_client() == ESP_OK);
@@ -1176,4 +1183,3 @@ TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)

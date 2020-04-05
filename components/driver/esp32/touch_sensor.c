@@ -49,7 +49,7 @@ typedef struct {
     bool enable;
 } touch_pad_filter_t;
 static touch_pad_filter_t *s_touch_pad_filter = NULL;
-// check if touch pad be inited.
+// check if touch pad be initialized.
 static uint16_t s_touch_pad_init_bit = 0x0000;
 static filter_cb_t s_filter_cb = NULL;
 static SemaphoreHandle_t rtc_touch_mux = NULL;
@@ -227,7 +227,7 @@ esp_err_t touch_pad_clear_group_mask(uint16_t set1_mask, uint16_t set2_mask, uin
 esp_err_t touch_pad_intr_enable(void)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_enable_interrupt();
+    touch_hal_intr_enable();
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -235,9 +235,22 @@ esp_err_t touch_pad_intr_enable(void)
 esp_err_t touch_pad_intr_disable(void)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_disable_interrupt();
+    touch_hal_intr_disable();
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
+}
+
+esp_err_t touch_pad_intr_clear(void)
+{
+    TOUCH_ENTER_CRITICAL();
+    touch_hal_intr_clear();
+    TOUCH_EXIT_CRITICAL();
+    return ESP_OK;
+}
+
+bool touch_pad_meas_is_done(void)
+{
+    return touch_hal_meas_is_done();
 }
 
 esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)

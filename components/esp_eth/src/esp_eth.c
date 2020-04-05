@@ -288,8 +288,8 @@ esp_err_t esp_eth_update_input_path(
 {
     esp_err_t ret = ESP_OK;
     esp_eth_driver_t *eth_driver = (esp_eth_driver_t *)hdl;
-    eth_driver->priv = priv;
     ETH_CHECK(eth_driver, "ethernet driver handle can't be null", err, ESP_ERR_INVALID_ARG);
+    eth_driver->priv = priv;
     eth_driver->stack_input = stack_input;
     return ESP_OK;
 err:

@@ -61,10 +61,10 @@ Ninja 编译工具
 适用于 Windows 平台的 Ninja 下载文件是一个 .zip 文件，包含一个 ``ninja.exe`` 文件。您需要将该文件解压到目录，并 :ref:`添加到您的路径 <add-directory-windows-path>` （或者选择您路径中的已有目录）。
 
 
-Python 2.x
-^^^^^^^^^^
+Python
+^^^^^^
 
-下载并运行适用于 Windows 安装器的最新版 Python_ 2.7。
+下载并运行适用于 Windows 安装器的最新版 Python_。
 
 Python 安装器的“自定义”菜单可为您提供一系列选项，最后一项为 "Add python.exe to Path"（添加 python.exe 到路径中）。请将该选项更改到 "Will be installed"（将会安装）。
 
@@ -117,7 +117,7 @@ Python 安装完成后，从 Windows 开始菜单中打开“命令提示符”�
 .. _ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/zh_CN/stable/
 

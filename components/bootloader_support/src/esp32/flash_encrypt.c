@@ -22,7 +22,7 @@
 #include "esp_efuse.h"
 #include "esp_log.h"
 #include "esp32/rom/secure_boot.h"
-#include "soc/rtc_wdt.h"
+#include "hal/wdt_hal.h"
 
 #include "esp32/rom/cache.h"
 #include "esp32/rom/spi_flash.h"   /* TODO: Remove this */
@@ -73,6 +73,10 @@ esp_err_t esp_flash_encrypt_check_and_update(void)
 
 static esp_err_t initialise_flash_encryption(void)
 {
+    uint32_t new_wdata0 = 0;
+    uint32_t new_wdata5 = 0;
+    uint32_t new_wdata6 = 0;
+
     uint32_t coding_scheme = REG_GET_FIELD(EFUSE_BLK0_RDATA6_REG, EFUSE_CODING_SCHEME);
     if (coding_scheme != EFUSE_CODING_SCHEME_VAL_NONE && coding_scheme != EFUSE_CODING_SCHEME_VAL_34) {
         ESP_LOGE(TAG, "Unknown/unsupported CODING_SCHEME value 0x%x", coding_scheme);
@@ -97,11 +101,10 @@ static esp_err_t initialise_flash_encryption(void)
         && REG_READ(EFUSE_BLK1_RDATA7_REG) == 0) {
         ESP_LOGI(TAG, "Generating new flash encryption key...");
         esp_efuse_write_random_key(EFUSE_BLK1_WDATA0_REG);
-        esp_efuse_burn_new_values();
+        // defer efuse programming step to the end
 
         ESP_LOGI(TAG, "Read & write protecting new key...");
-        REG_WRITE(EFUSE_BLK0_WDATA0_REG, EFUSE_WR_DIS_BLK1 | EFUSE_RD_DIS_BLK1);
-        esp_efuse_burn_new_values();
+        new_wdata0 |= EFUSE_WR_DIS_BLK1 | EFUSE_RD_DIS_BLK1;
     } else {
 
         if(!(efuse_key_read_protected && efuse_key_write_protected)) {
@@ -122,34 +125,36 @@ static esp_err_t initialise_flash_encryption(void)
        operation does nothing. Please note this is not recommended!
     */
     ESP_LOGI(TAG, "Setting CRYPT_CONFIG efuse to 0xF");
-    REG_WRITE(EFUSE_BLK0_WDATA5_REG, EFUSE_FLASH_CRYPT_CONFIG_M);
-    esp_efuse_burn_new_values();
+    new_wdata5 |= EFUSE_FLASH_CRYPT_CONFIG_M;
 
-    uint32_t new_wdata6 = 0;
 #ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
     ESP_LOGI(TAG, "Disable UART bootloader encryption...");
     new_wdata6 |= EFUSE_DISABLE_DL_ENCRYPT;
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader encryption");
 #endif
+
 #ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_DEC
     ESP_LOGI(TAG, "Disable UART bootloader decryption...");
     new_wdata6 |= EFUSE_DISABLE_DL_DECRYPT;
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader decryption - SECURITY COMPROMISED");
 #endif
+
 #ifndef CONFIG_SECURE_FLASH_UART_BOOTLOADER_ALLOW_CACHE
     ESP_LOGI(TAG, "Disable UART bootloader MMU cache...");
     new_wdata6 |= EFUSE_DISABLE_DL_CACHE;
 #else
     ESP_LOGW(TAG, "Not disabling UART bootloader MMU cache - SECURITY COMPROMISED");
 #endif
+
 #ifndef CONFIG_SECURE_BOOT_ALLOW_JTAG
     ESP_LOGI(TAG, "Disable JTAG...");
     new_wdata6 |= EFUSE_RD_DISABLE_JTAG;
 #else
     ESP_LOGW(TAG, "Not disabling JTAG - SECURITY COMPROMISED");
 #endif
+
 #ifndef CONFIG_SECURE_BOOT_ALLOW_ROM_BASIC
     ESP_LOGI(TAG, "Disable ROM BASIC interpreter fallback...");
     new_wdata6 |= EFUSE_RD_CONSOLE_DEBUG_DISABLE;
@@ -157,10 +162,16 @@ static esp_err_t initialise_flash_encryption(void)
     ESP_LOGW(TAG, "Not disabling ROM BASIC fallback - SECURITY COMPROMISED");
 #endif
 
-    if (new_wdata6 != 0) {
-        REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
-        esp_efuse_burn_new_values();
-    }
+#if defined(CONFIG_SECURE_BOOT_V2_ENABLED) && !defined(CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS)
+    // This bit is set when enabling Secure Boot V2, but we can't enable it until this later point in the first boot
+    // otherwise the Flash Encryption key cannot be read protected
+    new_wdata0 |= EFUSE_WR_DIS_RD_DIS;
+#endif
+
+    REG_WRITE(EFUSE_BLK0_WDATA0_REG, new_wdata0);
+    REG_WRITE(EFUSE_BLK0_WDATA5_REG, new_wdata5);
+    REG_WRITE(EFUSE_BLK0_WDATA6_REG, new_wdata6);
+    esp_efuse_burn_new_values();
 
     return ESP_OK;
 }
@@ -210,16 +221,19 @@ static esp_err_t encrypt_flash_contents(uint32_t flash_crypt_cnt, bool flash_cry
 
     ESP_LOGD(TAG, "All flash regions checked for encryption pass");
 
+    uint32_t new_flash_crypt_cnt;
+#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
+    // Go straight to max, permanently enabled
+    ESP_LOGI(TAG, "Setting FLASH_CRYPT_CNT for permanent encryption");
+    new_flash_crypt_cnt = EFUSE_FLASH_CRYPT_CNT;
+#else
     /* Set least significant 0-bit in flash_crypt_cnt */
     int ffs_inv = __builtin_ffs((~flash_crypt_cnt) & EFUSE_RD_FLASH_CRYPT_CNT);
     /* ffs_inv shouldn't be zero, as zero implies flash_crypt_cnt == EFUSE_RD_FLASH_CRYPT_CNT (0x7F) */
-    uint32_t new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
+    new_flash_crypt_cnt = flash_crypt_cnt + (1 << (ffs_inv - 1));
+#endif
     ESP_LOGD(TAG, "FLASH_CRYPT_CNT 0x%x -> 0x%x", flash_crypt_cnt, new_flash_crypt_cnt);
     uint32_t wdata0_reg = ((new_flash_crypt_cnt & EFUSE_FLASH_CRYPT_CNT) << EFUSE_FLASH_CRYPT_CNT_S);
-#ifdef CONFIG_SECURE_FLASH_ENCRYPTION_MODE_RELEASE
-    ESP_LOGI(TAG, "Write protecting FLASH_CRYPT_CNT eFuse");
-    wdata0_reg |= EFUSE_WR_DIS_FLASH_CRYPT_CNT;
-#endif
 
     REG_WRITE(EFUSE_BLK0_WDATA0_REG, wdata0_reg);
     esp_efuse_burn_new_values();
@@ -236,13 +250,24 @@ static esp_err_t encrypt_bootloader(void)
     /* Check for plaintext bootloader (verification will fail if it's already encrypted) */
     if (esp_image_verify_bootloader(&image_length) == ESP_OK) {
         ESP_LOGD(TAG, "bootloader is plaintext. Encrypting...");
+
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+        // Account for the signature sector after the bootloader
+        image_length = (image_length + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE - 1);
+        image_length += FLASH_SECTOR_SIZE;
+        if (ESP_BOOTLOADER_OFFSET + image_length > ESP_PARTITION_TABLE_OFFSET) {
+            ESP_LOGE(TAG, "Bootloader is too large to fit Secure Boot V2 signature sector and partition table (configured offset 0x%x)", ESP_PARTITION_TABLE_OFFSET);
+            return ESP_ERR_INVALID_STATE;
+        }
+#endif // CONFIG_SECURE_BOOT_V2_ENABLED
+
         err = esp_flash_encrypt_region(ESP_BOOTLOADER_OFFSET, image_length);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "Failed to encrypt bootloader in place: 0x%x", err);
             return err;
         }
 
-#ifdef CONFIG_SECURE_BOOT_ENABLED
+#ifdef CONFIG_SECURE_BOOT_V1_ENABLED
         /* If secure boot is enabled and bootloader was plaintext, also
          * need to encrypt secure boot IV+digest.
          */
@@ -334,8 +359,11 @@ esp_err_t esp_flash_encrypt_region(uint32_t src_addr, size_t data_length)
         return ESP_FAIL;
     }
 
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
     for (size_t i = 0; i < data_length; i += FLASH_SECTOR_SIZE) {
-        rtc_wdt_feed();
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_feed(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
         uint32_t sec_start = i + src_addr;
         err = bootloader_flash_read(sec_start, buf, FLASH_SECTOR_SIZE, false);
         if (err != ESP_OK) {

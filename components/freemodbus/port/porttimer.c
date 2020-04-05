@@ -52,7 +52,7 @@
 #include "port_serial_slave.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
 
 #define MB_US50_FREQ            (20000) // 20kHz 1/20000 = 50mks
 #define MB_DISCR_TIME_US        (50)    // 50uS = one discreet for timer
@@ -80,7 +80,7 @@ static void IRAM_ATTR vTimerGroupIsr(void *param)
 
 BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
 {
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
     MB_PORT_CHECK((usTim1Timerout50us > 0), FALSE,
             "Modbus timeout discreet is incorrect.");
     esp_err_t xErr;
@@ -121,7 +121,7 @@ BOOL xMBPortTimersInit(USHORT usTim1Timerout50us)
 
 void vMBPortTimersEnable(void)
 {
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
     ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
     ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));
     ESP_ERROR_CHECK(timer_enable_intr(usTimerGroupIndex, usTimerIndex));
@@ -132,9 +132,9 @@ void vMBPortTimersEnable(void)
 void MB_PORT_ISR_ATTR
 vMBPortTimersDisable(void)
 {
-#ifdef CONFIG_FMB_TIMER_PORT_ENABLED
+#if CONFIG_FMB_TIMER_PORT_ENABLED
     if( (BOOL)xPortInIsrContext() ) {
-            timer_group_set_counter_enable_in_isr(usTimerGroupIndex, usTimerIndex, TIMER_PAUSE);
+        timer_group_set_counter_enable_in_isr(usTimerGroupIndex, usTimerIndex, TIMER_PAUSE);
     } else {
         ESP_ERROR_CHECK(timer_pause(usTimerGroupIndex, usTimerIndex));
         ESP_ERROR_CHECK(timer_set_counter_value(usTimerGroupIndex, usTimerIndex, 0ULL));

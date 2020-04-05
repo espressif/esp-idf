@@ -22,36 +22,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "e6d47c1dbd8c8cbfe37271e5e2aac53ee88c9e347ae937e22bf0c73f530efbdf",
-            "size": 85459985,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-linux-amd64.tar.gz"
+            "sha256": "b65ae41a675c866f5e11e3c452fc4b9cee3f39038d88435faa45308f50388c54",
+            "size": 85490835,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r1-linux-amd64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "54a199c28f591da2466b21741911bc2ba77ddf82d3d2b66c6ce03c1a0c6835f0",
-            "size": 83647538,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-linux-armel.tar.gz"
+            "sha256": "7cd03edf067b5da6acf333ddaf18ce8070db98876c01b1d8979702e63587fcb5",
+            "size": 83653607,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r1-linux-armel.tar.gz"
           },
           "linux-i686": {
-            "sha256": "36a9648c414dbd1c518c687ce5587d9f8eaa94324f45d92e9ec31a1433a04df8",
-            "size": 87438500,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-linux-i686.tar.gz"
+            "sha256": "19273eb069efb29cc1df129f667fc09571c8e6e0ffa1fc536fb8b5d14bd59d4b",
+            "size": 87449664,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r1-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "dc62be8dd16c6d9d28d64e2b3f831fa208f3548c2ca73cdbcbdf68f474d59521",
-            "size": 92150978,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-macos.tar.gz"
+            "sha256": "a3ee69bbe23acb77242086d2445c62d6bf13dbd9abcdfd4b56acef0937051a12",
+            "size": 92170881,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r1-macos.tar.gz"
           },
-          "name": "esp-2019r2-8.2.0",
+          "name": "esp-2020r1-8.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "c9d5776a22516f0825a7c68d835ffacc2392f913136893b7646e1288937cc65e",
-            "size": 103850448,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-win32.zip"
+            "sha256": "5fbabd2b7c75f56ebe207061f56beb21aca32ef867b64e14e735065cf812cce4",
+            "size": 103877946,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r1-win32.zip"
           },
           "win64": {
-            "sha256": "c9d5776a22516f0825a7c68d835ffacc2392f913136893b7646e1288937cc65e",
-            "size": 103850448,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2019r2-win32.zip"
+            "sha256": "5fbabd2b7c75f56ebe207061f56beb21aca32ef867b64e14e735065cf812cce4",
+            "size": 103877946,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32-elf-gcc8_2_0-esp-2020r1-win32.zip"
           }
         }
       ]
@@ -78,36 +78,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "59c6951e39937b9dfa53cca6d7707984ee39572071e56d11069f032d079477f5",
-            "size": 85762044,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-amd64.tar.gz"
+            "sha256": "f435159a654dbfd8ccc9f89a16d5ce523ebd9e04ae48d95bf4935d15ac7bd058",
+            "size": 85781628,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2020r1-linux-amd64.tar.gz"
           },
           "linux-armel": {
-            "sha256": "92d80cf640db34913b91c1d8dae1632a7f5a740b5dcf39a3bea750b5dba05caa",
-            "size": 84036647,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-armel.tar.gz"
+            "sha256": "38081688e3d6d21b436adca9c790d8cdc9dd4dbd9e1a9c98262ea6b04639f8c1",
+            "size": 84055798,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2020r1-linux-armel.tar.gz"
           },
           "linux-i686": {
-            "sha256": "d31c39dce8e6faa36807152a8afa8fe79d491bc551ad27dff1fed2f31dd6a39e",
-            "size": 87755342,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-i686.tar.gz"
+            "sha256": "38b685c3243ab991dd9112ef330ba1fa1a176ab68a6aca832a0fc76975b8916f",
+            "size": 87764133,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2020r1-linux-i686.tar.gz"
           },
           "macos": {
-            "sha256": "01f6d9b6d25a550975a16d2634a577a0c0f3c3c24db10edd1b714f9c192f490d",
-            "size": 92535775,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-macos.tar.gz"
+            "sha256": "f6ec427699930ccd17d730fb5bcb0daa2283bee83e0987cade45d8f0e1f6f544",
+            "size": 92539826,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2020r1-macos.tar.gz"
           },
-          "name": "esp-2019r2-8.2.0",
+          "name": "esp-2020r1-8.2.0",
           "status": "recommended",
           "win32": {
-            "sha256": "f9b69732bd4e90d4558547f6a2d33f78433971e9e4f04968515cf460ea6de79a",
-            "size": 104254613,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-win32.zip"
+            "sha256": "a73a5b61510e730d7d0e46584f146a190b19627117e7657c92dccbedbf55ad68",
+            "size": 104292272,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2020r1-win32.zip"
           },
           "win64": {
-            "sha256": "f9b69732bd4e90d4558547f6a2d33f78433971e9e4f04968515cf460ea6de79a",
-            "size": 104254613,
-            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-win32.zip"
+            "sha256": "a73a5b61510e730d7d0e46584f146a190b19627117e7657c92dccbedbf55ad68",
+            "size": 104292272,
+            "url": "https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2020r1-win32.zip"
           }
         }
       ]
@@ -270,26 +270,26 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "563a39e0a7c7368f81bfa1c3aff8b590a0617cdfe51177ddc808f66cc0866c76",
-            "size": 38405896,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Linux-x86_64.tar.gz"
+            "sha256": "12a577aa04b6639766ae908f33cf70baefc11ac4499b8b1c8812d99f05fb6a02",
+            "size": 39517697,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Linux-x86_64.tar.gz"
           },
           "macos": {
-            "sha256": "fef537614d73fda848f6168273b6c7ba45f850484533361e7bc50ac1d315f780",
-            "size": 32062124,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-Darwin-x86_64.tar.gz"
+            "sha256": "f60e0ef96da48725cd8da7d6abe83cd9501167aa51625c90dd4d31081a631279",
+            "size": 35802699,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-Darwin-x86_64.tar.gz"
           },
-          "name": "3.13.4",
+          "name": "3.16.4",
           "status": "recommended",
           "win32": {
-            "sha256": "28daf772f55d817a13ef14e25af2a5569f8326dac66a6aa3cc5208cf1f8e943f",
-            "size": 26385104,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-win32-x86.zip"
+            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
+            "size": 32812189,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
           },
           "win64": {
-            "sha256": "bcd477d49e4a9400b41213d53450b474beaedb264631693c958ef9affa8e5623",
-            "size": 29696565,
-            "url": "https://github.com/Kitware/CMake/releases/download/v3.13.4/cmake-3.13.4-win64-x64.zip"
+            "sha256": "f37963bcfcebdfe5864926a3623f6c21220c35790c39cd65e64bd521cbb39c55",
+            "size": 32812189,
+            "url": "https://github.com/Kitware/CMake/releases/download/v3.16.4/cmake-3.16.4-win64-x64.zip"
           }
         }
       ]
@@ -325,31 +325,31 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "978213e8345dd19762c79d4bda309331bb78db3d2a7f7193641dfcc978f6e5e5",
-            "size": 1680363,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-linux64-0.10.0-esp32-20191114.tar.gz"
+            "sha256": "23c9a50b6e109e845311d697bfe1caae7bc0df092e71669e9848bcecd96be948",
+            "size": 1724360,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-linux64-0.10.0-esp32-20200309.tar.gz"
           },
           "linux-armel": {
-            "sha256": "3b41d889e54c03d26ebf4423084a1c25a9b0a8c5d93359a3eece1754377dbd81",
-            "size": 1730768,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-armel-0.10.0-esp32-20191114.tar.gz"
+            "sha256": "04b75498138e6cca9fc0264479dd9f11e60b757ac0d2f14f008f9b54ec624b12",
+            "size": 1774177,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-armel-0.10.0-esp32-20200309.tar.gz"
           },
           "macos": {
-            "sha256": "75ca2e235c35157d6dad2106cc62210ccb99b736da6940179aa1644fe1ae8c2b",
-            "size": 1765567,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-macos-0.10.0-esp32-20191114.tar.gz"
+            "sha256": "b39ded478181da4ddcdcc5c52c1c73b60610f856eb0f13b494caa750bebc1d78",
+            "size": 1810061,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-macos-0.10.0-esp32-20200309.tar.gz"
           },
-          "name": "v0.10.0-esp32-20191114",
+          "name": "v0.10.0-esp32-20200309",
           "status": "recommended",
           "win32": {
-            "sha256": "698bfa5903c99e2ee0a1898379b3a40451fcecbc1fd4fde4f2f1494e5725e7ab",
-            "size": 2102699,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-win32-0.10.0-esp32-20191114.zip"
+            "sha256": "31e2d12843386058ad13d27a5bb69c73ee185c93d76be9e4c03a832a2fdaef47",
+            "size": 2149578,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-win32-0.10.0-esp32-20200309.zip"
           },
           "win64": {
-            "sha256": "698bfa5903c99e2ee0a1898379b3a40451fcecbc1fd4fde4f2f1494e5725e7ab",
-            "size": 2102699,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20191114/openocd-esp32-win32-0.10.0-esp32-20191114.zip"
+            "sha256": "31e2d12843386058ad13d27a5bb69c73ee185c93d76be9e4c03a832a2fdaef47",
+            "size": 2149578,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-win32-0.10.0-esp32-20200309.zip"
           }
         }
       ]
@@ -383,21 +383,21 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "978fd9e26c2db8d33392c6daef50e9edac0a3db6680710a9f9ad47e01f3e49b7",
-            "size": 85276,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-linux64.tar.gz"
+            "sha256": "4b2ad65db438595813b981db921f675f5c775c302b34dc85710ffddf07ec9033",
+            "size": 102826,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-linux64.tar.gz"
           },
           "macos": {
-            "sha256": "9504cd1783ef3c242d06330a50d54dc8f838b605f5fc3e892c47254929f7350c",
-            "size": 91457,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-osx.tar.gz"
+            "sha256": "6cd22e2c5fc654282d26b485d9b3d68e242b09a22c2e73a253f2a4a7cfd6774c",
+            "size": 119947,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-osx.tar.gz"
           },
-          "name": "1.9.0",
+          "name": "1.10.0",
           "status": "recommended",
           "win64": {
-            "sha256": "2d70010633ddaacc3af4ffbd21e22fae90d158674a09e132e06424ba3ab036e9",
-            "size": 254497,
-            "url": "https://dl.espressif.com/dl/ninja-1.9.0-win64.zip"
+            "sha256": "919fd158c16bf135e8a850bb4046ec1ce28a7439ee08b977cd0b7f6b3463d178",
+            "size": 262400,
+            "url": "https://dl.espressif.com/dl/ninja-1.10.0-win64.zip"
           }
         }
       ]

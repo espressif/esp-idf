@@ -111,12 +111,17 @@ extern "C" {
 /**
  * To enable touch pad interrupt.
  */
-#define touch_hal_enable_interrupt() touch_ll_enable_interrupt()
+#define touch_hal_intr_enable() touch_ll_intr_enable()
 
 /**
  * To disable touch pad interrupt.
  */
-#define touch_hal_disable_interrupt() touch_ll_disable_interrupt()
+#define touch_hal_intr_disable() touch_ll_intr_disable()
+
+/**
+ * To clear touch pad interrupt.
+ */
+#define touch_hal_intr_clear() touch_ll_intr_clear()
 
 /**
  * Get the touch pad which caused wakeup from deep sleep.

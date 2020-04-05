@@ -1415,7 +1415,7 @@ static void performance_test(bool dedicated_task)
 
     TEST_SETUP();
 
-    const char test_base[] = "qwertyuiopasdfghjklzxvbnmmnbvcxzqwertyuiopasdfghjklzxvbnmmnbvcxz";
+    const char test_base[] = "qwertyuiopasdfghjklzxvbnmmnbvcxz";
 
     #define TEST_CONFIG_BASES  (sizeof(test_base) - 1)
     #define TEST_CONFIG_IDS    (TEST_CONFIG_BASES / 2)

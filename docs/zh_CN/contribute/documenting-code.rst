@@ -8,7 +8,7 @@
 概述
 ----
 
-在项目库内编写代码文档时，请遵循 `Doxygen 代码注释风格 <https://www.stack.nl/~dimitri/doxygen/manual/docblocks.html#specialblock>`_。要采用这一风格，您可以将 ``@param`` 等特殊命令插入到标准注释块中，比如： ::
+在项目库内编写代码文档时，请遵循 `Doxygen 代码注释风格 <http://doxygen.nl/manual/docblocks.html#specialblock>`_。要采用这一风格，您可以将 ``@param`` 等特殊命令插入到标准注释块中，比如： ::
 
     /**
      * @param ratio this is oxygen to air ratio
@@ -22,13 +22,13 @@ Doxygen 会解析代码，提取命令和后续文本，生成代码文档。
     :align: center
     :alt: 内联代码样本文档
 
-Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵活。请参考数据丰富、条理清晰的 `Doxygen 手册 <https://www.stack.nl/~dimitri/doxygen/manual/index.html>`_ 熟悉 Doxygen 特性。
+Doxygen 支持多种排版风格，对于文档中可以包含的细节非常灵活。请参考数据丰富、条理清晰的 `Doxygen 手册 <http://doxygen.nl/manual/index.html>`_ 熟悉 Doxygen 特性。
 
 
 为什么需要 Doxygen?
 --------------------
 
-使用 Doxygen 的最终目的是确保所有代码编写风格一致，以便在代码变更时使用 `Sphinx <http://www.sphinx-doc.org/>`_ 和 `Breathe <https://breathe.readthedocs.io/>`_ 等工具协助筹备、自动更新 API 文档。
+使用 Doxygen 的最终目的是确保所有代码编写风格一致，以便在代码变更时使用 `Sphinx`_ 和 `Breathe`_ 等工具协助筹备、自动更新 API 文档。
 
 使用这类工具时，上文代码渲染后呈现效果如下：
 
@@ -255,13 +255,13 @@ CI build 脚本中添加了检查功能，查找 RST 文件中的硬编码链接
 Sphinx 新手怎么办
 ------------------
 
-1. 不要担心。所有需要的软件均有详细文档，并且开源、免费。您可以先查看 `Sphinx <http://www.sphinx-doc.org/>`_ 文档。如果您不清楚如何用 rst markup 语言写作，请查看  `reStructuredText Primer <http://www.sphinx-doc.org/en/stable/rest.html>`_。您也可以使用  markdown (.md) 文件，查找更多在 `Recommonmark parser' 文档页面 <https://recommonmark.readthedocs.io/en/latest/>`_ 使用的特定 markdown 句法信息。
+1. 不要担心。所有需要的软件均有详细文档，并且开源、免费。您可以先查看 `Sphinx`_ 文档。如果您不清楚如何用 rst markup 语言写作，请查看  `reStructuredText Primer <http://www.sphinx-doc.org/en/stable/rest.html>`_。您也可以使用  markdown (.md) 文件，查找更多在 `Recommonmark parser' 文档页面 <https://recommonmark.readthedocs.io/en/latest/>`_ 使用的特定 markdown 句法信息。
 
 2. 查看本文档的源文件，了解本文档使用的代码。源文件存储于 GitHub `espressif/esp-idf`_ 项目库的 :idf:`docs` 文件夹下。您可以滑动到页面上方，点击右上角的链接，直接查看本页面的源文件。您也可以通过点击 ``Raw`` 按键打开源文件，在 GitHub 上查看文件的代码。
 
 3. 想要查看在上传至 GitHub 前文档如何生成、呈现，有两种方式：
 
-    * 安装`Sphinx <http://www.sphinx-doc.org/>`_、 `Breathe <https://breathe.readthedocs.io/>`_、 `Blockdiag <http://blockdiag.com/en/index.html>`_ 和 `Doxygen <https://www.stack.nl/~dimitri/doxygen/>`_ 本地生成文档，具体可查看下文。
+    * 安装`Sphinx`_、 `Breathe`_、 `Blockdiag <http://blockdiag.com/en/index.html>`_ 和 `Doxygen <http://doxygen.nl/>`_ 本地生成文档，具体可查看下文。
 
     * 在 `Read the Docs <https://readthedocs.org/>`_ 建立账号，在云端生成文档。 Read the Docs 免费提供文档生成和存储，且速度快、质量高。
 
@@ -275,17 +275,17 @@ Sphinx 新手怎么办
 
 您可以安装下列包，通过搭建环境在电脑上本地生成文档：
 
-1. Doxygen - https://www.stack.nl/~dimitri/doxygen/
+1. Doxygen - http://doxygen.nl/
 2. Sphinx - https://github.com/sphinx-doc/sphinx/#readme-for-sphinx
 3. Breathe - https://github.com/michaeljones/breathe#breathe
-4. Document theme "sphinx_rtd_theme" - https://github.com/rtfd/sphinx_rtd_theme
+4. Document theme "sphinx_idf_theme" - https://github.com/rtfd/sphinx_idf_theme
 5. Custom 404 page "sphinx-notfound-page" - https://github.com/rtfd/sphinx-notfound-page
 6. Blockdiag - http://blockdiag.com/en/index.html
 7. Recommonmark - https://github.com/rtfd/recommonmark
 
-添加 "sphinx_rtd_theme" 包之后，文档将与 `ESP32 编程指南 <https://docs.espressif.com/projects/esp-idf/zh_CN/latest/index.html>`_ 的风格保持一致，与 "Read the Docs" 网站的显示效果一样.
+添加 "sphinx_idf_theme" 包之后，文档将与 `ESP-IDF 编程指南 <https://docs.espressif.com/projects/esp-idf/en/latest/index.html>`_ 的风格保持一致。
 
-不用担心需要安装太多包。除 Doxygen 之外，其他包均使用 Python 语言，可一键安装。
+不用担心需要安装太多包。除 Doxygen 和 sphinx_idf_theme 之外，其他包均使用纯 Python 语言，可一键安装。
 
 Doxygen 的安装取决于操作系统：
 
@@ -323,11 +323,28 @@ Doxygen 的安装取决于操作系统：
 
         ::
 
-            $ pacman -S mingw32/mingw-w64-i686-python2-pillow
+            $ pacman -S mingw32/mingw-w64-i686-python-pillow
 
-        查看屏幕上的记录，确定 ``mingw-w64-i686-python2-pillow-4.3.0-1`` 已安装。旧版本 *pillow* 无法运行。
+        查看屏幕上的记录，确定 ``mingw-w64-i686-python-pillow-4.3.0-1`` 已安装。旧版本 *pillow* 无法运行。
 
-    Windows 安装 Doxygen 的缺点是 `blockdiag pictures <add-illustrations>` 字体不能正确加载，可能会存在乱码。在此问题解决之前，您可以使用 `interactive shell`_ 查看完整图片。
+    Windows 安装 Doxygen 的缺点是 `blockdiag pictures <add-illustrations>`_ 字体不能正确加载，可能会存在乱码。在此问题解决之前，您可以使用 `interactive shell`_ 查看完整图片。
+
+
+sphinx_idf_theme
+@@@@@@@@@@@@@@@@
+
+编译 ``sphinx_idf_theme`` 需要同时使用 Python 和 JavaScript。因此，目前要进行本地编译还必须安装 `node.js <https://nodejs.org/en/download/>`_ ，命令如下：
+
+::
+
+   cd ~/esp
+   git clone https://github.com/espressif/sphinx_idf_theme.git
+   cd sphinx_idf_theme
+   npm install
+   python setup.py build
+   python setup.py install
+
+我们计划在不久的将来支持安装预编译 ``sphinx_idf_theme``，给您带来的暂时不便，敬请谅解。
 
 其他所有应用都是 `Python <https://www.python.org/>`_ 包，可以按照下列步骤一键安装：
 
@@ -371,3 +388,5 @@ Doxygen 的安装取决于操作系统：
 
 .. _interactive shell: http://interactive.blockdiag.com/?compression=deflate&src=eJxlUMFOwzAMvecrrO3aITYQQirlAIIzEseJQ5q4TUSIq8TVGIh_J2m7jbKc7Ge_5_dSO1Lv2soWvoVYgieNoMh7VGzJR9FJtugZ7lYQ0UcKEbYNOY36rRQHZHUPT68vV5tceGLbWCUzPfeaFFMoBZzecVc56vWwJFnWMmJ59CCZg617xpOFbTSyw0pmvT_HJ7hxtFNGBr6wvuu5SCkchcrZ1vAeXZomznh5YgTqfcpR02cBO6vZVDeXBRjMjKEcFRbLh8f18-Z2UUBDnqP9wmp9ncRmSSfND2ldGo2h_zse407g0Mxc1q7HzJ3-4jzYYTJjtQH3iSV-fgFzx50J
 
+.. _Sphinx: http://www.sphinx-doc.org/
+.. _Breathe: https://breathe.readthedocs.io

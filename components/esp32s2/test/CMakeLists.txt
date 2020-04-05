@@ -1,7 +1,7 @@
 if(IDF_TARGET STREQUAL "esp32s2")
     idf_component_register(SRC_DIRS .
-                        INCLUDE_DIRS . ${CMAKE_CURRENT_BINARY_DIR}
-                        REQUIRES unity test_utils nvs_flash ulp esp_common
+                        PRIV_INCLUDE_DIRS . ${CMAKE_CURRENT_BINARY_DIR}
+                        PRIV_REQUIRES unity test_utils nvs_flash ulp esp_common
                         )
 
     add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/test_tjpgd_logo.h"

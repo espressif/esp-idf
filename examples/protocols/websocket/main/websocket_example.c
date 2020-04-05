@@ -115,7 +115,7 @@ static void websocket_app_start(void)
         if (esp_websocket_client_is_connected(client)) {
             int len = sprintf(data, "hello %04d", i++);
             ESP_LOGI(TAG, "Sending %s", data);
-            esp_websocket_client_send(client, data, len, portMAX_DELAY);
+            esp_websocket_client_send_text(client, data, len, portMAX_DELAY);
         }
         vTaskDelay(1000 / portTICK_RATE_MS);
     }

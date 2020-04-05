@@ -90,7 +90,7 @@ def parse_trace(reader, parser, os_evt_map_file=''):
     global _os_events_map
     # parse OS events formats file
     _os_events_map = _read_events_map(os_evt_map_file)
-    _read_file_header(reader)
+    parser.esp_ext = ('; ESP_Extension\n' in _read_file_header(reader))
     _read_init_seq(reader)
     while True:
         event = parser.read_event(reader, _os_events_map)
@@ -305,7 +305,7 @@ class SysViewEvent(apptrace.TraceEvent):
     """
         Generic SystemView event class. This is a base class for all events.
     """
-    def __init__(self, evt_id, reader, core_id, events_fmt_map=None):
+    def __init__(self, evt_id, core_id, reader, events_fmt_map=None):
         """
             Constructor. Reads and optionally decodes event.
 
@@ -516,11 +516,11 @@ class SysViewPredefinedEvent(SysViewEvent):
         SYSVIEW_EVTID_NUMMODULES:       ('svNumModules', [SysViewEventParamSimple('mod_cnt', _decode_u32)]),
     }
 
-    def __init__(self, evt_id, reader, core_id):
+    def __init__(self, evt_id, core_id, reader):
         """
             see SysViewEvent.__init__()
         """
-        SysViewEvent.__init__(self, evt_id, reader, core_id, self._predef_events_fmt)
+        SysViewEvent.__init__(self, evt_id, core_id, reader, self._predef_events_fmt)
         # self.name = 'SysViewPredefinedEvent'
 
 
@@ -528,11 +528,11 @@ class SysViewOSEvent(SysViewEvent):
     """
         OS related SystemView events class.
     """
-    def __init__(self, evt_id, reader, core_id, events_fmt_map):
+    def __init__(self, evt_id, core_id, reader, events_fmt_map):
         """
             see SysViewEvent.__init__()
         """
-        SysViewEvent.__init__(self, evt_id, reader, core_id, events_fmt_map)
+        SysViewEvent.__init__(self, evt_id, core_id, reader, events_fmt_map)
         # self.name = 'SysViewOSEvent'
 
 
@@ -553,7 +553,7 @@ class SysViewHeapEvent(SysViewEvent):
                                                   SysViewEventParamArray('callers', _decode_u32)]),
     }
 
-    def __init__(self, evt_id, events_off, reader, core_id):
+    def __init__(self, evt_id, core_id, events_off, reader):
         """
             Constructor. Reads and optionally decodes event.
 
@@ -571,7 +571,7 @@ class SysViewHeapEvent(SysViewEvent):
         cur_events_map = {}
         for id in self.events_fmt:
             cur_events_map[events_off + id] = self.events_fmt[id]
-        SysViewEvent.__init__(self, evt_id, reader, core_id, cur_events_map)
+        SysViewEvent.__init__(self, evt_id, core_id, reader, cur_events_map)
         # self.name = 'SysViewHeapEvent'
 
 
@@ -609,6 +609,7 @@ class SysViewTraceDataParser(apptrace.TraceDataProcessor):
         self.irqs_info = {}
         self.tasks_info = {}
         self.core_id = core_id
+        self.esp_ext = False
 
     def _parse_irq_desc(self, desc):
         """
@@ -646,7 +647,7 @@ class SysViewTraceDataParser(apptrace.TraceDataProcessor):
         self._last_ts += ts
         return float(self._last_ts) / self.sys_info.params['sys_freq'].value
 
-    def read_extension_event(self, evt_id, reader):
+    def read_extension_event(self, evt_id, core_id, reader):
         """
             Reads extension event.
             Default implementation which just reads out event.
@@ -667,8 +668,17 @@ class SysViewTraceDataParser(apptrace.TraceDataProcessor):
         """
         if self.root_proc == self:
             # by default just read out and skip unknown event
-            return SysViewEvent(evt_id, reader, self.core_id)
+            return SysViewEvent(evt_id, core_id, reader)
         return None  # let decide to root parser
+
+    @staticmethod
+    def _decode_core_id(high_b):
+        if high_b & (1 << 6):
+            core_id = 1
+            high_b &= ~(1 << 6)
+        else:
+            core_id = 0
+        return high_b,core_id
 
     def read_event(self, reader, os_evt_map):
         """
@@ -692,17 +702,26 @@ class SysViewTraceDataParser(apptrace.TraceDataProcessor):
         if evt_hdr & 0x80:
             # evt_id (2 bytes)
             b, = struct.unpack('<B', reader.read(1))
-            evt_id = b  # higher part
+            # higher part
+            if self.esp_ext:
+                evt_id,core_id = self._decode_core_id(b)
+            else:
+                evt_id = b
+                core_id = self.core_id
             evt_id = (evt_id << 7) | (evt_hdr & ~0x80)  # lower 7 bits
         else:
             # evt_id (1 byte)
-            evt_id = evt_hdr
+            if self.esp_ext:
+                evt_id,core_id = self._decode_core_id(evt_hdr)
+            else:
+                evt_id = evt_hdr
+                core_id = self.core_id
         if evt_id <= SYSVIEW_EVENT_ID_PREDEF_MAX:
-            return SysViewPredefinedEvent(evt_id, reader, self.core_id)
+            return SysViewPredefinedEvent(evt_id, core_id, reader)
         elif evt_id < SYSVIEW_MODULE_EVENT_OFFSET:
-            return SysViewOSEvent(evt_id, reader, self.core_id, os_evt_map)
+            return SysViewOSEvent(evt_id, core_id, reader, os_evt_map)
         else:
-            return self.read_extension_event(evt_id, reader)
+            return self.read_extension_event(evt_id, core_id, reader)
 
     def event_supported(self, event):
         return False
@@ -788,7 +807,7 @@ class SysViewMultiTraceDataParser(SysViewTraceDataParser):
         parser.root_proc = self
         self.stream_parsers[stream_id] = parser
 
-    def read_extension_event(self, evt_id, reader):
+    def read_extension_event(self, evt_id, core_id, reader):
         """
             Reads extension event.
             Iterates over registered stream parsers trying to find one which supports that type of event.
@@ -806,10 +825,10 @@ class SysViewMultiTraceDataParser(SysViewTraceDataParser):
                 object for extension event, if extension event is not supported return SysViewEvent instance.
         """
         for stream_id in self.stream_parsers:
-            evt = self.stream_parsers[stream_id].read_extension_event(evt_id, reader)
+            evt = self.stream_parsers[stream_id].read_extension_event(evt_id, core_id, reader)
             if evt:
                 return evt
-        return SysViewTraceDataParser.read_extension_event(self, evt_id, reader)
+        return SysViewTraceDataParser.read_extension_event(self, evt_id, core_id, reader)
 
     def on_new_event(self, event):
         """
@@ -976,8 +995,17 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
                 if SYSVIEW_EVTID_TASK_START_EXEC or SYSVIEW_EVTID_TASK_STOP_READY is received for unknown task.
         """
         if event.core_id not in self.traces:
-            raise SysViewTraceParseError("Event for unknown core %d" % event.core_id)
-        trace = self.traces[event.core_id]
+            if 0 in self.traces and self.traces[0].esp_ext:
+                # for Espressif extension there is one trace for all cores
+                trace = self.traces[0]
+                if event.core_id not in self.ctx_stack:
+                    self.ctx_stack[event.core_id] = []
+                if event.core_id not in self.prev_ctx:
+                    self.prev_ctx[event.core_id] = None
+            else:
+                raise SysViewTraceParseError("Event for unknown core %d" % event.core_id)
+        else:
+            trace = self.traces[event.core_id]
         if event.id == SYSVIEW_EVTID_ISR_ENTER:
             if event.params['irq_num'].value not in trace.irqs_info:
                 raise SysViewTraceParseError("Enter unknown ISR %d" % event.params['irq_num'].value)
@@ -1113,7 +1141,11 @@ class SysViewMultiStreamTraceDataProcessor(SysViewTraceDataProcessor):
             SysViewTraceDataParser
                 parser object for specified stream and core
         """
-        trace = self.traces[core_id]
+        if core_id not in self.traces and 0 in self.traces and self.traces[0].esp_ext:
+            # for Espressif extension there is one trace for all cores
+            trace = self.traces[0]
+        else:
+            trace = self.traces[core_id]
         if stream_id == SysViewTraceDataParser.STREAMID_SYS:
             return trace
         if isinstance(trace, SysViewMultiTraceDataParser):
@@ -1213,15 +1245,15 @@ class SysViewHeapTraceDataParser(SysViewTraceDataExtEventParser):
         """
         SysViewTraceDataExtEventParser.__init__(self, events_num=len(SysViewHeapEvent.events_fmt.keys()), core_id=core_id, print_events=print_events)
 
-    def read_extension_event(self, evt_id, reader):
+    def read_extension_event(self, evt_id, core_id, reader):
         """
             Reads heap event.
             see SysViewTraceDataParser.read_extension_event()
         """
         if (self.events_off >= SYSVIEW_MODULE_EVENT_OFFSET and evt_id >= self.events_off and
                 evt_id < self.events_off + self.events_num):
-            return SysViewHeapEvent(evt_id, self.events_off, reader, self.core_id)
-        return SysViewTraceDataParser.read_extension_event(self, evt_id, reader)
+            return SysViewHeapEvent(evt_id, core_id, self.events_off, reader)
+        return SysViewTraceDataParser.read_extension_event(self, evt_id, core_id, reader)
 
     def on_new_event(self, event):
         """

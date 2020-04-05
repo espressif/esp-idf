@@ -27,7 +27,6 @@
 #include <esp_partition.h>
 #include <esp_attr.h>
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
 {
     const esp_partition_t *part = get_test_data_partition();
@@ -69,7 +68,6 @@ TEST_CASE("Test erase partition", "[spi_flash][esp_flash]")
         }
     }
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
 static bool s_test_nonzero_sha_of_partition(const esp_partition_t *part, bool allow_invalid_image)
 {
@@ -104,7 +102,6 @@ TEST_CASE("Test esp_partition_get_sha256() with data", "[spi_flash]")
     s_test_nonzero_sha_of_partition(part, false);
 }
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 TEST_CASE("Test esp_partition_get_sha256() with app", "[spi_flash]")
 {
     bool found_valid_app = false;
@@ -124,5 +121,4 @@ TEST_CASE("Test esp_partition_get_sha256() with app", "[spi_flash]")
 
     TEST_ASSERT_MESSAGE(found_valid_app, "At least one app partition should be a valid app partition");
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 

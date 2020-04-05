@@ -203,7 +203,6 @@ bt_status_t btc_hf_client_connect( bt_bdaddr_t *bd_addr )
     BTC_TRACE_EVENT("HFP Client version is  %s", btc_hf_client_version);
     CHECK_HF_CLIENT_INIT();
     return btc_queue_connect(UUID_SERVCLASS_HF_HANDSFREE, bd_addr, connect_int);
-
 }
 
 /*******************************************************************************

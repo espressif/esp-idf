@@ -25,6 +25,9 @@ typedef struct {
     struct arg_int *opcode;
     struct arg_int *model;
     struct arg_int *role;
+    struct arg_int *pub_addr;
+    struct arg_int *app_index;
+    struct arg_int *period;
     struct arg_end *end;
 } ble_mesh_publish_message;
 ble_mesh_publish_message msg_publish;
@@ -55,6 +58,29 @@ int ble_mesh_module_publish_message(int argc, char **argv)
 
     arg_int_to_value(msg_publish.role, device_role, "device role");
     model = ble_mesh_get_model(msg_publish.model->ival[0]);
+    if (msg_publish.role->count != 0) {
+        device_role = msg_publish.role->ival[0];
+    }
+
+    if (msg_publish.pub_addr->count != 0) {
+        model->pub->publish_addr = msg_publish.pub_addr->ival[0];
+    }
+
+    if (msg_publish.period->count != 0) {
+        model->pub->period = msg_publish.period->ival[0];
+    }
+
+    if (msg_publish.app_index->count != 0) {
+        model->pub->app_idx = msg_publish.app_index->ival[0];
+    }
+
+    if (msg_publish.data->count != 0) {
+        length = strlen(msg_publish.data->sval[0]);
+        data = malloc((length + 1) * sizeof(uint8_t));
+        if (data != NULL) {
+            err = get_value_string((char *)msg_publish.data->sval[0], (char *) data);
+        }
+    }
 
     err = esp_ble_mesh_model_publish(model, msg_publish.opcode->ival[0], length, data, device_role);
 
@@ -69,6 +95,9 @@ void ble_mesh_register_server_operation(void)
     msg_publish.opcode = arg_int1("o", NULL, "<opcode>", "operation opcode");
     msg_publish.model = arg_int1("m", NULL, "<module>", "module published to");
     msg_publish.role = arg_int1("r", NULL, "<role>", "device role");
+    msg_publish.pub_addr = arg_int1("a", NULL, "<address>", "unicast address");
+    msg_publish.app_index = arg_int1("i", NULL, "<app key>", "app key index");
+    msg_publish.period = arg_int1("p", NULL, "<period>", "period");
     msg_publish.end = arg_end(1);
 
     const esp_console_cmd_t msg_publish_cmd = {

@@ -2,7 +2,18 @@ ESP-IDF 编程指南
 =========================
 :link_to_translation:`en:[English]`
 
-这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/overview>`_ 芯片的官方开发框架。
+这里是乐鑫 IoT 开发框架 (`esp-idf <https://github.com/espressif/esp-idf>`_) 的文档中心。ESP-IDF 是 `ESP32 和 ESP32-S2 <https://www.espressif.com/en/products/hardware/socs>`_ 系列芯片的官方开发框架。
+
+.. only:: html
+
+    本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。如需了解其他芯片，请点击页面左下方的 "Switch Version"。
+
+.. only:: latex
+
+    本文档仅包含针对 {IDF_TARGET_NAME} 芯片的 ESP-IDF 使用。
+
+
+ESP-IDF 是 `ESP32 <https://www.espressif.com/zh-hans/products/hardware/esp32/overview>`_ 芯片的官方开发框架。
 
 ==================  ==================  ==================
 |快速入门|_          |API 参考|_         |H/W 参考|_
@@ -39,10 +50,10 @@ ESP-IDF 编程指南
 .. toctree::
    :hidden:
 
+   :esp32s2: ESP32-S2 预览 <esp32s2>
    快速入门 <get-started/index>
    API 参考 <api-reference/index>
    H/W 参考 <hw-reference/index>
-   ESP32-S2 预览 <esp32s2>
    API 指南 <api-guides/index>
    Libraries and Frameworks <libraries-and-frameworks/index>
    贡献代码 <contribute/index>

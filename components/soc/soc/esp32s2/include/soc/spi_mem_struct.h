@@ -17,7 +17,7 @@
 extern "C" {
 #endif
 
-typedef volatile struct {
+typedef volatile struct spi_mem_dev_s {
     union {
         struct {
             uint32_t reserved0: 17;                             /*reserved*/

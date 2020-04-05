@@ -85,6 +85,8 @@ typedef enum {
     WIFI_REASON_802_1X_AUTH_FAILED       = 23,
     WIFI_REASON_CIPHER_SUITE_REJECTED    = 24,
 
+    WIFI_REASON_INVALID_PMKID            = 53,
+
     WIFI_REASON_BEACON_TIMEOUT           = 200,
     WIFI_REASON_NO_AP_FOUND              = 201,
     WIFI_REASON_AUTH_FAIL                = 202,
@@ -215,7 +217,7 @@ typedef struct {
     uint8_t channel;            /**< Channel of ESP32 soft-AP */
     wifi_auth_mode_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
-    uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 4 */
+    uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 10 */
     uint16_t beacon_interval;   /**< Beacon interval, 100 ~ 60000 ms, default 100 ms */
 } wifi_ap_config_t;
 
@@ -333,14 +335,12 @@ typedef struct {
     unsigned secondary_channel:4; /**< secondary channel on which this packet is received. 0: none; 1: above; 2: below */
     unsigned :8;                  /**< reserved */
     unsigned timestamp:32;        /**< timestamp. The local time when this packet is received. It is precise only if modem sleep or light sleep is not enabled. unit: microsecond */
-#if CONFIG_IDF_TARGET_ESP32
     unsigned :32;                 /**< reserved */
-    unsigned :31;                 /**< reserved */
-    unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
-#elif CONFIG_IDF_TARGET_ESP32S2
-    unsigned :32;                 /**< reserved */
+#if CONFIG_IDF_TARGET_ESP32S2
     unsigned :32;                 /**< reserved */
 #endif
+    unsigned :31;                 /**< reserved */
+    unsigned ant:1;               /**< antenna number from which this packet is received. 0: WiFi antenna 0; 1: WiFi antenna 1 */
 #if CONFIG_IDF_TARGET_ESP32S2
     signed noise_floor:8;         /**< noise floor of Radio Frequency Module(RF). unit: 0.25dBm*/
     unsigned :24;                 /**< reserved */

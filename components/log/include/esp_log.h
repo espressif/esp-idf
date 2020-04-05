@@ -125,6 +125,15 @@ uint32_t esp_log_early_timestamp(void);
  */
 void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__ ((format (printf, 3, 4)));
 
+/**
+ * @brief Write message into the log, va_list variant
+ * @see esp_log_write()
+ *
+ * This function is provided to ease integration toward other logging framework,
+ * so that esp_log can be used as a log sink.
+ */
+void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, va_list args);
+
 /** @cond */
 
 #include "esp_log_internal.h"

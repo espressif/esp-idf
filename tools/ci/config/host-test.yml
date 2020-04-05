@@ -157,6 +157,14 @@ test_multi_heap_on_host:
     - cd components/heap/test_multi_heap_host
     - ./test_all_configs.sh
 
+test_certificate_bundle_on_host:
+  extends: .host_test_template
+  tags:
+    - build
+  script:
+    - cd components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_gen_crt_bundle.py
+
 test_confserver:
   extends: .host_test_template
   script:
@@ -168,6 +176,12 @@ test_gen_kconfig_doc:
   script:
     - cd tools/kconfig_new/test/gen_kconfig_doc/
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_target_visibility.py
+
+test_confgen:
+  extends: .host_test_template
+  script:
+    - cd tools/kconfig_new/test/confgen/
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_confgen.py
 
 test_idf_monitor:
   extends: .host_test_template

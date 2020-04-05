@@ -1,5 +1,32 @@
 menu "Example Configuration"
 
+    choice
+        bool "Mesh Topology"
+        default MESH_TOPO_TREE
+        help
+            Mesh Network Topology.
+
+        config MESH_TOPO_TREE
+            bool "MESH_TOPO_TREE"
+        config MESH_TOPO_CHAIN
+            bool "MESH_TOPO_CHAIN"
+    endchoice
+
+    config MESH_TOPOLOGY
+        int
+        default 0 if MESH_TOPO_TREE
+        default 1 if MESH_TOPO_CHAIN
+        help
+            Mesh Network Topology.
+
+    config MESH_MAX_LAYER
+        int "Mesh Max Layer"
+        range 1 25 if MESH_TOPO_TREE
+        range 1 1000 if MESH_TOPO_CHAIN
+        default 6
+        help
+            Max layer allowed in mesh network.
+
     config MESH_CHANNEL
         int "channel"
         range 0 14
@@ -56,13 +83,6 @@ menu "Example Configuration"
         default 6
         help
             The number of stations allowed to connect in.
-
-    config MESH_MAX_LAYER
-        int "Mesh Max Layer"
-        range 1 25
-        default 6
-        help
-            Max layer allowed in mesh network.
 
     config MESH_ROUTE_TABLE_SIZE
         int "Mesh Routing Table Size"

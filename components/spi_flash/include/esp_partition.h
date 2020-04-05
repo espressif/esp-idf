@@ -35,7 +35,12 @@ extern "C" {
 
 /**
  * @brief Partition type
- * @note Keep this enum in sync with PartitionDefinition class gen_esp32part.py
+ *
+ * @note Partition types with integer value 0x00-0x3F are reserved for partition types defined by ESP-IDF.
+ * Any other integer value 0x40-0xFE can be used by individual applications, without restriction.
+ *
+ * @internal Keep this enum in sync with PartitionDefinition class gen_esp32part.py @endinternal
+ *
  */
 typedef enum {
     ESP_PARTITION_TYPE_APP = 0x00,       //!< Application partition type
@@ -44,7 +49,13 @@ typedef enum {
 
 /**
  * @brief Partition subtype
- * @note Keep this enum in sync with PartitionDefinition class gen_esp32part.py
+ *
+ * @note These ESP-IDF-defined partition subtypes apply to partitions of type ESP_PARTITION_TYPE_APP
+ * and ESP_PARTITION_TYPE_DATA.
+ *
+ * Application-defined partition types (0x40-0xFE) can set any numeric subtype value.
+ *
+ * @internal Keep this enum in sync with PartitionDefinition class gen_esp32part.py @endinternal
  */
 typedef enum {
     ESP_PARTITION_SUBTYPE_APP_FACTORY = 0x00,                                 //!< Factory application partition
@@ -112,10 +123,9 @@ typedef struct {
 /**
  * @brief Find partition based on one or more parameters
  *
- * @param type Partition type, one of esp_partition_type_t values
- * @param subtype Partition subtype, one of esp_partition_subtype_t values.
- *                To find all partitions of given type, use
- *                ESP_PARTITION_SUBTYPE_ANY.
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer
+ * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer.
+ *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
  *             for partition with a specific name. Pass NULL otherwise.
  *
@@ -129,10 +139,9 @@ esp_partition_iterator_t esp_partition_find(esp_partition_type_t type, esp_parti
 /**
  * @brief Find first partition based on one or more parameters
  *
- * @param type Partition type, one of esp_partition_type_t values
- * @param subtype Partition subtype, one of esp_partition_subtype_t values.
- *                To find all partitions of given type, use
- *                ESP_PARTITION_SUBTYPE_ANY.
+ * @param type Partition type, one of esp_partition_type_t values or an 8-bit unsigned integer
+ * @param subtype Partition subtype, one of esp_partition_subtype_t values or an 8-bit unsigned integer
+ *                To find all partitions of given type, use ESP_PARTITION_SUBTYPE_ANY.
  * @param label (optional) Partition label. Set this value if looking
  *             for partition with a specific name. Pass NULL otherwise.
  *
@@ -333,9 +342,9 @@ bool esp_partition_check_identity(const esp_partition_t *partition_1, const esp_
  * @param offset  Address in bytes, where the partition starts
  * @param size  Size of the partition in bytes
  * @param label  Partition name
- * @param type  One of the partition types (ESP_PARTITION_TYPE_*). Note that applications can not be booted from external flash
+ * @param type  One of the partition types (ESP_PARTITION_TYPE_*), or an integer. Note that applications can not be booted from external flash
  *              chips, so using ESP_PARTITION_TYPE_APP is not supported.
- * @param subtype  One of the partition subtypes (ESP_PARTITION_SUBTYPE_*)
+ * @param subtype  One of the partition subtypes (ESP_PARTITION_SUBTYPE_*), or an integer.
  * @param[out] out_partition  Output, if non-NULL, receives the pointer to the resulting esp_partition_t structure
  * @return
  *      - ESP_OK on success

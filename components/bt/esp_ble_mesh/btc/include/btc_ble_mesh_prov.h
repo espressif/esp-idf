@@ -15,15 +15,7 @@
 #ifndef _BTC_BLE_MESH_PROV_H_
 #define _BTC_BLE_MESH_PROV_H_
 
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/semphr.h"
-
-#include "btc/btc_task.h"
-
-#include "mesh_access.h"
-#include "mesh_buf.h"
+#include "btc/btc_manage.h"
 #include "mesh_main.h"
 #include "provisioner_prov.h"
 #include "esp_ble_mesh_defs.h"
@@ -46,13 +38,21 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROVISIONER_ENABLE,
     BTC_BLE_MESH_ACT_PROVISIONER_DISABLE,
     BTC_BLE_MESH_ACT_PROVISIONER_DEV_ADD,
+    BTC_BLE_MESH_ACT_PROVISIONER_PROV_DEV_WITH_ADDR,
     BTC_BLE_MESH_ACT_PROVISIONER_DEV_DEL,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_DEV_UUID_MATCH,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_PROV_DATA_INFO,
+    BTC_BLE_MESH_ACT_PROVISIONER_SET_STATIC_OOB_VAL,
+    BTC_BLE_MESH_ACT_PROVISIONER_SET_PRIMARY_ELEM_ADDR,
     BTC_BLE_MESH_ACT_PROVISIONER_SET_NODE_NAME,
-    BTC_BLE_MESH_ACT_PROVISIONER_SET_LOCAL_APP_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_APP_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_APP_KEY,
     BTC_BLE_MESH_ACT_PROVISIONER_BIND_LOCAL_MOD_APP,
     BTC_BLE_MESH_ACT_PROVISIONER_ADD_LOCAL_NET_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_UPDATE_LOCAL_NET_KEY,
+    BTC_BLE_MESH_ACT_PROVISIONER_STORE_NODE_COMP_DATA,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_UUID,
+    BTC_BLE_MESH_ACT_PROVISIONER_DELETE_NODE_WITH_ADDR,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_INFO,
     BTC_BLE_MESH_ACT_SET_FAST_PROV_ACTION,
     BTC_BLE_MESH_ACT_LPN_ENABLE,
@@ -63,6 +63,9 @@ typedef enum {
     BTC_BLE_MESH_ACT_PROXY_CLIENT_SET_FILTER_TYPE,
     BTC_BLE_MESH_ACT_PROXY_CLIENT_ADD_FILTER_ADDR,
     BTC_BLE_MESH_ACT_PROXY_CLIENT_REMOVE_FILTER_ADDR,
+    BTC_BLE_MESH_ACT_START_BLE_ADVERTISING,
+    BTC_BLE_MESH_ACT_STOP_BLE_ADVERTISING,
+    BTC_BLE_MESH_ACT_DEINIT_MESH,
 } btc_ble_mesh_prov_act_t;
 
 typedef enum {
@@ -121,6 +124,14 @@ typedef union {
         esp_ble_mesh_unprov_dev_add_t add_dev;
         esp_ble_mesh_dev_add_flag_t   flags;
     } provisioner_dev_add;
+    struct ble_mesh_provisioner_prov_dev_with_addr_args {
+        uint8_t uuid[16];
+        esp_ble_mesh_bd_addr_t addr;
+        esp_ble_mesh_addr_type_t addr_type;
+        esp_ble_mesh_prov_bearer_t bearer;
+        uint16_t oob_info;
+        uint16_t unicast_addr;
+    } provisioner_prov_dev_with_addr;
     struct ble_mesh_provisioner_dev_del_args {
         esp_ble_mesh_device_delete_t del_dev;
     } provisioner_dev_del;
@@ -133,8 +144,15 @@ typedef union {
     struct ble_mesh_provisioner_set_prov_net_idx_args {
         esp_ble_mesh_prov_data_info_t prov_data;
     } set_prov_data_info;
+    struct ble_mesh_provisioner_set_static_oob_val_args {
+        uint8_t value[16];
+        uint8_t length;
+    } set_static_oob_val;
+    struct ble_mesh_provisioner_set_primary_elem_addr_args {
+        uint16_t addr;
+    } set_primary_elem_addr;
     struct ble_mesh_provisioner_set_node_name_args {
-        int index;
+        uint16_t index;
         char name[ESP_BLE_MESH_NODE_NAME_MAX_LEN];
     } set_node_name;
     struct ble_mesh_provisioner_add_local_app_key_args {
@@ -142,6 +160,11 @@ typedef union {
         uint16_t net_idx;
         uint16_t app_idx;
     } add_local_app_key;
+    struct ble_mesh_provisioner_update_local_app_key_args {
+        uint8_t app_key[16];
+        uint16_t net_idx;
+        uint16_t app_idx;
+    } update_local_app_key;
     struct ble_mesh_provisioner_bind_local_mod_app_args {
         uint16_t elem_addr;
         uint16_t model_id;
@@ -152,6 +175,21 @@ typedef union {
         uint8_t net_key[16];
         uint16_t net_idx;
     } add_local_net_key;
+    struct ble_mesh_provisioner_update_local_net_key_args {
+        uint8_t net_key[16];
+        uint16_t net_idx;
+    } update_local_net_key;
+    struct ble_mesh_provisioner_store_node_comp_data_args {
+        uint16_t unicast_addr;
+        uint16_t length;
+        uint8_t *data;
+    } store_node_comp_data;
+    struct ble_mesh_provisioner_delete_node_with_uuid_args {
+        uint8_t uuid[16];
+    } delete_node_with_uuid;
+    struct ble_mesh_provisioner_delete_node_with_addr_args {
+        uint16_t unicast_addr;
+    } delete_node_with_addr;
     struct ble_mesh_set_fast_prov_info_args {
         uint16_t unicast_min;
         uint16_t unicast_max;
@@ -199,6 +237,16 @@ typedef union {
         uint16_t  addr_num;
         uint16_t *addr;
     } proxy_client_remove_filter_addr;
+    struct ble_mesh_start_ble_advertising_args {
+        esp_ble_mesh_ble_adv_param_t param;
+        esp_ble_mesh_ble_adv_data_t  data;
+    } start_ble_advertising;
+    struct ble_mesh_stop_ble_advertising_args {
+        uint8_t index;
+    } stop_ble_advertising;
+    struct ble_mesh_deinit_args {
+        esp_ble_mesh_deinit_param_t param;
+    } mesh_deinit;
 } btc_ble_mesh_prov_args_t;
 
 typedef union {
@@ -227,7 +275,13 @@ void btc_ble_mesh_prov_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
 void btc_ble_mesh_model_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_uuid(const uint8_t uuid[16]);
+
+esp_ble_mesh_node_t *btc_ble_mesh_provisioner_get_node_with_addr(uint16_t unicast_addr);
+
 int btc_ble_mesh_client_model_init(esp_ble_mesh_model_t *model);
+
+int btc_ble_mesh_client_model_deinit(esp_ble_mesh_model_t *model);
 
 int32_t btc_ble_mesh_model_pub_period_get(esp_ble_mesh_model_t *mod);
 
@@ -246,6 +300,8 @@ esp_ble_mesh_model_t *btc_ble_mesh_model_find(const esp_ble_mesh_elem_t *elem,
         uint16_t id);
 
 const esp_ble_mesh_comp_t *btc_ble_mesh_comp_get(void);
+
+u16_t btc_ble_mesh_provisioner_get_prov_node_count(void);
 
 void btc_ble_mesh_model_call_handler(btc_msg_t *msg);
 void btc_ble_mesh_model_cb_handler(btc_msg_t *msg);

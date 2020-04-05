@@ -92,7 +92,7 @@ IDF 监视器在后台运行以下命令，解码各地址::
 
 或者选择配置 panic 处理器以运行 GDBStub，GDBStub 工具可以与 GDB_ 项目调试器进行通信，允许读取内存、检查调用堆栈帧和变量等。GDBStub 虽然没有 JTAG 通用，但不需要使用特殊硬件。
 
-如需启用 GDBStub，请运行 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_PANIC` 选项设置为 ``Invoke GDBStub``。
+如需启用 GDBStub，请运行 ``idf.py menuconfig`` （适用于 CMake 编译系统），并将 :ref:`CONFIG_ESP_SYSTEM_PANIC` 选项设置为 ``Invoke GDBStub``。
 
 在这种情况下，如果 panic 处理器被触发，只要 IDF 监视器监控到 GDBStub 已经加载，panic 处理器就会自动暂停串行监控并使用必要的参数运行 GDB。GDB 退出后，通过 RTS 串口线复位开发板。如果未连接 RTS 串口线，请按复位键，手动复位开发板。
 

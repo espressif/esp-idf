@@ -249,6 +249,19 @@ function run_tests()
     (cd build && cmake -G "Unix Makefiles" .. && make) || failure "Make build failed"
     assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
 
+    print_status "idf.py can build with Ninja"
+    clean_build_dir
+    idf.py -G Ninja build  || failure "idf.py cannot build with Ninja"
+    grep "CMAKE_GENERATOR:INTERNAL=Ninja" build/CMakeCache.txt || failure "Ninja is not set in CMakeCache.txt"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
+    print_status "idf.py can build with Unix Makefiles"
+    clean_build_dir
+    mkdir build
+    idf.py -G "Unix Makefiles" build || failure "idf.py cannot build with Unix Makefiles"
+    grep "CMAKE_GENERATOR:INTERNAL=Unix Makefiles" build/CMakeCache.txt || failure "Unix Makefiles are not set in CMakeCache.txt"
+    assert_built ${APP_BINS} ${BOOTLOADER_BINS} ${PARTITION_BIN}
+
     print_status "Can build with IDF_PATH set via cmake cache not environment"
     clean_build_dir
     ${SED} -i.bak 's/ENV{IDF_PATH}/{IDF_PATH}/' CMakeLists.txt
@@ -446,6 +459,25 @@ function run_tests()
     grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
     (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-issue) && failure "All commands in compile_commands.json should use PSRAM cache workaround"
     rm -r build
+    #Test for various strategies
+    for strat in MEMW NOPS DUPLDST; do
+        rm -r build sdkconfig.defaults sdkconfig sdkconfig.defaults.esp32
+        stratlc=`echo $strat | tr A-Z a-z`
+        mkdir build && touch build/sdkconfig
+        echo "CONFIG_ESP32_SPIRAM_SUPPORT=y" > sdkconfig.defaults
+        echo "CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_$strat=y"  >> sdkconfig.defaults
+        echo "CONFIG_SPIRAM_CACHE_WORKAROUND=y" >> sdkconfig.defaults
+        # note: we do 'reconfigure' here, as we just need to run cmake
+        idf.py reconfigure
+        grep -q '"command"' build/compile_commands.json || failure "compile_commands.json missing or has no no 'commands' in it"
+        (grep '"command"' build/compile_commands.json | grep -v mfix-esp32-psram-cache-strategy=$stratlc) && failure "All commands in compile_commands.json should use PSRAM cache workaround strategy $strat when selected"
+        echo ${PWD}
+        rm -r sdkconfig.defaults build
+    done
+
+    print_status "Displays partition table when executing target partition_table"
+    idf.py partition_table | grep -E "# ESP-IDF .+ Partition Table"
+    rm -r build
 
     print_status "Make sure a full build never runs '/usr/bin/env python' or similar"
     OLDPATH="$PATH"
@@ -632,8 +664,8 @@ endmenu\n" >> ${IDF_PATH}/Kconfig
     printf "\n#include \"test_component.h\"\n" >> main/main.c
     printf "dependencies:\n  test_component:\n    path: test_component\n    git: ${COMPONENT_MANAGER_TEST_REPO}\n" >> idf_project.yml
     ! idf.py build || failure "Build should fail if dependencies are not installed"
-    pip install ${COMPONENT_MANAGER_REPO}
-    idf.py reconfigure build || failure "Build succeeds once requirements are installed"
+    pip install ${COMPONENT_MANAGER_REPO} || failure "Failed to install the component manager"
+    idf.py reconfigure build || failure "Build didn't succeed with required components installed by package manager"
     pip uninstall -y idf_component_manager
     rm idf_project.yml
     git checkout main/main.c

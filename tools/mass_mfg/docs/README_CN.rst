@@ -24,7 +24,7 @@
     -   Linux、MacOS 或 Windows（标准版） 
 
 * 安装依赖包：
-    -   Python：最低版本要求为 2.7。下载地址：https://www.python.org/downloads/。 
+    -   Python： https://www.python.org/downloads/。 
 
 .. note:: 
 

@@ -69,9 +69,10 @@ FreeRTOS support
 OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS tasks as threads. Viewing them all can be done using the GDB ``i threads`` command, changing to a certain task is done with ``thread n``, with ``n`` being the number of the thread. FreeRTOS detection can be disabled in target's configuration. For more details see :ref:`jtag-debugging-tip-openocd-configure-target`.
 
 
-.. _jtag-debugging-tip-code-flash-voltage:
 
-.. only:: esp33
+.. only:: esp32
+
+    .. _jtag-debugging-tip-code-flash-voltage:
 
     Why to set SPI flash voltage in OpenOCD configuration?
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -83,7 +84,11 @@ OpenOCD has explicit support for the ESP-IDF FreeRTOS. GDB can see FreeRTOS task
     Check specification of ESP32 module connected to JTAG, what is the power supply voltage of SPI flash chip. Then set ``ESP32_FLASH_VOLTAGE`` accordingly. Most WROOM modules use 3.3 V flash, while WROVER modules use 1.8 V flash.
 
 
-.. _jtag-debugging-tip-optimize-jtag-speed:
+    .. _jtag-debugging-tip-optimize-jtag-speed:
+
+.. only:: esp32s2
+
+    .. _jtag-debugging-tip-optimize-jtag-speed:
 
 Optimize JTAG speed
 ^^^^^^^^^^^^^^^^^^^
@@ -156,18 +161,17 @@ Disable RTOS support
 
 Comment out this line to have RTOS support.
 
-
-Power supply voltage of ESP32's SPI flash chip
-""""""""""""""""""""""""""""""""""""""""""""""
-
-::
-
-    set ESP32_FLASH_VOLTAGE 1.8
-
-Comment out this line to set 3.3 V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`
-
-
 .. only:: esp32
+
+    Power supply voltage of ESP32's SPI flash chip
+    """"""""""""""""""""""""""""""""""""""""""""""
+
+    ::
+
+        set ESP32_FLASH_VOLTAGE 1.8
+
+    Comment out this line to set 3.3 V, ref: :ref:`jtag-debugging-tip-code-flash-voltage`
+
 
     Configuration file for ESP32 targets
     """"""""""""""""""""""""""""""""""""
@@ -255,8 +259,27 @@ Below is an excerpt from series of errors reported by GDB after the application 
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
+.. _jtag-debugging-security-features:
 
-.. _jtag-debugging-tip-at-firmware-issue:
+JTAG with Flash Encryption or Secure Boot
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, enabling Flash Encryption and/or Secure Boot will disable JTAG debugging. On first boot, the bootloader will burn an eFuse bit to permanently disable JTAG at the same time it enables the other features.
+
+The project configuration option :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` will keep JTAG enabled at this time, removing all physical security but allowing debugging. (Although the name suggests Secure Boot, this option can be applied even when only Flash Encryption is enabled).
+
+However, OpenOCD may attempt to automatically read and write the flash in order to set :ref:`software breakpoints <jtag-debugging-tip-where-breakpoints>`. This has two problems:
+
+- Software breakpoints are incompatible with Flash Encryption, OpenOCD currently has no support for encrypting or decrypting flash contents.
+- If Secure Boot is enabled, setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if a software breakpoint is set and then a reset occurs, the signature verification will fail on boot.
+
+To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line. For example::
+
+    openocd -c 'set ESP_FLASH_SIZE 0' -f board/esp32-wrover-kit-3.3v.cfg
+
+.. note::
+
+   For the same reason, the ESP-IDF app may fail bootloader verification of app signatures, when this option is enabled and a software breakpoint is set.
 
 .. only:: esp32
 
@@ -266,7 +289,6 @@ Below is an excerpt from series of errors reported by GDB after the application 
     The ESP32-WROOM series of modules come pre-flashed with AT firmware. This firmware configures the pins GPIO12 to GPIO15 as SPI slave interface, which makes using JTAG impossible.
 
     To make JTAG available, build new firmware that is not using pins GPIO12 to GPIO15 dedicated to JTAG communication. After that, flash the firmware onto your module. See also :ref:`jtag-debugging-tip-jtag-pins-reconfigured`.
-
 
 .. _jtag-debugging-tip-reporting-issues:
 

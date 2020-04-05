@@ -35,6 +35,8 @@ API Reference - SPI Flash
 .. include-build-file:: inc/esp_flash.inc
 .. include-build-file:: inc/spi_flash_types.inc
 
+.. _api-reference-partition-table:
+
 API Reference - Partition Table
 -------------------------------
 

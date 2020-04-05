@@ -164,7 +164,22 @@ esp_err_t esp_read_mac(uint8_t* mac, esp_mac_type_t type)
     case ESP_MAC_WIFI_SOFTAP:
 #if CONFIG_ESP_MAC_ADDR_UNIVERSE_WIFI_AP
         memcpy(mac, efuse_mac, 6);
+    // as a result of some esp32s2 chips burned with one MAC address by mistake,
+    // there are some MAC address are reserved for this bug fix.
+    // related mistake MAC address is 0x7cdfa1003000~0x7cdfa1005fff,
+    // reserved MAC address is 0x7cdfa1020000~0x7cdfa1022fff (MAC address + 0x1d000).
+#ifdef CONFIG_IDF_TARGET_ESP32S2
+        uint8_t mac_begin[6] = { 0x7c, 0xdf, 0xa1, 0x00, 0x30, 0x00 };
+        uint8_t mac_end[6]   = { 0x7c, 0xdf, 0xa1, 0x00, 0x5f, 0xff };
+        if(memcmp(mac,mac_begin,6) >= 0 && memcmp(mac_end,mac,6) >=0 ){
+            mac[3] += 0x02; // contain carry bit 
+            mac[4] += 0xd0;
+        } else {
+            mac[5] += 1;
+        }
+#else
         mac[5] += 1;
+#endif // IDF_TARGET_ESP32S2
 #else
         esp_derive_local_mac(mac, efuse_mac);
 #endif

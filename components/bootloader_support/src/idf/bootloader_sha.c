@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 #include "bootloader_sha.h"
+#include "bootloader_flash.h"
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>

@@ -260,7 +260,14 @@ typedef volatile struct {
         };
         uint32_t val;
     } sar_i2c_io;
-    uint32_t reserved_e8;
+    union {
+        struct {
+            uint32_t io_touch_bufsel:  4;               /*BUF_SEL when touch work without fsm*/
+            uint32_t io_touch_bufmode: 1;               /*BUF_MODE when touch work without fsm*/
+            uint32_t reserved5:       27;
+        };
+        uint32_t val;
+    } touch_ctrl;
     uint32_t reserved_ec;
     uint32_t reserved_f0;
     uint32_t reserved_f4;

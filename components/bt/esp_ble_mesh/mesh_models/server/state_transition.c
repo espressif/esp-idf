@@ -6,22 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <string.h>
-#include <errno.h>
-#include <stdbool.h>
-
-#include "mesh_types.h"
-#include "mesh_kernel.h"
-#include "mesh_trace.h"
-#include "mesh.h"
 #include "model_opcode.h"
-
-#include "server_common.h"
-#include "state_binding.h"
 #include "state_transition.h"
-#include "generic_server.h"
-#include "lighting_server.h"
-#include "time_scene_server.h"
 
 #include "btc_ble_mesh_generic_model.h"
 #include "btc_ble_mesh_lighting_model.h"
@@ -32,9 +18,9 @@
 
 void bt_mesh_server_calc_remain_time(struct bt_mesh_state_transition *transition)
 {
-    u8_t steps, resolution;
-    s32_t duration_remainder;
-    s64_t now;
+    u8_t steps = 0U, resolution = 0U;
+    s32_t duration_remainder = 0;
+    s64_t now = 0;
 
     if (transition->just_started) {
         transition->remain_time = transition->trans_time;
@@ -71,7 +57,7 @@ void bt_mesh_server_calc_remain_time(struct bt_mesh_state_transition *transition
 
 static void tt_values_calculator(struct bt_mesh_state_transition *transition)
 {
-    u8_t steps_multiplier, resolution;
+    u8_t steps_multiplier = 0U, resolution = 0U;
 
     resolution = (transition->trans_time >> 6);
     steps_multiplier = (transition->trans_time & 0x3F);

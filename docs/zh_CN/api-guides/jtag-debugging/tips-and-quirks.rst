@@ -67,10 +67,9 @@ ESP-IDF 有一些针对 OpenOCD 调试功能的选项可以在编译时进行设
 
 OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRTOS 中的任务当做线程。使用 GDB 命令 ``i threads`` 可以查看所有的线程，使用命令 ``thread n`` 可以切换到某个具体任务的堆栈，其中 ``n`` 是线程的编号。检测 FreeRTOS 的功能可以在配置目标时被禁用。更多详细信息，请参阅 :ref:`jtag-debugging-tip-openocd-configure-target`.
 
+.. only:: esp32
 
-.. _jtag-debugging-tip-code-flash-voltage:
-
-.. only:: esp33
+    .. _jtag-debugging-tip-code-flash-voltage:
 
     在 OpenOCD 的配置文件中设置 SPI 闪存的工作电压
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -81,8 +80,11 @@ OpenOCD 完全支持 ESP-IDF 自带的 FreeRTOS 操作系统，GDB 会将 FreeRT
 
     查看 JTAG 连接的 ESP32 模组的规格书，检查其 SPI 闪存芯片的供电电压值，然后再相应的设置 ``ESP32_FLASH_VOLTAGE``。大多数的 WROOM 模组使用 3.3 V 的闪存芯片，但是 WROVER 模组使用 1.8 V 的闪存芯片。
 
+    .. _jtag-debugging-tip-optimize-jtag-speed:
 
-.. _jtag-debugging-tip-optimize-jtag-speed:
+.. only:: esp32s2
+
+    .. _jtag-debugging-tip-optimize-jtag-speed:
 
 优化 JTAG 的速度
 ^^^^^^^^^^^^^^^^
@@ -156,23 +158,22 @@ OpenOCD 需要知道当前使用的 JTAG 适配器的类型，以及其连接的
 
 如果要支持 RTOS， 请注释掉这一行。
 
-
-ESP32 的 SPI 闪存芯片的电源电压
-"""""""""""""""""""""""""""""""
-
-::
-
-    set ESP32_FLASH_VOLTAGE 1.8
-
-如果 SPI 闪存芯片的电源电压为 3.3 V， 请注释掉这一行，更多信息请参阅： :ref:`jtag-debugging-tip-code-flash-voltage`。
-
-
-
-
-ESP32 的目标配置文件
-""""""""""""""""""""
-
 .. only:: esp32
+
+    ESP32 的 SPI 闪存芯片的电源电压
+    """"""""""""""""""""""""""""""""""
+
+    ::
+
+        set ESP32_FLASH_VOLTAGE 1.8
+
+    如果 SPI 闪存芯片的电源电压为 3.3 V， 请注释掉这一行，更多信息请参阅： :ref:`jtag-debugging-tip-code-flash-voltage`。
+
+
+
+
+    ESP32 的目标配置文件
+    """"""""""""""""""""
 
     ::
 
@@ -257,6 +258,27 @@ ESP32 的目标配置文件
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an exception!
     cpu1: xtensa_resume (line 431): DSR (FFFFFFFF) indicates DIR instruction generated an overrun!
 
+.. _jtag-debugging-security-features:
+
+JTAG with Flash Encryption or Secure Boot
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, enabling Flash Encryption and/or Secure Boot will disable JTAG debugging. On first boot, the bootloader will burn an eFuse bit to permanently disable JTAG at the same time it enables the other features.
+
+The project configuration option :ref:`CONFIG_SECURE_BOOT_ALLOW_JTAG` will keep JTAG enabled at this time, removing all physical security but allowing debugging. (Although the name suggests Secure Boot, this option can be applied even when only Flash Encryption is enabled).
+
+However, OpenOCD may attempt to automatically read and write the flash in order to set :ref:`software breakpoints <jtag-debugging-tip-where-breakpoints>`. This has two problems:
+
+- Software breakpoints are incompatible with Flash Encryption, OpenOCD currently has no support for encrypting or decrypting flash contents.
+- If Secure Boot is enabled, setting a software breakpoint will change the digest of a signed app and make the signature invalid. This means if a software breakpoint is set and then a reset occurs, the signature verification will fail on boot.
+
+To disable software breakpoints while using JTAG, add an extra argument ``-c 'set ESP_FLASH_SIZE 0'`` to the start of the OpenOCD command line. For example::
+
+    openocd -c 'set ESP_FLASH_SIZE 0' -f board/esp32-wrover-kit-3.3v.cfg
+
+.. note::
+
+   For the same reason, the ESP-IDF app may fail bootloader verification of app signatures, when this option is enabled and a software breakpoint is set.
 
 .. _jtag-debugging-tip-reporting-issues:
 

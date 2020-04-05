@@ -101,6 +101,31 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     printf("Done.\n");
 }
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+TEST_CASE("IRAM_8BIT capability test", "[heap]")
+{
+    uint8_t *ptr;
+    size_t free_size, free_size32, largest_free_size;
+
+    /* need to print something as first printf allocates some heap */
+    printf("IRAM_8BIT capability test\n");
+
+    free_size = heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT);
+    free_size32 = heap_caps_get_free_size(MALLOC_CAP_32BIT);
+
+    largest_free_size = heap_caps_get_largest_free_block(MALLOC_CAP_IRAM_8BIT);
+
+    ptr = heap_caps_malloc(largest_free_size, MALLOC_CAP_IRAM_8BIT);
+
+    TEST_ASSERT((((int)ptr)&0xFF000000)==0x40000000);
+
+    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_IRAM_8BIT) == (free_size - largest_free_size));
+    TEST_ASSERT(heap_caps_get_free_size(MALLOC_CAP_32BIT) == (free_size32 - largest_free_size));
+
+    free(ptr);
+}
+#endif
+
 TEST_CASE("heap_caps metadata test", "[heap]")
 {
     /* need to print something as first printf allocates some heap */

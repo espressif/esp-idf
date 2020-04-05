@@ -77,7 +77,7 @@ The following peripherals work normally even when the APB frequency is changing:
 
 - **UART**: if REF_TICK is used as a clock source. See `use_ref_tick` member of :cpp:class:`uart_config_t`.
 - **LEDC**: if REF_TICK is used as a clock source. See :cpp:func:`ledc_timer_config` function.
-- **RMT**: if REF_TICK is used as a clock source. Although the driver does not support REF_TICK, this feature can be enabled by clearing the ``RMT_REF_ALWAYS_ON_CHx`` bit for the respective channel.
+- **RMT**: if REF_TICK is used as a clock source. See `flags` member of :cpp:class:`rmt_config_t` and macro `RMT_CHANNEL_FLAGS_ALWAYS_ON`.
 
 Currently, the following peripheral drivers are aware of DFS and will use the ``ESP_PM_APB_FREQ_MAX`` lock for the duration of the transaction:
 

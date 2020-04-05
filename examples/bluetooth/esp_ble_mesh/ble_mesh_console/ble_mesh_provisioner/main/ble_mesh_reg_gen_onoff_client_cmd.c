@@ -30,7 +30,7 @@ typedef struct {
     struct arg_int *net_idx;
     struct arg_end *end;
 } ble_mesh_gen_onoff_state_t;
-ble_mesh_gen_onoff_state_t gen_onoff_state;
+static ble_mesh_gen_onoff_state_t gen_onoff_state;
 
 void ble_mesh_register_gen_onoff_client_command(void);
 void ble_mesh_generic_onoff_client_model_cb(esp_ble_mesh_generic_client_cb_event_t event,
@@ -124,6 +124,9 @@ int ble_mesh_generic_onoff_client_model(int argc, char **argv)
     }
 
     onoff_common.model = ble_mesh_get_model(ESP_BLE_MESH_MODEL_ID_GEN_ONOFF_CLI);
+    if (onoff_common.model == NULL) {
+        ESP_LOGI(TAG, "GenONOFFClient:LoadModel,Fail");
+    }
 
     arg_int_to_value(gen_onoff_state.appkey_idx, onoff_common.ctx.app_idx, "appkey_index");
     arg_int_to_value(gen_onoff_state.opcode, onoff_common.opcode, "opcode");

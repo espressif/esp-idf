@@ -29,7 +29,6 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == 0) ? (&UART0) : (&UART1))
 
-
 // Define UART interrupts
 typedef enum {
     UART_INTR_RXFIFO_FULL      = (0x1<<0),
@@ -351,24 +350,6 @@ static inline void uart_ll_set_rx_idle_thr(uart_dev_t *hw, uint32_t rx_idle_thr)
 static inline void uart_ll_set_tx_idle_num(uart_dev_t *hw, uint32_t idle_num)
 {
     hw->idle_conf.tx_idle_num = idle_num;
-}
-
-/**
- * @brief  Configure the timeout value for receiver receiving a byte, and enable rx timeout function.
- *
- * @param  hw Beginning address of the peripheral registers.
- * @param  tout_thr The timeout value. The rx timeout function will be disabled if `tout_thr == 0`.
- *
- * @return None.
- */
-static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint8_t tout_thr)
-{
-    if(tout_thr > 0) {
-        hw->mem_conf.rx_tout_thrhd = tout_thr;
-        hw->conf1.rx_tout_en = 1;
-    } else {
-        hw->conf1.rx_tout_en = 0;
-    }
 }
 
 /**
@@ -761,15 +742,62 @@ static inline void uart_ll_set_loop_back(uart_dev_t *hw, bool loop_back_en)
 static inline void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 {
     typeof(hw->conf0) conf0_reg = hw->conf0;
-    conf0_reg.irda_tx_inv |= (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
-    conf0_reg.irda_rx_inv |= (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
-    conf0_reg.rxd_inv |= (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
-    conf0_reg.cts_inv |= (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
-    conf0_reg.dsr_inv |= (inv_mask & UART_SIGNAL_DSR_INV) ? 1 : 0;
-    conf0_reg.txd_inv |= (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
-    conf0_reg.rts_inv |= (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
-    conf0_reg.dtr_inv |= (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
+    conf0_reg.irda_tx_inv = (inv_mask & UART_SIGNAL_IRDA_TX_INV) ? 1 : 0;
+    conf0_reg.irda_rx_inv = (inv_mask & UART_SIGNAL_IRDA_RX_INV) ? 1 : 0;
+    conf0_reg.rxd_inv = (inv_mask & UART_SIGNAL_RXD_INV) ? 1 : 0;
+    conf0_reg.cts_inv = (inv_mask & UART_SIGNAL_CTS_INV) ? 1 : 0;
+    conf0_reg.dsr_inv = (inv_mask & UART_SIGNAL_DSR_INV) ? 1 : 0;
+    conf0_reg.txd_inv = (inv_mask & UART_SIGNAL_TXD_INV) ? 1 : 0;
+    conf0_reg.rts_inv = (inv_mask & UART_SIGNAL_RTS_INV) ? 1 : 0;
+    conf0_reg.dtr_inv = (inv_mask & UART_SIGNAL_DTR_INV) ? 1 : 0;
     hw->conf0.val = conf0_reg.val;
+}
+
+/**
+ * @brief  Configure the timeout value for receiver receiving a byte, and enable rx timeout function.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  tout_thrd The timeout value as UART bit time. The rx timeout function will be disabled if `tout_thrd == 0`.
+ *
+ * @return None.
+ */
+static inline void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
+{
+    uint16_t tout_val = tout_thrd;
+    if(tout_thrd > 0) {
+        hw->mem_conf.rx_tout_thrhd = tout_val;
+        hw->conf1.rx_tout_en = 1;
+    } else {
+        hw->conf1.rx_tout_en = 0;
+    }
+}
+
+/**
+ * @brief  Get the timeout value for receiver receiving a byte.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return tout_thr The timeout threshold value. If timeout feature is disabled returns 0.
+ */
+static inline uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
+{
+    uint16_t tout_thrd = 0;
+    if(hw->conf1.rx_tout_en > 0) {
+        tout_thrd = hw->mem_conf.rx_tout_thrhd;
+    }
+    return tout_thrd;
+}
+
+/**
+ * @brief  Get UART maximum timeout threshold.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ *
+ * @return maximum timeout threshold.
+ */
+static inline uint16_t uart_ll_max_tout_thrd(uart_dev_t *hw)
+{
+    return UART_RX_TOUT_THRHD_V;
 }
 
 #ifdef __cplusplus

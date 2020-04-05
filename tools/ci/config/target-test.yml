@@ -336,7 +336,7 @@ example_test_012:
 
 UT_001:
   extends: .unit_test_template
-  parallel: 33
+  parallel: 37
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -345,7 +345,7 @@ UT_001:
 
 UT_002:
   extends: .unit_test_template
-  parallel: 12
+  parallel: 14
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -384,13 +384,6 @@ UT_008:
     - UT_T1_GPIO
     - psram
 
-UT_010:
-  extends: .unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_PCNT
-    - psram
-
 UT_012:
   extends: .unit_test_template
   tags:
@@ -426,7 +419,7 @@ UT_017:
 
 UT_018:
   extends: .unit_test_template
-  parallel: 2
+  parallel: 4
   tags:
     - ESP32_IDF
     - UT_T1_1
@@ -458,13 +451,6 @@ UT_024:
   tags:
     - ESP32_IDF
     - UT_T1_MCPWM
-    - psram
-
-UT_026:
-  extends: .unit_test_template
-  tags:
-    - ESP32_IDF
-    - UT_T1_I2S
     - psram
 
 UT_028:
@@ -502,14 +488,14 @@ UT_034:
       # - /^release\/v/
       # - /^v\d+\.\d+(\.\d+)?($|-)/
       - triggers
-      # - schedules
+      - schedules
     variables:
       - $BOT_TRIGGER_WITH_LABEL == null
       - $BOT_LABEL_UNIT_TEST_S2
 
 UT_035:
   extends: .unit_test_s2_template
-  parallel: 26
+  parallel: 32
   tags:
     - ESP32S2_IDF
     - UT_T1_1

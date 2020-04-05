@@ -10,7 +10,7 @@
 # Make sure that correct warnings are generated to flag issues with documented code
 #
 # For the complete list of configuration statements see:
-# https://www.stack.nl/~dimitri/doxygen/manual/config.html
+# http://doxygen.nl/manual/config.html
 
 
 PROJECT_NAME = "ESP32 Programming Guide"
@@ -86,7 +86,6 @@ INPUT = \
     ##
     ## Peripherals - API Reference
     ##
-    $(IDF_PATH)/components/driver/include/driver/adc.h \
     $(IDF_PATH)/components/driver/include/driver/can.h \
     $(IDF_PATH)/components/soc/include/hal/can_types.h \
     $(IDF_PATH)/components/driver/include/driver/dac.h \
@@ -103,10 +102,12 @@ INPUT = \
     $(IDF_PATH)/components/driver/include/driver/spi_common.h \
     $(IDF_PATH)/components/driver/include/driver/spi_master.h \
     $(IDF_PATH)/components/driver/include/driver/spi_slave.h \
-    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/touch_sensor.h \
-    $(IDF_PATH)/components/driver/esp32s2/include/temp_sensor.h \
+    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/adc.h \
+    $(IDF_PATH)/components/driver/$(IDF_TARGET)/include/driver/touch_sensor.h \
+    $(IDF_PATH)/components/driver/esp32s2/include/driver/temp_sensor.h \
     $(IDF_PATH)/components/driver/include/driver/timer.h \
     $(IDF_PATH)/components/driver/include/driver/touch_sensor_common.h \
+    $(IDF_PATH)/components/driver/include/driver/adc_common.h \
     $(IDF_PATH)/components/driver/include/driver/uart.h \
     $(IDF_PATH)/components/esp_adc_cal/include/esp_adc_cal.h \
     $(IDF_PATH)/components/soc/include/hal/rmt_types.h \
@@ -154,6 +155,8 @@ INPUT = \
     ## ESP Serial Slave Link
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl.h \
     $(IDF_PATH)/components/esp_serial_slave_link/include/esp_serial_slave_link/essl_sdio.h \
+    ## ESP Certificate Bundle
+    $(IDF_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
     ##
     ## Provisioning - API Reference
     ##
@@ -241,7 +244,7 @@ INPUT = \
     $(IDF_PATH)/components/log/include/esp_log.h \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
-    $(IDF_PATH)/components/esp_common/include/esp_system.h \
+    $(IDF_PATH)/components/esp_system/include/esp_system.h \
     ## IDF version
     $(IDF_PATH)/components/esp_common/include/esp_idf_version.h \
     ##
@@ -282,7 +285,7 @@ INPUT = \
     ### Helper functions for error codes
     $(IDF_PATH)/components/esp_common/include/esp_err.h \
     ### System APIs
-    $(IDF_PATH)/components/esp_common/include/esp_system.h \
+    $(IDF_PATH)/components/esp_system/include/esp_system.h \
     ### Modbus controller component header file
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_common.h \
     $(IDF_PATH)/components/freemodbus/common/include/esp_modbus_slave.h \

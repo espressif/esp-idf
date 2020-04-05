@@ -77,7 +77,7 @@ def get_transport(sel_transport, service_name):
             # will fallback to using the provided UUIDs instead
             nu_lookup = {'prov-session': 'ff51', 'prov-config': 'ff52', 'proto-ver': 'ff53'}
             tp = transport.Transport_BLE(devname=service_name,
-                                         service_uuid='0000ffff-0000-1000-8000-00805f9b34fb',
+                                         service_uuid='021a9004-0382-4aea-bff4-6b3f1c5adfb4',
                                          nu_lookup=nu_lookup)
         elif (sel_transport == 'console'):
             tp = transport.Transport_Console()
@@ -181,6 +181,16 @@ def custom_config(tp, sec, custom_info, custom_ver):
         message = prov.custom_config_request(sec, custom_info, custom_ver)
         response = tp.send_data('custom-config', message)
         return (prov.custom_config_response(sec, response) == 0)
+    except RuntimeError as e:
+        on_except(e)
+        return None
+
+
+def custom_data(tp, sec, custom_data):
+    try:
+        message = prov.custom_data_request(sec, custom_data)
+        response = tp.send_data('custom-data', message)
+        return (prov.custom_data_response(sec, response) == 0)
     except RuntimeError as e:
         on_except(e)
         return None
@@ -328,6 +338,11 @@ if __name__ == '__main__':
                             'If Wi-Fi scanning is supported by the provisioning service, this need not '
                             'be specified'))
 
+    parser.add_argument("--custom_data", dest='custom_data', type=str, default='',
+                        help=desc_format(
+                            'This is an optional parameter, only intended for use with '
+                            '"examples/provisioning/wifi_prov_mgr_custom_data"'))
+
     parser.add_argument("--custom_config", action="store_true",
                         help=desc_format(
                             'This is an optional parameter, only intended for use with '
@@ -393,6 +408,13 @@ if __name__ == '__main__':
             print("---- Error in custom config ----")
             exit(5)
         print("==== Custom config sent successfully ====")
+
+    if args.custom_data != '':
+        print("\n==== Sending Custom data to esp32 ====")
+        if not custom_data(obj_transport, obj_security, args.custom_data):
+            print("---- Error in custom data ----")
+            exit(5)
+        print("==== Custom data sent successfully ====")
 
     if args.ssid == '':
         if not has_capability(obj_transport, 'wifi_scan'):

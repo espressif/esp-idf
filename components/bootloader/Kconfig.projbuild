@@ -1,4 +1,29 @@
 menu "Bootloader config"
+
+    choice BOOTLOADER_COMPILER_OPTIMIZATION
+        prompt "Bootloader optimization Level"
+        default BOOTLOADER_COMPILER_OPTIMIZATION_SIZE
+        help
+            This option sets compiler optimization level (gcc -O argument)
+            for the bootloader.
+
+            - The default "Size" setting will add the -0s flag to CFLAGS.
+            - The "Debug" setting will add the -Og flag to CFLAGS.
+            - The "Performance" setting will add the -O2 flag to CFLAGS.
+            - The "None" setting will add the -O0 flag to CFLAGS.
+
+            Note that custom optimization levels may be unsupported.
+
+        config BOOTLOADER_COMPILER_OPTIMIZATION_SIZE
+            bool "Size (-Os)"
+        config BOOTLOADER_COMPILER_OPTIMIZATION_DEBUG
+            bool "Debug (-Og)"
+        config BOOTLOADER_COMPILER_OPTIMIZATION_PERF
+            bool "Optimize for performance (-O2)"
+        config BOOTLOADER_COMPILER_OPTIMIZATION_NONE
+            bool "Debug without optimization (-O0)"
+    endchoice
+
     choice BOOTLOADER_LOG_LEVEL
         bool "Bootloader log verbosity"
         default BOOTLOADER_LOG_LEVEL_INFO
@@ -224,7 +249,7 @@ menu "Bootloader config"
 
     config BOOTLOADER_SKIP_VALIDATE_IN_DEEP_SLEEP
         bool "Skip image validation when exiting deep sleep"
-        depends on (SECURE_BOOT_ENABLED && SECURE_BOOT_INSECURE) || !SECURE_BOOT_ENABLED
+        depends on (SECURE_BOOT && SECURE_BOOT_INSECURE) || !SECURE_BOOT
         default n
         help
             This option disables the normal validation of an image coming out of
@@ -279,12 +304,12 @@ menu "Security features"
     config SECURE_SIGNED_ON_BOOT
         bool
         default y
-        depends on SECURE_BOOT_ENABLED || SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
+        depends on SECURE_BOOT || SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
 
     config SECURE_SIGNED_ON_UPDATE
         bool
         default y
-        depends on SECURE_BOOT_ENABLED || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
+        depends on SECURE_BOOT || SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT
 
     config SECURE_SIGNED_APPS
         bool
@@ -298,8 +323,7 @@ menu "Security features"
 
     config SECURE_SIGNED_APPS_NO_SECURE_BOOT
         bool "Require signed app images"
-        default n
-        depends on !SECURE_BOOT_ENABLED
+        depends on !SECURE_BOOT
         help
             Require apps to be signed to verify their integrity.
 
@@ -307,6 +331,35 @@ menu "Security features"
             does not prevent the bootloader from being physically updated. This means that the device can be secured
             against remote network access, but not physical access. Compared to using hardware Secure Boot this option
             is much simpler to implement.
+
+    choice SECURE_SIGNED_APPS_SCHEME
+        bool "App Signing Scheme"
+        depends on SECURE_BOOT || SECURE_SIGNED_APPS_NO_SECURE_BOOT
+        default SECURE_SIGNED_APPS_ECDSA_SCHEME if SECURE_BOOT_V1_ENABLED
+        default SECURE_SIGNED_APPS_RSA_SCHEME if SECURE_BOOT_V2_ENABLED
+        help
+            Select the Secure App signing scheme. Depends on the Chip Revision.
+            There are two options:
+            1. ECDSA based secure boot scheme. (Only choice for Secure Boot V1)
+            Supported in ESP32 and ESP32-ECO3.
+            2. The RSA based secure boot scheme. (Only choice for Secure Boot V2)
+            Supported in ESP32-ECO3. (ESP32 Chip Revision 3 onwards)
+
+        config SECURE_SIGNED_APPS_ECDSA_SCHEME
+            bool "ECDSA"
+            depends on IDF_TARGET_ESP32 && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V1_ENABLED)
+            help
+                Embeds the ECDSA public key in the bootloader and signs the application with an ECDSA key.
+
+                Refer to the documentation before enabling.
+
+        config SECURE_SIGNED_APPS_RSA_SCHEME
+            bool "RSA"
+            depends on ESP32_REV_MIN_3 && SECURE_BOOT_V2_ENABLED
+            help
+                Appends the RSA-3072 based Signature block to the application.
+                Refer to <Secure Boot Version 2 documentation link> before enabling.
+    endchoice
 
     config SECURE_SIGNED_ON_BOOT_NO_SECURE_BOOT
         bool "Bootloader verifies app signatures"
@@ -334,23 +387,48 @@ menu "Security features"
             If hardware secure boot is not enabled, this option still adds significant security against network-based
             attackers by preventing spoofing of OTA updates.
 
-    config SECURE_BOOT_ENABLED
-        bool "Enable hardware secure boot in bootloader (READ DOCS FIRST)"
+    config SECURE_BOOT
+        bool "Enable hardware Secure Boot in bootloader (READ DOCS FIRST)"
         default n
         help
-            Build a bootloader which enables secure boot on first boot.
+            Build a bootloader which enables Secure Boot on first boot.
 
-            Once enabled, secure boot will not boot a modified bootloader. The bootloader will only load a partition
+            Once enabled, Secure Boot will not boot a modified bootloader. The bootloader will only load a partition
             table or boot an app if the data has a verified digital signature. There are implications for reflashing
             updated apps once secure boot is enabled.
 
             When enabling secure boot, JTAG and ROM BASIC Interpreter are permanently disabled by default.
 
-            Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
+    choice SECURE_BOOT_VERSION
+        bool "Select secure boot version"
+        default SECURE_BOOT_V2_ENABLED if ESP32_REV_MIN_3
+        depends on SECURE_BOOT
+        help
+            Select the Secure Boot Version. Depends on the Chip Revision.
+            Secure Boot V2 is the new RSA based secure boot scheme.
+            Supported in ESP32-ECO3. (ESP32 Chip Revision 3 onwards)
+            Secure Boot V1 is the AES based secure boot scheme.
+            Supported in ESP32 and ESP32-ECO3.
+
+        config SECURE_BOOT_V1_ENABLED
+            bool "Enable Secure Boot version 1"
+            depends on IDF_TARGET_ESP32
+            help
+                Build a bootloader which enables secure boot version 1 on first boot.
+                Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version before enabling.
+
+        config SECURE_BOOT_V2_ENABLED
+            bool "Enable Secure Boot version 2"
+            depends on ESP32_REV_MIN_3
+            help
+                Build a bootloader which enables Secure Boot version 2 on first boot.
+                Refer to Secure Boot V2 section of the ESP-IDF Programmer's Guide for this version before enabling.
+
+    endchoice
 
     choice SECURE_BOOTLOADER_MODE
         bool "Secure bootloader mode"
-        depends on SECURE_BOOT_ENABLED
+        depends on SECURE_BOOT_V1_ENABLED
         default SECURE_BOOTLOADER_ONE_TIME_FLASH
 
         config SECURE_BOOTLOADER_ONE_TIME_FLASH
@@ -385,7 +463,8 @@ menu "Security features"
             If enabled (default), these binary files are signed as part of the build process. The file named in
             "Secure boot private signing key" will be used to sign the image.
 
-            If disabled, unsigned app/partition data will be built. They must be signed manually using espsecure.py
+            If disabled, unsigned app/partition data will be built. They must be signed manually using espsecure.py.
+            Version 1 to enable ECDSA Based Secure Boot and Version 2 to enable RSA based Secure Boot.
             (for example, on a remote signing server.)
 
     config SECURE_BOOT_SIGNING_KEY
@@ -395,28 +474,32 @@ menu "Security features"
         help
             Path to the key file used to sign app images.
 
-            Key file is an ECDSA private key (NIST256p curve) in PEM format.
+            Key file is an ECDSA private key (NIST256p curve) in PEM format for Secure Boot V1.
+            Key file is an RSA private key in PEM format for Secure Boot V2.
 
             Path is evaluated relative to the project directory.
 
             You can generate a new signing key by running the following command:
             espsecure.py generate_signing_key secure_boot_signing_key.pem
 
-            See https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html for details.
+            See the Secure Boot section of the ESP-IDF Programmer's Guide for this version for details.
 
     config SECURE_BOOT_VERIFICATION_KEY
         string "Secure boot public signature verification key"
-        depends on SECURE_SIGNED_APPS && !SECURE_BOOT_BUILD_SIGNED_BINARIES
+        depends on SECURE_SIGNED_APPS && !SECURE_BOOT_BUILD_SIGNED_BINARIES && !SECURE_SIGNED_APPS_RSA_SCHEME
         default "signature_verification_key.bin"
         help
-            Path to a public key file used to verify signed images. This key is compiled into the bootloader and/or
+            Path to a public key file used to verify signed images.
+            Secure Boot V1: This ECDSA public key is compiled into the bootloader and/or
             app, to verify app images.
+            Secure Boot V2: This RSA public key is compiled into the signature block at
+            the end of the bootloader/app.
 
             Key file is in raw binary format, and can be extracted from a
             PEM formatted private key using the espsecure.py
             extract_public_key command.
 
-            Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
+            Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version before enabling.
 
     choice SECURE_BOOTLOADER_KEY_ENCODING
         bool "Hardware Key Encoding"
@@ -443,7 +526,7 @@ menu "Security features"
 
     config SECURE_BOOT_INSECURE
         bool "Allow potentially insecure options"
-        depends on SECURE_BOOT_ENABLED
+        depends on SECURE_BOOT
         default N
         help
             You can disable some of the default protections offered by secure boot, in order to enable testing or a
@@ -451,7 +534,7 @@ menu "Security features"
 
             Only enable these options if you are very sure.
 
-            Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html before enabling.
+            Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version before enabling.
 
     config SECURE_FLASH_ENC_ENABLED
         bool "Enable flash encryption on boot (READ DOCS FIRST)"
@@ -495,7 +578,7 @@ menu "Security features"
             Select Release mode only for production or manufacturing. Once enabled you can not reflash using UART
             bootloader
 
-            Refer to https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot.html and
+            Refer to the Secure Boot section of the ESP-IDF Programmer's Guide for this version and
             https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html for details.
 
         config SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT
@@ -556,6 +639,18 @@ menu "Security features"
                 Setting this option allows the app partition length to be unaligned, and disables padding of the app
                 image to this length. It is generally not recommended to set this option, unless you have a legacy
                 partitioning scheme which doesn't support 64KB aligned partition lengths.
+
+        config SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS
+            bool "Allow additional read protecting of efuses"
+            depends on SECURE_BOOT_INSECURE && SECURE_BOOT_V2_ENABLED
+            help
+                If not set (default, recommended), on first boot the bootloader will burn the WR_DIS_RD_DIS
+                efuse when Secure Boot is enabled. This prevents any more efuses from being read protected.
+
+                If this option is set, it will remain possible to write the EFUSE_RD_DIS efuse field after Secure
+                Boot is enabled. This may allow an attacker to read-protect the BLK2 efuse holding the public
+                key digest, causing an immediate denial of service and possibly allowing an additional fault
+                injection attack to bypass the signature protection.
 
         config SECURE_FLASH_UART_BOOTLOADER_ALLOW_ENC
             bool "Leave UART bootloader encryption enabled"

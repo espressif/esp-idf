@@ -61,6 +61,7 @@ ESP32 采用 40 nm 工艺制成，具有最佳的功耗性能、射频性能、�
     ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
     ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
     ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
+    ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
 
 
 .. _get-started-step-by-step-legacy:
@@ -178,9 +179,9 @@ ESP-IDF 所需的 Python 软件包位于 ``IDF_PATH/requirements.txt`` 中。您
 
 .. note::
 
-    请注意查询您所使用的 Python 解释器的版本（运行命令 ``python --version``），并根据查询结果将上方命令中的 ``python`` 替换为 ``python2``, ``python2.7``，例如::
+    请注意查询您所使用的 Python 解释器的版本（运行命令 ``python --version``），并根据查询结果将上方命令中的 ``python`` 替换为 ``python3``, ``python3.7``，例如::
 
-        python2.7 -m pip install --user -r $IDF_PATH/requirements.txt
+        python3 -m pip install --user -r $IDF_PATH/requirements.txt
 
 
 .. _get-started-start-project-legacy:
@@ -277,10 +278,6 @@ Windows 操作系统
 * ``空格``或 ``Y 键``：选择 ``[*]`` 配置选项；``N 键``：禁用 ``[*]`` 配置选项
 * ``英文问号`` （查询配置选项）：调出有关该选项的帮助菜单
 * ``/ 键``：寻找配置工程
-
-.. note::
-
-    如果您是 **Arch Linux** 用户，请前往 ``SDK tool configuration``，并将 ``Python 2 interpreter`` 的名称从 ``python`` 替换为 ``python2``。
 
 .. attention::
 

@@ -1,6 +1,8 @@
 ESP-MESH
 ========
 
+:link_to_translation:`zh_CN:[中文]`
+
 This guide provides information regarding the ESP-MESH protocol. Please see the 
 :doc:`MESH API Reference<../api-reference/network/esp_mesh>` for more information
 about API usage.
@@ -40,10 +42,10 @@ Introduction
 
 .. figure:: ../../_static/mesh-traditional-network-architecture.png
     :align: center
-    :alt: Diagram of Traditional Network Architectures
+    :alt: Diagram of Traditional Network Architecture
     :figclass: align-center
 
-    Traditional Wi-Fi Network Architectures
+    Traditional Wi-Fi Network Architecture
 
 A traditional infrastructure Wi-Fi network is a point-to-multipoint network where a single central node known as the access point (AP) is directly connected to all other nodes known as stations. The AP is responsible for arbitrating and forwarding transmissions between the stations. Some APs also relay transmissions to/from an external IP network via a router. Traditional infrastructure Wi-Fi networks suffer the disadvantage of limited coverage area due to the requirement that every station must be in range to directly connect with the AP. Furthermore, traditional Wi-Fi networks are susceptible to overloading as the maximum number of stations permitted in the network is limited by the capacity of the AP.
 
@@ -81,7 +83,7 @@ Terminology
 +--------------------------+----------------------------------------------------------------+
 | Parent Node              | The converse notion of a child node                            |
 +--------------------------+----------------------------------------------------------------+
-| Sub-Child Node           | Any node reachable by repeated proceeding from parent to child |
+| Descendant Node          | Any node reachable by repeated proceeding from parent to child |
 +--------------------------+----------------------------------------------------------------+
 | Sibling Nodes            | Nodes that share the same parent node                          |
 +--------------------------+----------------------------------------------------------------+
@@ -262,7 +264,7 @@ The remaining idle nodes will connect with intermediate parent nodes within rang
 
 4. Limiting Tree Depth
 """"""""""""""""""""""
-To prevent the network from exceeding the maximum permitted number of layers, nodes on the maximum layer will automatically become leaf nodes once connected. This prevents any other idle node from connecting with the leaf node thereby prevent a new layer form forming. However if an idle node has no other potential parent node, it will remain idle indefinitely. Referring to the figure above, the network's maximum permitted layers is set to four. Therefore when node H connects, it becomes a leaf node to prevent any downstream connections from forming.
+To prevent the network from exceeding the maximum permitted number of layers, nodes on the maximum layer will automatically become leaf nodes once connected. This prevents any other idle node from connecting with the leaf node thereby prevent a new layer form forming. However if an idle node has no other potential parent node, it will remain idle indefinitely. Referring to the figure above, the network's number of maximum permitted layers is set to four. Therefore when node H connects, it becomes a leaf node to prevent any downstream connections from forming.
 
 Automatic Root Node Selection
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -284,7 +286,7 @@ The following diagram demonstrates how an ESP-MESH network is built when the roo
 
 **1.** On power-on reset, each node begins transmitting beacon frames consisting of their own MAC addresses and their router RSSIs.
 
-**2.** Over multiple iterations of transmission and scanning, the beacon frame with the strongest router RSSI is propagated throughout the network. Node C has the strongest router RSSI (-10db) hence its beacon frame is propagated throughout the network. All nodes participating in the election vote for node C thus giving node C a vote percentage of 100%. Therefore node C becomes a root node and connects with the router.
+**2.** Over multiple iterations of transmission and scanning, the beacon frame with the strongest router RSSI is propagated throughout the network. Node C has the strongest router RSSI (-10 dB) hence its beacon frame is propagated throughout the network. All nodes participating in the election vote for node C thus giving node C a vote percentage of 100%. Therefore node C becomes a root node and connects with the router.
 
 **3.** Once Node C has connected with the router, nodes A/B/D/E connectwith node C as it is the preferred parent node (i.e. the shallowest node). Nodes A/B/D/E form the second layer of the network.
 
@@ -350,11 +352,11 @@ The following example demonstrates the effects of asynchronous power-on with reg
 
 **2.** Once node A becomes the root node, the remaining nodes begin forming upstream connections layer by layer with their preferred parent nodes. The result is a network with five layers.
 
-**3.** Node B/E are delayed in powering-on but neither attempt to become the root node even though they have stronger router RSSIs (-20db and -10db) compared to node A. Instead both delayed nodes form upstream connections with their preferred parent nodes A and C respectively. Both Nodes B/E become intermediate parent nodes after connecting.
+**3.** Node B/E are delayed in powering-on but neither attempt to become the root node even though they have stronger router RSSIs (-20 dB and -10 dB) compared to node A. Instead both delayed nodes form upstream connections with their preferred parent nodes A and C respectively. Both nodes B/E become intermediate parent nodes after connecting.
 
 **4.** Nodes D/G switch their upstream connections as node B is the new preferred parent node due to it being on a shallower layer (second layer node). Due to the switch, the resultant network has three layers instead of the original five layers.
 
-**Synchronous Power-On:** Had all nodes powered-on synchronously, node E would have become the root node as it has the strongest router RSSI (-10db). This would result in a significantly different network layout compared to the network formed under the conditions of asynchronous power-on. **However the synchronous power-on network layout can still be reached if the user manually switches the root node** (see :cpp:func:`esp_mesh_waive_root`).
+**Synchronous Power-On:** Had all nodes powered-on synchronously, node E would have become the root node as it has the strongest router RSSI (-10 dB). This would result in a significantly different network layout compared to the network formed under the conditions of asynchronous power-on. **However the synchronous power-on network layout can still be reached if the user manually switches the root node** (see :cpp:func:`esp_mesh_waive_root`).
 
 .. note::
     Differences in parent node selection caused by asynchronous power-on are  autonomously corrected for to some extent in ESP-MESH (see `Parent Node Switching`_)
@@ -445,7 +447,7 @@ The following diagram illustrates an example of a root node switch.
 
 **2.** After multiple rounds of transmission and scanning, node B is elected as the new root node. Node B sends node C a **switch request** and node C responds with an acknowledgment.
 
-**3.** Node B disconnects from its parent and connects with the router becoming the networks new root node. Node C disconnects from the router, enters the idle state, and begins scanning for and selecting a new preferred parent node. **Node C maintains all its downstream connections throughout this process**. 
+**3.** Node B disconnects from its parent and connects with the router becoming the network's new root node. Node C disconnects from the router, enters the idle state, and begins scanning for and selecting a new preferred parent node. **Node C maintains all its downstream connections throughout this process**. 
 
 **4.** Node C selects node B as its preferred parent node, forms an upstream connection, and becomes a second layer node. The network layout is similar after the switch as node C still maintains the same subnetwork. However each node in node C's subnetwork has been placed one layer deeper as a result of the switch. `Parent Node Switching`_ may adjust the network layout afterwards if any nodes have a new preferred parent node as a result of the root node switch.
 
@@ -633,36 +635,88 @@ BSSID of the desired router. If this field is unset, the ``allow_router_switch``
 
 The following table illustrates how the different combinations of parameters/conditions affect whether channel switching and/or router switching is permitted. Note that `X` represents a "don't care" for the parameter.
 
-+-------------------------------------------------------------------------------------------------------+--------------------+
-| Configuration and Conditions                                                                          | Result             |
-+================+======================+=====================+=====================+===================+====================+
-| Preset Channel | Allow Channel Switch | Preset Router BSSID | Allow Router Switch | Root Node Present | Permitted Switches |
-+----------------+----------------------+---------------------+---------------------+-------------------+--------------------+
-| N              | X                    | N                   | X                   | X                 | Channel & Router   |
-|                |                      +---------------------+---------------------+                   +--------------------+
-|                |                      | Y                   | N                   |                   | Channel Only       |
-|                |                      +---------------------+---------------------+                   +--------------------+
-|                |                      | Y                   | Y                   |                   | Channel & Router   |
-+----------------+----------------------+---------------------+---------------------+-------------------+--------------------+
-| Y              | Y                    | N                   | X                   | X                 | Channel & Router   |
-+                +----------------------+                     +                     +-------------------+--------------------+
-|                | N                    |                     |                     | N                 | Router Only        |
-+                +----------------------+                     +                     +-------------------+--------------------+
-|                | N                    |                     |                     | Y                 | Channel & Router   |
-+                +----------------------+---------------------+---------------------+-------------------+--------------------+
-|                | Y                    | Y                   | N                   | X                 | Channel Only       |
-+                +----------------------+                     +                     +-------------------+--------------------+
-|                | N                    |                     |                     | N                 | None               |
-+                +----------------------+                     +                     +-------------------+--------------------+
-|                | N                    |                     |                     | Y                 | Channel Only       |
-+                +----------------------+                     +---------------------+-------------------+--------------------+
-|                | Y                    |                     | Y                   | X                 | Channel & Router   |
-+                +----------------------+                     +                     +-------------------+--------------------+
-|                | N                    |                     |                     | N                 | Router Only        |
-+                +----------------------+                     +                     +-------------------+--------------------+
-|                | N                    |                     |                     | Y                 | Channel & Router   |
-+----------------+----------------------+---------------------+---------------------+-------------------+--------------------+
+.. list-table:: 
+    :widths: 15 15 15 15 15 15
+    :header-rows: 1
 
+    * - Preset Channel
+      - Allow Channel Switch
+      - Preset Router BSSID
+      - Allow Router Switch
+      - Root Node Present
+      - Permitted Switches？
+    * - N
+      - X
+      - N
+      - X
+      - X
+      - Channel and Router
+    * - N
+      - X
+      - Y
+      - N
+      - X
+      - Channel Only
+    * - N
+      - X
+      - Y
+      - Y
+      - X
+      - Channel and Router
+    * - Y
+      - Y
+      - N
+      - X
+      - X
+      - Channel and Router
+    * - Y
+      - N
+      - N
+      - X
+      - N
+      - Router Only
+    * - Y
+      - N
+      - N
+      - X
+      - Y
+      - Channel and Router
+    * - Y
+      - Y
+      - Y
+      - N
+      - X
+      - Channel Only
+    * - Y
+      - N
+      - Y
+      - N
+      - N
+      - N
+    * - Y
+      - N
+      - Y
+      - N
+      - Y
+      - Channel Only
+    * - Y
+      - Y
+      - Y
+      - Y
+      - X
+      - Channel and Router 
+    * - Y
+      - N
+      - Y
+      - Y
+      - N
+      - Router Only
+    * - Y
+      - N
+      - Y
+      - Y
+      - Y
+      - Channel and Router
 
 .. ------------------------------ Performance ---------------------------------
 
@@ -681,20 +735,14 @@ The performance of an ESP-MESH network can be evaluated based on multiple metric
 
 **Network Node Capacity:** The total number of nodes the ESP-MESH network can simultaneously support. This number is determined by the maximum number of downstream connections a node can accept and the maximum number of layers permissible in the network.
 
-The following table lists the common performance figures of an ESP-MESH network. However users should note that performance numbers can vary greatly between installations based on network configuration and operating environment.
+The following table lists the common performance figures of an ESP-MESH network:
 
-+-------------------------+------------------------------------+
-| Function                | Description                        |
-+=========================+====================================+
-|Networking Building Time | < 60 seconds                       |
-+-------------------------+------------------------------------+
-|Healing time             | Root Node Break Down: < 10 seconds |
-|                         |                                    |
-|                         | Child Node Break Down: < 5 seconds |
-+-------------------------+------------------------------------+
-|Per-hop latency          | 10 to 30 milliseconds              |
-+-------------------------+------------------------------------+
-
+* Network Building Time: < 60 seconds
+* Healing time: 
+    * Root node break down: < 10 seconds
+    * Child node break down: < 5 seconds
+* Per-hop latency: 10 to 30 milliseconds
+ 
 .. note::
     The following test conditions were used to generate the performance figures above.
     
@@ -708,6 +756,8 @@ The following table lists the common performance figures of an ESP-MESH network.
 .. note::
     The throughput of root node's access to the external IP network is directly affected by the number of nodes in the ESP-MESH network and the bandwidth of the router.
 
+.. note::
+    The performance figures can vary greatly between installations based on network configuration and operating environment.
 
 .. ----------------------------- Further Notes --------------------------------
 

@@ -495,8 +495,6 @@ TEST_CASE("unaligned heaps", "[multi_heap]")
     }
 }
 
-#ifndef CONFIG_HEAP_POISONING_NONE
-
 TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
 {
     uint8_t test_heap[1024 * 1024];
@@ -527,7 +525,14 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
             //printf("[ALIGNED_ALLOC] allocated size: %d \n", multi_heap_get_allocated_size(heap, buf));    
             printf("[ALIGNED_ALLOC] address of allocated memory: %p \n\n", (void *)buf);
             //Address of obtained block must be aligned with selected value
-            REQUIRE(((intptr_t)buf & (aligments - 1)) == 0);
+
+            if((aligments & 0x03) == 0) {
+                //Alignment is a multiple of four:
+                REQUIRE(((intptr_t)buf & 0x03) == 0);
+            } else {
+                //Exotic alignments:
+                REQUIRE(((intptr_t)buf & (aligments - 1)) == 0);
+            }
 
             //Write some data, if it corrupts memory probably the heap
             //canary verification will fail:
@@ -540,5 +545,3 @@ TEST_CASE("multi_heap aligned allocations", "[multi_heap]")
     printf("[ALIGNED_ALLOC] heap_size after: %d \n", multi_heap_free_size(heap));
     REQUIRE((old_size - multi_heap_free_size(heap)) <= leakage);
 }
-
-#endif

@@ -72,7 +72,14 @@
         ESP-WROVER-KIT <../hw-reference/esp32/get-started-wrover-kit>
         ESP32-PICO-KIT <../hw-reference/esp32/get-started-pico-kit>
         ESP32-Ethernet-Kit <../hw-reference/esp32/get-started-ethernet-kit>
+        ESP32-DevKit-S(-R) <../hw-reference/esp32/user-guide-devkits-r-v1.1>
 
+.. only:: esp32s2
+
+    .. toctree::
+        :maxdepth: 1
+        
+        ESP32-S2-Saola-1 <../hw-reference/esp32s2/user-guide-saola-1-v1.2>
 
 .. _get-started-step-by-step:
 
@@ -311,8 +318,6 @@ Linux 和 MacOS 操作系统
     cd ~/esp/hello_world
     idf.py menuconfig
 
-如果您的默认 Python 版本为 3.0 及以上，可能需要运行 ``python2 $(which idf.py) menuconfig``。
-
 Windows 操作系统
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -320,6 +325,8 @@ Windows 操作系统
 
     cd %userprofile%\esp\hello_world
     idf.py menuconfig
+
+打开一个新项目后，应首先设置“目标”芯片 ``idf.py set-target {IDF_TARGET}``。注意，此操作将清除并初始化项目之前的编译和配置（如有）。 您也可以直接将“目标”配置为环境变量（此时可跳过该步骤）。更多信息，请见 :ref:`selecting-idf-target`。
 
 如果之前的步骤都正确，则会显示下面的菜单：
 
@@ -440,9 +447,9 @@ Windows 操作系统
 .. _get-started-build-monitor:
 
 第十步：监视器
-======================
+===============
 
-您可以使用 ``make monitor`` 命令，监视 “hello_world” 的运行情况。注意，不要忘记将 PORT 替换为您的串口名称。
+您可以使用 ``idf.py -p PORT monitor`` 命令，监视 “hello_world” 的运行情况。注意，不要忘记将 PORT 替换为您的串口名称。
 
 运行该命令后，:doc:`IDF 监视器 <../api-guides/tools/idf-monitor>` 应用程序将启动：::
 

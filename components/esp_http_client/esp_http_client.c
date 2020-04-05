@@ -1315,3 +1315,16 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
     }
 }
+
+int esp_http_client_read_response(esp_http_client_handle_t client, char *buffer, int len)
+{
+    int read_len = 0;
+    while (read_len < len) {
+        int data_read = esp_http_client_read(client, buffer + read_len, len - read_len);
+        if (data_read <= 0) {
+            return read_len;
+        }
+        read_len += data_read;
+    }
+    return read_len;
+}

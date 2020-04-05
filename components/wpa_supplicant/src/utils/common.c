@@ -269,8 +269,21 @@ char * wpa_config_parse_string(const char *value, size_t *len)
 	} else {
 		u8 *str;
 		size_t tlen, hlen = os_strlen(value);
+#ifndef ESP_SUPPLICANT
 		if (hlen & 1)
 			return NULL;
+#else
+		if (hlen == 5 || hlen == 13) {
+			*len = hlen;
+			str = (u8 *)os_malloc(*len + 1);
+			if (str == NULL) {
+				return NULL;
+			}
+			memcpy(str, value, *len);
+			str[*len] = '\0';
+			return (char *) str;
+	        }
+#endif
 		tlen = hlen / 2;
 		str = os_malloc(tlen + 1);
 		if (str == NULL)

@@ -110,6 +110,7 @@ struct wpa_funcs {
     bool (*wpa_sta_init)(void);
     bool (*wpa_sta_deinit)(void);
     void (*wpa_sta_connect)(uint8_t *bssid);
+    void (*wpa_sta_disconnected_cb)(uint8_t reason_code);
     int (*wpa_sta_rx_eapol)(u8 *src_addr, u8 *buf, u32 len);
     bool (*wpa_sta_in_4way_handshake)(void);
     void *(*wpa_ap_init)(void);
@@ -123,7 +124,7 @@ struct wpa_funcs {
     int (*wpa_config_bss)(u8 *bssid);
     int (*wpa_michael_mic_failure)(u16 is_unicast);
     uint8_t *(*wpa3_build_sae_msg)(uint8_t *bssid, uint32_t type, size_t *len);
-    int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type);
+    int (*wpa3_parse_sae_msg)(uint8_t *buf, size_t len, uint32_t type, uint16_t status);
 };
 
 struct wpa2_funcs {

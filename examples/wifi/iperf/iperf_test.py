@@ -610,7 +610,7 @@ def test_wifi_throughput_basic(env, extra_data):
     # do check after logging, otherwise test will exit immediately if check fail, some performance can't be logged.
     for throughput_type in test_result:
         ttfw_idf.check_performance("{}_throughput".format(throughput_type),
-                                   test_result[throughput_type].get_best_throughput())
+                                   test_result[throughput_type].get_best_throughput(), dut.TARGET)
 
     env.close_dut("iperf")
 

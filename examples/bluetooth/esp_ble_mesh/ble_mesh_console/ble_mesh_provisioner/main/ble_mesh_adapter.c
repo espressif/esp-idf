@@ -82,27 +82,21 @@ void ble_mesh_node_init(void)
     uint16_t i;
 
     for (i = 0; i < NODE_MAX_GROUP_CONFIG; i++) {
-        ble_mesh_node_prestore_params[i].net_idx = 0xFFFF;
-        ble_mesh_node_prestore_params[i].unicast_addr = 0xFFFF;
-    }
-
-    ble_mesh_node_sema = xSemaphoreCreateMutex();
-    if (!ble_mesh_node_sema) {
-        ESP_LOGE(TAG, "%s failed to init, failed to create mesh node semaphore", __func__);
+        ble_mesh_node_prestore_params[i].net_idx = ESP_BLE_MESH_KEY_UNUSED;
+        ble_mesh_node_prestore_params[i].unicast_addr = ESP_BLE_MESH_ADDR_UNASSIGNED;
     }
 }
 
 void ble_mesh_set_node_prestore_params(uint16_t netkey_index, uint16_t unicast_addr)
 {
     uint16_t i;
-    xSemaphoreTake(ble_mesh_node_sema, portMAX_DELAY);
     for (i = 0; i < NODE_MAX_GROUP_CONFIG; i++) {
-        if (ble_mesh_node_prestore_params[i].net_idx != 0xFFFF && ble_mesh_node_prestore_params[i].unicast_addr != 0xFFFF) {
+        if (ble_mesh_node_prestore_params[i].net_idx != ESP_BLE_MESH_KEY_UNUSED 
+                            && ble_mesh_node_prestore_params[i].unicast_addr != ESP_BLE_MESH_ADDR_UNASSIGNED) {
             ble_mesh_node_prestore_params[i].net_idx = netkey_index;
             ble_mesh_node_prestore_params[i].unicast_addr = unicast_addr;
         }
     }
-    xSemaphoreGive(ble_mesh_node_sema);
 }
 
 void ble_mesh_create_send_data(char *data, uint16_t byte_num, uint16_t sequence_num, uint32_t opcode)
@@ -134,8 +128,6 @@ void ble_mesh_test_performance_client_model_get(void)
     uint32_t i, j;
     uint32_t sum_time = 0;
 
-    xSemaphoreTake(ble_mesh_test_perf_sema, portMAX_DELAY);
-
     for (i = 0, j = 0; i < test_perf_statistics.test_num; i++) {
         if (test_perf_statistics.time[i] != 0) {
             sum_time += test_perf_statistics.time[i];
@@ -151,8 +143,6 @@ void ble_mesh_test_performance_client_model_get(void)
 
     ESP_LOGI(TAG, "VendorModel:Statistics,%d,%d\n",
              test_perf_statistics.statistics, (sum_time / (j + 1)));
-
-    xSemaphoreGive(ble_mesh_test_perf_sema);
 }
 
 void ble_mesh_test_performance_client_model_get_received_percent(void)
@@ -166,8 +156,6 @@ void ble_mesh_test_performance_client_model_get_received_percent(void)
         uint16_t time_num;
     } statistics_time_performance;
     statistics_time_performance *statistics_time_percent;
-
-    xSemaphoreTake(ble_mesh_test_perf_sema, portMAX_DELAY);
 
     time_level_num = ((max_time - min_time) / 50 + 1);
     statistics_time_percent = malloc(sizeof(statistics_time_performance) * time_level_num);
@@ -199,14 +187,11 @@ void ble_mesh_test_performance_client_model_get_received_percent(void)
     printf("\n");
 
     free(statistics_time_percent);
-    xSemaphoreGive(ble_mesh_test_perf_sema);
 }
 
 void ble_mesh_test_performance_client_model_accumulate_statistics(uint32_t value)
 {
-    xSemaphoreTake(ble_mesh_test_perf_sema, portMAX_DELAY);
     test_perf_statistics.statistics += value;
-    xSemaphoreGive(ble_mesh_test_perf_sema);
 }
 
 int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_t *data, uint8_t ack_ttl, uint16_t length)
@@ -214,11 +199,9 @@ int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_
     uint16_t i;
     uint16_t sequence_num = 0;
     uint16_t node_received_ttl = 0;
-    xSemaphoreTake(ble_mesh_test_perf_sema, portMAX_DELAY);
 
     // received fail
     if (length != test_perf_statistics.test_length) {
-        xSemaphoreGive(ble_mesh_test_perf_sema);
         return 1;
     }
 
@@ -231,7 +214,6 @@ int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_
 
     for (i = 0; i < test_perf_statistics.test_num; i++) {
         if (test_perf_statistics.package_index[i] == sequence_num) {
-            xSemaphoreGive(ble_mesh_test_perf_sema);
             return 1;
         }
     }
@@ -252,7 +234,6 @@ int ble_mesh_test_performance_client_model_accumulate_time(uint16_t time, uint8_
         }
     }
 
-    xSemaphoreGive(ble_mesh_test_perf_sema);
     return 0;
 }
 

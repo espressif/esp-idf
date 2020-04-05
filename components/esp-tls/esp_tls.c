@@ -60,6 +60,10 @@ static const char *TAG = "esp-tls";
 #define _esp_tls_read                       esp_wolfssl_read
 #define _esp_tls_write                      esp_wolfssl_write
 #define _esp_tls_conn_delete                esp_wolfssl_conn_delete
+#ifdef CONFIG_ESP_TLS_SERVER
+#define _esp_tls_server_session_create      esp_wolfssl_server_session_create
+#define _esp_tls_server_session_delete      esp_wolfssl_server_session_delete
+#endif  /* CONFIG_ESP_TLS_SERVER */
 #define _esp_tls_get_bytes_avail            esp_wolfssl_get_bytes_avail
 #define _esp_tls_init_global_ca_store       esp_wolfssl_init_global_ca_store
 #define _esp_tls_set_global_ca_store        esp_wolfssl_set_global_ca_store                 /*!< Callback function for setting global CA store data for TLS/SSL */
@@ -429,6 +433,7 @@ mbedtls_x509_crt *esp_tls_get_global_ca_store(void)
     return _esp_tls_get_global_ca_store();
 }
 
+#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 #ifdef CONFIG_ESP_TLS_SERVER
 /**
  * @brief      Create a server side TLS/SSL connection
@@ -445,7 +450,6 @@ void esp_tls_server_session_delete(esp_tls_t *tls)
     return _esp_tls_server_session_delete(tls);
 }
 #endif /* CONFIG_ESP_TLS_SERVER */
-#endif /* CONFIG_ESP_TLS_USING_MBEDTLS */
 
 ssize_t esp_tls_get_bytes_avail(esp_tls_t *tls)
 {

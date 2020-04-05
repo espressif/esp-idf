@@ -63,7 +63,7 @@ extern "C" {
  *
  * @param type  Select idle channel connect to high resistance state or ground.
  */
-#define touch_hal_set_inactive_connect(type) touch_ll_set_inactive_connect(type)
+#define touch_hal_set_idle_channel_connect(type) touch_ll_set_idle_channel_connect(type)
 
 /**
  * Set connection type of touch channel in idle status.
@@ -75,7 +75,7 @@ extern "C" {
  *
  * @param type  Select idle channel connect to high resistance state or ground.
  */
-#define touch_hal_get_inactive_connect(type) touch_ll_get_inactive_connect(type)
+#define touch_hal_get_idle_channel_connect(type) touch_ll_get_idle_channel_connect(type)
 
 /**
  * Get the current measure channel. Touch sensor measurement is cyclic scan mode.
@@ -100,11 +100,60 @@ extern "C" {
 #define touch_hal_intr_disable(int_mask) touch_ll_intr_disable(int_mask)
 
 /**
+ * Clear touch sensor interrupt by bitmask.
+ *
+ * @param int_mask Pad mask to clear interrupts
+ */
+#define touch_hal_intr_clear(int_mask) touch_ll_intr_clear(int_mask)
+
+/**
  * Get the bitmask of touch sensor interrupt status.
  *
  * @return type interrupt type
  */
 #define touch_hal_read_intr_status_mask() touch_ll_read_intr_status_mask()
+
+/**
+ * Enable the timeout check for all touch sensor channels measurements.
+ * When the touch reading of a touch channel exceeds the measurement threshold,
+ * If enable: a timeout interrupt will be generated and it will go to the next channel measurement.
+ * If disable: the FSM is always on the channel, until the measurement of this channel is over.
+ *
+ * @note Set the timeout threshold correctly before enabling it.
+ */
+#define touch_hal_timeout_enable() touch_ll_timeout_enable()
+
+/**
+ * Disable the timeout check for all touch sensor channels measurements.
+ * When the touch reading of a touch channel exceeds the measurement threshold,
+ * If enable: a timeout interrupt will be generated and it will go to the next channel measurement.
+ * If disable: the FSM is always on the channel, until the measurement of this channel is over.
+ *
+ * @note Set the timeout threshold correctly before enabling it.
+ */
+#define touch_hal_timeout_disable() touch_ll_timeout_disable()
+
+/**
+ * Set timeout threshold for all touch sensor channels measurements.
+ * Compared with touch readings.
+ *
+ * @param threshold Set to the maximum time measured on one channel.
+ */
+#define touch_hal_timeout_set_threshold(threshold) touch_ll_timeout_set_threshold(threshold)
+
+/**
+ * Get timeout threshold for all touch sensor channels measurements.
+ * Compared with touch readings.
+ *
+ * @param threshold Point to timeout threshold.
+ */
+#define touch_hal_timeout_get_threshold(threshold) touch_ll_timeout_get_threshold(threshold)
+
+/**
+ * Touch timer trigger measurement and always wait measurement done.
+ * Force done for touch timer ensures that the timer always can get the measurement done signal.
+ */
+#define touch_hal_timer_force_done() touch_ll_timer_force_done()
 
 /************************ Filter register setting ************************/
 
@@ -123,6 +172,14 @@ void touch_hal_filter_set_config(const touch_filter_config_t *filter_info);
  * @param filter_info select filter type and threshold of detection algorithm
  */
 void touch_hal_filter_get_config(touch_filter_config_t *filter_info);
+
+/**
+ * Get smoothed data that obtained by filtering the raw data.
+ *
+ * @param touch_num touch pad index
+ * @param smooth_data pointer to smoothed data
+ */
+#define touch_hal_filter_read_smooth(touch_num, smooth_data) touch_ll_filter_read_smooth(touch_num, smooth_data)
 
 /**
  * Get baseline value of touch sensor.
@@ -434,22 +491,19 @@ void touch_hal_waterproof_enable(void);
 #define touch_hal_waterproof_disable() touch_ll_waterproof_disable()
 
 /************************ Proximity register setting ************************/
-/**
- * Set parameter of proximity channel. Three proximity sensing channels can be set.
- * The proximity sensor measurement is the accumulation of touch channel measurements.
- *
- * @note  If stop the proximity function for the channel, point this proximity channel to `TOUCH_PAD_NUM0`.
- * @param proximity parameter of proximity
- */
-void touch_hal_proximity_set_config(const touch_pad_proximity_t *proximity);
 
 /**
- * Get parameter of proximity channel. Three proximity sensing channels can be set.
+ * Enable/disable proximity function of touch channels.
  * The proximity sensor measurement is the accumulation of touch channel measurements.
  *
- * @param proximity parameter of proximity.
+ * @note Supports up to three touch channels configured as proximity sensors.
+ * @param touch_num touch pad index
+ * @param enabled true: enable the proximity function; false:  disable the proximity function
+ * @return
+ *     - true: Configured correctly.
+ *     - false: Configured error.
  */
-void touch_hal_proximity_get_config(touch_pad_proximity_t *proximity);
+bool touch_hal_enable_proximity(touch_pad_t touch_num, bool enabled);
 
 /**
  * Set touch channel number for proximity pad.
@@ -496,15 +550,27 @@ void touch_hal_proximity_get_config(touch_pad_proximity_t *proximity);
 #define touch_hal_proximity_pad_check(touch_num) touch_ll_proximity_pad_check(touch_num)
 
 /************** sleep pad setting ***********************/
+
 /**
- * Set parameter of touch sensor in sleep mode.
- *        In order to achieve low power consumption in sleep mode, other circuits except the RTC part of the register are in a power-off state.
- *        Only one touch channel is supported in the sleep state, which can be used as a wake-up function.
- *        If in non-sleep mode, the sleep parameters do not work.
+ * Get parameter of touch sensor sleep channel.
+ * The touch sensor can works in sleep mode to wake up sleep.
+ * After the sleep channel is configured, users should query the channel reading using a specific function.
  *
- * @param slp_config touch pad config.
+ * @param slp_config Point to touch sleep pad config.
  */
-void touch_hal_sleep_channel_config(const touch_pad_sleep_channel_t *slp_config);
+void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config);
+
+/**
+ * Set parameter of touch sensor sleep channel.
+ * The touch sensor can works in sleep mode to wake up sleep.
+ * After the sleep channel is configured, users should query the channel reading using a specific function.
+ *
+ * @note ESP32S2 only support one channel to be set sleep channel.
+ * 
+ * @param pad_num touch sleep pad number.
+ * @param enable Enable/disable sleep pad function.
+ */
+void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable);
 
 /**
  * Set touch channel number for sleep pad.
@@ -556,6 +622,21 @@ void touch_hal_sleep_channel_config(const touch_pad_sleep_channel_t *slp_config)
  * @param baseline Pointer to accept touch sensor baseline value.
  */
 #define touch_hal_sleep_read_baseline(baseline) touch_ll_sleep_read_baseline(baseline)
+
+/**
+ * Read smooth data of touch sensor for sleep pad.
+ */
+#define touch_hal_sleep_read_smooth(smooth_data) touch_ll_sleep_read_smooth(smooth_data)
+
+/**
+ * Read raw data of touch sensor for sleep pad.
+ */
+#define touch_hal_sleep_read_data(raw_data) touch_ll_sleep_read_data(raw_data)
+
+/**
+ * Reset baseline of touch sensor for sleep pad.
+ */
+#define touch_hal_sleep_reset_baseline() touch_ll_sleep_reset_baseline()
 
 /**
  * Read debounce of touch sensor for sleep pad.

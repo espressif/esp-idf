@@ -10,6 +10,7 @@ choice BT_NIMBLE_MEM_ALLOC_MODE
         - External SPIRAM memory only
         - Either internal or external memory based on default malloc()
           behavior in ESP-IDF
+        - Internal IRAM memory wherever applicable else internal DRAM
 
         Recommended mode here is always internal, since that is most preferred
         from security perspective. But if application requirement does not
@@ -26,7 +27,16 @@ choice BT_NIMBLE_MEM_ALLOC_MODE
     config BT_NIMBLE_MEM_ALLOC_MODE_DEFAULT
         bool "Default alloc mode"
 
-endchoice
+    config BT_NIMBLE_MEM_ALLOC_MODE_IRAM_8BIT
+        bool "Internal IRAM"
+        depends on ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+        help
+            Allows to use IRAM memory region as 8bit accessible region.
+
+            Every unaligned (8bit or 16bit) access will result in an exception
+            and incur penalty of certain clock cycles per unaligned read/write.
+
+endchoice #BT_NIMBLE_MEM_ALLOC_MODE
 
 config BT_NIMBLE_MAX_CONNECTIONS
     int "Maximum number of concurrent connections"
@@ -216,6 +226,16 @@ config BT_NIMBLE_HCI_EVT_LO_BUF_COUNT
         low-priority event buffers, then an incoming advertising report will
         get dropped
 
+config BT_NIMBLE_MSYS1_BLOCK_COUNT
+    int "MSYS_1 Block Count"
+    depends on BT_NIMBLE_ENABLED
+    default 12
+    help
+        MSYS is a system level mbuf registry. For prepare write & prepare
+        responses MBUFs are allocated out of msys_1 pool. For NIMBLE_MESH
+        enabled cases, this block count is increased by 8 than user defined
+        count.
+
 config BT_NIMBLE_HS_FLOW_CTRL
     bool "Enable Host Flow control"
     depends on BT_NIMBLE_ENABLED
@@ -246,6 +266,15 @@ config BT_NIMBLE_HS_FLOW_CTRL_TX_ON_DISCONNECT
     help
         Enable this option to send number-of-completed-packets event to
         controller after disconnection
+
+config BT_NIMBLE_RPA_TIMEOUT
+    int "RPA timeout in seconds"
+    range 1 41400
+    depends on BT_NIMBLE_ENABLED
+    default 900
+    help
+        Time interval between RPA address change. This is applicable in case of
+        Host based RPA
 
 menuconfig BT_NIMBLE_MESH
     bool "Enable BLE mesh functionality"

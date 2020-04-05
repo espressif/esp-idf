@@ -6,6 +6,8 @@ components/espcoredump/espcoredump.py
 components/espcoredump/test/test_espcoredump.py
 components/espcoredump/test/test_espcoredump.sh
 components/heap/test_multi_heap_host/test_all_configs.sh
+components/mbedtls/esp_crt_bundle/gen_crt_bundle.py
+components/mbedtls/esp_crt_bundle/test_gen_crt_bundle/test_gen_crt_bundle.py
 components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py
 components/partition_table/gen_empty_partition.py
 components/partition_table/gen_esp32part.py
@@ -25,6 +27,7 @@ examples/storage/parttool/parttool_example.sh
 examples/system/ota/otatool/get_running_partition.py
 examples/system/ota/otatool/otatool_example.py
 examples/system/ota/otatool/otatool_example.sh
+install.fish
 install.sh
 tools/build_apps.py
 tools/check_kconfigs.py
@@ -43,6 +46,7 @@ tools/ci/check_idf_version.sh
 tools/ci/check_public_headers.sh
 tools/ci/check_ut_cmake_make.sh
 tools/ci/checkout_project_ref.py
+tools/ci/deploy_docs.py
 tools/ci/envsubst.py
 tools/ci/fix_empty_prototypes.sh
 tools/ci/get-full-sources.sh
@@ -60,7 +64,6 @@ tools/docker/hooks/build
 tools/esp_app_trace/logtrace_proc.py
 tools/esp_app_trace/sysviewtrace_proc.py
 tools/esp_app_trace/test/logtrace/test.sh
-tools/esp_app_trace/test/sysview/compare_json.py
 tools/esp_app_trace/test/sysview/test.sh
 tools/find_apps.py
 tools/format.sh
@@ -75,6 +78,7 @@ tools/kconfig/merge_config.sh
 tools/kconfig/streamline_config.pl
 tools/kconfig_new/confgen.py
 tools/kconfig_new/confserver.py
+tools/kconfig_new/test/confgen/test_confgen.py
 tools/kconfig_new/test/confserver/test_confserver.py
 tools/kconfig_new/test/gen_kconfig_doc/test_target_visibility.py
 tools/ldgen/ldgen.py

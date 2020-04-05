@@ -78,6 +78,13 @@ a15            0x0	0
   9    process 1073434712 xQueueGenericReceive (xQueue=0x3ffb4bdc <tasks+576>, pvBuffer=0x0, xTicksToWait=<optimized out>, xJustPeeking=0) at /home/alexey/projects/esp/esp-idf/components/freertos/queue.c:1546
   10   process 1073432952 0x40081414 in esp_crosscore_isr (arg=0x0) at /home/alexey/projects/esp/esp-idf/components/esp32/crosscore_int.c:60
 
+==================== THREAD 1 (TCB: 0x3ffb6260, name: 'unaligned_ptr_t') =====================
+#0  0x400d0e45 in recur_func () at /home/alexey/projects/esp/esp-idf/components/espcoredump/test/test_core_dump.c:61
+#1  0x400d0e20 in bad_ptr_task (pvParameter=0x1) at /home/alexey/projects/esp/esp-idf/components/espcoredump/test/test_core_dump.c:44
+#2  0x400d0e20 in bad_ptr_task (pvParameter=0xa) at /home/alexey/projects/esp/esp-idf/components/espcoredump/test/test_core_dump.c:44
+#3  0x400d0e68 in recur_func () at /home/alexey/projects/esp/esp-idf/components/espcoredump/test/test_core_dump.c:68
+#4  0x40088160 in xthal_restore_extra_nw () at /Users/igrokhotkov/e/esp32/hal/hal/state_asm.S:97
+
 ==================== THREAD 2 (TCB: 0x3ffba278, name: 'unityTask') =====================
 #0  0x400092dc in ?? ()
 #1  0x4000930f in ?? ()
@@ -135,6 +142,7 @@ a15            0x0	0
 #1  0x40088d34 in xQueueGenericReceive (xQueue=0x3ffb44fc <s_mmap_last_handle>, pvBuffer=<optimized out>, xTicksToWait=<optimized out>, xJustPeeking=0) at /home/alexey/projects/esp/esp-idf/components/freertos/queue.c:1542
 #2  0x40081d0f in esp_vApplicationTickHook () at /home/alexey/projects/esp/esp-idf/components/esp_common/src/freertos_hooks.c:41
 #3  0x40088160 in xthal_restore_extra_nw () at /Users/igrokhotkov/e/esp32/hal/hal/state_asm.S:97
+
 
 ======================= ALL MEMORY REGIONS ========================
 Name   Address   Size   Attrs

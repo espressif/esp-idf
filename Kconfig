@@ -45,12 +45,11 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 a crosstool-ng gcc setup that is in your PATH.
 
         config SDK_PYTHON
-            string "Python 2 interpreter"
+            string "Python interpreter"
             depends on !IDF_CMAKE
             default "python"
             help
-                The executable name/path that is used to run python. On some systems Python 2.x
-                may need to be invoked as python2.
+                The executable name/path that is used to run python.
 
                 (Note: This option is used with the legacy GNU Make build system only.)
 
@@ -134,7 +133,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
                     CONFIG_APP_BUILD_TYPE_ELF_RAM=y
                     CONFIG_VFS_SUPPORT_TERMIOS=
                     CONFIG_NEWLIB_NANO_FORMAT=y
-                    CONFIG_ESP32_PANIC_PRINT_HALT=y
+                    CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y
                     CONFIG_ESP32_DEBUG_STUBS_ENABLE=
                     CONFIG_ESP_ERR_TO_NAME_LOOKUP=
 
@@ -171,7 +170,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
             prompt "Optimization Level"
             default COMPILER_OPTIMIZATION_DEFAULT
             help
-                This option sets compiler optimization level (gcc -O argument).
+                This option sets compiler optimization level (gcc -O argument) for the app.
 
                 - The "Default" setting will add the -0g flag to CFLAGS.
                 - The "Size" setting will add the -0s flag to CFLAGS.
@@ -188,6 +187,9 @@ mainmenu "Espressif IoT Development Framework Configuration"
                 "None" with -O0 produces compiled code without optimization.
 
                 Note that custom optimization levels may be unsupported.
+
+                Compiler optimization for the IDF bootloader is set separately,
+                see the BOOTLOADER_COMPILER_OPTIMIZATION setting.
 
             config COMPILER_OPTIMIZATION_DEFAULT
                 bool "Debug (-Og)"

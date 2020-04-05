@@ -31,9 +31,9 @@
 #include "soc/spi_periph.h"
 #include "soc/dport_reg.h"
 #include "soc/extmem_reg.h"
-#include "soc/rtc_wdt.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/uart_caps.h"
+#include "hal/wdt_hal.h"
 #include "driver/rtc_io.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
@@ -96,6 +96,7 @@ static uint32_t get_power_down_flags(void);
 static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 static void timer_wakeup_prepare(void);
+static void touch_wakeup_prepare(void);
 
 /* Wake from deep sleep stub
    See esp_deepsleep.h esp_wake_deep_sleep() comments for details.
@@ -187,6 +188,10 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     // Enable ULP wakeup
     if (s_config.wakeup_triggers & RTC_ULP_TRIG_EN) {
         // no-op for esp32s2
+    }
+    // Enable Touch wakeup
+    if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
+        touch_wakeup_prepare();
     }
 
     // Enter sleep
@@ -301,16 +306,15 @@ esp_err_t esp_light_sleep_start(void)
     rtc_vddsdio_config_t vddsdio_config = rtc_vddsdio_get_config();
 
     // Safety net: enable WDT in case exit from light sleep fails
-    bool wdt_was_enabled = rtc_wdt_is_on(); // If WDT was enabled in the user code, then do not change it here.
+    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &RTCCNTL};
+    bool wdt_was_enabled = wdt_hal_is_enabled(&rtc_wdt_ctx);    // If WDT was enabled in the user code, then do not change it here.
     if (!wdt_was_enabled) {
-        rtc_wdt_protect_off();
-        rtc_wdt_disable();
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_SYS_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_length_of_reset_signal(RTC_WDT_CPU_RESET_SIG, RTC_WDT_LENGTH_3_2us);
-        rtc_wdt_set_stage(RTC_WDT_STAGE0, RTC_WDT_STAGE_ACTION_RESET_RTC);
-        rtc_wdt_set_time(RTC_WDT_STAGE0, 1000);
-        rtc_wdt_enable();
-        rtc_wdt_protect_on();
+        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+        uint32_t stage_timeout_ticks = (uint32_t)(1000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+        wdt_hal_enable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
 
     // Enter sleep, then wait for flash to be ready on wakeup
@@ -340,7 +344,9 @@ esp_err_t esp_light_sleep_start(void)
     esp_timer_private_unlock();
     DPORT_STALL_OTHER_CPU_END();
     if (!wdt_was_enabled) {
-        rtc_wdt_disable();
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_disable(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
     portEXIT_CRITICAL(&light_sleep_lock);
     return err;
@@ -406,6 +412,17 @@ static void timer_wakeup_prepare(void)
     rtc_sleep_set_wakeup_time(s_config.rtc_ticks_at_sleep_start + rtc_count_delta);
     SET_PERI_REG_MASK(RTC_CNTL_INT_CLR_REG, RTC_CNTL_MAIN_TIMER_INT_CLR_M);
     SET_PERI_REG_MASK(RTC_CNTL_SLP_TIMER1_REG, RTC_CNTL_MAIN_TIMER_ALARM_EN_M);
+}
+
+/* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
+static void touch_wakeup_prepare(void)
+{
+    touch_pad_sleep_channel_t slp_config;
+    touch_pad_fsm_stop();
+    touch_pad_clear_channel_mask(SOC_TOUCH_SENSOR_BIT_MASK_MAX);
+    touch_pad_sleep_channel_get_info(&slp_config);
+    touch_pad_set_channel_mask(BIT(slp_config.touch_num));
+    touch_pad_fsm_start();
 }
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
@@ -571,7 +588,7 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
 
-    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_WAKEUP_STATE_REG, RTC_CNTL_WAKEUP_CAUSE);
+    uint32_t wakeup_cause = REG_GET_FIELD(RTC_CNTL_SLP_WAKEUP_CAUSE_REG, RTC_CNTL_WAKEUP_CAUSE);
     if (wakeup_cause & RTC_EXT0_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_EXT0;
     } else if (wakeup_cause & RTC_EXT1_TRIG_EN) {

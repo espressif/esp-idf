@@ -9,6 +9,8 @@
 #ifndef _STATE_BINDING_H_
 #define _STATE_BINDING_H_
 
+#include "mesh_access.h"
+
 typedef enum {
     GENERIC_ONOFF_STATE,
     GENERIC_LEVEL_STATE,

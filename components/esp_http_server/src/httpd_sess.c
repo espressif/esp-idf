@@ -281,7 +281,9 @@ bool httpd_sess_pending(struct httpd_data *hd, int fd)
     if (sd->pending_fn) {
         // test if there's any data to be read (besides read() function, which is handled by select() in the main httpd loop)
         // this should check e.g. for the SSL data buffer
-        if (sd->pending_fn(hd, fd) > 0) return true;
+        if (sd->pending_fn(hd, fd) > 0) {
+            return true;
+        }
     }
 
     return (sd->pending_len != 0);

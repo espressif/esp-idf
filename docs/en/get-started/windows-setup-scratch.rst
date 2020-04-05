@@ -61,10 +61,10 @@ Download the ninja_ latest stable Windows release from the (`download page <ninj
 The Ninja for Windows download is a .zip file containing a single ``ninja.exe`` file which needs to be unzipped to a directory which is then :ref:`added to your Path <add-directory-windows-path>` (or you can choose a directory which is already on your Path).
 
 
-Python 2.x
-^^^^^^^^^^
+Python
+^^^^^^
 
-Download the latest Python_ 2.7 for Windows installer, and run it.
+Download the latest Python_ for Windows installer, and run it.
 
 The "Customise" step of the Python installer gives a list of options. The last option is "Add python.exe to Path". Change this option to select "Will be installed".
 
@@ -110,7 +110,7 @@ To carry on with development environment setup, proceed to :ref:`get-started-get
 .. _ninja: https://ninja-build.org/
 .. _ninja-dl: https://github.com/ninja-build/ninja/releases
 .. _Python: https://www.python.org/downloads/windows/
-.. _MSYS2: https://msys2.github.io/
+.. _MSYS2: https://www.msys2.org/
 .. _kconfig-frontends releases page: https://github.com/espressif/kconfig-frontends/releases
 .. _Stable version: https://docs.espressif.com/projects/esp-idf/en/stable/
 

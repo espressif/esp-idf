@@ -15,6 +15,7 @@
 #include <string.h>
 #include <errno.h>
 
+#include "mesh_main.h"
 #include "client_common.h"
 #include "mesh_common.h"
 
@@ -23,7 +24,7 @@ struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
     struct net_buf_simple *buf = NULL;
     u8_t *data = NULL;
 
-    buf = (struct net_buf_simple *)osi_calloc(sizeof(struct net_buf_simple) + size);
+    buf = (struct net_buf_simple *)bt_mesh_calloc(sizeof(struct net_buf_simple) + size);
     if (!buf) {
         BT_ERR("%s, Failed to allocate memory", __func__);
         return NULL;
@@ -42,7 +43,7 @@ struct net_buf_simple *bt_mesh_alloc_buf(u16_t size)
 void bt_mesh_free_buf(struct net_buf_simple *buf)
 {
     if (buf) {
-        osi_free(buf);
+        bt_mesh_free(buf);
     }
 }
 
@@ -63,4 +64,63 @@ u8_t bt_mesh_get_device_role(struct bt_mesh_model *model, bool srv_send)
     client = (bt_mesh_client_user_data_t *)model->user_data;
 
     return client->msg_role;
+}
+
+void bt_mesh_mutex_create(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("%s, Invalid mutex", __func__);
+        return;
+    }
+
+#if CONFIG_SPIRAM_USE_MALLOC
+    mutex->buffer = heap_caps_calloc(1, sizeof(StaticQueue_t), MALLOC_CAP_DEFAULT|MALLOC_CAP_SPIRAM);
+    __ASSERT(mutex->buffer, "%s, Failed to create queue buffer", __func__);
+    mutex->mutex = xSemaphoreCreateMutexStatic(mutex->buffer);
+    __ASSERT(mutex->mutex, "%s, Failed to create static mutex", __func__);
+#else
+    mutex->mutex = xSemaphoreCreateMutex();
+    __ASSERT(mutex->mutex, "%s, Failed to create mutex", __func__);
+#endif
+}
+
+void bt_mesh_mutex_free(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("%s, Invalid mutex", __func__);
+        return;
+    }
+
+    if (mutex->mutex) {
+        vSemaphoreDelete(mutex->mutex);
+        mutex->mutex = NULL;
+#if CONFIG_SPIRAM_USE_MALLOC
+        heap_caps_free(mutex->buffer);
+        mutex->buffer = NULL;
+#endif
+    }
+}
+
+void bt_mesh_mutex_lock(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("%s, Invalid mutex", __func__);
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreTake(mutex->mutex, portMAX_DELAY);
+    }
+}
+
+void bt_mesh_mutex_unlock(bt_mesh_mutex_t *mutex)
+{
+    if (!mutex) {
+        BT_ERR("%s, Invalid mutex", __func__);
+        return;
+    }
+
+    if (mutex->mutex) {
+        xSemaphoreGive(mutex->mutex);
+    }
 }

@@ -120,6 +120,7 @@ typedef struct {
     int if_index;                    /*!< Interface index for which the event is received (left for legacy compilation) */
     esp_netif_t *esp_netif;          /*!< Pointer to corresponding esp-netif object */
     esp_netif_ip6_info_t ip6_info;   /*!< IPv6 address of the interface */
+    int ip_index;                    /*!< IPv6 address index */
 } ip_event_got_ip6_t;
 
 /** Event structure for IP_EVENT_AP_STAIPASSIGNED event */

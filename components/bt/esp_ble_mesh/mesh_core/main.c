@@ -7,52 +7,45 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdbool.h>
-#include <errno.h>
 #include <string.h>
+#include <errno.h>
 
-#include "sdkconfig.h"
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLE_MESH_DEBUG)
-
-#include "mesh_buf.h"
-#include "mesh_trace.h"
-#include "mesh_main.h"
-#include "mesh_hci.h"
 
 #include "adv.h"
 #include "prov.h"
-#include "net.h"
 #include "beacon.h"
 #include "lpn.h"
 #include "friend.h"
 #include "transport.h"
 #include "access.h"
 #include "foundation.h"
-#include "proxy_server.h"
 #include "settings.h"
 #include "mesh.h"
-#include "provisioner_prov.h"
+#include "mesh_hci.h"
+#include "mesh_common.h"
 #include "proxy_client.h"
+#include "proxy_server.h"
+#include "provisioner_prov.h"
 #include "provisioner_main.h"
-
-static volatile bool provisioner_en = false;
 
 #define ACTION_ENTER    0x01
 #define ACTION_SUSPEND  0x02
 #define ACTION_EXIT     0x03
 
-#if CONFIG_BLE_MESH_NODE
+static bool mesh_init = false;
 
 int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
                       u8_t flags, u32_t iv_index, u16_t addr,
                       const u8_t dev_key[16])
 {
-    bool pb_gatt_enabled;
-    int err;
+    bool pb_gatt_enabled = false;
+    int err = 0;
 
     BT_INFO("Primary Element: 0x%04x", addr);
-    BT_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x",
+    BT_INFO("net_idx 0x%04x flags 0x%02x iv_index 0x%04x",
            net_idx, flags, iv_index);
+    BT_INFO("dev_key %s", bt_hex(dev_key, 16));
 
     if (bt_mesh_atomic_test_and_set_bit(bt_mesh.flags, BLE_MESH_VALID)) {
         return -EALREADY;
@@ -142,20 +135,53 @@ void bt_mesh_reset(void)
 
     bt_mesh_comp_unprovision();
 
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_role();
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
         bt_mesh_prov_reset();
     }
 }
 
+bool bt_mesh_is_node(void)
+{
+    return bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_NODE);
+}
+
 bool bt_mesh_is_provisioned(void)
 {
-    return bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID);
+    if (bt_mesh_is_node()) {
+        return bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID);
+    } else {
+        return false;
+    }
+}
+
+bool bt_mesh_is_provisioner(void)
+{
+    return bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_PROVISIONER);
+}
+
+bool bt_mesh_is_provisioner_en(void)
+{
+    if (bt_mesh_is_provisioner()) {
+        return bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
+    } else {
+        return false;
+    }
 }
 
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)
 {
     if (bt_mesh_is_provisioned()) {
         return -EALREADY;
+    }
+
+    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_NODE);
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_store_role();
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
@@ -181,6 +207,12 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
         return -EALREADY;
     }
 
+    bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_NODE);
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_clear_role();
+    }
+
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
             (bearers & BLE_MESH_PROV_ADV)) {
         bt_mesh_beacon_disable();
@@ -195,8 +227,6 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
     return 0;
 }
 
-#endif /* CONFIG_BLE_MESH_NODE */
-
 static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
                           bool vnd, bool primary, void *user_data)
 {
@@ -208,7 +238,7 @@ static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 int bt_mesh_suspend(void)
 {
-    int err;
+    int err = 0;
 
     if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
         return -EINVAL;
@@ -250,7 +280,7 @@ static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 
 int bt_mesh_resume(void)
 {
-    int err;
+    int err = 0;
 
     if (!bt_mesh_atomic_test_bit(bt_mesh.flags, BLE_MESH_VALID)) {
         return -EINVAL;
@@ -279,7 +309,12 @@ int bt_mesh_resume(void)
 int bt_mesh_init(const struct bt_mesh_prov *prov,
                  const struct bt_mesh_comp *comp)
 {
-    int err;
+    int err = 0;
+
+    if (mesh_init == true) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
 
     bt_mesh_k_init();
 
@@ -292,100 +327,171 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
         return err;
     }
 
-    bt_mesh_gatt_init();
-
-#if CONFIG_BLE_MESH_NODE
-    extern struct bt_mesh_gatt_service proxy_svc;
-    if (IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
-        bt_mesh_gatts_service_register(&proxy_svc);
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
+        bt_mesh_gatt_init();
     }
-
-    extern struct bt_mesh_gatt_service prov_svc;
-    if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-        bt_mesh_gatts_service_register(&prov_svc);
-    }
-#endif
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
-#if CONFIG_BLE_MESH_NODE
-        err = bt_mesh_prov_init(prov);
-        if (err) {
-            return err;
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+            err = bt_mesh_prov_init(prov);
+            if (err) {
+                return err;
+            }
         }
-#endif
-#if CONFIG_BLE_MESH_PROVISIONER
-        err = provisioner_prov_init(prov);
-        if (err) {
-            return err;
+        if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+            err = bt_mesh_provisioner_prov_init(prov);
+            if (err) {
+                return err;
+            }
         }
-#endif
     }
 
     bt_mesh_net_init();
     bt_mesh_trans_init();
 
-#if CONFIG_BLE_MESH_NODE
-    /* Changed by Espressif, add random delay (0 ~ 3s) */
-#if defined(CONFIG_BLE_MESH_FAST_PROV)
-    u32_t delay = 0;
-    bt_mesh_rand(&delay, sizeof(u32_t));
-    vTaskDelay((delay % 3000) / portTICK_PERIOD_MS);
-#endif
+    /* Changed by Espressif, add a random delay (0 ~ 3s) */
+    if (IS_ENABLED(CONFIG_BLE_MESH_FAST_PROV)) {
+        u32_t delay = 0;
+        bt_mesh_rand(&delay, sizeof(u32_t));
+        vTaskDelay((delay % 3000) / portTICK_PERIOD_MS);
+    }
+
     bt_mesh_beacon_init();
-#endif
 
     bt_mesh_adv_init();
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
-#if CONFIG_BLE_MESH_NODE
-        bt_mesh_proxy_init();
-#endif
-#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
-    CONFIG_BLE_MESH_GATT_PROXY_CLIENT
-        bt_mesh_proxy_prov_client_init();
-#endif
+        if ((IS_ENABLED(CONFIG_BLE_MESH_NODE) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_SERVER)) {
+            bt_mesh_proxy_init();
+        }
+        if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+            IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+            IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+            bt_mesh_proxy_prov_client_init();
+        }
     }
 
-#if !CONFIG_BLE_MESH_NODE && CONFIG_BLE_MESH_PROVISIONER
-    /* If node & provisioner are both enabled and the
-     * device starts as a node, it must finish provisioning */
-    err = provisioner_upper_init();
-    if (err) {
-        return err;
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+        bt_mesh_provisioner_init();
     }
-#endif
 
-#if defined(CONFIG_BLE_MESH_SETTINGS)
     if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
         bt_mesh_settings_init();
     }
-#endif
 
+    mesh_init = true;
     return 0;
 }
 
-bool bt_mesh_is_provisioner_en(void)
+int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 {
-    return provisioner_en;
-}
+    int err = 0;
 
-/* The following APIs are for fast provisioning */
+    if (param == NULL) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
 
-#if CONFIG_BLE_MESH_PROVISIONER
-int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
-{
-    int err;
-
-    if (bt_mesh_is_provisioner_en()) {
-        BT_WARN("%s, Provisioner is already enabled", __func__);
+    if (mesh_init == false) {
+        BT_WARN("%s, Already", __func__);
         return -EALREADY;
     }
 
-    err = provisioner_upper_init();
+    if (IS_ENABLED(CONFIG_BLE_MESH_NODE) && bt_mesh_is_provisioned()) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV)) {
+            bt_mesh_beacon_disable();
+            bt_mesh_scan_disable();
+        }
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
+            bt_mesh_proxy_prov_disable(true);
+        }
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) && bt_mesh_is_provisioner_en()) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
+            bt_mesh_provisioner_pb_gatt_disable();
+        }
+
+        bt_mesh_scan_disable();
+        bt_mesh_atomic_clear_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROV)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+            err = bt_mesh_prov_deinit();
+            if (err) {
+                return err;
+            }
+        }
+        if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+            err = bt_mesh_provisioner_prov_deinit(param->erase);
+            if (err) {
+                return err;
+            }
+        }
+    }
+
+    bt_mesh_trans_deinit(param->erase);
+    bt_mesh_net_deinit(param->erase);
+
+    bt_mesh_beacon_deinit();
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROXY)) {
+        if (IS_ENABLED(CONFIG_BLE_MESH_NODE)) {
+            bt_mesh_proxy_deinit();
+        }
+    }
+
+    if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+        bt_mesh_proxy_prov_client_deinit();
+    }
+
+    bt_mesh_gatt_deinit();
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER)) {
+        err = bt_mesh_provisioner_deinit(param->erase);
+        if (err) {
+            return err;
+        }
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+        bt_mesh_friend_deinit();
+    }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_LOW_POWER)) {
+        bt_mesh_lpn_deinit();
+    }
+
+    bt_mesh_adv_deinit();
+
+    err = bt_mesh_comp_deregister();
     if (err) {
-        BT_ERR("%s, provisioner_upper_init fail", __func__);
         return err;
     }
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        if (param->erase) {
+            bt_mesh_clear_role();
+        }
+        bt_mesh_settings_deinit();
+    }
+
+    bt_mesh_k_deinit();
+
+    mesh_init = false;
+    return 0;
+}
+
+#if defined(CONFIG_BLE_MESH_PROVISIONER)
+int bt_mesh_provisioner_net_start(bt_mesh_prov_bearer_t bearers)
+{
+    bt_mesh_provisioner_set_prov_bearer(bearers, false);
 
 #if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
@@ -410,42 +516,107 @@ int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
 
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        provisioner_pb_gatt_enable();
+        bt_mesh_provisioner_pb_gatt_enable();
+    }
+
+    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID_PROV);
+
+    if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
+        bt_mesh_beacon_enable();
     }
 
     if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
         bt_mesh_friend_init();
     }
 
-    provisioner_en = true;
-
     return 0;
+}
+
+int bt_mesh_provisioner_enable(bt_mesh_prov_bearer_t bearers)
+{
+    int err = 0;
+
+    if (bt_mesh_is_provisioner_en()) {
+        BT_WARN("%s, Already", __func__);
+        return -EALREADY;
+    }
+
+    err = bt_mesh_provisioner_set_prov_info();
+    if (err) {
+        BT_ERR("%s, Failed to set provisioning info", __func__);
+        return err;
+    }
+
+    err = bt_mesh_provisioner_net_create();
+    if (err) {
+        BT_ERR("%s, Failed to create network", __func__);
+        return err;
+    }
+
+    bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_PROVISIONER);
+
+    if (IS_ENABLED(CONFIG_BLE_MESH_SETTINGS)) {
+        bt_mesh_store_role();
+    }
+
+    return bt_mesh_provisioner_net_start(bearers);
 }
 
 int bt_mesh_provisioner_disable(bt_mesh_prov_bearer_t bearers)
 {
+    bt_mesh_prov_bearer_t enable = 0U;
+
     if (!bt_mesh_is_provisioner_en()) {
-        BT_WARN("%s, Provisioner is already disabled", __func__);
+        BT_WARN("%s, Already", __func__);
         return -EALREADY;
     }
 
+    enable = bt_mesh_provisioner_get_prov_bearer();
+    if (!(enable & bearers)) {
+        BT_ERR("%s, Bearers mismatch", __func__);
+        return -EINVAL;
+    }
+
+    bt_mesh_provisioner_set_prov_bearer(bearers, true);
+
     if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
+            (enable & BLE_MESH_PROV_GATT) &&
             (bearers & BLE_MESH_PROV_GATT)) {
-        provisioner_pb_gatt_disable();
+        bt_mesh_provisioner_pb_gatt_disable();
+#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
+        bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
+                                        BLE_MESH_EXCEP_INFO_MESH_PROV_ADV, NULL);
+#endif
     }
 
-    if ((IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
-            (bearers & BLE_MESH_PROV_ADV)) &&
-            (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT) &&
-             (bearers & BLE_MESH_PROV_GATT))) {
+    if (!(enable & (~bearers))) {
+        /* Provisioner is disabled completely, disable scan here */
         bt_mesh_scan_disable();
-    }
 
-    if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
-        bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
-    }
+#if defined(CONFIG_BLE_MESH_USE_DUPLICATE_SCAN)
+        if (IS_ENABLED(CONFIG_BLE_MESH_PB_ADV) &&
+                (enable & BLE_MESH_PROV_ADV)) {
+            bt_mesh_update_exceptional_list(BLE_MESH_EXCEP_LIST_REMOVE,
+                                            BLE_MESH_EXCEP_INFO_MESH_BEACON, NULL);
+        }
+#endif
 
-    provisioner_en = false;
+        /* Clear corresponding flags */
+        bt_mesh_atomic_and(bt_mesh.flags, ~(BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV)));
+
+        /* When Provisioner is disabled, the device role indicated by bt_mesh.flags
+         * will not be cleared, because when Provisioner is restarted after disabled,
+         * its previous information can be recovered from flash properly.
+         */
+
+        if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
+            bt_mesh_beacon_disable();
+        }
+
+        if (IS_ENABLED(CONFIG_BLE_MESH_FRIEND)) {
+            bt_mesh_friend_clear_net_idx(BLE_MESH_KEY_ANY);
+        }
+    }
 
     return 0;
 }
@@ -460,9 +631,9 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
         return 0x01;
     }
 
-    if ((!provisioner_en && (action == ACTION_SUSPEND || action == ACTION_EXIT)) ||
-            (provisioner_en && (action == ACTION_ENTER))) {
-        BT_WARN("%s, Action is already done", __func__);
+    if ((!bt_mesh_is_provisioner_en() && (action == ACTION_SUSPEND || action == ACTION_EXIT)) ||
+            (bt_mesh_is_provisioner_en() && (action == ACTION_ENTER))) {
+        BT_WARN("%s, Already", __func__);
         return 0x0;
     }
 
@@ -481,13 +652,14 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
             bt_mesh_beacon_disable();
         }
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            provisioner_pb_gatt_enable();
+            bt_mesh_provisioner_pb_gatt_enable();
         }
-        provisioner_set_fast_prov_flag(true);
-        provisioner_en = true;
+        bt_mesh_provisioner_set_prov_bearer(BLE_MESH_PROV_ADV, false);
+        bt_mesh_provisioner_fast_prov_enable(true);
+        bt_mesh_atomic_or(bt_mesh.flags, BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV));
     } else {
         if (IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) {
-            provisioner_pb_gatt_disable();
+            bt_mesh_provisioner_pb_gatt_disable();
         }
         if (bt_mesh_beacon_get() == BLE_MESH_BEACON_ENABLED) {
             bt_mesh_beacon_enable();
@@ -500,11 +672,10 @@ u8_t bt_mesh_set_fast_prov_action(u8_t action)
             bt_mesh_adv_update();
         }
 #endif
-        provisioner_set_fast_prov_flag(false);
-        provisioner_en = false;
+        bt_mesh_atomic_and(bt_mesh.flags, ~(BIT(BLE_MESH_PROVISIONER) | BIT(BLE_MESH_VALID_PROV)));
+        bt_mesh_provisioner_fast_prov_enable(false);
         if (action == ACTION_EXIT) {
-            provisioner_upper_reset_all_nodes();
-            provisioner_prov_reset_all_nodes();
+            bt_mesh_provisioner_remove_node(NULL);
         }
     }
 

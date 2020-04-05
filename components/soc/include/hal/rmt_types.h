@@ -18,11 +18,25 @@
 extern "C" {
 #endif
 
+#include "soc/rmt_caps.h"
+
 /**
- * @brief RMT Channel Type
- *
- */
-typedef rmt_channel_id_t rmt_channel_t;
+* @brief RMT channel ID
+*
+*/
+typedef enum {
+    RMT_CHANNEL_0,  /*!< RMT channel number 0 */
+    RMT_CHANNEL_1,  /*!< RMT channel number 1 */
+    RMT_CHANNEL_2,  /*!< RMT channel number 2 */
+    RMT_CHANNEL_3,  /*!< RMT channel number 3 */
+#if SOC_RMT_CHANNELS_NUM > 4
+    RMT_CHANNEL_4,  /*!< RMT channel number 4 */
+    RMT_CHANNEL_5,  /*!< RMT channel number 5 */
+    RMT_CHANNEL_6,  /*!< RMT channel number 6 */
+    RMT_CHANNEL_7,  /*!< RMT channel number 7 */
+#endif
+    RMT_CHANNEL_MAX /*!< Number of RMT channels */
+} rmt_channel_t;
 
 /**
  * @brief RMT Internal Memory Owner
@@ -39,7 +53,7 @@ typedef enum {
  *
  */
 typedef enum {
-    RMT_BASECLK_REF, /*!< RMT source clock system reference tick, 1MHz by default (not supported in this version) */
+    RMT_BASECLK_REF, /*!< RMT source clock is REF_TICK, 1MHz by default */
     RMT_BASECLK_APB, /*!< RMT source clock is APB CLK, 80Mhz by default */
     RMT_BASECLK_MAX,
 } rmt_source_clk_t;

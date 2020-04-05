@@ -16,13 +16,16 @@
 #include <soc/cpu.h>
 #include <bootloader_utility.h>
 #include <esp_secure_boot.h>
+#include <esp_fault.h>
 #include <esp_log.h>
+#include <esp_attr.h>
 #include <esp_spi_flash.h>
 #include <bootloader_flash.h>
 #include <bootloader_random.h>
 #include <bootloader_sha.h>
 #include "bootloader_util.h"
 #include "bootloader_common.h"
+#include "soc/soc_memory_layout.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/rtc.h"
 #include "esp32/rom/secure_boot.h"
@@ -37,11 +40,11 @@
 */
 #ifdef BOOTLOADER_BUILD
 #ifdef CONFIG_SECURE_SIGNED_ON_BOOT
-#define SECURE_BOOT_CHECK_SIGNATURE
+#define SECURE_BOOT_CHECK_SIGNATURE 1
 #endif
 #else /* !BOOTLOADER_BUILD */
 #ifdef CONFIG_SECURE_SIGNED_ON_UPDATE
-#define SECURE_BOOT_CHECK_SIGNATURE
+#define SECURE_BOOT_CHECK_SIGNATURE 1
 #endif
 #endif
 
@@ -55,18 +58,12 @@ static const char *TAG = "esp_image";
 /* Headroom to ensure between stack SP (at time of checking) and data loaded from flash */
 #define STACK_LOAD_HEADROOM 32768
 
-/* Mmap source address mask */
-#define MMAP_ALIGNED_MASK 0x0000FFFF
-
 #ifdef BOOTLOADER_BUILD
 /* 64 bits of random data to obfuscate loaded RAM with, until verification is complete
    (Means loaded code isn't executable until after the secure boot check.)
 */
 static uint32_t ram_obfs_value[2];
 
-/* Range of IRAM used by the loader, defined in ld script */
-extern int _loader_text_start;
-extern int _loader_text_end;
 #endif
 
 /* Return true if load_addr is an address the bootloader should load into */
@@ -97,7 +94,7 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
 
 static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t checksum_word, esp_image_metadata_t *data);
 
-static esp_err_t __attribute__((unused)) verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
+static esp_err_t __attribute__((unused)) verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest);
 static esp_err_t __attribute__((unused)) verify_simple_hash(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data);
 
 static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_t *part, esp_image_metadata_t *data)
@@ -115,6 +112,11 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     uint32_t checksum_word = ESP_ROM_CHECKSUM_INITIAL;
     uint32_t *checksum = NULL;
     bootloader_sha256_handle_t sha_handle = NULL;
+#if SECURE_BOOT_CHECK_SIGNATURE
+     /* used for anti-FI checks */
+    uint8_t image_digest[HASH_LEN] = { [ 0 ... 31] = 0xEE };
+    uint8_t verified_digest[HASH_LEN] = { [ 0 ... 31 ] = 0x01 };
+#endif
 
     if (data == NULL || part == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -172,6 +174,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     for (int i = 0; i < data->image.segment_count; i++) {
         esp_image_segment_header_t *header = &data->segments[i];
         ESP_LOGV(TAG, "loading segment header %d at offset 0x%x", i, next_addr);
+
         err = process_segment(i, next_addr, header, silent, do_load, sha_handle, checksum);
         if (err != ESP_OK) {
             goto err;
@@ -197,14 +200,14 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
             }
         }
 
-        /* For secure boot on ESP32, we don't calculate SHA or verify signautre on bootloaders.
-           For ESP32S2, we do verify signature on bootloader which includes the SHA calculation.
+        /* For secure boot V1 on ESP32, we don't calculate SHA or verify signature on bootloaders.
+           For Secure Boot V2, we do verify signature on bootloader which includes the SHA calculation.
 
            (For non-secure boot, we don't verify any SHA-256 hash appended to the bootloader because
            esptool.py may have rewritten the header - rely on esptool.py having verified the bootloader at flashing time, instead.)
         */
         bool verify_sha;
-#if CONFIG_SECURE_BOOT_ENABLED && CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_SECURE_BOOT_V2_ENABLED
         verify_sha = true;
 #else // ESP32, or ESP32S2 without secure boot enabled
         verify_sha = (data->start_addr != ESP_BOOTLOADER_OFFSET);
@@ -217,7 +220,7 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
 
 #ifdef SECURE_BOOT_CHECK_SIGNATURE
             // secure boot images have a signature appended
-            err = verify_secure_boot_signature(sha_handle, data);
+            err = verify_secure_boot_signature(sha_handle, data, image_digest, verified_digest);
 #else
             // No secure boot, but SHA-256 can be appended for basic corruption detection
             if (sha_handle != NULL && !esp_cpu_in_ocd_debug_mode()) {
@@ -250,7 +253,28 @@ static esp_err_t image_load(esp_image_load_mode_t mode, const esp_partition_pos_
     }
 
 #ifdef BOOTLOADER_BUILD
-    if (do_load && ram_obfs_value[0] != 0 && ram_obfs_value[1] != 0) { // Need to deobfuscate RAM
+
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
+    /* If signature was checked in bootloader build, verified_digest should equal image_digest
+
+       This is to detect any fault injection that caused signature verification to not complete normally.
+
+       Any attack which bypasses this check should be of limited use as the RAM contents are still obfuscated, therefore we do the check
+       immediately before we deobfuscate.
+
+       Note: the conditions for making this check are the same as for setting verify_sha above, but on ESP32 SB V1 we move the test for
+       "only verify signature in bootloader" into the macro so it's tested multiple times.
+     */
+#if CONFIG_SECURE_BOOT_V2_ENABLED
+    ESP_FAULT_ASSERT(memcmp(image_digest, verified_digest, HASH_LEN) == 0);
+#else // Secure Boot V1 on ESP32, only verify signatures for apps not bootloaders
+    ESP_FAULT_ASSERT(data->start_addr == ESP_BOOTLOADER_OFFSET || memcmp(image_digest, verified_digest, HASH_LEN) == 0);
+#endif
+
+#endif // SECURE_BOOT_CHECK_SIGNATURE
+
+    // Deobfuscate RAM
+    if (do_load && ram_obfs_value[0] != 0 && ram_obfs_value[1] != 0) {
         for (int i = 0; i < data->image.segment_count; i++) {
             uint32_t load_addr = data->segments[i].load_addr;
             if (should_load(load_addr)) {
@@ -336,6 +360,127 @@ static esp_err_t verify_image_header(uint32_t src_addr, const esp_image_header_t
     return err;
 }
 
+#ifdef BOOTLOADER_BUILD
+/* Check the region load_addr - load_end doesn't overlap any memory used by the bootloader, registers, or other invalid memory
+ */
+static bool verify_load_addresses(int segment_index, intptr_t load_addr, intptr_t load_end, bool print_error, bool no_recurse)
+{
+    /* Addresses of static data and the "loader" section of bootloader IRAM, all defined in ld script */
+    const char *reason = NULL;
+    extern int _dram_start, _dram_end, _loader_text_start, _loader_text_end;
+    void *load_addr_p = (void *)load_addr;
+    void *load_end_p = (void *)load_end;
+
+    if (load_end == load_addr) {
+        return true; // zero-length segments are fine
+    }
+    assert(load_end > load_addr); // data_len<16MB is checked in verify_segment_header() which is called before this, so this should always be true
+
+    if (esp_ptr_in_dram(load_addr_p) && esp_ptr_in_dram(load_end_p)) { /* Writing to DRAM */
+        /* Check if we're clobbering the stack */
+        intptr_t sp = (intptr_t)get_sp();
+        if (bootloader_util_regions_overlap(sp - STACK_LOAD_HEADROOM, SOC_ROM_STACK_START,
+                                           load_addr, load_end)) {
+            reason = "overlaps bootloader stack";
+            goto invalid;
+        }
+
+        /* Check if we're clobbering static data
+
+           (_dram_start.._dram_end includes bss, data, rodata sections in DRAM)
+         */
+        if (bootloader_util_regions_overlap((intptr_t)&_dram_start, (intptr_t)&_dram_end, load_addr, load_end)) {
+            reason = "overlaps bootloader data";
+            goto invalid;
+        }
+
+        /* LAST DRAM CHECK (recursive): for D/IRAM, check the equivalent IRAM addresses if needed
+
+           Allow for the possibility that even though both pointers are IRAM, only part of the region is in a D/IRAM
+           section. In which case we recurse to check the part which falls in D/IRAM.
+
+           Note: We start with SOC_DIRAM_DRAM_LOW/HIGH and convert that address to IRAM to account for any reversing of word order
+           (chip-specific).
+         */
+        if (!no_recurse && bootloader_util_regions_overlap(SOC_DIRAM_DRAM_LOW, SOC_DIRAM_DRAM_HIGH, load_addr, load_end)) {
+            intptr_t iram_load_addr, iram_load_end;
+
+            if (esp_ptr_in_diram_dram(load_addr_p)) {
+                iram_load_addr = (intptr_t)esp_ptr_diram_dram_to_iram(load_addr_p);
+            } else {
+                iram_load_addr = (intptr_t)esp_ptr_diram_dram_to_iram((void *)SOC_DIRAM_DRAM_LOW);
+            }
+
+            if (esp_ptr_in_diram_dram(load_end_p)) {
+                iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram(load_end_p);
+            } else {
+                iram_load_end = (intptr_t)esp_ptr_diram_dram_to_iram((void *)SOC_DIRAM_DRAM_HIGH);
+            }
+
+            if (iram_load_end < iram_load_addr) {
+                return verify_load_addresses(segment_index, iram_load_end, iram_load_addr, print_error, true);
+            } else {
+                return verify_load_addresses(segment_index, iram_load_addr, iram_load_end, print_error, true);
+            }
+        }
+    }
+    else if (esp_ptr_in_iram(load_addr_p) && esp_ptr_in_iram(load_end_p)) { /* Writing to IRAM */
+        /* Check for overlap of 'loader' section of IRAM */
+        if (bootloader_util_regions_overlap((intptr_t)&_loader_text_start, (intptr_t)&_loader_text_end,
+                                            load_addr, load_end)) {
+            reason = "overlaps loader IRAM";
+            goto invalid;
+        }
+
+        /* LAST IRAM CHECK (recursive): for D/IRAM, check the equivalent DRAM address if needed
+
+           Allow for the possibility that even though both pointers are IRAM, only part of the region is in a D/IRAM
+           section. In which case we recurse to check the part which falls in D/IRAM.
+           Note: We start with SOC_DIRAM_IRAM_LOW/HIGH and convert that address to DRAM to account for any reversing of word order
+           (chip-specific).
+         */
+        if (!no_recurse && bootloader_util_regions_overlap(SOC_DIRAM_IRAM_LOW, SOC_DIRAM_IRAM_HIGH, load_addr, load_end)) {
+            intptr_t dram_load_addr, dram_load_end;
+
+            if (esp_ptr_in_diram_iram(load_addr_p)) {
+                dram_load_addr = (intptr_t)esp_ptr_diram_iram_to_dram(load_addr_p);
+            } else {
+                dram_load_addr = (intptr_t)esp_ptr_diram_iram_to_dram((void *)SOC_DIRAM_IRAM_LOW);
+            }
+
+            if (esp_ptr_in_diram_iram(load_end_p)) {
+                dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram(load_end_p);
+            } else {
+                dram_load_end = (intptr_t)esp_ptr_diram_iram_to_dram((void *)SOC_DIRAM_IRAM_HIGH);
+            }
+
+            if (dram_load_end < dram_load_addr) {
+                return verify_load_addresses(segment_index, dram_load_end, dram_load_addr, print_error, true);
+            } else {
+                return verify_load_addresses(segment_index, dram_load_addr, dram_load_end, print_error, true);
+            }
+        }
+    /* Sections entirely in RTC memory won't overlap with a vanilla bootloader but are valid load addresses, thus skipping them from the check */
+    } else if (esp_ptr_in_rtc_iram_fast(load_addr_p) && esp_ptr_in_rtc_iram_fast(load_end_p)){
+        return true;
+    } else if (esp_ptr_in_rtc_dram_fast(load_addr_p) && esp_ptr_in_rtc_dram_fast(load_end_p)){
+        return true;
+    } else if (esp_ptr_in_rtc_slow(load_addr_p) && esp_ptr_in_rtc_slow(load_end_p)) {
+        return true;
+    } else { /* Not a DRAM or an IRAM or RTC Fast IRAM, RTC Fast DRAM or RTC Slow address */
+        reason = "bad load address range";
+        goto invalid;
+    }
+    return true;
+
+ invalid:
+    if (print_error) {
+        ESP_LOGE(TAG, "Segment %d 0x%08x-0x%08x invalid: %s", segment_index, load_addr, load_end, reason);
+    }
+    return false;
+}
+#endif // BOOTLOADER_BUILD
+
 static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segment_header_t *header, bool silent, bool do_load, bootloader_sha256_handle_t sha_handle, uint32_t *checksum)
 {
     esp_err_t err;
@@ -379,33 +524,8 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 #ifdef BOOTLOADER_BUILD
     /* Before loading segment, check it doesn't clobber bootloader RAM. */
     if (do_load && data_len > 0) {
-        const intptr_t load_end = load_addr + data_len;
-        if (load_end < (intptr_t) SOC_DRAM_HIGH) {
-            /* Writing to DRAM */
-            intptr_t sp = (intptr_t)get_sp();
-            if (load_end > sp - STACK_LOAD_HEADROOM) {
-                /* Bootloader .data/.rodata/.bss is above the stack, so this
-                 * also checks that we aren't overwriting these segments.
-                 *
-                 * TODO: This assumes specific arrangement of sections we have
-                 * in the ESP32. Rewrite this in a generic way to support other
-                 * layouts.
-                 */
-                ESP_LOGE(TAG, "Segment %d end address 0x%08x too high (bootloader stack 0x%08x limit 0x%08x)",
-                         index, load_end, sp, sp - STACK_LOAD_HEADROOM);
-                return ESP_ERR_IMAGE_INVALID;
-            }
-        } else {
-            /* Writing to IRAM */
-            const intptr_t loader_iram_start = (intptr_t) &_loader_text_start;
-            const intptr_t loader_iram_end = (intptr_t) &_loader_text_end;
-
-            if (bootloader_util_regions_overlap(loader_iram_start, loader_iram_end,
-                                                load_addr, load_end)) {
-                ESP_LOGE(TAG, "Segment %d (0x%08x-0x%08x) overlaps bootloader IRAM (0x%08x-0x%08x)",
-                         index, load_addr, load_end, loader_iram_start, loader_iram_end);
-                return ESP_ERR_IMAGE_INVALID;
-            }
+        if (!verify_load_addresses(index, load_addr, load_addr + data_len, true, false)) {
+            return ESP_ERR_IMAGE_INVALID;
         }
     }
 #endif // BOOTLOADER_BUILD
@@ -415,6 +535,10 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 
     int32_t data_len_remain = data_len;
     while (data_len_remain > 0) {
+#if SECURE_BOOT_CHECK_SIGNATURE && defined(BOOTLOADER_BUILD)
+        /* Double check the address verification done above */
+        ESP_FAULT_ASSERT(!do_load || verify_load_addresses(0, load_addr, load_addr + data_len_remain, false, false));
+#endif
         uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
         /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
         data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
@@ -440,7 +564,7 @@ static esp_err_t process_segment_data(intptr_t load_addr, uint32_t data_addr, ui
 {
     // If we are not loading, and the checksum is empty, skip processing this
     // segment for data
-    if(!do_load && checksum == NULL) {
+    if (!do_load && checksum == NULL) {
         ESP_LOGD(TAG, "skipping checksum for segment");
         return ESP_OK;
     }
@@ -599,7 +723,7 @@ static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t
     length = (length + 15) & ~15; // Pad to next full 16 byte block
 
     // Verify checksum
-    uint8_t buf[16];
+    WORD_ALIGNED_ATTR uint8_t buf[16];
     esp_err_t err = bootloader_flash_read(data->start_addr + unpadded_length, buf, length - unpadded_length, true);
     uint8_t calc = buf[length - unpadded_length - 1];
     uint8_t checksum = (checksum_word >> 24)
@@ -623,9 +747,9 @@ static esp_err_t verify_checksum(bootloader_sha256_handle_t sha_handle, uint32_t
     return ESP_OK;
 }
 
-static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data)
+static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_handle, esp_image_metadata_t *data, uint8_t *image_digest, uint8_t *verified_digest)
 {
-    uint8_t image_hash[HASH_LEN] = { 0 };
+#ifdef SECURE_BOOT_CHECK_SIGNATURE
     uint32_t end = data->start_addr + data->image_len;
 
     ESP_LOGI(TAG, "Verifying image signature...");
@@ -638,25 +762,36 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         bootloader_munmap(simple_hash);
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2
-    // Pad to 4096 byte sector boundary
-    if (end % FLASH_SECTOR_SIZE != 0) {
-        uint32_t pad_len = FLASH_SECTOR_SIZE - (end % FLASH_SECTOR_SIZE);
-        const void *padding = bootloader_mmap(end, pad_len);
-        bootloader_sha256_data(sha_handle, padding, pad_len);
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+    // End of the image needs to be padded all the way to a 4KB boundary, after the simple hash
+    // (for apps they are usually already padded due to --secure-pad-v2, only a problem if this option was not used.)
+    uint32_t padded_end = (end + FLASH_SECTOR_SIZE - 1) & ~(FLASH_SECTOR_SIZE-1);
+    if (padded_end > end) {
+        const void *padding = bootloader_mmap(end, padded_end - end);
+        bootloader_sha256_data(sha_handle, padding, padded_end - end);
         bootloader_munmap(padding);
-        end += pad_len;
+        end = padded_end;
     }
 #endif
 
-    bootloader_sha256_finish(sha_handle, image_hash);
+    bootloader_sha256_finish(sha_handle, image_digest);
 
     // Log the hash for debugging
-    bootloader_debug_buffer(image_hash, HASH_LEN, "Calculated secure boot hash");
+    bootloader_debug_buffer(image_digest, HASH_LEN, "Calculated secure boot hash");
 
     // Use hash to verify signature block
-    const esp_secure_boot_sig_block_t *sig_block = bootloader_mmap(data->start_addr + data->image_len, sizeof(esp_secure_boot_sig_block_t));
-    esp_err_t err = esp_secure_boot_verify_signature_block(sig_block, image_hash);
+    esp_err_t err = ESP_ERR_IMAGE_INVALID;
+    const void *sig_block;
+#ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+    ESP_FAULT_ASSERT(memcmp(image_digest, verified_digest, HASH_LEN) != 0); /* sanity check that these values start differently */
+    sig_block = bootloader_mmap(data->start_addr + data->image_len, sizeof(esp_secure_boot_sig_block_t));
+    err = esp_secure_boot_verify_ecdsa_signature_block(sig_block, image_digest, verified_digest);
+#elif CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+    ESP_FAULT_ASSERT(memcmp(image_digest, verified_digest, HASH_LEN) != 0);  /* sanity check that these values start differently */
+    sig_block = bootloader_mmap(end, sizeof(ets_secure_boot_signature_t));
+    err = esp_secure_boot_verify_rsa_signature_block(sig_block, image_digest, verified_digest);
+#endif
+
     bootloader_munmap(sig_block);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure boot signature verification failed");
@@ -677,11 +812,12 @@ static esp_err_t verify_secure_boot_signature(bootloader_sha256_handle_t sha_han
         return ESP_ERR_IMAGE_INVALID;
     }
 
-#if CONFIG_IDF_TARGET_ESP32S2
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
     // Adjust image length result to include the appended signature
     data->image_len = end - data->start_addr + sizeof(ets_secure_boot_signature_t);
 #endif
 
+#endif // SECURE_BOOT_CHECK_SIGNATURE
     return ESP_OK;
 }
 

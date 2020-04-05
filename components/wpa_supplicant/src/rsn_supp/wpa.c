@@ -399,12 +399,9 @@ static int wpa_supplicant_get_pmk(struct wpa_sm *sm,
             if (sm->proto == WPA_PROTO_RSN &&
                     !wpa_key_mgmt_suite_b(sm->key_mgmt) &&
                     !wpa_key_mgmt_ft(sm->key_mgmt)) {
-                sa = pmksa_cache_add(sm->pmksa,
-                        sm->pmk, pmk_len,
-                        NULL, 0,
-						     src_addr, sm->own_addr,
-						     sm->network_ctx,
-						     sm->key_mgmt);
+                sa = pmksa_cache_add(sm->pmksa, sm->pmk, pmk_len,
+                                     NULL, NULL, 0, src_addr, sm->own_addr,
+                                     sm->network_ctx, sm->key_mgmt);
 			}
 			if (!sm->cur_pmksa && pmkid &&
 			    pmksa_cache_get(sm->pmksa, src_addr, pmkid, NULL))
@@ -590,8 +587,8 @@ void   wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
     if (res)
         goto failed;
 
-    if (esp_wifi_sta_prof_is_wpa2_internal() 
-            && esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT) {
+    if (esp_wifi_sta_prof_is_wpa2_internal() &&
+        esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT) {
         pmksa_cache_set_current(sm, NULL, sm->bssid, 0, 0);
     }
 
@@ -1991,7 +1988,7 @@ void wpa_sm_set_state(enum wpa_states state)
  * Configure the PMK for WPA state machine.
  */
 void wpa_sm_set_pmk(struct wpa_sm *sm, const u8 *pmk, size_t pmk_len,
-		    const u8 *bssid)
+                    const u8 *pmkid, const u8 *bssid)
 {
 	if (sm == NULL)
 		return;
@@ -2006,9 +2003,9 @@ void wpa_sm_set_pmk(struct wpa_sm *sm, const u8 *pmk, size_t pmk_len,
 #endif /* CONFIG_IEEE80211R */
 
 	if (bssid) {
-		pmksa_cache_add(sm->pmksa, pmk, pmk_len, NULL, 0,
-				bssid, sm->own_addr,
-				sm->network_ctx, sm->key_mgmt);
+		pmksa_cache_add(sm->pmksa, pmk, pmk_len, pmkid, NULL, 0,
+                        bssid, sm->own_addr,
+                        sm->network_ctx, sm->key_mgmt);
 	}
 }
 
@@ -2090,12 +2087,18 @@ void wpa_set_profile(u32 wpa_proto, u8 auth_mode)
     }
 }
 
-void wpa_set_pmk(uint8_t *pmk)
+void wpa_set_pmk(uint8_t *pmk, const u8 *pmkid, bool cache_pmksa)
 {
     struct wpa_sm *sm = &gWpaSm;
     
     memcpy(sm->pmk, pmk, PMK_LEN);
     sm->pmk_len = PMK_LEN;
+
+    if (cache_pmksa) {
+        pmksa_cache_add(sm->pmksa, pmk, PMK_LEN, pmkid, NULL, 0,
+                        sm->bssid, sm->own_addr,
+                        sm->network_ctx, sm->key_mgmt);
+    }
 }
 
 int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
@@ -2112,9 +2115,10 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
     memcpy(sm->own_addr, macddr, ETH_ALEN);
     memcpy(sm->bssid, bssid, ETH_ALEN);
     sm->ap_notify_completed_rsne = esp_wifi_sta_is_ap_notify_completed_rsne_internal();
-        
-    if (esp_wifi_sta_prof_is_wpa2_internal() 
-            && esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT) {
+
+    if (sm->key_mgmt == WPA_KEY_MGMT_SAE ||
+        (esp_wifi_sta_prof_is_wpa2_internal() &&
+         esp_wifi_sta_get_prof_authmode_internal() == WPA2_AUTH_ENT)) {
         pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, 0);
         wpa_sm_set_pmk_from_pmksa(sm);
     }
@@ -2153,7 +2157,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
      *    PMK.
      */
     if (sm->key_mgmt == WPA_KEY_MGMT_SAE)
-	return;
+        return;
 
     /* This is really SLOW, so just re cacl while reset param */
     if (esp_wifi_sta_get_reset_param_internal() != 0) {
@@ -2356,6 +2360,14 @@ bool wpa_sta_in_4way_handshake(void)
 bool wpa_sta_is_cur_pmksa_set(void) {
     struct wpa_sm *sm = &gWpaSm;
     return (pmksa_cache_get_current(sm) != NULL);
+}
+
+void wpa_sta_clear_curr_pmksa(void) {
+    struct wpa_sm *sm = &gWpaSm;
+
+    if (sm->pmksa)
+        pmksa_cache_flush(sm->pmksa, NULL, sm->pmk, sm->pmk_len);
+    pmksa_cache_clear_current(sm);
 }
 
 #endif // ESP_SUPPLICANT

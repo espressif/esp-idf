@@ -361,95 +361,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
     .endm
 
 
-/*
---------------------------------------------------------------------------------
-  Panic handler.
-  Should be reached by call0 (preferable) or jump only. If call0, a0 says where
-  from. If on simulator, display panic message and abort, else loop indefinitely.
---------------------------------------------------------------------------------
-*/
-
-    .section .iram1,"ax"
-    .global panicHandler
-
-    .global     _xt_panic
-    .type       _xt_panic,@function
-    .align      4
-    .literal_position
-    .align      4
-
-_xt_panic:
-    /* Allocate exception frame and save minimal context. */
-    mov     a0, sp
-    addi    sp, sp, -XT_STK_FRMSZ
-    s32i    a0, sp, XT_STK_A1
-    #if XCHAL_HAVE_WINDOWED
-    s32e    a0, sp, -12                     /* for debug backtrace */
-    #endif
-    rsr     a0, PS                          /* save interruptee's PS */
-    s32i    a0, sp, XT_STK_PS
-    rsr     a0, EPC_1                       /* save interruptee's PC */
-    s32i    a0, sp, XT_STK_PC
-    #if XCHAL_HAVE_WINDOWED
-    s32e    a0, sp, -16                     /* for debug backtrace */
-    #endif
-    s32i    a12, sp, XT_STK_A12             /* _xt_context_save requires A12- */
-    s32i    a13, sp, XT_STK_A13             /* A13 to have already been saved */
-    call0   _xt_context_save
-
-    /* Save exc cause and vaddr into exception frame */
-    rsr     a0, EXCCAUSE
-    s32i    a0, sp, XT_STK_EXCCAUSE
-    rsr     a0, EXCVADDR
-    s32i    a0, sp, XT_STK_EXCVADDR
-
-    /* _xt_context_save seems to save the current a0, but we need the interuptees a0. Fix this. */
-    rsr     a0, EXCSAVE_1                   /* save interruptee's a0 */
-
-    s32i    a0, sp, XT_STK_A0
-
-    /* Set up PS for C, disable all interrupts except NMI and debug, and clear EXCM. */
-    movi    a0, PS_INTLEVEL(5) | PS_UM | PS_WOE
-    wsr     a0, PS
-
-    //Call panic handler
-    mov     a6,sp
-    call4 panicHandler
-
-
-    .align 4
-//Call using call0. Prints the hex char in a2. Kills a3, a4, a5
-panic_print_hex:
-    movi a3,0x60000000
-    movi a4,8
-panic_print_hex_loop:
-    l32i a5, a3, 0x1c
-    extui a5, a5, 16, 8
-    bgei a5,64,panic_print_hex_loop
-
-    srli a5,a2,28
-    bgei a5,10,panic_print_hex_a
-    addi a5,a5,'0'
-    j panic_print_hex_ok
-panic_print_hex_a:
-    addi a5,a5,'A'-10
-panic_print_hex_ok:
-    s32i a5,a3,0
-    slli a2,a2,4
-
-    addi a4,a4,-1
-    bnei a4,0,panic_print_hex_loop
-    movi a5,' '
-    s32i a5,a3,0
-
-    ret
-
-
-
     .section    .rodata, "a"
     .align      4
-
-
 
 /*
 --------------------------------------------------------------------------------
@@ -611,6 +524,11 @@ _UserExceptionVector:
 --------------------------------------------------------------------------------
 */
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    .global   LoadStoreErrorHandler
+    .global   AlignmentErrorHandler
+#endif
+
     .section .iram1,"ax"
 
     #if XCHAL_HAVE_WINDOWED
@@ -632,6 +550,20 @@ _xt_to_coproc_exc:
     /* never returns here - call0 is used as a jump (see note at top) */
     #endif
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    .align      4
+_call_loadstore_handler:
+    call0   LoadStoreErrorHandler
+    /* This will return only if wrong opcode or address out of range*/
+    j       .LS_exit
+
+    .align      4
+_call_alignment_handler:
+    call0   AlignmentErrorHandler
+    /* This will return only if wrong opcode or address out of range*/
+    addi    a0, a0, 1
+    j       .LS_exit
+#endif
 
 /*
 --------------------------------------------------------------------------------
@@ -661,6 +593,15 @@ _xt_user_exc:
     #endif
     beqi    a0, EXCCAUSE_SYSCALL, _xt_to_syscall_exc
 
+#ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+    beqi    a0, EXCCAUSE_LOAD_STORE_ERROR, _call_loadstore_handler
+
+    addi    a0, a0, -1
+    beqi    a0, 8, _call_alignment_handler
+    addi    a0, a0, 1
+.LS_exit:
+#endif
+    
     /* Handle all other exceptions. All can have user-defined handlers. */
     /* NOTE: we'll stay on the user stack for exception handling.       */
 

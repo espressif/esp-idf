@@ -125,6 +125,9 @@ extern "C" {
 #define ESP_ERR_MESH_DISCARD_DUPLICATE    (ESP_ERR_MESH_BASE + 20)   /**< discard the packet due to the duplicate sequence number */
 #define ESP_ERR_MESH_DISCARD              (ESP_ERR_MESH_BASE + 21)   /**< discard the packet */
 #define ESP_ERR_MESH_VOTING               (ESP_ERR_MESH_BASE + 22)   /**< vote in progress */
+#define ESP_ERR_MESH_XMIT                 (ESP_ERR_MESH_BASE + 23)   /**< XMIT */
+#define ESP_ERR_MESH_QUEUE_READ           (ESP_ERR_MESH_BASE + 24)   /**< error in reading queue */
+#define ESP_ERR_MESH_INACTIVE             (ESP_ERR_MESH_BASE + 25)   /**< mesh network is not active */
 
 /**
  * @brief Flags bitmap for esp_mesh_send() and esp_mesh_recv()
@@ -150,6 +153,12 @@ extern "C" {
 #define MESH_ASSOC_FLAG_NETWORK_FREE        (0x08)     /**< no root in current network */
 #define MESH_ASSOC_FLAG_ROOTS_FOUND         (0x20)     /**< root conflict is found */
 #define MESH_ASSOC_FLAG_ROOT_FIXED          (0x40)     /**< fixed root */
+
+
+/**
+ * @brief Mesh PS (Power Save) duty cycle type
+ */
+#define MESH_PS_DEVICE_DUTY_REQUEST         (0x01)    /**< requests to join a network PS without specifying a duty cycle */
 
 /*******************************************************
  *                Enumerations
@@ -251,6 +260,14 @@ typedef enum {
     MESH_REASON_EMPTY_PASSWORD,             /**< use an empty password to connect to an encrypted parent */
     MESH_REASON_PARENT_UNENCRYPTED,         /**< connect to an unencrypted parent/router */
 } mesh_disconnect_reason_t;
+
+/**
+ * @brief Mesh topology
+ */
+typedef enum {
+    MESH_TOPO_TREE,                         /**< tree topology */
+    MESH_TOPO_CHAIN,                        /**< chain topology */
+} esp_mesh_topology_t;
 
 /*******************************************************
  *                Structures
@@ -413,7 +430,6 @@ typedef union {
                                                                 packets out. If not, devices had better to wait until this state changes to be
                                                                 MESH_TODS_REACHABLE. */
     mesh_event_vote_started_t vote_started;                /**< vote started */
-    //mesh_event_root_got_ip_t got_ip;                       /**< root obtains IP address */
     mesh_event_root_address_t root_addr;                   /**< root address */
     mesh_event_root_switch_req_t switch_req;               /**< root switch request */
     mesh_event_root_conflict_t root_conflict;              /**< other powerful root */
@@ -583,6 +599,7 @@ esp_err_t esp_mesh_start(void);
  *             - Delete TX and RX queues.
  *             - Release resources.
  *             - Restore Wi-Fi softAP to default settings if Wi-Fi dual mode is enabled.
+ *             - Set Wi-Fi power save type to WIFI_PS_NONE.
  *
  * @return
  *    - ESP_OK
@@ -1000,7 +1017,7 @@ bool esp_mesh_get_self_organized(void);
 esp_err_t esp_mesh_waive_root(const mesh_vote_t *vote, int reason);
 
 /**
- * @brief      Set vote percentage threshold for approval of being a root
+ * @brief      Set vote percentage threshold for approval of being a root (default:0.9)
  *             - During the networking, only obtaining vote percentage reaches this threshold,
  *             the device could be a root.
  *
@@ -1453,6 +1470,71 @@ esp_err_t esp_mesh_get_router_bssid(uint8_t *router_bssid);
  * @return     the TSF time
  */
 int64_t esp_mesh_get_tsf_time(void);
+
+/**
+ * @brief      Set mesh topology. The default value is MESH_TOPO_TREE
+ *             - MESH_TOPO_CHAIN supports up to 1000 layers
+ *
+ * @attention  This API shall be called before mesh is started
+ *
+ * @param[in]  topo  MESH_TOPO_TREE or MESH_TOPO_CHAIN
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_MESH_ERR_ARGUMENT
+ *    - ESP_ERR_MESH_NOT_ALLOWED
+ */
+esp_err_t esp_mesh_set_topology(esp_mesh_topology_t topo);
+
+/**
+ * @brief      Get mesh topology
+ *
+ * @return     MESH_TOPO_TREE or MESH_TOPO_CHAIN
+ */
+esp_mesh_topology_t esp_mesh_get_topology(void);
+
+/**
+ * @brief      Check whether the mesh network is in active state
+ *             - If the mesh network is not in active state, mesh devices will neither transmit nor receive frames.
+ *             - If power save mode of the mesh network is enabled, devices should check whether the network is active before
+ *             sending any packets. (i.e. before calling esp_mesh_send()).
+ *             - Power save mode is enabled by setting the PS type to WIFI_PS_MIN_MODEM for all devices before mesh is started.
+ *
+ * @return     true/false
+ */
+bool esp_mesh_is_network_active(void);
+
+/**
+ * @brief      Set device duty cycle and type
+ *
+ * @attention  This API can be called at any time after mesh is initialized.
+ *
+ * @param[in]  dev_duty  device duty cycle
+ * @param[in]  dev_duty_type  device PS duty cycle type
+ *
+ * @return
+ *    - ESP_OK
+ *    - ESP_FAIL
+ */
+esp_err_t esp_mesh_set_active_duty_cycle(int dev_duty, int dev_duty_type);
+
+/**
+ * @brief      Get device duty cycle and type
+ *
+ * @param[out] dev_duty  device duty cycle
+ * @param[out] dev_duty_type  device PS duty cycle type
+ *
+ * @return
+ *    - ESP_OK
+ */
+esp_err_t esp_mesh_get_active_duty_cycle(int* dev_duty, int* dev_duty_type);
+
+/**
+ * @brief      Get the running active duty cycle
+ *
+ * @return     the running active duty cycle
+ */
+int esp_mesh_get_running_active_duty_cycle(void);
 
 #ifdef __cplusplus
 }

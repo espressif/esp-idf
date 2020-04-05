@@ -38,7 +38,7 @@ SECTIONS
     *libbootloader_support.a:secure_boot_signatures.*(.literal .text .literal.* .text.*)
     *libmicro-ecc.a:*.*(.literal .text .literal.* .text.*)
     *libspi_flash.a:*.*(.literal .text .literal.* .text.*)
-    *libsoc.a:rtc_wdt.*(.literal .text .literal.* .text.*)
+    *libsoc.a:wdt_hal_iram.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)
@@ -59,6 +59,7 @@ SECTIONS
   .dram0.bss (NOLOAD) :
   {
     . = ALIGN (8);
+    _dram_start = ABSOLUTE(.);
     _bss_start = ABSOLUTE(.);
     *(.dynsbss)
     *(.sbss)
@@ -135,7 +136,7 @@ SECTIONS
     *(.gnu.linkonce.lit4.*)
     _lit4_end = ABSOLUTE(.);
     . = ALIGN(4);
-    _heap_start = ABSOLUTE(.);
+    _dram_end = ABSOLUTE(.);
   } >dram_seg
 
   .iram.text :

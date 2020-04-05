@@ -20,7 +20,10 @@ extern "C" {
 
 #include "esp_system.h"
 
-#define TG0_WDT_TICK_US 500
+#define MWDT0_TICK_PRESCALER    40000
+#define MWDT0_TICKS_PER_US      500
+#define MWDT1_TICK_PRESCALER    40000
+#define MWDT1_TICKS_PER_US      500
 
 /**
  * @brief  Internal function to restart PRO and APP CPUs.

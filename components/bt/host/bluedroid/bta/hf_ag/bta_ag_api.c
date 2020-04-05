@@ -122,7 +122,7 @@ void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,tBTA_AG_FEAT f
         p_buf->app_id = app_id;
         for (i = 0; i < BTA_AG_NUM_IDX; i++) {
             if(p_service_names[i]) {
-                BCM_STRNCPY_S(p_buf->p_name[i], BTA_SERVICE_NAME_LEN+1, p_service_names[i], BTA_SERVICE_NAME_LEN);
+                BCM_STRNCPY_S(p_buf->p_name[i], p_service_names[i], BTA_SERVICE_NAME_LEN);
                 p_buf->p_name[i][BTA_SERVICE_NAME_LEN] = 0;
             } else {
                 p_buf->p_name[i][0] = 0;

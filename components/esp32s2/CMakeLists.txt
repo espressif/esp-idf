@@ -16,19 +16,16 @@ else()
              "cpu_start.c"
              "crosscore_int.c"
              "dport_access.c"
-             "dport_panic_highint_hdl.S"
              "hw_random.c"
-             "int_wdt.c"
              "intr_alloc.c"
-             "panic.c"
              "pm_esp32s2.c"
              "pm_trace.c"
-             "reset_reason.c"
              "sleep_modes.c"
              "spiram.c"
              "spiram_psram.c"
              "system_api_esp32s2.c"
-             "task_wdt.c")
+             "esp_crypto_lock.c"
+             "esp_hmac.c")
 
     set(include_dirs "include")
 
@@ -68,7 +65,7 @@ else()
     #symbols in it.
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u ld_include_panic_highint_hdl")
 
-    idf_build_get_property(config_dir CONFIG_DIR)    
+    idf_build_get_property(config_dir CONFIG_DIR)
     # Preprocess esp32s2.ld linker script to include configuration, becomes esp32s2_out.ld
     set(LD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ld)
     add_custom_command(

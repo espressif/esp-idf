@@ -177,41 +177,36 @@ void app_main(void)
     touch_pad_denoise_t denoise = {
         /* The bits to be cancelled are determined according to the noise level. */
         .grade = TOUCH_PAD_DENOISE_BIT4,
-        .cap_level = TOUCH_PAD_DENOISE_CAP_L7,
+        .cap_level = TOUCH_PAD_DENOISE_CAP_L4,
     };
     touch_pad_denoise_set_config(&denoise);
     touch_pad_denoise_enable();
     printf("Denoise function init\n");
     /* Filter setting */
     touch_filter_config_t filter_info = {
-        .mode = TOUCH_PAD_FILTER_IIR_8,
+        .mode = TOUCH_PAD_FILTER_IIR_16,
         .debounce_cnt = 1,      // 1 time count.
         .hysteresis_thr = 3,    // 3%
         .noise_thr = 0,         // 50%
         .noise_neg_thr = 0,     // 50%
         .neg_noise_limit = 10,  // 10 time count.
         .jitter_step = 4,       // use for jitter mode.
+        .smh_lvl = TOUCH_PAD_SMOOTH_IIR_2,
     };
     touch_pad_filter_set_config(&filter_info);
     touch_pad_filter_enable();
-    touch_pad_filter_reset_baseline(TOUCH_PAD_NUM9);
     printf("touch pad filter init %d\n", TOUCH_PAD_FILTER_IIR_8);
     /* Set sleep touch pad. */
-    touch_pad_sleep_channel_t slp_config = {
-        .touch_num = TOUCH_PAD_NUM9,
-        .sleep_pad_threshold = TOUCH_PAD_THRESHOLD_MAX,
-        .en_proximity = false,
-    };
-    touch_pad_sleep_channel_config(&slp_config);
+    touch_pad_sleep_channel_enable(TOUCH_PAD_NUM9, true);
+    touch_pad_sleep_channel_enable_proximity(TOUCH_PAD_NUM9, false);
     /* Enable touch sensor clock. Work mode is "timer trigger". */
     touch_pad_set_fsm_mode(TOUCH_FSM_MODE_TIMER);
     touch_pad_fsm_start();
     vTaskDelay(100 / portTICK_RATE_MS);
     /* read sleep touch pad value */
     uint32_t touch_value;
-    touch_pad_sleep_channel_read_baseline(&touch_value);
-    slp_config.sleep_pad_threshold = touch_value * 0.1;
-    touch_pad_sleep_channel_config(&slp_config); //10%
+    touch_pad_sleep_channel_read_smooth(TOUCH_PAD_NUM9, &touch_value);
+    touch_pad_sleep_set_threshold(TOUCH_PAD_NUM9, touch_value * 0.1); //10%
     printf("test init: touch pad [%d] slp %d, thresh %d\n",
         TOUCH_PAD_NUM9, touch_value, (uint32_t)(touch_value * 0.1));
 #endif

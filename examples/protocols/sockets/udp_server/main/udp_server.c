@@ -31,28 +31,24 @@ static void udp_server_task(void *pvParameters)
 {
     char rx_buffer[128];
     char addr_str[128];
-    int addr_family;
-    int ip_protocol;
+    int addr_family = (int)pvParameters;
+    int ip_protocol = 0;
+    struct sockaddr_in6 dest_addr;
 
     while (1) {
 
-#ifdef CONFIG_EXAMPLE_IPV4
-        struct sockaddr_in dest_addr;
-        dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-        dest_addr.sin_family = AF_INET;
-        dest_addr.sin_port = htons(PORT);
-        addr_family = AF_INET;
-        ip_protocol = IPPROTO_IP;
-        inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
-#else // IPV6
-        struct sockaddr_in6 dest_addr;
-        bzero(&dest_addr.sin6_addr.un, sizeof(dest_addr.sin6_addr.un));
-        dest_addr.sin6_family = AF_INET6;
-        dest_addr.sin6_port = htons(PORT);
-        addr_family = AF_INET6;
-        ip_protocol = IPPROTO_IPV6;
-        inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
-#endif
+        if (addr_family == AF_INET) {
+            struct sockaddr_in *dest_addr_ip4 = (struct sockaddr_in *)&dest_addr;
+            dest_addr_ip4->sin_addr.s_addr = htonl(INADDR_ANY);
+            dest_addr_ip4->sin_family = AF_INET;
+            dest_addr_ip4->sin_port = htons(PORT);
+            ip_protocol = IPPROTO_IP;
+        } else if (addr_family == AF_INET6) {
+            bzero(&dest_addr.sin6_addr.un, sizeof(dest_addr.sin6_addr.un));
+            dest_addr.sin6_family = AF_INET6;
+            dest_addr.sin6_port = htons(PORT);
+            ip_protocol = IPPROTO_IPV6;
+        }
 
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
         if (sock < 0) {
@@ -60,6 +56,16 @@ static void udp_server_task(void *pvParameters)
             break;
         }
         ESP_LOGI(TAG, "Socket created");
+
+#if defined(CONFIG_EXAMPLE_IPV4) && defined(CONFIG_EXAMPLE_IPV6)
+        if (addr_family == AF_INET6) {
+            // Note that by default IPV6 binds to both protocols, it is must be disabled
+            // if both protocols used at the same time (used in CI)
+            int opt = 1;
+            setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+            setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY, &opt, sizeof(opt));
+        }
+#endif
 
         int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
         if (err < 0) {
@@ -121,5 +127,11 @@ void app_main(void)
      */
     ESP_ERROR_CHECK(example_connect());
 
-    xTaskCreate(udp_server_task, "udp_server", 4096, NULL, 5, NULL);
+#ifdef CONFIG_EXAMPLE_IPV4
+    xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET, 5, NULL);
+#endif
+#ifdef CONFIG_EXAMPLE_IPV6
+    xTaskCreate(udp_server_task, "udp_server", 4096, (void*)AF_INET6, 5, NULL);
+#endif
+
 }

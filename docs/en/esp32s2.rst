@@ -1,14 +1,16 @@
 ESP32-S2 Preview Support
 ========================
 
-The current master branch of ESP-IDF (pre-V4.2) contains preview support for ESP32-S2.
+The current master branch of ESP-IDF (pre-v4.2) contains preview support for ESP32-S2.
 
-Software support is still being developed ahead of the final ESP32-S2 release (see :ref:`esp32s2-limitations` and :ref:`esp32s2-roadmap` sections below).
+..note: Support for the ESP32-S2beta chip is included in ESP-IDF v4.1 as a preview only. In ESP-IDF v4.2 (this version) it has been replaced by ESP32-S2 (non-beta) chip support.
+
+Software support and documentation for ESP32-S2 chip is still being developed. See :ref:`esp32s2-limitations` section below.
 
 Documentation
 ^^^^^^^^^^^^^
 
-Except where it specifically mentions ESP32-S2, this version of the ESP-IDF Programming Guide is written for ESP32 only. Most software APIs and components are the same or very similar for ESP32-S2, but differences may not be documented yet.
+You are viewing the version of the ESP-IDF Programming Guide that describes ESP32-S2 support. However, as this version is still under development then there may be some changes from ESP32 that are not yet correctly documented here. If you find documentation that needs updating, please use the "Provide feedback about this document" link at the bottom of the page to tell us about it.
 
 Setting up for ESP32-S2
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -22,12 +24,7 @@ The toolchain tuple is `xtensa-esp32s2-elf-`, for example the GCC compiler for t
 Manual toolchain URLs
 ---------------------
 
-If not using ``install.sh`` or ``install.bat``, you can download the manual toolchain manually from here:
-
-- `Windows <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-win32.zip>`_
-- `macOS <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-macos.tar.gz>`_
-- `Linux 64-bit x86 <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-amd64.tar.gz>`_
-- `Linux 32-bit x86 <https://dl.espressif.com/dl/xtensa-esp32s2-elf-gcc8_2_0-esp-2019r2-linux-i686.tar.gz>`_
+If not using ``install.sh`` or ``install.bat``, you can download the toolchain manually. Download links can be found in the :ref:`idf-tools-list`, under the name ``xtensa-esp32s2-elf``.
 
 If installing the toolchain manually, unpack it somewhere and add the ``bin`` subdirectory to your `PATH`.
 
@@ -48,11 +45,11 @@ Before building an ESP-IDF project, run the following command to switch the targ
 
 .. important:: Running ``set-target`` will clear the project configuration and create a new empty ``sdkconfig`` file for the project. The old configuration will be saved in ``sdkconfig.old``.
 
+See :ref:`selecting-idf-target` for more details about switching between different targets (esp32, esp32s2).
+
 Then configure the project::
 
   idf.py menuconfig
-
-.. important:: There are 3 versions of ESP32-S2 available with different Wi-Fi PHYs. They can be identified by the marking on the chip itself. The project must be configured to match the chip via the project setting "ESP32-S2 chip version" (``CONFIG_ESP32S2_CHIP_VERSION``). This can be found under Component Config -> ESP32S2-specific. If the project setting doesn't match the chip then Wi-Fi performance may be very poor, or the chip may crash when initializing Wi-Fi.
 
 Build and flash the project as usual, for example::
 
@@ -71,25 +68,15 @@ ESP32-S2 support is currently a preview and does not support all features. Espre
 
 - The integrated USB OTG peripheral is not supported
 - Documentation not updated for ESP32-S2 in most places
-- Peripheral drivers are a work in progress
-- No power saving modes
+- Peripheral drivers and power saving modes are a work in progress
 - No hardware security features or cryptographic accelerator support
 - Time-of-Flight (TOF) measurements with normal Wi-Fi packets is not supported
 
-.. _esp32s2-roadmap:
-
-Roadmap
-^^^^^^^
-
-- ESP-IDF V4.1 will support ESP32-S2beta chip as a preview with some limitations.
-- ESP-IDF V4.2 will support ESP32-S2 (the previous ESP32-S2beta chip can't work on V4.2).
-
-Support for ESP32-S2beta will be removed from ESP-IDF once ESP32-S2 is available.
-
+The up-to-date list of features supported on ESP32-S2 is maintained at `in this forum post <https://esp32.com/viewtopic.php?f=10&p=56361>`_.
 
 Issues
 ^^^^^^
 
 If you find issues which are not mentioned in :ref:`esp32s2-limitations`, please `open an issue on GitHub <https://github.com/espressif/esp-idf/issues>`_.
 
-Please make sure to mention that you are using the ESP32-S2 preview support and give your exact version of ESP-IDF.
+Please make sure to mention that you are using the ESP32-S2 chip and give your exact version of ESP-IDF.

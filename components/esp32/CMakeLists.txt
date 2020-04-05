@@ -18,20 +18,15 @@ else()
         "cpu_start.c"
         "crosscore_int.c"
         "dport_access.c"
-        "dport_panic_highint_hdl.S"
         "esp_himem.c"
         "hw_random.c"
-        "int_wdt.c"
         "intr_alloc.c"
-        "panic.c"
         "pm_esp32.c"
         "pm_trace.c"
-        "reset_reason.c"
         "sleep_modes.c"
         "spiram.c"
         "spiram_psram.c"
-        "system_api_esp32.c"
-        "task_wdt.c")
+        "system_api_esp32.c")
 
     set(include_dirs "include")
 
@@ -101,5 +96,19 @@ else()
         target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
         # also, make sure we link with this option so correct toolchain libs are pulled in
         target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-issue)
+        # set strategy selected
+        # note that we don't need to set link options as the library linked is independent of this
+        if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST)
+            target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=dupldst)
+            target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=dupldst)
+        endif()
+        if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW)
+            target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=memw)
+            target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=memw)
+        endif()
+        if(CONFIG_SPIRAM_CACHE_WORKAROUND_STRATEGY_NOPS)
+            target_compile_options(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=nops)
+            target_link_libraries(${COMPONENT_LIB} PUBLIC -mfix-esp32-psram-cache-strategy=nops)
+        endif()
     endif()
 endif()

@@ -11,11 +11,10 @@
 #ifndef _BLE_MESH_ACCESS_H_
 #define _BLE_MESH_ACCESS_H_
 
-#include <stddef.h>
 #include "mesh_types.h"
 #include "mesh_util.h"
 #include "mesh_buf.h"
-#include "sdkconfig.h"
+#include "mesh_kernel.h"
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -370,11 +369,11 @@ struct bt_mesh_model_pub {
      */
     int (*update)(struct bt_mesh_model *mod);
 
-    /* Change by Espressif, role of the device going to publish messages */
-    u8_t dev_role;
-
     /** Publish Period Timer. Only for stack-internal use. */
     struct k_delayed_work timer;
+
+    /* Change by Espressif, role of the device going to publish messages */
+    u8_t dev_role;
 };
 
 /** @def BLE_MESH_MODEL_PUB_DEFINE

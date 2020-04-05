@@ -30,6 +30,17 @@
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 #define CONNECTED_BITS (GOT_IPV4_BIT | GOT_IPV6_BIT)
+
+#if defined(CONFIG_EXAMPLE_CONNECT_IPV6_PREF_LOCAL_LINK)
+#define EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE ESP_IP6_ADDR_IS_LINK_LOCAL
+#elif defined(CONFIG_EXAMPLE_CONNECT_IPV6_PREF_GLOBAL)
+#define EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE ESP_IP6_ADDR_IS_GLOBAL
+#elif defined(CONFIG_EXAMPLE_CONNECT_IPV6_PREF_SITE_LOCAL)
+#define EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE ESP_IP6_ADDR_IS_SITE_LOCAL
+#elif defined(CONFIG_EXAMPLE_CONNECT_IPV6_PREF_UNIQUE_LOCAL)
+#define EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE ESP_IP6_ADDR_IS_UNIQUE_LOCAL
+#endif // if-elif CONFIG_EXAMPLE_CONNECT_IPV6_PREF_...
+
 #else
 #define CONNECTED_BITS (GOT_IPV4_BIT)
 #endif
@@ -41,6 +52,16 @@ static esp_netif_t *s_example_esp_netif = NULL;
 
 #ifdef CONFIG_EXAMPLE_CONNECT_IPV6
 static esp_ip6_addr_t s_ipv6_addr;
+
+/* types of ipv6 addresses to be displayed on ipv6 events */
+static const char *s_ipv6_addr_types[] = {
+    "ESP_IP6_ADDR_IS_UNKNOWN",
+    "ESP_IP6_ADDR_IS_GLOBAL",
+    "ESP_IP6_ADDR_IS_LINK_LOCAL",
+    "ESP_IP6_ADDR_IS_SITE_LOCAL",
+    "ESP_IP6_ADDR_IS_UNIQUE_LOCAL",
+    "ESP_IP6_ADDR_IS_IPV4_MAPPED_IPV6"
+    };
 #endif
 
 static const char *TAG = "example_connect";
@@ -65,10 +86,17 @@ static void on_got_ip(void *arg, esp_event_base_t event_base,
 static void on_got_ipv6(void *arg, esp_event_base_t event_base,
                         int32_t event_id, void *event_data)
 {
-    ESP_LOGI(TAG, "Got IPv6 event!");
     ip_event_got_ip6_t *event = (ip_event_got_ip6_t *)event_data;
-    memcpy(&s_ipv6_addr, &event->ip6_info.ip, sizeof(s_ipv6_addr));
-    xEventGroupSetBits(s_connect_event_group, GOT_IPV6_BIT);
+    if (event->esp_netif != s_example_esp_netif) {
+        ESP_LOGD(TAG, "Got IPv6 from another netif: ignored");
+        return;
+    }
+    esp_ip6_addr_type_t ipv6_type = esp_netif_ip6_get_addr_type(&event->ip6_info.ip);
+    ESP_LOGI(TAG, "Got IPv6 address: " IPV6STR ", type: %s", IPV62STR(event->ip6_info.ip), s_ipv6_addr_types[ipv6_type]);
+    if (ipv6_type == EXAMPLE_CONNECT_PREFERRED_IPV6_TYPE) {
+        memcpy(&s_ipv6_addr, &event->ip6_info.ip, sizeof(s_ipv6_addr));
+        xEventGroupSetBits(s_connect_event_group, GOT_IPV6_BIT);
+    }
 }
 
 #endif // CONFIG_EXAMPLE_CONNECT_IPV6

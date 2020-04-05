@@ -102,7 +102,7 @@ typedef struct {
  *
  * @warning For now, only supports HSPI and VSPI.
  *
- * @param host SPI peripheral that controls this bus
+ * @param host_id SPI peripheral that controls this bus
  * @param bus_config Pointer to a spi_bus_config_t struct specifying how the host should be initialized
  * @param dma_chan Either channel 1 or 2, or 0 in the case when no DMA is required. Selecting a DMA channel
  *                 for a SPI bus allows transfers on the bus to have sizes only limited by the amount of
@@ -123,20 +123,20 @@ typedef struct {
  *         - ESP_ERR_NO_MEM        if out of memory
  *         - ESP_OK                on success
  */
-esp_err_t spi_bus_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, int dma_chan);
+esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *bus_config, int dma_chan);
 
 /**
  * @brief Free a SPI bus
  *
  * @warning In order for this to succeed, all devices have to be removed first.
  *
- * @param host SPI peripheral to free
+ * @param host_id SPI peripheral to free
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_ERR_INVALID_STATE if not all devices on the bus are freed
  *         - ESP_OK                on success
  */
-esp_err_t spi_bus_free(spi_host_device_t host);
+esp_err_t spi_bus_free(spi_host_device_t host_id);
 
 #ifdef __cplusplus
 }

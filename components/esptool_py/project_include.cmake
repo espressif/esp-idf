@@ -22,10 +22,13 @@ if(NOT BOOTLOADER_BUILD)
     set(esptool_elf2image_args --elf-sha256-offset 0xb0)
 endif()
 
-if(CONFIG_SECURE_BOOT_ENABLED AND
-    NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION
-    AND NOT BOOTLOADER_BUILD)
-    list(APPEND esptool_elf2image_args --secure-pad)
+if(NOT CONFIG_SECURE_BOOT_ALLOW_SHORT_APP_PARTITION AND
+    NOT BOOTLOADER_BUILD)
+    if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+        list(APPEND esptool_elf2image_args --secure-pad)
+    elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+        list(APPEND esptool_elf2image_args --secure-pad-v2)
+    endif()
 endif()
 
 if(CONFIG_ESP32_REV_MIN)
@@ -36,6 +39,10 @@ if(CONFIG_ESPTOOLPY_FLASHSIZE_DETECT)
     # Set ESPFLASHSIZE to 'detect' *after* elf2image options are generated,
     # as elf2image can't have 'detect' as an option...
     set(ESPFLASHSIZE detect)
+endif()
+
+if(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+    set(ESPFLASHSIZE keep)
 endif()
 
 idf_build_get_property(build_dir BUILD_DIR)
@@ -77,11 +84,17 @@ if(CONFIG_APP_BUILD_GENERATE_BINARIES)
     add_custom_target(app ALL DEPENDS gen_project_binary)
 endif()
 
+if(CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME)
+    set(secure_boot_version "1")
+elseif(CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME)
+    set(secure_boot_version "2")
+endif()
+
 if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
     if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES)
         # for locally signed secure boot image, add a signing step to get from unsigned app to signed app
         add_custom_command(OUTPUT "${build_dir}/.signed_bin_timestamp"
-            COMMAND ${ESPSECUREPY} sign_data --keyfile ${secure_boot_signing_key}
+            COMMAND ${ESPSECUREPY} sign_data --version ${secure_boot_version} --keyfile ${secure_boot_signing_key}
                 -o "${build_dir}/${PROJECT_BIN}" "${build_dir}/${unsigned_project_binary}"
             COMMAND ${CMAKE_COMMAND} -E echo "Generated signed binary image ${build_dir}/${PROJECT_BIN}"
                                     "from ${build_dir}/${unsigned_project_binary}"
@@ -103,7 +116,8 @@ if(NOT BOOTLOADER_BUILD AND CONFIG_SECURE_SIGNED_APPS)
             COMMAND ${CMAKE_COMMAND} -E echo
                 "App built but not signed. Sign app before flashing"
             COMMAND ${CMAKE_COMMAND} -E echo
-                "\t${espsecurepy} sign_data --keyfile KEYFILE ${build_dir}/${PROJECT_BIN}"
+                "\t${espsecurepy} sign_data --keyfile KEYFILE --version ${secure_boot_version} \
+                ${build_dir}/${PROJECT_BIN}"
             VERBATIM)
     endif()
 endif()
@@ -131,7 +145,7 @@ add_custom_target(monitor
 
 set(esptool_flash_main_args "--before=${CONFIG_ESPTOOLPY_BEFORE}")
 
-if(CONFIG_SECURE_BOOT_ENABLED OR CONFIG_SECURE_FLASH_ENC_ENABLED)
+if(CONFIG_SECURE_BOOT OR CONFIG_SECURE_FLASH_ENC_ENABLED)
     # If security enabled then override post flash option
     list(APPEND esptool_flash_main_args "--after=no_reset")
 else()
@@ -212,7 +226,12 @@ $<JOIN:$<TARGET_PROPERTY:encrypted-${target_name},IMAGES>,\n>")
                     CONTENT "${flash_args_content}")
         file(GENERATE OUTPUT "${build_dir}/encrypted_${target_name}_args"
                     INPUT "${CMAKE_CURRENT_BINARY_DIR}/encrypted_${target_name}_args.in")
+    else()
+        fail_target(encrypted-${target_name} "Error: The target encrypted-${target_name} requires"
+                    "CONFIG_SECURE_FLASH_ENCRYPTION_MODE_DEVELOPMENT to be enabled.")
+
     endif()
+
 endfunction()
 
 

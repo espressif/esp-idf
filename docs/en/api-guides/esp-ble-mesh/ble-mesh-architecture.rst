@@ -278,8 +278,8 @@ Specific files that implement functions of Provisioner are shown in Table 2.3:
     - ESP-BLE-MESH Provisioner provisioning (PB-ADV & PB-GATT)
   * - :component_file:`proxy_server.c <bt/esp_ble_mesh/mesh_core/proxy_server.c>`
     - ESP-BLE-MESH Proxy Client related functionalities
-  * - :component_file:`provisioner_beacon.c <bt/esp_ble_mesh/mesh_core/provisioner_beacon.c>`
-    - ESP-BLE-MESH Provisioner receives Unprovisioned Device Beacon
+  * - :component_file:`provisioner_main.c <bt/esp_ble_mesh/mesh_core/provisioner_main.c>`
+    - ESP-BLE-MESH Provisioner networking related functionalities
 
 2.1.3 Mesh Models Implementation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

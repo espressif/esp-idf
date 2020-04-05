@@ -78,5 +78,7 @@ void esp_cache_err_int_init(void)
 
 int IRAM_ATTR esp_cache_err_get_cpuid(void)
 {
+    // TODO: The description for this seem to indicate that when cache is not in error
+    // state, return -1.
     return PRO_CPU_NUM;
 }

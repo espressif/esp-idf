@@ -14,8 +14,9 @@
 
 #pragma once
 
-#define SOC_SPI_PERIPH_NUM      4
+#define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    3
+#define SOC_SPI_PERIPH_CS_NUM(i)    3
 
 #define SPI_FUNC_NUM            0
 #define SPI_IOMUX_PIN_NUM_HD    27
@@ -35,7 +36,7 @@
 #define FSPI_IOMUX_PIN_NUM_WP   14
 //TODO: add the next slot
 
-//HSPI and VSPI have no iomux pins
+//HSPI has no iomux pins
 
 #define SOC_SPI_MAXIMUM_BUFFER_SIZE     72
 
@@ -45,5 +46,21 @@
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+struct spi_dev_s;
+extern volatile struct spi_dev_s GPSPI3;
+struct spi_mem_dev_s;
+extern volatile struct spi_mem_dev_s SPIMEM1;
+#ifdef __cplusplus
+}
+#endif
+
 // Peripheral supports DIO, DOUT, QIO, or QOUT
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)  (!((void*)spi_dev == (void*)&GPSPI3))
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)          (!((void*)spi_dev == (void*)&GPSPI3))
+
+// Peripheral supports output given level during its "dummy phase"
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_dev)    ((void*)spi_dev == (void*)&SPIMEM1)
+

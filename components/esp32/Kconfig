@@ -129,6 +129,40 @@ menu "ESP32-specific"
 
                 The workaround is not required for ESP32 revision 3 and above.
 
+        menu "SPIRAM cache workaround debugging"
+
+            choice SPIRAM_CACHE_WORKAROUND_STRATEGY
+                prompt "Workaround strategy"
+                depends on SPIRAM_CACHE_WORKAROUND
+                default SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
+                help
+                    Select the workaround strategy. Note that the strategy for precompiled
+                    libraries (libgcc, newlib, bt, wifi) is not affected by this selection.
+
+                    Unless you know you need a different strategy, it's suggested you stay
+                    with the default MEMW strategy. Note that DUPLDST can interfere with hardware
+                    encryption and this will be automatically disabled if this workaround is selected.
+                    'Insert nops' is the workaround that was used in older esp-idf versions. This workaround
+                    still can cause faulty data transfers from/to SPI RAM in some situation.
+
+                config SPIRAM_CACHE_WORKAROUND_STRATEGY_MEMW
+                    bool "Insert memw after vulnerable instructions (default)"
+
+                config SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+                    bool "Duplicate LD/ST for 32-bit, memw for 8/16 bit"
+
+                config SPIRAM_CACHE_WORKAROUND_STRATEGY_NOPS
+                    bool "Insert nops between vulnerable loads/stores (old strategy, obsolete)"
+            endchoice
+
+            #This needs to be Y only for the dupldst workaround
+            config SPIRAM_WORKAROUND_NEED_VOLATILE_SPINLOCK
+                bool
+                default "y" if SPIRAM_CACHE_WORKAROUND_STRATEGY_DUPLDST
+
+
+        endmenu
+
         config SPIRAM_BANKSWITCH_ENABLE
             bool "Enable bank switching for >4MiB external RAM"
             default y
@@ -356,38 +390,6 @@ menu "ESP32-specific"
 
             Data is reserved at the beginning of RTC slow memory.
 
-    choice ESP32_PANIC
-        prompt "Panic handler behaviour"
-        default ESP32_PANIC_PRINT_REBOOT
-        help
-            If FreeRTOS detects unexpected behaviour or an unhandled exception, the panic handler is
-            invoked. Configure the panic handlers action here.
-
-        config ESP32_PANIC_PRINT_HALT
-            bool "Print registers and halt"
-            help
-                Outputs the relevant registers over the serial port and halt the
-                processor. Needs a manual reset to restart.
-
-        config ESP32_PANIC_PRINT_REBOOT
-            bool "Print registers and reboot"
-            help
-                Outputs the relevant registers over the serial port and immediately
-                reset the processor.
-
-        config ESP32_PANIC_SILENT_REBOOT
-            bool "Silent reboot"
-            help
-                Just resets the processor without outputting anything
-
-        config ESP32_PANIC_GDBSTUB
-            bool "Invoke GDBStub"
-            select ESP_GDBSTUB_ENABLED
-            help
-                Invoke gdbstub on the serial port, allowing for gdb to attach to it to do a postmortem
-                of the crash.
-    endchoice
-
     config ESP32_DEBUG_OCDAWARE
         bool "Make exception and panic handlers JTAG/OCD aware"
         default y
@@ -556,6 +558,16 @@ menu "ESP32-specific"
               In case more value will help improve the definition of the launch of the crystal.
               If the crystal could not start, it will be switched to internal RC.
 
+    config ESP32_RTC_XTAL_CAL_RETRY
+        int "Number of attempts to repeat 32k XTAL calibration"
+        default 1
+        depends on ESP32_RTC_CLK_SRC_EXT_CRYS
+        help
+            Number of attempts to repeat 32k XTAL calibration
+            before giving up and switching to the internal RC.
+            Increase this option if the 32k crystal oscillator
+            does not start and switches to internal RC.
+
     config ESP32_RTC_XTAL_BOOTSTRAP_CYCLES
         int "Bootstrap cycles for external 32kHz crystal"
         depends on ESP32_RTC_CLK_SRC_EXT_CRYS
@@ -699,6 +711,16 @@ menu "ESP32-specific"
         help
             To prevent interrupting DPORT workarounds,
             need to disable interrupt with a maximum used level in the system.
+
+    config ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
+        bool "Enable IRAM as 8 bit accessible memory"
+        depends on FREERTOS_UNICORE
+        help
+            If enabled, application can use IRAM as byte accessible region for storing data
+            (Note: IRAM region cannot be used as task stack)
+
+            This is possible due to handling of exceptions `LoadStoreError (3)` and `LoadStoreAlignmentError (9)`
+            Each unaligned read/write access will incur a penalty of maximum of 167 CPU cycles.
 
 endmenu  # ESP32-Specific
 

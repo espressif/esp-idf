@@ -1185,6 +1185,11 @@ def action_install(args):
 def action_install_python_env(args):
     idf_python_env_path, _, virtualenv_python = get_python_env_path()
 
+    is_virtualenv = hasattr(sys, 'real_prefix') or (hasattr(sys, 'base_prefix') and sys.base_prefix != sys.prefix)
+    if is_virtualenv and (not os.path.exists(idf_python_env_path) or args.reinstall):
+        fatal('This script was called from a virtual environment, can not create a virtual environment again')
+        raise SystemExit(1)
+
     if args.reinstall and os.path.exists(idf_python_env_path):
         warn('Removing the existing Python environment in {}'.format(idf_python_env_path))
         shutil.rmtree(idf_python_env_path)

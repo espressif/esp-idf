@@ -253,11 +253,13 @@ void node_remove_from_list(list_node **phead, list_node *pdelete)
         *phead = NULL;
     } else {
         if (plist == pdelete) {
-            *phead = plist->pnext;
+            // Note: Ignoring the "use after free" warnings, as it could only happen
+            // if the linked list contains loops
+            *phead = plist->pnext; // NOLINT(clang-analyzer-unix.Malloc)
             pdelete->pnext = NULL;
         } else {
             while (plist != NULL) {
-                if (plist->pnext == pdelete) {
+                if (plist->pnext == pdelete) { // NOLINT(clang-analyzer-unix.Malloc)
                     plist->pnext = pdelete->pnext;
                     pdelete->pnext = NULL;
                 }
@@ -1216,6 +1218,7 @@ static void kill_oldest_dhcps_pool(void)
     list_node *minpre = NULL, *minp = NULL;
     struct dhcps_pool *pdhcps_pool = NULL, *pmin_pool = NULL;
     pre = plist;
+    assert(pre != NULL && pre->pnext != NULL); // Expect the list to have at least 2 nodes
     p = pre->pnext;
     minpre = pre;
     minp = p;

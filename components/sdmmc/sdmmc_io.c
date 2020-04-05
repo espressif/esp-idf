@@ -567,6 +567,9 @@ esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t 
     esp_err_t ret = ESP_OK;
     WORD_ALIGNED_ATTR uint8_t buf[CIS_GET_MINIMAL_SIZE];
 
+    /* Pointer to size is a mandatory parameter */
+    assert(inout_cis_size);
+
     /*
      * CIS region exist in 0x1000~0x17FFF of FUNC 0, get the start address of it
      * from CCCR register.
@@ -585,7 +588,7 @@ esp_err_t sdmmc_io_get_cis_data(sdmmc_card_t* card, uint8_t* out_buffer, size_t 
      * existing.
      */
     size_t max_reading = UINT32_MAX;
-    if (inout_cis_size && *inout_cis_size != 0) {
+    if (*inout_cis_size != 0) {
         max_reading = *inout_cis_size;
     }
 

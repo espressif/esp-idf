@@ -27,15 +27,16 @@ typedef volatile struct {
     } scl_low;
     union {
         struct {
-            uint32_t sda_force_out: 1;              /*1=push pull  0=open drain*/
-            uint32_t scl_force_out: 1;              /*1=push pull  0=open drain*/
-            uint32_t ms_mode:       1;              /*1=master  0=slave*/
-            uint32_t trans_start:   1;              /*force start*/
-            uint32_t tx_lsb_first:  1;              /*transit lsb first*/
-            uint32_t rx_lsb_first:  1;              /*receive lsb first*/
-            uint32_t reserved6:    24;
-            uint32_t i2c_reset:     1;              /*rtc i2c sw reset*/
-            uint32_t i2cclk_en:     1;              /*rtc i2c reg clk gating*/
+            uint32_t sda_force_out:        1;       /*1=push pull  0=open drain*/
+            uint32_t scl_force_out:        1;       /*1=push pull  0=open drain*/
+            uint32_t ms_mode:              1;       /*1=master  0=slave*/
+            uint32_t trans_start:          1;       /*force start*/
+            uint32_t tx_lsb_first:         1;       /*transit lsb first*/
+            uint32_t rx_lsb_first:         1;       /*receive lsb first*/
+            uint32_t reserved6:           23;
+            uint32_t i2c_ctrl_clk_gate_en: 1;
+            uint32_t i2c_reset:            1;       /*rtc i2c sw reset*/
+            uint32_t i2cclk_en:            1;       /*rtc i2c reg clk gating*/
         };
         uint32_t val;
     } ctrl;
@@ -171,11 +172,7 @@ typedef volatile struct {
     } fifo_data;
     union {
         struct {
-            uint32_t byte_num:      8;              /*Byte_num represent the number of data need to be send or data need to be received.*/
-            uint32_t ack_en:        1;              /*ack_check_en  ack_exp and ack value are used to control  the ack bit.*/
-            uint32_t ack_exp:       1;              /*ack_check_en  ack_exp and ack value are used to control  the ack bit.*/
-            uint32_t ack_val:       1;              /*ack_check_en  ack_exp and ack value are used to control  the ack bit.*/
-            uint32_t op_code:       3;              /*op_code is the command  0：RSTART   1：WRITE  2：READ  3：STOP . 4:END.*/
+            uint32_t command0:     14;              /*command0*/
             uint32_t reserved14:   17;
             uint32_t done:          1;              /*command0_done*/
         };

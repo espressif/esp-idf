@@ -16,8 +16,7 @@
 
 #define SOC_SPI_PERIPH_NUM      3
 #define SOC_SPI_DMA_CHAN_NUM    2
-
-#define SPI_PERIPH_NUM          3
+#define SOC_SPI_PERIPH_CS_NUM(i)    3
 
 #define SPI_FUNC_NUM            1
 #define SPI_IOMUX_PIN_NUM_MISO  7
@@ -60,4 +59,9 @@
 //#define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
 //#define SOC_SPI_SUPPORT_CD_SIG
 
-#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(SPI_HOST)  true
+// Peripheral supports DIO, DOUT, QIO, or QOUT
+#define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_dev)          1
+
+// Peripheral doesn't support output given level during its "dummy phase"
+#define SOC_SPI_PERIPH_SUPPORT_CONTROL_DUMMY_OUTPUT(spi_dev)    0
+

@@ -33,13 +33,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
 - ``light_sleep_enable``：没有获取任何管理锁时，决定系统是否需要自动进入 Light-sleep 状态 (``true``/``false``)。
 
-.. only:: esp32
-
-    或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
-
-.. only:: esp32s2
-
-    或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_ESP32S2_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
+或者，如果在 menuconfig 中启用了 :ref:`CONFIG_PM_DFS_INIT_AUTO` 选项，最大 CPU 频率将由 :ref:`CONFIG_{IDF_TARGET_CFG_PREFIX}_DEFAULT_CPU_FREQ_MHZ` 设置决定，最小 CPU 频率将锁定为 XTAL 频率。
 
 .. note::
 
@@ -78,7 +72,7 @@ ESP32 支持下表中所述的三种电源管理锁。
 
 - **UART**：如果 REF_TICK 用作时钟源，则 UART 不受 APB 频率变更影响。请查看 :cpp:class:`uart_config_t` 中的 `use_ref_tick`。
 - **LEDC**：如果 REF_TICK 用作时钟源，则 LEDC 不受 APB 频率变更影响。请查看 :cpp:func:`ledc_timer_config` 函数。
-- **RMT**：如果 REF_TICK 用作时钟源，则 RMT 不受 APB 频率变更影响。此驱动程序尚不支持 REF_TICK，但可以清除相应通道的 ``RMT_REF_ALWAYS_ON_CHx`` 位来启用该功能。
+- **RMT**：如果 REF_TICK 用作时钟源，则 RMT 不受 APB 频率变更影响。请查看 :cpp:class:`rmt_config_t` 结构体中的 `flags` 成员以及 `RMT_CHANNEL_FLAGS_ALWAYS_ON` 宏。
 
 目前以下外设驱动程序可感知动态调频，并在调频期间使用 ``ESP_PM_APB_FREQ_MAX`` 锁：
 

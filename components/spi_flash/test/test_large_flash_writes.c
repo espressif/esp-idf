@@ -29,7 +29,6 @@
 #include "../cache_utils.h"
 #include "soc/timer_periph.h"
 
-#if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 static const uint8_t large_const_buffer[16400] = {
     203, // first byte
     1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,
@@ -94,4 +93,3 @@ static void test_write_large_buffer(const uint8_t *source, size_t length)
     TEST_ASSERT_EQUAL_HEX8(0xFF, ends[2]);
     TEST_ASSERT_EQUAL_HEX8(0xFF, ends[3]);
 }
-#endif //!TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)

@@ -49,6 +49,12 @@ static char s_prompt[CONSOLE_PROMPT_LEN_MAX];
 static const char *s_history_save_path = NULL;
 
 /**
+ * @brief default uart channel number
+ *
+ */
+static int s_uart_channel = -1;
+
+/**
  * @brief REPL task handle
  *
  */
@@ -122,21 +128,23 @@ esp_err_t esp_console_repl_init(const esp_console_repl_config_t *config)
      * correct while APB frequency is changing in light sleep mode.
      */
     const uart_config_t uart_config = {
-        .baud_rate = CONFIG_ESP_CONSOLE_UART_BAUDRATE,
+        .baud_rate = config->device.uart.baud_rate,
         .data_bits = UART_DATA_8_BITS,
         .parity = UART_PARITY_DISABLE,
         .stop_bits = UART_STOP_BITS_1,
         .source_clk = UART_SCLK_REF_TICK,
     };
     /* Install UART driver for interrupt-driven reads and writes */
-    ret = uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM, 256, 0, 0, NULL, 0);
+    ret = uart_driver_install(config->device.uart.channel, 256, 0, 0, NULL, 0);
     if (ret != ESP_OK) {
         goto _exit;
     }
-    uart_param_config(CONFIG_ESP_CONSOLE_UART_NUM, &uart_config);
+    s_uart_channel = config->device.uart.channel;
+    uart_param_config(s_uart_channel, &uart_config);
+    uart_set_pin(s_uart_channel, config->device.uart.tx_gpio, config->device.uart.rx_gpio, -1, -1);
 
     /* Tell VFS to use UART driver */
-    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_driver(s_uart_channel);
 
     /* Initialize the console */
     esp_console_config_t console_config = ESP_CONSOLE_CONFIG_DEFAULT();
@@ -220,8 +228,9 @@ esp_err_t esp_console_repl_init(const esp_console_repl_config_t *config)
 
 _console_del:
     esp_console_deinit();
-    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
-    uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_nonblocking(s_uart_channel);
+    uart_driver_delete(s_uart_channel);
+    s_uart_channel = -1;
     s_repl_state = CONSOLE_REPL_STATE_DEINIT;
 _exit:
     return ret;
@@ -240,8 +249,9 @@ esp_err_t esp_console_repl_deinit(void)
 
     s_repl_state = CONSOLE_REPL_STATE_DEINIT;
     esp_console_deinit();
-    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
-    uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM);
+    esp_vfs_dev_uart_use_nonblocking(s_uart_channel);
+    uart_driver_delete(s_uart_channel);
+    s_uart_channel = -1;
     s_repl_task_hdl = NULL;
     s_history_save_path = NULL;
 _exit:

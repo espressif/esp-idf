@@ -653,7 +653,7 @@ static int eap_sm_rx_eapol_internal(u8 *src_addr, u8 *buf, u32 len, uint8_t *bss
         break;
     case EAP_CODE_SUCCESS:
         if (sm->eapKeyData) {
-            wpa_set_pmk(sm->eapKeyData);
+            wpa_set_pmk(sm->eapKeyData, NULL, false);
             os_free(sm->eapKeyData);
             sm->eapKeyData = NULL;
             wpa_printf(MSG_INFO, ">>>>>wpa2 FINISH\n");
@@ -752,7 +752,7 @@ static int eap_peer_sm_init(void)
 
     s_wpa2_data_lock = xSemaphoreCreateRecursiveMutex();
     if (!s_wpa2_data_lock) {
-        wpa_printf(MSG_ERROR, "wpa2 eap_peer_sm_init: failed to alloc data lock");
+        wpa_printf(MSG_ERROR, "wpa2 eap_peer_sm_init: failed to alloc data lock");  // NOLINT(clang-analyzer-unix.Malloc)
         return ESP_ERR_NO_MEM;
     }
 

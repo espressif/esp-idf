@@ -42,15 +42,17 @@ idf.py menuconfig
 Select Modbus Example Configuration menu item.
 Configure the UART pins used for modbus communication using command and table below.
 ```
-  -----------------------------------------------------------------------------------
-  | ESP32 Interface       | #define            | Default ESP32 Pin | External RS485 |
-  | ----------------------|--------------------|-------------------| Driver Pin     |
-  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23            | DI             |
-  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22            | RO             |
-  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18            | ~RE/DE         |
-  | Ground                | n/a                | GND               | GND            |
-  -----------------------------------------------------------------------------------
+  --------------------------------------------------------------------------------------------------------------------------
+  | ESP32 Interface       | #define            | Default ESP32 Pin     | Default ESP32-S2 Pins | External RS485 Driver Pin |
+  | ----------------------|--------------------|-----------------------|-----------------------|---------------------------|
+  | Transmit Data (TxD)   | CONFIG_MB_UART_TXD | GPIO23                | GPIO20                | DI                        |
+  | Receive Data (RxD)    | CONFIG_MB_UART_RXD | GPIO22                | GPIO19                | RO                        |
+  | Request To Send (RTS) | CONFIG_MB_UART_RTS | GPIO18                | GPIO18                | ~RE/DE                    |
+  | Ground                | n/a                | GND                   | GND                   | GND                       |
+  --------------------------------------------------------------------------------------------------------------------------
 ```
+Note: The GPIO22 - GPIO25 can not be used with ESP32-S2 chip because they are used for flash chip connection. Please refer to UART documentation for selected target.
+
 Define the ```Modbus communiction mode``` for slave in Kconfig - CONFIG_MB_COMM_MODE (must be the same for master and slave application).
 Set ```Modbus slave address``` for the example application (by default for example script is set to 1).
 The communication parameters of freemodbus stack (Component config->Modbus configuration) allow to configure it appropriately but usually it is enough to use default settings.

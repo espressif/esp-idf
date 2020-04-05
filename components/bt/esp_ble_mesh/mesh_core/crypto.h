@@ -10,8 +10,8 @@
 #ifndef _CRYPTO_H_
 #define _CRYPTO_H_
 
-#include "mesh_types.h"
 #include <string.h>
+#include "mesh_buf.h"
 
 struct bt_mesh_sg {
     const void *data;

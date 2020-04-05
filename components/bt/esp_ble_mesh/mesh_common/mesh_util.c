@@ -7,9 +7,9 @@
  */
 
 #include <string.h>
-#include "sdkconfig.h"
+
+#include "mesh_types.h"
 #include "mesh_util.h"
-#include "mesh_kernel.h"
 #include "mesh_aes_encrypt.h"
 
 #define MASK_TWENTY_SEVEN 0x1b

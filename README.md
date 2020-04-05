@@ -13,8 +13,6 @@ See setup guides for detailed instructions to set up the ESP-IDF:
 * [Getting Started Guide for the stable ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/stable/get-started/)
 * [Getting Started Guide for the latest (master branch) ESP-IDF version](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/)
 
-*Note: ESP-IDF Programmers Guide is in the process of transitioning to a new documentation host. Master branch ("latest") docs will not be updated from 2020-02-05 for approximately two weeks. This note will be removed once the master branch docs are updating again. Other branch & release docs continue to update as normal.*
-
 ### Non-GitHub forks
 
 ESP-IDF uses relative locations as its submodules URLs ([.gitmodules](.gitmodules)). So they link to GitHub.

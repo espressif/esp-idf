@@ -19,9 +19,6 @@
 #ifndef _TIME_SCENE_CLIENT_H_
 #define _TIME_SCENE_CLIENT_H_
 
-#include "mesh_access.h"
-#include "mesh_kernel.h"
-
 #include "client_common.h"
 
 /* Time scene client model common structure */
@@ -231,6 +228,36 @@ int bt_mesh_scene_cli_init(struct bt_mesh_model *model, bool primary);
  * @return Zero-success, other-fail
  */
 int bt_mesh_scheduler_cli_init(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize time client model user_data.
+ *
+ * @param[in] model:   Pointer to time client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_time_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize scene client model user_data.
+ *
+ * @param[in] model:   Pointer to scene client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_scene_cli_deinit(struct bt_mesh_model *model, bool primary);
+
+/**
+ * @brief This function is called to de-initialize scheduler client model user_data.
+ *
+ * @param[in] model:   Pointer to scheduler client model
+ * @param[in] primary: Whether belongs to primary element
+ *
+ * @return Zero-success, other-fail
+ */
+int bt_mesh_scheduler_cli_deinit(struct bt_mesh_model *model, bool primary);
 
 /**
  * @brief This function is called to get scene states.

@@ -9,30 +9,32 @@
 #ifndef _BLE_MESH_BEARER_ADRPT_H_
 #define _BLE_MESH_BEARER_ADRPT_H_
 
-#include <string.h>
+#include <sys/types.h>
 #include "mesh_types.h"
 #include "mesh_util.h"
-#include "mesh_buf.h"
 #include "mesh_uuid.h"
+#include "mesh_buf.h"
 
 /* BLE Mesh Max Connection Count */
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
 #define BLE_MESH_MAX_CONN   \
     MIN(CONFIG_BT_ACL_CONNECTIONS, CONFIG_BTDM_CTRL_BLE_MAX_CONN)
 
-#define ADV_TASK_CORE TASK_PINNED_TO_CORE
+#define BLE_MESH_ADV_TASK_CORE  TASK_PINNED_TO_CORE
 #endif
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
 #define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
 
 #ifdef CONFIG_BT_NIMBLE_PINNED_TO_CORE
-#define ADV_TASK_CORE              (CONFIG_BT_NIMBLE_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_NIMBLE_PINNED_TO_CORE : tskNO_AFFINITY)
+#define BLE_MESH_ADV_TASK_CORE  (CONFIG_BT_NIMBLE_PINNED_TO_CORE < portNUM_PROCESSORS ? CONFIG_BT_NIMBLE_PINNED_TO_CORE : tskNO_AFFINITY)
 #else
-#define ADV_TASK_CORE              (0)
+#define BLE_MESH_ADV_TASK_CORE  (0)
 #endif
 
 #endif
+
+#define BLE_MESH_ADV_TASK_STACK_SIZE    3072
 
 #define BLE_MESH_GAP_ADV_MAX_LEN    31
 
@@ -392,6 +394,32 @@ struct bt_mesh_adv_param {
     u16_t interval_max;
 };
 
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+enum bt_mesh_ble_adv_priority {
+    BLE_MESH_BLE_ADV_PRIO_LOW,
+    BLE_MESH_BLE_ADV_PRIO_HIGH,
+};
+
+struct bt_mesh_ble_adv_param {
+    u16_t interval;         /* Advertising interval */
+    u8_t  adv_type;         /* Advertising type */
+    u8_t  own_addr_type;    /* Own address type */
+    u8_t  peer_addr_type;   /* Peer address type */
+    u8_t  peer_addr[6];     /* Peer address */
+    u16_t duration;         /* Duration is milliseconds */
+    u16_t period;           /* Period in milliseconds */
+    u16_t count;            /* Number of advertising duration */
+    u8_t  priority:2;       /* Priority of BLE advertising packet */
+};
+
+struct bt_mesh_ble_adv_data {
+    u8_t adv_data_len;      /* Advertising data length */
+    u8_t adv_data[31];      /* Advertising data */
+    u8_t scan_rsp_data_len; /* Scan response data length */
+    u8_t scan_rsp_data[31]; /* Scan response data */
+};
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
 /* BLE Mesh scan parameters */
 struct bt_mesh_scan_param {
     /** Scan type (BLE_MESH_SCAN_ACTIVE or BLE_MESH_SCAN_PASSIVE) */
@@ -407,6 +435,9 @@ struct bt_mesh_scan_param {
 
     /** Scan window (N * 0.625 ms) */
     u16_t window;
+
+    /** BLE scan filter policy */
+    u8_t  scan_fil_policy;
 };
 
 struct bt_mesh_conn {
@@ -640,11 +671,17 @@ struct bt_mesh_gatt_attr {
     .attr_count = ARRAY_SIZE(_attrs),   \
 }
 
-esp_err_t bt_mesh_host_init(void);
+int bt_mesh_host_init(void);
+int bt_mesh_host_deinit(void);
 
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len);
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
+                          const struct bt_mesh_ble_adv_data *data);
+#endif
 
 int bt_le_adv_stop(void);
 
@@ -652,11 +689,30 @@ int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t c
 
 int bt_le_scan_stop(void);
 
+typedef enum {
+    BLE_MESH_WHITELIST_REMOVE,
+    BLE_MESH_WHITELIST_ADD,
+} bt_mesh_wl_operation;
+
+struct bt_mesh_white_list {
+    bool add_remove;
+    u8_t remote_bda[BLE_MESH_ADDR_LEN];
+    u8_t addr_type;
+    /* For Bluedroid host, this callback is used to notify the
+     * result of updating white list.
+     */
+    void (*update_wl_comp_cb)(u8_t status, bt_mesh_wl_operation wl_operation);
+};
+
+int bt_le_update_white_list(struct bt_mesh_white_list *wl);
+
 void bt_mesh_gatts_conn_cb_register(struct bt_mesh_conn_cb *cb);
+void bt_mesh_gatts_conn_cb_deregister(void);
 
 int bt_mesh_gatts_disconnect(struct bt_mesh_conn *conn, u8_t reason);
 
 int bt_mesh_gatts_service_register(struct bt_mesh_gatt_service *svc);
+int bt_mesh_gatts_service_deregister(struct bt_mesh_gatt_service *svc);
 
 int bt_mesh_gatts_service_unregister(struct bt_mesh_gatt_service *svc);
 
@@ -688,6 +744,7 @@ int bt_mesh_gatts_service_start(struct bt_mesh_gatt_service *svc);
 int bt_mesh_gatts_set_local_device_name(const char *name);
 
 void bt_mesh_gattc_conn_cb_register(struct bt_mesh_prov_conn_cb *cb);
+void bt_mesh_gattc_conn_cb_deregister(void);
 
 u8_t bt_mesh_gattc_get_free_conn_count(void);
 
@@ -711,6 +768,7 @@ struct bt_mesh_conn *bt_mesh_conn_ref(struct bt_mesh_conn *conn);
 void bt_mesh_conn_unref(struct bt_mesh_conn *conn);
 
 void bt_mesh_gatt_init(void);
+void bt_mesh_gatt_deinit(void);
 
 void bt_mesh_adapt_init(void);
 

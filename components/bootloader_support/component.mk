@@ -22,11 +22,23 @@ endif
 COMPONENT_OBJEXCLUDE += src/bootloader_flash_config_esp32s2.o \
 			src/bootloader_efuse_esp32s2.o
 
+ifndef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
+ifndef CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+COMPONENT_OBJEXCLUDE += src/$(IDF_TARGET)/secure_boot_signatures.o \
+			src/idf/secure_boot_signatures.o
+endif
+endif
+
+ifndef CONFIG_SECURE_BOOT
+COMPONENT_OBJEXCLUDE += src/$(IDF_TARGET)/secure_boot.o
+endif
+
 #
 # Secure boot signing key support
 #
 ifdef CONFIG_SECURE_SIGNED_APPS
 
+ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 # this path is created relative to the component build directory
 SECURE_BOOT_VERIFICATION_KEY := $(abspath signature_verification_key.bin)
 
@@ -41,7 +53,7 @@ ORIG_SECURE_BOOT_VERIFICATION_KEY := $(call resolvepath,$(call dequote,$(CONFIG_
 $(ORIG_SECURE_BOOT_VERIFICATION_KEY):
 	@echo "Secure boot verification public key '$@' missing."
 	@echo "This can be extracted from the private signing key, see"
-	@echo "docs/security/secure-boot.rst for details."
+	@echo "docs/security/secure-boot-v1.rst for details."
 	exit 1
 
 # copy it into the build dir, so the secure boot verification key has
@@ -55,4 +67,5 @@ COMPONENT_EXTRA_CLEAN += $(SECURE_BOOT_VERIFICATION_KEY)
 
 COMPONENT_EMBED_FILES := $(SECURE_BOOT_VERIFICATION_KEY)
 
+endif #CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 endif #CONFIG_SECURE_SIGNED_APPS

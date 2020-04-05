@@ -213,6 +213,9 @@ def ensure_build_directory(args, prog_name, always_run_cmake=False):
                 os.remove(cache_path)
             raise
 
+    # need to update cache so subsequent access in this method would reflect the result of the previous cmake run
+    cache = _parse_cmakecache(cache_path) if os.path.exists(cache_path) else {}
+
     try:
         generator = cache["CMAKE_GENERATOR"]
     except KeyError:

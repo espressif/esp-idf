@@ -68,7 +68,7 @@ idf.py -p PORT flash monitor
 **Start App Trace:** In the telnet session window, trigger OpenOCD to start App Trace on the ESP32 by entering the command below. This command will collect 9000 bytes of JTAG log data and save them to `adc.log` file in `~/esp/openocd-esp32` folder.
 
 ```bash
-esp32 apptrace start file://adc.log 0 9000 5 0 0
+esp apptrace start file://adc.log 0 9000 5 0 0
 ```
 
 **Note:** For more details on OpenOCD commands regarding App Trace, refer to the [OpenOCD Application Level Tracing Commands](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/app_trace.html#openocd-application-level-tracing-commands)
@@ -156,7 +156,7 @@ Log records count: 428
 
 ### Unable to flash when OpenOCD is connected to ESP32
 
-One likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose an ESP32 board/module with a 3.3 V powered SPI flash is being used, but the `board/esp32-wrover.cfg` configuration file is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the ESP32 as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash ESP32 when OpenOCD is connected. 
+One likely cause would be an incorrect SPI flash voltage when starting OpenOCD. Suppose an ESP32 board/module with a 3.3 V powered SPI flash is being used, but the `board/esp32-wrover.cfg` configuration file is selected when starting OpenOCD which can set the SPI flash voltage to 1.8 V. In this situation, the SPI flash will not work after OpenOCD connects to the ESP32 as OpenOCD has changed the SPI flash voltage. Therefore, you might not be able to flash ESP32 when OpenOCD is connected.
 
 To work around this issue, users are suggested to use `board/esp32-wrover.cfg` for ESP32 boards/modules operating with an SPI flash voltage of 1.8 V, and `board/esp-wroom-32.cfg` for 3.3 V. Refer to [ESP32 Modules and Boards](https://docs.espressif.com/projects/esp-idf/en/latest/hw-reference/modules-and-boards.html) and [Set SPI Flash Voltage](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/jtag-debugging/tips-and-quirks.html#why-to-set-spi-flash-voltage-in-openocd-configuration) for more details.
 

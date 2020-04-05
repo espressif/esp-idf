@@ -66,10 +66,16 @@ int hexstr_2_bin(const char *hex, uint8_t *buf, uint32_t len)
 int get_value_string(char *value_in, char *buf)
 {
     int result = -1;
-
+    uint8_t loop = 0;
     uint16_t length = strlen(value_in);
-    for(int i = 0; i<length; i++) {
-        printf("%c", value_in[i]);
+
+    // address string, need sepcial test
+    for (loop = 0; loop < 17 ; loop++) {
+        if (loop % 3 == 2) {
+            if (value_in[loop] == ':') {
+                return result;
+            }
+        }
     }
 
     if (length > 2) {
@@ -85,7 +91,6 @@ int get_value_string(char *value_in, char *buf)
         strcpy(buf, value_in);
         result = 0;
     }
-
     return result;
 }
 
@@ -104,7 +109,6 @@ bool str_2_mac(uint8_t *str, uint8_t *dest)
             if (src_p[loop] != ':') {
                 return false;
             }
-
             continue;
         }
 

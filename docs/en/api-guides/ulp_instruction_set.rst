@@ -851,24 +851,23 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
    **REG_RD**   *Addr, High, Low*
 
 **Operands**
-  - *Addr* – register address, in 32-bit words
-  - *High* – High part of R0
-  - *Low* – Low part of R0
+  - *Addr* – Register address, in 32-bit words
+  - *High* – Register end bit number
+  - *Low* – Register start bit number
 
 **Cycles**
   4 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-   The instruction reads up to 16 bits from a peripheral register into a general purpose register: ``R0 = REG[Addr][High:Low]``.
+  The instruction reads up to 16 bits from a peripheral register into a general purpose register: ``R0 = REG[Addr][High:Low]``.
 
-   This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP,
-   can be calculated from the address of the same register on the DPORT bus as follows::
+  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP, can be calculated from the address of the same register on the DPORT bus as follows::
 
     addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
 
 **Examples**::
 
-  1:        REG_RD      0x120, 2, 0     // load 4 bits: R0 = {12'b0, REG[0x120][7:4]}
+  1:        REG_RD      0x120, 7, 4     // load 4 bits: R0 = {12'b0, REG[0x120][7:4]}
 
 
 **REG_WR** – write to peripheral register
@@ -878,19 +877,18 @@ Note that when accessing RTC memories and RTC registers, ULP coprocessor has low
   **REG_WR**   *Addr, High, Low, Data*
 
 **Operands**
-  - *Addr* – register address, in 32-bit words.
-  - *High* – High part of R0
-  - *Low* – Low part of R0
-  - *Data* – value to write, 8 bits
+  - *Addr* – Register address, in 32-bit words.
+  - *High* – Register end bit number
+  - *Low* – Register start bit number
+  - *Data* – Value to write, 8 bits
 
 **Cycles**
   8 cycles to execute, 4 cycles to fetch next instruction
 
 **Description**
-   The instruction writes up to 8 bits from a general purpose register into a peripheral register. ``REG[Addr][High:Low] = data``
+  The instruction writes up to 8 bits from an immediate data value into a peripheral register: ``REG[Addr][High:Low] = data``.
 
-   This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP,
-   can be calculated from the address of the same register on the DPORT bus as follows::
+  This instruction can access registers in RTC_CNTL, RTC_IO, SENS, and RTC_I2C peripherals. Address of the the register, as seen from the ULP, can be calculated from the address of the same register on the DPORT bus as follows::
 
     addr_ulp = (addr_dport - DR_REG_RTCCNTL_BASE) / 4
 

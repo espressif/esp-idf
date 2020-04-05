@@ -39,17 +39,16 @@ possible. This should optimize the amount of RAM accessible to the code without 
 IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 {
     uintptr_t dstart = (uintptr_t)addr; //First word
-    uintptr_t dend = dstart + len; //Last word + 4
+    uintptr_t dend = dstart + len - 4; //Last word
     assert(esp_ptr_in_diram_dram((void *)dstart));
     assert(esp_ptr_in_diram_dram((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
-#if SOC_DIRAM_INVERTED
-    uint32_t istart = SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - dend);
+#ifdef SOC_DIRAM_INVERTED // We want the word before the result to hold the DRAM address
+    uint32_t *iptr = esp_ptr_diram_dram_to_iram((void *)dend);
 #else
-    uint32_t istart = SOC_DIRAM_IRAM_LOW + (dstart - SOC_DIRAM_DRAM_LOW);
+    uint32_t *iptr = esp_ptr_diram_dram_to_iram((void *)dstart);
 #endif
-    uint32_t *iptr = (uint32_t *)istart;
     *iptr = dstart;
     return iptr + 1;
 }

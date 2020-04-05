@@ -1,6 +1,6 @@
 .check_doc_links_template: &check_doc_links_template
   stage: post_deploy
-  image: $CI_DOCKER_REGISTRY/esp-idf-doc-env:v2
+  image: $ESP_IDF_DOC_ENV_IMAGE
   tags: [ "build", "amd64", "internet" ]
   only:
     - master
@@ -15,6 +15,7 @@
   dependencies: []
   script:
     - cd docs
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 pip install -r requirements.txt
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh -p 3.6.10 ./build_docs.py -l $DOCLANG -t $DOCTGT linkcheck
 
 check_doc_links_en_esp32:

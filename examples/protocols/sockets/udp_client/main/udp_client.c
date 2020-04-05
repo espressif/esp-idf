@@ -23,12 +23,14 @@
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
+#include "addr_from_stdin.h"
 
-
-#ifdef CONFIG_EXAMPLE_IPV4
+#if defined(CONFIG_EXAMPLE_IPV4)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
-#else
+#elif defined(CONFIG_EXAMPLE_IPV6)
 #define HOST_IP_ADDR CONFIG_EXAMPLE_IPV6_ADDR
+#else
+#define HOST_IP_ADDR ""
 #endif
 
 #define PORT CONFIG_EXAMPLE_PORT
@@ -40,28 +42,30 @@ static const char *payload = "Message from ESP32 ";
 static void udp_client_task(void *pvParameters)
 {
     char rx_buffer[128];
-    char addr_str[128];
-    int addr_family;
-    int ip_protocol;
+    char host_ip[] = HOST_IP_ADDR;
+    int addr_family = 0;
+    int ip_protocol = 0;
 
     while (1) {
 
-#ifdef CONFIG_EXAMPLE_IPV4
+#if defined(CONFIG_EXAMPLE_IPV4)
         struct sockaddr_in dest_addr;
         dest_addr.sin_addr.s_addr = inet_addr(HOST_IP_ADDR);
         dest_addr.sin_family = AF_INET;
         dest_addr.sin_port = htons(PORT);
         addr_family = AF_INET;
         ip_protocol = IPPROTO_IP;
-        inet_ntoa_r(dest_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
-#else // IPV6
-        struct sockaddr_in6 dest_addr;
+#elif defined(CONFIG_EXAMPLE_IPV6)
+        struct sockaddr_in6 dest_addr = { 0 };
         inet6_aton(HOST_IP_ADDR, &dest_addr.sin6_addr);
         dest_addr.sin6_family = AF_INET6;
         dest_addr.sin6_port = htons(PORT);
+        dest_addr.sin6_scope_id = esp_netif_get_netif_impl_index(EXAMPLE_INTERFACE);
         addr_family = AF_INET6;
         ip_protocol = IPPROTO_IPV6;
-        inet6_ntoa_r(dest_addr.sin6_addr, addr_str, sizeof(addr_str) - 1);
+#elif defined(CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN)
+        struct sockaddr_in6 dest_addr = { 0 };
+        ESP_ERROR_CHECK(get_addr_from_stdin(PORT, SOCK_DGRAM, &ip_protocol, &addr_family, &dest_addr));
 #endif
 
         int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
@@ -92,8 +96,12 @@ static void udp_client_task(void *pvParameters)
             // Data received
             else {
                 rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+                ESP_LOGI(TAG, "Received %d bytes from %s:", len, host_ip);
                 ESP_LOGI(TAG, "%s", rx_buffer);
+                if (strncmp(rx_buffer, "OK: ", 4) == 0) {
+                    ESP_LOGI(TAG, "Received expected message, reconnecting");
+                    break;
+                }
             }
 
             vTaskDelay(2000 / portTICK_PERIOD_MS);

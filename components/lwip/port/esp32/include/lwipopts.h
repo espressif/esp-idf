@@ -612,6 +612,14 @@
 #if PPP_SUPPORT
 
 /**
+ * PPP_IPV6_SUPPORT == 1: Enable IPV6 support for local link
+ * between modem and lwIP stack.
+ * Some modems do not support IPV6 addressing in local link and
+ * the only option available is to disable IPV6 address negotiation.
+ */
+#define PPP_IPV6_SUPPORT				CONFIG_LWIP_PPP_ENABLE_IPV6
+
+/**
  * PPP_NOTIFY_PHASE==1: Support PPP notify phase.
  */
 #define PPP_NOTIFY_PHASE                CONFIG_LWIP_PPP_NOTIFY_PHASE_SUPPORT
@@ -779,7 +787,6 @@
 #define ESP_THREAD_SAFE_DEBUG           LWIP_DBG_OFF
 #define ESP_DHCP                        1
 #define ESP_DNS                         1
-#define ESP_IPV6_AUTOCONFIG             1
 #define ESP_PERF                        0
 #define ESP_RANDOM_TCP_PORT             1
 #define ESP_IP4_ATON                    1
@@ -802,6 +809,10 @@
 #define ESP_SOCKET                      1
 #define ESP_LWIP_SELECT                 1
 #define ESP_LWIP_LOCK                   1
+
+#ifdef CONFIG_LWIP_IPV6_AUTOCONFIG
+#define ESP_IPV6_AUTOCONFIG             CONFIG_LWIP_IPV6_AUTOCONFIG
+#endif
 
 #ifdef ESP_IRAM_ATTR
 #undef ESP_IRAM_ATTR

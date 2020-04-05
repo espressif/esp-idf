@@ -33,7 +33,7 @@ typedef struct {
     touch_high_volt_t refh;
     touch_low_volt_t refl;
     touch_volt_atten_t atten;
-}touch_hal_volt_t;
+} touch_hal_volt_t;
 
 typedef struct {
     touch_cnt_slope_t slope;    /*!<Set touch sensor charge/discharge speed(currents) for each pad.*/
@@ -112,16 +112,12 @@ void touch_hal_get_meas_mode(touch_pad_t touch_num, touch_hal_meas_mode_t *meas)
 /**
  * Start touch sensor FSM timer.
  *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
- *
- * @param mode FSM mode.
  */
 #define touch_hal_start_fsm() touch_ll_start_fsm()
 
 /**
  * Stop touch sensor FSM timer.
  *        The measurement action can be triggered by the hardware timer, as well as by the software instruction.
- *
- * @param mode FSM mode.
  */
 #define touch_hal_stop_fsm() touch_ll_stop_fsm()
 

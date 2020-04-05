@@ -276,19 +276,10 @@ Windows 用户::
 
 本节列出了本指南中提到的所有注意事项和补充内容的链接。
 
-* :ref:`jtag-debugging-tip-breakpoints`
-* :ref:`jtag-debugging-tip-where-breakpoints`
-* :ref:`jtag-debugging-tip-flash-mappings`
-* :ref:`jtag-debugging-tip-why-next-works-as-step`
-* :ref:`jtag-debugging-tip-code-options`
-* :ref:`jtag-debugging-tip-freertos-support`
-* :ref:`jtag-debugging-tip-code-flash-voltage`
-* :ref:`jtag-debugging-tip-optimize-jtag-speed`
-* :ref:`jtag-debugging-tip-debugger-startup-commands`
-* :ref:`jtag-debugging-tip-openocd-configure-target`
-* :ref:`jtag-debugging-tip-reset-by-debugger`
-* :ref:`jtag-debugging-tip-jtag-pins-reconfigured`
-* :ref:`jtag-debugging-tip-reporting-issues`
+.. toctree::
+    :maxdepth: 2
+
+    tips-and-quirks
 
 
 相关文档

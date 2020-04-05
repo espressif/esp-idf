@@ -14,22 +14,20 @@
 
 #pragma once
 
+#include "esp_types.h"
 #include "esp_err.h"
-#include <esp_types.h>
-#include "soc/soc.h"
-#include "soc/gpio_periph.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 #include "soc/i2s_periph.h"
 #include "soc/rtc_periph.h"
 #include "soc/i2s_caps.h"
-#include "esp32/rom/gpio.h"
-#include "esp_attr.h"
-#include "esp_intr_alloc.h"
-#include "driver/periph_ctrl.h"
-#include "driver/adc.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
 #include "hal/i2s_hal.h"
 #include "hal/i2s_types.h"
+#include "driver/periph_ctrl.h"
+#include "esp_intr_alloc.h"
+#if SOC_I2S_SUPPORTS_ADC_DAC
+#include "driver/adc.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,7 +59,7 @@ typedef intr_handle_t i2s_isr_handle_t;
  */
 esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin);
 
-#if SOC_I2S_SUPPORT_PDM
+#if SOC_I2S_SUPPORTS_PDM
 /**
  * @brief Set PDM mode down-sample rate
  *        In PDM RX mode, there would be 2 rounds of downsample process in hardware.
@@ -295,6 +293,7 @@ esp_err_t i2s_set_clk(i2s_port_t i2s_num, uint32_t rate, i2s_bits_per_sample_t b
  */
 float i2s_get_clk(i2s_port_t i2s_num);
 
+#if SOC_I2S_SUPPORTS_ADC_DAC
 /**
  * @brief Set built-in ADC mode for I2S DMA, this function will initialize ADC pad,
  *        and set ADC parameters.
@@ -329,6 +328,7 @@ esp_err_t i2s_adc_enable(i2s_port_t i2s_num);
  *     - ESP_ERR_INVALID_STATE  Driver state error
  */
 esp_err_t i2s_adc_disable(i2s_port_t i2s_num);
+#endif
 
 #ifdef __cplusplus
 }

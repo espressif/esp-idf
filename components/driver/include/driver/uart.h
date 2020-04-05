@@ -70,6 +70,8 @@ typedef enum {
 typedef struct {
     uart_event_type_t type; /*!< UART event type */
     size_t size;            /*!< UART data size for UART_DATA event*/
+    bool timeout_flag;      /*!< UART data read timeout flag for UART_DATA event (no new data received during configured RX TOUT)*/
+                            /*!< If the event is caused by FIFO-full interrupt, then there will be no event with the timeout flag before the next byte coming.*/
 } uart_event_t;
 
 typedef intr_handle_t uart_isr_handle_t;
@@ -844,6 +846,21 @@ esp_err_t uart_wait_tx_idle_polling(uart_port_t uart_num);
   *      - ESP_FAIL Driver not installed
   */
 esp_err_t uart_set_loop_back(uart_port_t uart_num, bool loop_back_en);
+
+/**
+  * @brief Configure behavior of UART RX timeout interrupt.
+  *
+  * When always_rx_timeout is true, timeout interrupt is triggered even if FIFO is full.
+  * This function can cause extra timeout interrupts triggered only to send the timeout event.
+  * Call this function only if you want to ensure timeout interrupt will always happen after a byte stream.
+  *
+  * @param uart_num UART number
+  * @param always_rx_timeout_en Set to false enable the default behavior of timeout interrupt,
+  *                             set it to true to always trigger timeout interrupt.
+  *
+  * * @return None
+  */
+void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout_en);
 
 #ifdef __cplusplus
 }
