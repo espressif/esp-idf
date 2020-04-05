@@ -182,7 +182,10 @@ esp_err_t httpd_register_uri_handler(httpd_handle_t handle,
 				free(hd->hd_calls[i]);
 				return ESP_ERR_HTTPD_ALLOC_MEM;
 			}
-#endif            
+#endif 
+#ifdef CONFIG_HTTPD_WS_SUPPORT
+            hd->hd_calls[i]->is_websocket = uri_handler->is_websocket;
+#endif
             ESP_LOGD(TAG, LOG_FMT("[%d] installed %s"), i, uri_handler->uri);
             return ESP_OK;
         }
