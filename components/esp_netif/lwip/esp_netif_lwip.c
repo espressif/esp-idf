@@ -1141,7 +1141,7 @@ bool esp_netif_is_netif_up(esp_netif_t *esp_netif)
 {
     ESP_LOGV(TAG, "%s esp_netif:%p", __func__, esp_netif);
 
-    if (esp_netif != NULL && esp_netif->lwip_netif != NULL && netif_is_up(esp_netif->lwip_netif)) {
+    if (esp_netif != NULL && esp_netif->lwip_netif != NULL && netif_is_up(esp_netif->lwip_netif) && netif_is_link_up(esp_netif->lwip_netif)) {
         return true;
     } else {
         return false;
