@@ -21,11 +21,11 @@ ESP-IDF will use the version of Python installed by default on macOS.
 
   - If you have HomeBrew_, you can run::
 
-      brew install cmake ninja
+      brew install cmake ninja dfu-util
 
   - If you have MacPorts_, you can run::
 
-      sudo port install cmake ninja
+      sudo port install cmake ninja dfu-util
 
   - Otherwise, consult the CMake_ and Ninja_ home pages for macOS installation downloads.
 

@@ -12,6 +12,7 @@ API 指南
    严重错误 <fatal-errors>
    Event Handling <event-handling>
    Deep Sleep Wake Stubs <deep-sleep-stub>
+   :esp32s2: Device Firmware Upgrade through USB <dfu>
    ESP32 Core Dump <core_dump>
    Flash Encryption <../security/flash-encryption>
    FreeRTOS SMP Changes <freertos-smp>

@@ -48,3 +48,8 @@ On Linux and macOS, it is recommended to install ninja using the OS-specific pac
 
 
 ---
+
+.. tool-dfu-util-notes
+
+
+---

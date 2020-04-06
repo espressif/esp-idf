@@ -11,15 +11,15 @@ Linux 平台工具链的标准设置
 
 - CentOS 7::
 
-    sudo yum install git wget flex bison gperf python cmake ninja-build ccache
+    sudo yum install git wget flex bison gperf python cmake ninja-build ccache dfu-util
 
 - Ubuntu 和 Debian::
 
-    sudo apt-get install git wget flex bison gperf python python-pip python-setuptools cmake ninja-build ccache libffi-dev libssl-dev
+    sudo apt-get install git wget flex bison gperf python python-pip python-setuptools cmake ninja-build ccache libffi-dev libssl-dev dfu-util
 
 - Arch::
 
-    sudo pacman -S --needed gcc git make flex bison gperf python-pip python-pyserial cmake ninja ccache
+    sudo pacman -S --needed gcc git make flex bison gperf python-pip python-pyserial cmake ninja ccache dfu-util
 
 .. note::
     使用 ESP-IDF 需要 CMake 3.5 或以上版本。较早版本的 Linux 可能需要升级才能向后移植仓库，或安装 "cmake3" 软件包，而不是安装 "cmake"。

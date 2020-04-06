@@ -1,16 +1,31 @@
 #!/usr/bin/env python
 #
+# Copyright 2020 Espressif Systems (Shanghai) PTE LTD
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 # This program creates archives compatible with ESP32-S* ROM DFU implementation.
 #
 # The archives are in CPIO format. Each file which needs to be flashed is added to the archive
 # as a separate file. In addition to that, a special index file, 'dfuinfo0.dat', is created.
 # This file must be the first one in the archive. It contains binary structures describing each
 # subsequent file (for example, where the file needs to be flashed/loaded).
-#
 
-import argparse
 from collections import namedtuple
+from future.utils import iteritems
+import argparse
 import hashlib
+import json
 import os
 import struct
 import zlib
@@ -19,6 +34,12 @@ try:
     import typing
 except ImportError:
     # Only used for type annotations
+    pass
+
+try:
+    from itertools import izip as zip
+except ImportError:
+    # Python 3
     pass
 
 # CPIO ("new ASCII") format related things
@@ -166,46 +187,64 @@ class EspDfuWriter(object):
 
 
 def action_write(args):
-    writer = EspDfuWriter(args.output_file)
-    for addr, file in args.files:
-        writer.add_file(addr, file)
+    writer = EspDfuWriter(args['output_file'])
+    for addr, f in args['files']:
+        print('Adding {} at {:#x}'.format(f, addr))
+        writer.add_file(addr, f)
     writer.finish()
-
-
-class WriteArgsAction(argparse.Action):
-    """ Helper for argparse to parse <address, filename> argument pairs """
-
-    def __init__(self, *args, **kwargs):
-        super(WriteArgsAction, self).__init__(*args, **kwargs)
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        # TODO: add validation
-        addr = 0
-        result = []
-        for i, value in enumerate(values):
-            if i % 2 == 0:
-                addr = int(value, 0)
-            else:
-                result.append((addr, value))
-
-        setattr(namespace, self.dest, result)
+    print('"{}" has been written. You may proceed with DFU flashing.'.format(args['output_file'].name))
 
 
 def main():
-    parser = argparse.ArgumentParser("mkdfu")
+    parser = argparse.ArgumentParser()
 
     # Provision to add "info" command
     subparsers = parser.add_subparsers(dest="command")
     write_parser = subparsers.add_parser("write")
-    write_parser.add_argument("-o", "--output-file", type=argparse.FileType("wb"))
-    write_parser.add_argument(
-        "files", metavar="<address> <file>", action=WriteArgsAction, nargs="+"
-    )
+    write_parser.add_argument("-o", "--output-file",
+                              help='Filename for storing the output DFU image',
+                              required=True,
+                              type=argparse.FileType("wb"))
+    write_parser.add_argument("--json",
+                              help='Optional file for loading "flash_files" dictionary with <address> <file> items')
+    write_parser.add_argument("files",
+                              metavar="<address> <file>", help='Add <file> at <address>',
+                              nargs="*")
 
     args = parser.parse_args()
-    print(repr(args))
-    if args.command == "write":
-        action_write(args)
+
+    def check_file(file_name):
+        if not os.path.isfile(file_name):
+            raise RuntimeError('{} is not a regular file!'.format(file_name))
+        return file_name
+
+    files = []
+    if args.files:
+        files += [(int(addr, 0), check_file(f_name)) for addr, f_name in zip(args.files[::2], args.files[1::2])]
+
+    if args.json:
+        json_dir = os.path.dirname(os.path.abspath(args.json))
+
+        def process_json_file(path):
+            '''
+            The input path is relative to json_dir. This function makes it relative to the current working
+            directory.
+            '''
+            return check_file(os.path.relpath(os.path.join(json_dir, path), start=os.curdir))
+
+        with open(args.json) as f:
+            files += [(int(addr, 0),
+                       process_json_file(f_name)) for addr, f_name in iteritems(json.load(f)['flash_files'])]
+
+    files = sorted([(addr, f_name) for addr, f_name in iteritems(dict(files))],
+                   key=lambda x: x[0])  # remove possible duplicates and sort based on the address
+
+    cmd_args = {'output_file': args.output_file,
+                'files': files,
+                }
+
+    {'write': action_write
+     }[args.command](cmd_args)
 
 
 if __name__ == "__main__":

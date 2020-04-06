@@ -304,3 +304,11 @@ test_sysviewtrace_proc:
   script:
     - cd ${IDF_PATH}/tools/esp_app_trace/test/sysview
     - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test.sh
+
+test_mkdfu:
+  extends: .host_test_template
+  variables:
+    LC_ALL: C.UTF-8
+  script:
+    - cd ${IDF_PATH}/tools/test_mkdfu
+    - ${IDF_PATH}/tools/ci/multirun_with_pyenv.sh ./test_mkdfu.py
