@@ -83,6 +83,6 @@
 	path = components/tinyusb/tinyusb
 	url = ../../espressif/tinyusb.git
 
-[submodule "components/cryptoauthlib/cryptoauthlib"]
-	path = components/cryptoauthlib/cryptoauthlib
-	url = https://github.com/MicrochipTech/cryptoauthlib.git
+[submodule "examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib"]
+	path = examples/peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib
+	url = ../../espressif/esp-cryptoauthlib.git

@@ -63,6 +63,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * `mynewt-nimble`_ Apache Mynewt NimBLE, Copyright 2015-2018, The Apache Software Foundation, is licensed under Apache License 2.0 as described in :component_file:`LICENSE file<bt/host/nimble/nimble/LICENSE>`.
 
+* `cryptoauthlib`_ Microchip CryptoAuthentication Library - Copyright (c) 2015 - 2018 Microchip Technology Inc, is licensed under common Microchip software License as described in :example_file:`LICENSE file <peripherals/secure_element/atecc608_ecdsa/components/esp-cryptoauthlib/cryptoauthlib/LICENSE>`
 
 Build Tools
 -----------
@@ -180,4 +181,4 @@ Copyright (C) 2011, ChaN, all right reserved.
 .. _ESP-IDF Programming Guide: https://docs.espressif.com/projects/esp-idf/en/latest/
 .. _sphinx_idf_theme: https://github.com/espressif/sphinx_idf_theme
 .. _sphinx_rtd_theme: https://github.com/readthedocs/sphinx_rtd_theme
-
+.. _cryptoauthlib: https://github.com/MicrochipTech/cryptoauthlib

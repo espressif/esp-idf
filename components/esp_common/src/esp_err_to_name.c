@@ -644,6 +644,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_WOLFSSL_SSL_WRITE_FAILED
     ERR_TBL_IT(ESP_ERR_WOLFSSL_SSL_WRITE_FAILED),               /* 32794 0x801a wolfSSL api returned failed */
 #   endif
+#   ifdef      ESP_ERR_ESP_TLS_SE_FAILED
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_SE_FAILED),                      /* 32795 0x801b */
+#   endif
     // components/esp_https_ota/include/esp_https_ota.h
 #   ifdef      ESP_ERR_HTTPS_OTA_BASE
     ERR_TBL_IT(ESP_ERR_HTTPS_OTA_BASE),                         /* 36864 0x9000 */

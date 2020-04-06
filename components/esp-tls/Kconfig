@@ -13,6 +13,17 @@ menu "ESP-TLS"
             bool "wolfSSL (License info in wolfSSL directory README)"
     endchoice
 
+    config ESP_TLS_USE_SECURE_ELEMENT
+        bool "Use Secure Element (ATECC608A) with ESP-TLS"
+        depends on IDF_TARGET_ESP32 && ESP_TLS_USING_MBEDTLS
+        select ATCA_MBEDTLS_ECDSA
+        select ATCA_MBEDTLS_ECDSA_SIGN
+        select ATCA_MBEDTLS_ECDSA_VERIFY
+        default n
+        help
+            Enable use of Secure Element for ESP-TLS, this enables internal support for
+            ATECC608A peripheral on ESPWROOM32SE, which can be used for TLS connection.
+
     config ESP_TLS_SERVER
         bool "Enable ESP-TLS Server"
         default n
