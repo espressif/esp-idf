@@ -75,7 +75,7 @@ typedef enum {
 #define BTU_TASK_STACK_SIZE             (CONFIG_BTU_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)
 #define BTU_TASK_PRIO                   (configMAX_PRIORITIES - 5)
 #define BTU_TASK_NAME                   "btuT"
-#define BTU_QUEUE_LEN                   50
+#define BTU_QUEUE_LEN                   200
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
 #define BTC_TASK_STACK_SIZE             (CONFIG_BTC_TASK_STACK_SIZE + BT_TASK_EXTRA_STACK_SIZE)	//by menuconfig
