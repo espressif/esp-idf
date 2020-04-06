@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Build all examples from the examples directory, in BUILD_PATH to
 # ensure they can run when copied to a new directory.

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # While we support GNU Make & CMake together, check the same examples are present for both. But only for ESP32
 

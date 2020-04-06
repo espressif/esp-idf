@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # While we support GNU Make & CMake together, check that unit tests support both
 CMAKE_UT_PATHS=$( find ${IDF_PATH}/components/ -type f -name CMakeLists.txt | grep "/test/" | grep -v "mbedtls/programs")

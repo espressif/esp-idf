@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Run cmakelint on all cmake files in IDF_PATH (except third party)
 #

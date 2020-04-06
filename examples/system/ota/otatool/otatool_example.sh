@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Demonstrates command-line interface of OTA Partitions Tool, otatool.py
 #
