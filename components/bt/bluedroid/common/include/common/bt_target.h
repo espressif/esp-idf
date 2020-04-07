@@ -915,7 +915,7 @@
 
 /* This is set to enable L2CAP to  take the ACL link out of park mode when ACL data is to be sent. */
 #ifndef L2CAP_WAKE_PARKED_LINK
-#define L2CAP_WAKE_PARKED_LINK      TRUE
+#define L2CAP_WAKE_PARKED_LINK      FALSE
 #endif
 
 /* Whether link wants to be the master or the slave. */
