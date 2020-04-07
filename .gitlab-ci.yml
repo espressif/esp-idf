@@ -1586,3 +1586,9 @@ IT_015_01:
   tags:
     - ESP32_IDF
     - SSC_T2_4
+
+UT_001_41:
+  <<: *unit_test_template
+  tags:
+    - ESP32_IDF
+    - UT_T1_1
