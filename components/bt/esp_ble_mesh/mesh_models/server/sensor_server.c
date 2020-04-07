@@ -424,14 +424,22 @@ static void send_sensor_column_status(struct bt_mesh_model *model,
         state = &srv->states[i];
         if (state->sensor_property_id != INVALID_SENSOR_PROPERTY_ID &&
                 state->sensor_property_id == prop_id) {
-            length = SENSOR_PROPERTY_ID_LEN + state->series_column.raw_value_x->len;
+            length = SENSOR_PROPERTY_ID_LEN;
+            if (state->series_column.raw_value_x) {
+                length += state->series_column.raw_value_x->len;
+            }
             /**
              * TODO: column width & raw value y in Sensor Column Status are optional,
              * here we need to add some conditions to decide whether put these two
              * in the status message.
              */
             if (optional) {
-                length += state->series_column.column_width->len + state->series_column.raw_value_y->len;
+                if (state->series_column.column_width) {
+                    length += state->series_column.column_width->len;
+                }
+                if (state->series_column.raw_value_y) {
+                    length += state->series_column.raw_value_y->len;
+                }
             }
             break;
         }
@@ -455,13 +463,19 @@ static void send_sensor_column_status(struct bt_mesh_model *model,
     bt_mesh_model_msg_init(msg, BLE_MESH_MODEL_OP_SENSOR_COLUMN_STATUS);
     net_buf_simple_add_le16(msg, prop_id);
     if (i != srv->state_count) {
-        net_buf_simple_add_mem(msg, state->series_column.raw_value_x->data,
-                               state->series_column.raw_value_x->len);
+        if (state->series_column.raw_value_x) {
+            net_buf_simple_add_mem(msg, state->series_column.raw_value_x->data,
+                                   state->series_column.raw_value_x->len);
+        }
         if (optional) {
-            net_buf_simple_add_mem(msg, state->series_column.column_width->data,
-                                   state->series_column.column_width->len);
-            net_buf_simple_add_mem(msg, state->series_column.raw_value_y->data,
-                                   state->series_column.raw_value_y->len);
+            if (state->series_column.column_width) {
+                net_buf_simple_add_mem(msg, state->series_column.column_width->data,
+                                       state->series_column.column_width->len);
+            }
+            if (state->series_column.raw_value_y) {
+                net_buf_simple_add_mem(msg, state->series_column.raw_value_y->data,
+                                       state->series_column.raw_value_y->len);
+            }
         }
     }
 
@@ -491,9 +505,15 @@ static void send_sensor_series_status(struct bt_mesh_model *model,
              * decide whether put these three in the status message.
              */
             if (optional) {
-                length += state->series_column.raw_value_x->len +
-                          state->series_column.column_width->len +
-                          state->series_column.raw_value_y->len;
+                if (state->series_column.raw_value_x) {
+                    length += state->series_column.raw_value_x->len;
+                }
+                if (state->series_column.column_width) {
+                    length += state->series_column.column_width->len;
+                }
+                if (state->series_column.raw_value_y) {
+                    length += state->series_column.raw_value_y->len;
+                }
             }
             break;
         }
@@ -519,12 +539,18 @@ static void send_sensor_series_status(struct bt_mesh_model *model,
     net_buf_simple_add_le16(msg, prop_id);
     if (i != srv->state_count) {
         if (optional) {
-            net_buf_simple_add_mem(msg, state->series_column.raw_value_x->data,
-                                   state->series_column.raw_value_x->len);
-            net_buf_simple_add_mem(msg, state->series_column.column_width->data,
-                                   state->series_column.column_width->len);
-            net_buf_simple_add_mem(msg, state->series_column.raw_value_y->data,
-                                   state->series_column.raw_value_y->len);
+            if (state->series_column.raw_value_x) {
+                net_buf_simple_add_mem(msg, state->series_column.raw_value_x->data,
+                                       state->series_column.raw_value_x->len);
+            }
+            if (state->series_column.column_width) {
+                net_buf_simple_add_mem(msg, state->series_column.column_width->data,
+                                       state->series_column.column_width->len);
+            }
+            if (state->series_column.raw_value_y) {
+                net_buf_simple_add_mem(msg, state->series_column.raw_value_y->data,
+                                       state->series_column.raw_value_y->len);
+            }
         }
     }
 
@@ -1008,12 +1034,6 @@ static int check_sensor_server_init(struct bt_mesh_sensor_state *state_start,
         }
         if (state->sensor_data.raw_value == NULL) {
             BT_ERR("%s, Invalid Sensor Data state", __func__);
-            return -EINVAL;
-        }
-        if (state->series_column.raw_value_x == NULL ||
-                state->series_column.column_width == NULL ||
-                state->series_column.raw_value_y == NULL) {
-            BT_ERR("%s, Invalid Sensor Series column state", __func__);
             return -EINVAL;
         }
     }
