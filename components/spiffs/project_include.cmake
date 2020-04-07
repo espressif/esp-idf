@@ -47,14 +47,16 @@ function(spiffs_create_partition_image partition base_dir)
             ADDITIONAL_MAKE_CLEAN_FILES
             ${image_file})
 
-
         idf_component_get_property(main_args esptool_py FLASH_ARGS)
         idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
         esptool_py_flash_target(${partition}-flash "${main_args}" "${sub_args}")
         esptool_py_flash_target_image(${partition}-flash "${partition}" "${offset}" "${image_file}")
 
+        add_dependencies(${partition}-flash spiffs_${partition}_bin)
+
         if(arg_FLASH_IN_PROJECT)
             esptool_py_flash_target_image(flash "${partition}" "${offset}" "${image_file}")
+            add_dependencies(flash spiffs_${partition}_bin)
         endif()
     else()
         set(message "Failed to create SPIFFS image for partition '${partition}'. "
