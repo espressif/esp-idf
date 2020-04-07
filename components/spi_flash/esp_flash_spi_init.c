@@ -121,25 +121,35 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     if (config->host_id == SPI_HOST) caps = MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT;
 
     chip = (esp_flash_t*)heap_caps_malloc(sizeof(esp_flash_t), caps);
-    host = (spi_flash_host_driver_t*)heap_caps_malloc(sizeof(spi_flash_host_driver_t), caps);
-    host_data = (memspi_host_data_t*)heap_caps_malloc(sizeof(memspi_host_data_t), caps);
-    if (!chip || !host || !host_data) {
+    if (!chip) {
         ret = ESP_ERR_NO_MEM;
         goto fail;
     }
 
+    host = (spi_flash_host_driver_t*)heap_caps_malloc(sizeof(spi_flash_host_driver_t), caps);
     *chip = (esp_flash_t) {
         .read_mode = config->io_mode,
         .host = host,
     };
+    if (!host) {
+        ret = ESP_ERR_NO_MEM;
+        goto fail;
+    }
+
+    host_data = (memspi_host_data_t*)heap_caps_malloc(sizeof(memspi_host_data_t), caps);
+    host->driver_data = host_data;
+    if (!host_data) {
+        ret = ESP_ERR_NO_MEM;
+        goto fail;
+    }
 
     int dev_id;
     esp_err_t err = esp_flash_init_os_functions(chip, config->host_id, &dev_id);
-    assert(dev_id < SOC_SPI_PERIPH_CS_NUM(config->host_id) && dev_id >= 0);
     if (err != ESP_OK) {
         ret = err;
         goto fail;
     }
+    assert(dev_id < SOC_SPI_PERIPH_CS_NUM(config->host_id) && dev_id >= 0);
 
     bool use_iomux = spicommon_bus_using_iomux(config->host_id);
     memspi_host_config_t host_cfg = {
@@ -159,6 +169,7 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
     *out_chip = chip;
     return ret;
 fail:
+    // The memory allocated are free'd in the `spi_bus_remove_flash_device`.
     spi_bus_remove_flash_device(chip);
     return ret;
 }
