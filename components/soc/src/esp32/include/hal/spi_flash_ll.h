@@ -238,9 +238,9 @@ static inline bool spi_flash_ll_host_idle(const spi_dev_t *dev)
  */
 static inline void spi_flash_ll_set_cs_pin(spi_dev_t *dev, int pin)
 {
-    dev->pin.cs0_dis = (pin == 0) ? 0 : 1;
-    dev->pin.cs1_dis = (pin == 1) ? 0 : 1;
-    dev->pin.cs2_dis = (pin == 2) ? 0 : 1;
+    dev->pin.cs0_dis = (pin != 0);
+    dev->pin.cs1_dis = (pin != 1);
+    dev->pin.cs2_dis = (pin != 2);
 }
 
 /**

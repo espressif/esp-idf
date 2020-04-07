@@ -185,8 +185,12 @@ static inline void gpspi_flash_ll_read_phase(spi_dev_t *dev)
  */
 static inline void gpspi_flash_ll_set_cs_pin(spi_dev_t *dev, int pin)
 {
-    dev->misc.cs0_dis = (pin == 0) ? 0 : 1;
-    dev->misc.cs1_dis = (pin == 1) ? 0 : 1;
+    dev->misc.cs0_dis = (pin != 0);
+    dev->misc.cs1_dis = (pin != 1);
+    dev->misc.cs2_dis = (pin != 2);
+    dev->misc.cs3_dis = (pin != 3);
+    dev->misc.cs4_dis = (pin != 4);
+    dev->misc.cs5_dis = (pin != 5);
 }
 
 /**
