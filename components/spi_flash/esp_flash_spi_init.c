@@ -73,14 +73,14 @@ __attribute__((unused)) static const char TAG[] = "spi_flash";
 esp_flash_t *esp_flash_default_chip = NULL;
 
 
-static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux)
+static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_flash_spi_device_config_t *config, bool use_iomux, int cs_id)
 {
     //Not using spicommon_cs_initialize since we don't want to put the whole
     //spi_periph_signal into the DRAM. Copy these data from flash before the
     //cache disabling
     int cs_io_num = config->cs_io_num;
     int spics_in = spi_periph_signal[config->host_id].spics_in;
-    int spics_out = spi_periph_signal[config->host_id].spics_out[config->cs_id];
+    int spics_out = spi_periph_signal[config->host_id].spics_out[cs_id];
     int spics_func = spi_periph_signal[config->host_id].func;
     uint32_t iomux_reg = GPIO_PIN_MUX_REG[cs_io_num];
 
@@ -101,7 +101,7 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
         }
         GPIO.pin[cs_io_num].pad_driver = 0;
         gpio_matrix_out(cs_io_num, spics_out, false, false);
-        if (config->cs_id == 0) {
+        if (cs_id == 0) {
             gpio_matrix_in(cs_io_num, spics_in, false);
         }
         PIN_FUNC_SELECT(iomux_reg, PIN_FUNC_GPIO);
@@ -167,7 +167,8 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
         goto fail;
     }
 
-    cs_initialize(chip, config, use_iomux);
+    // The cs_id inside `config` is deprecated, use the `dev_id` provided by the bus lock instead.
+    cs_initialize(chip, config, use_iomux, dev_id);
     *out_chip = chip;
     return ret;
 fail:
@@ -210,7 +211,7 @@ esp_err_t esp_flash_init_default_chip(void)
 {
     memspi_host_config_t cfg = ESP_FLASH_HOST_CONFIG_DEFAULT();
 
-    #ifdef CONFIG_IDF_TARGET_ESP32S2 
+    #ifdef CONFIG_IDF_TARGET_ESP32S2
     // For esp32s2 spi IOs are configured as from IO MUX by default
     cfg.iomux = ets_efuse_get_spiconfig() == 0 ?  true : false;
     #endif
