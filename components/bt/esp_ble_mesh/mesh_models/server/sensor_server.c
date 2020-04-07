@@ -290,7 +290,8 @@ static void send_sensor_settings_status(struct bt_mesh_model *model,
     for (i = 0; i < srv->state_count; i++) {
         state = &srv->states[i];
         if (state->sensor_property_id != INVALID_SENSOR_PROPERTY_ID &&
-                state->sensor_property_id == prop_id) {
+                state->sensor_property_id == prop_id &&
+                state->setting_count && state->settings) {
             for (j = 0; j < state->setting_count; j++) {
                 item = &state->settings[j];
                 if (item->property_id != INVALID_SENSOR_SETTING_PROPERTY_ID) {
@@ -325,7 +326,8 @@ static struct sensor_setting *find_sensor_setting(struct bt_mesh_model *model,
     for (i = 0; i < srv->state_count; i++) {
         state = &srv->states[i];
         if (state->sensor_property_id != INVALID_SENSOR_PROPERTY_ID &&
-                state->sensor_property_id == prop_id) {
+                state->sensor_property_id == prop_id &&
+                state->setting_count && state->settings) {
             for (j = 0; j < state->setting_count; j++) {
                 item = &state->settings[j];
                 if (item->property_id != INVALID_SENSOR_SETTING_PROPERTY_ID &&
@@ -972,15 +974,13 @@ static int check_sensor_server_init(struct bt_mesh_sensor_state *state_start,
             BT_ERR("%s, Invalid Sensor Property ID 0x%04x", __func__, state->sensor_property_id);
             return -EINVAL;
         }
-        if (state->setting_count == 0U || state->settings == NULL) {
-            BT_ERR("%s, Invalid Sensor Setting state", __func__);
-            return -EINVAL;
-        }
-        for (j = 0; j < state->setting_count; j++) {
-            setting = &state->settings[j];
-            if (setting->property_id == INVALID_SENSOR_SETTING_PROPERTY_ID || setting->raw == NULL) {
-                BT_ERR("%s, Invalid Sensor Setting state internal parameter", __func__);
-                return -EINVAL;
+        if (state->setting_count && state->settings) {
+            for (j = 0; j < state->setting_count; j++) {
+                setting = &state->settings[j];
+                if (setting->property_id == INVALID_SENSOR_SETTING_PROPERTY_ID || setting->raw == NULL) {
+                    BT_ERR("%s, Invalid Sensor Setting state internal parameter", __func__);
+                    return -EINVAL;
+                }
             }
         }
         if (state->cadence) {
