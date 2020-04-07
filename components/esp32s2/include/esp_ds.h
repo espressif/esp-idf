@@ -97,7 +97,7 @@ typedef struct {
  * in parallel.
  * It blocks until the signing is finished and then returns the signature.
  *
- * @note This function locks the HMAC, SHA and AES components during its entire execution time.
+ * @note This function locks the HMAC, SHA, AES and RSA components during its entire execution time.
  *
  * @param message the message to be signed; its length is determined by data->rsa_length
  * @param data the encrypted signing key data (AES encrypted RSA key + IV)
@@ -126,7 +126,7 @@ esp_err_t esp_ds_sign(const void *message,
  * This function yields a context object which needs to be passed to \c esp_ds_finish_sign() to finish the signing
  * process.
  *
- * @note This function locks the HMAC, SHA and AES components, so the user has to ensure to call
+ * @note This function locks the HMAC, SHA, AES and RSA components, so the user has to ensure to call
  *       \c esp_ds_finish_sign() in a timely manner.
  *
  * @param message the message to be signed; its length is determined by data->rsa_length
