@@ -230,6 +230,24 @@ xt_highint5:
     .align      4
 .handle_livelock_int:
 
+    movi    a0, SOC_RTC_DATA_LOW
+    movi    a5, _l4_intr_livelock_sync
+    l32i    a5, a5, 0
+    s32i    a5, a0, 0
+    memw
+    movi    a5, _l4_intr_livelock_sync
+    l32i    a5, a5, 4
+    s32i    a5, a0, 4
+    memw
+    movi    a5, _l4_intr_livelock_app
+    l32i    a5, a5, 0
+    s32i    a5, a0, 8
+    memw
+    movi    a5, _l4_intr_livelock_counter
+    l32i    a5, a5, 0
+    s32i    a5, a0, 12
+    memw
+
     getcoreid   a5
 
     /* Save A2, A3, A4 so we can use those registers */
