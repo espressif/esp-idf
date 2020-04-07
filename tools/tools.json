@@ -325,31 +325,31 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "23c9a50b6e109e845311d697bfe1caae7bc0df092e71669e9848bcecd96be948",
-            "size": 1724360,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-linux64-0.10.0-esp32-20200309.tar.gz"
+            "sha256": "b9e4070d1262e80dfdbdae337059239a5c4812698de5ee76746c648732b60392",
+            "size": 1725822,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200406/openocd-esp32-linux64-0.10.0-esp32-20200406.tar.gz"
           },
           "linux-armel": {
-            "sha256": "04b75498138e6cca9fc0264479dd9f11e60b757ac0d2f14f008f9b54ec624b12",
-            "size": 1774177,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-armel-0.10.0-esp32-20200309.tar.gz"
+            "sha256": "2588aac49d0a68e558ea1e7b7cf5a4ae182a99731da5b2ba9dacfa7df1869aea",
+            "size": 1776875,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200406/openocd-esp32-armel-0.10.0-esp32-20200406.tar.gz"
           },
           "macos": {
-            "sha256": "b39ded478181da4ddcdcc5c52c1c73b60610f856eb0f13b494caa750bebc1d78",
-            "size": 1810061,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-macos-0.10.0-esp32-20200309.tar.gz"
+            "sha256": "fc3cfa4ffac4cb7ecc20d752ef52bab9fdd5207a7159b4e8b7b11d5f10a641d4",
+            "size": 1810346,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200406/openocd-esp32-macos-0.10.0-esp32-20200406.tar.gz"
           },
-          "name": "v0.10.0-esp32-20200309",
+          "name": "v0.10.0-esp32-20200406",
           "status": "recommended",
           "win32": {
-            "sha256": "31e2d12843386058ad13d27a5bb69c73ee185c93d76be9e4c03a832a2fdaef47",
-            "size": 2149578,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-win32-0.10.0-esp32-20200309.zip"
+            "sha256": "f0834cda591d164ea33d8f82f29098fadc4e8e19f5a920e44fe50da55698be4e",
+            "size": 2150669,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200406/openocd-esp32-win32-0.10.0-esp32-20200406.zip"
           },
           "win64": {
-            "sha256": "31e2d12843386058ad13d27a5bb69c73ee185c93d76be9e4c03a832a2fdaef47",
-            "size": 2149578,
-            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200309/openocd-esp32-win32-0.10.0-esp32-20200309.zip"
+            "sha256": "f0834cda591d164ea33d8f82f29098fadc4e8e19f5a920e44fe50da55698be4e",
+            "size": 2150669,
+            "url": "https://github.com/espressif/openocd-esp32/releases/download/v0.10.0-esp32-20200406/openocd-esp32-win32-0.10.0-esp32-20200406.zip"
           }
         }
       ]
