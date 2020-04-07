@@ -17,6 +17,10 @@
 #include "hal/spi_types.h"
 #include "esp_flash.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /// Configurations for the SPI Flash to init
 typedef struct {
     spi_host_device_t host_id;      ///< Bus to use
@@ -53,3 +57,6 @@ esp_err_t spi_bus_add_flash_device(esp_flash_t **out_chip, const esp_flash_spi_d
  */
 esp_err_t spi_bus_remove_flash_device(esp_flash_t *chip);
 
+#ifdef __cplusplus
+}
+#endif
