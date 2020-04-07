@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 #
 # Test the build system for basic consistency (Cmake/idf.py version)
 #
