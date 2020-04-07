@@ -88,6 +88,8 @@ static IRAM_ATTR NOINLINE_ATTR void cs_initialize(esp_flash_t *chip, const esp_f
     //initialization, disable the cache temporarily
     chip->os_func->start(chip->os_func_data);
     if (use_iomux) {
+        // This requires `gpio_iomux_in` and `gpio_iomux_out` to be in the IRAM.
+        // `linker.lf` is used fulfill this requirement.
         gpio_iomux_in(cs_io_num, spics_in);
         gpio_iomux_out(cs_io_num, spics_func, false);
     } else {
