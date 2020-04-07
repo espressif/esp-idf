@@ -269,7 +269,7 @@ struct crypto_ec *crypto_ec_init(int group)
         return NULL;
     }
 
-    mbedtls_ecp_group_init( &e->group );
+    mbedtls_ecp_group_init(&e->group);
 
     if (mbedtls_ecp_group_load(&e->group, grp_id)) {
         crypto_ec_deinit(e);
@@ -286,7 +286,7 @@ void crypto_ec_deinit(struct crypto_ec *e)
         return;
     }
 
-    mbedtls_ecp_group_free( &e->group );
+    mbedtls_ecp_group_free(&e->group);
     os_free(e);
 }
 
@@ -420,6 +420,7 @@ int crypto_ec_point_mul(struct crypto_ec *e, const struct crypto_ec_point *p,
     mbedtls_ctr_drbg_context ctr_drbg;
     
     mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
 
     MBEDTLS_MPI_CHK(mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy,
                                     NULL, 0)); 
@@ -431,8 +432,8 @@ int crypto_ec_point_mul(struct crypto_ec *e, const struct crypto_ec_point *p,
                 mbedtls_ctr_drbg_random, 
                 &ctr_drbg));
 cleanup:
-    mbedtls_ctr_drbg_free( &ctr_drbg );
-    mbedtls_entropy_free( &entropy );
+    mbedtls_ctr_drbg_free(&ctr_drbg);
+    mbedtls_entropy_free(&entropy);
     return ret ? -1 : 0;
 }
 
