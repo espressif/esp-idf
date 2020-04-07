@@ -974,12 +974,26 @@ static int check_sensor_server_init(struct bt_mesh_sensor_state *state_start,
             BT_ERR("%s, Invalid Sensor Property ID 0x%04x", __func__, state->sensor_property_id);
             return -EINVAL;
         }
+        /* Check if the same Sensor Property ID exists */
+        for (int k = i + 1; k < state_count; k++) {
+            if (state->sensor_property_id == state_start[k].sensor_property_id) {
+                BT_ERR("%s, Same Sensor Property ID 0x%04x exists", __func__, state->sensor_property_id);
+                return -EINVAL;
+            }
+        }
         if (state->setting_count && state->settings) {
             for (j = 0; j < state->setting_count; j++) {
                 setting = &state->settings[j];
                 if (setting->property_id == INVALID_SENSOR_SETTING_PROPERTY_ID || setting->raw == NULL) {
-                    BT_ERR("%s, Invalid Sensor Setting state internal parameter", __func__);
+                    BT_ERR("%s, Invalid Sensor Setting state", __func__);
                     return -EINVAL;
+                }
+                /* Check if the same Sensor Setting Property ID exists */
+                for (int k = j + 1; k < state->setting_count; k++) {
+                    if (setting->property_id == state->settings[k].property_id) {
+                        BT_ERR("%s, Same Sensor Setting Property ID 0x%04x exists", __func__, setting->property_id);
+                        return -EINVAL;
+                    }
                 }
             }
         }
@@ -1018,11 +1032,10 @@ static int sensor_server_init(struct bt_mesh_model *model)
     case BLE_MESH_MODEL_ID_SENSOR_SRV: {
         struct bt_mesh_sensor_srv *srv = model->user_data;
         if (srv->state_count == 0U || srv->states == NULL) {
-            BT_ERR("%s, Invalid Sensor state parameter, model_id 0x%04x", __func__, model->id);
+            BT_ERR("%s, Invalid Sensor state, model_id 0x%04x", __func__, model->id);
             return -EINVAL;
         }
         if (check_sensor_server_init(srv->states, srv->state_count)) {
-            BT_ERR("%s, Invalid Sensor Server init value", __func__);
             return -EINVAL;
         }
         srv->model = model;
@@ -1031,11 +1044,10 @@ static int sensor_server_init(struct bt_mesh_model *model)
     case BLE_MESH_MODEL_ID_SENSOR_SETUP_SRV: {
         struct bt_mesh_sensor_setup_srv *srv = model->user_data;
         if (srv->state_count == 0U || srv->states == NULL) {
-            BT_ERR("%s, Invalid parameter, model_id 0x%04x", __func__, model->id);
+            BT_ERR("%s, Invalid Sensor state, model_id 0x%04x", __func__, model->id);
             return -EINVAL;
         }
         if (check_sensor_server_init(srv->states, srv->state_count)) {
-            BT_ERR("%s, Invalid Sensor Setup Server init value", __func__);
             return -EINVAL;
         }
         srv->model = model;
