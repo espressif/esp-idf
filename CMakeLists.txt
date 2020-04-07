@@ -1,6 +1,12 @@
 cmake_minimum_required(VERSION 3.5)
 project(esp-idf C CXX ASM)
 
+if(CMAKE_CURRENT_LIST_DIR STREQUAL CMAKE_SOURCE_DIR)
+    message(FATAL_ERROR "Current directory '${CMAKE_CURRENT_LIST_DIR}' is not buildable. "
+    "Change directories to one of the example projects in '${CMAKE_CURRENT_LIST_DIR}/examples' and try "
+    "again.")
+endif()
+
 unset(compile_options)
 unset(c_compile_options)
 unset(cxx_compile_options)
