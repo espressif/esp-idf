@@ -32,6 +32,7 @@
 #include "esp32s2/rom/efuse.h"
 #endif
 
+static __attribute__((unused)) const char *TAG = "efuse";
 // Permanently update values written to the efuse write registers
 void esp_efuse_burn_new_values(void)
 {
@@ -49,7 +50,6 @@ void esp_efuse_reset(void)
 #include "../include_bootloader/bootloader_flash.h"
 #include "esp_flash_encrypt.h"
 
-const static char *TAG = "efuse";
 static uint32_t esp_efuse_flash_offset = 0;
 static uint32_t esp_efuse_flash_size = 0;
 
