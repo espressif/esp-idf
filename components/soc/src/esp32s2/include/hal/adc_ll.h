@@ -1,11 +1,13 @@
 #pragma once
 
+#include <stdbool.h>
 #include "soc/adc_periph.h"
 #include "hal/adc_types.h"
 #include "soc/apb_saradc_struct.h"
 #include "soc/apb_saradc_reg.h"
 #include "soc/rtc_cntl_struct.h"
-#include <stdbool.h>
+#include "soc/rtc_cntl_reg.h"
+#include "i2c_rtc_clk.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +53,7 @@ typedef struct {
 
 /**
  * @brief ADC controller type selection.
- * 
+ *
  * @note For ADC2, use the force option with care. The system power consumption detection will use ADC2.
  *       If it is forced to switch to another controller, it may cause the system to obtain incorrect values.
  * @note Normally, there is no need to switch the controller manually.
@@ -66,6 +68,49 @@ typedef enum {
     ADC2_CTRL_FORCE_ULP = 5,    /*!<For ADC2. Arbiter in shield mode. Force select RTC controller work. */
     ADC2_CTRL_FORCE_DIG = 6,    /*!<For ADC2. Arbiter in shield mode. Force select digital controller work. */
 } adc_controller_t;
+
+/* ADC calibration defines. */
+#define ADC_LL_I2C_ADC            0X69
+#define ADC_LL_I2C_ADC_HOSTID     0
+
+#define ADC_LL_ANA_CONFIG2_REG  0x6000E048
+
+#define ADC_LL_SAR1_ENCAL_GND_ADDR 0x7
+#define ADC_LL_SAR1_ENCAL_GND_ADDR_MSB 5
+#define ADC_LL_SAR1_ENCAL_GND_ADDR_LSB 5
+
+#define ADC_LL_SAR2_ENCAL_GND_ADDR 0x7
+#define ADC_LL_SAR2_ENCAL_GND_ADDR_MSB 7
+#define ADC_LL_SAR2_ENCAL_GND_ADDR_LSB 7
+
+#define ADC_LL_SAR1_INITIAL_CODE_HIGH_ADDR 0x1
+#define ADC_LL_SAR1_INITIAL_CODE_HIGH_ADDR_MSB 0x3
+#define ADC_LL_SAR1_INITIAL_CODE_HIGH_ADDR_LSB 0x0
+
+#define ADC_LL_SAR1_INITIAL_CODE_LOW_ADDR  0x0
+#define ADC_LL_SAR1_INITIAL_CODE_LOW_ADDR_MSB  0x7
+#define ADC_LL_SAR1_INITIAL_CODE_LOW_ADDR_LSB  0x0
+
+#define ADC_LL_SAR2_INITIAL_CODE_HIGH_ADDR 0x4
+#define ADC_LL_SAR2_INITIAL_CODE_HIGH_ADDR_MSB 0x3
+#define ADC_LL_SAR2_INITIAL_CODE_HIGH_ADDR_LSB 0x0
+
+#define ADC_LL_SAR2_INITIAL_CODE_LOW_ADDR  0x3
+#define ADC_LL_SAR2_INITIAL_CODE_LOW_ADDR_MSB  0x7
+#define ADC_LL_SAR2_INITIAL_CODE_LOW_ADDR_LSB  0x0
+
+#define ADC_LL_SAR1_DREF_ADDR  0x2
+#define ADC_LL_SAR1_DREF_ADDR_MSB  0x6
+#define ADC_LL_SAR1_DREF_ADDR_LSB  0x4
+
+#define ADC_LL_SAR2_DREF_ADDR  0x5
+#define ADC_LL_SAR2_DREF_ADDR_MSB  0x6
+#define ADC_LL_SAR2_DREF_ADDR_LSB  0x4
+
+#define ADC_LL_SAR1_SAMPLE_CYCLE_ADDR 0x2
+#define ADC_LL_SAR1_SAMPLE_CYCLE_ADDR_MSB 0x2
+#define ADC_LL_SAR1_SAMPLE_CYCLE_ADDR_LSB 0x0
+/* ADC calibration defines end. */
 
 /*---------------------------------------------------------------
                     Digital controller setting
@@ -89,15 +134,21 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
 }
 
 /**
- * Set adc sample cycle for digital controller.
+ * Set adc sample cycle.
  *
  * @note Normally, please use default value.
- * @param sample_cycle Cycles between DIG ADC controller start ADC sensor and beginning to receive data from sensor.
- *                     Range: 2 ~ 0xFF.
+ * @param sample_cycle The number of ADC sampling cycles. Range: 1 ~ 7.
  */
-static inline void adc_ll_digi_set_sample_cycle(uint32_t sample_cycle)
+static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    APB_SARADC.fsm.sample_cycle = sample_cycle;
+    /* Should be called before writing I2C registers. */
+    void phy_get_romfunc_addr(void);
+    phy_get_romfunc_addr();
+    SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
+    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
+    SET_PERI_REG_MASK(ADC_LL_ANA_CONFIG2_REG, BIT(16));
+
+    I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
 /**
@@ -263,6 +314,7 @@ static inline void adc_ll_digi_output_invert(adc_ll_num_t adc_n, bool inv_en)
 
 /**
  * Sets the number of interval clock cycles for the digital controller to trigger the measurement.
+ * Expression: `trigger_meas_freq` = `controller_clk` / 2 / interval. Refer to ``adc_digi_clk_t``.
  *
  * @note The trigger interval should not be less than the sampling time of the SAR ADC.
  * @param cycle The number of clock cycles for the trigger interval. The unit is the divided clock. Range: 40 ~ 4095.
@@ -292,11 +344,11 @@ static inline void adc_ll_digi_trigger_disable(void)
 
 /**
  * Set ADC digital controller clock division factor. The clock divided from `APLL` or `APB` clock.
- * Expression: controller_clk = APLL/APB * (div_num  + div_b / div_a).
+ * Expression: controller_clk = (`APLL` or `APB`) / (div_num + div_a / div_b + 1).
  *
- * @param div_num Division factor. Range: 1 ~ 255.
+ * @param div_num Division factor. Range: 0 ~ 255.
  * @param div_b Division factor. Range: 1 ~ 63.
- * @param div_a Division factor. Range: 1 ~ 63.
+ * @param div_a Division factor. Range: 0 ~ 63.
  */
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
@@ -1027,7 +1079,7 @@ static inline void adc_ll_set_controller(adc_ll_num_t adc_n, adc_controller_t ct
  * @note Only ADC2 support arbiter.
  * @note The arbiter's working clock is APB_CLK. When the APB_CLK clock drops below 8 MHz, the arbiter must be in shield mode.
  *
- * @param mode Refer to `adc_arbiter_mode_t`.
+ * @param mode Refer to ``adc_arbiter_mode_t``.
  */
 static inline void adc_ll_set_arbiter_work_mode(adc_arbiter_mode_t mode)
 {
@@ -1092,7 +1144,7 @@ static inline void adc_ll_set_arbiter_priority(uint8_t pri_rtc, uint8_t pri_dig,
  * In sleep mode, the arbiter is in power-down mode.
  * Need to switch the controller to RTC to shield the control of the arbiter.
  * After waking up, it needs to switch to arbiter control.
- * 
+ *
  * @note The hardware will do this automatically. In normal use, there is no need to call this interface to manually switch the controller.
  * @note Only support ADC2.
  */
@@ -1116,47 +1168,6 @@ static inline void adc_ll_disable_sleep_controller(void)
 }
 
 /* ADC calibration code. */
-#include "soc/rtc_cntl_reg.h"
-#include "i2c_rtc_clk.h"
-
-#define I2C_ADC            0X69
-#define I2C_ADC_HOSTID     0
-
-#define ANA_CONFIG2_REG  0x6000E048
-#define ANA_CONFIG2_M   (BIT(18))
-
-#define SAR1_ENCAL_GND_ADDR 0x7
-#define SAR1_ENCAL_GND_ADDR_MSB 5
-#define SAR1_ENCAL_GND_ADDR_LSB 5
-
-#define SAR2_ENCAL_GND_ADDR 0x7
-#define SAR2_ENCAL_GND_ADDR_MSB 7
-#define SAR2_ENCAL_GND_ADDR_LSB 7
-
-#define SAR1_INITIAL_CODE_HIGH_ADDR 0x1
-#define SAR1_INITIAL_CODE_HIGH_ADDR_MSB 0x3
-#define SAR1_INITIAL_CODE_HIGH_ADDR_LSB 0x0
-
-#define SAR1_INITIAL_CODE_LOW_ADDR  0x0
-#define SAR1_INITIAL_CODE_LOW_ADDR_MSB  0x7
-#define SAR1_INITIAL_CODE_LOW_ADDR_LSB  0x0
-
-#define SAR2_INITIAL_CODE_HIGH_ADDR 0x4
-#define SAR2_INITIAL_CODE_HIGH_ADDR_MSB 0x3
-#define SAR2_INITIAL_CODE_HIGH_ADDR_LSB 0x0
-
-#define SAR2_INITIAL_CODE_LOW_ADDR  0x3
-#define SAR2_INITIAL_CODE_LOW_ADDR_MSB  0x7
-#define SAR2_INITIAL_CODE_LOW_ADDR_LSB  0x0
-
-#define SAR1_DREF_ADDR  0x2
-#define SAR1_DREF_ADDR_MSB  0x6
-#define SAR1_DREF_ADDR_LSB  0x4
-
-#define SAR2_DREF_ADDR  0x5
-#define SAR2_DREF_ADDR_MSB  0x6
-#define SAR2_DREF_ADDR_LSB  0x4
-
 /**
  * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
  *
@@ -1169,28 +1180,28 @@ static inline void adc_ll_disable_sleep_controller(void)
  */
 static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t channel, bool internal_gnd)
 {
-    /* Enable i2s_write_reg function. */
+    /* Should be called before writing I2C registers. */
     void phy_get_romfunc_addr(void);
     phy_get_romfunc_addr();
     CLEAR_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PD_M);
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+    SET_PERI_REG_MASK(ADC_LL_ANA_CONFIG2_REG, BIT(16));
 
     /* Enable/disable internal connect GND (for calibration). */
     if (adc_n == ADC_NUM_1) {
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_DREF_ADDR, 4);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_DREF_ADDR, 4);
         if (internal_gnd) {
-            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_ENCAL_GND_ADDR, 1);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_ENCAL_GND_ADDR, 1);
         } else {
-            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_ENCAL_GND_ADDR, 0);
         }
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_DREF_ADDR, 4);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR2_DREF_ADDR, 4);
         if (internal_gnd) {
-            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_ENCAL_GND_ADDR, 1);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR2_ENCAL_GND_ADDR, 1);
         } else {
-            I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
+            I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR2_ENCAL_GND_ADDR, 0);
         }
     }
 }
@@ -1203,9 +1214,9 @@ static inline void adc_ll_calibration_prepare(adc_ll_num_t adc_n, adc_channel_t 
 static inline void adc_ll_calibration_finish(adc_ll_num_t adc_n)
 {
     if (adc_n == ADC_NUM_1) {
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_ENCAL_GND_ADDR, 0);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_ENCAL_GND_ADDR, 0);
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_ENCAL_GND_ADDR, 0);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR2_ENCAL_GND_ADDR, 0);
     }
 }
 
@@ -1220,19 +1231,19 @@ static inline void adc_ll_set_calibration_param(adc_ll_num_t adc_n, uint32_t par
 {
     uint8_t msb = param >> 8;
     uint8_t lsb = param & 0xFF;
-    /* Enable i2s_write_reg function. */
+    /* Should be called before writing I2C registers. */
     void phy_get_romfunc_addr(void);
     phy_get_romfunc_addr();
     SET_PERI_REG_MASK(RTC_CNTL_ANA_CONF_REG, RTC_CNTL_SAR_I2C_FORCE_PU_M);
     CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, BIT(18));
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, BIT(16));
+    SET_PERI_REG_MASK(ADC_LL_ANA_CONFIG2_REG, BIT(16));
 
     if (adc_n == ADC_NUM_1) {
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
     } else {
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_INITIAL_CODE_HIGH_ADDR, msb);
-        I2C_WRITEREG_MASK_RTC(I2C_ADC, SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        I2C_WRITEREG_MASK_RTC(ADC_LL_I2C_ADC, ADC_LL_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
     }
 }
 /* Temp code end. */
