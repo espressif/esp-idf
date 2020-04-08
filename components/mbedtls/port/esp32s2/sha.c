@@ -54,6 +54,9 @@
 */
 #define SHA_DMA_MAX_BYTES 3968
 
+/* The longest length of a single block is for SHA512 = 128 byte */
+#define SHA_MAX_BLK_LEN 128
+
 const static char *TAG = "esp-sha";
 
 /* Return block size (in bytes) for a given SHA type */
@@ -196,6 +199,59 @@ int esp_sha_512_t_init_hash(uint16_t t)
     return 0;
 }
 
+static void esp_sha_fill_text_block(esp_sha_type sha_type, const void *input)
+{
+    uint32_t *reg_addr_buf = (uint32_t *)(SHA_TEXT_BASE);
+    uint32_t *data_words = NULL;
+
+    /* Fill the data block */
+    data_words = (uint32_t *)(input);
+    for (int i = 0; i < block_length(sha_type) / 4; i++) {
+        reg_addr_buf[i] = (data_words[i]);
+    }
+    asm volatile ("memw");
+}
+
+/* Hash a single SHA block */
+static void esp_sha_block(esp_sha_type sha_type, const void *input, bool is_first_block)
+{
+    esp_sha_fill_text_block(sha_type, input);
+
+    esp_sha_wait_idle();
+    /* Start hashing */
+    if (is_first_block) {
+        REG_WRITE(SHA_START_REG, 1);
+    } else {
+        REG_WRITE(SHA_CONTINUE_REG, 1);
+    }
+}
+
+/* Hash the input block by block, using non-DMA mode */
+static void esp_sha_block_mode(esp_sha_type sha_type, const uint8_t *input, uint32_t ilen,
+                                const uint8_t *buf, uint32_t buf_len, bool is_first_block)
+{
+    size_t blk_len = 0;
+    int num_block = 0;
+
+    blk_len = block_length(sha_type);
+
+    REG_WRITE(SHA_MODE_REG, sha_type);
+    num_block = ilen / blk_len;
+
+    if (buf_len != 0) {
+        esp_sha_block(sha_type, buf, is_first_block);
+        is_first_block = false;
+    }
+
+    for (int i = 0; i < num_block; i++) {
+        esp_sha_block(sha_type, input + blk_len*i, is_first_block);
+        is_first_block = false;
+    }
+
+    esp_sha_wait_idle();
+}
+
+
 
 static int esp_sha_dma_process(esp_sha_type sha_type, const void *input, uint32_t ilen,
                                 const void *buf, uint32_t buf_len, bool is_first_block);
@@ -207,87 +263,65 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
                 const void *buf, uint32_t buf_len, bool is_first_block)
 {
     int ret = 0;
-    const void *dma_input;
-    unsigned char *non_icache_input = NULL;
-    unsigned char *non_icache_buf = NULL;
-    int dma_op_num;
-    size_t dma_max_chunk_len = SHA_DMA_MAX_BYTES;
+    unsigned char *dma_cap_buf = NULL;
+    int dma_op_num = ( ilen / (SHA_DMA_MAX_BYTES + 1) ) + 1;
 
-    if (buf_len > 128) {
+    if (buf_len > block_length(sha_type)) {
         ESP_LOGE(TAG, "SHA DMA buf_len cannot exceed max size for a single block");
         return -1;
     }
 
-#if (CONFIG_SPIRAM_USE_CAPS_ALLOC || CONFIG_SPIRAM_USE_MALLOC)
-    if (esp_ptr_external_ram(input) || esp_ptr_external_ram(buf)) {
-        Cache_WriteBack_All();
+    /* DMA cannot access memory in the iCache range, hash block by block instead of using DMA */
+    if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input) && (ilen != 0)) {
+        esp_sha_block_mode(sha_type, input, ilen, buf, buf_len, is_first_block);
+        return 0;
+    }
+
+#if (CONFIG_ESP32S2_SPIRAM_SUPPORT)
+    if (esp_ptr_external_ram(input)) {
+        Cache_WriteBack_Addr((uint32_t)input, ilen);
+    }
+    if (esp_ptr_external_ram(buf)) {
+        Cache_WriteBack_Addr((uint32_t)buf, buf_len);
     }
 #endif
 
+    /* Copy to internal buf if buf is in non DMA capable memory */
     if (!esp_ptr_dma_ext_capable(buf) && !esp_ptr_dma_capable(buf) && (buf_len != 0)) {
-        non_icache_buf = heap_caps_malloc(sizeof(unsigned char) * buf_len, MALLOC_CAP_DMA);
-        if (non_icache_buf == NULL) {
+        dma_cap_buf = heap_caps_malloc(sizeof(unsigned char) * buf_len, MALLOC_CAP_DMA);
+        if (dma_cap_buf == NULL) {
             ESP_LOGE(TAG, "Failed to allocate buf memory");
-            ret = ESP_ERR_NO_MEM;
+            ret = -1;
             goto cleanup;
         }
-        memcpy(non_icache_buf, buf, buf_len);
-        buf = non_icache_buf;
-    }
-
-    /* DMA cannot access memory in the iCache range, copy data to temporary buffers before transfer */
-    if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input) && (ilen != 0)) {
-        non_icache_input = heap_caps_malloc(sizeof(unsigned char) * MIN(ilen, dma_max_chunk_len), MALLOC_CAP_DMA);
-
-        if (non_icache_input == NULL) {
-            /* Allocate biggest available heap */
-            size_t max_alloc_len = heap_caps_get_largest_free_block(MALLOC_CAP_DMA);
-            dma_max_chunk_len = max_alloc_len - max_alloc_len % block_length(sha_type);
-            non_icache_input = heap_caps_malloc(sizeof(unsigned char) * MIN(ilen, dma_max_chunk_len), MALLOC_CAP_DMA);
-
-            if (non_icache_input == NULL) {
-                ESP_LOGE(TAG, "Failed to allocate input memory");
-                ret = ESP_ERR_NO_MEM;
-                goto cleanup;
-            }
-        }
+        memcpy(dma_cap_buf, buf, buf_len);
+        buf = dma_cap_buf;
     }
 
 
     /* The max amount of blocks in a single hardware operation is 2^6 - 1 = 63
        Thus we only do a single DMA input list + dma buf list,
        which is max 3968/64 + 64/64 = 63 blocks */
-    dma_op_num = ( ilen / (dma_max_chunk_len + 1) ) + 1;
     for (int i = 0; i < dma_op_num; i++) {
-        int dma_chunk_len = MIN(ilen, dma_max_chunk_len);
 
+        int dma_chunk_len = MIN(ilen, SHA_DMA_MAX_BYTES);
 
-        /* Input depends on if it's a temp alloc buffer or supplied by user */
-        if (non_icache_input != NULL) {
-            memcpy(non_icache_input, input, dma_chunk_len);
-            dma_input = non_icache_input;
-        } else {
-            dma_input = input;
-        }
-
-        ret = esp_sha_dma_process(sha_type, dma_input, dma_chunk_len, buf, buf_len, is_first_block);
-
+        ret = esp_sha_dma_process(sha_type, input, dma_chunk_len, buf, buf_len, is_first_block);
 
         if (ret != 0) {
             goto cleanup;
         }
 
-        is_first_block = false;
         ilen -= dma_chunk_len;
         input += dma_chunk_len;
 
         // Only append buf to the first operation
         buf_len = 0;
+        is_first_block = false;
     }
 
 cleanup:
-    free(non_icache_input);
-    free(non_icache_buf);
+    free(dma_cap_buf);
     return ret;
 }
 
