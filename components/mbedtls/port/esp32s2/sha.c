@@ -210,7 +210,8 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
     const void *dma_input;
     unsigned char *non_icache_input = NULL;
     unsigned char *non_icache_buf = NULL;
-    int dma_op_num = ( ilen / (SHA_DMA_MAX_BYTES + 1) ) + 1;
+    int dma_op_num;
+    size_t dma_max_chunk_len = SHA_DMA_MAX_BYTES;
 
     if (buf_len > 128) {
         ESP_LOGE(TAG, "SHA DMA buf_len cannot exceed max size for a single block");
@@ -223,16 +224,6 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
     }
 #endif
 
-    /* DMA cannot access memory in the iCache range, copy data to temporary buffers before transfer */
-    if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input) && (ilen != 0)) {
-        non_icache_input = heap_caps_malloc(sizeof(unsigned char) * MIN(ilen, SHA_DMA_MAX_BYTES), MALLOC_CAP_DMA);
-        if (non_icache_input == NULL) {
-            ESP_LOGE(TAG, "Failed to allocate input memory");
-            ret = ESP_ERR_NO_MEM;
-            goto cleanup;
-        }
-    }
-
     if (!esp_ptr_dma_ext_capable(buf) && !esp_ptr_dma_capable(buf) && (buf_len != 0)) {
         non_icache_buf = heap_caps_malloc(sizeof(unsigned char) * buf_len, MALLOC_CAP_DMA);
         if (non_icache_buf == NULL) {
@@ -244,11 +235,31 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
         buf = non_icache_buf;
     }
 
+    /* DMA cannot access memory in the iCache range, copy data to temporary buffers before transfer */
+    if (!esp_ptr_dma_ext_capable(input) && !esp_ptr_dma_capable(input) && (ilen != 0)) {
+        non_icache_input = heap_caps_malloc(sizeof(unsigned char) * MIN(ilen, dma_max_chunk_len), MALLOC_CAP_DMA);
+
+        if (non_icache_input == NULL) {
+            /* Allocate biggest available heap */
+            size_t max_alloc_len = heap_caps_get_largest_free_block(MALLOC_CAP_DMA);
+            dma_max_chunk_len = max_alloc_len - max_alloc_len % block_length(sha_type);
+            non_icache_input = heap_caps_malloc(sizeof(unsigned char) * MIN(ilen, dma_max_chunk_len), MALLOC_CAP_DMA);
+
+            if (non_icache_input == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate input memory");
+                ret = ESP_ERR_NO_MEM;
+                goto cleanup;
+            }
+        }
+    }
+
+
     /* The max amount of blocks in a single hardware operation is 2^6 - 1 = 63
        Thus we only do a single DMA input list + dma buf list,
        which is max 3968/64 + 64/64 = 63 blocks */
+    dma_op_num = ( ilen / (dma_max_chunk_len + 1) ) + 1;
     for (int i = 0; i < dma_op_num; i++) {
-        int dma_chunk_len = MIN(ilen, SHA_DMA_MAX_BYTES);
+        int dma_chunk_len = MIN(ilen, dma_max_chunk_len);
 
 
         /* Input depends on if it's a temp alloc buffer or supplied by user */
@@ -263,12 +274,10 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 
 
         if (ret != 0) {
-            return ret;
+            goto cleanup;
         }
 
         is_first_block = false;
-
-
         ilen -= dma_chunk_len;
         input += dma_chunk_len;
 
