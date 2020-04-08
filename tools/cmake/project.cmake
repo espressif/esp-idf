@@ -26,6 +26,7 @@ include(components)
 include(kconfig)
 include(git_submodules)
 include(idf_functions)
+include(version)
 
 set_default(PYTHON "python")
 
