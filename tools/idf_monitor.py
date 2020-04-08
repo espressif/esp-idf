@@ -649,7 +649,7 @@ class Monitor(object):
             else:
                 popen_args = [self.make, target]
             yellow_print("Running %s..." % " ".join(popen_args))
-            p = subprocess.Popen(popen_args)
+            p = subprocess.Popen(popen_args, env=os.environ)
             try:
                 p.wait()
             except KeyboardInterrupt:
@@ -966,6 +966,13 @@ def main():
         os.environ["MAKEFLAGS"] = makeflags
     except KeyError:
         pass  # not running a make jobserver
+
+    # Pass the actual used port to callee of idf_monitor (e.g. make) through `ESPPORT` environment
+    # variable
+    # To make sure the key as well as the value are str type, by the requirements of subprocess
+    espport_key = str("ESPPORT")
+    espport_val = str(args.port)
+    os.environ.update({espport_key: espport_val})
 
     monitor = Monitor(serial_instance, args.elf_file.name, args.print_filter, args.make, args.encrypted,
                       args.toolchain_prefix, args.eol,
