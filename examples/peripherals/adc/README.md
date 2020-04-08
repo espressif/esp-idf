@@ -19,8 +19,6 @@ In this example, we use `ADC_UNIT_1` by default, we need to connect a voltage so
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 ### Build and Flash
 
 Build the project and flash it to the board, then run monitor tool to view serial output:

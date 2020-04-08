@@ -34,7 +34,6 @@ to make ESPNOW data more safe and more reliable.
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
 * Set WiFi mode (station or SoftAP) under Example Configuration Options.
 * Set ESPNOW primary master key under Example Configuration Options. 
   This parameter must be set to the same value for sending and recving devices.
