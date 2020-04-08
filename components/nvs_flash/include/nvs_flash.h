@@ -87,31 +87,36 @@ esp_err_t nvs_flash_deinit_partition(const char* partition_label);
 /**
  * @brief Erase the default NVS partition
  *
- * Erases all contents of the default NVS partition (one with label "nvs"), which must be uninitialized.
+ * Erases all contents of the default NVS partition (one with label "nvs").
+ *
+ * @note If the partition is initialized, this function first de-initializes it. Afterwards, the partition has to
+ *       be initialized again to be used.
  *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_FOUND if there is no NVS partition labeled "nvs" in the
  *        partition table
- *      - ESP_ERR_NVS_INVALID_STATE if the default partition is initialized already
+ *      - different error in case de-initialization fails (shouldn't happen)
  */
 esp_err_t nvs_flash_erase(void);
 
 /**
  * @brief Erase specified NVS partition
  *
- * Erase all content of a specified uninitialized NVS partition
+ * Erase all content of a specified NVS partition
  *
- * @param[in]  part_name    Name (label) of an uninitialized partition which should be erased
+ * @note If the partition is initialized, this function first de-initializes it. Afterwards, the partition has to
+ *       be initialized again to be used.
+ *
+ * @param[in]  part_name    Name (label) of the partition which should be erased
  *
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_NOT_FOUND if there is no NVS partition with the specified name
  *        in the partition table
- *      - ESP_ERR_NVS_INVALID_STATE if the partition with part_name is initialized already
+ *      - different error in case de-initialization fails (shouldn't happen)
  */
 esp_err_t nvs_flash_erase_partition(const char *part_name);
-
 
 /**
  * @brief Initialize the default NVS partition.

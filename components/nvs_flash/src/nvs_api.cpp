@@ -118,6 +118,14 @@ extern "C" esp_err_t nvs_flash_secure_init_custom(const char *partName, uint32_t
 }
 #endif
 
+static esp_err_t close_handles_and_deinit(const char* part_name)
+{
+    // Delete all corresponding open handles
+    s_nvs_handles.clearAndFreeNodes();
+
+    // Deinit partition
+    return NVSPartitionManager::get_instance()->deinit_partition(part_name);
+}
 
 #ifdef ESP_PLATFORM
 extern "C" esp_err_t nvs_flash_init_partition(const char *part_name)
@@ -163,8 +171,17 @@ extern "C" esp_err_t nvs_flash_secure_init(nvs_sec_cfg_t* cfg)
 
 extern "C" esp_err_t nvs_flash_erase_partition(const char *part_name)
 {
+    Lock::init();
+    Lock lock;
+
+    // if the partition is initialized, uninitialize it first
     if (NVSPartitionManager::get_instance()->lookup_storage_from_name(part_name)) {
-        return ESP_ERR_NVS_INVALID_STATE;
+        esp_err_t err = close_handles_and_deinit(part_name);
+
+        // only hypothetical/future case, deinit_partition() only fails if partition is uninitialized
+        if (err != ESP_OK) {
+            return err;
+        }
     }
 
     const esp_partition_t* partition = esp_partition_find_first(
@@ -187,11 +204,7 @@ extern "C" esp_err_t nvs_flash_deinit_partition(const char* partition_name)
     Lock::init();
     Lock lock;
 
-    // Delete all corresponding open handles // TODO: why all handles, not just the ones with partition_name?
-    s_nvs_handles.clearAndFreeNodes();
-
-    // Deinit partition
-    return NVSPartitionManager::get_instance()->deinit_partition(partition_name);
+    return close_handles_and_deinit(partition_name);
 }
 
 extern "C" esp_err_t nvs_flash_deinit(void)
