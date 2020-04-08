@@ -50,10 +50,6 @@ This example can be run on any commonly available ESP32 development board.
 idf.py menuconfig
 ```
 
-Set following parameter under Serial Flasher Options:
-
-* Set `Default serial port`.
-
 Set following parameters under Example Configuration Options:
 
 * Set `IP version` of example to be IPV4 or IPV6.

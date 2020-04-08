@@ -52,7 +52,6 @@ There are various applications, specific to Windows and macOS platform which can
 idf.py menuconfig
 ```
 * Set the BLE/Soft AP transport under "Example Configuration" options. ESP32-S2 will have only SoftAP option.
-* Set serial port under Serial Flasher Options.
 
 ### Build and Flash
 

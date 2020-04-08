@@ -103,8 +103,6 @@ This example can be run on any commonly available ESP32 development board.
 idf.py menuconfig
 ```
 
-* Set serial port under Serial Flasher Options.
-
 * Specific configuration for each example can be found in its README.md file.
 
 ## Build and Flash
