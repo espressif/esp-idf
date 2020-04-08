@@ -18,6 +18,7 @@ SOURCE_FILES = \
 	test_spi_flash_emulation.cpp \
 	test_intrusive_list.cpp \
 	test_nvs.cpp \
+	test_nvs_storage.cpp \
 	crc.cpp \
 	main.cpp
 
