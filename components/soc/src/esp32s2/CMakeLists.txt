@@ -1,4 +1,5 @@
 set(srcs "adc_hal.c"
+        "dac_hal.c"
         "brownout_hal.c"
         "cp_dma_hal.c"
         "rtc_clk.c"

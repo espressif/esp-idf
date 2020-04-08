@@ -1,6 +1,6 @@
 set(srcs
     "adc_common.c"
-    "dac.c"
+    "dac_common.c"
     "gpio.c"
     "i2c.c"
     "i2s.c"
@@ -32,7 +32,8 @@ if(IDF_TARGET STREQUAL "esp32")
                      "sdmmc_host.c"
                      "sdmmc_transaction.c"
                      "esp32/touch_sensor.c"
-                     "esp32/adc.c")
+                     "esp32/adc.c"
+                     "esp32/dac.c")
     list(APPEND includes "esp32/include")
 endif()
 
@@ -42,7 +43,7 @@ if(IDF_TARGET STREQUAL "esp32s2")
                      "esp32s2/adc.c"
                      "esp32s2/adc2_init_cal.c"
                      "spi_slave_hd.c"
-                    )
+                     "esp32s2/dac.c")
     # currently only S2 beta has its own target-specific includes
     list(APPEND includes "esp32s2/include")
 endif()
