@@ -178,10 +178,10 @@ static s32_t bt_mesh_client_calc_timeout(struct bt_mesh_msg_ctx *ctx,
                                          struct net_buf_simple *msg,
                                          u32_t opcode, s32_t timeout)
 {
-    s32_t seg_retrans_to, duration, time;
-    u8_t seg_count, seg_retrans_num;
-    u8_t mic_size;
-    bool need_seg;
+    s32_t seg_retrans_to = 0, duration = 0, time = 0;
+    u8_t seg_count = 0, seg_retrans_num = 0;
+    bool need_seg = false;
+    u8_t mic_size = 0;
 
     if (msg->len > UNSEG_ACCESS_MSG_MAX_LEN || ctx->send_rel) {
         need_seg = true;    /* Needs segmentation */
