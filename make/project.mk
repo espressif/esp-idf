@@ -126,7 +126,7 @@ export PROJECT_PATH
 endif
 
 # A list of the "common" makefiles, to use as a target dependency
-COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
+COMMON_MAKEFILES := $(abspath $(IDF_PATH)/make/project.mk $(IDF_PATH)/make/common.mk $(IDF_PATH)/make/version.mk $(IDF_PATH)/make/component_wrapper.mk $(firstword $(MAKEFILE_LIST)))
 export COMMON_MAKEFILES
 
 # The directory where we put all objects/libraries/binaries. The project Makefile can

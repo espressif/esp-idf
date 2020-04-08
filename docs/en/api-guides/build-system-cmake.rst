@@ -341,6 +341,7 @@ The following variables are set at the project level, but available for use in c
 - ``COMPONENTS``: Names of all components that are included in this build, formatted as a semicolon-delimited CMake list.
 - ``CONFIG_*``: Each value in the project configuration has a corresponding variable available in cmake. All names begin with ``CONFIG_``. :doc:`More information here </api-reference/kconfig>`.
 - ``IDF_VER``: Git version of ESP-IDF (produced by ``git describe``)
+- ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: Components of ESP-IDF version, to be used in conditional expressions. Note that this information is less precise than that provided by ``IDF_VER`` variable. ``v4.0-dev-*``, ``v4.0-beta1``, ``v4.0-rc1`` and ``v4.0`` will all have the same values of ``IDF_VERSION_*`` variables, but different ``IDF_VER`` values.
 - ``IDF_TARGET``: Name of the target for which the project is being built.
 - ``PROJECT_VER``: Project version.
 

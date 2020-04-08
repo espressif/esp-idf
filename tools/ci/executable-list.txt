@@ -20,6 +20,7 @@ docs/gen-version-specific-includes.py
 tools/ci/apply_bot_filter.py
 tools/ci/build_examples.sh
 tools/ci/build_examples_cmake.sh
+tools/ci/check_idf_version.sh
 tools/ci/check-executable.sh
 tools/ci/check-line-endings.sh
 tools/ci/checkout_project_ref.py

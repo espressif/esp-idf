@@ -315,6 +315,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照 ``COMPONENT_DIRS`` 指�
 - ``COMPONENTS``：此次构建中包含的所有组件的名称，具体格式为用分号隔开的 CMake 列表。
 - ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多详细信息请参阅 :doc:`Kconfig </api-reference/kconfig>`。
 - ``IDF_VER``：ESP-IDF 的 git 版本号，由 ``git describe`` 命令生成。
+- ``IDF_VERSION_MAJOR``, ``IDF_VERSION_MINOR``, ``IDF_VERSION_PATCH``: ESP-IDF 的组件版本，可用于条件表达式。请注意这些信息的精确度不如 ``IDF_VER`` 变量，版本号 ``v4.0-dev-*``， ``v4.0-beta1``， ``v4.0-rc1`` 和 ``v4.0`` 对应的 ``IDF_VERSION_*`` 变量值是相同的，但是 ``IDF_VER`` 的值是不同的。
 - ``IDF_TARGET``：项目的硬件目标名称。
 - ``PROJECT_VER``：项目版本号。
 

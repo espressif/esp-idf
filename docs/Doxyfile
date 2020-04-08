@@ -197,6 +197,8 @@ INPUT = \
     ## Base MAC address
     ## NOTE: for line below header_file.inc is not used
     ../../components/esp32/include/esp_system.h \
+    ## IDF version
+    ../../components/esp32/include/esp_idf_version.h \
     ##
     ## ULP Coprocessor - API Guides
     ##
