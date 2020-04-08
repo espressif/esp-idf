@@ -100,7 +100,7 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg,
                                      mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%x", -ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         esp_ret = ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
         goto exit;
     }
@@ -113,7 +113,7 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
 
     if ((ret = mbedtls_ssl_setup(&tls->ssl, &tls->conf)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned -0x%x", -ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         esp_ret = ESP_ERR_MBEDTLS_SSL_SETUP_FAILED;
         goto exit;
     }
@@ -140,8 +140,8 @@ int esp_mbedtls_handshake(esp_tls_t *tls, const esp_tls_cfg_t *cfg)
     } else {
         if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             ESP_LOGE(TAG, "mbedtls_ssl_handshake returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED);
             if (cfg->cacert_buf != NULL || cfg->use_global_ca_store == true) {
                 /* This is to check whether handshake failed due to invalid certificate*/
                 esp_mbedtls_verify_certificate(tls);
@@ -164,7 +164,7 @@ ssize_t esp_mbedtls_read(esp_tls_t *tls, char *data, size_t datalen)
             return 0;
         }
         if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             ESP_LOGE(TAG, "read error :%d:", ret);
         }
     }
@@ -185,8 +185,8 @@ ssize_t esp_mbedtls_write(esp_tls_t *tls, const char *data, size_t datalen)
         ssize_t ret = mbedtls_ssl_write(&tls->ssl, (unsigned char*) data + written, write_len);
         if (ret <= 0) {
             if (ret != ESP_TLS_ERR_SSL_WANT_READ  && ret != ESP_TLS_ERR_SSL_WANT_WRITE && ret != 0) {
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_WRITE_FAILED);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_MBEDTLS_SSL_WRITE_FAILED);
                 ESP_LOGE(TAG, "write error :%d:", ret);
                 return ret;
             } else {
@@ -217,7 +217,7 @@ void esp_mbedtls_verify_certificate(esp_tls_t *tls)
     char buf[100];
     if ((flags = mbedtls_ssl_get_verify_result(&tls->ssl)) != 0) {
         ESP_LOGI(TAG, "Failed to verify peer certificate!");
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS_CERT_FLAGS, flags);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS, flags);
         bzero(buf, sizeof(buf));
         mbedtls_x509_crt_verify_info(buf, sizeof(buf), "  ! ", flags);
         ESP_LOGI(TAG, "verification info: %s", buf);
@@ -271,7 +271,7 @@ static esp_err_t set_ca_cert(esp_tls_t *tls, const unsigned char *cacert, size_t
     int ret = mbedtls_x509_crt_parse(tls->cacert_ptr, cacert, cacert_len);
     if (ret < 0) {
         ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
     }
     mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
@@ -295,7 +295,7 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
         ret = mbedtls_x509_crt_parse(pki->public_cert, pki->publiccert_pem_buf, pki->publiccert_pem_bytes);
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
         }
 
@@ -317,14 +317,14 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_PK_PARSE_KEY_FAILED;
         }
 
         ret = mbedtls_ssl_conf_own_cert(&tls->conf, pki->public_cert, pki->pk_key);
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_OWN_CERT_FAILED;
         }
     } else {
@@ -359,7 +359,7 @@ esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
                     MBEDTLS_SSL_TRANSPORT_STREAM,
                     MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED;
     }
 
@@ -421,7 +421,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
         /* Hostname set here should match CN in server certificate */
         if ((ret = mbedtls_ssl_set_hostname(&tls->ssl, use_host)) != 0) {
             ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             free(use_host);
             return ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED;
         }
@@ -433,7 +433,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
                                            MBEDTLS_SSL_TRANSPORT_STREAM,
                                            MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned -0x%x", -ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_MBEDTLS_SSL_CONFIG_DEFAULTS_FAILED;
     }
 
@@ -445,7 +445,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #ifdef CONFIG_MBEDTLS_SSL_ALPN
         if ((ret = mbedtls_ssl_conf_alpn_protocols(&tls->conf, cfg->alpn_protos) != 0)) {
             ESP_LOGE(TAG, "mbedtls_ssl_conf_alpn_protocols returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_ALPN_PROTOCOLS_FAILED;
         }
 #else
@@ -483,7 +483,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
                                    (const unsigned char *)cfg->psk_hint_key->hint, strlen(cfg->psk_hint_key->hint));
         if (ret != 0) {
             ESP_LOGE(TAG, "mbedtls_ssl_conf_psk returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
         }
 #else
@@ -570,7 +570,7 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     esp_err_t esp_ret = esp_create_mbedtls_handle(NULL, 0, cfg, tls);
     if (esp_ret != ESP_OK) {
         ESP_LOGE(TAG, "create_ssl_handle failed");
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, esp_ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
         tls->conn_state = ESP_TLS_FAIL;
         return -1;
     }
@@ -703,7 +703,7 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cf
         ret = mbedtls_x509_crt_parse(&tls->clientcert, (const unsigned char*)cfg->clientcert_buf, cfg->clientcert_bytes);
         if (ret < 0) {
             ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned -0x%x", -ret);
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_X509_CRT_PARSE_FAILED;
         }
     } else {
@@ -714,14 +714,14 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, esp_tls_cfg_t *cf
     ret = atca_mbedtls_pk_init(&tls->clientkey, 0);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to parse key from device");
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_ESP_TLS_SE_FAILED;
     }
 
     ret = mbedtls_ssl_conf_own_cert(&tls->conf, &tls->clientcert, &tls->clientkey);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed\n ! mbedtls_ssl_conf_own_cert returned -0x%x", ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_MBEDTLS, -ret);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
         return ESP_ERR_ESP_TLS_SE_FAILED;
     }
     return ESP_OK;

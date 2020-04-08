@@ -108,7 +108,7 @@ int esp_tls_conn_destroy(esp_tls_t *tls)
         if (tls->sockfd >= 0) {
             ret = close(tls->sockfd);
         }
-        free(tls->error_handle);
+        esp_tls_internal_event_tracker_destroy(tls->error_handle);
         free(tls);
         return ret;
     }
@@ -121,7 +121,7 @@ esp_tls_t *esp_tls_init(void)
     if (!tls) {
         return NULL;
     }
-    tls->error_handle = calloc(1, sizeof(esp_tls_last_error_t));
+    tls->error_handle = esp_tls_internal_event_tracker_create();
     if (!tls->error_handle) {
         free(tls);
         return NULL;
@@ -172,7 +172,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
     int fd = socket(addrinfo->ai_family, addrinfo->ai_socktype, addrinfo->ai_protocol);
     if (fd < 0) {
         ESP_LOGE(TAG, "Failed to create socket (family %d socktype %d protocol %d)", addrinfo->ai_family, addrinfo->ai_socktype, addrinfo->ai_protocol);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_SYSTEM, errno);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
         ret = ESP_ERR_ESP_TLS_CANNOT_CREATE_SOCKET;
         goto err_freeaddr;
     }
@@ -214,7 +214,7 @@ static esp_err_t esp_tcp_connect(const char *host, int hostlen, int port, int *s
     if (ret < 0 && !(errno == EINPROGRESS && cfg && cfg->non_block)) {
 
         ESP_LOGE(TAG, "Failed to connnect to host (errno %d)", errno);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_SYSTEM, errno);
+        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
         ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
         goto err_freesocket;
     }
@@ -249,7 +249,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
             tls->is_tls = true;
         }
         if ((esp_ret = esp_tcp_connect(hostname, hostlen, port, &tls->sockfd, tls, cfg)) != ESP_OK) {
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, esp_ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             return -1;
         }
         if (!cfg) {
@@ -284,8 +284,8 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
                 /* pending error check */
                 if (getsockopt(tls->sockfd, SOL_SOCKET, SO_ERROR, &error, &len) < 0) {
                     ESP_LOGD(TAG, "Non blocking connect failed");
-                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_SYSTEM, errno);
-                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_SYSTEM, errno);
+                    ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_SOCKET_SETOPT_FAILED);
                     tls->conn_state = ESP_TLS_FAIL;
                     return -1;
                 }
@@ -295,7 +295,7 @@ static int esp_tls_low_level_conn(const char *hostname, int hostlen, int port, c
         esp_ret = create_ssl_handle(hostname, hostlen, cfg, tls);
         if (esp_ret != ESP_OK) {
             ESP_LOGE(TAG, "create_ssl_handle failed");
-            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, esp_ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, esp_ret);
             tls->conn_state = ESP_TLS_FAIL;
             return -1;
         }
@@ -367,7 +367,7 @@ int esp_tls_conn_new_sync(const char *hostname, int hostlen, int port, const esp
             uint32_t expired = xTaskGetTickCount() - start;
             if (expired >= timeout_ticks) {
                 ESP_LOGW(TAG, "Failed to open new connection in specified timeout");
-                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
+                ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_ESP, ESP_ERR_ESP_TLS_CONNECTION_TIMEOUT);
                 return 0;
             }
         }

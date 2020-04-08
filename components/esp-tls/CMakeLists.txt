@@ -1,4 +1,4 @@
-set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c)
+set(srcs esp_tls.c esp-tls-crypto/esp_tls_crypto.c esp_tls_error_capture.c)
 if(CONFIG_ESP_TLS_USING_MBEDTLS)
     list(APPEND srcs
         "esp_tls_mbedtls.c")

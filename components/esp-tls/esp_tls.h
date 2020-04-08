@@ -74,6 +74,22 @@ extern "C" {
 #define ESP_TLS_ERR_SSL_WANT_WRITE                         WOLFSSL_ERROR_WANT_WRITE
 #define ESP_TLS_ERR_SSL_TIMEOUT                            WOLFSSL_CBIO_ERR_TIMEOUT
 #endif /*CONFIG_ESP_TLS_USING_WOLFSSL */
+
+/**
+* Definition of different types/sources of error codes reported
+* from different components
+*/
+typedef enum {
+    ESP_TLS_ERR_TYPE_UNKNOWN = 0,
+    ESP_TLS_ERR_TYPE_SYSTEM,                /*!< System error -- errno */
+    ESP_TLS_ERR_TYPE_MBEDTLS,               /*!< Error code from mbedTLS library */
+    ESP_TLS_ERR_TYPE_MBEDTLS_CERT_FLAGS,    /*!< Certificate flags defined in mbedTLS */
+    ESP_TLS_ERR_TYPE_ESP,                   /*!< ESP-IDF error type -- esp_err_t  */
+    ESP_TLS_ERR_TYPE_WOLFSSL,               /*!< Error code from wolfSSL library */
+    ESP_TLS_ERR_TYPE_WOLFSSL_CERT_FLAGS,    /*!< Certificate flags defined in wolfSSL */
+    ESP_TLS_ERR_TYPE_MAX,                   /*!< Last err type -- invalid entry */
+} esp_tls_error_type_t;
+
 typedef struct esp_tls_last_error* esp_tls_error_handle_t;
 
 /**
@@ -573,6 +589,20 @@ void esp_tls_free_global_ca_store(void);
  *            - specific error code (based on ESP_ERR_ESP_TLS_BASE) otherwise
  */
 esp_err_t esp_tls_get_and_clear_last_error(esp_tls_error_handle_t h, int *esp_tls_code, int *esp_tls_flags);
+
+/**
+ * @brief      Returns the last error captured in esp_tls of a specific type
+ *             The error information is cleared internally upon return
+ *
+ * @param[in]  h              esp-tls error handle.
+ * @param[in]  err_type       specific error type
+ * @param[out] error_code     last error code returned from mbedtls api (set to zero if none)
+ *                            This pointer could be NULL if caller does not care about esp_tls_code
+ * @return
+ *            - ESP_ERR_INVALID_STATE if invalid parameters
+ *            - ESP_OK if a valid error returned and was cleared
+ */
+esp_err_t esp_tls_get_and_clear_error_type(esp_tls_error_handle_t h, esp_tls_error_type_t err_type, int *error_code);
 
 #if CONFIG_ESP_TLS_USING_MBEDTLS
 /**

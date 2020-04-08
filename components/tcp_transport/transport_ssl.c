@@ -105,6 +105,7 @@ static int ssl_poll_read(esp_transport_handle_t t, int timeout_ms)
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
         getsockopt(ssl->tls->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+        esp_transport_capture_errno(t, sock_errno);
         ESP_LOGE(TAG, "ssl_poll_read select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->tls->sockfd);
         ret = -1;
     }
@@ -127,6 +128,7 @@ static int ssl_poll_write(esp_transport_handle_t t, int timeout_ms)
         int sock_errno = 0;
         uint32_t optlen = sizeof(sock_errno);
         getsockopt(ssl->tls->sockfd, SOL_SOCKET, SO_ERROR, &sock_errno, &optlen);
+        esp_transport_capture_errno(t, sock_errno);
         ESP_LOGE(TAG, "ssl_poll_write select error %d, errno = %s, fd = %d", sock_errno, strerror(sock_errno), ssl->tls->sockfd);
         ret = -1;
     }
