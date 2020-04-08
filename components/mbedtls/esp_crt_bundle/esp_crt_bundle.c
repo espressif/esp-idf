@@ -19,7 +19,6 @@
 #include "esp_log.h"
 #include "esp_err.h"
 
-
 #define BUNDLE_HEADER_OFFSET 2
 #define CRT_HEADER_OFFSET 4
 
@@ -43,45 +42,48 @@ typedef struct crt_bundle_t {
 static crt_bundle_t s_crt_bundle;
 
 static int esp_crt_verify_callback(void *buf, mbedtls_x509_crt *crt, int data, uint32_t *flags);
-static esp_err_t esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_key_buf, size_t pub_key_len);
+static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_key_buf, size_t pub_key_len);
 
 
-static esp_err_t esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_key_buf, size_t pub_key_len)
+static int esp_crt_check_signature(mbedtls_x509_crt *child, const uint8_t *pub_key_buf, size_t pub_key_len)
 {
-    int ret = ESP_FAIL;
+    int ret = 0;
     mbedtls_x509_crt parent;
     const mbedtls_md_info_t *md_info;
     unsigned char hash[MBEDTLS_MD_MAX_SIZE];
 
     mbedtls_x509_crt_init(&parent);
 
-    if ( (ret = mbedtls_pk_parse_public_key(&parent.pk , pub_key_buf, pub_key_len) ) != 0) {
+    if ( (ret = mbedtls_pk_parse_public_key(&parent.pk, pub_key_buf, pub_key_len) ) != 0) {
         ESP_LOGE(TAG, "PK parse failed with error %X", ret);
-        return ESP_FAIL;
+        goto cleanup;
     }
 
 
     // Fast check to avoid expensive computations when not necessary
     if (!mbedtls_pk_can_do(&parent.pk, child->sig_pk)) {
         ESP_LOGE(TAG, "Simple compare failed");
-        return ESP_FAIL;
+        ret = -1;
+        goto cleanup;
     }
 
     md_info = mbedtls_md_info_from_type(child->sig_md);
     if ( (ret = mbedtls_md( md_info, child->tbs.p, child->tbs.len, hash )) != 0 ) {
         ESP_LOGE(TAG, "Internal mbedTLS error %X", ret);
-        return ESP_FAIL;
+        goto cleanup;
     }
 
-    ret = mbedtls_pk_verify_ext( child->sig_pk, child->sig_opts, &parent.pk,
-                                 child->sig_md, hash, mbedtls_md_get_size( md_info ),
-                                 child->sig.p, child->sig.len ) ;
+    if ( (ret = mbedtls_pk_verify_ext( child->sig_pk, child->sig_opts, &parent.pk,
+                                       child->sig_md, hash, mbedtls_md_get_size( md_info ),
+                                       child->sig.p, child->sig.len )) != 0 ) {
 
-    if (ret != 0) {
         ESP_LOGE(TAG, "PK verify failed with error %X", ret);
-        return ESP_FAIL;
+        goto cleanup;
     }
-    return ESP_OK;
+cleanup:
+    mbedtls_x509_crt_free(&parent);
+
+    return ret;
 }
 
 
@@ -205,6 +207,7 @@ esp_err_t esp_crt_bundle_attach(void *conf)
 void esp_crt_bundle_detach(mbedtls_ssl_config *conf)
 {
     free(s_crt_bundle.crts);
+    s_crt_bundle.crts = NULL;
     if (conf) {
         mbedtls_ssl_conf_verify(conf, NULL, NULL);
     }

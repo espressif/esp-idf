@@ -63,15 +63,21 @@ typedef struct {
     mbedtls_x509_crt cert;
     mbedtls_pk_context pkey;
 
-}mbedtls_endpoint_t;
+} mbedtls_endpoint_t;
+
+typedef enum {
+    ESP_CRT_VALIDATE_UNKNOWN,
+    ESP_CRT_VALIDATE_OK,
+    ESP_CRT_VALIDATE_FAIL,
+}esp_crt_validate_res_t;
 
 static const char *TAG = "cert_bundle_test";
 
 static volatile bool exit_flag;
 
-esp_err_t endpoint_teardown(mbedtls_endpoint_t* endpoint);
+esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint);
 
-esp_err_t server_setup(mbedtls_endpoint_t * server)
+esp_err_t server_setup(mbedtls_endpoint_t *server)
 {
     int ret;
     mbedtls_ssl_config_init( &server->conf );
@@ -87,52 +93,49 @@ esp_err_t server_setup(mbedtls_endpoint_t * server)
     ret = mbedtls_x509_crt_parse( &server->cert, server_cert_chain_pem_start,
                                   server_cert_chain_pem_end - server_cert_chain_pem_start);
 
-    if( ret != 0 ) {
+    if ( ret != 0 ) {
         ESP_LOGE(TAG, "mbedtls_x509_crt_parse returned %d", ret );
         return ESP_FAIL;
     }
 
-    ret =  mbedtls_pk_parse_key( &server->pkey, (const unsigned char *)server_pk_start ,
+    ret =  mbedtls_pk_parse_key( &server->pkey, (const unsigned char *)server_pk_start,
                                  server_pk_end - server_pk_start, NULL, 0 );
-    if( ret != 0 ) {
+    if ( ret != 0 ) {
         ESP_LOGE(TAG, "mbedtls_pk_parse_key returned %d", ret );
         return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Bind on https://%s:%s/", SERVER_ADDRESS, SERVER_PORT );
-    if( ( ret = mbedtls_net_bind( &server->listen_fd, NULL, SERVER_PORT, MBEDTLS_NET_PROTO_TCP ) ) != 0 ) {
+    if ( ( ret = mbedtls_net_bind( &server->listen_fd, NULL, SERVER_PORT, MBEDTLS_NET_PROTO_TCP ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_net_bind returned %d", ret );
         return ESP_FAIL;
     }
+    mbedtls_net_set_nonblock(&server->listen_fd);
 
     ESP_LOGI(TAG, "Seeding the random number generator");
-    if( ( ret = mbedtls_ctr_drbg_seed( &server->ctr_drbg, mbedtls_entropy_func, &server->entropy,
-                NULL, 0) ) != 0 ) {
+    if ( ( ret = mbedtls_ctr_drbg_seed( &server->ctr_drbg, mbedtls_entropy_func, &server->entropy,
+                                        NULL, 0) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret );
         return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Setting up the SSL data");
-    if( ( ret = mbedtls_ssl_config_defaults( &server->conf,
-                    MBEDTLS_SSL_IS_SERVER,
-                    MBEDTLS_SSL_TRANSPORT_STREAM,
-                    MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 )
-    {
+    if ( ( ret = mbedtls_ssl_config_defaults( &server->conf,
+                 MBEDTLS_SSL_IS_SERVER,
+                 MBEDTLS_SSL_TRANSPORT_STREAM,
+                 MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret );
         return ESP_FAIL;
     }
 
     mbedtls_ssl_conf_rng( &server->conf, mbedtls_ctr_drbg_random, &server->ctr_drbg );
-    mbedtls_ssl_conf_ca_chain( &server->conf, server->cert.next, NULL );
 
-    if (( ret = mbedtls_ssl_conf_own_cert( &server->conf, &server->cert, &server->pkey ) ) != 0 )
-    {
+    if (( ret = mbedtls_ssl_conf_own_cert( &server->conf, &server->cert, &server->pkey ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ssl_conf_own_cert returned %d", ret );
         return ESP_FAIL;
     }
 
-    if (( ret = mbedtls_ssl_setup( &server->ssl, &server->conf ) ) != 0 )
-    {
+    if (( ret = mbedtls_ssl_setup( &server->ssl, &server->conf ) ) != 0 ) {
         ESP_LOGE(TAG, "mbedtls_ssl_setup returned %d", ret );
         return ESP_FAIL;
     }
@@ -151,27 +154,33 @@ void server_task(void *pvParameters)
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Waiting for a remote connection" );
-    if( ( ret = mbedtls_net_accept( &server.listen_fd, &server.client_fd,
-                                    NULL, 0, NULL ) ) != 0 ) {
-        ESP_LOGE(TAG, "mbedtls_net_accept returned %d", ret );
-        goto exit;
-    }
+    bool connected = false;
+    while (!exit_flag) {
 
-    mbedtls_ssl_set_bio( &server.ssl, &server.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL );
+        ret = mbedtls_net_accept( &server.listen_fd, &server.client_fd, NULL, 0, NULL );
 
-    while(exit_flag == false) {
-        mbedtls_ssl_handshake( &server.ssl );
+        if (ret == 0) {
+            connected = true;
+        }
+
+        if (connected) {
+            mbedtls_ssl_set_bio( &server.ssl, &server.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL );
+            ret = mbedtls_ssl_handshake( &server.ssl );
+            mbedtls_ssl_session_reset(&server.ssl);
+            connected = false;
+        }
+
+        vTaskDelay(20 / portTICK_PERIOD_MS);
     }
     ESP_LOGE(TAG, "Server shutdown");
-    exit:
-        endpoint_teardown(&server);
-        xSemaphoreGive(*sema);
-        vTaskDelete(NULL);
+exit:
+    endpoint_teardown(&server);
+    xSemaphoreGive(*sema);
+    vTaskDelete(NULL);
 }
 
 
-esp_err_t endpoint_teardown(mbedtls_endpoint_t* endpoint)
+esp_err_t endpoint_teardown(mbedtls_endpoint_t *endpoint)
 {
     mbedtls_net_free( &endpoint->client_fd );
     mbedtls_net_free( &endpoint->listen_fd );
@@ -187,7 +196,7 @@ esp_err_t endpoint_teardown(mbedtls_endpoint_t* endpoint)
     return ESP_OK;
 }
 
-esp_err_t client_setup(mbedtls_endpoint_t* client)
+esp_err_t client_setup(mbedtls_endpoint_t *client)
 {
     int ret;
     mbedtls_ssl_config_init( &client->conf );
@@ -199,24 +208,24 @@ esp_err_t client_setup(mbedtls_endpoint_t* client)
     mbedtls_ctr_drbg_init( &client->ctr_drbg );
 
     ESP_LOGI(TAG, "Seeding the random number generator");
-    if((ret = mbedtls_ctr_drbg_seed(&client->ctr_drbg, mbedtls_entropy_func, &client->entropy,
-                                    NULL, 0)) != 0) {
+    if ((ret = mbedtls_ctr_drbg_seed(&client->ctr_drbg, mbedtls_entropy_func, &client->entropy,
+                                     NULL, 0)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned %d", ret);
         return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Setting hostname for TLS session...");
-     /* Hostname set here should match CN in server certificate */
-    if((ret = mbedtls_ssl_set_hostname(&client->ssl, SERVER_ADDRESS)) != 0) {
+    /* Hostname set here should match CN in server certificate */
+    if ((ret = mbedtls_ssl_set_hostname(&client->ssl, SERVER_ADDRESS)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_set_hostname returned -0x%x", -ret);
         return ESP_FAIL;
     }
 
     ESP_LOGI(TAG, "Setting up the SSL/TLS structure...");
-    if((ret = mbedtls_ssl_config_defaults(&client->conf,
-                                          MBEDTLS_SSL_IS_CLIENT,
-                                          MBEDTLS_SSL_TRANSPORT_STREAM,
-                                          MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
+    if ((ret = mbedtls_ssl_config_defaults(&client->conf,
+                                           MBEDTLS_SSL_IS_CLIENT,
+                                           MBEDTLS_SSL_TRANSPORT_STREAM,
+                                           MBEDTLS_SSL_PRESET_DEFAULT)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_config_defaults returned %d", ret);
         return ESP_FAIL;
     }
@@ -230,21 +239,26 @@ esp_err_t client_setup(mbedtls_endpoint_t* client)
     return ESP_OK;
 }
 
-void client_task(void *pvParameters)
+int client_task(const uint8_t *bundle, esp_crt_validate_res_t *res)
 {
-    int ret;
-
-    xSemaphoreHandle *sema = (xSemaphoreHandle *) pvParameters;
+    int ret = ESP_FAIL;
 
     mbedtls_endpoint_t client;
 
-    if(client_setup(&client) != ESP_OK) {
+    *res = ESP_CRT_VALIDATE_UNKNOWN;
+
+    if (client_setup(&client) != ESP_OK) {
         ESP_LOGE(TAG, "SSL client setup failed");
         goto exit;
     }
 
-    // Set the custom bundle which DOESN'T includes the server's root certificate (default bundle)
     esp_crt_bundle_attach(&client.conf);
+    if (bundle) {
+        /* Set a bundle different from the menuconfig bundle */
+        esp_crt_bundle_set(bundle);
+    }
+
+
 
     ESP_LOGI(TAG, "Connecting to %s:%s...", SERVER_ADDRESS, SERVER_PORT);
     if ((ret = mbedtls_net_connect(&client.client_fd, SERVER_ADDRESS, SERVER_PORT, MBEDTLS_NET_PROTO_TCP)) != 0) {
@@ -256,57 +270,61 @@ void client_task(void *pvParameters)
     mbedtls_ssl_set_bio(&client.ssl, &client.client_fd, mbedtls_net_send, mbedtls_net_recv, NULL);
 
     ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle that is missing the server root certificate");
-    ret = mbedtls_ssl_handshake(&client.ssl);
+    while ( ( ret = mbedtls_ssl_handshake( &client.ssl ) ) != 0 ) {
+        if ( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE ) {
+            printf( "mbedtls_ssl_handshake failed with -0x%x\n", -ret );
+            break;
+        }
+    }
 
     ESP_LOGI(TAG, "Verifying peer X.509 certificate for bundle ...");
-    TEST_ASSERT(mbedtls_ssl_get_verify_result(&client.ssl) != 0);
+    ret  = mbedtls_ssl_get_verify_result(&client.ssl);
+
+    *res = (ret == 0) ? ESP_CRT_VALIDATE_OK : ESP_CRT_VALIDATE_FAIL;
+
 
     // Reset session before new connection
     mbedtls_ssl_close_notify(&client.ssl);
     mbedtls_ssl_session_reset(&client.ssl);
-
-    // Set the custom bundle which includes the server's root certificate
-    esp_crt_bundle_set(server_cert_bundle_start);
-
-    ESP_LOGI(TAG, "Performing the SSL/TLS handshake with bundle containing the server root certificate");
-    ret = mbedtls_ssl_handshake(&client.ssl);
-
-    ESP_LOGI(TAG, "Verifying peer X.509 certificate ...");
-    ret = mbedtls_ssl_get_verify_result(&client.ssl);
-    TEST_ASSERT(ret == 0);
-
-    if(ret == 0) {
-        ESP_LOGI(TAG, "Certificate validated");
-    }
+    mbedtls_net_free( &client.client_fd);
 
 
-    exit_flag = true;
+exit:
+    mbedtls_ssl_close_notify(&client.ssl);
+    mbedtls_ssl_session_reset(&client.ssl);
+    esp_crt_bundle_detach(&client.conf);
+    endpoint_teardown(&client);
 
-    exit:
-        mbedtls_ssl_close_notify(&client.ssl);
-        mbedtls_ssl_session_reset(&client.ssl);
-        esp_crt_bundle_detach(&client.conf);
-        endpoint_teardown(&client);
-        xSemaphoreGive(*sema);
-        vTaskDelete(NULL);
+    return ret;
 }
 
 TEST_CASE("custom certificate bundle", "[mbedtls]")
 {
+    esp_crt_validate_res_t validate_res;
+
     test_case_uses_tcpip();
 
-    xSemaphoreHandle exit_sema = xSemaphoreCreateCounting(2, 0);
+    xSemaphoreHandle exit_sema = xSemaphoreCreateBinary();
 
-    xTaskCreate(server_task, "server task", 8192, &exit_sema, 5, NULL);
+    exit_flag = false;
+    xTaskCreate(server_task, "server task", 8192, &exit_sema, 10, NULL);
 
     // Wait for the server to start up
     vTaskDelay(100 / portTICK_PERIOD_MS);
-    xTaskCreate(client_task, "https_get_task", 8192, &exit_sema, 5, NULL);
 
-    for(int i = 0; i < 2; i++) {
-        if(!xSemaphoreTake(exit_sema, 10000/portTICK_PERIOD_MS)) {
-            TEST_FAIL_MESSAGE("exit_sem not released by test task");
-        }
+    /* Test with default crt bundle that doesnt contain the ca crt */
+    client_task(NULL, &validate_res);
+    TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_FAIL);
+
+    /* Test with bundle that does contain the CA crt */
+    client_task(server_cert_bundle_start, &validate_res);
+    TEST_ASSERT(validate_res == ESP_CRT_VALIDATE_OK);
+
+    exit_flag = true;
+
+    if (!xSemaphoreTake(exit_sema, 10000 / portTICK_PERIOD_MS)) {
+        TEST_FAIL_MESSAGE("exit_sem not released by server task");
     }
+
     vSemaphoreDelete(exit_sema);
 }
