@@ -264,8 +264,8 @@ static esp_err_t encrypt_flash_contents(uint32_t spi_boot_crypt_cnt, bool flash_
     /* Set least significant 0-bit in spi_boot_crypt_cnt */
     int ffs_inv = __builtin_ffs((~spi_boot_crypt_cnt) & 0x7);
     /* ffs_inv shouldn't be zero, as zero implies spi_boot_crypt_cnt == 0xFF */
-    uint32_t new_spi_boot_crypt_cnt = spi_boot_crypt_cnt + (1 << (ffs_inv - 1));
-    ESP_LOGD(TAG, "SPI_BOOT_CRYPT_CNT 0x%x -> 0x%x", spi_boot_crypt_cnt, new_spi_boot_crypt_cnt);
+    uint32_t new_spi_boot_crypt_cnt = (1 << (ffs_inv - 1));
+    ESP_LOGD(TAG, "SPI_BOOT_CRYPT_CNT 0x%x -> 0x%x", spi_boot_crypt_cnt, new_spi_boot_crypt_cnt + spi_boot_crypt_cnt);
 
     esp_efuse_write_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &new_spi_boot_crypt_cnt, 3);
 
