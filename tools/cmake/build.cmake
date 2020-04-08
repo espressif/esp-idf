@@ -474,8 +474,11 @@ function(idf_build_executable elf)
     # Set the EXECUTABLE_NAME and EXECUTABLE properties since there are generator expression
     # from components that depend on it
     get_filename_component(elf_name ${elf} NAME_WE)
+    get_target_property(elf_dir ${elf} BINARY_DIR)
+
     idf_build_set_property(EXECUTABLE_NAME ${elf_name})
     idf_build_set_property(EXECUTABLE ${elf})
+    idf_build_set_property(EXECUTABLE_DIR "${elf_dir}")
 
     # Add dependency of the build target to the executable
     add_dependencies(${elf} __idf_build_target)
