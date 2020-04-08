@@ -180,17 +180,20 @@ def test_method(**kwargs):
                 if key in env_config:
                     env_config[key] = kwargs[key]
 
+            # Runner.py should overwrite target with the current target.
             env_config.update(overwrite)
 
-            # FIXME: CI need more variable here. add `if CI_TARGET: ...` later with CI.
+            # This code block is used to run test script locally without
+            # Runner.py
             target = env_config['target'] if 'target' in env_config else kwargs['target']
-            dut_dict = kwargs['dut_dict']
             if isinstance(target, list):
                 target = target[0]
             elif isinstance(target, str):
                 target = target
             else:
                 raise TypeError('keyword targets can only be list or str')
+
+            dut_dict = kwargs['dut_dict']
             if target not in dut_dict:
                 raise Exception('target can only be {%s}' % ', '.join(dut_dict.keys()))
 

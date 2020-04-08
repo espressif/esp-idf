@@ -190,6 +190,15 @@ class Parser(object):
             _overwrite = cls.handle_overwrite_args(_config.pop("overwrite", dict()))
             _extra_data = _config.pop("extra_data", None)
             _filter.update(_config)
+
+            # Try get target from yml
+            try:
+                _target = _filter['target']
+            except KeyError:
+                pass
+            else:
+                _overwrite.update({'target': _target})
+
             for test_method in test_methods:
                 if _filter_one_case(test_method, _filter):
                     test_case_list.append(TestCase.TestCase(test_method, _extra_data, **_overwrite))
