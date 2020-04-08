@@ -442,19 +442,19 @@ After installing Impulse and ensuring that it can successfully load trace files 
 Gcov (Source Code Coverage)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Basics of Gcov and Lcov
-"""""""""""""""""""""""
+Basics of Gcov and Gcovr
+""""""""""""""""""""""""
 
-Source code coverage is data indicating the count and frequency of every program execution path that has been taken within a program's runtime. `Gcov <https://en.wikipedia.org/wiki/Gcov>`_ is a GCC tool that, when used in concert with the compiler, can generate log files indicating the execution count of each line of a source file. The Lcov tool is similar to Gcov but is a graphical front end for Gcov, and generates code coverage reports in HTML format.
+Source code coverage is data indicating the count and frequency of every program execution path that has been taken within a program's runtime. `Gcov <https://en.wikipedia.org/wiki/Gcov>`_ is a GCC tool that, when used in concert with the compiler, can generate log files indicating the execution count of each line of a source file. The `Gcovr <https://gcovr.com>`_ tool is utility for managing Gcov and generating summarized code coverage results.
 
 Generally, using Gcov to compile and run programs on the Host will undergo these steps:
 
 1. Compile the source code using GCC with the ``--coverage`` option enabled. This will cause the compiler to generate a ``.gcno`` notes files during compilation. The notes files contain information to reconstruct execution path block graphs and map each block to source code line numbers. Each source file compiled with the ``--coverage`` option should have their own ``.gcno`` file of the same name (e.g., a ``main.c`` will generate a ``main.gcno`` when compiled).
 2. Execute the program. During execution, the program should generate ``.gcda`` data files. These data files contain the counts of the number of times an execution path was taken. The program will generate a ``.gcda`` file for each source file compiled with the ``--coverage`` option (e.g., ``main.c`` will generate a ``main.gcda``.
-3. Gcov or Lcov can be used generate a code coverage based on the ``.gcno``, ``.gcda``, and source files. Gcov will generate a text based coverage report for each source file in the form of a ``.gcov`` file, whilst Lcov will generate a coverage report in HTML format.
+3. Gcov or Gcovr can be used generate a code coverage based on the ``.gcno``, ``.gcda``, and source files. Gcov will generate a text based coverage report for each source file in the form of a ``.gcov`` file, whilst Gcovr will generate a coverage report in HTML format.
 
-Gcov and Lcov in ESP-IDF
-""""""""""""""""""""""""
+Gcov and Gcovr in ESP-IDF
+"""""""""""""""""""""""""
 
 Using Gcov in ESP-IDF is complicated by the fact that the program is running remotely from the Host (i.e., on the target). The code coverage data (i.e., the ``.gcda`` files) is initially stored on the target itself. OpenOCD is then used to dump the code coverage data from the target to the host via JTAG during runtime. Using Gcov in ESP-IDF can be split into the following steps.
 
@@ -542,13 +542,10 @@ Generating Coverage Report
 
 Once the code coverage data has been dumped, the ``.gcno``, ``.gcda`` and the source files can be used to generate a code coverage report. A code coverage report is simply a report indicating the number of times each line in a source file has been executed.
 
-Both Gcov and Lcov (along with genhtml) can be used to generate code coverage reports. Gcov is provided along with the Xtensa toolchian, whilst Lcov may need to be installed separately. For details on how to use Gcov or Lcov, refer to `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ and `Lcov documentation <https://linux.die.net/man/1/lcov>`_.
+Both Gcov and Gcovr can be used to generate code coverage reports. Gcov is provided along with the Xtensa toolchain, whilst Gcovr may need to be installed separately. For details on how to use Gcov or Gcovr, refer to `Gcov documentation <https://gcc.gnu.org/onlinedocs/gcc/Gcov.html>`_ and `Gcovr documentation <http://gcovr.com/>`_.
 
-.. note::
-    There is currently no support for Lcov for the CMake build system on Windows.
-
-Adding Lcov Build Target to Project
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Adding Gcovr Build Target to Project
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To make report generation more convenient, users can define additional build targets in their projects such report generation can be done with a single build command.
 
@@ -565,10 +562,8 @@ For the CMake build systems, add the following lines to the ``CMakeLists.txt`` f
 
 The following commands can now be used:
 
-    * ``cmake --build build/ --target lcov-report`` will generate an HTML coverga report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
-    * ``cmake --build build/ --target cov-data-clean`` will remove all coverage data files and report.
-
-
+    * ``cmake --build build/ --target gcovr-report`` will generate an HTML coverage report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
+    * ``cmake --build build/ --target cov-data-clean`` will remove all coverage data files.
 
 Make Build System
 *****************
@@ -580,21 +575,21 @@ For the Make build systems, add the following lines to the ``Makefile`` of your 
     GCOV := $(call dequote,$(CONFIG_SDK_TOOLPREFIX))gcov
     REPORT_DIR := $(BUILD_DIR_BASE)/coverage_report
 
-    lcov-report:
+    gcovr-report:
         echo "Generating coverage report in: $(REPORT_DIR)"
         echo "Using gcov: $(GCOV)"
         mkdir -p $(REPORT_DIR)/html
-        lcov --gcov-tool $(GCOV) -c -d $(BUILD_DIR_BASE) -o $(REPORT_DIR)/$(PROJECT_NAME).info
-        genhtml -o $(REPORT_DIR)/html $(REPORT_DIR)/$(PROJECT_NAME).info
+        cd $(BUILD_DIR_BASE)
+        gcovr -r $(PROJECT_PATH) --gcov-executable $(GCOV) -s --html-details $(REPORT_DIR)/html/index.html
 
     cov-data-clean:
         echo "Remove coverage data files..."
         find $(BUILD_DIR_BASE) -name "*.gcda" -exec rm {} +
         rm -rf $(REPORT_DIR)
 
-    .PHONY: lcov-report cov-data-clean
+    .PHONY: gcovr-report cov-data-clean
 
 The following commands can now be used:
 
-    * ``make lcov-report`` will generate an HTML coverga report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
-    * ``make cov-data-clean`` will remove all coverage data files and report.
+    * ``make gcovr-report`` will generate an HTML coverage report in ``$(BUILD_DIR_BASE)/coverage_report/html`` directory.
+    * ``make cov-data-clean`` will remove all coverage data files.
