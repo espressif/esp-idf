@@ -1369,4 +1369,46 @@ esp_err_t esp_ble_scan_dupilcate_list_flush(void)
     btdm_controller_scan_duplicate_list_clear();
     return ESP_OK;
 }
+
+#define BT_IS_ALIVE true
+#define BT_NOT_ALIVE false
+
+extern bool connection_is_alive();
+extern uint32_t real_bt_isr_count ;
+extern uint32_t connection_LinkSuperTimeout;
+extern uint32_t bt_isr_count_arry[16];
+
+
+static bool check_bt_is_alive()
+{
+    static int stop_times = 0;
+    static int64_t last_time = 0; 
+    static int last_clk_ts = -1;
+    int stop_timeout = (connection_LinkSuperTimeout*625+5000000);
+    stop_timeout = (stop_timeout > 20000000) ? stop_timeout : 20000000;
+    int currect_clkint_ts = real_bt_isr_count;
+    if(last_clk_ts == currect_clkint_ts) {
+        if(stop_times==0) {
+            last_time = esp_timer_get_time();
+        } else if(esp_timer_get_time() - last_time > stop_timeout) { 
+            return BT_NOT_ALIVE;
+        }
+        stop_times++;
+    } else {
+        stop_times = 0;
+    }
+    
+    last_clk_ts = currect_clkint_ts;
+    return BT_IS_ALIVE;
+}
+
+void esp_bt_check_need_restart()
+{
+    if(connection_is_alive() && (check_bt_is_alive()==false))
+    {
+        ets_printf("!! Check BT is not alive. Abort !!");
+        abort();
+    }
+}
+
 #endif /*  CONFIG_BT_ENABLED */

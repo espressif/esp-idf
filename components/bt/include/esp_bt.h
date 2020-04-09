@@ -481,6 +481,8 @@ void esp_bt_controller_wakeup_request(void);
  */
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
+void esp_bt_check_need_restart();
+
 #ifdef __cplusplus
 }
 #endif

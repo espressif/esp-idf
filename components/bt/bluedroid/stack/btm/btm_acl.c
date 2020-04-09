@@ -135,6 +135,28 @@ UINT8 btm_handle_to_acl_index (UINT16 hci_handle)
     return (xx);
 }
 
+uint32_t connection_LinkSuperTimeout = HCI_DEFAULT_INACT_TOUT;
+
+bool connection_is_alive ()
+{
+#if BTM_DYNAMIC_MEMORY == TRUE
+    if(&btm_cb==NULL)
+        return false;
+#endif
+    tACL_CONN   *p = &btm_cb.acl_db[0];
+    UINT8       xx;
+    BTM_TRACE_DEBUG ("test connection_is_alive.\n");
+    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+        if ((p->in_use) && p->transport == BT_TRANSPORT_BR_EDR) {
+            connection_LinkSuperTimeout = p->link_super_tout;
+            BTM_TRACE_WARNING("conn index:%d,timeout:%d\n",xx,connection_LinkSuperTimeout*625);
+            return true;
+        }
+    }
+
+    /* If here, no BD Addr found */
+    return false;
+}
 /*******************************************************************************
 **
 ** Function         btm_handle_to_acl
